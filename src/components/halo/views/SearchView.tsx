@@ -3,7 +3,9 @@ import { Search, Xmark, NavArrowRight } from "iconoir-react";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import type { SearchViewProps, SearchFilter } from "../types";
 import { PreText } from "~/components/ui/pretext";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { Button } from "~/components/ui/button";
+import { Badge, type BadgeVariant } from "~/components/ui/badge";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 const FILTERS: { value: SearchFilter; label: string }[] = [
   { value: "all", label: "All" },
@@ -13,18 +15,18 @@ const FILTERS: { value: SearchFilter; label: string }[] = [
   { value: "features", label: "Features" },
 ];
 
-const CATEGORY_COLORS: Record<string, string> = {
-  Statecraft: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
-  Vault: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20",
-  Geography:
-    "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
-  Knowledge: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
-  Community: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
-  Sports: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
-  Labs: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20",
-  System: "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border border-zinc-500/20",
-  Country: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
-  Wiki: "bg-wiki/10 text-wiki border border-wiki/30",
+/** Result category → Badge colour (system colours; the wiki uses its own ink tint). */
+const CATEGORY_BADGE: Record<string, BadgeVariant> = {
+  Statecraft: "yellow",
+  Vault: "teal",
+  Geography: "green",
+  Knowledge: "blue",
+  Community: "blue",
+  Sports: "yellow",
+  Labs: "indigo",
+  System: "neutral",
+  Country: "blue",
+  Wiki: "indigo",
 };
 
 function SearchViewComponent({
@@ -57,7 +59,7 @@ function SearchViewComponent({
     <div className="p-4">
       <div className="mb-3 flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="text-muted-foreground/60 pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+          <Search className="text-label-tertiary pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <input
             ref={searchInputRef}
             type="text"
@@ -75,39 +77,33 @@ function SearchViewComponent({
                 }
               }
             }}
-            className="text-foreground placeholder:text-muted-foreground/50 w-full rounded-xl border border-black/[0.06] bg-black/[0.04] py-2 pr-14 pl-9 text-sm shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:border-blue-500/40 focus:bg-black/[0.06] focus:outline-none dark:border-white/10 dark:bg-white/[0.06] dark:focus:border-blue-400/40 dark:focus:bg-white/[0.09]"
+            className="text-label placeholder:text-label-tertiary rounded-row border-separator bg-fill-4 text-body focus-visible:outline-tint w-full border py-2 pr-14 pl-9 transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
             data-command-palette-search="true"
           />
           {searchQuery && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => setSearchQuery?.("")}
-              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 p-1"
+              aria-label="Clear search"
+              className="text-label-secondary hover:text-label absolute top-1/2 right-2 -translate-y-1/2"
             >
-              <Xmark className="h-4 w-4" />
-            </button>
+              <Xmark aria-hidden />
+            </Button>
           )}
         </div>
       </div>
 
       {/* Filter pills */}
-      <div className="mb-3 flex items-center gap-1 overflow-x-auto pb-1">
-        {FILTERS.map((f) => (
-          <button
-            key={f.value}
-            onClick={() => {
-              soundEffects.tick();
-              setSearchFilter?.(f.value);
-            }}
-            className={`rounded-full px-3 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95 ${
-              searchFilter === f.value
-                ? "bg-foreground text-background shadow-2xs"
-                : "text-muted-foreground hover:text-foreground bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/[0.04] dark:hover:bg-white/[0.08]"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        aria-label="Search in"
+        size="sm"
+        className="mb-3"
+        value={searchFilter}
+        onValueChange={(value) => setSearchFilter?.(value)}
+        options={FILTERS}
+      />
 
       {/* Results list */}
       <div className="max-h-[380px] space-y-1 overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
@@ -117,30 +113,30 @@ function SearchViewComponent({
             const cat =
               (result.metadata?.category as string) ||
               (result.type === "country" ? "Country" : "Command");
-            const badgeStyle = CATEGORY_COLORS[cat] || "bg-muted text-muted-foreground";
+            const badgeVariant = CATEGORY_BADGE[cat] ?? "neutral";
 
             return (
               <button
+                type="button"
                 key={result.id}
                 onClick={() => {
-                  soundEffects.press();
                   result.action();
                   closeDropdown();
                 }}
-                className="group flex w-full items-center gap-3 rounded-xl p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none hover:bg-black/[0.04] active:scale-[0.985] dark:hover:bg-white/[0.06]"
+                className="group rounded-row hover:bg-fill-3 focus-visible:outline-tint facet-press facet-press-subtle flex w-full items-center gap-3 p-3 text-left select-none focus-visible:outline-2"
               >
                 {/* Icon or Flag */}
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-black/5 dark:bg-white/5">
+                <div className="rounded-control bg-fill-4 flex h-9 w-9 shrink-0 items-center justify-center">
                   {result.type === "country" && result.metadata?.flagUrl ? (
                     <UnifiedCountryFlag
                       flagUrl={result.metadata.flagUrl as string}
                       countryName={result.title}
-                      className="h-5 w-7 rounded object-cover shadow-xs"
+                      className="rounded-control-sm h-5 w-7 object-cover"
                     />
                   ) : Icon ? (
-                    <Icon className="text-muted-foreground group-hover:text-foreground h-4 w-4 transition-colors" />
+                    <Icon className="text-label-secondary group-hover:text-label h-4 w-4 transition-colors" />
                   ) : (
-                    <Search className="text-muted-foreground/60 h-4 w-4" />
+                    <Search className="text-label-tertiary h-4 w-4" />
                   )}
                 </div>
 
@@ -148,20 +144,16 @@ function SearchViewComponent({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <PreText
-                      className="text-foreground block truncate text-sm font-medium transition-colors group-hover:text-blue-500 dark:group-hover:text-blue-400"
+                      className="text-label text-body group-hover:text-tint block truncate font-medium transition-colors"
                       whiteSpace="nowrap"
                     >
                       {result.title}
                     </PreText>
-                    <span
-                      className={`inline-flex shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${badgeStyle}`}
-                    >
-                      {cat}
-                    </span>
+                    <Badge variant={badgeVariant}>{cat}</Badge>
                   </div>
                   {result.description && (
                     <PreText
-                      className="text-muted-foreground block truncate text-xs"
+                      className="text-label-secondary text-footnote block truncate"
                       whiteSpace="nowrap"
                     >
                       {result.description}
@@ -170,53 +162,55 @@ function SearchViewComponent({
                 </div>
 
                 {/* Arrow */}
-                <NavArrowRight className="text-muted-foreground/30 group-hover:text-muted-foreground/80 h-4 w-4 shrink-0 transition-colors" />
+                <NavArrowRight className="text-label-tertiary group-hover:text-label-secondary h-4 w-4 shrink-0 transition-colors" />
               </button>
             );
           })
         ) : debouncedSearchQuery ? (
           /* ── No results ─────────────────────────────────────────── */
           <div className="py-8 text-center">
-            <Search className="text-muted-foreground/40 mx-auto mb-2 h-8 w-8" />
-            <div className="text-muted-foreground/80 text-sm">
+            <Search className="text-label-tertiary mx-auto mb-2 h-8 w-8" />
+            <div className="text-label-secondary text-body">
               <PreText className="inline" whiteSpace="nowrap">
                 {`Nothing found for "${debouncedSearchQuery}"${searchFilter !== "all" ? ` in ${searchFilter}.` : ""}`}
               </PreText>
               {searchFilter !== "all" && (
-                <button
+                <Button
+                  type="button"
+                  variant="link"
                   onClick={() => setSearchFilter?.("all")}
-                  className="text-primary ml-1 font-medium hover:underline"
+                  className="ml-1 h-auto p-0"
                 >
                   <PreText className="inline" whiteSpace="nowrap">
                     Search all
                   </PreText>
-                </button>
+                </Button>
               )}
             </div>
           </div>
         ) : (
           /* ── Empty state ────────────────────────────────────────── */
           <div className="py-10 text-center">
-            <PreText className="text-muted-foreground/80 mb-3 text-sm" whiteSpace="nowrap">
+            <PreText className="text-label-secondary text-body mb-3" whiteSpace="nowrap">
               {`Type to search ${searchFilter === "all" ? "countries, commands, and features" : searchFilter}`}
             </PreText>
-            <div className="text-muted-foreground/65 flex items-center justify-center gap-3 text-xs">
+            <div className="text-label-secondary text-footnote flex items-center justify-center gap-3">
               <span className="flex items-center gap-1">
-                <kbd className="bg-muted/50 rounded px-1.5 py-0.5">⌘K</kbd>
+                <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">⌘K</kbd>
                 <PreText className="w-auto text-inherit" whiteSpace="nowrap">
                   search
                 </PreText>
               </span>
-              <span className="text-muted-foreground/30">·</span>
+              <span className="text-label-tertiary">·</span>
               <span className="flex items-center gap-1">
-                <kbd className="bg-muted/50 rounded px-1.5 py-0.5">Tab</kbd>
+                <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">Tab</kbd>
                 <PreText className="w-auto text-inherit" whiteSpace="nowrap">
                   filter
                 </PreText>
               </span>
-              <span className="text-muted-foreground/20">·</span>
+              <span className="text-label-tertiary">·</span>
               <span className="flex items-center gap-1">
-                <kbd className="bg-muted/50 rounded px-1.5 py-0.5">Esc</kbd>
+                <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">Esc</kbd>
                 <PreText className="w-auto text-inherit" whiteSpace="nowrap">
                   close
                 </PreText>

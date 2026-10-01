@@ -139,9 +139,7 @@ export function StateSeal({
                 height: size * 0.09,
                 filter: "drop-shadow(0 1px 0 rgba(58,30,0,0.5))",
               }}
-              className={
-                i < pips ? "fill-amber-100 text-amber-100" : "fill-transparent text-amber-950/50"
-              }
+              className={i < pips ? "fill-yellow text-yellow" : "text-yellow/50 fill-transparent"}
               strokeWidth={1.5}
             />
           ))}

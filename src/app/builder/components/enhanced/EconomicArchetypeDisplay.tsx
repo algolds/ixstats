@@ -99,16 +99,16 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
     <div className={`space-y-6 ${className ?? ""}`}>
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-muted/50 border-border grid h-11 w-full grid-cols-2 rounded-xl border p-1">
+        <TabsList className="bg-fill-3 border-separator rounded-row grid h-11 w-full grid-cols-2 border p-1">
           <TabsTrigger
             value="modern"
-            className="text-muted-foreground cursor-pointer rounded-lg text-sm font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] data-[state=active]:bg-emerald-600/10 data-[state=active]:font-semibold data-[state=active]:text-emerald-600 dark:data-[state=active]:bg-emerald-500/15 dark:data-[state=active]:text-emerald-400"
+            className="text-label-secondary rounded-control text-body data-[state=active]:bg-green/10 data-[state=active]:text-green cursor-pointer font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] data-[state=active]:font-semibold"
           >
             Modern Archetypes
           </TabsTrigger>
           <TabsTrigger
             value="historical"
-            className="text-muted-foreground cursor-pointer rounded-lg text-sm font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] data-[state=active]:bg-emerald-600/10 data-[state=active]:font-semibold data-[state=active]:text-emerald-600 dark:data-[state=active]:bg-emerald-500/15 dark:data-[state=active]:text-emerald-400"
+            className="text-label-secondary rounded-control text-body data-[state=active]:bg-green/10 data-[state=active]:text-green cursor-pointer font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] data-[state=active]:font-semibold"
           >
             Historical Archetypes
           </TabsTrigger>
@@ -116,22 +116,22 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
 
         <div className="mt-6 space-y-6">
           {archetypes.length > 0 && (
-            <div className="border-border/40 bg-card/10 flex flex-col gap-4 rounded-xl border p-4 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="border-separator bg-surface rounded-row flex flex-col gap-4 border p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
                 {/* Search Input */}
                 <div className="relative max-w-md flex-1">
-                  <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                  <Search className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <Input
                     placeholder="Search archetypes..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-background/30 border-border/50 pr-4 pl-9 text-sm"
+                    className="bg-fill-4 border-separator text-body pr-4 pl-9"
                   />
                 </div>
 
                 {/* Complexity Filter */}
                 <Select value={complexityFilter} onValueChange={setComplexityFilter}>
-                  <SelectTrigger className="bg-background/30 border-border/50 w-full sm:w-44">
+                  <SelectTrigger className="bg-fill-4 border-separator w-full sm:w-44">
                     <SelectValue placeholder="Select Complexity" />
                   </SelectTrigger>
                   <SelectContent>
@@ -144,35 +144,33 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
               </div>
 
               {/* Counter */}
-              <div className="text-muted-foreground shrink-0 text-xs font-semibold">
+              <div className="text-label-secondary text-caption shrink-0 font-semibold">
                 Showing {filteredArchetypes.length} of{" "}
-                {
-                  archetypes.filter((a) => (a.era ?? "modern") === activeTab).length
-                }
+                {archetypes.filter((a) => (a.era ?? "modern") === activeTab).length}
               </div>
             </div>
           )}
 
           {archetypes.length === 0 ? (
-            <div className="border-border bg-card/25 rounded-xl border-2 border-dashed p-16 text-center">
+            <div className="border-separator bg-surface rounded-row border-2 border-dashed p-16 text-center">
               <div className="space-y-4">
-                <div className="bg-muted border-border mx-auto w-fit rounded-full border p-4">
-                  <Target className="text-muted-foreground h-8 w-8" />
+                <div className="bg-fill-3 border-separator mx-auto w-fit rounded-full border p-4">
+                  <Target className="text-label-secondary h-8 w-8" />
                 </div>
-                <h3 className="text-foreground text-lg font-semibold">No Archetypes Available</h3>
-                <p className="text-muted-foreground mx-auto max-w-md text-sm">
+                <h3 className="text-label text-title-3">No Archetypes Available</h3>
+                <p className="text-label-secondary text-body mx-auto max-w-md">
                   Economic archetypes are being loaded. If this persists, contact the administrator.
                 </p>
               </div>
             </div>
           ) : filteredArchetypes.length === 0 ? (
-            <div className="border-border bg-card/25 rounded-xl border-2 border-dashed p-16 text-center">
+            <div className="border-separator bg-surface rounded-row border-2 border-dashed p-16 text-center">
               <div className="space-y-4">
-                <div className="bg-muted border-border mx-auto w-fit rounded-full border p-4">
-                  <Target className="text-muted-foreground h-8 w-8" />
+                <div className="bg-fill-3 border-separator mx-auto w-fit rounded-full border p-4">
+                  <Target className="text-label-secondary h-8 w-8" />
                 </div>
-                <h3 className="text-foreground text-lg font-semibold">No Matching Archetypes</h3>
-                <p className="text-muted-foreground mx-auto max-w-md text-sm">
+                <h3 className="text-label text-title-3">No Matching Archetypes</h3>
+                <p className="text-label-secondary text-body mx-auto max-w-md">
                   No archetypes match your current search and filter settings. Try clearing them.
                 </p>
               </div>

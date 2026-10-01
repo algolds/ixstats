@@ -174,10 +174,10 @@ export const DossierTab: React.FC<DossierTabProps> = ({
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <FacetCard depth={1} className="rounded-2xl">
+        <FacetCard className="rounded-card">
           <FacetCardContent className="p-8">
             <div className="space-y-4">
-              <Skeleton className="h-12 w-12 rounded-lg" />
+              <Skeleton className="rounded-control h-12 w-12" />
               <Skeleton className="h-5 w-48" />
               <Skeleton className="h-4 w-32" />
               <Skeleton className="h-4 w-full" />
@@ -193,13 +193,11 @@ export const DossierTab: React.FC<DossierTabProps> = ({
   // Error state
   if (wikiData.error) {
     return (
-      <FacetCard depth={1} className="rounded-2xl">
+      <FacetCard className="rounded-card">
         <FacetCardContent className="p-8 text-center">
           <AlertTriangle className="text-destructive mx-auto mb-3 h-6 w-6" />
-          <h3 className="text-foreground mb-2 text-base font-semibold">
-            Wiki Intelligence Unavailable
-          </h3>
-          <p className="text-muted-foreground mb-4">{wikiData.error}</p>
+          <h3 className="text-label text-title-3 mb-2">Wiki Intelligence Unavailable</h3>
+          <p className="text-label-secondary mb-4">{wikiData.error}</p>
           <Button onClick={handleRefresh} variant="outline">
             <RefreshCw className="mr-2 h-4 w-4" />
             Retry
@@ -271,13 +269,11 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                 <div className="space-y-6 lg:col-span-8">
                   {/* Empty state: No sections returned from wiki */}
                   {wikiData.sections.length === 0 && (
-                    <FacetCard depth={1} className="rounded-2xl">
+                    <FacetCard className="rounded-card">
                       <FacetCardContent className="p-8 text-center">
-                        <BookOpen className="text-muted-foreground mx-auto mb-3 h-6 w-6" />
-                        <h3 className="text-foreground mb-2 text-base font-semibold">
-                          No Wiki Sections Found
-                        </h3>
-                        <p className="text-muted-foreground mx-auto mb-6 max-w-md text-sm">
+                        <BookOpen className="text-label-secondary mx-auto mb-3 h-6 w-6" />
+                        <h3 className="text-label text-title-3 mb-2">No Wiki Sections Found</h3>
+                        <p className="text-label-secondary text-body mx-auto mb-6 max-w-md">
                           There is no active WikiOS database entry for{" "}
                           <strong>{countryName}</strong>.
                         </p>
@@ -322,7 +318,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
 
                 {/* Right Sticky TOC Sidebar */}
                 <div className="lg:col-span-4">
-                  <div className="sticky top-20">
+                  <div className="sticky top-(--shell-top-offset)">
                     <DossierTocSidebar
                       countryName={countryName}
                       infobox={wikiData.infobox}
@@ -344,8 +340,8 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                 {/* Action Bar */}
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <h3 className="text-foreground text-sm font-semibold">Native Lore Documents</h3>
-                    <p className="text-muted-foreground text-xs">
+                    <h3 className="text-label text-headline">Native Lore Documents</h3>
+                    <p className="text-label-secondary text-footnote">
                       Custom dossier documents created via the WikiOS Canvas Editor or file import.
                     </p>
                   </div>
@@ -354,7 +350,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                       variant="outline"
                       size="sm"
                       onClick={() => setShowFileImport(!showFileImport)}
-                      className="gap-1.5 text-xs font-semibold"
+                      className="text-caption gap-2 font-semibold"
                     >
                       <Upload className="h-3.5 w-3.5" />
                       {showFileImport ? "Hide Import" : "Import Files"}
@@ -365,7 +361,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                         setEditingLoreDoc(null);
                         setIsCanvasModalOpen(true);
                       }}
-                      className="gap-1.5 text-xs"
+                      className="text-footnote gap-2"
                     >
                       <Plus className="h-3.5 w-3.5" />
                       New Document
@@ -383,13 +379,11 @@ export const DossierTab: React.FC<DossierTabProps> = ({
 
                 {/* Document Grid / Empty State */}
                 {nativeDocs.length === 0 ? (
-                  <FacetCard depth={1} className="rounded-2xl">
+                  <FacetCard className="rounded-card">
                     <FacetCardContent className="p-8 text-center">
-                      <BookOpen className="text-muted-foreground mx-auto mb-3 h-6 w-6" />
-                      <h3 className="text-foreground mb-2 text-base font-semibold">
-                        No Native Lore Documents
-                      </h3>
-                      <p className="text-muted-foreground mx-auto mb-6 max-w-md text-sm">
+                      <BookOpen className="text-label-secondary mx-auto mb-3 h-6 w-6" />
+                      <h3 className="text-label text-title-3 mb-2">No Native Lore Documents</h3>
+                      <p className="text-label-secondary text-body mx-auto mb-6 max-w-md">
                         Create custom dossier documents directly using the WikiOS Canvas Editor or
                         import existing markdown/text files.
                       </p>
@@ -406,28 +400,26 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                 ) : (
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {nativeDocs.map((doc) => (
-                      <FacetCard key={doc.id} depth={2} className="rounded-2xl p-5">
+                      <FacetCard key={doc.id} className="rounded-card p-5">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <h4 className="text-foreground truncate text-sm font-semibold">
-                                {doc.title}
-                              </h4>
+                              <h4 className="text-label text-headline truncate">{doc.title}</h4>
                               <Badge variant="outline" className="capitalize">
                                 {doc.clearance.toLowerCase()}
                               </Badge>
                             </div>
-                            <p className="text-muted-foreground mt-1 line-clamp-3 text-xs">
+                            <p className="text-label-secondary text-footnote mt-1 line-clamp-3">
                               {doc.content.replace(/<[^>]*>/g, "").slice(0, 150)}...
                             </p>
                           </div>
                         </div>
 
-                        <div className="border-border mt-4 flex items-center justify-between border-t pt-3">
-                          <span className="text-muted-foreground text-xs">
+                        <div className="border-separator mt-4 flex items-center justify-between border-t pt-3">
+                          <span className="text-label-secondary text-footnote">
                             Updated {new Date(doc.updatedAt).toLocaleDateString()}
                           </span>
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-2">
                             <Button
                               variant="ghost"
                               size="icon"

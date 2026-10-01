@@ -9,12 +9,7 @@ import type {
   NationalIdentityData,
 } from "~/app/builder/lib/economy-data-service";
 import { BuilderTabCard, type TabDefinition } from "~/app/builder/primitives/BuilderTabCard";
-import {
-  BasicInfoForm,
-  GeographyForm,
-  CultureForm,
-  IdentityHeroBanner,
-} from "./national-identity";
+import { BasicInfoForm, GeographyForm, CultureForm, IdentityHeroBanner } from "./national-identity";
 import { useNationalIdentityState } from "./national-identity/useNationalIdentityState";
 import { useBuilderContext } from "./context/BuilderStateContext";
 import type { GovernmentType, GovernmentBuilderState } from "~/types/government";
@@ -138,8 +133,8 @@ export function NationalIdentitySection({
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
-          <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
-          <p className="text-muted-foreground">Loading national identity data...</p>
+          <div className="border-tint mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
+          <p className="text-label-secondary">Loading national identity data...</p>
         </div>
       </div>
     );

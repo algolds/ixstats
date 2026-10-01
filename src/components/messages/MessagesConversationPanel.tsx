@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { Search, Plus, Crown, Pin, OpenBook as BookOpen } from "iconoir-react";
-import { Input } from "~/components/ui/input";
+import { Plus, Crown, Pin, OpenBook as BookOpen } from "iconoir-react";
+import { SearchField } from "~/components/ui/search-field";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Button } from "~/components/ui/button";
-import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { MESSAGE_FOLDERS } from "./MessagesFolderNav";
 import { MessagesConversationCard } from "./MessagesConversationCard";
@@ -65,8 +65,6 @@ export function MessagesConversationPanel({
   );
   const latestWikiChange = (latestWikiData as any)?.[0];
 
-  const currentBg = "bg-emerald-500/[0.03] dark:bg-emerald-500/10";
-
   // Filter conversations by sub-filter & search query
   const filtered = conversations.filter((c) => {
     // Exclude thinktanks from main messaging feed
@@ -111,113 +109,83 @@ export function MessagesConversationPanel({
   return (
     <div className="flex h-full flex-col">
       {/* Search Header */}
-      <div
-        className={cn(
-          "border-border/40 relative z-10 flex shrink-0 flex-col gap-2.5 border-b p-3 pb-2.5",
-          currentBg
-        )}
-      >
+      <div className={cn("border-separator relative flex shrink-0 flex-col gap-3 border-b p-3")}>
         <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="text-muted-foreground/60 absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
-            <Input
-              placeholder="Search messages..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="border-border/50 bg-background/70 h-9 rounded-xl pr-3 pl-9 text-xs shadow-2xs backdrop-blur-xs"
-            />
-          </div>
+          <SearchField
+            containerClassName="flex-1"
+            placeholder="Search messages..."
+            aria-label="Search messages"
+            value={searchQuery}
+            onValueChange={onSearchChange}
+          />
           {activeFolder === "conversations" && (
             <Button
               size="sm"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 h-9 shrink-0 cursor-pointer gap-1.5 rounded-xl px-3 text-xs font-semibold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.96]"
+              className="shrink-0"
               onClick={onNewConversation}
               title="Start a new conversation"
             >
-              <Plus className="h-4 w-4 stroke-[2.5]" />
-              <span className="font-semibold">New</span>
+              <Plus aria-hidden="true" />
+              New
             </Button>
           )}
         </div>
 
-        {/* Channel filter chips (Conversations folder only) */}
+        {/* Channel filter (Conversations folder only) */}
         {activeFolder === "conversations" && (
-          <div className="flex scrollbar-none items-center gap-1 overflow-x-auto pt-0.5">
-            {CHANNEL_FILTERS.map((filter) => {
-              const isActive = activeFilter === filter.id;
-              return (
-                <button
-                  key={filter.id}
-                  onClick={() => setActiveFilter(filter.id)}
-                  className={cn(
-                    "relative cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none active:scale-95",
-                    isActive
-                      ? "text-foreground shadow-2xs"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
-                  )}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="messages-channel-chip"
-                      className="border-border/60 bg-card absolute inset-0 rounded-lg border shadow-xs"
-                      transition={{ type: "spring", stiffness: 450, damping: 30 }}
-                    />
-                  )}
-                  <span className="relative z-10">{filter.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          <SegmentedControl
+            size="sm"
+            fullWidth
+            aria-label="Channel filter"
+            value={activeFilter}
+            onValueChange={setActiveFilter}
+            options={CHANNEL_FILTERS.map((filter) => ({ value: filter.id, label: filter.label }))}
+          />
         )}
       </div>
 
       {/* Conversation List */}
-      <div
-        className="flex-1 space-y-1 overflow-y-auto p-2"
-        style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(128,128,128,0.2) transparent" }}
-      >
+      <div className="flex-1 space-y-1 overflow-y-auto p-2" style={{ scrollbarWidth: "thin" }}>
         {/* Pinned System Messages Card (Conversations folder only) */}
         {activeFolder === "conversations" &&
           (activeFilter === "all" || activeFilter === "direct") && (
             <button
               onClick={() => onSelectConversation(SYSTEM_CONVERSATION_ID)}
               className={cn(
-                "group relative flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.985]",
+                "group rounded-row relative flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-[background-color,scale] duration-150 select-none active:scale-[0.98]",
                 isSystemSelected
-                  ? "bg-accent/80 text-accent-foreground ring-border/50 shadow-2xs ring-1"
-                  : "hover:bg-accent/20 text-foreground/90 hover:text-foreground"
+                  ? "bg-tint-fill text-label"
+                  : "hover:bg-fill-4 text-label hover:text-label"
               )}
             >
               {/* System Avatar */}
               <div className="relative shrink-0">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 shadow-2xs ring-1 ring-amber-500/20">
-                  <Crown className="h-4 w-4" />
+                <div className="bg-yellow/15 text-yellow flex size-10 items-center justify-center rounded-full">
+                  <Crown className="size-4" aria-hidden="true" />
                 </div>
               </div>
 
               {/* Content */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-1.5">
+                  <div className="flex min-w-0 items-center gap-2">
                     <span
                       className={cn(
-                        "truncate text-[13px] tracking-[-0.01em]",
-                        isSystemSelected
-                          ? "text-foreground font-semibold"
-                          : "text-foreground/90 font-medium"
+                        "text-body truncate",
+                        isSystemSelected ? "text-label font-semibold" : "text-label font-medium"
                       )}
                     >
                       System Messages
                     </span>
-                    <Crown className="h-3 w-3 shrink-0 text-amber-500/80" />
+                    <Crown className="text-yellow size-3.5 shrink-0" aria-label="Official" />
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
-                    <Pin className="text-muted-foreground/50 h-3 w-3" />
+                    <Pin className="text-label-tertiary size-3.5" aria-label="Pinned" />
                   </div>
                 </div>
 
                 <div className="mt-0.5 flex items-center justify-between gap-2">
-                  <p className="text-muted-foreground line-clamp-1 text-[12px] leading-normal font-normal">
+                  <p className="text-footnote text-label-secondary line-clamp-1">
                     {latestSystemNotice
                       ? `${latestSystemNotice.title}: ${latestSystemNotice.description || latestSystemNotice.message || ""}`
                       : "Official platform bulletins and simulation digests"}
@@ -233,42 +201,40 @@ export function MessagesConversationPanel({
             <button
               onClick={() => onSelectConversation(LOREBOT_CONVERSATION_ID)}
               className={cn(
-                "group relative flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.985]",
+                "group rounded-row relative flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-[background-color,scale] duration-150 select-none active:scale-[0.98]",
                 isLoreBotSelected
-                  ? "bg-accent/80 text-accent-foreground ring-border/50 shadow-2xs ring-1"
-                  : "hover:bg-accent/20 text-foreground/90 hover:text-foreground"
+                  ? "bg-tint-fill text-label"
+                  : "hover:bg-fill-4 text-label hover:text-label"
               )}
             >
               {/* LoreBot Avatar */}
               <div className="relative shrink-0">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-500/10 text-cyan-400 shadow-2xs ring-1 ring-cyan-500/20">
-                  <BookOpen className="h-4 w-4" />
+                <div className="bg-teal/15 text-teal flex size-10 items-center justify-center rounded-full">
+                  <BookOpen className="size-4" aria-hidden="true" />
                 </div>
               </div>
 
               {/* Content */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-1.5">
+                  <div className="flex min-w-0 items-center gap-2">
                     <span
                       className={cn(
-                        "truncate text-[13px] tracking-[-0.01em]",
-                        isLoreBotSelected
-                          ? "text-foreground font-semibold"
-                          : "text-foreground/90 font-medium"
+                        "text-body truncate",
+                        isLoreBotSelected ? "text-label font-semibold" : "text-label font-medium"
                       )}
                     >
                       LoreBot
                     </span>
-                    <Crown className="h-3 w-3 shrink-0 text-amber-500/80" />
+                    <Crown className="text-yellow size-3.5 shrink-0" aria-label="Official" />
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
-                    <Pin className="text-muted-foreground/50 h-3 w-3" />
+                    <Pin className="text-label-tertiary size-3.5" aria-label="Pinned" />
                   </div>
                 </div>
 
                 <div className="mt-0.5 flex items-center justify-between gap-2">
-                  <p className="text-muted-foreground line-clamp-1 text-[12px] leading-normal font-normal">
+                  <p className="text-footnote text-label-secondary line-clamp-1">
                     {latestWikiChange
                       ? `Latest edit on ${latestWikiChange.title}: ${latestWikiChange.comment || `${latestWikiChange.user} updated article`}`
                       : "WikiOS updates, watchlist activity & lore dispatches"}
@@ -280,14 +246,14 @@ export function MessagesConversationPanel({
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="border-primary h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
+            <div className="border-tint size-5 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-6 text-center">
-            <p className="text-foreground text-xs font-semibold">
+            <p className="text-headline text-label">
               {folderConfig?.emptyTitle || "No conversations found"}
             </p>
-            <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+            <p className="text-callout text-label-secondary mt-1">
               {searchQuery
                 ? `No conversations match "${searchQuery}"`
                 : (folderConfig?.emptyDescription ?? "")}

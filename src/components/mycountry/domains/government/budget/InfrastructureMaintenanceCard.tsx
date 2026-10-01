@@ -19,19 +19,19 @@ import { cn } from "~/lib/utils";
 /** Network condition → semantic status colour (badge text, figure text, funding bar). */
 const CONDITION_THEMES = {
   optimal: {
-    badge: "border-emerald-500/30 text-emerald-600",
-    text: "text-emerald-600",
-    bar: "bg-emerald-500",
+    badge: "border-green/30 text-green",
+    text: "text-green",
+    bar: "bg-green",
   },
   adequate: {
-    badge: "text-muted-foreground",
-    text: "text-foreground",
-    bar: "bg-foreground/60",
+    badge: "text-label-secondary",
+    text: "text-label",
+    bar: "bg-label-tertiary",
   },
   deteriorating: {
-    badge: "border-amber-500/30 text-amber-600",
-    text: "text-amber-600",
-    bar: "bg-amber-500",
+    badge: "border-yellow/30 text-yellow",
+    text: "text-yellow",
+    bar: "bg-yellow",
   },
   failing: {
     badge: "border-destructive/30 text-destructive",
@@ -48,10 +48,7 @@ export interface InfrastructureMaintenanceCardProps {
 function Delta({ value }: { value: number }) {
   return (
     <span
-      className={cn(
-        "font-mono text-xl font-semibold tabular-nums",
-        value >= 0 ? "text-emerald-600" : "text-destructive"
-      )}
+      className={cn("text-title-2 tabular-nums", value >= 0 ? "text-green" : "text-destructive")}
     >
       {value >= 0 ? "+" : ""}
       {(value * 100).toFixed(2)}%
@@ -69,7 +66,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
   );
 
   if (isLoading) {
-    return <Skeleton className="h-40 w-full rounded-2xl" />;
+    return <Skeleton className="rounded-card h-40 w-full" />;
   }
 
   if (!profile || profile.totalOperationalKm === 0) {
@@ -77,6 +74,8 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
   }
 
   const { degradation, totalOperationalKm } = profile;
+  // The maintenance budget is served to the nation's owner only.
+  if (degradation.fundingRatio == null || degradation.budgetedMaintenance == null) return null;
   const fundingPercent = Math.min(150, Math.round(degradation.fundingRatio * 100));
 
   const isCritical =
@@ -85,22 +84,19 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
   const StatusIcon = isCritical ? AlertTriangle : Shield;
 
   return (
-    <FacetCard depth={1} surface="solid" className={cn("p-5", isCritical && "border-amber-500/40")}>
+    <FacetCard className={cn("p-5", isCritical && "border-yellow/40")}>
       {/* Header */}
-      <div className="border-border/60 flex flex-wrap items-center justify-between gap-2 border-b pb-3">
-        <div className="flex min-w-0 items-center gap-2.5">
+      <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+        <div className="flex min-w-0 items-center gap-2">
           <StatusIcon
             aria-hidden="true"
-            className={cn(
-              "h-4 w-4 shrink-0",
-              isCritical ? "text-amber-600" : "text-muted-foreground"
-            )}
+            className={cn("h-4 w-4 shrink-0", isCritical ? "text-yellow" : "text-label-secondary")}
           />
           <div className="min-w-0">
-            <h3 className="text-foreground text-sm font-semibold">
+            <h3 className="text-label text-headline">
               Infrastructure maintenance & speed retention
             </h3>
-            <span className="text-muted-foreground text-xs">
+            <span className="text-label-secondary text-footnote">
               Physical network condition across {totalOperationalKm.toLocaleString()} operational
               kilometers
             </span>
@@ -114,21 +110,21 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
 
       {/* Progress & Budget Ratio */}
       <div className="mt-4 space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-          <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
+        <div className="text-footnote flex flex-wrap items-center justify-between gap-2">
+          <span className="text-label-secondary text-footnote flex items-center gap-2">
             <Coins aria-hidden="true" className="h-3.5 w-3.5" /> Budgeted vs. Required Annual
             Maintenance
           </span>
-          <span className="text-foreground font-mono text-xs font-semibold tabular-nums">
+          <span className="text-label text-caption font-semibold tabular-nums">
             {degradation.budgetedMaintenance.toFixed(3)}B /{" "}
             {degradation.requiredMaintenance.toFixed(3)}B
-            <span className="text-muted-foreground ml-1.5 font-normal">
+            <span className="text-label-secondary ml-2 font-normal">
               ({fundingPercent}% funded)
             </span>
           </span>
         </div>
 
-        <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
+        <div className="bg-fill-3 h-2 w-full overflow-hidden rounded-full">
           <div
             className={cn("h-full rounded-full", theme.bar)}
             style={{ width: `${Math.min(100, fundingPercent)}%` }}
@@ -137,23 +133,23 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
       </div>
 
       {/* 3-Metric Impact Row */}
-      <dl className="divide-border/60 border-border/60 mt-4 grid grid-cols-1 divide-y border-y sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <dl className="divide-separator border-separator mt-4 grid grid-cols-1 divide-y border-y sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <div className="py-3 sm:pr-3">
           <dt className="flex items-center gap-1">
-            <Gauge aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+            <Gauge aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
             <Eyebrow>Network speed factor</Eyebrow>
           </dt>
-          <dd className="mt-1.5 flex items-baseline gap-1.5">
-            <span className={cn("font-mono text-xl font-semibold tabular-nums", theme.text)}>
+          <dd className="mt-2 flex items-baseline gap-2">
+            <span className={cn("text-title-2 tabular-nums", theme.text)}>
               {degradation.speedDegradationFactor.toFixed(2)}×
             </span>
             {degradation.speedPenaltyPercent > 0 && (
-              <span className="text-destructive font-mono text-xs tabular-nums">
+              <span className="text-destructive text-footnote tabular-nums">
                 (-{degradation.speedPenaltyPercent}%)
               </span>
             )}
           </dd>
-          <dd className="text-muted-foreground mt-0.5 text-xs">
+          <dd className="text-label-secondary text-footnote mt-0.5">
             {degradation.speedPenaltyPercent === 0
               ? "Full design velocity"
               : "Transit delay penalty"}
@@ -164,26 +160,26 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
           <dt>
             <Eyebrow>GDP modifier impact</Eyebrow>
           </dt>
-          <dd className="mt-1.5">
+          <dd className="mt-2">
             <Delta value={degradation.gdpModifierDelta} />
           </dd>
-          <dd className="text-muted-foreground mt-0.5 text-xs">Annual growth dividend</dd>
+          <dd className="text-label-secondary text-footnote mt-0.5">Annual growth dividend</dd>
         </div>
 
         <div className="py-3 sm:pl-3">
           <dt>
             <Eyebrow>Trade efficiency</Eyebrow>
           </dt>
-          <dd className="mt-1.5">
+          <dd className="mt-2">
             <Delta value={degradation.tradeModifierDelta} />
           </dd>
-          <dd className="text-muted-foreground mt-0.5 text-xs">Supply-chain throughput</dd>
+          <dd className="text-label-secondary text-footnote mt-0.5">Supply-chain throughput</dd>
         </div>
       </dl>
 
       {/* Description & Action */}
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <p className="text-muted-foreground max-w-xl text-xs leading-relaxed">
+      <div className="text-footnote mt-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-label-secondary text-footnote max-w-xl leading-relaxed">
           {degradation.description}
         </p>
 
@@ -193,7 +189,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
             size="sm"
             onClick={() => onDeclareDirective("Emergency Transport Infrastructure Rehabilitation")}
           >
-            <Command aria-hidden="true" className="h-3.5 w-3.5 text-amber-600" />
+            <Command aria-hidden="true" className="text-yellow h-3.5 w-3.5" />
             Rehabilitation Directive
           </Button>
         )}

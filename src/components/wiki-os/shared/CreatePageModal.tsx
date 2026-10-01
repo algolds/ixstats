@@ -4,7 +4,6 @@ import { pageEditHref } from "~/lib/wiki-os/page-tools";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Xmark as X,
   NavArrowRight as ChevronRight,
   NavArrowLeft as ChevronLeft,
   Plus,
@@ -12,6 +11,8 @@ import {
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
+import { Button } from "~/components/ui/button";
+import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
 import { generateWikitext } from "./create-page/WikitextTemplates";
 import { TitleStep } from "./create-page/TitleStep";
 import { TypeStep } from "./create-page/TypeStep";
@@ -190,26 +191,15 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh]" onClick={onClose}>
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-[12px] dark:bg-black/60" />
-      <div
-        className="facet-depth-4 facet-refraction relative z-10 w-full max-w-lg rounded-2xl p-6 text-[var(--wikios-text)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
-        onClick={(e) => e.stopPropagation()}
+    <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
+      <SheetContent
+        aria-describedby={undefined}
+        className="flex flex-col gap-0 overflow-y-auto sm:max-w-md"
       >
         {/* Header */}
-        <div className="mb-4 flex items-center justify-between border-b border-[var(--wikios-border)] pb-3">
-          <div className="flex items-center gap-2">
-            <PenTool className="h-5 w-5 text-[var(--wikios-accent)]" />
-            <h3 className="text-base font-semibold tracking-wide text-[var(--wikios-text)]">
-              Create Wiki Page
-            </h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="hover:bg-foreground/[0.05] rounded-lg p-1 text-[var(--wikios-text-muted)] transition-colors hover:text-[var(--wikios-text)]"
-          >
-            <X className="h-4.5 w-4.5" />
-          </button>
+        <div className="border-separator mb-4 flex items-center gap-2 border-b pr-10 pb-3">
+          <PenTool className="text-tint size-5" aria-hidden="true" />
+          <SheetTitle className="text-title-3">Create Wiki Page</SheetTitle>
         </div>
 
         {/* Steps */}
@@ -251,53 +241,44 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
         )}
 
         {/* Footer actions */}
-        <div className="mt-6 flex items-center justify-between border-t border-[var(--wikios-border)] pt-4">
+        <div className="border-separator mt-6 flex items-center justify-between border-t pt-4">
           <div>
             {step > 1 && (
-              <button
-                type="button"
-                onClick={handleBack}
-                className="flex items-center gap-1 text-xs text-[var(--wikios-text-muted)] transition-colors hover:text-[var(--wikios-text)]"
-              >
-                <ChevronLeft className="h-3.5 w-3.5" />
-                <span>Back</span>
-              </button>
+              <Button variant="plain" size="sm" onClick={handleBack}>
+                <ChevronLeft aria-hidden="true" />
+                Back
+              </Button>
             )}
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="bg-foreground/[0.05] hover:bg-foreground/[0.1] rounded-xl px-4 py-2 text-xs font-medium text-[var(--wikios-text-muted)] transition-colors hover:text-[var(--wikios-text)]"
-            >
+          <div className="flex items-center gap-2">
+            <Button variant="gray" size="sm" onClick={onClose}>
               Cancel
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              size="sm"
               onClick={
                 step === 3 || (step === 2 && pageType === "blank") ? handleCreate : handleNext
               }
               disabled={!title.trim() || checkExists.isFetching}
-              className="flex items-center gap-1 rounded-xl bg-[var(--wikios-accent)] px-4 py-2 text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-[var(--wikios-accent-hover)] active:scale-95 disabled:scale-100 disabled:opacity-50"
             >
               {checkExists.isFetching ? (
                 <span>Checking...</span>
               ) : step === 3 || (step === 2 && pageType === "blank") ? (
                 <>
-                  <Plus className="h-3.5 w-3.5" />
+                  <Plus aria-hidden="true" />
                   <span>Create Page</span>
                 </>
               ) : (
                 <>
                   <span>Next</span>
-                  <ChevronRight className="h-3.5 w-3.5" />
+                  <ChevronRight aria-hidden="true" />
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }

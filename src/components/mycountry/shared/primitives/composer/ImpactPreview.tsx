@@ -4,7 +4,7 @@ import React from "react";
 import { City, Coins, Journal, Page, WarningTriangle } from "iconoir-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { EffectList } from "~/components/mycountry/directives/EffectList";
 import {
@@ -50,12 +50,14 @@ export function ImpactPreview({ pkg, broker }: ImpactPreviewProps) {
             const Icon = CHANGE_ICONS[c.kind] ?? Page;
             return (
               <li key={`${c.label}-${i}`} className="flex items-start gap-3">
-                <Icon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                <Icon className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                 <div className="min-w-0">
-                  <p className="text-foreground text-sm font-medium first-letter:uppercase">
+                  <p className="text-label text-body font-medium first-letter:uppercase">
                     {c.label}
                   </p>
-                  <p className="text-muted-foreground text-xs first-letter:uppercase">{c.detail}</p>
+                  <p className="text-label-secondary text-footnote first-letter:uppercase">
+                    {c.detail}
+                  </p>
                 </div>
               </li>
             );
@@ -68,12 +70,12 @@ export function ImpactPreview({ pkg, broker }: ImpactPreviewProps) {
         {effects.length > 0 ? (
           <>
             <EffectList items={effects} />
-            <p className="text-muted-foreground mt-2 text-xs">
+            <p className="text-label-secondary text-footnote mt-2">
               Stat changes apply as soon as you declare, within the engine&rsquo;s bounds.
             </p>
           </>
         ) : (
-          <p className="text-muted-foreground text-sm">
+          <p className="text-label-secondary text-body">
             No direct stat change. This approach works through the budget and public signalling.
           </p>
         )}
@@ -81,23 +83,23 @@ export function ImpactPreview({ pkg, broker }: ImpactPreviewProps) {
 
       <div>
         <SubHeading>Stakeholders</SubHeading>
-        <FacetContainer depth={3} surface="solid" className="rounded-xl">
-          <dl className="divide-border divide-y text-sm">
-            <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-              <dt className="text-muted-foreground">Acceptance</dt>
+        <FacetCard variant="inset" padding="none">
+          <dl className="divide-separator text-body divide-y">
+            <div className="flex items-center justify-between gap-3 px-3 py-2">
+              <dt className="text-label-secondary">Acceptance</dt>
               <dd className={cn("font-medium", TONE_CLASSES[acceptance.tone].text)}>
                 {acceptance.label}
               </dd>
             </div>
             {broker && (
-              <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-                <dt className="text-muted-foreground flex items-center gap-2">
+              <div className="flex items-center justify-between gap-3 px-3 py-2">
+                <dt className="text-label-secondary flex items-center gap-2">
                   <City className="h-4 w-4" aria-hidden />
                   Aligned power broker
                 </dt>
-                <dd className="text-foreground text-right font-medium">
+                <dd className="text-label text-right font-medium">
                   {broker.name}
-                  <span className="text-muted-foreground font-normal">
+                  <span className="text-label-secondary font-normal">
                     {" "}
                     · {broker.satisfied ? "satisfied" : broker.unlocked ? "active" : "neutral"}
                   </span>
@@ -105,11 +107,11 @@ export function ImpactPreview({ pkg, broker }: ImpactPreviewProps) {
               </div>
             )}
           </dl>
-        </FacetContainer>
+        </FacetCard>
         {tierMaySpawnResistance(pkg.tier) && (
-          <Alert role="note" className="mt-3 border-amber-500/30 text-amber-600">
+          <Alert role="note" className="border-yellow/30 text-yellow mt-3">
             <WarningTriangle aria-hidden />
-            <AlertDescription className="text-xs">
+            <AlertDescription className="text-footnote">
               May stir up a resistance issue. You will need to resolve it before you can mark this
               directive complete.
             </AlertDescription>

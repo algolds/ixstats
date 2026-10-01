@@ -38,6 +38,14 @@ import {
   Settings as Cog,
 } from "iconoir-react";
 import { SvgProcessingDialog } from "./SvgProcessingDialog";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 const LAYER_TYPES = [
   { value: "political", label: "Political" },
@@ -52,11 +60,11 @@ const LAYER_TYPES = [
 type LayerType = (typeof LAYER_TYPES)[number]["value"];
 
 const STATUS_CONFIG: Record<string, { icon: any; color: string; label: string }> = {
-  pending: { icon: Clock, color: "text-amber-500", label: "Pending" },
-  processing: { icon: Cog, color: "text-blue-500", label: "Processing" },
-  processed: { icon: CheckCircle2, color: "text-emerald-500", label: "Processed" },
-  failed: { icon: XCircle, color: "text-red-500", label: "Failed" },
-  rolled_back: { icon: RotateCcw, color: "text-muted-foreground", label: "Rolled Back" },
+  pending: { icon: Clock, color: "text-yellow", label: "Pending" },
+  processing: { icon: Cog, color: "text-blue", label: "Processing" },
+  processed: { icon: CheckCircle2, color: "text-green", label: "Processed" },
+  failed: { icon: XCircle, color: "text-red", label: "Failed" },
+  rolled_back: { icon: RotateCcw, color: "text-label-secondary", label: "Rolled Back" },
 };
 
 export function SvgUploadManager() {
@@ -183,7 +191,7 @@ export function SvgUploadManager() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left: Layer selector */}
         <div className="space-y-3">
-          <label className="text-foreground text-sm font-medium">Target Layer</label>
+          <label className="text-label text-body font-medium">Target Layer</label>
           <Select value={selectedLayer} onValueChange={(v) => setSelectedLayer(v as LayerType)}>
             <SelectTrigger>
               <SelectValue />
@@ -197,8 +205,8 @@ export function SvgUploadManager() {
             </SelectContent>
           </Select>
 
-          <FacetCard className="text-muted-foreground rounded-lg p-3 text-xs">
-            <p className="text-foreground font-medium">Upload an Inkscape SVG</p>
+          <FacetCard className="text-label-secondary rounded-control text-footnote p-3">
+            <p className="text-label font-medium">Upload an Inkscape SVG</p>
             <p className="mt-1">
               The SVG should contain a layer group matching the selected type. Features are
               extracted from <code>&lt;path&gt;</code> elements within the layer.
@@ -209,8 +217,8 @@ export function SvgUploadManager() {
         {/* Right: Upload zone */}
         <div className="lg:col-span-2">
           <div
-            className={`flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${
-              isDragging ? "border-blue-500" : "border-border hover:border-blue-400"
+            className={`rounded-row flex min-h-[160px] cursor-pointer flex-col items-center justify-center border-2 border-dashed transition-colors ${
+              isDragging ? "border-blue" : "border-separator hover:border-blue"
             }`}
             onDragOver={(e) => {
               e.preventDefault();
@@ -230,24 +238,24 @@ export function SvgUploadManager() {
 
             {isUploading ? (
               <div className="flex items-center gap-3">
-                <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-                <span className="text-foreground/80 text-sm">Uploading...</span>
+                <Loader2 className="text-blue h-6 w-6 animate-spin" />
+                <span className="text-label text-body">Uploading...</span>
               </div>
             ) : (
               <>
                 <FileUp
-                  className={`h-10 w-10 ${isDragging ? "text-blue-500" : "text-muted-foreground"}`}
+                  className={`h-10 w-10 ${isDragging ? "text-blue" : "text-label-secondary"}`}
                 />
-                <p className="text-foreground/80 mt-3 text-sm font-medium">
+                <p className="text-label text-body mt-3 font-medium">
                   Drop SVG file here or click to browse
                 </p>
-                <p className="text-muted-foreground mt-1 text-xs">Max 50MB</p>
+                <p className="text-label-secondary text-footnote mt-1">Max 50MB</p>
               </>
             )}
           </div>
 
           {uploadError && (
-            <div className="border-destructive/30 mt-3 rounded-lg border p-3 text-sm text-red-700">
+            <div className="border-destructive/30 rounded-control text-body text-red mt-3 border p-3">
               <AlertCircle className="mb-1 inline h-4 w-4" /> {uploadError}
             </div>
           )}
@@ -256,7 +264,7 @@ export function SvgUploadManager() {
 
       {/* Upload history */}
       <div>
-        <h3 className="text-foreground mb-3 text-sm font-medium">
+        <h3 className="text-label text-body mb-3 font-medium">
           Upload History — {LAYER_TYPES.find((l) => l.value === selectedLayer)?.label}
         </h3>
 
@@ -267,105 +275,99 @@ export function SvgUploadManager() {
             ))}
           </div>
         ) : !history || history.length === 0 ? (
-          <FacetCard className="text-muted-foreground rounded-lg p-8 text-center text-sm">
+          <FacetCard className="text-label-secondary rounded-control text-body p-8 text-center">
             No uploads yet for this layer type.
           </FacetCard>
         ) : (
-          <div className="border-border overflow-hidden rounded-lg border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="text-foreground/80 px-4 py-2.5 text-left font-medium">File</th>
-                  <th className="text-foreground/80 px-4 py-2.5 text-left font-medium">Status</th>
-                  <th className="text-foreground/80 px-4 py-2.5 text-left font-medium">Features</th>
-                  <th className="text-foreground/80 px-4 py-2.5 text-left font-medium">Date</th>
-                  <th className="text-foreground/80 px-4 py-2.5 text-right font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-border/50 divide-y">
-                {history.map((upload) => {
-                  const statusCfg = STATUS_CONFIG[upload.status] ?? STATUS_CONFIG.pending!;
-                  const StatusIcon = statusCfg.icon;
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-label px-4">File</TableHead>
+                <TableHead className="text-label px-4">Status</TableHead>
+                <TableHead className="text-label px-4">Features</TableHead>
+                <TableHead className="text-label px-4">Date</TableHead>
+                <TableHead className="text-label px-4 text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {history.map((upload) => {
+                const statusCfg = STATUS_CONFIG[upload.status] ?? STATUS_CONFIG.pending!;
+                const StatusIcon = statusCfg.icon;
 
-                  return (
-                    <tr key={upload.id} className={`${upload.isActive ? "" : ""}`}>
-                      <td className="px-4 py-2.5">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{upload.fileName}</span>
-                          <span className="text-muted-foreground text-xs">
-                            {formatBytes(upload.fileSizeBytes)}
-                          </span>
-                          {upload.isActive && (
-                            <Badge className="bg-emerald-100 text-emerald-700">Active</Badge>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <div className={`flex items-center gap-1.5 ${statusCfg.color}`}>
-                          <StatusIcon className="h-3.5 w-3.5" />
-                          <span className="text-xs font-medium">{statusCfg.label}</span>
-                        </div>
-                        {upload.errorMessage && (
-                          <p className="mt-0.5 max-w-[200px] truncate text-xs text-red-500">
-                            {upload.errorMessage}
-                          </p>
+                return (
+                  <TableRow key={upload.id} className={`${upload.isActive ? "" : ""}`}>
+                    <TableCell className="px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{upload.fileName}</span>
+                        <span className="text-label-secondary text-footnote">
+                          {formatBytes(upload.fileSizeBytes)}
+                        </span>
+                        {upload.isActive && <Badge variant="green">Active</Badge>}
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-4">
+                      <div className={`flex items-center gap-2 ${statusCfg.color}`}>
+                        <StatusIcon className="h-3.5 w-3.5" />
+                        <span className="text-caption">{statusCfg.label}</span>
+                      </div>
+                      {upload.errorMessage && (
+                        <p className="text-footnote text-red mt-0.5 max-w-[200px] truncate">
+                          {upload.errorMessage}
+                        </p>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-label px-4">{upload.featureCount ?? "—"}</TableCell>
+                    <TableCell className="text-label-secondary text-footnote px-4">
+                      {formatDate(upload.createdAt)}
+                    </TableCell>
+                    <TableCell className="px-4">
+                      <div className="flex justify-end gap-2">
+                        {(upload.status === "pending" ||
+                          upload.status === "processed" ||
+                          upload.status === "failed") && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              setProcessingUpload({
+                                id: upload.id,
+                                fileName: upload.fileName,
+                              })
+                            }
+                          >
+                            <Upload className="mr-1 h-3 w-3" />
+                            {upload.status === "pending" ? "Process" : "Reprocess"}
+                          </Button>
                         )}
-                      </td>
-                      <td className="text-foreground/80 px-4 py-2.5">
-                        {upload.featureCount ?? "—"}
-                      </td>
-                      <td className="text-muted-foreground px-4 py-2.5 text-xs">
-                        {formatDate(upload.createdAt)}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex justify-end gap-1.5">
-                          {(upload.status === "pending" ||
-                            upload.status === "processed" ||
-                            upload.status === "failed") && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                setProcessingUpload({
-                                  id: upload.id,
-                                  fileName: upload.fileName,
-                                })
-                              }
-                            >
-                              <Upload className="mr-1 h-3 w-3" />
-                              {upload.status === "pending" ? "Process" : "Reprocess"}
-                            </Button>
-                          )}
-                          {upload.status === "processed" && !upload.isActive && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => rollbackMutation.mutate({ uploadId: upload.id })}
-                              disabled={rollbackMutation.isPending}
-                            >
-                              <RotateCcw className="mr-1 h-3 w-3" />
-                              Restore
-                            </Button>
-                          )}
-                          {!upload.isActive && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-red-500 hover:text-red-700"
-                              onClick={() => deleteMutation.mutate({ uploadId: upload.id })}
-                              disabled={deleteMutation.isPending}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        {upload.status === "processed" && !upload.isActive && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => rollbackMutation.mutate({ uploadId: upload.id })}
+                            disabled={rollbackMutation.isPending}
+                          >
+                            <RotateCcw className="mr-1 h-3 w-3" />
+                            Restore
+                          </Button>
+                        )}
+                        {!upload.isActive && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive"
+                            onClick={() => deleteMutation.mutate({ uploadId: upload.id })}
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         )}
       </div>
 

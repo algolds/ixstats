@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useId } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Globe, EditPencil as Edit3, ArrowRight, ClockRotateRight, Trash } from "iconoir-react";
 import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
@@ -8,6 +8,13 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
+import { TintGlow } from "~/components/ui/facet/identity/Glow";
+import {
+  HUE_ACCENT,
+  HUE_BADGE,
+  hueAccentStyle,
+  type DomainHue,
+} from "~/components/mycountry/shell/domain-hue";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
@@ -28,6 +35,8 @@ interface PathCardProps {
   description: string;
   icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" }>;
   iconClassName?: string;
+  /** v2 path accent (amber/emerald/indigo): icon badge, hover rim and badge colour. */
+  hue: DomainHue;
   onClick: () => void;
   badge?: string;
 }
@@ -43,56 +52,81 @@ function IIWikiLogoIcon({ className }: { className?: string; "aria-hidden"?: boo
   );
 }
 
+/**
+ * One starting path, restored from c5c6b382: a card with the builder's chevron texture (at the
+ * Facet texture cap, .05), the path's glyph in its v2 accent badge, an accent badge and hover rim,
+ * the hover lift and press, and the "Continue" arrow drifting on hover. The path hue is the card's
+ * Facet accent; the card is the primitive's pressable (`onClick`: a focusable `role="button"` with
+ * Enter/Space, press, lift and the focus ring), named by its title and described by its blurb.
+ * Keyboard focus shows the hover affordances too.
+ */
 function PathCard({
   title,
   description,
   icon: Icon,
   iconClassName,
+  hue,
   onClick,
   badge,
 }: PathCardProps) {
+  const titleId = useId();
+  const descriptionId = useId();
+  const badgeId = useId();
   return (
-    <button
-      type="button"
+    <FacetCard
       onClick={onClick}
-      className="group focus-visible:ring-ring h-full w-full rounded-2xl text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      accent={HUE_ACCENT[hue]}
+      texture="chevron"
+      textureOpacity={0.05}
+      aria-labelledby={badge ? `${titleId} ${badgeId}` : titleId}
+      aria-describedby={descriptionId}
       data-cuelume-press
-      data-cuelume-hover="tick"
+      className="group hover:border-facet-accent/40 focus-visible:border-facet-accent/40 h-full overflow-hidden p-6 text-left"
     >
-      <FacetCard
-        depth={2}
-        className="h-full rounded-2xl p-6 transition-[border-color,transform] duration-150 group-hover:border-amber-500/40 group-active:scale-[0.98]"
-      >
-        <FacetCardContent className="flex h-full flex-col justify-between p-0">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Icon
-                aria-hidden="true"
-                className={cn("text-muted-foreground h-6 w-6", iconClassName)}
-              />
-              {badge && (
-                <Badge variant="outline" className="border-amber-500/40 text-amber-600">
-                  {badge}
-                </Badge>
-              )}
-            </div>
-
-            <div className="space-y-1.5">
-              <h3 className="text-foreground text-lg font-semibold tracking-tight">{title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
-            </div>
-          </div>
-
-          <div className="text-muted-foreground group-hover:text-foreground mt-6 flex items-center gap-1.5 text-xs font-semibold transition-colors">
-            <span>Continue</span>
-            <ArrowRight
+      <FacetCardContent className="relative flex h-full flex-col justify-between p-0">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span
               aria-hidden="true"
-              className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-1"
-            />
+              className={cn(
+                "rounded-control-lg flex size-12 items-center justify-center border transition-[scale] duration-150 motion-safe:group-hover:scale-105 motion-safe:group-focus-visible:scale-105",
+                HUE_BADGE
+              )}
+            >
+              <Icon aria-hidden="true" className={cn("h-6 w-6", iconClassName)} />
+            </span>
+            {badge && (
+              <span
+                id={badgeId}
+                className={cn(
+                  "text-caption rounded-full border px-3 py-0.5 font-semibold",
+                  HUE_BADGE
+                )}
+              >
+                {badge}
+              </span>
+            )}
           </div>
-        </FacetCardContent>
-      </FacetCard>
-    </button>
+
+          <div className="space-y-2">
+            <span id={titleId} className="text-label text-title-3 block">
+              {title}
+            </span>
+            <p id={descriptionId} className="text-label-secondary text-body leading-relaxed">
+              {description}
+            </p>
+          </div>
+        </div>
+
+        <div
+          aria-hidden="true"
+          className="text-label-secondary group-hover:text-label group-focus-visible:text-label text-footnote mt-6 flex items-center gap-2 font-semibold transition-colors"
+        >
+          <span>Continue</span>
+          <ArrowRight className="h-3.5 w-3.5 transition-[translate] duration-200 motion-safe:group-hover:translate-x-1 motion-safe:group-focus-visible:translate-x-1" />
+        </div>
+      </FacetCardContent>
+    </FacetCard>
   );
 }
 
@@ -222,8 +256,10 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-          className="relative select-none"
+          className="group relative isolate select-none"
         >
+          {/* v2 ambient warm glow halo behind the logo (the gold tint glow) */}
+          <TintGlow position="center" size="lg" className="-z-10 opacity-60" />
           <MyCountryLogo
             size="xl"
             variant="full"
@@ -235,10 +271,10 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
         </motion.div>
 
         <div className="space-y-2">
-          <h1 className="text-foreground text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
+          <h1 className="text-label text-large-title sm:text-large-title lg:text-display">
             Build your country.
           </h1>
-          <p className="text-muted-foreground mx-auto max-w-lg text-base leading-relaxed sm:text-lg">
+          <p className="text-label-secondary text-body sm:text-title-3 mx-auto max-w-lg leading-relaxed">
             Choose a starting point below. All 140+ options can be modified later.
           </p>
         </div>
@@ -270,28 +306,27 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                   onClick={(e) => e.stopPropagation()}
                 >
                   <FacetCard
-                    depth={2}
                     role="alertdialog"
                     aria-labelledby="foundation-discard-title"
-                    className="border-destructive/40 flex flex-col gap-4 rounded-2xl p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
+                    className="border-destructive/40 rounded-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
                   >
                     <div className="flex min-w-0 items-center gap-4">
                       <Trash aria-hidden="true" className="text-destructive h-6 w-6 shrink-0" />
                       <div className="min-w-0 flex-1 space-y-1">
-                        <Eyebrow className="text-destructive block">Confirmation Required</Eyebrow>
-                        <h3
+                        <Eyebrow className="text-destructive block">Confirmation required</Eyebrow>
+                        <h2
                           id="foundation-discard-title"
-                          className="text-foreground truncate text-base font-semibold tracking-tight sm:text-lg"
+                          className="text-label text-headline sm:text-title-3 truncate"
                         >
                           Discard draft for {inProgressData.name}?
-                        </h3>
-                        <p className="text-muted-foreground text-xs sm:text-sm">
+                        </h2>
+                        <p className="text-label-secondary text-footnote sm:text-body">
                           All unsaved progress and configuration will be permanently deleted.
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-2.5 self-end sm:self-center">
+                    <div className="flex shrink-0 items-center gap-2 self-end sm:self-center">
                       <Button
                         type="button"
                         variant="ghost"
@@ -314,7 +349,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                         }}
                       >
                         <Trash aria-hidden="true" className="h-3.5 w-3.5" />
-                        Discard Draft
+                        Discard draft
                       </Button>
                     </div>
                   </FacetCard>
@@ -327,54 +362,78 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                   exit={{ opacity: 0, scale: 0.98 }}
                   transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
                 >
+                  {/* v2 resume banner: gold glass with warm glows, the draft's flag and the
+                      gold Resume action. The whole banner resumes on a pointer press through a
+                      stretched target under the content (a pressable card may not hold the
+                      Discard / Resume buttons); keyboard and assistive tech use the buttons. */}
                   <FacetCard
-                    depth={2}
-                    onClick={handleResumeClick}
-                    data-cuelume-press
-                    onKeyDown={(e) => {
-                      if (e.target !== e.currentTarget) return;
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        handleResumeClick();
-                      }
-                    }}
-                    className="focus-visible:ring-ring flex flex-col gap-4 rounded-2xl border-amber-500/30 p-4 hover:border-amber-500/50 focus-visible:ring-2 focus-visible:outline-none sm:flex-row sm:items-center sm:justify-between sm:p-5"
+                    as="section"
+                    variant="glass"
+                    glow
+                    interactive="hover"
+                    aria-labelledby="foundation-resume-title"
+                    className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
                   >
-                    <div className="flex min-w-0 items-center gap-4">
-                      {inProgressData.flag ? (
-                        <div className="border-border bg-muted h-12 w-16 shrink-0 overflow-hidden rounded-lg border">
-                          <img
-                            src={inProgressData.flag}
-                            alt={inProgressData.name}
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <ClockRotateRight
+                    <TintGlow position="bottom-left" className="-z-10 opacity-40" />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      aria-hidden="true"
+                      data-cuelume-press
+                      onClick={handleResumeClick}
+                      className="absolute inset-0 cursor-pointer rounded-[inherit]"
+                    />
+                    <div className="pointer-events-none relative flex min-w-0 items-center gap-4">
+                      <div className="relative shrink-0">
+                        {inProgressData.flag ? (
+                          <div className="border-separator bg-fill-3 rounded-control shadow-card h-12 w-16 overflow-hidden border">
+                            <img
+                              src={inProgressData.flag}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <span
+                            aria-hidden="true"
+                            className={cn(
+                              "rounded-control-lg flex size-12 items-center justify-center border",
+                              HUE_BADGE
+                            )}
+                            style={hueAccentStyle("yellow")}
+                          >
+                            <ClockRotateRight className="h-6 w-6" />
+                          </span>
+                        )}
+                        {/* v2 "live draft" dot */}
+                        <span
                           aria-hidden="true"
-                          className="h-6 w-6 shrink-0 text-amber-500"
-                        />
-                      )}
+                          className="bg-surface ring-surface absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-full ring-2"
+                        >
+                          <span className="bg-green size-2 rounded-full" />
+                        </span>
+                      </div>
 
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="border-amber-500/40 text-amber-600">
-                            Draft In Progress
-                          </Badge>
-                          <span className="text-muted-foreground text-xs font-medium">
+                          <Badge variant="yellow">Draft in progress</Badge>
+                          <span className="text-label-secondary text-caption">
                             {inProgressData.stepLabel}
                           </span>
                         </div>
-                        <h3 className="text-foreground truncate text-base font-semibold tracking-tight sm:text-lg">
+                        <h2
+                          id="foundation-resume-title"
+                          className="text-label text-headline sm:text-title-3 truncate"
+                        >
                           Resume {inProgressData.name}
-                        </h3>
-                        <p className="text-muted-foreground truncate text-xs sm:text-sm">
+                        </h2>
+                        <p className="text-label-secondary text-footnote sm:text-body truncate">
                           Continue configuring your nation where you left off.
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-2.5 self-end sm:self-center">
+                    <div className="relative flex shrink-0 items-center gap-2 self-end sm:self-center">
                       <Button
                         type="button"
                         variant="ghost"
@@ -384,7 +443,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                           soundEffects.press();
                           setShowDiscardConfirm(true);
                         }}
-                        className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        className="text-label-secondary hover:bg-destructive/10 hover:text-destructive"
                         title="Discard this draft and start fresh"
                       >
                         Discard
@@ -396,9 +455,8 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                           e.stopPropagation();
                           handleResumeClick();
                         }}
-                        className="bg-amber-600 font-semibold text-white hover:bg-amber-600/90"
                       >
-                        Resume Building
+                        Resume building
                         <ArrowRight aria-hidden="true" className="h-4 w-4" />
                       </Button>
                     </div>
@@ -416,6 +474,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
           title="Start with a Template"
           description="Select a real country or archetype to use as a template. We'll do the heavy lifting to get you started."
           icon={Globe}
+          hue="yellow"
           badge="Recommended"
           onClick={() => onSelectPath("template")}
         />
@@ -424,6 +483,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
           title="Start from Scratch"
           description="Customize every aspect of your country from the ground up. Only for the most dedicated worldbuilders."
           icon={Edit3}
+          hue="green"
           onClick={() => onSelectPath("scratch")}
         />
 
@@ -432,6 +492,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
           description="Use your existing country data from IIWiki to build your country. Core stats, flag, and relevant lore are automatically parsed."
           icon={IIWikiLogoIcon}
           iconClassName="h-7 w-7"
+          hue="indigo"
           onClick={() => onSelectPath("import")}
         />
       </div>

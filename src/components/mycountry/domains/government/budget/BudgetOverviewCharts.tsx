@@ -2,7 +2,6 @@
 
 import React from "react";
 import { FacetCard } from "~/components/ui/facet-container";
-import { FacetTabs } from "~/components/ui/facet";
 import {
   PieChart,
   Pie,
@@ -19,6 +18,7 @@ import {
   Line,
 } from "recharts";
 import type { DepartmentChartItem, RevenueChartItem, BudgetTrendItem } from "./budgetTypes";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface BudgetOverviewChartsProps {
   overviewChartMode: "allocation" | "trend";
@@ -40,22 +40,22 @@ export function BudgetOverviewCharts({
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       {/* Togglable Budget Allocation vs Historical Trend Chart */}
-      <FacetCard depth={1} surface="solid" className="space-y-3 p-4">
-        <div className="border-border/60 flex flex-wrap items-center justify-between gap-2 border-b pb-3">
-          <h4 className="text-foreground text-sm font-semibold">
+      <FacetCard className="space-y-3 p-4">
+        <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+          <h4 className="text-label text-headline">
             {overviewChartMode === "allocation"
               ? "Budget allocation by department"
               : "Budget vs revenue trend"}
           </h4>
-          <FacetTabs
+          <SegmentedControl
+            aria-label="Chart"
             size="sm"
-            tone="mycountry"
-            tabs={[
-              { id: "allocation", label: "Allocation" },
-              { id: "trend", label: "Trend" },
+            options={[
+              { value: "allocation", label: "Allocation" },
+              { value: "trend", label: "Trend" },
             ]}
-            activeTab={overviewChartMode}
-            onChange={(id) => setOverviewChartMode(id as "allocation" | "trend")}
+            value={overviewChartMode}
+            onValueChange={(id) => setOverviewChartMode(id as "allocation" | "trend")}
           />
         </div>
 
@@ -87,9 +87,9 @@ export function BudgetOverviewCharts({
                 <XAxis
                   dataKey="year"
                   stroke="currentColor"
-                  className="text-muted-foreground text-xs"
+                  className="text-label-secondary text-footnote"
                 />
-                <YAxis stroke="currentColor" className="text-muted-foreground text-xs" />
+                <YAxis stroke="currentColor" className="text-label-secondary text-footnote" />
                 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Legend />
                 <Line
@@ -102,7 +102,7 @@ export function BudgetOverviewCharts({
                 <Line
                   type="monotone"
                   dataKey="spent"
-                  stroke="var(--color-muted-foreground)"
+                  stroke="var(--color-label-secondary)"
                   name="Spending"
                   strokeWidth={2}
                 />
@@ -120,9 +120,9 @@ export function BudgetOverviewCharts({
       </FacetCard>
 
       {/* Revenue Sources Chart */}
-      <FacetCard depth={1} surface="solid" className="space-y-3 p-4">
-        <div className="border-border/60 border-b pb-3">
-          <h4 className="text-foreground text-sm font-semibold">Revenue sources</h4>
+      <FacetCard className="space-y-3 p-4">
+        <div className="border-separator border-b pb-3">
+          <h4 className="text-label text-headline">Revenue sources</h4>
         </div>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
@@ -131,9 +131,9 @@ export function BudgetOverviewCharts({
               <XAxis
                 dataKey="name"
                 stroke="currentColor"
-                className="text-muted-foreground text-xs"
+                className="text-label-secondary text-footnote"
               />
-              <YAxis stroke="currentColor" className="text-muted-foreground text-xs" />
+              <YAxis stroke="currentColor" className="text-label-secondary text-footnote" />
               <Tooltip formatter={(value) => formatCurrency(Number(value))} />
               <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                 {revenueChartData.map((entry, index) => (

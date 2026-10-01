@@ -8,6 +8,7 @@ import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
+import { Button } from "~/components/ui/button";
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
@@ -40,9 +41,9 @@ export default function SearchPage() {
             className="wikios-fullsearch-input"
             autoFocus
           />
-          <button type="submit" className="wikios-action-btn">
+          <Button variant="tinted" type="submit">
             Search
-          </button>
+          </Button>
         </form>
 
         {isLoading && (
@@ -81,12 +82,12 @@ export default function SearchPage() {
 
         {results && results.length === 0 && searchTerm && (
           <div className="wikios-no-results">
-            <p className="text-zinc-400">No results found for &ldquo;{searchTerm}&rdquo;.</p>
-            <p className="mt-2 text-sm text-zinc-500">
+            <p className="text-label-secondary">No results found for &ldquo;{searchTerm}&rdquo;.</p>
+            <p className="text-body text-label-secondary mt-2">
               Try a different search term, or{" "}
               <a
                 href={`/wiki/index.php?search=${encodeURIComponent(searchTerm)}`}
-                className="text-blue-400 underline"
+                className="text-tint underline"
               >
                 search on MediaWiki
               </a>

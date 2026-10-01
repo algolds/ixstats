@@ -16,6 +16,11 @@ import {
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
+import { FacetCard } from "~/components/ui/facet-container";
+import { EmptyState } from "~/components/ui/empty-state";
+import { SearchField } from "~/components/ui/search-field";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Button } from "~/components/ui/button";
 
 export type ReleaseCategory = "all" | "feature" | "improvement" | "engine" | "fix";
 
@@ -45,32 +50,32 @@ const CATEGORY_META: Record<
   all: {
     label: "All Updates",
     icon: Layers,
-    color: "text-foreground",
-    badgeBg: "bg-white/10 text-foreground",
+    color: "text-label",
+    badgeBg: "bg-fill-3 text-label",
   },
   feature: {
     label: "New Features",
     icon: Flame,
-    color: "text-emerald-500 dark:text-emerald-400",
-    badgeBg: "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300",
+    color: "text-green",
+    badgeBg: "bg-green/15 border-green/30 text-green",
   },
   improvement: {
     label: "Improvements",
     icon: Zap,
-    color: "text-blue-500 dark:text-blue-400",
-    badgeBg: "bg-blue-500/15 border-blue-500/30 text-blue-700 dark:text-blue-300",
+    color: "text-blue",
+    badgeBg: "bg-blue/15 border-blue/30 text-blue",
   },
   engine: {
     label: "Platform & Engine",
     icon: Cpu,
-    color: "text-purple-500 dark:text-purple-400",
-    badgeBg: "bg-purple-500/15 border-purple-500/30 text-purple-700 dark:text-purple-300",
+    color: "text-purple",
+    badgeBg: "bg-purple/15 border-purple/30 text-purple",
   },
   fix: {
     label: "Fixes & Polish",
     icon: ShieldCheck,
-    color: "text-amber-500 dark:text-amber-400",
-    badgeBg: "bg-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300",
+    color: "text-yellow",
+    badgeBg: "bg-yellow/15 border-yellow/30 text-yellow",
   },
 };
 
@@ -105,105 +110,78 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
   return (
     <>
       {/* Search & Category Filter Controls */}
-      <div className="facet-surface border-border/40 mb-10 rounded-2xl border p-4 shadow-sm backdrop-blur-xl">
+      <FacetCard className="mb-10 p-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           {/* Search Input */}
-          <div className="relative flex-1">
-            <Search className="text-muted-foreground/60 pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search features, fixes, or engines…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-accent/10 text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:bg-accent/20 w-full rounded-xl border border-transparent py-2 pr-4 pl-9 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-xs"
-              >
-                Clear
-              </button>
-            )}
-          </div>
+          <SearchField
+            containerClassName="flex-1"
+            aria-label="Search the changelog"
+            placeholder="Search features, fixes, or engines…"
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+          />
 
-          {/* Category Filter Pills */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            {(Object.keys(CATEGORY_META) as ReleaseCategory[]).map((cat) => {
+          {/* Category Filter */}
+          <SegmentedControl
+            aria-label="Release category"
+            size="sm"
+            value={selectedCategory}
+            onValueChange={setSelectedCategory}
+            options={(Object.keys(CATEGORY_META) as ReleaseCategory[]).map((cat) => {
               const meta = CATEGORY_META[cat];
               const Icon = meta.icon;
-              const isSelected = selectedCategory === cat;
-
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={cn(
-                    "flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97]",
-                    isSelected
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/15 bg-transparent"
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  <span>{meta.label}</span>
-                </button>
-              );
+              return { value: cat, label: meta.label, icon: <Icon aria-hidden /> };
             })}
-          </div>
+          />
         </div>
-      </div>
+      </FacetCard>
 
       {/* Release Timeline */}
       {filteredReleases.length === 0 ? (
-        <div className="facet-surface border-border/30 rounded-2xl border p-12 text-center">
-          <Search className="text-muted-foreground/40 mx-auto h-8 w-8" />
-          <h3 className="text-foreground mt-3 text-base font-semibold">
-            No matching updates found
-          </h3>
-          <p className="text-muted-foreground mt-1 text-xs">
-            Try adjusting your search keywords or switching category filters.
-          </p>
-          <button
-            onClick={() => {
-              setSearchQuery("");
-              setSelectedCategory("all");
-            }}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 mt-4 cursor-pointer rounded-xl px-4 py-2 text-xs font-medium transition-colors"
-          >
-            Reset Filters
-          </button>
-        </div>
+        <FacetCard>
+          <EmptyState
+            icon={<Search />}
+            title="No matching updates found"
+            message="Try adjusting your search keywords or switching category filters."
+            action={
+              <Button
+                size="sm"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedCategory("all");
+                }}
+              >
+                Reset Filters
+              </Button>
+            }
+          />
+        </FacetCard>
       ) : (
         <div className="space-y-12">
           {filteredReleases.map((release) => (
             <section key={release.version} className="relative">
               {/* Release Header */}
-              <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+              <div className="border-separator mb-6 flex flex-wrap items-center justify-between gap-3 border-b pb-4">
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2.5">
-                    <h2 className="text-foreground text-2xl font-bold tracking-tight">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-label text-title-1">
                       v{release.version}{" "}
-                      <span className="text-muted-foreground font-semibold">
+                      <span className="text-label-secondary font-semibold">
                         "{release.releaseName}"
                       </span>
                     </h2>
-                    {release.isCurrent && (
-                      <Badge className="rounded-full border-blue-500/30 bg-blue-500/15 text-xs font-bold text-blue-600 uppercase dark:text-blue-400">
-                        Latest Release
-                      </Badge>
-                    )}
+                    {release.isCurrent && <Badge variant="info">Latest Release</Badge>}
                   </div>
-                  <p className="text-muted-foreground max-w-3xl text-xs leading-relaxed">
+                  <p className="text-label-secondary text-footnote max-w-3xl leading-relaxed">
                     {release.tagline}
                   </p>
                 </div>
 
-                <div className="text-muted-foreground flex items-center gap-2 text-xs font-medium">
+                <div className="text-label-secondary text-caption flex items-center gap-2">
                   <Calendar className="h-3.5 w-3.5" />
                   <span>{release.date}</span>
-                  <span className="text-muted-foreground/40">·</span>
-                  <span className="font-mono text-xs">Channel: {release.channel}</span>
+                  <span className="text-label-tertiary">·</span>
+                  <span className="text-footnote font-mono">Channel: {release.channel}</span>
                 </div>
               </div>
 
@@ -218,14 +196,14 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
                       key={item.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="group facet-surface border-border/40 hover:border-border/80 flex flex-col justify-between rounded-2xl border p-5 shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-md"
+                      className="group bg-surface border-separator hover:border-separator rounded-card shadow-card hover:shadow-card flex flex-col justify-between border p-5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
                     >
                       <div className="space-y-3">
                         {/* Item Category Header */}
                         <div className="flex items-center justify-between gap-2">
                           <span
                             className={cn(
-                              "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-semibold tracking-wide uppercase",
+                              "rounded-control-sm text-eyebrow inline-flex items-center gap-2 border px-2 py-0.5",
                               catMeta.badgeBg
                             )}
                           >
@@ -236,27 +214,25 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
 
                         {/* Title & Description */}
                         <div>
-                          <h3 className="text-foreground text-base font-bold tracking-tight">
-                            {item.title}
-                          </h3>
-                          <p className="text-muted-foreground mt-1.5 text-xs leading-relaxed">
+                          <h3 className="text-label text-headline">{item.title}</h3>
+                          <p className="text-label-secondary text-footnote mt-2 leading-relaxed">
                             {item.description}
                           </p>
                         </div>
 
                         {/* Bullet Highlights */}
                         {item.highlights && item.highlights.length > 0 && (
-                          <div className="border-border/30 bg-accent/5 space-y-1.5 rounded-xl border p-3">
-                            <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                          <div className="border-separator bg-fill-4 rounded-row space-y-2 border p-3">
+                            <span className="text-label-secondary text-eyebrow">
                               Key Highlights
                             </span>
                             <ul className="space-y-1">
                               {item.highlights.map((highlight, idx) => (
                                 <li
                                   key={idx}
-                                  className="text-foreground/90 flex items-start gap-2 text-xs leading-snug"
+                                  className="text-label/90 text-footnote flex items-start gap-2 leading-snug"
                                 >
-                                  <CheckCircle2 className="text-primary/70 mt-0.5 h-3 w-3 shrink-0" />
+                                  <CheckCircle2 className="text-tint/70 mt-0.5 h-3 w-3 shrink-0" />
                                   <span>{highlight}</span>
                                 </li>
                               ))}
@@ -267,10 +243,10 @@ export function ChangelogFeed({ releases }: { releases: Release[] }) {
 
                       {/* Optional Action Link */}
                       {item.link && (
-                        <div className="border-border/20 mt-4 border-t pt-3">
+                        <div className="border-separator mt-4 border-t pt-3">
                           <Link
                             href={item.link.href}
-                            className="group/link text-primary hover:text-primary/80 inline-flex items-center gap-1.5 text-xs font-semibold transition-colors"
+                            className="group/link text-tint hover:text-tint/80 text-caption inline-flex items-center gap-2 font-semibold transition-colors"
                           >
                             <span>{item.link.label}</span>
                             <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover/link:translate-x-0.5" />

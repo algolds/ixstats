@@ -47,7 +47,7 @@ import { SourceWikiNote } from "./SourceWikiNote";
 import { cn } from "~/lib/utils";
 import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
 import { ixstatesHref } from "~/lib/system/wikios-standalone";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 import { NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { extractLeadImage } from "~/lib/wiki-os/transformers/image-url";
@@ -90,12 +90,12 @@ const CoordinatesMapEmbed = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="wikios-ixworld-loading flex min-h-[200px] items-center justify-center rounded-xl border border-white/10 bg-white/5">
+      <div className="wikios-ixworld-loading rounded-row border-separator bg-fill-4 flex min-h-[200px] items-center justify-center border">
         <div
           className="wikios-loading-spinner mr-2 animate-spin"
           style={{ width: 20, height: 20 }}
         />
-        <span className="text-xs text-zinc-400">Loading map...</span>
+        <span className="text-footnote text-label-secondary">Loading map...</span>
       </div>
     ),
   }
@@ -285,7 +285,6 @@ export function ArticleRenderer({
         !e.altKey
       ) {
         e.preventDefault();
-        soundEffects.press();
         toggleMargin();
       }
     };
@@ -303,7 +302,7 @@ export function ArticleRenderer({
 
   const addAnnotationMutation = api.wikios.addAnnotation.useMutation({
     onSuccess: () => {
-      soundEffects.success();
+      soundCues?.success?.();
       void utils.wikios.getAnnotations.invalidate({ pageTitle: title });
       void utils.wikios.getStashItems.invalidate();
       void utils.wikios.getStashes.invalidate();
@@ -691,15 +690,15 @@ export function ArticleRenderer({
           if (!creatorName && !lastModified) return null;
 
           return (
-            <div className="text-muted-foreground mt-2.5 mb-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 px-1 text-xs xl:hidden">
+            <div className="text-label-secondary text-footnote mt-2 mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 px-1 xl:hidden">
               {creatorName && (
-                <span className="text-foreground/90 font-medium">
+                <span className="text-label font-medium">
                   By <span className="font-semibold">{creatorName}</span>
                 </span>
               )}
               {lastModified && (
                 <>
-                  {creatorName && <span className="text-muted-foreground/40 select-none">•</span>}
+                  {creatorName && <span className="text-label-secondary select-none">•</span>}
                   <span>
                     {new Date(lastModified).toLocaleDateString("en-US", {
                       timeZone: "UTC",
@@ -807,7 +806,7 @@ export function ArticleRenderer({
       {/* Right static panel — Vector 2022 / Notion pattern: companion pinned, only TOC scrolls */}
       {!marginOpen && !companionCollapsed && (
         <aside
-          className="animate-in fade-in sticky top-20 hidden max-h-[calc(100vh-6rem)] w-[240px] shrink-0 flex-col gap-3 self-start border-l border-white/5 pr-1 pl-3 duration-200 xl:flex 2xl:w-[280px]"
+          className="animate-in fade-in border-separator sticky top-(--shell-top-offset) hidden max-h-[calc(100vh-6rem)] w-[240px] shrink-0 flex-col gap-3 self-start border-l pr-1 pl-3 duration-200 xl:flex 2xl:w-[280px]"
           aria-label="Article companion and table of contents"
         >
           <button
@@ -823,10 +822,9 @@ export function ArticleRenderer({
               (e.currentTarget as HTMLButtonElement).style.transform = "";
             }}
             onClick={() => {
-              soundEffects.press();
               chooseCompanionCollapsed(true);
             }}
-            className="text-muted-foreground hover:text-foreground -mb-1 hidden cursor-pointer items-center justify-center gap-1 self-end rounded-full border border-white/10 bg-white/5 px-2 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:border-white/15 hover:bg-white/10 active:scale-[0.96] xl:flex"
+            className="text-label-secondary hover:text-label border-separator bg-fill-4 text-caption hover:border-separator hover:bg-fill-4 -mb-1 hidden cursor-pointer items-center justify-center gap-1 self-end rounded-full border px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.98] xl:flex"
             title="Hide companion"
             aria-label="Hide companion"
           >
@@ -869,10 +867,9 @@ export function ArticleRenderer({
         <button
           type="button"
           onClick={() => {
-            soundEffects.press();
             chooseCompanionCollapsed(false);
           }}
-          className="text-muted-foreground/40 hover:text-foreground sticky top-20 hidden h-[calc(100vh-6rem)] w-8 shrink-0 cursor-pointer items-start justify-center self-start border-l border-white/5 pt-8 transition-colors duration-150 select-none hover:border-white/10 hover:bg-white/[0.04] xl:flex"
+          className="text-label-secondary hover:text-label border-separator hover:border-separator hover:bg-fill-4 sticky top-(--shell-top-offset) hidden h-[calc(100vh-6rem)] w-8 shrink-0 cursor-pointer items-start justify-center self-start border-l pt-8 transition-colors duration-150 select-none xl:flex"
           title="Show companion"
           aria-label="Show companion"
         >

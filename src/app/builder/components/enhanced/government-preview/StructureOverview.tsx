@@ -26,21 +26,21 @@ export function StructureOverview({ structure, getGovernmentTypeIcon }: Structur
             <div>
               <div className="mb-2 flex items-center gap-2">
                 {getGovernmentTypeIcon(structure.governmentType)}
-                <span className="text-muted-foreground text-sm font-medium">
+                <span className="text-label-secondary text-body font-medium">
                   Government Details
                 </span>
               </div>
               <div className="space-y-2">
                 <div>
-                  <span className="text-muted-foreground text-sm">Name:</span>
+                  <span className="text-label-secondary text-body">Name:</span>
                   <p className="font-semibold">{structure.governmentName}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground text-sm">Type:</span>
+                  <span className="text-label-secondary text-body">Type:</span>
                   <p className="font-semibold">{structure.governmentType}</p>
                 </div>
                 <div>
-                  <span className="text-muted-foreground text-sm">Fiscal Year:</span>
+                  <span className="text-label-secondary text-body">Fiscal Year:</span>
                   <p className="font-semibold">{structure.fiscalYear}</p>
                 </div>
               </div>
@@ -52,18 +52,18 @@ export function StructureOverview({ structure, getGovernmentTypeIcon }: Structur
             <div>
               <div className="mb-2 flex items-center gap-2">
                 <User className="h-4 w-4" />
-                <span className="text-muted-foreground text-sm font-medium">Leadership</span>
+                <span className="text-label-secondary text-body font-medium">Leadership</span>
               </div>
               <div className="space-y-2">
                 {structure.headOfState && (
                   <div>
-                    <span className="text-muted-foreground text-sm">Head of State:</span>
+                    <span className="text-label-secondary text-body">Head of State:</span>
                     <p className="font-semibold">{structure.headOfState}</p>
                   </div>
                 )}
                 {structure.headOfGovernment && (
                   <div>
-                    <span className="text-muted-foreground text-sm">Head of Government:</span>
+                    <span className="text-label-secondary text-body">Head of Government:</span>
                     <p className="font-semibold">{structure.headOfGovernment}</p>
                   </div>
                 )}
@@ -76,24 +76,24 @@ export function StructureOverview({ structure, getGovernmentTypeIcon }: Structur
             <div>
               <div className="mb-2 flex items-center gap-2">
                 <Building2 className="h-4 w-4" />
-                <span className="text-muted-foreground text-sm font-medium">Branches</span>
+                <span className="text-label-secondary text-body font-medium">Branches</span>
               </div>
               <div className="space-y-2">
                 {structure.legislatureName && (
                   <div>
-                    <span className="text-muted-foreground text-sm">Legislature:</span>
+                    <span className="text-label-secondary text-body">Legislature:</span>
                     <p className="font-semibold">{structure.legislatureName}</p>
                   </div>
                 )}
                 {structure.executiveName && (
                   <div>
-                    <span className="text-muted-foreground text-sm">Executive:</span>
+                    <span className="text-label-secondary text-body">Executive:</span>
                     <p className="font-semibold">{structure.executiveName}</p>
                   </div>
                 )}
                 {structure.judicialName && (
                   <div>
-                    <span className="text-muted-foreground text-sm">Judiciary:</span>
+                    <span className="text-label-secondary text-body">Judiciary:</span>
                     <p className="font-semibold">{structure.judicialName}</p>
                   </div>
                 )}

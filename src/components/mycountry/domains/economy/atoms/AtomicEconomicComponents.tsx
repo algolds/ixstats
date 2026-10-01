@@ -153,7 +153,7 @@ export function AtomicEconomicComponentSelector({
   const workspaceContent = (
     <div className="space-y-6">
       {/* Filter, Search and Template Selector Row */}
-      <div className="border-border/40 border-b pb-6">
+      <div className="border-separator border-b pb-6">
         <AtomicFilterBar
           searchQuery={builder.search.query}
           onSearchChange={builder.search.setQuery}
@@ -175,8 +175,10 @@ export function AtomicEconomicComponentSelector({
         <div className={hideSelectedList ? "lg:col-span-3" : "lg:col-span-2"}>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Eyebrow className="block">Available components</Eyebrow>
-              <Badge variant="secondary" className="font-mono tabular-nums">
+              <h3>
+                <Eyebrow className="block">Available components</Eyebrow>
+              </h3>
+              <Badge variant="secondary" className="tabular-nums">
                 {builder.selectedComponents.length} / {maxComponents} selected
               </Badge>
             </div>
@@ -192,7 +194,7 @@ export function AtomicEconomicComponentSelector({
 
         {/* Selected Components Sidebar List (1/3 width) */}
         {!hideSelectedList && (
-          <div className="border-border/40 border-t pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
+          <div className="border-separator border-t pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
             <SelectedComponentsList
               selectedComponents={builder.selectedComponents}
               onDeselect={builder.handleDeselect}
@@ -219,7 +221,7 @@ export function AtomicEconomicComponentSelector({
         {!builder.validation.valid && builder.validation.errors.length > 0 && (
           <Alert variant="destructive">
             <AlertDescription>
-              <ul className="list-inside list-disc space-y-1 text-xs font-semibold">
+              <ul className="text-caption list-inside list-disc space-y-1 font-semibold">
                 {builder.validation.errors.map((error, index) => (
                   <li key={index}>{error}</li>
                 ))}
@@ -266,7 +268,7 @@ export function AtomicEconomicComponentSelector({
         {standalone ? (
           workspaceContent
         ) : (
-          <FacetCard className="rounded-3xl">
+          <FacetCard className="rounded-card">
             <FacetCardContent className="space-y-6 p-6">{workspaceContent}</FacetCardContent>
           </FacetCard>
         )}
@@ -335,10 +337,10 @@ export function AtomicEconomicBuilder({
   return (
     <div className="atomic-economic-builder space-y-6">
       {/* Header */}
-      <FacetCard className="rounded-3xl">
+      <FacetCard className="rounded-card">
         <FacetCardHeader className="flex-row flex-wrap items-center justify-between gap-3 pb-3">
-          <h2 className="text-foreground flex items-center gap-2 text-base font-semibold">
-            <DollarSign aria-hidden="true" className="text-muted-foreground h-5 w-5" />
+          <h2 className="text-label text-title-3 flex items-center gap-2">
+            <DollarSign aria-hidden="true" className="text-label-secondary h-5 w-5" />
             Atomic economic system builder
           </h2>
           <div className="flex items-center gap-2">
@@ -367,7 +369,7 @@ export function AtomicEconomicBuilder({
           </div>
         </FacetCardHeader>
         <FacetCardContent className="px-6 pb-6">
-          <p className="text-muted-foreground text-sm">
+          <p className="text-label-secondary text-body">
             Build your economy by selecting complementary components. Discover synergies and avoid
             conflicts to maximize effectiveness.
           </p>
@@ -412,7 +414,7 @@ export function AtomicEconomicBuilder({
       )}
 
       {/* Filter and Search */}
-      <FacetCard className="rounded-3xl">
+      <FacetCard className="rounded-card">
         <FacetCardContent className="space-y-4 p-6">
           <AtomicFilterBar
             searchQuery={builder.search.query}
@@ -463,10 +465,10 @@ export function AtomicEconomicBuilder({
 
       {/* Action Buttons (Bottom) */}
       {!isReadOnly && (
-        <FacetCard className="rounded-3xl">
+        <FacetCard className="rounded-card">
           <FacetCardContent className="p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="text-muted-foreground text-sm tabular-nums">
+              <div className="text-label-secondary text-body tabular-nums">
                 {builder.selectedComponents.length} / {maxComponents} components selected
               </div>
               <div className="flex items-center gap-2">

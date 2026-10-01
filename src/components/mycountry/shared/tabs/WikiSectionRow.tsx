@@ -50,20 +50,20 @@ export const WikiSectionRow = React.memo(function WikiSectionRow({
   const cleanContent = cleanWikiSectionContent(rawContent);
 
   return (
-    <div className="hover:bg-accent/50 rounded-lg transition-colors">
+    <div className="hover:bg-fill-3 rounded-control transition-colors">
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
         aria-expanded={expanded}
-        className="focus-visible:ring-ring flex min-h-9 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left outline-none focus-visible:ring-2"
+        className="focus-visible:ring-tint rounded-control flex min-h-9 w-full items-center gap-2 px-3 py-2 text-left outline-none focus-visible:ring-2"
       >
         <Icon className={cn("h-3.5 w-3.5 shrink-0", color)} />
-        <span className="text-foreground flex-1 text-xs font-medium">{title}</span>
+        <span className="text-label text-caption flex-1">{title}</span>
         <Eyebrow className={color}>{label}</Eyebrow>
         {expanded ? (
-          <ChevronDown className="text-muted-foreground h-3 w-3" />
+          <ChevronDown className="text-label-secondary h-3 w-3" />
         ) : (
-          <ChevronRight className="text-muted-foreground h-3 w-3" />
+          <ChevronRight className="text-label-secondary h-3 w-3" />
         )}
       </button>
       <AnimatePresence>
@@ -75,27 +75,29 @@ export const WikiSectionRow = React.memo(function WikiSectionRow({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-3 pb-2.5">
+            <div className="px-3 pb-2">
               {contentLoading && (
-                <div className="space-y-1.5 py-2" role="status" aria-label="Loading section">
+                <div className="space-y-2 py-2" role="status" aria-label="Loading section">
                   <Skeleton className="h-3 w-full" />
                   <Skeleton className="h-3 w-3/4" />
                 </div>
               )}
               {cleanContent && (
-                <p className="text-foreground/70 text-xs leading-relaxed">
+                <p className="text-label-secondary text-footnote leading-relaxed">
                   {cleanContent}
                   {cleanContent.length >= 600 ? "..." : ""}
                 </p>
               )}
               {!contentLoading && !cleanContent && (
-                <p className="text-muted-foreground py-1 text-xs italic">No content available.</p>
+                <p className="text-label-secondary text-footnote py-1 italic">
+                  No content available.
+                </p>
               )}
               <a
                 href={getWikiSectionUrl(wikiUrl, title)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-wiki hover:text-wiki-hover mt-1 inline-flex items-center gap-1 text-xs hover:underline"
+                className="text-wiki hover:text-wiki-hover text-footnote mt-1 inline-flex items-center gap-1 hover:underline"
               >
                 Read more <ExternalLink className="h-2.5 w-2.5" />
               </a>

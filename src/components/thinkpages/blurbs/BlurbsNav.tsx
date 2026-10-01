@@ -18,7 +18,7 @@ export function BlurbsNav() {
   const stripped = stripBasePath(pathname);
 
   return (
-    <nav className="flex gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1">
+    <nav className="rounded-control border-separator bg-fill-4 flex gap-1 border p-1">
       {NAV_ITEMS.map((item) => {
         const isActive =
           item.href === "/blurbs"
@@ -32,14 +32,15 @@ export function BlurbsNav() {
           <Link
             key={item.href}
             href={withBasePath(item.href)}
+            aria-current={isActive ? "page" : undefined}
             className={cn(
-              "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+              "rounded-control-sm text-caption flex items-center gap-2 px-3 py-2 transition-colors",
               isActive
-                ? "text-foreground bg-white/10"
-                : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                ? "text-label bg-fill-3"
+                : "text-label-secondary hover:text-label hover:bg-fill-3"
             )}
           >
-            <item.icon className="h-3.5 w-3.5" />
+            <item.icon className="size-3.5" aria-hidden="true" />
             {item.label}
           </Link>
         );

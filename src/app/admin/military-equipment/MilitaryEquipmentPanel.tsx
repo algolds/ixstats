@@ -51,31 +51,31 @@ export function MilitaryEquipmentPanel() {
 
       <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <TabsList className="bg-card/40 border-border/40 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md sm:w-auto">
+          <TabsList className="bg-fill-3 rounded-row flex w-full flex-wrap justify-start gap-1 p-1 sm:w-auto">
             <TabsTrigger
               value="catalog"
-              className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+              className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
             >
               <Rocket className="h-4 w-4" />
               Equipment Catalog
             </TabsTrigger>
             <TabsTrigger
               value="manufacturers"
-              className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+              className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
             >
               <Factory className="h-4 w-4" />
               Manufacturers
             </TabsTrigger>
             <TabsTrigger
               value="small-arms"
-              className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+              className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
             >
               <Target className="h-4 w-4" />
               Small Arms
             </TabsTrigger>
             <TabsTrigger
               value="analytics"
-              className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+              className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
             >
               <BarChart3 className="h-4 w-4" />
               Analytics
@@ -84,22 +84,14 @@ export function MilitaryEquipmentPanel() {
 
           <div className="flex items-center gap-2">
             {activeMainTab === "catalog" && (
-              <Button
-                onClick={() => catalog.setIsAddDialogOpen(true)}
-                size="sm"
-                className="text-xs active:scale-[0.98]"
-              >
-                <Plus className="mr-1.5 h-4 w-4" />
+              <Button onClick={() => catalog.setIsAddDialogOpen(true)} size="sm">
+                <Plus className="mr-2 h-4 w-4" />
                 Add Equipment
               </Button>
             )}
             {activeMainTab === "manufacturers" && (
-              <Button
-                onClick={() => manufacturers.setIsManufacturerDialogOpen(true)}
-                size="sm"
-                className="text-xs active:scale-[0.98]"
-              >
-                <Plus className="mr-1.5 h-4 w-4" />
+              <Button onClick={() => manufacturers.setIsManufacturerDialogOpen(true)} size="sm">
+                <Plus className="mr-2 h-4 w-4" />
                 Add Manufacturer
               </Button>
             )}

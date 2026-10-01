@@ -3,12 +3,7 @@
 
 import React from "react";
 import { WarningTriangle as AlertTriangle, CheckCircle } from "iconoir-react";
-import {
-  FacetCard,
-  FacetCardContent,
-  FacetCardHeader,
-  FacetContainer,
-} from "~/components/ui/facet-container";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
@@ -39,7 +34,7 @@ interface SecurityEventsCardProps {
 const SEVERITY_TONE: Record<string, string> = {
   critical: "border-destructive/30 text-destructive",
   high: "border-destructive/30 text-destructive",
-  moderate: "border-amber-500/30 text-amber-600",
+  moderate: "border-yellow/30 text-yellow",
 };
 
 export const SecurityEventsCard = React.memo(function SecurityEventsCard({
@@ -47,10 +42,10 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
   resolveEvent,
 }: SecurityEventsCardProps) {
   return (
-    <FacetCard depth={1} surface="solid">
+    <FacetCard>
       <FacetCardHeader className="p-5 pb-3">
-        <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
-          <AlertTriangle aria-hidden="true" className="h-4 w-4 text-rose-500" />
+        <h3 className="text-label text-title-3 flex items-center gap-2">
+          <AlertTriangle aria-hidden="true" className="text-red h-4 w-4" />
           Active security events ({activeEvents.length})
         </h3>
       </FacetCardHeader>
@@ -58,13 +53,7 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
         {activeEvents.length > 0 ? (
           <div className="space-y-3">
             {activeEvents.map((event) => (
-              <FacetContainer
-                key={event.id}
-                depth={3}
-                surface="solid"
-                enableRefraction={false}
-                className="rounded-lg p-3"
-              >
+              <FacetCard variant="inset" key={event.id} className="p-3">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -72,19 +61,19 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
                         variant="outline"
                         className={cn(
                           "capitalize",
-                          SEVERITY_TONE[event.severity] ?? "text-muted-foreground"
+                          SEVERITY_TONE[event.severity] ?? "text-label-secondary"
                         )}
                       >
                         {event.severity}
                       </Badge>
-                      <h5 className="text-foreground text-sm font-medium">{event.title}</h5>
+                      <h5 className="text-label text-body font-medium">{event.title}</h5>
                     </div>
-                    <p className="text-muted-foreground mb-3 text-sm">{event.description}</p>
+                    <p className="text-label-secondary text-body mb-3">{event.description}</p>
 
-                    <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
+                    <div className="text-footnote grid grid-cols-1 gap-2 sm:grid-cols-3">
                       {event.casualties > 0 && (
                         <div>
-                          <span className="text-muted-foreground">Casualties:</span>
+                          <span className="text-label-secondary">Casualties:</span>
                           <span className="ml-1 font-medium tabular-nums">
                             <NumberFlowDisplay value={event.casualties} />
                           </span>
@@ -92,7 +81,7 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
                       )}
                       {event.arrested > 0 && (
                         <div>
-                          <span className="text-muted-foreground">Arrested:</span>
+                          <span className="text-label-secondary">Arrested:</span>
                           <span className="ml-1 font-medium tabular-nums">
                             <NumberFlowDisplay value={event.arrested} />
                           </span>
@@ -100,7 +89,7 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
                       )}
                       {event.economicImpact > 0 && (
                         <div>
-                          <span className="text-muted-foreground">Economic Impact:</span>
+                          <span className="text-label-secondary">Economic Impact:</span>
                           <span className="ml-1 font-medium tabular-nums">
                             $<NumberFlowDisplay value={event.economicImpact} format="compact" />
                           </span>
@@ -109,7 +98,7 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
                     </div>
 
                     {event.region && (
-                      <div className="text-muted-foreground mt-2 text-xs">
+                      <div className="text-label-secondary text-footnote mt-2">
                         Location: {event.region}
                         {event.city ? `, ${event.city}` : ""}
                       </div>
@@ -131,14 +120,14 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
                     Resolve
                   </Button>
                 </div>
-              </FacetContainer>
+              </FacetCard>
             ))}
           </div>
         ) : (
-          <div className="text-muted-foreground py-6 text-center">
-            <CheckCircle aria-hidden="true" className="mx-auto mb-3 h-8 w-8 text-emerald-600" />
-            <h4 className="text-foreground mb-1 font-medium">All clear</h4>
-            <p className="text-sm">No active security events at this time</p>
+          <div className="text-label-secondary py-6 text-center">
+            <CheckCircle aria-hidden="true" className="text-green mx-auto mb-3 h-8 w-8" />
+            <h4 className="text-label mb-1 font-medium">All clear</h4>
+            <p className="text-body">No active security events at this time</p>
           </div>
         )}
       </FacetCardContent>

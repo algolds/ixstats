@@ -113,8 +113,7 @@ export const EmbassyCard = React.memo(function EmbassyCard({
 
   return (
     <FacetCard
-      depth={2}
-      className="overflow-hidden rounded-2xl"
+      className="rounded-card overflow-hidden"
       onClick={isOwner ? onClick : undefined}
       onKeyDown={
         isOwner
@@ -130,7 +129,7 @@ export const EmbassyCard = React.memo(function EmbassyCard({
       aria-label={isOwner ? `Open ${embassy.name}` : undefined}
     >
       {/* Paired flag header: host left, guest right */}
-      <div className="border-border relative flex h-20 overflow-hidden border-b">
+      <div className="border-separator relative flex h-20 overflow-hidden border-b">
         {[
           { name: embassy.hostCountry, flag: embassy.hostCountryFlag },
           { name: embassy.guestCountry, flag: embassy.guestCountryFlag },
@@ -147,8 +146,8 @@ export const EmbassyCard = React.memo(function EmbassyCard({
           </div>
         ))}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="bg-background border-border rounded-full border p-2 shadow-sm">
-            <Building2 className="text-foreground h-4 w-4" />
+          <div className="bg-surface border-separator shadow-card rounded-full border p-2">
+            <Building2 className="text-label h-4 w-4" />
           </div>
         </div>
       </div>
@@ -156,8 +155,8 @@ export const EmbassyCard = React.memo(function EmbassyCard({
       <FacetCardHeader className="p-4 pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h3 className="text-foreground truncate text-base font-semibold">{embassy.name}</h3>
-            <p className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+            <h3 className="text-label text-title-3 truncate">{embassy.name}</h3>
+            <p className="text-label-secondary text-footnote mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
               <span>
                 {embassy.guestCountry} ⟷ {embassy.hostCountry}
               </span>
@@ -172,7 +171,7 @@ export const EmbassyCard = React.memo(function EmbassyCard({
               <ShieldCheck />
               {synergy.label} Synergy
             </Badge>
-            <Badge variant="outline" className="text-muted-foreground">
+            <Badge variant="outline" className="text-label-secondary">
               {asymmetry.label}
             </Badge>
           </div>
@@ -181,31 +180,26 @@ export const EmbassyCard = React.memo(function EmbassyCard({
 
       <FacetCardContent className="space-y-3 px-4 pb-4">
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs">
+          <div className="text-footnote flex items-center justify-between">
             <Eyebrow>Standing tier</Eyebrow>
             <span className={cn("font-semibold", synergy.textClass)}>{synergy.label}</span>
           </div>
           <Progress value={embassy.totalSynergyScore} className="h-2" />
         </div>
 
-        <dl className="grid grid-cols-3 gap-2 text-xs">
+        <dl className="text-footnote grid grid-cols-3 gap-2">
           {benefits.map((b) => (
-            <div key={b.label} className="bg-muted/50 rounded-lg p-2 text-center">
-              <dd
-                className={cn(
-                  "font-semibold",
-                  b.high ? "text-foreground" : "text-muted-foreground"
-                )}
-              >
+            <div key={b.label} className="bg-fill-3 rounded-control p-2 text-center">
+              <dd className={cn("font-semibold", b.high ? "text-label" : "text-label-secondary")}>
                 {b.high ? "High" : "Standard"}
               </dd>
-              <dt className="text-muted-foreground">{b.label}</dt>
+              <dt className="text-label-secondary">{b.label}</dt>
             </div>
           ))}
         </dl>
 
         {isOwner && (
-          <div className="border-border space-y-2 border-t pt-3">
+          <div className="border-separator space-y-2 border-t pt-3">
             <Button variant="outline" size="sm" className="w-full" asChild>
               <Link
                 href={`/vault/market?nation=${encodeURIComponent(partnerCountry)}`}
@@ -215,7 +209,7 @@ export const EmbassyCard = React.memo(function EmbassyCard({
                 Trade Cards with {partnerCountry}
               </Link>
             </Button>
-            <p className="text-muted-foreground flex items-center justify-center gap-1 text-xs">
+            <p className="text-label-secondary text-footnote flex items-center justify-center gap-1">
               Open for embassy details
               <ChevronRight className="h-3 w-3" />
             </p>

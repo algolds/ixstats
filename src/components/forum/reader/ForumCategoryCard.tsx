@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ChatBubble as MessageSquare, Clock } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { timeAgo } from "~/lib/format/compact";
+import { FacetCard } from "~/components/ui/facet-container";
 
 interface ForumCategoryCardProps {
   nodeId: number;
@@ -38,47 +39,44 @@ export function ForumCategoryCard({
 }: ForumCategoryCardProps) {
   if (isCategory) {
     return (
-      <div className="mb-6">
-        <div className="mb-3 flex items-center gap-2">
-          <div className="h-1 w-4 rounded-full bg-[var(--forum-accent)]" />
-          <h2 className="text-xs font-semibold tracking-widest text-[var(--forum-accent)] uppercase">
-            {title}
-          </h2>
+      <section className="mb-6">
+        <div className="mb-2 px-4">
+          <h2 className="text-headline text-label">{title}</h2>
+          {description && (
+            <p className="text-footnote text-label-secondary mt-0.5">{description}</p>
+          )}
         </div>
-        {description && (
-          <p className="mb-3 ml-6 text-xs text-[var(--forum-text-dim)]">{description}</p>
-        )}
-        <div className="glass-forum-parent space-y-0.5 overflow-hidden p-1">{children}</div>
-      </div>
+        <FacetCard className="divide-separator divide-y overflow-hidden">{children}</FacetCard>
+      </section>
     );
   }
 
   return (
     <Link
       href={withBasePath(`/forum/${nodeId}`)}
-      className="glass-forum-child forum-category-card group flex items-center gap-4"
+      className="forum-category-card group flex items-center gap-4"
     >
       {/* Icon */}
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-500/10 text-orange-400 transition-colors group-hover:bg-orange-500/20">
+      <div className="bg-tint-fill text-tint rounded-control flex size-10 shrink-0 items-center justify-center">
         <MessageSquare className="h-5 w-5" />
       </div>
 
       {/* Info */}
       <div className="min-w-0 flex-1">
-        <h3 className="text-sm font-medium text-[var(--forum-text)] transition-colors group-hover:text-[var(--forum-accent)]">
+        <h3 className="text-headline text-label group-hover:text-tint transition-colors">
           {title}
         </h3>
         {description && (
-          <p className="mt-0.5 truncate text-xs text-[var(--forum-text-dim)]">{description}</p>
+          <p className="text-footnote text-label-secondary mt-0.5 truncate">{description}</p>
         )}
       </div>
 
       {/* Stats */}
-      <div className="hidden shrink-0 text-right sm:block">
-        <div className="text-xs text-[var(--forum-text-muted)]">
+      <div className="hidden shrink-0 text-right tabular-nums sm:block">
+        <div className="text-footnote text-label-secondary">
           {threadCount.toLocaleString()} threads
         </div>
-        <div className="text-xs text-[var(--forum-text-dim)]">
+        <div className="text-footnote text-label-secondary">
           {messageCount.toLocaleString()} posts
         </div>
       </div>
@@ -88,13 +86,13 @@ export function ForumCategoryCard({
         <div className="hidden shrink-0 text-right md:block" style={{ minWidth: "140px" }}>
           {lastThreadTitle && lastThreadId && (
             <div
-              className="truncate text-xs text-[var(--forum-text-muted)]"
+              className="text-footnote text-label-secondary truncate"
               style={{ maxWidth: "140px" }}
             >
               {lastThreadTitle}
             </div>
           )}
-          <div className="flex items-center justify-end gap-1 text-xs text-[var(--forum-text-dim)]">
+          <div className="text-footnote text-label-secondary flex items-center justify-end gap-1">
             <Clock className="h-3 w-3" />
             {formatTimeAgo(lastPostDate)}
             {lastPostUsername && <span>by {lastPostUsername}</span>}

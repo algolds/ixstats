@@ -58,7 +58,7 @@ export function LaborTab({
   };
 
   return (
-    <FacetCard depth={1} className="relative overflow-hidden rounded-2xl">
+    <FacetCard className="rounded-card relative overflow-hidden">
       {/* Background wash system (desaturated flag wash + radial dot mesh) */}
       <MetricCardGrid
         metrics={[]} // empty metrics to just render background
@@ -78,22 +78,22 @@ export function LaborTab({
 
       <FacetCardContent className="relative z-10 space-y-4 pt-4 pb-4">
         {/* ── Compact Header ── */}
-        <div className="border-border/10 flex items-center justify-between border-b pb-3">
+        <div className="border-separator flex items-center justify-between border-b pb-3">
           <div>
-            <div className="flex items-center gap-1.5">
-              <h3 className="text-foreground text-sm font-semibold">Labor & Workforce</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-label text-headline">Labor & Workforce</h3>
               <InlineHelpIcon
                 title="Labor & Workforce"
                 content="View national employment rates, labor participation, wages, and education levels. Click values to open historical charts and details."
               />
             </div>
-            <p className="text-muted-foreground/80 text-xs">
+            <p className="text-label-secondary text-footnote">
               Employment, wages, and human capital for {country.name}
             </p>
           </div>
           {!isPublicReadOnly && (
             <Link href={createUrl("/mycountry/editor")}>
-              <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs">
+              <Button size="sm" variant="outline" className="text-footnote h-8 gap-2">
                 <Briefcase className="h-3.5 w-3.5" />
                 <span>Open Editor</span>
               </Button>
@@ -106,14 +106,16 @@ export function LaborTab({
           <TooltipTrigger asChild>
             <div className="grid grid-cols-3 gap-2">
               {/* Metric 1: Workforce */}
-              <button
+              <FacetCard
+                variant="inset"
+                padding="sm"
+                className="text-left"
                 onClick={() =>
                   setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     workforce: v.workforce === "participation" ? "count" : "participation",
                   }))
                 }
-                className="border-border bg-card hover:bg-accent/50 focus-visible:ring-ring cursor-pointer rounded-xl border p-3 text-left transition-[transform,background-color] duration-150 ease-out outline-none focus-visible:ring-2 active:scale-[0.98]"
               >
                 <Eyebrow className="block">
                   {metricView.workforce === "participation"
@@ -121,7 +123,7 @@ export function LaborTab({
                     : "Total Workforce"}
                 </Eyebrow>
                 <div
-                  className="mt-0.5 flex items-center gap-1.5"
+                  className="mt-0.5 flex items-center gap-2"
                   onClick={(e) => {
                     e.stopPropagation();
                     openMetricModalAction("labor-force", country.id);
@@ -134,7 +136,7 @@ export function LaborTab({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
                       transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                      className="text-foreground flex items-center text-lg font-bold tracking-tight hover:underline"
+                      className="text-label text-title-3 flex items-center hover:underline"
                     >
                       {metricView.workforce === "participation"
                         ? `${(economyData?.labor?.laborForceParticipationRate ?? 0).toFixed(1)}%`
@@ -142,28 +144,30 @@ export function LaborTab({
                     </motion.p>
                   </AnimatePresence>
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                <p className="text-label-secondary text-footnote mt-0.5 truncate">
                   {metricView.workforce === "participation"
                     ? "Active workforce share"
                     : `${(economyData?.labor?.laborForceParticipationRate ?? 0).toFixed(1)}% participation`}
                 </p>
-              </button>
+              </FacetCard>
 
               {/* Metric 2: Employment */}
-              <button
+              <FacetCard
+                variant="inset"
+                padding="sm"
+                className="text-left"
                 onClick={() =>
                   setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     employment: v.employment === "employed" ? "unemployed" : "employed",
                   }))
                 }
-                className="border-border bg-card hover:bg-accent/50 focus-visible:ring-ring cursor-pointer rounded-xl border p-3 text-left transition-[transform,background-color] duration-150 ease-out outline-none focus-visible:ring-2 active:scale-[0.98]"
               >
                 <Eyebrow className="block">
                   {metricView.employment === "employed" ? "Employment Rate" : "Unemployment Rate"}
                 </Eyebrow>
                 <div
-                  className="mt-0.5 flex items-center gap-1.5"
+                  className="mt-0.5 flex items-center gap-2"
                   onClick={(e) => {
                     e.stopPropagation();
                     openMetricModalAction(
@@ -179,7 +183,7 @@ export function LaborTab({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
                       transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                      className="text-foreground text-lg font-bold tracking-tight hover:underline"
+                      className="text-label text-title-3 hover:underline"
                     >
                       {metricView.employment === "employed"
                         ? `${(economyData?.labor?.employmentRate ?? 0).toFixed(1)}%`
@@ -189,34 +193,38 @@ export function LaborTab({
                   {(() => {
                     const unemp = economyData?.labor?.unemploymentRate ?? 0;
                     if (unemp < 4.0)
-                      return <span className="text-xs font-semibold text-emerald-500">Low</span>;
+                      return <span className="text-caption text-green font-semibold">Low</span>;
                     if (unemp > 8.0)
-                      return <span className="text-destructive text-xs font-semibold">High</span>;
-                    return <span className="text-xs font-semibold text-amber-500">Stable</span>;
+                      return (
+                        <span className="text-destructive text-caption font-semibold">High</span>
+                      );
+                    return <span className="text-caption text-yellow font-semibold">Stable</span>;
                   })()}
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                <p className="text-label-secondary text-footnote mt-0.5 truncate">
                   {metricView.employment === "employed"
                     ? `Active employment share`
                     : `Seeking employment`}
                 </p>
-              </button>
+              </FacetCard>
 
               {/* Metric 3: Compensation */}
-              <button
+              <FacetCard
+                variant="inset"
+                padding="sm"
+                className="text-left"
                 onClick={() =>
                   setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     compensation: v.compensation === "minimum" ? "average" : "minimum",
                   }))
                 }
-                className="border-border bg-card hover:bg-accent/50 focus-visible:ring-ring cursor-pointer rounded-xl border p-3 text-left transition-[transform,background-color] duration-150 ease-out outline-none focus-visible:ring-2 active:scale-[0.98]"
               >
                 <Eyebrow className="block">
                   {metricView.compensation === "minimum" ? "Minimum Wage" : "Average Wage"}
                 </Eyebrow>
                 <div
-                  className="mt-0.5 flex items-center gap-1.5"
+                  className="mt-0.5 flex items-center gap-2"
                   onClick={(e) => {
                     e.stopPropagation();
                     openMetricModalAction("labor-force", country.id);
@@ -229,7 +237,7 @@ export function LaborTab({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
                       transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                      className="text-foreground text-lg font-bold tracking-tight hover:underline"
+                      className="text-label text-title-3 hover:underline"
                     >
                       {metricView.compensation === "minimum"
                         ? formatExactCurrency(economyData?.labor?.minimumWage ?? 0, currency)
@@ -240,35 +248,35 @@ export function LaborTab({
                     </motion.p>
                   </AnimatePresence>
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                <p className="text-label-secondary text-footnote mt-0.5 truncate">
                   {metricView.compensation === "minimum"
                     ? `Per year (mandatory)`
                     : `Average annual salary`}
                 </p>
-              </button>
+              </FacetCard>
             </div>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="text-xs">
+          <TooltipContent side="bottom" className="text-footnote">
             Click metric value to view history, click headers to toggle views
           </TooltipContent>
         </Tooltip>
 
         {/* ── Sub-Tabs Content (Folder Dossier Accordion Stack) ── */}
-        <div className="border-border/10 space-y-3 border-t pt-3">
+        <div className="border-separator space-y-3 border-t pt-3">
           {/* Dossier Section 1: Workforce */}
           <div className="flex flex-col">
             <div className="flex">
               <button
                 onClick={() => toggleSection("workforce")}
                 aria-expanded={expandedSection === "workforce"}
-                className={`focus-visible:ring-ring relative z-10 flex min-h-9 cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-sm font-semibold transition-[color,background-color,border-color] duration-150 outline-none focus-visible:ring-2 ${
+                className={`focus-visible:ring-tint rounded-t-row text-headline relative z-10 flex min-h-9 cursor-pointer items-center gap-2 border-x border-t px-4 py-2 transition-[color,background-color,border-color] duration-150 outline-none focus-visible:ring-2 ${
                   expandedSection === "workforce"
-                    ? "text-foreground border-border bg-card"
-                    : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"
+                    ? "text-label border-separator bg-surface"
+                    : "text-label-secondary hover:text-label border-transparent bg-transparent"
                 }`}
               >
                 <Users
-                  className={`h-3.5 w-3.5 ${expandedSection === "workforce" ? "text-destructive" : "text-muted-foreground/60"}`}
+                  className={`h-3.5 w-3.5 ${expandedSection === "workforce" ? "text-destructive" : "text-label-tertiary"}`}
                 />
                 <span>Workforce Overview</span>
                 <motion.div
@@ -284,9 +292,9 @@ export function LaborTab({
               initial={false}
               animate={{ height: expandedSection === "workforce" ? "auto" : 0 }}
               transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-              className={`bg-card relative overflow-hidden rounded-tr-xl rounded-b-xl transition-colors duration-200 ${
+              className={`bg-surface rounded-tr-row rounded-b-row relative overflow-hidden transition-colors duration-200 ${
                 expandedSection === "workforce"
-                  ? "border-border border"
+                  ? "border-separator border"
                   : "border border-transparent"
               }`}
             >
@@ -296,36 +304,40 @@ export function LaborTab({
                 className="pointer-events-none absolute inset-0 z-0"
               />
               <div className="relative z-10 space-y-4 p-4">
-                <div className="bg-muted/50 grid grid-cols-2 gap-4 rounded-xl p-3 md:grid-cols-4">
+                <FacetCard
+                  variant="inset"
+                  padding="none"
+                  className="grid grid-cols-2 gap-4 p-3 md:grid-cols-4"
+                >
                   <div className="min-w-0">
                     <Eyebrow className="block">Labor Force</Eyebrow>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
+                    <p className="text-label text-headline mt-0.5">
                       {(economyData?.labor?.totalWorkforce ?? 0).toLocaleString()}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Active workforce</p>
+                    <p className="text-label-secondary text-footnote mt-0.5">Active workforce</p>
                   </div>
                   <div className="min-w-0">
                     <Eyebrow className="block">Participation</Eyebrow>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
+                    <p className="text-label text-headline mt-0.5">
                       {`${(economyData?.labor?.laborForceParticipationRate ?? 0).toFixed(1)}%`}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Working-age share</p>
+                    <p className="text-label-secondary text-footnote mt-0.5">Working-age share</p>
                   </div>
                   <div className="min-w-0">
                     <Eyebrow className="block">Employment</Eyebrow>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
+                    <p className="text-label text-headline mt-0.5">
                       {`${(economyData?.labor?.employmentRate ?? 0).toFixed(1)}%`}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Employed portion</p>
+                    <p className="text-label-secondary text-footnote mt-0.5">Employed portion</p>
                   </div>
                   <div className="min-w-0">
                     <Eyebrow className="block">Unemployment</Eyebrow>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
+                    <p className="text-label text-headline mt-0.5">
                       {`${(economyData?.labor?.unemploymentRate ?? 0).toFixed(1)}%`}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Actively seeking</p>
+                    <p className="text-label-secondary text-footnote mt-0.5">Actively seeking</p>
                   </div>
-                </div>
+                </FacetCard>
 
                 <SectorBreakdownCard
                   title="Employment by Sector"
@@ -387,14 +399,14 @@ export function LaborTab({
               <button
                 onClick={() => toggleSection("compensation")}
                 aria-expanded={expandedSection === "compensation"}
-                className={`focus-visible:ring-ring relative z-10 flex min-h-9 cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-sm font-semibold transition-[color,background-color,border-color] duration-150 outline-none focus-visible:ring-2 ${
+                className={`focus-visible:ring-tint rounded-t-row text-headline relative z-10 flex min-h-9 cursor-pointer items-center gap-2 border-x border-t px-4 py-2 transition-[color,background-color,border-color] duration-150 outline-none focus-visible:ring-2 ${
                   expandedSection === "compensation"
-                    ? "text-foreground border-border bg-card"
-                    : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"
+                    ? "text-label border-separator bg-surface"
+                    : "text-label-secondary hover:text-label border-transparent bg-transparent"
                 }`}
               >
                 <DollarSign
-                  className={`h-3.5 w-3.5 ${expandedSection === "compensation" ? "text-destructive" : "text-muted-foreground/60"}`}
+                  className={`h-3.5 w-3.5 ${expandedSection === "compensation" ? "text-destructive" : "text-label-tertiary"}`}
                 />
                 <span>Compensation & Wages</span>
                 <motion.div
@@ -410,9 +422,9 @@ export function LaborTab({
               initial={false}
               animate={{ height: expandedSection === "compensation" ? "auto" : 0 }}
               transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-              className={`bg-card relative overflow-hidden rounded-tr-xl rounded-b-xl transition-colors duration-200 ${
+              className={`bg-surface rounded-tr-row rounded-b-row relative overflow-hidden transition-colors duration-200 ${
                 expandedSection === "compensation"
-                  ? "border-border border"
+                  ? "border-separator border"
                   : "border border-transparent"
               }`}
             >
@@ -422,38 +434,42 @@ export function LaborTab({
                 className="pointer-events-none absolute inset-0 z-0"
               />
               <div className="relative z-10 space-y-4 p-4">
-                <div className="bg-muted/50 grid grid-cols-2 gap-4 rounded-xl p-3 md:grid-cols-4">
+                <FacetCard
+                  variant="inset"
+                  padding="none"
+                  className="grid grid-cols-2 gap-4 p-3 md:grid-cols-4"
+                >
                   <div className="min-w-0">
                     <Eyebrow className="block">Average Annual Income</Eyebrow>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
+                    <p className="text-label text-headline mt-0.5">
                       {formatExactCurrency(economyData?.labor?.averageAnnualIncome ?? 0, currency)}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Mean earnings</p>
+                    <p className="text-label-secondary text-footnote mt-0.5">Mean earnings</p>
                   </div>
                   <div className="min-w-0">
                     <Eyebrow className="block">Minimum Wage</Eyebrow>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
+                    <p className="text-label text-headline mt-0.5">
                       {formatExactCurrency(economyData?.labor?.minimumWage ?? 0, currency)}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Per year</p>
+                    <p className="text-label-secondary text-footnote mt-0.5">Per year</p>
                   </div>
                   <div className="min-w-0">
                     <Eyebrow className="block">Average Work Week</Eyebrow>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
+                    <p className="text-label text-headline mt-0.5">
                       {economyData?.labor?.averageWorkweekHours ?? 0}h
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Hours per week</p>
+                    <p className="text-label-secondary text-footnote mt-0.5">Hours per week</p>
                   </div>
                   <div className="min-w-0">
                     <Eyebrow className="block">Productivity Index</Eyebrow>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
+                    <p className="text-label text-headline mt-0.5">
                       {(
                         economyData?.labor?.skillsAndProductivity?.laborProductivityIndex ?? 0
                       ).toFixed(0)}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Output efficiency</p>
+                    <p className="text-label-secondary text-footnote mt-0.5">Output efficiency</p>
                   </div>
-                </div>
+                </FacetCard>
 
                 <SectorBreakdownCard
                   title="Employment Types"
@@ -510,14 +526,14 @@ export function LaborTab({
               <button
                 onClick={() => toggleSection("human-capital")}
                 aria-expanded={expandedSection === "human-capital"}
-                className={`focus-visible:ring-ring relative z-10 flex min-h-9 cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-sm font-semibold transition-[color,background-color,border-color] duration-150 outline-none focus-visible:ring-2 ${
+                className={`focus-visible:ring-tint rounded-t-row text-headline relative z-10 flex min-h-9 cursor-pointer items-center gap-2 border-x border-t px-4 py-2 transition-[color,background-color,border-color] duration-150 outline-none focus-visible:ring-2 ${
                   expandedSection === "human-capital"
-                    ? "text-foreground border-border bg-card"
-                    : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"
+                    ? "text-label border-separator bg-surface"
+                    : "text-label-secondary hover:text-label border-transparent bg-transparent"
                 }`}
               >
                 <TrendingUp
-                  className={`h-3.5 w-3.5 ${expandedSection === "human-capital" ? "text-destructive" : "text-muted-foreground/60"}`}
+                  className={`h-3.5 w-3.5 ${expandedSection === "human-capital" ? "text-destructive" : "text-label-tertiary"}`}
                 />
                 <span>Human Capital & Skills</span>
                 <motion.div
@@ -533,9 +549,9 @@ export function LaborTab({
               initial={false}
               animate={{ height: expandedSection === "human-capital" ? "auto" : 0 }}
               transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-              className={`bg-card relative overflow-hidden rounded-tr-xl rounded-b-xl transition-colors duration-200 ${
+              className={`bg-surface rounded-tr-row rounded-b-row relative overflow-hidden transition-colors duration-200 ${
                 expandedSection === "human-capital"
-                  ? "border-border border"
+                  ? "border-separator border"
                   : "border border-transparent"
               }`}
             >
@@ -545,36 +561,44 @@ export function LaborTab({
                 className="pointer-events-none absolute inset-0 z-0"
               />
               <div className="relative z-10 space-y-4 p-4">
-                <div className="bg-muted/50 grid grid-cols-2 gap-4 rounded-xl p-3 md:grid-cols-4">
+                <FacetCard
+                  variant="inset"
+                  padding="none"
+                  className="grid grid-cols-2 gap-4 p-3 md:grid-cols-4"
+                >
                   <div className="min-w-0">
                     <Eyebrow className="block">Education Years</Eyebrow>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
+                    <p className="text-label text-headline mt-0.5">
                       {`${(economyData?.labor?.skillsAndProductivity?.averageEducationYears ?? 0).toFixed(1)} years`}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Schooling duration</p>
+                    <p className="text-label-secondary text-footnote mt-0.5">Schooling duration</p>
                   </div>
                   <div className="min-w-0">
                     <Eyebrow className="block">Tertiary Ed Rate</Eyebrow>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
+                    <p className="text-label text-headline mt-0.5">
                       {`${(economyData?.labor?.skillsAndProductivity?.tertiaryEducationRate ?? 0).toFixed(1)}%`}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-xs">University graduates</p>
+                    <p className="text-label-secondary text-footnote mt-0.5">
+                      University graduates
+                    </p>
                   </div>
                   <div className="min-w-0">
                     <Eyebrow className="block">Vocational Rate</Eyebrow>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
+                    <p className="text-label text-headline mt-0.5">
                       {`${(economyData?.labor?.skillsAndProductivity?.vocationalTrainingRate ?? 0).toFixed(1)}%`}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Technical certified</p>
+                    <p className="text-label-secondary text-footnote mt-0.5">Technical certified</p>
                   </div>
                   <div className="min-w-0">
                     <Eyebrow className="block">Youth Unemp.</Eyebrow>
-                    <p className="text-foreground mt-0.5 text-sm font-bold">
+                    <p className="text-label text-headline mt-0.5">
                       {`${(economyData?.labor?.youthUnemploymentRate ?? 0).toFixed(1)}%`}
                     </p>
-                    <p className="text-muted-foreground/80 mt-0.5 text-xs">Age 15-24 unemployed</p>
+                    <p className="text-label-secondary text-footnote mt-0.5">
+                      Age 15-24 unemployed
+                    </p>
                   </div>
-                </div>
+                </FacetCard>
 
                 <SectorBreakdownCard
                   title="Skills & Capital Metrics"

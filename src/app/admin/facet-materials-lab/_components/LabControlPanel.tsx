@@ -1,6 +1,8 @@
 import * as React from "react";
 import { type TextureType } from "~/components/ui/texture-overlay";
 import { Slider } from "~/components/ui/slider";
+import { Button } from "~/components/ui/button";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Switch } from "~/components/ui/switch";
 import {
   Select,
@@ -50,19 +52,22 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
   }, [config.material, onChange]);
 
   return (
-    <div className="bg-card/45 border-border/40 rounded-2xl border p-6 backdrop-blur-md">
-      <div className="border-border/20 mb-6 flex items-center gap-2 border-b pb-3">
-        <Sliders className="text-primary h-4 w-4" />
-        <h3 className="text-sm font-semibold tracking-wide uppercase">Simulation Controls</h3>
+    <FacetCard className="p-6">
+      <div className="border-separator mb-6 flex items-center gap-2 border-b pb-3">
+        <Sliders className="text-tint h-4 w-4" />
+        <h3 className="text-headline">Simulation controls</h3>
       </div>
+      <p className="text-footnote text-label-secondary -mt-3 mb-6">
+        Experimental, lab-only materials and textures from <code>styles/facet/lab.css</code>.
+        Production screens use opaque <code>FacetCard</code> content and <code>FacetMaterial</code>{" "}
+        thin/regular/thick for chrome — see the Facet 3 tab.
+      </p>
 
       <div className="space-y-6">
         {/* ── Template Selection ── */}
         <div className="space-y-2">
-          <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Template Selection
-          </label>
-          <div className="grid grid-cols-3 gap-1.5">
+          <label className="text-label-secondary text-subhead">Template Selection</label>
+          <div className="grid grid-cols-3 gap-2">
             {[
               { id: "material-block", label: "Material Block" },
               { id: "facet-card", label: "Facet Card" },
@@ -82,40 +87,34 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
               { id: "gradient-metrics", label: "Gradient Metrics" },
               { id: "code-block", label: "Code Block" },
             ].map((t) => (
-              <button
+              <Button
                 key={t.id}
+                size="sm"
+                variant={config.template === t.id ? "tinted" : "gray"}
+                aria-pressed={config.template === t.id}
                 onClick={() => onChange({ template: t.id as TemplateType })}
-                className={
-                  "rounded-lg border px-2.5 py-2 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] " +
-                  (config.template === t.id
-                    ? "bg-primary border-primary text-primary-foreground shadow-sm"
-                    : "bg-muted/30 border-border/40 hover:bg-muted/65 text-muted-foreground hover:text-foreground")
-                }
+                className="h-auto min-h-(--control-height-sm) px-2 py-2 whitespace-normal"
               >
                 {t.label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
 
         {/* ── Material & Depth ── */}
-        <div className="border-border/10 space-y-4 border-t pt-4">
-          <div className="flex items-center gap-1.5">
-            <GlassWater className="text-primary h-3 w-3" />
-            <h4 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-              Material & Depth
-            </h4>
+        <div className="border-separator space-y-4 border-t pt-4">
+          <div className="flex items-center gap-2">
+            <GlassWater className="text-tint h-3 w-3" />
+            <h4 className="text-label-secondary text-subhead">Material & Depth</h4>
           </div>
 
           <div className="space-y-2">
-            <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-              Base Material Type
-            </label>
+            <label className="text-label-secondary text-subhead">Base Material Type</label>
             <Select
               value={config.material}
               onValueChange={(val) => onChange({ material: val as MaterialType })}
             >
-              <SelectTrigger className="bg-background/50 border-border/40 w-full rounded-lg">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -155,10 +154,8 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                Elevation Depth
-              </label>
-              <span className="text-primary font-mono text-xs font-bold">Level {config.depth}</span>
+              <label className="text-label-secondary text-subhead">Elevation Depth</label>
+              <span className="text-tint text-caption tabular-nums">Level {config.depth}</span>
             </div>
             <Slider
               min={1}
@@ -168,7 +165,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
               onValueChange={(val) => onChange({ depth: val[0] ?? 2 })}
               className="py-2"
             />
-            <div className="text-muted-foreground/80 flex justify-between px-0.5 text-xs">
+            <div className="text-label-secondary text-footnote flex justify-between px-0.5">
               <span>Flat (1)</span>
               <span>Floating (2)</span>
               <span>Overlay (3)</span>
@@ -177,14 +174,12 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-              Variant Theme
-            </label>
+            <label className="text-label-secondary text-subhead">Variant Theme</label>
             <Select
               value={config.variant}
               onValueChange={(val) => onChange({ variant: val as VariantType })}
             >
-              <SelectTrigger className="bg-background/50 border-border/40 w-full rounded-lg">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -204,23 +199,19 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
         </div>
 
         {/* ── Texture ── */}
-        <div className="border-border/10 space-y-3 border-t pt-4">
-          <div className="flex items-center gap-1.5">
-            <Palette className="text-primary h-3 w-3" />
-            <h4 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-              Texture
-            </h4>
+        <div className="border-separator space-y-3 border-t pt-4">
+          <div className="flex items-center gap-2">
+            <Palette className="text-tint h-3 w-3" />
+            <h4 className="text-label-secondary text-subhead">Texture</h4>
           </div>
 
           <div className="space-y-2">
-            <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-              Tactile Texture Overlay
-            </label>
+            <label className="text-label-secondary text-subhead">Tactile Texture Overlay</label>
             <Select
               value={config.texture}
               onValueChange={(val) => onChange({ texture: val as TextureType })}
             >
-              <SelectTrigger className="bg-background/50 border-border/40 w-full rounded-lg">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -261,10 +252,8 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                Texture Intensity
-              </label>
-              <span className="text-primary font-mono text-xs font-bold">
+              <label className="text-label-secondary text-subhead">Texture Intensity</label>
+              <span className="text-tint text-caption tabular-nums">
                 {(config.textureOpacity * 100).toFixed(1)}%
               </span>
             </div>
@@ -281,12 +270,8 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
           {config.texture !== "none" && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                  Pattern Scale
-                </label>
-                <span className="text-primary font-mono text-xs font-bold">
-                  {config.patternScale}%
-                </span>
+                <label className="text-label-secondary text-subhead">Pattern Scale</label>
+                <span className="text-tint text-caption font-mono">{config.patternScale}%</span>
               </div>
               <Slider
                 min={50}
@@ -301,22 +286,16 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
         </div>
 
         {/* ── Glass & Refraction ── */}
-        <div className="border-border/10 space-y-3 border-t pt-4">
-          <div className="flex items-center gap-1.5">
+        <div className="border-separator space-y-3 border-t pt-4">
+          <div className="flex items-center gap-2">
             <GlassWater className="h-3 w-3" style={{ color: config.customAccent }} />
-            <h4 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-              Glass & Refraction
-            </h4>
+            <h4 className="text-label-secondary text-subhead">Glass & Refraction</h4>
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                Backdrop Blur
-              </label>
-              <span className="text-primary font-mono text-xs font-bold">
-                {config.blurStrength}px
-              </span>
+              <label className="text-label-secondary text-subhead">Backdrop Blur</label>
+              <span className="text-tint text-caption tabular-nums">{config.blurStrength}px</span>
             </div>
             <Slider
               min={0}
@@ -330,12 +309,8 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                Saturation Boost
-              </label>
-              <span className="text-primary font-mono text-xs font-bold">
-                {config.saturationBoost}%
-              </span>
+              <label className="text-label-secondary text-subhead">Saturation Boost</label>
+              <span className="text-tint text-caption tabular-nums">{config.saturationBoost}%</span>
             </div>
             <Slider
               min={100}
@@ -349,8 +324,8 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
 
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-0.5">
-              <span className="text-foreground text-xs font-semibold">Edge Refraction</span>
-              <span className="text-muted-foreground text-xs">
+              <span className="text-label text-caption">Edge Refraction</span>
+              <span className="text-label-secondary text-footnote">
                 Gradient sheen at material borders
               </span>
             </div>
@@ -362,22 +337,16 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
         </div>
 
         {/* ── Glow & Shadow ── */}
-        <div className="border-border/10 space-y-3 border-t pt-4">
-          <div className="flex items-center gap-1.5">
+        <div className="border-separator space-y-3 border-t pt-4">
+          <div className="flex items-center gap-2">
             <Sun className="h-3 w-3" style={{ color: config.customAccent }} />
-            <h4 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-              Glow & Shadow
-            </h4>
+            <h4 className="text-label-secondary text-subhead">Glow & Shadow</h4>
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                Glow Intensity
-              </label>
-              <span className="text-primary font-mono text-xs font-bold">
-                {config.glowIntensity}%
-              </span>
+              <label className="text-label-secondary text-subhead">Glow Intensity</label>
+              <span className="text-tint text-caption tabular-nums">{config.glowIntensity}%</span>
             </div>
             <Slider
               min={0}
@@ -391,23 +360,16 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
         </div>
 
         {/* ── Depth of Field ── */}
-        <div className="border-border/10 space-y-3 border-t pt-4">
-          <div className="flex items-center gap-1.5">
-            <span
-              className="text-xs font-bold tracking-wider uppercase"
-              style={{ color: config.customAccent }}
-            >
+        <div className="border-separator space-y-3 border-t pt-4">
+          <div className="flex items-center gap-2">
+            <span className="text-eyebrow" style={{ color: config.customAccent }}>
               Depth of Field
             </span>
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                Fore/Background Shift
-              </label>
-              <span className="text-primary font-mono text-xs font-bold">
-                {config.dofStrength}%
-              </span>
+              <label className="text-label-secondary text-subhead">Fore/Background Shift</label>
+              <span className="text-tint text-caption tabular-nums">{config.dofStrength}%</span>
             </div>
             <Slider
               min={0}
@@ -417,7 +379,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
               onValueChange={(val) => onChange({ dofStrength: val[0] ?? 0 })}
               className="py-2"
             />
-            <p className="text-muted-foreground text-xs">
+            <p className="text-label-secondary text-footnote">
               Moves foreground content forward and background elements backward to visualize depth
               layering.
             </p>
@@ -425,23 +387,19 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
         </div>
 
         {/* ── Background ── */}
-        <div className="border-border/10 space-y-3 border-t pt-4">
-          <div className="flex items-center gap-1.5">
+        <div className="border-separator space-y-3 border-t pt-4">
+          <div className="flex items-center gap-2">
             <Palette className="h-3 w-3" style={{ color: config.customAccent }} />
-            <h4 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-              Sandbox Background
-            </h4>
+            <h4 className="text-label-secondary text-subhead">Sandbox Background</h4>
           </div>
 
           <div className="space-y-2">
-            <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-              Background Style
-            </label>
+            <label className="text-label-secondary text-subhead">Background Style</label>
             <Select
               value={config.bgStyle}
               onValueChange={(val) => onChange({ bgStyle: val as BgStyleType })}
             >
-              <SelectTrigger className="bg-background/50 border-border/40 w-full rounded-lg">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -456,9 +414,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
 
           {config.bgStyle !== "refraction" && (
             <div className="space-y-2">
-              <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                Background Color
-              </label>
+              <label className="text-label-secondary text-subhead">Background Color</label>
               <ColorPickerInput
                 value={config.bgCustomColor}
                 onChange={(color: string) => onChange({ bgCustomColor: color })}
@@ -468,16 +424,14 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
         </div>
 
         {/* ── Interactivity ── */}
-        <div className="border-border/10 space-y-3 border-t pt-4">
+        <div className="border-separator space-y-3 border-t pt-4">
           <div className="space-y-2">
-            <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-              Interactivity Profile
-            </label>
+            <label className="text-label-secondary text-subhead">Interactivity Profile</label>
             <Select
               value={config.interactivity}
               onValueChange={(val) => onChange({ interactivity: val as InteractivityType })}
             >
-              <SelectTrigger className="bg-background/50 border-border/40 w-full rounded-lg">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -494,13 +448,11 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
         </div>
 
         {/* ── Toggles ── */}
-        <div className="border-border/10 space-y-3 border-t pt-4">
+        <div className="border-separator space-y-3 border-t pt-4">
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-0.5">
-              <span className="text-foreground text-xs font-semibold">
-                Pointer Light Interactions
-              </span>
-              <span className="text-muted-foreground text-xs">
+              <span className="text-label text-caption">Pointer Light Interactions</span>
+              <span className="text-label-secondary text-footnote">
                 Radial reflection gradient follows mouse coordinates
               </span>
             </div>
@@ -511,6 +463,6 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
           </div>
         </div>
       </div>
-    </div>
+    </FacetCard>
   );
 }

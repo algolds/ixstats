@@ -32,7 +32,7 @@ import Link from "next/link";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 import { createUrl } from "~/lib/utils";
 import { WikiLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import {
   Dialog,
@@ -48,6 +48,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { FacetCard } from "~/components/ui/facet-container";
 
 interface CountryActionsMenuProps {
   targetCountryId: string;
@@ -325,12 +326,16 @@ export function CountryActionsMenu({
                   />
 
                   {recentAchievements && recentAchievements.length > 0 && (
-                    <div className="border-border bg-card flex flex-wrap items-center gap-2 rounded-xl border p-2 pl-4">
-                      <Heart className="text-muted-foreground h-4 w-4 shrink-0" />
+                    <FacetCard
+                      variant="inset"
+                      padding="none"
+                      className="flex flex-wrap items-center gap-2 p-2 pl-4"
+                    >
+                      <Heart className="text-label-secondary h-4 w-4 shrink-0" />
                       <Select value={selectedAchievement} onValueChange={setSelectedAchievement}>
                         <SelectTrigger
                           size="sm"
-                          className="min-w-[140px] flex-1 text-xs"
+                          className="text-footnote min-w-[140px] flex-1"
                           aria-label="Achievement to congratulate"
                         >
                           <SelectValue placeholder="Select achievement…" />
@@ -353,7 +358,7 @@ export function CountryActionsMenu({
                       >
                         {congratulateMutation.isPending ? "Sending…" : "Congratulate"}
                       </Button>
-                    </div>
+                    </FacetCard>
                   )}
                 </ActionGroup>
 
@@ -424,12 +429,15 @@ export function CountryActionsMenu({
               <WikiLinkPreview title={targetCountryName}>
                 <Link
                   href={titleToWikiOSPath(targetCountryName)}
-                  className={ACTION_ROW_CLASS}
+                  className={cn(
+                    buttonVariants({ variant: "bordered", size: "lg" }),
+                    ACTION_ROW_CLASS
+                  )}
                   onClick={onClose}
                 >
-                  <Globe className="text-muted-foreground h-4 w-4" />
+                  <Globe className="text-label-secondary h-4 w-4" />
                   View on IxWiki
-                  <ExternalLink className="text-muted-foreground ml-auto h-3.5 w-3.5" />
+                  <ExternalLink className="text-label-secondary ml-auto h-3.5 w-3.5" />
                 </Link>
               </WikiLinkPreview>
               <ActionRow
@@ -455,7 +463,7 @@ export function CountryActionsMenu({
             </ActionGroup>
 
             {!viewerCountryId && !isOwnCountry && (
-              <p className="border-border text-muted-foreground border-t pt-4 text-center text-xs">
+              <p className="border-separator text-label-secondary text-footnote border-t pt-4 text-center">
                 Login required to perform diplomatic actions
               </p>
             )}
@@ -474,8 +482,8 @@ export function CountryActionsMenu({
   );
 }
 
-const ACTION_ROW_CLASS =
-  "border-border bg-card text-foreground hover:bg-accent focus-visible:ring-ring flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl border px-4 py-2.5 text-sm font-medium transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50";
+/** Action rows: large (44px) bordered Facet buttons, label-aligned. */
+const ACTION_ROW_CLASS = "w-full justify-start gap-3";
 
 /** A titled group of action rows. */
 function ActionGroup({ label, children }: { label: string; children: React.ReactNode }) {
@@ -502,15 +510,16 @@ function ActionRow({
   destructive?: boolean;
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="bordered"
+      size="lg"
       onClick={onClick}
       disabled={disabled}
-      data-cuelume-press=""
       className={cn(ACTION_ROW_CLASS, destructive && "text-destructive")}
     >
-      <Icon className={cn("h-4 w-4", destructive ? "text-destructive" : "text-muted-foreground")} />
+      <Icon className={cn("h-4 w-4", destructive ? "text-destructive" : "text-label-secondary")} />
       {label}
-    </button>
+    </Button>
   );
 }

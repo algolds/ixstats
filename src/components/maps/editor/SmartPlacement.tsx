@@ -97,7 +97,7 @@ function generateSuggestions(props: SmartPlacementProps): Suggestion[] {
       text: "Sheltered coastal waters provide superior maritime access and trade throughput.",
       suggestedType: "port",
       suggestedName: "Port Valen",
-      color: "text-blue-500",
+      color: "text-blue",
       civCapImpact: "+35% Trade CivCap",
     });
   }
@@ -110,7 +110,7 @@ function generateSuggestions(props: SmartPlacementProps): Suggestion[] {
       text: "Rugged elevation and natural chokepoints offer strategic defensive control.",
       suggestedType: props.featureType === "city" ? "fortress" : "military",
       suggestedName: "Kragtor Keep",
-      color: "text-stone-500",
+      color: "text-label-secondary",
       civCapImpact: "+45% Defensive Security",
     });
   } else if (
@@ -124,7 +124,7 @@ function generateSuggestions(props: SmartPlacementProps): Suggestion[] {
       text: "Alluvial soil and abundant fresh water support intensive agriculture and population growth.",
       suggestedType: "city",
       suggestedName: "Oakhaven",
-      color: "text-emerald-500",
+      color: "text-green",
       civCapImpact: "+35% Agricultural Yield",
     });
   }
@@ -137,7 +137,7 @@ function generateSuggestions(props: SmartPlacementProps): Suggestion[] {
       text: "Critical desert aquifer point acting as an inland mercantile nexus.",
       suggestedType: "town",
       suggestedName: "Al-Zahra",
-      color: "text-amber-500",
+      color: "text-yellow",
       civCapImpact: "+20% Trans-Arid Trade",
     });
   } else if (climate.toLowerCase().includes("tropical")) {
@@ -147,7 +147,7 @@ function generateSuggestions(props: SmartPlacementProps): Suggestion[] {
       text: "Lush botanical ecosystem rich in rare timber, spices, and natural lore.",
       suggestedType: props.featureType === "poi" ? "natural" : "city",
       suggestedName: "Verdant Reach",
-      color: "text-green-500",
+      color: "text-green",
       civCapImpact: "+25% Lore Harvest",
     });
   }
@@ -164,67 +164,67 @@ export function SmartPlacement(props: SmartPlacementProps) {
   const metrics = computeCivCapMetrics(elev, climate, props.isCoastal);
 
   return (
-    <FacetCard surface="solid" className="space-y-2.5 rounded-lg p-2.5">
+    <FacetCard className="space-y-2 p-2">
       {/* CivCap Intelligence Header */}
       <div className="flex items-center justify-between">
-        <Eyebrow className="flex items-center gap-1.5">
+        <Eyebrow className="flex items-center gap-2">
           <span>CivCap geographic intelligence</span>
         </Eyebrow>
-        <span className="text-muted-foreground font-mono text-xs">
+        <span className="text-label-secondary text-footnote tabular-nums">
           {elev || "Terrain"} · {climate || "Climate"}
         </span>
       </div>
 
       {/* CivCap Rating Bars */}
-      <div className="grid grid-cols-2 gap-2 text-xs">
-        <div className="bg-muted/40 flex items-center justify-between rounded px-2 py-1">
-          <span className="text-muted-foreground flex items-center gap-1">
-            <Waves className="h-2.5 w-2.5 text-emerald-500" /> Agri Yield
+      <div className="text-footnote grid grid-cols-2 gap-2">
+        <div className="bg-fill-3 rounded-control-sm flex items-center justify-between px-2 py-1">
+          <span className="text-label-secondary flex items-center gap-1">
+            <Waves className="text-green h-2.5 w-2.5" /> Agri Yield
           </span>
-          <span className="font-mono font-semibold">{metrics.agriScore}%</span>
+          <span className="font-semibold tabular-nums">{metrics.agriScore}%</span>
         </div>
-        <div className="bg-muted/40 flex items-center justify-between rounded px-2 py-1">
-          <span className="text-muted-foreground flex items-center gap-1">
-            <Anchor className="h-2.5 w-2.5 text-blue-500" /> Trade Flow
+        <div className="bg-fill-3 rounded-control-sm flex items-center justify-between px-2 py-1">
+          <span className="text-label-secondary flex items-center gap-1">
+            <Anchor className="text-blue h-2.5 w-2.5" /> Trade Flow
           </span>
-          <span className="font-mono font-semibold">{metrics.tradeScore}%</span>
+          <span className="font-semibold tabular-nums">{metrics.tradeScore}%</span>
         </div>
-        <div className="bg-muted/40 flex items-center justify-between rounded px-2 py-1">
-          <span className="text-muted-foreground flex items-center gap-1">
-            <Shield className="h-2.5 w-2.5 text-stone-500" /> Defense
+        <div className="bg-fill-3 rounded-control-sm flex items-center justify-between px-2 py-1">
+          <span className="text-label-secondary flex items-center gap-1">
+            <Shield className="text-label-secondary h-2.5 w-2.5" /> Defense
           </span>
-          <span className="font-mono font-semibold">{metrics.defenseScore}%</span>
+          <span className="font-semibold tabular-nums">{metrics.defenseScore}%</span>
         </div>
-        <div className="bg-muted/40 flex items-center justify-between rounded px-2 py-1">
-          <span className="text-muted-foreground flex items-center gap-1">
-            <Droplets className="h-2.5 w-2.5 text-cyan-500" /> Water Table
+        <div className="bg-fill-3 rounded-control-sm flex items-center justify-between px-2 py-1">
+          <span className="text-label-secondary flex items-center gap-1">
+            <Droplets className="text-cyan h-2.5 w-2.5" /> Water Table
           </span>
-          <span className="font-mono font-semibold">{metrics.waterScore}%</span>
+          <span className="font-semibold tabular-nums">{metrics.waterScore}%</span>
         </div>
       </div>
 
       {/* Smart Suggestions */}
       {suggestions.length > 0 && (
-        <div className="border-border/40 space-y-1.5 border-t pt-1">
+        <div className="border-separator space-y-2 border-t pt-1">
           {suggestions.map((s, i) => {
             const Icon = s.icon;
             return (
               <div
                 key={i}
-                className="group border-border/40 bg-card/40 hover:bg-card/90 flex flex-col gap-1 rounded-md border p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                className="group border-separator bg-surface hover:bg-surface rounded-control-sm flex flex-col gap-1 border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs font-medium">
+                  <div className="text-caption flex items-center gap-2">
                     <Icon className={`h-3 w-3 shrink-0 ${s.color}`} />
-                    <span className="text-foreground">{s.title}</span>
+                    <span className="text-label">{s.title}</span>
                   </div>
                   {s.civCapImpact && (
-                    <span className="font-mono text-xs font-semibold text-emerald-500">
+                    <span className="text-caption text-green font-semibold tabular-nums">
                       {s.civCapImpact}
                     </span>
                   )}
                 </div>
-                <p className="text-muted-foreground text-xs leading-tight">{s.text}</p>
+                <p className="text-label-secondary text-footnote leading-tight">{s.text}</p>
                 {props.onApplySuggestion && s.suggestedType && (
                   <Button
                     variant="secondary"
@@ -234,7 +234,7 @@ export function SmartPlacement(props: SmartPlacementProps) {
                   >
                     <span>Apply Type: {s.suggestedType}</span>
                     {s.suggestedName && (
-                      <span className="text-muted-foreground font-normal">({s.suggestedName})</span>
+                      <span className="text-label-secondary font-normal">({s.suggestedName})</span>
                     )}
                   </Button>
                 )}

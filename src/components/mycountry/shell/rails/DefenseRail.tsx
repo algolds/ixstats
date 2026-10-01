@@ -140,11 +140,11 @@ export function DefenseRail({ countryId }: { countryId: string }) {
             return (
               <RailRow key={b.id}>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-foreground min-w-0 truncate font-medium">
+                  <span className="text-label min-w-0 truncate font-medium">
                     {b.name ?? b.branchType ?? "Military branch"}
                   </span>
                   <span
-                    className="text-foreground shrink-0 tabular-nums"
+                    className="text-label shrink-0 tabular-nums"
                     title={`${(personnel / 1000).toFixed(1)}k personnel`}
                   >
                     <span className={STATUS_TEXT[tone]}>{Math.round(readiness)}%</span> ·{" "}
@@ -181,7 +181,7 @@ export function DefenseRail({ countryId }: { countryId: string }) {
                       critical ? STATUS_TEXT.critical : STATUS_TEXT.warning
                     )}
                   />
-                  <span className="text-foreground truncate font-medium">
+                  <span className="text-label truncate font-medium">
                     {threat.threatName ?? threat.name ?? "Threat vector"}
                   </span>
                 </div>

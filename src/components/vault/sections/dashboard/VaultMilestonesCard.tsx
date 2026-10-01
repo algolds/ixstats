@@ -3,7 +3,6 @@
 import React from "react";
 import { Trophy, Trophy as Award } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { FacetCard } from "~/components/ui/facet-container";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 
@@ -65,56 +64,55 @@ export function VaultMilestonesCard({
   ];
 
   return (
+    // v2 (c5c6b382): a glass showcase card with the dot texture.
     <FacetCard
-      depth={2}
-      className={cn(
-        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:border-amber-500/30 hover:shadow-amber-500/10"
-      )}
+      variant="glass"
+      padding="lg"
+      texture="dots"
+      textureOpacity={0.03}
+      className="overflow-hidden"
     >
-      <TextureOverlay texture="dots" opacity={0.03} />
-
-      <div className="border-border/40 relative z-10 mb-4 flex items-center justify-between border-b pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/15 text-amber-600 shadow-sm backdrop-blur-md dark:text-amber-400">
-            <Trophy className="h-4.5 w-4.5 text-amber-600 dark:text-amber-400" />
+      <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
+        <div className="flex items-center gap-2">
+          <div className="rounded-row bg-tint-fill text-tint shadow-card flex h-8 w-8 items-center justify-center border font-medium">
+            <Trophy aria-hidden className="text-yellow h-4.5 w-4.5" />
           </div>
-          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Milestones & Rank
-          </span>
+          <span className="text-label-secondary text-eyebrow">Milestones & rank</span>
         </div>
-        <span className="flex items-center gap-1 font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
-          <Award className="h-3.5 w-3.5" /> {myRank} ({totalScore} pts)
+        <span className="text-footnote text-yellow-ink flex items-center gap-1 font-semibold">
+          <Award aria-hidden className="h-3.5 w-3.5" />
+          <span className={cn(myRank !== "Unranked" && "font-data tabular-nums")}>{myRank}</span>
+          <span>
+            (<span className="font-data tabular-nums">{totalScore}</span> pts)
+          </span>
         </span>
       </div>
 
-      <div className="space-y-3.5">
+      <div className="space-y-4">
         {milestones.map((m, idx) => {
           const progress = Math.min(100, Math.round((m.current / m.max) * 100));
           const isComplete = progress >= 100;
 
           return (
-            <div
-              key={idx}
-              className="border-border/40 bg-muted/30 hover:bg-muted/60 space-y-1.5 rounded-2xl border p-3 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] dark:bg-white/5 dark:hover:bg-white/10"
-            >
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-foreground font-bold tracking-tight">{m.title}</span>
-                <span className="text-muted-foreground font-mono text-xs font-semibold">
+            <div key={idx} className="border-separator bg-fill-4 rounded-card space-y-2 border p-3">
+              <div className="text-footnote flex items-center justify-between">
+                <span className="text-label font-semibold">{m.title}</span>
+                <span className="text-label-secondary text-footnote font-data font-semibold tabular-nums">
                   {m.current.toLocaleString()} / {m.max.toLocaleString()}
                 </span>
               </div>
-              <div className="border-border/50 bg-muted/40 h-2 w-full overflow-hidden rounded-full border p-0.5 backdrop-blur-md">
+              <div className="border-separator bg-fill-3 h-2 w-full overflow-hidden rounded-full border p-0.5">
                 <div
                   className={cn(
-                    "h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500",
-                    isComplete ? "bg-amber-500" : "bg-indigo-500"
+                    "ease-out-facet h-full rounded-full transition-[width] duration-500",
+                    isComplete ? "bg-yellow" : "bg-indigo"
                   )}
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <div className="text-muted-foreground flex items-center justify-between text-xs">
+              <div className="text-label-secondary text-footnote flex items-center justify-between">
                 <span>{m.target}</span>
-                <span className="font-semibold text-amber-600 dark:text-amber-400">{m.reward}</span>
+                <span className="text-yellow-ink font-semibold">{m.reward}</span>
               </div>
             </div>
           );

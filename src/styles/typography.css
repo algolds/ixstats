@@ -298,6 +298,29 @@
   descent-override: 24%;
   line-gap-override: 0%;
 }
+/* 800/900 back the Facet 3.1 heavy headings (OFL, Google Fonts); until the files are in public/fonts the browser falls back to 700. */
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/Schibsted Grotesk-800.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  ascent-override: 96%;
+  descent-override: 24%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/Schibsted Grotesk-900.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  ascent-override: 96%;
+  descent-override: 24%;
+  line-gap-override: 0%;
+}
 
 /* --- 6. Azeret Mono ---
    public/fonts has the 500, 600 and 700 weights only: weight 400 is answered by the 500 face (the
@@ -337,140 +360,45 @@
 }
 
 /* ==========================================================================
-   Typography Blueprint Presets & Fallback Chains
+   Typography presets & fallback chains
+
+   Layered in `@layer base`. Facet 3 §3: letter-spacing lives in the text
+   styles, never in `.font-*` classes, so this file no longer redefines
+   Tailwind's `.font-sans/.font-mono/.font-serif` or `.tabular-nums`, and the
+   unused named scale (`text-display-hero` … `text-map-label`) and
+   `.font-display/.font-wiki-sans/.font-onoma/.font-ipa` were deleted.
+
+   Font stacks: `--font-sans/-mono/-serif/-display` are owned by `@theme` in
+   styles/facet/tokens.css (Facet 3 §3). This file keeps the @font-face faces,
+   the wiki/Onoma/IPA stacks and the legacy `national`/`sovereign` preset
+   override, which stays while src/lib/design/appearance.ts still writes
+   `data-typography` (Facet 3 removes presets in Phase 4 settings work).
    ========================================================================== */
 
-/* Blueprint 2: Modernist Swiss (Akzidenz-Grotesk + Schibsted Grotesk + Azeret Mono - Default) */
-:root,
-[data-typography="swiss"] {
-  --font-preset-sans: "Schibsted Grotesk", "Akzidenz-Grotesk", ui-sans-serif, sans-serif;
-  --font-sans: "Schibsted Grotesk", "Akzidenz-Grotesk", ui-sans-serif, sans-serif;
-  --font-display: "Akzidenz-Grotesk", "Schibsted Grotesk", ui-sans-serif, sans-serif;
-  --font-mono: "Azeret Mono", "DINPro", ui-monospace, monospace;
-  --font-serif: "Baskerville 10 Pro", "Baskerville", ui-serif, Georgia, serif;
-  --font-wiki-sans: "Host Grotesk", "Schibsted Grotesk", ui-sans-serif, sans-serif;
-  --font-onoma: "Schibsted Grotesk", ui-sans-serif, sans-serif;
-  --font-ipa: "Charis SIL", "Gentium Plus", "Doulos SIL", "Lucida Sans Unicode", ui-serif, serif;
-}
+@layer base {
+  /* Swiss (the default): the sans/mono/serif/display stacks come from @theme (tokens.css). */
+  :root {
+    --font-wiki-sans: "Host Grotesk", "Schibsted Grotesk", ui-sans-serif, sans-serif;
+    --font-onoma: "Schibsted Grotesk", ui-sans-serif, sans-serif;
+    --font-ipa: "Charis SIL", "Gentium Plus", "Doulos SIL", "Lucida Sans Unicode", ui-serif, serif;
+  }
 
-/* Blueprint 1: Klim National (Sovereign Editorial Modernism) */
-[data-typography="national"],
-[data-typography="sovereign"] {
-  --font-preset-sans: "National", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-sans: "National", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-display: "Neutraface 2", "Neutraface Text", ui-sans-serif, sans-serif;
-  --font-mono: "DINPro", ui-monospace, monospace;
-  --font-serif: "Baskerville 10 Pro", "Baskerville", ui-serif, Georgia, serif;
-  --font-wiki-sans: "Host Grotesk", "National", ui-sans-serif, sans-serif;
-  --font-onoma: "National", ui-sans-serif, sans-serif;
-  --font-ipa: "Charis SIL", "Gentium Plus", "Doulos SIL", "Lucida Sans Unicode", ui-serif, serif;
-}
+  /* Blueprint 1: Klim National (Sovereign Editorial Modernism) */
+  [data-typography="national"],
+  [data-typography="sovereign"] {
+    --font-sans: "National", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Neutraface 2", "Neutraface Text", ui-sans-serif, sans-serif;
+    --font-mono: "DINPro", ui-monospace, monospace;
+    --font-serif: "Baskerville 10 Pro", "Baskerville", ui-serif, Georgia, serif;
+    --font-wiki-sans: "Host Grotesk", "National", ui-sans-serif, sans-serif;
+    --font-onoma: "National", ui-sans-serif, sans-serif;
+    --font-ipa: "Charis SIL", "Gentium Plus", "Doulos SIL", "Lucida Sans Unicode", ui-serif, serif;
+  }
 
-/* ==========================================================================
-   Scale Tokens (Composed via Custom Property --ls)
-   ========================================================================== */
-
-.text-display-hero {
-  font-size: clamp(32px, 4vw, 40px);
-  line-height: 1.10;
-  --ls: -0.015em;
-}
-
-.text-section-title {
-  font-size: clamp(20px, 2.5vw, 24px);
-  line-height: 1.20;
-  --ls: -0.008em;
-}
-
-.text-card-header {
-  font-size: 15px;
-  line-height: 1.30;
-  --ls: 0em;
-}
-
-.text-body-standard {
-  font-size: 13px;
-  line-height: 1.45;
-  --ls: 0em;
-}
-
-.text-ui-compact {
-  font-size: 11.5px;
-  line-height: 1.35;
-  --ls: 0.020em;
-}
-
-.text-micro-badge {
-  font-size: 9.5px;
-  line-height: 1.00;
-  --ls: 0.045em;
-  text-transform: uppercase;
-}
-
-.text-telemetry {
-  font-size: 15px;
-  line-height: 1.00;
-  --ls: 0.015em;
-}
-
-.text-map-label {
-  font-size: 12px;
-  line-height: 1.00;
-  --ls: 0.20em;
-  text-transform: uppercase;
-}
-
-/* ==========================================================================
-   Family Classes (Font + Weight Defaults, Tracking from --ls)
-   ========================================================================== */
-
-body {
-  font-family: var(--font-sans);
-  letter-spacing: var(--ls, 0em);
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.font-display {
-  font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: var(--ls, -0.008em);
-}
-
-.font-sans {
-  font-family: var(--font-sans);
-  letter-spacing: var(--ls, 0em);
-}
-
-.font-mono {
-  font-family: var(--font-mono);
-  font-feature-settings: "tnum" 1, "zero" 1;
-  letter-spacing: var(--ls, 0.015em);
-}
-
-.font-serif {
-  font-family: var(--font-serif);
-  letter-spacing: var(--ls, 0.010em);
-}
-
-.font-wiki-sans {
-  font-family: var(--font-wiki-sans);
-  letter-spacing: var(--ls, 0em);
-}
-
-.font-onoma {
-  font-family: var(--font-onoma);
-  letter-spacing: var(--ls, 0em);
-}
-
-.font-ipa {
-  font-family: var(--font-ipa);
-  font-style: normal;
-  letter-spacing: var(--ls, 0.02em);
-}
-
-/* Tabular Numerals Utility */
-.tabular-nums {
-  font-feature-settings: "tnum" 1, "zero" 1;
+  body {
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 }

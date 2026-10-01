@@ -2,7 +2,7 @@
 // src/app/(forum)/forum/page.tsx
 // Forum index — categories view by default, thread feed for Trending/New.
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FireFlame as Flame, Clock, HomeSimple as HomeIcon } from "iconoir-react";
@@ -12,9 +12,19 @@ import { ThreadListItem } from "~/components/forum/reader/ThreadListItem";
 import { ForumPagination } from "~/components/forum/reader/Pagination";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { withBasePath } from "~/lib/base-path";
+import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
 import { api } from "~/trpc/react";
+import { buttonVariants } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Skeleton } from "~/components/ui/skeleton";
 
 type ViewMode = "categories" | "trending" | "new";
+
+const TINT_RULE: CSSProperties = {
+  backgroundImage:
+    "linear-gradient(to right, transparent, color-mix(in srgb, var(--tint) 20%, transparent), transparent)",
+};
 
 export default function ForumIndexPage() {
   const { clearForumPage } = useForumContext();
@@ -69,18 +79,21 @@ export default function ForumIndexPage() {
 
   return (
     <ForumLayout>
+      {/* Phone title under the new navigation shell (nothing with the flag off). */}
+      <ShellPageHeader title="Forum" className="max-w-4xl px-0 sm:px-0" />
       {/* Header — only shown for trending/new feed views */}
       {viewMode !== "categories" && (
         <div className="mx-auto mb-6 max-w-4xl">
-          <h1 className="text-2xl font-bold text-[var(--forum-text)]">
-            {viewMode === "trending" ? "Trending Threads" : "New Posts"}
+          <h1 className="text-large-title text-label">
+            {viewMode === "trending" ? "Trending threads" : "New posts"}
           </h1>
-          <p className="mt-1.5 text-sm text-[var(--forum-text-dim)]">
+          <p className="text-body text-label-secondary mt-1">
             {viewMode === "trending"
               ? "Most active discussions across all forums"
               : "Latest threads and activity"}
           </p>
-          <div className="mt-3 h-px w-full bg-gradient-to-r from-transparent via-[var(--forum-accent)]/20 to-transparent" />
+          {/* v2 header rule: a hairline of the Forum tint fading out at both ends. */}
+          <div aria-hidden="true" className="mt-3 h-px w-full" style={TINT_RULE} />
         </div>
       )}
 
@@ -89,32 +102,32 @@ export default function ForumIndexPage() {
         <div className="mb-4 flex items-center gap-2">
           <Link
             href={withBasePath("/forum")}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-[var(--forum-text-dim)] transition-colors hover:text-[var(--forum-text-muted)]"
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
           >
-            <HomeIcon className="h-3.5 w-3.5" />
-            All Forums
+            <HomeIcon />
+            All forums
           </Link>
           <Link
             href={withBasePath("/forum?sort=trending")}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              viewMode === "trending"
-                ? "bg-orange-500/15 text-orange-400"
-                : "text-[var(--forum-text-dim)] hover:text-[var(--forum-text-muted)]"
-            }`}
+            aria-current={viewMode === "trending" ? "page" : undefined}
+            className={buttonVariants({
+              variant: viewMode === "trending" ? "tinted" : "ghost",
+              size: "sm",
+            })}
           >
-            <Flame className="h-3.5 w-3.5" />
+            <Flame />
             Trending
           </Link>
           <Link
             href={withBasePath("/forum?sort=new")}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              viewMode === "new"
-                ? "bg-orange-500/15 text-orange-400"
-                : "text-[var(--forum-text-dim)] hover:text-[var(--forum-text-muted)]"
-            }`}
+            aria-current={viewMode === "new" ? "page" : undefined}
+            className={buttonVariants({
+              variant: viewMode === "new" ? "tinted" : "ghost",
+              size: "sm",
+            })}
           >
-            <Clock className="h-3.5 w-3.5" />
-            New Posts
+            <Clock />
+            New posts
           </Link>
         </div>
       )}
@@ -122,7 +135,7 @@ export default function ForumIndexPage() {
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="forum-skeleton h-16 w-full rounded-xl" />
+            <Skeleton key={i} className="rounded-row h-16 w-full" />
           ))}
         </div>
       ) : viewMode === "categories" ? (
@@ -165,7 +178,7 @@ export default function ForumIndexPage() {
           })}
 
           {orphanForums.length > 0 && (
-            <div className="glass-forum-parent space-y-0.5 overflow-hidden p-1">
+            <FacetCard className="overflow-hidden">
               {orphanForums.map((forum: any) => (
                 <ForumCategoryCard
                   key={forum.nodeId}
@@ -180,29 +193,23 @@ export default function ForumIndexPage() {
                   lastThreadId={forum.lastThreadId}
                 />
               ))}
-            </div>
+            </FacetCard>
           )}
 
-          {forums.length === 0 && (
-            <div className="py-12 text-center text-sm text-[var(--forum-text-dim)]">
-              No forums available.
-            </div>
-          )}
+          {forums.length === 0 && <EmptyState title="No forums available" />}
         </div>
       ) : (
         /* ─── Thread Feed View (Trending / New) ─── */
         <div>
-          <div className="glass-forum-parent overflow-hidden p-1">
+          <FacetCard className="overflow-hidden">
             {(threadsData?.threads ?? []).map((thread: any) => (
               <ThreadListItem key={thread.threadId} {...thread} />
             ))}
 
             {(threadsData?.threads ?? []).length === 0 && (
-              <div className="py-12 text-center text-sm text-[var(--forum-text-dim)]">
-                No threads found.
-              </div>
+              <EmptyState compact title="No threads found" />
             )}
-          </div>
+          </FacetCard>
 
           {threadsData?.pagination && threadsData.pagination.last_page > 1 && (
             <ForumPagination

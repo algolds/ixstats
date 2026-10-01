@@ -1,7 +1,7 @@
 "use client";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useEffect, useRef, useCallback, useState } from "react";
 import { MapPin, WarningTriangle as AlertTriangle, CheckCircle } from "iconoir-react";
@@ -302,11 +302,11 @@ export function MapPickerModal({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="facet-modal flex h-[550px] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-3xl">
+      <DialogContent className="rounded-card flex h-[550px] flex-col gap-0 overflow-hidden p-0 sm:max-w-3xl">
         {/* Header */}
-        <DialogHeader className="border-border border-b px-6 py-4 pr-12">
+        <DialogHeader className="border-separator border-b px-6 py-4 pr-12">
           <DialogTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-blue-500" aria-hidden />
+            <MapPin className="text-blue h-5 w-5" aria-hidden />
             {title}
           </DialogTitle>
         </DialogHeader>
@@ -318,14 +318,14 @@ export function MapPickerModal({
               role="status"
               className="bg-map-ocean absolute inset-0 flex flex-col items-center justify-center gap-3"
             >
-              <Skeleton className="h-3 w-40 bg-white/10" />
-              <p className="text-sm text-white/70">Loading map data…</p>
+              <Skeleton className="bg-fill-4 h-3 w-40" />
+              <p className="text-body text-white/70">Loading map data…</p>
             </div>
           ) : !geometry ? (
             <div className="bg-map-ocean absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 text-center text-white">
-              <AlertTriangle className="h-10 w-10 text-amber-500" aria-hidden />
-              <p className="text-sm font-semibold">No map boundary linked</p>
-              <p className="max-w-xs text-xs text-white/70">
+              <AlertTriangle className="text-yellow h-10 w-10" aria-hidden />
+              <p className="text-headline">No map boundary linked</p>
+              <p className="text-footnote max-w-xs text-white/70">
                 Your country has no boundary coordinates assigned. Contact an administrator to link
                 it.
               </p>
@@ -337,16 +337,16 @@ export function MapPickerModal({
 
               {/* Status overlay */}
               <div className="pointer-events-none absolute top-4 right-4 left-4 z-10">
-                <FacetContainer
-                  depth={2}
+                <FacetMaterial
+                  material="regular"
                   role="status"
-                  className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold"
+                  className="rounded-control text-caption inline-flex items-center gap-2 px-3 py-2 font-semibold"
                 >
                   {selectedCoords ? (
                     isValid ? (
                       <>
-                        <CheckCircle className="h-4 w-4 shrink-0 text-emerald-500" aria-hidden />
-                        <span className="text-foreground">
+                        <CheckCircle className="text-green h-4 w-4 shrink-0" aria-hidden />
+                        <span className="text-label">
                           Valid location: {selectedCoords[1].toFixed(5)}&deg;,{" "}
                           {selectedCoords[0].toFixed(5)}&deg;
                         </span>
@@ -361,27 +361,27 @@ export function MapPickerModal({
                     )
                   ) : (
                     <>
-                      <MapPin className="text-muted-foreground h-4 w-4 shrink-0" aria-hidden />
-                      <span className="text-foreground">
+                      <MapPin className="text-label-secondary h-4 w-4 shrink-0" aria-hidden />
+                      <span className="text-label">
                         Click on the map inside your borders to select a point
                       </span>
                     </>
                   )}
-                </FacetContainer>
+                </FacetMaterial>
               </div>
             </>
           )}
         </div>
 
         {/* Footer */}
-        <div className="border-border flex items-center justify-end gap-3 border-t px-6 py-4">
+        <div className="border-separator flex items-center justify-end gap-3 border-t px-6 py-4">
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button
             onClick={handleConfirm}
             disabled={!selectedCoords || isValid === false || !mapReady}
-            className="bg-blue-600 text-white hover:bg-blue-600/90"
+            className="bg-blue text-on-blue hover:bg-blue/90"
           >
             Confirm selection
           </Button>

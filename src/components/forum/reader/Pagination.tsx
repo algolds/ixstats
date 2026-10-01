@@ -3,7 +3,7 @@
 // Forum pagination component.
 
 import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
 
 interface PaginationProps {
   currentPage: number;
@@ -28,42 +28,44 @@ export function ForumPagination({ currentPage, lastPage, onPageChange }: Paginat
 
   return (
     <div className="forum-pagination">
-      <button
+      <Button
+        variant="gray"
+        size="icon"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage <= 1}
-        className="forum-pagination-btn"
         aria-label="Previous page"
       >
         <ChevronLeft className="h-4 w-4" />
-      </button>
+      </Button>
 
       {pages.map((page, idx) =>
         page === "ellipsis" ? (
-          <span key={`e-${idx}`} className="px-1 text-[var(--forum-text-dim)]">
+          <span key={`e-${idx}`} className="text-label-secondary px-1">
             ...
           </span>
         ) : (
-          <button
+          <Button
             key={page}
+            variant={page === currentPage ? "filled" : "gray"}
             onClick={() => onPageChange(page)}
-            className={cn(
-              "forum-pagination-btn",
-              page === currentPage && "forum-pagination-btn-active"
-            )}
+            aria-label={`Page ${page}`}
+            aria-current={page === currentPage ? "page" : undefined}
+            className="min-w-(--control-height) px-2 tabular-nums"
           >
             {page}
-          </button>
+          </Button>
         )
       )}
 
-      <button
+      <Button
+        variant="gray"
+        size="icon"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage >= lastPage}
-        className="forum-pagination-btn"
         aria-label="Next page"
       >
         <ChevronRight className="h-4 w-4" />
-      </button>
+      </Button>
     </div>
   );
 }

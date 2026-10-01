@@ -67,49 +67,49 @@ export function MessagesViewDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="bg-background/80 border-border/50 text-card-foreground backdrop-blur-md sm:max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
-            <Info className="text-primary h-5 w-5" />
+          <DialogTitle className="text-title-3 flex items-center gap-2">
+            <Info className="text-tint size-5" aria-hidden="true" />
             Conversation Details
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Metadata Cards */}
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="bg-muted/40 border-border/20 flex flex-col gap-1 rounded-xl border p-3">
-              <span className="text-muted-foreground flex items-center gap-1 text-xs font-medium">
-                <Users className="h-3.5 w-3.5" /> Type
+          <div className="text-body grid grid-cols-2 gap-3">
+            <div className="bg-surface-secondary rounded-row flex flex-col gap-1 p-3">
+              <span className="text-footnote text-label-secondary flex items-center gap-1">
+                <Users className="size-3.5" aria-hidden="true" /> Type
               </span>
-              <span className="text-foreground font-semibold">
+              <span className="text-headline text-label">
                 {conversation.source === "thinktank" || conversation.type === "group"
                   ? "ThinkTank Group"
                   : `${formatType(conversation.type)} Chat`}
               </span>
             </div>
-            <div className="bg-muted/40 border-border/20 flex flex-col gap-1 rounded-xl border p-3">
-              <span className="text-muted-foreground flex items-center gap-1 text-xs font-medium">
-                <Calendar className="h-3.5 w-3.5" /> Created
+            <div className="bg-surface-secondary rounded-row flex flex-col gap-1 p-3">
+              <span className="text-footnote text-label-secondary flex items-center gap-1">
+                <Calendar className="size-3.5" aria-hidden="true" /> Created
               </span>
-              <span className="text-foreground font-semibold">{createdDate}</span>
+              <span className="text-headline text-label">{createdDate}</span>
             </div>
             {conversation.conversationType && (
-              <div className="bg-muted/40 border-border/20 flex flex-col gap-1 rounded-xl border p-3">
-                <span className="text-muted-foreground flex items-center gap-1 text-xs font-medium">
-                  <Shield className="h-3.5 w-3.5" /> Category
+              <div className="bg-surface-secondary rounded-row flex flex-col gap-1 p-3">
+                <span className="text-footnote text-label-secondary flex items-center gap-1">
+                  <Shield className="size-3.5" aria-hidden="true" /> Category
                 </span>
-                <span className="text-foreground font-semibold">
+                <span className="text-headline text-label">
                   {formatType(conversation.conversationType)}
                 </span>
               </div>
             )}
             {conversation.diplomaticClassification && (
-              <div className="bg-muted/40 border-border/20 flex flex-col gap-1 rounded-xl border p-3">
-                <span className="text-muted-foreground flex items-center gap-1 text-xs font-medium">
-                  <AlertCircle className="h-3.5 w-3.5" /> Classification
+              <div className="bg-surface-secondary rounded-row flex flex-col gap-1 p-3">
+                <span className="text-footnote text-label-secondary flex items-center gap-1">
+                  <AlertCircle className="size-3.5" aria-hidden="true" /> Classification
                 </span>
-                <span className="text-foreground font-mono text-xs font-semibold tracking-wider text-red-500">
+                <span className="text-headline text-destructive font-mono">
                   {conversation.diplomaticClassification}
                 </span>
               </div>
@@ -118,18 +118,18 @@ export function MessagesViewDetailsModal({
 
           {/* Participant List */}
           <div className="space-y-3">
-            <h4 className="text-foreground/80 flex items-center gap-1.5 px-1 text-sm font-semibold">
-              <Users className="text-muted-foreground h-4 w-4" />
+            <h4 className="text-headline text-label flex items-center gap-2 px-1">
+              <Users className="text-label-secondary size-4" aria-hidden="true" />
               Participants ({conversation.otherParticipants.length + 1})
             </h4>
 
             <div className="max-h-60 space-y-2 overflow-y-auto pr-1">
               {/* Current User */}
               {currentUser && (
-                <div className="bg-muted/20 border-border/10 flex items-center gap-3 rounded-lg border p-2">
-                  <Avatar className="h-8 w-8">
+                <div className="bg-surface-secondary rounded-control flex items-center gap-3 p-2">
+                  <Avatar className="size-8">
                     <AvatarImage src={currentUser.profileImageUrl ?? undefined} />
-                    <AvatarFallback className="bg-indigo-600 text-xs font-semibold text-white">
+                    <AvatarFallback className="bg-tint-fill text-caption text-tint">
                       {(currentUser.displayName ?? currentUser.username ?? "Me")
                         .split(" ")
                         .map((n) => n[0])
@@ -138,18 +138,18 @@ export function MessagesViewDetailsModal({
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">
+                    <p className="text-headline text-label truncate">
                       {displayNamePreference === "account"
                         ? currentUser.username
                           ? `@${currentUser.username}`
                           : "Me"
                         : (currentUser.displayName ?? "Me")}{" "}
-                      <span className="text-muted-foreground text-xs font-normal italic">
+                      <span className="text-label-secondary text-footnote font-normal italic">
                         (You)
                       </span>
                     </p>
                     {currentUser.username && (
-                      <p className="text-muted-foreground truncate text-xs">
+                      <p className="text-label-secondary text-footnote truncate">
                         @{currentUser.username}
                       </p>
                     )}
@@ -161,11 +161,11 @@ export function MessagesViewDetailsModal({
               {conversation.otherParticipants.map((participant) => (
                 <div
                   key={participant.accountId}
-                  className="bg-muted/10 border-border/10 flex items-center gap-3 rounded-lg border p-2"
+                  className="bg-surface-secondary rounded-control flex items-center gap-3 p-2"
                 >
-                  <Avatar className="h-8 w-8">
+                  <Avatar className="size-8">
                     <AvatarImage src={participant.account.profileImageUrl ?? undefined} />
-                    <AvatarFallback className="bg-emerald-600 text-xs font-semibold text-white">
+                    <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
                       {participant.account.displayName
                         .split(" ")
                         .map((n) => n[0])
@@ -174,10 +174,10 @@ export function MessagesViewDetailsModal({
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">
+                    <p className="text-headline text-label truncate">
                       {getDisplayName(participant.account)}
                     </p>
-                    <p className="text-muted-foreground truncate text-xs">
+                    <p className="text-label-secondary text-footnote truncate">
                       @{participant.account.username}
                     </p>
                   </div>

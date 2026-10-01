@@ -77,9 +77,9 @@ export default function CollectionDetailPage() {
   if (!collection) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-        <Card className="facet-hierarchy-child max-w-md">
+        <Card className="max-w-md">
           <CardContent className="p-8 text-center">
-            <p className="mb-4 text-lg font-semibold text-white">Collection not found</p>
+            <p className="text-title-3 text-label mb-4 font-semibold">Collection not found</p>
             <Button onClick={() => router.push("/vault/collections")}>Back to Collections</Button>
           </CardContent>
         </Card>
@@ -172,14 +172,14 @@ export default function CollectionDetailPage() {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="facet-hierarchy-child gap-2">
+        <TabsList className="bg-surface-secondary border-separator gap-2 border">
           <TabsTrigger
             value="grid"
             className={cn(
-              "rounded-lg px-4 py-2 text-sm font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+              "rounded-control text-body px-4 py-2 font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               activeTab === "grid"
-                ? "glass-hierarchy-interactive text-white"
-                : "text-white/60 hover:text-white/80"
+                ? "bg-fill-3 text-label"
+                : "text-label-secondary hover:text-label"
             )}
           >
             <Grid3x3 className="mr-2 h-4 w-4" />
@@ -188,10 +188,10 @@ export default function CollectionDetailPage() {
           <TabsTrigger
             value="carousel"
             className={cn(
-              "rounded-lg px-4 py-2 text-sm font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+              "rounded-control text-body px-4 py-2 font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               activeTab === "carousel"
-                ? "glass-hierarchy-interactive text-white"
-                : "text-white/60 hover:text-white/80"
+                ? "bg-fill-3 text-label"
+                : "text-label-secondary hover:text-label"
             )}
           >
             <Sparkles className="mr-2 h-4 w-4" />
@@ -200,10 +200,10 @@ export default function CollectionDetailPage() {
           <TabsTrigger
             value="comments"
             className={cn(
-              "rounded-lg px-4 py-2 text-sm font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+              "rounded-control text-body px-4 py-2 font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               activeTab === "comments"
-                ? "glass-hierarchy-interactive text-white"
-                : "text-white/60 hover:text-white/80"
+                ? "bg-fill-3 text-label"
+                : "text-label-secondary hover:text-label"
             )}
           >
             <MessageCircle className="mr-2 h-4 w-4" />
@@ -214,28 +214,27 @@ export default function CollectionDetailPage() {
         <TabsContent value="grid">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-white sm:text-2xl">Cards in Collection</h2>
+              <h2 className="text-title-2 text-label sm:text-title-1">Cards in Collection</h2>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="facet-hierarchy-child">
+                <Button variant="outline" size="sm" className="bg-surface-secondary border">
                   <Filter className="mr-2 h-4 w-4" />
                   Filter
                 </Button>
-                <Button
-                  size="sm"
-                  className="from-gold-500 bg-gradient-to-r to-orange-500 text-black"
-                >
+                <Button size="sm" className="text-black">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Cards
                 </Button>
               </div>
             </div>
 
-            <Card className="facet-hierarchy-child">
+            <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <Grid3x3 className="mb-4 h-16 w-16 text-white/20" />
-                <p className="mb-2 text-lg font-semibold text-white">CardGrid Component</p>
-                <p className="text-sm text-white/60">Card grid will display collection cards</p>
-                <p className="mt-2 text-xs text-white/50">
+                <Grid3x3 className="text-label-tertiary mb-4 h-16 w-16" />
+                <p className="text-title-3 text-label mb-2 font-semibold">CardGrid Component</p>
+                <p className="text-body text-label-secondary">
+                  Card grid will display collection cards
+                </p>
+                <p className="text-footnote text-label-secondary mt-2">
                   Filter: {cardFilter || "none"} • Cards: {cards.length}
                 </p>
               </CardContent>

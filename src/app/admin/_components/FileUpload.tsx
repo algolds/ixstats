@@ -36,19 +36,19 @@ export function FileUpload({ onFileSelect, isUploading, isAnalyzing }: FileUploa
 
   return (
     <div
-      className="border-border hover:border-border/80 rounded-lg border-2 border-dashed p-6 transition-colors"
+      className="border-separator hover:border-separator rounded-control border-2 border-dashed p-6 transition-colors"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
       <div className="text-center">
         {isAnalyzing || isUploading ? (
-          <Loader2 className="text-muted-foreground mx-auto h-12 w-12 animate-spin" />
+          <Loader2 className="text-label-secondary mx-auto h-12 w-12 animate-spin" />
         ) : (
-          <Upload className="text-muted-foreground mx-auto h-12 w-12" />
+          <Upload className="text-label-secondary mx-auto h-12 w-12" />
         )}
         <div className="mt-4">
           <label htmlFor="file-upload" className="cursor-pointer">
-            <span className="text-foreground mt-2 block text-sm font-medium">
+            <span className="text-label text-body mt-2 block font-medium">
               Upload Excel roster file
             </span>
             <input
@@ -60,7 +60,7 @@ export function FileUpload({ onFileSelect, isUploading, isAnalyzing }: FileUploa
               onChange={handleFileChange}
               disabled={isUploading || isAnalyzing}
             />
-            <div className="text-muted-foreground mt-2 text-xs">
+            <div className="text-label-secondary text-footnote mt-2">
               {isAnalyzing
                 ? "Analyzing changes..."
                 : isUploading
@@ -69,7 +69,7 @@ export function FileUpload({ onFileSelect, isUploading, isAnalyzing }: FileUploa
             </div>
           </label>
         </div>
-        <div className="text-muted-foreground mt-4 text-xs">
+        <div className="text-label-secondary text-footnote mt-4">
           <p>• Supports .xlsx / .xls formats only</p>
           <p>• Excel files should have headers in the first row</p>
           <p>• Required columns: Country, Population, GDP PC</p>

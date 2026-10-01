@@ -15,8 +15,9 @@ import {
 } from "iconoir-react";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { sanitizeUserContent } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
+
 import type { StashedPageItem } from "./types";
+import { Button } from "~/components/ui/button";
 
 interface StashPagesListProps {
   items: StashedPageItem[];
@@ -30,7 +31,7 @@ function StashNote({ note }: { note: string }) {
 
   return (
     <div
-      className="rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)]/70 p-3 text-xs leading-relaxed text-[var(--wikios-text-muted)] italic shadow-2xs"
+      className="rounded-row border-separator bg-surface text-footnote text-label-secondary border p-3 leading-relaxed italic"
       dangerouslySetInnerHTML={markup}
     />
   );
@@ -41,14 +42,14 @@ function StashArticleThumbnail({ thumbUrl, title }: { thumbUrl?: string | null; 
 
   if (!thumbUrl || hasError) {
     return (
-      <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] text-[var(--wikios-accent)] opacity-85 shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover/title:border-[var(--wikios-accent)] group-hover/title:opacity-100 sm:h-14 sm:w-14">
+      <div className="rounded-row border-separator bg-surface text-tint group-hover/title:border-tint relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden border opacity-85 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover/title:opacity-100 sm:h-14 sm:w-14">
         <WikiOSLogomark className="h-6 w-6" />
       </div>
     );
   }
 
   return (
-    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover/title:border-[var(--wikios-accent)] sm:h-14 sm:w-14">
+    <div className="rounded-row border-separator bg-surface group-hover/title:border-tint relative h-12 w-12 shrink-0 overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] sm:h-14 sm:w-14">
       <img
         src={thumbUrl}
         alt={title}
@@ -74,23 +75,22 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
         return (
           <div
             key={item.id}
-            className="group relative flex flex-col gap-3 overflow-hidden rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-4 shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-[var(--wikios-border)]/80 hover:bg-[var(--wikios-surface)]/90 hover:shadow-md"
+            className="group rounded-card border-separator bg-surface hover:border-separator hover:bg-surface hover:shadow-card relative flex flex-col gap-3 overflow-hidden border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
           >
             {/* Header Lockup & Title Link */}
             <div className="flex items-start justify-between gap-3">
               <Link
                 href={withBasePath(`/wiki/${item.pageSlug}`)}
-                onClick={() => soundEffects.press()}
                 className="group/title flex min-w-0 flex-1 items-center gap-3"
               >
                 {/* Article Image / WikiOS Logomark Thumbnail Box */}
                 <StashArticleThumbnail thumbUrl={thumbUrl} title={cleanTitle} />
 
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate text-sm font-bold tracking-tight text-[var(--wikios-text)] transition-colors group-hover/title:text-[var(--wikios-accent)]">
+                  <h3 className="text-headline text-label group-hover/title:text-tint truncate transition-colors">
                     {cleanTitle}
                   </h3>
-                  <div className="flex flex-wrap items-center gap-2.5 pt-0.5 text-xs text-[var(--wikios-text-dim)]">
+                  <div className="text-footnote text-label-secondary flex flex-wrap items-center gap-2 pt-0.5">
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
                       {new Date(item.savedAt).toLocaleDateString("en-US", {
@@ -100,13 +100,13 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
                       })}
                     </span>
                     {annotations.length > 0 && (
-                      <span className="py-0.2 bg-margin-accent/15 dark:text-margin-accent flex items-center gap-1 rounded-md border border-yellow-400/40 px-2 text-xs font-bold text-stone-950">
+                      <span className="py-0.2 bg-margin-accent/15 rounded-control-sm border-yellow/40 text-caption text-label flex items-center gap-1 border px-2 font-semibold">
                         <Highlighter className="h-2.5 w-2.5" />
                         {annotations.length} highlight{annotations.length !== 1 ? "s" : ""}
                       </span>
                     )}
                     {item.note && (
-                      <span className="py-0.2 flex items-center gap-1 rounded-md border border-indigo-500/30 bg-indigo-500/15 px-2 text-xs font-bold text-indigo-400">
+                      <span className="py-0.2 rounded-control-sm border-indigo/30 bg-indigo/15 text-caption text-indigo flex items-center gap-1 border px-2 font-semibold">
                         <StickyNote className="h-2.5 w-2.5" />
                         Note
                       </span>
@@ -119,26 +119,26 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
               <div className="flex shrink-0 items-center gap-1">
                 <Link
                   href={withBasePath(`/wiki/${item.pageSlug}`)}
-                  onClick={() => soundEffects.press()}
-                  className="flex items-center gap-1 rounded-xl border border-[var(--wikios-border)] bg-white/5 px-2.5 py-1 text-xs font-semibold text-[var(--wikios-text-muted)] shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-95"
+                  className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex items-center gap-1 border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
                   title="Read article"
                 >
                   <span>Read</span>
                   <ArrowRight className="h-3 w-3" />
                 </Link>
 
-                <button
-                  type="button"
+                <Button
+                  variant="bordered"
+                  size="icon-sm"
+                  aria-label="Remove from collection"
                   onClick={(e) => {
                     e.stopPropagation();
-                    soundEffects.release();
                     onUnstash(item.pageTitle, item.contentType);
                   }}
-                  className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-xl border border-[var(--wikios-border)] bg-white/5 text-[var(--wikios-text-dim)] shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-400 active:scale-95"
                   title="Remove from collection"
+                  className="bg-fill-4 text-label-secondary hover:border-red/30 hover:bg-red/10 hover:text-red"
                 >
                   <X className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             </div>
 

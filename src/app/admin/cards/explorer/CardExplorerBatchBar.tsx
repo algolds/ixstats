@@ -16,6 +16,14 @@ import {
 import { LoreCategory } from "~/lib/cards/category-enums";
 import { getCategoryLabel } from "~/lib/cards/category-theme";
 import type { CardRarity } from "@prisma/client";
+import { Badge } from "~/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 interface CardExplorerBatchBarProps {
   total: number;
@@ -58,126 +66,124 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
     <>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
-          <div className="border-primary/30 bg-primary/10 rounded-xl border p-2.5 backdrop-blur-md">
-            <SlidersHorizontal className="text-primary h-5 w-5" />
+          <div className="border-tint/30 bg-tint-fill rounded-row border p-3">
+            <SlidersHorizontal className="text-tint h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-foreground text-xl font-bold tracking-tight">Card Explorer</h3>
+            <h3 className="text-label text-title-2">Card Explorer</h3>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            onClick={() => setIsBulkModalOpen(true)}
-            className="border-primary/30 bg-primary/20 text-primary hover:bg-primary/30 h-8 rounded-xl border text-xs font-semibold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
-          >
-            <EyeOff className="mr-1.5 h-3.5 w-3.5" />
+          <Button variant="tinted" size="sm" onClick={() => setIsBulkModalOpen(true)}>
+            <EyeOff className="mr-2 h-3.5 w-3.5" />
             Bulk Visibility Controls
           </Button>
-          <span className="border-border bg-card/60 text-foreground inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold backdrop-blur-md">
-            <Layers className="text-primary h-3.5 w-3.5" />
-            Showing <strong className="text-foreground">{loadedCount}</strong> of{" "}
-            <strong className="text-foreground">{total.toLocaleString()}</strong>
-          </span>
+          <Badge variant="neutral" className="gap-2">
+            <Layers className="text-tint h-3.5 w-3.5" />
+            Showing <strong className="text-label">{loadedCount}</strong> of{" "}
+            <strong className="text-label">{total.toLocaleString()}</strong>
+          </Badge>
         </div>
       </div>
 
       <Dialog open={isBulkModalOpen} onOpenChange={setIsBulkModalOpen}>
-        <DialogContent className="border-border bg-card text-card-foreground max-w-lg backdrop-blur-xl">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold">Bulk Visibility & Takedowns</DialogTitle>
-            <DialogDescription className="text-xs">
+            <DialogTitle>Bulk Visibility & Takedowns</DialogTitle>
+            <DialogDescription>
               Batch update the visibility/retired status of cards matching selected filters.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-3 py-2 text-xs">
+          <div className="text-footnote space-y-3 py-2">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-muted-foreground mb-1 block text-xs font-medium">
+                <label className="text-label-secondary text-caption mb-1 block">
                   Target Category
                 </label>
-                <select
+                <Select
                   value={bulkCategoryFilter}
-                  onChange={(e) => setBulkCategoryFilter(e.target.value as any)}
-                  className="border-border bg-card text-foreground hover:bg-accent h-8.5 w-full rounded-xl border px-2.5 text-xs font-medium focus:outline-none"
+                  onValueChange={(v) => setBulkCategoryFilter(v as any)}
                 >
-                  <option value="all">All Categories</option>
-                  {Object.values(LoreCategory).map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat} — {getCategoryLabel(cat)}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {Object.values(LoreCategory).map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat} — {getCategoryLabel(cat)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
-                <label className="text-muted-foreground mb-1 block text-xs font-medium">
-                  Source Type
-                </label>
-                <select
-                  value={bulkTargetType}
-                  onChange={(e) => setBulkTargetType(e.target.value as any)}
-                  className="border-border bg-card text-foreground hover:bg-accent h-8.5 w-full rounded-xl border px-2.5 text-xs font-medium focus:outline-none"
-                >
-                  <option value="all">All Sources</option>
-                  <option value="LORE">Lore Cards Only</option>
-                  <option value="NS_IMPORT">NS Imports Only</option>
-                  <option value="USER_CUSTOM">User Custom Only</option>
-                  <option value="COMMONS_IMPORT">Commons Imports</option>
-                </select>
+                <label className="text-label-secondary text-caption mb-1 block">Source Type</label>
+                <Select value={bulkTargetType} onValueChange={(v) => setBulkTargetType(v as any)}>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sources</SelectItem>
+                    <SelectItem value="LORE">Lore Cards Only</SelectItem>
+                    <SelectItem value="NS_IMPORT">NS Imports Only</SelectItem>
+                    <SelectItem value="USER_CUSTOM">User Custom Only</SelectItem>
+                    <SelectItem value="COMMONS_IMPORT">Commons Imports</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="text-muted-foreground mb-1 block text-xs font-medium">
+                <label className="text-label-secondary text-caption mb-1 block">
                   Nation Status
                 </label>
-                <select
-                  value={bulkCteFilter}
-                  onChange={(e) => setBulkCteFilter(e.target.value as any)}
-                  className="border-border bg-card text-foreground hover:bg-accent h-8.5 w-full rounded-xl border px-2.5 text-xs font-medium focus:outline-none"
-                >
-                  <option value="all">All</option>
-                  <option value="active">Active</option>
-                  <option value="cte">CTE</option>
-                </select>
+                <Select value={bulkCteFilter} onValueChange={(v) => setBulkCteFilter(v as any)}>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="cte">CTE</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
-                <label className="text-muted-foreground mb-1 block text-xs font-medium">
-                  Season
-                </label>
-                <select
-                  value={bulkSeason}
-                  onChange={(e) => setBulkSeason(e.target.value as any)}
-                  className="border-border bg-card text-foreground hover:bg-accent h-8.5 w-full rounded-xl border px-2.5 text-xs font-medium focus:outline-none"
-                >
-                  <option value="all">All</option>
-                  <option value="1">Season 1</option>
-                  <option value="2">Season 2</option>
-                  <option value="3">Season 3</option>
-                </select>
+                <label className="text-label-secondary text-caption mb-1 block">Season</label>
+                <Select value={bulkSeason} onValueChange={(v) => setBulkSeason(v as any)}>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="1">Season 1</SelectItem>
+                    <SelectItem value="2">Season 2</SelectItem>
+                    <SelectItem value="3">Season 3</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
-                <label className="text-muted-foreground mb-1 block text-xs font-medium">
-                  Rarity
-                </label>
-                <select
-                  value={bulkRarity}
-                  onChange={(e) => setBulkRarity(e.target.value as any)}
-                  className="border-border bg-card text-foreground hover:bg-accent h-8.5 w-full rounded-xl border px-2.5 text-xs font-medium focus:outline-none"
-                >
-                  <option value="all">All</option>
-                  <option value="COMMON">Common</option>
-                  <option value="UNCOMMON">Uncommon</option>
-                  <option value="RARE">Rare</option>
-                  <option value="ULTRA_RARE">Ultra Rare</option>
-                  <option value="EPIC">Epic</option>
-                  <option value="LEGENDARY">Legendary</option>
-                </select>
+                <label className="text-label-secondary text-caption mb-1 block">Rarity</label>
+                <Select value={bulkRarity} onValueChange={(v) => setBulkRarity(v as any)}>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="COMMON">Common</SelectItem>
+                    <SelectItem value="UNCOMMON">Uncommon</SelectItem>
+                    <SelectItem value="RARE">Rare</SelectItem>
+                    <SelectItem value="ULTRA_RARE">Ultra Rare</SelectItem>
+                    <SelectItem value="EPIC">Epic</SelectItem>
+                    <SelectItem value="LEGENDARY">Legendary</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -186,18 +192,10 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
             <Button variant="ghost" onClick={() => setIsBulkModalOpen(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={() => onBulkExecute(true)}
-              disabled={isPending}
-              className="bg-rose-500 font-semibold text-white hover:bg-rose-600"
-            >
+            <Button variant="destructive" onClick={() => onBulkExecute(true)} disabled={isPending}>
               Hide Matching Cards
             </Button>
-            <Button
-              onClick={() => onBulkExecute(false)}
-              disabled={isPending}
-              className="bg-emerald-600 font-semibold text-white hover:bg-emerald-700"
-            >
+            <Button onClick={() => onBulkExecute(false)} disabled={isPending}>
               Restore Matching Cards
             </Button>
           </DialogFooter>

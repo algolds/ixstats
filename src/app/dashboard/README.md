@@ -37,6 +37,12 @@ The former `/dashboard/world`, `/dashboard/diplomacy`, `/dashboard/feed`, and
 - **Left rail widgets**: player/nation widget with Mail / Issues / Actions
   quick-actions and active-crisis banner, `VaultWidget`, and quick links.
 - `NewVersionNotice` alert banner; `BlurbSection` daily-prompt widget.
+- **Widget identity (Facet 3.1)**: each sidebar widget is a `CutoutCard` in its v2
+  hue — Trending orange, Blurb indigo, Countries blue, Economic tiers green, Quick
+  links cyan, player indigo — via `accent="…" retint` (the player's quick-action
+  tiles use `facetAccentStyle` + `facet-retint`). Widget titles are
+  `CutoutCardHeader as="h2"` under the page's visually hidden `h1` ("Dashboard");
+  the pressable Blurb card is itself the button, so its "Respond" pill is visual.
 
 ## Architecture
 

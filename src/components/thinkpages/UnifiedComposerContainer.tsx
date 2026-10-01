@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import { EditPencil as PenSquare, Group as Users } from "iconoir-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { GlassCanvasComposer } from "./GlassCanvasComposer";
 import { EnhancedAccountManager } from "./EnhancedAccountManager";
@@ -43,7 +44,7 @@ export function UnifiedComposerContainer({
   // If hiding accounts tab, show only composer without tabs
   if (hideAccountsTab) {
     return (
-      <Card className="glass-hierarchy-interactive border-blue-500/30 bg-blue-500/5">
+      <div>
         {selectedAccount ? (
           <GlassCanvasComposer
             account={selectedAccount}
@@ -58,39 +59,33 @@ export function UnifiedComposerContainer({
             repostData={repostData}
           />
         ) : (
-          <div className="p-8 text-center">
-            <div className="text-muted-foreground mb-4">
-              <Users className="mx-auto mb-3 h-12 w-12 opacity-50" />
-              <h3 className="mb-2 text-lg font-semibold">No Account Selected</h3>
-              <p className="text-sm">Please select an account to start posting</p>
-            </div>
-          </div>
+          <FacetCard>
+            <EmptyState
+              icon={<Users />}
+              title="No Account Selected"
+              message="Please select an account to start posting"
+            />
+          </FacetCard>
         )}
-      </Card>
+      </div>
     );
   }
 
   return (
-    <Card className="glass-hierarchy-interactive border-blue-500/30 bg-blue-500/5">
+    <FacetCard>
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as "compose" | "accounts")}
         className="w-full"
       >
-        <div className="border-b border-white/10 p-4">
-          <TabsList className="grid w-full grid-cols-2 bg-white/5">
-            <TabsTrigger
-              value="compose"
-              className="flex items-center gap-2 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400"
-            >
-              <PenSquare className="h-4 w-4" />
+        <div className="border-separator border-b p-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="compose" className="gap-2" aria-label="Compose">
+              <PenSquare className="size-4" aria-hidden="true" />
               <span className="hidden sm:inline">Compose</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="accounts"
-              className="flex items-center gap-2 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400"
-            >
-              <Users className="h-4 w-4" />
+            <TabsTrigger value="accounts" className="gap-2" aria-label="Accounts">
+              <Users className="size-4" aria-hidden="true" />
               <span className="hidden sm:inline">Accounts</span>
             </TabsTrigger>
           </TabsList>
@@ -113,17 +108,17 @@ export function UnifiedComposerContainer({
               repostData={repostData}
             />
           ) : (
-            <div className="p-8 text-center">
-              <div className="text-muted-foreground mb-4">
-                <Users className="mx-auto mb-3 h-12 w-12 opacity-50" />
-                <h3 className="mb-2 text-lg font-semibold">Select an Account to Compose</h3>
-                <p className="text-sm">Choose an account from the Accounts tab to start posting</p>
-              </div>
-              <Button variant="outline" onClick={() => setActiveTab("accounts")} className="mt-4">
-                <Users className="mr-2 h-4 w-4" />
-                Manage Accounts
-              </Button>
-            </div>
+            <EmptyState
+              icon={<Users />}
+              title="Select an Account to Compose"
+              message="Choose an account from the Accounts tab to start posting"
+              action={
+                <Button variant="bordered" onClick={() => setActiveTab("accounts")}>
+                  <Users aria-hidden="true" />
+                  Manage Accounts
+                </Button>
+              }
+            />
           )}
         </TabsContent>
 
@@ -139,6 +134,6 @@ export function UnifiedComposerContainer({
           />
         </TabsContent>
       </Tabs>
-    </Card>
+    </FacetCard>
   );
 }

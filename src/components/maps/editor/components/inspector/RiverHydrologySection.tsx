@@ -90,10 +90,10 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
 
   const flowRegime = useMemo(() => {
     if (gradientMPerKm == null) return null;
-    if (gradientMPerKm >= 15) return { label: "High Alpine / Torrential", tone: "text-amber-500" };
-    if (gradientMPerKm >= 5) return { label: "Upland / Rapid Flow", tone: "text-cyan-500" };
-    if (gradientMPerKm >= 1.5) return { label: "Valley / Moderate Run", tone: "text-blue-500" };
-    return { label: "Lowland / Meandering", tone: "text-emerald-500" };
+    if (gradientMPerKm >= 15) return { label: "High Alpine / Torrential", tone: "text-yellow" };
+    if (gradientMPerKm >= 5) return { label: "Upland / Rapid Flow", tone: "text-cyan" };
+    if (gradientMPerKm >= 1.5) return { label: "Valley / Moderate Run", tone: "text-blue" };
+    return { label: "Lowland / Meandering", tone: "text-green" };
   }, [gradientMPerKm]);
 
   const courseDirection = useMemo(() => {
@@ -103,41 +103,41 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
   }, [source, mouth, coords.length]);
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-2">
       {/* Primary River Metrics */}
       <div className="grid grid-cols-2 gap-2">
-        <FacetCard surface="solid" className="min-w-0 rounded-lg p-2">
+        <FacetCard className="min-w-0 p-2">
           <Eyebrow className="block truncate">Course length</Eyebrow>
           <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
-            <span className="text-foreground truncate font-mono text-sm font-semibold tracking-tight tabular-nums">
+            <span className="text-label text-headline truncate tabular-nums">
               {lengthKm != null ? Math.round(lengthKm).toLocaleString() : "—"}
             </span>
             {lengthKm != null && (
-              <span className="text-muted-foreground shrink-0 font-sans text-xs font-normal">
+              <span className="text-label-secondary text-footnote shrink-0 font-sans font-normal">
                 km
               </span>
             )}
           </div>
           {lengthMi != null && (
-            <span className="text-muted-foreground mt-0.5 block font-mono text-xs tabular-nums">
+            <span className="text-label-secondary text-footnote mt-0.5 block tabular-nums">
               ~{Math.round(lengthMi).toLocaleString()} mi
             </span>
           )}
         </FacetCard>
 
-        <FacetCard surface="solid" className="min-w-0 rounded-lg p-2">
+        <FacetCard className="min-w-0 p-2">
           <Eyebrow className="block truncate">Course geometry</Eyebrow>
           <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
-            <span className="text-foreground truncate font-mono text-sm font-semibold tracking-tight tabular-nums">
+            <span className="text-label text-headline truncate tabular-nums">
               {coords.length.toLocaleString()}
             </span>
-            <span className="text-muted-foreground shrink-0 font-sans text-xs font-normal">
+            <span className="text-label-secondary text-footnote shrink-0 font-sans font-normal">
               nodes
             </span>
           </div>
           {courseDirection && (
-            <div className="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs">
-              <Compass className="h-3 w-3 shrink-0 text-cyan-500" />
+            <div className="text-label-secondary text-footnote mt-0.5 flex items-center gap-1">
+              <Compass className="text-cyan h-3 w-3 shrink-0" />
               <span className="truncate">{courseDirection}</span>
             </div>
           )}
@@ -145,44 +145,44 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
       </div>
 
       {/* Headwaters & Mouth Limnology */}
-      <FacetCard surface="solid" className="space-y-2 rounded-lg p-2.5">
+      <FacetCard className="space-y-2 p-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <Waves className="h-3.5 w-3.5 text-cyan-500" />
+          <div className="flex items-center gap-2">
+            <Waves className="text-cyan h-3.5 w-3.5" />
             <Eyebrow>Hydrological Profile</Eyebrow>
           </div>
           {(sourceSample.isLoading || mouthSample.isLoading) && (
-            <div className="border-muted-foreground/20 h-2.5 w-2.5 animate-spin rounded-full border-2 border-t-cyan-500" />
+            <div className="border-separator border-t-cyan h-2.5 w-2.5 animate-spin rounded-full border-2" />
           )}
         </div>
 
         {/* Source vs Mouth comparison */}
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="border-border/30 bg-muted/20 min-w-0 space-y-1 rounded p-2">
+        <div className="text-footnote grid grid-cols-2 gap-2">
+          <div className="border-separator bg-fill-4 rounded-control-sm min-w-0 space-y-1 p-2">
             <Eyebrow className="block">Headwaters (Source)</Eyebrow>
-            <p className="text-foreground font-mono text-xs font-semibold tabular-nums">
+            <p className="text-label text-caption font-semibold tabular-nums">
               {sourceElev != null ? `${sourceElev.toLocaleString()} m` : "—"}
             </p>
-            <span className="text-muted-foreground block truncate text-xs">
+            <span className="text-label-secondary text-footnote block truncate">
               {sourceSample.data?.zoneName || (source ? "Highland" : "No source")}
             </span>
             {source && (
-              <span className="text-muted-foreground/50 block truncate font-mono text-xs tabular-nums">
+              <span className="text-label-tertiary text-footnote block truncate font-mono tabular-nums">
                 {source[1].toFixed(2)}°, {source[0].toFixed(2)}°
               </span>
             )}
           </div>
 
-          <div className="border-border/30 bg-muted/20 min-w-0 space-y-1 rounded p-2">
+          <div className="border-separator bg-fill-4 rounded-control-sm min-w-0 space-y-1 p-2">
             <Eyebrow className="block">Terminus (Mouth)</Eyebrow>
-            <p className="text-foreground font-mono text-xs font-semibold tabular-nums">
+            <p className="text-label text-caption font-semibold tabular-nums">
               {mouthElev != null ? `${mouthElev.toLocaleString()} m` : "—"}
             </p>
-            <span className="text-muted-foreground block truncate text-xs">
+            <span className="text-label-secondary text-footnote block truncate">
               {mouthSample.data?.zoneName || (mouth ? "Coastal / Lowland" : "No terminus")}
             </span>
             {mouth && (
-              <span className="text-muted-foreground/50 block truncate font-mono text-xs tabular-nums">
+              <span className="text-label-tertiary text-footnote block truncate font-mono tabular-nums">
                 {mouth[1].toFixed(2)}°, {mouth[0].toFixed(2)}°
               </span>
             )}
@@ -190,24 +190,24 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
         </div>
 
         {/* Elevation Drop & Gradient */}
-        <div className="border-border/30 bg-muted/20 space-y-1.5 rounded p-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Total drop</span>
-            <span className="text-foreground font-mono font-medium tabular-nums">
+        <div className="border-separator bg-fill-4 rounded-control-sm space-y-2 p-2">
+          <div className="text-footnote flex items-center justify-between">
+            <span className="text-label-secondary">Total drop</span>
+            <span className="text-label font-medium tabular-nums">
               {elevDropM != null ? `${elevDropM.toLocaleString()} m` : "—"}
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Mean gradient</span>
-            <span className="text-foreground font-mono font-medium tabular-nums">
+          <div className="text-footnote flex items-center justify-between">
+            <span className="text-label-secondary">Mean gradient</span>
+            <span className="text-label font-medium tabular-nums">
               {gradientMPerKm != null ? `${gradientMPerKm.toFixed(1)} m/km` : "—"}
             </span>
           </div>
 
           {flowRegime && (
-            <div className="border-border/20 flex items-center justify-between border-t pt-0.5 text-xs">
-              <span className="text-muted-foreground">Flow regime</span>
+            <div className="border-separator text-footnote flex items-center justify-between border-t pt-0.5">
+              <span className="text-label-secondary">Flow regime</span>
               <span className={`font-medium ${flowRegime.tone}`}>{flowRegime.label}</span>
             </div>
           )}

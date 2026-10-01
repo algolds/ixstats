@@ -13,6 +13,11 @@ import { ForumLayout } from "~/components/forum/shared/ForumLayout";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { timeAgo as formatTimeAgo } from "~/lib/format/compact";
+import { buttonVariants } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
+import { FacetCard } from "~/components/ui/facet-container";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { Skeleton } from "~/components/ui/skeleton";
 
 export default function ForumStashesPage() {
   const { data, isLoading, error } = api.forum.getStashedThreads.useQuery(
@@ -27,24 +32,27 @@ export default function ForumStashesPage() {
       <div className="mx-auto mb-6 max-w-4xl">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-[var(--forum-text)]">Stashed Threads</h1>
-            <p className="mt-1 text-sm text-[var(--forum-text-dim)]">
+            <h1 className="text-large-title text-label">Stashed threads</h1>
+            <p className="text-body text-label-secondary mt-1">
               Forum threads you&apos;ve saved for later
             </p>
           </div>
           <Link
             href={withBasePath("/stashes")}
             prefetch={false}
-            className="flex items-center gap-1.5 rounded-lg border border-[var(--forum-border)] px-3 py-1.5 text-xs font-medium text-[var(--forum-text-dim)] transition-colors hover:border-[var(--forum-accent-border)] hover:text-[var(--forum-accent)]"
+            className={buttonVariants({ variant: "gray", size: "sm" })}
           >
-            All Stashes
-            <ExternalLink className="h-3 w-3" />
+            All stashes
+            <ExternalLink />
           </Link>
         </div>
       </div>
 
       {error && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+        <div
+          role="alert"
+          className="bg-destructive/10 text-destructive text-body rounded-row px-4 py-3"
+        >
           {error.message}
         </div>
       )}
@@ -52,41 +60,41 @@ export default function ForumStashesPage() {
       {isLoading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="forum-skeleton h-16 w-full rounded-xl" />
+            <Skeleton key={i} className="rounded-row h-16 w-full" />
           ))}
         </div>
       ) : threads.length > 0 ? (
-        <div className="glass-forum-parent overflow-hidden p-1">
-          {threads.map((thread) => (
-            <Link
-              key={thread.id}
-              href={withBasePath(thread.slug)}
-              className="glass-forum-child group mb-0.5 flex items-center gap-3 p-3"
-            >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-500/10 text-orange-400">
-                <MessageSquare className="h-4 w-4" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium text-[var(--forum-text)] transition-colors group-hover:text-[var(--forum-accent)]">
-                  {thread.title}
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-[var(--forum-text-dim)]">
-                  <Clock className="h-3 w-3" />
-                  Saved {formatTimeAgo(thread.savedAt)}
-                </div>
-              </div>
-              <Bookmark className="h-4 w-4 shrink-0 fill-[var(--forum-accent)] text-[var(--forum-accent)]" />
-            </Link>
-          ))}
-        </div>
+        <FacetList>
+          <FacetListSection>
+            {threads.map((thread) => (
+              <FacetRow
+                key={thread.id}
+                href={withBasePath(thread.slug)}
+                leading={
+                  <span className="bg-tint-fill text-tint rounded-control flex size-9 items-center justify-center">
+                    <MessageSquare className="size-4" />
+                  </span>
+                }
+                title={thread.title}
+                subtitle={
+                  <span className="flex items-center gap-2">
+                    <Clock className="size-3.5" />
+                    Saved {formatTimeAgo(thread.savedAt)}
+                  </span>
+                }
+                trailing={<Bookmark className="fill-tint text-tint size-4" />}
+              />
+            ))}
+          </FacetListSection>
+        </FacetList>
       ) : (
-        <div className="glass-forum-parent p-8 text-center">
-          <Bookmark className="mx-auto mb-3 h-10 w-10 text-[var(--forum-accent)] opacity-30" />
-          <h2 className="text-sm font-medium text-[var(--forum-text)]">No stashed threads yet</h2>
-          <p className="mx-auto mt-2 max-w-md text-xs text-[var(--forum-text-dim)]">
-            Click the bookmark icon on any forum post to save the thread to your stash for later.
-          </p>
-        </div>
+        <FacetCard>
+          <EmptyState
+            icon={<Bookmark />}
+            title="No stashed threads yet"
+            message="Click the bookmark icon on any forum post to save the thread to your stash for later."
+          />
+        </FacetCard>
       )}
     </ForumLayout>
   );

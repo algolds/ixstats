@@ -3,6 +3,7 @@
 import React from "react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
 
 export interface TeamInfo {
   id: string;
@@ -41,10 +42,9 @@ export function Scoreboard({
 
   return (
     <FacetCard
-      depth={2}
       interactive="hover"
       className={cn(
-        "border-border/40 bg-card/90 mx-auto w-full max-w-[360px] overflow-hidden rounded-3xl border shadow-xl",
+        "border-separator bg-surface rounded-sheet shadow-card mx-auto w-full max-w-[360px] overflow-hidden border",
         className
       )}
     >
@@ -52,12 +52,12 @@ export function Scoreboard({
         <div className="flex flex-col gap-4">
           {/* Home Team */}
           <div className="flex items-center gap-3">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={() => onTeamClick?.(homeTeam.id)}
-              className="group flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left hover:underline"
+              className="group h-auto min-w-0 flex-1 justify-start gap-3 p-0 text-left font-normal whitespace-normal hover:bg-transparent hover:underline"
             >
-              <div className="border-border/40 bg-background flex aspect-square w-9 shrink-0 items-center justify-center rounded-full border p-1 shadow-sm">
+              <div className="border-separator bg-background shadow-card flex aspect-square w-9 shrink-0 items-center justify-center rounded-full border p-1">
                 {homeTeam.logo ? (
                   <img
                     src={homeTeam.logo}
@@ -69,7 +69,7 @@ export function Scoreboard({
                     viewBox="0 0 420 420"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-full w-full transition-transform group-hover:scale-110"
+                    className="h-full w-full transition-transform"
                     style={{ color: homeColor }}
                   >
                     <path
@@ -79,17 +79,17 @@ export function Scoreboard({
                   </svg>
                 )}
               </div>
-              <div className="text-foreground min-w-0">
-                <div className="truncate text-sm font-semibold">{homeTeam.name}</div>
+              <div className="text-label min-w-0">
+                <div className="text-headline truncate">{homeTeam.name}</div>
                 {homeTeam.city && (
-                  <div className="text-muted-foreground mt-0.5 text-xs leading-none font-medium tracking-wider uppercase">
+                  <div className="text-label-secondary text-eyebrow mt-0.5 leading-none">
                     {homeTeam.city}
                   </div>
                 )}
               </div>
-            </button>
+            </Button>
             {isCompleted && (
-              <span className="text-foreground shrink-0 text-lg font-bold tabular-nums">
+              <span className="text-label text-title-3 shrink-0 tabular-nums">
                 {homeScore ?? 0}
               </span>
             )}
@@ -98,7 +98,7 @@ export function Scoreboard({
           {/* VS Divider with Title */}
           <div className="flex items-center gap-2">
             <div className="bg-border/40 h-[1px] flex-1"></div>
-            <span className="text-muted-foreground/60 text-xs font-bold tracking-wider uppercase flex items-center gap-1">
+            <span className="text-label-tertiary text-eyebrow flex items-center gap-1">
               <span>{title}</span>
             </span>
             <div className="bg-border/40 h-[1px] flex-1"></div>
@@ -106,12 +106,12 @@ export function Scoreboard({
 
           {/* Away Team */}
           <div className="flex items-center gap-3">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={() => onTeamClick?.(awayTeam.id)}
-              className="group flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left hover:underline"
+              className="group h-auto min-w-0 flex-1 justify-start gap-3 p-0 text-left font-normal whitespace-normal hover:bg-transparent hover:underline"
             >
-              <div className="border-border/40 bg-background flex aspect-square w-9 shrink-0 items-center justify-center rounded-full border p-1 shadow-sm">
+              <div className="border-separator bg-background shadow-card flex aspect-square w-9 shrink-0 items-center justify-center rounded-full border p-1">
                 {awayTeam.logo ? (
                   <img
                     src={awayTeam.logo}
@@ -123,7 +123,7 @@ export function Scoreboard({
                     viewBox="0 0 420 420"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-full w-full transition-transform group-hover:scale-110"
+                    className="h-full w-full transition-transform"
                     style={{ color: awayColor }}
                   >
                     <path
@@ -133,17 +133,17 @@ export function Scoreboard({
                   </svg>
                 )}
               </div>
-              <div className="text-foreground min-w-0">
-                <div className="truncate text-sm font-semibold">{awayTeam.name}</div>
+              <div className="text-label min-w-0">
+                <div className="text-headline truncate">{awayTeam.name}</div>
                 {awayTeam.city && (
-                  <div className="text-muted-foreground mt-0.5 text-xs leading-none font-medium tracking-wider uppercase">
+                  <div className="text-label-secondary text-eyebrow mt-0.5 leading-none">
                     {awayTeam.city}
                   </div>
                 )}
               </div>
-            </button>
+            </Button>
             {isCompleted && (
-              <span className="text-foreground shrink-0 text-lg font-bold tabular-nums">
+              <span className="text-label text-title-3 shrink-0 tabular-nums">
                 {awayScore ?? 0}
               </span>
             )}
@@ -151,7 +151,7 @@ export function Scoreboard({
         </div>
 
         {date && (
-          <div className="text-muted-foreground mt-4 border-t border-white/5 pt-3 text-center text-xs">
+          <div className="text-label-secondary border-separator text-footnote mt-4 border-t pt-3 text-center">
             {date}
           </div>
         )}

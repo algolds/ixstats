@@ -56,20 +56,20 @@ export function GeographyContent() {
   );
 
   if (!countryId) {
-    return <p className="text-muted-foreground text-sm">No country context.</p>;
+    return <p className="text-label-secondary text-body">No country context.</p>;
   }
 
   if (isLoading) {
     return (
       <div className="space-y-2" aria-busy="true" aria-label="Loading geography">
-        <Skeleton className="h-16 rounded-2xl" />
-        <Skeleton className="h-32 rounded-2xl" />
+        <Skeleton className="rounded-card h-16" />
+        <Skeleton className="rounded-card h-32" />
       </div>
     );
   }
 
   if (!bundle) {
-    return <p className="text-muted-foreground text-sm">No geographic data found.</p>;
+    return <p className="text-label-secondary text-body">No geographic data found.</p>;
   }
 
   // The bundle builder queries through an untyped client; rows are these Prisma models.
@@ -81,13 +81,11 @@ export function GeographyContent() {
   if (!bundle.geometry) {
     return (
       <div className="space-y-4">
-        <FacetCard className="rounded-2xl">
+        <FacetCard className="rounded-card">
           <FacetCardContent className="flex flex-col items-center justify-center p-8 text-center">
-            <MapPin aria-hidden="true" className="text-muted-foreground mb-3 h-8 w-8" />
-            <h3 className="text-foreground mb-2 text-base font-semibold">
-              Map integration required
-            </h3>
-            <p className="text-muted-foreground max-w-md text-xs leading-relaxed">
+            <MapPin aria-hidden="true" className="text-label-secondary mb-3 h-8 w-8" />
+            <h3 className="text-label text-title-3 mb-2">Map integration required</h3>
+            <p className="text-label-secondary text-footnote max-w-md leading-relaxed">
               This nation has not yet established map coordinates. Map feature linkage is required
               to define cities, subdivisions, and points of interest.
             </p>
@@ -120,21 +118,21 @@ export function GeographyContent() {
             { label: "POIs", icon: Pin, value: pois.length },
           ] as const
         ).map(({ label, icon: Icon, value }) => (
-          <FacetCard key={label} className="rounded-2xl p-3">
-            <div className="flex items-center gap-1.5">
-              <Icon aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
+          <FacetCard key={label} className="rounded-card p-3">
+            <div className="flex items-center gap-2">
+              <Icon aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
               <Eyebrow>{label}</Eyebrow>
             </div>
-            <p className="text-foreground mt-1 text-lg font-semibold tabular-nums">{value}</p>
+            <p className="text-label text-title-3 mt-1 tabular-nums">{value}</p>
           </FacetCard>
         ))}
       </div>
 
       {/* Geographic profile summary */}
       {geoProfile && (
-        <FacetCard className="rounded-2xl">
+        <FacetCard className="rounded-card">
           <FacetCardHeader className="flex-row flex-wrap items-center justify-between gap-2 p-4 pb-3">
-            <h3 className="text-foreground text-sm font-semibold">Geographic profile</h3>
+            <h3 className="text-label text-headline">Geographic profile</h3>
             <GeographyReportModal countryName={country?.name ?? ""} geoProfile={geoProfile} />
           </FacetCardHeader>
           <FacetCardContent className="grid grid-cols-2 gap-3 px-4 pb-4 sm:grid-cols-4">
@@ -173,7 +171,7 @@ export function GeographyContent() {
       {/* Cities editor */}
       <SearchableList
         title="Cities"
-        icon={<Building2 className="text-muted-foreground h-3.5 w-3.5" />}
+        icon={<Building2 className="text-label-secondary h-3.5 w-3.5" />}
         items={cities}
         searchKeys={["name", "type", "mayorName", "specialization"]}
         searchPlaceholder="Search cities, mayors, specializations…"
@@ -187,7 +185,7 @@ export function GeographyContent() {
       {/* Subdivisions editor */}
       <SearchableList
         title="Subdivisions"
-        icon={<MapPin className="text-muted-foreground h-3.5 w-3.5" />}
+        icon={<MapPin className="text-label-secondary h-3.5 w-3.5" />}
         items={subdivisions}
         searchKeys={["name", "type", "governorName", "governmentType"]}
         searchPlaceholder="Search subdivisions, governors, government…"
@@ -201,7 +199,7 @@ export function GeographyContent() {
       {/* Points of Interest (read-only) */}
       <SearchableList
         title="Points of Interest"
-        icon={<Pin className="text-muted-foreground h-3.5 w-3.5" />}
+        icon={<Pin className="text-label-secondary h-3.5 w-3.5" />}
         items={pois}
         searchKeys={["name", "category", "description"]}
         searchPlaceholder="Search POIs, categories…"
@@ -249,11 +247,11 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
   };
 
   return (
-    <FacetCard surface="solid" className="rounded-xl p-3">
+    <FacetCard className="p-3">
       <div className="mb-2 flex items-center justify-between">
         <div>
-          <div className="text-foreground text-xs font-semibold">{city.name}</div>
-          <div className="text-muted-foreground text-xs">
+          <div className="text-label text-caption font-semibold">{city.name}</div>
+          <div className="text-label-secondary text-footnote">
             {city.isNationalCapital ? "National capital" : city.type}
             {city.wikiPageTitle ? ` · wiki: ${city.wikiPageTitle}` : ""}
           </div>
@@ -331,23 +329,23 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
           />
         </div>
       ) : (
-        <div className="text-muted-foreground grid grid-cols-2 gap-2 text-xs">
+        <div className="text-label-secondary text-footnote grid grid-cols-2 gap-2">
           <div>
             <Eyebrow className="block">Pop</Eyebrow>
-            <div className="text-foreground/80 text-xs">
+            <div className="text-label-secondary text-footnote">
               {(city.population ?? 0).toLocaleString()}
             </div>
           </div>
           <div>
             <Eyebrow className="block">GDP</Eyebrow>
-            <div className="text-foreground/80 text-xs">
+            <div className="text-label-secondary text-footnote">
               {Math.round(city.gdpContribution ?? 0).toLocaleString()}
             </div>
           </div>
           {city.mayorName && (
             <div className="col-span-2">
               <Eyebrow className="block">Mayor</Eyebrow>
-              <div className="text-foreground/80 text-xs">{city.mayorName}</div>
+              <div className="text-label-secondary text-footnote">{city.mayorName}</div>
             </div>
           )}
         </div>
@@ -390,11 +388,11 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
   };
 
   return (
-    <FacetCard surface="solid" className="rounded-xl p-3">
+    <FacetCard className="p-3">
       <div className="mb-2 flex items-center justify-between">
         <div>
-          <div className="text-foreground text-xs font-semibold">{subdivision.name}</div>
-          <div className="text-muted-foreground text-xs">{subdivision.type}</div>
+          <div className="text-label text-caption font-semibold">{subdivision.name}</div>
+          <div className="text-label-secondary text-footnote">{subdivision.type}</div>
         </div>
         {editing && !isPublicReadOnly ? (
           <div className="flex gap-1">
@@ -473,23 +471,23 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
           />
         </div>
       ) : (
-        <div className="text-muted-foreground grid grid-cols-2 gap-2 text-xs">
+        <div className="text-label-secondary text-footnote grid grid-cols-2 gap-2">
           <div>
             <Eyebrow className="block">Pop</Eyebrow>
-            <div className="text-foreground/80 text-xs">
+            <div className="text-label-secondary text-footnote">
               {(subdivision.population ?? 0).toLocaleString()}
             </div>
           </div>
           <div>
             <Eyebrow className="block">GDP</Eyebrow>
-            <div className="text-foreground/80 text-xs">
+            <div className="text-label-secondary text-footnote">
               {Math.round(subdivision.gdpContribution ?? 0).toLocaleString()}
             </div>
           </div>
           {subdivision.governorName && (
             <div className="col-span-2">
               <Eyebrow className="block">Governor</Eyebrow>
-              <div className="text-foreground/80 text-xs">{subdivision.governorName}</div>
+              <div className="text-label-secondary text-footnote">{subdivision.governorName}</div>
             </div>
           )}
         </div>
@@ -509,11 +507,11 @@ function PoiCard({
 }) {
   const { isPublicReadOnly } = useCountryData();
   return (
-    <FacetCard surface="solid" className="rounded-xl p-3">
-      <div className="mb-1 flex items-center justify-between gap-1.5">
-        <div className="flex items-center gap-1.5">
-          <Tag aria-hidden="true" className="text-muted-foreground h-3 w-3" />
-          <div className="text-foreground text-xs font-semibold">{poi.name}</div>
+    <FacetCard className="p-3">
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Tag aria-hidden="true" className="text-label-secondary h-3 w-3" />
+          <div className="text-label text-caption font-semibold">{poi.name}</div>
         </div>
         {!isPublicReadOnly && (
           <PopulateFromWikiButton
@@ -526,14 +524,14 @@ function PoiCard({
           />
         )}
       </div>
-      <div className="text-muted-foreground mb-1 flex items-center gap-1 text-xs">
+      <div className="text-label-secondary text-footnote mb-1 flex items-center gap-1">
         <Badge variant="secondary" className="capitalize">
           {poi.category}
         </Badge>
         {poi.wikiPageTitle ? <span>· wiki: {poi.wikiPageTitle}</span> : null}
       </div>
       {poi.description && (
-        <p className="text-foreground/80 text-xs leading-snug">{poi.description}</p>
+        <p className="text-label-secondary text-footnote leading-snug">{poi.description}</p>
       )}
     </FacetCard>
   );
@@ -557,7 +555,7 @@ function FieldInput({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-11 text-xs sm:h-8"
+        className="text-footnote h-11 sm:h-8"
       />
     </label>
   );
@@ -576,12 +574,12 @@ function ProfileStat({
   mono?: boolean;
 }) {
   return (
-    <FacetCard surface="solid" className="rounded-xl p-2.5">
+    <FacetCard className="p-2">
       <Eyebrow className="block">{label}</Eyebrow>
       <p
         className={cn(
-          "text-foreground mt-0.5 truncate text-xs font-semibold",
-          mono && "font-mono tabular-nums"
+          "text-label text-caption mt-0.5 truncate font-semibold",
+          mono && "tabular-nums"
         )}
         title={title}
       >

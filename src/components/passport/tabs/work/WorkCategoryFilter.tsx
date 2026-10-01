@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { cn } from "~/lib/utils";
+import { SearchField } from "~/components/ui/search-field";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 
 export type WorkCategory = "articles" | "languages" | "directives" | "sports" | "feed";
 
@@ -15,15 +16,6 @@ const CATEGORIES: Array<{ id: WorkCategory; label: string }> = [
   { id: "sports", label: "Clubs" },
   { id: "feed", label: "Activity Stream" },
 ];
-
-function pillClass(active: boolean) {
-  return cn(
-    "cursor-pointer rounded-xl px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]",
-    active
-      ? "bg-stone-900 text-white shadow-sm dark:bg-white dark:text-stone-950"
-      : "hover:text-foreground text-stone-600 dark:text-stone-400"
-  );
-}
 
 interface WorkCategoryFilterProps {
   selected: WorkCategoryFilterValue;
@@ -46,40 +38,38 @@ export const WorkCategoryFilter = React.memo(function WorkCategoryFilter({
 }: WorkCategoryFilterProps) {
   return (
     <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-      <div className="flex max-w-fit flex-wrap items-center gap-1.5 rounded-2xl border border-black/6 bg-black/[0.02] p-1 dark:border-white/8 dark:bg-white/[0.02]">
-        <button
-          type="button"
-          onClick={() => onSelect(selected === "all" ? null : "all")}
-          aria-pressed={selected === "all"}
-          data-cuelume-press="soft"
-          className={pillClass(selected === "all")}
-        >
+      <ToggleGroup
+        type="single"
+        aria-label="Work category"
+        size="sm"
+        variant="pill"
+        value={selected ?? ""}
+        onValueChange={(value) => {
+          // Pressing "All work" again unpins it; a pressed category stays selected.
+          if (value) onSelect(value as WorkCategoryFilterValue);
+          else if (selected === "all") onSelect(null);
+        }}
+        className="flex-wrap"
+      >
+        <ToggleGroupItem value="all" className="tabular-nums">
           All Work ({total})
-        </button>
+        </ToggleGroupItem>
         {CATEGORIES.filter((category) => counts[category.id] > 0).map((category) => (
-          <button
-            key={category.id}
-            type="button"
-            onClick={() => onSelect(category.id)}
-            aria-pressed={selected === category.id}
-            data-cuelume-press="soft"
-            className={pillClass(selected === category.id)}
-          >
+          <ToggleGroupItem key={category.id} value={category.id} className="tabular-nums">
             {category.label} ({counts[category.id]})
-          </button>
+          </ToggleGroupItem>
         ))}
-      </div>
+      </ToggleGroup>
 
       {showSearch && (
-        <div className="w-full sm:w-56">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => onSearch(e.target.value)}
-            placeholder="Search work & articles..."
-            className="text-foreground placeholder:text-muted-foreground w-full rounded-xl border border-black/8 bg-black/[0.02] px-3 py-1.5 font-mono text-xs focus:ring-1 focus:ring-blue-500/40 focus:outline-none dark:border-white/10 dark:bg-white/[0.03]"
-          />
-        </div>
+        <SearchField
+          size="sm"
+          value={searchQuery}
+          onValueChange={onSearch}
+          placeholder="Search work & articles..."
+          aria-label="Search work and articles"
+          containerClassName="w-full sm:w-56"
+        />
       )}
     </div>
   );

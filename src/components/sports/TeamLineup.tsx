@@ -97,29 +97,26 @@ export function TeamLineup({
 
   return (
     <FacetCard
-      depth={2}
       interactive="hover"
       className={cn(
-        "border-border/40 bg-card/90 mx-auto w-full max-w-[550px] overflow-hidden rounded-3xl border p-6 shadow-xl",
+        "border-separator bg-surface rounded-sheet shadow-floating mx-auto w-full max-w-[550px] overflow-hidden border p-6",
         className
       )}
     >
       {/* Header */}
       <div className="mb-4 text-center">
-        <h3 className="text-foreground text-lg leading-none font-bold tracking-tight">
-          {teamName} Lineup
-        </h3>
-        <span className="text-muted-foreground mt-1 inline-block text-xs font-semibold tracking-wider uppercase">
+        <h3 className="text-label text-title-3 leading-none">{teamName} Lineup</h3>
+        <span className="text-label-secondary text-eyebrow mt-1 inline-block">
           Active Formation • {sportPreset}
         </span>
       </div>
 
       {/* Field Area */}
-      <div className="border-border/30 relative aspect-[4/5] w-full overflow-hidden rounded-2xl border bg-gradient-to-b from-emerald-800/80 to-emerald-950/90 shadow-inner dark:from-emerald-900/40 dark:to-emerald-950/60">
+      <div className="border-separator rounded-card bg-green/80 relative aspect-[4/5] w-full overflow-hidden border">
         {/* Pitch markings */}
         <svg
           viewBox="0 0 400 500"
-          className="pointer-events-none absolute inset-0 h-full w-full fill-none stroke-white/20 stroke-[2px]"
+          className="pointer-events-none absolute inset-0 h-full w-full fill-none stroke-white/40 stroke-[2px]"
         >
           {/* Outer Border */}
           <rect x="15" y="15" width="370" height="470" />
@@ -156,35 +153,35 @@ export function TeamLineup({
                     <div className="flex flex-col items-center">
                       {/* Player Circle Token */}
                       <div
-                        className="relative flex h-10 w-10 items-center justify-center rounded-full border-2 border-white text-xs font-bold text-white shadow-lg transition-transform hover:scale-110 active:scale-95"
+                        className="text-footnote shadow-card relative flex size-10 items-center justify-center rounded-full border-2 border-white/60 font-semibold text-white transition-transform active:scale-95"
                         style={{ backgroundColor: teamColor }}
                       >
                         {player.number ?? initials}
 
                         {/* Rating Overlay Badge */}
-                        <div className="absolute -top-1.5 -right-1.5 flex h-4.5 w-4.5 items-center justify-center rounded-full border border-white/20 bg-slate-950 text-xs font-bold text-white tabular-nums">
+                        <div className="border-separator bg-surface text-caption text-label absolute -top-2 -right-2 flex min-h-5 min-w-5 items-center justify-center rounded-full border px-0.5 font-semibold tabular-nums">
                           {player.overallRating}
                         </div>
                       </div>
 
                       {/* Mini Name underneath */}
-                      <span className="mt-1 max-w-[70px] truncate rounded bg-black/60 px-1.5 py-0.5 text-xs leading-none font-semibold tracking-tight text-white shadow-xs backdrop-blur-xs">
+                      <span className="rounded-control-sm text-caption mt-1 max-w-[70px] truncate bg-black/60 px-2 py-0.5 leading-none text-white">
                         {player.lastName}
                       </span>
                     </div>
                   </TooltipTrigger>
 
-                  <TooltipContent className="bg-popover text-popover-foreground border-border max-w-[180px] rounded-xl border p-3 shadow-xl">
-                    <div className="text-popover-foreground text-xs leading-tight font-bold">
+                  <TooltipContent className="max-w-[180px] p-3">
+                    <div className="text-label text-footnote leading-tight font-semibold">
                       {player.firstName} {player.lastName}
                     </div>
-                    <div className="text-muted-foreground mt-0.5 text-xs font-semibold tracking-wider uppercase">
+                    <div className="text-label-secondary text-eyebrow mt-0.5">
                       {SPORTS_ABBREVIATIONS[player.position] || player.position} #
                       {player.number ?? "--"}
                     </div>
-                    <div className="border-border/50 mt-2 flex items-center justify-between border-t pt-1.5 text-xs">
-                      <span className="text-muted-foreground font-semibold">RATING:</span>
-                      <span className="font-bold text-emerald-600 tabular-nums dark:text-emerald-400">
+                    <div className="border-separator text-footnote mt-2 flex items-center justify-between border-t pt-2">
+                      <span className="text-label-secondary font-semibold">RATING:</span>
+                      <span className="text-green font-semibold tabular-nums">
                         {player.overallRating} Overall
                       </span>
                     </div>

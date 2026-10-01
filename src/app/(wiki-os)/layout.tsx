@@ -7,6 +7,7 @@ import { WikiHalo } from "~/components/halo/plugins/wiki/WikiHalo";
 import { MediaContextProvider } from "~/components/media/MediaContext";
 import { MiniPlayer } from "~/components/media/MiniPlayer";
 import { MediaThemeProvider } from "~/components/wiki-os/shared/MediaThemeContext";
+import { PortalTintSync } from "~/components/providers/PortalTintSync";
 import { WikiChromePrefsProvider } from "~/components/wiki-os/shared/WikiChromePrefs";
 import { parseChromePrefs } from "~/lib/wiki-os/chrome-prefs";
 
@@ -46,16 +47,19 @@ export default async function WikiosLayout({ children }: { children: React.React
   const chromePrefs = parseChromePrefs((await cookies()).getAll());
 
   return (
-    <MediaContextProvider>
-      <MediaThemeProvider>
-        <WikiChromePrefsProvider prefs={chromePrefs}>
-          <div className={`${hostGrotesk.variable} wikios-brand-scope`}>
-            <WikiHalo />
-            {children}
-            {!isStandalone && <MiniPlayer />}
-          </div>
-        </WikiChromePrefsProvider>
-      </MediaThemeProvider>
-    </MediaContextProvider>
+    <div data-app="wiki" className="contents">
+      <PortalTintSync />
+      <MediaContextProvider>
+        <MediaThemeProvider>
+          <WikiChromePrefsProvider prefs={chromePrefs}>
+            <div className={`${hostGrotesk.variable} wikios-brand-scope`}>
+              <WikiHalo />
+              {children}
+              {!isStandalone && <MiniPlayer />}
+            </div>
+          </WikiChromePrefsProvider>
+        </MediaThemeProvider>
+      </MediaContextProvider>
+    </div>
   );
 }

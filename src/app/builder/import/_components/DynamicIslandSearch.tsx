@@ -6,21 +6,21 @@ import {
   Search,
   SystemRestart as Loader2,
   Xmark as X,
-  NavArrowDown as ChevronDown,
   OpenNewWindow as ExternalLink,
   Globe,
   Group as Users,
   Dollar as DollarSign,
-  Check,
   FilterList,
 } from "iconoir-react";
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from "~/components/ui/dropdown-menu";
+import { MenuButton } from "~/components/ui/menu-button";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { cn, sanitizeWikiContent } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
@@ -201,26 +201,26 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -6 }}
             transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-            className="border-border bg-card/85 flex items-center gap-3 rounded-full border px-4 py-2.5 shadow-lg backdrop-blur-md"
+            className="border-separator bg-surface shadow-floating flex items-center gap-3 rounded-full border px-4 py-3"
           >
             {selectedCountryFlag && !flagImgError ? (
               <img
                 src={selectedCountryFlag}
                 alt="Flag"
-                className="border-border h-4 w-6 rounded-sm border object-cover shadow-sm"
+                className="border-separator shadow-card h-4 w-6 rounded-sm border object-cover"
                 referrerPolicy="no-referrer"
                 onError={() => setFlagImgError(true)}
               />
             ) : (
-              <Globe className="text-muted-foreground h-4 w-5" />
+              <Globe className="text-label-secondary h-4 w-5" />
             )}
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
             >
-              <Loader2 className="text-muted-foreground h-4 w-4" />
+              <Loader2 className="text-label-secondary h-4 w-4" />
             </motion.div>
-            <span className="text-foreground text-sm font-medium">
+            <span className="text-label text-body font-medium">
               Parsing {selectedResult?.title}...
             </span>
           </motion.div>
@@ -228,59 +228,50 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
 
         {/* ─── Unified Search & Filter Island ─── */}
         {!isParsing && !isParsed && (
-          <div className="border-border/70 bg-card/85 relative w-full rounded-2xl border p-2 sm:p-2.5 shadow-lg backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]">
-            <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
+          <div className="border-separator bg-surface rounded-card shadow-card relative w-full border p-2 sm:p-3">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               {/* Left Group: Wiki Source Selector + Search Input */}
               <div className="flex min-w-0 flex-1 items-center gap-2">
-                {/* Wiki Switcher Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      data-cuelume-press
-                      className="hover:bg-accent/50 flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-border/50 bg-background/60 px-2.5 py-1.5 text-xs font-semibold text-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97] shadow-xs"
-                      title="Switch Wiki Source"
-                    >
-                      <img
-                        src={withBasePath(logoMap[selectedSite.name]!)}
-                        alt={selectedSite.displayName}
-                        className="h-4 w-4 object-contain"
-                      />
-                      <span>{selectedSite.displayName}</span>
-                      <ChevronDown className="text-muted-foreground h-3 w-3 opacity-60" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-48 p-1.5 backdrop-blur-xl">
-                    <DropdownMenuLabel className="px-2 py-1 text-xs font-semibold text-muted-foreground">
-                      Wiki Source
-                    </DropdownMenuLabel>
+                {/* Wiki source menu */}
+                <MenuButton
+                  size="sm"
+                  variant="gray"
+                  className="shrink-0"
+                  title="Switch Wiki Source"
+                  icon={
+                    <img
+                      src={withBasePath(logoMap[selectedSite.name]!)}
+                      alt=""
+                      className="size-4 object-contain"
+                    />
+                  }
+                  label={selectedSite.displayName}
+                  contentClassName="w-48"
+                >
+                  <DropdownMenuLabel>Wiki source</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={selectedSite.name}
+                    onValueChange={(name) => {
+                      const site = wikiSites.find((w) => w.name === name);
+                      if (!site) return;
+                      soundEffects.press();
+                      onSelectSite(site);
+                    }}
+                  >
                     {wikiSites.map((site) => (
-                      <DropdownMenuItem
-                        key={site.name}
-                        onClick={() => {
-                          soundEffects.press();
-                          onSelectSite(site);
-                        }}
-                        className={cn(
-                          "flex items-center justify-between rounded-md px-2 py-1.5 text-xs cursor-pointer",
-                          selectedSite.name === site.name && "font-semibold text-blue-500 bg-blue-500/10"
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={withBasePath(logoMap[site.name]!)}
-                            alt={site.displayName}
-                            className="h-4 w-4 object-contain"
-                          />
-                          <span>{site.displayName}</span>
-                        </div>
-                        {selectedSite.name === site.name && <Check className="h-3.5 w-3.5 text-blue-500" />}
-                      </DropdownMenuItem>
+                      <DropdownMenuRadioItem key={site.name} value={site.name}>
+                        <img
+                          src={withBasePath(logoMap[site.name]!)}
+                          alt=""
+                          className="size-4 object-contain"
+                        />
+                        <span>{site.displayName}</span>
+                      </DropdownMenuRadioItem>
                     ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                  </DropdownMenuRadioGroup>
+                </MenuButton>
 
-                <div className="h-4 w-px bg-border/60 shrink-0" />
+                <div aria-hidden className="bg-separator-opaque h-4 w-px shrink-0" />
 
                 {/* Search Input Field */}
                 <div className="relative flex min-w-0 flex-1 items-center gap-2 px-1">
@@ -290,10 +281,10 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                       transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
                       className="shrink-0"
                     >
-                      <Loader2 className="text-muted-foreground h-4 w-4" />
+                      <Loader2 className="text-label-secondary h-4 w-4" />
                     </motion.div>
                   ) : (
-                    <Search className="text-muted-foreground h-4 w-4 shrink-0 opacity-70" />
+                    <Search className="text-label-secondary h-4 w-4 shrink-0 opacity-70" />
                   )}
 
                   <input
@@ -308,125 +299,101 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                     onFocus={() => {
                       if (searchTerm.trim()) setShowResults(true);
                     }}
-                    className="placeholder:text-muted-foreground/70 text-foreground flex-1 bg-transparent text-xs sm:text-sm outline-none font-medium min-w-0"
+                    aria-label={`Search ${selectedSite.displayName}`}
+                    className="placeholder:text-label-tertiary text-label text-body min-w-0 flex-1 bg-transparent outline-none"
                   />
 
                   {searchTerm && (
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSearchTerm("");
                         setShowResults(false);
                         inputRef.current?.focus();
                       }}
-                      className="hover:bg-accent/60 flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-colors active:scale-90 cursor-pointer"
+                      className="text-label-secondary shrink-0 rounded-full"
                       aria-label="Clear search"
                     >
-                      <X className="text-muted-foreground h-3 w-3" />
-                    </button>
+                      <X aria-hidden />
+                    </Button>
                   )}
                 </div>
               </div>
 
-              <div className="hidden md:block h-4 w-px bg-border/60 shrink-0" />
+              <div aria-hidden className="bg-separator-opaque hidden h-4 w-px shrink-0 md:block" />
 
               {/* Right Group: Government Segmented Control + Sort Dropdown + Count + Reset */}
-              <div className="flex items-center justify-between md:justify-end gap-2 shrink-0 flex-wrap sm:flex-nowrap pt-1 md:pt-0 border-t border-border/30 md:border-t-0">
+              <div className="border-separator flex shrink-0 flex-wrap items-center justify-between gap-2 border-t pt-1 sm:flex-nowrap md:justify-end md:border-t-0 md:pt-0">
                 {/* Segmented Government Filter */}
-                <div className="flex items-center rounded-lg border border-border/50 bg-background/50 p-0.5 shadow-xs">
-                  {GOV_PRESETS.map((preset) => {
-                    const isSelected = selectedGov === preset.id;
-                    return (
-                      <button
-                        key={preset.id}
-                        type="button"
-                        onClick={() => {
-                          soundEffects.press();
-                          onSelectGov(preset.id);
-                        }}
-                        data-cuelume-press
-                        className={cn(
-                          "relative rounded-md px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] cursor-pointer",
-                          isSelected
-                            ? "bg-card text-foreground font-semibold shadow-xs border border-border/60"
-                            : "text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        {preset.label}
-                      </button>
-                    );
-                  })}
-                </div>
+                <SegmentedControl
+                  aria-label="Government type"
+                  size="sm"
+                  value={selectedGov}
+                  onValueChange={(gov) => {
+                    soundEffects.press();
+                    onSelectGov(gov);
+                  }}
+                  options={GOV_PRESETS.map((preset) => ({ value: preset.id, label: preset.label }))}
+                />
 
-                {/* Sort Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      data-cuelume-press
-                      className={cn(
-                        "flex h-7 sm:h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95 cursor-pointer shadow-xs",
-                        sortOption !== "default"
-                          ? "border-amber-500/40 bg-amber-500/15 text-amber-400 font-semibold"
-                          : "border-border/50 bg-background/50 text-muted-foreground hover:border-border/70 hover:bg-background/80 hover:text-foreground"
-                      )}
-                    >
-                      <FilterList className="h-3.5 w-3.5 opacity-70" />
-                      <span className="hidden sm:inline whitespace-nowrap">
-                        {SORT_OPTIONS.find((s) => s.id === sortOption)?.label ?? "Sort"}
-                      </span>
-                      <ChevronDown className="h-3 w-3 opacity-60" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 p-1.5 backdrop-blur-xl">
-                    <DropdownMenuLabel className="px-2 py-1 text-xs font-semibold text-muted-foreground">
-                      Sort Nations
-                    </DropdownMenuLabel>
+                {/* Sort menu */}
+                <MenuButton
+                  size="sm"
+                  variant={sortOption !== "default" ? "tinted" : "gray"}
+                  icon={<FilterList aria-hidden />}
+                  aria-label="Sort nations"
+                  label={
+                    <span className="hidden whitespace-nowrap sm:inline">
+                      {SORT_OPTIONS.find((s) => s.id === sortOption)?.label ?? "Sort"}
+                    </span>
+                  }
+                  align="end"
+                  contentClassName="w-48"
+                >
+                  <DropdownMenuLabel>Sort nations</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={sortOption}
+                    onValueChange={(id) => {
+                      soundEffects.press();
+                      onSelectSort(id);
+                    }}
+                  >
                     {SORT_OPTIONS.map((opt) => (
-                      <DropdownMenuItem
-                        key={opt.id}
-                        onClick={() => {
-                          soundEffects.press();
-                          onSelectSort(opt.id);
-                        }}
-                        className={cn(
-                          "flex items-center justify-between rounded-md px-2 py-1.5 text-xs cursor-pointer",
-                          sortOption === opt.id && "font-semibold text-amber-500 bg-amber-500/10"
-                        )}
-                      >
-                        <span>{opt.label}</span>
-                        {sortOption === opt.id && <Check className="h-3.5 w-3.5 text-amber-500" />}
-                      </DropdownMenuItem>
+                      <DropdownMenuRadioItem key={opt.id} value={opt.id}>
+                        {opt.label}
+                      </DropdownMenuRadioItem>
                     ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                  </DropdownMenuRadioGroup>
+                </MenuButton>
 
                 {/* Nation Count Badge */}
-                <span className="rounded-full border border-border/50 bg-background/60 px-2.5 py-0.5 text-xs font-medium tabular-nums text-muted-foreground shadow-xs whitespace-nowrap">
+                <Badge variant="neutral" className="tabular-nums">
                   {nationCount} {nationCount === 1 ? "nation" : "nations"}
-                </span>
+                </Badge>
 
                 {/* Reset Action */}
                 {hasActiveFilters && (
-                  <button
+                  <Button
                     type="button"
+                    variant="plain"
+                    size="sm"
                     onClick={() => {
                       soundEffects.press();
                       onClearFilters();
                     }}
-                    data-cuelume-press
-                    className="text-xs font-medium text-amber-500 hover:text-amber-400 transition-colors active:scale-95 cursor-pointer ml-0.5"
                   >
                     Reset
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
 
             {/* Dropdown Live Results Area (if searching via MediaWiki API) */}
             {showResults && searchTerm.trim().length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 z-30 max-h-72 overflow-y-auto rounded-xl border border-border/70 bg-card/95 p-2 shadow-2xl backdrop-blur-xl">
+              <div className="material-thick rounded-row z-popover shadow-floating absolute top-full right-0 left-0 mt-2 max-h-72 overflow-y-auto p-2">
                 {/* Searching Status */}
                 {isSearching && searchResults.length === 0 && (
                   <div className="flex items-center justify-center gap-3 py-6">
@@ -434,9 +401,9 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
                     >
-                      <Loader2 className="text-muted-foreground h-4 w-4" />
+                      <Loader2 className="text-label-secondary h-4 w-4" />
                     </motion.div>
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-label-secondary text-footnote">
                       Searching {selectedSite.displayName}...
                     </span>
                   </div>
@@ -445,14 +412,14 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                 {/* Error Status */}
                 {error && (
                   <div className="px-4 py-4 text-center">
-                    <p className="text-xs text-red-400">{error}</p>
+                    <p className="text-footnote text-red">{error}</p>
                   </div>
                 )}
 
                 {/* No Results */}
                 {!isSearching && searchResults.length === 0 && !error && (
                   <div className="px-4 py-6 text-center">
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-label-secondary text-footnote">
                       No wiki articles found for "{searchTerm}"
                     </p>
                   </div>
@@ -460,7 +427,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
 
                 {/* Results List */}
                 {searchResults.length > 0 && (
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     {searchResults.slice(0, 10).map((result, index) => (
                       <div
                         key={result.title}
@@ -515,11 +482,9 @@ function SearchResultItemInline({
       onClick={onSelect}
       onFocus={onFocus}
       className={cn(
-        "group flex cursor-pointer items-start gap-3 rounded-xl border p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
-        isFocused && "ring-2 ring-blue-500/50",
-        isSelected
-          ? "border-blue-500/40 bg-blue-500/10"
-          : "bg-card/60 hover:bg-accent/40 border-border/60"
+        "group rounded-row facet-press facet-press-subtle flex cursor-pointer items-start gap-3 border p-3 text-left",
+        isFocused && "ring-blue/50 ring-2",
+        isSelected ? "border-blue/40 bg-blue/10" : "bg-surface hover:bg-fill-3 border-separator"
       )}
     >
       {/* Flag or Globe */}
@@ -527,36 +492,41 @@ function SearchResultItemInline({
         <img
           src={result.flagUrl}
           alt={`Flag of ${result.title}`}
-          className="border-border/60 mt-0.5 h-5 w-8 shrink-0 rounded-sm border object-cover shadow-sm"
+          className="border-separator shadow-card mt-0.5 h-5 w-8 shrink-0 rounded-sm border object-cover"
           referrerPolicy="no-referrer"
           onError={() => setImgError(true)}
         />
       ) : (
-        <div className="border-border/60 flex h-5 w-8 shrink-0 items-center justify-center rounded-sm border bg-muted/30">
-          <Globe className="text-muted-foreground h-3 w-3" />
+        <div className="border-separator bg-fill-4 flex h-5 w-8 shrink-0 items-center justify-center rounded-sm border">
+          <Globe className="text-label-secondary h-3 w-3" />
         </div>
       )}
 
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <h4 className="text-foreground truncate text-sm font-medium">{result.title}</h4>
-          <ExternalLink className="text-muted-foreground h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+          <h2 className="text-label text-body truncate font-medium">{result.title}</h2>
+          <ExternalLink
+            aria-hidden="true"
+            className={cn(
+              "text-label-secondary h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100",
+              isFocused && "opacity-100"
+            )}
+          />
         </div>
 
         {/* Key Indicators or Snippet */}
         {result.population || result.gdpPerCapita || result.capital || result.government ? (
-          <div className="text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+          <div className="text-label-secondary text-footnote mt-1 flex flex-wrap gap-x-3 gap-y-1">
             {result.population && (
               <span className="flex items-center gap-1">
-                <Users className="text-blue-500 h-3 w-3" />
+                <Users className="text-blue h-3 w-3" />
                 {formatNumber(result.population, 0)}
               </span>
             )}
             {result.gdpPerCapita && (
               <span className="flex items-center gap-1">
-                <DollarSign className="text-emerald-500 h-3 w-3" />$
-                {formatNumber(result.gdpPerCapita)}
+                <DollarSign className="text-green h-3 w-3" />${formatNumber(result.gdpPerCapita)}
               </span>
             )}
             {result.capital && (
@@ -574,7 +544,7 @@ function SearchResultItemInline({
           </div>
         ) : (
           <p
-            className="text-muted-foreground mt-0.5 line-clamp-1 text-xs leading-relaxed"
+            className="text-label-secondary text-footnote mt-0.5 line-clamp-1 leading-relaxed"
             dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(result.snippet) }}
           />
         )}

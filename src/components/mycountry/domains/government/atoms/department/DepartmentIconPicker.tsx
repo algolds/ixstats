@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { ColorPickerInput } from "~/components/ui/color-picker";
 import { MediaSearchModal } from "~/components/wiki-os/media-search/MediaSearchModal";
@@ -30,23 +30,22 @@ export const DepartmentIconPicker = React.memo(function DepartmentIconPicker({
   const FallbackIcon = categoryIcons[data.category] || categoryIcons.Other!;
 
   return (
-    <FacetContainer
-      depth={3}
-      surface="solid"
-      enableRefraction={false}
-      className="grid grid-cols-1 gap-4 rounded-lg p-4 sm:grid-cols-2"
-    >
+    <FacetCard variant="inset" className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2">
       {/* Icon Display and Media Modal */}
       <div className="space-y-2">
         <Eyebrow className="block">Department emblem / icon</Eyebrow>
         <div className="flex items-center gap-3">
           {/* The department's own chosen colour (user data) tints its emblem preview. */}
           <div
-            className="border-border flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border"
+            className="border-separator rounded-control flex h-12 w-12 shrink-0 items-center justify-center border"
             style={{ color: currentColor }}
           >
             {isImageIconSource(data.icon) ? (
-              <img src={data.icon} alt={data.name} className="h-8 w-8 rounded object-cover" />
+              <img
+                src={data.icon}
+                alt={data.name}
+                className="rounded-control-sm h-8 w-8 object-cover"
+              />
             ) : CustomIcon ? (
               <CustomIcon className="h-6 w-6" />
             ) : (
@@ -85,6 +84,6 @@ export const DepartmentIconPicker = React.memo(function DepartmentIconPicker({
           disabled={isReadOnly}
         />
       </div>
-    </FacetContainer>
+    </FacetCard>
   );
 });

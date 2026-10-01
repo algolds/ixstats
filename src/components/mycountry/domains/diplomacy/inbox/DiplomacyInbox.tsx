@@ -251,24 +251,24 @@ function InboxSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-2.5" aria-label={title}>
+    <section className="space-y-2" aria-label={title}>
       <div className="flex items-center gap-2">
-        <Icon className="text-muted-foreground h-4 w-4" />
-        <h4 className="text-foreground text-sm font-semibold">{title}</h4>
+        <Icon className="text-label-secondary h-4 w-4" />
+        <h4 className="text-label text-headline">{title}</h4>
         {!loading && !error && (
-          <span className="text-muted-foreground font-mono text-xs">{count}</span>
+          <span className="text-label-secondary text-footnote tabular-nums">{count}</span>
         )}
       </div>
-      <p className="text-muted-foreground text-xs">{description}</p>
+      <p className="text-label-secondary text-footnote">{description}</p>
       {loading ? (
         <div className="space-y-2" role="status" aria-label={`Loading ${title.toLowerCase()}`}>
-          <Skeleton className="h-16 rounded-xl" />
-          <Skeleton className="h-16 rounded-xl" />
+          <Skeleton className="rounded-row h-16" />
+          <Skeleton className="rounded-row h-16" />
         </div>
       ) : error ? (
         <div
           role="alert"
-          className="border-destructive/30 bg-destructive/5 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3 text-sm"
+          className="border-destructive/30 bg-destructive/5 rounded-row text-body flex flex-wrap items-center justify-between gap-3 border p-3"
         >
           <span className="text-destructive flex items-center gap-2">
             <WarningTriangle className="h-4 w-4 shrink-0" />
@@ -280,7 +280,7 @@ function InboxSection({
           </Button>
         </div>
       ) : count === 0 ? (
-        <div className="border-border text-muted-foreground rounded-xl border border-dashed p-5 text-center text-sm">
+        <div className="border-separator text-label-secondary rounded-row text-body border border-dashed p-5 text-center">
           {emptyText}
         </div>
       ) : (
@@ -301,13 +301,13 @@ function InboxItem({
 }) {
   const KindIcon = row.kind === "invite" ? Users : Handshake;
   return (
-    <li className="border-border bg-card flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3">
+    <li className="border-separator bg-surface rounded-row flex flex-wrap items-center justify-between gap-3 border p-3">
       <div className="flex min-w-0 items-start gap-3">
-        <KindIcon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+        <KindIcon className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
         <div className="min-w-0">
-          <p className="text-foreground truncate text-sm font-semibold">{row.title}</p>
-          <p className="text-muted-foreground truncate text-xs">{row.subtitle}</p>
-          <p className="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs">
+          <p className="text-label text-headline truncate">{row.title}</p>
+          <p className="text-label-secondary text-footnote truncate">{row.subtitle}</p>
+          <p className="text-label-secondary text-footnote mt-0.5 flex items-center gap-1">
             <Clock className="h-3 w-3" />
             <span>
               {status} · {formatExpiry(row.expiresAt)}

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { NavArrowDown as ChevronDown, Check, Search } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { useSectionTheme, getGlassClasses } from "./theme-utils";
+import { tweenFast } from "~/lib/design/motion";
 import type { EnhancedInputProps } from "./types";
 import { Input } from "~/components/ui/input";
 
@@ -52,12 +53,12 @@ export function GlassSelectBox({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { theme: resolvedTheme, colors, cssVars } = useSectionTheme(sectionId, theme);
+  const { theme: resolvedTheme, cssVars } = useSectionTheme(sectionId, theme);
 
   const sizeClasses = {
-    sm: "text-sm px-3 py-2 h-10",
-    md: "text-base px-4 py-3 h-12",
-    lg: "text-lg px-5 py-4 h-14",
+    sm: "text-body px-3 py-2 h-10",
+    md: "text-body px-4 py-3 h-12",
+    lg: "text-title-3 px-5 py-4 h-14",
   };
 
   // Filter options based on search
@@ -153,13 +154,13 @@ export function GlassSelectBox({
       {(label || description) && (
         <div className="space-y-1">
           {label && (
-            <label className="text-foreground flex items-center gap-2 text-sm font-medium">
+            <label className="text-label text-body flex items-center gap-2 font-medium">
               {Icon && <Icon className="h-4 w-4" />}
               {label}
-              {required && <span className="text-red-400">*</span>}
+              {required && <span className="text-red">*</span>}
             </label>
           )}
-          {description && <p className="text-muted-foreground text-xs">{description}</p>}
+          {description && <p className="text-label-secondary text-footnote">{description}</p>}
         </div>
       )}
 
@@ -174,43 +175,30 @@ export function GlassSelectBox({
         className={cn(
           "relative flex w-full items-center justify-between text-left",
           getGlassClasses("elevated", resolvedTheme, sectionId),
-          "border-2 bg-card/80 backdrop-blur-md",
-          "border-border/50",
-          "hover:border-foreground/20",
-          "focus:border-[var(--primitive-primary)] focus:shadow-lg",
-          "focus:shadow-[var(--primitive-primary)]/20",
+          "bg-surface border-2",
+          "border-separator",
+          "hover:border-label-tertiary",
+          "focus-visible:border-tint focus-visible:shadow-floating",
           sizeClasses[size],
-          isOpen &&
-            "border-[var(--primitive-primary)] shadow-[var(--primitive-primary)]/20 shadow-lg",
+          isOpen && "border-tint shadow-floating",
           disabled && "cursor-not-allowed opacity-50"
         )}
       >
-        {/* Background Gradient */}
-        <motion.div
-          className="absolute inset-0 rounded-lg opacity-0 transition-opacity"
-          style={{
-            background: `linear-gradient(135deg, ${colors.background}, transparent)`,
-          }}
-          animate={{ opacity: isOpen ? 1 : 0 }}
-        />
-
         <div className="relative flex min-w-0 flex-1 items-center gap-3">
-          {selectedOption?.icon && (
-            <selectedOption.icon className="h-4 w-4 shrink-0 text-[var(--primitive-primary)]" />
-          )}
+          {selectedOption?.icon && <selectedOption.icon className="text-tint h-4 w-4 shrink-0" />}
 
           <div className="min-w-0 flex-1">
             {selectedOption ? (
               <div>
-                <span className="text-foreground font-medium">{selectedOption.label}</span>
+                <span className="text-label font-medium">{selectedOption.label}</span>
                 {selectedOption.description && (
-                  <p className="text-muted-foreground truncate text-xs">
+                  <p className="text-label-secondary text-footnote truncate">
                     {selectedOption.description}
                   </p>
                 )}
               </div>
             ) : (
-              <span className="text-muted-foreground">{placeholder}</span>
+              <span className="text-label-secondary">{placeholder}</span>
             )}
           </div>
         </div>
@@ -220,7 +208,7 @@ export function GlassSelectBox({
           transition={{ duration: 0.2 }}
           className="ml-2 shrink-0"
         >
-          <ChevronDown className="text-muted-foreground h-4 w-4" />
+          <ChevronDown className="text-label-secondary h-4 w-4" />
         </motion.div>
       </motion.button>
 
@@ -228,31 +216,31 @@ export function GlassSelectBox({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            initial={{ opacity: 0, y: -4, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
+            exit={{ opacity: 0, y: -4, scale: 0.96 }}
+            transition={tweenFast}
             className={cn(
-              "absolute top-full right-0 left-0 z-50 mt-1",
+              "z-popover absolute top-full right-0 left-0 mt-1",
               getGlassClasses("modal", resolvedTheme, sectionId),
-              "bg-popover/95 backdrop-blur-md",
-              "border border-border/50",
-              "overflow-hidden rounded-lg shadow-xl"
+              "material-thick",
+              "border-separator border",
+              "rounded-control shadow-floating overflow-hidden"
             )}
             style={{ maxHeight }}
           >
             {/* Search Input */}
             {searchable && (
-              <div className="border-b border-border/50 p-3">
+              <div className="border-separator border-b p-3">
                 <div className="relative">
-                  <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
+                  <Search className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
                   <Input
                     ref={inputRef}
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search options..."
-                    className="text-foreground h-9 w-full border-border/50 bg-transparent py-1"
+                    className="text-label border-separator h-9 w-full bg-transparent py-1"
                   />
                 </div>
               </div>
@@ -261,7 +249,7 @@ export function GlassSelectBox({
             {/* Options List */}
             <div className="max-h-48 overflow-y-auto">
               {filteredOptions.length === 0 ? (
-                <div className="text-muted-foreground px-4 py-3 text-center text-sm">
+                <div className="text-label-secondary text-body px-4 py-3 text-center">
                   No options found
                 </div>
               ) : (
@@ -271,31 +259,26 @@ export function GlassSelectBox({
                     type="button"
                     onClick={() => handleOptionClick(option)}
                     disabled={option.disabled}
-                    whileHover={{ backgroundColor: `${colors.primary}10` }}
                     className={cn(
                       "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
-                      "hover:bg-[var(--primitive-primary)]/10",
-                      index === highlightedIndex && "bg-[var(--primitive-primary)]/10",
+                      "hover:bg-tint/10",
+                      index === highlightedIndex && "bg-tint/10",
                       option.disabled && "cursor-not-allowed opacity-50",
-                      option.value === value && "bg-[var(--primitive-primary)]/20"
+                      option.value === value && "bg-tint/20"
                     )}
                   >
-                    {option.icon && (
-                      <option.icon className="h-4 w-4 shrink-0 text-[var(--primitive-primary)]" />
-                    )}
+                    {option.icon && <option.icon className="text-tint h-4 w-4 shrink-0" />}
 
                     <div className="min-w-0 flex-1">
-                      <div className="text-foreground text-sm font-medium">{option.label}</div>
+                      <div className="text-label text-body font-medium">{option.label}</div>
                       {option.description && (
-                        <div className="text-muted-foreground truncate text-xs">
+                        <div className="text-label-secondary text-footnote truncate">
                           {option.description}
                         </div>
                       )}
                     </div>
 
-                    {option.value === value && (
-                      <Check className="h-4 w-4 shrink-0 text-[var(--primitive-primary)]" />
-                    )}
+                    {option.value === value && <Check className="text-tint h-4 w-4 shrink-0" />}
                   </motion.button>
                 ))
               )}

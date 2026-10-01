@@ -5,7 +5,16 @@
 
 import React from "react";
 import { Cpu, ArrowRight } from "iconoir-react";
-import { FacetMaterial } from "~/components/ui/facet";
+import { Input } from "~/components/ui/input";
+import { FacetCard } from "~/components/ui/facet-container";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Checkbox } from "~/components/ui/checkbox";
 
 interface SyntaxSentenceBuilderProps {
   wordOrder: string;
@@ -146,61 +155,54 @@ export function SyntaxSentenceBuilder({
   const englishSentence = `${engSubjArt} ${engSubjAdj}${engSubjNoun} ${engVerb} ${engObjArt} ${engObjAdj}${engObjNoun}.`;
 
   return (
-    <FacetMaterial
-      material="satin"
-      className="border-border/40 space-y-4 rounded-xl border p-5 text-left shadow-sm"
-    >
-      <h4 className="text-foreground flex items-center gap-2 text-xs font-bold tracking-wider uppercase">
-        <Cpu className="h-4 w-4 text-indigo-500" /> Live Sentence Generator
+    <FacetCard variant="inset" padding="none" className="space-y-4 p-5 text-left">
+      <h4 className="text-label text-subhead flex items-center gap-2">
+        <Cpu className="text-indigo h-4 w-4" /> Live Sentence Generator
       </h4>
 
       {/* Translation Output Banner */}
-      <div className="space-y-2 rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-4">
-        <div className="text-muted-foreground flex items-center gap-2 text-xs font-semibold">
+      <div className="rounded-control border-indigo/20 bg-indigo/5 space-y-2 border p-4">
+        <div className="text-label-secondary text-footnote flex items-center gap-2 font-semibold">
           <span>Source (English):</span>
-          <span className="text-foreground italic">{englishSentence}</span>
+          <span className="text-label italic">{englishSentence}</span>
         </div>
-        <div className="text-foreground flex items-center gap-2 text-sm font-bold">
-          <ArrowRight className="h-4 w-4 text-indigo-500" />
-          <span className="font-mono text-base text-indigo-500">{sentence}.</span>
+        <div className="text-label text-body flex items-center gap-2 font-semibold">
+          <ArrowRight className="text-indigo h-4 w-4" />
+          <span className="text-body text-indigo font-mono">{sentence}.</span>
         </div>
       </div>
 
       {/* Interactive Phrase Tuning */}
-      <div className="grid grid-cols-1 gap-4 pt-2 text-xs md:grid-cols-3">
+      <div className="text-footnote grid grid-cols-1 gap-4 pt-2 md:grid-cols-3">
         {/* Subject */}
-        <div className="border-border/40 bg-secondary/10 space-y-2 rounded-lg border p-3">
-          <span className="text-foreground block font-bold">Subject Noun</span>
-          <input
+        <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
+          <span className="text-label block font-semibold">Subject Noun</span>
+          <Input
             type="text"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            className="border-border/60 bg-background w-full rounded border px-2 py-1 focus:outline-none"
+            className="w-full"
             placeholder="e.g. dog"
           />
-          <input
+          <Input
             type="text"
             value={subjectAdjective}
             onChange={(e) => setSubjectAdjective(e.target.value)}
-            className="border-border/60 bg-background w-full rounded border px-2 py-1 focus:outline-none"
+            className="w-full"
             placeholder="Adjective (e.g. quick)"
           />
-          <div className="text-muted-foreground flex justify-between text-[10px]">
+          <div className="text-label-secondary text-caption flex justify-between">
             <label className="flex cursor-pointer items-center gap-1">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={subjectPlural}
-                onChange={(e) => setSubjectPlural(e.target.checked)}
-                className="accent-indigo-500"
+                onCheckedChange={(checked) => setSubjectPlural(checked === true)}
               />{" "}
               Plural
             </label>
             <label className="flex cursor-pointer items-center gap-1">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={subjectDefinite}
-                onChange={(e) => setSubjectDefinite(e.target.checked)}
-                className="accent-indigo-500"
+                onCheckedChange={(checked) => setSubjectDefinite(checked === true)}
               />{" "}
               Definite
             </label>
@@ -208,65 +210,62 @@ export function SyntaxSentenceBuilder({
         </div>
 
         {/* Verb */}
-        <div className="border-border/40 bg-secondary/10 space-y-2 rounded-lg border p-3">
-          <span className="text-foreground block font-bold">Action Verb</span>
-          <input
+        <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
+          <span className="text-label block font-semibold">Action Verb</span>
+          <Input
             type="text"
             value={verb}
             onChange={(e) => setVerb(e.target.value)}
-            className="border-border/60 bg-background w-full rounded border px-2 py-1 focus:outline-none"
+            className="w-full"
             placeholder="e.g. eat"
           />
-          <select
-            value={verbTense}
-            onChange={(e) => setVerbTense(e.target.value)}
-            className="border-border/60 bg-background w-full rounded border px-2 py-1 text-xs focus:outline-none"
-          >
-            <option value="present">Present Tense</option>
-            <option value="past">Past Tense</option>
-            <option value="future">Future Tense</option>
-          </select>
+          <Select value={verbTense} onValueChange={(v) => setVerbTense(v)}>
+            <SelectTrigger size="sm" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="present">Present Tense</SelectItem>
+              <SelectItem value="past">Past Tense</SelectItem>
+              <SelectItem value="future">Future Tense</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Object */}
-        <div className="border-border/40 bg-secondary/10 space-y-2 rounded-lg border p-3">
-          <span className="text-foreground block font-bold">Object Noun</span>
-          <input
+        <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
+          <span className="text-label block font-semibold">Object Noun</span>
+          <Input
             type="text"
             value={object}
             onChange={(e) => setObject(e.target.value)}
-            className="border-border/60 bg-background w-full rounded border px-2 py-1 focus:outline-none"
+            className="w-full"
             placeholder="e.g. fish"
           />
-          <input
+          <Input
             type="text"
             value={objectAdjective}
             onChange={(e) => setObjectAdjective(e.target.value)}
-            className="border-border/60 bg-background w-full rounded border px-2 py-1 focus:outline-none"
+            className="w-full"
             placeholder="Adjective (e.g. small)"
           />
-          <div className="text-muted-foreground flex justify-between text-[10px]">
+          <div className="text-label-secondary text-caption flex justify-between">
             <label className="flex cursor-pointer items-center gap-1">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={objectPlural}
-                onChange={(e) => setObjectPlural(e.target.checked)}
-                className="accent-indigo-500"
+                onCheckedChange={(checked) => setObjectPlural(checked === true)}
               />{" "}
               Plural
             </label>
             <label className="flex cursor-pointer items-center gap-1">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={objectDefinite}
-                onChange={(e) => setObjectDefinite(e.target.checked)}
-                className="accent-indigo-500"
+                onCheckedChange={(checked) => setObjectDefinite(checked === true)}
               />{" "}
               Definite
             </label>
           </div>
         </div>
       </div>
-    </FacetMaterial>
+    </FacetCard>
   );
 }

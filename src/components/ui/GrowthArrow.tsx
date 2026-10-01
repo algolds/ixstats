@@ -32,8 +32,8 @@ export function GrowthArrow({
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center gap-0.5 text-xs font-semibold",
-        !inheritColor && (up ? "text-emerald-500" : "text-red-500"),
+        "text-caption inline-flex shrink-0 items-center gap-0.5 font-semibold tabular-nums",
+        !inheritColor && (up ? "text-green" : "text-red"),
         className
       )}
     >

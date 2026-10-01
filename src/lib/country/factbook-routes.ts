@@ -3,7 +3,8 @@
  * (`/countries/[slug]`) and its nested factbook section routes.
  *
  * The country profile has two navigation tiers:
- *  - Tier 1 (top bar): Factbook / Dossier / Activity → `/factbook`, `/dossier`, `/activity`
+ *  - Tier 1 (top bar): Profile / Factbook / Dossier / Activity → `/countries/:slug` (the
+ *    profile itself), `/factbook`, `/dossier`, `/activity`
  *  - Tier 2 (inner pills): five factbook sections → `/factbook`, `/factbook/economy`, ...
  *
  * This module centralizes the section list + pathname/hash mapping so both the
@@ -62,6 +63,14 @@ const HASH_ROUTE_MAP: Record<string, string> = {
 };
 
 export function hashToFactbookRoute(hash: string): string {
+  return legacyHashRoute(hash) ?? "/factbook";
+}
+
+/**
+ * The route a legacy hash deep link on the bare profile URL moved to, or `null` when the hash is
+ * empty or not a legacy tab (the profile renders in place; its own anchors keep working).
+ */
+export function legacyHashRoute(hash: string): string | null {
   const normalized = hash.replace(/^#/, "").toLowerCase();
-  return HASH_ROUTE_MAP[normalized] ?? "/factbook";
+  return Object.hasOwn(HASH_ROUTE_MAP, normalized) ? HASH_ROUTE_MAP[normalized]! : null;
 }

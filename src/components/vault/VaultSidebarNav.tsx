@@ -12,50 +12,61 @@ import { cn } from "~/lib/utils";
 import { stripBasePath } from "~/lib/base-path";
 import { useTheme } from "~/context/theme-context";
 
-import {
-  CutoutCard,
-  CutoutCardContent,
-  CutoutCorner,
-  cutoutCardSurfaceClassName,
-} from "~/components/ui/cutout-card";
+import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
+import { facetAccentStyle, type FacetAccent } from "~/lib/design/identity";
 
 export type VaultSection =
   "dashboard" | "cards" | "marketplace" | "import" | "achievements" | "leaderboards";
+
+/**
+ * The current section's row (Facet 3.1, spec §16.8): each row carries its hue as
+ * `style={facetAccentStyle(accent)}` — fill, rim and icon read `--facet-accent`, and `facet-retint`
+ * re-tints the row's focus ring with the hue's AA ink.
+ */
+const ACTIVE_ROW =
+  "bg-facet-accent-fill border-facet-accent/30 text-label shadow-card font-semibold";
 
 export const VAULT_NAV_ITEMS: {
   id: VaultSection;
   href: string;
   icon: typeof Home;
   title: string;
+  /** Active-row classes; the hue comes from `accent` (`bg-facet-accent-fill`, rim, icon). */
   activeColor: string;
+  /** v2 per-section hue (Dashboard amber, Cards indigo, Marketplace blue, Import cyan). */
+  accent: FacetAccent;
 }[] = [
   {
     id: "dashboard",
     href: "/vault",
     icon: Home,
     title: "Dashboard",
-    activeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
+    activeColor: ACTIVE_ROW,
+    accent: "yellow",
   },
   {
     id: "cards",
     href: "/vault/cards",
     icon: Grid3x3,
     title: "Cards",
-    activeColor: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30",
+    activeColor: ACTIVE_ROW,
+    accent: "indigo",
   },
   {
     id: "marketplace",
     href: "/vault/marketplace",
     icon: ShoppingCart,
     title: "Marketplace",
-    activeColor: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30",
+    activeColor: ACTIVE_ROW,
+    accent: "blue",
   },
   {
     id: "import",
     href: "/vault/import",
     icon: Download,
     title: "Import",
-    activeColor: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30",
+    activeColor: ACTIVE_ROW,
+    accent: "cyan",
   },
 ];
 
@@ -157,26 +168,34 @@ export function VaultSidebarNav({
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
     return (
-      <nav className="facet-hierarchy-child border-border overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
-        <div className="hide-scrollbar flex gap-1.5 overflow-x-auto">
+      <nav
+        aria-label="Vault sections"
+        className="bg-surface border-separator rounded-row overflow-hidden border p-1"
+      >
+        <div className="hide-scrollbar flex gap-1 overflow-x-auto">
           {filteredNavItems.map((item) => {
             const isActive = item.id === activeId;
             const Icon = item.icon;
             const cls = cn(
-              "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 border",
+              "facet-retint focus-visible:outline-tint text-footnote facet-press facet-press-sm pointer-coarse:min-h-11 flex shrink-0 items-center gap-2 rounded-control border px-3 py-2 font-medium focus-visible:outline-2 focus-visible:-outline-offset-2",
               isActive
-                ? cn("font-bold shadow-xs", item.activeColor)
-                : "text-muted-foreground hover:bg-muted hover:text-foreground border-transparent"
+                ? item.activeColor
+                : "text-label-secondary hover:bg-fill-3 hover:text-label border-transparent"
             );
 
             return isControlled ? (
               <button
+                type="button"
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
                 className={cls}
+                style={facetAccentStyle(item.accent)}
                 aria-current={isActive ? "page" : undefined}
               >
-                <Icon className="h-3.5 w-3.5 shrink-0" />
+                <Icon
+                  aria-hidden
+                  className={cn("size-3.5 shrink-0", isActive && "text-facet-accent")}
+                />
                 <span className="whitespace-nowrap">{item.title}</span>
               </button>
             ) : (
@@ -184,9 +203,13 @@ export function VaultSidebarNav({
                 key={item.id}
                 href={item.href}
                 className={cls}
+                style={facetAccentStyle(item.accent)}
                 aria-current={isActive ? "page" : undefined}
               >
-                <Icon className="h-3.5 w-3.5 shrink-0" />
+                <Icon
+                  aria-hidden
+                  className={cn("size-3.5 shrink-0", isActive && "text-facet-accent")}
+                />
                 <span className="whitespace-nowrap">{item.title}</span>
               </Link>
             );
@@ -196,75 +219,64 @@ export function VaultSidebarNav({
     );
   }
 
-  /* ── Desktop: cutout card navigation ── */
+  /* ── Desktop: v2 (c5c6b382) cutout card navigation — copper tab header, dot texture ── */
   return (
     <CutoutCard
-      className={cn(cutoutCardSurfaceClassName, "w-48 overflow-hidden rounded-xl")}
+      variant="card"
+      role="navigation"
+      aria-label="Vault sections"
+      className="w-48"
       trackPointerHover={false}
       texture="dots"
-      textureOpacity={0.06}
     >
-      {/* Cutout tab header */}
-      <div className="relative bg-amber-500/10 px-3 pt-2.5 pb-4">
-        <div className="text-card-foreground flex items-center gap-1.5 text-xs font-bold">
-          <svg
-            className="h-3.5 w-3.5 text-amber-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-            />
-          </svg>
-          Vault Sections
-        </div>
-        <CutoutCorner className="text-card absolute -bottom-px left-0" size={16} />
-        <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={16} />
-      </div>
-      <CutoutCardContent className="space-y-1.5 p-2.5 pt-1">
+      <CutoutCardHeader icon={<Grid3x3 />} as="h2" cornerSize={16} className="px-3 pt-2 pb-4">
+        Vault sections
+      </CutoutCardHeader>
+      <div className="space-y-1 p-2 pt-1">
         {filteredNavItems.map((item) => {
           const isActive = item.id === activeId;
           const Icon = item.icon;
-
-          const rowEl = (
-            <div
-              className={cn(
-                "flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 border",
-                isActive
-                  ? cn("font-bold shadow-xs", item.activeColor)
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/5 border-transparent"
-              )}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              <span className="truncate text-xs font-medium">{item.title}</span>
-            </div>
+          const cls = cn(
+            "facet-retint focus-visible:outline-tint text-body facet-press flex w-full cursor-pointer items-center gap-2 rounded-control border px-3 py-2 text-left font-medium outline-none focus-visible:outline-2 focus-visible:-outline-offset-2",
+            isActive ? item.activeColor : "text-label hover:bg-fill-4 border-transparent"
+          );
+          const content = (
+            <>
+              <Icon
+                aria-hidden
+                className={cn(
+                  "size-4 shrink-0",
+                  isActive ? "text-facet-accent" : "text-label-secondary"
+                )}
+              />
+              <span className="truncate">{item.title}</span>
+            </>
           );
 
           return isControlled ? (
             <button
+              type="button"
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className="w-full rounded-lg border-none bg-transparent p-0 text-left outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+              className={cls}
+              style={facetAccentStyle(item.accent)}
               aria-current={isActive ? "page" : undefined}
             >
-              {rowEl}
+              {content}
             </button>
           ) : (
             <Link
               key={item.id}
               href={item.href}
-              className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+              className={cls}
+              style={facetAccentStyle(item.accent)}
               aria-current={isActive ? "page" : undefined}
             >
-              {rowEl}
+              {content}
             </Link>
           );
         })}
-      </CutoutCardContent>
+      </div>
     </CutoutCard>
   );
 }

@@ -16,8 +16,8 @@ interface BudgetHealthAnalysisProps {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-2.5">
-      <span className="text-muted-foreground text-xs font-medium">{label}</span>
+    <div className="flex items-center justify-between gap-3 py-2">
+      <span className="text-label-secondary text-caption">{label}</span>
       {children}
     </div>
   );
@@ -41,11 +41,11 @@ export function BudgetHealthAnalysis({
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <FacetCard depth={1} surface="solid" className="space-y-1 p-4">
-        <h4 className="text-foreground border-border/60 border-b pb-3 text-sm font-semibold">
+      <FacetCard className="space-y-1 p-4">
+        <h4 className="text-label border-separator text-headline border-b pb-3">
           Budget health indicators
         </h4>
-        <div className="divide-border/60 divide-y text-xs">
+        <div className="divide-separator text-footnote divide-y">
           <Row label="Fiscal Balance">
             <Badge variant="outline" className={budgetHealth.color}>
               {budgetHealth.label}
@@ -54,11 +54,11 @@ export function BudgetHealthAnalysis({
           <Row label="Budget Utilization">
             <span
               className={cn(
-                "font-mono font-semibold tabular-nums",
+                "font-semibold tabular-nums",
                 budgetSummary.utilizationRate > 90
-                  ? "text-emerald-600"
+                  ? "text-green"
                   : budgetSummary.utilizationRate > 70
-                    ? "text-amber-600"
+                    ? "text-yellow"
                     : "text-destructive"
               )}
             >
@@ -67,43 +67,38 @@ export function BudgetHealthAnalysis({
           </Row>
           <Row label="Revenue Adequacy">
             <span
-              className={cn(
-                "font-semibold",
-                revenueAdequate ? "text-emerald-600" : "text-destructive"
-              )}
+              className={cn("font-semibold", revenueAdequate ? "text-green" : "text-destructive")}
             >
               {revenueAdequate ? "Adequate" : "Insufficient"}
             </span>
           </Row>
           <Row label="Departments">
-            <span className="text-foreground font-mono font-semibold tabular-nums">
+            <span className="text-label font-semibold tabular-nums">
               {budgetSummary.departmentCount} Active
             </span>
           </Row>
         </div>
       </FacetCard>
 
-      <FacetCard depth={1} surface="solid" className="space-y-3 p-4">
-        <h4 className="text-foreground border-border/60 border-b pb-3 text-sm font-semibold">
+      <FacetCard className="space-y-3 p-4">
+        <h4 className="text-label border-separator text-headline border-b pb-3">
           Budget efficiency score
         </h4>
         <div className="py-2 text-center">
-          <div className="text-foreground font-mono text-4xl font-semibold tracking-tight tabular-nums">
-            {efficiencyScore}
-          </div>
+          <div className="text-label text-large-title tabular-nums">{efficiencyScore}</div>
           <Eyebrow className="mt-1 block">Overall administrative efficiency</Eyebrow>
         </div>
-        <div className="divide-border/60 divide-y text-xs">
+        <div className="divide-separator text-footnote divide-y">
           <Row label="Utilization Rate">
-            <span className="text-foreground font-mono font-semibold tabular-nums">
+            <span className="text-label font-semibold tabular-nums">
               {budgetSummary.utilizationRate.toFixed(1)}%
             </span>
           </Row>
           <Row label="Fiscal Health">
-            <span className="text-foreground font-semibold">{budgetHealth.label}</span>
+            <span className="text-label font-semibold">{budgetHealth.label}</span>
           </Row>
           <Row label="Department Coverage">
-            <span className="text-foreground font-mono font-semibold tabular-nums">
+            <span className="text-label font-semibold tabular-nums">
               {budgetSummary.departmentCount} depts
             </span>
           </Row>

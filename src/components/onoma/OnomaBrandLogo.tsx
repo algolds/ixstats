@@ -73,7 +73,7 @@ export function OnomaBrandLogo({
         className={cn(
           "group/logo transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] select-none",
           SIZE_MAP.symbol[size],
-          tone === "monochrome" ? "text-foreground fill-current" : "fill-onoma-primary",
+          tone === "monochrome" ? "text-label fill-current" : "fill-onoma-primary", // brand artwork keeps the Onoma blue outside /labs
           isWinking && "scale-105 -rotate-2",
           "group-hover/footer:scale-105 group-hover/footer:rotate-3",
           "group-hover/brand:scale-105 group-hover/brand:-rotate-2",
@@ -113,7 +113,7 @@ export function OnomaBrandLogo({
         xmlns="http://www.w3.org/2000/svg"
         viewBox="70 295 1665 295"
         className={cn(
-          "text-foreground fill-current transition-colors duration-200 select-none",
+          "text-label fill-current transition-colors duration-200 select-none",
           SIZE_MAP.wordmark[size],
           className
         )}
@@ -167,7 +167,7 @@ export function OnomaBrandLogo({
           className
         )}
       >
-        <g id="Type" className="text-foreground fill-current">
+        <g id="Type" className="text-label fill-current">
           {/* Letter O (1) */}
           <path
             fillRule="evenodd"
@@ -196,7 +196,7 @@ export function OnomaBrandLogo({
           id="Logo"
           className={cn(
             "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
-            tone === "monochrome" ? "text-foreground fill-current" : "fill-onoma-primary"
+            tone === "monochrome" ? "text-label fill-current" : "fill-onoma-primary"
           )}
         >
           <path d="M385.3,72.21c1.99-1.79,3.61-4.77,4.18-7.4,1.97-9.08-3.53-15.08-7.56-22.39-.22-.4-2.15-4.52-2.38-4.37-10.05,17.52-25.55,31.23-42.73,41.58-1.7,1.03-4.23,3.36-5.91,1.52-.65-.71-2.48-3.91-2.97-4.89-.54-1.09-1.04-1.85.05-2.84,19.92-10.64,36.2-25.72,47.03-45.64,2.05-3.77,3.64-8.26,5.71-11.82.41-.71.78-1.27,1.74-1.29.67,0,5.51,2.29,6.29,2.79,1.23.8,1.31,1.3.77,2.66-.9,2.23-3.09,5.09-3.78,7.32-.06.2-.19.37-.11.59,4.34,14.36,18.25,23.17,13.97,39.84-4.88,18.97-31.33,22.79-42.8,7.55-.64-.85-1.64-1.96-1.11-3.11.14-.3,3.81-3.52,4.34-3.91.72-.53,1.26-.94,2.21-.63.69.22,3.56,3.73,4.52,4.55,5.39,4.62,13.23,4.7,18.56-.1Z" />
@@ -224,7 +224,7 @@ export function OnomaBrandLogo({
   return (
     <div
       className={cn(
-        "border-border/40 bg-card/60 hover:border-onoma-primary/30 relative flex items-center justify-center overflow-hidden border shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-105 hover:shadow-md",
+        "border-separator bg-surface hover:border-tint/30 shadow-card hover:shadow-card relative flex items-center justify-center overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-105",
         SIZE_MAP["app-icon"][size],
         className
       )}

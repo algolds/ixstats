@@ -11,10 +11,10 @@ import { STATUS_TEXT as SHELL_STATUS_TEXT } from "../status-tone";
 
 /** Legacy per-domain text accent (re-exported by DomainContextRail; not used by the rails). */
 export const DOMAIN_ACCENT: Record<V2Domain, string> = {
-  relations: "text-cyan-500",
-  defense: "text-red-500",
-  politics: "text-indigo-500",
-  economy: "text-emerald-500",
+  relations: "text-cyan",
+  defense: "text-red",
+  politics: "text-indigo",
+  economy: "text-green",
 };
 
 /**
@@ -23,16 +23,16 @@ export const DOMAIN_ACCENT: Record<V2Domain, string> = {
  */
 export const STATUS_TEXT = {
   ...SHELL_STATUS_TEXT,
-  success: "text-emerald-600",
+  success: "text-green",
 } as const;
 
 /** Semantic fill for a progress/level bar. */
 export const STATUS_FILL = {
   critical: "bg-destructive",
-  warning: "bg-orange-500",
-  accent: "bg-amber-500",
-  neutral: "bg-muted-foreground/60",
-  success: "bg-emerald-500",
+  warning: "bg-orange",
+  accent: "bg-yellow",
+  neutral: "bg-label-tertiary",
+  success: "bg-green",
 } as const;
 
 export type StatusTone = keyof typeof STATUS_TEXT;
@@ -71,15 +71,15 @@ export function RailCard({
   children: React.ReactNode;
 }) {
   return (
-    <FacetCard className={cn("rounded-3xl", className)}>
+    <FacetCard className={cn("rounded-card", className)}>
       <FacetCardHeader className="flex-row items-center justify-between gap-2 p-4 pb-3">
         <div className="flex min-w-0 items-center gap-2">
-          {Icon && <Icon aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />}
-          <h3 className="text-foreground truncate text-sm font-semibold">{title}</h3>
+          {Icon && <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />}
+          <h3 className="text-label text-headline truncate">{title}</h3>
         </div>
-        {accessory ? <div className="flex shrink-0 items-center gap-1.5">{accessory}</div> : null}
+        {accessory ? <div className="flex shrink-0 items-center gap-2">{accessory}</div> : null}
       </FacetCardHeader>
-      <FacetCardContent className={cn("space-y-1.5 px-4 pb-4", contentClassName)}>
+      <FacetCardContent className={cn("space-y-2 px-4 pb-4", contentClassName)}>
         {children}
       </FacetCardContent>
     </FacetCard>
@@ -95,16 +95,14 @@ export function RailRow({
   children: React.ReactNode;
 }) {
   return (
-    <FacetCard surface="solid" className={cn("rounded-xl p-2 text-xs", className)}>
-      {children}
-    </FacetCard>
+    <FacetCard className={cn("rounded-row text-footnote p-2", className)}>{children}</FacetCard>
   );
 }
 
 /** Thin level bar (0–100). */
-export function RailBar({ value, fill = "bg-primary" }: { value: number; fill?: string }) {
+export function RailBar({ value, fill = "bg-tint" }: { value: number; fill?: string }) {
   return (
-    <div className="bg-muted mt-1 h-1 w-full overflow-hidden rounded-full">
+    <div className="bg-fill-3 mt-1 h-1 w-full overflow-hidden rounded-full">
       <div
         className={cn("h-full rounded-full", fill)}
         style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
@@ -115,7 +113,7 @@ export function RailBar({ value, fill = "bg-primary" }: { value: number; fill?: 
 
 /** Empty-state line inside a rail card. */
 export function RailEmpty({ children }: { children: React.ReactNode }) {
-  return <p className="text-muted-foreground py-2 text-center text-xs">{children}</p>;
+  return <p className="text-label-secondary text-footnote py-2 text-center">{children}</p>;
 }
 
 /** Count accessory for a rail card header. */
@@ -131,12 +129,10 @@ export function DomainKpiGrid({ items }: { items: Kpi[] }) {
   return (
     <div className="grid grid-cols-3 gap-2">
       {items.map((item) => (
-        <FacetCard key={item.label} surface="solid" className="rounded-xl p-2.5">
+        <FacetCard key={item.label} className="p-2">
           <Eyebrow className="block truncate">{item.label}</Eyebrow>
-          <p className="text-foreground mt-0.5 text-base font-semibold tabular-nums">
-            {item.value}
-          </p>
-          {item.sub && <p className="text-muted-foreground mt-0.5 text-xs">{item.sub}</p>}
+          <p className="text-label text-title-3 mt-0.5 tabular-nums">{item.value}</p>
+          {item.sub && <p className="text-label-secondary text-footnote mt-0.5">{item.sub}</p>}
         </FacetCard>
       ))}
     </div>
@@ -162,7 +158,7 @@ export function DomainActivityCard({
       {recent.length === 0 ? (
         <RailEmpty>{emptyMessage}</RailEmpty>
       ) : (
-        <ul className="divide-border/60 divide-y">
+        <ul className="divide-separator divide-y">
           {recent.map((e) => (
             <li key={e.id} className="flex items-start gap-2 py-2 first:pt-0 last:pb-0">
               <e.icon
@@ -170,8 +166,8 @@ export function DomainActivityCard({
                 className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", e.iconColor)}
               />
               <div className="min-w-0 flex-1">
-                <p className="text-foreground line-clamp-1 text-xs leading-snug">{e.text}</p>
-                <span className="text-muted-foreground text-xs">{timeAgo(e.time)}</span>
+                <p className="text-label text-footnote line-clamp-1 leading-snug">{e.text}</p>
+                <span className="text-label-secondary text-footnote">{timeAgo(e.time)}</span>
               </div>
             </li>
           ))}

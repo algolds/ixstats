@@ -27,7 +27,7 @@ export function LeagueStandingsTab({
     return (
       <div className="space-y-3 py-6">
         <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-64 w-full rounded-2xl" />
+        <Skeleton className="rounded-card h-64 w-full" />
       </div>
     );
   }

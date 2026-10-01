@@ -57,7 +57,7 @@ function EquipmentImageField({ formData, onChange }: AssetFormFieldsProps) {
     <div className="space-y-2">
       <Label>Equipment Image</Label>
       {formData.imageUrl ? (
-        <div className="border-border overflow-hidden rounded-lg border">
+        <div className="border-separator rounded-control overflow-hidden border">
           <img
             src={formData.imageUrl}
             alt="Equipment preview"
@@ -66,7 +66,7 @@ function EquipmentImageField({ formData, onChange }: AssetFormFieldsProps) {
               e.currentTarget.style.display = "none";
             }}
           />
-          <div className="border-border flex gap-2 border-t p-3">
+          <div className="border-separator flex gap-2 border-t p-3">
             <Button
               type="button"
               variant="outline"
@@ -87,7 +87,7 @@ function EquipmentImageField({ formData, onChange }: AssetFormFieldsProps) {
               variant="ghost"
               size="sm"
               aria-label="Remove image"
-              className="text-muted-foreground hover:text-destructive"
+              className="text-label-secondary hover:text-destructive"
               onClick={() => onChange({ ...formData, imageUrl: "" })}
             >
               <Trash2 className="h-4 w-4" />
@@ -110,13 +110,13 @@ function EquipmentImageField({ formData, onChange }: AssetFormFieldsProps) {
           }}
         >
           <div className="flex flex-col items-center gap-2">
-            <Image aria-hidden="true" className="text-muted-foreground h-8 w-8" />
-            <span className="text-sm font-medium">Add Equipment Image</span>
-            <span className="text-muted-foreground text-xs">Click to enter image URL</span>
+            <Image aria-hidden="true" className="text-label-secondary h-8 w-8" />
+            <span className="text-body font-medium">Add Equipment Image</span>
+            <span className="text-label-secondary text-footnote">Click to enter image URL</span>
           </div>
         </Button>
       )}
-      <p className="text-muted-foreground text-xs">
+      <p className="text-label-secondary text-footnote">
         Template equipment includes images automatically. Custom assets can add images from
         Wikimedia Commons.
       </p>
@@ -242,7 +242,7 @@ export const AssetFormFields = React.memo(function AssetFormFields({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label>Modernization Level</Label>
-          <span className="text-sm font-medium tabular-nums">{formData.modernizationLevel}%</span>
+          <span className="text-body font-medium tabular-nums">{formData.modernizationLevel}%</span>
         </div>
         <Slider
           value={[formData.modernizationLevel]}

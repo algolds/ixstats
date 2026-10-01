@@ -28,19 +28,21 @@ export function LeagueRacesTab({
 
   if (!seasonId) {
     return (
-      <FacetCard depth={2} className="rounded-3xl border border-border/40 bg-card/60 p-12 text-center backdrop-blur-xl space-y-3">
-        <MapPin className="mx-auto h-12 w-12 text-muted-foreground/40" />
-        <h4 className="text-base font-bold text-foreground">No Season Initialized</h4>
-        <p className="text-xs text-muted-foreground">Start a season in the Command overview to generate the circuit schedule.</p>
+      <FacetCard className="space-y-3 p-12 text-center">
+        <MapPin className="text-label-tertiary mx-auto h-12 w-12" />
+        <h4 className="text-headline text-label">No Season Initialized</h4>
+        <p className="text-footnote text-label-secondary">
+          Start a season in the Command overview to generate the circuit schedule.
+        </p>
       </FacetCard>
     );
   }
 
   if (isLoading) {
     return (
-      <FacetCard depth={2} className="rounded-3xl border border-border/40 bg-card/60 p-8 backdrop-blur-xl space-y-4">
+      <FacetCard className="space-y-4 p-8">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+          <Skeleton key={i} className="rounded-card h-24 w-full" />
         ))}
       </FacetCard>
     );
@@ -48,10 +50,12 @@ export function LeagueRacesTab({
 
   if (!races || races.length === 0) {
     return (
-      <FacetCard depth={2} className="rounded-3xl border border-border/40 bg-card/60 p-12 text-center backdrop-blur-xl space-y-3">
-        <MapPin className="mx-auto h-12 w-12 text-muted-foreground/40" />
-        <h4 className="text-base font-bold text-foreground">No Grand Prix Results</h4>
-        <p className="text-xs text-muted-foreground">Race classifications will appear once events are contested.</p>
+      <FacetCard className="space-y-3 p-12 text-center">
+        <MapPin className="text-label-tertiary mx-auto h-12 w-12" />
+        <h4 className="text-headline text-label">No Grand Prix Results</h4>
+        <p className="text-footnote text-label-secondary">
+          Race classifications will appear once events are contested.
+        </p>
       </FacetCard>
     );
   }

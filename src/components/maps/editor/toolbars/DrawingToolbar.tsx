@@ -1,4 +1,4 @@
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import React from "react";
 
 interface DrawingToolbarProps {
@@ -20,19 +20,14 @@ export function DrawingToolbar({
 
   return (
     <div className="absolute bottom-6 left-1/2 z-30 -translate-x-1/2 duration-200">
-      <FacetContainer depth={2} className="flex items-center gap-3 rounded-full px-4 py-2">
-        <span className="text-foreground mr-2 text-xs font-semibold select-none">
+      <FacetMaterial material="regular" className="flex items-center gap-3 rounded-full px-4 py-2">
+        <span className="text-label text-caption mr-2 font-semibold select-none">
           Drawing Subdivision:{" "}
-          <span className="text-primary font-bold tabular-nums">{drawVertices.length}</span>{" "}
+          <span className="text-tint font-semibold tabular-nums">{drawVertices.length}</span>{" "}
           {drawVertices.length === 1 ? "vertex" : "vertices"}
         </span>
-        <div className="bg-border h-4 w-px" />
-        <Button
-          variant="ghost"
-          size="xs"
-          className="text-muted-foreground"
-          onClick={undoLastVertex}
-        >
+        <div className="bg-separator h-4 w-px" />
+        <Button variant="ghost" size="xs" className="text-label-secondary" onClick={undoLastVertex}>
           Delete Last
         </Button>
         <Button
@@ -43,18 +38,16 @@ export function DrawingToolbar({
         >
           Clear
         </Button>
-        <button
+        <Button
+          type="button"
+          size="sm"
           onClick={saveDraw}
           disabled={!canSaveDraw}
-          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-            canSaveDraw
-              ? "bg-primary text-primary-foreground hover:bg-primary/95 shadow-sm"
-              : "bg-muted text-muted-foreground cursor-not-allowed"
-          }`}
+          className="rounded-full"
         >
           Save Shape
-        </button>
-      </FacetContainer>
+        </Button>
+      </FacetMaterial>
     </div>
   );
 }

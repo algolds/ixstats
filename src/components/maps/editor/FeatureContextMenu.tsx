@@ -1,6 +1,6 @@
 "use client";
 
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import React, { useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -169,13 +169,13 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
         item.onClick();
         onClose();
       }}
-      className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 active:scale-[0.98] ${
+      className={`text-caption flex w-full items-center gap-2 px-3 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 active:scale-[0.98] ${
         item.danger
           ? "text-destructive hover:bg-destructive/10 hover:text-destructive"
-          : "text-foreground hover:bg-accent hover:text-accent-foreground"
+          : "text-label hover:bg-fill-3"
       }`}
     >
-      <item.icon className="text-muted-foreground h-3.5 w-3.5 shrink-0" aria-hidden />
+      <item.icon className="text-label-secondary h-3.5 w-3.5 shrink-0" aria-hidden />
       <span>{item.label}</span>
     </button>
   );
@@ -183,24 +183,24 @@ export const FeatureContextMenu = React.memo(function FeatureContextMenu({
   return createPortal(
     <div
       data-context-menu
-      className="animate-in fade-in zoom-in-95 fixed z-[var(--z-depth-popover)] min-w-[208px] origin-top-left duration-100"
+      className="animate-in fade-in zoom-in-95 z-popover fixed min-w-[208px] origin-top-left duration-100"
       style={{ left: clampedX, top: clampedY }}
     >
-      <FacetContainer
-        depth={3}
+      <FacetMaterial
+        material="thick"
         role="menu"
         aria-label={`${feature.name} actions`}
-        className="overflow-hidden rounded-xl py-1.5"
+        className="rounded-row overflow-hidden py-2"
       >
         {primaryItems.map(renderItem)}
 
         {secondaryItems.length > 0 && (
           <>
-            <div className="bg-border mx-2 my-1 h-px" />
+            <div className="bg-separator mx-2 my-1 h-px" />
             {secondaryItems.map(renderItem)}
           </>
         )}
-      </FacetContainer>
+      </FacetMaterial>
     </div>,
     document.body
   );

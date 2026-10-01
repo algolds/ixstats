@@ -99,10 +99,10 @@ export function CulturalExchangeWizard({
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {/* Header */}
-      <div className="border-border flex shrink-0 items-center justify-between border-b p-4 pr-12">
+      <div className="border-separator flex shrink-0 items-center justify-between border-b p-4 pr-12">
         <div>
-          <h2 className="text-foreground text-lg font-semibold">Create Cultural Exchange</h2>
-          <p className="text-muted-foreground mt-1 text-xs">
+          <h2 className="text-label text-title-3">Create Cultural Exchange</h2>
+          <p className="text-label-secondary text-footnote mt-1">
             Step {currentStep} of {WIZARD_STEP_COUNT}
           </p>
         </div>
@@ -119,7 +119,7 @@ export function CulturalExchangeWizard({
               key={step}
               className={cn(
                 "h-1.5 flex-1 rounded-full transition-colors duration-200",
-                step <= currentStep ? "bg-primary" : "bg-muted"
+                step <= currentStep ? "bg-tint" : "bg-fill-3"
               )}
             />
           ))}
@@ -132,7 +132,7 @@ export function CulturalExchangeWizard({
       </div>
 
       {/* Footer */}
-      <div className="border-border flex shrink-0 justify-between gap-4 border-t p-4">
+      <div className="border-separator flex shrink-0 justify-between gap-4 border-t p-4">
         <Button variant="outline" onClick={currentStep === 1 ? onCancel : form.handlePrevious}>
           <ArrowLeft className="mr-2" />
           {currentStep === 1 ? "Cancel" : "Previous"}
@@ -146,7 +146,7 @@ export function CulturalExchangeWizard({
         ) : (
           <Button onClick={() => onComplete(data)}>
             <Check className="mr-2" />
-            Create Exchange
+            Create exchange
           </Button>
         )}
       </div>

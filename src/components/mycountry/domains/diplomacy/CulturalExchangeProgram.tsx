@@ -20,7 +20,7 @@ import { ImpactVisualizationModal } from "./ImpactVisualizationModal";
 import { ArtifactUploadModal } from "./ArtifactUploadModal";
 import type { ArtifactUploadData } from "./ArtifactUploadForm";
 import { uploadImageFile } from "~/lib/media/upload-image";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 
 const isExchangeStatus = (value: string): value is keyof typeof STATUS_STYLES =>
   value in STATUS_STYLES;
@@ -580,12 +580,10 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
 
       {/* Empty State */}
       {filteredExchanges.length === 0 && !exchangesLoading && (
-        <FacetCard depth={1} className="rounded-2xl px-6 py-12 text-center">
-          <Globe className="text-muted-foreground mx-auto mb-3 h-6 w-6" />
-          <h4 className="text-foreground mb-1 text-base font-semibold">
-            No cultural exchanges found
-          </h4>
-          <p className="text-muted-foreground mb-5 text-sm">
+        <FacetCard className="rounded-card px-6 py-12 text-center">
+          <Globe className="text-label-secondary mx-auto mb-3 h-6 w-6" />
+          <h4 className="text-label text-title-3 mb-1">No cultural exchanges found</h4>
+          <p className="text-label-secondary text-body mb-5">
             {filterType !== "all" || filterStatus !== "all"
               ? "Try adjusting your filters or create a new exchange to get started."
               : "Be the first to create a cultural exchange and connect nations."}
@@ -598,18 +596,18 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
       )}
 
       {/* Create Exchange Modal (Wizard) */}
-      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="h-[90vh] max-w-4xl overflow-hidden p-0">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Create Cultural Exchange</DialogTitle>
-          </DialogHeader>
+      <Sheet open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <SheetContent size="wide" className="flex flex-col overflow-hidden p-0">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Create Cultural Exchange</SheetTitle>
+          </SheetHeader>
           <CulturalExchangeWizard
             hostCountry={primaryCountry}
             onComplete={handleCreateExchange}
             onCancel={() => setShowCreateModal(false)}
           />
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       {/* Exchange Details Modal */}
       <ExchangeDetailsModal

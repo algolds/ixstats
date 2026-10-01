@@ -5,18 +5,18 @@ import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import { useVexelEditor } from "../VexelEditorProvider";
 
-import { FacetMaterial } from "~/components/ui/facet";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export default function ValidationPanel() {
   const { validationWarnings } = useVexelEditor();
 
   return (
-    <FacetMaterial material="satin" className="border-border overflow-hidden rounded-xl border">
+    <FacetCard className="overflow-hidden">
       <div className="p-4">
-        <Eyebrow className="border-border mb-3 block border-b pb-2">Rule Audit</Eyebrow>
+        <Eyebrow className="border-separator mb-3 block border-b pb-2">Rule Audit</Eyebrow>
 
         {validationWarnings.length === 0 ? (
-          <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 p-3 text-xs text-emerald-500">
+          <div className="rounded-control border-green/30 text-footnote text-green flex items-center gap-2 border p-3">
             <CheckCircle className="h-4 w-4 shrink-0" aria-hidden />
             <span>Compliant with the classic Rule of Tincture. Excellent design!</span>
           </div>
@@ -25,10 +25,10 @@ export default function ValidationPanel() {
             {validationWarnings.map((warn, idx) => (
               <div
                 key={idx}
-                className={`flex items-start gap-2.5 rounded-lg border p-3 text-xs ${
+                className={`rounded-control text-footnote flex items-start gap-2 border p-3 ${
                   warn.severity === "caution"
                     ? "border-destructive/30 text-destructive"
-                    : "border-amber-500/30 text-amber-500"
+                    : "border-yellow/30 text-yellow"
                 }`}
               >
                 {warn.severity === "caution" ? (
@@ -40,13 +40,13 @@ export default function ValidationPanel() {
                   <Eyebrow className="block">
                     {warn.code.replace(/_/g, " ")} ({warn.severity})
                   </Eyebrow>
-                  <p className="text-muted-foreground leading-normal font-medium">{warn.message}</p>
+                  <p className="text-label-secondary leading-normal font-medium">{warn.message}</p>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
-    </FacetMaterial>
+    </FacetCard>
   );
 }

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { CountriesHeader } from "./CountriesHeader";
+import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
 import { CountriesFocusGridModular } from "./CountriesFocusGridModular";
 import { CountriesStats } from "./CountriesStats";
 import { type CountryCardData } from "~/components/mycountry/dossier/CountryFocusCard";
@@ -218,6 +219,8 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   return (
     <div className="bg-background relative min-h-screen">
       <div className="relative z-10 container mx-auto px-4 pt-16 pb-8 sm:pt-20">
+        {/* Phone title under the new navigation shell (nothing with the flag off). */}
+        <ShellPageHeader title="Countries" className="px-0 pt-0 sm:px-0" />
         {/* Unified Apple Control Panel with Search Bar & 4 Stat Cards */}
         <CountriesHeader
           searchInput={searchInput}

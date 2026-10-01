@@ -5,7 +5,6 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { motion } from "motion/react";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
@@ -18,15 +17,16 @@ import {
   WarningCircle as AlertCircle,
   HelpCircle,
   DesignPencil as Highlighter,
-  Search,
   MediaImage as ImageIcon,
   ChatBubble as MessageSquare,
 } from "iconoir-react";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
-import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 import { StashWelcomeModal } from "~/components/wiki-os/shared/StashWelcomeModal";
+import { Button } from "~/components/ui/button";
+import { SearchField } from "~/components/ui/search-field";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import {
   StashSidebar,
   StashPagesList,
@@ -323,26 +323,26 @@ export default function StashesPage() {
         <WikiOSLayout sidebarVariant="dashboard">
           <div className="mx-auto min-h-screen max-w-7xl space-y-6 p-3 sm:p-6">
             {/* Top Page Header */}
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--wikios-border)] pb-4">
+            <div className="border-separator flex flex-wrap items-center justify-between gap-4 border-b pb-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-rose-500/30 bg-rose-500/15 text-rose-400 shadow-md">
+                <div className="bg-red/10 text-red rounded-card flex size-11 items-center justify-center">
                   <Bookmark className="h-5 w-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h1 className="text-xl font-bold tracking-tight text-[var(--wikios-text)]">
-                      Stash
-                    </h1>
-                    <button
+                    <h1 className="text-large-title text-label">Stash</h1>
+                    <Button
                       type="button"
+                      variant="plain"
+                      size="icon-sm"
                       onClick={() => setWelcomeOpen(true)}
-                      className="cursor-pointer rounded-lg p-1 text-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5 hover:text-rose-400 active:scale-95"
                       title="Stash Guide"
+                      aria-label="Stash Guide"
                     >
-                      <HelpCircle className="h-4 w-4" />
-                    </button>
+                      <HelpCircle aria-hidden />
+                    </Button>
                   </div>
-                  <p className="text-xs text-[var(--wikios-text-dim)]">
+                  <p className="text-footnote text-label-secondary">
                     {totalItems} item{totalItems === 1 ? "" : "s"} saved across {stashes.length}{" "}
                     collection{stashes.length === 1 ? "" : "s"}
                   </p>
@@ -363,18 +363,24 @@ export default function StashesPage() {
 
             {/* Error Banner */}
             {error && (
-              <div className="animate-in fade-in flex items-center justify-between rounded-2xl border border-rose-500/30 bg-rose-500/15 p-3 text-xs text-rose-300 shadow-xs">
+              <div
+                role="alert"
+                className="animate-in fade-in bg-destructive/10 rounded-row text-footnote text-destructive flex items-center justify-between p-3"
+              >
                 <div className="flex items-center gap-2">
                   <AlertCircle className="h-4 w-4 shrink-0" />
                   <span>{error}</span>
                 </div>
-                <button
+                <Button
                   type="button"
+                  variant="plain"
+                  size="icon-sm"
                   onClick={() => setError(null)}
-                  className="cursor-pointer rounded-lg p-1 text-rose-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-500/20 hover:text-white active:scale-95"
+                  aria-label="Dismiss error"
+                  className="text-destructive"
                 >
-                  <X className="h-3.5 w-3.5" />
-                </button>
+                  <X aria-hidden />
+                </Button>
               </div>
             )}
 
@@ -403,21 +409,19 @@ export default function StashesPage() {
                 {/* Right Content Canvas */}
                 <main className="w-full min-w-0 flex-1 space-y-4">
                   {activeStash && (
-                    <div className="space-y-4 rounded-3xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-4 shadow-xs backdrop-blur-xl">
+                    <div className="border-separator bg-surface rounded-card shadow-card space-y-4 border p-4">
                       {/* Active Stash Header Banner */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--wikios-border)] pb-3">
-                        <div className="flex min-w-0 items-center gap-2.5">
+                      <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-3">
+                        <div className="flex min-w-0 items-center gap-2">
                           <span
-                            className="h-3.5 w-3.5 shrink-0 rounded-full shadow-sm"
+                            className="shadow-card h-3.5 w-3.5 shrink-0 rounded-full"
                             style={{
                               backgroundColor: activeStash.color,
                               boxShadow: `0 0 12px ${activeStash.color}80`,
                             }}
                           />
-                          <h2 className="truncate text-base font-bold tracking-tight text-[var(--wikios-text)]">
-                            {activeStash.name}
-                          </h2>
-                          <span className="shrink-0 rounded-full border border-[var(--wikios-border)] bg-[var(--wikios-surface)] px-2 py-0.5 text-xs font-bold text-[var(--wikios-text-dim)]">
+                          <h2 className="text-headline text-label truncate">{activeStash.name}</h2>
+                          <span className="border-separator bg-surface-secondary text-caption text-label-secondary shrink-0 rounded-full border px-2 py-0.5 font-semibold">
                             {activeStash.itemCount} item{activeStash.itemCount === 1 ? "" : "s"}
                           </span>
                         </div>
@@ -441,67 +445,46 @@ export default function StashesPage() {
                       {/* Search Bar + Floating Segmented Tab Bar */}
                       <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
                         {/* Instant Filter Search */}
-                        <div className="relative max-w-xs flex-1">
-                          <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-[var(--wikios-text-dim)]" />
-                          <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Filter in this stash..."
-                            className="w-full rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] py-1.5 pr-3 pl-8 text-xs text-[var(--wikios-text)] shadow-2xs transition-colors outline-none placeholder:text-[var(--wikios-text-dim)] focus:border-[var(--wikios-accent)]"
-                          />
-                        </div>
+                        <SearchField
+                          size="sm"
+                          containerClassName="max-w-xs flex-1"
+                          value={searchQuery}
+                          onValueChange={setSearchQuery}
+                          aria-label="Filter in this stash"
+                          placeholder="Filter in this stash..."
+                        />
 
                         {/* Segmented Tab Control */}
-                        <div className="relative flex items-center gap-1 self-start rounded-2xl border border-[var(--wikios-border)] bg-white/5 p-1 shadow-2xs sm:self-auto">
-                          {tabs.map((tab) => {
-                            const Icon = tab.icon;
-                            const isActive = stashTab === tab.id;
-                            return (
-                              <button
-                                key={tab.id}
-                                type="button"
-                                onClick={() => {
-                                  soundEffects.press();
-                                  setStashTab(tab.id);
-                                }}
-                                className={cn(
-                                  "relative flex cursor-pointer items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
-                                  isActive
-                                    ? "font-bold text-[var(--wikios-text)] shadow-xs"
-                                    : "text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
-                                )}
-                              >
-                                {isActive && (
-                                  <motion.div
-                                    layoutId="stash-active-tab-pill"
-                                    transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                                    className="absolute inset-0 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] shadow-xs"
-                                  />
-                                )}
-                                <Icon className="relative z-10 h-3.5 w-3.5" />
-                                <span className="relative z-10">{tab.label}</span>
-                                <span
-                                  className={cn(
-                                    "py-0.2 relative z-10 ml-0.5 rounded-full px-1.5 text-xs leading-none font-bold",
-                                    isActive
-                                      ? "border border-rose-500/25 bg-rose-500/15 text-rose-400"
-                                      : "bg-white/5 text-[var(--wikios-text-dim)]"
-                                  )}
-                                >
+                        <SegmentedControl
+                          aria-label="Stash content"
+                          size="sm"
+                          className="self-start sm:self-auto"
+                          value={stashTab}
+                          onValueChange={(next) => {
+                            soundEffects.press();
+                            setStashTab(next);
+                          }}
+                          options={tabs.map((tab) => ({
+                            value: tab.id,
+                            icon: <tab.icon />,
+                            "aria-label": `${tab.label} (${tab.count})`,
+                            label: (
+                              <span className="flex items-center gap-1">
+                                {tab.label}
+                                <span className="text-caption text-label-secondary tabular-nums">
                                   {tab.count}
                                 </span>
-                              </button>
-                            );
-                          })}
-                        </div>
+                              </span>
+                            ),
+                          }))}
+                        />
                       </div>
 
                       {/* Loading State */}
                       {itemsQuery.isLoading && (
-                        <div className="flex flex-col items-center justify-center gap-2 py-16 text-[var(--wikios-text-muted)]">
-                          <Loader2 className="h-6 w-6 animate-spin text-rose-500 opacity-40" />
-                          <span className="text-xs">Loading stash items...</span>
+                        <div className="text-label-secondary flex flex-col items-center justify-center gap-2 py-16">
+                          <Loader2 className="text-red h-6 w-6 animate-spin opacity-40" />
+                          <span className="text-footnote">Loading stash items...</span>
                         </div>
                       )}
 
@@ -517,16 +500,16 @@ export default function StashesPage() {
                                 thumbnailsMap={thumbnailsMap ?? {}}
                               />
                             ) : (
-                              <div className="space-y-2 py-16 text-center text-[var(--wikios-text-muted)]">
-                                <WikiOSLogomark className="mx-auto h-10 w-10 text-[var(--wikios-accent)] opacity-20" />
-                                <p className="text-xs font-bold text-[var(--wikios-text)]">
+                              <div className="text-label-secondary space-y-2 py-16 text-center">
+                                <WikiOSLogomark className="text-tint mx-auto h-10 w-10 opacity-20" />
+                                <p className="text-headline text-label">
                                   {query
                                     ? "No articles match your search"
                                     : "No articles in this collection"}
                                 </p>
-                                <p className="mx-auto max-w-sm text-xs text-[var(--wikios-text-dim)]">
+                                <p className="text-footnote text-label-secondary mx-auto max-w-sm">
                                   Browse wiki articles and click the{" "}
-                                  <Bookmark className="inline h-3 w-3 text-rose-400" />{" "}
+                                  <Bookmark className="text-red inline h-3 w-3" />{" "}
                                   <strong>Stash</strong> button in the toolbar to save them here.
                                 </p>
                               </div>
@@ -537,14 +520,14 @@ export default function StashesPage() {
                             (filteredQuotes.length > 0 ? (
                               <StashQuotesList quotes={filteredQuotes} />
                             ) : (
-                              <div className="space-y-2 py-16 text-center text-[var(--wikios-text-muted)]">
+                              <div className="text-label-secondary space-y-2 py-16 text-center">
                                 <Highlighter className="mx-auto h-10 w-10 opacity-20" />
-                                <p className="text-xs font-bold text-[var(--wikios-text)]">
+                                <p className="text-headline text-label">
                                   {query
                                     ? "No quotes match your search"
                                     : "No saved quotes in this collection"}
                                 </p>
-                                <p className="mx-auto max-w-sm text-xs text-[var(--wikios-text-dim)]">
+                                <p className="text-footnote text-label-secondary mx-auto max-w-sm">
                                   Highlight text while reading an article and click{" "}
                                   <strong>Save Quote</strong> in the Margin capsule to curate
                                   excerpts here.
@@ -561,18 +544,18 @@ export default function StashesPage() {
                                 onUnstash={handleUnstash}
                               />
                             ) : (
-                              <div className="space-y-2 py-16 text-center text-[var(--wikios-text-muted)]">
+                              <div className="text-label-secondary space-y-2 py-16 text-center">
                                 <ImageIcon className="mx-auto h-10 w-10 opacity-20" />
-                                <p className="text-xs font-bold text-[var(--wikios-text)]">
+                                <p className="text-headline text-label">
                                   {query
                                     ? "No media matches your search"
                                     : "No media in this collection"}
                                 </p>
-                                <p className="mx-auto max-w-sm text-xs text-[var(--wikios-text-dim)]">
+                                <p className="text-footnote text-label-secondary mx-auto max-w-sm">
                                   Browse the{" "}
                                   <Link
                                     href={withBasePath("/util/repository")}
-                                    className="font-semibold text-[var(--wikios-accent)] hover:underline"
+                                    className="text-tint font-semibold hover:underline"
                                   >
                                     Media Repository
                                   </Link>{" "}
@@ -586,18 +569,18 @@ export default function StashesPage() {
                             (filteredThreads.length > 0 ? (
                               <StashThreadsList items={filteredThreads} onUnstash={handleUnstash} />
                             ) : (
-                              <div className="space-y-2 py-16 text-center text-[var(--wikios-text-muted)]">
+                              <div className="text-label-secondary space-y-2 py-16 text-center">
                                 <MessageSquare className="mx-auto h-10 w-10 opacity-20" />
-                                <p className="text-xs font-bold text-[var(--wikios-text)]">
+                                <p className="text-headline text-label">
                                   {query
                                     ? "No threads match your search"
                                     : "No forum threads in this collection"}
                                 </p>
-                                <p className="mx-auto max-w-sm text-xs text-[var(--wikios-text-dim)]">
+                                <p className="text-footnote text-label-secondary mx-auto max-w-sm">
                                   Browse the{" "}
                                   <Link
                                     href={withBasePath("/forum")}
-                                    className="font-semibold text-orange-400 hover:underline"
+                                    className="text-orange font-semibold hover:underline"
                                   >
                                     Forum
                                   </Link>{" "}
@@ -619,14 +602,14 @@ export default function StashesPage() {
       </SignedIn>
 
       <SignedOut>
-        <div className="flex min-h-screen flex-col items-center justify-center bg-[var(--wikios-bg)] p-4 text-[var(--wikios-text)]">
-          <div className="mx-auto max-w-sm space-y-4 rounded-3xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-8 text-center shadow-xl backdrop-blur-2xl">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-rose-500/30 bg-rose-500/15 text-rose-400 shadow-md">
+        <div className="bg-background text-label flex min-h-screen flex-col items-center justify-center p-4">
+          <div className="rounded-sheet border-separator bg-surface shadow-floating mx-auto max-w-sm space-y-4 border p-8 text-center">
+            <div className="bg-red/10 text-red rounded-card mx-auto flex size-14 items-center justify-center">
               <Bookmark className="h-7 w-7" />
             </div>
             <div>
-              <h2 className="text-lg font-bold tracking-tight">Access Stash</h2>
-              <p className="mt-1 text-xs leading-relaxed text-[var(--wikios-text-muted)]">
+              <h2 className="text-title-3">Access Stash</h2>
+              <p className="text-footnote text-label-secondary mt-1 leading-relaxed">
                 Sign in to manage your saved lore collections, highlights, media assets, and forum
                 bookmarks.
               </p>

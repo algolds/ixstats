@@ -1,580 +1,118 @@
-/* Buttons */
-.btn-primary {
-  background-color: var(--color-button-primary);
-  color: var(--color-white);
-  border: 1px solid var(--color-button-primary);
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius, 0.625rem);
-  font-weight: 600;
-  transition: transform 120ms cubic-bezier(0.2, 0, 0, 1), box-shadow 150ms ease, background-color 150ms ease;
-  box-shadow: var(--shadow-sm);
-}
-
-.btn-primary:hover {
-  background-color: var(--color-button-primary-hover);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-primary:active {
-  transform: scale(0.98);
-}
-
-.btn-secondary {
-  background-color: var(--color-button-secondary);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border-primary);
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius, 0.625rem);
-  font-weight: 500;
-  transition: transform 120ms cubic-bezier(0.2, 0, 0, 1), box-shadow 150ms ease, background-color 150ms ease;
-}
-
-.btn-secondary:hover {
-  background-color: var(--color-button-secondary-hover);
-  border-color: var(--color-border-secondary);
-}
-
-.btn-secondary:active {
-  transform: scale(0.98);
-}
-
-/* Cards */
-.card {
-  background-color: var(--color-card-bg);
-  border: 1px solid var(--color-card-border);
-  border-radius: var(--radius, 0.75rem);
-  box-shadow: var(--shadow-sm);
-  transition: transform 160ms cubic-bezier(0.2, 0, 0, 1), box-shadow 160ms ease, background-color 160ms ease;
-}
-
-.card:hover {
-  background-color: var(--color-card-hover);
-  box-shadow: var(--shadow-md);
-}
-
-.card-header {
-  padding: 1.5rem 1.5rem 1rem 1.5rem;
-  border-bottom: 1px solid var(--color-border-primary);
-}
-
-.card-content {
-  padding: 1.5rem;
-}
-
-.card-footer {
-  padding: 1rem 1.5rem;
-  background-color: var(--color-bg-tertiary);
-  border-top: 1px solid var(--color-border-primary);
-}
-
-.card-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  display: flex;
-  align-items: center;
-}
-
-.card-icon {
-  height: 1.25rem;
-  width: 1.25rem;
-  margin-right: 0.5rem;
-  color: var(--color-brand-primary);
-}
-
-.card-body {
-  padding: 1rem;
-}
-
-/* WikiLink styles for MediaWiki content */
-.wikilink {
-  color: var(--color-brand-primary) !important;
-  text-decoration: none;
-  transition:
-    color 150ms ease,
-    text-decoration 150ms ease;
-}
-
-.wikilink:hover {
-  text-decoration: underline;
-  color: var(--color-brand-secondary) !important;
-}
-
-/* Support for wikilinks in infobox content */
-.country-infobox-content a[href*="ixwiki.com"] {
-  color: var(--color-brand-primary) !important;
-  text-decoration: none;
-  transition:
-    color 150ms ease,
-    text-decoration 150ms ease;
-}
-
-.country-infobox-content a[href*="ixwiki.com"]:hover {
-  text-decoration: underline;
-  color: var(--color-brand-secondary) !important;
-}
-
-/* Dark mode support for wikilinks */
-.dark .wikilink,
-.dark .country-infobox-content a[href*="ixwiki.com"] {
-  color: var(--color-brand-secondary) !important;
-}
-
-.dark .wikilink:hover,
-.dark .country-infobox-content a[href*="ixwiki.com"]:hover {
-  color: var(--color-info-light) !important;
-}
-
-/* Form Elements */
-.form-input {
-  background-color: var(--color-input-bg);
-  border: 1px solid var(--color-input-border);
-  color: var(--color-text-primary);
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
-  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
-  width: 100%;
-  box-shadow: 0 1.5px 3px rgba(0, 0, 0, 0.04);
-}
-
-.dark .form-input {
-  box-shadow: 0 1.5px 3px rgba(0, 0, 0, 0.2);
-}
-
-.form-input:hover {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-}
-
-.dark .form-input:hover {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: var(--color-input-focus);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-input-focus) 18%, transparent);
-}
-
-.form-input::placeholder {
-  color: var(--color-text-muted);
-}
-
-.form-label {
-  color: var(--color-text-secondary);
-  font-weight: 500;
-  font-size: 0.875rem;
-  margin-bottom: 0.25rem;
-  display: block;
-}
-
-.form-select {
-  background-color: var(--color-input-bg);
-  border: 1px solid var(--color-input-border);
-  color: var(--color-text-primary);
-  padding: 0.5rem 2.5rem 0.5rem 0.75rem;
-  border-radius: 0.375rem;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
-  background-position: right 0.5rem center;
-  background-repeat: no-repeat;
-  background-size: 1.5em 1.5em;
-  appearance: none;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
-}
-
-.form-select:focus {
-  outline: none;
-  border-color: var(--color-input-focus);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-input-focus) 18%, transparent);
-}
-
-/* Navigation */
-.nav-link {
-  color: var(--color-text-muted);
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  transition: color 150ms ease, background-color 150ms ease;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-}
-
-.nav-link:hover {
-  color: var(--color-text-primary);
-  background-color: var(--color-bg-tertiary);
-}
-
-.nav-link.active {
-  color: var(--color-brand-primary);
-  background-color: color-mix(in srgb, var(--color-brand-primary) 12%, transparent);
-}
-
-/* Tables */
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th {
-  background-color: var(--color-bg-secondary);
-  color: var(--color-text-secondary);
-  padding: 0.75rem;
-  text-align: left;
-  font-weight: 500;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid var(--color-border-primary);
-}
-
-.table td {
-  padding: 1rem 0.75rem;
-  border-bottom: 1px solid var(--color-border-primary);
-  color: var(--color-text-primary);
-}
-
-.table tr:hover {
-  background-color: var(--color-bg-tertiary);
-}
-
-/* Modal */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background-color: var(--color-backdrop);
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-}
-
-.modal-content {
-  background-color: var(--color-card-bg);
-  border-radius: 0.5rem;
-  box-shadow: var(--shadow-xl);
-  max-width: 100%;
-  max-height: 90vh;
-  overflow: hidden;
-  border: 1px solid var(--color-card-border);
-}
-
-/* Status Indicators and Tier Badges moved to shared-utilities.css */
-
-/* Statistics Display Components */
-.stat-block {
-  display: flex;
-  align-items: center;
-  padding: 1rem;
-  background-color: var(--color-bg-tertiary);
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-border-primary);
-}
-
-.stat-icon {
-  height: 1.25rem;
-  width: 1.25rem;
-  margin-right: 0.5rem;
-  color: var(--color-brand-primary);
-}
-
-.stat-label {
-  font-size: 0.875rem;
-  color: var(--color-text-muted);
-  display: block;
-}
-
-.stat-value {
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.stat-block-small {
-  background-color: var(--color-bg-tertiary);
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-border-primary);
-  padding: 0.75rem;
-}
-
-.stat-label-small {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-  display: block;
-}
-
-.stat-value-small {
-  font-weight: 600;
-  color: var(--color-text-primary);
-  font-size: 0.875rem;
-}
-
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--color-border-primary);
-  padding-bottom: 0.5rem;
-}
-
-.stat-row:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-/* Loading States moved to shared-utilities.css */
-
-/* Country List Card Enhancements */
-.country-card {
-  position: relative;
-  overflow: hidden;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.3s ease;
-}
-
-.country-card:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 4px 20px 0 rgba(99, 102, 241, 0.15),
-    0 2px 8px 0 rgba(0, 0, 0, 0.08);
-}
-
-.country-card .flag-background-accent {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4rem;
-  z-index: 0;
-  background-size: cover;
-  background-position: center;
-  filter: blur(8px) brightness(0.4) saturate(1.1);
-  opacity: 0.3;
-  pointer-events: none;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
-  transition: opacity 0.3s ease;
-}
-
-.country-card:hover .flag-background-accent {
-  opacity: 0.5;
-}
-
-.country-card .color-accent-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4rem;
-  z-index: 1;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-.country-card:hover .color-accent-overlay {
-  opacity: 0.7;
-}
-
-.country-card-content {
-  position: relative;
-  z-index: 2;
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  .country-card {
-    transition: none;
-  }
-  .country-card:hover {
-    transform: none;
-  }
-}
-
-/* Focus Card Animations */
-.focus-card {
-  transition: transform 200ms cubic-bezier(0.2, 0, 0, 1), box-shadow 200ms ease;
-}
-
-.focus-card:hover {
-  transform: translateY(-4px);
-}
-
-.focus-card.selected {
-  transform: scale(1.02);
-  box-shadow: 0 8px 32px color-mix(in srgb, var(--color-brand-primary) 25%, transparent);
-}
-
-/* Enhanced Medallion Glow */
-.medallion-glow {
-  filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.4));
-  transition: filter var(--transition-standard);
-}
-
-.medallion-glow:hover {
-  filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.6));
-}
-
-/* Dynamic Island (Halo) Apple Design Acrylic Shell with Interactive Physics */
-.dynamic-island-shell {
-  background: rgba(255, 255, 255, 0.85) !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.03),
-    0 16px 36px -8px rgba(0, 0, 0, 0.12),
-    0 4px 12px -2px rgba(0, 0, 0, 0.04) !important;
-  backdrop-filter: blur(28px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
-  transition: 
-    background 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    backdrop-filter 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
-/* Light Mode: Interactive Opacity on Hover, Focus-Within, Active */
-.dynamic-island-shell:hover,
-.dynamic-island-shell:focus-within,
-.dynamic-island-shell:active {
-  background: rgba(255, 255, 255, 0.90) !important;
-  border-color: rgba(0, 0, 0, 0.11) !important;
-  box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 1),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.04),
-    0 20px 44px -8px rgba(0, 0, 0, 0.14),
-    0 6px 14px -2px rgba(0, 0, 0, 0.05) !important;
-  backdrop-filter: blur(32px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
-}
-
-/* Light Mode: Frosted Glass Opaque Sheet when Expanded */
-.dynamic-island-shell[data-expanded="true"] {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(250, 250, 253, 0.89) 100%) !important;
-  border-color: rgba(0, 0, 0, 0.10) !important;
-  box-shadow: 
-    inset 0 1.5px 1px rgba(255, 255, 255, 1),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.65),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.03),
-    0 32px 64px -12px rgba(0, 0, 0, 0.18),
-    0 12px 28px -4px rgba(0, 0, 0, 0.08) !important;
-  backdrop-filter: blur(40px) saturate(210%) brightness(102%) !important;
-  -webkit-backdrop-filter: blur(40px) saturate(210%) brightness(102%) !important;
-}
-
-.dark .dynamic-island-shell {
-  background: rgba(15, 17, 24, 0.88) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.4),
-    0 20px 48px -10px rgba(0, 0, 0, 0.65),
-    0 8px 20px -4px rgba(0, 0, 0, 0.45) !important;
-  backdrop-filter: blur(28px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
-  transition: 
-    background 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-    backdrop-filter 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
-/* Dark Mode: Interactive Opacity on Hover, Focus-Within, Active */
-.dark .dynamic-island-shell:hover,
-.dark .dynamic-island-shell:focus-within,
-.dark .dynamic-island-shell:active {
-  background: rgba(18, 20, 28, 0.92) !important;
-  border-color: rgba(255, 255, 255, 0.16) !important;
-  box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.20),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
-    0 24px 54px -10px rgba(0, 0, 0, 0.72),
-    0 10px 24px -4px rgba(0, 0, 0, 0.50) !important;
-  backdrop-filter: blur(32px) saturate(200%) !important;
-  -webkit-backdrop-filter: blur(32px) saturate(200%) !important;
-}
-
-/* Dark Mode: Frosted Glass Opaque Obsidian Sheet when Expanded */
-.dark .dynamic-island-shell[data-expanded="true"] {
-  background: linear-gradient(180deg, rgba(24, 28, 40, 0.94) 0%, rgba(13, 15, 22, 0.96) 100%) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 
-    inset 0 1px 1px rgba(255, 255, 255, 0.28),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.6),
-    0 36px 72px -16px rgba(0, 0, 0, 0.88),
-    0 16px 32px -6px rgba(0, 0, 0, 0.60) !important;
-  backdrop-filter: blur(40px) saturate(210%) brightness(104%) !important;
-  -webkit-backdrop-filter: blur(40px) saturate(210%) brightness(104%) !important;
-}
-
 /* ==========================================================================
-   DASHBOARD THEME — Section Glow Effects & Domain Accents
+   SHARED COMPONENT CLASSES
+
+   Layered in `@layer components`; no `!important`. Deleted 2026-09-30 (no
+   callers): .btn-*, .form-*, .nav-link, .modal-*, .stat-*, .country-card*,
+   .focus-card, .medallion-glow (its undefined --transition-standard went with
+   it), .dashboard-section-*.
    ========================================================================== */
 
-.dashboard-section-mycountry {
-  border: 1px solid rgba(202, 138, 4, 0.3);
-  box-shadow:
-    0 0 20px rgba(202, 138, 4, 0.15),
-    0 4px 12px rgba(202, 138, 4, 0.1);
-  transition: box-shadow 0.3s ease;
-}
+@layer components {
+  /* Cards */
+  .card {
+    background-color: var(--color-card-bg);
+    border: 1px solid var(--color-card-border);
+    border-radius: var(--radius, 0.75rem);
+    box-shadow: var(--shadow-sm);
+    transition: transform 160ms cubic-bezier(0.2, 0, 0, 1), box-shadow 160ms ease, background-color 160ms ease;
+  }
 
-.dashboard-section-mycountry:hover {
-  box-shadow:
-    0 0 30px rgba(202, 138, 4, 0.25),
-    0 6px 20px rgba(202, 138, 4, 0.15);
-}
+  .card:hover {
+    background-color: var(--color-card-hover);
+    box-shadow: var(--shadow-md);
+  }
 
-.dashboard-section-vault {
-  border: 1px solid rgba(147, 51, 234, 0.3);
-  box-shadow:
-    0 0 20px rgba(147, 51, 234, 0.15),
-    0 4px 12px rgba(255, 215, 0, 0.1);
-  transition: box-shadow 0.3s ease;
-}
+  .card-header {
+    padding: 1.5rem 1.5rem 1rem 1.5rem;
+    border-bottom: 1px solid var(--color-border-primary);
+  }
 
-.dashboard-section-vault:hover {
-  box-shadow:
-    0 0 30px rgba(147, 51, 234, 0.25),
-    0 6px 20px rgba(255, 215, 0, 0.15);
-}
+  .card-content {
+    padding: 1.5rem;
+  }
 
-.dashboard-section-global {
-  border: 1px solid rgba(37, 99, 235, 0.3);
-  box-shadow:
-    0 0 20px rgba(37, 99, 235, 0.15),
-    0 4px 12px rgba(37, 99, 235, 0.1);
-  transition: box-shadow 0.3s ease;
-}
+  .card-footer {
+    padding: 1rem 1.5rem;
+    background-color: var(--color-bg-tertiary);
+    border-top: 1px solid var(--color-border-primary);
+  }
 
-.dashboard-section-global:hover {
-  box-shadow:
-    0 0 30px rgba(37, 99, 235, 0.25),
-    0 6px 20px rgba(37, 99, 235, 0.15);
-}
+  .card-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    display: flex;
+    align-items: center;
+  }
 
-.dashboard-section-eci {
-  border: 1px solid rgba(79, 70, 229, 0.3);
-  box-shadow:
-    0 0 20px rgba(79, 70, 229, 0.15),
-    0 4px 12px rgba(79, 70, 229, 0.1);
-  transition: box-shadow 0.3s ease;
-}
+  /* WikiLink styles for MediaWiki content */
+  .wikilink {
+    color: var(--color-brand-primary);
+    text-decoration: none;
+    transition:
+      color 150ms ease,
+      text-decoration 150ms ease;
+  }
 
-.dashboard-section-eci:hover {
-  box-shadow:
-    0 0 30px rgba(79, 70, 229, 0.25),
-    0 6px 20px rgba(79, 70, 229, 0.15);
-}
+  .wikilink:hover {
+    text-decoration: underline;
+    color: var(--color-brand-secondary);
+  }
 
-.dashboard-section-sdi {
-  border: 1px solid rgba(220, 38, 38, 0.3);
-  box-shadow:
-    0 0 20px rgba(220, 38, 38, 0.15),
-    0 4px 12px rgba(220, 38, 38, 0.1);
-  transition: box-shadow 0.3s ease;
-}
+  /* Support for wikilinks in infobox content */
+  .country-infobox-content a[href*="ixwiki.com"] {
+    color: var(--color-brand-primary);
+    text-decoration: none;
+    transition:
+      color 150ms ease,
+      text-decoration 150ms ease;
+  }
 
-.dashboard-section-sdi:hover {
-  box-shadow:
-    0 0 30px rgba(220, 38, 38, 0.25),
-    0 6px 20px rgba(220, 38, 38, 0.15);
+  .country-infobox-content a[href*="ixwiki.com"]:hover {
+    text-decoration: underline;
+    color: var(--color-brand-secondary);
+  }
+
+  /* Dark mode support for wikilinks */
+  .dark .wikilink,
+  [data-theme="dark"] .wikilink,
+  .dark .country-infobox-content a[href*="ixwiki.com"],
+  [data-theme="dark"] .country-infobox-content a[href*="ixwiki.com"] {
+    color: var(--color-brand-secondary);
+  }
+
+  .dark .wikilink:hover,
+  [data-theme="dark"] .wikilink:hover,
+  .dark .country-infobox-content a[href*="ixwiki.com"]:hover,
+  [data-theme="dark"] .country-infobox-content a[href*="ixwiki.com"]:hover {
+    color: var(--color-info-light);
+  }
+
+  /* Tables */
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .table th {
+    background-color: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 500;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--color-border-primary);
+  }
+
+  .table td {
+    padding: 1rem 0.75rem;
+    border-bottom: 1px solid var(--color-border-primary);
+    color: var(--color-text-primary);
+  }
+
+  .table tr:hover {
+    background-color: var(--color-bg-tertiary);
+  }
 }

@@ -2,7 +2,7 @@ import React from "react";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Textarea } from "~/components/ui/textarea";
 import { Slider } from "~/components/ui/slider";
 import {
@@ -37,7 +37,7 @@ export const DepartmentBasicFields = React.memo(function DepartmentBasicFields({
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label htmlFor="dept-name">Department Name *</Label>
           <Input
             id="dept-name"
@@ -46,10 +46,10 @@ export const DepartmentBasicFields = React.memo(function DepartmentBasicFields({
             placeholder="e.g. Ministry of Finance"
             disabled={isReadOnly}
           />
-          {errors?.name && <p className="text-destructive text-xs">{errors.name[0]}</p>}
+          {errors?.name && <p className="text-destructive text-footnote">{errors.name[0]}</p>}
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label htmlFor="dept-shortname">Short Name / Acronym</Label>
           <Input
             id="dept-shortname"
@@ -62,7 +62,7 @@ export const DepartmentBasicFields = React.memo(function DepartmentBasicFields({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label>Category</Label>
           <Select
             value={data.category}
@@ -82,7 +82,7 @@ export const DepartmentBasicFields = React.memo(function DepartmentBasicFields({
           </Select>
         </div>
 
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label>Organizational Level</Label>
           <Select
             value={data.organizationalLevel || "Department"}
@@ -105,7 +105,7 @@ export const DepartmentBasicFields = React.memo(function DepartmentBasicFields({
         </div>
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label htmlFor="minister-title">Minister Title</Label>
         <Input
           id="minister-title"
@@ -116,7 +116,7 @@ export const DepartmentBasicFields = React.memo(function DepartmentBasicFields({
         />
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label htmlFor="dept-desc">Description</Label>
         <Textarea
           id="dept-desc"
@@ -129,14 +129,9 @@ export const DepartmentBasicFields = React.memo(function DepartmentBasicFields({
       </div>
 
       {/* Priority Level Slider */}
-      <FacetContainer
-        depth={3}
-        surface="solid"
-        enableRefraction={false}
-        className="space-y-2 rounded-lg p-4"
-      >
+      <FacetCard variant="inset" className="space-y-2 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h4 className="text-foreground text-sm font-semibold">Operational priority</h4>
+          <h4 className="text-label text-headline">Operational priority</h4>
           <Badge variant="outline" className={priorityDetails.color}>
             {priorityDetails.label} ({data.priority || 5}/10)
           </Badge>
@@ -150,8 +145,8 @@ export const DepartmentBasicFields = React.memo(function DepartmentBasicFields({
           disabled={isReadOnly}
           className="py-2"
         />
-        <p className="text-muted-foreground text-xs">{priorityDetails.desc}</p>
-      </FacetContainer>
+        <p className="text-label-secondary text-footnote">{priorityDetails.desc}</p>
+      </FacetCard>
     </div>
   );
 });

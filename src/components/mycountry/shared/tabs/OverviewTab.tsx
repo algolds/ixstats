@@ -52,28 +52,28 @@ export function OverviewTab({
   setMetricViewAction: React.Dispatch<React.SetStateAction<MyCountryMetricView>>;
 }) {
   return (
-    <FacetCard depth={1} className="overflow-hidden rounded-2xl">
+    <FacetCard className="rounded-card overflow-hidden">
       <FacetCardContent className="space-y-4 pt-4 pb-4">
         {/* ── Metrics Grid (GDP / Population / Land Area) ── */}
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                data-cuelume-press="soft"
+              <FacetCard
+                variant="inset"
+                padding="sm"
+                className="text-left"
                 onClick={() =>
                   setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     gdp: v.gdp === "perCapita" ? "total" : "perCapita",
                   }))
                 }
-                className="border-border bg-card hover:bg-accent/50 focus-visible:ring-ring cursor-pointer rounded-xl border p-3 text-left transition-[transform,background-color] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]"
               >
                 <Eyebrow className="block">
                   {metricView.gdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
                 </Eyebrow>
-                <div className="mt-0.5 flex items-center gap-1.5">
-                  <p className="text-foreground text-lg font-bold tracking-tight">
+                <div className="mt-0.5 flex items-center gap-2">
+                  <p className="text-label text-title-3">
                     $
                     {metricView.gdp === "perCapita"
                       ? Math.round(country.currentGdpPerCapita ?? 0).toLocaleString("en-US")
@@ -86,43 +86,47 @@ export function OverviewTab({
                     );
                     if (gdpGrowth > 0)
                       return (
-                        <span className="flex items-center gap-0.5 text-emerald-500">
+                        <span className="text-green flex items-center gap-0.5">
                           <TrendingUp className="inline-flex h-3.5 w-3.5" />
-                          <span className="text-xs font-semibold">+{gdpGrowth.toFixed(1)}%</span>
+                          <span className="text-caption font-semibold">
+                            +{gdpGrowth.toFixed(1)}%
+                          </span>
                         </span>
                       );
                     if (gdpGrowth < 0)
                       return (
                         <span className="text-destructive flex items-center gap-0.5">
                           <TrendingDown className="inline-flex h-3.5 w-3.5" />
-                          <span className="text-xs font-semibold">{gdpGrowth.toFixed(1)}%</span>
+                          <span className="text-caption font-semibold">
+                            {gdpGrowth.toFixed(1)}%
+                          </span>
                         </span>
                       );
-                    return <span className="text-muted-foreground text-xs">0.0%</span>;
+                    return <span className="text-label-secondary text-footnote">0.0%</span>;
                   })()}
                 </div>
-                <p className="text-muted-foreground mt-0.5 text-xs">
+                <p className="text-label-secondary text-footnote mt-0.5">
                   {metricView.gdp === "perCapita"
                     ? `${country.economicTier || "Developing"} · $${Math.round(country.currentTotalGdp ?? 0).toLocaleString("en-US")} total`
                     : `Per capita: $${Math.round(country.currentGdpPerCapita ?? 0).toLocaleString("en-US")}`}
                 </p>
-              </button>
-              <button
-                type="button"
-                data-cuelume-press="soft"
+              </FacetCard>
+              <FacetCard
+                variant="inset"
+                padding="sm"
+                className="text-left"
                 onClick={() =>
                   setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     population: v.population === "total" ? "density" : "total",
                   }))
                 }
-                className="border-border bg-card hover:bg-accent/50 focus-visible:ring-ring cursor-pointer rounded-xl border p-3 text-left transition-[transform,background-color] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]"
               >
                 <Eyebrow className="block">
                   {metricView.population === "total" ? "Population" : "Pop. Density"}
                 </Eyebrow>
-                <div className="mt-0.5 flex items-center gap-1.5">
-                  <p className="text-foreground text-lg font-bold tracking-tight">
+                <div className="mt-0.5 flex items-center gap-2">
+                  <p className="text-label text-title-3">
                     {metricView.population === "total"
                       ? Math.round(country.currentPopulation ?? 0).toLocaleString("en-US")
                       : country.populationDensity
@@ -133,30 +137,35 @@ export function OverviewTab({
                     const popGrowth = smartNormalizeGrowthRate(country.populationGrowthRate, 0);
                     if (popGrowth > 0)
                       return (
-                        <span className="flex items-center gap-0.5 text-emerald-500">
+                        <span className="text-green flex items-center gap-0.5">
                           <TrendingUp className="inline-flex h-3.5 w-3.5" />
-                          <span className="text-xs font-semibold">+{popGrowth.toFixed(1)}%</span>
+                          <span className="text-caption font-semibold">
+                            +{popGrowth.toFixed(1)}%
+                          </span>
                         </span>
                       );
                     if (popGrowth < 0)
                       return (
                         <span className="text-destructive flex items-center gap-0.5">
                           <TrendingDown className="inline-flex h-3.5 w-3.5" />
-                          <span className="text-xs font-semibold">{popGrowth.toFixed(1)}%</span>
+                          <span className="text-caption font-semibold">
+                            {popGrowth.toFixed(1)}%
+                          </span>
                         </span>
                       );
-                    return <span className="text-muted-foreground text-xs">0.0%</span>;
+                    return <span className="text-label-secondary text-footnote">0.0%</span>;
                   })()}
                 </div>
-                <p className="text-muted-foreground mt-0.5 text-xs">
+                <p className="text-label-secondary text-footnote mt-0.5">
                   {metricView.population === "total"
                     ? `Tier ${country.populationTier || "N/A"}${country.populationDensity ? ` · ${Math.round(country.populationDensity).toLocaleString()}/km²` : ""}`
                     : `Total: ${Math.round(country.currentPopulation ?? 0).toLocaleString("en-US")}`}
                 </p>
-              </button>
-              <button
-                type="button"
-                data-cuelume-press="soft"
+              </FacetCard>
+              <FacetCard
+                variant="inset"
+                padding="sm"
+                className="text-left"
                 onClick={
                   country.areaSqMi && country.landArea
                     ? () =>
@@ -166,15 +175,9 @@ export function OverviewTab({
                         }))
                     : undefined
                 }
-                className={cn(
-                  "border-border bg-card rounded-xl border p-3 text-left transition-[background-color,transform] duration-150",
-                  country.areaSqMi &&
-                    country.landArea &&
-                    "hover:bg-accent/50 cursor-pointer active:scale-[0.98]"
-                )}
               >
                 <Eyebrow className="block">Land Area</Eyebrow>
-                <p className="text-foreground mt-0.5 text-lg font-bold tracking-tight">
+                <p className="text-label text-title-3 mt-0.5">
                   {metricView.area === "km"
                     ? country.landArea
                       ? `${Math.round(country.landArea).toLocaleString()} km²`
@@ -183,7 +186,7 @@ export function OverviewTab({
                       ? `${Math.round(country.areaSqMi).toLocaleString()} sq mi`
                       : "N/A"}
                 </p>
-                <p className="text-muted-foreground mt-0.5 text-xs">
+                <p className="text-label-secondary text-footnote mt-0.5">
                   {metricView.area === "km"
                     ? country.areaSqMi
                       ? `${Math.round(country.areaSqMi).toLocaleString()} sq mi`
@@ -192,35 +195,35 @@ export function OverviewTab({
                       ? `${Math.round(country.landArea).toLocaleString()} km²`
                       : ""}
                 </p>
-              </button>
+              </FacetCard>
             </div>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="text-xs">
+          <TooltipContent side="bottom" className="text-footnote">
             Click any metric to toggle between views
           </TooltipContent>
         </Tooltip>
 
         {/* Growth footer */}
-        <div className="border-border/40 text-muted-foreground flex items-center gap-4 border-t pt-2.5 text-xs">
+        <div className="border-separator text-label-secondary text-footnote flex items-center gap-4 border-t pt-2">
           <span>
-            <TrendingUp className="text-muted-foreground mr-1 inline h-3 w-3" />
+            <TrendingUp className="text-label-secondary mr-1 inline h-3 w-3" />
             Max GDP Growth{" "}
-            <span className="text-foreground font-semibold">
+            <span className="text-label font-semibold">
               {((country.maxGdpGrowthRate ?? 0) * 100).toFixed(1)}%
             </span>
             <span className="ml-1 opacity-60">({country.economicTier || "N/A"} cap)</span>
           </span>
           <span>
-            <Activity className="text-muted-foreground mr-1 inline h-3 w-3" />
+            <Activity className="text-label-secondary mr-1 inline h-3 w-3" />
             Local Factor{" "}
             <span
               className={cn(
                 "font-semibold",
                 (country.localGrowthFactor ?? 1) > 1
-                  ? "text-emerald-500"
+                  ? "text-green"
                   : (country.localGrowthFactor ?? 1) < 1
                     ? "text-destructive"
-                    : "text-foreground"
+                    : "text-label"
               )}
             >
               {(((country.localGrowthFactor ?? 1) - 1) * 100).toFixed(2)}%
@@ -229,9 +232,9 @@ export function OverviewTab({
         </div>
 
         {/* ── Identity & Lore (inline, no collapsible wrapper) ── */}
-        <div className="border-border/30 space-y-3 border-t pt-3">
+        <div className="border-separator space-y-3 border-t pt-3">
           {country.nationalIdentity?.motto && (
-            <p className="text-muted-foreground/80 text-xs italic">
+            <p className="text-label-secondary text-footnote italic">
               &ldquo;{country.nationalIdentity.motto}&rdquo;
             </p>
           )}
@@ -256,29 +259,32 @@ export function OverviewTab({
                   <img
                     src={coatOfArmsUrl}
                     alt={`Coat of arms of ${country.name}`}
-                    className="border-border bg-muted h-20 w-auto shrink-0 rounded-lg border object-contain p-1.5"
+                    className="border-separator bg-fill-3 rounded-control h-20 w-auto shrink-0 border object-contain p-2"
                   />
                 )}
                 <div className="min-w-0 flex-1">
                   {introHtml ? (
                     <div className="space-y-2">
                       <div
-                        className="text-foreground/80 [&_a]:text-primary line-clamp-4 text-sm leading-relaxed [&_a]:underline"
+                        className="text-label-secondary [&_a]:text-tint text-body line-clamp-4 leading-relaxed [&_a]:underline"
                         dangerouslySetInnerHTML={{ __html: introHtml }}
                       />
                       <div className="flex items-center pt-0.5">
                         <Link
                           href={titleToWikiOSRoute(country.wikiPageTitle || country.name)}
-                          className="group/wikilink text-primary inline-flex items-center gap-1.5 text-xs font-semibold transition-colors hover:underline"
+                          className="group/wikilink text-tint text-caption inline-flex items-center gap-2 font-semibold transition-colors hover:underline"
                         >
-                          <BookOpen className="h-3.5 w-3.5" />
+                          <BookOpen aria-hidden="true" className="h-3.5 w-3.5" />
                           <span>Read full page</span>
-                          <ChevronRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover/wikilink:translate-x-0.5" />
+                          <ChevronRight
+                            aria-hidden="true"
+                            className="h-3.5 w-3.5 transition-[translate] duration-200 motion-safe:group-hover/wikilink:translate-x-0.5 motion-safe:group-focus-visible/wikilink:translate-x-0.5"
+                          />
                         </Link>
                       </div>
                     </div>
                   ) : showLoadingSkeleton ? (
-                    <div className="space-y-1.5" role="status" aria-label="Loading summary">
+                    <div className="space-y-2" role="status" aria-label="Loading summary">
                       <Skeleton className="h-3 w-full" />
                       <Skeleton className="h-3 w-4/5" />
                       <Skeleton className="h-3 w-3/5" />
@@ -302,12 +308,12 @@ export function OverviewTab({
                     return (
                       <div
                         key={f.key}
-                        className="border-border bg-card flex items-center gap-2 rounded-lg border px-3 py-2"
+                        className="border-separator bg-surface rounded-control flex items-center gap-2 border px-3 py-2"
                       >
                         <FieldIcon className={cn("h-3.5 w-3.5 shrink-0", f.color)} />
                         <div className="min-w-0">
                           <Eyebrow className="block">{f.label}</Eyebrow>
-                          <p className="text-foreground truncate text-xs font-semibold">
+                          <p className="text-label text-caption truncate font-semibold">
                             {f.getValue(ni)}
                           </p>
                         </div>

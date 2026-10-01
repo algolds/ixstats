@@ -15,12 +15,12 @@ export function RealmFeed({ realmId }: { realmId: string | null }) {
     { staleTime: 15_000 }
   );
 
-  if (isLoading) return <p className="text-muted-foreground p-4 text-sm">Loading posts…</p>;
+  if (isLoading) return <p className="text-label-secondary text-body p-4">Loading posts…</p>;
   if (error)
-    return <p className="text-muted-foreground p-4 text-sm">The feed could not be loaded.</p>;
+    return <p className="text-label-secondary text-body p-4">The feed could not be loaded.</p>;
   if (!data?.posts.length)
     return (
-      <p className="text-muted-foreground p-4 text-sm">
+      <p className="text-label-secondary text-body p-4">
         No posts yet. {realmId ? "Nations of this realm haven't posted." : ""}
       </p>
     );

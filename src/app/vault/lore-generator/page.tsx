@@ -11,6 +11,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { LoreCardGenerator } from "~/components/cards/lore";
+import { Button } from "~/components/ui/button";
 
 export default function LoreGeneratorPage() {
   const router = useRouter();
@@ -20,62 +21,64 @@ export default function LoreGeneratorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900/20 via-purple-900/20 to-blue-900/20 p-6">
+    <div className="min-h-screen p-6">
       <div className="mx-auto max-w-4xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="mb-2 text-4xl font-bold text-white">Wiki Lore Card Generator</h1>
-          <p className="text-white/70">Request custom lore cards from IxWiki and IIWiki articles</p>
+          <h1 className="text-large-title text-label mb-2">Wiki Lore Card Generator</h1>
+          <p className="text-label-secondary">
+            Request custom lore cards from IxWiki and IIWiki articles
+          </p>
         </div>
 
         {/* Info Panel */}
-        <div className="glass-parent mb-6 space-y-4 p-6">
-          <h2 className="text-2xl font-bold text-white">How It Works</h2>
+        <div className="border-separator bg-surface rounded-row mb-6 space-y-4 border p-6">
+          <h2 className="text-title-1 text-label">How It Works</h2>
 
           <div className="space-y-3">
             <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-400 font-bold text-gray-900">
+              <div className="bg-indigo text-label flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold">
                 1
               </div>
               <div>
-                <div className="font-semibold text-white">Search for an Article</div>
-                <div className="text-sm text-white/60">
+                <div className="text-label font-semibold">Search for an Article</div>
+                <div className="text-body text-label-secondary">
                   Find interesting wiki articles from IxWiki or IIWiki
                 </div>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-400 font-bold text-gray-900">
+              <div className="bg-indigo text-label flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold">
                 2
               </div>
               <div>
-                <div className="font-semibold text-white">Submit Your Request</div>
-                <div className="text-sm text-white/60">
+                <div className="text-label font-semibold">Submit Your Request</div>
+                <div className="text-body text-label-secondary">
                   Pay 50 IxCredits to request the article become a lore card
                 </div>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-400 font-bold text-gray-900">
+              <div className="bg-indigo text-label flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold">
                 3
               </div>
               <div>
-                <div className="font-semibold text-white">Admin Review</div>
-                <div className="text-sm text-white/60">
+                <div className="text-label font-semibold">Admin Review</div>
+                <div className="text-body text-label-secondary">
                   Admins review your request for quality and appropriateness
                 </div>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-400 font-bold text-gray-900">
+              <div className="bg-indigo text-label flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold">
                 4
               </div>
               <div>
-                <div className="font-semibold text-white">Card Generation</div>
-                <div className="text-sm text-white/60">
+                <div className="text-label font-semibold">Card Generation</div>
+                <div className="text-body text-label-secondary">
                   Once approved, the system automatically generates your lore card with
                   quality-based rarity
                 </div>
@@ -83,10 +86,10 @@ export default function LoreGeneratorPage() {
             </div>
           </div>
 
-          <div className="glass-child rounded-lg border border-indigo-400/20 bg-indigo-500/10 p-4">
+          <div className="rounded-control border-indigo/20 bg-indigo/10 border p-4">
             <div className="flex items-start gap-3">
               <svg
-                className="mt-0.5 h-5 w-5 shrink-0 text-indigo-400"
+                className="text-indigo mt-0.5 h-5 w-5 shrink-0"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -96,18 +99,18 @@ export default function LoreGeneratorPage() {
                   clipRule="evenodd"
                 />
               </svg>
-              <div className="text-sm text-white/80">
-                <strong className="text-white">Lore Card Quality:</strong> Card rarity is determined
+              <div className="text-body text-label">
+                <strong className="text-label">Lore Card Quality:</strong> Card rarity is determined
                 by article quality metrics including length, references, inbound links, categories,
                 infoboxes, and featured status. Higher quality articles generate rarer cards!
               </div>
             </div>
           </div>
 
-          <div className="glass-child rounded-lg border border-yellow-400/20 bg-yellow-500/10 p-4">
+          <div className="rounded-control border-yellow/20 bg-yellow/10 border p-4">
             <div className="flex items-start gap-3">
               <svg
-                className="mt-0.5 h-5 w-5 shrink-0 text-yellow-400"
+                className="text-yellow mt-0.5 h-5 w-5 shrink-0"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -117,8 +120,8 @@ export default function LoreGeneratorPage() {
                   clipRule="evenodd"
                 />
               </svg>
-              <div className="text-sm text-white/80">
-                <strong className="text-white">Refund Policy:</strong> If your request is rejected
+              <div className="text-body text-label">
+                <strong className="text-label">Refund Policy:</strong> If your request is rejected
                 by admins, you'll receive a full refund of 50 IxCredits. Requests are only rejected
                 for quality or appropriateness concerns.
               </div>
@@ -127,18 +130,19 @@ export default function LoreGeneratorPage() {
         </div>
 
         {/* Generator Interface */}
-        <div className="glass-parent p-8">
+        <div className="border-separator bg-surface rounded-row border p-8">
           <LoreCardGenerator onRequestSubmitted={handleRequestSubmitted} />
         </div>
 
         {/* Back Button */}
         <div className="mt-6 text-center">
-          <button
+          <Button
+            variant="ghost"
             onClick={() => router.push("/vault")}
-            className="text-sm text-white/60 transition-colors hover:text-white"
+            className="text-label-secondary"
           >
             Back to MyVault
-          </button>
+          </Button>
         </div>
       </div>
     </div>

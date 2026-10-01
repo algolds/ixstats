@@ -1,11 +1,15 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "motion/react";
 import { Check, EditPencil as Edit3, Pin, RotateCameraLeft as RotateCcw } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { Switch } from "~/components/ui/switch";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { FacetCard, MotionFacetCard } from "~/components/ui/facet-container";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { tweenFast } from "~/lib/design/motion";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { RibbonBar } from "~/components/achievements/FloatingRibbonRack";
 import { GuillochePattern } from "../cards/GuillochePattern";
@@ -92,9 +96,11 @@ export const PassportBackFace = React.memo(function PassportBackFace({
   };
 
   return (
-    <motion.div
+    <MotionFacetCard
+      // v2: the back of the document is the same translucent glass page as the front.
+      variant="glass"
       className={cn(
-        "bg-card/70 dark:bg-card/60 absolute inset-0 min-h-full w-full space-y-6 overflow-y-auto rounded-3xl border border-black/10 p-6 shadow-2xl saturate-[180%] backdrop-blur-[20px] [backface-visibility:hidden] sm:p-8 dark:border-white/15",
+        "absolute inset-0 min-h-full w-full space-y-6 overflow-y-auto p-6 [backface-visibility:hidden] sm:p-8",
         !isFlipped ? "pointer-events-none" : ""
       )}
       style={
@@ -106,122 +112,105 @@ export const PassportBackFace = React.memo(function PassportBackFace({
             } as React.CSSProperties)
       }
       animate={{ opacity: isFlipped ? 1 : 0 }}
-      transition={shouldReduceMotion ? { duration: 0.2 } : { duration: 0.15 }}
+      transition={tweenFast}
     >
       <GuillochePattern opacity={0.05} />
 
-      <div className="relative z-10 space-y-6">
+      <div className="relative space-y-6">
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/8 pb-4 dark:border-white/10">
+        <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-4">
           <div className="flex items-center gap-3">
             <IxnayPassportSeal size="sm" />
             <div>
-              <span className="text-foreground block font-mono text-xs font-bold tracking-[0.2em] uppercase sm:text-xs">
-                PASSPORT CONFIGURATION
-              </span>
-              <span className="text-muted-foreground font-mono text-xs tracking-wider uppercase">
-                SIGNATURE, PRIVACY & SIGNATURE RIBBONS
-              </span>
+              <h2 className="text-label text-title-3">Passport configuration</h2>
+              <p className="text-label-secondary text-footnote">
+                Signature, privacy and signature ribbons
+              </p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleDone}
-            data-cuelume-press="soft"
-            className="bg-foreground text-background inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-semibold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-[0.97]"
-          >
-            <Check className="h-3.5 w-3.5 text-emerald-400" />
+          <Button type="button" variant="filled" onClick={handleDone}>
+            <Check aria-hidden />
             <span>Done</span>
-          </button>
+          </Button>
         </div>
 
         {update.error && (
-          <p role="alert" className="text-destructive text-xs">
+          <p role="alert" className="text-destructive text-footnote">
             Could not save: {update.error.message}
           </p>
         )}
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* Editable Signature Block */}
-          <div className="space-y-3.5 rounded-2xl border border-black/8 bg-black/[0.015] p-5 dark:border-white/10 dark:bg-white/[0.02]">
+          {/* Editable signature */}
+          <FacetCard variant="inset" className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 font-mono text-xs font-bold tracking-wider text-stone-400 uppercase">
-                <Edit3 className="h-3 w-3 text-blue-500" />
-                <span>Signature Inscription</span>
-              </span>
-              <span className="text-muted-foreground font-mono text-xs">Saved on Done</span>
+              <h3 className="text-subhead text-label flex items-center gap-2">
+                <Edit3 aria-hidden className="text-label-secondary size-4" />
+                <span>Signature inscription</span>
+              </h3>
+              <span className="text-label-secondary text-footnote">Saved on Done</span>
             </div>
 
             <div className="space-y-2">
-              <input
+              <Input
                 type="text"
                 value={signature}
                 maxLength={MAX_SIGNATURE}
                 onChange={(e) => setSignature(e.target.value)}
                 placeholder={displayName}
                 aria-label="Signature inscription"
-                className="text-foreground placeholder:text-muted-foreground w-full rounded-xl border border-black/10 bg-black/[0.02] px-3.5 py-2 font-serif text-sm tracking-wide italic transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-2 focus:ring-blue-500/30 focus:outline-none dark:border-white/15 dark:bg-white/[0.03]"
+                className="bg-surface font-serif italic"
               />
-              <div className="text-muted-foreground flex items-center justify-between text-xs">
-                <span>Calligraphic Preview:</span>
-                <span className="text-foreground font-serif font-semibold italic">
+              <div className="text-label-secondary text-footnote flex items-center justify-between gap-2">
+                <span>Calligraphic preview:</span>
+                <span className="text-label text-body truncate font-serif italic">
                   {signature.trim() || displayName}
                 </span>
               </div>
             </div>
-          </div>
+          </FacetCard>
 
           {/* Persisted visibility toggles */}
-          <div className="space-y-3.5 rounded-2xl border border-black/8 bg-black/[0.015] p-5 dark:border-white/10 dark:bg-white/[0.02]">
-            <span className="block font-mono text-xs font-bold tracking-wider text-stone-400 uppercase">
-              Public Passport Sections
-            </span>
-            <p className="text-muted-foreground text-xs">
-              Saved to your account. A hidden section is not sent to anyone viewing your passport,
-              including you.
-            </p>
-
-            <div className="space-y-3 text-xs">
-              {VISIBILITY_TOGGLES.map((toggle, idx) => (
-                <div
+          <FacetList>
+            <FacetListSection
+              header="Public passport sections"
+              footer="Saved to your account. A hidden section is not sent to anyone viewing your passport, including you."
+            >
+              {VISIBILITY_TOGGLES.map((toggle) => (
+                <FacetRow
                   key={toggle.key}
-                  className={cn(
-                    "flex items-center justify-between gap-3",
-                    idx > 0 && "border-t border-black/6 pt-2 dark:border-white/8"
-                  )}
-                >
-                  <div className="space-y-0.5">
-                    <p className="text-foreground font-semibold">{toggle.title}</p>
-                    <p className="text-muted-foreground text-xs">{toggle.hint}</p>
-                  </div>
-                  <Switch
-                    aria-label={`Show ${toggle.title}`}
-                    checked={visibility?.[toggle.key] ?? true}
-                    disabled={!visibility || busy}
-                    onCheckedChange={(value) =>
-                      update.mutate({ visibility: { [toggle.key]: value } })
-                    }
-                  />
-                </div>
+                  title={toggle.title}
+                  subtitle={toggle.hint}
+                  trailing={
+                    <Switch
+                      aria-label={`Show ${toggle.title}`}
+                      checked={visibility?.[toggle.key] ?? true}
+                      disabled={!visibility || busy}
+                      onCheckedChange={(value) =>
+                        update.mutate({ visibility: { [toggle.key]: value } })
+                      }
+                    />
+                  }
+                />
               ))}
-            </div>
-          </div>
+            </FacetListSection>
+          </FacetList>
         </div>
 
         {/* Signature ribbon shelf picker */}
-        <div className="space-y-3 rounded-2xl border border-black/8 bg-black/[0.015] p-5 dark:border-white/10 dark:bg-white/[0.02]">
+        <FacetCard variant="inset" className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1.5 font-mono text-xs font-bold tracking-wider text-stone-400 uppercase">
-              <Pin className="h-3 w-3 text-amber-500" />
-              <span>Signature Ribbons</span>
-            </span>
-            <span className="text-muted-foreground font-mono text-xs">
+            <h3 className="text-subhead text-label flex items-center gap-2">
+              <Pin aria-hidden className="text-label-secondary size-4" />
+              <span>Signature ribbons</span>
+            </h3>
+            <span className="text-label-secondary text-footnote tabular-nums">
               {pinned.length}/{MAX_PINS} pinned
             </span>
           </div>
           {ribbons.length === 0 ? (
-            <p className="text-muted-foreground text-xs">
+            <p className="text-label-secondary text-footnote">
               Unlock achievements to earn ribbons. Without pins, your rarest ribbons lead the shelf.
             </p>
           ) : (
@@ -238,17 +227,17 @@ export const PassportBackFace = React.memo(function PassportBackFace({
                         disabled={busy || full}
                         aria-pressed={isPinned}
                         className={cn(
-                          "flex w-full cursor-pointer items-center gap-2.5 rounded-xl border p-2 text-left text-xs transition-[background-color,border-color,opacity] disabled:cursor-not-allowed disabled:opacity-50",
+                          "rounded-row text-footnote duration-fast ease-out-facet focus-visible:outline-tint flex w-full cursor-pointer items-center gap-2 border p-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
                           isPinned
-                            ? "border-amber-500/40 bg-amber-500/10"
-                            : "border-black/8 hover:bg-black/[0.03] dark:border-white/10 dark:hover:bg-white/[0.04]"
+                            ? "border-tint bg-tint-fill"
+                            : "bg-surface border-separator hover:bg-fill-4"
                         )}
                       >
                         <RibbonBar ribbon={ribbon} />
-                        <span className="text-foreground min-w-0 flex-1 truncate font-semibold">
+                        <span className="text-label text-headline min-w-0 flex-1 truncate">
                           {ribbon.title}
                         </span>
-                        {isPinned && <Pin className="h-3 w-3 shrink-0 text-amber-500" />}
+                        {isPinned && <Pin aria-hidden className="text-tint size-3.5 shrink-0" />}
                       </button>
                     </li>
                   );
@@ -256,21 +245,16 @@ export const PassportBackFace = React.memo(function PassportBackFace({
               </ul>
             </TooltipProvider>
           )}
-        </div>
+        </FacetCard>
 
-        {/* Action Footer */}
+        {/* Action footer */}
         <div className="flex items-center justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={handleDone}
-            data-cuelume-press="soft"
-            className="bg-foreground text-background inline-flex cursor-pointer items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-semibold shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-[0.97]"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
+          <Button type="button" variant="gray" onClick={handleDone}>
+            <RotateCcw aria-hidden />
             <span>Return to Passport</span>
-          </button>
+          </Button>
         </div>
       </div>
-    </motion.div>
+    </MotionFacetCard>
   );
 });

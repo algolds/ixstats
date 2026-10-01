@@ -55,30 +55,25 @@ export function AtomicComponentsHeader({
     <div className="space-y-4">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div className="flex items-center gap-3">
-          <div className="border-border/40 bg-card/40 rounded-xl border p-2.5 backdrop-blur-md">
-            <Icon className="text-primary h-5 w-5" />
+          <div className="border-separator bg-surface rounded-row border p-3">
+            <Icon className="text-tint h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-foreground text-lg font-bold tracking-tight md:text-xl">{title}</h1>
-            <p className="text-muted-foreground text-xs">{subtitle}</p>
+            <h1 className="text-label text-title-3 md:text-title-2">{title}</h1>
+            <p className="text-label-secondary text-footnote">{subtitle}</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {onOpenTemplates && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onOpenTemplates}
-              className="h-8 rounded-xl px-3 text-xs transition-transform active:scale-[0.98]"
-            >
-              <FileText className="text-muted-foreground mr-1.5 h-3.5 w-3.5" />
+            <Button variant="outline" size="sm" onClick={onOpenTemplates}>
+              <FileText className="text-label-secondary mr-2 h-3.5 w-3.5" />
               Templates
             </Button>
           )}
         </div>
       </div>
 
-      <p className="border-border/30 bg-card/25 text-muted-foreground flex items-start gap-2 rounded-xl border p-3 text-xs leading-relaxed">
+      <p className="border-separator bg-surface text-label-secondary rounded-row text-footnote flex items-start gap-2 border p-3 leading-relaxed">
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         <span>
           Read-only. These components are defined in code (<code>{sourcePath}</code>), which the
@@ -88,27 +83,27 @@ export function AtomicComponentsHeader({
       </p>
 
       {/* Filter Rail */}
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative max-w-sm min-w-[200px] flex-1">
-          <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+          <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
           <Input
             placeholder="Search components..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="border-border/30 bg-background/50 focus:border-border/60 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
+            className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
           />
         </div>
 
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="border-border/30 bg-background/50 h-8 w-44 rounded-xl text-xs backdrop-blur-md">
+          <SelectTrigger size="sm" className="w-44">
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="text-xs">
+            <SelectItem value="all" className="text-footnote">
               All Categories
             </SelectItem>
             {categories.map((category) => (
-              <SelectItem key={category} value={category} className="text-xs">
+              <SelectItem key={category} value={category} className="text-footnote">
                 {category}
               </SelectItem>
             ))}
@@ -116,15 +111,15 @@ export function AtomicComponentsHeader({
         </Select>
 
         <Select value={complexityFilter} onValueChange={setComplexityFilter}>
-          <SelectTrigger className="border-border/30 bg-background/50 h-8 w-40 rounded-xl text-xs backdrop-blur-md">
+          <SelectTrigger size="sm" className="w-40">
             <SelectValue placeholder="All Complexities" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="text-xs">
+            <SelectItem value="all" className="text-footnote">
               All Complexities
             </SelectItem>
             {COMPLEXITY_LEVELS.map((level) => (
-              <SelectItem key={level} value={level} className="text-xs">
+              <SelectItem key={level} value={level} className="text-footnote">
                 {level}
               </SelectItem>
             ))}

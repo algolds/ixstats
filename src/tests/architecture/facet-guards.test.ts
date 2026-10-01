@@ -1,13 +1,15 @@
 /** @jest-environment node */
 /**
  * Plan 346: pins the Facet anti-slop gates (docs/reference/facet-design-system.md §8) so they
- * cannot regrow. `src/app/labs/onoma` keeps its own type scale and motion, so it is excluded.
+ * cannot regrow. (Onoma, `src/app/labs/onoma`, was excluded until its Facet 3 conversion.)
  */
 import fs from "fs";
 import path from "path";
 
+import { SANCTIONED_TEXTURES } from "~/components/ui/texture-overlay";
+
 const srcDir = path.resolve(__dirname, "../..");
-const excludedDirs = [path.join(srcDir, "tests"), path.join(srcDir, "app/labs/onoma")];
+const excludedDirs = [path.join(srcDir, "tests")];
 
 function listSourceFiles(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -57,6 +59,79 @@ const FACET_CONVERTED = [
   "components/shared/atomic-picker/",
   "app/help/",
   "app/builder/components/editor/",
+  // Facet 3 navigation shell (spec §7.4, Phase 3).
+  "components/shell/",
+  "lib/navigation/",
+  // Country profile: the Command profile, its deep-dive chrome and shared pieces.
+  "app/countries/[slug]/",
+  "components/country-profile/",
+  // Phase 4 apps: dashboard, achievements, passport (+ its settings panel).
+  "components/dashboard/",
+  "app/dashboard/",
+  "components/achievements/",
+  "app/achievements/",
+  "components/passport/",
+  "app/settings/_components/panels/AccountIdentityPanel.tsx",
+  // Phase 4 apps: ThinkPages (+ ThinkTanks, blurbs components), Messages, Halo views.
+  "components/thinkpages/",
+  "components/thinktanks/",
+  "app/thinkpages/",
+  "app/thinktanks/",
+  "components/messages/",
+  "app/messages/",
+  "components/halo/",
+  // Phase 4 apps: Labs (Onoma, its brand logo, Vexel, map pipeline) and Forum.
+  "app/labs/",
+  "components/onoma/",
+  "app/(forum)/",
+  "components/forum/",
+  // Phase 4 apps: Admin console (+ the Facet materials lab) and its shared admin components.
+  "app/admin/",
+  "components/admin/",
+  // Phase 4 apps: WikiOS (reader, editors, margin, stashes, repository, commons) and its media player.
+  "components/wiki-os/",
+  "app/(wiki-os)/",
+  "components/media/",
+  // Phase 4 apps: Vault (+ the trading-card UI) and Sports (MyLeague, MyClub).
+  "app/vault/",
+  "components/vault/",
+  "components/cards/",
+  "components/sports/",
+  "app/myleague/",
+  "app/myclub/",
+  // Phase 4 apps: Builder (all of it, MyCountry tint) and the countries index + public pages.
+  "app/builder/",
+  "app/countries/_components/",
+  "app/countries/page.tsx",
+  "app/explore/",
+  "app/leaderboards/",
+  "app/id/",
+  "app/r/",
+  "app/realms/",
+  "app/feed/",
+  "app/hashtags/",
+  "app/changelog/",
+  "app/stashes/",
+  "app/setup/",
+  "app/privacy/",
+  "app/terms/",
+  "app/page.tsx",
+  "app/_components/splash/",
+  "app/_components/IxStatsSplashPage.tsx",
+  "app/_components/HomeClient.tsx",
+  "app/_components/GlobalStatsOverview.tsx",
+  "app/_components/LeaderboardsSection.tsx",
+  "app/_components/LiveGameBanner.tsx",
+  "lib/splash/",
+  "lib/tier-utils.ts",
+  "app/settings/_components/SettingsSidebarNav.tsx",
+  // Phase 4 primitives: the shared UI kit itself (status inks, no glass/v2 classes).
+  "components/ui/",
+  // Phase 4 re-check: MyCountry routes, executive panels, the atomic selector, maps routes.
+  "app/mycountry/",
+  "components/executive/",
+  "components/shared/atomic/",
+  "app/maps/",
 ].map((dir) => dir.split("/").join(path.sep));
 
 const inConverted = (file: string) => FACET_CONVERTED.some((dir) => file.startsWith(dir));
@@ -65,19 +140,90 @@ function convertedHits(pattern: RegExp, allowed: ReadonlySet<string> = new Set()
   return hits(pattern, allowed).filter((hit) => inConverted(hit.slice(0, hit.indexOf(": "))));
 }
 
-// Brand artwork, a monochrome logo image, typography-plugin inversion, and a comment describing
-// legacy class strings.
+// A monochrome logo image (inverted in dark mode).
 const DARK_OVERRIDE_ALLOWED = new Set([
-  `${path.join("components", "mycountry", "shared", "primitives", "mycountry-logo.tsx")}: dark:text-amber-400`,
-  `${path.join("components", "mycountry", "shared", "primitives", "SectionTabBar.tsx")}: dark:text-`,
   `${path.join("components", "maps", "core", "MapLoadingScreen.tsx")}: dark:invert`,
-  `${path.join("components", "maps", "core", "StoryPinModal.tsx")}: dark:prose-invert`,
 ]);
 
-// Image scrims (flag photos, card art) and the MyCountry logo.
-const CONVERTED_GRADIENT_CEILING = 10;
+/**
+ * Facet 3.1 (spec §16.5): gradients come from sanctioned classes, not ad-hoc palette stops. The
+ * identity sheet (styles/facet/identity.css) owns the gold, glass wash, glow, aurora/foil/radiance,
+ * jewel, acrylic glow and refraction paints; card art owns `card-art-linear-*` (styles/card-art.css);
+ * raw gradient utilities are only image scrims on role/black/white/transparent stops.
+ */
+const SANCTIONED_GRADIENT_CLASSES = [
+  "material-hero",
+  // The expanded Halo sheet (`data-expanded="true"`) paints the v2 top-to-bottom acrylic fill.
+  "material-acrylic",
+  "facet-primary",
+  "facet-gold",
+  "facet-glow",
+  "facet-tint-glow",
+  "facet-acrylic-glow",
+  "facet-refraction-line",
+  "facet-aurora",
+  "facet-radiance",
+  "facet-foil",
+  "facet-jewel",
+] as const;
+
+/** Tailwind palette stops (`from-amber-500`, `via-blue-400/20`…) — the "ad-hoc palette gradient". */
+const PALETTE_STOP =
+  /(?<![\w-])(?:from|via|to)-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-\d{2,3}\b/g;
+
+/**
+ * Artwork that keeps its own palette gradients: trading-card faces, backs, holographic covers,
+ * pack art, reveal and crafting flourishes and cosmetic frames (content, spec §14 Vault), and the
+ * MyCountry logo's gold artwork.
+ */
+const ART_GRADIENT_FILES = [
+  "components/cards/",
+  "components/vault/NeonFrameOverlay.tsx",
+  "components/vault/VaultParticleExplosionModal.tsx",
+  "components/mycountry/shared/primitives/mycountry-logo.tsx",
+].map((dir) => dir.split("/").join(path.sep));
+
+/**
+ * Facet 3.1 (spec §16.1): blur comes from the glass/acrylic materials (`material-*`, FacetCard
+ * `variant="glass"`, FacetMaterial). A raw `backdrop-blur-*`/`backdrop-saturate-*` utility or an
+ * inline `backdropFilter` in converted feature code is a hand-rolled material. `backdrop-blur-none`
+ * (turning a primitive's blur off) is fine.
+ */
+const RAW_BACKDROP = /(?<![\w-])backdrop-(?:blur|saturate)(?:-[\w[\]/.()%-]+)?(?![\w-])/g;
+const INLINE_BACKDROP = /\b(?:Webkit)?[bB]ackdropFilter\s*:/g;
+const RAW_BACKDROP_ALLOWED = new Set([
+  // The drill sheet's own blur (pinned to exactly one by the drill-sheet test above).
+  `${path.join("components", "mycountry", "shell", "DrillSheets.tsx")}: backdrop-blur-xl`,
+]);
+const INLINE_BACKDROP_FILES = [
+  // The rare-card reveal moment (Vault flourish, spec §8) frosts the stage behind the card.
+  "components/cards/pack-opening/Stage3_CardReveal.tsx",
+  // The progressive blur primitive is a material itself (stepped backdrop blur).
+  "components/ui/magicui/progressive-blur.tsx",
+].map((dir) => dir.split("/").join(path.sep));
+
+/**
+ * Facet 3.1 (spec §16.8): textures in converted feature code are the sanctioned ones
+ * (`SANCTIONED_TEXTURES`: dots, grid, paperGrain, chevron — clamped to 0.05 by TextureOverlay).
+ * Card art (`components/cards/`) keeps its own textures. Allowlisted: legacy uses pending their app's
+ * next pass.
+ */
+const TEXTURE_ATTR = /\btexture=(?:"(\w+)"|\{"(\w+)"\})/g;
+const UNSANCTIONED_TEXTURE_ALLOWED = new Set<string>([]);
 
 describe("Facet anti-slop guards", () => {
+  it("never nests block elements (Skeleton renders a div) inside <p> — a hydration error", () => {
+    const paragraph = /<p(?:\s[^>]*)?>((?:(?!<\/p>)[\s\S]){0,600}?)<\/p>/g;
+    const offenders = sources.flatMap(({ file, content }) =>
+      [...content.matchAll(paragraph)]
+        .filter((m) =>
+          /<(Skeleton|div|FacetCard|Card|ul|ol|table|h[1-6]|section)\b/.test(m[1] ?? "")
+        )
+        .map((m) => `${file}:${content.slice(0, m.index).split("\n").length}`)
+    );
+    expect(offenders).toEqual([]);
+  });
+
   it("has no arbitrary sub-12px text sizes", () => {
     expect(hits(MICRO_TYPE, MICRO_TYPE_ALLOWED)).toEqual([]);
   });
@@ -101,9 +247,11 @@ describe("Facet anti-slop guards", () => {
     expect(drillSheets?.content.match(/backdrop-blur/g) ?? []).toHaveLength(1);
   });
 
-  it("wraps the app in one reduced-motion MotionConfig and no route blur wrapper", () => {
+  it("wraps the app in one reduced-motion FacetMotionConfig and no route blur wrapper", () => {
     const layout = sources.find(({ file }) => file === path.join("app", "layout.tsx"));
-    expect(layout?.content.match(/<MotionConfig reducedMotion="user">/g) ?? []).toHaveLength(1);
+    // FacetMotionConfig follows the OS and the in-app Reduce Motion setting (data-motion).
+    expect(layout?.content.match(/<FacetMotionConfig>/g) ?? []).toHaveLength(1);
+    expect(layout?.content.match(/<MotionConfig\b/g) ?? []).toHaveLength(0);
     expect(hits(/RackFocusBlurWrapper/g)).toEqual([]);
   });
 
@@ -121,6 +269,38 @@ describe("Facet anti-slop guards", () => {
     expect(hits(/radial-gradient\(circle at 1px 1px/g)).toEqual([]);
   });
 
+  describe("Facet 3 foundations (docs/specs/2026-09-30-facet-3-design-system.md)", () => {
+    it("uses no legacy glass-*/facet-card-* classes (their CSS was deleted)", () => {
+      expect(
+        hits(
+          /\b(?:glass-(?:hierarchy-interactive|hierarchy-modal|child|parent|none|physics|blended|contextual-popover)|facet-card-(?:parent|child))\b/g
+        )
+      ).toEqual([]);
+    });
+
+    it("defines every sanctioned gradient class in the identity sheet (Facet 3.1)", () => {
+      const identity = fs.readFileSync(
+        path.join(srcDir, "styles", "facet", "identity.css"),
+        "utf-8"
+      );
+      for (const name of SANCTIONED_GRADIENT_CLASSES) {
+        expect([name, new RegExp(`(@utility ${name} \\{|\\.${name}\\b)`).test(identity)]).toEqual([
+          name,
+          true,
+        ]);
+      }
+    });
+
+    it("references no *-hsl colour tokens (none exist)", () => {
+      expect(hits(/var\(--[\w-]+-hsl\)/g)).toEqual([]);
+    });
+
+    it("layers src/components/ui with the --z-* tokens, not arbitrary z-[N] values", () => {
+      const uiDir = path.join("components", "ui") + path.sep;
+      expect(hits(/\bz-\[\d+\]/g).filter((hit) => hit.startsWith(uiDir))).toEqual([]);
+    });
+  });
+
   describe("surfaces converted to Facet", () => {
     it("use theme tokens instead of dark: overrides", () => {
       expect(convertedHits(/\bdark:[a-z][a-z0-9-]*/g, DARK_OVERRIDE_ALLOWED)).toEqual([]);
@@ -134,10 +314,70 @@ describe("Facet anti-slop guards", () => {
       expect(convertedHits(/\[#[0-9a-fA-F]{3,8}\]/g)).toEqual([]);
     });
 
-    it(`keep decorative gradients at or below ${CONVERTED_GRADIENT_CEILING}`, () => {
-      expect(convertedHits(/\bbg-gradient-to-[a-z]+/g).length).toBeLessThanOrEqual(
-        CONVERTED_GRADIENT_CEILING
+    it("draw gradients with sanctioned classes, never ad-hoc palette stops (Facet 3.1)", () => {
+      const offenders = convertedHits(PALETTE_STOP).filter(
+        (hit) => !ART_GRADIENT_FILES.some((dir) => hit.startsWith(dir))
       );
+      expect(offenders).toEqual([]);
+    });
+
+    it("keep raw gradient utilities to image scrims (no palette stops on the same element)", () => {
+      const gradient =
+        /\bbg-(?:gradient-to-[a-z]+|linear-[\w-]+|radial(?:-[\w-]+)?|conic(?:-[\w-]+)?)\b/;
+      const offenders = sources
+        .filter(
+          ({ file }) => inConverted(file) && !ART_GRADIENT_FILES.some((d) => file.startsWith(d))
+        )
+        .flatMap(({ file, content }) =>
+          content
+            .split("\n")
+            .map((line, index) => ({ line, index }))
+            .filter(({ line }) => gradient.test(line) && new RegExp(PALETTE_STOP.source).test(line))
+            .map(({ index }) => `${file}:${index + 1}`)
+        );
+      expect(offenders).toEqual([]);
+    });
+
+    it("blur only through the glass/acrylic materials (no raw backdrop-blur utilities)", () => {
+      const raw = convertedHits(RAW_BACKDROP, RAW_BACKDROP_ALLOWED).filter(
+        (hit) => !hit.endsWith(": backdrop-blur-none")
+      );
+      expect(raw).toEqual([]);
+      const inline = convertedHits(INLINE_BACKDROP).filter(
+        (hit) => !INLINE_BACKDROP_FILES.some((file) => hit.startsWith(file))
+      );
+      expect(inline).toEqual([]);
+    });
+
+    it("keep the navigation shell on the z-* tokens (no arbitrary z-[…] at all)", () => {
+      const shellDir = path.join("components", "shell") + path.sep;
+      expect(hits(/\bz-\[[^\]]+\]/g).filter((hit) => hit.startsWith(shellDir))).toEqual([]);
+    });
+
+    it("read country lore in the wiki Reading face, not the unloaded serif (Baskerville)", () => {
+      const profileDirs = [
+        path.join("app", "countries", "[slug]") + path.sep,
+        path.join("components", "country-profile") + path.sep,
+      ];
+      expect(
+        hits(/\bfont-serif\b/g).filter((hit) => profileDirs.some((dir) => hit.startsWith(dir)))
+      ).toEqual([]);
+    });
+
+    it("use only the sanctioned textures (Facet 3.1)", () => {
+      const sanctioned = new Set<string>(SANCTIONED_TEXTURES);
+      const offenders = sources
+        .filter(
+          ({ file }) => inConverted(file) && !file.startsWith(path.join("components", "cards"))
+        )
+        .flatMap(({ file, content }) =>
+          [...content.matchAll(TEXTURE_ATTR)]
+            .map((m) => m[1] ?? m[2]!)
+            .filter((texture) => texture !== "none" && !sanctioned.has(texture))
+            .map((texture) => `${file}: ${texture}`)
+        )
+        .filter((hit) => !UNSANCTIONED_TEXTURE_ALLOWED.has(hit));
+      expect(offenders).toEqual([]);
     });
 
     it("do not bring back the retired MyCountry surface-kit", () => {

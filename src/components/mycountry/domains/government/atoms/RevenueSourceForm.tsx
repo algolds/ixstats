@@ -5,7 +5,6 @@ import { formatExactCurrency } from "~/lib/utils";
 import { usePendingLocks } from "~/hooks/usePendingLocks";
 import { Badge } from "~/components/ui/badge";
 import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
-import { cn } from "~/lib/utils";
 import { Coins } from "iconoir-react";
 import type { RevenueSourceInput, RevenueCategory } from "~/types/government";
 import {
@@ -125,20 +124,17 @@ export function RevenueSourceForm({
   );
 
   return (
-    <FacetCard depth={1}>
-      <FacetCardHeader className="border-border/60 flex-row flex-wrap items-center justify-between gap-2 border-b px-6 py-4">
-        <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
-          <Coins aria-hidden="true" className="text-muted-foreground h-5 w-5" />
+    <FacetCard>
+      <FacetCardHeader className="border-separator flex-row flex-wrap items-center justify-between gap-2 border-b px-6 py-4">
+        <h2 className="text-label text-title-3 flex items-center gap-2">
+          <Coins aria-hidden="true" className="text-label-secondary h-5 w-5" />
           Revenue Channels
-        </h3>
+        </h2>
         <div className="flex items-center gap-2">
-          <Badge
-            variant="outline"
-            className={cn(totalPercent > 100 && "border-destructive/30 text-destructive")}
-          >
+          <Badge variant={totalPercent > 100 ? "destructive" : "outline"}>
             {data.length} Channels
           </Badge>
-          <Badge variant="secondary" className="font-mono">
+          <Badge variant="secondary" className="tabular-nums">
             {formatExactCurrency(totalCalculated, currency)}
           </Badge>
         </div>

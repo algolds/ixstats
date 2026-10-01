@@ -19,7 +19,7 @@ export function ValidationResults({ validationStatus }: ValidationResultsProps) 
             <div className="space-y-1">
               <div className="font-medium">Configuration Errors:</div>
               {validationStatus.errors.map((error, index) => (
-                <div key={index} className="text-sm">
+                <div key={index} className="text-body">
                   • {error}
                 </div>
               ))}
@@ -35,7 +35,7 @@ export function ValidationResults({ validationStatus }: ValidationResultsProps) 
             <div className="space-y-1">
               <div className="font-medium">Configuration Warnings:</div>
               {validationStatus.warnings.map((warning, index) => (
-                <div key={index} className="text-sm">
+                <div key={index} className="text-body">
                   • {warning}
                 </div>
               ))}

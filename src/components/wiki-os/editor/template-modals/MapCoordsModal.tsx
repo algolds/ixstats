@@ -1,11 +1,18 @@
 "use client";
 
+import { cn } from "~/lib/utils";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Xmark as X, Map as MapIcon, SystemRestart as Loader2, Compass } from "iconoir-react";
+import { Map as MapIcon, SystemRestart as Loader2, Compass } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { buildBaseStyle, getCountryColor } from "~/lib/maps/map-config";
-import { Portal, type BaseModalProps } from "./types";
+import { Input } from "~/components/ui/input";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import type { BaseModalProps } from "./types";
+import { TemplateModalShell } from "./TemplateModalShell";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
 
 type MapCoordsTab = "coords" | "mapembed";
@@ -73,16 +80,6 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
       setLng(centroid.lng.toFixed(5));
     }
   }, [isOpen, centroid]);
-
-  // Close on Escape keypress
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
 
   // Handle marker selection from quick list
   const handleMarkerSelect = (markerLat: number, markerLng: number, markerName: string) => {
@@ -301,249 +298,202 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
   };
 
   return (
-    <Portal>
-      <div
-        className="fixed inset-0 z-[100080] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md"
-        onClick={onClose}
-      >
-        <div
-          className="border-border bg-card/95 text-foreground dark:bg-card/95 relative flex h-[85vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl dark:border-white/15"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="border-border bg-muted/30 flex items-center justify-between border-b px-6 py-4 dark:border-white/10 dark:bg-white/5">
-            <h3 className="text-foreground flex items-center gap-2 text-lg font-bold">
-              <MapIcon className="h-5 w-5 text-emerald-400" />
-              Insert Map Coords &amp; Embeds
-            </h3>
-            <button
-              onClick={onClose}
-              className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg p-1 transition-colors active:scale-95 dark:hover:bg-white/10"
-            >
-              <X className="h-5 w-5" />
-            </button>
+    <TemplateModalShell
+      isOpen={isOpen}
+      onClose={onClose}
+      icon={<MapIcon className="text-green size-5 shrink-0" aria-hidden="true" />}
+      title="Insert Map Coords & Embeds"
+      className="h-[85vh] max-w-5xl"
+      bodyClassName="flex overflow-hidden"
+    >
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left Panel: Configuration */}
+        <div className="border-separator bg-fill-4 flex w-80 shrink-0 flex-col gap-5 overflow-y-auto border-r p-6">
+          {/* Tab selector */}
+          <SegmentedControl
+            aria-label="Insert mode"
+            fullWidth
+            size="sm"
+            className="shrink-0"
+            value={activeTab}
+            onValueChange={setActiveTab}
+            options={[
+              { value: "coords", label: "Coords Link" },
+              { value: "mapembed", label: "Map Embed" },
+            ]}
+          />
+
+          {/* Coordinates status */}
+          <div className="border-separator bg-fill-4 rounded-control grid shrink-0 grid-cols-2 gap-3 border p-3">
+            <div>
+              <span className="text-label-secondary text-eyebrow block">Latitude (Y)</span>
+              <span className="text-label text-headline tabular-nums">{lat}</span>
+            </div>
+            <div>
+              <span className="text-label-secondary text-eyebrow block">Longitude (X)</span>
+              <span className="text-label text-headline tabular-nums">{lng}</span>
+            </div>
           </div>
 
-          <div className="flex flex-1 overflow-hidden">
-            {/* Left Panel: Configuration */}
-            <div className="border-border bg-muted/10 flex w-80 shrink-0 flex-col gap-5 overflow-y-auto border-r p-6 dark:border-white/10 dark:bg-white/[0.02]">
-              {/* Tab Selector */}
-              <div className="border-border bg-secondary flex shrink-0 rounded-lg border p-0.5">
-                <button
-                  onClick={() => setActiveTab("coords")}
-                  className={`flex-1 rounded py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
-                    activeTab === "coords"
-                      ? "bg-emerald-500/20 text-emerald-400 shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Coords Link
-                </button>
-                <button
-                  onClick={() => setActiveTab("mapembed")}
-                  className={`flex-1 rounded py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
-                    activeTab === "mapembed"
-                      ? "bg-emerald-500/20 text-emerald-400 shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Map Embed
-                </button>
-              </div>
-
-              {/* Coordinates status */}
-              <div className="border-border bg-muted/30 grid shrink-0 grid-cols-2 gap-3 rounded-lg border p-3">
-                <div>
-                  <span className="text-muted-foreground block text-xs font-bold uppercase">
-                    Latitude (Y)
-                  </span>
-                  <span className="text-foreground font-mono text-sm font-semibold">{lat}</span>
+          {/* Markers Picker */}
+          <div className="shrink-0 space-y-2">
+            <h4 className="text-subhead text-label block">Quick Select Existing Marker</h4>
+            <div className="border-separator divide-separator bg-fill-4 rounded-control text-footnote max-h-36 scrollbar-thin divide-y overflow-y-auto border">
+              {isMapBundleLoading && (
+                <div className="text-label-secondary flex items-center gap-2 p-3">
+                  <Loader2 className="text-label-secondary h-3 w-3 animate-spin" /> Loading
+                  features...
                 </div>
-                <div>
-                  <span className="text-muted-foreground block text-xs font-bold uppercase">
-                    Longitude (X)
-                  </span>
-                  <span className="text-foreground font-mono text-sm font-semibold">{lng}</span>
-                </div>
-              </div>
-
-              {/* Markers Picker */}
-              <div className="shrink-0 space-y-1.5">
-                <label className="text-foreground block text-xs font-semibold">
-                  Quick Select Existing Marker
-                </label>
-                <div className="border-border divide-border bg-muted/20 max-h-36 scrollbar-thin divide-y overflow-y-auto rounded-lg border text-xs">
-                  {isMapBundleLoading && (
-                    <div className="text-muted-foreground flex items-center gap-1.5 p-3">
-                      <Loader2 className="h-3 w-3 animate-spin text-emerald-400" /> Loading
-                      features...
-                    </div>
-                  )}
-                  {!isMapBundleLoading &&
-                    cities.map((c: any) => (
-                      <button
-                        key={`city-${c.id}`}
-                        type="button"
-                        onClick={() =>
-                          handleMarkerSelect(c.coordinates[1], c.coordinates[0], c.name)
-                        }
-                        className="hover:bg-muted/50 flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-colors"
-                      >
-                        <span className="text-foreground font-semibold">{c.name}</span>
-                        <span className="text-muted-foreground text-xs font-bold uppercase">
-                          {c.isNationalCapital ? "Capital" : "City"}
-                        </span>
-                      </button>
-                    ))}
-                  {!isMapBundleLoading &&
-                    pois.map((p: any) => (
-                      <button
-                        key={`poi-${p.id}`}
-                        type="button"
-                        onClick={() =>
-                          handleMarkerSelect(p.coordinates[1], p.coordinates[0], p.name)
-                        }
-                        className="hover:bg-muted/50 flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-colors"
-                      >
-                        <span className="text-foreground">{p.name}</span>
-                        <span className="bg-muted text-muted-foreground rounded px-1.5 text-xs capitalize">
+              )}
+              {!isMapBundleLoading && (cities.length > 0 || pois.length > 0) && (
+                <FacetListSection variant="plain" aria-label="Existing markers">
+                  {cities.map((c: any) => (
+                    <FacetRow
+                      key={`city-${c.id}`}
+                      onClick={() => handleMarkerSelect(c.coordinates[1], c.coordinates[0], c.name)}
+                      title={c.name}
+                      trailing={c.isNationalCapital ? "Capital" : "City"}
+                    />
+                  ))}
+                  {pois.map((p: any) => (
+                    <FacetRow
+                      key={`poi-${p.id}`}
+                      onClick={() => handleMarkerSelect(p.coordinates[1], p.coordinates[0], p.name)}
+                      title={p.name}
+                      trailing={
+                        <Badge variant="neutral" className="capitalize">
                           {p.category}
-                        </span>
-                      </button>
-                    ))}
-                  {!isMapBundleLoading && cities.length === 0 && pois.length === 0 && (
-                    <div className="text-muted-foreground p-3 text-center">
-                      No markers found in database.
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Shared parameters */}
-              <div className="shrink-0 space-y-3">
-                <div className="space-y-1.5">
-                  <label className="text-foreground block text-xs font-semibold">
-                    {activeTab === "coords" ? "Link Label (Required)" : "Marker Title (Optional)"}
-                  </label>
-                  <input
-                    type="text"
-                    required={activeTab === "coords"}
-                    placeholder={activeTab === "coords" ? "e.g. Royal Palace" : "e.g. My Capital"}
-                    value={label}
-                    onChange={(e) => setLabel(e.target.value)}
-                    className="border-input bg-secondary text-foreground focus:ring-ring w-full rounded-lg border px-2.5 py-1.5 text-xs focus:ring-2 focus:outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-foreground block text-xs font-semibold">
-                    Map Zoom level ({zoom})
-                  </label>
-                  <input
-                    type="range"
-                    min={2}
-                    max={18}
-                    step={1}
-                    value={zoom}
-                    onChange={(e) => {
-                      const newZ = parseInt(e.target.value);
-                      setZoom(newZ);
-                      if (mapRef.current) {
-                        mapRef.current.setZoom(newZ);
+                        </Badge>
                       }
-                    }}
-                    className="bg-muted h-1 w-full cursor-pointer appearance-none rounded-lg accent-emerald-500"
-                  />
-                </div>
-              </div>
-
-              {/* Embed parameters */}
-              {activeTab === "mapembed" && (
-                <div className="border-border shrink-0 space-y-3 border-t pt-3">
-                  <div className="space-y-1.5">
-                    <label className="text-foreground block text-xs font-semibold">
-                      Embed Height (px)
-                    </label>
-                    <input
-                      type="number"
-                      value={embedHeight}
-                      onChange={(e) => setEmbedHeight(parseInt(e.target.value) || 400)}
-                      className="border-input bg-secondary text-foreground focus:ring-ring w-full rounded-lg border px-2.5 py-1 text-xs focus:ring-2 focus:outline-none"
                     />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-foreground block text-xs font-semibold">
-                      Embed Width
-                    </label>
-                    <input
-                      type="text"
-                      value={embedWidth}
-                      onChange={(e) => setEmbedWidth(e.target.value)}
-                      className="border-input bg-secondary text-foreground focus:ring-ring w-full rounded-lg border px-2.5 py-1 text-xs focus:ring-2 focus:outline-none"
-                    />
-                  </div>
-                  <label className="flex cursor-pointer items-center gap-2 py-1">
-                    <input
-                      type="checkbox"
-                      checked={embedInteractive}
-                      onChange={(e) => setEmbedInteractive(e.target.checked)}
-                      className="border-input bg-secondary rounded text-emerald-600 focus:ring-emerald-500"
-                    />
-                    <span className="text-foreground text-xs">Interactive panning / zoom</span>
-                  </label>
-                </div>
+                  ))}
+                </FacetListSection>
               )}
-
-              {/* Syntax preview */}
-              <div className="mt-auto shrink-0 rounded border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-center font-mono text-xs text-emerald-400">
-                {activeTab === "coords" ? (
-                  <span>
-                    [[Coords:{parseFloat(lat).toFixed(4)},{parseFloat(lng).toFixed(4)},{zoom}
-                    {label.trim() ? `|${label.trim()}` : ""}]]
-                  </span>
-                ) : (
-                  <span className="break-all">
-                    [[MapEmbed:{parseFloat(lat).toFixed(4)},{parseFloat(lng).toFixed(4)},{zoom}
-                    |height={embedHeight}|width={embedWidth}|interactive=
-                    {embedInteractive ? "yes" : "no"}
-                    {label.trim() ? `|title=${label}` : ""}]]
-                  </span>
-                )}
-              </div>
-
-              {/* Confirm button */}
-              <button
-                onClick={handleInsertLink}
-                disabled={activeTab === "coords" && !label.trim()}
-                className="w-full shrink-0 rounded-lg bg-emerald-600 py-2 text-xs font-bold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500 active:scale-[0.97] disabled:opacity-50"
-              >
-                Insert Map Feature
-              </button>
-            </div>
-
-            {/* Right Panel: Map Canvas */}
-            <div className="bg-background relative flex-1">
-              {isMapBundleLoading ? (
-                <div className="text-muted-foreground absolute inset-0 flex flex-col items-center justify-center gap-2">
-                  <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
-                  <span className="text-xs font-semibold">Loading border layers...</span>
+              {!isMapBundleLoading && cities.length === 0 && pois.length === 0 && (
+                <div className="text-label-secondary p-3 text-center">
+                  No markers found in database.
                 </div>
-              ) : (
-                <>
-                  <div ref={mapContainerRef} className="absolute inset-0 h-full w-full" />
-                  {/* Status Indicator overlay */}
-                  <div className="pointer-events-none absolute top-4 left-4 z-10">
-                    <div className="border-border bg-card/85 text-foreground flex items-center gap-2 rounded-lg border p-2.5 text-xs shadow-lg backdrop-blur-md">
-                      <Compass className="animate-spin-slow h-4 w-4 text-emerald-400" />
-                      <span>Click on map to capture pin coords</span>
-                    </div>
-                  </div>
-                </>
               )}
             </div>
           </div>
+
+          {/* Shared parameters */}
+          <div className="shrink-0 space-y-3">
+            <div className="space-y-2">
+              <label className="text-subhead text-label block">
+                {activeTab === "coords" ? "Link Label (Required)" : "Marker Title (Optional)"}
+              </label>
+              <Input
+                type="text"
+                required={activeTab === "coords"}
+                placeholder={activeTab === "coords" ? "e.g. Royal Palace" : "e.g. My Capital"}
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                className="rounded-control-sm md:text-footnote h-(--control-height-sm) px-3 py-2"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-subhead text-label block">Map Zoom level ({zoom})</label>
+              <input
+                type="range"
+                min={2}
+                max={18}
+                step={1}
+                value={zoom}
+                onChange={(e) => {
+                  const newZ = parseInt(e.target.value);
+                  setZoom(newZ);
+                  if (mapRef.current) {
+                    mapRef.current.setZoom(newZ);
+                  }
+                }}
+                className="bg-fill-3 rounded-control accent-tint h-1 w-full cursor-pointer appearance-none"
+              />
+            </div>
+          </div>
+
+          {/* Embed parameters */}
+          {activeTab === "mapembed" && (
+            <div className="border-separator shrink-0 space-y-3 border-t pt-3">
+              <div className="space-y-2">
+                <label className="text-subhead text-label block">Embed Height (px)</label>
+                <Input
+                  type="number"
+                  value={embedHeight}
+                  onChange={(e) => setEmbedHeight(parseInt(e.target.value) || 400)}
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm) px-3 py-1"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-subhead text-label block">Embed Width</label>
+                <Input
+                  type="text"
+                  value={embedWidth}
+                  onChange={(e) => setEmbedWidth(e.target.value)}
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm) px-3 py-1"
+                />
+              </div>
+              <label className="flex cursor-pointer items-center gap-2 py-1">
+                <input
+                  type="checkbox"
+                  checked={embedInteractive}
+                  onChange={(e) => setEmbedInteractive(e.target.checked)}
+                  className="border-separator bg-fill-3 rounded-control-sm accent-tint"
+                />
+                <span className="text-label text-footnote">Interactive panning / zoom</span>
+              </label>
+            </div>
+          )}
+
+          {/* Syntax preview */}
+          <div className="rounded-control bg-surface-secondary text-footnote text-label-secondary mt-auto shrink-0 p-3 text-center font-mono">
+            {activeTab === "coords" ? (
+              <span>
+                [[Coords:{parseFloat(lat).toFixed(4)},{parseFloat(lng).toFixed(4)},{zoom}
+                {label.trim() ? `|${label.trim()}` : ""}]]
+              </span>
+            ) : (
+              <span className="break-all">
+                [[MapEmbed:{parseFloat(lat).toFixed(4)},{parseFloat(lng).toFixed(4)},{zoom}
+                |height={embedHeight}|width={embedWidth}|interactive=
+                {embedInteractive ? "yes" : "no"}
+                {label.trim() ? `|title=${label}` : ""}]]
+              </span>
+            )}
+          </div>
+
+          {/* Confirm button */}
+          <Button
+            className="w-full shrink-0"
+            onClick={handleInsertLink}
+            disabled={activeTab === "coords" && !label.trim()}
+          >
+            Insert Map Feature
+          </Button>
+        </div>
+
+        {/* Right Panel: Map Canvas */}
+        <div className="bg-background relative flex-1">
+          {isMapBundleLoading ? (
+            <div className="text-label-secondary absolute inset-0 flex flex-col items-center justify-center gap-2">
+              <Loader2 className="text-label-secondary h-8 w-8 animate-spin" />
+              <span className="text-caption">Loading border layers...</span>
+            </div>
+          ) : (
+            <>
+              <div ref={mapContainerRef} className="absolute inset-0 h-full w-full" />
+              {/* Status Indicator overlay */}
+              <div className="pointer-events-none absolute top-4 left-4 z-10">
+                <div className="border-separator bg-surface text-label rounded-control text-footnote shadow-floating flex items-center gap-2 border p-3">
+                  <Compass className="animate-spin-slow text-green h-4 w-4" />
+                  <span>Click on map to capture pin coords</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
-    </Portal>
+    </TemplateModalShell>
   );
 }

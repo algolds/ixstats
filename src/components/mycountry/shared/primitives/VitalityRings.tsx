@@ -99,7 +99,7 @@ export function VitalityRings({
       return (
         <div
           key={ring.key ?? index}
-          className="hover:bg-accent/50 focus-visible:ring-ring flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]"
+          className="hover:bg-fill-3 focus-visible:ring-tint rounded-control flex cursor-pointer items-center gap-3 p-3 transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]"
           onClick={ring.onClick}
           role={isClickable ? "button" : undefined}
           tabIndex={isClickable ? 0 : undefined}
@@ -121,12 +121,12 @@ export function VitalityRings({
             tooltip={tooltipText}
           />
           <div className="min-w-0 flex-1">
-            <div className="mb-1 flex items-center gap-1.5">
+            <div className="mb-1 flex items-center gap-2">
               {Icon && <Icon className="h-3 w-3" style={{ color: ring.color }} />}
-              <span className="text-xs font-medium">{ring.label}</span>
+              <span className="text-caption">{ring.label}</span>
             </div>
-            <div className="text-muted-foreground text-xs">{ring.subtitle}</div>
-            <div className="text-sm font-bold" style={{ color: ring.color }}>
+            <div className="text-label-secondary text-footnote">{ring.subtitle}</div>
+            <div className="text-headline" style={{ color: ring.color }}>
               {display}
             </div>
           </div>
@@ -164,7 +164,7 @@ export function VitalityRings({
               {Icon && <Icon className="h-4 w-4" style={{ color: ring.color }} />}
               <span className="font-medium">{ring.label}</span>
             </div>
-            <div className="text-muted-foreground text-sm">{display}</div>
+            <div className="text-label-secondary text-body">{display}</div>
           </div>
         </div>
       );
@@ -174,7 +174,7 @@ export function VitalityRings({
     return (
       <div
         key={ring.key ?? index}
-        className={`facet-hierarchy-child flex items-center gap-3 rounded-lg p-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${isClickable ? "hover:ring-foreground/20 cursor-pointer hover:scale-[1.02] hover:ring-1" : ""}`}
+        className={`rounded-control flex items-center gap-3 p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ${isClickable ? "hover:ring-foreground/20 cursor-pointer hover:scale-[1.02] hover:ring-1" : ""}`}
         onClick={ring.onClick}
         role={isClickable ? "button" : undefined}
         tabIndex={isClickable ? 0 : undefined}
@@ -196,11 +196,11 @@ export function VitalityRings({
           tooltip={tooltipText}
         />
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {Icon && <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: ring.color }} />}
-            <span className="truncate text-xs font-semibold">{ring.label}</span>
+            <span className="text-caption truncate font-semibold">{ring.label}</span>
           </div>
-          <div className="mt-0.5 text-sm font-bold" style={{ color: ring.color }}>
+          <div className="text-headline mt-0.5" style={{ color: ring.color }}>
             {display}
           </div>
         </div>
@@ -214,10 +214,10 @@ export function VitalityRings({
 
   return (
     <Card className="px-3 py-2">
-      <div className="mb-1.5 flex items-center gap-1">
-        <Activity className="h-3.5 w-3.5 text-blue-500" />
-        <span className="text-xs font-semibold">{title}</span>
-        <Badge variant="outline" className="ml-auto px-1.5 py-0 text-xs">
+      <div className="mb-2 flex items-center gap-1">
+        <Activity className="text-blue h-3.5 w-3.5" />
+        <span className="text-caption font-semibold">{title}</span>
+        <Badge variant="outline" className="text-footnote ml-auto px-2 py-0">
           LIVE
         </Badge>
       </div>

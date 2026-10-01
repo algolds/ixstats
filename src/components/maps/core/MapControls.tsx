@@ -22,8 +22,9 @@ import {
   Globe,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import { cn } from "~/lib/utils/cn";
 import { LAYER_CONFIGS, getClimateLegend, type MapLayerType } from "~/lib/maps/map-config";
 import { overlaysByCategory } from "~/lib/maps/overlay-registry";
@@ -133,11 +134,11 @@ export function MapControls({
       onTouchMove={(e) => e.stopPropagation()}
     >
       {/* Icon button row: one floating Facet toolbar */}
-      <FacetContainer
-        depth={2}
+      <FacetMaterial
+        material="regular"
         role="toolbar"
         aria-label="Map controls"
-        className="flex w-fit items-center gap-0.5 rounded-xl p-1"
+        className="rounded-row flex w-fit items-center gap-0.5 p-1"
       >
         {/* Layers */}
         <IconButton
@@ -211,7 +212,7 @@ export function MapControls({
             onClick={onOpenWorldEditor}
           />
         )}
-      </FacetContainer>
+      </FacetMaterial>
 
       {/* Layers panel */}
       {openPanel === "layers" && (
@@ -251,10 +252,10 @@ export function MapControls({
                 {getClimateLegend().map((entry) => (
                   <div key={entry.code} className="flex items-center gap-2 py-0.5">
                     <span
-                      className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm border border-black/10"
+                      className="border-separator inline-block h-2.5 w-2.5 shrink-0 rounded-xs border"
                       style={{ backgroundColor: entry.color }}
                     />
-                    <span className="text-foreground text-xs">{entry.label}</span>
+                    <span className="text-label text-footnote">{entry.label}</span>
                   </div>
                 ))}
               </div>
@@ -311,12 +312,12 @@ function IconButton({
       size="icon"
       onClick={onClick}
       className={cn(
-        "relative h-11 w-11 rounded-lg sm:h-9 sm:w-9",
+        "rounded-control relative h-11 w-11 sm:h-9 sm:w-9",
         variant === "active-tool"
-          ? "bg-blue-500 text-white hover:bg-blue-500/90 hover:text-white"
+          ? "bg-blue text-on-blue hover:bg-blue/90"
           : isActive
-            ? "bg-accent text-foreground"
-            : "text-muted-foreground"
+            ? "bg-fill-3 text-label"
+            : "text-label-secondary"
       )}
       title={label}
       aria-label={label}
@@ -326,7 +327,7 @@ function IconButton({
     >
       {icon}
       {hasIndicator && (
-        <span className="ring-card absolute top-1 right-1 h-2 w-2 rounded-full bg-blue-500 ring-1" />
+        <span className="ring-card bg-blue absolute top-1 right-1 h-2 w-2 rounded-full ring-1" />
       )}
     </Button>
   );
@@ -334,22 +335,22 @@ function IconButton({
 
 function DropdownPanel({ children, label }: { children: React.ReactNode; label: string }) {
   return (
-    <FacetContainer
-      depth={2}
+    <FacetMaterial
+      material="regular"
       id="map-controls-panel"
       role="region"
       aria-label={label}
-      className="animate-in fade-in slide-in-from-top-1 mt-1.5 max-h-[min(70dvh,32rem)] w-56 overflow-y-auto overscroll-contain rounded-xl p-2 duration-150"
+      className="animate-in fade-in slide-in-from-top-1 rounded-row mt-2 max-h-[min(70dvh,32rem)] w-56 overflow-y-auto overscroll-contain p-2 duration-150"
     >
       {children}
-    </FacetContainer>
+    </FacetMaterial>
   );
 }
 
 function PanelSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="[&+&]:border-border [&+&]:mt-1.5 [&+&]:border-t [&+&]:pt-1.5">
-      <Eyebrow className="block px-1.5 pb-0.5">{title}</Eyebrow>
+    <div className="[&+&]:border-separator [&+&]:mt-2 [&+&]:border-t [&+&]:pt-2">
+      <Eyebrow className="block px-2 pb-0.5">{title}</Eyebrow>
       {children}
     </div>
   );
@@ -376,20 +377,22 @@ function ToggleAllRow({
   }, [anyFeatureOn, overlayVisibility, onToggleOverlay]);
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="sm"
       onClick={handleToggleAll}
-      className="hover:bg-accent border-border focus-visible:ring-ring mt-1 flex w-full cursor-pointer items-center gap-2 rounded border-t px-1.5 py-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none sm:py-1"
+      className="mt-1 w-full justify-start px-2"
     >
       {anyFeatureOn ? (
-        <EyeOff className="text-muted-foreground h-3.5 w-3.5" />
+        <EyeOff className="text-label-secondary size-3.5" aria-hidden />
       ) : (
-        <Eye className="text-muted-foreground h-3.5 w-3.5" />
+        <Eye className="text-label-secondary size-3.5" aria-hidden />
       )}
-      <span className="text-foreground text-xs font-medium">
+      <span className="text-label text-caption">
         {anyFeatureOn ? "Hide All Markers" : "Show All Markers"}
       </span>
-    </button>
+    </Button>
   );
 }
 
@@ -403,14 +406,9 @@ function CheckboxRow({
   onChange: () => void;
 }) {
   return (
-    <label className="hover:bg-accent has-[:focus-visible]:ring-ring flex cursor-pointer items-center gap-2 rounded px-1.5 py-2 transition-colors has-[:focus-visible]:ring-2 sm:py-1">
-      <input
-        type="checkbox"
-        checked={!!checked}
-        onChange={onChange}
-        className="border-border h-3.5 w-3.5 rounded accent-blue-500 focus:outline-none"
-      />
-      <span className="text-foreground text-xs">{label}</span>
+    <label className="hover:bg-fill-4 rounded-control-sm flex cursor-pointer items-center gap-2 px-2 py-2 transition-colors sm:py-1">
+      <Checkbox checked={!!checked} onCheckedChange={() => onChange()} />
+      <span className="text-label text-footnote">{label}</span>
     </label>
   );
 }

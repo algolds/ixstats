@@ -1,7 +1,8 @@
 "use client";
 // src/components/forum/shared/ForumLayout.tsx
 // Forum content wrapper with icon rail sidebar on desktop, horizontal pills on mobile.
-// Mirrors WikiOSLayout.tsx pattern with orange forum accent color.
+// Facet 3: the rail and pill bar are chrome (material-thin pill bar); the Forum tint (orange) comes
+// from data-app="forum" on the route layout.
 
 import { type ReactNode, useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -18,11 +19,14 @@ import {
   EditPencil as PenSquare,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { withBasePath } from "~/lib/base-path";
 import { stripBasePath } from "~/lib/base-path";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
-import { InteractiveGridPattern } from "~/components/ui/magicui/interactive-grid-pattern";
 import { IXFORUM_VERSION } from "~/lib/buildVersion";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "~/components/ui/dialog";
+import { SearchField } from "~/components/ui/search-field";
+import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 
 // ---------------------------------------------------------------------------
 // Nav items
@@ -39,7 +43,7 @@ interface ForumNavItem {
 const NAV_GROUP_1: ForumNavItem[] = [
   { id: "home", href: "/forum", icon: Home, title: "Forums" },
   { id: "trending", href: "/forum?sort=trending", icon: Flame, title: "Trending" },
-  { id: "new-posts", href: "/forum?sort=new", icon: Clock, title: "New Posts" },
+  { id: "new-posts", href: "/forum?sort=new", icon: Clock, title: "New posts" },
 ];
 
 const NAV_GROUP_2: ForumNavItem[] = [
@@ -58,69 +62,52 @@ const NAV_GROUP_3: ForumNavItem[] = [
 
 function ForumSearchModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
     if (open) {
       // oxlint-disable-next-line
       setQuery("");
-      setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
-
-  useEffect(() => {
-    const handleGlobal = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        if (open) onClose();
-      }
-    };
-    window.addEventListener("keydown", handleGlobal);
-    return () => window.removeEventListener("keydown", handleGlobal);
-  }, [open, onClose]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && query.trim()) {
       e.preventDefault();
       onClose();
       router.push(withBasePath(`/forum/search?q=${encodeURIComponent(query)}`));
-    } else if (e.key === "Escape") {
-      onClose();
     }
   };
 
-  if (!open) return null;
-
+  // Keyboard-invoked (⌘K): instant presentation (spec §8); Escape and the close button dismiss.
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]" onClick={onClose}>
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-      <div
-        className="relative z-10 w-full max-w-lg rounded-xl border border-[var(--forum-border)] bg-[var(--forum-surface)] shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent
+        presentation="instant"
+        showCloseButton={false}
+        className="top-[15vh] translate-y-0 gap-0 p-0 sm:max-w-lg"
       >
-        <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
-          <Search className="h-4 w-4 shrink-0 text-[var(--forum-text-dim)]" />
-          <input
-            ref={inputRef}
-            type="text"
+        <DialogTitle className="sr-only">Search forums</DialogTitle>
+        <DialogDescription className="sr-only">
+          Type a query and press Enter to search the forums.
+        </DialogDescription>
+        <div className="border-separator border-b p-3">
+          <SearchField
+            autoFocus
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onValueChange={setQuery}
             onKeyDown={handleKeyDown}
             placeholder="Search forums..."
-            className="min-w-0 flex-1 bg-transparent text-sm text-[var(--forum-text)] outline-none placeholder:text-[var(--forum-text-dim)]"
+            aria-label="Search forums"
             autoComplete="off"
             spellCheck={false}
           />
-          <kbd className="hidden shrink-0 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-xs text-[var(--forum-text-dim)] sm:inline">
-            ESC
-          </kbd>
         </div>
-        <div className="px-4 py-6 text-center text-xs text-[var(--forum-text-dim)]">
+        <p className="text-footnote text-label-secondary px-4 py-6 text-center">
           Press Enter to search forums
-        </div>
-      </div>
-    </div>
+        </p>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -189,17 +176,13 @@ export function ForumLayout({ children }: ForumLayoutProps) {
 
   return (
     <div className="forum-shell relative">
-      {/* Interactive grid background — orange accent on hover */}
-      <InteractiveGridPattern
-        width={40}
-        height={40}
-        squares={[50, 40]}
-        className="pointer-events-auto fixed inset-0 z-0 opacity-25 dark:opacity-15"
-        squaresClassName="fill-slate-200/15 dark:fill-slate-700/15 stroke-slate-300/20 dark:stroke-slate-600/20 [&:hover]:fill-orange-500/30 [&:hover]:stroke-orange-500/50 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
-      />
-
-      {/* Mobile: horizontal pill bar */}
-      <nav className="forum-mobile-nav lg:hidden">
+      {/* Mobile: horizontal pill bar. This and the desktop rail are hidden under the new shell,
+          where the AppSidebar / TabBar list the same destinations (app-sections.ts). */}
+      <nav
+        data-app-subnav=""
+        aria-label="Forum"
+        className="forum-mobile-nav material-thin lg:hidden"
+      >
         <div className="flex gap-1 overflow-x-auto px-3 py-2">
           {NAV_GROUP_1.map((item) => (
             <MobilePill key={item.id} item={item} isActive={activeId === item.id} />
@@ -207,16 +190,15 @@ export function ForumLayout({ children }: ForumLayoutProps) {
           {NAV_GROUP_2.map((item) => (
             <MobilePill key={item.id} item={item} isActive={activeId === item.id} />
           ))}
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setSearchOpen(true)}
-            className={cn(
-              "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-              "text-muted-foreground hover:bg-accent/10 hover:text-foreground"
-            )}
+            className={pillClassName(false)}
           >
-            <Search className="h-3.5 w-3.5 shrink-0" />
+            <Search className="size-3.5 shrink-0" />
             <span className="whitespace-nowrap">Search</span>
-          </button>
+          </Button>
           {contextualItems.map((item) => (
             <MobilePill key={item.id} item={item} isActive={false} />
           ))}
@@ -225,36 +207,35 @@ export function ForumLayout({ children }: ForumLayoutProps) {
 
       <div className="flex">
         {/* Desktop: icon rail */}
-        <aside className="forum-icon-rail hidden lg:flex">
-          <nav className="flex flex-col gap-1">
+        <aside data-app-subnav="" className="forum-icon-rail hidden lg:flex">
+          <nav aria-label="Forum" className="flex flex-col gap-1">
             {/* Browse */}
             {NAV_GROUP_1.map((item) => (
               <RailIcon key={item.id} item={item} isActive={activeId === item.id} />
             ))}
 
-            <div className="bg-border/50 mx-auto my-1.5 h-px w-6" />
+            <div className="bg-separator mx-auto my-2 h-px w-6" />
 
             {/* Community */}
             {NAV_GROUP_2.map((item) => (
               <RailIcon key={item.id} item={item} isActive={activeId === item.id} />
             ))}
 
-            <div className="bg-border/50 mx-auto my-1.5 h-px w-6" />
+            <div className="bg-separator mx-auto my-2 h-px w-6" />
 
             {/* Search */}
-            <button
-              onClick={() => setSearchOpen(true)}
-              className={cn(
-                "group relative flex h-10 w-10 items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
-                "text-muted-foreground hover:bg-orange-500/10 hover:text-orange-300"
-              )}
-              title="Search (⌘K)"
-            >
-              <Search className="h-[18px] w-[18px]" />
-              <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full ml-2 rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap opacity-0 shadow-md transition-opacity group-hover:opacity-100">
-                Search (⌘K)
-              </span>
-            </button>
+            <RailTooltip label="Search (⌘K)">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSearchOpen(true)}
+                aria-label="Search"
+                aria-keyshortcuts="Meta+K"
+                className={railClassName(false)}
+              >
+                <Search className="size-[18px]" />
+              </Button>
+            </RailTooltip>
 
             {/* New Thread */}
             <RailIcon
@@ -262,7 +243,7 @@ export function ForumLayout({ children }: ForumLayoutProps) {
                 id: "new-thread",
                 href: "/forum/new-thread",
                 icon: PenSquare,
-                title: "New Thread",
+                title: "New thread",
               }}
               isActive={activeId === "new-thread"}
             />
@@ -270,7 +251,7 @@ export function ForumLayout({ children }: ForumLayoutProps) {
             {/* Contextual (reply/share when in thread) */}
             {contextualItems.length > 0 && (
               <>
-                <div className="bg-border/50 mx-auto my-1.5 h-px w-6" />
+                <div className="bg-separator mx-auto my-2 h-px w-6" />
                 {contextualItems.map((item) => (
                   <RailIcon key={item.id} item={item} isActive={false} />
                 ))}
@@ -280,12 +261,12 @@ export function ForumLayout({ children }: ForumLayoutProps) {
         </aside>
 
         {/* Content */}
-        <main ref={contentRef} className="forum-content relative z-10 min-w-0 flex-1">
+        <main ref={contentRef} className="forum-content min-w-0 flex-1">
           {children}
         </main>
       </div>
 
-      <footer className="forum-main-footer relative z-10">
+      <footer className="forum-main-footer">
         Powered by <strong>IxForum</strong> v{IXFORUM_VERSION}
       </footer>
 
@@ -299,24 +280,44 @@ export function ForumLayout({ children }: ForumLayoutProps) {
 // Rail icon (desktop)
 // ---------------------------------------------------------------------------
 
+// Rail icons and mobile pills are `ghost` Buttons (links share the classes via `buttonVariants`)
+// with tint selection for the current destination.
+const railClassName = (isActive: boolean) =>
+  cn(
+    buttonVariants({ variant: "ghost", size: "icon" }),
+    "size-10",
+    isActive ? "bg-tint-fill text-tint hover:bg-tint/20" : "text-label-secondary hover:text-label"
+  );
+
+const pillClassName = (isActive: boolean) =>
+  cn(
+    buttonVariants({ variant: "ghost", size: "sm" }),
+    "shrink-0 gap-2 rounded-full px-3",
+    isActive ? "bg-tint-fill text-tint hover:bg-tint/20" : "text-label-secondary hover:text-label"
+  );
+
+function RailTooltip({ label, children }: { label: string; children: React.ReactElement }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side="right">{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
 function RailIcon({ item, isActive }: { item: ForumNavItem; isActive: boolean }) {
   const Icon = item.icon;
   return (
-    <Link
-      href={withBasePath(item.href)}
-      className={cn(
-        "group relative flex h-10 w-10 items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
-        isActive
-          ? "bg-orange-500/15 text-orange-400"
-          : "text-muted-foreground hover:bg-orange-500/10 hover:text-orange-300"
-      )}
-      title={item.title}
-    >
-      <Icon className="h-[18px] w-[18px]" />
-      <span className="bg-popover text-popover-foreground pointer-events-none absolute left-full ml-2 rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap opacity-0 shadow-md transition-opacity group-hover:opacity-100">
-        {item.title}
-      </span>
-    </Link>
+    <RailTooltip label={item.title}>
+      <Link
+        href={withBasePath(item.href)}
+        aria-label={item.title}
+        aria-current={isActive ? "page" : undefined}
+        className={railClassName(isActive)}
+      >
+        <Icon className="size-[18px]" />
+      </Link>
+    </RailTooltip>
   );
 }
 
@@ -329,14 +330,10 @@ function MobilePill({ item, isActive }: { item: ForumNavItem; isActive: boolean 
   return (
     <Link
       href={withBasePath(item.href)}
-      className={cn(
-        "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-        isActive
-          ? "bg-orange-500/15 text-orange-400 shadow-sm"
-          : "text-muted-foreground hover:bg-accent/10 hover:text-foreground"
-      )}
+      aria-current={isActive ? "page" : undefined}
+      className={pillClassName(isActive)}
     >
-      <Icon className="h-3.5 w-3.5 shrink-0" />
+      <Icon className="size-3.5 shrink-0" />
       <span className="whitespace-nowrap">{item.title}</span>
     </Link>
   );

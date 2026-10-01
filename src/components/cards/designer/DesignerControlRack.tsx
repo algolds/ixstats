@@ -16,6 +16,7 @@ import { RackAppearanceSection } from "./rack/RackAppearanceSection";
 import { RackEconomySection } from "./rack/RackEconomySection";
 import { RackPresetsSection } from "./rack/RackPresetsSection";
 import { RackPublishBar } from "./rack/RackPublishBar";
+import { Button } from "~/components/ui/button";
 
 export interface DesignerControlRackProps {
   state: CardDesignState;
@@ -57,26 +58,28 @@ export const DesignerControlRack = React.memo<DesignerControlRackProps>(
     return (
       <div className="flex flex-col space-y-4">
         {/* Section 1: Overview & Basic Info */}
-        <div className="border-border bg-card overflow-hidden rounded-xl border">
-          <button
-            type="button"
+        <div className="border-separator bg-surface rounded-row overflow-hidden border">
+          <Button
+            variant="ghost"
+            size="lg"
+            aria-expanded={openSections.identity}
             onClick={() => toggleSection("identity")}
-            className="text-foreground hover:bg-muted/40 flex w-full items-center justify-between p-4 text-sm font-semibold transition-colors"
+            className="text-label text-headline h-auto w-full justify-between rounded-none p-4"
           >
             <div className="flex items-center gap-2">
-              <BookOpen className="text-primary h-4 w-4" />
+              <BookOpen className="text-tint h-4 w-4" />
               <span>Overview & Basic Info</span>
             </div>
             <ChevronDown
               className={cn(
-                "text-muted-foreground h-4 w-4 transition-transform",
+                "text-label-secondary h-4 w-4 transition-transform",
                 openSections.identity && "rotate-180"
               )}
             />
-          </button>
+          </Button>
 
           {openSections.identity && (
-            <div className="border-border space-y-4 border-t p-4 pt-0">
+            <div className="border-separator space-y-4 border-t p-4 pt-0">
               <RackIdentitySection
                 state={state}
                 onChange={onChange}
@@ -87,26 +90,28 @@ export const DesignerControlRack = React.memo<DesignerControlRackProps>(
         </div>
 
         {/* Section 2: Appearance & Artwork */}
-        <div className="border-border bg-card overflow-hidden rounded-xl border">
-          <button
-            type="button"
+        <div className="border-separator bg-surface rounded-row overflow-hidden border">
+          <Button
+            variant="ghost"
+            size="lg"
+            aria-expanded={openSections.materials}
             onClick={() => toggleSection("materials")}
-            className="text-foreground hover:bg-muted/40 flex w-full items-center justify-between p-4 text-sm font-semibold transition-colors"
+            className="text-label text-headline h-auto w-full justify-between rounded-none p-4"
           >
             <div className="flex items-center gap-2">
-              <Gem className="text-primary h-4 w-4" />
+              <Gem className="text-tint h-4 w-4" />
               <span>Appearance & Artwork</span>
             </div>
             <ChevronDown
               className={cn(
-                "text-muted-foreground h-4 w-4 transition-transform",
+                "text-label-secondary h-4 w-4 transition-transform",
                 openSections.materials && "rotate-180"
               )}
             />
-          </button>
+          </Button>
 
           {openSections.materials && (
-            <div className="border-border space-y-4 border-t p-4 pt-0">
+            <div className="border-separator space-y-4 border-t p-4 pt-0">
               <RackAppearanceSection
                 state={state}
                 onChange={onChange}
@@ -117,52 +122,56 @@ export const DesignerControlRack = React.memo<DesignerControlRackProps>(
         </div>
 
         {/* Section 3: Economy & Print Supply */}
-        <div className="border-border bg-card overflow-hidden rounded-xl border">
-          <button
-            type="button"
+        <div className="border-separator bg-surface rounded-row overflow-hidden border">
+          <Button
+            variant="ghost"
+            size="lg"
+            aria-expanded={openSections.economy}
             onClick={() => toggleSection("economy")}
-            className="text-foreground hover:bg-muted/40 flex w-full items-center justify-between p-4 text-sm font-semibold transition-colors"
+            className="text-label text-headline h-auto w-full justify-between rounded-none p-4"
           >
             <div className="flex items-center gap-2">
-              <Coins className="text-primary h-4 w-4" />
+              <Coins className="text-tint h-4 w-4" />
               <span>Economy & Print Supply</span>
             </div>
             <ChevronDown
               className={cn(
-                "text-muted-foreground h-4 w-4 transition-transform",
+                "text-label-secondary h-4 w-4 transition-transform",
                 openSections.economy && "rotate-180"
               )}
             />
-          </button>
+          </Button>
 
           {openSections.economy && (
-            <div className="border-border space-y-3 border-t p-4 pt-0">
+            <div className="border-separator space-y-3 border-t p-4 pt-0">
               <RackEconomySection state={state} onChange={onChange} />
             </div>
           )}
         </div>
 
         {/* Section 4: Design Presets */}
-        <div className="border-border bg-card overflow-hidden rounded-xl border">
-          <button
-            type="button"
+        <div className="border-separator bg-surface rounded-row overflow-hidden border">
+          <Button
+            variant="ghost"
+            size="lg"
+            aria-expanded={openSections.presets}
             onClick={() => toggleSection("presets")}
-            className="text-foreground hover:bg-muted/40 flex w-full items-center justify-between p-4 text-sm font-semibold transition-colors"
+            className="text-label text-headline h-auto w-full justify-between rounded-none p-4"
           >
             <div className="flex items-center gap-2">
-              <FolderOpen className="text-primary h-4 w-4" />
+              <FolderOpen className="text-tint h-4 w-4" />
               <span>Saved Design Presets</span>
             </div>
             <ChevronDown
               className={cn(
-                "text-muted-foreground h-4 w-4 transition-transform",
+                "text-label-secondary h-4 w-4 transition-transform",
                 openSections.presets && "rotate-180"
               )}
             />
-          </button>
+          </Button>
 
           {openSections.presets && (
-            <div className="border-border space-y-3 border-t p-4 pt-0">
+            <div className="border-separator space-y-3 border-t p-4 pt-0">
               <RackPresetsSection
                 presets={presets}
                 onSavePreset={onSavePreset}

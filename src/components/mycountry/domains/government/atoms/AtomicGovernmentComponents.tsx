@@ -212,7 +212,7 @@ export function AtomicGovernmentComponents({
     <div className="space-y-6">
       {/* Filter and Search Bar */}
       {!hideCategorySelector && (
-        <div className="border-border/60 border-b pb-6">
+        <div className="border-separator border-b pb-6">
           <AtomicFilterBar
             searchQuery={builder.searchQuery}
             onSearchChange={builder.setSearchQuery}
@@ -233,8 +233,8 @@ export function AtomicGovernmentComponents({
         <div className={hideSelectedList ? "lg:col-span-3" : "lg:col-span-2"}>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-foreground text-sm font-semibold">Available components</h3>
-              <Badge variant="outline" className="text-muted-foreground font-mono">
+              <h3 className="text-label text-headline">Available components</h3>
+              <Badge variant="outline" className="text-label-secondary tabular-nums">
                 {builder.selectedComponents.length} / {maxComponents} selected
               </Badge>
             </div>
@@ -252,7 +252,7 @@ export function AtomicGovernmentComponents({
         </div>
 
         {!hideSelectedList && (
-          <div className="border-border/60 border-t pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
+          <div className="border-separator border-t pt-6 lg:col-span-1 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
             <SelectedComponentsList
               selectedComponents={selectedComponentObjects}
               onDeselect={builder.deselectComponent}
@@ -274,12 +274,12 @@ export function AtomicGovernmentComponents({
 
         {/* Header Section */}
         {!standalone && (
-          <FacetCard depth={1} surface="solid" className="p-5">
+          <FacetCard className="p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 items-center gap-3">
-                <Blocks aria-hidden="true" className="h-6 w-6 shrink-0 text-amber-500" />
+                <Blocks aria-hidden="true" className="text-yellow h-6 w-6 shrink-0" />
                 <div className="min-w-0">
-                  <h2 className="text-foreground flex flex-wrap items-center gap-2 text-xl font-semibold tracking-tight">
+                  <h2 className="text-label text-title-2 flex flex-wrap items-center gap-2">
                     Atomic Government Builder
                     <Button
                       variant="ghost"
@@ -288,10 +288,10 @@ export function AtomicGovernmentComponents({
                       onClick={() => setWelcomeOpen(true)}
                       aria-label="Open the atomic government guide"
                     >
-                      <HelpCircle className="text-muted-foreground h-4 w-4" />
+                      <HelpCircle className="text-label-secondary h-4 w-4" />
                     </Button>
                   </h2>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-label-secondary text-body">
                     Assemble your governance structure from atomic principles
                   </p>
                 </div>
@@ -322,8 +322,8 @@ export function AtomicGovernmentComponents({
         {/* Info Alert */}
         {!standalone && (
           <Alert>
-            <Info className="text-muted-foreground h-4 w-4" />
-            <AlertDescription className="text-xs leading-normal">
+            <Info className="text-label-secondary h-4 w-4" />
+            <AlertDescription className="text-footnote leading-normal">
               Select {maxComponents} government components to build your custom governance system.
               Watch for synergies (bonuses) and conflicts (penalties) between components.
             </AlertDescription>
@@ -334,7 +334,7 @@ export function AtomicGovernmentComponents({
         {!builder.validation.isValid && builder.validation.errors.length > 0 && (
           <Alert variant="destructive">
             <AlertDescription>
-              <ul className="list-inside list-disc space-y-1 text-xs font-semibold">
+              <ul className="text-caption list-inside list-disc space-y-1 font-semibold">
                 {builder.validation.errors.map((error, index) => (
                   <li key={index}>{error}</li>
                 ))}
@@ -377,13 +377,7 @@ export function AtomicGovernmentComponents({
         />
 
         {/* Main Workspace */}
-        {standalone ? (
-          workspaceContent
-        ) : (
-          <FacetCard depth={1} surface="solid" className="p-6">
-            {workspaceContent}
-          </FacetCard>
-        )}
+        {standalone ? workspaceContent : <FacetCard className="p-6">{workspaceContent}</FacetCard>}
 
         {/* Save Button (Bottom) */}
         {!isReadOnly && !standalone && (
@@ -393,17 +387,12 @@ export function AtomicGovernmentComponents({
               onClick={builder.clearSelection}
               disabled={builder.selectedComponents.length === 0}
             >
-              <RotateCcw className="h-4 w-4" />
-              Reset Selection
+              <RotateCcw aria-hidden="true" className="h-4 w-4" />
+              Reset selection
             </Button>
-            <Button
-              onClick={handleSave}
-              disabled={!builder.validation.isValid}
-              size="lg"
-              className="bg-amber-500 text-amber-950 hover:bg-amber-400"
-            >
-              <Save className="h-4 w-4" />
-              Save Government Configuration
+            <Button onClick={handleSave} disabled={!builder.validation.isValid} size="lg">
+              <Save aria-hidden="true" className="h-4 w-4" />
+              Save government configuration
             </Button>
           </div>
         )}

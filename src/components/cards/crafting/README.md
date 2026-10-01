@@ -250,7 +250,8 @@ Ownership and material validation happen just before the transaction. **If any s
 ## UI/UX Features
 
 ### Facet Design
-Components use Facet (glass) styling via `CometCard` and `facet-hierarchy-*` classes.
+Components use Facet 3 primitives: an opaque `FacetCard` workbench with `Stat` insets, the card picker in a
+`Dialog`, and the crafting result as a full-screen `Dialog` (a Vault reveal moment; Escape or a click continues).
 
 ### Animations
 - Motion (`motion/react`) for smooth transitions
@@ -287,7 +288,7 @@ Components use Facet (glass) styling via `CometCard` and `facet-hierarchy-*` cla
 - Recipe not found
 - Invalid materials
 
-**Errors surface as TRPCError messages; the workbench currently shows them with `alert()`.**
+**Errors surface as TRPCError messages, shown with `useNotify()` (toast / Halo).**
 
 ## Testing Checklist
 

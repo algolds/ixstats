@@ -69,29 +69,26 @@ export function CorpusSelector({
   }, []);
 
   return (
-    <div className={cn("space-y-1.5", className)}>
+    <div className={cn("space-y-2", className)}>
       {label && (
-        <label className="text-muted-foreground text-xs font-semibold select-none">{label}</label>
+        <label className="text-label-secondary text-footnote font-semibold select-none">
+          {label}
+        </label>
       )}
       <Select value={value} onValueChange={onChange} disabled={disabled}>
-        <SelectTrigger className="border-border/60 bg-background/60 hover:bg-background/90 text-foreground focus:ring-onoma-primary flex h-9.5 w-full items-center justify-between rounded-xl border px-3 text-xs transition-colors focus:ring-1 focus:outline-none">
+        <SelectTrigger className="text-footnote h-9.5 w-full">
           <SelectValue placeholder="Select language profile or corpus…" />
         </SelectTrigger>
-        <SelectContent className="border-border/40 bg-background/95 max-h-[340px] rounded-2xl border shadow-xl backdrop-blur-2xl">
+        <SelectContent className="max-h-[340px]">
           {/* Active Studio Lexicon */}
           {studioWords && studioWords.length > 0 && (
-            <div className="border-border/30 border-b pb-1">
-              <div className="text-onoma-primary px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
-                Active Studio Session
-              </div>
-              <SelectItem
-                value="studio-active"
-                className="focus:bg-onoma-primary/10 focus:text-foreground cursor-pointer text-xs"
-              >
+            <div className="border-separator border-b pb-1">
+              <div className="text-tint text-eyebrow px-3 py-1">Active Studio Session</div>
+              <SelectItem value="studio-active" className="text-footnote">
                 <div className="flex items-center gap-2">
                   <OnomaGlyph name="compose-lexicon" size="xs" accentColor="#0091ff" />
                   <span className="font-semibold">Active Studio Lexicon</span>
-                  <span className="text-muted-foreground/70 font-mono text-[10px]">
+                  <span className="text-label-secondary text-caption font-mono">
                     ({studioWords.length} words)
                   </span>
                 </div>
@@ -101,20 +98,16 @@ export function CorpusSelector({
 
           {/* User's Stashed Custom Dictionaries */}
           {stashDictionaries.length > 0 && (
-            <div className="border-border/30 border-b pb-1">
-              <div className="px-2.5 py-1 text-[10px] font-bold tracking-wider text-indigo-500 uppercase">
+            <div className="border-separator border-b pb-1">
+              <div className="text-eyebrow text-indigo px-3 py-1">
                 Custom Stash Dictionaries ({stashDictionaries.length})
               </div>
               {stashDictionaries.map((dict) => (
-                <SelectItem
-                  key={dict.id}
-                  value={dict.id}
-                  className="focus:text-foreground cursor-pointer text-xs focus:bg-indigo-500/10"
-                >
+                <SelectItem key={dict.id} value={dict.id} className="text-footnote">
                   <div className="flex items-center gap-2">
                     <OnomaGlyph name="memory-dataset" size="xs" accentColor="#6366f1" />
                     <span className="max-w-[180px] truncate font-medium">{dict.title}</span>
-                    <span className="text-muted-foreground/70 font-mono text-[10px]">
+                    <span className="text-label-secondary text-caption font-mono">
                       ({dict.values.length} words)
                     </span>
                   </div>
@@ -125,15 +118,11 @@ export function CorpusSelector({
 
           {/* Natural Language Profiles */}
           <div>
-            <div className="text-onoma-primary px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase">
+            <div className="text-tint text-eyebrow px-3 py-1">
               Natural Language Profiles ({NATURAL_PROFILES.length})
             </div>
             {NATURAL_PROFILES.map((p) => (
-              <SelectItem
-                key={p.value}
-                value={p.value}
-                className="focus:bg-onoma-primary/10 focus:text-foreground cursor-pointer text-xs"
-              >
+              <SelectItem key={p.value} value={p.value} className="text-footnote">
                 <div className="flex items-center gap-2">
                   <OnomaGlyph name="sound-acoustic" size="xs" accentColor="#0091ff" />
                   <span>{p.label}</span>
@@ -143,16 +132,12 @@ export function CorpusSelector({
           </div>
 
           {/* Fantasy & Lineage Templates */}
-          <div className="border-border/30 border-t pt-1">
-            <div className="px-2.5 py-1 text-[10px] font-bold tracking-wider text-indigo-500 uppercase">
+          <div className="border-separator border-t pt-1">
+            <div className="text-eyebrow text-indigo px-3 py-1">
               Fantasy & Lineage Templates ({templateProfiles.length})
             </div>
             {templateProfiles.map((t) => (
-              <SelectItem
-                key={t.id}
-                value={t.id}
-                className="focus:text-foreground cursor-pointer text-xs focus:bg-indigo-500/10"
-              >
+              <SelectItem key={t.id} value={t.id} className="text-footnote">
                 <div className="flex items-center gap-2">
                   <OnomaGlyph name="emerge-branch" size="xs" accentColor="#6366f1" />
                   <span>{t.name}</span>

@@ -51,7 +51,7 @@ function Tooltip({
             <div className="flex items-center gap-2">
               <span>{content}</span>
               {shortcut && (
-                <kbd className="bg-muted text-muted-foreground pointer-events-none inline-flex h-4 items-center gap-0.5 rounded px-1.5 font-mono text-xs font-medium opacity-100 select-none">
+                <kbd className="pointer-events-none inline-flex h-4 items-center gap-0.5 rounded-control-sm bg-fill-3 px-1 text-caption text-label-secondary select-none">
                   {shortcut}
                 </kbd>
               )}
@@ -73,7 +73,7 @@ function Tooltip({
 
 function TooltipTrigger({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
   return (
-    <TooltipPrimitive.Trigger data-slot="tooltip-trigger" data-cuelume-hover="tick" {...props} />
+    <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
   );
 }
 
@@ -89,15 +89,15 @@ function TooltipContent({
         data-slot="tooltip-content"
         sideOffset={sideOffset}
         className={cn(
-          "animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-          "z-[150000] w-fit max-w-sm origin-(--radix-tooltip-content-transform-origin) rounded-lg px-3 py-1.5 text-xs text-balance",
-          "bg-popover text-popover-foreground border-border/60 border shadow-md",
+          "z-tooltip w-fit max-w-sm origin-(--radix-tooltip-content-transform-origin) rounded-row px-3 py-1 text-footnote text-balance",
+          "border border-separator bg-surface-elevated text-label shadow-floating",
+          // Radix tooltips open with data-state="delayed-open" / "instant-open".
+          "animate-facet-in data-[state=closed]:animate-facet-out",
           className
         )}
         {...props}
       >
         {children}
-        <TooltipPrimitive.Arrow className="fill-popover z-[150000] size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
   );

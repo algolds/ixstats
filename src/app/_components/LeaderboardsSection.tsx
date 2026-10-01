@@ -76,27 +76,27 @@ const leaderboardConfig = {
 
 const getTierColor = (tier: string) => {
   const colors: Record<string, string> = {
-    Extravagant: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-    "Very Strong": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-    Strong: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-    Healthy: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
-    Developed: "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200",
-    Developing: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-    Impoverished: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+    Extravagant: "bg-purple/10 text-label",
+    "Very Strong": "bg-blue/10 text-label",
+    Strong: "bg-green/10 text-label",
+    Healthy: "bg-green/10 text-label",
+    Developed: "bg-teal/10 text-label",
+    Developing: "bg-yellow/10 text-label",
+    Impoverished: "bg-red/10 text-label",
   };
-  return colors[tier] || "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
+  return colors[tier] || "bg-surface-secondary text-label";
 };
 
 const getRankIcon = (rank: number) => {
   switch (rank) {
     case 1:
-      return <Trophy className="h-4 w-4 text-yellow-500" />;
+      return <Trophy className="text-yellow h-4 w-4" />;
     case 2:
-      return <Medal className="h-4 w-4 text-gray-400" />;
+      return <Medal className="text-label-secondary h-4 w-4" />;
     case 3:
-      return <Award className="h-4 w-4 text-amber-600" />;
+      return <Award className="text-yellow h-4 w-4" />;
     default:
-      return <span className="text-muted-foreground text-sm font-medium">#{rank}</span>;
+      return <span className="text-label-secondary text-body font-medium">#{rank}</span>;
   }
 };
 
@@ -111,10 +111,8 @@ const CountryFlag = ({
 }) => {
   if (!flagUrl) {
     return (
-      <div
-        className={`${className} flex items-center justify-center rounded-sm bg-gray-200 dark:bg-gray-700`}
-      >
-        <span className="text-xs text-gray-500">🏴</span>
+      <div className={`${className} bg-fill-3 flex items-center justify-center rounded-sm`}>
+        <span className="text-footnote text-label-secondary">🏴</span>
       </div>
     );
   }
@@ -123,15 +121,15 @@ const CountryFlag = ({
     <img
       src={flagUrl}
       alt={`${countryName} flag`}
-      className={`${className} rounded-sm border border-gray-200 object-cover dark:border-gray-700`}
+      className={`${className} border-separator rounded-sm border object-cover`}
       onError={(e) => {
         // Hide the broken image and show placeholder
         e.currentTarget.style.display = "none";
         const parent = e.currentTarget.parentElement;
         if (parent) {
           const placeholder = document.createElement("div");
-          placeholder.className = `${className} bg-gray-200 dark:bg-gray-700 rounded-sm flex items-center justify-center`;
-          placeholder.innerHTML = '<span class="text-xs text-gray-500">🏴</span>';
+          placeholder.className = `${className} bg-fill-3 rounded-sm flex items-center justify-center`;
+          placeholder.innerHTML = '<span class="text-footnote text-label-secondary">🏴</span>';
           parent.appendChild(placeholder);
         }
       }}
@@ -156,7 +154,7 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
         <CardContent>
           <div className="space-y-4">
             {[...Array(7)].map((_, i) => (
-              <div key={i} className="flex items-center gap-4 rounded-lg border p-3">
+              <div key={i} className="rounded-control flex items-center gap-4 border p-3">
                 <Skeleton className="h-8 w-8 rounded-full" />
                 <div className="flex-1">
                   <Skeleton className="mb-2 h-4 w-32" />
@@ -184,7 +182,7 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
 
     return (
       <div className="space-y-3">
-        <div className="text-muted-foreground mb-4 text-sm">{config.description}</div>
+        <div className="text-label-secondary text-body mb-4">{config.description}</div>
         {topCountries.map((country, index) => {
           const rank = index + 1;
           const value = country[config.sortKey] as number;
@@ -193,9 +191,9 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
             <Link
               key={country.id}
               href={createUrl(`/countries/${country.slug}`)}
-              className="hover:bg-muted/50 group flex items-center gap-4 rounded-lg border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.02] hover:shadow-lg"
+              className="hover:bg-fill-3 group rounded-control hover:shadow-floating flex items-center gap-4 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.02]"
             >
-              <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-full">
+              <div className="bg-fill-3 flex h-8 w-8 items-center justify-center rounded-full">
                 {getRankIcon(rank)}
               </div>
 
@@ -207,26 +205,26 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
 
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex items-center gap-2">
-                  <h3 className="text-foreground group-hover:text-primary truncate font-semibold transition-colors">
+                  <h3 className="text-label group-hover:text-tint truncate font-semibold transition-colors">
                     {country.name}
                   </h3>
                   <Badge
                     variant="secondary"
-                    className={`text-xs ${getTierColor(country.economicTier)}`}
+                    className={`text-footnote ${getTierColor(country.economicTier)}`}
                   >
                     {country.economicTier}
                   </Badge>
                 </div>
-                <div className="text-muted-foreground text-sm">
+                <div className="text-label-secondary text-body">
                   {formatPopulation(country.currentPopulation)} •{" "}
                   {formatCurrency(country.currentGdpPerCapita)}/capita
                 </div>
               </div>
 
               <div className="text-right">
-                <div className="text-foreground font-semibold">{config.formatValue(value)}</div>
+                <div className="text-label font-semibold">{config.formatValue(value)}</div>
                 {type === "growth" && (
-                  <div className="text-muted-foreground text-xs">Annual rate</div>
+                  <div className="text-label-secondary text-footnote">Annual rate</div>
                 )}
               </div>
             </Link>
@@ -237,23 +235,12 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
   };
 
   return (
-    <Card
-      className="group/card transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-[1.01] hover:shadow-xl"
-      style={{
-        backdropFilter: "blur(8px)",
-        WebkitBackdropFilter: "blur(8px)",
-        boxShadow: `
-          0 4px 16px rgba(0, 0, 0, 0.1),
-          0 1px 4px rgba(0, 0, 0, 0.05),
-          0 0 0 1px rgba(34, 211, 238, 0.1)
-        `,
-      }}
-    >
+    <Card className="group/card">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-yellow-500 transition-colors group-hover/card:text-yellow-400" />
+          <Trophy aria-hidden className="text-yellow h-5 w-5" />
           Global Leaderboards
-          <Badge variant="secondary" className="ml-auto">
+          <Badge variant="neutral" className="ml-auto">
             Top 7
           </Badge>
         </CardTitle>

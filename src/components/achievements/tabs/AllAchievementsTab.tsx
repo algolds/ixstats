@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import {
   Lock,
   Trophy as Award,
@@ -10,8 +10,6 @@ import {
   Eye,
   EyeClosed as EyeOff,
   Crown as Diamond,
-  Search,
-  Xmark as X,
   Crown as Gem,
   Flash as Zap,
   Archery as Target,
@@ -20,7 +18,14 @@ import {
   Hexagon,
 } from "iconoir-react";
 import { cn, createUrl } from "~/lib/utils";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { Badge, type BadgeVariant } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
+import { FacetCard, MotionFacetCard } from "~/components/ui/facet-container";
+import { SearchField } from "~/components/ui/search-field";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import { springSmooth } from "~/lib/design/motion";
 import {
   rarities,
   getTrophyTier,
@@ -31,115 +36,37 @@ import {
   type GroupedAchievementItem,
 } from "../constants";
 import { JewelAchievementIcon, AchievementCardBackdrop } from "../AchievementDecorations";
-import { Input } from "~/components/ui/input";
 
 interface AllAchievementsTabProps {
   achievements: any[] | undefined;
 }
 
+/** Trophy tier chip: a Badge variant plus an icon (colour never carries meaning alone). */
 const ACHIEVEMENT_TIER_CONFIG: Record<
   TrophyTier,
   {
     label: string;
     icon: React.ComponentType<{ className?: string }>;
-    bg: string;
-    border: string;
-    text: string;
+    badge: BadgeVariant;
   }
 > = {
-  platinum: {
-    label: "Legendary",
-    icon: Zap,
-    bg: "bg-amber-500/15 border-amber-500/35 text-amber-600 dark:text-amber-300 font-extrabold shadow-sm",
-    border: "border-amber-500/40 shadow-sm",
-    text: "text-amber-600 dark:text-amber-300 font-extrabold",
-  },
-  gold: {
-    label: "Epic",
-    icon: Gem,
-    bg: "bg-purple-500/15 border-purple-500/35 text-purple-600 dark:text-purple-300 font-extrabold shadow-sm",
-    border: "border-purple-500/40 shadow-sm",
-    text: "text-purple-600 dark:text-purple-300 font-extrabold",
-  },
-  silver: {
-    label: "Rare",
-    icon: Hexagon,
-    bg: "bg-blue-500/15 border-blue-500/35 text-blue-600 dark:text-blue-300 font-extrabold shadow-sm",
-    border: "border-blue-500/40 shadow-sm",
-    text: "text-blue-600 dark:text-blue-300 font-extrabold",
-  },
-  bronze: {
-    label: "Core",
-    icon: Target,
-    bg: "bg-stone-500/15 border-stone-500/35 text-stone-600 dark:text-stone-300 font-extrabold shadow-sm",
-    border: "border-stone-500/40 shadow-sm",
-    text: "text-stone-600 dark:text-stone-300 font-bold",
-  },
+  platinum: { label: "Legendary", icon: Zap, badge: "yellow" },
+  gold: { label: "Epic", icon: Gem, badge: "purple" },
+  silver: { label: "Rare", icon: Hexagon, badge: "blue" },
+  bronze: { label: "Core", icon: Target, badge: "neutral" },
 };
 
+/** Rarity filter: label and icon per option. */
 const RARITY_CONFIG: Record<
   string,
-  {
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-    color: string;
-    activeBg: string;
-    textColor: string;
-    ringColor: string;
-  }
+  { label: string; icon: React.ComponentType<{ className?: string }> }
 > = {
-  all: {
-    label: "All",
-    icon: Layers,
-    color: "text-amber-500 dark:text-amber-400",
-    activeBg:
-      "bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-300 shadow-sm",
-    textColor: "text-amber-600 dark:text-amber-300 font-bold",
-    ringColor: "ring-amber-500/20",
-  },
-  Legendary: {
-    label: "Legendary",
-    icon: Zap,
-    color: "text-amber-500 dark:text-amber-400",
-    activeBg:
-      "bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-300 shadow-sm",
-    textColor: "text-amber-600 dark:text-amber-300 font-bold",
-    ringColor: "ring-amber-500/20",
-  },
-  Epic: {
-    label: "Epic",
-    icon: Gem,
-    color: "text-purple-500 dark:text-purple-400",
-    activeBg:
-      "bg-purple-500/15 border border-purple-500/30 text-purple-600 dark:text-purple-300 font-bold",
-    textColor: "text-purple-600 dark:text-purple-300 font-bold",
-    ringColor: "ring-purple-500/20",
-  },
-  Rare: {
-    label: "Rare",
-    icon: Hexagon,
-    color: "text-blue-500 dark:text-blue-400",
-    activeBg: "bg-blue-500/15 border border-blue-500/30 text-blue-600 dark:text-blue-300 font-bold",
-    textColor: "text-blue-600 dark:text-blue-300 font-bold",
-    ringColor: "ring-blue-500/20",
-  },
-  Uncommon: {
-    label: "Uncommon",
-    icon: Target,
-    color: "text-emerald-500 dark:text-emerald-400",
-    activeBg:
-      "bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 font-bold",
-    textColor: "text-emerald-600 dark:text-emerald-300 font-bold",
-    ringColor: "ring-emerald-500/20",
-  },
-  Common: {
-    label: "Common",
-    icon: CircleDot,
-    color: "text-muted-foreground",
-    activeBg: "bg-muted/80 border border-border/60 text-foreground shadow-sm",
-    textColor: "text-foreground font-bold",
-    ringColor: "ring-border/40",
-  },
+  all: { label: "All", icon: Layers },
+  Legendary: { label: "Legendary", icon: Zap },
+  Epic: { label: "Epic", icon: Gem },
+  Rare: { label: "Rare", icon: Hexagon },
+  Uncommon: { label: "Uncommon", icon: Target },
+  Common: { label: "Common", icon: CircleDot },
 };
 
 const ROMAN_NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
@@ -202,21 +129,22 @@ function GroupedSeriesCard({
   const isLegendaryOrEpic = activeLevel.rarity === "Legendary" || activeLevel.rarity === "Epic";
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 14 }}
+    // v2 (c5c6b382): unlocked achievements are glass cards that lift on hover, decorated with the
+    // aurora / radiance / foil / ghost-heraldry backdrop; locked ones stay a dashed opaque slot.
+    <MotionFacetCard
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
-      whileHover={isUnlocked ? { y: -3, scale: 1.008 } : { y: 0 }}
-      whileTap={isUnlocked ? { scale: 0.985 } : {}}
+      transition={springSmooth}
+      variant={isUnlocked ? "glass" : undefined}
+      accent={categoryTheme.accent}
+      interactive={isUnlocked ? "hover" : undefined}
       className={cn(
-        "group border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative flex flex-col justify-between overflow-hidden rounded-3xl border border-t-white/20 p-5 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 dark:border-t-white/10",
-        isUnlocked && categoryTheme.cardBorderHover,
-        !isUnlocked
-          ? "border-border/50 bg-muted/25 border-dashed opacity-85 shadow-md select-none"
-          : "hover:shadow-2xl"
+        "flex flex-col justify-between overflow-hidden p-5",
+        isUnlocked
+          ? categoryTheme.cardBorderHover
+          : "bg-surface-secondary border-dashed shadow-none select-none"
       )}
     >
-      {/* Background Texture & Ambient Artwork: 140px Ghost Watermark + Aurora Glass Mesh */}
       <AchievementCardBackdrop
         iconPath={iconPath}
         categoryTheme={categoryTheme}
@@ -224,45 +152,31 @@ function GroupedSeriesCard({
         isLegendaryOrEpic={isLegendaryOrEpic}
       />
 
-      {/* Top Status & Tier Bar */}
-      <div className="relative z-10 space-y-3.5">
+      {/* Status & tier */}
+      <div className="relative space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            {/* Rarity & Tier Badge */}
-            <span
-              className={cn(
-                "flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-xs font-bold uppercase backdrop-blur-md transition-colors",
-                tierConfig.bg
-              )}
-            >
-              <TierIcon className="h-3 w-3" />
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={tierConfig.badge}>
+              <TierIcon aria-hidden />
               <span>{tierConfig.label}</span>
-            </span>
+            </Badge>
 
-            {/* Ultra-Rare Diamond Pill */}
             {isUltraRare && (
-              <span className="flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/15 px-2 py-0.5 font-mono text-xs font-extrabold text-cyan-600 uppercase shadow-sm backdrop-blur-md dark:text-cyan-300">
-                <Diamond className="h-3 w-3 text-cyan-500 dark:text-cyan-300" />
-                <span>{activeLevel.globalUnlockPercent}% Ultra-Rare</span>
-              </span>
+              <Badge variant="teal" className="tabular-nums">
+                <Diamond aria-hidden />
+                <span>{activeLevel.globalUnlockPercent}% ultra-rare</span>
+              </Badge>
             )}
           </div>
 
-          {/* Category Tag with Icon */}
-          <span
-            className={cn(
-              "flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-extrabold tracking-wider uppercase backdrop-blur-md",
-              categoryTheme.badge
-            )}
-          >
-            <CategoryIcon className="h-2.5 w-2.5" />
+          <Badge variant={categoryTheme.badgeVariant}>
+            <CategoryIcon aria-hidden />
             <span>{item.category}</span>
-          </span>
+          </Badge>
         </div>
 
-        {/* Main Content Info Block */}
+        {/* Icon, title and description */}
         <div className="flex items-start gap-4 pt-1">
-          {/* Game Icons SVG Pedestal with Metallic Jewel Gradient Mask & Rejection Shake if locked */}
           <motion.div
             animate={isPedestalShaking ? { x: [0, -6, 6, -5, 5, -2, 2, 0] } : { x: 0 }}
             transition={{ duration: 0.38, ease: [0.36, 0.07, 0.19, 0.97] }}
@@ -270,41 +184,39 @@ function GroupedSeriesCard({
               if (!isUnlocked) triggerLockedShake();
             }}
             className={cn(
-              "relative flex h-13 w-13 shrink-0 items-center justify-center rounded-2xl border shadow-inner backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 select-none",
+              "rounded-row relative flex size-13 shrink-0 items-center justify-center select-none",
               isUnlocked
-                ? cn(categoryTheme.pedestal, "shadow-md group-hover:scale-105")
-                : "border-border/60 bg-muted/30 text-muted-foreground/50 cursor-not-allowed border-dashed opacity-70 backdrop-blur-md"
+                ? categoryTheme.pedestal
+                : "border-separator bg-fill-4 text-label-tertiary cursor-not-allowed border border-dashed"
             )}
           >
             <JewelAchievementIcon
               iconPath={iconPath}
               categoryTheme={categoryTheme}
               isUnlocked={!!isUnlocked}
-              className="h-7.5 w-7.5"
+              className="size-7.5"
             />
           </motion.div>
 
           <div className="min-w-0 flex-1 space-y-1">
-            <div className="flex items-center gap-2">
-              <h3
-                className={cn(
-                  "truncate text-sm font-extrabold tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                  isUnlocked ? "text-foreground" : "text-muted-foreground/70 blur-[0.5px]"
-                )}
-              >
-                {isSecret && !isRevealed ? "Secret Milestone" : activeLevel.title}
-              </h3>
-            </div>
+            <h3
+              className={cn(
+                "text-headline truncate",
+                isUnlocked ? "text-label" : "text-label-secondary"
+              )}
+            >
+              {isSecret && !isRevealed ? "Secret milestone" : activeLevel.title}
+            </h3>
 
-            {/* Blurred Locked Description (non-clickable) */}
+            {/* Locked descriptions stay blurred (non-interactive) */}
             <p
               className={cn(
-                "pointer-events-none line-clamp-2 text-xs leading-snug font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 select-none",
+                "text-footnote pointer-events-none line-clamp-2 select-none",
                 isUnlocked
-                  ? "text-muted-foreground"
+                  ? "text-label-secondary"
                   : isSecret && !isRevealed
-                    ? "text-muted-foreground/60 opacity-40 blur-[3px]"
-                    : "text-muted-foreground/70 opacity-60 blur-[2px]"
+                    ? "text-label-tertiary opacity-40 blur-[3px]"
+                    : "text-label-secondary opacity-60 blur-[2px]"
               )}
             >
               {isSecret && !isRevealed
@@ -315,13 +227,17 @@ function GroupedSeriesCard({
         </div>
       </div>
 
-      {/* Interactive Level Stepper & Bottom Action Bar */}
-      <div className="border-border/40 relative z-10 mt-4 space-y-3.5 border-t pt-3.5">
+      {/* Tier stepper & footer */}
+      <div className="border-separator relative mt-4 space-y-3 border-t pt-3">
         {item.isSeries && item.levels.length > 1 && (
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5">
-              <span className="text-muted-foreground text-xs font-bold uppercase">Tiers:</span>
-              <div className="border-border/60 bg-muted/40 flex items-center gap-1 rounded-xl border p-0.5 shadow-inner backdrop-blur-md">
+            <div className="flex items-center gap-2">
+              <span className="text-label-secondary text-footnote">Tiers</span>
+              <div
+                role="group"
+                aria-label="Tiers"
+                className="bg-fill-3 rounded-control flex items-center gap-1 p-0.5"
+              >
                 {item.levels.map((lvl: any, idx: number) => {
                   const lvlUnlocked = lvl.isUnlocked;
                   const isCurrent = inspectedIndex === idx;
@@ -329,6 +245,7 @@ function GroupedSeriesCard({
 
                   return (
                     <motion.button
+                      type="button"
                       key={lvl.key}
                       animate={isShaking ? { x: [0, -6, 6, -5, 5, -2, 2, 0] } : { x: 0 }}
                       transition={{ duration: 0.38, ease: [0.36, 0.07, 0.19, 0.97] }}
@@ -340,22 +257,21 @@ function GroupedSeriesCard({
                         }
                         setInspectedIndex(idx);
                       }}
+                      aria-pressed={isCurrent}
+                      aria-disabled={!lvlUnlocked}
                       className={cn(
-                        "relative flex h-6 min-w-[24px] items-center justify-center rounded-lg px-1.5 font-mono text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
+                        "rounded-control-sm text-caption duration-fast ease-out-facet focus-visible:outline-tint relative flex h-6 min-w-6 items-center justify-center px-2 tabular-nums transition-colors select-none focus-visible:outline-2 focus-visible:outline-offset-2",
                         isCurrent
-                          ? "bg-foreground text-background shadow-md"
+                          ? "bg-surface text-label shadow-card"
                           : lvlUnlocked
-                            ? "cursor-pointer border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 active:scale-95 dark:text-emerald-400"
-                            : "border-border/30 bg-muted/20 text-muted-foreground/40 cursor-not-allowed border opacity-50 hover:border-red-500/40 hover:bg-red-500/5 hover:text-red-500/70"
+                            ? "text-success-ink hover:bg-fill-4 cursor-pointer"
+                            : "text-label-tertiary cursor-not-allowed"
                       )}
-                      title={`Level ${idx + 1}: ${lvl.title} (${lvlUnlocked ? "Unlocked - Click to view" : "Locked Tier (Immutable)"})`}
+                      title={`Level ${idx + 1}: ${lvl.title} (${lvlUnlocked ? "unlocked, select to view" : "locked tier"})`}
                     >
                       <span>{ROMAN_NUMERALS[idx] || idx + 1}</span>
-                      {lvlUnlocked && !isCurrent && (
-                        <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      )}
                       {!lvlUnlocked && (
-                        <Lock className="text-muted-foreground/50 absolute -top-0.5 -right-0.5 h-2 w-2" />
+                        <Lock aria-hidden className="absolute -top-1 -right-1 size-3" />
                       )}
                     </motion.button>
                   );
@@ -363,57 +279,62 @@ function GroupedSeriesCard({
               </div>
             </div>
 
-            <span className="text-muted-foreground font-mono text-xs font-semibold">
-              {item.unlockedCount} / {item.totalLevels} Mastered
+            <span className="text-label-secondary text-footnote">
+              <span className="font-data tabular-nums">
+                {item.unlockedCount} / {item.totalLevels}
+              </span>{" "}
+              mastered
             </span>
           </div>
         )}
 
-        {/* Bottom Reward Points, Secret Toggle, & Date details */}
-        <div className="flex items-center justify-between text-xs">
+        {/* Points, secret toggle and date */}
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {/* Secret Reveal Button */}
             {isSecret && (
-              <button
+              <Button
+                type="button"
+                variant="gray"
+                size="icon-sm"
+                className="rounded-full"
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleSecretReveal(activeLevel.key);
                 }}
-                className="border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/80 hover:text-foreground flex h-7 w-7 items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
-                title={isRevealed ? "Hide Secret" : "Reveal Secret"}
+                title={isRevealed ? "Hide secret" : "Reveal secret"}
+                aria-label={isRevealed ? "Hide secret" : "Reveal secret"}
+                aria-pressed={isRevealed}
               >
-                {isRevealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-              </button>
+                {isRevealed ? <EyeOff /> : <Eye />}
+              </Button>
             )}
 
-            {/* Clean Points Badge without '+' symbol */}
-            <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-mono text-xs font-bold text-emerald-600 tabular-nums shadow-sm backdrop-blur-md select-none dark:text-emerald-400">
-              <span>{activeLevel.points || 10}</span>
-              <span className="text-xs font-semibold tracking-wider text-emerald-600/80 uppercase dark:text-emerald-400/80">
-                pts
-              </span>
-            </div>
+            <Badge variant="success" numeric className="select-none">
+              {activeLevel.points || 10} pts
+            </Badge>
           </div>
 
-          {/* Date Details */}
-          <div className="text-muted-foreground text-right text-xs">
+          <div className="text-footnote text-right">
             {isUnlocked && activeLevel.unlockedAt ? (
-              <span className="text-foreground font-mono font-bold tabular-nums">
+              <span className="text-label">
                 Unlocked{" "}
-                {new Date(activeLevel.unlockedAt).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                })}
+                <span className="font-data tabular-nums">
+                  {new Date(activeLevel.unlockedAt).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </span>
               </span>
             ) : (
-              <span className="text-muted-foreground/60 font-medium tracking-wide uppercase">
+              <span className="text-label-secondary inline-flex items-center gap-1">
+                <Lock aria-hidden className="size-3.5" />
                 Locked
               </span>
             )}
           </div>
         </div>
       </div>
-    </motion.div>
+    </MotionFacetCard>
   );
 }
 
@@ -469,156 +390,91 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
   }, [groupedItems, selectedRarity, searchQuery]);
 
   return (
-    <div className="space-y-4">
-      {/* Apple Frosted Glass Filter & Search Control Center */}
-      <div className="border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative overflow-hidden rounded-3xl border border-t-white/15 p-3.5 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] dark:border-t-white/10">
-        <TextureOverlay texture="dots" opacity={0.03} />
+    <section aria-labelledby="achievement-catalogue-title" className="space-y-4">
+      {/* The catalogue's cards are h3s: name the section in the outline (after the showcase h2). */}
+      <h2 id="achievement-catalogue-title" className="sr-only">
+        Achievement catalogue
+      </h2>
+      {/* Search and filters */}
+      <FacetCard
+        padding="sm"
+        className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
+      >
+        <SearchField
+          size="sm"
+          placeholder="Search achievement series..."
+          aria-label="Search achievement series"
+          value={searchQuery}
+          onValueChange={setSearchQuery}
+          containerClassName="max-w-sm flex-1"
+        />
 
-        <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {/* Instant Search Field */}
-          <div className="relative max-w-sm flex-1">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
-            <Input
-              type="text"
-              placeholder="Search achievement series..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="border-border/60 bg-background/60 text-foreground placeholder:text-muted-foreground h-8.5 rounded-full pr-8 pl-8 text-xs font-medium backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2.5 h-3.5 w-3.5 -translate-y-1/2 transition-colors"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Enhanced Apple Rarity Segmented Control */}
-            <div className="border-border/60 bg-muted/40 flex items-center gap-1 overflow-x-auto rounded-full border p-1 shadow-inner backdrop-blur-md">
-              {rarities.map((r: string) => {
-                const isSelected = selectedRarity === r;
-                const config = RARITY_CONFIG[r] || {
-                  label: r,
-                  icon: CircleDot,
-                  color: "text-muted-foreground",
-                  activeBg: "bg-muted/80 border border-border/60 text-foreground",
-                  textColor: "text-foreground font-bold",
-                  ringColor: "ring-border/40",
-                };
-                const RarityIcon = config.icon;
-                const count = rarityCounts[r] ?? 0;
-
-                return (
-                  <button
-                    key={r}
-                    onClick={() => setSelectedRarity(r)}
-                    className={cn(
-                      "relative flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-xs font-bold capitalize transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-95",
-                      isSelected ? config.textColor : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {isSelected && (
-                      <motion.div
-                        layoutId="rarity-active-pill"
-                        transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                        className={cn("absolute inset-0 rounded-full", config.activeBg)}
-                      />
-                    )}
-                    <RarityIcon
-                      className={cn(
-                        "relative z-10 h-3 w-3 transition-colors",
-                        isSelected ? config.color : "text-muted-foreground/70"
-                      )}
-                    />
-                    <span className="relative z-10">{config.label}</span>
-                    <span
-                      className={cn(
-                        "py-0.2 relative z-10 rounded-full px-1.5 font-mono text-xs font-bold tabular-nums transition-colors",
-                        isSelected
-                          ? "bg-background/80 text-foreground shadow-xs"
-                          : "bg-muted/60 text-muted-foreground"
-                      )}
-                    >
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* View Mode Switcher (Grid / List) */}
-            <div className="border-border/60 bg-muted/40 flex items-center gap-0.5 rounded-full border p-0.5 shadow-inner backdrop-blur-md select-none">
-              <button
-                onClick={() => setViewMode("grid")}
-                className={cn(
-                  "flex h-6.5 items-center gap-1 rounded-full px-2.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-                  viewMode === "grid"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                title="Grid View"
-              >
-                <LayoutGrid className="h-3 w-3" />
-                <span>Grid</span>
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={cn(
-                  "flex h-6.5 items-center gap-1 rounded-full px-2.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-                  viewMode === "list"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                title="List View"
-              >
-                <List className="h-3 w-3" />
-                <span>List</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Catalog Render */}
-      <AnimatePresence mode="wait">
-        {filteredGroupedItems.length > 0 ? (
-          <div
-            key="series-view"
-            className={cn(
-              "scrollbar-thumb-border/40 hover:scrollbar-thumb-border/70 relative max-h-[620px] scrollbar-thin scrollbar-track-transparent overflow-y-auto pr-1.5",
-              viewMode === "grid"
-                ? "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
-                : "space-y-3"
-            )}
+        <div className="flex flex-wrap items-center gap-2">
+          <ToggleGroup
+            type="single"
+            aria-label="Rarity"
+            size="sm"
+            variant="pill"
+            value={selectedRarity}
+            onValueChange={(value) => setSelectedRarity(value || "all")}
+            className="flex-wrap"
           >
-            {filteredGroupedItems.map((item) => (
-              <GroupedSeriesCard
-                key={item.seriesId || item.levels[0].key}
-                item={item}
-                selectedRarity={selectedRarity}
-                revealedSecrets={revealedSecrets}
-                toggleSecretReveal={toggleSecretReveal}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative overflow-hidden rounded-3xl border border-t-white/15 p-8 text-center shadow-xl backdrop-blur-2xl">
-            <TextureOverlay texture="dots" opacity={0.03} />
-            <div className="relative z-10 mx-auto max-w-sm space-y-2">
-              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-600 shadow-md backdrop-blur-md dark:text-amber-400">
-                <Award className="h-5 w-5 text-amber-500 dark:text-amber-400" />
-              </div>
-              <h3 className="text-foreground text-xs font-bold">No Matching Series</h3>
-              <p className="text-muted-foreground text-xs leading-relaxed">
-                Try adjusting your search query or rarity filter.
-              </p>
-            </div>
-          </div>
-        )}
-      </AnimatePresence>
-    </div>
+            {rarities.map((r: string) => {
+              const config = RARITY_CONFIG[r] ?? { label: r, icon: CircleDot };
+              const RarityIcon = config.icon;
+              const count = rarityCounts[r] ?? 0;
+              return (
+                <ToggleGroupItem key={r} value={r} className="gap-2">
+                  <RarityIcon aria-hidden className="size-3.5" />
+                  <span>{config.label}</span>
+                  <span className="text-label-secondary font-data tabular-nums">{count}</span>
+                </ToggleGroupItem>
+              );
+            })}
+          </ToggleGroup>
+
+          <SegmentedControl
+            aria-label="Layout"
+            size="sm"
+            value={viewMode}
+            onValueChange={setViewMode}
+            options={[
+              { value: "grid", label: "Grid", icon: <LayoutGrid /> },
+              { value: "list", label: "List", icon: <List /> },
+            ]}
+          />
+        </div>
+      </FacetCard>
+
+      {/* Catalogue */}
+      {filteredGroupedItems.length > 0 ? (
+        <div
+          className={cn(
+            "relative max-h-[620px] overflow-y-auto pr-1",
+            viewMode === "grid"
+              ? "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+              : "space-y-3"
+          )}
+        >
+          {filteredGroupedItems.map((item) => (
+            <GroupedSeriesCard
+              key={item.seriesId || item.levels[0].key}
+              item={item}
+              selectedRarity={selectedRarity}
+              revealedSecrets={revealedSecrets}
+              toggleSecretReveal={toggleSecretReveal}
+            />
+          ))}
+        </div>
+      ) : (
+        <FacetCard>
+          <EmptyState
+            icon={<Award />}
+            title="No matching series"
+            message="Try adjusting your search query or rarity filter."
+          />
+        </FacetCard>
+      )}
+    </section>
   );
 }

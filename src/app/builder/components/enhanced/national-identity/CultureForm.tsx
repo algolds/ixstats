@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useId, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   Translate as Languages,
@@ -25,14 +25,16 @@ import {
   Plus,
 } from "iconoir-react";
 import { Input } from "~/components/ui/input";
+import { Button, focusRing } from "~/components/ui/button";
 import { IdentityAutocomplete } from "./IdentityAutocomplete";
 import { CurrencyAutocomplete } from "./CurrencyAutocomplete";
 import { CurrencyIcon } from "./CurrencyIcon";
 import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { soundEffects } from "~/lib/sound/cuelume";
 import type { NationalIdentityData } from "~/app/builder/lib/economy-data-service";
-import { getCurrencyInfo } from "~/lib/utils";
+import { cn, getCurrencyInfo } from "~/lib/utils";
 import { POPULAR_LANGUAGES } from "./identityUtils";
+import { IMAGE_SCRIM_LIGHT, IMAGE_SCRIM_TOUCH_BAND } from "~/app/builder/lib/image-scrim";
 
 const MediaSearchModal = dynamic(
   () =>
@@ -146,6 +148,7 @@ const ADDITIONAL_HERITAGE_SYMBOLS: HeritageItem[] = [
 
 export const CultureForm = React.memo(
   function CultureForm({ identity, onIdentityChange, onFieldSave }: CultureFormProps) {
+    const fieldId = useId();
     const [imagePickerField, setImagePickerField] = useState<string | null>(null);
     const [showAllMotifs, setShowAllMotifs] = useState(false);
     const [revealedKeys, setRevealedKeys] = useState<Set<string>>(new Set());
@@ -189,7 +192,9 @@ export const CultureForm = React.memo(
         if (revealedKeys.has(sym.key)) return true;
         const text = identity[sym.key as keyof NationalIdentityData];
         const img = identity[sym.imageKey as keyof NationalIdentityData];
-        return Boolean((typeof text === "string" && text.trim()) || (typeof img === "string" && img.trim()));
+        return Boolean(
+          (typeof text === "string" && text.trim()) || (typeof img === "string" && img.trim())
+        );
       });
     }, [showAllMotifs, revealedKeys, identity]);
 
@@ -200,7 +205,9 @@ export const CultureForm = React.memo(
         if (revealedKeys.has(sym.key)) return false;
         const text = identity[sym.key as keyof NationalIdentityData];
         const img = identity[sym.imageKey as keyof NationalIdentityData];
-        return !Boolean((typeof text === "string" && text.trim()) || (typeof img === "string" && img.trim()));
+        return !Boolean(
+          (typeof text === "string" && text.trim()) || (typeof img === "string" && img.trim())
+        );
       });
     }, [showAllMotifs, revealedKeys, identity]);
 
@@ -222,12 +229,10 @@ export const CultureForm = React.memo(
       ({ key, label, icon: Icon, placeholder, imageKey }: HeritageItem) => {
         const textVal = identity[key as keyof NationalIdentityData];
         const imgVal = identity[imageKey as keyof NationalIdentityData];
+        const hasImage = typeof imgVal === "string" && imgVal !== "";
 
         return (
-          <div
-            key={key}
-            className="flex items-center gap-3 rounded-xl border border-border/40 bg-background/50 p-3 shadow-xs transition-colors hover:border-border/80"
-          >
+          <div key={key} className="bg-surface-secondary rounded-row flex items-center gap-3 p-3">
             {/* Media Thumbnail / Picker Trigger */}
             <button
               type="button"
@@ -235,75 +240,86 @@ export const CultureForm = React.memo(
                 soundEffects.press();
                 setImagePickerField(imageKey);
               }}
-              className="group relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border/50 bg-muted/40 transition-transform hover:scale-105 active:scale-95"
+              className={cn(
+                "group border-separator bg-fill-3 rounded-control facet-press facet-press-sm facet-lift relative size-12 shrink-0 overflow-hidden border",
+                focusRing
+              )}
               title="Upload or search emblem on IxWiki"
+              aria-label={`${hasImage ? "Change" : "Choose"} image for ${label}`}
               data-cuelume-press
             >
-              {typeof imgVal === "string" && imgVal ? (
-                <img
-                  src={imgVal}
-                  alt={label}
-                  className="h-full w-full object-cover"
-                />
+              {hasImage ? (
+                <img src={imgVal} alt="" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-muted-foreground/60 group-hover:text-teal-500">
-                  <Image className="h-5 w-5" />
+                <div className="text-label-tertiary group-hover:text-teal group-focus-visible:text-teal flex h-full w-full items-center justify-center">
+                  <Image aria-hidden="true" className="h-5 w-5" />
                 </div>
               )}
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                <Image className="h-4 w-4 text-white" />
-              </div>
+              {/* Revealed on hover / keyboard focus; on touch (no hover) an image keeps an
+                  always-visible edit band so the thumbnail reads as changeable. */}
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100",
+                  IMAGE_SCRIM_LIGHT,
+                  hasImage && IMAGE_SCRIM_TOUCH_BAND
+                )}
+              >
+                <Image className="size-4 pointer-coarse:size-3" />
+              </span>
             </button>
 
             {/* Text Input */}
             <div className="min-w-0 flex-1 space-y-1">
-              <label className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-                <Icon className="h-3.5 w-3.5 text-teal-400" />
+              <label
+                htmlFor={`${fieldId}-${key}`}
+                className="text-label text-caption flex items-center gap-1"
+              >
+                <Icon aria-hidden className="text-teal h-3.5 w-3.5" />
                 <span>{label}</span>
               </label>
               <Input
+                id={`${fieldId}-${key}`}
                 value={typeof textVal === "string" ? textVal : ""}
                 onChange={(e) =>
                   onIdentityChange(key as keyof NationalIdentityData, e.target.value)
                 }
                 placeholder={placeholder}
-                className="h-8 text-xs"
+                className="text-footnote h-8"
               />
             </div>
           </div>
         );
       },
-      [identity, onIdentityChange]
+      [identity, onIdentityChange, fieldId]
     );
 
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-6 text-left lg:grid-cols-2">
           {/* Aspirations & Expressions Card */}
-          <FacetCard
-            depth="base"
-            theme="gold"
-            className="border-amber-500/20"
-            texture="chevron"
-            textureOpacity={0.06}
-          >
-            <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-              <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                <Sparkles className="h-5 w-5 text-amber-400" />
+          <FacetCard texture="chevron" textureOpacity={0.04}>
+            <div className="border-separator border-b px-6 py-4">
+              <h3 className="text-label text-headline flex items-center gap-2">
+                <Sparkles className="text-tint h-5 w-5" />
                 National Motto & Expressions
               </h3>
             </div>
             <FacetCardContent className="space-y-4 p-6">
               {/* National Motto (Primary) */}
               <div className="space-y-2">
-                <label className="text-foreground flex items-center gap-2 text-sm font-medium">
-                  <Sparkles className="text-muted-foreground h-4 w-4" />
+                <label
+                  htmlFor={`${fieldId}-motto`}
+                  className="text-label text-body flex items-center gap-2 font-medium"
+                >
+                  <Sparkles className="text-label-secondary h-4 w-4" />
                   National Motto
                 </label>
-                <p className="text-muted-foreground text-xs leading-tight">
+                <p className="text-label-secondary text-footnote leading-tight">
                   The primary rallying cry or constitutional motto of your people
                 </p>
                 <Input
+                  id={`${fieldId}-motto`}
                   value={identity.motto || ""}
                   onChange={(e) => onIdentityChange("motto", e.target.value)}
                   placeholder="e.g. Liberty, Equality, Fraternity • E pluribus unum"
@@ -311,29 +327,37 @@ export const CultureForm = React.memo(
               </div>
 
               {/* Native Language Motto (Streamlined Inline Sub-field) */}
-              <div className="space-y-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
-                <label className="flex items-center gap-2 text-xs font-semibold text-amber-600 dark:text-amber-400">
+              <div className="bg-surface-secondary rounded-row space-y-2 p-3">
+                <label
+                  htmlFor={`${fieldId}-mottoNative`}
+                  className="text-caption text-label flex items-center gap-2"
+                >
                   <Globe className="h-3.5 w-3.5" />
                   <span>Native / Historical Language Motto (Optional)</span>
                 </label>
                 <Input
+                  id={`${fieldId}-mottoNative`}
                   value={identity.mottoNative || ""}
                   onChange={(e) => onIdentityChange("mottoNative", e.target.value)}
                   placeholder="e.g. Liberté, égalité, fraternité"
-                  className="h-8 text-xs italic"
+                  className="text-footnote h-8 italic"
                 />
               </div>
 
               {/* National Anthem */}
               <div className="space-y-2">
-                <label className="text-foreground flex items-center gap-2 text-sm font-medium">
-                  <Music className="text-muted-foreground h-4 w-4" />
+                <label
+                  htmlFor={`${fieldId}-nationalAnthem`}
+                  className="text-label text-body flex items-center gap-2 font-medium"
+                >
+                  <Music className="text-label-secondary h-4 w-4" />
                   National Anthem
                 </label>
-                <p className="text-muted-foreground text-xs leading-tight">
+                <p className="text-label-secondary text-footnote leading-tight">
                   Title of the solemn or celebratory state anthem
                 </p>
                 <Input
+                  id={`${fieldId}-nationalAnthem`}
                   value={identity.nationalAnthem || ""}
                   onChange={(e) => onIdentityChange("nationalAnthem", e.target.value)}
                   placeholder="e.g. The Star-Spangled Banner, La Marseillaise..."
@@ -342,14 +366,18 @@ export const CultureForm = React.memo(
 
               {/* Primary Religion */}
               <div className="space-y-2">
-                <label className="text-foreground flex items-center gap-2 text-sm font-medium">
-                  <Heart className="text-muted-foreground h-4 w-4" />
+                <label
+                  htmlFor={`${fieldId}-nationalReligion`}
+                  className="text-label text-body flex items-center gap-2 font-medium"
+                >
+                  <Heart className="text-label-secondary h-4 w-4" />
                   Primary / State Religion
                 </label>
-                <p className="text-muted-foreground text-xs leading-tight">
+                <p className="text-label-secondary text-footnote leading-tight">
                   Major religious tradition or secular constitutional designation
                 </p>
                 <Input
+                  id={`${fieldId}-nationalReligion`}
                   value={identity.nationalReligion || ""}
                   onChange={(e) => onIdentityChange("nationalReligion", e.target.value)}
                   placeholder="e.g. Secular, Christianity, Islam, Buddhism, Pluralist..."
@@ -357,12 +385,16 @@ export const CultureForm = React.memo(
               </div>
 
               {/* National Day & Sport Grid */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-2 border-t border-border/20">
+              <div className="border-separator grid grid-cols-1 gap-4 border-t pt-2 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-foreground flex items-center gap-1.5 text-sm font-medium">
+                  <label
+                    htmlFor={`${fieldId}-nationalDay`}
+                    className="text-label text-body flex items-center gap-2 font-medium"
+                  >
                     <span>National Day</span>
                   </label>
                   <Input
+                    id={`${fieldId}-nationalDay`}
                     value={identity.nationalDay || ""}
                     onChange={(e) => onIdentityChange("nationalDay", e.target.value)}
                     placeholder="e.g. July 4th, Dec 1"
@@ -370,11 +402,15 @@ export const CultureForm = React.memo(
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-foreground flex items-center gap-1.5 text-sm font-medium">
-                    <Trophy className="h-3.5 w-3.5 text-muted-foreground" />
+                  <label
+                    htmlFor={`${fieldId}-nationalSport`}
+                    className="text-label text-body flex items-center gap-2 font-medium"
+                  >
+                    <Trophy className="text-label-secondary h-3.5 w-3.5" />
                     <span>National Sport</span>
                   </label>
                   <Input
+                    id={`${fieldId}-nationalSport`}
                     value={identity.nationalSport || ""}
                     onChange={(e) => onIdentityChange("nationalSport", e.target.value)}
                     placeholder="e.g. Football, Cricket"
@@ -385,19 +421,13 @@ export const CultureForm = React.memo(
           </FacetCard>
 
           {/* Languages & Currency Card */}
-          <FacetCard
-            depth="base"
-            theme="indigo"
-            className="!overflow-visible border-indigo-500/20"
-            texture="chevron"
-            textureOpacity={0.06}
-          >
-            <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-              <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                <Languages className="h-5 w-5 text-indigo-400" />
+          <FacetCard texture="chevron" textureOpacity={0.04} className="overflow-visible">
+            <div className="border-separator border-b px-6 py-4">
+              <h3 className="text-label text-headline flex items-center gap-2">
+                <Languages className="text-indigo h-5 w-5" />
                 Languages & Currency
               </h3>
-              <p className="text-muted-foreground text-xs leading-tight mt-0.5">
+              <p className="text-label-secondary text-footnote mt-0.5 leading-tight">
                 Official languages, lingua franca, and national currency.
               </p>
             </div>
@@ -410,7 +440,7 @@ export const CultureForm = React.memo(
                   onChange={(val) => onIdentityChange("officialLanguages", val)}
                   placeholder="e.g. English, French, Eldorian"
                   icon={Languages}
-                  iconClassName="text-indigo-400"
+                  iconClassName="text-indigo"
                   defaultSuggestions={POPULAR_LANGUAGES}
                   size="sm"
                   onSave={onFieldSave}
@@ -423,7 +453,7 @@ export const CultureForm = React.memo(
                   onChange={(val) => onIdentityChange("nationalLanguage", val)}
                   placeholder="e.g. Regional tongue or dialect"
                   icon={Languages}
-                  iconClassName="text-indigo-400"
+                  iconClassName="text-indigo"
                   defaultSuggestions={POPULAR_LANGUAGES}
                   size="sm"
                   onSave={onFieldSave}
@@ -431,7 +461,7 @@ export const CultureForm = React.memo(
               </div>
 
               {/* Currency Selector */}
-              <div className="border-border/20 space-y-4 border-t pt-4">
+              <div className="border-separator space-y-4 border-t pt-4">
                 <CurrencyAutocomplete
                   fieldName="currency"
                   value={String(identity.currency || "")}
@@ -441,27 +471,31 @@ export const CultureForm = React.memo(
                 />
 
                 {identity.currency && !getCurrencyInfo(identity.currency).isISO && (
-                  <div className="animate-in fade-in slide-in-from-top-1 flex items-center justify-between rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3">
+                  <div className="animate-in fade-in slide-in-from-top-1 bg-surface-secondary rounded-row flex items-center justify-between p-3">
                     <div className="space-y-0.5">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2">
                         <CurrencyIcon
                           code={identity.currency}
                           symbol={identity.currencySymbol || "$"}
-                          className="h-4 w-4 text-indigo-500"
+                          className="text-indigo h-4 w-4"
                         />
-                        <label className="text-xs font-semibold text-foreground">
+                        <label
+                          htmlFor={`${fieldId}-currencySymbol`}
+                          className="text-caption text-label font-semibold"
+                        >
                           Custom Currency Symbol
                         </label>
                       </div>
-                      <p className="text-muted-foreground text-xs">
+                      <p className="text-label-secondary text-footnote">
                         Symbol placed before amounts (e.g. ₮, ℳ, ©, Cr)
                       </p>
                     </div>
                     <Input
+                      id={`${fieldId}-currencySymbol`}
                       value={identity.currencySymbol || "$"}
                       onChange={handleCurrencySymbolChange}
                       placeholder="$"
-                      className="h-8 max-w-[80px] font-mono text-center text-sm font-bold"
+                      className="text-headline h-8 max-w-20 text-center"
                     />
                   </div>
                 )}
@@ -471,38 +505,23 @@ export const CultureForm = React.memo(
         </div>
 
         {/* Heritage Symbols Progressive Disclosure Card */}
-        <FacetCard
-          depth="base"
-          theme="teal"
-          className="border-teal-500/20"
-          texture="chevron"
-          textureOpacity={0.06}
-        >
-          <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
+        <FacetCard texture="chevron" textureOpacity={0.04}>
+          <div className="border-separator border-b px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                  <Star className="h-5 w-5 text-teal-400" />
+                <h3 className="text-label text-headline flex items-center gap-2">
+                  <Star className="text-teal h-5 w-5" />
                   Cultural Heritage & National Emblems
                 </h3>
-                <p className="text-muted-foreground text-xs leading-tight mt-0.5">
+                <p className="text-label-secondary text-footnote mt-0.5 leading-tight">
                   Fauna, flora, founding figures, and cherished national motifs
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={handleToggleShowAll}
-                className="flex items-center gap-1 text-xs font-semibold text-teal-600 dark:text-teal-400 hover:underline active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                data-cuelume-press
-              >
+              <Button type="button" variant="plain" size="sm" onClick={handleToggleShowAll}>
                 <span>{showAllMotifs ? "Show Essentials" : "Show All 10 Emblems"}</span>
-                {showAllMotifs ? (
-                  <ChevronUp className="h-3.5 w-3.5" />
-                ) : (
-                  <ChevronDown className="h-3.5 w-3.5" />
-                )}
-              </button>
+                {showAllMotifs ? <ChevronUp aria-hidden /> : <ChevronDown aria-hidden />}
+              </Button>
             </div>
           </div>
           <FacetCardContent className="space-y-4 p-6">
@@ -514,27 +533,27 @@ export const CultureForm = React.memo(
 
             {/* Progressive Motif Add Tray */}
             {unrevealedSymbols.length > 0 && !showAllMotifs && (
-              <div className="border-border/20 pt-3 border-t space-y-2">
+              <div className="border-separator space-y-2 border-t pt-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground text-xs font-medium">
+                  <span className="text-label-secondary text-caption">
                     Add More Cultural Motifs:
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-2">
                   {unrevealedSymbols.map((sym) => {
                     const Icon = sym.icon;
                     return (
-                      <button
+                      <Button
                         key={sym.key}
                         type="button"
+                        variant="gray"
+                        size="sm"
                         onClick={() => handleRevealMotif(sym.key)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-border/40 bg-background/50 px-2.5 py-1 text-xs font-medium text-muted-foreground hover:border-teal-500/40 hover:bg-teal-500/10 hover:text-teal-600 dark:hover:text-teal-400 active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                        data-cuelume-press
                       >
-                        <Plus className="h-3 w-3 text-teal-500" />
-                        <Icon className="h-3 w-3 opacity-70" />
+                        <Plus aria-hidden className="text-tint" />
+                        <Icon aria-hidden />
                         <span>{sym.shortLabel}</span>
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>

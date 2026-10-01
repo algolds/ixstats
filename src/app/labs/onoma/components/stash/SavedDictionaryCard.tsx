@@ -3,7 +3,7 @@
 // src/app/labs/onoma/components/stash/SavedDictionaryCard.tsx
 // Onoma Custom Studio Workshop — Saved Dictionary Card Component
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import {
   Globe,
   Lock,
@@ -19,11 +19,15 @@ import {
   GitFork,
   Sparks as Sparkles,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
 import { api } from "~/trpc/react";
 import { useNameBank } from "~/hooks/useNameBank";
 import type { NameCategory, ExploreSubTab, StudioSubTab } from "~/lib/onoma/types";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { MenuButton } from "~/components/ui/menu-button";
+import { DropdownMenuItem } from "~/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 
 interface SavedDictionaryCardProps {
   dict: {
@@ -63,27 +67,10 @@ export function SavedDictionaryCard({
   const bank = useNameBank();
   const [stashingFolderId, setStashingFolderId] = useState<string | null>(null);
   const [isStashingThis, setIsStashingThis] = useState(false);
-  const [showExportPopover, setShowExportPopover] = useState(false);
   const [stashFeedback, setStashFeedback] = useState<string | null>(null);
-  const popoverRef = useRef<HTMLDivElement>(null);
-  const exportRef = useRef<HTMLDivElement>(null);
 
   // Stash queries
   const stashesQuery = api.wikios.getStashes.useQuery();
-
-  // Close popover on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        setIsStashingThis(false);
-      }
-      if (exportRef.current && !exportRef.current.contains(e.target as Node)) {
-        setShowExportPopover(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const handleMoveFolder = async (stashId: string, stashName: string) => {
     setStashingFolderId(stashId);
@@ -117,13 +104,17 @@ export function SavedDictionaryCard({
   const previewWords = dict.values.slice(0, 12).join(", ");
 
   return (
-    <FacetCard className="border-border/40 bg-card/40 rounded-xl p-3.5 shadow-sm transition-all">
-      <div className="space-y-2.5">
+    <FacetCard
+      variant="inset"
+      padding="none"
+      className="p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+    >
+      <div className="space-y-2">
         {/* Header & Meta Row */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <h4 className="text-foreground truncate text-xs font-bold">{dict.title}</h4>
-            <div className="text-muted-foreground/80 mt-0.5 flex items-center gap-1.5 text-[10px]">
+            <h4 className="text-label text-footnote truncate font-semibold">{dict.title}</h4>
+            <div className="text-label-secondary text-caption mt-0.5 flex items-center gap-2">
               <span>{wordsCount} words</span>
               {dict.category && (
                 <>
@@ -134,42 +125,38 @@ export function SavedDictionaryCard({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-            <span className="bg-secondary/40 text-muted-foreground flex items-center gap-1 rounded px-1.5 py-0.5">
+          <div className="text-caption flex flex-wrap items-center gap-2">
+            <Badge variant={dict.isPublic ? "success" : "neutral"}>
               {dict.isPublic ? (
                 <>
-                  <Globe className="h-3 w-3 text-emerald-500" />
-                  <span className="font-semibold text-emerald-500">Public</span>
+                  <Globe />
+                  <span>Public</span>
                 </>
               ) : (
                 <>
-                  <Lock className="text-muted-foreground h-3 w-3" />
+                  <Lock />
                   <span>Private</span>
                 </>
               )}
-            </span>
+            </Badge>
             {dict.role && (
-              <span className="bg-onoma-primary/10 text-onoma-primary rounded px-1.5 py-0.5 text-[9px] font-bold capitalize">
+              <Badge variant="tinted" className="capitalize">
                 {dict.role}
                 {dict.gender && dict.gender !== "any" ? ` · ${dict.gender}` : ""}
-              </span>
+              </Badge>
             )}
-            {dict.setName && (
-              <span className="rounded bg-indigo-500/10 px-1.5 py-0.5 text-[9px] font-bold text-indigo-600 dark:text-indigo-400">
-                ⚇ {dict.setName}
-              </span>
-            )}
+            {dict.setName && <Badge variant="neutral">⚇ {dict.setName}</Badge>}
             {dict.clonedFromId && (
               <>
                 <span>•</span>
-                <span className="text-onoma-primary/80 font-semibold">Cloned</span>
+                <span className="text-tint/80 font-semibold">Cloned</span>
               </>
             )}
             {dict.stashName && (
               <>
                 <span>•</span>
                 <span
-                  className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] font-bold select-none"
+                  className="rounded-control-sm text-caption inline-flex items-center gap-1 px-2 py-0.5 font-semibold select-none"
                   style={{
                     backgroundColor: `${dict.stashColor || "#3b82f6"}20`,
                     color: dict.stashColor || "#3b82f6",
@@ -183,13 +170,15 @@ export function SavedDictionaryCard({
         </div>
 
         {/* Actions Bar */}
-        <div className="border-border/10 flex flex-wrap items-center justify-between gap-2 border-t pt-2.5">
+        <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-t pt-2">
           {/* Primary Buttons */}
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Expand Button */}
-            <button
+            <Button
+              variant="gray"
+              size="sm"
               onClick={onToggleExpand}
-              className="bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-foreground flex h-7 cursor-pointer items-center gap-1.5 rounded px-2.5 text-[11px] transition-all active:scale-[0.97]"
+
               title={isExpanded ? "Hide word list" : "Show word list"}
             >
               {isExpanded ? (
@@ -198,179 +187,169 @@ export function SavedDictionaryCard({
                 <ChevronDown className="h-3.5 w-3.5" />
               )}
               <span>Words</span>
-            </button>
+            </Button>
 
             {/* Load to Studio / Generate */}
             {onLoadToStudio && (
-              <button
+              <Button
+                variant="tinted"
+                size="sm"
                 onClick={() => onLoadToStudio(dict.values, dict.title)}
-                className="bg-onoma-primary/10 text-onoma-primary hover:bg-onoma-primary/20 flex h-7 cursor-pointer items-center gap-1.5 rounded px-2 text-[11px] font-semibold transition-all active:scale-[0.97]"
+
                 title="Load into Studio Workshop"
               >
                 <Wrench className="h-3 w-3" />
                 <span>Studio</span>
-              </button>
+              </Button>
             )}
 
             {/* Quick Cross-System Actions */}
             {onNavigateExplore && (
-              <button
+              <Button
+                variant="tinted"
+                size="sm"
                 onClick={() => onNavigateExplore("phonology", dict.values, dict.title)}
-                className="flex h-7 cursor-pointer items-center gap-1.5 rounded bg-indigo-500/10 px-2 text-[11px] font-semibold text-indigo-600 transition-all hover:bg-indigo-500/20 active:scale-[0.97] dark:text-indigo-400"
                 title="Inspect IPA acoustics & compare profile"
               >
                 <AudioLines className="h-3 w-3" />
                 <span className="hidden sm:inline">Compare</span>
-              </button>
+              </Button>
             )}
 
             {onNavigateStudio && (
-              <button
+              <Button
+                variant="tinted"
+                size="sm"
                 onClick={() => onNavigateStudio("shifts", dict.values, dict.title)}
-                className="bg-onoma-primary/10 text-onoma-primary hover:bg-onoma-primary/20 dark:text-onoma-primary-light flex h-7 cursor-pointer items-center gap-1.5 rounded px-2 text-[11px] font-semibold transition-all active:scale-[0.97]"
+
                 title="Evolve words in Historical Sound Shifts"
               >
                 <GitFork className="h-3 w-3" />
                 <span className="hidden sm:inline">Shifts</span>
-              </button>
+              </Button>
             )}
 
             {onNavigateExplore && (
-              <button
+              <Button
+                variant="tinted"
+                size="sm"
                 onClick={() => onNavigateExplore("writing", dict.values, dict.title)}
-                className="flex h-7 cursor-pointer items-center gap-1.5 rounded bg-cyan-500/10 px-2 text-[11px] font-semibold text-cyan-600 transition-all hover:bg-cyan-500/20 active:scale-[0.97] dark:text-cyan-400"
                 title="Typeset words in Writing Systems"
               >
                 <Sparkles className="h-3 w-3" />
                 <span className="hidden sm:inline">Script</span>
-              </button>
+              </Button>
             )}
 
-            {/* Stash Export Dropdown (Move Folder) */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setIsStashingThis(!isStashingThis);
-                }}
-                className={cn(
-                  "flex h-7 cursor-pointer items-center gap-1.5 rounded px-2.5 text-[11px] transition-all active:scale-[0.97]",
-                  isStashingThis
-                    ? "bg-indigo-500/10 text-indigo-500"
-                    : "bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:text-onoma-primary"
-                )}
-                title="Move dictionary to another Stash folder"
-              >
-                <FolderPlus className="h-3.5 w-3.5" />
-                <span>Move</span>
-              </button>
-
-              {isStashingThis && (
-                <div
-                  ref={popoverRef}
-                  className="bg-popover/95 animate-in fade-in border-border/60 absolute left-0 z-30 mt-1.5 w-52 rounded-xl border p-1.5 shadow-xl shadow-black/20 backdrop-blur-lg duration-100"
+            {/* Move to another stash folder */}
+            <Popover open={isStashingThis} onOpenChange={setIsStashingThis}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={isStashingThis ? "tinted" : "gray"}
+                  size="sm"
+                  title="Move dictionary to another stash folder"
                 >
-                  <div className="text-muted-foreground border-border/40 mb-1 flex items-center justify-between border-b px-2 py-1.5 text-[10px] font-bold uppercase">
-                    <span>Stash Folders</span>
-                    <span className="rounded bg-indigo-500/10 px-1 text-[9px] font-bold text-indigo-600 dark:text-indigo-400">
-                      Global
-                    </span>
-                  </div>
-                  {stashesQuery.isLoading && (
-                    <div className="text-muted-foreground flex items-center gap-1.5 px-2 py-1.5 text-xs">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      <span>Loading stashes...</span>
-                    </div>
-                  )}
-                  {stashesQuery.data && stashesQuery.data.length === 0 && (
-                    <div className="text-muted-foreground px-2 py-1.5 text-xs italic">
-                      No stash folders found.
-                    </div>
-                  )}
-                  <div className="max-h-36 space-y-0.5 overflow-y-auto">
-                    {stashesQuery.data?.map((s) => (
-                      <button
-                        key={s.id}
-                        disabled={stashingFolderId !== null}
-                        onClick={() => handleMoveFolder(s.id, s.name)}
-                        className="text-foreground flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-indigo-500/10 hover:text-indigo-600 disabled:opacity-50 dark:hover:text-indigo-400"
-                      >
-                        <span className="flex items-center gap-1.5 truncate">
-                          <span
-                            className="h-2 w-2 shrink-0 rounded-full"
-                            style={{ backgroundColor: s.color }}
-                          />
-                          <span className="truncate">{s.name}</span>
-                        </span>
-                        {stashingFolderId === s.id && (
-                          <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  {stashFeedback && (
-                    <div className="mt-1.5 rounded bg-indigo-500/10 px-2 py-1 text-center text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
-                      {stashFeedback}
-                    </div>
-                  )}
+                  <FolderPlus />
+                  <span>Move</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-56 p-2">
+                <div className="border-separator mb-1 flex items-center justify-between border-b px-2 py-2">
+                  <span className="text-subhead text-label-secondary">Stash folders</span>
+                  <Badge variant="tinted">Global</Badge>
                 </div>
-              )}
-            </div>
+                {stashesQuery.isLoading && (
+                  <div className="text-label-secondary text-footnote flex items-center gap-2 px-2 py-2">
+                    <Loader2 className="size-3.5 animate-spin" />
+                    <span>Loading stashes...</span>
+                  </div>
+                )}
+                {stashesQuery.data && stashesQuery.data.length === 0 && (
+                  <div className="text-label-secondary text-footnote px-2 py-2">
+                    No stash folders found.
+                  </div>
+                )}
+                <div className="max-h-36 space-y-0.5 overflow-y-auto">
+                  {stashesQuery.data?.map((s) => (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      key={s.id}
+                      disabled={stashingFolderId !== null}
+                      onClick={() => handleMoveFolder(s.id, s.name)}
+                      className="text-label w-full justify-between px-2 text-left font-normal"
+                    >
+                      <span className="flex items-center gap-2 truncate">
+                        <span
+                          className="size-2 shrink-0 rounded-full"
+                          style={{ backgroundColor: s.color }}
+                        />
+                        <span className="truncate">{s.name}</span>
+                      </span>
+                      {stashingFolderId === s.id && (
+                        <Loader2 className="text-label-secondary size-3.5 animate-spin" />
+                      )}
+                    </Button>
+                  ))}
+                </div>
+                {stashFeedback && (
+                  <div className="bg-tint-fill text-tint text-caption rounded-control-sm mt-2 px-2 py-1 text-center">
+                    {stashFeedback}
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Secondary Utilities */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {/* Edit (rename / re-tag) */}
-            <button
+            <Button
+              variant="gray"
+              size="icon-sm"
               onClick={() => onEdit(dict)}
-              className="bg-secondary/30 text-muted-foreground hover:bg-onoma-primary/10 hover:text-onoma-primary flex h-7 w-7 cursor-pointer items-center justify-center rounded transition-colors"
+              aria-label="Edit dictionary"
               title="Edit dictionary (rename, role, set)"
             >
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
+              <Pencil />
+            </Button>
 
             {/* Export */}
-            <div className="relative" ref={exportRef}>
-              <button
-                onClick={() => setShowExportPopover(!showExportPopover)}
-                className="bg-secondary/30 text-muted-foreground flex h-7 w-7 cursor-pointer items-center justify-center rounded transition-colors hover:bg-emerald-500/10 hover:text-emerald-500"
-                title="Export dictionary"
-              >
-                <Download className="h-3.5 w-3.5" />
-              </button>
-              {showExportPopover && (
-                <div className="bg-popover/95 border-border/60 absolute right-0 z-30 mt-1.5 w-28 rounded-lg border p-1 shadow-xl backdrop-blur-lg">
-                  {(["txt", "csv", "json"] as const).map((fmt) => (
-                    <button
-                      key={fmt}
-                      onClick={() => {
-                        handleExport(dict.title, dict.values, fmt);
-                        setShowExportPopover(false);
-                      }}
-                      className="text-foreground flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400"
-                    >
-                      <span className="uppercase">{fmt}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <MenuButton
+              size="icon-sm"
+              label={<Download />}
+              aria-label="Export dictionary"
+              title="Export dictionary"
+              align="end"
+            >
+              {(["txt", "csv", "json"] as const).map((fmt) => (
+                <DropdownMenuItem
+                  key={fmt}
+                  onSelect={() => handleExport(dict.title, dict.values, fmt)}
+                >
+                  {fmt.toUpperCase()}
+                </DropdownMenuItem>
+              ))}
+            </MenuButton>
 
             {/* Delete */}
-            <button
+            <Button
+              variant="gray"
+              size="icon-sm"
               onClick={() => onDelete(dict.id)}
-              className="bg-secondary/30 text-muted-foreground flex h-7 w-7 cursor-pointer items-center justify-center rounded transition-colors hover:bg-red-500/10 hover:text-red-500"
+              aria-label="Delete dictionary"
               title="Delete dictionary"
             >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+              <Trash2 />
+            </Button>
           </div>
         </div>
       </div>
 
       {/* Expanded list of words */}
       {isExpanded && (
-        <div className="border-border/10 border-t pt-2.5 text-xs">
-          <p className="text-muted-foreground line-clamp-3 font-mono leading-normal">
+        <div className="border-separator text-footnote border-t pt-2">
+          <p className="text-label-secondary line-clamp-3 font-mono leading-normal">
             {previewWords || "No words inside."}
             {wordsCount > 12 && " ..."}
           </p>

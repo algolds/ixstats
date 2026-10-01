@@ -4,6 +4,8 @@ import { type Metadata } from "next";
 import { Book, Archery as Target, Crown, Coins, Globe, NavArrowRight } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { HelpExplorer } from "./_components/HelpExplorer";
+import { PageHeader } from "~/components/shell/PageHeader";
+import { ShellGate } from "~/components/shell/ShellGate";
 
 export const metadata: Metadata = {
   title: "Help Center - IxStats",
@@ -38,29 +40,40 @@ const QUICK_LINKS = [
   },
 ] as const;
 
+const INTRO = (
+  <>
+    Plain guides to every part of IxStats. Search below or pick a topic. New here? Start with{" "}
+    <Link
+      href="/help/getting-started/welcome"
+      className="text-primary font-medium underline-offset-4 hover:underline"
+    >
+      Welcome to IxStats
+    </Link>
+    .
+  </>
+);
+
 export default function HelpPage() {
   return (
     <div className="bg-background min-h-screen">
-      {/* Header */}
-      <header className="border-border border-b">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="mb-3 flex items-center gap-3">
-            <Book aria-hidden="true" className="text-muted-foreground h-7 w-7" />
-            <h1 className="text-foreground text-3xl font-semibold tracking-tight">Help Center</h1>
-          </div>
-          <p className="text-muted-foreground max-w-2xl">
-            Plain guides to every part of IxStats. Search below or pick a topic. New here? Start
-            with{" "}
-            <Link
-              href="/help/getting-started/welcome"
-              className="text-primary font-medium underline-offset-4 hover:underline"
-            >
-              Welcome to IxStats
-            </Link>
-            .
-          </p>
+      {/* Header: the Facet 3 PageHeader under the new navigation shell (reference adoption,
+          spec §7.4), the original header otherwise. */}
+      <ShellGate variant="facet">
+        <div className="mx-auto max-w-7xl px-2 pt-2 sm:px-4 lg:px-6">
+          <PageHeader title="Help Center" subtitle={INTRO} />
         </div>
-      </header>
+      </ShellGate>
+      <ShellGate variant="legacy">
+        <header className="material-thin border-separator border-b">
+          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <div className="mb-3 flex items-center gap-3">
+              <Book aria-hidden="true" className="text-muted-foreground h-7 w-7" />
+              <h1 className="text-foreground text-3xl font-semibold tracking-tight">Help Center</h1>
+            </div>
+            <p className="text-muted-foreground max-w-2xl">{INTRO}</p>
+          </div>
+        </header>
+      </ShellGate>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Interactive Explorer */}

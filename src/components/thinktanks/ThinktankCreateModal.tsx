@@ -18,6 +18,7 @@ import { MediaSearchModal } from "~/components/wiki-os/media-search/MediaSearchM
 import { api } from "~/trpc/react";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 
 interface ThinktankCreateModalProps {
   isOpen: boolean;
@@ -105,29 +106,27 @@ export function ThinktankCreateModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="border-border/50 bg-card/90 dark:bg-card/95 max-w-md rounded-2xl p-6 shadow-2xl backdrop-blur-2xl dark:border-white/10">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <Group className="h-5 w-5" />
+            <div className="flex items-center gap-3">
+              <div className="bg-tint-fill text-tint rounded-control flex size-9 items-center justify-center">
+                <Group className="size-5" aria-hidden="true" />
               </div>
               <div>
-                <DialogTitle className="text-foreground text-base font-bold">
-                  Create a Group
-                </DialogTitle>
-                <DialogDescription className="text-muted-foreground text-xs">
+                <DialogTitle className="text-title-3">Create a Group</DialogTitle>
+                <DialogDescription>
                   Set up a shared lore hub and discussion workspace.
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-3.5 pt-2">
+          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
             {/* Logo / Avatar Picker */}
-            <div className="border-border/40 bg-muted/20 flex items-center gap-3 rounded-xl border p-2.5">
-              <Avatar className="border-border/50 h-11 w-11 rounded-xl border shadow-xs">
+            <div className="bg-surface-secondary rounded-row flex items-center gap-3 p-3">
+              <Avatar className="border-separator rounded-control size-11 border">
                 <AvatarImage src={avatarUrl || undefined} alt={name} />
-                <AvatarFallback className="rounded-xl bg-emerald-500/10 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                <AvatarFallback className="rounded-control bg-tint-fill text-caption text-tint">
                   {name.slice(0, 2).toUpperCase() || "TT"}
                 </AvatarFallback>
               </Avatar>
@@ -137,88 +136,81 @@ export function ThinktankCreateModal({
                   size="sm"
                   variant="outline"
                   onClick={() => setShowMediaModal(true)}
-                  className="h-7 rounded-lg text-xs font-semibold"
                 >
-                  <MediaImage className="mr-1.5 h-3.5 w-3.5 text-emerald-500" />
+                  <MediaImage className="text-tint" />
                   {avatarUrl ? "Change Emblem" : "Select from Repository"}
                 </Button>
                 {avatarUrl && (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setAvatarUrl("")}
-                    className="text-muted-foreground hover:text-foreground ml-2 text-xs"
+                    className="text-label-secondary hover:text-label ml-2"
                   >
                     Clear
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-foreground text-xs font-semibold">Group Name</label>
+              <label className="text-subhead text-label">Group Name</label>
               <Input
                 placeholder="e.g., Grand Vandarch Lore Archive"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="bg-background/50 border-border/40 h-8.5 rounded-xl text-xs"
                 required
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-foreground text-xs font-semibold">Description</label>
+              <label className="text-subhead text-label">Description</label>
               <Textarea
                 placeholder="Purpose, scope, and objectives of this group..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="bg-background/50 border-border/40 min-h-[55px] rounded-xl text-xs"
+                className="min-h-[55px]"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-foreground text-xs font-semibold">Category</label>
-              <div className="flex flex-wrap gap-1">
+              <label className="text-subhead text-label">Category</label>
+              <ToggleGroup
+                type="single"
+                aria-label="Category"
+                variant="pill"
+                size="sm"
+                disallowEmpty
+                value={category}
+                onValueChange={(cat) => {
+                  if (cat) setCategory(cat);
+                }}
+              >
                 {categories.map((cat) => (
-                  <button
-                    type="button"
-                    key={cat}
-                    onClick={() => {
-                      soundEffects.press();
-                      setCategory(cat);
-                    }}
-                    className={`rounded-lg px-2 py-0.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                      category === cat
-                        ? "bg-emerald-600 text-white shadow-sm dark:bg-emerald-500"
-                        : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
+                  <ToggleGroupItem key={cat} value={cat}>
                     {cat}
-                  </button>
+                  </ToggleGroupItem>
                 ))}
-              </div>
+              </ToggleGroup>
             </div>
 
             <div className="space-y-1">
-              <label className="text-foreground text-xs font-semibold">
-                Tags (comma-separated)
-              </label>
+              <label className="text-subhead text-label">Tags (comma-separated)</label>
               <Input
                 placeholder="treaty, economics, maritime, vandarch"
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
-                className="bg-background/50 border-border/40 h-8.5 rounded-xl text-xs"
               />
             </div>
 
             {/* Multi-Persona Posting Switch */}
-            <div className="flex items-center justify-between rounded-xl border border-blue-500/20 bg-blue-500/5 p-3">
+            <div className="bg-surface-secondary rounded-row flex items-center justify-between p-3">
               <div className="flex items-center gap-2">
-                <Group className="h-4 w-4 text-blue-500" />
+                <Group className="text-label-secondary size-4" aria-hidden="true" />
                 <div>
-                  <span className="text-foreground text-xs font-bold">
-                    Enable Multi-Persona Posting
-                  </span>
-                  <p className="text-muted-foreground text-xs">
+                  <span className="text-subhead text-label">Enable Multi-Persona Posting</span>
+                  <p className="text-label-secondary text-footnote">
                     Allow members to post as Government, Media, or Citizen personas.
                   </p>
                 </div>
@@ -233,18 +225,18 @@ export function ThinktankCreateModal({
             </div>
 
             {/* Privacy Choice */}
-            <div className="border-border/40 bg-muted/20 flex items-center justify-between rounded-xl border p-3">
+            <div className="bg-surface-secondary rounded-row flex items-center justify-between p-3">
               <div className="flex items-center gap-2">
                 {type === "public" ? (
-                  <Globe className="h-4 w-4 text-emerald-500" />
+                  <Globe className="text-label-secondary size-4" aria-hidden="true" />
                 ) : (
-                  <Lock className="h-4 w-4 text-amber-500" />
+                  <Lock className="text-label-secondary size-4" aria-hidden="true" />
                 )}
                 <div>
-                  <span className="text-foreground text-xs font-bold">
+                  <span className="text-subhead text-label">
                     {type === "public" ? "Public Group" : "Private Group"}
                   </span>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-label-secondary text-footnote">
                     {type === "public" ? "Open to all users" : "Invite or approval required"}
                   </p>
                 </div>
@@ -257,29 +249,18 @@ export function ThinktankCreateModal({
                   soundEffects.press();
                   setType(type === "public" ? "private" : "public");
                 }}
-                className="border-border/40 h-7 rounded-lg text-xs"
+                className="border-separator"
               >
                 Toggle
               </Button>
             </div>
 
-            <div className="border-border/30 flex items-center justify-end gap-2 border-t pt-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={onClose}
-                className="h-8.5 rounded-xl text-xs"
-              >
+            <div className="border-separator flex items-center justify-end gap-2 border-t pt-3">
+              <Button type="button" variant="outline" size="sm" onClick={onClose}>
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                size="sm"
-                disabled={createMutation.isPending || !name.trim()}
-                className="h-8.5 rounded-xl bg-emerald-600 px-4 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 active:scale-95 dark:bg-emerald-500"
-              >
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
+              <Button type="submit" size="sm" disabled={createMutation.isPending || !name.trim()}>
+                <Plus />
                 {createMutation.isPending ? "Creating..." : "Create Group"}
               </Button>
             </div>

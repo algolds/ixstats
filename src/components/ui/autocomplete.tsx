@@ -31,6 +31,8 @@ export interface AutocompleteProps {
   disabled?: boolean;
   className?: string;
   allowCustom?: boolean;
+  /** Id for the text input, so a `<label htmlFor>` can name it. */
+  id?: string;
 }
 
 export const Autocomplete = React.memo(function Autocomplete({
@@ -41,6 +43,7 @@ export const Autocomplete = React.memo(function Autocomplete({
   onBlur,
   onOpenChange,
   placeholder = "Select or type...",
+  id,
   globalSuggestions = [],
   userSuggestions = [],
   defaultSuggestions = [],
@@ -149,6 +152,7 @@ export const Autocomplete = React.memo(function Autocomplete({
       <div className="relative flex items-center">
         <input
           ref={inputRef}
+          id={id}
           type="text"
           value={value}
           onChange={handleInputChange}
@@ -157,11 +161,10 @@ export const Autocomplete = React.memo(function Autocomplete({
           disabled={disabled}
           placeholder={placeholder}
           className={cn(
-            "file:text-foreground placeholder:text-muted-foreground/70 selection:bg-primary selection:text-primary-foreground",
-            "border-border/70 bg-background/40 flex h-9 w-full min-w-0 rounded-md border",
-            "px-3 py-1 pr-8 text-sm shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 outline-none hover:shadow-xs dark:shadow-[0_1px_2px_rgba(0,0,0,0.2)]",
-            "hover:border-border hover:bg-background/60",
-            "focus-visible:border-ring focus-visible:bg-background/90 focus-visible:ring-ring/25 focus-visible:ring-[2.5px]",
+            "flex h-(--control-height) w-full min-w-0 rounded-control bg-fill-3 px-3 py-1 pr-8 text-body text-label",
+            "placeholder:text-label-tertiary selection:bg-tint selection:text-on-tint",
+            "transition-[background-color,box-shadow] duration-fast ease-out-facet outline-none",
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-tint",
             "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
             className
           )}
@@ -174,7 +177,7 @@ export const Autocomplete = React.memo(function Autocomplete({
             handleOpenChange(!open);
             inputRef.current?.focus();
           }}
-          className="text-muted-foreground/50 hover:text-foreground absolute right-2.5 flex h-5 w-5 items-center justify-center rounded transition-colors active:scale-95"
+          className="absolute right-2 flex size-5 items-center justify-center rounded-control-sm text-label-tertiary transition-colors duration-fast hover:text-label"
           aria-label="Toggle options"
         >
           {isLoading ? (
@@ -186,13 +189,13 @@ export const Autocomplete = React.memo(function Autocomplete({
       </div>
 
       {open && totalSuggestions > 0 && (
-        <div className="border-border/60 bg-popover/95 text-popover-foreground absolute z-[100020] mt-1.5 w-full rounded-lg border p-1 shadow-lg backdrop-blur-md animate-in fade-in-0 zoom-in-95 duration-100">
-          <Command shouldFilter={false}>
+        <div className="absolute z-popover mt-1 w-full origin-top animate-facet-in rounded-row border border-separator bg-surface-elevated p-1 text-label shadow-floating">
+          <Command shouldFilter={false} className="rounded-control-sm bg-transparent">
             <CommandList className="max-h-[260px]">
               {isLoading ? (
                 <div className="flex items-center justify-center py-4">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  <span className="text-muted-foreground ml-2 text-xs">Loading...</span>
+                  <Loader2 className="size-4 animate-spin text-label-secondary" />
+                  <span className="ml-2 text-footnote text-label-secondary">Loading…</span>
                 </div>
               ) : (
                 <>
@@ -206,17 +209,17 @@ export const Autocomplete = React.memo(function Autocomplete({
                             key={suggestion.id}
                             value={suggestion.value}
                             onSelect={() => handleSelect(suggestion.value)}
-                            className="cursor-pointer text-xs py-1.5"
+                            className="cursor-pointer text-callout"
                           >
                             <Check
                               className={cn(
-                                "mr-2 h-3.5 w-3.5 text-primary",
+                                "mr-2 size-3.5 text-tint",
                                 isSelected ? "opacity-100" : "opacity-0"
                               )}
                             />
                             <span className="flex-1 font-medium">{suggestion.value}</span>
                             {suggestion.usageCount && suggestion.usageCount > 1 && (
-                              <Badge variant="secondary" className="ml-2 text-xs px-1.5 py-0">
+                              <Badge variant="secondary" className="ml-2 tabular-nums">
                                 {suggestion.usageCount}x
                               </Badge>
                             )}
@@ -236,17 +239,17 @@ export const Autocomplete = React.memo(function Autocomplete({
                             key={suggestion.id}
                             value={suggestion.value}
                             onSelect={() => handleSelect(suggestion.value)}
-                            className="cursor-pointer text-xs py-1.5"
+                            className="cursor-pointer text-callout"
                           >
                             <Check
                               className={cn(
-                                "mr-2 h-3.5 w-3.5 text-primary",
+                                "mr-2 size-3.5 text-tint",
                                 isSelected ? "opacity-100" : "opacity-0"
                               )}
                             />
                             <span className="flex-1">{suggestion.value}</span>
                             {suggestion.usageCount && suggestion.usageCount > 1 && (
-                              <Badge variant="outline" className="ml-2 text-xs px-1.5 py-0">
+                              <Badge variant="outline" className="ml-2 tabular-nums">
                                 {suggestion.usageCount}x
                               </Badge>
                             )}

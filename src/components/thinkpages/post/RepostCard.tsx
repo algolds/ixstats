@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { Card } from "~/components/ui/card";
+import { springSnappy } from "~/lib/design/motion";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { formatThinkpagesContentForDisplay } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
@@ -26,11 +26,11 @@ export function RepostCard({
   if (!post.repostOf) return null;
 
   return (
-    <Card className="rounded-lg border-green-500/30 bg-green-500/10 p-3">
+    <div className="bg-surface-secondary rounded-row p-3">
       <div className="mb-2 flex items-center gap-2">
-        <Avatar className="h-6 w-6">
+        <Avatar className="size-6">
           <AvatarImage src={proxyDiscordUrl(post.repostOf.account?.profileImageUrl || "")} />
-          <AvatarFallback className="text-xs font-semibold">
+          <AvatarFallback className="text-caption">
             {post.repostOf.account?.displayName
               ?.split(" ")
               .map((n: string) => n[0])
@@ -38,14 +38,16 @@ export function RepostCard({
               .toUpperCase() || "?"}
           </AvatarFallback>
         </Avatar>
-        <span className="text-sm font-semibold">{post.repostOf.account?.displayName}</span>
-        <span className="text-muted-foreground text-xs">@{post.repostOf.account?.username}</span>
+        <span className="text-headline text-label">{post.repostOf.account?.displayName}</span>
+        <span className="text-label-secondary text-footnote">
+          @{post.repostOf.account?.username}
+        </span>
       </div>
       <WikiHtmlContent html={formatThinkpagesContentForDisplay(cleanRepostContent)} />
       {repostMediaAttachments && repostMediaAttachments.length > 0 && (
         <div
           className={cn(
-            "border-border/50 mt-2 overflow-hidden rounded-lg border shadow-sm dark:border-white/10",
+            "border-separator rounded-control mt-2 overflow-hidden border",
             repostMediaAttachments.length === 1 && "max-w-md",
             repostMediaAttachments.length > 1 && "grid grid-cols-2 gap-0.5"
           )}
@@ -56,7 +58,7 @@ export function RepostCard({
               <div
                 key={media.id || index}
                 className={cn(
-                  "relative flex items-center justify-center overflow-hidden bg-neutral-900/40",
+                  "bg-fill-3 relative flex items-center justify-center overflow-hidden",
                   isSingle && "aspect-[16/10] max-h-[220px] w-full",
                   repostMediaAttachments.length === 2 && "aspect-square",
                   repostMediaAttachments.length === 3 && index === 0
@@ -71,7 +73,7 @@ export function RepostCard({
                   alt={media.filename || `Image ${index + 1}`}
                   className="h-full w-full cursor-pointer object-cover"
                   whileHover={{ scale: 1.02, opacity: 0.95 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  transition={springSnappy}
                   onClick={(e) => {
                     e.stopPropagation();
                     setLightboxMedia({
@@ -85,6 +87,6 @@ export function RepostCard({
           })}
         </div>
       )}
-    </Card>
+    </div>
   );
 }

@@ -3,6 +3,8 @@
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { hasCountryWriteAccess } from "~/server/shared/country-authorization";
+import { redactMilitaryBranchBudget } from "~/lib/country/public-record";
 
 // ===========================
 // Input Validation Schemas
@@ -68,12 +70,24 @@ export const securityAssessmentRouter = createTRPCRouter({
           }),
         ]);
 
+      // Branch budgets and the resources allocated to threats are the owner's only.
+      if (await hasCountryWriteAccess(ctx, input.countryId)) {
+        return {
+          ...assessment,
+          internalStability,
+          borderSecurity,
+          activeThreats,
+          militaryBranches,
+        };
+      }
       return {
         ...assessment,
         internalStability,
         borderSecurity,
-        activeThreats,
-        militaryBranches,
+        activeThreats: activeThreats.map(
+          ({ resourcesAllocated: _resourcesAllocated, ...threat }) => threat
+        ),
+        militaryBranches: militaryBranches.map(redactMilitaryBranchBudget),
       };
     }),
 });

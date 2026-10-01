@@ -52,20 +52,23 @@ export function FoundationStep({
   );
 
   // Flow State: 1 = Benchmark Country Selector, 2 = Archetype Grid
-  const [subStep, setSubStep] = useState<1 | 2>(
-    builderState.selectedArchetypeId ? 2 : 1
-  );
+  const [subStep, setSubStep] = useState<1 | 2>(builderState.selectedArchetypeId ? 2 : 1);
   const [transitionDirection, setTransitionDirection] = useState<number>(1);
-
 
   // Archetype Grid Filters
   const [activeEra, setActiveEra] = useState<"modern" | "historical">("modern");
   const [searchQuery, setSearchQuery] = useState("");
-  const [complexityFilter, setComplexityFilter] = useState<"all" | "Low" | "Medium" | "High">("all");
+  const [complexityFilter, setComplexityFilter] = useState<"all" | "Low" | "Medium" | "High">(
+    "all"
+  );
 
   // Selection & Details Modal State
-  const [localSelectedArchetype, setLocalSelectedArchetype] = useState<EconomicArchetype | null>(null);
-  const [detailsModalArchetype, setDetailsModalArchetype] = useState<EconomicArchetype | null>(null);
+  const [localSelectedArchetype, setLocalSelectedArchetype] = useState<EconomicArchetype | null>(
+    null
+  );
+  const [detailsModalArchetype, setDetailsModalArchetype] = useState<EconomicArchetype | null>(
+    null
+  );
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   // Archetype Data Fetching via hook
@@ -171,7 +174,9 @@ export function FoundationStep({
           nextState.governmentComponents = archetype.governmentComponents;
         }
 
-        const govType = (archetype.name || selectedTemplate?.governmentType || "Republic") as GovernmentType;
+        const govType = (archetype.name ||
+          selectedTemplate?.governmentType ||
+          "Republic") as GovernmentType;
         nextState.governmentStructure = {
           structure: {
             governmentName: `Government of ${selectedTemplate?.name || "the Nation"}`,
@@ -266,7 +271,9 @@ export function FoundationStep({
               archetype.growthMetrics?.gdpGrowth ?? baseInputs.coreIndicators.realGDPGrowthRate,
             nominalGDP: selectedTemplate?.gdp || baseInputs.coreIndicators.nominalGDP || totalGDP,
             totalPopulation:
-              selectedTemplate?.population || baseInputs.coreIndicators.totalPopulation || totalPopulation,
+              selectedTemplate?.population ||
+              baseInputs.coreIndicators.totalPopulation ||
+              totalPopulation,
           },
           laborEmployment: {
             ...baseInputs.laborEmployment,
@@ -300,7 +307,14 @@ export function FoundationStep({
         onCreateFromScratch();
       }
     },
-    [localSelectedArchetype, applyArchetypeToState, notify, selectedTemplate, onCountrySelect, onCreateFromScratch]
+    [
+      localSelectedArchetype,
+      applyArchetypeToState,
+      notify,
+      selectedTemplate,
+      onCountrySelect,
+      onCreateFromScratch,
+    ]
   );
 
   const handleBackToBenchmark = React.useCallback(() => {
@@ -327,10 +341,13 @@ export function FoundationStep({
   const handleResume = React.useCallback(() => {
     if (typeof window !== "undefined") {
       try {
-        const rawSaved = safeGetItemSync("builder_state") || sessionStorage.getItem("builder_state");
+        const rawSaved =
+          safeGetItemSync("builder_state") || sessionStorage.getItem("builder_state");
         if (rawSaved) {
           const parsed = JSON.parse(rawSaved);
-          const targetStep = (parsed.step && parsed.step !== "foundation" ? parsed.step : "core") as BuilderStep;
+          const targetStep = (
+            parsed.step && parsed.step !== "foundation" ? parsed.step : "core"
+          ) as BuilderStep;
           setBuilderState((prev) => ({
             ...prev,
             ...parsed,
@@ -343,7 +360,9 @@ export function FoundationStep({
       }
     }
 
-    const targetStep = (builderState.step && builderState.step !== "foundation" ? builderState.step : "core") as BuilderStep;
+    const targetStep = (
+      builderState.step && builderState.step !== "foundation" ? builderState.step : "core"
+    ) as BuilderStep;
     setBuilderState((prev) => ({
       ...prev,
       step: targetStep,
@@ -359,11 +378,11 @@ export function FoundationStep({
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             className="mx-auto h-16 w-16"
           >
-            <Globe className="h-16 w-16 text-amber-500" />
+            <Globe className="text-tint h-16 w-16" />
           </motion.div>
           <div className="space-y-2">
-            <p className="text-lg font-medium text-foreground">Loading country templates...</p>
-            <p className="text-sm text-muted-foreground">Preparing your foundation options</p>
+            <p className="text-title-3 text-label">Loading country templates...</p>
+            <p className="text-body text-label-secondary">Preparing your foundation options</p>
           </div>
         </div>
       </div>
@@ -372,8 +391,8 @@ export function FoundationStep({
 
   if (countryLoadError) {
     return (
-      <Alert className="mx-auto max-w-2xl border-red-500/30 bg-red-950/20 backdrop-blur-md">
-        <AlertDescription className="text-red-400">
+      <Alert className="border-red/30 bg-red/10 mx-auto max-w-2xl">
+        <AlertDescription className="text-red">
           <strong>Error loading country templates:</strong> {countryLoadError}
           <br />
           Please refresh the page to try again.
@@ -383,7 +402,12 @@ export function FoundationStep({
   }
 
   // Part 0: Foundation Hero Pathway Selection
-  if (selectedPath === "hero" && !selectedTemplate && !builderState.selectedArchetypeId && subStep === 1) {
+  if (
+    selectedPath === "hero" &&
+    !selectedTemplate &&
+    !builderState.selectedArchetypeId &&
+    subStep === 1
+  ) {
     return (
       <FoundationHero
         onResume={handleResume}

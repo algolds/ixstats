@@ -27,6 +27,9 @@ import { api } from "~/trpc/react";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
+import { Badge } from "~/components/ui/badge";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { StepIndicator } from "~/components/ui/step-indicator";
 
 export interface TradeOfferModalProps {
   open: boolean;
@@ -243,54 +246,43 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
             "max-h-[90vh] w-[98vw] max-w-[95vw] overflow-hidden p-0 sm:max-w-4xl lg:max-w-5xl"
           )}
         >
-          <DialogClose className="absolute top-4 right-4 z-50 rounded-full bg-slate-100 p-2 backdrop-blur-sm transition-colors hover:bg-slate-200 dark:bg-black/40 dark:hover:bg-black/60">
-            <X className="h-5 w-5 text-slate-800 dark:text-white" />
+          <DialogClose className="bg-surface-secondary hover:bg-fill-2 absolute top-4 right-4 z-50 rounded-full p-2 transition-colors">
+            <X className="text-label h-5 w-5" />
           </DialogClose>
 
           <div className="flex h-full flex-col overflow-hidden p-4 sm:p-6">
             <DialogHeader className="mb-4 shrink-0">
-              <DialogTitle className="flex items-center gap-3 text-xl font-bold text-slate-900 sm:text-2xl dark:text-white">
-                <ArrowRightLeft className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <DialogTitle className="text-title-2 text-label sm:text-title-1 flex items-center gap-3">
+                <ArrowRightLeft className="text-tint h-6 w-6" />
                 Create Trade Offer
               </DialogTitle>
             </DialogHeader>
 
             {/* Step indicator */}
-            <div className="mb-4 flex shrink-0 items-center justify-center gap-2">
-              {STEPS.map((s, idx) => (
-                <React.Fragment key={s}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (s === "partner") {
-                        setStep("partner");
-                        return;
-                      }
-                      if (s === "cards" && !searchRecipient) return;
-                      if (
-                        s === "review" &&
-                        (!searchRecipient ||
-                          selectedYourCards.length === 0 ||
-                          selectedTheirCards.length === 0)
-                      )
-                        return;
-                      setStep(s);
-                    }}
-                    className={cn(
-                      "rounded-full px-4 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                      step === s
-                        ? "border border-blue-500/30 bg-blue-500/10 font-bold text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
-                        : "text-slate-500 hover:bg-slate-100 dark:text-white/50 dark:hover:bg-white/5"
-                    )}
-                  >
-                    {idx + 1}. {STEP_LABELS[s]}
-                  </button>
-                  {idx < STEPS.length - 1 && (
-                    <div className="h-px w-6 bg-slate-200 dark:bg-white/20" />
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
+            <StepIndicator
+              aria-label="Trade steps"
+              className="mb-4 shrink-0 justify-center"
+              steps={STEPS.map((s) => ({ id: s, label: STEP_LABELS[s] }))}
+              current={STEPS.indexOf(step)}
+              navigable="all"
+              onStepClick={(idx) => {
+                const s = STEPS[idx];
+                if (!s) return;
+                if (s === "partner") {
+                  setStep("partner");
+                  return;
+                }
+                if (s === "cards" && !searchRecipient) return;
+                if (
+                  s === "review" &&
+                  (!searchRecipient ||
+                    selectedYourCards.length === 0 ||
+                    selectedTheirCards.length === 0)
+                )
+                  return;
+                setStep(s);
+              }}
+            />
 
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto">
@@ -298,7 +290,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
               {step === "partner" && (
                 <div className="mx-auto max-w-lg space-y-4">
                   <div className="relative">
-                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Search className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                     <Input
                       placeholder="Search by country name..."
                       value={partnerSearchText}
@@ -308,49 +300,47 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                   </div>
 
                   <div className="max-h-64 space-y-1 overflow-y-auto">
-                    {displayUsers.map((user) => (
-                      <button
-                        key={user.id}
-                        type="button"
-                        onClick={() => {
-                          setSearchRecipient(user.id);
-                          setSelectedPartnerName(user.countryName || user.leader);
-                          setPartnerSearchText("");
-                        }}
-                        className={cn(
-                          "flex w-full items-center gap-3 rounded-lg p-2 text-left transition-colors hover:bg-slate-100 dark:hover:bg-white/5",
-                          searchRecipient === user.id && "bg-blue-50 dark:bg-blue-500/10"
-                        )}
-                      >
-                        <UnifiedCountryFlag
-                          countryName={user.countryName || user.leader}
-                          flagUrl={user.flag}
-                          size="md"
-                          className="h-8 w-8 rounded object-cover"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
-                            {user.countryName || "Unknown"}
-                          </p>
-                          <p className="truncate text-xs text-slate-400">{user.leader}</p>
-                        </div>
-                        <span className="shrink-0 rounded border border-amber-500/20 px-1.5 py-0.5 text-xs font-bold text-amber-600 dark:border-amber-500/30 dark:text-amber-400">
-                          {user.economicTier}
-                        </span>
-                      </button>
-                    ))}
+                    {displayUsers.length > 0 && (
+                      <FacetListSection variant="plain" aria-label="Trade partners">
+                        {displayUsers.map((user) => (
+                          <FacetRow
+                            key={user.id}
+                            onClick={() => {
+                              setSearchRecipient(user.id);
+                              setSelectedPartnerName(user.countryName || user.leader);
+                              setPartnerSearchText("");
+                            }}
+                            selected={searchRecipient === user.id}
+                            selectionStyle="tint"
+                            itemClassName="rounded-control overflow-hidden"
+                            leading={
+                              <UnifiedCountryFlag
+                                countryName={user.countryName || user.leader}
+                                flagUrl={user.flag}
+                                size="md"
+                                className="h-8 w-8 rounded object-cover"
+                              />
+                            }
+                            title={
+                              <span className="block truncate">
+                                {user.countryName || "Unknown"}
+                              </span>
+                            }
+                            subtitle={<span className="block truncate">{user.leader}</span>}
+                            trailing={<Badge variant="caution">{user.economicTier}</Badge>}
+                          />
+                        ))}
+                      </FacetListSection>
+                    )}
                     {displayUsers.length === 0 && partnerSearchText.length >= 2 && (
-                      <p className="py-8 text-center text-xs text-slate-400">No results</p>
+                      <p className="text-footnote text-label-secondary py-8 text-center">
+                        No results
+                      </p>
                     )}
                   </div>
 
                   <div className="flex justify-end pt-2">
-                    <Button
-                      size="sm"
-                      onClick={() => setStep("cards")}
-                      disabled={!searchRecipient}
-                      className="bg-blue-600 text-xs font-bold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
+                    <Button size="sm" onClick={() => setStep("cards")} disabled={!searchRecipient}>
                       Next: Select Cards
                     </Button>
                   </div>
@@ -361,154 +351,51 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
               {step === "cards" && (
                 <div className="space-y-4">
                   {selectedPartnerName && (
-                    <div className="flex items-center justify-between rounded-lg bg-slate-50 p-2 dark:bg-white/5">
+                    <div className="rounded-control bg-surface-secondary flex items-center justify-between p-2">
                       <div className="flex items-center gap-2">
                         <UnifiedCountryFlag
                           countryName={selectedPartnerName}
                           size="sm"
                           className="h-5 w-5 rounded object-cover"
                         />
-                        <span className="text-xs font-bold text-slate-700 dark:text-white/70">
+                        <span className="text-footnote text-label font-semibold">
                           Trading with {selectedPartnerName}
                         </span>
                       </div>
-                      <button
-                        type="button"
+                      <Button
+                        variant="link"
+                        size="sm"
                         onClick={() => setStep("partner")}
-                        className="text-xs text-blue-500 hover:text-blue-600"
+                        className="h-auto px-0"
                       >
                         Change
-                      </button>
+                      </Button>
                     </div>
                   )}
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {/* Your Cards */}
                     <div className="flex flex-col">
-                      <div className="mb-1.5 flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-500 uppercase dark:text-white/50">
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-eyebrow text-label-secondary">
                           Your Cards ({selectedYourCards.length})
                         </span>
-                        <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
+                        <span className="text-footnote text-blue font-semibold tabular-nums">
                           {yourValue.toLocaleString()} IxC
                         </span>
                       </div>
-                      <div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-1 dark:border-white/10">
-                        {yourCards.map((card) => {
-                          const selected = selectedYourCards.includes(card.id);
-                          return (
-                            <button
+                      <div className="rounded-control border-separator max-h-64 space-y-1 overflow-y-auto border p-1">
+                        <FacetListSection variant="plain" aria-label="Your cards">
+                          {yourCards.map((card) => (
+                            <FacetRow
                               key={card.id}
-                              type="button"
                               onClick={() => toggleYourCard(card.id)}
-                              className={cn(
-                                "flex w-full items-center gap-2 rounded-md p-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                                selected
-                                  ? "bg-blue-50 dark:bg-blue-500/10"
-                                  : "hover:bg-slate-50 dark:hover:bg-white/5"
-                              )}
-                            >
-                              <div
-                                className={cn(
-                                  "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
-                                  selected
-                                    ? "border-blue-500 bg-blue-500"
-                                    : "border-slate-300 dark:border-white/30"
-                                )}
-                              >
-                                {selected && (
-                                  <svg
-                                    className="h-3 w-3 text-white"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={3}
-                                      d="M5 13l4 4L19 7"
-                                    />
-                                  </svg>
-                                )}
-                              </div>
-                              <div className="h-7 w-5 shrink-0 overflow-hidden rounded">
-                                <Image
-                                  src={proxyCardArtwork(card.artwork)}
-                                  alt=""
-                                  width={20}
-                                  height={28}
-                                  className="h-full w-full object-cover"
-                                  unoptimized
-                                />
-                              </div>
-                              <span className="min-w-0 flex-1 truncate font-medium text-slate-900 dark:text-white">
-                                {card.title}
-                              </span>
-                              <span className="shrink-0 font-mono text-xs text-slate-400">
-                                {card.marketValue.toLocaleString()}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Their Cards */}
-                    <div className="flex flex-col">
-                      <div className="mb-1.5 flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-500 uppercase dark:text-white/50">
-                          Their Cards ({selectedTheirCards.length})
-                        </span>
-                        <span className="font-mono text-xs font-bold text-green-600 dark:text-green-400">
-                          {theirValue.toLocaleString()} IxC
-                        </span>
-                      </div>
-                      {!searchRecipient ? (
-                        <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-white/10">
-                          <p className="text-xs text-slate-400">Select a partner first</p>
-                        </div>
-                      ) : (
-                        <div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-1 dark:border-white/10">
-                          {theirCards.map((card) => {
-                            const selected = selectedTheirCards.includes(card.id);
-                            return (
-                              <button
-                                key={card.id}
-                                type="button"
-                                onClick={() => toggleTheirCard(card.id)}
-                                className={cn(
-                                  "flex w-full items-center gap-2 rounded-md p-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                                  selected
-                                    ? "bg-green-50 dark:bg-green-500/10"
-                                    : "hover:bg-slate-50 dark:hover:bg-white/5"
-                                )}
-                              >
-                                <div
-                                  className={cn(
-                                    "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
-                                    selected
-                                      ? "border-green-500 bg-green-500"
-                                      : "border-slate-300 dark:border-white/30"
-                                  )}
-                                >
-                                  {selected && (
-                                    <svg
-                                      className="h-3 w-3 text-white"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      stroke="currentColor"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={3}
-                                        d="M5 13l4 4L19 7"
-                                      />
-                                    </svg>
-                                  )}
-                                </div>
-                                <div className="h-7 w-5 shrink-0 overflow-hidden rounded">
+                              selected={selectedYourCards.includes(card.id)}
+                              selectionStyle="tint"
+                              accessory="check"
+                              itemClassName="rounded-control-sm overflow-hidden"
+                              leading={
+                                <span className="block h-7 w-5 shrink-0 overflow-hidden rounded">
                                   <Image
                                     src={proxyCardArtwork(card.artwork)}
                                     alt=""
@@ -517,16 +404,64 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                                     className="h-full w-full object-cover"
                                     unoptimized
                                   />
-                                </div>
-                                <span className="min-w-0 flex-1 truncate font-medium text-slate-900 dark:text-white">
-                                  {card.title}
                                 </span>
-                                <span className="shrink-0 font-mono text-xs text-slate-400">
-                                  {card.marketValue.toLocaleString()}
-                                </span>
-                              </button>
-                            );
-                          })}
+                              }
+                              title={
+                                <span className="block truncate font-medium">{card.title}</span>
+                              }
+                              trailing={card.marketValue.toLocaleString()}
+                            />
+                          ))}
+                        </FacetListSection>
+                      </div>
+                    </div>
+
+                    {/* Their Cards */}
+                    <div className="flex flex-col">
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-eyebrow text-label-secondary">
+                          Their Cards ({selectedTheirCards.length})
+                        </span>
+                        <span className="text-footnote text-green font-semibold tabular-nums">
+                          {theirValue.toLocaleString()} IxC
+                        </span>
+                      </div>
+                      {!searchRecipient ? (
+                        <div className="rounded-control border-separator flex h-32 items-center justify-center border border-dashed">
+                          <p className="text-footnote text-label-secondary">
+                            Select a partner first
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="rounded-control border-separator max-h-64 space-y-1 overflow-y-auto border p-1">
+                          <FacetListSection variant="plain" aria-label="Their cards">
+                            {theirCards.map((card) => (
+                              <FacetRow
+                                key={card.id}
+                                onClick={() => toggleTheirCard(card.id)}
+                                selected={selectedTheirCards.includes(card.id)}
+                                selectionStyle="tint"
+                                accessory="check"
+                                itemClassName="rounded-control-sm overflow-hidden"
+                                leading={
+                                  <span className="block h-7 w-5 shrink-0 overflow-hidden rounded">
+                                    <Image
+                                      src={proxyCardArtwork(card.artwork)}
+                                      alt=""
+                                      width={20}
+                                      height={28}
+                                      className="h-full w-full object-cover"
+                                      unoptimized
+                                    />
+                                  </span>
+                                }
+                                title={
+                                  <span className="block truncate font-medium">{card.title}</span>
+                                }
+                                trailing={card.marketValue.toLocaleString()}
+                              />
+                            ))}
+                          </FacetListSection>
                         </div>
                       )}
                     </div>
@@ -534,23 +469,23 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
 
                   {/* Credits row inside cards step */}
                   <div className="flex items-center gap-3">
-                    <Coins className="h-4 w-4 shrink-0 text-amber-500" />
+                    <Coins className="text-yellow h-4 w-4 shrink-0" />
                     <Input
                       type="number"
                       min="0"
                       placeholder="You give (credits)"
                       value={yourCredits || ""}
                       onChange={(e) => setYourCredits(parseInt(e.target.value) || 0)}
-                      className="h-8 text-xs"
+                      className="text-footnote h-8"
                     />
-                    <ArrowRightLeft className="h-3 w-3 shrink-0 text-slate-400" />
+                    <ArrowRightLeft className="text-label-secondary h-3 w-3 shrink-0" />
                     <Input
                       type="number"
                       min="0"
                       placeholder="You request (credits)"
                       value={theirCredits || ""}
                       onChange={(e) => setTheirCredits(parseInt(e.target.value) || 0)}
-                      className="h-8 text-xs"
+                      className="text-footnote h-8"
                     />
                   </div>
 
@@ -559,7 +494,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                       variant="outline"
                       size="sm"
                       onClick={() => setStep("partner")}
-                      className="text-xs"
+                      className="text-footnote"
                     >
                       Back: Partner
                     </Button>
@@ -567,7 +502,6 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                       size="sm"
                       onClick={() => setStep("review")}
                       disabled={selectedYourCards.length === 0 || selectedTheirCards.length === 0}
-                      className="bg-blue-600 text-xs font-bold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       Next: Review
                     </Button>
@@ -578,20 +512,18 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
               {/* Review Step */}
               {step === "review" && (
                 <div className="mx-auto max-w-lg space-y-4">
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
-                    <p className="mb-1 text-xs text-slate-500">
+                  <div className="rounded-control border-separator bg-surface-secondary border p-3">
+                    <p className="text-footnote text-label-secondary mb-1">
                       Trading with{" "}
-                      <span className="font-bold text-slate-800 dark:text-white">
-                        {selectedPartnerName}
-                      </span>
+                      <span className="text-label font-semibold">{selectedPartnerName}</span>
                     </p>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-blue-600 dark:text-blue-400">
+                    <div className="text-footnote flex items-center justify-between">
+                      <span className="text-blue">
                         You give: {yourValue.toLocaleString()} IxC ({selectedYourCards.length}{" "}
                         cards)
                       </span>
-                      <ArrowRightLeft className="h-3 w-3 text-slate-400" />
-                      <span className="text-green-600 dark:text-green-400">
+                      <ArrowRightLeft className="text-label-secondary h-3 w-3" />
+                      <span className="text-green">
                         You get: {theirValue.toLocaleString()} IxC ({selectedTheirCards.length}{" "}
                         cards)
                       </span>
@@ -600,21 +532,17 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
 
                   <div
                     className={cn(
-                      "flex items-center gap-2 rounded-lg border p-2 text-xs",
-                      fairTrade ? "border-green-500/30" : "border-amber-500/30"
+                      "rounded-control text-footnote flex items-center gap-2 border p-2",
+                      fairTrade ? "border-green/30" : "border-yellow/30"
                     )}
                   >
                     {fairTrade ? (
-                      <span className="font-bold text-green-600 dark:text-green-400">
-                        Fair Trade
-                      </span>
+                      <span className="text-green font-semibold">Fair Trade</span>
                     ) : (
                       <>
-                        <AlertCircle className="h-4 w-4 shrink-0 text-amber-500" />
-                        <span className="font-bold text-amber-600 dark:text-amber-400">
-                          Unbalanced
-                        </span>
-                        <span className="text-slate-400">
+                        <AlertCircle className="text-yellow h-4 w-4 shrink-0" />
+                        <span className="text-yellow font-semibold">Unbalanced</span>
+                        <span className="text-label-secondary">
                           Diff: {Math.abs(valueDifference).toLocaleString()} IxC
                         </span>
                       </>
@@ -622,9 +550,9 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                   </div>
 
                   {message && (
-                    <div className="rounded-lg border border-slate-200 p-2 dark:border-white/10">
-                      <p className="text-xs text-slate-400">Message</p>
-                      <p className="text-xs text-slate-800 dark:text-white/80">{message}</p>
+                    <div className="rounded-control border-separator border p-2">
+                      <p className="text-footnote text-label-secondary">Message</p>
+                      <p className="text-footnote text-label">{message}</p>
                     </div>
                   )}
 
@@ -634,7 +562,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                     onChange={(e) => setMessage(e.target.value)}
                     maxLength={500}
                     rows={2}
-                    className="h-14 resize-none text-xs"
+                    className="text-footnote h-14 resize-none"
                   />
 
                   <div className="flex justify-between pt-2">
@@ -642,7 +570,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                       variant="outline"
                       size="sm"
                       onClick={() => setStep("cards")}
-                      className="text-xs"
+                      className="text-footnote"
                     >
                       Back: Cards
                     </Button>
@@ -650,7 +578,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
                       size="sm"
                       onClick={handleSubmit}
                       disabled={createTrade.isPending}
-                      className="gap-1.5 bg-blue-600 text-xs font-bold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="bg-blue text-on-blue disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Send className="h-3.5 w-3.5" />
                       {createTrade.isPending ? "Sending..." : "Send Trade Offer"}

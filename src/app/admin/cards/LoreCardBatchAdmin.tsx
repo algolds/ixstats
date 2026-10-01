@@ -5,9 +5,12 @@
 import { useState, useRef, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { useNotify } from "~/hooks/useNotify";
-import { FacetCard, FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import {
   Dialog,
   DialogContent,
@@ -36,7 +39,6 @@ import {
   Page as FileText,
   Trash as Trash2,
   Play,
-  Page as Scroll,
   Sparks as Sparkles,
   MediaImage as ImageIcon,
   Eye,
@@ -51,6 +53,23 @@ import { IIWikiBadge } from "~/components/cards/display/IIWikiLogo";
 import { publicArticleUrl } from "~/lib/wiki-os/config";
 
 import { CATEGORY_PRESETS } from "./lore-batch/category-presets";
+import { Textarea } from "~/components/ui/textarea";
+import { Badge } from "~/components/ui/badge";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 export { CATEGORY_PRESETS };
 
@@ -793,157 +812,124 @@ export function LoreCardBatchAdmin() {
   };
 
   return (
-    <FacetCard
-      depth={2}
-      className="border-border bg-card/70 text-card-foreground space-y-6 rounded-2xl border p-6 shadow-xl backdrop-blur-xl"
-    >
+    <FacetCard className="space-y-6 p-6">
       {/* ─── Header & Sub-Tab Navigation Bar ────────────────────────── */}
-      <div className="border-border flex flex-col gap-4 border-b pb-4 md:flex-row md:items-center md:justify-between">
+      <div className="border-separator flex flex-col gap-4 border-b pb-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-2.5 backdrop-blur-md">
-            <BookOpen className="h-5 w-5 text-purple-500" />
+          <div className="rounded-row border-purple/30 bg-purple/10 border p-3">
+            <BookOpen className="text-purple h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-foreground text-xl font-bold tracking-tight">
-              Lore Card Batch Studio & Requests
-            </h2>
-            <p className="text-muted-foreground text-xs font-medium">
+            <h2 className="text-label text-title-2">Lore Card Batch Studio & Requests</h2>
+            <p className="text-label-secondary text-caption">
               AI wiki card generation, category preset crawlers, CSV/JSON bulk import, and request
               queue.
             </p>
           </div>
         </div>
 
-        {/* Sub-Tab Switcher */}
-        <FacetContainer
-          depth={1}
-          enableRefraction={true}
-          surface="solid"
-          className="border-border flex items-center gap-1 rounded-xl border p-1"
-        >
-          <button
-            onClick={() => setActiveTab("generator")}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-              activeTab === "generator"
-                ? "bg-primary/15 border-primary/40 text-foreground border shadow-xs"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
-            }`}
-          >
-            <BookOpen className="text-primary h-3.5 w-3.5" />
-            Batch Studio ({candidates.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("requests")}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-              activeTab === "requests"
-                ? "bg-primary/15 border-primary/40 text-foreground border shadow-xs"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
-            }`}
-          >
-            <UserCheck className="text-primary h-3.5 w-3.5" />
-            User Queue ({requestStats.data?.pending ?? 0})
-          </button>
-        </FacetContainer>
+        {/* Sub-tab switcher */}
+        <SegmentedControl
+          asTabs
+          aria-label="Lore batch views"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          options={[
+            {
+              value: "generator",
+              label: `Batch Studio (${candidates.length})`,
+              icon: <BookOpen />,
+            },
+            {
+              value: "requests",
+              label: `User Queue (${requestStats.data?.pending ?? 0})`,
+              icon: <UserCheck />,
+            },
+          ]}
+        />
       </div>
 
       {/* ─── TAB 1: BATCH GENERATOR STUDIO ──────────────────────────── */}
       {activeTab === "generator" && (
         <div className="space-y-6">
           {/* Global Parameter Controls */}
-          <FacetContainer
-            depth={1}
-            enableRefraction={true}
-            surface="solid"
-            className="border-border space-y-4 rounded-2xl border p-4 shadow-sm"
-          >
-            <div className="text-foreground flex items-center gap-2 text-xs font-semibold">
-              <Sliders className="h-4 w-4 text-purple-500" />
+          <FacetCard className="space-y-4 p-4">
+            <div className="text-label text-caption flex items-center gap-2">
+              <Sliders className="text-purple h-4 w-4" />
               <span>Batch Generation Parameters</span>
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-3">
               {/* Wiki Source */}
               <div>
-                <label className="text-muted-foreground mb-1 block text-xs font-medium">
+                <label className="text-label-secondary text-caption mb-1 block">
                   Default Wiki Source
                 </label>
-                <select
+                <Select
                   value={globalWikiSource}
-                  onChange={(e) => setGlobalWikiSource(e.target.value as any)}
-                  className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 w-full rounded-xl border px-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-1 focus:outline-none"
+                  onValueChange={(v) => setGlobalWikiSource(v as any)}
                 >
-                  <option value="ixwiki" className="bg-card text-card-foreground">
-                    IxWiki (Primary)
-                  </option>
-                  <option value="iiwiki" className="bg-card text-card-foreground">
-                    IIWiki (Secondary)
-                  </option>
-                </select>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ixwiki">IxWiki (Primary)</SelectItem>
+                    <SelectItem value="iiwiki">IIWiki (Secondary)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Target Rarity */}
               <div>
-                <label className="text-muted-foreground mb-1 block text-xs font-medium">
+                <label className="text-label-secondary text-caption mb-1 block">
                   Target Rarity Strategy
                 </label>
-                <select
+                <Select
                   value={globalTargetRarity}
-                  onChange={(e) => setGlobalTargetRarity(e.target.value as any)}
-                  className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 w-full rounded-xl border px-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-1 focus:outline-none"
+                  onValueChange={(v) => setGlobalTargetRarity(v as any)}
                 >
-                  <option value="AUTO" className="bg-card text-card-foreground">
-                    Auto (AI-determined)
-                  </option>
-                  <option value="COMMON" className="bg-card text-card-foreground">
-                    Common
-                  </option>
-                  <option value="UNCOMMON" className="bg-card text-card-foreground">
-                    Uncommon
-                  </option>
-                  <option value="RARE" className="bg-card text-card-foreground">
-                    Rare
-                  </option>
-                  <option value="ULTRA_RARE" className="bg-card text-card-foreground">
-                    Ultra Rare
-                  </option>
-                  <option value="EPIC" className="bg-card text-card-foreground">
-                    Epic
-                  </option>
-                  <option value="LEGENDARY" className="bg-card text-card-foreground">
-                    Legendary
-                  </option>
-                </select>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="AUTO">Auto (AI-determined)</SelectItem>
+                    <SelectItem value="COMMON">Common</SelectItem>
+                    <SelectItem value="UNCOMMON">Uncommon</SelectItem>
+                    <SelectItem value="RARE">Rare</SelectItem>
+                    <SelectItem value="ULTRA_RARE">Ultra Rare</SelectItem>
+                    <SelectItem value="EPIC">Epic</SelectItem>
+                    <SelectItem value="LEGENDARY">Legendary</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Card Season */}
               <div>
-                <label className="text-muted-foreground mb-1 block text-xs font-medium">
+                <label className="text-label-secondary text-caption mb-1 block">
                   Target Card Season
                 </label>
-                <select
-                  value={globalSeason}
-                  onChange={(e) => setGlobalSeason(parseInt(e.target.value, 10))}
-                  className="border-border bg-card text-foreground hover:bg-accent focus:ring-primary h-8.5 w-full rounded-xl border px-3 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-1 focus:outline-none"
+                <Select
+                  value={String(globalSeason)}
+                  onValueChange={(v) => setGlobalSeason(parseInt(v, 10))}
                 >
-                  <option value={1} className="bg-card text-card-foreground">
-                    Season 1
-                  </option>
-                  <option value={2} className="bg-card text-card-foreground">
-                    Season 2
-                  </option>
-                  <option value={3} className="bg-card text-card-foreground">
-                    Season 3
-                  </option>
-                </select>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={String(1)}>Season 1</SelectItem>
+                    <SelectItem value={String(2)}>Season 2</SelectItem>
+                    <SelectItem value={String(3)}>Season 3</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          </FacetContainer>
+          </FacetCard>
 
           {/* Quick Category Presets & Bulk Import Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-muted-foreground flex items-center gap-1 text-xs font-semibold">
-                <BookOpen className="h-3 w-3 text-amber-500" /> Category Presets:
+              <span className="text-label-secondary text-caption flex items-center gap-1">
+                <BookOpen className="text-yellow h-3 w-3" /> Category Presets:
               </span>
               {CATEGORY_PRESETS.filter(
                 (preset: any) =>
@@ -962,23 +948,24 @@ export function LoreCardBatchAdmin() {
                     : preset.terms.length;
 
                 return (
-                  <button
+                  <Button
                     key={preset.name}
+                    variant="bordered"
+                    size="sm"
                     disabled={Boolean(crawlingPresetName)}
                     onClick={() => handleApplyPreset(preset)}
                     title={`Add all ${liveCount.toLocaleString()} verified ${preset.name} articles & files to batch queue\nCategory: Category:${preset.categoryName}\nSynonyms & Keywords: ${preset.synonyms.slice(0, 10).join(", ")}...`}
-                    className="border-border bg-card/60 text-foreground hover:bg-accent hover:text-accent-foreground inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-semibold shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95 disabled:opacity-60"
                   >
                     {isPresetCrawling ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin text-purple-400" />
+                      <Loader2 className="text-purple h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Icon className="h-3.5 w-3.5 text-purple-500" />
+                      <Icon className="text-purple h-3.5 w-3.5" />
                     )}
                     <span>{preset.name}</span>
-                    <span className="text-muted-foreground bg-muted/80 rounded-md px-1.5 py-0.5 font-mono text-xs">
+                    <Badge variant="neutral" className="tabular-nums">
                       {isPresetCrawling ? "Crawling..." : liveCount.toLocaleString()}
-                    </span>
-                  </button>
+                    </Badge>
+                  </Button>
                 );
               })}
             </div>
@@ -991,39 +978,24 @@ export function LoreCardBatchAdmin() {
                 onChange={handleFileUpload}
                 className="hidden"
               />
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                className="border-border bg-card text-foreground hover:bg-accent h-8 rounded-xl text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
-              >
-                <Upload className="mr-1.5 h-3.5 w-3.5" /> Import CSV/JSON
+              <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                <Upload className="mr-2 h-3.5 w-3.5" /> Import CSV/JSON
               </Button>
               {candidates.length > 0 && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleExportJSON}
-                  className="border-border bg-card text-foreground hover:bg-accent h-8 rounded-xl text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
-                >
-                  <Download className="mr-1.5 h-3.5 w-3.5" /> Export JSON
+                <Button size="sm" variant="outline" onClick={handleExportJSON}>
+                  <Download className="mr-2 h-3.5 w-3.5" /> Export JSON
                 </Button>
               )}
             </div>
           </div>
 
           {/* Live Wiki Category Search & Namespace 0 Crawlers */}
-          <FacetContainer
-            depth={1}
-            enableRefraction={true}
-            surface="solid"
-            className="border-border space-y-3 rounded-2xl border p-3.5 shadow-xs"
-          >
+          <FacetCard className="space-y-3 p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               {/* Category Search Input with Autocomplete Dropdown */}
               <div className="relative flex-1">
                 <div className="relative flex items-center">
-                  <Search className="text-muted-foreground absolute left-3 h-3.5 w-3.5" />
+                  <Search className="text-label-secondary absolute left-3 h-3.5 w-3.5" />
                   <Input
                     value={categorySearchQuery}
                     onChange={(e) => {
@@ -1032,14 +1004,15 @@ export function LoreCardBatchAdmin() {
                     }}
                     onFocus={() => setIsCategoryDropdownOpen(true)}
                     placeholder={`Search ${globalWikiSource.toUpperCase()} categories (e.g. IXWB, Countries, Wars, Treaties)...`}
-                    className="border-border bg-card/80 text-foreground placeholder:text-muted-foreground focus:ring-primary h-8.5 rounded-xl pr-24 pl-8.5 text-xs focus:ring-1"
+                    className="rounded-control-sm md:text-footnote h-(--control-height-sm) pr-24 pl-9"
                   />
                   {categorySearchQuery.trim() && (
                     <Button
+                      variant="tinted"
                       size="sm"
                       disabled={isCrawlingCategory}
                       onClick={() => handleCrawlCategory(categorySearchQuery)}
-                      className="bg-primary/20 hover:bg-primary/30 text-primary border-primary/30 absolute right-1 h-6.5 rounded-lg border px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
+                      className="absolute right-1"
                     >
                       {isCrawlingCategory ? (
                         <Loader2 className="mr-1 h-3 w-3 animate-spin" />
@@ -1055,31 +1028,35 @@ export function LoreCardBatchAdmin() {
                 {isCategoryDropdownOpen &&
                   categorySearchData?.categories &&
                   categorySearchData.categories.length > 0 && (
-                    <div className="border-border bg-popover/95 absolute top-10 right-0 left-0 z-50 max-h-48 space-y-0.5 overflow-y-auto rounded-xl border p-1.5 shadow-xl backdrop-blur-xl">
-                      <div className="text-muted-foreground border-border/50 flex items-center justify-between border-b px-2 py-1 pb-1 text-xs font-semibold">
+                    <div className="border-separator bg-surface-elevated rounded-row shadow-floating absolute top-10 right-0 left-0 z-50 max-h-48 overflow-y-auto border p-2">
+                      <div className="text-label-secondary border-separator text-caption flex items-center justify-between border-b px-2 pb-1">
                         <span>Matching {globalWikiSource.toUpperCase()} Categories</span>
-                        <button
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           onClick={() => setIsCategoryDropdownOpen(false)}
-                          className="text-muted-foreground hover:text-foreground text-xs hover:underline"
                         >
                           Close
-                        </button>
+                        </Button>
                       </div>
-                      {categorySearchData.categories.map((cat) => (
-                        <button
-                          key={cat}
-                          onClick={() => handleCrawlCategory(cat)}
-                          className="text-foreground hover:bg-accent/80 group flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                        >
-                          <span className="flex items-center gap-1.5 font-medium">
-                            <BookOpen className="h-3 w-3 text-purple-400" />
-                            {cat}
-                          </span>
-                          <span className="text-muted-foreground group-hover:text-primary font-mono text-xs transition-colors">
-                            Crawl Category →
-                          </span>
-                        </button>
-                      ))}
+                      <FacetListSection
+                        variant="plain"
+                        aria-label={`Matching ${globalWikiSource.toUpperCase()} categories`}
+                      >
+                        {categorySearchData.categories.map((cat) => (
+                          <FacetRow
+                            key={cat}
+                            onClick={() => handleCrawlCategory(cat)}
+                            leading={<BookOpen aria-hidden className="text-purple size-3.5" />}
+                            title={cat}
+                            trailing={
+                              <span className="text-label-secondary text-footnote">
+                                Crawl Category →
+                              </span>
+                            }
+                          />
+                        ))}
+                      </FacetListSection>
                     </div>
                   )}
               </div>
@@ -1087,70 +1064,60 @@ export function LoreCardBatchAdmin() {
               {/* Crawl All Namespace 0 (Main Pages) Action Button */}
               <Button
                 size="sm"
-                variant="outline"
+                variant="tinted"
                 disabled={isCrawlingAllPages}
                 onClick={handleCrawlAllMainPages}
                 title={`Fetch all articles in the main namespace (namespace 0) on ${globalWikiSource.toUpperCase()}`}
-                className="h-8.5 shrink-0 rounded-xl border-purple-500/40 bg-purple-500/10 text-xs font-semibold text-purple-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-purple-500/20 active:scale-95"
+                className="shrink-0"
               >
                 {isCrawlingAllPages ? (
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Globe className="mr-1.5 h-3.5 w-3.5 text-purple-400" />
+                  <Globe className="text-purple mr-2 h-3.5 w-3.5" />
                 )}
                 Parse All {globalWikiSource.toUpperCase()} Main Pages (Namespace 0)
               </Button>
             </div>
-          </FacetContainer>
+          </FacetCard>
 
           {/* Manual Input Box */}
-          <FacetContainer
-            depth={1}
-            enableRefraction={true}
-            surface="solid"
-            className="border-border space-y-3 rounded-2xl border p-4"
-          >
+          <FacetCard className="space-y-3 p-4">
             <div className="flex items-center justify-between">
-              <label className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-                <FileText className="text-primary h-4 w-4" />
+              <label className="text-label text-caption flex items-center gap-2">
+                <FileText className="text-tint h-4 w-4" />
                 Add Articles & Categories to Queue (Comma or Newline Separated)
               </label>
               <Button
+                variant="tinted"
                 size="sm"
                 onClick={handleAddArticlesFromText}
                 disabled={!articleInput.trim()}
-                className="border-primary/30 bg-primary/20 text-primary hover:bg-primary/30 h-7 rounded-lg border text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
               >
                 Add to Queue
               </Button>
             </div>
-            <textarea
+            <Textarea
               value={articleInput}
               onChange={(e) => setArticleInput(e.target.value)}
               placeholder="e.g. Caphiria, Daxia, Category:IXWB, Category:Wars, Category:Treaties, Urcea..."
-              className="border-border bg-card text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary h-20 w-full rounded-xl border p-3 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none focus:ring-1"
+              className="h-20 w-full"
             />
-            <p className="text-muted-foreground text-xs">
+            <p className="text-label-secondary text-footnote">
               💡 Supports individual article titles, comma-separated lists, and{" "}
-              <code className="rounded bg-purple-500/10 px-1 py-0.5 font-mono text-purple-400">
+              <code className="rounded-control-sm bg-purple/10 text-purple px-1 py-0.5 tabular-nums">
                 Category:&lt;Name&gt;
               </code>{" "}
               to automatically crawl and load all member pages.
             </p>
-          </FacetContainer>
+          </FacetCard>
 
           {/* Batch Candidate Queue Table */}
           {candidates.length > 0 && (
-            <FacetContainer
-              depth={1}
-              enableRefraction={true}
-              surface="solid"
-              className="border-border space-y-3 overflow-hidden rounded-2xl border p-4 shadow-inner"
-            >
-              <div className="border-border flex flex-col gap-2.5 border-b pb-2 sm:flex-row sm:items-center sm:justify-between">
+            <FacetCard className="space-y-3 overflow-hidden p-4">
+              <div className="border-separator flex flex-col gap-2 border-b pb-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-purple-500" />
-                  <span className="text-foreground text-xs font-bold">
+                  <Layers className="text-purple h-4 w-4" />
+                  <span className="text-label text-caption">
                     Batch Candidates Queue ({candidates.length})
                   </span>
                 </div>
@@ -1161,19 +1128,19 @@ export function LoreCardBatchAdmin() {
                     variant="outline"
                     onClick={handleDeduplicateQueue}
                     disabled={isProcessingBatch || candidates.length <= 1}
-                    className="border-border text-foreground hover:bg-accent h-7.5 rounded-lg border px-2.5 text-xs font-semibold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
+
                     title="Remove duplicate articles currently in this queue"
                   >
-                    <Layers className="mr-1 h-3.5 w-3.5 text-purple-500" /> Deduplicate Queue
+                    <Layers className="text-purple mr-1 h-3.5 w-3.5" /> Deduplicate Queue
                   </Button>
 
                   {/* Purge Database Duplicates Button */}
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="destructive"
                     onClick={() => setIsPurgeDialogOpen(true)}
                     disabled={isProcessingBatch}
-                    className="h-7.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 text-xs font-semibold text-rose-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-500/20 active:scale-95 dark:text-rose-400"
+
                     title="Scan and purge duplicate cards from the database"
                   >
                     <Trash2 className="mr-1 h-3.5 w-3.5" /> Purge DB Duplicates (
@@ -1183,25 +1150,25 @@ export function LoreCardBatchAdmin() {
                   {/* Backfill Authors Button */}
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="tinted"
                     onClick={() => setIsBackfillDialogOpen(true)}
                     disabled={isProcessingBatch}
-                    className="h-7.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 text-xs font-semibold text-amber-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-95 dark:text-amber-400"
+
                     title="Backfill page creator and contributor attribution for existing lore cards"
                   >
-                    <Sparkles className="mr-1 h-3.5 w-3.5 text-amber-500" /> Backfill Wiki Authors
+                    <Sparkles className="text-yellow mr-1 h-3.5 w-3.5" /> Backfill Wiki Authors
                   </Button>
 
                   {/* Re-Catalog Categories Button */}
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="tinted"
                     onClick={() => setIsReclassifyDialogOpen(true)}
                     disabled={isProcessingBatch}
-                    className="h-7.5 rounded-lg border border-purple-500/30 bg-purple-500/10 px-2.5 text-xs font-semibold text-purple-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-purple-500/20 active:scale-95 dark:text-purple-300"
+
                     title="Re-scan and categorize lore cards with multi-signal infobox & category tree classifier"
                   >
-                    <Layers className="mr-1 h-3.5 w-3.5 text-purple-500" /> Re-Catalog Categories
+                    <Layers className="text-purple mr-1 h-3.5 w-3.5" /> Re-Catalog Categories
                   </Button>
 
                   <Button
@@ -1209,25 +1176,25 @@ export function LoreCardBatchAdmin() {
                     variant="ghost"
                     onClick={() => setCandidates([])}
                     disabled={isProcessingBatch}
-                    className="h-7.5 rounded-lg px-2 text-xs font-medium text-rose-500 hover:bg-rose-500/10"
+                    className="text-destructive"
                   >
                     <Trash2 className="mr-1 h-3.5 w-3.5" /> Clear All
                   </Button>
 
                   <Button
+                    variant="tinted"
                     size="sm"
                     onClick={handleProcessBatch}
                     disabled={isProcessingBatch || candidates.every((c) => c.status !== "idle")}
-                    className="h-8 rounded-xl border border-emerald-500/30 bg-emerald-500/20 text-xs font-semibold text-emerald-600 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/30 active:scale-95 dark:text-emerald-300"
                   >
                     {isProcessingBatch ? (
                       <>
-                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                        <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                         Generating Batch...
                       </>
                     ) : (
                       <>
-                        <Play className="mr-1.5 h-3.5 w-3.5" />
+                        <Play className="mr-2 h-3.5 w-3.5" />
                         Mint Batch Lore Cards (
                         {candidates.filter((c) => c.status === "idle").length})
                       </>
@@ -1236,77 +1203,34 @@ export function LoreCardBatchAdmin() {
                 </div>
               </div>
 
-              {/* Queue Status Filter Pills */}
-              <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setCandidateStatusFilter("ALL")}
-                  className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                    candidateStatusFilter === "ALL"
-                      ? "bg-primary/20 text-primary border-primary/30 border"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
-                  }`}
-                >
-                  All ({candidates.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCandidateStatusFilter("idle")}
-                  className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                    candidateStatusFilter === "idle"
-                      ? "bg-muted text-foreground border-border border"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
-                  }`}
-                >
-                  Queued ({idleCount})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCandidateStatusFilter("generating")}
-                  className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                    candidateStatusFilter === "generating"
-                      ? "border border-blue-500/30 bg-blue-500/20 text-blue-500"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
-                  }`}
-                >
-                  Generating ({generatingCount})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCandidateStatusFilter("success")}
-                  className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                    candidateStatusFilter === "success"
-                      ? "border border-emerald-500/30 bg-emerald-500/20 text-emerald-500"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
-                  }`}
-                >
-                  Minted ({successCount})
-                </button>
-                {errorCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setCandidateStatusFilter("error")}
-                    className={`cursor-pointer rounded-lg px-2.5 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                      candidateStatusFilter === "error"
-                        ? "border border-rose-500/40 bg-rose-500/25 text-rose-500 shadow-xs"
-                        : "text-rose-500/80 hover:bg-rose-500/10 hover:text-rose-500"
-                    }`}
-                  >
-                    Failed ({errorCount})
-                  </button>
-                )}
-              </div>
+              {/* Queue status filter */}
+              <SegmentedControl
+                size="sm"
+                aria-label="Queue status"
+                className="mt-1"
+                value={candidateStatusFilter}
+                onValueChange={setCandidateStatusFilter}
+                options={[
+                  { value: "ALL", label: `All (${candidates.length})` },
+                  { value: "idle", label: `Queued (${idleCount})` },
+                  { value: "generating", label: `Generating (${generatingCount})` },
+                  { value: "success", label: `Minted (${successCount})` },
+                  ...(errorCount > 0
+                    ? [{ value: "error" as const, label: `Failed (${errorCount})` }]
+                    : []),
+                ]}
+              />
 
               {/* Failed Imports Diagnostic Alert Banner */}
               {errorCount > 0 && (
-                <div className="flex flex-col justify-between gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs backdrop-blur-md sm:flex-row sm:items-center">
-                  <div className="flex items-start gap-2.5">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" />
+                <div className="rounded-row border-red/30 bg-red/10 text-footnote flex flex-col justify-between gap-3 border p-3 sm:flex-row sm:items-center">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="text-red mt-0.5 h-4 w-4 shrink-0" />
                     <div>
-                      <div className="font-bold text-rose-600 dark:text-rose-400">
+                      <div className="text-red font-semibold">
                         {errorCount} candidate{errorCount > 1 ? "s" : ""} failed during generation
                       </div>
-                      <div className="text-muted-foreground mt-0.5 text-xs">
+                      <div className="text-label-secondary text-footnote mt-0.5">
                         Common issues: Article missing on wiki, stub/short article, duplicate card,
                         or API timeout.
                       </div>
@@ -1317,23 +1241,18 @@ export function LoreCardBatchAdmin() {
                       size="sm"
                       variant="outline"
                       onClick={handleCopyErrorReport}
-                      className="h-7 border-rose-500/30 text-xs font-semibold text-rose-600 hover:bg-rose-500/20 dark:text-rose-400"
+                      className="text-destructive"
                     >
                       <Copy className="mr-1 h-3 w-3" /> Copy Error Log
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleClearFailed}
-                      className="border-border text-muted-foreground hover:bg-accent hover:text-foreground h-7 text-xs font-semibold"
-                    >
+                    <Button size="sm" variant="outline" onClick={handleClearFailed}>
                       <Trash2 className="mr-1 h-3 w-3" /> Clear Failed
                     </Button>
                     <Button
+                      variant="destructive"
                       size="sm"
                       onClick={handleRetryAllFailed}
                       disabled={isProcessingBatch}
-                      className="h-7 border border-rose-500/40 bg-rose-500/20 text-xs font-semibold text-rose-600 hover:bg-rose-500/30 dark:text-rose-300"
                     >
                       <RotateCcw className="mr-1 h-3 w-3" /> Retry All Failed ({errorCount})
                     </Button>
@@ -1341,28 +1260,176 @@ export function LoreCardBatchAdmin() {
                 </div>
               )}
 
-              <div className="max-h-[440px] overflow-x-auto overflow-y-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="border-border bg-card/95 text-muted-foreground sticky top-0 z-10 border-b text-xs font-semibold tracking-wider uppercase backdrop-blur-xl">
-                    <tr>
-                      <th className="w-14 px-3 py-2.5 text-center">Artwork</th>
-                      <th className="px-4 py-2.5">Article Title</th>
-                      <th className="px-4 py-2.5">Source</th>
-                      <th className="px-4 py-2.5">Target Rarity</th>
-                      <th className="px-4 py-2.5">Season</th>
-                      <th className="px-4 py-2.5">Status & Error Diagnostics</th>
-                      <th className="px-4 py-2.5 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-border/60 divide-y">
-                    {filteredCandidates.map((c) => {
-                      const artworkToShow = c.mintedArtwork || c.imageUrl;
-                      return (
-                        <tr key={c.id} className="hover:bg-accent/40 transition-colors">
-                          {/* Artwork Thumbnail / Clickable Image */}
-                          <td className="px-3 py-2 text-center">
-                            {artworkToShow ? (
-                              <button
+              <Table containerClassName="max-h-[440px]">
+                <TableHeader sticky>
+                  <TableRow>
+                    <TableHead className="w-14 px-3 text-center">Artwork</TableHead>
+                    <TableHead className="px-4">Article Title</TableHead>
+                    <TableHead className="px-4">Source</TableHead>
+                    <TableHead className="px-4">Target Rarity</TableHead>
+                    <TableHead className="px-4">Season</TableHead>
+                    <TableHead className="px-4">Status & Error Diagnostics</TableHead>
+                    <TableHead className="px-4 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCandidates.map((c) => {
+                    const artworkToShow = c.mintedArtwork || c.imageUrl;
+                    return (
+                      <TableRow key={c.id}>
+                        {/* Artwork Thumbnail / Clickable Image */}
+                        <TableCell className="px-3 text-center">
+                          {artworkToShow ? (
+                            <Button
+                              variant="gray"
+                              size="icon-lg"
+                              aria-label={`Inspect artwork for ${c.articleTitle}`}
+                              onClick={() =>
+                                setPreviewImage({
+                                  title: c.articleTitle,
+                                  imageUrl: artworkToShow,
+                                  extract: c.extract,
+                                  wikiSource: c.wikiSource,
+                                  category: c.category,
+                                  rarity: c.targetRarity,
+                                  season: c.season,
+                                })
+                              }
+                              className="group border-separator mx-auto size-10 overflow-hidden border bg-black/40 p-0"
+                              title="Click to inspect full image"
+                            >
+                              <img
+                                src={artworkToShow}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                              <span
+                                aria-hidden
+                                className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
+                              >
+                                <Eye className="size-3.5 text-white" />
+                              </span>
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="gray"
+                              size="icon-lg"
+                              aria-label={`Inspect details for ${c.articleTitle} (no image)`}
+                              onClick={() =>
+                                setPreviewImage({
+                                  title: c.articleTitle,
+                                  imageUrl: "",
+                                  extract: c.extract,
+                                  wikiSource: c.wikiSource,
+                                  category: c.category,
+                                  rarity: c.targetRarity,
+                                  season: c.season,
+                                })
+                              }
+                              className="border-separator text-label-secondary hover:text-label mx-auto size-10 border"
+                              title="No primary image parsed. Click to inspect details"
+                            >
+                              <ImageIcon aria-hidden className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </TableCell>
+
+                        <TableCell className="text-label min-w-64 px-4 font-semibold whitespace-normal">
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span>{c.articleTitle}</span>
+                              {c.category && <Badge variant="tinted">{c.category}</Badge>}
+                            </div>
+                            {c.author &&
+                              c.author !== "Unknown" &&
+                              !c.author.toLowerCase().includes("community") && (
+                                <span className="text-caption text-yellow line-clamp-1">
+                                  ✍️ {c.author}
+                                </span>
+                              )}
+                            {c.extract &&
+                              (!c.author ||
+                                c.author === "Unknown" ||
+                                c.author.toLowerCase().includes("community")) && (
+                                <span className="text-label-secondary text-footnote line-clamp-1 font-normal">
+                                  {c.extract}
+                                </span>
+                              )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-4">
+                          {c.wikiSource === "iiwiki" ? (
+                            <IIWikiBadge size="xs" />
+                          ) : (
+                            <Badge variant="neutral">{c.wikiSource}</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="px-4">
+                          <Badge variant="purple">{c.targetRarity}</Badge>
+                        </TableCell>
+                        <TableCell className="text-label-secondary px-4">S{c.season}</TableCell>
+                        <TableCell className="px-4 whitespace-normal">
+                          {c.status === "generating" && (
+                            <span className="text-caption text-blue inline-flex items-center gap-1">
+                              <Loader2 className="h-3 w-3 animate-spin" /> Generating...
+                            </span>
+                          )}
+                          {c.status === "success" && (
+                            <span className="text-caption text-green inline-flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3" /> Minted (
+                              {c.generatedCardId?.slice(0, 8)})
+                            </span>
+                          )}
+                          {c.status === "error" && (
+                            <div className="flex flex-col gap-1">
+                              <Button
+                                variant="plain"
+                                size="sm"
+                                onClick={() => setSelectedErrorCandidate(c)}
+                                className="bg-red/15 text-red-ink hover:bg-red/25 self-start rounded-full px-2"
+                                title="Click to view full failure diagnostic"
+                              >
+                                <XCircle aria-hidden />
+                                Failed
+                              </Button>
+                              {c.errorMessage && (
+                                <span
+                                  onClick={() => setSelectedErrorCandidate(c)}
+                                  className="text-caption text-red line-clamp-1 max-w-[240px] cursor-pointer hover:underline"
+                                  title={c.errorMessage}
+                                >
+                                  {c.errorMessage}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {c.status === "idle" && (
+                            <span className="text-label-secondary text-footnote inline-flex items-center gap-1">
+                              <Clock className="h-3 w-3" /> Queued
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="px-4 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {c.status === "error" && (
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Retry Import"
+                                type="button"
+                                onClick={() => handleRetryCandidate(c.id)}
+                                disabled={isProcessingBatch}
+
+                                title="Retry Import"
+                              >
+                                <RotateCcw className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            {artworkToShow && (
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Inspect Artwork"
                                 type="button"
                                 onClick={() =>
                                   setPreviewImage({
@@ -1375,174 +1442,33 @@ export function LoreCardBatchAdmin() {
                                     season: c.season,
                                   })
                                 }
-                                className="group border-border/80 relative mx-auto h-10 w-10 cursor-pointer overflow-hidden rounded-lg border bg-black/40 shadow-xs transition-transform hover:scale-105 active:scale-95"
-                                title="Click to inspect full image"
-                              >
-                                <img
-                                  src={artworkToShow}
-                                  alt={c.articleTitle}
-                                  className="h-full w-full object-cover"
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                                  <Eye className="h-3.5 w-3.5 text-white" />
-                                </div>
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setPreviewImage({
-                                    title: c.articleTitle,
-                                    imageUrl: "",
-                                    extract: c.extract,
-                                    wikiSource: c.wikiSource,
-                                    category: c.category,
-                                    rarity: c.targetRarity,
-                                    season: c.season,
-                                  })
-                                }
-                                className="border-border/60 bg-muted/40 text-muted-foreground/60 hover:text-foreground mx-auto flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border transition-colors"
-                                title="No primary image parsed. Click to inspect details"
-                              >
-                                <ImageIcon className="h-4 w-4" />
-                              </button>
-                            )}
-                          </td>
 
-                          <td className="text-foreground px-4 py-2.5 font-semibold">
-                            <div className="flex flex-col">
-                              <div className="flex items-center gap-1.5">
-                                <span>{c.articleTitle}</span>
-                                {c.category && (
-                                  <span className="bg-primary/10 border-primary/20 py-0.2 text-primary rounded-full border px-1.5 text-xs font-bold uppercase">
-                                    {c.category}
-                                  </span>
-                                )}
-                              </div>
-                              {c.author &&
-                                c.author !== "Unknown" &&
-                                !c.author.toLowerCase().includes("community") && (
-                                  <span className="line-clamp-1 text-xs font-medium text-amber-500/90">
-                                    ✍️ {c.author}
-                                  </span>
-                                )}
-                              {c.extract &&
-                                (!c.author ||
-                                  c.author === "Unknown" ||
-                                  c.author.toLowerCase().includes("community")) && (
-                                  <span className="text-muted-foreground line-clamp-1 text-xs font-normal">
-                                    {c.extract}
-                                  </span>
-                                )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-2.5">
-                            {c.wikiSource === "iiwiki" ? (
-                              <IIWikiBadge size="xs" />
-                            ) : (
-                              <span className="bg-muted border-border text-foreground rounded-full border px-2 py-0.5 text-xs font-bold uppercase">
-                                {c.wikiSource}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-2.5">
-                            <span className="rounded-full border border-purple-500/30 bg-purple-500/15 px-2 py-0.5 text-xs font-bold text-purple-600 dark:text-purple-300">
-                              {c.targetRarity}
-                            </span>
-                          </td>
-                          <td className="text-muted-foreground px-4 py-2.5">S{c.season}</td>
-                          <td className="px-4 py-2.5">
-                            {c.status === "generating" && (
-                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-blue-500">
-                                <Loader2 className="h-3 w-3 animate-spin" /> Generating...
-                              </span>
-                            )}
-                            {c.status === "success" && (
-                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-500">
-                                <CheckCircle2 className="h-3 w-3" /> Minted (
-                                {c.generatedCardId?.slice(0, 8)})
-                              </span>
-                            )}
-                            {c.status === "error" && (
-                              <div className="flex flex-col gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedErrorCandidate(c)}
-                                  className="inline-flex w-fit cursor-pointer items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-0.5 text-xs font-bold text-rose-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-500/25 dark:text-rose-400"
-                                  title="Click to view full failure diagnostic"
-                                >
-                                  <XCircle className="h-3 w-3 text-rose-500" />
-                                  Failed
-                                </button>
-                                {c.errorMessage && (
-                                  <span
-                                    onClick={() => setSelectedErrorCandidate(c)}
-                                    className="line-clamp-1 max-w-[240px] cursor-pointer text-xs font-medium text-rose-500/90 hover:underline"
-                                    title={c.errorMessage}
-                                  >
-                                    {c.errorMessage}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                            {c.status === "idle" && (
-                              <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
-                                <Clock className="h-3 w-3" /> Queued
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-2.5 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              {c.status === "error" && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRetryCandidate(c.id)}
-                                  disabled={isProcessingBatch}
-                                  className="text-muted-foreground cursor-pointer rounded p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500/10 hover:text-blue-400"
-                                  title="Retry Import"
-                                >
-                                  <RotateCcw className="h-3.5 w-3.5" />
-                                </button>
-                              )}
-                              {artworkToShow && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setPreviewImage({
-                                      title: c.articleTitle,
-                                      imageUrl: artworkToShow,
-                                      extract: c.extract,
-                                      wikiSource: c.wikiSource,
-                                      category: c.category,
-                                      rarity: c.targetRarity,
-                                      season: c.season,
-                                    })
-                                  }
-                                  className="text-muted-foreground cursor-pointer rounded p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-purple-500/10 hover:text-purple-400"
-                                  title="Inspect Artwork"
-                                >
-                                  <Eye className="h-3.5 w-3.5" />
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setCandidates((prev) => prev.filter((item) => item.id !== c.id))
-                                }
-                                className="text-muted-foreground cursor-pointer rounded p-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-500/10 hover:text-rose-500"
-                                title="Remove Candidate"
+                                title="Inspect Artwork"
                               >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </FacetContainer>
+                                <Eye className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label="Remove Candidate"
+                              type="button"
+                              onClick={() =>
+                                setCandidates((prev) => prev.filter((item) => item.id !== c.id))
+                              }
+
+                              title="Remove Candidate"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </FacetCard>
           )}
         </div>
       )}
@@ -1553,49 +1479,27 @@ export function LoreCardBatchAdmin() {
           {/* Stats Bar */}
           {requestStats.data && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <FacetCard
-                depth={1}
-                interactive="hover"
-                surface="solid"
-                className="border-border rounded-xl border p-3"
-              >
-                <div className="text-muted-foreground text-xs">Total Requests</div>
-                <div className="text-foreground mt-0.5 text-lg font-bold">
-                  {requestStats.data.total}
-                </div>
+              <FacetCard interactive="hover" className="rounded-row p-3">
+                <div className="text-label-secondary text-footnote">Total Requests</div>
+                <div className="text-label text-title-3 mt-0.5">{requestStats.data.total}</div>
               </FacetCard>
               <FacetCard
-                depth={1}
                 interactive="hover"
-                surface="solid"
-                className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3"
+                className="rounded-row border-yellow/30 bg-yellow/10 p-3"
               >
-                <div className="text-muted-foreground text-xs">Pending Approval</div>
-                <div className="mt-0.5 text-lg font-bold text-amber-500 dark:text-amber-300">
-                  {requestStats.data.pending}
-                </div>
+                <div className="text-label-secondary text-footnote">Pending Approval</div>
+                <div className="text-title-3 text-yellow mt-0.5">{requestStats.data.pending}</div>
               </FacetCard>
               <FacetCard
-                depth={1}
                 interactive="hover"
-                surface="solid"
-                className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3"
+                className="rounded-row border-green/30 bg-green/10 p-3"
               >
-                <div className="text-muted-foreground text-xs">Generated Cards</div>
-                <div className="mt-0.5 text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                  {requestStats.data.generated}
-                </div>
+                <div className="text-label-secondary text-footnote">Generated Cards</div>
+                <div className="text-title-3 text-green mt-0.5">{requestStats.data.generated}</div>
               </FacetCard>
-              <FacetCard
-                depth={1}
-                interactive="hover"
-                surface="solid"
-                className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3"
-              >
-                <div className="text-muted-foreground text-xs">Rejected</div>
-                <div className="mt-0.5 text-lg font-bold text-rose-600 dark:text-rose-400">
-                  {requestStats.data.rejected}
-                </div>
+              <FacetCard interactive="hover" className="rounded-row border-red/30 bg-red/10 p-3">
+                <div className="text-label-secondary text-footnote">Rejected</div>
+                <div className="text-title-3 text-red mt-0.5">{requestStats.data.rejected}</div>
               </FacetCard>
             </div>
           )}
@@ -1603,157 +1507,120 @@ export function LoreCardBatchAdmin() {
           {/* Filter Bar */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-xs font-medium">Filter Queue:</span>
-              <select
-                value={requestStatusFilter}
-                onChange={(e) => setRequestStatusFilter(e.target.value)}
-                className="border-border bg-card text-foreground hover:bg-accent h-8.5 rounded-xl border px-3 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
-              >
-                <option value="ALL" className="bg-card text-card-foreground">
-                  All Requests
-                </option>
-                <option value="PENDING" className="bg-card text-card-foreground">
-                  Pending Only
-                </option>
-                <option value="APPROVED" className="bg-card text-card-foreground">
-                  Approved Only
-                </option>
-                <option value="GENERATED" className="bg-card text-card-foreground">
-                  Generated Only
-                </option>
-                <option value="REJECTED" className="bg-card text-card-foreground">
-                  Rejected Only
-                </option>
-              </select>
+              <span className="text-label-secondary text-caption">Filter Queue:</span>
+              <Select value={requestStatusFilter} onValueChange={(v) => setRequestStatusFilter(v)}>
+                <SelectTrigger size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Requests</SelectItem>
+                  <SelectItem value="PENDING">Pending Only</SelectItem>
+                  <SelectItem value="APPROVED">Approved Only</SelectItem>
+                  <SelectItem value="GENERATED">Generated Only</SelectItem>
+                  <SelectItem value="REJECTED">Rejected Only</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           {/* Request Queue Table */}
           {requestQueue.isLoading ? (
-            <div className="border-border bg-card/40 flex h-48 items-center justify-center rounded-xl border backdrop-blur-md">
-              <Loader2 className="text-primary h-6 w-6 animate-spin" />
+            <div className="border-separator bg-surface rounded-row flex h-48 items-center justify-center border">
+              <Loader2 className="text-tint h-6 w-6 animate-spin" />
             </div>
           ) : !requestQueue.data || requestQueue.data.requests.length === 0 ? (
-            <div className="border-border bg-card/30 flex h-40 flex-col items-center justify-center rounded-xl border border-dashed backdrop-blur-md">
-              <BookOpen className="text-muted-foreground/40 mb-1.5 h-8 w-8" />
-              <p className="text-foreground text-sm font-semibold">No requests found in queue</p>
+            <div className="border-separator bg-surface rounded-row flex h-40 flex-col items-center justify-center border border-dashed">
+              <BookOpen className="text-label-tertiary mb-2 h-8 w-8" />
+              <p className="text-label text-headline">No requests found in queue</p>
             </div>
           ) : (
-            <FacetContainer
-              depth={1}
-              enableRefraction={true}
-              surface="solid"
-              className="border-border overflow-hidden rounded-2xl border shadow-inner"
-            >
-              <div className="max-h-[500px] overflow-x-auto overflow-y-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="border-border bg-card/95 text-muted-foreground sticky top-0 z-10 border-b text-xs font-semibold tracking-wider uppercase backdrop-blur-xl">
-                    <tr>
-                      <th className="px-4 py-3">Article Title</th>
-                      <th className="px-4 py-3">Wiki Source</th>
-                      <th className="px-4 py-3">Requester (Nation / User)</th>
-                      <th className="px-4 py-3">Requested Date</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-border/60 divide-y">
-                    {requestQueue.data.requests.map((request: any) => {
-                      const isPending = request.status === "PENDING";
-                      const isApproved = request.status === "APPROVED";
-                      const isGenerated = request.status === "GENERATED";
-                      const isRejected = request.status === "REJECTED";
+            <FacetCard className="overflow-hidden">
+              <Table containerClassName="max-h-[500px]">
+                <TableHeader sticky>
+                  <TableRow>
+                    <TableHead className="px-4">Article Title</TableHead>
+                    <TableHead className="px-4">Wiki Source</TableHead>
+                    <TableHead className="px-4">Requester (Nation / User)</TableHead>
+                    <TableHead className="px-4">Requested Date</TableHead>
+                    <TableHead className="px-4">Status</TableHead>
+                    <TableHead className="px-4 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {requestQueue.data.requests.map((request: any) => {
+                    const isPending = request.status === "PENDING";
+                    const isApproved = request.status === "APPROVED";
+                    const isGenerated = request.status === "GENERATED";
+                    const isRejected = request.status === "REJECTED";
 
-                      return (
-                        <tr key={request.id} className="hover:bg-accent/40 transition-colors">
-                          <td className="text-foreground px-4 py-3 font-semibold">
-                            {request.articleTitle}
-                          </td>
-                          <td className="px-4 py-3">
-                            {request.wikiSource === "iiwiki" ? (
-                              <IIWikiBadge size="xs" />
-                            ) : (
-                              <span className="bg-muted border-border text-foreground rounded-full border px-2 py-0.5 text-xs font-bold">
-                                {request.wikiSource}
-                              </span>
-                            )}
-                          </td>
-                          <td className="text-foreground px-4 py-3 font-medium">
-                            <span className="bg-primary/10 border-primary/20 text-primary inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold">
-                              <UserCheck className="h-3 w-3" />
-                              {request.requesterName || request.userId}
-                            </span>
-                          </td>
-                          <td className="text-muted-foreground px-4 py-3">
-                            {new Date(request.requestedAt).toLocaleDateString()}
-                          </td>
-                          <td className="px-4 py-3">
+                    return (
+                      <TableRow key={request.id}>
+                        <TableCell className="text-label px-4 font-semibold">
+                          {request.articleTitle}
+                        </TableCell>
+                        <TableCell className="px-4">
+                          {request.wikiSource === "iiwiki" ? (
+                            <IIWikiBadge size="xs" />
+                          ) : (
+                            <Badge variant="neutral">{request.wikiSource}</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-label px-4 font-medium">
+                          <Badge variant="tinted" className="gap-2">
+                            <UserCheck className="h-3 w-3" />
+                            {request.requesterName || request.userId}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-label-secondary px-4">
+                          {new Date(request.requestedAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="px-4">
+                          {isPending && <Badge variant="yellow">Pending</Badge>}
+                          {isApproved && <Badge variant="blue">Approved</Badge>}
+                          {isGenerated && <Badge variant="green">Generated</Badge>}
+                          {isRejected && <Badge variant="red">Rejected</Badge>}
+                        </TableCell>
+                        <TableCell className="px-4 text-right">
+                          <div className="flex justify-end gap-2">
                             {isPending && (
-                              <span className="rounded-full border border-amber-500/30 bg-amber-500/20 px-2.5 py-0.5 text-xs font-bold text-amber-500 dark:text-amber-300">
-                                Pending
-                              </span>
-                            )}
-                            {isApproved && (
-                              <span className="rounded-full border border-blue-500/30 bg-blue-500/20 px-2.5 py-0.5 text-xs font-bold text-blue-600 dark:text-blue-300">
-                                Approved
-                              </span>
-                            )}
-                            {isGenerated && (
-                              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2.5 py-0.5 text-xs font-bold text-emerald-600 dark:text-emerald-300">
-                                Generated
-                              </span>
-                            )}
-                            {isRejected && (
-                              <span className="rounded-full border border-rose-500/30 bg-rose-500/20 px-2.5 py-0.5 text-xs font-bold text-rose-600 dark:text-rose-300">
-                                Rejected
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex justify-end gap-1.5">
-                              {isPending && (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    onClick={() =>
-                                      approveMutation.mutate({ requestId: request.id })
-                                    }
-                                    disabled={approveMutation.isPending}
-                                    className="h-7 rounded-lg border border-emerald-500/30 bg-emerald-500/20 text-xs font-semibold text-emerald-600 hover:bg-emerald-500/30 dark:text-emerald-300"
-                                  >
-                                    Approve
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setRejectionRequestId(request.id)}
-                                    className="h-7 rounded-lg border border-rose-500/20 bg-rose-500/10 text-xs font-semibold text-rose-600 hover:bg-rose-500/20 dark:text-rose-300"
-                                  >
-                                    Reject
-                                  </Button>
-                                </>
-                              )}
-                              {(isPending || isApproved) && (
+                              <>
+                                <Button
+                                  variant="tinted"
+                                  size="sm"
+                                  onClick={() => approveMutation.mutate({ requestId: request.id })}
+                                  disabled={approveMutation.isPending}
+                                >
+                                  Approve
+                                </Button>
                                 <Button
                                   size="sm"
-                                  onClick={() =>
-                                    generateRequestedMutation.mutate({ requestId: request.id })
-                                  }
-                                  disabled={generateRequestedMutation.isPending}
-                                  className="h-7 rounded-lg border border-purple-500/30 bg-purple-500/20 text-xs font-semibold text-purple-600 hover:bg-purple-500/30 dark:text-purple-300"
+                                  variant="destructive"
+                                  onClick={() => setRejectionRequestId(request.id)}
                                 >
-                                  Mint Card
+                                  Reject
                                 </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </FacetContainer>
+                              </>
+                            )}
+                            {(isPending || isApproved) && (
+                              <Button
+                                variant="tinted"
+                                size="sm"
+                                onClick={() =>
+                                  generateRequestedMutation.mutate({ requestId: request.id })
+                                }
+                                disabled={generateRequestedMutation.isPending}
+                              >
+                                Mint Card
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </FacetCard>
           )}
         </div>
       )}
@@ -1763,13 +1630,13 @@ export function LoreCardBatchAdmin() {
         open={rejectionRequestId !== null}
         onOpenChange={(open) => !open && setRejectionRequestId(null)}
       >
-        <DialogContent className="border-border bg-card text-card-foreground border shadow-2xl backdrop-blur-2xl">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-rose-500" />
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="text-red h-5 w-5" />
               Reject Lore Card Request & Refund 50 IxC?
             </DialogTitle>
-            <DialogDescription className="text-muted-foreground text-xs">
+            <DialogDescription>
               Provide an optional reason for the user. The 50 IxC request fee will be automatically
               refunded to their vault.
             </DialogDescription>
@@ -1778,13 +1645,14 @@ export function LoreCardBatchAdmin() {
             value={rejectionReason}
             onChange={(e) => setRejectionReason(e.target.value)}
             placeholder="Reason for rejection (e.g. Article non-existent or duplicate)"
-            className="border-border bg-card text-foreground placeholder:text-muted-foreground h-9 rounded-xl text-xs"
+            className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
           />
           <DialogFooter>
             <Button variant="ghost" onClick={() => setRejectionRequestId(null)}>
               Cancel
             </Button>
             <Button
+              variant="destructive"
               onClick={() => {
                 if (rejectionRequestId) {
                   rejectMutation.mutate({
@@ -1794,7 +1662,6 @@ export function LoreCardBatchAdmin() {
                 }
               }}
               disabled={rejectMutation.isPending}
-              className="bg-rose-500 font-semibold text-white hover:bg-rose-600"
             >
               {rejectMutation.isPending ? "Rejecting..." : "Confirm Rejection"}
             </Button>
@@ -1804,50 +1671,42 @@ export function LoreCardBatchAdmin() {
 
       {/* ─── Artwork & Image Inspector Lightbox Modal ──────────── */}
       <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
-        <DialogContent className="border-border/80 bg-card/95 text-card-foreground max-w-2xl overflow-hidden rounded-2xl border p-0 shadow-2xl backdrop-blur-2xl">
+        <DialogContent className="max-w-2xl overflow-hidden p-0">
           {previewImage && (
             <div>
               {/* Header */}
-              <div className="border-border/60 flex items-center justify-between border-b px-6 py-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-2">
-                    <Sparkles className="h-4 w-4 text-purple-400" />
+              <div className="border-separator flex items-center justify-between border-b px-6 py-4">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-row border-purple/30 bg-purple/10 border p-2">
+                    <Sparkles className="text-purple h-4 w-4" />
                   </div>
                   <div>
-                    <DialogTitle className="text-foreground text-base font-bold">
-                      {previewImage.title}
-                    </DialogTitle>
-                    <DialogDescription className="text-muted-foreground text-xs">
-                      Parsed Wiki Artwork & Media Inspector
-                    </DialogDescription>
+                    <DialogTitle>{previewImage.title}</DialogTitle>
+                    <DialogDescription>Parsed Wiki Artwork & Media Inspector</DialogDescription>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {previewImage.wikiSource && (
-                    <span className="bg-muted border-border text-foreground rounded-full border px-2.5 py-0.5 font-mono text-xs font-bold uppercase">
+                    <Badge variant="neutral" className="tabular-nums">
                       {previewImage.wikiSource}
-                    </span>
+                    </Badge>
                   )}
-                  {previewImage.rarity && (
-                    <span className="rounded-full border border-purple-500/30 bg-purple-500/15 px-2.5 py-0.5 text-xs font-bold text-purple-400">
-                      {previewImage.rarity}
-                    </span>
-                  )}
+                  {previewImage.rarity && <Badge variant="purple">{previewImage.rarity}</Badge>}
                 </div>
               </div>
 
               {/* Main Image Stage */}
-              <div className="border-border/60 relative flex max-h-[480px] min-h-[300px] w-full items-center justify-center border-b bg-black/60 p-4">
+              <div className="border-separator relative flex max-h-[480px] min-h-[300px] w-full items-center justify-center border-b bg-black/60 p-4">
                 {previewImage.imageUrl ? (
                   <img
                     src={previewImage.imageUrl}
                     alt={previewImage.title}
-                    className="max-h-[420px] w-auto max-w-full rounded-xl object-contain shadow-2xl transition-transform duration-300 hover:scale-[1.02]"
+                    className="rounded-row duration-fast max-h-[420px] w-auto max-w-full object-contain transition-transform"
                   />
                 ) : (
-                  <div className="text-muted-foreground flex flex-col items-center justify-center py-12">
+                  <div className="text-label-secondary flex flex-col items-center justify-center py-12">
                     <ImageIcon className="mb-2 h-12 w-12 stroke-[1.5] opacity-50" />
-                    <p className="text-xs">No primary artwork detected for this article</p>
+                    <p className="text-footnote">No primary artwork detected for this article</p>
                   </div>
                 )}
               </div>
@@ -1857,44 +1716,42 @@ export function LoreCardBatchAdmin() {
                 {previewImage.author &&
                   previewImage.author !== "Unknown" &&
                   !previewImage.author.toLowerCase().includes("community") && (
-                    <div className="flex items-center justify-between rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs font-semibold text-amber-600 dark:text-amber-400">
-                      <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                        Wiki Author:
-                      </span>
+                    <div className="rounded-row border-yellow/30 bg-yellow/10 text-caption text-yellow flex items-center justify-between border p-3">
+                      <span className="text-label-secondary text-eyebrow">Wiki Author:</span>
                       <span className="font-semibold">{previewImage.author}</span>
                     </div>
                   )}
 
                 {previewImage.extract && (
-                  <div className="bg-card/60 border-border/60 text-muted-foreground max-h-24 overflow-y-auto rounded-xl border p-3 text-xs leading-relaxed">
-                    <p className="text-foreground mb-1 text-xs font-semibold">
-                      Article Summary:
-                    </p>
+                  <div className="bg-surface border-separator text-label-secondary rounded-row text-footnote max-h-24 overflow-y-auto border p-3 leading-relaxed">
+                    <p className="text-label text-caption mb-1">Article Summary:</p>
                     {previewImage.extract}
                   </div>
                 )}
 
                 {previewImage.imageUrl && (
-                  <div className="bg-muted/40 border-border/40 flex items-center justify-between rounded-xl border px-3 py-2 font-mono text-xs">
-                    <span className="text-muted-foreground max-w-[400px] truncate">
+                  <div className="bg-fill-3 border-separator rounded-row text-footnote flex items-center justify-between border px-3 py-2 font-mono">
+                    <span className="text-label-secondary max-w-[400px] truncate">
                       {previewImage.imageUrl}
                     </span>
-                    <button
+                    <Button
                       type="button"
+                      variant="link"
+                      size="sm"
                       onClick={() => {
                         void navigator.clipboard.writeText(previewImage.imageUrl);
                         notify.success("Copied", "Image URL copied to clipboard.");
                       }}
-                      className="text-primary ml-2 flex shrink-0 cursor-pointer items-center gap-1 font-sans hover:underline"
+                      className="ml-2 h-auto shrink-0 gap-1 px-0 font-sans"
                     >
-                      <Copy className="h-3 w-3" /> Copy URL
-                    </button>
+                      <Copy aria-hidden className="size-3.5" /> Copy URL
+                    </Button>
                   </div>
                 )}
               </div>
 
               {/* Footer */}
-              <div className="border-border/60 bg-card/40 flex items-center justify-between border-t px-6 py-3.5">
+              <div className="border-separator bg-surface flex items-center justify-between border-t px-6 py-4">
                 {previewImage.wikiSource ? (
                   <a
                     href={publicArticleUrl(
@@ -1903,19 +1760,14 @@ export function LoreCardBatchAdmin() {
                     )}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-primary inline-flex items-center gap-1.5 text-xs font-semibold hover:underline"
+                    className="text-tint text-caption inline-flex items-center gap-2 hover:underline"
                   >
                     <ExternalLink className="h-3.5 w-3.5" /> View Wiki Article
                   </a>
                 ) : (
                   <div />
                 )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setPreviewImage(null)}
-                  className="border-border rounded-xl border text-xs"
-                >
+                <Button size="sm" variant="outline" onClick={() => setPreviewImage(null)}>
                   Close
                 </Button>
               </div>
@@ -1926,30 +1778,30 @@ export function LoreCardBatchAdmin() {
 
       {/* ─── Purge Duplicates Modal ──────────────────────────────── */}
       <Dialog open={isPurgeDialogOpen} onOpenChange={setIsPurgeDialogOpen}>
-        <DialogContent className="border-border/80 bg-card/95 text-card-foreground max-w-xl rounded-2xl border shadow-2xl backdrop-blur-2xl">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-2.5">
-                <Trash2 className="h-5 w-5 text-rose-500" />
+              <div className="rounded-row border-red/30 bg-red/10 border p-3">
+                <Trash2 className="text-red h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-foreground text-base font-bold">
+                <DialogTitle>
                   Purge Duplicate Cards ({duplicateStats?.totalDuplicates ?? 0} Redundant)
                 </DialogTitle>
-                <DialogDescription className="text-muted-foreground text-xs">
+                <DialogDescription>
                   Safely consolidate duplicate cards and clean up redundant database copies.
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
 
-          <div className="space-y-4 py-2 text-xs">
-            <div className="space-y-1 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-amber-700 dark:text-amber-300">
-              <p className="flex items-center gap-1.5 font-bold">
+          <div className="text-footnote space-y-4 py-2">
+            <div className="rounded-row border-yellow/30 bg-yellow/10 text-yellow space-y-1 border p-4">
+              <p className="flex items-center gap-2 font-semibold">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 How Duplicate Purging Works:
               </p>
-              <p className="text-xs leading-relaxed opacity-90">
+              <p className="text-footnote leading-relaxed opacity-90">
                 For each article with duplicate cards, the system selects the highest-level / most
                 referenced card as the Primary Keeper. All user ownerships, auctions, and value
                 history are re-linked to the keeper card before deleting redundant copies.
@@ -1958,10 +1810,10 @@ export function LoreCardBatchAdmin() {
 
             {duplicateStats?.loreGroups && duplicateStats.loreGroups.length > 0 ? (
               <div className="space-y-2">
-                <span className="text-foreground block font-semibold">
+                <span className="text-label block font-semibold">
                   Duplicate Groups ({duplicateStats.loreGroups.length} unique articles):
                 </span>
-                <div className="border-border bg-card/60 divide-border/60 max-h-52 divide-y overflow-y-auto rounded-xl border">
+                <div className="border-separator bg-surface divide-separator rounded-row max-h-52 divide-y overflow-y-auto border">
                   {duplicateStats.loreGroups.map(
                     (
                       g: {
@@ -1972,26 +1824,26 @@ export function LoreCardBatchAdmin() {
                       },
                       idx: number
                     ) => (
-                      <div key={idx} className="flex items-center justify-between p-2.5">
+                      <div key={idx} className="flex items-center justify-between p-3">
                         <div className="min-w-0">
-                          <p className="text-foreground truncate font-semibold">{g.title}</p>
-                          <span className="text-muted-foreground font-mono text-xs uppercase">
+                          <p className="text-label truncate font-semibold">{g.title}</p>
+                          <span className="text-label-secondary text-eyebrow tabular-nums">
                             {g.wikiSource}
                           </span>
                         </div>
-                        <span className="shrink-0 rounded-full bg-rose-500/20 px-2 py-0.5 text-xs font-bold text-rose-600 dark:text-rose-400">
+                        <Badge variant="red">
                           {g.count} copies (+{g.redundantCount} redundant)
-                        </span>
+                        </Badge>
                       </div>
                     )
                   )}
                 </div>
               </div>
             ) : (
-              <div className="text-muted-foreground py-4 text-center">
-                <CheckCircle2 className="mx-auto mb-1.5 h-8 w-8 text-emerald-500 opacity-80" />
-                <p className="text-foreground font-semibold">No Duplicate Lore Cards Found</p>
-                <p className="text-xs">
+              <div className="text-label-secondary py-4 text-center">
+                <CheckCircle2 className="text-green mx-auto mb-2 h-8 w-8 opacity-80" />
+                <p className="text-label font-semibold">No Duplicate Lore Cards Found</p>
+                <p className="text-footnote">
                   Your database is clean with no redundant lore card records.
                 </p>
               </div>
@@ -1999,25 +1851,20 @@ export function LoreCardBatchAdmin() {
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsPurgeDialogOpen(false)}
-              className="border-border rounded-xl border text-xs"
-            >
+            <Button variant="outline" size="sm" onClick={() => setIsPurgeDialogOpen(false)}>
               Cancel
             </Button>
             <Button
+              variant="destructive"
               size="sm"
               disabled={
                 purgeDuplicatesMutation.isPending || (duplicateStats?.totalDuplicates ?? 0) === 0
               }
               onClick={() => purgeDuplicatesMutation.mutate({ mode: "wiki_lore" })}
-              className="rounded-xl bg-rose-500 text-xs font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-rose-600 active:scale-95"
             >
               {purgeDuplicatesMutation.isPending ? (
                 <>
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Purging...
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Purging...
                 </>
               ) : (
                 <>
@@ -2032,17 +1879,15 @@ export function LoreCardBatchAdmin() {
 
       {/* ─── Backfill Authors Modal ──────────────────────────────── */}
       <Dialog open={isBackfillDialogOpen} onOpenChange={setIsBackfillDialogOpen}>
-        <DialogContent className="border-border/80 bg-card/95 text-card-foreground max-w-md rounded-2xl border shadow-2xl backdrop-blur-2xl">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5">
-                <Sparkles className="h-5 w-5 text-amber-500" />
+              <div className="rounded-row border-yellow/30 bg-yellow/10 border p-3">
+                <Sparkles className="text-yellow h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-foreground text-base font-bold">
-                  Backfill Wiki Authors
-                </DialogTitle>
-                <DialogDescription className="text-muted-foreground text-xs">
+                <DialogTitle>Backfill Wiki Authors</DialogTitle>
+                <DialogDescription>
                   Query MediaWiki API to parse and store creator & top contributor attribution on
                   lore cards.
                 </DialogDescription>
@@ -2050,59 +1895,46 @@ export function LoreCardBatchAdmin() {
             </div>
           </DialogHeader>
 
-          <div className="space-y-4 py-2 text-xs">
+          <div className="text-footnote space-y-4 py-2">
             {/* Wiki Source Selector */}
-            <div className="border-border/60 bg-muted/30 space-y-2 rounded-xl border p-3">
-              <label className="text-foreground block text-xs font-semibold">Wiki Source:</label>
-              <div className="flex items-center gap-2">
-                {[
-                  { id: "all", label: "All Sources" },
-                  { id: "ixwiki", label: "IxWiki" },
-                  { id: "iiwiki", label: "IIWiki" },
-                ].map((src) => (
-                  <button
-                    key={src.id}
-                    type="button"
-                    onClick={() => setBackfillSource(src.id as "all" | "ixwiki" | "iiwiki")}
-                    className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                      backfillSource === src.id
-                        ? "border-amber-500 bg-amber-500/20 text-amber-600 dark:text-amber-400"
-                        : "border-border bg-card/60 text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {src.label}
-                  </button>
-                ))}
-              </div>
+            <div className="border-separator bg-fill-4 rounded-row space-y-2 border p-3">
+              <label className="text-label text-caption block">Wiki Source:</label>
+              <SegmentedControl
+                size="sm"
+                fullWidth
+                aria-label="Wiki source"
+                value={backfillSource}
+                onValueChange={(value) => setBackfillSource(value)}
+                options={[
+                  { value: "all", label: "All Sources" },
+                  { value: "ixwiki", label: "IxWiki" },
+                  { value: "iiwiki", label: "IIWiki" },
+                ]}
+              />
             </div>
 
             {/* Batch Limit Selector */}
-            <div className="border-border/60 bg-muted/30 space-y-2 rounded-xl border p-3">
-              <label className="text-foreground block text-xs font-semibold">Batch Limit:</label>
-              <div className="flex items-center gap-2">
-                {[50, 100, 250, 500].map((num) => (
-                  <button
-                    key={num}
-                    type="button"
-                    onClick={() => setBackfillLimit(num)}
-                    className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                      backfillLimit === num
-                        ? "border-amber-500 bg-amber-500/20 text-amber-600 dark:text-amber-400"
-                        : "border-border bg-card/60 text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {num} Cards
-                  </button>
-                ))}
-              </div>
+            <div className="border-separator bg-fill-4 rounded-row space-y-2 border p-3">
+              <label className="text-label text-caption block">Batch Limit:</label>
+              <SegmentedControl
+                size="sm"
+                fullWidth
+                aria-label="Batch limit"
+                value={String(backfillLimit)}
+                onValueChange={(value) => setBackfillLimit(Number(value))}
+                options={[50, 100, 250, 500].map((num) => ({
+                  value: String(num),
+                  label: `${num} Cards`,
+                }))}
+              />
             </div>
-            <p className="text-muted-foreground text-xs leading-relaxed">
+            <p className="text-label-secondary text-footnote leading-relaxed">
               This will find lore cards from{" "}
-              <strong className="text-foreground">
+              <strong className="text-label">
                 {backfillSource === "all" ? "all wikis" : backfillSource.toUpperCase()}
               </strong>{" "}
               without saved{" "}
-              <code className="rounded bg-amber-500/10 px-1 py-0.5 font-mono text-amber-500">
+              <code className="rounded-control-sm bg-yellow/10 text-yellow px-1 py-0.5 tabular-nums">
                 authorInfo
               </code>
               , fetch their revision history to locate human page creators and top editors, and
@@ -2111,12 +1943,7 @@ export function LoreCardBatchAdmin() {
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsBackfillDialogOpen(false)}
-              className="border-border rounded-xl border text-xs"
-            >
+            <Button variant="outline" size="sm" onClick={() => setIsBackfillDialogOpen(false)}>
               Cancel
             </Button>
             <Button
@@ -2125,15 +1952,14 @@ export function LoreCardBatchAdmin() {
               onClick={() =>
                 backfillAuthorsMutation.mutate({ limit: backfillLimit, wikiSource: backfillSource })
               }
-              className="rounded-xl bg-amber-500 text-xs font-bold text-black shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-600 active:scale-95"
             >
               {backfillAuthorsMutation.isPending ? (
                 <>
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Backfilling...
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Backfilling...
                 </>
               ) : (
                 <>
-                  <Sparkles className="mr-1.5 h-3.5 w-3.5" /> Start Backfill ({backfillLimit})
+                  <Sparkles className="mr-2 h-3.5 w-3.5" /> Start Backfill ({backfillLimit})
                 </>
               )}
             </Button>
@@ -2143,89 +1969,76 @@ export function LoreCardBatchAdmin() {
 
       {/* ─── Re-Catalog Categories Modal ──────────────────────────── */}
       <Dialog open={isReclassifyDialogOpen} onOpenChange={setIsReclassifyDialogOpen}>
-        <DialogContent className="bg-card/95 border-border/80 max-w-md space-y-4 rounded-3xl p-6 shadow-2xl backdrop-blur-2xl">
+        <DialogContent className="max-w-md space-y-4 p-6">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-2.5">
-                <Layers className="h-5 w-5 text-purple-500" />
+              <div className="rounded-row border-purple/30 bg-purple/10 border p-3">
+                <Layers className="text-purple h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-foreground text-base font-bold">
-                  Re-Catalog Lore Categories
-                </DialogTitle>
-                <DialogDescription className="text-muted-foreground text-xs">
+                <DialogTitle>Re-Catalog Lore Categories</DialogTitle>
+                <DialogDescription>
                   Re-evaluate existing lore cards using Infobox template and category tree scoring.
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
 
-          <div className="space-y-4 py-2 text-xs">
+          <div className="text-footnote space-y-4 py-2">
             {/* Wiki Source Selector */}
-            <div className="border-border/60 bg-muted/30 space-y-2 rounded-xl border p-3">
-              <label className="text-foreground block text-xs font-semibold">Wiki Source:</label>
-              <div className="flex items-center gap-2">
-                {[
-                  { id: "all", label: "All Sources" },
-                  { id: "ixwiki", label: "IxWiki" },
-                  { id: "iiwiki", label: "IIWiki" },
-                ].map((src) => (
-                  <button
-                    key={src.id}
-                    type="button"
-                    onClick={() => setReclassifySource(src.id as "all" | "ixwiki" | "iiwiki")}
-                    className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                      reclassifySource === src.id
-                        ? "border-purple-500 bg-purple-500/20 text-purple-600 dark:text-purple-300"
-                        : "border-border bg-card/60 text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {src.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Batch Limit Selector */}
-            <div className="border-border/60 bg-muted/30 space-y-2 rounded-xl border p-3">
-              <label className="text-foreground block text-xs font-semibold">Batch Limit:</label>
-              <div className="flex items-center gap-2">
-                {[50, 100, 250, 500].map((num) => (
-                  <button
-                    key={num}
-                    type="button"
-                    onClick={() => setReclassifyLimit(num)}
-                    className={`flex-1 rounded-lg border py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                      reclassifyLimit === num
-                        ? "border-purple-500 bg-purple-500/20 text-purple-600 dark:text-purple-300"
-                        : "border-border bg-card/60 text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {num} Cards
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Overwrite Toggle */}
-            <div className="border-border/60 bg-muted/30 flex items-center justify-between rounded-xl border p-3">
-              <div>
-                <span className="text-foreground block text-xs font-semibold">Force Overwrite</span>
-                <span className="text-muted-foreground text-xs">
-                  Re-classify all cards, not just unclassified/defaults
-                </span>
-              </div>
-              <input
-                type="checkbox"
-                checked={reclassifyForce}
-                onChange={(e) => setReclassifyForce(e.target.checked)}
-                className="border-border h-4 w-4 rounded text-purple-600 focus:ring-purple-500"
+            <div className="border-separator bg-fill-4 rounded-row space-y-2 border p-3">
+              <label className="text-label text-caption block">Wiki Source:</label>
+              <SegmentedControl
+                size="sm"
+                fullWidth
+                aria-label="Wiki source"
+                value={reclassifySource}
+                onValueChange={(value) => setReclassifySource(value)}
+                options={[
+                  { value: "all", label: "All Sources" },
+                  { value: "ixwiki", label: "IxWiki" },
+                  { value: "iiwiki", label: "IIWiki" },
+                ]}
               />
             </div>
 
-            <p className="text-muted-foreground text-xs leading-relaxed">
+            {/* Batch Limit Selector */}
+            <div className="border-separator bg-fill-4 rounded-row space-y-2 border p-3">
+              <label className="text-label text-caption block">Batch Limit:</label>
+              <SegmentedControl
+                size="sm"
+                fullWidth
+                aria-label="Batch limit"
+                value={String(reclassifyLimit)}
+                onValueChange={(value) => setReclassifyLimit(Number(value))}
+                options={[50, 100, 250, 500].map((num) => ({
+                  value: String(num),
+                  label: `${num} Cards`,
+                }))}
+              />
+            </div>
+
+            {/* Overwrite Toggle */}
+            <div className="border-separator bg-fill-4 rounded-row flex items-center justify-between border p-3">
+              <div>
+                <span id="reclassify-force-label" className="text-label text-caption block">
+                  Force Overwrite
+                </span>
+                <span id="reclassify-force-hint" className="text-label-secondary text-footnote">
+                  Re-classify all cards, not just unclassified/defaults
+                </span>
+              </div>
+              <Checkbox
+                aria-labelledby="reclassify-force-label"
+                aria-describedby="reclassify-force-hint"
+                checked={reclassifyForce}
+                onCheckedChange={(checked) => setReclassifyForce(checked === true)}
+              />
+            </div>
+
+            <p className="text-label-secondary text-footnote leading-relaxed">
               This will analyze lore cards from{" "}
-              <strong className="text-foreground">
+              <strong className="text-label">
                 {reclassifySource === "all" ? "all wikis" : reclassifySource.toUpperCase()}
               </strong>{" "}
               against the 12 canonical LoreCategory enums, matching infobox types (e.g.
@@ -2234,12 +2047,7 @@ export function LoreCardBatchAdmin() {
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsReclassifyDialogOpen(false)}
-              className="border-border rounded-xl border text-xs"
-            >
+            <Button variant="outline" size="sm" onClick={() => setIsReclassifyDialogOpen(false)}>
               Cancel
             </Button>
             <Button
@@ -2252,15 +2060,14 @@ export function LoreCardBatchAdmin() {
                   forceOverwrite: reclassifyForce,
                 })
               }
-              className="rounded-xl bg-purple-600 text-xs font-bold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-purple-700 active:scale-95"
             >
               {reclassifyCategoriesMutation.isPending ? (
                 <>
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Classifying...
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Classifying...
                 </>
               ) : (
                 <>
-                  <Layers className="mr-1.5 h-3.5 w-3.5" /> Start Re-Catalog ({reclassifyLimit})
+                  <Layers className="mr-2 h-3.5 w-3.5" /> Start Re-Catalog ({reclassifyLimit})
                 </>
               )}
             </Button>
@@ -2273,17 +2080,15 @@ export function LoreCardBatchAdmin() {
         open={!!selectedErrorCandidate}
         onOpenChange={(isOpen) => !isOpen && setSelectedErrorCandidate(null)}
       >
-        <DialogContent className="bg-card/95 border-border/80 max-w-md space-y-4 rounded-3xl p-6 shadow-2xl backdrop-blur-2xl">
+        <DialogContent className="max-w-md space-y-4 p-6">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-2.5">
-                <AlertTriangle className="h-5 w-5 text-rose-500" />
+              <div className="rounded-row border-red/30 bg-red/10 border p-3">
+                <AlertTriangle className="text-red h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-foreground text-base font-bold tracking-tight">
-                  Import Failure Diagnostics
-                </DialogTitle>
-                <DialogDescription className="text-muted-foreground text-xs">
+                <DialogTitle>Import Failure Diagnostics</DialogTitle>
+                <DialogDescription>
                   Troubleshooting details for why this lore card failed to generate.
                 </DialogDescription>
               </div>
@@ -2291,41 +2096,41 @@ export function LoreCardBatchAdmin() {
           </DialogHeader>
 
           {selectedErrorCandidate && (
-            <div className="space-y-3 py-1 text-xs">
-              <div className="border-border/60 bg-muted/40 space-y-2 rounded-xl border p-3">
+            <div className="text-footnote space-y-3 py-1">
+              <div className="border-separator bg-fill-3 rounded-row space-y-2 border p-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground font-medium">Article Title:</span>
-                  <span className="text-foreground font-bold">
+                  <span className="text-label-secondary font-medium">Article Title:</span>
+                  <span className="text-label font-semibold">
                     {selectedErrorCandidate.articleTitle}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground font-medium">Wiki Source:</span>
-                  <span className="text-foreground font-bold uppercase">
+                  <span className="text-label-secondary font-medium">Wiki Source:</span>
+                  <span className="text-label font-semibold uppercase">
                     {selectedErrorCandidate.wikiSource}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground font-medium">Target Rarity:</span>
-                  <span className="font-bold text-purple-400">
+                  <span className="text-label-secondary font-medium">Target Rarity:</span>
+                  <span className="text-purple font-semibold">
                     {selectedErrorCandidate.targetRarity}
                   </span>
                 </div>
               </div>
 
-              <div className="space-y-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-rose-600 dark:text-rose-400">
-                  <XCircle className="h-4 w-4 text-rose-500" /> Error Reason
+              <div className="rounded-row border-red/30 bg-red/10 space-y-2 border p-3">
+                <div className="text-caption text-red flex items-center gap-2">
+                  <XCircle className="text-red h-4 w-4" /> Error Reason
                 </div>
-                <div className="font-mono text-xs leading-relaxed break-words whitespace-pre-wrap text-rose-700 dark:text-rose-300">
+                <div className="text-footnote text-red leading-relaxed break-words whitespace-pre-wrap tabular-nums">
                   {selectedErrorCandidate.errorMessage ||
                     "Unknown error occurred during generation."}
                 </div>
               </div>
 
-              <div className="border-border/40 bg-card/60 text-muted-foreground space-y-1 rounded-xl border p-3 text-xs">
-                <div className="text-foreground flex items-center gap-1 font-semibold">
-                  <Info className="text-primary h-3.5 w-3.5" /> Troubleshooting Tips:
+              <div className="border-separator bg-surface text-label-secondary rounded-row text-footnote space-y-1 border p-3">
+                <div className="text-label flex items-center gap-1 font-semibold">
+                  <Info className="text-tint h-3.5 w-3.5" /> Troubleshooting Tips:
                 </div>
                 <ul className="mt-1 list-disc space-y-0.5 pl-4">
                   <li>
@@ -2342,12 +2147,7 @@ export function LoreCardBatchAdmin() {
           )}
 
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedErrorCandidate(null)}
-              className="border-border rounded-xl border text-xs"
-            >
+            <Button variant="outline" size="sm" onClick={() => setSelectedErrorCandidate(null)}>
               Close
             </Button>
             {selectedErrorCandidate && (
@@ -2359,9 +2159,8 @@ export function LoreCardBatchAdmin() {
                   void handleRetryCandidate(id);
                 }}
                 disabled={isProcessingBatch}
-                className="bg-primary text-primary-foreground rounded-xl text-xs font-bold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
               >
-                <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Retry Import Now
+                <RotateCcw className="mr-2 h-3.5 w-3.5" /> Retry Import Now
               </Button>
             )}
           </DialogFooter>

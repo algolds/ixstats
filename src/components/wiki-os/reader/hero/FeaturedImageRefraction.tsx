@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import type React from "react";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
+import { FacetCard } from "~/components/ui/facet-container";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 export type RefractionMode = "ambient-underglow" | "facet-lens";
@@ -68,13 +69,27 @@ interface FeaturedArticleRefractionCardProps {
   children: React.ReactNode;
 }
 
+/** The v2 halo mask: solid to 75%, fading out at the rim so the glow never hard-edges. */
+const UNDERGLOW_MASK: React.CSSProperties = {
+  maskImage:
+    "radial-gradient(ellipse 96% 92% at 50% 50%, black 0%, black 75%, rgb(0 0 0 / 0.5) 90%, transparent 100%)",
+  WebkitMaskImage:
+    "radial-gradient(ellipse 96% 92% at 50% 50%, black 0%, black 75%, rgb(0 0 0 / 0.5) 90%, transparent 100%)",
+};
+
 /**
- * Harmonious Refraction Card Container
- * Built on Apple Design & Web Interface Guidelines:
- * - Concentric corner radii: R_outer = R_inner + Inset (24px + 6px = 30px)
- * - Proportional optical balance between thumbnail and content columns
- * - Multi-layer luminance falloff with paper grain texture overlay
- * - Strictly contained (zero layout shifting or scale distortion)
+ * Featured article card on the main page — the v2 refraction card (c5c6b382), restored for
+ * Facet 3.1 (spec §16.1 #6 "wiki reader hero modes") on the glass hero tier:
+ *
+ * - `ambient-underglow` (Harmonic Under-Glow): a blurred, saturated copy of the lead image glows
+ *   out behind the glass card as a concentric halo (outer radius = inner + inset), under a surface
+ *   veil inside the card that keeps the labels ≥ 4.5:1 over any artwork in both appearances.
+ * - `facet-lens` (Facet Crystal Lens): the lead image tints the card from inside, under a surface
+ *   scrim that keeps the text ≥ 4.5:1 (held stronger in dark), with the chamfered double rim.
+ *
+ * Both sit under the v2 paper grain. Pointer tilt / sheen stay retired (spec §16.1 #4); the
+ * artwork brightens on hover / focus-within only. Reduce Transparency and Increase Contrast drop
+ * the artwork (the card turns opaque); paint lives in styles/wiki-os/components.css.
  */
 export function FeaturedArticleRefractionCard({
   imgSrc,
@@ -82,130 +97,66 @@ export function FeaturedArticleRefractionCard({
   className,
   children,
 }: FeaturedArticleRefractionCardProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [isHovered, setIsHovered] = useState(false);
-
-  const handleMouseEnter = useCallback(() => {
-    setIsHovered(true);
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    setIsHovered(false);
-  }, []);
-
   return (
     <div
-      ref={cardRef}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      className="group relative w-full select-none"
+      className="wikios-hero-refraction group relative isolate w-full select-none"
+      data-refraction-mode={mode}
     >
-      {/* ══════════════════════════════════════════════════════════════════════
-          DIRECTION 1: HARMONIC UNDER-GLOW (CONCENTRIC BACKLIGHT HALO)
-          Mathematically balanced corner radii (R_outer = 30px for R_inner = 24px)
-         ══════════════════════════════════════════════════════════════════════ */}
       {mode === "ambient-underglow" && imgSrc && (
         <div
           aria-hidden="true"
-          className={cn(
-            "pointer-events-none absolute -inset-1 z-0 overflow-hidden rounded-[20px] sm:-inset-1.5 sm:rounded-[30px]",
-            "transition-opacity duration-300 ease-out",
-            isHovered ? "opacity-90 dark:opacity-95" : "opacity-60 dark:opacity-75"
-          )}
-          style={{
-            maskImage:
-              "radial-gradient(ellipse 96% 92% at 50% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0.5) 90%, transparent 100%)",
-            WebkitMaskImage:
-              "radial-gradient(ellipse 96% 92% at 50% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 75%, rgba(0,0,0,0.5) 90%, transparent 100%)",
-          }}
+          className="wikios-hero-underglow pointer-events-none absolute -inset-1 -z-10 overflow-hidden rounded-[20px] sm:-inset-1.5 sm:rounded-[30px] print:hidden"
+          style={UNDERGLOW_MASK}
         >
-          <img
-            src={imgSrc}
-            alt=""
-            className="h-full w-full transform-gpu object-cover opacity-85 blur-xl contrast-[1.15] saturate-[1.85] sm:blur-2xl dark:opacity-95"
-            loading="lazy"
-          />
+          <img src={imgSrc} alt="" loading="lazy" className="size-full object-cover" />
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          CORE GLASS CARD CONTAINER (HARMONIOUS 24PX CORNER RADIUS)
-         ══════════════════════════════════════════════════════════════════════ */}
-      <div
-        className={cn(
-          "relative overflow-hidden rounded-2xl sm:rounded-3xl",
-          "border border-black/[0.08] dark:border-white/[0.12]",
-          "bg-white/[0.84] backdrop-blur-2xl dark:bg-zinc-900/[0.84]",
-          "p-4 sm:p-5 lg:p-6",
-          "shadow-[inset_0_1px_1px_rgba(255,255,255,0.75),0_8px_24px_rgba(0,0,0,0.03)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_12px_32px_rgba(0,0,0,0.3)]",
-          "transition-colors duration-200",
-          className
-        )}
+      <FacetCard
+        variant="glass"
+        className={cn("overflow-hidden rounded-2xl p-4 sm:rounded-3xl sm:p-5 lg:p-6", className)}
       >
-        {/* ──────────────────────────────────────────────────────────────────
-            DIRECTION 2: FACET CRYSTAL LENS (INTERNAL OPTICAL REFRACTION)
-            Internal color tint + precision chamfered rim + top specular hairline
-           ────────────────────────────────────────────────────────────────── */}
+        {/* The halo shows through the frost; the veil keeps the labels AA over it (spec §16.8). */}
+        {mode === "ambient-underglow" && imgSrc && (
+          <div
+            aria-hidden="true"
+            className="wikios-hero-veil pointer-events-none absolute inset-0 -z-10 rounded-[inherit]"
+          />
+        )}
+
         {mode === "facet-lens" && (
           <>
-            {/* Internal Artwork Color Refraction (Masked for 100% text contrast) */}
             {imgSrc && (
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
+                className="pointer-events-none absolute inset-0 -z-10 overflow-hidden print:hidden"
               >
                 <img
                   src={imgSrc}
                   alt=""
-                  className={cn(
-                    "h-full w-full transform-gpu object-cover blur-3xl saturate-150",
-                    "transition-opacity duration-300 ease-out",
-                    isHovered
-                      ? "opacity-[0.24] dark:opacity-[0.32]"
-                      : "opacity-[0.16] dark:opacity-[0.22]",
-                    "mix-blend-luminosity dark:mix-blend-lighten"
-                  )}
                   loading="lazy"
+                  className="wikios-hero-lens-art size-full object-cover"
                 />
-                {/* Contrast Preservation Mask */}
-                <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-white/65 to-white/20 backdrop-blur-[1px] dark:from-zinc-950/90 dark:via-zinc-950/70 dark:to-zinc-950/20" />
+                <div className="wikios-hero-lens-scrim absolute inset-0" />
               </div>
             )}
-
-            {/* Precision Facet Double-Rim Inverted Chamfer */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 z-20 rounded-2xl shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.85),inset_0_-1.5px_3px_rgba(0,0,0,0.4)] sm:rounded-3xl dark:shadow-[inset_0_1.5px_2px_rgba(255,255,255,0.35),inset_0_-1.5px_3px_rgba(0,0,0,0.8)]"
-            />
-
-            {/* Top Razor-Sharp Specular Caustic Hairline */}
-            <div
-              aria-hidden="true"
-              className={cn(
-                "pointer-events-none absolute inset-x-6 top-0 z-20 h-[1.5px] bg-gradient-to-r from-transparent via-white/90 to-transparent dark:via-white/60",
-                "transition-opacity duration-250 ease-out",
-                isHovered ? "opacity-100" : "opacity-60"
-              )}
+              className="wikios-hero-lens-chamfer pointer-events-none absolute inset-0 rounded-[inherit]"
             />
           </>
         )}
 
-        {/* ══════════════════════════════════════════════════════════════════════
-            PHYSICAL TACTILE TEXTURE OVERLAY (PAPER GRAIN OVER GLASS & GLOW)
-           ══════════════════════════════════════════════════════════════════════ */}
-        <TextureOverlay texture="paperGrain" opacity={0.06} className="pointer-events-none z-20" />
+        <TextureOverlay texture="paperGrain" opacity={0.05} className="rounded-[inherit]" />
 
-        {/* ══════════════════════════════════════════════════════════════════════
-            STATIONARY SURFACE EDITORIAL CONTENT
-           ══════════════════════════════════════════════════════════════════════ */}
-        <div className="relative z-25">{children}</div>
-      </div>
+        <div className="relative">{children}</div>
+      </FacetCard>
     </div>
   );
 }
 
 /**
- * Featured Thumbnail Artwork Frame with Golden Ratio Proportions
+ * Featured thumbnail artwork frame (v2: 16:10 frame, image zoom on hover, bottom scrim).
  */
 export function FeaturedThumbnailFrame({
   imgSrc,
@@ -219,24 +170,25 @@ export function FeaturedThumbnailFrame({
   return (
     <Link
       href={withBasePath(`/wiki/${slug}`)}
-      data-cuelume-press="droplet"
-      data-cuelume-hover="tick"
       className={cn(
         "group/img relative block w-full shrink-0 sm:w-[240px] md:w-[270px] lg:w-[290px]",
         "aspect-[16/10] sm:aspect-[3/2] md:aspect-[16/10]",
         "overflow-hidden rounded-xl sm:rounded-2xl",
-        "border border-black/[0.08] dark:border-white/[0.12]",
-        "bg-black/5 shadow-2xs dark:bg-white/5",
-        "focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
+        "border-separator bg-surface-secondary border shadow-xs",
+        "focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2"
       )}
     >
       <img
         src={imgSrc}
         alt={title}
         loading="lazy"
-        className="h-full w-full transform-gpu object-cover transition-transform duration-300 ease-out group-hover/img:scale-105"
+        className="ease-out-facet h-full w-full object-cover transition-transform duration-300 motion-safe:group-hover/img:scale-105 motion-safe:group-focus-visible/img:scale-105 motion-reduce:transition-none"
       />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
+      {/* v2 bottom scrim: grounds the artwork against the card. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent"
+      />
     </Link>
   );
 }

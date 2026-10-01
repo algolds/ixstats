@@ -11,13 +11,10 @@ import {
   Globe,
   FireFlame as Flame,
 } from "iconoir-react";
-import {
-  CutoutCard,
-  CutoutCardContent,
-  CutoutCorner,
-  cutoutCardSurfaceClassName,
-} from "~/components/ui/cutout-card";
+import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 import {
   staggerContainer,
   staggerItem,
@@ -25,7 +22,6 @@ import {
 import { useUser } from "~/context/auth-context";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { FacetTabs } from "~/components/ui/facet";
-import { cn } from "~/lib/utils";
 
 type ThinkpagesAccountItem = RouterOutputs["thinkpages"]["getMyAccounts"][number];
 
@@ -35,7 +31,7 @@ import { useNotify } from "~/hooks/useNotify";
 const GlassCanvasComposer = dynamic(
   () => import("~/components/thinkpages/GlassCanvasComposer").then((m) => m.GlassCanvasComposer),
   {
-    loading: () => <div className="h-36 animate-pulse rounded-2xl bg-white/5" />,
+    loading: () => <Skeleton className="rounded-card h-36" />,
     ssr: false,
   }
 );
@@ -235,18 +231,20 @@ export function UnifiedDashboardSection({
                 tone="accent"
                 size="md"
                 className="flex-1"
-                indicatorClassName="rounded-xl"
+                indicatorClassName="rounded-row"
               />
               {/* Settings gear */}
               {isSignedIn && (
-                <button
+                <Button
+                  variant="gray"
+                  size="icon"
                   onClick={() => setIsAccountModalOpen(true)}
-                  data-cuelume-press="soft"
-                  className="text-muted-foreground hover:text-foreground relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-black/[0.08] bg-black/[0.04] shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:bg-black/[0.08] dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/[0.08]"
-                  title="Feed & Account Settings"
+                  className="shrink-0"
+                  title="Feed and account settings"
+                  aria-label="Feed and account settings"
                 >
-                  <Settings className="h-3.5 w-3.5" />
-                </button>
+                  <Settings />
+                </Button>
               )}
             </motion.div>
 
@@ -270,20 +268,22 @@ export function UnifiedDashboardSection({
                   onCreateAccount={() => setIsAccountModalOpen(true)}
                 />
                 {hasCountry && accounts.length > 1 && selectedAccount && (
-                  <div className="flex items-center gap-2 px-1 text-xs">
-                    <span className="text-muted-foreground font-normal">Posting as:</span>
-                    <div className="text-foreground flex items-center gap-1.5 font-medium">
+                  <div className="text-footnote flex items-center gap-2 px-1">
+                    <span className="text-label-secondary">Posting as:</span>
+                    <div className="text-label flex items-center gap-2 font-medium">
                       <span>@{selectedAccount.username}</span>
-                      <span className="text-muted-foreground text-xs font-normal">
+                      <span className="text-label-secondary text-footnote font-normal">
                         ({selectedAccount.accountType})
                       </span>
                     </div>
-                    <button
+                    <Button
+                      variant="link"
+                      size="sm"
                       onClick={() => setIsAccountModalOpen(true)}
-                      className="ml-2 cursor-pointer text-xs font-semibold text-blue-600 underline hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                      className="ml-2 h-auto px-0"
                     >
-                      Switch Account
-                    </button>
+                      Switch account
+                    </Button>
                   </div>
                 )}
               </div>
@@ -348,7 +348,7 @@ export function UnifiedDashboardSection({
           </div>
 
           {/* Sidebar (right 1/3): Community widgets */}
-          <div className="facet-layout-sidebar-span-1 space-y-4 md:sticky md:top-20 md:self-start">
+          <div className="facet-layout-sidebar-span-1 space-y-4 md:sticky md:top-(--shell-top-offset) md:self-start">
             {/* Trending Now — Compact */}
             <TrendingSectionWidget />
 
@@ -360,42 +360,21 @@ export function UnifiedDashboardSection({
 
             {/* Economic Tier Distribution */}
             {(globalStats as any)?.economicTierDistribution && (
-              <CutoutCard
-                className={cn(cutoutCardSurfaceClassName, "overflow-hidden rounded-xl")}
-                trackPointerHover={false}
-              >
-                {/* Cutout tab header */}
-                <div className="relative bg-emerald-500/10 px-4 pt-3 pb-5">
-                  <div className="text-card-foreground flex items-center gap-2 text-xs font-semibold tracking-tight">
-                    <Globe className="h-4 w-4 text-emerald-500" />
-                    Economic Tiers
-                  </div>
-                  <CutoutCorner className="text-card absolute -bottom-px left-0" size={20} />
-                  <CutoutCorner
-                    className="text-card absolute right-0 -bottom-px -scale-x-100"
-                    size={20}
-                  />
+              // v2 (c5c6b382): a CutoutCard with the emerald cutout tab header.
+              <CutoutCard variant="card" accent="green" retint trackPointerHover={false}>
+                <CutoutCardHeader icon={<Globe />} as="h2">
+                  Economic tiers
+                </CutoutCardHeader>
+                <div className="flex flex-wrap items-center gap-1 px-4 pb-4">
+                  {Object.entries((globalStats as any).economicTierDistribution).map(
+                    ([tier, count]) => (
+                      <Badge key={tier} variant="neutral">
+                        <span>{tier}</span>
+                        <span className="text-label font-data tabular-nums">{count as number}</span>
+                      </Badge>
+                    )
+                  )}
                 </div>
-                <CutoutCardContent className="px-4 pt-0 pb-4">
-                  <div className="flex flex-wrap items-center gap-1">
-                    {Object.entries((globalStats as any).economicTierDistribution).map(
-                      ([tier, count]) => (
-                        <div
-                          key={tier}
-                          className="bg-muted/50 flex items-center gap-1 rounded px-2 py-0.5"
-                        >
-                          <span className="text-xs font-medium">{tier}</span>
-                          <Badge
-                            variant="secondary"
-                            className="bg-background text-foreground border-border border px-1 py-0 text-xs font-semibold tabular-nums"
-                          >
-                            {count as number}
-                          </Badge>
-                        </div>
-                      )
-                    )}
-                  </div>
-                </CutoutCardContent>
               </CutoutCard>
             )}
           </div>

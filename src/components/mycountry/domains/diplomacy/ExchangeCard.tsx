@@ -33,13 +33,16 @@ function FlagTile({
 }) {
   return (
     <div
-      className={cn("border-border bg-muted overflow-hidden rounded-md border", className)}
+      className={cn(
+        "border-separator bg-fill-3 rounded-control-sm overflow-hidden border",
+        className
+      )}
       title={name}
     >
       {flagUrl ? (
         <img src={flagUrl} alt={`${name} flag`} className="h-full w-full object-cover" />
       ) : (
-        <span className="text-muted-foreground flex h-full w-full items-center justify-center text-sm font-semibold">
+        <span className="text-label-secondary text-headline flex h-full w-full items-center justify-center">
           {name.charAt(0)}
         </span>
       )}
@@ -56,7 +59,6 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
 
     return (
       <FacetCard
-        depth={2}
         onClick={onClick}
         onKeyDown={(e) => {
           if (e.target !== e.currentTarget) return;
@@ -67,10 +69,10 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
         }}
         aria-label={`${exchange.title}, ${typeConfig.label}, ${statusConfig.label}`}
         aria-pressed={isSelected}
-        className={cn("overflow-hidden rounded-2xl", isSelected && "ring-ring ring-2")}
+        className={cn("rounded-card overflow-hidden", isSelected && "ring-tint ring-2")}
       >
         {/* Host → exchange type → participants */}
-        <div className="border-border bg-muted/40 flex items-center justify-between gap-3 border-b px-4 py-3">
+        <div className="border-separator bg-fill-3 flex items-center justify-between gap-3 border-b px-4 py-3">
           <div className="flex min-w-0 items-center gap-2">
             <FlagTile
               name={exchange.hostCountry.name}
@@ -78,25 +80,25 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
               className="h-8 w-12 shrink-0"
             />
             <div className="min-w-0">
-              <p className="text-foreground truncate text-xs font-semibold">
+              <p className="text-label text-caption truncate font-semibold">
                 {exchange.hostCountry.name}
               </p>
-              <p className="text-muted-foreground text-xs">Host</p>
+              <p className="text-label-secondary text-footnote">Host</p>
             </div>
           </div>
 
-          <div className="text-muted-foreground flex shrink-0 items-center gap-1" aria-hidden>
+          <div className="text-label-secondary flex shrink-0 items-center gap-1" aria-hidden>
             <ArrowRight className="h-3.5 w-3.5" />
-            <Icon className="text-foreground h-4 w-4" />
+            <Icon className="text-label h-4 w-4" />
             <ArrowRight className="h-3.5 w-3.5" />
           </div>
 
           <div className="flex min-w-0 items-center justify-end gap-2">
             <div className="min-w-0 text-right">
-              <p className="text-foreground truncate text-xs font-semibold">
+              <p className="text-label text-caption truncate font-semibold">
                 {firstParticipant ? firstParticipant.name : "Open to all"}
               </p>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-label-secondary text-footnote">
                 {exchange.participatingCountries.length > 1
                   ? `+${exchange.participatingCountries.length - 1} more`
                   : "Participant"}
@@ -115,12 +117,12 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
         <div className="p-4">
           <div className="mb-3 flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <h4 className="text-foreground mb-1 text-sm font-semibold">{exchange.title}</h4>
-              <div className="flex flex-wrap items-center gap-1.5">
+              <h4 className="text-label text-headline mb-1">{exchange.title}</h4>
+              <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className={statusConfig.color}>
                   {statusConfig.label}
                 </Badge>
-                <span className="text-muted-foreground text-xs">{typeConfig.label}</span>
+                <span className="text-label-secondary text-footnote">{typeConfig.label}</span>
               </div>
             </div>
 
@@ -142,9 +144,9 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
           </div>
 
           <div className="space-y-2">
-            <p className="text-muted-foreground line-clamp-2 text-sm">{exchange.description}</p>
+            <p className="text-label-secondary text-body line-clamp-2">{exchange.description}</p>
 
-            <div className="text-muted-foreground flex flex-wrap items-center gap-4 text-xs">
+            <div className="text-label-secondary text-footnote flex flex-wrap items-center gap-4">
               <span className="flex items-center gap-1">
                 <User className="h-3 w-3" />
                 <span className="tabular-nums">{exchange.metrics.participants}</span>
@@ -161,18 +163,18 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
 
             {exchange.participatingCountries.length > 0 && (
               <div className="flex items-center gap-2">
-                <Globe className="text-muted-foreground h-3 w-3" />
+                <Globe className="text-label-secondary h-3 w-3" />
                 <div className="flex items-center gap-1">
                   {exchange.participatingCountries.slice(0, 3).map((country) => (
                     <FlagTile
                       key={country.id}
                       name={country.name}
                       flagUrl={country.flagUrl}
-                      className="h-3 w-4 rounded-sm"
+                      className="h-3 w-4 rounded-xs"
                     />
                   ))}
                   {exchange.participatingCountries.length > 3 && (
-                    <span className="text-muted-foreground ml-1 text-xs">
+                    <span className="text-label-secondary text-footnote ml-1">
                       +{exchange.participatingCountries.length - 3}
                     </span>
                   )}

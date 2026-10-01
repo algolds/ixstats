@@ -6,10 +6,11 @@ import { notFound } from "next/navigation";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { cn, createUrl } from "~/lib/utils";
+import { createUrl } from "~/lib/utils";
 import { ThinktankFeedTab } from "~/components/thinktanks/ThinktankFeedTab";
 import { ThinktankChatTab } from "~/components/thinktanks/ThinktankChatTab";
 import { RealmFeed } from "../_components/RealmFeed";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 type BoardTab = "board" | "chat" | "feed";
 
@@ -34,12 +35,12 @@ export default function RealmBoardPage({ params }: { params: Promise<{ realm: st
 
   if (isLoading)
     return (
-      <div className="text-muted-foreground mx-auto max-w-5xl p-8 text-sm">Loading board…</div>
+      <div className="text-label-secondary text-body mx-auto max-w-5xl p-8">Loading board…</div>
     );
   if (error?.data?.code === "NOT_FOUND") notFound();
   if (!board)
     return (
-      <div className="text-muted-foreground mx-auto max-w-5xl p-8 text-sm">
+      <div className="text-label-secondary text-body mx-auto max-w-5xl p-8">
         The board could not be loaded.
       </div>
     );
@@ -49,7 +50,7 @@ export default function RealmBoardPage({ params }: { params: Promise<{ realm: st
   const notice = currentUserId ? (
     <>
       Only owners of a nation in {board.realm.name} can post here.{" "}
-      <Link href={realmHref} className="text-foreground font-medium underline">
+      <Link href={realmHref} className="text-label font-medium underline">
         Claim a nation
       </Link>{" "}
       to join the board.
@@ -60,7 +61,7 @@ export default function RealmBoardPage({ params }: { params: Promise<{ realm: st
         href={createUrl(
           `/sign-in?redirect_url=${encodeURIComponent(createUrl(`/r/${slug}/board`))}`
         )}
-        className="text-foreground font-medium underline"
+        className="text-label font-medium underline"
       >
         Sign in
       </Link>{" "}
@@ -70,15 +71,13 @@ export default function RealmBoardPage({ params }: { params: Promise<{ realm: st
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 md:p-8">
-      <header className="border-border bg-card/70 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-5 backdrop-blur-xl">
+      <header className="material-hero text-label flex flex-wrap items-center justify-between gap-3 rounded-2xl p-5">
         <div>
-          <Link href={realmHref} className="text-muted-foreground hover:text-foreground text-xs">
+          <Link href={realmHref} className="text-label-secondary hover:text-label text-footnote">
             ← {board.realm.name}
           </Link>
-          <h1 className="text-foreground text-xl font-bold tracking-tight">
-            {board.realm.name} Board
-          </h1>
-          <p className="text-muted-foreground text-xs">
+          <h1 className="text-label text-title-2">{board.realm.name} Board</h1>
+          <p className="text-label-secondary text-footnote">
             {group ? `${group.memberCount.toLocaleString()} members · ` : ""}
             {board.canModerate
               ? "You moderate this board"
@@ -87,24 +86,16 @@ export default function RealmBoardPage({ params }: { params: Promise<{ realm: st
                 : "Read-only"}
           </p>
         </div>
-        <nav className="bg-muted/40 flex gap-1 rounded-xl p-1" aria-label="Board sections">
-          {visibleTabs.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              className={cn(
-                "rounded-lg px-3 py-1.5 text-xs font-semibold",
-                tab === t.id ? "bg-background text-foreground shadow-xs" : "text-muted-foreground"
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
+        <SegmentedControl
+          aria-label="Board sections"
+          size="sm"
+          value={tab}
+          onValueChange={setTab}
+          options={visibleTabs.map((t) => ({ value: t.id, label: t.label }))}
+        />
       </header>
 
-      <section className="border-border bg-card/40 overflow-hidden rounded-2xl border">
+      <section className="border-separator bg-surface rounded-card overflow-hidden border">
         {tab === "board" && (
           <ThinktankFeedTab
             groupId={board.groupId}
@@ -127,7 +118,7 @@ export default function RealmBoardPage({ params }: { params: Promise<{ realm: st
         )}
         {tab === "feed" && (
           <div className="p-4">
-            <p className="text-muted-foreground mb-3 text-xs">
+            <p className="text-label-secondary text-footnote mb-3">
               Posts by the nations of {board.realm.name}, and this board.
             </p>
             <RealmFeed realmId={board.realm.id} />

@@ -10,6 +10,8 @@ import {
   type GeneratableRouteType,
 } from "./transport/ProceduralRouteGenerator";
 import { RouteNodeInspector } from "./transport/RouteNodeInspector";
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface TransportPropertyFormProps {
   countryId?: string;
@@ -153,23 +155,27 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
 
   if (activeRouteId) {
     return (
-      <div className="bg-background text-foreground flex h-full flex-col">
+      <div className="bg-surface text-label flex h-full flex-col">
         {/* Header */}
-        <div className="border-border/40 flex items-center justify-between border-b px-3 py-2.5">
-          <div className="flex items-center gap-1.5 text-xs font-semibold">
-            <RouteIcon className="text-primary h-4 w-4" />
+        <div className="border-separator flex items-center justify-between border-b px-3 py-2">
+          <div className="text-caption flex items-center gap-2 font-semibold">
+            <RouteIcon className="text-tint h-4 w-4" />
             <span>Edit Route Path</span>
           </div>
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={() => {
               onRouteEditCancel?.();
               onSelectRouteId?.(null);
             }}
-            className="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-1 transition active:scale-[0.98]"
             title="Close edit mode"
+            aria-label="Close edit mode"
+            className="text-label-secondary hover:bg-fill-3 hover:text-label rounded-control-sm size-6"
           >
             <X className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-3">
@@ -197,56 +203,48 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
   }
 
   return (
-    <div className="bg-background text-foreground flex h-full flex-col">
+    <div className="bg-surface text-label flex h-full flex-col">
       {/* Header */}
-      <div className="border-border/40 flex items-center justify-between border-b px-3 py-2.5">
-        <div className="flex items-center gap-1.5 text-xs font-semibold">
-          <RouteIcon className="text-primary h-4 w-4" />
+      <div className="border-separator flex items-center justify-between border-b px-3 py-2">
+        <div className="text-caption flex items-center gap-2 font-semibold">
+          <RouteIcon className="text-tint h-4 w-4" />
           <span>Transport Network</span>
         </div>
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={onCancel}
-          className="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-1"
+          aria-label="Close transport network"
+          className="text-label-secondary"
         >
-          <X className="h-3.5 w-3.5" />
-        </button>
+          <X className="size-3.5" />
+        </Button>
       </div>
 
       {/* Tabs */}
-      <div className="border-border/40 bg-muted/20 flex border-b p-1">
-        <button
-          onClick={() => setUserTab("routes")}
-          className={`flex flex-1 items-center justify-center gap-1.5 rounded py-1.5 text-xs font-medium transition ${
-            tab === "routes"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <RouteIcon className="h-3.5 w-3.5" />
-          <span>Routes ({routes.length})</span>
-        </button>
-        <button
-          onClick={() => setUserTab("draw")}
-          className={`flex flex-1 items-center justify-center gap-1.5 rounded py-1.5 text-xs font-medium transition ${
-            tab === "draw"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <MapPin className="h-3.5 w-3.5" />
-          <span>Draw ({routeWaypoints.length})</span>
-        </button>
-        <button
-          onClick={() => setUserTab("generate")}
-          className={`flex flex-1 items-center justify-center gap-1.5 rounded py-1.5 text-xs font-medium transition ${
-            tab === "generate"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <NetworkLeft className="h-3.5 w-3.5" aria-hidden />
-          <span>Generate</span>
-        </button>
+      <div className="border-separator border-b p-2">
+        <SegmentedControl
+          aria-label="Transport network"
+          asTabs
+          fullWidth
+          size="sm"
+          value={tab}
+          onValueChange={(v) => setUserTab(v as "routes" | "draw" | "generate")}
+          options={[
+            {
+              value: "routes",
+              label: `Routes (${routes.length})`,
+              icon: <RouteIcon aria-hidden />,
+            },
+            {
+              value: "draw",
+              label: `Draw (${routeWaypoints.length})`,
+              icon: <MapPin aria-hidden />,
+            },
+            { value: "generate", label: "Generate", icon: <NetworkLeft aria-hidden /> },
+          ]}
+        />
       </div>
 
       {/* Content */}

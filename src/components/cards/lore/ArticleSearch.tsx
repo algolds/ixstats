@@ -9,6 +9,8 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { debounce } from "~/lib/utils";
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 interface ArticleSearchProps {
   wikiSource: "ixwiki" | "iiwiki";
@@ -97,22 +99,25 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
           placeholder={`Search ${wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"} articles...`}
-          className="glass-child w-full rounded-lg px-4 py-3 pr-10 text-white placeholder-white/40"
+          className="border-separator bg-fill-3 rounded-control text-label placeholder:text-label-tertiary w-full border px-4 py-3 pr-10"
         />
 
         {loading && (
           <div className="absolute top-1/2 right-3 -translate-y-1/2">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white"></div>
+            <div className="border-separator border-t-separator h-5 w-5 animate-spin rounded-full border-2"></div>
           </div>
         )}
 
         {!loading && searchQuery && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Clear search"
             onClick={() => {
               setSearchQuery("");
               setSuggestions([]);
             }}
-            className="absolute top-1/2 right-3 -translate-y-1/2 text-white/60 hover:text-white"
+            className="text-label-secondary absolute top-1/2 right-2 -translate-y-1/2"
           >
             <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
               <path
@@ -121,32 +126,34 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
                 clipRule="evenodd"
               />
             </svg>
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Suggestions Dropdown */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="glass-parent absolute z-10 mt-2 max-h-96 w-full overflow-y-auto rounded-lg shadow-lg">
-          {suggestions.map((suggestion, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleSelect(suggestion.title)}
-              className="w-full px-4 py-3 text-left transition-colors first:rounded-t-lg last:rounded-b-lg hover:bg-white/10"
-            >
-              <div className="font-semibold text-white">{suggestion.title}</div>
-              {suggestion.snippet && (
-                <div className="mt-1 line-clamp-2 text-sm text-white/60">{suggestion.snippet}</div>
-              )}
-            </button>
-          ))}
+        <div className="border-separator bg-surface-elevated rounded-control shadow-floating absolute z-10 mt-2 max-h-96 w-full overflow-y-auto border">
+          <FacetListSection variant="plain" aria-label="Article suggestions">
+            {suggestions.map((suggestion, idx) => (
+              <FacetRow
+                key={idx}
+                onClick={() => handleSelect(suggestion.title)}
+                title={suggestion.title}
+                subtitle={
+                  suggestion.snippet ? (
+                    <span className="line-clamp-2">{suggestion.snippet}</span>
+                  ) : undefined
+                }
+              />
+            ))}
+          </FacetListSection>
         </div>
       )}
 
       {/* No Results Message */}
       {!loading && searchQuery.length >= 3 && suggestions.length === 0 && showSuggestions && (
-        <div className="glass-parent absolute z-10 mt-2 w-full rounded-lg px-4 py-3 shadow-lg">
-          <div className="text-center text-sm text-white/60">
+        <div className="border-separator bg-surface-elevated rounded-control shadow-floating absolute z-10 mt-2 w-full border px-4 py-3">
+          <div className="text-body text-label-secondary text-center">
             No articles found matching "{searchQuery}"
           </div>
         </div>

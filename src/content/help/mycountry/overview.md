@@ -15,7 +15,7 @@ nextLabel: Executive Directives
 - **Header.** Your seal, name and leader, and the **Declare Directive** button. The line under it shows how many directives you have left this week ("2 of 3 directives left this week"), or a countdown to your next one when all three are used. See [Executive Directives](/help/mycountry/executive).
 - **National standing.** Your vital signs (below).
 - **Priority.** The most pressing thing on your desk. For a national issue, choose **Open issue brief** to respond.
-- **Agenda.** What's coming up (below).
+- **Agenda.** Your inbox of things waiting on you (below).
 - **Recent activity.** A log of recent changes to your nation.
 - **Side column.** Your **World Census** ranking and a **Territory** card with your map, plus buttons to open the world map and edit your territory.
 
@@ -34,9 +34,14 @@ The **Vitality** button opens the full breakdown. A score with no data yet (for 
 
 ## The agenda
 
-The agenda lists only real items: open [national issues](/help/gameplay/national-issues), active [directives](/help/mycountry/executive), [elections](/help/mycountry/politics) and issue deadlines. Category filters appear only for categories that have items, and a dot on a day means something is scheduled then. Select an item to act on it; for an issue, choose **Open issue brief**.
+The agenda works like an email inbox. It lists only real items: open [national issues](/help/gameplay/national-issues), active [directives](/help/mycountry/executive) and upcoming [elections](/help/mycountry/politics). Each row shows what it is, a one-line preview and how long ago it arrived ("2h ago"), or how pressing it is ("Due soon", "Overdue"). New items are **bold with a dot** until you open them, and the number next to "Agenda" counts your unread items. A flag marks anything urgent.
 
-A new nation often has an empty agenda. That's normal: it fills as issues arrive and you declare directives or set up elections.
+- **Mailboxes.** Switch between **All**, **Needs action** (the flagged items), **Issues**, **Directives** and **Elections**. Only mailboxes with items appear.
+- **Open an item** to act on it; for an issue, choose **Open issue brief**. Opening an item marks it read.
+- **Tidy up** from the open item: **Mark as unread**, **Snooze a day**, **Snooze a week** or **Done**. On a phone, swipe a row: right to mark it read or unread, left to snooze or finish it. **Mark all as read** clears every dot.
+- **Snoozed and done** items move out of the way; "Show … snoozed and … done" at the bottom lists them, and **Move to inbox** brings one back. A snoozed item returns on its own, and a finished one comes back if it changes, for example when an issue escalates.
+
+Read, snoozed and done are remembered in this browser, separately for each of your nations. When nothing is waiting you'll see **Inbox zero**. A new nation often starts there; it fills as issues arrive and you declare directives or set up elections.
 
 ## The other sections
 
@@ -54,7 +59,7 @@ Domain tiles on the home page link to Politics, Economy, Diplomacy and Defense. 
 
 ## World Census
 
-The World Census card ranks your nation against the other nations in your realm on ten measures: GDP per person, total GDP, GDP growth, population, approval, stability, diplomatic standing, infrastructure, debt-to-GDP and income equality. Each shows your position in the realm, your region and your tier.
+The World Census card ranks your nation against the other nations in your realm on ten measures: GDP per person, total GDP, GDP growth, population, approval, stability, diplomatic standing, infrastructure, debt-to-GDP and income equality. It shows the five where your nation stands out most (your best ranks first); choose **See more** for the rest and **See less** to fold them away. Hover a rank to see your position in the realm and your region.
 
 ## Tips
 

@@ -9,7 +9,12 @@ import {
 } from "~/components/ui/sheet";
 import { Xmark } from "iconoir-react";
 import { Eyebrow } from "~/components/ui/eyebrow";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { SearchField } from "~/components/ui/search-field";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import { CHARGE_CATEGORIES } from "~/lib/heraldry";
@@ -136,63 +141,52 @@ export default function CommonsBrowserPanel({
         className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-[450px]"
       >
         {/* Panel Header */}
-        <SheetHeader className="border-border border-b px-6 py-3 pr-12 text-left">
-          <SheetTitle className="text-sm">Wikimedia Commons</SheetTitle>
-          <SheetDescription className="text-xs">
+        <SheetHeader className="border-separator border-b px-6 py-3 pr-12 text-left">
+          <SheetTitle className="text-body">Wikimedia Commons</SheetTitle>
+          <SheetDescription className="text-footnote">
             Search and import vector heraldic charges
           </SheetDescription>
         </SheetHeader>
 
         {/* Tabs */}
-        <div className="border-border bg-muted/40 flex border-b">
-          <button
-            onClick={() => setActiveTab("category")}
-            className={`flex-1 border-b-2 py-2 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-              activeTab === "category"
-                ? "border-amber-500 text-amber-500"
-                : "text-muted-foreground hover:text-foreground border-transparent"
-            }`}
-          >
-            Categories
-          </button>
-          <button
-            onClick={() => setActiveTab("search")}
-            className={`flex-1 border-b-2 py-2 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-              activeTab === "search"
-                ? "border-amber-500 text-amber-500"
-                : "text-muted-foreground hover:text-foreground border-transparent"
-            }`}
-          >
-            Search
-          </button>
+        <div className="border-separator border-b px-4 py-2">
+          <SegmentedControl
+            aria-label="Browse Commons by"
+            asTabs
+            fullWidth
+            size="sm"
+            value={activeTab}
+            onValueChange={(v) => setActiveTab(v as typeof activeTab)}
+            options={[
+              { value: "category", label: "Categories" },
+              { value: "search", label: "Search" },
+            ]}
+          />
         </div>
 
         {/* Controls Area */}
-        <div className="border-border bg-card border-b p-4">
+        <div className="border-separator bg-surface border-b p-4">
           {activeTab === "category" ? (
             <div className="space-y-1">
-              <Eyebrow className="block">Commons Category</Eyebrow>
-              <select
+              <Eyebrow id="commons-category-label" className="block">
+                Commons category
+              </Eyebrow>
+              <OptionSelect
+                aria-labelledby="commons-category-label"
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="border-border bg-muted text-muted-foreground w-full rounded-lg border p-2 text-xs focus:outline-none"
-              >
-                {COMMONS_SUGGESTED_CATEGORIES.map((cat) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
+                onValueChange={setSelectedCategory}
+                options={COMMONS_SUGGESTED_CATEGORIES}
+              />
             </div>
           ) : (
             <div className="space-y-1">
-              <Eyebrow className="block">Search Term</Eyebrow>
-              <input
-                type="text"
+              <Eyebrow className="block">Search term</Eyebrow>
+              <SearchField
+                aria-label="Search term"
                 placeholder="e.g. heraldic lion, crown SVG..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="border-border bg-muted text-muted-foreground w-full rounded-lg border p-2 text-xs focus:border-amber-500 focus:outline-none"
+                onClear={() => setSearch("")}
               />
             </div>
           )}
@@ -201,12 +195,12 @@ export default function CommonsBrowserPanel({
         {/* Results View */}
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
           {isLoading ? (
-            <div className="text-muted-foreground flex flex-col items-center justify-center gap-3 py-20 text-xs">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+            <div className="text-label-secondary text-footnote flex flex-col items-center justify-center gap-3 py-20">
+              <div className="border-tint h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
               <span>Fetching Wikimedia library...</span>
             </div>
           ) : svgImages.length === 0 ? (
-            <div className="text-muted-foreground py-20 text-center text-xs italic">
+            <div className="text-label-secondary text-footnote py-20 text-center italic">
               {activeTab === "search" && search.length < 3
                 ? "Type search query to search Wikimedia Commons..."
                 : "No vector SVG files found in this section."}
@@ -219,60 +213,59 @@ export default function CommonsBrowserPanel({
                 return (
                   <div
                     key={img.pageid}
-                    className="group border-border bg-muted/40 relative flex flex-col gap-2 overflow-hidden rounded-lg border p-2"
+                    className="group border-separator bg-fill-3 rounded-control relative flex flex-col gap-2 overflow-hidden border p-2"
                   >
                     {/* Thumbnail Image Box */}
-                    <div className="bg-card relative flex h-28 items-center justify-center overflow-hidden rounded p-2">
+                    <div className="bg-surface rounded-control-sm relative flex h-28 items-center justify-center overflow-hidden p-2">
                       <img
                         src={img.thumbUrl}
                         alt={img.title}
                         className="max-h-full max-w-full object-contain brightness-95 transition-[color,background-color,border-color,box-shadow,opacity,transform] group-hover:brightness-100"
                         loading="lazy"
                       />
-                      <span className="border-border bg-background/80 absolute right-1 bottom-1 rounded border px-1 py-0.5 font-mono text-xs text-emerald-500">
+                      <Badge variant="green" className="absolute right-1 bottom-1">
                         SVG
-                      </span>
+                      </Badge>
                     </div>
 
                     {/* Title / Info */}
-                    <div className="space-y-0.5 text-xs">
-                      <p className="text-muted-foreground truncate font-medium" title={img.title}>
+                    <div className="text-footnote space-y-0.5">
+                      <p className="text-label-secondary truncate font-medium" title={img.title}>
                         {getSanitizedTitle(img.title)}
                       </p>
-                      <p className="text-muted-foreground truncate">
+                      <p className="text-label-secondary truncate">
                         License: {img.license || "Unknown"}
                       </p>
                     </div>
 
                     {/* Action buttons or Inline import form */}
                     {isImportingThis ? (
-                      <div className="border-border space-y-1.5 border-t p-1 text-xs">
+                      <div className="border-separator text-footnote space-y-2 border-t p-1">
                         <div>
-                          <span className="text-muted-foreground mb-0.5 block font-bold">Name</span>
-                          <input
+                          <span className="text-label-secondary mb-0.5 block font-semibold">
+                            Name
+                          </span>
+                          <Input
                             type="text"
+                            aria-label="Name"
                             value={importName}
                             onChange={(e) => setImportName(e.target.value)}
-                            className="border-border bg-card text-muted-foreground w-full rounded border px-1.5 py-0.5 focus:outline-none"
+                            className="text-footnote h-(--control-height-sm) px-2"
                           />
                         </div>
                         <div>
-                          <span className="text-muted-foreground mb-0.5 block font-bold">
+                          <span className="text-label-secondary mb-0.5 block font-semibold">
                             Category
                           </span>
-                          <select
+                          <OptionSelect
+                            aria-label="Category"
+                            size="sm"
                             value={importCategory}
-                            onChange={(e) => setImportCategory(e.target.value)}
-                            className="border-border bg-card text-muted-foreground w-full rounded border px-1 py-0.5 focus:outline-none"
-                          >
-                            {CHARGE_CATEGORIES.map((cat) => (
-                              <option key={cat.value} value={cat.value}>
-                                {cat.label}
-                              </option>
-                            ))}
-                          </select>
+                            onValueChange={setImportCategory}
+                            options={CHARGE_CATEGORIES}
+                          />
                         </div>
-                        <div className="flex gap-1 pt-1.5">
+                        <div className="flex gap-1 pt-2">
                           <Button
                             variant="ghost"
                             size="xs"

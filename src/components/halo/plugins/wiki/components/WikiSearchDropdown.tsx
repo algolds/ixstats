@@ -7,6 +7,7 @@ import { Search, Xmark as X } from "iconoir-react";
 import { PreText } from "~/components/ui/pretext";
 import { HighlightedSnippet } from "~/components/wiki-os/shared/HighlightedSnippet";
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
 
 interface WikiSearchDropdownProps {
   searchQuery: string;
@@ -42,41 +43,41 @@ export function WikiSearchDropdown({
     <>
       {/* Search Input Bar */}
       <div className="mb-3">
-        <div className="border-border bg-accent/5 flex items-center gap-2 rounded-lg border px-3">
-          <Search className="text-muted-foreground h-4 w-4 shrink-0" />
+        <div className="border-separator bg-fill-4 rounded-control flex items-center gap-2 border px-3">
+          <Search className="text-label-secondary h-4 w-4 shrink-0" />
           <input
             ref={searchInputRef}
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search wiki articles..."
-            className="text-foreground placeholder:text-muted-foreground w-full bg-transparent py-2 text-sm outline-none"
+            className="text-label placeholder:text-label-secondary text-body w-full bg-transparent py-2 outline-none"
             data-command-palette-search="true"
           />
           {searchQuery && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={() => onSearchChange("")}
-              className="text-muted-foreground hover:text-foreground"
+              aria-label="Clear search"
+              className="text-label-secondary hover:text-label"
             >
-              <X className="h-3.5 w-3.5" />
-            </button>
+              <X aria-hidden />
+            </Button>
           )}
         </div>
       </div>
 
       {/* Search Results Dropdown */}
       {searchQuery.length >= 2 && (
-        <div className="border-border mb-3 border-b pb-3">
-          <div className="text-muted-foreground mb-1 flex items-center justify-between text-xs font-semibold tracking-wider uppercase">
+        <div className="border-separator mb-3 border-b pb-3">
+          <div className="text-label-secondary text-subhead mb-1 flex items-center justify-between">
             <PreText className="text-inherit" whiteSpace="nowrap">
               {`Results${searchData?.totalHits ? ` (${searchData.totalHits})` : ""}`}
             </PreText>
             {isSearching && (
-              <PreText
-                className="text-muted-foreground/80 animate-pulse text-xs"
-                whiteSpace="nowrap"
-              >
+              <PreText className="text-label-secondary text-footnote" whiteSpace="nowrap">
                 searching...
               </PreText>
             )}
@@ -87,22 +88,22 @@ export function WikiSearchDropdown({
                 key={result.title}
                 type="button"
                 onClick={() => onSelectArticle(result.title)}
-                className="text-foreground/70 hover:bg-accent/10 hover:text-foreground flex w-full flex-col rounded-md px-2 py-1.5 text-left transition-colors"
+                className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm flex w-full flex-col px-2 py-2 text-left transition-colors"
               >
-                <span className="flex items-center gap-2 text-sm">
+                <span className="text-body flex items-center gap-2">
                   <PreText className="truncate font-medium text-inherit" whiteSpace="nowrap">
                     {result.title}
                   </PreText>
                 </span>
                 {result.snippet && (
-                  <span className="text-muted-foreground mt-0.5 line-clamp-1 pl-[22px] text-xs">
+                  <span className="text-label-secondary text-footnote mt-0.5 line-clamp-1 pl-[22px]">
                     <HighlightedSnippet text={result.snippet} ranges={result.snippetRanges} />
                   </span>
                 )}
               </button>
             ))
           ) : !isSearching ? (
-            <PreText className="text-muted-foreground/75 px-2 py-1 text-xs" whiteSpace="nowrap">
+            <PreText className="text-label-secondary text-footnote px-2 py-1" whiteSpace="nowrap">
               No results
             </PreText>
           ) : null}

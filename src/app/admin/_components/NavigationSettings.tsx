@@ -86,7 +86,7 @@ export function NavigationSettings() {
 
   if (isLoading) {
     return (
-      <Card className="facet-surface border-border/40">
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Navigation className="h-5 w-5" />
@@ -95,7 +95,7 @@ export function NavigationSettings() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+            <Loader2 className="text-label-secondary h-8 w-8 animate-spin" />
           </div>
         </CardContent>
       </Card>
@@ -103,33 +103,35 @@ export function NavigationSettings() {
   }
 
   return (
-    <Card className="facet-surface border-border/40">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Navigation className="h-5 w-5" />
           Navigation Settings
         </CardTitle>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-label-secondary text-body">
           Control which navigation tabs are visible to users. These tabs can be hidden to simplify
           the navigation bar.
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Wiki Tab Setting */}
-        <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
+        <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-2">
+            <div className="rounded-control border-blue/20 bg-blue/10 border p-2">
               {localSettings.showWikiTab ? (
-                <Eye className="h-4 w-4 text-blue-500" />
+                <Eye className="text-blue h-4 w-4" />
               ) : (
-                <EyeOff className="text-muted-foreground h-4 w-4" />
+                <EyeOff className="text-label-secondary h-4 w-4" />
               )}
             </div>
             <div>
-              <Label htmlFor="wiki-tab" className="text-sm font-medium">
+              <Label htmlFor="wiki-tab" className="text-body font-medium">
                 Wiki Tab
               </Label>
-              <p className="text-muted-foreground text-xs">Show/hide the Wiki navigation tab</p>
+              <p className="text-label-secondary text-footnote">
+                Show/hide the Wiki navigation tab
+              </p>
             </div>
           </div>
           <Switch
@@ -140,20 +142,22 @@ export function NavigationSettings() {
         </div>
 
         {/* Cards Tab Setting */}
-        <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
+        <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/10 p-2">
+            <div className="rounded-control border-teal/20 bg-teal/10 border p-2">
               {localSettings.showCardsTab ? (
-                <Eye className="h-4 w-4 text-cyan-500" />
+                <Eye className="text-teal h-4 w-4" />
               ) : (
-                <EyeOff className="text-muted-foreground h-4 w-4" />
+                <EyeOff className="text-label-secondary h-4 w-4" />
               )}
             </div>
             <div>
-              <Label htmlFor="cards-tab" className="text-sm font-medium">
+              <Label htmlFor="cards-tab" className="text-body font-medium">
                 Cards Tab
               </Label>
-              <p className="text-muted-foreground text-xs">Show/hide the Cards navigation tab</p>
+              <p className="text-label-secondary text-footnote">
+                Show/hide the Cards navigation tab
+              </p>
             </div>
           </div>
           <Switch
@@ -164,20 +168,20 @@ export function NavigationSettings() {
         </div>
 
         {/* Labs Tab Setting */}
-        <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
+        <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg border border-purple-500/20 bg-purple-500/10 p-2">
+            <div className="rounded-control border-purple/20 bg-purple/10 border p-2">
               {localSettings.showLabsTab ? (
-                <Eye className="h-4 w-4 text-purple-500" />
+                <Eye className="text-purple h-4 w-4" />
               ) : (
-                <EyeOff className="text-muted-foreground h-4 w-4" />
+                <EyeOff className="text-label-secondary h-4 w-4" />
               )}
             </div>
             <div>
-              <Label htmlFor="labs-tab" className="text-sm font-medium">
+              <Label htmlFor="labs-tab" className="text-body font-medium">
                 Labs Tab
               </Label>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-label-secondary text-footnote">
                 Show/hide the Labs navigation tab and dropdown
               </p>
             </div>
@@ -190,24 +194,24 @@ export function NavigationSettings() {
         </div>
 
         {/* Intelligence Tab Setting */}
-        <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
+        <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2">
+            <div className="rounded-control border-green/20 bg-green/10 border p-2">
               {localSettings.showIntelligenceTab ? (
-                <Eye className="h-4 w-4 text-emerald-500" />
+                <Eye className="text-green h-4 w-4" />
               ) : (
-                <EyeOff className="text-muted-foreground h-4 w-4" />
+                <EyeOff className="text-label-secondary h-4 w-4" />
               )}
             </div>
             <div>
               <Label
                 htmlFor="intelligence-tab"
-                className="flex items-center gap-1 text-sm font-medium"
+                className="text-body flex items-center gap-1 font-medium"
               >
-                <Shield className="text-muted-foreground h-4 w-4" />
+                <Shield className="text-label-secondary h-4 w-4" />
                 Intelligence Tab
               </Label>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-label-secondary text-footnote">
                 Show/hide the Intelligence navigation tab
               </p>
             </div>
@@ -220,21 +224,24 @@ export function NavigationSettings() {
         </div>
 
         {/* Defense Tab Setting */}
-        <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
+        <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-2">
+            <div className="rounded-control border-red/20 bg-red/10 border p-2">
               {localSettings.showDefenseTab ? (
-                <Eye className="h-4 w-4 text-red-500" />
+                <Eye className="text-red h-4 w-4" />
               ) : (
-                <EyeOff className="text-muted-foreground h-4 w-4" />
+                <EyeOff className="text-label-secondary h-4 w-4" />
               )}
             </div>
             <div>
-              <Label htmlFor="defense-tab" className="flex items-center gap-1 text-sm font-medium">
-                <Shield className="text-muted-foreground h-4 w-4" />
+              <Label
+                htmlFor="defense-tab"
+                className="text-body flex items-center gap-1 font-medium"
+              >
+                <Shield className="text-label-secondary h-4 w-4" />
                 Defense Tab
               </Label>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-label-secondary text-footnote">
                 Show/hide the Defense & Security navigation tab in MyCountry
               </p>
             </div>
@@ -247,20 +254,22 @@ export function NavigationSettings() {
         </div>
 
         {/* Maps Tab Setting */}
-        <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
+        <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg border border-orange-500/20 bg-orange-500/10 p-2">
+            <div className="rounded-control border-orange/20 bg-orange/10 border p-2">
               {localSettings.showMapsTab ? (
-                <Eye className="h-4 w-4 text-orange-500" />
+                <Eye className="text-orange h-4 w-4" />
               ) : (
-                <EyeOff className="text-muted-foreground h-4 w-4" />
+                <EyeOff className="text-label-secondary h-4 w-4" />
               )}
             </div>
             <div>
-              <Label htmlFor="maps-tab" className="text-sm font-medium">
+              <Label htmlFor="maps-tab" className="text-body font-medium">
                 Maps Tab
               </Label>
-              <p className="text-muted-foreground text-xs">Show/hide the Maps navigation tab</p>
+              <p className="text-label-secondary text-footnote">
+                Show/hide the Maps navigation tab
+              </p>
             </div>
           </div>
           <Switch
@@ -271,20 +280,22 @@ export function NavigationSettings() {
         </div>
 
         {/* Forum Tab Setting */}
-        <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
+        <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg border border-orange-500/20 bg-orange-500/10 p-2">
+            <div className="rounded-control border-orange/20 bg-orange/10 border p-2">
               {localSettings.showForumTab ? (
-                <Eye className="h-4 w-4 text-orange-500" />
+                <Eye className="text-orange h-4 w-4" />
               ) : (
-                <EyeOff className="text-muted-foreground h-4 w-4" />
+                <EyeOff className="text-label-secondary h-4 w-4" />
               )}
             </div>
             <div>
-              <Label htmlFor="forum-tab" className="text-sm font-medium">
+              <Label htmlFor="forum-tab" className="text-body font-medium">
                 Forum Tab
               </Label>
-              <p className="text-muted-foreground text-xs">Show/hide the Forum navigation tab</p>
+              <p className="text-label-secondary text-footnote">
+                Show/hide the Forum navigation tab
+              </p>
             </div>
           </div>
           <Switch
@@ -295,20 +306,22 @@ export function NavigationSettings() {
         </div>
 
         {/* Help Tab Setting */}
-        <div className="bg-card/10 border-border/20 flex items-center justify-between rounded-lg border p-4">
+        <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-2">
+            <div className="rounded-control border-yellow/20 bg-yellow/10 border p-2">
               {localSettings.showHelpTab ? (
-                <Eye className="h-4 w-4 text-amber-500" />
+                <Eye className="text-yellow h-4 w-4" />
               ) : (
-                <EyeOff className="text-muted-foreground h-4 w-4" />
+                <EyeOff className="text-label-secondary h-4 w-4" />
               )}
             </div>
             <div>
-              <Label htmlFor="help-tab" className="text-sm font-medium">
+              <Label htmlFor="help-tab" className="text-body font-medium">
                 Help Tab
               </Label>
-              <p className="text-muted-foreground text-xs">Show/hide the Help navigation tab</p>
+              <p className="text-label-secondary text-footnote">
+                Show/hide the Help navigation tab
+              </p>
             </div>
           </div>
           <Switch
@@ -320,7 +333,7 @@ export function NavigationSettings() {
 
         {/* Save Button */}
         {hasChanges && (
-          <div className="border-border/20 border-t pt-4">
+          <div className="border-separator border-t pt-4">
             <Button onClick={handleSave} disabled={isSaving} className="w-full">
               {isSaving ? (
                 <>
@@ -338,9 +351,9 @@ export function NavigationSettings() {
         )}
 
         {!hasChanges && navigationSettings && (
-          <div className="border-border/20 border-t pt-4">
-            <div className="text-muted-foreground flex items-center justify-center gap-2 text-sm">
-              <Check className="h-4 w-4 text-green-500" />
+          <div className="border-separator border-t pt-4">
+            <div className="text-label-secondary text-body flex items-center justify-center gap-2">
+              <Check className="text-green h-4 w-4" />
               All changes saved
             </div>
           </div>

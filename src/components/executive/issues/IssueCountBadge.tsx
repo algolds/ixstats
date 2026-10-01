@@ -17,13 +17,13 @@ function IssueCountBadgeInner({ countryId, className }: IssueCountBadgeProps) {
 
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-full text-xs leading-none font-bold ${
-        isUrgent
-          ? "h-4 min-w-[16px] bg-red-500 px-1 text-white"
-          : "h-4 min-w-[16px] bg-amber-500 px-1 text-white"
+      className={`text-caption font-data inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 leading-none font-semibold tabular-nums ${
+        isUrgent ? "bg-red text-on-red" : "facet-gold"
       } ${className ?? ""}`}
     >
       {total}
+      {/* Red is not the only signal: urgency is spoken too. */}
+      {isUrgent ? <span className="sr-only">, {urgent} urgent</span> : null}
     </span>
   );
 }

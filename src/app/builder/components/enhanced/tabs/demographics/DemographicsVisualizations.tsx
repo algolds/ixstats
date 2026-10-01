@@ -36,16 +36,10 @@ export function DemographicsVisualizations({
   return (
     <div className="space-y-6">
       {/* Merged Age, Urban-Rural & Regional Distribution */}
-      <FacetCard
-        depth="base"
-        theme="emerald"
-        className="border-emerald-500/20"
-        texture="chevron"
-        textureOpacity={0.04}
-      >
+      <FacetCard>
         <FacetCardContent className="p-6">
-          <div className="mb-4 flex flex-col gap-2 border-b border-white/5 pb-3 sm:flex-row sm:items-center sm:justify-between">
-            <h4 className="flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
+          <div className="border-separator mb-4 flex flex-col gap-2 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
+            <h4 className="text-headline text-green flex items-center gap-2">
               {activeChart === "age" && (
                 <>
                   <PieChart className="h-5 w-5" />
@@ -65,16 +59,16 @@ export function DemographicsVisualizations({
                 </>
               )}
             </h4>
-            <div className="flex max-w-fit rounded-lg border border-white/10 bg-white/5 p-0.5 select-none">
+            <div className="rounded-control border-separator bg-fill-4 flex max-w-fit border p-0.5 select-none">
               <Button
                 size="sm"
                 variant={activeChart === "age" ? "default" : "ghost"}
                 onClick={() => setActiveChart("age")}
                 className={cn(
-                  "h-7 rounded-md px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  "rounded-control-sm text-caption h-7 px-3 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   activeChart === "age"
-                    ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-500"
-                    : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                    ? "bg-green text-on-green shadow-card hover:bg-green"
+                    : "text-label-secondary hover:bg-fill-4 hover:text-label"
                 )}
               >
                 Age
@@ -84,10 +78,10 @@ export function DemographicsVisualizations({
                 variant={activeChart === "urbanRural" ? "default" : "ghost"}
                 onClick={() => setActiveChart("urbanRural")}
                 className={cn(
-                  "h-7 rounded-md px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  "rounded-control-sm text-caption h-7 px-3 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   activeChart === "urbanRural"
-                    ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-500"
-                    : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                    ? "bg-green text-on-green shadow-card hover:bg-green"
+                    : "text-label-secondary hover:bg-fill-4 hover:text-label"
                 )}
               >
                 Urban/Rural
@@ -97,10 +91,10 @@ export function DemographicsVisualizations({
                 variant={activeChart === "regional" ? "default" : "ghost"}
                 onClick={() => setActiveChart("regional")}
                 className={cn(
-                  "h-7 rounded-md px-2.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  "rounded-control-sm text-caption h-7 px-3 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   activeChart === "regional"
-                    ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-500"
-                    : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
+                    ? "bg-green text-on-green shadow-card hover:bg-green"
+                    : "text-label-secondary hover:bg-fill-4 hover:text-label"
                 )}
               >
                 Regional
@@ -131,7 +125,7 @@ export function DemographicsVisualizations({
 
           {activeChart === "regional" &&
             (regionData.length === 0 ? (
-              <div className="flex h-[300px] items-center justify-center text-xs text-zinc-400">
+              <div className="text-footnote text-label-secondary flex h-[300px] items-center justify-center">
                 No regions configured. Go to the Geographic tab to add regions.
               </div>
             ) : (
@@ -147,15 +141,9 @@ export function DemographicsVisualizations({
       </FacetCard>
 
       {/* Education Levels */}
-      <FacetCard
-        depth="base"
-        theme="emerald"
-        className="border-emerald-500/20"
-        texture="chevron"
-        textureOpacity={0.04}
-      >
+      <FacetCard>
         <FacetCardContent className="p-6">
-          <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
+          <h4 className="text-headline text-green mb-4 flex items-center gap-2">
             <GraduationCap className="h-5 w-5" />
             <span>Education Levels</span>
           </h4>
@@ -171,21 +159,15 @@ export function DemographicsVisualizations({
       </FacetCard>
 
       {/* Demographics Health */}
-      <FacetCard
-        depth="base"
-        theme="emerald"
-        className="border-emerald-500/20"
-        texture="chevron"
-        textureOpacity={0.04}
-      >
+      <FacetCard>
         <FacetCardContent className="p-6">
-          <h4 className="mb-4 flex items-center gap-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
+          <h4 className="text-headline text-green mb-4 flex items-center gap-2">
             <Gauge className="h-5 w-5" />
             <span>Demographics Health</span>
           </h4>
           <div className="space-y-4">
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
+              <div className="text-body flex justify-between">
                 <span>Life Expectancy</span>
                 <span className="font-medium">{demographics.lifeExpectancy.toFixed(1)} years</span>
               </div>
@@ -193,7 +175,7 @@ export function DemographicsVisualizations({
             </div>
 
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
+              <div className="text-body flex justify-between">
                 <span>Literacy Rate</span>
                 <span className="font-medium">{demographics.literacyRate.toFixed(1)}%</span>
               </div>
@@ -201,7 +183,7 @@ export function DemographicsVisualizations({
             </div>
 
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
+              <div className="text-body flex justify-between">
                 <span>Urbanization</span>
                 <span className="font-medium">
                   {demographics.urbanRuralSplit.urban.toFixed(1)}%
@@ -211,7 +193,7 @@ export function DemographicsVisualizations({
             </div>
 
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
+              <div className="text-body flex justify-between">
                 <span>Working Age Share</span>
                 <span className="font-medium">
                   {demographics.ageDistribution.age15to64.toFixed(1)}%

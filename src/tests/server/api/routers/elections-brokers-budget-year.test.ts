@@ -11,6 +11,12 @@ import { createMockRouterContext } from "~/tests/helpers/router-context";
 
 describe("elections.getPowerBrokers budget year", () => {
   const createCaller = createCallerFactory(electionsBrokersRouter);
+  // The owner of country_1 (power brokers are owner-only: country-private-record.test.ts).
+  const ownerContext = (db: unknown) =>
+    createMockRouterContext({
+      db,
+      user: { id: "owner_db", clerkUserId: "test_user_clerk_id", countryId: "country_1" },
+    }) as any;
 
   afterEach(() => IxTime.clearTimeOverride());
 
@@ -21,7 +27,7 @@ describe("elections.getPowerBrokers budget year", () => {
     db.budgetAllocation.findMany.mockResolvedValue([
       { allocatedPercent: 40, department: { category: "Defense" } },
     ]);
-    const caller = createCaller(createMockRouterContext({ db, auth: null }) as any);
+    const caller = createCaller(ownerContext(db));
 
     await caller.getPowerBrokers({ countryId: "country_1" });
 
@@ -45,7 +51,7 @@ describe("elections.getPowerBrokers budget year", () => {
     db.budgetAllocation.findMany.mockResolvedValue([
       { allocatedPercent: 40, department: { category: "Defense" } },
     ]);
-    const caller = createCaller(createMockRouterContext({ db, auth: null }) as any);
+    const caller = createCaller(ownerContext(db));
 
     await caller.getPowerBrokers({ countryId: "country_1" });
 

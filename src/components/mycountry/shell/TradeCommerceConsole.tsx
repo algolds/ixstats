@@ -143,16 +143,14 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
       />
 
       {/* Sector Tariff Planner (not saved) */}
-      <FacetCard surface="solid" className="rounded-2xl">
+      <FacetCard className="rounded-card">
         <FacetCardHeader className="flex-row flex-wrap items-start justify-between gap-3 p-4 pb-3">
           <div className="min-w-0 space-y-0.5">
-            <h3 className="text-foreground flex flex-wrap items-center gap-2 text-sm font-semibold">
+            <h3 className="text-label text-headline flex flex-wrap items-center gap-2">
               Sector Tariff Planner
-              <Badge variant="outline" className="text-orange-600">
-                Not saved
-              </Badge>
+              <Badge variant="orange">Not saved</Badge>
             </h3>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-label-secondary text-footnote">
               Try out tariffs by sector. Changes here reset when you leave the page and don&apos;t
               change your economy.
             </p>
@@ -170,18 +168,18 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
         </FacetCardHeader>
 
         <FacetCardContent className="space-y-4 px-4 pb-4">
-          <p className="text-muted-foreground flex items-start gap-2 text-xs">
+          <p className="text-label-secondary text-footnote flex items-start gap-2">
             <InfoCircle aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>
-              Your saved tariff is the <strong className="text-foreground">Tariff rate</strong> in
-              the Fiscal Policy tab
+              Your saved tariff is the <strong className="text-label">Tariff rate</strong> in the
+              Fiscal Policy tab
               {baseTariff != null ? ` (currently ${baseTariff}%)` : " (none saved yet)"}. Sectors
               start at that rate and are weighted by their recorded share of GDP.
             </span>
           </p>
 
           {sectors.length === 0 ? (
-            <p className="text-muted-foreground border-border rounded-xl border border-dashed py-8 text-center text-xs">
+            <p className="text-label-secondary border-separator rounded-row text-footnote border border-dashed py-8 text-center">
               No economic sectors recorded. Record them in the Country Editor, or add one here to
               sketch a tariff schedule.
             </p>
@@ -241,13 +239,13 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
       accessory={<RailCount>{partnerCount} partners</RailCount>}
     >
       <div className="grid grid-cols-2 gap-2">
-        <RailRow className="p-2.5">
+        <RailRow className="p-2">
           <Eyebrow className="block">Free trade pacts</Eyebrow>
-          <p className="text-foreground mt-0.5 text-base font-semibold tabular-nums">{ftaCount}</p>
+          <p className="text-label text-title-3 mt-0.5 tabular-nums">{ftaCount}</p>
         </RailRow>
-        <RailRow className="p-2.5">
+        <RailRow className="p-2">
           <Eyebrow className="block">Recorded sectors</Eyebrow>
-          <p className="text-foreground mt-0.5 text-base font-semibold tabular-nums">
+          <p className="text-label text-title-3 mt-0.5 tabular-nums">
             {recordedSectorCount > 0 ? recordedSectorCount : "—"}
           </p>
         </RailRow>

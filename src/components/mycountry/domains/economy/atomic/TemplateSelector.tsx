@@ -27,10 +27,10 @@ function TemplateSelectorComponent({
   disabled = false,
 }: TemplateSelectorProps) {
   return (
-    <FacetCard className="rounded-2xl">
+    <FacetCard className="rounded-card">
       <FacetCardHeader className="flex-row items-center gap-2 p-4 pb-3">
-        <FileText aria-hidden="true" className="text-muted-foreground h-4 w-4" />
-        <h3 className="text-foreground text-sm font-semibold">Quick start templates</h3>
+        <FileText aria-hidden="true" className="text-label-secondary h-4 w-4" />
+        <h3 className="text-label text-headline">Quick start templates</h3>
       </FacetCardHeader>
       <FacetCardContent className="px-4 pb-4">
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6">
@@ -46,10 +46,10 @@ function TemplateSelectorComponent({
                 disabled={disabled}
                 className="flex h-auto flex-col items-center gap-2 py-3"
               >
-                <Icon aria-hidden="true" className="text-muted-foreground h-5 w-5" />
+                <Icon aria-hidden="true" className="text-label-secondary h-5 w-5" />
                 <div className="text-center">
-                  <div className="text-xs font-medium">{template.name}</div>
-                  <div className="text-muted-foreground mt-1 text-xs">
+                  <div className="text-caption">{template.name}</div>
+                  <div className="text-label-secondary text-footnote mt-1">
                     {template.components.length} components
                   </div>
                 </div>

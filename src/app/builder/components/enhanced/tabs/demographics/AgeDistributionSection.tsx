@@ -72,7 +72,7 @@ export function AgeDistributionSection({
         <div className="space-y-4 border-t pt-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
+              <div className="text-body flex justify-between">
                 <span>Youth Dependency Ratio</span>
                 <span className="font-medium">{demographics.youthDependencyRatio.toFixed(1)}</span>
               </div>
@@ -80,7 +80,7 @@ export function AgeDistributionSection({
             </div>
 
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
+              <div className="text-body flex justify-between">
                 <span>Elderly Dependency Ratio</span>
                 <span className="font-medium">
                   {demographics.elderlyDependencyRatio.toFixed(1)}

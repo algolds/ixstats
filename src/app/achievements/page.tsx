@@ -5,14 +5,15 @@ import Link from "next/link";
 import { VaultSidebarLayout } from "~/components/vault/VaultSidebarLayout";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
-import {
-  SystemRestart as Loader2,
-  Trophy as Award,
-  OpenNewWindow as ExternalLink,
-} from "iconoir-react";
+import { Trophy as Award } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Stat } from "~/components/ui/stat";
+import { FlagWatermark } from "~/components/ui/facet";
 import NumberFlow from "~/components/ui/number-flow";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 
@@ -101,124 +102,100 @@ export default function AchievementsPage() {
   return (
     <VaultSidebarLayout activeSection="achievements">
       <div className="space-y-6">
-        {/* Country Profile Header Card */}
+        {/* The page title is the hero's h1; without a profile (signed out, loading, no country)
+            there is no hero, so the h1 is visually hidden — one h1 on every render. */}
+        {!(isMounted && userProfile) && <h1 className="sr-only">Achievements</h1>}
+
+        {/* Country profile header card */}
         {isMounted && userProfile && (
-          <div className="border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative overflow-hidden rounded-3xl border border-t-white/20 p-6 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 dark:border-t-white/10">
-            <TextureOverlay texture="dots" opacity={0.03} />
+          // v2 (c5c6b382): the glass hero with the dot texture and the flag watermark.
+          <FacetCard
+            variant="glass"
+            glow
+            padding="lg"
+            texture="dots"
+            textureOpacity={0.03}
+            className="overflow-hidden"
+          >
+            <FlagWatermark src={countryFlagUrl} />
 
-            {/* Country Flag Background Wash & Watermark */}
-            {countryFlagUrl && (
-              <>
-                <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-10 select-none dark:opacity-15">
-                  <img
-                    src={countryFlagUrl}
-                    alt=""
-                    className="h-full w-full object-cover object-center blur-2xl saturate-[0.4]"
-                  />
-                  <div className="from-card via-card/85 to-card absolute inset-0 bg-gradient-to-r" />
-                </div>
-                <div className="pointer-events-none absolute -top-12 -right-12 h-64 w-64 overflow-hidden opacity-10 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-700 select-none dark:opacity-20">
-                  <img
-                    src={countryFlagUrl}
-                    alt=""
-                    className="h-full w-full rounded-full object-cover object-center mix-blend-luminosity blur-[1px] filter dark:mix-blend-normal"
-                  />
-                  <div className="via-card/60 to-card absolute inset-0 bg-gradient-to-l from-transparent" />
-                </div>
-              </>
-            )}
-
-            <div className="relative z-10 space-y-5">
+            <div className="relative space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <h1 className="text-foreground flex flex-wrap items-center gap-3 text-2xl font-black tracking-tight">
-                    <span>Achievements</span>
-                    <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 font-mono text-xs font-bold text-amber-600 backdrop-blur-md dark:text-amber-400">
-                      {completionPercent}% Mastered
-                    </span>
-                  </h1>
-                </div>
+                <h1 className="text-label text-title-1 flex flex-wrap items-center gap-3">
+                  <span>Achievements</span>
+                  <Badge variant="yellow">
+                    <span className="font-data tabular-nums">{completionPercent}%</span> mastered
+                  </Badge>
+                </h1>
 
-                <div className="flex flex-wrap items-center gap-2.5">
-                  {/* Global Leaderboards Badge Link */}
-                  <Link
-                    href="/leaderboards"
-                    className="border-border/60 bg-muted/50 text-foreground/80 hover:bg-muted/80 hover:text-foreground flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
-                  >
-                    <Award className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
-                    <span>Global Leaderboards</span>
-                    <ExternalLink className="h-3 w-3 opacity-60" />
-                  </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button asChild variant="gray" size="sm" className="rounded-full">
+                    <Link href="/leaderboards">
+                      <Award aria-hidden className="text-yellow" />
+                      <span>Global leaderboards</span>
+                    </Link>
+                  </Button>
 
-                  {/* Showcase Cabinet Toggle */}
-                  <div className="border-border/60 bg-muted/40 flex items-center gap-2 rounded-full border px-3.5 py-1.5 backdrop-blur-md">
+                  {/* Showcase shelf toggle */}
+                  <div className="bg-fill-3 flex h-(--control-height-sm) items-center gap-2 rounded-full px-3">
                     <Label
                       htmlFor="cabinet-toggle"
-                      className="text-muted-foreground hover:text-foreground cursor-pointer text-xs font-extrabold tracking-wider uppercase select-none"
+                      className="text-label text-footnote cursor-pointer font-medium select-none"
                     >
-                      Showcase Shelf
+                      Showcase shelf
                     </Label>
                     <Switch
                       id="cabinet-toggle"
                       checked={showCabinet}
                       onCheckedChange={toggleCabinet}
-                      className="data-[state=checked]:bg-amber-500"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Metrics Summary Row */}
-              <div className="border-border/50 grid grid-cols-1 gap-4 border-t pt-5 sm:grid-cols-3">
-                <div className="space-y-1">
-                  <div className="text-foreground text-3xl font-black tracking-tight">
-                    <NumberFlow value={totalUnlocked} />
-                  </div>
-                  <div className="text-muted-foreground text-xs font-extrabold tracking-wider uppercase">
-                    Achievements Unlocked
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="text-3xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
+              {/* Metrics summary */}
+              <div className="border-separator grid grid-cols-1 gap-4 border-t pt-5 sm:grid-cols-3">
+                <Stat label="Achievements unlocked" value={<NumberFlow value={totalUnlocked} />} />
+                <Stat
+                  label="Achievement points"
+                  value={
                     <span className="flex items-baseline gap-1">
-                      <NumberFlow value={gameplayPoints} />
-                      <span className="text-sm font-bold text-emerald-600/80 dark:text-emerald-400/80">
-                        pts
+                      <span className="text-success-ink">
+                        <NumberFlow value={gameplayPoints} />
                       </span>
+                      <span className="text-footnote text-label-secondary">pts</span>
                     </span>
-                  </div>
-                  <div className="text-muted-foreground text-xs font-extrabold tracking-wider uppercase">
-                    Achievement Points
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <div className="text-3xl font-black tracking-tight text-purple-600 dark:text-purple-400">
-                    {globalRank > 0 ? (
+                  }
+                />
+                <Stat
+                  label="Global rank"
+                  value={
+                    globalRank > 0 ? (
                       <span className="flex items-baseline">
                         #<NumberFlow value={globalRank} />
                       </span>
                     ) : (
                       "—"
-                    )}
-                  </div>
-                  <div className="text-muted-foreground text-xs font-extrabold tracking-wider uppercase">
-                    Global Rank
-                  </div>
-                </div>
+                    )
+                  }
+                />
               </div>
             </div>
-          </div>
+          </FacetCard>
         )}
 
         {/* Showcase Cabinet */}
         {!isLoading && showCabinet && <ShowcaseTab achievements={achievements} />}
 
-        {/* Loader */}
+        {/* Loading */}
         {isLoading && (
-          <div className="flex h-64 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-amber-500 dark:text-amber-400" />
+          <div aria-busy className="space-y-4">
+            <Skeleton className="rounded-card h-40" />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <Skeleton className="rounded-card h-48" />
+              <Skeleton className="rounded-card h-48" />
+              <Skeleton className="rounded-card h-48" />
+            </div>
           </div>
         )}
 

@@ -4,11 +4,12 @@ import React from "react";
 import { useElement, usePath, useReadOnly } from "platejs/react";
 import { usePlateWikiCallbacks } from "./PlateRawHtmlElement";
 import type { ChipEngineEl } from "../wiki-html";
+import { Button } from "~/components/ui/button";
 
 const chipTone: Record<string, string> = {
-  CountryData: "border-amber-400/30 bg-amber-400/10 text-amber-300",
-  BusinessData: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
-  MyCountry: "border-wiki/30 bg-wiki/10 text-wiki",
+  CountryData: "border-yellow/30 bg-yellow/10 text-yellow",
+  BusinessData: "border-green/30 bg-green/10 text-green",
+  MyCountry: "border-tint/30 bg-tint/10 text-tint",
 };
 
 /** Live simulation metric badge (CountryData / BusinessData / MyCountry). */
@@ -30,18 +31,18 @@ export function PlateEngineChipElement({
       {children}
       <span
         contentEditable={false}
-        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold ${chipTone[family] ?? "border-border bg-secondary text-foreground"}`}
+        className={`text-caption inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold ${chipTone[family] ?? "border-separator bg-fill-3 text-label"}`}
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />⚡{" "}
-        {el.label}
+        <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />⚡ {el.label}
         {!readOnly && path && (
-          <button
-            type="button"
+          <Button
+            variant="link"
+            size="sm"
             onClick={() => cb.openTemplateEditor(el.id!)}
-            className="ml-0.5 rounded px-1 text-xs underline opacity-60 hover:opacity-100 active:scale-[0.98]"
+            className="text-footnote ml-0.5 h-auto px-1 text-inherit underline opacity-60 hover:opacity-100"
           >
             edit
-          </button>
+          </Button>
         )}
       </span>
     </span>

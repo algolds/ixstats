@@ -79,22 +79,22 @@ export function WikiPreviewTooltip({ wikiTitle, children }: WikiPreviewTooltipPr
     visible && mounted
       ? createPortal(
           <div
-            className="pointer-events-none fixed z-[var(--z-depth-tooltip)]"
+            className="z-tooltip pointer-events-none fixed"
             style={{
               top: position.top,
               left: position.left,
               transform: "translate(-100%, -50%)",
             }}
           >
-            <div className="border-border bg-popover pointer-events-auto w-64 rounded-lg border p-3 shadow-lg">
-              <h4 className="text-foreground mb-1 text-sm font-semibold">{wikiTitle}</h4>
+            <div className="border-separator bg-surface-elevated rounded-control shadow-floating pointer-events-auto w-64 border p-3">
+              <h4 className="text-label text-headline mb-1">{wikiTitle}</h4>
               {isLoading ? (
-                <div className="text-muted-foreground flex items-center gap-2 py-2 text-xs">
+                <div className="text-label-secondary text-footnote flex items-center gap-2 py-2">
                   <Loader2 className="h-3 w-3 animate-spin" />
                   Loading...
                 </div>
               ) : intro ? (
-                <p className="text-muted-foreground text-xs leading-relaxed">
+                <p className="text-label-secondary text-footnote leading-relaxed">
                   {firstSentences(
                     typeof intro === "string"
                       ? intro
@@ -103,11 +103,11 @@ export function WikiPreviewTooltip({ wikiTitle, children }: WikiPreviewTooltipPr
                   )}
                 </p>
               ) : (
-                <p className="text-muted-foreground text-xs">No article found.</p>
+                <p className="text-label-secondary text-footnote">No article found.</p>
               )}
               <Link
                 href={titleToWikiOSPath(wikiTitle)}
-                className="text-primary mt-2 flex items-center gap-1 text-xs font-medium hover:underline"
+                className="text-tint text-caption mt-2 flex items-center gap-1 hover:underline"
               >
                 Open on Wiki
                 <ExternalLink className="h-3 w-3" />

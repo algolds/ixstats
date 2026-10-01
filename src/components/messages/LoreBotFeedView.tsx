@@ -6,7 +6,6 @@ import Link from "next/link";
 // oxlint-disable-next-line eslint/no-unused-vars
 import {
   OpenBook as BookOpen,
-  Search,
   Eye,
   Bookmark,
   ClockRotateRight as History,
@@ -18,8 +17,12 @@ import {
   EditPencil as Edit3,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { cn } from "~/lib/utils";
-import { Input } from "~/components/ui/input";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
+import { SearchField } from "~/components/ui/search-field";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { springSmooth } from "~/lib/design/motion";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 // oxlint-disable-next-line eslint/no-unused-vars
@@ -172,87 +175,63 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
   return (
     <div className="flex h-full flex-col">
       {/* Top Filter & Search Controls */}
-      <div className="border-border/40 border-b bg-cyan-500/[0.02] p-3 backdrop-blur-md dark:bg-cyan-500/[0.04]">
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-          {/* Spring Pills */}
-          <div className="flex scrollbar-none items-center gap-1 overflow-x-auto">
-            {filterTabs.map((tab) => {
-              const isActive = activeFilter === tab.id;
+      <div className="border-separator border-b p-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <SegmentedControl
+            size="sm"
+            aria-label="Lore feed filter"
+            value={activeFilter}
+            onValueChange={(value) => {
+              soundEffects.toggle();
+              setActiveFilter(value);
+            }}
+            options={filterTabs.map((tab) => {
               const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    soundEffects.toggle();
-                    setActiveFilter(tab.id);
-                  }}
-                  className={cn(
-                    "relative flex cursor-pointer items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-95",
-                    isActive
-                      ? "text-cyan-400 shadow-2xs"
-                      : "text-muted-foreground hover:bg-accent/15 hover:text-foreground"
-                  )}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="lorebot-filter-pill"
-                      className="absolute inset-0 rounded-xl border border-cyan-500/30 bg-cyan-500/10 shadow-xs"
-                      transition={{ type: "spring", stiffness: 450, damping: 30 }}
-                    />
-                  )}
-                  <Icon className="relative z-10 h-3.5 w-3.5" />
-                  <span className="relative z-10">{tab.label}</span>
-                </button>
-              );
+              return { value: tab.id, label: tab.label, icon: <Icon /> };
             })}
-          </div>
+            className="max-w-full scrollbar-none overflow-x-auto"
+          />
 
-          {/* Search bar */}
-          <div className="relative max-w-xs min-w-[180px]">
-            <Search className="text-muted-foreground/60 absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter lore updates..."
-              className="border-border/40 bg-background/50 h-8 rounded-xl pl-8 text-xs backdrop-blur-xs"
-            />
-          </div>
+          <SearchField
+            size="sm"
+            containerClassName="max-w-xs min-w-[180px]"
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+            placeholder="Filter lore updates..."
+            aria-label="Filter lore updates"
+          />
         </div>
       </div>
 
       {/* Main Stream */}
       <div
         className="flex-1 scrollbar-none space-y-3 overflow-y-auto p-4"
-        style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(128,128,128,0.2) transparent" }}
+        style={{ scrollbarWidth: "thin" }}
       >
         {isLoading ? (
           <div className="flex h-64 flex-col items-center justify-center gap-3">
-            <div className="flex h-10 w-10 animate-pulse items-center justify-center rounded-2xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-400 shadow-sm">
-              <BookOpen className="h-5 w-5" />
-            </div>
-            <p className="text-muted-foreground text-xs font-semibold">
-              Syncing LoreBot dispatches...
-            </p>
+            <span className="border-tint size-5 animate-spin rounded-full border-2 border-t-transparent" />
+            <p className="text-footnote text-label-secondary">Syncing LoreBot dispatches...</p>
           </div>
         ) : filteredItems.length === 0 ? (
-          <div className="mx-auto flex max-w-sm flex-col items-center justify-center py-16 text-center">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-400 shadow-sm">
-              <BookOpen className="h-6 w-6" />
-            </div>
-            <h4 className="text-foreground text-sm font-semibold">No lore activity found</h4>
-            <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-              {searchQuery
+          <EmptyState
+            className="mx-auto max-w-sm py-16"
+            icon={<BookOpen />}
+            title="No lore activity found"
+            message={
+              searchQuery
                 ? `No articles match "${searchQuery}" in this filter.`
-                : "Watch pages in WikiOS to receive personalized live dispatches right here."}
-            </p>
-            <Link
-              href="/wikios"
-              className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3.5 py-1.5 text-xs font-semibold text-cyan-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500/20 active:scale-95"
-            >
-              <span>Explore WikiOS</span>
-              <ArrowUpRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
+                : "Watch pages in WikiOS to receive personalized live dispatches right here."
+            }
+            action={
+              <Button asChild variant="tinted" size="sm">
+                <Link href="/wikios">
+                  <span>Explore WikiOS</span>
+                  <ArrowUpRight aria-hidden="true" />
+                </Link>
+              </Button>
+            }
+          />
         ) : (
           <AnimatePresence initial={false}>
             {filteredItems.map((item) => (
@@ -261,99 +240,93 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                className="group border-border/50 bg-card/65 hover:bg-card/90 relative rounded-2xl border p-4 shadow-2xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-cyan-500/30 hover:shadow-md"
+                transition={springSmooth}
+                className="group bg-surface-secondary rounded-row relative p-4"
               >
                 {/* Top Badge & Author Line */}
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
                     {/* Source badge */}
                     {item.type === "new" ? (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-bold tracking-wider text-emerald-500 uppercase">
-                        <FilePlus className="h-3 w-3" />
+                      <Badge variant="success">
+                        <FilePlus aria-hidden="true" />
                         New Article
-                      </span>
+                      </Badge>
                     ) : item.type === "watchlist" ? (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs font-bold tracking-wider text-amber-500 uppercase">
-                        <Eye className="h-3 w-3" />
+                      <Badge variant="caution">
+                        <Eye aria-hidden="true" />
                         Watchlist
-                      </span>
+                      </Badge>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-xs font-bold tracking-wider text-cyan-400 uppercase">
-                        <Edit3 className="h-3 w-3" />
+                      <Badge variant="info">
+                        <Edit3 aria-hidden="true" />
                         Revision
-                      </span>
+                      </Badge>
                     )}
 
                     {/* Delta badge */}
                     {item.delta !== 0 && (
-                      <span
-                        className={cn(
-                          "rounded-md px-1.5 py-0.5 text-xs font-bold tabular-nums",
-                          item.delta > 0
-                            ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
-                            : "border border-amber-500/20 bg-amber-500/10 text-amber-400"
-                        )}
+                      <Badge
+                        variant={item.delta > 0 ? "success" : "warning"}
+                        className="tabular-nums"
                       >
                         {item.delta > 0 ? `+${item.delta} B` : `${item.delta} B`}
-                      </span>
+                      </Badge>
                     )}
 
                     {/* Watched tag */}
                     {item.isWatched && item.type !== "watchlist" && (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-xs font-semibold text-amber-400">
-                        <Eye className="h-2.5 w-2.5" />
+                      <Badge variant="neutral">
+                        <Eye aria-hidden="true" />
                         Watched
-                      </span>
+                      </Badge>
                     )}
                   </div>
 
                   {/* Timestamp */}
-                  <span className="text-muted-foreground/70 flex items-center gap-1 text-xs font-medium tabular-nums">
-                    <Clock className="h-3 w-3" />
+                  <span className="text-footnote text-label-secondary flex items-center gap-1 tabular-nums">
+                    <Clock className="size-3.5" aria-hidden="true" />
                     {formatTimestamp(item.timestamp)}
                   </span>
                 </div>
 
                 {/* Article Header & Excerpt */}
                 <div className="mb-3">
-                  <h4 className="text-foreground text-sm font-bold tracking-tight transition-colors group-hover:text-cyan-400">
+                  <h4 className="text-headline text-label group-hover:text-tint transition-colors">
                     <Link href={titleToWikiOSRoute(item.title)} className="hover:underline">
                       {item.title}
                     </Link>
                   </h4>
 
                   {item.comment && (
-                    <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed font-normal">
-                      <span className="text-foreground/80 font-semibold">{item.user}: </span>
+                    <p className="text-callout text-label-secondary mt-1 line-clamp-2">
+                      <span className="text-label font-medium">{item.user}: </span>
                       {item.comment}
                     </p>
                   )}
                 </div>
 
                 {/* Bottom Action Tray */}
-                <div className="border-border/30 flex items-center justify-between gap-2 border-t pt-2.5">
-                  <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-                    <User className="h-3 w-3" />
-                    <span className="text-foreground/80 font-medium">{item.user}</span>
+                <div className="border-separator flex items-center justify-between gap-2 border-t pt-2">
+                  <div className="text-footnote text-label-secondary flex items-center gap-1">
+                    <User className="size-3.5" aria-hidden="true" />
+                    <span className="text-label font-medium">{item.user}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Link
-                      href={`${titleToWikiOSRoute(item.title)}?tab=history`}
-                      className="border-border/40 bg-accent/20 text-muted-foreground hover:bg-accent/40 hover:text-foreground inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
-                    >
-                      <History className="h-3 w-3" />
-                      <span>History</span>
-                    </Link>
+                    <Button asChild variant="gray" size="sm">
+                      <Link href={`${titleToWikiOSRoute(item.title)}?tab=history`}>
+                        <History aria-hidden="true" />
+                        <span>History</span>
+                      </Link>
+                    </Button>
 
-                    <Link
-                      href={titleToWikiOSRoute(item.title)}
-                      className="inline-flex items-center gap-1 rounded-lg bg-cyan-600 px-3 py-1 text-xs font-semibold text-white shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-cyan-500 active:scale-95"
-                    >
-                      <span>Read in WikiOS</span>
-                      <ArrowUpRight className="h-3 w-3" />
-                    </Link>
+                    <Button asChild variant="tinted" size="sm">
+                      <Link href={titleToWikiOSRoute(item.title)}>
+                        <span>Read in WikiOS</span>
+                        <ArrowUpRight aria-hidden="true" />
+                      </Link>
+                    </Button>
                   </div>
                 </div>
               </motion.div>

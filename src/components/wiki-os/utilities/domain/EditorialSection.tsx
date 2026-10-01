@@ -23,7 +23,7 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
       icon: ViewGrid,
       href: "/util/templates",
       badge: "Builder Suite",
-      color: "border-indigo-500/20 bg-indigo-500/10 text-indigo-400",
+      color: "border-indigo/20 bg-indigo/10 text-indigo",
     },
     {
       id: "diff-suite",
@@ -33,7 +33,7 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
       icon: GitCommit,
       href: "/util/diff",
       badge: "Scrubbable",
-      color: "border-blue-500/20 bg-blue-500/10 text-blue-400",
+      color: "border-blue/20 bg-blue/10 text-blue",
     },
     {
       id: "editor",
@@ -43,7 +43,7 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
       icon: EditPencil,
       href: "/wiki/Main_Page?action=edit",
       badge: "WYSIWYG",
-      color: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
+      color: "border-green/20 bg-green/10 text-green",
     },
     {
       id: "export",
@@ -54,7 +54,7 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
       icon: Download,
       href: "/util/export",
       badge: "XML",
-      color: "border-amber-500/20 bg-amber-500/10 text-amber-400",
+      color: "border-yellow/20 bg-yellow/10 text-yellow",
     },
     {
       id: "search",
@@ -65,7 +65,7 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
       icon: PageSearch,
       href: "/util/search",
       badge: "Ranked",
-      color: "border-cyan-500/20 bg-cyan-500/10 text-cyan-400",
+      color: "border-teal/20 bg-teal/10 text-teal",
     },
   ];
 
@@ -82,8 +82,8 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 px-1">
-        <EditPencil className="h-4 w-4 text-indigo-400" />
-        <h3 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+        <EditPencil className="text-indigo h-4 w-4" />
+        <h3 className="text-label-secondary text-subhead">
           Editorial & Tooling ({filtered.length})
         </h3>
       </div>
@@ -97,31 +97,29 @@ export function EditorialSection({ searchFilter }: EditorialSectionProps) {
               href={withBasePath(tool.href)}
               data-cuelume-press="press"
               data-cuelume-hover="tick"
-              className="group border-border/40 bg-card/60 hover:border-wiki/40 hover:bg-card/90 relative flex flex-col justify-between rounded-xl border p-4 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98]"
+              className="group border-separator bg-surface hover:border-tint/40 hover:bg-surface rounded-row hover:shadow-floating relative flex flex-col justify-between border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
             >
               <div>
                 <div className="mb-3 flex items-center justify-between">
                   <div
-                    className={`flex h-9 w-9 items-center justify-center rounded-lg border bg-gradient-to-br ${tool.color}`}
+                    className={`rounded-control flex h-9 w-9 items-center justify-center border ${tool.color}`}
                   >
                     <Icon className="h-4 w-4" />
                   </div>
-                  <span className="border-border/40 bg-secondary/50 text-muted-foreground rounded-full border px-2 py-0.5 text-xs font-medium">
+                  <span className="border-separator bg-fill-3 text-label-secondary text-caption rounded-full border px-2 py-0.5">
                     {tool.badge}
                   </span>
                 </div>
 
-                <h4 className="text-foreground group-hover:text-wiki text-sm font-semibold">
-                  {tool.title}
-                </h4>
-                <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
+                <h4 className="text-label group-hover:text-tint text-headline">{tool.title}</h4>
+                <p className="text-label-secondary text-footnote mt-1 line-clamp-2">
                   {tool.description}
                 </p>
               </div>
 
-              <div className="border-border/30 text-muted-foreground mt-4 flex items-center justify-between border-t pt-3 text-xs">
-                <span className="font-mono text-xs opacity-70">{tool.legacyAlias}</span>
-                <ArrowRight className="text-muted-foreground group-hover:text-wiki h-3 w-3 transition-transform duration-200 group-hover:translate-x-1" />
+              <div className="border-separator text-label-secondary text-footnote mt-4 flex items-center justify-between border-t pt-3">
+                <span className="text-footnote tabular-nums opacity-70">{tool.legacyAlias}</span>
+                <ArrowRight className="text-label-secondary group-hover:text-tint h-3 w-3 transition-transform duration-200 group-hover:translate-x-1" />
               </div>
             </Link>
           );

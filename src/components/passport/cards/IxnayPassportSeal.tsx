@@ -11,22 +11,18 @@ export interface IxnayPassportSealProps {
 
 const sizeConfig = {
   sm: {
-    container: "h-9 w-9 rounded-xl p-1",
+    container: "h-9 w-9 rounded-row p-1",
   },
   md: {
-    container: "h-11 w-11 rounded-2xl p-1.5",
+    container: "h-11 w-11 rounded-card p-2",
   },
   lg: {
-    container: "h-14 w-14 rounded-3xl p-2",
+    container: "h-14 w-14 rounded-card p-2",
   },
 };
 
 /**
- * IxnayPassportSeal (/apple-design)
- *
- * Official Ixnay sovereign passport seal medallion.
- * Built with Apple design restraint: precision frosted glass, micro-specular rim highlight,
- * and zero distortion filters.
+ * IxnayPassportSeal: the Ixnay emblem on a faint fill medallion (decorative).
  */
 export const IxnayPassportSeal = memo(function IxnayPassportSeal({
   size = "md",
@@ -38,21 +34,18 @@ export const IxnayPassportSeal = memo(function IxnayPassportSeal({
   return (
     <div
       className={cn(
-        "group relative flex shrink-0 items-center justify-center overflow-hidden select-none",
-        "border border-black/[0.08] dark:border-white/[0.12]",
-        "bg-black/[0.03] backdrop-blur-md dark:bg-white/[0.06]",
-        "shadow-[inset_0_2px_6px_rgba(0,0,0,0.35)]",
-        "transition-transform duration-150 ease-out active:scale-[0.96]",
+        // v2 medallion: a faint fill with an inset (pressed-in) shadow; the emblem grows on hover.
+        "group/seal bg-fill-4 border-separator relative flex shrink-0 items-center justify-center overflow-hidden border shadow-[inset_0_2px_6px_rgb(0_0_0/0.35)] select-none",
         config.container,
         className
       )}
       aria-hidden="true"
     >
-      {/* Official Crisp Ixnay Emblem (Original Colors & Zero Distortion) */}
+      {/* Official Ixnay emblem (original colours) */}
       <img
         src={logoUrl}
-        alt="Ixnay"
-        className="h-full w-full object-contain filter transition-transform duration-200 ease-out select-none group-hover:scale-105 dark:brightness-110"
+        alt=""
+        className="ease-out-facet h-full w-full object-contain transition-[scale] duration-200 select-none group-hover/seal:scale-105 motion-reduce:transition-none motion-reduce:group-hover/seal:scale-100"
       />
     </div>
   );

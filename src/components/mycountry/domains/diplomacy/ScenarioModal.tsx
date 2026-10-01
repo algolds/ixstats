@@ -8,12 +8,12 @@ import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { FacetCard } from "~/components/ui/facet-container";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "~/components/ui/sheet";
 
 export interface ResponseOption {
   id?: string;
@@ -50,38 +50,40 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
     if (!scenario) return null;
 
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Flash className="text-muted-foreground h-5 w-5" />
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent size="wide" className="overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Flash className="text-label-secondary h-5 w-5" />
               Cultural Exchange Scenario
-            </DialogTitle>
-            <DialogDescription>
+            </SheetTitle>
+            <SheetDescription>
               Interactive scenario with diplomatic choices and outcomes
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
 
           <div className="space-y-6">
-            <FacetCard surface="solid" className="rounded-xl p-5">
-              <h4 className="text-foreground mb-3 text-base font-semibold">{scenario.title}</h4>
-              <p className="text-muted-foreground text-sm whitespace-pre-line">
+            <FacetCard variant="inset" className="p-5">
+              <h4 className="text-label text-title-3 mb-3">{scenario.title}</h4>
+              <p className="text-label-secondary text-body whitespace-pre-line">
                 {scenario.narrative}
               </p>
             </FacetCard>
 
             {scenario.responseOptions && scenario.responseOptions.length > 0 && (
               <div className="space-y-3">
-                <h5 className="text-foreground text-sm font-semibold">How will you respond?</h5>
+                <h5 className="text-label text-headline">How will you respond?</h5>
                 {scenario.responseOptions.map((option: ResponseOption, index: number) => {
                   const outcome = option.predictedOutcomes?.immediate;
                   const signed = (n: number) => `${n > 0 ? "+" : ""}${n}`;
                   return (
-                    <FacetCard key={option.id || index} surface="solid" className="rounded-xl p-4">
+                    <FacetCard variant="inset" key={option.id || index} className="p-4">
                       <div className="mb-3 flex items-start justify-between gap-3">
                         <div>
-                          <h6 className="text-foreground text-sm font-medium">{option.label}</h6>
-                          <p className="text-muted-foreground mt-1 text-sm">{option.description}</p>
+                          <h6 className="text-label text-body font-medium">{option.label}</h6>
+                          <p className="text-label-secondary text-body mt-1">
+                            {option.description}
+                          </p>
                         </div>
                         <Button
                           size="sm"
@@ -93,7 +95,7 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
                       </div>
 
                       {option.requirements && option.requirements.length > 0 && (
-                        <div className="mb-3 flex flex-wrap gap-1.5">
+                        <div className="mb-3 flex flex-wrap gap-2">
                           {option.requirements.map((req, reqIdx: number) => (
                             <Badge key={reqIdx} variant="outline">
                               {req.skill} {req.level}+
@@ -109,10 +111,8 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
                             { label: "Diplomatic", value: signed(outcome.diplomaticChange ?? 0) },
                             { label: "Cost", value: String(outcome.economicCost ?? 0) },
                           ].map((m) => (
-                            <div key={m.label} className="bg-muted/50 rounded-lg p-2">
-                              <dd className="text-foreground text-lg font-semibold tabular-nums">
-                                {m.value}
-                              </dd>
+                            <div key={m.label} className="bg-fill-3 rounded-control p-2">
+                              <dd className="text-label text-title-3 tabular-nums">{m.value}</dd>
                               <dt>
                                 <Eyebrow>{m.label}</Eyebrow>
                               </dt>
@@ -126,8 +126,8 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
               </div>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     );
   }
 );

@@ -26,6 +26,7 @@ import { type LocalDraft, type PausedSession } from "../types";
 import { listDrafts } from "~/lib/wiki-os/editor/draft-store";
 import { pageRefPath } from "~/lib/wiki-os/page-ref";
 import type { WikiSource } from "~/lib/wiki-os/config";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 export interface WikiViewProps extends DIViewProps {}
 
@@ -182,10 +183,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
               style={{ backgroundColor: themeColors.primary }}
             />
           )}
-          <PreText
-            className="text-foreground max-w-[200px] truncate text-sm font-semibold"
-            whiteSpace="nowrap"
-          >
+          <PreText className="text-label text-headline max-w-[200px] truncate" whiteSpace="nowrap">
             {articleTitle || "IxWiki Workspace"}
           </PreText>
         </div>
@@ -194,45 +192,56 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
         <div className="flex items-center gap-1">
           {onSwitchMode && (
             <>
-              <button
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 type="button"
                 onClick={() => onSwitchMode("search")}
-                className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+                className="text-label-secondary hover:text-label"
                 title="Global Search"
+                aria-label="Global Search"
               >
-                <Search className="h-3.5 w-3.5" />
-              </button>
-              <button
+                <Search aria-hidden />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 type="button"
                 onClick={() => onSwitchMode("notifications")}
-                className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+                className="text-label-secondary hover:text-label"
                 title="Notifications"
+                aria-label="Notifications"
               >
-                <Bell className="h-3.5 w-3.5" />
-              </button>
-              <button
+                <Bell aria-hidden />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 type="button"
                 onClick={() => onSwitchMode("settings")}
-                className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md transition-colors"
+                className="text-label-secondary hover:text-label"
                 title="Settings"
+                aria-label="Settings"
               >
-                <Settings className="h-3.5 w-3.5" />
-              </button>
+                <Settings aria-hidden />
+              </Button>
             </>
           )}
           {articleTitle && !isMainPage && isSignedIn && (
             <Button
-              size="sm"
               variant="ghost"
               onClick={handleToggleStash}
               disabled={isStashPending}
+              size="icon-sm"
+              aria-pressed={isStashed}
               className={cn(
-                "h-7 w-7 rounded-full p-0 transition-colors",
+                "rounded-full",
                 isStashed
-                  ? "text-amber-400 hover:text-amber-300"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? "text-yellow hover:text-yellow"
+                  : "text-label-secondary hover:text-label"
               )}
               title={isStashed ? "Remove from Stash" : "Save to Stash"}
+              aria-label={isStashed ? "Remove from Stash" : "Save to Stash"}
             >
               {isStashPending ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -242,13 +251,14 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
             </Button>
           )}
           <Button
-            size="sm"
+            size="icon-sm"
             variant="ghost"
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground h-7 w-7 rounded-full p-0"
+            className="text-label-secondary hover:text-label"
             title="Close"
+            aria-label="Close"
           >
-            <X className="h-3.5 w-3.5" />
+            <X aria-hidden />
           </Button>
         </div>
       </div>
@@ -262,45 +272,24 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
 
       {/* Segmented Tab Switcher (Workspace vs Narrator) */}
       {hasNarratorAccess && narratorState && narratorState.totalBlocks > 0 && (
-        <div className="bg-accent/15 mb-3 flex w-full rounded-lg p-0.5">
-          <button
-            type="button"
-            onClick={() => setWikiTab("workspace")}
-            className={cn(
-              "flex-1 cursor-pointer rounded-md py-1 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-              wikiTab === "workspace"
-                ? "bg-white text-zinc-900 shadow-sm dark:bg-white/15 dark:text-white"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Workspace
-          </button>
-          <button
-            type="button"
-            onClick={() => setWikiTab("narrator")}
-            className={cn(
-              "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md py-1 text-center text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-              wikiTab === "narrator"
-                ? "bg-white text-blue-600 shadow-sm dark:bg-white/15 dark:text-blue-400"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <span>Narrator</span>
-            <span
-              className={cn(
-                "py-0.2 rounded-full px-1.5 text-xs font-bold tracking-widest uppercase transition-colors",
-                wikiTab === "narrator"
-                  ? "border border-blue-500/30 bg-blue-500/20 text-blue-400"
-                  : "border border-white/5 bg-white/10 text-zinc-400"
-              )}
-            >
-              BETA
-            </span>
-            {narratorState?.isPlaying && (
-              <span className="ml-0.5 flex h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
-            )}
-          </button>
-        </div>
+        <SegmentedControl
+          aria-label="Wiki panel"
+          asTabs
+          fullWidth
+          size="sm"
+          className="mb-3"
+          value={wikiTab}
+          onValueChange={setWikiTab}
+          options={[
+            { value: "workspace", label: "Workspace" },
+            {
+              value: "narrator",
+              label: "Narrator",
+              badge: narratorState?.isPlaying ? "Beta · playing" : "Beta",
+              badgeLabel: narratorState?.isPlaying ? "beta, playing" : "beta",
+            },
+          ]}
+        />
       )}
 
       {/* Tab 1: Narrator Player Focus (Restricted) */}

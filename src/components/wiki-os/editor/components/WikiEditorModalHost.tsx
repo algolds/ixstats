@@ -4,8 +4,12 @@
 
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
-import { Puzzle, Xmark as X } from "iconoir-react";
+import { Puzzle } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
 import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
 import { useEditorModalContext } from "../context/EditorModalContext";
@@ -16,19 +20,31 @@ const ImageSearchModal = dynamic(
   { ssr: false }
 );
 const InfoboxCountryModal = dynamic(
-  () => import("~/components/wiki-os/editor/template-modals/InfoboxCountryModal").then((m) => m.InfoboxCountryModal),
+  () =>
+    import("~/components/wiki-os/editor/template-modals/InfoboxCountryModal").then(
+      (m) => m.InfoboxCountryModal
+    ),
   { ssr: false }
 );
 const CountryStatsModal = dynamic(
-  () => import("~/components/wiki-os/editor/template-modals/CountryStatsModal").then((m) => m.CountryStatsModal),
+  () =>
+    import("~/components/wiki-os/editor/template-modals/CountryStatsModal").then(
+      (m) => m.CountryStatsModal
+    ),
   { ssr: false }
 );
 const BusinessStatsModal = dynamic(
-  () => import("~/components/wiki-os/editor/template-modals/BusinessStatsModal").then((m) => m.BusinessStatsModal),
+  () =>
+    import("~/components/wiki-os/editor/template-modals/BusinessStatsModal").then(
+      (m) => m.BusinessStatsModal
+    ),
   { ssr: false }
 );
 const MapCoordsModal = dynamic(
-  () => import("~/components/wiki-os/editor/template-modals/MapCoordsModal").then((m) => m.MapCoordsModal),
+  () =>
+    import("~/components/wiki-os/editor/template-modals/MapCoordsModal").then(
+      (m) => m.MapCoordsModal
+    ),
   { ssr: false }
 );
 
@@ -170,23 +186,18 @@ function TemplateEditorDialog({
   );
 
   return (
-    <div className="wikios-modal-backdrop" onClick={onClose}>
-      <div
-        className="wikios-quick-modal wikios-ve-template-dialog"
-        onClick={(e) => e.stopPropagation()}
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        aria-describedby={undefined}
+        className="flex max-h-[80vh] max-w-lg flex-col gap-0 overflow-hidden p-0"
       >
-        <div className="wikios-quick-modal-header">
-          <div className="wikios-quick-modal-title">
-            <Puzzle className="h-4 w-4" />
-            <span>Edit: {templateName}</span>
-          </div>
-          <button onClick={onClose} className="wikios-quick-modal-close">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="wikios-quick-modal-body">
+        <DialogTitle className="border-separator text-headline flex items-center gap-2 border-b px-5 py-4 pr-14">
+          <Puzzle className="text-tint size-4" aria-hidden="true" />
+          Edit: {templateName}
+        </DialogTitle>
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4">
           {loading && (
-            <div className="text-muted-foreground py-4 text-center text-xs">
+            <div className="text-label-secondary text-footnote py-4 text-center">
               Loading template schema...
             </div>
           )}
@@ -195,15 +206,15 @@ function TemplateEditorDialog({
             <div className="wikios-ve-template-field">
               <label className="wikios-ve-template-field-label">
                 Wikitext{" "}
-                <span className="text-muted-foreground">
+                <span className="text-label-secondary">
                   (no TemplateData schema — edit source directly)
                 </span>
               </label>
-              <textarea
+              <Textarea
                 value={rawWikitext}
                 onChange={(e) => setRawWikitext(e.target.value)}
                 rows={5}
-                className="border-border/40 bg-background text-foreground focus:border-wiki/60 w-full rounded-lg border px-2 py-1.5 font-mono text-xs outline-none"
+                className="text-footnote font-mono"
               />
             </div>
           )}
@@ -219,11 +230,10 @@ function TemplateEditorDialog({
                   {meta.description && (
                     <div className="wikios-ti-param-desc">{meta.description}</div>
                   )}
-                  <input
+                  <Input
                     type="text"
                     value={values[key] ?? ""}
                     onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
-                    className="wikios-ti-param-input"
                     placeholder={meta.example ?? `Enter ${meta.label ?? key}...`}
                   />
                 </div>
@@ -232,11 +242,10 @@ function TemplateEditorDialog({
               {extraKeys.map((key) => (
                 <div key={key} className="wikios-ve-template-field">
                   <label className="wikios-ve-template-field-label">{key}</label>
-                  <input
+                  <Input
                     type="text"
                     value={values[key] ?? ""}
                     onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
-                    className="wikios-ti-param-input"
                     placeholder={`Enter ${key}...`}
                   />
                 </div>
@@ -251,19 +260,16 @@ function TemplateEditorDialog({
             />
           )}
         </div>
-        <div className="wikios-ve-template-dialog-footer">
-          <button onClick={onRemove} className="wikios-ve-template-remove">
+        <div className="border-separator flex items-center justify-between gap-2 border-t px-5 py-3">
+          <Button variant="plain" size="sm" onClick={onRemove} className="text-red">
             Remove template
-          </button>
-          <div className="wikios-ve-template-dialog-actions">
-            <button
-              onClick={() => setShowPreview(!showPreview)}
-              className="wikios-ve-btn wikios-ve-btn-ghost"
-              type="button"
-            >
+          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="gray" size="sm" onClick={() => setShowPreview(!showPreview)}>
               {showPreview ? "Hide Preview" : "Preview"}
-            </button>
-            <button
+            </Button>
+            <Button
+              size="sm"
               onClick={() => {
                 if (hasSchema || !onSaveRaw) {
                   onSave(values);
@@ -271,14 +277,12 @@ function TemplateEditorDialog({
                   onSaveRaw(rawWikitext.trim());
                 }
               }}
-              className="wikios-ve-btn wikios-ve-btn-primary"
-              type="button"
             >
               Update Template
-            </button>
+            </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

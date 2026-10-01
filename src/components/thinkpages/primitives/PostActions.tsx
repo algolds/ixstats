@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
+import React, { useState, useCallback, useRef } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { cn } from "~/lib/utils";
 import {
   Heart,
@@ -18,6 +18,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getQueryKey } from "@trpc/react-query";
 
 import { updateReactionsInCacheData, updatePostReactionsList } from "./ReactionCacheUpdater";
+import { ActionPill } from "~/components/ui/action-pill";
 
 interface PostActionsProps {
   postId: string;
@@ -76,30 +77,6 @@ export function PostActions({
   const [showReactionPopup, setShowReactionPopup] = useState(false);
   const [showRepostModal, setShowRepostModal] = useState(false);
   const reactionButtonRef = useRef<HTMLButtonElement>(null);
-
-  // Close reaction popup when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        showReactionPopup &&
-        reactionButtonRef.current &&
-        !reactionButtonRef.current.contains(event.target as Node)
-      ) {
-        // Check if the click is on the popup itself
-        const popupElement = document.querySelector("[data-reaction-popup]");
-        if (popupElement && popupElement.contains(event.target as Node)) {
-          return; // Don't close if clicking on the popup
-        }
-        setShowReactionPopup(false);
-      }
-    };
-
-    if (showReactionPopup) {
-      document.addEventListener("click", handleClickOutside);
-      return () => document.removeEventListener("click", handleClickOutside);
-    }
-    return;
-  }, [showReactionPopup]);
 
   // oxlint-disable-next-line eslint/no-unused-vars
   const utils = api.useUtils();
@@ -453,70 +430,45 @@ export function PostActions({
     onShare?.(postId);
   }, [postId, onShare, notify]);
 
-  const iconSize = size === "sm" ? "h-3.5 w-3.5" : size === "lg" ? "h-5 w-5" : "h-4 w-4";
-  const pillPadding =
-    size === "sm"
-      ? "px-2 py-1 text-xs"
-      : size === "lg"
-        ? "px-3.5 py-2 text-sm"
-        : "px-2.5 py-1.5 text-xs";
+  // ActionPill (spec §7.2) has two sizes; the large toolbar uses the standalone `md` pill.
+  const pillSize = size === "sm" ? "sm" : "md";
 
   return (
     <div className={cn("flex items-center justify-between", className)}>
-      <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
-        {/* Reply Button */}
-        <button
-          type="button"
+      <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+        {/* Reply */}
+        <ActionPill
+          size={pillSize}
+          tone="blue"
+          icon={<MessageCircle />}
+          count={showCounts && replyCount > 0 ? replyCount : undefined}
           onClick={() => onReply?.(postId)}
-          className={cn(
-            "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-95",
-            pillPadding,
-            "text-muted-foreground hover:bg-blue-500/10 hover:text-blue-500 dark:hover:bg-blue-500/15"
-          )}
           aria-label="Reply to post"
         >
-          <MessageCircle
-            className={cn(
-              iconSize,
-              "transition-transform duration-200 group-hover:scale-110 group-active:scale-90"
-            )}
-          />
-          <span>Reply</span>
-          {showCounts && replyCount > 0 && (
-            <span className="font-semibold tabular-nums">{replyCount}</span>
-          )}
-        </button>
+          Reply
+        </ActionPill>
 
-        {/* Repost Button */}
-        <button
-          type="button"
+        {/* Repost */}
+        <ActionPill
+          size={pillSize}
+          pressed={isReposted}
+          icon={<Repeat2 />}
+          count={showCounts && repostCount > 0 ? repostCount : undefined}
           onClick={handleRepost}
-          className={cn(
-            "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-95",
-            pillPadding,
-            isReposted
-              ? "bg-emerald-500/10 font-semibold text-emerald-500 dark:bg-emerald-500/15"
-              : "text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-500 dark:hover:bg-emerald-500/15"
-          )}
           aria-label="Repost"
         >
-          <Repeat2
-            className={cn(
-              iconSize,
-              "transition-transform duration-200 group-hover:rotate-45 group-active:scale-90"
-            )}
-          />
-          <span>Repost</span>
-          {showCounts && repostCount > 0 && (
-            <span className="font-semibold tabular-nums">{repostCount}</span>
-          )}
-        </button>
+          Repost
+        </ActionPill>
 
-        {/* Like/Reaction Button */}
+        {/* Like / reaction */}
         <div className="relative">
-          <button
-            type="button"
+          <ActionPill
             ref={reactionButtonRef}
+            size={pillSize}
+            tone="pink"
+            pressed={isLiked || showReactionPopup}
+            icon={<Heart className={cn(isLiked && "fill-current")} />}
+            count={showCounts && likeCount > 0 ? likeCount : undefined}
             onClick={(e) => {
               e.stopPropagation();
               handleLike();
@@ -526,15 +478,7 @@ export function PostActions({
               e.stopPropagation();
               setShowReactionPopup(!showReactionPopup);
             }}
-            className={cn(
-              "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-95",
-              pillPadding,
-              isLiked
-                ? "bg-rose-500/10 font-semibold text-rose-500 dark:bg-rose-500/15"
-                : "text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500 dark:hover:bg-rose-500/15",
-              !currentUserAccountId && "cursor-not-allowed opacity-50",
-              showReactionPopup && "bg-rose-500/10 ring-2 ring-rose-500/40"
-            )}
+            className={cn(!currentUserAccountId && "cursor-not-allowed opacity-50")}
             title={
               currentUserAccountId
                 ? "Click to like (right-click for emoji reactions)"
@@ -542,101 +486,52 @@ export function PostActions({
             }
             aria-label="Like post"
           >
-            <Heart
-              className={cn(
-                iconSize,
-                "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 group-hover:scale-115 group-active:scale-90",
-                isLiked && "scale-105 fill-current"
-              )}
-            />
-            <span>{isLiked ? "Liked" : "Like"}</span>
-            {showCounts && likeCount > 0 && (
-              <span className="font-semibold tabular-nums">{likeCount}</span>
-            )}
-          </button>
+            {isLiked ? "Liked" : "Like"}
+          </ActionPill>
 
-          {/* Reaction Popup */}
-          {showReactionPopup &&
-            typeof window !== "undefined" &&
-            createPortal(
-              <div
-                className="fixed inset-0 bg-black/20 backdrop-blur-xs"
-                style={{ zIndex: 99998 }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowReactionPopup(false);
-                }}
-              >
-                <div
-                  className="pointer-events-auto fixed"
-                  data-reaction-popup
-                  style={{
-                    zIndex: 99999,
-                    // oxlint-disable-next-line
-                    top: reactionButtonRef.current
-                      ? // oxlint-disable-next-line
-                        Math.max(10, reactionButtonRef.current.getBoundingClientRect().top - 60)
-                      : 100,
-                    // oxlint-disable-next-line
-                    left: reactionButtonRef.current
-                      ? // oxlint-disable-next-line
-                        Math.max(10, reactionButtonRef.current.getBoundingClientRect().left - 140)
-                      : 100,
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <ReactionPopup
-                    onSelectReaction={handleReaction}
-                    postReactionCounts={reactionCounts}
-                  />
-                </div>
-              </div>,
-              document.body
-            )}
+          {/* Reaction popup, anchored to the like button (opened by right-click). */}
+          <Popover open={showReactionPopup} onOpenChange={setShowReactionPopup}>
+            <PopoverTrigger asChild>
+              <span
+                aria-hidden="true"
+                tabIndex={-1}
+                className="pointer-events-none absolute inset-0"
+              />
+            </PopoverTrigger>
+            <PopoverContent side="top" align="center" className="w-auto p-3">
+              <ReactionPopup
+                onSelectReaction={handleReaction}
+                postReactionCounts={reactionCounts}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
 
-        {/* Share Button */}
-        <button
-          type="button"
-          onClick={handleShare}
-          className={cn(
-            "group inline-flex cursor-pointer items-center gap-1.5 rounded-full font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-95",
-            pillPadding,
-            "text-muted-foreground hover:bg-cyan-500/10 hover:text-cyan-500 dark:hover:bg-cyan-500/15"
-          )}
-          aria-label="Share post"
-        >
-          <Share
-            className={cn(
-              iconSize,
-              "transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:scale-110 group-active:scale-90"
-            )}
-          />
-          <span>Share</span>
-        </button>
+        {/* Share */}
+        <ActionPill size={pillSize} icon={<Share />} onClick={handleShare} aria-label="Share post">
+          Share
+        </ActionPill>
       </div>
 
       {/* Repost Modal */}
-      {showRepostModal &&
-        createPortal(
-          <RepostModal
-            open={showRepostModal}
-            onOpenChange={setShowRepostModal}
-            originalPost={post}
-            countryId={countryId}
-            selectedAccount={accounts.find((acc) => acc.id === currentUserAccountId)}
-            accounts={accounts}
-            onAccountSelect={onAccountSelect}
-            onAccountSettings={onAccountSettings}
-            onCreateAccount={onCreateAccount}
-            isOwner={isOwner}
-            onPost={() => {
-              onRepost?.(postId);
-              setShowRepostModal(false);
-            }}
-          />,
-          document.body
-        )}
+      {showRepostModal && (
+        <RepostModal
+          open={showRepostModal}
+          onOpenChange={setShowRepostModal}
+          originalPost={post}
+          countryId={countryId}
+          selectedAccount={accounts.find((acc) => acc.id === currentUserAccountId)}
+          accounts={accounts}
+          onAccountSelect={onAccountSelect}
+          onAccountSettings={onAccountSettings}
+          onCreateAccount={onCreateAccount}
+          isOwner={isOwner}
+          onPost={() => {
+            onRepost?.(postId);
+            setShowRepostModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }

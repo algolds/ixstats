@@ -61,19 +61,17 @@ export function EconomicArchetypeModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="economic-archetype-modal-v2 border-border/60 bg-background/95 text-foreground flex h-[90vh] max-h-[90vh] w-full max-w-7xl flex-col gap-0 border p-0 shadow-2xl backdrop-blur-3xl dark:shadow-emerald-950/20">
+      <DialogContent className="economic-archetype-modal-v2 border-separator bg-background text-label shadow-floating flex h-[90vh] max-h-[90vh] w-full max-w-7xl flex-col gap-0 border p-0">
         {/* Header */}
-        <DialogHeader className="border-border/40 shrink-0 border-b bg-white/[0.02] px-6 py-5 dark:bg-black/[0.1]">
+        <DialogHeader className="border-separator bg-surface shrink-0 border-b px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex min-w-0 flex-1 items-center gap-4">
-              <div className="bg-muted/40 border-border/50 shrink-0 rounded-xl border p-3">
-                <Sparkles className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              <div className="bg-fill-3 border-separator rounded-row shrink-0 border p-3">
+                <Sparkles className="text-green h-5 w-5" />
               </div>
               <div className="min-w-0 space-y-1">
-                <DialogTitle className="text-foreground text-2xl font-bold tracking-tight">
-                  Economic Presets
-                </DialogTitle>
-                <DialogDescription className="text-muted-foreground text-sm leading-relaxed">
+                <DialogTitle className="text-label text-title-1">Economic Presets</DialogTitle>
+                <DialogDescription className="text-label-secondary text-body leading-relaxed">
                   Quick-start templates based on successful real-world economies
                 </DialogDescription>
               </div>
@@ -84,9 +82,9 @@ export function EconomicArchetypeModal({
         {/* Fallback Warning */}
         {isUsingFallback && !isLoading && (
           <div className="px-6 pt-4">
-            <Alert variant="default" className="border-yellow-500/30 bg-yellow-500/10">
-              <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-              <AlertDescription className="text-xs text-yellow-600 dark:text-yellow-400">
+            <Alert variant="default" className="border-caution/30 bg-caution/10">
+              <AlertTriangle className="text-caution h-4 w-4" />
+              <AlertDescription className="text-footnote text-caution">
                 Couldn&apos;t load the archetype catalog, so these are the built-in archetypes.
               </AlertDescription>
             </Alert>
@@ -104,10 +102,10 @@ export function EconomicArchetypeModal({
         </div>
 
         {/* Footer */}
-        <div className="border-border/40 shrink-0 border-t bg-white/[0.02] px-6 py-4 backdrop-blur-md dark:bg-black/[0.1]">
+        <div className="border-separator bg-surface shrink-0 border-t px-6 py-4">
           <div className="flex items-center justify-between gap-4">
-            <p className="text-muted-foreground flex items-center gap-2 text-sm leading-relaxed">
-              <Info className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <p className="text-label-secondary text-body flex items-center gap-2 leading-relaxed">
+              <Info className="text-green h-4 w-4 shrink-0" />
               <span>
                 Select an archetype to auto-populate components, then customize to fit your nation
               </span>
@@ -116,7 +114,7 @@ export function EconomicArchetypeModal({
               variant="outline"
               size="sm"
               onClick={() => onOpenChange(false)}
-              className="border-border hover:bg-accent hover:text-accent-foreground shrink-0"
+              className="border-separator hover:bg-fill-3 hover:text-label shrink-0"
             >
               Close
             </Button>

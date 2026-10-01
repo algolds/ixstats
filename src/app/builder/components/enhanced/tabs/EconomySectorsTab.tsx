@@ -260,40 +260,38 @@ export function EconomySectorsTab({
       />
 
       {/* 3. Search & Grid Selector (Component UX style) */}
-      <FacetCard depth="base" theme="emerald" className="border-emerald-500/10">
+      <FacetCard>
         <FacetCardContent className="space-y-5 p-6">
-          <div className="flex flex-col gap-4 border-b border-white/5 pb-4 md:flex-row md:items-center md:justify-between">
+          <div className="border-separator flex flex-col gap-4 border-b pb-4 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-wrap items-center gap-4">
               <Tabs
                 value={activeCategory}
                 onValueChange={(val) =>
-                  setActiveCategory(
-                    val as "all" | "primary" | "secondary" | "tertiary"
-                  )
+                  setActiveCategory(val as "all" | "primary" | "secondary" | "tertiary")
                 }
               >
-                <TabsList className="border border-white/10 bg-white/5 p-0.5">
-                  <TabsTrigger value="all" className="text-xs">
+                <TabsList className="border-separator bg-fill-4 border p-0.5">
+                  <TabsTrigger value="all" className="text-footnote">
                     All Sectors
                   </TabsTrigger>
-                  <TabsTrigger value="primary" className="text-xs">
+                  <TabsTrigger value="primary" className="text-footnote">
                     Primary
                   </TabsTrigger>
-                  <TabsTrigger value="secondary" className="text-xs">
+                  <TabsTrigger value="secondary" className="text-footnote">
                     Secondary
                   </TabsTrigger>
-                  <TabsTrigger value="tertiary" className="text-xs">
+                  <TabsTrigger value="tertiary" className="text-footnote">
                     Tertiary
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
 
-              <label className="flex cursor-pointer items-center gap-2 border-l border-white/10 pl-4 text-xs text-zinc-400 select-none">
+              <label className="border-separator text-footnote text-label-secondary flex cursor-pointer items-center gap-2 border-l pl-4 select-none">
                 <input
                   type="checkbox"
                   checked={localShowAdvanced}
                   onChange={(e) => setLocalShowAdvanced(e.target.checked)}
-                  className="rounded border-white/10 bg-white/5 text-emerald-500 focus:ring-emerald-500/20"
+                  className="border-separator bg-fill-4 text-green focus:ring-green/20 rounded"
                 />
                 Show Advanced Settings
               </label>
@@ -303,22 +301,22 @@ export function EconomySectorsTab({
                   size="sm"
                   variant="outline"
                   onClick={normalizeSectors}
-                  className="h-8 border-emerald-500/20 py-1 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+                  className="border-green/20 text-caption text-green hover:bg-green/10 hover:text-green h-8 py-1 font-semibold"
                 >
-                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                  <RefreshCw className="mr-2 h-3.5 w-3.5" />
                   Normalize Ratios
                 </Button>
               )}
             </div>
 
             <div className="relative w-full max-w-xs">
-              <Search className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
+              <Search className="text-label-secondary absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Search sectors..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="text-foreground placeholder:text-muted-foreground w-full rounded-lg border border-white/10 bg-white/5 py-1.5 pr-4 pl-9 text-xs focus:ring-2 focus:ring-emerald-500/20 focus:outline-none"
+                className="text-label placeholder:text-label-secondary rounded-control border-separator bg-fill-4 text-footnote focus:ring-green/20 w-full border py-2 pr-4 pl-9 focus:ring-2 focus:outline-none"
               />
             </div>
           </div>
@@ -371,31 +369,29 @@ export function EconomySectorsTab({
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Analysis & Insights Alert Box (Left 2 cols) */}
           <div className="space-y-6 lg:col-span-2">
-            <Alert className="border-2 border-emerald-500/20 bg-emerald-500/[0.02]">
-              <Info className="h-4 w-4 text-emerald-400" />
+            <Alert className="border-green/20 bg-green/[0.02] border-2">
+              <Info className="text-green h-4 w-4" />
               <AlertDescription>
                 <div className="space-y-2">
-                  <p className="text-foreground text-xs font-medium">
-                    Sectors Analysis & Rationale:
-                  </p>
-                  <ul className="list-inside list-disc space-y-1 text-xs text-zinc-400">
+                  <p className="text-label text-caption">Sectors Analysis & Rationale:</p>
+                  <ul className="text-footnote text-label-secondary list-inside list-disc space-y-1">
                     {gdpValid && employmentValid ? (
-                      <li className="text-emerald-400">
+                      <li className="text-green">
                         ✓ Ratios perfectly balanced! Rationale checks out.
                       </li>
                     ) : (
-                      <li className="text-amber-400">
+                      <li className="text-caution">
                         ⚠ GDP and Employment metrics do not sum to 100%. Click "Normalize Ratios" to
                         auto-balance.
                       </li>
                     )}
                     {economyBuilder.sectors.length >= 3 && (
-                      <li className="text-emerald-400">
+                      <li className="text-green">
                         ✓ Healthy sector diversity: {economyBuilder.sectors.length} sectors active.
                       </li>
                     )}
                     {economyBuilder.sectors.length < 3 && (
-                      <li className="text-amber-400">
+                      <li className="text-caution">
                         ⚠ Low sector diversity. Consider activating primary, secondary, and tertiary
                         sectors for a balanced build.
                       </li>
@@ -403,7 +399,7 @@ export function EconomySectorsTab({
                     {economyBuilder.sectors.some(
                       (s) => s.id.startsWith("technology") && s.automation > 50
                     ) && (
-                      <li className="text-emerald-400">
+                      <li className="text-green">
                         ✓ Technology sector is highly automated, boosting productivity.
                       </li>
                     )}

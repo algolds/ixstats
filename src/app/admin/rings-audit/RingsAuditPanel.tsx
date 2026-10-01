@@ -9,12 +9,19 @@ import { HealthRing } from "~/components/ui/health-ring";
 import { AdminHeader } from "../_components/AdminHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { Activity, StatsReport as BarChart3, Heart, Shield } from "iconoir-react";
+import { Badge } from "~/components/ui/badge";
+import { FacetCard } from "~/components/ui/facet-container";
 
 const RING_META = [
-  { key: "economicVitality", label: "Economic", color: "#22c55e", icon: BarChart3 },
-  { key: "populationWellbeing", label: "Population", color: "#3b82f6", icon: Heart },
-  { key: "diplomaticStanding", label: "Diplomatic", color: "#a855f7", icon: Shield },
-  { key: "governmentalEfficiency", label: "Government", color: "#f97316", icon: Activity },
+  { key: "economicVitality", label: "Economic", color: "var(--color-chart-3)", icon: BarChart3 },
+  { key: "populationWellbeing", label: "Population", color: "var(--color-chart-1)", icon: Heart },
+  { key: "diplomaticStanding", label: "Diplomatic", color: "var(--color-chart-4)", icon: Shield },
+  {
+    key: "governmentalEfficiency",
+    label: "Government",
+    color: "var(--color-chart-2)",
+    icon: Activity,
+  },
 ] as const;
 
 const ENDPOINTS = [
@@ -53,23 +60,23 @@ function CountryRingsCard({
   const loading = loadingA || loadingD;
 
   return (
-    <div className="border-border/30 bg-card/25 overflow-hidden rounded-2xl border shadow-xs backdrop-blur-md">
-      <div className="border-border/20 bg-muted/20 flex items-center gap-3 border-b px-4 py-3">
+    <FacetCard className="overflow-hidden">
+      <div className="border-separator bg-fill-4 flex items-center gap-3 border-b px-4 py-3">
         {flagUrl && (
-          <img src={flagUrl} alt="" className="h-6 w-10 rounded object-cover shadow-sm" />
+          <img src={flagUrl} alt="" className="rounded-control-sm h-6 w-10 object-cover" />
         )}
         <div>
-          <span className="text-foreground font-semibold">{countryName}</span>
-          {slug && <span className="text-muted-foreground ml-2 text-xs">/ {slug}</span>}
+          <span className="text-label font-semibold">{countryName}</span>
+          {slug && <span className="text-label-secondary text-footnote ml-2">/ {slug}</span>}
         </div>
-        <span className="text-muted-foreground ml-auto font-mono text-xs">
+        <span className="text-label-secondary text-footnote ml-auto font-mono">
           {countryId.slice(0, 8)}...
         </span>
       </div>
 
       {loading ? (
-        <div className="text-muted-foreground flex items-center justify-center p-8 text-sm">
-          <div className="border-muted-foreground/30 border-t-muted-foreground mr-2 h-5 w-5 animate-spin rounded-full border-2" />
+        <div className="text-label-secondary text-body flex items-center justify-center p-8">
+          <div className="border-separator-opaque border-t-separator-opaque mr-2 h-5 w-5 animate-spin rounded-full border-2" />
           Loading ring data...
         </div>
       ) : (
@@ -80,12 +87,12 @@ function CountryRingsCard({
             return (
               <div
                 key={ep.id}
-                className={`p-4 ${ep.id === "getActivityRingsData" ? "md:border-border/40 md:border-r" : ""}`}
+                className={`p-4 ${ep.id === "getActivityRingsData" ? "md:border-separator md:border-r" : ""}`}
               >
-                <div className="mb-3 flex items-center gap-1.5">
-                  <span className="rounded bg-blue-500/10 px-1.5 py-0.5 font-mono text-xs text-blue-600 dark:text-blue-400">
+                <div className="mb-3 flex items-center gap-2">
+                  <Badge variant="blue" className="font-mono">
                     {ep.endpoint}
-                  </span>
+                  </Badge>
                 </div>
 
                 {data ? (
@@ -100,15 +107,15 @@ function CountryRingsCard({
                         />
                       ))}
                     </div>
-                    <div className="grid grid-cols-1 gap-y-1.5 text-xs">
+                    <div className="text-footnote grid grid-cols-1 gap-y-2">
                       {RING_META.map(({ key, label, color }) => (
                         <div key={key} className="flex items-center gap-2">
                           <span
                             className="inline-block h-2 w-2 rounded-full"
                             style={{ backgroundColor: color }}
                           />
-                          <span className="text-muted-foreground">{label}:</span>
-                          <span className="font-mono font-bold">
+                          <span className="text-label-secondary">{label}:</span>
+                          <span className="font-mono font-semibold">
                             {Math.round(Number(data[key]) || 0)}
                           </span>
                         </div>
@@ -116,14 +123,14 @@ function CountryRingsCard({
                     </div>
                   </div>
                 ) : (
-                  <div className="text-muted-foreground p-4 text-xs">No data available</div>
+                  <div className="text-label-secondary text-footnote p-4">No data available</div>
                 )}
               </div>
             );
           })}
         </div>
       )}
-    </div>
+    </FacetCard>
   );
 }
 
@@ -150,7 +157,7 @@ export function RingsAuditPanel() {
 
       <div className="space-y-4">
         {isLoading ? (
-          <div className="text-muted-foreground p-8 text-center text-sm">
+          <div className="text-label-secondary text-body p-8 text-center">
             Loading sample nations...
           </div>
         ) : (

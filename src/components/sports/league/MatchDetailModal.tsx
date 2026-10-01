@@ -30,11 +30,13 @@ export default function MatchDetailModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         showCloseButton={false}
-        className="max-w-4xl max-h-[90vh] overflow-y-auto border-border/40 bg-card/95 backdrop-blur-2xl p-6 rounded-3xl"
+        className="border-separator bg-surface rounded-sheet max-h-[90vh] max-w-4xl overflow-y-auto p-6"
       >
         <DialogHeader className="sr-only">
           <DialogTitle>Match Center</DialogTitle>
-          <DialogDescription>Match details, live scoreboard, and tactical analysis</DialogDescription>
+          <DialogDescription>
+            Match details, live scoreboard, and tactical analysis
+          </DialogDescription>
         </DialogHeader>
         <MatchCenter matchId={matchId} onClose={onClose} sportPreset={sportPreset} />
       </DialogContent>

@@ -2,14 +2,16 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  Globe,
-  Check,
-  Xmark,
-} from "iconoir-react";
+import { Globe, Check, Xmark } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
+import { springSnappy } from "~/lib/design/motion";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
+import { Skeleton } from "~/components/ui/skeleton";
+import { IMAGE_SCRIM } from "~/app/builder/lib/image-scrim";
 
 export interface EligibleCountry {
   pageName: string;
@@ -64,7 +66,6 @@ export const SORT_OPTIONS = [
   { id: "completeness-desc", label: "Completeness" },
 ] as const;
 
-
 function formatPopulationDisplay(num?: number): string {
   if (!num) return "—";
   if (num >= 1_000_000_000) {
@@ -105,7 +106,7 @@ const EligibleCountryCard = React.memo<EligibleCountryCardProps>(function Eligib
   const showFlag = Boolean(country.flagUrl && !imgError);
 
   return (
-    <div className="relative overflow-visible rounded-xl aspect-square">
+    <div className="rounded-row relative aspect-square overflow-visible">
       <motion.div
         className="group relative h-full w-full cursor-pointer select-none"
         data-cuelume-press
@@ -120,30 +121,30 @@ const EligibleCountryCard = React.memo<EligibleCountryCardProps>(function Eligib
           y: -4,
         }}
         whileTap={{ scale: 0.98 }}
-        transition={{
-          type: "spring",
-          stiffness: 380,
-          damping: 30,
-        }}
+        transition={springSnappy}
       >
         <div
           className={cn(
-            "relative h-full w-full overflow-hidden rounded-xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out",
-            "shadow-md shadow-black/10 dark:shadow-black/35",
-            "group-hover:shadow-2xl group-hover:shadow-black/25 group-hover:brightness-105 group-hover:saturate-110 dark:group-hover:shadow-black/60",
+            "rounded-row shadow-card relative h-full w-full overflow-hidden border transition-[border-color,box-shadow] duration-200 ease-out",
+            "group-hover:shadow-floating",
             isSelected
-              ? "border-amber-500 bg-amber-500/10 shadow-2xl ring-2 shadow-amber-500/20 ring-amber-400/60 dark:border-amber-400"
-              : "border-border/40 hover:border-border/80"
+              ? "border-tint ring-tint/60 shadow-floating ring-2"
+              : "border-separator hover:border-label-tertiary"
           )}
         >
           {/* Completeness Badge in Top-Left */}
-          <div className="absolute top-3 left-3 z-20 flex items-center gap-1 rounded-full border border-white/15 bg-black/45 px-2 py-0.5 text-xs font-semibold text-white/90 backdrop-blur-md shadow-xs">
+          <div
+            className={cn(
+              "text-caption absolute top-3 left-3 z-20 flex items-center gap-1 rounded-full px-2 py-0.5 tabular-nums",
+              IMAGE_SCRIM
+            )}
+          >
             <span>{country.completeness}%</span>
           </div>
 
           {/* Selected Checkmark Badge in Top-Right */}
           {isSelected && (
-            <div className="absolute top-3 right-3 z-30 flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-zinc-950 shadow-md ring-2 shadow-amber-500/25 ring-white/20">
+            <div className="facet-gold shadow-card absolute top-3 right-3 z-30 flex size-6 items-center justify-center rounded-full">
               <Check className="h-3.5 w-3.5 stroke-[3]" />
             </div>
           )}
@@ -155,99 +156,95 @@ const EligibleCountryCard = React.memo<EligibleCountryCardProps>(function Eligib
                 initial={{ opacity: 0, scale: 0.94 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.94 }}
-                transition={{ type: "spring", stiffness: 420, damping: 28 }}
-                className="absolute inset-0 z-40 flex flex-col justify-between rounded-xl border-2 border-amber-500/80 bg-card/95 p-3 text-center shadow-2xl backdrop-blur-md select-none sm:p-3.5"
+                transition={springSnappy}
+                className="bg-surface-elevated border-tint rounded-row shadow-floating absolute inset-0 z-40 flex flex-col justify-between border p-3 text-center select-none"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-xs font-bold text-amber-400">
-                    <Check className="h-2.5 w-2.5 stroke-[3]" />
+                  <Badge variant="tinted">
+                    <Check aria-hidden className="stroke-[3]" />
                     <span>Confirm</span>
-                  </span>
-                  <button
+                  </Badge>
+                  <Button
                     type="button"
+                    variant="plain"
+                    size="icon-sm"
+                    className="rounded-full"
                     onClick={(e) => {
                       e.stopPropagation();
                       soundEffects.press();
                       onCancelSelect();
                     }}
-                    className="flex h-5 w-5 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
                     aria-label="Cancel selection"
-                    data-cuelume-press
                   >
-                    <Xmark className="h-3.5 w-3.5" />
-                  </button>
+                    <Xmark aria-hidden />
+                  </Button>
                 </div>
 
                 <div className="my-auto space-y-2">
                   <div>
-                    <h4 className="line-clamp-1 text-sm sm:text-base font-bold tracking-tight text-foreground leading-tight">
-                      {country.displayName}
-                    </h4>
-                    <p className="text-xs font-medium text-muted-foreground">
-                      Import from {siteName}?
-                    </p>
+                    <h2 className="text-headline text-label line-clamp-1">{country.displayName}</h2>
+                    <p className="text-caption text-label-secondary">Import from {siteName}?</p>
                   </div>
 
-                  <div className="rounded-lg border border-border/40 bg-muted/40 p-2 space-y-1 text-left text-xs sm:text-xs">
+                  <div className="bg-surface-secondary rounded-control text-footnote space-y-1 p-2 text-left tabular-nums">
                     {country.population !== undefined && (
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Population</span>
-                        <span className="font-semibold text-foreground">
+                        <span className="text-label-secondary">Population</span>
+                        <span className="text-label font-semibold">
                           {formatPopulationDisplay(country.population)}
                         </span>
                       </div>
                     )}
                     {country.capital && (
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Capital</span>
-                        <span className="font-semibold text-foreground truncate max-w-[110px]">
+                        <span className="text-label-secondary">Capital</span>
+                        <span className="text-label max-w-[110px] truncate font-semibold">
                           {country.capital}
                         </span>
                       </div>
                     )}
                     {country.governmentType && (
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Government</span>
-                        <span className="font-semibold text-foreground truncate max-w-[110px]">
+                        <span className="text-label-secondary">Government</span>
+                        <span className="text-label max-w-[110px] truncate font-semibold">
                           {country.governmentType}
                         </span>
                       </div>
                     )}
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Completeness</span>
-                      <span className="font-semibold text-amber-400">
-                        {country.completeness}%
-                      </span>
+                      <span className="text-label-secondary">Completeness</span>
+                      <span className="text-tint font-semibold">{country.completeness}%</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 pt-2">
-                  <button
+                <div className="flex items-center gap-2 pt-2">
+                  <Button
                     type="button"
+                    variant="bordered"
+                    size="sm"
+                    className="flex-1"
                     onClick={(e) => {
                       e.stopPropagation();
                       soundEffects.press();
                       onCancelSelect();
                     }}
-                    className="flex-1 rounded-lg border border-border/40 bg-muted/50 py-1.5 px-2 text-xs font-semibold text-foreground transition-colors hover:bg-muted active:scale-[0.96] cursor-pointer"
-                    data-cuelume-press
                   >
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    size="sm"
+                    className="flex-1"
                     onClick={(e) => {
                       e.stopPropagation();
                       soundEffects.press();
                       onConfirmSelect(country.pageName);
                     }}
-                    className="flex-1 rounded-lg bg-gradient-to-r from-amber-500 to-yellow-500 py-1.5 px-2 text-xs font-bold text-zinc-950 shadow-md shadow-amber-500/20 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:from-amber-400 hover:to-yellow-400 active:scale-[0.96] cursor-pointer"
-                    data-cuelume-press
                   >
                     Import →
-                  </button>
+                  </Button>
                 </div>
               </motion.div>
             )}
@@ -263,21 +260,21 @@ const EligibleCountryCard = React.memo<EligibleCountryCardProps>(function Eligib
               onError={() => setImgError(true)}
             />
           ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-card/90 via-card/70 to-muted/40 p-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-background/50 shadow-inner">
-                <Globe className="h-6 w-6 text-muted-foreground/70" />
+            <div className="bg-fill-3 absolute inset-0 flex flex-col items-center justify-center p-4">
+              <div className="border-separator bg-surface rounded-card flex size-12 items-center justify-center border">
+                <Globe className="text-label-secondary h-6 w-6" />
               </div>
             </div>
           )}
 
-          {/* Ambient Scrim Overlay */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent opacity-75 transition-opacity duration-200 group-hover:opacity-100" />
-
-          {/* Persistent Country Name Label */}
-          <div className="pointer-events-none absolute right-3.5 bottom-3.5 left-3.5 z-10 sm:right-4 sm:bottom-4 sm:left-4">
-            <span className="text-base sm:text-lg font-semibold text-white tracking-tight antialiased [text-shadow:0_2px_8px_rgba(0,0,0,0.75)] line-clamp-2">
-              {country.displayName}
-            </span>
+          {/* Persistent Country Name Label — a flat image scrim band (fixed white on black) */}
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-x-0 bottom-0 z-10 px-3 py-2",
+              IMAGE_SCRIM
+            )}
+          >
+            <span className="text-headline line-clamp-2">{country.displayName}</span>
           </div>
         </div>
       </motion.div>
@@ -358,35 +355,29 @@ export function EligibleCountryGrid({
 
   return (
     <div className="relative w-full select-none">
-      <div className="relative flex max-h-[75vh] flex-col overflow-hidden rounded-2xl border border-border/40 bg-card/60 shadow-[inset_0_2px_8px_rgba(0,0,0,0.06)] backdrop-blur-md dark:shadow-[inset_0_4px_16px_rgba(0,0,0,0.5)]">
+      <div className="rounded-card border-separator bg-surface relative flex max-h-[75vh] flex-col overflow-hidden border">
         {/* Scrollable Grid Area */}
-        <div className="relative flex-1 min-h-0 overflow-y-auto p-3.5 pb-8 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out sm:p-4">
+        <div className="relative min-h-0 flex-1 overflow-y-auto p-4 pb-8">
           {isLoading ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 sm:gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div
-                  key={`skeleton-${i}`}
-                  className="aspect-square rounded-xl border border-border/30 bg-muted/40 animate-pulse"
-                />
+                <Skeleton key={`skeleton-${i}`} className="rounded-row aspect-square" />
               ))}
             </div>
           ) : filteredCountries.length === 0 ? (
-            <div className="rounded-xl border border-border/50 bg-card/80 p-12 text-center backdrop-blur-sm">
-              <Globe className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
-              <p className="text-muted-foreground text-sm font-medium">No countries match your criteria</p>
-              {onClearFilters && (
-                <button
-                  type="button"
-                  onClick={onClearFilters}
-                  data-cuelume-press
-                  className="mt-4 text-sm font-medium text-amber-500 transition-colors hover:text-amber-400 active:scale-95 cursor-pointer"
-                >
-                  Clear filters
-                </button>
-              )}
-            </div>
+            <EmptyState
+              icon={<Globe />}
+              title="No countries match your criteria"
+              action={
+                onClearFilters ? (
+                  <Button type="button" variant="plain" size="sm" onClick={onClearFilters}>
+                    Clear filters
+                  </Button>
+                ) : undefined
+              }
+            />
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 sm:gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-4">
               {filteredCountries.map((country: EligibleCountry) => (
                 <EligibleCountryCard
                   key={country.pageName}

@@ -10,6 +10,7 @@ import {
   WarningTriangle as AlertTriangle,
 } from "iconoir-react";
 import type { CalculationModule, CalculationResult } from "./calculation-types";
+import { FacetCard } from "~/components/ui/facet-container";
 
 interface CalculationSimulatorProps {
   selectedModule: CalculationModule;
@@ -29,19 +30,14 @@ export function CalculationSimulator({
   onRunSimulation,
 }: CalculationSimulatorProps) {
   return (
-    <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-      <div className="border-border/20 flex items-center justify-between border-b pb-3">
-        <h4 className="text-foreground text-xs font-bold">Interactive Sandbox</h4>
-        <Button
-          onClick={onRunSimulation}
-          disabled={isSimulating}
-          size="sm"
-          className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
-        >
+    <FacetCard className="space-y-4 p-5">
+      <div className="border-separator flex items-center justify-between border-b pb-3">
+        <h4 className="text-label text-caption">Interactive Sandbox</h4>
+        <Button onClick={onRunSimulation} disabled={isSimulating} size="sm">
           {isSimulating ? (
-            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
           ) : (
-            <Play className="mr-1.5 h-3.5 w-3.5" />
+            <Play className="mr-2 h-3.5 w-3.5" />
           )}
           Run Calculation
         </Button>
@@ -51,7 +47,7 @@ export function CalculationSimulator({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {Object.entries(selectedModule.variables).map(([key, defaultValue]) => (
             <div key={key} className="space-y-1">
-              <label className="text-muted-foreground block font-mono text-xs">{key}</label>
+              <label className="text-label-secondary text-footnote block font-mono">{key}</label>
               <Input
                 type="number"
                 value={sandboxInputs[key] ?? (typeof defaultValue === "number" ? defaultValue : 0)}
@@ -61,7 +57,7 @@ export function CalculationSimulator({
                     [key]: parseFloat(e.target.value) || 0,
                   }))
                 }
-                className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs"
+                className="rounded-control-sm md:text-footnote h-(--control-height-sm) font-mono"
               />
             </div>
           ))}
@@ -70,25 +66,23 @@ export function CalculationSimulator({
         {/* Results */}
         {sandboxResult && (
           <div
-            className={`rounded-xl border p-4 text-xs ${
-              sandboxResult.success
-                ? "border-emerald-500/20 bg-emerald-500/10"
-                : "border-red-500/20 bg-red-500/10"
+            className={`rounded-row text-footnote border p-4 ${
+              sandboxResult.success ? "border-green/20 bg-green/10" : "border-red/20 bg-red/10"
             }`}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {sandboxResult.success ? (
-                  <CheckCircle className="h-4 w-4 text-emerald-400" />
+                  <CheckCircle className="text-green h-4 w-4" />
                 ) : (
-                  <AlertTriangle className="h-4 w-4 text-red-400" />
+                  <AlertTriangle className="text-red h-4 w-4" />
                 )}
-                <span className="text-foreground font-semibold">
+                <span className="text-label font-semibold">
                   {sandboxResult.success ? "Calculation Successful" : "Execution Error"}
                 </span>
               </div>
               {sandboxResult.executionTime > 0 && (
-                <span className="text-muted-foreground font-mono text-xs">
+                <span className="text-label-secondary text-footnote tabular-nums">
                   {sandboxResult.executionTime.toFixed(1)}ms
                 </span>
               )}
@@ -96,8 +90,8 @@ export function CalculationSimulator({
 
             {sandboxResult.result !== undefined && (
               <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-muted-foreground">Computed Output:</span>
-                <span className="font-mono text-base font-bold text-emerald-400">
+                <span className="text-label-secondary">Computed Output:</span>
+                <span className="text-headline text-green tabular-nums">
                   {typeof sandboxResult.result === "number"
                     ? sandboxResult.result.toLocaleString(undefined, {
                         maximumFractionDigits: 4,
@@ -107,18 +101,16 @@ export function CalculationSimulator({
               </div>
             )}
 
-            {sandboxResult.error && <p className="mt-2 text-red-300">{sandboxResult.error}</p>}
+            {sandboxResult.error && <p className="text-red mt-2">{sandboxResult.error}</p>}
 
             {sandboxResult.intermediateSteps && (
-              <div className="border-border/20 mt-3 border-t pt-2">
-                <p className="text-muted-foreground mb-1 text-xs font-semibold uppercase">
-                  Intermediate Variables
-                </p>
-                <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
+              <div className="border-separator mt-3 border-t pt-2">
+                <p className="text-label-secondary text-eyebrow mb-1">Intermediate Variables</p>
+                <div className="text-footnote grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {Object.entries(sandboxResult.intermediateSteps).map(([k, v]) => (
-                    <div key={k} className="flex justify-between font-mono">
-                      <span className="text-muted-foreground">{k}:</span>
-                      <span className="text-foreground">{v}</span>
+                    <div key={k} className="flex justify-between tabular-nums">
+                      <span className="text-label-secondary">{k}:</span>
+                      <span className="text-label">{v}</span>
                     </div>
                   ))}
                 </div>
@@ -127,6 +119,6 @@ export function CalculationSimulator({
           </div>
         )}
       </div>
-    </div>
+    </FacetCard>
   );
 }

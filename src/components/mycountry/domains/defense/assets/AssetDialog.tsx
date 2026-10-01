@@ -3,13 +3,13 @@
 import React, { useState } from "react";
 import { CheckCircle as CheckCircle2 } from "iconoir-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useNotify } from "~/hooks/useNotify";
@@ -84,14 +84,14 @@ export function AssetDialog({ open, onOpenChange, asset, onCreate, onUpdate }: A
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-5xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{asset ? "Edit Asset" : "Add New Asset"}</DialogTitle>
-          <DialogDescription>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent size="wide" className="overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>{asset ? "Edit Asset" : "Add New Asset"}</SheetTitle>
+          <SheetDescription>
             Browse real-world military equipment or create custom assets
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
@@ -119,7 +119,7 @@ export function AssetDialog({ open, onOpenChange, asset, onCreate, onUpdate }: A
           </TabsContent>
         </Tabs>
 
-        <DialogFooter>
+        <SheetFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
@@ -127,8 +127,8 @@ export function AssetDialog({ open, onOpenChange, asset, onCreate, onUpdate }: A
             <CheckCircle2 className="mr-2 h-4 w-4" />
             {asset ? "Update Asset" : "Add Asset"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

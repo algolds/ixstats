@@ -198,7 +198,7 @@ export const CurrencyIcon = React.memo(function CurrencyIcon({
     return (
       <span
         className={cn(
-          "inline-flex items-center justify-center shrink-0 leading-none overflow-hidden",
+          "inline-flex shrink-0 items-center justify-center overflow-hidden leading-none",
           className
         )}
         {...props}
@@ -207,7 +207,7 @@ export const CurrencyIcon = React.memo(function CurrencyIcon({
           viewBox={vector.viewBox}
           fill="currentColor"
           xmlns="http://www.w3.org/2000/svg"
-          className="h-full w-full max-h-full max-w-full object-contain"
+          className="h-full max-h-full w-full max-w-full object-contain"
           aria-hidden="true"
         >
           <path d={vector.path} fillRule={vector.fillRule} />
@@ -224,15 +224,15 @@ export const CurrencyIcon = React.memo(function CurrencyIcon({
   if (symbolText) {
     const fontSizeClass =
       symbolText.length >= 4
-        ? "text-[8.5px]"
+        ? "text-caption"
         : symbolText.length === 3
-        ? "text-[9.5px]"
-        : "text-xs";
+          ? "text-caption"
+          : "text-footnote";
 
     return (
       <span
         className={cn(
-          "inline-flex items-center justify-center shrink-0 font-mono font-bold leading-none select-none tracking-tight",
+          "inline-flex shrink-0 items-center justify-center font-mono leading-none font-bold tracking-tight select-none",
           fontSizeClass,
           className
         )}
@@ -246,10 +246,7 @@ export const CurrencyIcon = React.memo(function CurrencyIcon({
   // 3. Fallback: generic Coins icon
   return (
     <span
-      className={cn(
-        "inline-flex items-center justify-center shrink-0 leading-none",
-        className
-      )}
+      className={cn("inline-flex shrink-0 items-center justify-center leading-none", className)}
       {...props}
     >
       <Coins className="h-full w-full opacity-70" aria-hidden="true" />

@@ -2,6 +2,7 @@
 // src/components/wiki-os/reader/WikiOSMainPage.tsx
 // Custom WikiOS main page
 
+import { cn } from "~/lib/utils";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { OpenBook as BookOpen, OpenNewWindow as ExternalLink } from "iconoir-react";
@@ -54,18 +55,18 @@ function BlurbPromptModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="flex max-h-[80vh] max-w-lg flex-col gap-0 overflow-hidden rounded-3xl border border-white/20 bg-white/80 p-0 shadow-2xl backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-950/90">
+      <DialogContent className="rounded-card border-separator bg-surface shadow-floating flex max-h-[80vh] max-w-lg flex-col gap-0 overflow-hidden border p-0">
         {/* Header */}
-        <DialogHeader className="border-b border-white/10 px-5 py-4">
+        <DialogHeader className="border-separator border-b px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="mb-1 flex items-center gap-2">
-                <BookOpen className="text-wiki h-4 w-4 shrink-0" />
-                <DialogTitle className="text-base font-semibold">{prompt.title}</DialogTitle>
+                <BookOpen className="text-tint h-4 w-4 shrink-0" />
+                <DialogTitle className="text-title-3">{prompt.title}</DialogTitle>
               </div>
-              <p className="text-muted-foreground text-sm leading-relaxed">{prompt.question}</p>
+              <p className="text-label-secondary text-body leading-relaxed">{prompt.question}</p>
               <div className="mt-2 flex items-center gap-2">
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-footnote">
                   {prompt._count.responses}{" "}
                   {prompt._count.responses === 1 ? "response" : "responses"}
                 </Badge>
@@ -75,9 +76,9 @@ function BlurbPromptModal({
         </DialogHeader>
 
         {/* Responses */}
-        <div className="flex-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-2.5 overflow-y-auto px-5 py-3">
+        <div className="flex-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-2 overflow-y-auto px-5 py-3">
           {responses.length === 0 && (
-            <p className="text-muted-foreground py-6 text-center text-sm">
+            <p className="text-label-secondary text-body py-6 text-center">
               No responses yet. Be the first!
             </p>
           )}
@@ -85,29 +86,30 @@ function BlurbPromptModal({
           {responses.map((r) => (
             <div
               key={r.id}
-              className={`rounded-2xl border p-3.5 ${
-                r.featured
-                  ? "border-amber-500/30 bg-amber-500/5"
-                  : "bg-foreground/[0.02] border-white/10"
-              }`}
+              className={cn(
+                "rounded-card border p-4",
+                r.featured ? "border-yellow/30 bg-yellow/5" : "bg-fill-4 border-separator"
+              )}
             >
-              <div className="mb-1.5 flex items-center gap-2">
+              <div className="mb-2 flex items-center gap-2">
                 {r.country?.flag && (
-                  <img src={r.country.flag} alt="" className="h-3.5 w-5 rounded-sm object-cover" />
+                  <img
+                    src={r.country.flag}
+                    alt=""
+                    className="rounded-control-sm h-3.5 w-5 object-cover"
+                  />
                 )}
-                <span className="text-foreground text-xs font-medium">
-                  {r.country?.name ?? "Unknown"}
-                </span>
+                <span className="text-label text-caption">{r.country?.name ?? "Unknown"}</span>
                 {r.featured && (
                   <Badge
                     variant="outline"
-                    className="border-amber-500/30 px-1 py-0 text-xs text-amber-400"
+                    className="border-yellow/30 text-footnote text-yellow px-1 py-0"
                   >
                     Featured
                   </Badge>
                 )}
               </div>
-              <p className="text-muted-foreground line-clamp-4 text-sm whitespace-pre-wrap">
+              <p className="text-label-secondary text-body line-clamp-4 whitespace-pre-wrap">
                 {r.content}
               </p>
             </div>
@@ -118,7 +120,7 @@ function BlurbPromptModal({
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-xs"
+                className="text-footnote"
                 onClick={() => fetchNextPage()}
                 disabled={isFetchingNextPage}
               >
@@ -129,17 +131,17 @@ function BlurbPromptModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-white/10 px-5 py-3">
+        <div className="border-separator flex items-center justify-between border-t px-5 py-3">
           <Link
             href={ixstatesHref(`/blurbs/${prompt.slug}`)}
-            className="text-wiki hover:text-wiki-hover inline-flex items-center gap-1.5 text-xs transition-colors"
+            className="text-footnote text-tint hover:text-wiki-hover inline-flex items-center gap-2 transition-colors"
           >
             <ExternalLink className="h-3 w-3" />
             Open full prompt
           </Link>
           <Link
             href={ixstatesHref("/blurbs")}
-            className="text-muted-foreground hover:text-foreground text-xs transition-colors"
+            className="text-label-secondary hover:text-label text-footnote transition-colors"
           >
             All prompts →
           </Link>

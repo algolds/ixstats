@@ -45,23 +45,23 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
   const parsedHtml = useMemo(() => parseWikitextToHtml(excerptText, source), [excerptText, source]);
 
   return (
-    <div className="facet-hierarchy-child border-border/40 space-y-3 rounded-xl border p-4 backdrop-blur-md">
-      <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-        <BookOpen className="text-primary h-4 w-4" />
+    <div className="bg-surface-secondary border-separator rounded-row space-y-3 border p-4">
+      <h3 className="text-label text-headline flex items-center gap-2">
+        <BookOpen className="text-tint h-4 w-4" />
         {card.wikiArticleTitle?.replace(/_/g, " ") || card.title}
       </h3>
 
       {isLoading && !storedExcerpt ? (
-        <div className="text-muted-foreground flex items-center gap-2 py-4 text-xs">
-          <Loader2 className="text-primary h-3.5 w-3.5 animate-spin" />
+        <div className="text-label-secondary text-footnote flex items-center gap-2 py-4">
+          <Loader2 className="text-tint h-3.5 w-3.5 animate-spin" />
           Loading article excerpt...
         </div>
       ) : excerptText ? (
-        <div className="text-muted-foreground max-h-64 space-y-2 overflow-y-auto pr-1 text-xs leading-relaxed">
+        <div className="text-label-secondary text-footnote max-h-64 space-y-2 overflow-y-auto pr-1 leading-relaxed">
           <WikiHtmlContent html={parsedHtml} />
         </div>
       ) : (
-        <div className="text-muted-foreground py-2 text-xs">No article excerpt available.</div>
+        <div className="text-label-secondary text-footnote py-2">No article excerpt available.</div>
       )}
 
       {wikiUrl && (
@@ -79,7 +79,7 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
           {card.wikiSource === "ixwiki" ? (
             <Link
               href={wikiUrl}
-              className="text-primary inline-flex items-center gap-1.5 pt-1 text-xs font-semibold hover:underline"
+              className="text-tint text-footnote inline-flex items-center gap-2 pt-1 font-semibold hover:underline"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               Read full article on IxWiki
@@ -89,7 +89,7 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
               href={wikiUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary inline-flex items-center gap-1.5 pt-1 text-xs font-semibold hover:underline"
+              className="text-tint text-footnote inline-flex items-center gap-2 pt-1 font-semibold hover:underline"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               Read full article on IIWiki

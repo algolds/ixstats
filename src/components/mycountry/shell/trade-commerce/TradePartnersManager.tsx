@@ -29,8 +29,8 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
 }: TradePartnersManagerProps) {
   if (partners.length === 0) {
     return (
-      <FacetCard surface="solid" className="rounded-2xl border-dashed px-4 py-8 text-center">
-        <p className="text-muted-foreground text-xs">
+      <FacetCard className="rounded-card border-dashed px-4 py-8 text-center">
+        <p className="text-label-secondary text-footnote">
           No active bilateral trade partners found. Establish diplomatic embassies to negotiate
           trade pacts.
         </p>
@@ -39,20 +39,18 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
   }
 
   return (
-    <FacetCard surface="solid" className="rounded-2xl">
+    <FacetCard className="rounded-card">
       <FacetCardHeader className="gap-1 p-4 pb-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
-            <Handshake aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
-            <h3 className="text-foreground text-sm font-semibold">
-              Bilateral Trade Agreements & Partners
-            </h3>
+            <Handshake aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
+            <h3 className="text-label text-headline">Bilateral Trade Agreements & Partners</h3>
           </div>
           <Badge variant="secondary" className="shrink-0 tabular-nums">
             {partners.length} connected
           </Badge>
         </div>
-        <p className="text-muted-foreground text-xs">
+        <p className="text-label-secondary text-footnote">
           Agreement status comes from your recorded treaties. To sign a free trade agreement,
           propose one from the partner&apos;s country page (Country Actions).
         </p>
@@ -61,22 +59,22 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
       <FacetCardContent className="grid grid-cols-1 gap-2 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-3">
         {partners.map((partner) => (
           <FacetCard
+            variant="inset"
             key={partner.countryId}
-            surface="solid"
-            className="flex items-center justify-between gap-2 rounded-xl p-2.5"
+            className="flex items-center justify-between gap-2 p-2"
           >
             <div className="flex min-w-0 items-center gap-2">
               <UnifiedCountryFlag
                 flagUrl={partner.flagUrl}
                 countryName={partner.countryName}
-                className="h-4 w-6 shrink-0 rounded object-cover"
+                className="h-4 w-6 shrink-0 rounded-xs object-cover"
               />
               <div className="min-w-0">
-                <span className="text-foreground block truncate text-xs font-medium">
+                <span className="text-label text-caption block truncate">
                   {partner.countryName}
                 </span>
                 {partner.tradeVolume > 0 && (
-                  <span className="text-muted-foreground block text-xs">
+                  <span className="text-label-secondary text-footnote block">
                     Trade volume: {currencySymbol}
                     {formatCompact(partner.tradeVolume)}
                   </span>
@@ -85,7 +83,7 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
             </div>
 
             {partner.tradeAgreement ? (
-              <Badge variant="outline" className="shrink-0 text-emerald-600">
+              <Badge variant="green" className="shrink-0">
                 <Handshake aria-hidden="true" />
                 Trade treaty
               </Badge>

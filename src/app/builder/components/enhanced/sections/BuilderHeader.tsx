@@ -56,7 +56,7 @@ export function BuilderHeader({
     <motion.div
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="bg-background/80 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 border-b backdrop-blur-xl"
+      className="material-thin border-separator-opaque z-sticky sticky top-0 border-b"
     >
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
@@ -64,11 +64,8 @@ export function BuilderHeader({
             <motion.div className="flex items-center gap-3" whileHover={{ scale: 1.02 }}>
               <MyCountryLogo size="lg" animated mode={mode} showSubtitle={true} />
             </motion.div>
-            <Badge
-              variant="outline"
-              className="hidden items-center gap-1 border-amber-500/20 md:flex"
-            >
-              <Zap className="h-3 w-3 text-amber-500" />
+            <Badge variant="outline" className="border-tint/20 hidden items-center gap-1 md:flex">
+              <Zap className="text-tint h-3 w-3" />
               {isEditMode ? "Editor" : "Builder"} v{BUILDER_VERSION}
             </Badge>
           </div>
@@ -115,7 +112,7 @@ export function BuilderHeader({
                 variant="ghost"
                 size="sm"
                 onClick={onClearDraft}
-                className="text-muted-foreground hover:text-destructive hidden md:flex"
+                className="text-label-secondary hover:text-destructive hidden md:flex"
               >
                 <AlertTriangle className="mr-1 h-4 w-4" />
                 Clear Draft

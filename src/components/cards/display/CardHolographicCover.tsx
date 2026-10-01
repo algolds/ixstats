@@ -1,5 +1,7 @@
 "use client";
 
+import "~/styles/card-art.css";
+
 /**
  * CardHolographicCover — Universal procedural holographic fallback for ALL card types
  *
@@ -223,7 +225,7 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
         {/* Layer 1: Base gradient */}
         <div
           className={cn(
-            "absolute inset-0 bg-gradient-to-br",
+            "card-art-linear-br absolute inset-0",
             categoryTheme ? categoryTheme.gradient : theme.base
           )}
         />
@@ -358,7 +360,7 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             {/* Outer frame */}
             <div
-              className="absolute rounded-lg border"
+              className="rounded-control absolute border"
               style={{
                 width: "60%",
                 height: "75%",
@@ -382,7 +384,7 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
             {/* Center emblem for EPIC+ */}
             {(rarity === "EPIC" || rarity === "LEGENDARY") && (
               <div
-                className="absolute flex items-center justify-center text-xl opacity-40"
+                className="text-title-2 absolute flex items-center justify-center opacity-40"
                 style={{
                   width: "15%",
                   height: "15%",
@@ -409,10 +411,10 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
         {!resolvedCategory && (
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
             <div className="space-y-1 px-4 text-center">
-              <p className="text-xs font-semibold tracking-[0.25em] text-white/25 uppercase">
+              <p className="text-footnote font-semibold tracking-[0.25em] text-white/25 uppercase">
                 {theme.label}
               </p>
-              <p className="text-xs tracking-[0.2em] text-white/15 uppercase">
+              <p className="text-footnote tracking-[0.2em] text-white/15 uppercase">
                 {theme.sublabel}
               </p>
             </div>

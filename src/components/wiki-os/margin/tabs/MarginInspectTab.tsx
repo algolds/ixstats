@@ -15,8 +15,9 @@ import {
   OpenNewWindow as ExternalLink,
   Compass,
 } from "iconoir-react";
-import { soundEffects } from "~/lib/sound/cuelume";
+
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
 import { formatCompact } from "~/lib/format/compact";
 import { ixstatesHref } from "~/lib/system/wikios-standalone";
 
@@ -121,7 +122,6 @@ export function MarginInspectTab({
 
   const handleGenerateFactDiff = () => {
     if (!matchedCountry) return;
-    soundEffects.press();
     const oldText = `Population: (outdated value)\nGDP: (outdated value)`;
     const newText = `Population: ${formattedPop ?? "Unknown"}\nGDP: ${formattedGdp ?? "Unknown"}\nRegion: ${matchedCountry.continent ?? "IxWorld"}`;
 
@@ -129,84 +129,76 @@ export function MarginInspectTab({
   };
 
   return (
-    <div className="animate-in fade-in space-y-3.5 duration-150">
+    <div className="animate-in fade-in space-y-4 duration-150">
       {/* 1. Article Topology & Lore Structure */}
-      <div className="space-y-3 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-3.5 shadow-xs backdrop-blur-md">
+      <div className="rounded-card border-separator bg-surface space-y-3 border p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Compass className="text-margin-accent h-4 w-4" />
-            <h4 className="text-xs font-bold tracking-tight text-[var(--wikios-text)]">
-              Article Topology
-            </h4>
+            <h4 className="text-caption text-label font-semibold">Article Topology</h4>
           </div>
-          <span className="bg-margin-accent rounded-full px-2 py-0.5 text-xs font-bold text-stone-950 shadow-xs">
+          <span className="bg-margin-accent text-caption rounded-full px-2 py-0.5 font-semibold text-(--margin-badge-text)">
             {pageTierInfo.title}
           </span>
         </div>
 
         {/* Structural Spec Inset */}
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="space-y-0.5 rounded-xl border border-[var(--wikios-border)]/60 bg-[var(--wikios-surface)]/50 p-2">
-            <span className="text-xs font-semibold tracking-wider text-[var(--wikios-text-dim)] uppercase">
-              Hierarchy Tier
-            </span>
-            <p className="truncate text-xs font-bold text-[var(--wikios-text)]">
+        <div className="text-footnote grid grid-cols-2 gap-2">
+          <div className="rounded-row border-separator bg-surface-secondary space-y-0.5 border p-2">
+            <span className="text-subhead text-label-secondary">Hierarchy Tier</span>
+            <p className="text-caption text-label truncate font-semibold">
               {pageTierInfo.levelName}
             </p>
           </div>
 
-          <div className="space-y-0.5 rounded-xl border border-[var(--wikios-border)]/60 bg-[var(--wikios-surface)]/50 p-2">
-            <span className="text-xs font-semibold tracking-wider text-[var(--wikios-text-dim)] uppercase">
-              Editorial Scope
-            </span>
-            <p className="truncate text-xs font-bold text-[var(--wikios-text)]">
+          <div className="rounded-row border-separator bg-surface-secondary space-y-0.5 border p-2">
+            <span className="text-subhead text-label-secondary">Editorial Scope</span>
+            <p className="text-caption text-label truncate font-semibold">
               {pageTierInfo.scopeName}
             </p>
           </div>
         </div>
 
-        <p className="text-xs leading-relaxed text-[var(--wikios-text-muted)]">
+        <p className="text-footnote text-label-secondary leading-relaxed">
           {pageTierInfo.description}
         </p>
 
-        <div className="space-y-1 rounded-xl border border-[var(--wikios-border)]/70 bg-[var(--wikios-surface)]/70 p-2.5 text-xs text-[var(--wikios-text-muted)]">
-          <span className="text-margin-accent block text-xs font-bold tracking-wider uppercase">
-            Linkage Recommendation
-          </span>
-          <p className="leading-snug text-[var(--wikios-text-dim)]">{pageTierInfo.guideline}</p>
+        <div className="rounded-row border-separator bg-surface text-footnote text-label-secondary space-y-1 border p-3">
+          <span className="text-margin-accent text-subhead block">Linkage Recommendation</span>
+          <p className="text-label-secondary leading-snug">{pageTierInfo.guideline}</p>
         </div>
       </div>
 
       {/* 2. Simulation Registry & Live Telemetry */}
       {isLoading && (
-        <div className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-6 text-xs text-[var(--wikios-text-muted)] backdrop-blur-md">
+        <div className="rounded-card border-separator bg-surface text-footnote text-label-secondary flex items-center justify-center gap-2 border p-6">
           <RefreshCw className="text-margin-accent h-4 w-4 animate-spin" />
           <span>Querying simulation registry...</span>
         </div>
       )}
 
       {!isLoading && matchedCountry && (
-        <div className="space-y-3 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-3.5 shadow-xs backdrop-blur-md">
+        <div className="rounded-card border-separator bg-surface space-y-3 border p-4">
           {/* Nation Dossier Header */}
-          <div className="flex items-start justify-between gap-2 border-b border-[var(--wikios-border)]/60 pb-2.5">
-            <div className="flex min-w-0 items-center gap-2.5">
+          <div className="border-separator flex items-start justify-between gap-2 border-b pb-3">
+            <div className="flex min-w-0 items-center gap-2">
               {matchedCountry.flagUrl ? (
                 <img
                   src={matchedCountry.flagUrl}
                   alt={matchedCountry.name}
-                  className="h-6 w-8 rounded border border-[var(--wikios-border)] object-cover shadow-xs"
+                  className="rounded-control-sm border-separator h-6 w-8 border object-cover"
                 />
               ) : (
-                <div className="bg-margin-accent/15 border-margin-accent/30 text-margin-accent flex h-6 w-8 items-center justify-center rounded border text-xs font-bold">
+                <div className="bg-margin-accent/15 border-margin-accent/30 text-margin-accent rounded-control-sm text-caption flex h-6 w-8 items-center justify-center border font-semibold">
                   {matchedCountry.name.slice(0, 2).toUpperCase()}
                 </div>
               )}
               <div className="min-w-0">
-                <h4 className="truncate text-xs font-bold text-[var(--wikios-text)]">
+                <h4 className="text-caption text-label truncate font-semibold">
                   {matchedCountry.name}
                 </h4>
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
+                <div className="text-caption text-green flex items-center gap-2 font-semibold">
+                  <span className="bg-green/70 h-1.5 w-1.5 rounded-full" />
                   <span>Simulation Active</span>
                 </div>
               </div>
@@ -214,7 +206,7 @@ export function MarginInspectTab({
 
             <a
               href={ixstatesHref(`/countries/${matchedCountry.id}`)}
-              className="text-margin-accent hover:text-margin-accent/90 flex items-center gap-1 p-1 text-xs font-bold transition-colors"
+              className="text-margin-accent hover:text-margin-accent/90 text-caption flex items-center gap-1 p-1 font-semibold transition-colors"
               title="Open sovereign dossier"
             >
               <span>Profile</span>
@@ -223,42 +215,40 @@ export function MarginInspectTab({
           </div>
 
           {/* Metric Comparison Grid */}
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="space-y-1 rounded-xl border border-[var(--wikios-border)]/60 bg-[var(--wikios-surface)]/50 p-2.5">
-              <div className="flex items-center gap-1 text-xs font-medium text-[var(--wikios-text-dim)]">
-                <Users className="h-3 w-3 text-cyan-400" />
+          <div className="text-footnote grid grid-cols-2 gap-2">
+            <div className="rounded-row border-separator bg-surface-secondary space-y-1 border p-3">
+              <div className="text-caption text-label-secondary flex items-center gap-1">
+                <Users className="text-teal h-3 w-3" />
                 <span>Population</span>
               </div>
-              <div className="text-xs font-bold text-[var(--wikios-text)] tabular-nums">
+              <div className="text-caption text-label font-semibold tabular-nums">
                 {formattedPop ?? "Calculating..."}
               </div>
             </div>
 
-            <div className="space-y-1 rounded-xl border border-[var(--wikios-border)]/60 bg-[var(--wikios-surface)]/50 p-2.5">
-              <div className="flex items-center gap-1 text-xs font-medium text-[var(--wikios-text-dim)]">
-                <DollarSign className="h-3 w-3 text-emerald-400" />
+            <div className="rounded-row border-separator bg-surface-secondary space-y-1 border p-3">
+              <div className="text-caption text-label-secondary flex items-center gap-1">
+                <DollarSign className="text-green h-3 w-3" />
                 <span>Gross Domestic Product</span>
               </div>
-              <div className="text-xs font-bold text-[var(--wikios-text)] tabular-nums">
+              <div className="text-caption text-label font-semibold tabular-nums">
                 {formattedGdp ?? "Calculating..."}
               </div>
             </div>
           </div>
 
           {/* Additional Registry Facts */}
-          <div className="space-y-1.5 border-t border-[var(--wikios-border)]/60 pt-1 text-xs">
+          <div className="border-separator text-footnote space-y-2 border-t pt-1">
             {matchedCountry.continent && (
-              <div className="flex items-center justify-between text-[var(--wikios-text-dim)]">
+              <div className="text-label-secondary flex items-center justify-between">
                 <span>Continental Region</span>
-                <span className="font-semibold text-[var(--wikios-text)]">
-                  {matchedCountry.continent}
-                </span>
+                <span className="text-label font-semibold">{matchedCountry.continent}</span>
               </div>
             )}
             {matchedCountry.currentGdpPerCapita && (
-              <div className="flex items-center justify-between text-[var(--wikios-text-dim)]">
+              <div className="text-label-secondary flex items-center justify-between">
                 <span>GDP per Capita</span>
-                <span className="font-semibold text-[var(--wikios-text)] tabular-nums">
+                <span className="text-label font-semibold tabular-nums">
                   ${Number(matchedCountry.currentGdpPerCapita).toLocaleString()}
                 </span>
               </div>
@@ -267,27 +257,25 @@ export function MarginInspectTab({
 
           {/* Action: Propose Diff Patch */}
           {isAuthenticated && (
-            <button
-              type="button"
+            <Button
+              size="lg"
               onClick={handleGenerateFactDiff}
-              className="bg-margin-accent hover:bg-margin-accent/90 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl p-2.5 text-xs font-bold text-stone-950 shadow-xs transition-transform active:scale-[0.98]"
+              className="bg-margin-accent hover:bg-margin-accent-hover w-full text-(--margin-badge-text)"
             >
-              <Edit3 className="h-3.5 w-3.5" />
+              <Edit3 className="size-3.5" />
               <span>Propose edit with live stats</span>
-            </button>
+            </Button>
           )}
         </div>
       )}
 
       {!isLoading && !matchedCountry && (
-        <div className="space-y-2 rounded-2xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/80 p-4 text-center backdrop-blur-md">
-          <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-full border border-[var(--wikios-border)] bg-[var(--wikios-surface)] text-[var(--wikios-text-dim)]">
+        <div className="rounded-card border-separator bg-surface space-y-2 border p-4 text-center">
+          <div className="border-separator bg-surface text-label-secondary mx-auto flex h-8 w-8 items-center justify-center rounded-full border">
             <Globe className="h-4 w-4" />
           </div>
-          <p className="text-xs font-bold text-[var(--wikios-text)]">
-            Independent Encyclopedic Entry
-          </p>
-          <p className="mx-auto max-w-xs text-xs leading-relaxed text-[var(--wikios-text-dim)]">
+          <p className="text-caption text-label font-semibold">Independent Encyclopedic Entry</p>
+          <p className="text-footnote text-label-secondary mx-auto max-w-xs leading-relaxed">
             This entry represents an event, custom, or artifact rather than an active sovereign
             nation state.
           </p>

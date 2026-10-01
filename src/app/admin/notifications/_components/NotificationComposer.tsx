@@ -17,6 +17,7 @@ import {
 } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
+import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 import { useNotify } from "~/hooks/useNotify";
 import {
   Send,
@@ -28,7 +29,6 @@ import {
   Globe,
   Sparks as Sparkles,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
 
 type BroadcastMode = "platform_alert" | "system_message" | "direct_message";
 
@@ -283,82 +283,49 @@ export function NotificationComposer() {
       {/* Compose form */}
       <div className="space-y-6 lg:col-span-2">
         {/* Mode Selector */}
-        <Card className="border-border/60 bg-card/60 backdrop-blur-xl">
+        <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-              <Sparkles className="h-4 w-4 text-amber-500" />
+            <CardTitle className="text-headline flex items-center gap-2">
+              <Sparkles className="text-yellow h-4 w-4" />
               Delivery Destination
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-footnote">
               Choose where and how this message will be delivered across IxStates.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-              <button
-                type="button"
-                onClick={() => handleField("mode", "platform_alert")}
-                className={cn(
-                  "flex cursor-pointer flex-col items-start gap-1 rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-                  form.mode === "platform_alert"
-                    ? "text-foreground border-rose-500/50 bg-rose-500/10 shadow-2xs"
-                    : "border-border/40 bg-card/40 text-muted-foreground hover:border-border/80 hover:bg-card/80"
-                )}
-              >
-                <div className="flex items-center gap-1.5 text-xs font-semibold">
-                  <Bell className="h-3.5 w-3.5 text-rose-500" />
-                  Platform Alert
-                </div>
-                <p className="text-muted-foreground text-xs leading-tight">
-                  Halo tray & realtime notification center.
-                </p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleField("mode", "system_message")}
-                className={cn(
-                  "flex cursor-pointer flex-col items-start gap-1 rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-                  form.mode === "system_message"
-                    ? "text-foreground border-amber-500/50 bg-amber-500/10 shadow-2xs"
-                    : "border-border/40 bg-card/40 text-muted-foreground hover:border-border/80 hover:bg-card/80"
-                )}
-              >
-                <div className="flex items-center gap-1.5 text-xs font-semibold">
-                  <Crown className="h-3.5 w-3.5 text-amber-500" />
-                  System Message
-                </div>
-                <p className="text-muted-foreground text-xs leading-tight">
-                  Pinned System Messages thread in /messages inbox.
-                </p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleField("mode", "direct_message")}
-                className={cn(
-                  "flex cursor-pointer flex-col items-start gap-1 rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-                  form.mode === "direct_message"
-                    ? "text-foreground border-indigo-500/50 bg-indigo-500/10 shadow-2xs"
-                    : "border-border/40 bg-card/40 text-muted-foreground hover:border-border/80 hover:bg-card/80"
-                )}
-              >
-                <div className="flex items-center gap-1.5 text-xs font-semibold">
-                  <MessageSquare className="h-3.5 w-3.5 text-indigo-500" />
-                  Direct Dispatch
-                </div>
-                <p className="text-muted-foreground text-xs leading-tight">
-                  Direct conversation or diplomatic cable in /messages.
-                </p>
-              </button>
-            </div>
+            <RadioCardGroup
+              aria-label="Delivery destination"
+              columns={3}
+              value={form.mode}
+              onValueChange={(mode) => handleField("mode", mode as BroadcastMode)}
+            >
+              <RadioCard
+                value="platform_alert"
+                icon={<Bell className="text-red" />}
+                title="Platform Alert"
+                description="Halo tray & realtime notification center."
+              />
+              <RadioCard
+                value="system_message"
+                icon={<Crown className="text-yellow" />}
+                title="System Message"
+                description="Pinned System Messages thread in /messages inbox."
+              />
+              <RadioCard
+                value="direct_message"
+                icon={<MessageSquare className="text-indigo" />}
+                title="Direct Dispatch"
+                description="Direct conversation or diplomatic cable in /messages."
+              />
+            </RadioCardGroup>
           </CardContent>
         </Card>
 
         {/* Templates */}
-        <Card className="border-border/60 bg-card/60 backdrop-blur-xl">
+        <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-xs font-semibold">
+            <CardTitle className="text-caption flex items-center gap-2">
               <Plus className="h-3.5 w-3.5" />
               Quick Templates
             </CardTitle>
@@ -370,7 +337,7 @@ export function NotificationComposer() {
                   key={p.label}
                   variant="outline"
                   size="sm"
-                  className="h-7 text-xs font-medium"
+
                   onClick={() => applyPreset(p)}
                 >
                   {p.label}
@@ -381,9 +348,9 @@ export function NotificationComposer() {
         </Card>
 
         {/* Main form */}
-        <Card className="border-border/60 bg-card/60 backdrop-blur-xl">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <CardTitle className="text-headline flex items-center gap-2">
               <Send className="h-4 w-4" />
               {form.mode === "platform_alert" && "Compose Platform Alert"}
               {form.mode === "system_message" && "Publish System Message"}
@@ -392,7 +359,7 @@ export function NotificationComposer() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-xs font-semibold">
+              <Label className="text-caption">
                 {form.mode === "direct_message" ? "Subject *" : "Title *"}
               </Label>
               <Input
@@ -403,12 +370,12 @@ export function NotificationComposer() {
                 }
                 value={form.title}
                 onChange={(e) => handleField("title", e.target.value)}
-                className="h-9 text-xs"
+                className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
               />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs font-semibold">
+              <Label className="text-caption">
                 {form.mode === "direct_message" ? "Message Content *" : "Description / Body"}
               </Label>
               <Textarea
@@ -416,19 +383,19 @@ export function NotificationComposer() {
                 value={form.description}
                 onChange={(e) => handleField("description", e.target.value)}
                 rows={4}
-                className="text-xs"
+                className="md:text-footnote"
               />
             </div>
 
             {form.mode === "direct_message" ? (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold">Conversation Type</Label>
+                  <Label className="text-caption">Conversation Type</Label>
                   <Select
                     value={form.conversationType}
                     onValueChange={(v) => handleField("conversationType", v as any)}
                   >
-                    <SelectTrigger className="h-9 text-xs">
+                    <SelectTrigger size="sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -440,12 +407,12 @@ export function NotificationComposer() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold">Security Classification</Label>
+                  <Label className="text-caption">Security Classification</Label>
                   <Select
                     value={form.classification}
                     onValueChange={(v) => handleField("classification", v as any)}
                   >
-                    <SelectTrigger className="h-9 text-xs">
+                    <SelectTrigger size="sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -461,9 +428,9 @@ export function NotificationComposer() {
             ) : (
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold">Type</Label>
+                  <Label className="text-caption">Type</Label>
                   <Select value={form.type} onValueChange={(v) => handleField("type", v)}>
-                    <SelectTrigger className="h-9 text-xs">
+                    <SelectTrigger size="sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -477,9 +444,9 @@ export function NotificationComposer() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-xs font-semibold">Level / Priority</Label>
+                  <Label className="text-caption">Level / Priority</Label>
                   <Select value={form.level} onValueChange={(v) => handleField("level", v as any)}>
-                    <SelectTrigger className="h-9 text-xs">
+                    <SelectTrigger size="sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -496,9 +463,9 @@ export function NotificationComposer() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-xs font-semibold">Category</Label>
+                <Label className="text-caption">Category</Label>
                 <Select value={form.category} onValueChange={(v) => handleField("category", v)}>
-                  <SelectTrigger className="h-9 text-xs">
+                  <SelectTrigger size="sm">
                     <SelectValue placeholder="None" />
                   </SelectTrigger>
                   <SelectContent>
@@ -512,12 +479,12 @@ export function NotificationComposer() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-semibold">Recipient Scope</Label>
+                <Label className="text-caption">Recipient Scope</Label>
                 <Select
                   value={form.scope}
                   onValueChange={(v) => handleField("scope", v as FormState["scope"])}
                 >
-                  <SelectTrigger className="h-9 text-xs">
+                  <SelectTrigger size="sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -531,9 +498,9 @@ export function NotificationComposer() {
 
             {form.scope === "country" && (
               <div className="space-y-2">
-                <Label className="text-xs font-semibold">Target Country</Label>
+                <Label className="text-caption">Target Country</Label>
                 <Select value={form.countryId} onValueChange={(v) => handleField("countryId", v)}>
-                  <SelectTrigger className="h-9 text-xs">
+                  <SelectTrigger size="sm">
                     <SelectValue placeholder="Select country" />
                   </SelectTrigger>
                   <SelectContent>
@@ -549,23 +516,23 @@ export function NotificationComposer() {
 
             {form.scope === "user" && (
               <div className="space-y-2">
-                <Label className="text-xs font-semibold">Target User ID (Clerk ID)</Label>
+                <Label className="text-caption">Target User ID (Clerk ID)</Label>
                 <Input
                   placeholder="e.g. user_2abc..."
                   value={form.userId}
                   onChange={(e) => handleField("userId", e.target.value)}
-                  className="h-9 text-xs"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                 />
               </div>
             )}
 
             <div className="space-y-2">
-              <Label className="text-xs font-semibold">Action Link (optional)</Label>
+              <Label className="text-caption">Action Link (optional)</Label>
               <Input
                 placeholder="e.g. /mycountry or /maps"
                 value={form.href}
                 onChange={(e) => handleField("href", e.target.value)}
-                className="h-9 text-xs"
+                className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
               />
             </div>
 
@@ -574,7 +541,7 @@ export function NotificationComposer() {
                 checked={form.actionable}
                 onCheckedChange={(v) => handleField("actionable", v)}
               />
-              <Label className="cursor-pointer text-xs font-medium">
+              <Label className="text-caption cursor-pointer">
                 Actionable (highlights action button in UI)
               </Label>
             </div>
@@ -582,7 +549,7 @@ export function NotificationComposer() {
             <Button
               onClick={handleSubmit}
               disabled={isPending}
-              className="w-full cursor-pointer font-semibold shadow-xs"
+              className="w-full cursor-pointer"
               size="lg"
             >
               <Send className="mr-2 h-4 w-4" />
@@ -594,53 +561,49 @@ export function NotificationComposer() {
 
       {/* Sidebar Live Preview */}
       <div className="space-y-4">
-        <Card className="border-border/60 bg-card/60 backdrop-blur-xl">
+        <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-              <Sparkles className="h-4 w-4 text-indigo-400" />
+            <CardTitle className="text-headline flex items-center gap-2">
+              <Sparkles className="text-indigo h-4 w-4" />
               Live Preview
             </CardTitle>
-            <CardDescription className="text-xs">
+            <CardDescription className="text-footnote">
               Render preview as seen by recipient players.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {form.mode === "platform_alert" && (
-              <div className="rounded-xl border border-rose-500/30 bg-rose-500/[0.06] p-3.5 shadow-xs">
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-rose-400 uppercase">
+              <div className="rounded-row border-red/30 bg-red/[0.06] border p-4">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="text-eyebrow text-red flex items-center gap-2">
                     <Shield className="h-3 w-3" />
                     {form.level} Priority Alert
                   </span>
-                  <span className="text-muted-foreground text-xs tabular-nums">Just now</span>
+                  <span className="text-label-secondary text-footnote tabular-nums">Just now</span>
                 </div>
-                <h4 className="text-foreground text-xs font-bold">
-                  {form.title || "Notification Title"}
-                </h4>
-                <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                <h4 className="text-label text-caption">{form.title || "Notification Title"}</h4>
+                <p className="text-label-secondary text-footnote mt-1 leading-relaxed">
                   {form.description || "Notification body preview will appear here."}
                 </p>
               </div>
             )}
 
             {form.mode === "system_message" && (
-              <div className="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] p-3.5 shadow-xs">
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-amber-400 uppercase">
+              <div className="rounded-row border-yellow/30 bg-yellow/[0.06] border p-4">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="text-eyebrow text-yellow flex items-center gap-2">
                     <Crown className="h-3 w-3" />
                     System Dispatch • {form.category}
                   </span>
-                  <span className="text-muted-foreground text-xs tabular-nums">10:42 AM</span>
+                  <span className="text-label-secondary text-footnote tabular-nums">10:42 AM</span>
                 </div>
-                <h4 className="text-foreground text-xs font-bold">
-                  {form.title || "System Message Title"}
-                </h4>
-                <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                <h4 className="text-label text-caption">{form.title || "System Message Title"}</h4>
+                <p className="text-label-secondary text-footnote mt-1 leading-relaxed">
                   {form.description || "Event summary and dispatch details."}
                 </p>
                 {form.actionable && (
-                  <div className="mt-2.5 flex items-center gap-2">
-                    <div className="rounded-md border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-xs font-bold text-amber-400">
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="rounded-control-sm border-yellow/40 bg-yellow/15 text-caption text-yellow border px-2 py-0.5">
                       Open Action →
                     </div>
                   </div>
@@ -649,26 +612,24 @@ export function NotificationComposer() {
             )}
 
             {form.mode === "direct_message" && (
-              <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/[0.06] p-3.5 shadow-xs">
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <span className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-indigo-400 uppercase">
+              <div className="rounded-row border-indigo/30 bg-indigo/[0.06] border p-4">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="text-eyebrow text-indigo flex items-center gap-2">
                     <Globe className="h-3 w-3" />
                     {form.classification}
                     {" // "}
                     {form.conversationType.toUpperCase()}
                   </span>
-                  <span className="text-muted-foreground text-xs tabular-nums">Just now</span>
+                  <span className="text-label-secondary text-footnote tabular-nums">Just now</span>
                 </div>
-                <h4 className="text-foreground text-xs font-bold">
-                  {form.title || "Subject Line"}
-                </h4>
-                <p className="text-muted-foreground mt-1 text-xs leading-relaxed whitespace-pre-wrap">
+                <h4 className="text-label text-caption">{form.title || "Subject Line"}</h4>
+                <p className="text-label-secondary text-footnote mt-1 leading-relaxed whitespace-pre-wrap">
                   {form.description || "Direct dispatch message contents."}
                 </p>
               </div>
             )}
 
-            <div className="text-muted-foreground space-y-1 pt-2 text-xs">
+            <div className="text-label-secondary text-footnote space-y-1 pt-2">
               <p>
                 <strong>Recipient Scope:</strong>{" "}
                 {form.scope === "global"

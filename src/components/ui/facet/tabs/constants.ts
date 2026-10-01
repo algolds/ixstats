@@ -1,64 +1,76 @@
+/**
+ * FacetTabs metrics (Facet 3): a `fill-3` track with a raised `control-thumb` indicator, the
+ * control radius tokens, footnote/subhead labels. `padding` (px) must match the track's padding
+ * class — the indicator physics offsets by it.
+ */
 export const sizeClasses = {
   sm: {
-    container: "p-0.5 rounded-lg gap-0.5",
-    item: "px-2.5 py-1 text-xs gap-1 rounded-md font-medium active:scale-[0.97] transition-transform",
-    icon: "h-3 w-3",
-    indicator: "rounded-md",
+    container: "p-0.5 rounded-control gap-0.5",
+    item: "px-3 py-1 text-footnote gap-1 rounded-control-sm font-medium active:scale-[0.97] transition-transform",
+    icon: "size-3",
+    indicator: "rounded-control-sm",
     indicatorInset: "inset-y-0.5",
     padding: 2,
   },
   md: {
-    container: "p-1 rounded-xl gap-1",
-    item: "px-3 py-2 text-xs gap-1.5 rounded-lg font-medium active:scale-[0.97] transition-transform",
-    icon: "h-3.5 w-3.5",
-    indicator: "rounded-lg",
+    container: "p-1 rounded-control-lg gap-1",
+    item: "px-3 py-2 text-footnote gap-2 rounded-control-sm font-medium active:scale-[0.97] transition-transform",
+    icon: "size-3.5",
+    indicator: "rounded-control-sm",
     indicatorInset: "inset-y-1",
     padding: 4,
   },
   lg: {
-    container: "p-1.5 rounded-2xl gap-1.5",
-    item: "px-5 py-2.5 text-sm gap-2 rounded-xl font-bold active:scale-[0.98] transition-transform",
-    icon: "h-4 w-4",
-    indicator: "rounded-xl",
-    indicatorInset: "inset-y-1.5",
-    padding: 6,
+    container: "p-2 rounded-card gap-2",
+    item: "px-5 py-2 text-subhead gap-2 rounded-control font-semibold active:scale-[0.98] transition-transform",
+    icon: "size-4",
+    indicator: "rounded-control",
+    indicatorInset: "inset-y-2",
+    padding: 8,
   },
 } as const;
 
-export const toneIndicatorStyles = {
-  neutral: {
-    light:
-      "bg-white/50 border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] text-slate-900",
-    dark: "bg-white/10 border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] text-white",
-  },
-  accent: {
-    light:
-      "bg-white/50 border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] text-indigo-700",
-    dark: "bg-white/10 border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] text-indigo-300",
-  },
-  mycountry: {
-    light:
-      "bg-white/50 border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] text-amber-700",
-    dark: "bg-white/10 border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] text-amber-300",
-  },
-  forum: {
-    light:
-      "bg-white/50 border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] text-orange-700",
-    dark: "bg-white/10 border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] text-orange-300",
-  },
-  sdi: {
-    light: "bg-white/50 border-white/40 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] text-red-700",
-    dark: "bg-white/10 border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] text-red-300",
-  },
-} as const;
+export type FacetTabsTone = "neutral" | "accent" | "mycountry" | "forum" | "sdi";
 
-export const toneGlowClasses = {
-  neutral: "bg-slate-200/40 dark:bg-white/5",
-  accent: "bg-white/20 dark:bg-white/5",
-  mycountry: "bg-white/20 dark:bg-white/5",
-  forum: "bg-white/20 dark:bg-white/5",
-  sdi: "bg-white/20 dark:bg-white/5",
-} as const;
+/**
+ * The colour each tone gives the active tab's icon (and a `themeColor`-less indicator's edge):
+ * roles and system colours, so it follows the theme and Increase Contrast. `accent` is the app
+ * tint.
+ */
+export const TONE_COLOR: Record<FacetTabsTone, string> = {
+  neutral: "var(--color-label)",
+  accent: "var(--color-tint)",
+  mycountry: "var(--color-yellow)",
+  forum: "var(--color-orange)",
+  sdi: "var(--color-red)",
+};
+
+/** Active-icon classes per tone (written out so Tailwind sees them). */
+export const toneIconClasses: Record<FacetTabsTone, string> = {
+  neutral: "text-label",
+  accent: "text-tint",
+  mycountry: "text-yellow",
+  forum: "text-orange",
+  sdi: "text-red",
+};
+
+/** The sliding indicator: the same raised thumb as `SegmentedControl` for every tone. */
+export const toneIndicatorStyles: Record<FacetTabsTone, string> = {
+  neutral: "bg-control-thumb border-transparent shadow-card",
+  accent: "bg-control-thumb border-transparent shadow-card",
+  mycountry: "bg-control-thumb border-transparent shadow-card",
+  forum: "bg-control-thumb border-transparent shadow-card",
+  sdi: "bg-control-thumb border-transparent shadow-card",
+};
+
+/** @deprecated FacetTabs has no glow layer in Facet 3; kept for imports. */
+export const toneGlowClasses: Record<FacetTabsTone, string> = {
+  neutral: "",
+  accent: "",
+  mycountry: "",
+  forum: "",
+  sdi: "",
+};
 
 import {
   DRAG_ELASTICITY as SHARED_DRAG_ELASTICITY,

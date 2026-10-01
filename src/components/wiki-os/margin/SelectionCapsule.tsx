@@ -3,8 +3,7 @@
 // Origin-aware floating selection capsule for inline markup, stash, suggested edits, and discussions.
 // Full Apple Design & Emil Kowalski motion compliance.
 
-import React, { useEffect, useState, useRef, useCallback } from "react";
-import { createPortal } from "react-dom";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   ChatBubble as MessageSquare,
   Bookmark,
@@ -13,8 +12,7 @@ import {
   DesignPencil as Edit3,
   ShareAndroid as Share2,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { VirtualAnchorPopover } from "~/components/ui/popover";
 import { useNotify } from "~/hooks/useNotify";
 
 export const HIGHLIGHT_PALETTE = [
@@ -54,13 +52,15 @@ export function SelectionCapsule({
   onShareQuote,
   isAuthenticated,
 }: SelectionCapsuleProps) {
-  const [selectionData, setSelectionData] = useState<SelectionPayload | null>(null);
+  const [selection, setSelection] = useState<{ payload: SelectionPayload; range: Range } | null>(
+    null
+  );
+  const selectionData = selection?.payload ?? null;
   const [copied, setCopied] = useState(false);
-  const capsuleRef = useRef<HTMLDivElement>(null);
   const notify = useNotify();
 
   const clearSelection = useCallback(() => {
-    setSelectionData(null);
+    setSelection(null);
   }, []);
 
   const handleSelectionChange = useCallback(() => {
@@ -70,32 +70,30 @@ export function SelectionCapsule({
 
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
-      setSelectionData(null);
+      setSelection(null);
       return;
     }
 
     const text = selection.toString().trim();
     if (text.length < 2) {
-      setSelectionData(null);
+      setSelection(null);
       return;
     }
 
     const range = selection.getRangeAt(0);
     if (!container.contains(range.commonAncestorContainer)) {
-      setSelectionData(null);
+      setSelection(null);
       return;
     }
 
     const rect = range.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) {
-      setSelectionData(null);
+      setSelection(null);
       return;
     }
 
-    setSelectionData({
-      text,
-      rect,
-    });
+    // The capsule follows a copy of the range, so it stays on the text as the page scrolls.
+    setSelection({ payload: { text, rect }, range: range.cloneRange() });
   }, [contentRef]);
 
   useEffect(() => {
@@ -122,21 +120,18 @@ export function SelectionCapsule({
 
   const handleHighlight = (color: string) => {
     if (!selectionData) return;
-    soundEffects.press();
     onAddHighlight?.(selectionData, color);
     clearSelection();
   };
 
   const handleComment = () => {
     if (!selectionData) return;
-    soundEffects.press();
     onOpenThreadDraft?.(selectionData);
     clearSelection();
   };
 
   const handleSuggest = () => {
     if (!selectionData) return;
-    soundEffects.press();
     if (onSuggestEdit) {
       onSuggestEdit(selectionData);
     } else {
@@ -147,14 +142,12 @@ export function SelectionCapsule({
 
   const handleStash = () => {
     if (!selectionData) return;
-    soundEffects.press();
     onStashQuote?.(selectionData);
     clearSelection();
   };
 
   const handleShare = () => {
     if (!selectionData) return;
-    soundEffects.press();
     onShareQuote?.(selectionData);
     clearSelection();
   };
@@ -163,7 +156,6 @@ export function SelectionCapsule({
     if (!selectionData) return;
     try {
       await navigator.clipboard.writeText(selectionData.text);
-      soundEffects.press();
       setCopied(true);
       notify.success("Quote copied to clipboard");
       setTimeout(() => {
@@ -175,44 +167,32 @@ export function SelectionCapsule({
     }
   };
 
-  if (!selectionData || typeof document === "undefined") return null;
-
-  // Compute position centered above the selection with safe viewport bounds
-  const x = Math.max(
-    160,
-    Math.min(window.innerWidth - 160, selectionData.rect.left + selectionData.rect.width / 2)
-  );
-  const y = Math.max(70, selectionData.rect.top - 12);
-
-  const style: React.CSSProperties = {
-    position: "fixed",
-    left: `${x}px`,
-    top: `${y}px`,
-    transform: "translate(-50%, -100%)",
-    transformOrigin: "center bottom",
-    zIndex: 9999,
-  };
-
-  return createPortal(
-    <div
-      ref={capsuleRef}
-      style={style}
-      className={cn(
-        "animate-in fade-in zoom-in-95 flex items-center gap-1 rounded-2xl border border-[var(--wikios-border)] p-1 shadow-[0_12px_36px_rgba(0,0,0,0.4)] backdrop-blur-2xl transition-transform duration-100 select-none",
-        "bg-[var(--wikios-surface)]/95 text-[var(--wikios-text)]"
-      )}
+  return (
+    // Anchored to the text selection (a virtual anchor): centred above it, flipping below when
+    // there is no room. Keeps focus (and the selection) in the article.
+    <VirtualAnchorPopover
+      anchor={selection?.range ?? null}
+      onOpenChange={(open) => {
+        if (!open) clearSelection();
+      }}
+      side="top"
+      sideOffset={12}
+      role="toolbar"
+      aria-label="Selection actions"
+      className="flex w-auto items-center gap-1 rounded-full p-1 select-none"
     >
       {/* Highlight Color Palette */}
       {isAuthenticated && (
-        <div className="flex items-center gap-1 border-r border-[var(--wikios-border)] pr-1.5 pl-0.5">
+        <div className="border-separator flex items-center gap-1 border-r pr-2 pl-0.5">
           {HIGHLIGHT_PALETTE.map((p) => (
             <button
               key={p.color}
               type="button"
               onClick={() => handleHighlight(p.color)}
-              className="h-4.5 w-4.5 cursor-pointer rounded-full border border-white/25 shadow-xs transition-transform duration-100 hover:scale-110 active:scale-85"
+              className="border-separator duration-fast size-5 cursor-pointer rounded-full border transition-transform active:scale-[0.98]"
               style={{ backgroundColor: p.color }}
               title={`Highlight (${p.label})`}
+              aria-label={`Highlight (${p.label})`}
             />
           ))}
         </div>
@@ -222,7 +202,7 @@ export function SelectionCapsule({
       <button
         type="button"
         onClick={handleComment}
-        className="flex cursor-pointer items-center gap-1 rounded-xl px-2 py-1 text-xs font-semibold text-[var(--wikios-text-muted)] transition-transform duration-100 hover:bg-[var(--wikios-border)] hover:text-[var(--wikios-text)] active:scale-95"
+        className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-3 transition-[background-color,transform] active:scale-[0.98]"
         title="Discuss"
       >
         <MessageSquare className="text-margin-accent h-3.5 w-3.5" />
@@ -234,10 +214,10 @@ export function SelectionCapsule({
         <button
           type="button"
           onClick={handleSuggest}
-          className="flex cursor-pointer items-center gap-1 rounded-xl px-2 py-1 text-xs font-semibold text-[var(--wikios-text-muted)] transition-transform duration-100 hover:bg-[var(--wikios-border)] hover:text-[var(--wikios-text)] active:scale-95"
+          className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-3 transition-[background-color,transform] active:scale-[0.98]"
           title="Suggest edit"
         >
-          <Edit3 className="h-3.5 w-3.5 text-cyan-400" />
+          <Edit3 className="text-teal h-3.5 w-3.5" />
           <span>Suggest edit</span>
         </button>
       )}
@@ -247,10 +227,10 @@ export function SelectionCapsule({
         <button
           type="button"
           onClick={handleStash}
-          className="flex cursor-pointer items-center gap-1 rounded-xl px-2 py-1 text-xs font-semibold text-[var(--wikios-text-muted)] transition-transform duration-100 hover:bg-[var(--wikios-border)] hover:text-[var(--wikios-text)] active:scale-95"
+          className="text-caption text-label duration-fast hover:bg-fill-3 flex h-7 cursor-pointer items-center gap-1 rounded-full px-3 transition-[background-color,transform] active:scale-[0.98]"
           title="Save quote"
         >
-          <Bookmark className="h-3.5 w-3.5 text-rose-400" />
+          <Bookmark className="text-red h-3.5 w-3.5" />
           <span>Stash</span>
         </button>
       )}
@@ -259,8 +239,9 @@ export function SelectionCapsule({
       <button
         type="button"
         onClick={handleShare}
-        className="hover:text-margin-accent cursor-pointer rounded-xl p-1 text-[var(--wikios-text-dim)] transition-transform duration-100 hover:bg-[var(--wikios-border)] active:scale-95"
+        className="text-label-secondary duration-fast hover:bg-fill-3 hover:text-label flex size-7 cursor-pointer items-center justify-center rounded-full transition-[background-color,color,transform] active:scale-[0.98]"
         title="Share quote"
+        aria-label="Share quote"
       >
         <Share2 className="h-3.5 w-3.5" />
       </button>
@@ -269,16 +250,12 @@ export function SelectionCapsule({
       <button
         type="button"
         onClick={handleCopy}
-        className="cursor-pointer rounded-xl p-1 text-[var(--wikios-text-dim)] transition-transform duration-100 hover:bg-[var(--wikios-border)] hover:text-[var(--wikios-text)] active:scale-95"
+        className="text-label-secondary duration-fast hover:bg-fill-3 hover:text-label flex size-7 cursor-pointer items-center justify-center rounded-full transition-[background-color,color,transform] active:scale-[0.98]"
         title="Copy text"
+        aria-label="Copy text"
       >
-        {copied ? (
-          <Check className="h-3.5 w-3.5 text-emerald-400" />
-        ) : (
-          <Copy className="h-3.5 w-3.5" />
-        )}
+        {copied ? <Check className="text-green h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
       </button>
-    </div>,
-    document.body
+    </VirtualAnchorPopover>
   );
 }

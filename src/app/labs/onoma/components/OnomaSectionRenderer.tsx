@@ -15,7 +15,7 @@ import CategoryDomainSection from "./sections/CategoryDomainSection";
 // Suspense loading fallback
 const SectionLoadingFallback = () => (
   <div className="flex h-64 w-full items-center justify-center">
-    <Loader2 className="text-onoma-primary h-6 w-6 animate-spin" />
+    <Loader2 className="text-tint h-6 w-6 animate-spin" />
   </div>
 );
 

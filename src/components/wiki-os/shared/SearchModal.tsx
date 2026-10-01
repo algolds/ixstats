@@ -15,6 +15,8 @@ import { Search } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
+import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
+import { Button } from "~/components/ui/button";
 
 interface SearchModalProps {
   open: boolean;
@@ -82,23 +84,21 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
         onClose();
         navigateWithBasePath(`/util/search?q=${encodeURIComponent(query)}`, router);
       }
-    } else if (e.key === "Escape") {
-      onClose();
     }
   };
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]" onClick={onClose}>
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
-      <div
-        className="relative z-10 w-full max-w-lg rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent
+        presentation="instant"
+        showCloseButton={false}
+        aria-describedby={undefined}
+        className="top-[15vh] max-w-lg translate-y-0 gap-0 overflow-hidden p-0"
       >
+        <DialogTitle className="sr-only">Search articles</DialogTitle>
         {/* Input */}
-        <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
-          <Search className="h-4 w-4 shrink-0 text-[var(--wikios-text-dim)]" />
+        <div className="border-separator flex items-center gap-3 border-b px-4 py-3">
+          <Search className="text-label-secondary size-4 shrink-0" aria-hidden="true" />
           <input
             ref={inputRef}
             type="text"
@@ -106,24 +106,25 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search articles..."
-            className="min-w-0 flex-1 bg-transparent text-sm text-[var(--wikios-text)] outline-none placeholder:text-[var(--wikios-text-dim)]"
+            aria-label="Search articles"
+            className="text-body text-label placeholder:text-label-tertiary min-w-0 flex-1 bg-transparent outline-none"
             autoComplete="off"
             spellCheck={false}
           />
-          <kbd className="hidden shrink-0 rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-xs text-[var(--wikios-text-dim)] sm:inline">
+          <kbd className="rounded-control-sm border-separator bg-fill-4 text-caption text-label-secondary hidden shrink-0 border px-2 py-0.5 sm:inline">
             ESC
           </kbd>
         </div>
 
         {/* Results */}
         {query.length >= 2 && items.length > 0 && (
-          <ul className="max-h-80 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent overflow-y-auto py-1">
+          <ul className="max-h-80 overflow-y-auto py-1">
             {items.map((item, idx) => (
               <li key={item.title}>
                 <button
                   className={cn(
-                    "flex w-full flex-col px-4 py-2.5 text-left transition-colors",
-                    idx === selectedIndex ? "bg-white/10" : "hover:bg-white/5"
+                    "flex w-full flex-col px-4 py-3 text-left transition-colors",
+                    idx === selectedIndex ? "bg-fill-4" : "hover:bg-fill-4"
                   )}
                   onClick={() => navigate(item.title)}
                   onMouseEnter={() => setSelectedIndex(idx)}
@@ -131,16 +132,14 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
                 >
                   <span
                     className={cn(
-                      "truncate text-sm font-medium",
-                      idx === selectedIndex
-                        ? "text-[var(--wikios-text)]"
-                        : "text-[var(--wikios-text-muted)]"
+                      "text-headline truncate",
+                      idx === selectedIndex ? "text-label" : "text-label-secondary"
                     )}
                   >
                     {item.title}
                   </span>
                   {item.snippet && (
-                    <span className="mt-0.5 line-clamp-1 text-xs text-[var(--wikios-text-dim)]">
+                    <span className="text-footnote text-label-secondary mt-0.5 line-clamp-1">
                       {item.snippet}
                     </span>
                   )}
@@ -151,33 +150,34 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
         )}
 
         {query.length >= 2 && items.length === 0 && (
-          <div className="px-4 py-6 text-center text-sm text-[var(--wikios-text-dim)]">
+          <div className="text-body text-label-secondary px-4 py-6 text-center">
             No results for &ldquo;{query}&rdquo;
           </div>
         )}
 
         {/* Footer */}
         {query.length >= 2 && (
-          <div className="border-t border-white/10 px-4 py-2">
-            <button
-              className="text-xs text-[var(--wikios-text-dim)] transition-colors hover:text-[var(--wikios-text-muted)]"
+          <div className="border-separator border-t px-4 py-2">
+            <Button
+              variant="link"
+              size="sm"
               onClick={() => {
                 onClose();
                 navigateWithBasePath(`/util/search?q=${encodeURIComponent(query)}`, router);
               }}
-              type="button"
+              className="h-auto px-0"
             >
               Full search for &ldquo;{query}&rdquo; →
-            </button>
+            </Button>
           </div>
         )}
 
         {query.length < 2 && (
-          <div className="px-4 py-6 text-center text-xs text-[var(--wikios-text-dim)]">
+          <div className="text-footnote text-label-secondary px-4 py-6 text-center">
             Type at least 2 characters to search
           </div>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

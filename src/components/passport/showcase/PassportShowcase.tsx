@@ -6,6 +6,9 @@ import { RibbonBar } from "~/components/achievements/FloatingRibbonRack";
 import { getRarityColor } from "~/components/achievements/constants";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { TooltipProvider } from "~/components/ui/tooltip";
+import { Button } from "~/components/ui/button";
+import { Stat } from "~/components/ui/stat";
+import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import type {
   PassportAchievements,
@@ -14,11 +17,13 @@ import type {
   PassportVault,
 } from "../types";
 
-const SECTION_LABEL =
-  "text-muted-foreground flex items-center gap-1.5 font-mono text-xs font-bold tracking-wider uppercase";
+/** Section header (sentence-case `text-subhead`). */
+const SECTION_LABEL = "text-subhead text-label-secondary flex items-center gap-2";
 
-const PANEL =
-  "space-y-3 rounded-3xl border border-black/8 bg-black/[0.015] p-5 dark:border-white/10 dark:bg-white/[0.02]";
+/** An inset panel inside the passport card. */
+
+/** Section icon, decorative. */
+const SECTION_ICON = "size-4 shrink-0";
 
 /** How many ribbons the signature shelf holds. */
 export const SIGNATURE_SHELF_SIZE = 3;
@@ -49,8 +54,8 @@ function rarityLabel(rarity: string): string {
 
 function Hidden({ what, handle, isOwner }: { what: string; handle: string; isOwner: boolean }) {
   return (
-    <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
-      <EyeClosed className="h-3.5 w-3.5 shrink-0" />
+    <p className="text-label-secondary text-footnote flex items-center gap-2">
+      <EyeClosed aria-hidden className="size-3.5 shrink-0" />
       {isOwner
         ? `You hide your ${what}. Change it on the back of your passport.`
         : `@${handle} keeps their ${what} private.`}
@@ -70,7 +75,7 @@ function AchievementsPanel({
   if (!achievements) return <Hidden what="achievements" handle={handle} isOwner={isOwner} />;
   if (achievements.unlockedCount === 0) {
     return (
-      <p className="text-muted-foreground text-xs">
+      <p className="text-label-secondary text-footnote">
         @{handle} has not unlocked any achievements yet.
       </p>
     );
@@ -83,27 +88,24 @@ function AchievementsPanel({
   return (
     <TooltipProvider delayDuration={100}>
       <div className="space-y-4">
-        <p className="text-muted-foreground font-mono text-xs">
+        <p className="text-label-secondary text-footnote font-data tabular-nums">
           {achievements.unlockedCount.toLocaleString()}
           {achievements.totalCount ? ` / ${achievements.totalCount.toLocaleString()}` : ""} unlocked
           · {achievements.points.toLocaleString()} pts
         </p>
 
         <div className="space-y-2">
-          <span className="text-muted-foreground flex items-center gap-1 font-mono text-xs uppercase">
-            {shelf.pinned && <Pin className="h-3 w-3" />}
+          <h4 className="text-footnote text-label-secondary flex items-center gap-1 font-medium">
+            {shelf.pinned && <Pin aria-hidden className="size-3.5" />}
             {shelf.pinned ? "Signature ribbons" : "Top ribbons"}
-          </span>
+          </h4>
           <ul className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {shelf.ribbons.map((ribbon) => (
-              <li
-                key={ribbon.key}
-                className="flex items-center gap-2.5 rounded-2xl border border-black/6 bg-black/[0.02] p-2.5 dark:border-white/8 dark:bg-white/[0.02]"
-              >
+              <li key={ribbon.key} className="bg-surface rounded-row flex items-center gap-2 p-2">
                 <RibbonBar ribbon={ribbon} size="md" />
                 <div className="min-w-0">
-                  <p className="text-foreground truncate text-xs font-semibold">{ribbon.title}</p>
-                  <p className={cn("font-mono text-xs", getRarityColor(ribbon.rarity))}>
+                  <p className="text-label text-headline truncate">{ribbon.title}</p>
+                  <p className={cn("text-footnote", getRarityColor(ribbon.rarity))}>
                     {ribbon.rarity}
                   </p>
                 </div>
@@ -113,10 +115,11 @@ function AchievementsPanel({
         </div>
 
         <div className="space-y-2">
-          <span className="text-muted-foreground block font-mono text-xs uppercase">
-            Ribbon rack · {achievements.ribbons.length}
-          </span>
-          <div className="flex flex-wrap gap-1.5" data-testid="passport-ribbon-shelf">
+          <h4 className="text-footnote text-label-secondary font-medium">
+            Ribbon rack ·{" "}
+            <span className="font-data tabular-nums">{achievements.ribbons.length}</span>
+          </h4>
+          <div className="flex flex-wrap gap-2" data-testid="passport-ribbon-shelf">
             {achievements.ribbons.map((ribbon) => (
               <RibbonBar key={ribbon.key} ribbon={ribbon} />
             ))}
@@ -124,14 +127,14 @@ function AchievementsPanel({
         </div>
 
         {highlights.length > 0 && (
-          <ul className="divide-y divide-black/6 dark:divide-white/8">
+          <ul className="divide-separator divide-y">
             {highlights.map((ribbon) => (
               <li key={ribbon.key} className="flex items-center justify-between gap-3 py-2">
                 <div className="min-w-0">
-                  <p className="text-foreground truncate text-xs font-semibold">{ribbon.title}</p>
-                  <p className="text-muted-foreground truncate text-xs">{ribbon.category}</p>
+                  <p className="text-label text-headline truncate">{ribbon.title}</p>
+                  <p className="text-label-secondary text-footnote truncate">{ribbon.category}</p>
                 </div>
-                <span className={cn("shrink-0 font-mono text-xs", getRarityColor(ribbon.rarity))}>
+                <span className={cn("text-footnote shrink-0", getRarityColor(ribbon.rarity))}>
                   {ribbon.rarity}
                 </span>
               </li>
@@ -157,38 +160,39 @@ function CollectionPanel({
   if (!vault) return <Hidden what="collection" handle={handle} isOwner={isOwner} />;
   const cards = vault.topCards.slice(0, COLLECTION_SIZE);
   if (cards.length === 0) {
-    return <p className="text-muted-foreground text-xs">@{handle} has no IxCards yet.</p>;
+    return <p className="text-label-secondary text-footnote">@{handle} has no IxCards yet.</p>;
   }
   return (
     <div className="space-y-2">
-      <ul className="divide-y divide-black/6 dark:divide-white/8">
+      <ul className="divide-separator divide-y">
         {cards.map((card) => (
           <li
             key={card.ownershipId ?? card.id}
             className="flex items-center justify-between gap-3 py-2"
           >
             <div className="min-w-0">
-              <p className="text-foreground truncate text-xs font-semibold">{card.title}</p>
-              <p className={cn("font-mono text-xs", getRarityColor(rarityLabel(card.rarity)))}>
+              <p className="text-label text-headline truncate">{card.title}</p>
+              <p className={cn("text-footnote", getRarityColor(rarityLabel(card.rarity)))}>
                 {rarityLabel(card.rarity)}
               </p>
             </div>
-            <span className="text-foreground flex shrink-0 items-center gap-1 font-mono text-xs font-bold">
-              <IxCreditsSymbol className="h-3 w-3 text-amber-500" />
+            <span className="text-label text-headline font-data flex shrink-0 items-center gap-1 tabular-nums">
+              <IxCreditsSymbol aria-hidden className="text-yellow size-3.5" />
               {card.marketValue.toLocaleString()}
             </span>
           </li>
         ))}
       </ul>
       {onOpenVault && (
-        <button
+        <Button
           type="button"
+          variant="link"
+          size="sm"
           onClick={onOpenVault}
-          data-cuelume-press="soft"
-          className="cursor-pointer font-mono text-xs text-amber-600 hover:underline dark:text-amber-400"
+          className="h-auto px-0"
         >
           View all {vault.totalCards.toLocaleString()} cards
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -206,28 +210,16 @@ function LorewardsPanel({
   if (!data.privacy.accolades) return <Hidden what="Lorewards" handle={handle} isOwner={isOwner} />;
   const lore = data.wiki.lorewards;
   if (!lore || lore.totalScore <= 0) {
-    return <p className="text-muted-foreground text-xs">No Lorewards score yet.</p>;
+    return <p className="text-label-secondary text-footnote">No Lorewards score yet.</p>;
   }
   const laurels = lore.dailyWins + lore.weeklyWins + lore.monthlyWins;
   return (
-    <dl className="grid grid-cols-2 gap-2 font-mono text-xs">
-      <div>
-        <dt className="text-muted-foreground uppercase">Rank</dt>
-        <dd className="text-foreground text-sm font-bold">{lore.rank ? `#${lore.rank}` : "—"}</dd>
-      </div>
-      <div>
-        <dt className="text-muted-foreground uppercase">Score</dt>
-        <dd className="text-foreground text-sm font-bold">{lore.totalScore.toLocaleString()}</dd>
-      </div>
-      <div>
-        <dt className="text-muted-foreground uppercase">Laurels</dt>
-        <dd className="text-foreground text-sm font-bold">{laurels.toLocaleString()}</dd>
-      </div>
-      <div>
-        <dt className="text-muted-foreground uppercase">Best streak</dt>
-        <dd className="text-foreground text-sm font-bold">{lore.longestStreak}d</dd>
-      </div>
-    </dl>
+    <div className="grid grid-cols-2 gap-3">
+      <Stat size="sm" label="Rank" value={lore.rank ? `#${lore.rank}` : "—"} />
+      <Stat size="sm" label="Score" value={lore.totalScore.toLocaleString()} />
+      <Stat size="sm" label="Laurels" value={laurels.toLocaleString()} />
+      <Stat size="sm" label="Best streak" value={`${lore.longestStreak}d`} />
+    </div>
   );
 }
 
@@ -251,26 +243,26 @@ export const PassportShowcase = React.memo(function PassportShowcase({
   return (
     <section className="space-y-3" aria-label="Showcase">
       <h2 className={SECTION_LABEL}>
-        <Medal className="h-3.5 w-3.5 text-amber-500" />
+        <Medal aria-hidden className={SECTION_ICON} />
         <span>Showcase</span>
       </h2>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div className={cn(PANEL, "lg:col-span-3")}>
+        <FacetCard variant="inset" className="space-y-3 lg:col-span-3">
           <h3 className={SECTION_LABEL}>
-            <Trophy className="h-3.5 w-3.5 text-amber-500" />
-            <span>Achievements & Ribbons</span>
+            <Trophy aria-hidden className={SECTION_ICON} />
+            <span>Achievements and ribbons</span>
           </h3>
           <AchievementsPanel
             achievements={data.showcase.achievements}
             handle={cleanUsername}
             isOwner={isOwner}
           />
-        </div>
+        </FacetCard>
         <div className="space-y-4 lg:col-span-2">
-          <div className={PANEL}>
+          <FacetCard variant="inset" className="space-y-3">
             <h3 className={SECTION_LABEL}>
-              <Crown className="h-3.5 w-3.5 text-amber-500" />
-              <span>Collection Highlight</span>
+              <Crown aria-hidden className={SECTION_ICON} />
+              <span>Collection highlight</span>
             </h3>
             <CollectionPanel
               vault={data.vault}
@@ -278,14 +270,14 @@ export const PassportShowcase = React.memo(function PassportShowcase({
               isOwner={isOwner}
               onOpenVault={onOpenVault}
             />
-          </div>
-          <div className={PANEL}>
+          </FacetCard>
+          <FacetCard variant="inset" className="space-y-3">
             <h3 className={SECTION_LABEL}>
-              <Trophy className="h-3.5 w-3.5 text-amber-500" />
-              <span>Lorewards Standing</span>
+              <Trophy aria-hidden className={SECTION_ICON} />
+              <span>Lorewards standing</span>
             </h3>
             <LorewardsPanel data={data} handle={cleanUsername} isOwner={isOwner} />
-          </div>
+          </FacetCard>
         </div>
       </div>
     </section>

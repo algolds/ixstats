@@ -20,10 +20,7 @@ import {
 } from "slate";
 import { deserializeParsoidHtml, serializePlateToHtml, valueToPlainText } from "./wiki-html";
 // oxlint-disable-next-line eslint/no-unused-vars
-import {
-  wikitextToAst,
-  astToPlateNodes,
-} from "~/lib/wiki-os/transformers/wiki-ast-converter";
+import { wikitextToAst, astToPlateNodes } from "~/lib/wiki-os/transformers/wiki-ast-converter";
 import { createIxWikiPlugins, getIxWikiComponents } from "./plugins/createIxWikiPlugins";
 import { useSlashMenuState } from "./slash-menu/useSlashMenuState";
 import { WikiSlashMenu } from "./slash-menu/WikiSlashMenu";
@@ -37,7 +34,6 @@ import { PlateEngineChipElement } from "./elements/PlateEngineChipElement";
 import { PlateCoordChipElement, PlateMapEmbedChipElement } from "./elements/PlateCoordChipElement";
 import { PlateMediaElement } from "./elements/PlateMediaElement";
 import { PlateRawWikitextElement } from "./elements/PlateRawWikitextElement";
-
 
 export interface PlateWikiEditorProps {
   initialHtml?: string;
@@ -60,7 +56,9 @@ function LeafRenderer(props: any) {
   };
   let node = <>{children}</>;
   if (leaf.codeMark || leaf.code)
-    node = <code className="bg-secondary/60 rounded px-1 font-mono text-[0.9em]">{node}</code>;
+    node = (
+      <code className="bg-fill-3 rounded-control-sm px-1 text-[0.9em] tabular-nums">{node}</code>
+    );
   if (leaf.strike || leaf.strikethrough) node = <s>{node}</s>;
   if (leaf.underline) node = <u>{node}</u>;
   if (leaf.italic) node = <em>{node}</em>;
@@ -71,12 +69,12 @@ function LeafRenderer(props: any) {
 }
 
 const BLOCK_CLASS: Record<string, string> = {
-  h1: "wikios-ve-h1 mb-3 mt-6 border-b border-border/40 pb-1.5 text-2xl font-bold text-foreground",
-  h2: "wikios-ve-h2 mb-2 mt-5 border-b border-border/30 pb-1 text-xl font-bold text-foreground",
-  h3: "wikios-ve-h3 mb-1.5 mt-4 text-base font-bold text-foreground",
-  h4: "wikios-ve-h4 mb-1 mt-3 text-sm font-bold text-foreground",
-  h5: "wikios-ve-h5 mb-1 mt-2.5 text-xs font-bold text-foreground uppercase tracking-wider",
-  h6: "wikios-ve-h6 mb-1 mt-2 text-xs font-semibold text-muted-foreground",
+  h1: "wikios-ve-h1 mb-3 mt-6 border-b border-separator pb-2 text-title-1 text-label",
+  h2: "wikios-ve-h2 mb-2 mt-5 border-b border-separator pb-1 text-title-2 text-label",
+  h3: "wikios-ve-h3 mb-2 mt-4 text-title-3 text-label",
+  h4: "wikios-ve-h4 mb-1 mt-3 text-headline text-label",
+  h5: "wikios-ve-h5 mb-1 mt-2 text-eyebrow text-label",
+  h6: "wikios-ve-h6 mb-1 mt-2 text-caption font-semibold text-label-secondary",
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -84,7 +82,13 @@ function ElementRenderer(props: any) {
   const { attributes, children, element } = props as {
     attributes: any;
     children: React.ReactNode;
-    element: { type: string; url?: string; internal?: boolean; templateName?: string; name?: string };
+    element: {
+      type: string;
+      url?: string;
+      internal?: boolean;
+      templateName?: string;
+      name?: string;
+    };
   };
 
   switch (element.type) {
@@ -103,7 +107,7 @@ function ElementRenderer(props: any) {
       return (
         <blockquote
           {...attributes}
-          className="border-wiki/40 bg-wiki/5 text-muted-foreground my-2 border-l-4 px-3 py-1.5 italic"
+          className="border-tint/40 bg-tint/5 text-label-secondary my-2 border-l-4 px-3 py-2 italic"
         >
           {children}
         </blockquote>
@@ -112,32 +116,46 @@ function ElementRenderer(props: any) {
       return (
         <pre
           {...attributes}
-          className="my-2 overflow-x-auto rounded-xl bg-black/40 p-3 font-mono text-xs text-emerald-200"
+          className="rounded-row text-footnote text-green my-2 overflow-x-auto bg-black/40 p-3 tabular-nums"
         >
           <code>{children}</code>
         </pre>
       );
     case "ul":
       return (
-        <ul {...attributes} className="my-2 list-disc pl-6 space-y-1 text-sm leading-relaxed text-foreground/90">
+        <ul
+          {...attributes}
+          className="text-body text-label my-2 list-disc space-y-1 pl-6 leading-relaxed"
+        >
           {children}
         </ul>
       );
     case "ol":
       return (
-        <ol {...attributes} className="my-2 list-decimal pl-6 space-y-1 text-sm leading-relaxed text-foreground/90">
+        <ol
+          {...attributes}
+          className="text-body text-label my-2 list-decimal space-y-1 pl-6 leading-relaxed"
+        >
           {children}
         </ol>
       );
     case "li": {
       const level = (element as any).level || 1;
       const indentClass =
-        level === 2 ? "ml-4" :
-        level === 3 ? "ml-8" :
-        level === 4 ? "ml-12" :
-        level >= 5 ? "ml-16" : "";
+        level === 2
+          ? "ml-4"
+          : level === 3
+            ? "ml-8"
+            : level === 4
+              ? "ml-12"
+              : level >= 5
+                ? "ml-16"
+                : "";
       return (
-        <li {...attributes} className={`list-item pl-1 min-h-[1.5em] leading-relaxed ${indentClass}`}>
+        <li
+          {...attributes}
+          className={`list-item min-h-[1.5em] pl-1 leading-relaxed ${indentClass}`}
+        >
           {children}
         </li>
       );
@@ -146,20 +164,26 @@ function ElementRenderer(props: any) {
       return <span {...attributes}>{children}</span>;
     case "table":
       return (
-        <div {...attributes} className="my-3 overflow-x-auto rounded-xl border border-border/60 bg-card/40 p-2 shadow-xs transition-colors">
+        <div
+          {...attributes}
+          className="rounded-row border-separator bg-surface my-3 overflow-x-auto border p-2 transition-colors"
+        >
           {(element as any).caption && (
-            <div className="mb-2 px-1 text-xs font-semibold text-muted-foreground">
+            <div className="text-caption text-label-secondary mb-2 px-1 font-semibold">
               {(element as any).caption}
             </div>
           )}
-          <table className="w-full border-collapse text-xs">
+          <table className="text-footnote w-full border-collapse">
             <tbody>{children}</tbody>
           </table>
         </div>
       );
     case "tr":
       return (
-        <tr {...attributes} className="border-b border-border/40 last:border-0 hover:bg-secondary/20 transition-colors">
+        <tr
+          {...attributes}
+          className="border-separator hover:bg-fill-4 border-b transition-colors last:border-0"
+        >
           {children}
         </tr>
       );
@@ -167,7 +191,7 @@ function ElementRenderer(props: any) {
       return (
         <th
           {...attributes}
-          className="border border-border/50 bg-secondary/80 p-2.5 text-left font-semibold text-foreground min-w-[90px] focus-within:ring-1 focus-within:ring-wiki/50 focus-within:bg-wiki/10 transition-colors"
+          className="border-separator bg-fill-2 text-label focus-within:ring-tint/50 focus-within:bg-tint/10 min-w-[90px] border p-3 text-left font-semibold transition-colors focus-within:ring-1"
         >
           {children}
         </th>
@@ -176,7 +200,7 @@ function ElementRenderer(props: any) {
       return (
         <td
           {...attributes}
-          className="border border-border/40 p-2.5 text-foreground/90 min-w-[90px] focus-within:ring-1 focus-within:ring-wiki/50 focus-within:bg-wiki/5 transition-colors"
+          className="border-separator text-label focus-within:ring-tint/50 focus-within:bg-tint/5 min-w-[90px] border p-3 transition-colors focus-within:ring-1"
         >
           {children}
         </td>
@@ -184,14 +208,14 @@ function ElementRenderer(props: any) {
     case "hr":
       return (
         <div {...attributes} className="my-3">
-          <div contentEditable={false} className="border-border border-t" />
+          <div contentEditable={false} className="border-separator border-t" />
           {children}
         </div>
       );
     case "a":
     case "link":
       return (
-        <a {...attributes} href={element.url} className="text-wiki underline underline-offset-2">
+        <a {...attributes} href={element.url} className="text-tint underline underline-offset-2">
           {children}
         </a>
       );
@@ -199,7 +223,7 @@ function ElementRenderer(props: any) {
       return (
         <span
           {...attributes}
-          className="text-wiki align-super text-xs font-semibold cursor-pointer select-none hover:underline"
+          className="text-tint text-caption cursor-pointer align-super font-semibold select-none hover:underline"
           title={(element as any).label ? `Reference: ${(element as any).label}` : "Citation"}
         >
           [{(element as any).label || (element as any).name || "ref"}]
@@ -218,11 +242,11 @@ function ElementRenderer(props: any) {
         <span
           {...attributes}
           contentEditable={false}
-          className="inline-flex items-center gap-1 mx-0.5 px-1.5 py-0.5 rounded-md bg-secondary/80 border border-border/50 text-xs font-mono text-foreground select-none align-baseline hover:bg-secondary transition-colors"
+          className="rounded-control-sm bg-fill-2 border-separator text-footnote text-label hover:bg-fill-3 mx-0.5 inline-flex items-center gap-1 border px-2 py-0.5 align-baseline tabular-nums transition-colors select-none"
         >
-          <span className="text-wiki font-semibold">{"{{"}</span>
+          <span className="text-tint font-semibold">{"{{"}</span>
           <span>{element.templateName || (element as any).name || "template"}</span>
-          <span className="text-wiki font-semibold">{"}}"}</span>
+          <span className="text-tint font-semibold">{"}}"}</span>
           {children}
         </span>
       );
@@ -271,7 +295,6 @@ function ElementRenderer(props: any) {
       );
   }
 }
-
 
 export const PlateWikiEditor = React.memo(function PlateWikiEditor({
   initialHtml,
@@ -403,16 +426,12 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
               e.preventDefault();
               Editor.withoutNormalizing(editor as any, () => {
                 Transforms.delete(editor as any, { at: rangeBefore });
-                Transforms.setNodes(
-                  editor as any,
-                  { type: "li", level: 1 } as any,
-                  { at: blockPath }
-                );
-                Transforms.wrapNodes(
-                  editor as any,
-                  { type: "ul", children: [] } as any,
-                  { at: blockPath }
-                );
+                Transforms.setNodes(editor as any, { type: "li", level: 1 } as any, {
+                  at: blockPath,
+                });
+                Transforms.wrapNodes(editor as any, { type: "ul", children: [] } as any, {
+                  at: blockPath,
+                });
               });
               return;
             }
@@ -421,16 +440,12 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
               e.preventDefault();
               Editor.withoutNormalizing(editor as any, () => {
                 Transforms.delete(editor as any, { at: rangeBefore });
-                Transforms.setNodes(
-                  editor as any,
-                  { type: "li", level: 1 } as any,
-                  { at: blockPath }
-                );
-                Transforms.wrapNodes(
-                  editor as any,
-                  { type: "ol", children: [] } as any,
-                  { at: blockPath }
-                );
+                Transforms.setNodes(editor as any, { type: "li", level: 1 } as any, {
+                  at: blockPath,
+                });
+                Transforms.wrapNodes(editor as any, { type: "ol", children: [] } as any, {
+                  at: blockPath,
+                });
               });
               return;
             }
@@ -531,7 +546,10 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
                   try {
                     Transforms.select(editor as any, Editor.end(editor as any, targetPath));
                   } catch {
-                    Transforms.select(editor as any, Editor.end(editor as any, [...tablePath, rowIndex + 1, 0]));
+                    Transforms.select(
+                      editor as any,
+                      Editor.end(editor as any, [...tablePath, rowIndex + 1, 0])
+                    );
                   }
                 } else {
                   // Last row: append row
@@ -546,7 +564,10 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
                   const newRowPath = [...tablePath, rows.length];
                   Transforms.insertNodes(editor as any, newRow as any, { at: newRowPath });
                   const safeColIndex = Math.min(colIndex, colCount - 1);
-                  Transforms.select(editor as any, Editor.start(editor as any, [...newRowPath, safeColIndex]));
+                  Transforms.select(
+                    editor as any,
+                    Editor.start(editor as any, [...newRowPath, safeColIndex])
+                  );
                 }
               }
               return;
@@ -567,8 +588,7 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
           const [liNode, liPath] = liEntry;
           const [listEntry] = Editor.nodes(editor as unknown as import("slate").BaseEditor, {
             match: (n) =>
-              SlateElement.isElement(n) &&
-              ((n as any).type === "ul" || (n as any).type === "ol"),
+              SlateElement.isElement(n) && ((n as any).type === "ul" || (n as any).type === "ol"),
           });
 
           // ── Indent / Outdent on Tab / Shift+Tab ──
@@ -593,7 +613,9 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
               // Empty bullet: check if indented first
               const currentLevel = (liNode as any).level || 1;
               if (currentLevel > 1) {
-                Transforms.setNodes(editor as any, { level: currentLevel - 1 } as any, { at: liPath });
+                Transforms.setNodes(editor as any, { level: currentLevel - 1 } as any, {
+                  at: liPath,
+                });
                 return;
               }
 
@@ -604,12 +626,20 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
 
                 if (items.length <= 1) {
                   Transforms.removeNodes(editor as any, { at: listPath });
-                  Transforms.insertNodes(editor as any, { type: "p", children: [{ text: "" }] } as any, { at: listPath });
+                  Transforms.insertNodes(
+                    editor as any,
+                    { type: "p", children: [{ text: "" }] } as any,
+                    { at: listPath }
+                  );
                   Transforms.select(editor as any, Editor.end(editor as any, listPath));
                 } else {
                   Transforms.removeNodes(editor as any, { at: liPath });
                   const nextBlockPath = Path.next(listPath);
-                  Transforms.insertNodes(editor as any, { type: "p", children: [{ text: "" }] } as any, { at: nextBlockPath });
+                  Transforms.insertNodes(
+                    editor as any,
+                    { type: "p", children: [{ text: "" }] } as any,
+                    { at: nextBlockPath }
+                  );
                   Transforms.select(editor as any, Editor.end(editor as any, nextBlockPath));
                 }
               }
@@ -626,7 +656,9 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
               e.preventDefault();
               const currentLevel = (liNode as any).level || 1;
               if (currentLevel > 1) {
-                Transforms.setNodes(editor as any, { level: currentLevel - 1 } as any, { at: liPath });
+                Transforms.setNodes(editor as any, { level: currentLevel - 1 } as any, {
+                  at: liPath,
+                });
                 return;
               }
 
@@ -635,12 +667,20 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
 
               if (items.length <= 1) {
                 Transforms.removeNodes(editor as any, { at: listPath });
-                Transforms.insertNodes(editor as any, { type: "p", children: [{ text: "" }] } as any, { at: listPath });
+                Transforms.insertNodes(
+                  editor as any,
+                  { type: "p", children: [{ text: "" }] } as any,
+                  { at: listPath }
+                );
                 Transforms.select(editor as any, Editor.end(editor as any, listPath));
               } else {
                 Transforms.removeNodes(editor as any, { at: liPath });
                 const nextBlockPath = Path.next(listPath);
-                Transforms.insertNodes(editor as any, { type: "p", children: [{ text: "" }] } as any, { at: nextBlockPath });
+                Transforms.insertNodes(
+                  editor as any,
+                  { type: "p", children: [{ text: "" }] } as any,
+                  { at: nextBlockPath }
+                );
                 Transforms.select(editor as any, Editor.end(editor as any, nextBlockPath));
               }
               return;
@@ -659,7 +699,7 @@ export const PlateWikiEditor = React.memo(function PlateWikiEditor({
       <Plate editor={editor}>
         <ValueReporter editor={editor} onValueChange={onValueChange} readyRef={readyFired} />
         <PlateContent
-          className="wikios-ve-content wikios-ve-editable min-h-full flex-1 w-full outline-none p-6 pb-48 cursor-text"
+          className="wikios-ve-content wikios-ve-editable min-h-full w-full flex-1 cursor-text p-6 pb-48 outline-none"
           spellCheck
           renderElement={((props: any) => <ElementRenderer {...props} />) as never}
           renderLeaf={((props: any) => <LeafRenderer {...props} />) as never}

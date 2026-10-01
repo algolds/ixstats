@@ -7,6 +7,9 @@ import {
   SystemRestart as Loader2,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
 
 export interface AccountDetailsFormProps {
   formData: {
@@ -45,83 +48,86 @@ export function AccountDetailsForm({
   return (
     <div className={cn("space-y-6", className)}>
       <div className="flex items-center gap-3">
-        <button
-          onClick={onBack}
-          className="rounded-full p-2 text-slate-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/10 hover:text-white active:scale-95"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-        <h3 className="text-base font-bold tracking-tight text-white">Account Details</h3>
+        <Button variant="ghost" size="icon-sm" onClick={onBack} aria-label="Back to account type">
+          <ArrowLeft />
+        </Button>
+        <h3 className="text-headline text-label">Account Details</h3>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-slate-300">First Name</label>
-          <input
+          <label htmlFor="thinkpages-first-name" className="text-subhead text-label mb-2 block">
+            First Name
+          </label>
+          <Input
+            id="thinkpages-first-name"
             type="text"
             value={formData.firstName}
             onChange={(e) => setFormData((p: any) => ({ ...p, firstName: e.target.value }))}
             placeholder="Enter first name"
-            className={cn(
-              "block w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none",
-              errors.firstName && "border-red-500"
-            )}
+            aria-invalid={!!errors.firstName || undefined}
           />
-          {errors.firstName && <p className="mt-1 text-xs text-red-400">{errors.firstName}</p>}
+          {errors.firstName && (
+            <p className="text-footnote text-destructive mt-1">{errors.firstName}</p>
+          )}
         </div>
 
         <div>
-          <label className="mb-1.5 block text-xs font-semibold text-slate-300">
+          <label htmlFor="thinkpages-last-name" className="text-subhead text-label mb-2 block">
             Last Name (optional)
           </label>
-          <input
+          <Input
+            id="thinkpages-last-name"
             type="text"
             value={formData.lastName}
             onChange={(e) => setFormData((p: any) => ({ ...p, lastName: e.target.value }))}
             placeholder="Enter last name"
-            className="block w-full rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-xs text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none"
           />
         </div>
       </div>
 
       {/* Username Handle */}
       <div>
-        <label className="mb-1.5 block text-xs font-semibold text-slate-300">Username Handle</label>
+        <label htmlFor="thinkpages-username" className="text-subhead text-label mb-2 block">
+          Username Handle
+        </label>
         <div className="relative">
-          <span className="absolute inset-y-0 left-3 flex items-center text-xs text-slate-500">
+          <span className="text-body text-label-secondary absolute inset-y-0 left-3 flex items-center">
             @
           </span>
-          <input
+          <Input
+            id="thinkpages-username"
             type="text"
             value={formData.username}
             onChange={(e) => handleUsernameChange(e.target.value)}
             placeholder="username"
-            className={cn(
-              "block w-full rounded-xl border border-white/10 bg-black/40 py-2.5 pr-10 pl-8 text-xs text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none",
-              errors.username && "border-red-500",
-              isUsernameAvailable && "border-emerald-500"
-            )}
+            aria-invalid={!!errors.username || undefined}
+            className={cn("pr-10 pl-8", isUsernameAvailable && "border-success")}
           />
           <div className="absolute inset-y-0 right-3 flex items-center">
-            {isCheckingUsername && <Loader2 className="h-4 w-4 animate-spin text-slate-400" />}
-            {isUsernameAvailable === true && <Check className="h-4 w-4 text-emerald-400" />}
+            {isCheckingUsername && (
+              <Loader2 className="text-label-secondary size-4 animate-spin" aria-label="Checking" />
+            )}
+            {isUsernameAvailable === true && (
+              <Check className="text-success size-4" aria-label="Available" />
+            )}
             {isUsernameAvailable === false && !errors.username && (
-              <AlertCircle className="h-4 w-4 text-red-400" />
+              <AlertCircle className="text-destructive size-4" aria-label="Unavailable" />
             )}
           </div>
         </div>
         {errors.username ? (
-          <p className="mt-1 text-xs text-red-400">{errors.username}</p>
+          <p className="text-footnote text-destructive mt-1">{errors.username}</p>
         ) : isUsernameAvailable === true ? (
-          <p className="mt-1 text-xs text-emerald-400">Username handle is available</p>
+          <p className="text-footnote text-success mt-1">Username handle is available</p>
         ) : isUsernameAvailable === false && formData.username.length >= 3 ? (
-          <p className="mt-1 text-xs text-red-400">
+          <p className="text-footnote text-destructive mt-1">
             {!isValidUsernameFormat
               ? "Must start with a letter (letters, numbers, underscores only)"
               : "Username is already taken"}
           </p>
         ) : (
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="text-footnote text-label-secondary mt-1">
             3-20 characters, letters, numbers, and underscores
           </p>
         )}
@@ -129,52 +135,53 @@ export function AccountDetailsForm({
 
       {/* Bio */}
       <div>
-        <label className="mb-1.5 block text-xs font-semibold text-slate-300">Bio (optional)</label>
-        <textarea
+        <label htmlFor="thinkpages-bio" className="text-subhead text-label mb-2 block">
+          Bio (optional)
+        </label>
+        <Textarea
+          id="thinkpages-bio"
           value={formData.bio}
           onChange={(e) => setFormData((p: any) => ({ ...p, bio: e.target.value }))}
           placeholder="Describe this account..."
           maxLength={160}
-          className="block min-h-[80px] w-full rounded-xl border border-white/10 bg-black/40 p-3 text-xs text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 focus:outline-none"
+          className="min-h-[80px]"
         />
-        <div className="mt-1 text-right text-xs text-slate-500">{formData.bio.length}/160</div>
+        <div className="text-footnote text-label-secondary mt-1 text-right tabular-nums">
+          {formData.bio.length}/160
+        </div>
       </div>
 
       {/* Profile Image Picker */}
       <div>
-        <label className="mb-1.5 block text-xs font-semibold text-slate-300">
-          Profile Image (optional)
-        </label>
+        <span className="text-subhead text-label mb-2 block">Profile Image (optional)</span>
         <div className="flex items-center gap-4">
-          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-white/10 bg-black/50">
+          <div className="border-separator bg-fill-3 size-16 shrink-0 overflow-hidden rounded-full border">
             {formData.profileImageUrl ? (
               <img
                 src={formData.profileImageUrl}
                 alt="Profile"
-                className="h-full w-full object-cover"
+                className="size-full object-cover"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-xs text-slate-500">
+              <div className="text-footnote text-label-secondary flex size-full items-center justify-center">
                 No Image
               </div>
             )}
           </div>
           <div className="flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={onOpenImageSearch}
-              className="rounded-xl border border-blue-500/30 bg-blue-500/15 px-3.5 py-2 text-xs font-semibold text-blue-300 transition-colors hover:bg-blue-500/25 active:scale-[0.96]"
-            >
+            <Button type="button" variant="tinted" size="sm" onClick={onOpenImageSearch}>
               Search Repository
-            </button>
+            </Button>
             {formData.profileImageUrl && (
-              <button
+              <Button
                 type="button"
+                variant="plain"
+                size="sm"
                 onClick={() => setFormData((p: any) => ({ ...p, profileImageUrl: "" }))}
-                className="text-xs font-medium text-red-400 hover:underline"
+                className="text-destructive hover:text-destructive"
               >
                 Remove Image
-              </button>
+              </Button>
             )}
           </div>
         </div>

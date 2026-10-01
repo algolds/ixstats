@@ -61,10 +61,10 @@ export const NetworkOverviewCard = React.memo(function NetworkOverviewCard({
   ];
 
   return (
-    <FacetCard depth={1} className="rounded-2xl">
+    <FacetCard className="rounded-card">
       <FacetCardHeader className="p-4 pb-2">
-        <h3 className="text-foreground flex items-center gap-2 text-sm font-semibold">
-          <Globe className="h-4 w-4 text-cyan-500" />
+        <h3 className="text-label text-headline flex items-center gap-2">
+          <Globe className="text-cyan h-4 w-4" />
           Embassy Network Power
           <InlineHelpIcon
             title="Embassy Network"
@@ -76,18 +76,18 @@ export const NetworkOverviewCard = React.memo(function NetworkOverviewCard({
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {kpis.map((k) => (
             <div key={k.label} className="space-y-0.5">
-              <div className="text-foreground text-lg font-semibold tabular-nums">{k.value}</div>
+              <div className="text-label text-title-3 tabular-nums">{k.value}</div>
               <Eyebrow>{k.label}</Eyebrow>
             </div>
           ))}
         </div>
 
-        <div className="border-border grid grid-cols-3 gap-2 border-t pt-3">
+        <div className="border-separator grid grid-cols-3 gap-2 border-t pt-3">
           {bonuses.map((b) => (
             <div key={b.label} className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">{b.label}</span>
-                <span className="text-foreground font-semibold tabular-nums">
+              <div className="text-footnote flex items-center justify-between">
+                <span className="text-label-secondary">{b.label}</span>
+                <span className="text-label font-semibold tabular-nums">
                   +{b.value.toFixed(1)}%
                 </span>
               </div>

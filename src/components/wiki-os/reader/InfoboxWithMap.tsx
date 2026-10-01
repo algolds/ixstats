@@ -54,7 +54,7 @@ export function InfoboxWithMap({ infoboxHtml, articleTitle, markupId }: InfoboxW
   const infoboxMarkup = useMemo(() => ({ __html: infoboxHtml }), [infoboxHtml]);
 
   return (
-    <aside className="wikios-infobox facet-hierarchy-child">
+    <aside className="wikios-infobox rounded-row border-separator bg-surface border">
       <div id={markupId} className={ARTICLE_STYLE_ROOT_CLASS} dangerouslySetInnerHTML={infoboxMarkup} />
       {matchedCountry && (
         <div className="wikios-infobox-map-embed">

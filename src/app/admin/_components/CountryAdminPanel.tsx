@@ -20,6 +20,14 @@ import {
 } from "iconoir-react";
 import { useBulkFlagCache } from "~/hooks/useUnifiedFlags";
 import { useNotify } from "~/hooks/useNotify";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 export function CountryAdminPanel() {
   const notify = useNotify();
@@ -118,10 +126,10 @@ export function CountryAdminPanel() {
   // Loading state
   if (isLoading) {
     return (
-      <Card className="facet-card p-8">
+      <Card className="p-8">
         <div className="mb-6 flex items-center gap-3">
-          <Users className="text-primary h-6 w-6" />
-          <h2 className="text-2xl font-bold">Country Admin</h2>
+          <Users className="text-tint h-6 w-6" />
+          <h2 className="text-title-1">Country Admin</h2>
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -141,26 +149,26 @@ export function CountryAdminPanel() {
   }
   if (error) {
     return (
-      <Card className="facet-card p-8">
+      <Card className="p-8">
         <div className="mb-6 flex items-center gap-3">
-          <AlertCircle className="h-6 w-6 text-red-500" />
-          <h2 className="text-2xl font-bold text-red-600">Country Admin</h2>
+          <AlertCircle className="text-red h-6 w-6" />
+          <h2 className="text-title-1 text-red">Country Admin</h2>
         </div>
-        <div className="text-red-600">Error loading countries: {error.message}</div>
+        <div className="text-red">Error loading countries: {error.message}</div>
       </Card>
     );
   }
 
   return (
-    <Card className="facet-card p-8">
+    <Card className="p-8">
       <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
-          <Users className="text-primary h-6 w-6" />
-          <h2 className="text-2xl font-bold">Country Admin</h2>
+          <Users className="text-tint h-6 w-6" />
+          <h2 className="text-title-1">Country Admin</h2>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
+            <Search className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
             <Input
               type="text"
               placeholder="Search countries..."
@@ -175,196 +183,187 @@ export function CountryAdminPanel() {
           </Button>
         </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="bg-background min-w-full rounded-lg border">
-          <thead>
-            <tr className="bg-muted/50">
-              <th className="p-2 text-left">Flag</th>
-              <th className="p-2 text-left">Name</th>
-              <th className="p-2 text-left">Continent</th>
-              <th className="p-2 text-left">Region</th>
-              <th className="p-2 text-right">Population</th>
-              <th className="p-2 text-right">GDP p.c.</th>
-              <th className="p-2 text-right">Total GDP</th>
-              <th className="p-2 text-center">Tier</th>
-              <th className="p-2 text-center" title="Hide Diplomatic Ops Tab">
-                <div className="flex items-center justify-center gap-1">
-                  <EyeOff className="h-3 w-3" />
-                  <span className="text-xs">Dipl</span>
-                </div>
-              </th>
-              <th className="p-2 text-center" title="Hide StratComm Intel Tab">
-                <div className="flex items-center justify-center gap-1">
-                  <EyeOff className="h-3 w-3" />
-                  <span className="text-xs">Strat</span>
-                </div>
-              </th>
-              <th className="p-2 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {countries.map((country: any) => {
-              const isEditing = editId === country.id;
-              const flagUrl = flagUrls[country.name] || null;
-              return (
-                <tr
-                  key={country.id}
-                  className={isEditing ? "bg-blue-50 dark:bg-blue-900/20" : "hover:bg-muted/30"}
-                >
-                  <td className="p-2">
-                    {flagsLoading ? (
-                      <Skeleton className="h-6 w-10 rounded" />
-                    ) : flagUrl ? (
-                      <img
-                        src={flagUrl}
-                        alt={country.name}
-                        className="h-6 w-10 rounded border object-cover"
-                      />
-                    ) : (
-                      <div className="bg-muted text-muted-foreground flex h-6 w-10 items-center justify-center rounded text-xs">
-                        N/A
-                      </div>
-                    )}
-                  </td>
-                  <td className="p-2 font-medium">
-                    {isEditing ? (
-                      <Input
-                        value={editData.name}
-                        onChange={(e) => handleChange("name", e.target.value)}
-                      />
-                    ) : (
-                      country.name
-                    )}
-                  </td>
-                  <td className="p-2">
-                    {isEditing ? (
-                      <Input
-                        value={editData.continent || ""}
-                        onChange={(e) => handleChange("continent", e.target.value)}
-                      />
-                    ) : (
-                      country.continent || "—"
-                    )}
-                  </td>
-                  <td className="p-2">
-                    {isEditing ? (
-                      <Input
-                        value={editData.region || ""}
-                        onChange={(e) => handleChange("region", e.target.value)}
-                      />
-                    ) : (
-                      country.region || "—"
-                    )}
-                  </td>
-                  <td className="p-2 text-right">
-                    {isEditing ? (
-                      <Input
-                        type="number"
-                        value={editData.currentPopulation}
-                        onChange={(e) => handleChange("currentPopulation", Number(e.target.value))}
-                      />
-                    ) : (
-                      Math.round(country.currentPopulation ?? 0).toLocaleString() || "—"
-                    )}
-                  </td>
-                  <td className="p-2 text-right">
-                    {isEditing ? (
-                      <Input
-                        type="number"
-                        value={editData.currentGdpPerCapita}
-                        onChange={(e) =>
-                          handleChange("currentGdpPerCapita", Number(e.target.value))
-                        }
-                      />
-                    ) : (
-                      country.currentGdpPerCapita?.toLocaleString() || "—"
-                    )}
-                  </td>
-                  <td className="p-2 text-right">
-                    {isEditing ? (
-                      <Input
-                        type="number"
-                        value={editData.currentTotalGdp}
-                        onChange={(e) => handleChange("currentTotalGdp", Number(e.target.value))}
-                      />
-                    ) : (
-                      country.currentTotalGdp?.toLocaleString() || "—"
-                    )}
-                  </td>
-                  <td className="p-2 text-center">
-                    <Badge variant="secondary">{country.economicTier || "—"}</Badge>
-                  </td>
-                  <td className="p-2 text-center">
-                    <Checkbox
-                      checked={country.hideDiplomaticOps || false}
-                      onCheckedChange={() =>
-                        handleVisibilityToggle(
-                          country.id,
-                          "hideDiplomaticOps",
-                          country.hideDiplomaticOps || false
-                        )
-                      }
-                      disabled={updateMutation.isPending}
-                      title="Hide Diplomatic Operations tab"
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Flag</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Continent</TableHead>
+            <TableHead>Region</TableHead>
+            <TableHead className="text-right">Population</TableHead>
+            <TableHead className="text-right">GDP p.c.</TableHead>
+            <TableHead className="text-right">Total GDP</TableHead>
+            <TableHead className="text-center">Tier</TableHead>
+            <TableHead className="text-center" title="Hide Diplomatic Ops Tab">
+              <div className="flex items-center justify-center gap-1">
+                <EyeOff className="h-3 w-3" />
+                <span className="text-footnote">Dipl</span>
+              </div>
+            </TableHead>
+            <TableHead className="text-center" title="Hide StratComm Intel Tab">
+              <div className="flex items-center justify-center gap-1">
+                <EyeOff className="h-3 w-3" />
+                <span className="text-footnote">Strat</span>
+              </div>
+            </TableHead>
+            <TableHead className="text-center">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {countries.map((country: any) => {
+            const isEditing = editId === country.id;
+            const flagUrl = flagUrls[country.name] || null;
+            return (
+              <TableRow key={country.id} className={isEditing ? "bg-blue/10" : "hover:bg-fill-4"}>
+                <TableCell className="p-2">
+                  {flagsLoading ? (
+                    <Skeleton className="rounded-control-sm h-6 w-10" />
+                  ) : flagUrl ? (
+                    <img
+                      src={flagUrl}
+                      alt={country.name}
+                      className="rounded-control-sm h-6 w-10 border object-cover"
                     />
-                  </td>
-                  <td className="p-2 text-center">
-                    <Checkbox
-                      checked={country.hideStratcommIntel || false}
-                      onCheckedChange={() =>
-                        handleVisibilityToggle(
-                          country.id,
-                          "hideStratcommIntel",
-                          country.hideStratcommIntel || false
-                        )
-                      }
-                      disabled={updateMutation.isPending}
-                      title="Hide StratComm Intelligence tab"
+                  ) : (
+                    <div className="bg-fill-3 text-label-secondary rounded-control-sm text-footnote flex h-6 w-10 items-center justify-center">
+                      N/A
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell className="p-2 font-medium">
+                  {isEditing ? (
+                    <Input
+                      value={editData.name}
+                      onChange={(e) => handleChange("name", e.target.value)}
                     />
-                  </td>
-                  <td className="p-2 text-center">
-                    {isEditing ? (
-                      <div className="flex justify-center gap-2">
-                        <Button size="sm" onClick={handleSave} disabled={updateMutation.isPending}>
-                          {updateMutation.isPending ? (
-                            <Save className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Save className="h-4 w-4" />
-                          )}{" "}
-                          Save
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={handleCancel}>
-                          <X className="h-4 w-4" /> Cancel
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button size="sm" variant="outline" onClick={() => handleEdit(country)}>
-                        <Edit3 className="h-4 w-4" /> Edit
+                  ) : (
+                    country.name
+                  )}
+                </TableCell>
+                <TableCell className="p-2">
+                  {isEditing ? (
+                    <Input
+                      value={editData.continent || ""}
+                      onChange={(e) => handleChange("continent", e.target.value)}
+                    />
+                  ) : (
+                    country.continent || "—"
+                  )}
+                </TableCell>
+                <TableCell className="p-2">
+                  {isEditing ? (
+                    <Input
+                      value={editData.region || ""}
+                      onChange={(e) => handleChange("region", e.target.value)}
+                    />
+                  ) : (
+                    country.region || "—"
+                  )}
+                </TableCell>
+                <TableCell className="p-2 text-right">
+                  {isEditing ? (
+                    <Input
+                      type="number"
+                      value={editData.currentPopulation}
+                      onChange={(e) => handleChange("currentPopulation", Number(e.target.value))}
+                    />
+                  ) : (
+                    Math.round(country.currentPopulation ?? 0).toLocaleString() || "—"
+                  )}
+                </TableCell>
+                <TableCell className="p-2 text-right">
+                  {isEditing ? (
+                    <Input
+                      type="number"
+                      value={editData.currentGdpPerCapita}
+                      onChange={(e) => handleChange("currentGdpPerCapita", Number(e.target.value))}
+                    />
+                  ) : (
+                    country.currentGdpPerCapita?.toLocaleString() || "—"
+                  )}
+                </TableCell>
+                <TableCell className="p-2 text-right">
+                  {isEditing ? (
+                    <Input
+                      type="number"
+                      value={editData.currentTotalGdp}
+                      onChange={(e) => handleChange("currentTotalGdp", Number(e.target.value))}
+                    />
+                  ) : (
+                    country.currentTotalGdp?.toLocaleString() || "—"
+                  )}
+                </TableCell>
+                <TableCell className="p-2 text-center">
+                  <Badge variant="secondary">{country.economicTier || "—"}</Badge>
+                </TableCell>
+                <TableCell className="p-2 text-center">
+                  <Checkbox
+                    checked={country.hideDiplomaticOps || false}
+                    onCheckedChange={() =>
+                      handleVisibilityToggle(
+                        country.id,
+                        "hideDiplomaticOps",
+                        country.hideDiplomaticOps || false
+                      )
+                    }
+                    disabled={updateMutation.isPending}
+                    title="Hide Diplomatic Operations tab"
+                  />
+                </TableCell>
+                <TableCell className="p-2 text-center">
+                  <Checkbox
+                    checked={country.hideStratcommIntel || false}
+                    onCheckedChange={() =>
+                      handleVisibilityToggle(
+                        country.id,
+                        "hideStratcommIntel",
+                        country.hideStratcommIntel || false
+                      )
+                    }
+                    disabled={updateMutation.isPending}
+                    title="Hide StratComm Intelligence tab"
+                  />
+                </TableCell>
+                <TableCell className="p-2 text-center">
+                  {isEditing ? (
+                    <div className="flex justify-center gap-2">
+                      <Button size="sm" onClick={handleSave} disabled={updateMutation.isPending}>
+                        {updateMutation.isPending ? (
+                          <Save className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4" />
+                        )}{" "}
+                        Save
                       </Button>
+                      <Button size="sm" variant="outline" onClick={handleCancel}>
+                        <X className="h-4 w-4" /> Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={() => handleEdit(country)}>
+                      <Edit3 className="h-4 w-4" /> Edit
+                    </Button>
+                  )}
+                  {saveStatus &&
+                    saveStatus.id === country.id &&
+                    saveStatus.status === "success" && (
+                      <span className="text-green ml-2">
+                        <CheckCircle className="inline h-4 w-4" /> Saved
+                      </span>
                     )}
-                    {saveStatus &&
-                      saveStatus.id === country.id &&
-                      saveStatus.status === "success" && (
-                        <span className="ml-2 text-green-600">
-                          <CheckCircle className="inline h-4 w-4" /> Saved
-                        </span>
-                      )}
-                    {saveStatus &&
-                      saveStatus.id === country.id &&
-                      saveStatus.status === "error" && (
-                        <span className="ml-2 text-red-600">
-                          <AlertCircle className="inline h-4 w-4" /> {saveStatus.error}
-                        </span>
-                      )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                  {saveStatus && saveStatus.id === country.id && saveStatus.status === "error" && (
+                    <span className="text-red ml-2">
+                      <AlertCircle className="inline h-4 w-4" /> {saveStatus.error}
+                    </span>
+                  )}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
       {countries.length === 0 && (
-        <div className="text-muted-foreground py-12 text-center">No countries found.</div>
+        <div className="text-label-secondary py-12 text-center">No countries found.</div>
       )}
     </Card>
   );

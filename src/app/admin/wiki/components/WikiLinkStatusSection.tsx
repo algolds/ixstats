@@ -2,13 +2,22 @@
 // src/app/admin/wiki/components/WikiLinkStatusSection.tsx
 // Wiki Link Status table & filtering overview.
 
+import { FacetCard } from "~/components/ui/facet-container";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { useState, useMemo } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Search, Link as Link2, CheckCircle, XmarkCircle as XCircle } from "iconoir-react";
-import { cn } from "~/lib/utils";
 import type { FilterTab } from "./types";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 export function WikiLinkStatusSection({
   countriesData,
@@ -63,39 +72,32 @@ export function WikiLinkStatusSection({
   ];
 
   return (
-    <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+    <FacetCard className="space-y-4 p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <Link2 className="h-4 w-4 text-emerald-400" />
-          <h3 className="text-foreground text-xs font-bold">Wiki Link Status</h3>
+          <Link2 className="text-green h-4 w-4" />
+          <h3 className="text-label text-caption">Wiki Link Status</h3>
         </div>
-        <div className="bg-card/40 border-border/40 flex items-center gap-1 rounded-xl border p-1 backdrop-blur-md">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setFilter(tab.key)}
-              className={cn(
-                "rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-                filter === tab.key
-                  ? "bg-primary text-primary-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {tab.label}
-              <span className="ml-1 opacity-70">({tab.count})</span>
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          size="sm"
+          aria-label="Link status filter"
+          value={filter}
+          onValueChange={setFilter}
+          options={TABS.map((tab) => ({
+            value: tab.key,
+            label: `${tab.label} (${tab.count})`,
+          }))}
+        />
       </div>
 
       {/* Search */}
       <div className="relative max-w-sm">
-        <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+        <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
         <Input
           placeholder="Search countries..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="border-border/30 bg-background/50 focus:border-border/60 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
+          className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
         />
       </div>
 
@@ -103,65 +105,59 @@ export function WikiLinkStatusSection({
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-10 w-full rounded-xl" />
+            <Skeleton key={i} className="rounded-row h-10 w-full" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-muted-foreground py-8 text-center text-xs">
+        <div className="text-label-secondary text-footnote py-8 text-center">
           No countries match your filters.
         </div>
       ) : (
-        <div className="border-border/30 bg-card/25 max-h-[28rem] overflow-x-auto overflow-y-auto rounded-2xl border shadow-xs backdrop-blur-md">
-          <table className="w-full text-xs">
-            <thead className="bg-muted/20 border-border/30 text-muted-foreground sticky top-0 border-b font-semibold backdrop-blur-md">
-              <tr>
-                <th className="px-4 py-2.5 text-left font-medium">Country</th>
-                <th className="px-4 py-2.5 text-left font-medium">Wiki Page</th>
-                <th className="hidden px-4 py-2.5 text-left font-medium sm:table-cell">Source</th>
-                <th className="hidden px-4 py-2.5 text-left font-medium md:table-cell">
-                  Last Synced
-                </th>
-                <th className="px-4 py-2.5 text-right font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-border/15 divide-y">
-              {filtered.map((country) => (
-                <tr key={country.id} className="hover:bg-foreground/[0.02] transition-colors">
-                  <td className="text-foreground px-4 py-2.5 font-semibold">{country.name}</td>
-                  <td className="text-muted-foreground max-w-[12rem] truncate px-4 py-2.5">
-                    {country.wikiPageTitle ?? <span className="italic opacity-50">Not linked</span>}
-                  </td>
-                  <td className="hidden px-4 py-2.5 sm:table-cell">
-                    {country.wikiSource ? (
-                      <Badge variant="outline" className="text-xs">
-                        {country.wikiSource}
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground opacity-50">—</span>
-                    )}
-                  </td>
-                  <td className="text-muted-foreground hidden px-4 py-2.5 font-mono text-xs md:table-cell">
-                    {country.wikiLastSynced
-                      ? new Date(country.wikiLastSynced).toLocaleDateString()
-                      : "—"}
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
-                    {country.wikiPageTitle ? (
-                      <CheckCircle className="ml-auto h-4 w-4 text-emerald-400" />
-                    ) : (
-                      <XCircle className="ml-auto h-4 w-4 text-red-400" />
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table containerClassName="max-h-[28rem]">
+          <TableHeader sticky>
+            <TableRow>
+              <TableHead className="px-4">Country</TableHead>
+              <TableHead className="px-4">Wiki Page</TableHead>
+              <TableHead className="hidden px-4 sm:table-cell">Source</TableHead>
+              <TableHead className="hidden px-4 md:table-cell">Last Synced</TableHead>
+              <TableHead className="px-4 text-right">Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.map((country) => (
+              <TableRow key={country.id}>
+                <TableCell className="text-label px-4 font-semibold">{country.name}</TableCell>
+                <TableCell className="text-label-secondary max-w-[12rem] truncate px-4">
+                  {country.wikiPageTitle ?? <span className="italic opacity-50">Not linked</span>}
+                </TableCell>
+                <TableCell className="hidden px-4 sm:table-cell">
+                  {country.wikiSource ? (
+                    <Badge variant="outline">{country.wikiSource}</Badge>
+                  ) : (
+                    <span className="text-label-secondary opacity-50">—</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-label-secondary text-footnote hidden px-4 md:table-cell">
+                  {country.wikiLastSynced
+                    ? new Date(country.wikiLastSynced).toLocaleDateString()
+                    : "—"}
+                </TableCell>
+                <TableCell className="px-4 text-right">
+                  {country.wikiPageTitle ? (
+                    <CheckCircle className="text-green ml-auto h-4 w-4" />
+                  ) : (
+                    <XCircle className="text-red ml-auto h-4 w-4" />
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
 
-      <p className="text-muted-foreground text-xs">
+      <p className="text-label-secondary text-footnote">
         {linkedCount} of {countries.length} countries linked to wiki pages
       </p>
-    </div>
+    </FacetCard>
   );
 }

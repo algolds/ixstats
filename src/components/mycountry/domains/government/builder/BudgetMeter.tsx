@@ -34,16 +34,16 @@ export const BudgetMeter = React.memo(function BudgetMeter({ budgetSummary }: Bu
     : isWarning
       ? {
           icon: TrendingUp,
-          text: "text-amber-600",
-          bar: "bg-amber-500",
-          border: "border-amber-500/40",
+          text: "text-yellow",
+          bar: "bg-yellow",
+          border: "border-yellow/40",
           message:
             "Fiscal Precaution: Approaching maximum target budget. Maintain tight control over operational margins.",
         }
       : {
           icon: CheckCircle,
-          text: "text-emerald-600",
-          bar: "bg-emerald-500",
+          text: "text-green",
+          bar: "bg-green",
           border: "",
           message:
             "Fiscal Health: Allocation structure is optimal and conforms to stability directives.",
@@ -51,44 +51,41 @@ export const BudgetMeter = React.memo(function BudgetMeter({ budgetSummary }: Bu
   const StatusIcon = status.icon;
 
   return (
-    <FacetCard depth={1} className={cn("p-5", status.border)}>
+    <FacetCard className={cn("p-5", status.border)}>
       <div className="flex flex-col gap-4">
         <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2">
             <StatusIcon aria-hidden="true" className={cn("h-5 w-5", status.text)} />
-            <h3 className="text-foreground text-sm font-semibold">Fiscal allocation status</h3>
+            <h4 className="text-label text-headline">Fiscal allocation status</h4>
           </div>
-          <div className="text-xs font-medium tabular-nums sm:text-sm">
-            <span className={cn("mr-1 font-mono text-base font-semibold", status.text)}>
+          <div className="text-caption sm:text-body tabular-nums">
+            <span className={cn("text-title-3 mr-1 tabular-nums", status.text)}>
               {totalAllocatedPercent.toFixed(1)}%
             </span>
-            <span className="text-muted-foreground">allocated</span>
-            <span aria-hidden="true" className="text-muted-foreground mx-2">
+            <span className="text-label-secondary">allocated</span>
+            <span aria-hidden="true" className="text-label-secondary mx-2">
               •
             </span>
             <span
               className={cn(
-                "mr-1 font-mono font-semibold",
-                remainingPercent < 0 ? "text-destructive" : "text-foreground"
+                "mr-1 font-semibold tabular-nums",
+                remainingPercent < 0 ? "text-destructive" : "text-label"
               )}
             >
               {remainingPercent.toFixed(1)}%
             </span>
-            <span className="text-muted-foreground">remaining</span>
+            <span className="text-label-secondary">remaining</span>
           </div>
         </div>
 
         <Progress
           value={Math.min(100, Math.max(0, totalAllocatedPercent))}
-          className="bg-muted h-3"
+          className="bg-fill-3 h-3"
           indicatorClassName={status.bar}
           aria-label="Budget allocated"
         />
 
-        <div
-          role="status"
-          className={cn("flex items-center gap-1.5 text-xs font-medium", status.text)}
-        >
+        <div role="status" className={cn("text-caption flex items-center gap-2", status.text)}>
           <StatusIcon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
           <span>{status.message}</span>
         </div>

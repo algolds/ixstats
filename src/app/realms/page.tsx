@@ -7,6 +7,13 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useViewerRealmId } from "~/hooks/useViewerRealmId";
 import { createUrl } from "~/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { RealmFeed } from "~/app/r/[realm]/_components/RealmFeed";
 
 const ALL = "__all__";
@@ -24,9 +31,9 @@ function RealmCard({ realm }: { realm: DirectoryRealm }) {
   const base = `/r/${encodeURIComponent(realm.slug)}`;
   const canClaimMore = realm.myNationCount < realm.maxNationsPerUser;
   return (
-    <li className="border-border bg-card/70 flex flex-col gap-3 rounded-2xl border p-5">
+    <li className="border-separator bg-surface rounded-card flex flex-col gap-3 border p-5">
       <div className="flex items-center gap-3">
-        <div className="border-border bg-accent flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border">
+        <div className="border-separator bg-fill-3 rounded-row flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border">
           {realm.thumbnail ? (
             <img src={realm.thumbnail} alt="" className="h-full w-full object-cover" />
           ) : (
@@ -36,31 +43,31 @@ function RealmCard({ realm }: { realm: DirectoryRealm }) {
         <div className="min-w-0">
           <Link
             href={createUrl(base)}
-            className="text-foreground block truncate text-sm font-bold hover:underline"
+            className="text-label text-headline block truncate hover:underline"
           >
             {realm.name}
           </Link>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-label-secondary text-footnote">
             {realm.nationCount.toLocaleString()} nations · {realm.openNationCount.toLocaleString()}{" "}
             unclaimed
           </p>
         </div>
       </div>
       {realm.description && (
-        <p className="text-muted-foreground line-clamp-2 text-xs">{realm.description}</p>
+        <p className="text-label-secondary text-footnote line-clamp-2">{realm.description}</p>
       )}
-      <p className="text-muted-foreground text-xs">{boardActivity(realm.board)}</p>
-      <div className="mt-auto flex flex-wrap items-center gap-3 text-xs font-medium">
-        <Link href={createUrl(`${base}/board`)} className="text-foreground hover:underline">
+      <p className="text-label-secondary text-footnote">{boardActivity(realm.board)}</p>
+      <div className="text-caption mt-auto flex flex-wrap items-center gap-3">
+        <Link href={createUrl(`${base}/board`)} className="text-label hover:underline">
           Board
         </Link>
         {realm.myNationCount > 0 && (
-          <span className="text-muted-foreground">
+          <span className="text-label-secondary">
             You hold {realm.myNationCount} of {realm.maxNationsPerUser}
           </span>
         )}
         {canClaimMore && (
-          <Link href={createUrl(base)} className="text-foreground hover:underline">
+          <Link href={createUrl(base)} className="text-label hover:underline">
             {realm.myNationCount > 0 ? "Claim another nation" : "Join · claim a nation"}
           </Link>
         )}
@@ -81,16 +88,16 @@ export default function RealmsDirectoryPage() {
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-4 md:p-8">
       <header>
-        <h1 className="text-foreground text-2xl font-bold tracking-tight">Realms</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <h1 className="text-label text-title-1">Realms</h1>
+        <p className="text-label-secondary text-body mt-1">
           Worlds you can play in. Each realm has its own nations and a board where they talk.
         </p>
       </header>
 
       {isLoading ? (
-        <p className="text-muted-foreground text-sm">Loading realms…</p>
+        <p className="text-label-secondary text-body">Loading realms…</p>
       ) : !realms?.length ? (
-        <p className="text-muted-foreground text-sm">No realms are open yet.</p>
+        <p className="text-label-secondary text-body">No realms are open yet.</p>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {realms.map((realm) => (
@@ -99,27 +106,28 @@ export default function RealmsDirectoryPage() {
         </ul>
       )}
 
-      <section className="border-border bg-card/40 rounded-2xl border p-4">
+      <section className="border-separator bg-surface rounded-card border p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-foreground text-sm font-bold">Realm feed</h2>
-          <label className="text-muted-foreground flex items-center gap-2 text-xs">
-            Showing
-            <select
-              value={selected}
-              onChange={(e) => setChoice(e.target.value)}
-              className="border-border bg-background text-foreground rounded-lg border px-2 py-1 text-xs"
-            >
-              <option value={ALL}>All realms</option>
-              {selected !== ALL && !realms?.some((realm) => realm.id === selected) && (
-                <option value={selected}>Your realm</option>
-              )}
-              {realms?.map((realm) => (
-                <option key={realm.id} value={realm.id}>
-                  {realm.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <h2 className="text-label text-headline">Realm feed</h2>
+          <div className="text-label-secondary text-footnote flex items-center gap-2">
+            <span id="realm-feed-scope">Showing</span>
+            <Select value={selected} onValueChange={setChoice}>
+              <SelectTrigger size="sm" aria-labelledby="realm-feed-scope">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                <SelectItem value={ALL}>All realms</SelectItem>
+                {selected !== ALL && !realms?.some((realm) => realm.id === selected) && (
+                  <SelectItem value={selected}>Your realm</SelectItem>
+                )}
+                {realms?.map((realm) => (
+                  <SelectItem key={realm.id} value={realm.id}>
+                    {realm.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <RealmFeed realmId={selected === ALL ? null : selected} />
       </section>

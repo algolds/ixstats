@@ -15,6 +15,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { HelpCircle, Xmark as X } from "iconoir-react";
 import { FacetTabs, type FacetTabItem } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
+import { Toggle } from "~/components/ui/toggle";
 
 export interface PatternDepthLevel {
   depth: number;
@@ -38,10 +40,10 @@ export const PATTERN_DEPTH_LEVELS: PatternDepthLevel[] = [
     description:
       "Broad linguistic patterns; high phonetic variation and exploratory sound combinations.",
     color: "#06b6d4",
-    textClassName: "text-cyan-600 dark:text-cyan-400",
-    bgClassName: "bg-cyan-500/10 dark:bg-cyan-500/15",
-    borderClassName: "border-cyan-500/30",
-    dotClassName: "bg-cyan-500",
+    textClassName: "text-teal",
+    bgClassName: "bg-teal/10",
+    borderClassName: "border-teal/30",
+    dotClassName: "bg-teal",
   },
   {
     depth: 2,
@@ -51,10 +53,10 @@ export const PATTERN_DEPTH_LEVELS: PatternDepthLevel[] = [
     description:
       "Natural linguistic cadence; optimal conlang sweet spot balancing novelty & cohesion.",
     color: "#0091ff",
-    textClassName: "text-onoma-primary dark:text-onoma-primary-light",
-    bgClassName: "bg-onoma-primary/10 dark:bg-onoma-primary/15",
-    borderClassName: "border-onoma-primary/30",
-    dotClassName: "bg-onoma-primary",
+    textClassName: "text-tint",
+    bgClassName: "bg-tint/10",
+    borderClassName: "border-tint/30",
+    dotClassName: "bg-tint",
   },
   {
     depth: 3,
@@ -63,10 +65,10 @@ export const PATTERN_DEPTH_LEVELS: PatternDepthLevel[] = [
     tag: "Strong Resonance",
     description: "Strong structural fidelity; generates forms closely echoing seed language roots.",
     color: "#6366f1",
-    textClassName: "text-indigo-600 dark:text-indigo-400",
-    bgClassName: "bg-indigo-500/10 dark:bg-indigo-500/15",
-    borderClassName: "border-indigo-500/30",
-    dotClassName: "bg-indigo-500",
+    textClassName: "text-indigo",
+    bgClassName: "bg-indigo/10",
+    borderClassName: "border-indigo/30",
+    dotClassName: "bg-indigo",
   },
   {
     depth: 4,
@@ -76,10 +78,10 @@ export const PATTERN_DEPTH_LEVELS: PatternDepthLevel[] = [
     description:
       "High pattern constraints; closely preserves literal word structures from training data.",
     color: "#f59e0b",
-    textClassName: "text-amber-600 dark:text-amber-400",
-    bgClassName: "bg-amber-500/10 dark:bg-amber-500/15",
-    borderClassName: "border-amber-500/30",
-    dotClassName: "bg-amber-500",
+    textClassName: "text-yellow",
+    bgClassName: "bg-yellow/10",
+    borderClassName: "border-yellow/30",
+    dotClassName: "bg-yellow",
   },
 ];
 
@@ -111,17 +113,15 @@ export function PatternDepthControl({
       return {
         id: String(level.depth),
         label: (
-          <span className="flex items-center justify-center gap-1.5 leading-none">
+          <span className="flex items-center justify-center gap-2 leading-none">
             <span
               className={cn(
                 "h-1.5 w-1.5 rounded-full transition-colors duration-200",
-                isSelected ? level.dotClassName : "bg-muted-foreground/35"
+                isSelected ? level.dotClassName : "bg-label-secondary"
               )}
             />
-            <span className="font-mono text-xs font-bold">{level.depth}</span>
-            <span className="text-[11px] leading-none font-medium tracking-tight">
-              {level.editorialTier}
-            </span>
+            <span className="text-footnote font-mono font-semibold">{level.depth}</span>
+            <span className="text-caption leading-none font-medium">{level.editorialTier}</span>
           </span>
         ),
         themeColor: level.color,
@@ -136,51 +136,54 @@ export function PatternDepthControl({
       <div className={cn("space-y-1", className)}>
         {showLabels && (
           <div className="flex items-center gap-1">
-            <label className="block text-xs font-semibold tracking-tight text-zinc-800 dark:text-zinc-200">
-              Pattern Depth
-            </label>
-            <button
-              type="button"
+            <label className="text-footnote text-label block font-semibold">Pattern Depth</label>
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => setShowHelp(!showHelp)}
-              className="text-muted-foreground/60 hover:text-foreground cursor-pointer"
               title="What is Pattern Depth?"
+              aria-label="What is Pattern Depth?"
+              className="text-label-tertiary hover:text-label"
             >
               <HelpCircle className="h-3 w-3" />
-            </button>
+            </Button>
           </div>
         )}
-        <div className="flex h-9 w-full items-center justify-between rounded-xl border border-zinc-200/85 bg-zinc-100/75 p-1 shadow-2xs select-none dark:border-zinc-700/70 dark:bg-zinc-800/60">
-          <button
+        <div className="rounded-row border-separator bg-fill-4 shadow-card flex h-9 w-full items-center justify-between border p-1 select-none">
+          <Button
+            variant="gray"
+            size="icon-sm"
             type="button"
             onClick={() => onChange(Math.max(1, value - 1))}
             disabled={value <= 1}
-            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg bg-white text-xs font-bold text-zinc-700 shadow-2xs transition-all hover:bg-zinc-50 active:scale-95 disabled:opacity-30 disabled:shadow-none dark:bg-zinc-700 dark:text-zinc-200"
+            className="w-7 justify-center"
             title="Broader patterns / higher variation"
           >
             -
-          </button>
-          <div className="flex items-center gap-1.5 leading-none">
-            <span className={cn("font-mono text-xs font-bold", currentLevel.textClassName)}>
+          </Button>
+          <div className="flex items-center gap-2 leading-none">
+            <span
+              className={cn("text-footnote font-mono font-semibold", currentLevel.textClassName)}
+            >
               {value}
             </span>
             <span
-              className={cn(
-                "text-[11px] leading-none font-semibold tracking-tight",
-                currentLevel.textClassName
-              )}
+              className={cn("text-caption leading-none font-semibold", currentLevel.textClassName)}
             >
               {currentLevel.editorialTier}
             </span>
           </div>
-          <button
+          <Button
+            variant="gray"
+            size="icon-sm"
             type="button"
             onClick={() => onChange(Math.min(4, value + 1))}
             disabled={value >= 4}
-            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg bg-white text-xs font-bold text-zinc-700 shadow-2xs transition-all hover:bg-zinc-50 active:scale-95 disabled:opacity-30 disabled:shadow-none dark:bg-zinc-700 dark:text-zinc-200"
+            className="w-7 justify-center"
             title="Deeper patterns / tighter corpus fidelity"
           >
             +
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -188,28 +191,22 @@ export function PatternDepthControl({
 
   // PRIMARY FACET TABS CONTROL (For segmented & inspector views)
   return (
-    <div className={cn("space-y-1.5", className)}>
+    <div className={cn("space-y-2", className)}>
       {showLabels && (
-        <div className="flex items-center gap-1.5 pb-0.5">
-          <label className="text-xs font-semibold tracking-tight text-zinc-800 dark:text-zinc-200">
-            Pattern Depth
-          </label>
+        <div className="flex items-center gap-2 pb-0.5">
+          <label className="text-footnote text-label font-semibold">Pattern Depth</label>
 
           {/* Help / Info Trigger Icon */}
-          <button
-            type="button"
-            onClick={() => setShowHelp(!showHelp)}
-            className={cn(
-              "flex h-4 w-4 cursor-pointer items-center justify-center rounded-full transition-all",
-              showHelp
-                ? "bg-secondary text-foreground font-bold"
-                : "text-muted-foreground/60 hover:text-foreground hover:bg-secondary/40"
-            )}
+          <Toggle
+            size="sm"
+            pressed={showHelp}
+            onPressedChange={setShowHelp}
+            className="text-label-tertiary min-w-0 rounded-full px-1"
             title="What is Pattern Depth?"
             aria-label="What is Pattern Depth?"
           >
             <HelpCircle className="h-3 w-3" />
-          </button>
+          </Toggle>
         </div>
       )}
 
@@ -234,45 +231,43 @@ export function PatternDepthControl({
             transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
             className="overflow-hidden"
           >
-            <div className="border-border/60 bg-secondary/25 text-muted-foreground space-y-1.5 rounded-xl border p-2.5 text-[11px] backdrop-blur-md">
-              <div className="text-foreground flex items-center justify-between font-semibold">
-                <span className="text-foreground">About Pattern Depth</span>
-                <button
-                  type="button"
+            <div className="border-separator bg-fill-3 text-label-secondary rounded-row text-caption space-y-2 border p-3">
+              <div className="text-label flex items-center justify-between font-semibold">
+                <span className="text-label">About Pattern Depth</span>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => setShowHelp(false)}
-                  className="text-muted-foreground hover:text-foreground cursor-pointer p-0.5"
+                  aria-label="Close help"
+                  className="text-label-secondary hover:text-label"
                 >
                   <X className="h-3 w-3" />
-                </button>
+                </Button>
               </div>
               <p className="leading-relaxed font-normal">
                 Controls the depth of preceding linguistic context used to model and generate forms.
                 Higher depth creates tighter fidelity to the seed language, while lower depth
                 introduces abstract phonetic variation.
               </p>
-              <div className="border-border/30 grid grid-cols-2 gap-1.5 border-t pt-1.5 text-[10.5px]">
-                <div className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-500" />
-                  <span className="font-semibold text-cyan-600 dark:text-cyan-400">1 Fluid:</span>
+              <div className="border-separator text-caption grid grid-cols-2 gap-2 border-t pt-2">
+                <div className="flex items-center gap-2">
+                  <span className="bg-teal h-1.5 w-1.5 rounded-full" />
+                  <span className="text-teal font-semibold">1 Fluid:</span>
                   <span>High variation</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="bg-onoma-primary h-1.5 w-1.5 rounded-full" />
-                  <span className="text-onoma-primary font-semibold">2 Organic:</span>
+                <div className="flex items-center gap-2">
+                  <span className="bg-tint h-1.5 w-1.5 rounded-full" />
+                  <span className="text-tint font-semibold">2 Organic:</span>
                   <span>Natural flow (★)</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
-                  <span className="font-semibold text-indigo-600 dark:text-indigo-400">
-                    3 Faithful:
-                  </span>
+                <div className="flex items-center gap-2">
+                  <span className="bg-indigo h-1.5 w-1.5 rounded-full" />
+                  <span className="text-indigo font-semibold">3 Faithful:</span>
                   <span>Strong resonance</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                  <span className="font-semibold text-amber-600 dark:text-amber-400">
-                    4 Strict:
-                  </span>
+                <div className="flex items-center gap-2">
+                  <span className="bg-yellow h-1.5 w-1.5 rounded-full" />
+                  <span className="text-yellow font-semibold">4 Strict:</span>
                   <span>Corpus lock</span>
                 </div>
               </div>
@@ -283,7 +278,7 @@ export function PatternDepthControl({
 
       {/* Dynamic Contextual Micro-Description if enabled */}
       {showDescription && !showHelp && (
-        <p className="text-muted-foreground animate-in fade-in px-0.5 text-[11px] leading-relaxed font-normal duration-200">
+        <p className="text-label-secondary animate-in fade-in text-caption px-0.5 leading-relaxed font-normal duration-200">
           <strong className={cn("font-semibold", currentLevel.textClassName)}>
             {currentLevel.editorialTier}:
           </strong>{" "}

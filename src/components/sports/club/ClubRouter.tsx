@@ -9,7 +9,8 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Card, CardContent } from "~/components/ui/card";
+import { FacetCard } from "~/components/ui/facet-container";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Input } from "~/components/ui/input";
 import {
@@ -164,11 +165,11 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
   if (overviewLoading) {
     return (
       <div className="container mx-auto max-w-7xl space-y-6 px-4 py-8">
-        <Skeleton className="h-10 w-48 rounded-xl" />
-        <Skeleton className="h-44 w-full rounded-2xl" />
+        <Skeleton className="rounded-row h-10 w-48" />
+        <Skeleton className="rounded-card h-44 w-full" />
         <div className="grid gap-6 sm:grid-cols-4">
-          <Skeleton className="h-64 rounded-2xl" />
-          <Skeleton className="h-64 rounded-2xl sm:col-span-3" />
+          <Skeleton className="rounded-card h-64" />
+          <Skeleton className="rounded-card h-64 sm:col-span-3" />
         </div>
       </div>
     );
@@ -182,34 +183,34 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
 
     return (
       <div className="container mx-auto max-w-2xl px-4 py-16">
-        <Card className="facet-hierarchy-parent border-border/40 rounded-3xl border p-8 text-center backdrop-blur-2xl">
+        <FacetCard padding="lg" className="text-center">
           <div
-            className="border-border/50 mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-3xl border text-4xl shadow-inner"
-            style={{ backgroundColor: `${teamPublic.color}25` }}
+            className="border-separator bg-surface-secondary rounded-card text-large-title mx-auto mb-4 flex size-20 items-center justify-center overflow-hidden border"
+            style={teamPublic.color ? { borderColor: teamPublic.color } : undefined}
           >
             {teamPublic.logo ? (
               <img
                 src={teamPublic.logo}
                 alt={teamPublic.name}
-                className="h-full w-full rounded-3xl object-cover"
+                className="h-full w-full object-cover"
               />
             ) : (
               publicEmoji
             )}
           </div>
-          <h2 className="text-foreground text-2xl font-black">{teamPublic.name}</h2>
-          <p className="text-muted-foreground mt-1 text-xs font-semibold">
+          <h2 className="text-label text-title-1">{teamPublic.name}</h2>
+          <p className="text-label-secondary text-footnote mt-1">
             {teamPublic.league?.name} • {teamPublic.city ?? "Imperial League"}
           </p>
 
           {!isClaimed ? (
             <div className="mt-6 space-y-4">
-              <p className="text-muted-foreground text-sm leading-relaxed">
+              <p className="text-label-secondary text-body leading-relaxed">
                 This franchise is currently unclaimed. Take ownership of {teamPublic.name} to set
                 lineups, hire talent, and compete for league honors.
               </p>
               <Button
-                className="cursor-pointer rounded-xl px-6 py-2.5 font-bold active:scale-[0.98]"
+                size="lg"
                 onClick={() => claimTeam.mutate({ teamId })}
                 disabled={claimTeam.isPending}
               >
@@ -218,26 +219,22 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
             </div>
           ) : isOwnedByMe ? (
             <div className="mt-6 space-y-4">
-              <p className="text-muted-foreground text-sm">
+              <p className="text-label-secondary text-body">
                 You own this club. Refreshing session data...
               </p>
-              <Button
-                variant="outline"
-                className="rounded-xl font-semibold"
-                onClick={() => void refetchOverview()}
-              >
+              <Button variant="gray" onClick={() => void refetchOverview()}>
                 Reload Dashboard
               </Button>
             </div>
           ) : (
             <div className="mt-6 space-y-4">
-              <Shield className="text-muted-foreground/50 mx-auto h-8 w-8" />
-              <p className="text-muted-foreground text-sm">
+              <Shield className="text-label-tertiary mx-auto size-8" aria-hidden />
+              <p className="text-label-secondary text-body">
                 This club is managed by another registered director.
               </p>
             </div>
           )}
-        </Card>
+        </FacetCard>
       </div>
     );
   }
@@ -245,22 +242,19 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
   if (!overview) {
     return (
       <div className="container mx-auto max-w-lg px-4 py-16">
-        <Card className="facet-hierarchy-parent rounded-3xl p-8 text-center">
-          <CardContent className="space-y-4">
-            <Trophy className="text-muted-foreground/40 mx-auto h-12 w-12" />
-            <h3 className="text-foreground text-lg font-bold">Club not found</h3>
-            <p className="text-muted-foreground text-xs">
-              The franchise you are looking for does not exist or has been relocated.
-            </p>
-            <Button
-              className="mt-4 cursor-pointer rounded-xl font-semibold"
-              onClick={() => router.push(withBasePath("/myclub"))}
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to MyClub Lobby
-            </Button>
-          </CardContent>
-        </Card>
+        <FacetCard>
+          <EmptyState
+            icon={<Trophy />}
+            title="Club not found"
+            message="The franchise you are looking for does not exist or has been relocated."
+            action={
+              <Button onClick={() => router.push(withBasePath("/myclub"))}>
+                <ArrowLeft />
+                Back to MyClub Lobby
+              </Button>
+            }
+          />
+        </FacetCard>
       </div>
     );
   }
@@ -277,24 +271,20 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
 
   const sportTheme = getSportTheme(team.league?.sportPreset);
 
+  // v2 club header: the glass hero card (no glow: sports stay flat).
   const heroSection = (
-    <div className="facet-hierarchy-parent border-border/40 bg-card/60 relative overflow-hidden rounded-2xl border shadow-lg backdrop-blur-xl">
+    <FacetCard variant="glass" className="overflow-hidden">
       {team.coverImage && (
-        <div className="absolute inset-0 z-0">
-          <img
-            src={withBasePath(team.coverImage)}
-            alt=""
-            className="h-full w-full object-cover opacity-30 blur-[1px] filter"
-          />
-          <div className="from-card via-card/60 absolute inset-0 bg-gradient-to-t to-transparent" />
+        <div className="bg-fill-3 h-28 overflow-hidden">
+          <img src={withBasePath(team.coverImage)} alt="" className="h-full w-full object-cover" />
         </div>
       )}
 
-      <div className="relative z-10 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+      <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div className="flex items-center gap-4">
           <div
-            className="border-border/50 flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border text-3xl shadow-inner"
-            style={{ backgroundColor: team.color ? `${team.color}25` : "rgba(255,255,255,0.05)" }}
+            className="border-separator bg-surface-secondary rounded-row text-large-title flex size-16 shrink-0 items-center justify-center overflow-hidden border"
+            style={team.color ? { borderColor: team.color } : undefined}
           >
             {team.logo ? (
               <img src={team.logo} alt={team.name} className="h-full w-full object-cover" />
@@ -304,14 +294,10 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-foreground text-2xl font-black tracking-tight">{team.name}</h1>
-              {team.shortName && (
-                <Badge variant="outline" className="border-border/60 text-xs font-bold">
-                  {team.shortName}
-                </Badge>
-              )}
+              <h1 className="text-label text-title-1">{team.name}</h1>
+              {team.shortName && <Badge variant="neutral">{team.shortName}</Badge>}
             </div>
-            <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-3 text-xs font-semibold">
+            <div className="text-label-secondary text-footnote mt-1 flex flex-wrap items-center gap-3">
               {team.city && (
                 <span className="flex items-center gap-1">
                   <MapPin className="h-3.5 w-3.5" />
@@ -321,7 +307,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
               {team.league && (
                 <Link
                   href={withBasePath(`/myleague/${team.leagueId}`)}
-                  className="hover:text-foreground flex items-center gap-1 hover:underline"
+                  className="hover:text-label flex items-center gap-1 hover:underline"
                 >
                   <Flag className="h-3.5 w-3.5" />
                   <span>{team.league.name}</span>
@@ -332,19 +318,13 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSettingsOpen(true)}
-            data-cuelume-press="subtle"
-            className="border-border/50 bg-card/60 hover:bg-muted/40 h-8 text-xs font-medium active:scale-[0.98]"
-          >
-            <Settings className="mr-1.5 h-3.5 w-3.5" />
+          <Button variant="gray" size="sm" onClick={() => setSettingsOpen(true)}>
+            <Settings />
             Manage Club
           </Button>
         </div>
       </div>
-    </div>
+    </FacetCard>
   );
 
   const renderSectionContent = () => {
@@ -448,35 +428,32 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
 
       {/* List Player on Transfer Market Dialog */}
       <Dialog open={!!selectedPlayer} onOpenChange={(o) => !o && setSelectedPlayer(null)}>
-        <DialogContent className="border-border/40 bg-card/95 max-w-md rounded-3xl p-6 backdrop-blur-2xl">
-          <DialogHeader className="px-0">
-            <DialogTitle className="text-lg font-bold">
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
               List {selectedPlayer?.firstName} {selectedPlayer?.lastName}
             </DialogTitle>
-            <DialogDescription className="text-muted-foreground text-xs">
+            <DialogDescription>
               List this athlete on the open transfer marketplace for sealed escrow bidding.
             </DialogDescription>
           </DialogHeader>
           <div className="my-4 space-y-4">
             <div>
-              <label className="text-muted-foreground mb-1.5 block text-xs font-bold tracking-wider uppercase">
-                Asking Valuation (Sovereigns)
+              <label htmlFor="list-price" className="text-subhead text-label-secondary mb-2 block">
+                Asking valuation (Sovereigns)
               </label>
               <Input
+                id="list-price"
                 type="number"
                 min={10}
                 value={listPrice}
                 onChange={(e) => setListPrice(Number(e.target.value))}
-                className="border-border/50 bg-background/50 rounded-xl text-xs font-semibold"
+                className="tabular-nums"
               />
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button
-              variant="ghost"
-              className="text-muted-foreground hover:text-foreground rounded-xl text-xs font-semibold"
-              onClick={() => setSelectedPlayer(null)}
-            >
+            <Button variant="gray" onClick={() => setSelectedPlayer(null)}>
               Cancel
             </Button>
             <Button
@@ -486,8 +463,6 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
                 }
               }}
               disabled={listPlayer.isPending}
-              style={{ backgroundColor: team.color ?? "#3b82f6" }}
-              className="rounded-xl text-xs font-bold text-white shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-[0.98]"
             >
               {listPlayer.isPending ? "Listing..." : "Confirm Listing"}
             </Button>

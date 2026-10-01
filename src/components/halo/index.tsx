@@ -21,6 +21,8 @@ import { IOSActivityIndicator } from "~/components/ui/loader";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { HaloTourProvider, useHaloTour } from "./HaloTourContext";
 import { HaloTourTooltip } from "./HaloTourTooltip";
+import { springSnappy } from "~/lib/design/motion";
+import { cn } from "~/lib/utils";
 
 // Re-export original dynamic island components for backward compatibility
 export {
@@ -298,7 +300,7 @@ function CommandPaletteContent({
           {ringActive && (
             <motion.div
               key="ring"
-              className="pointer-events-none absolute inset-0 rounded-full border-2 border-blue-400/60"
+              className="border-tint/60 pointer-events-none absolute inset-0 rounded-full border-2"
               initial={{ scale: 1, opacity: 0.8 }}
               animate={{ scale: 1.35, opacity: 0 }}
               exit={{ opacity: 0 }}
@@ -307,33 +309,22 @@ function CommandPaletteContent({
           )}
         </AnimatePresence>
 
-        {/* DI pill — draggable for swipe-up nav tray */}
+        {/* DI pill — draggable for swipe-up nav tray. During the walkthrough the island carries
+            a static highlight — the tour tooltip's tint ring and soft tint glow (`facet-glow`) —
+            instead of the retired looping pulse (spec §8 / §16.8: no ambient loops). It has no
+            movement, so it is the same under Reduce Motion. */}
         <motion.div
-          className={`rounded-full ${diPulseClass}`}
+          data-tour-highlight={isTourActive ? "true" : undefined}
+          className={cn(
+            "rounded-full",
+            diPulseClass,
+            isTourActive && "ring-tint/50 facet-glow ring-2"
+          )}
           animate={{
             scale: ringActive ? 1.04 : 1,
             y: pillBounce ? -4 : 0,
-            boxShadow: isTourActive
-              ? [
-                  "0 0 0px rgba(59, 130, 246, 0)",
-                  "0 0 15px rgba(59, 130, 246, 0.5)",
-                  "0 0 0px rgba(59, 130, 246, 0)",
-                ]
-              : "0 0 0px rgba(0, 0, 0, 0)",
           }}
-          transition={
-            isTourActive
-              ? {
-                  boxShadow: {
-                    repeat: Infinity,
-                    duration: 2,
-                    ease: "easeInOut",
-                  },
-                  scale: { type: "spring", stiffness: 420, damping: 38, mass: 0.8 },
-                  y: { type: "spring", stiffness: 420, damping: 38, mass: 0.8 },
-                }
-              : { type: "spring", stiffness: 420, damping: 38, mass: 0.8 }
-          }
+          transition={springSnappy}
           drag="y"
           dragConstraints={{ top: 0, bottom: 0 }}
           dragElastic={0.15}
@@ -345,12 +336,10 @@ function CommandPaletteContent({
             {isNavLoading ? (
               <div
                 key="loading"
-                className="flex h-10 w-full items-center justify-center gap-2 px-3 text-neutral-200"
+                className="text-label flex h-10 w-full items-center justify-center gap-2 px-3"
               >
                 <IOSActivityIndicator size="sm" />
-                <span className="text-xs font-semibold tracking-wide">
-                  Loading...
-                </span>
+                <span className="text-caption">Loading...</span>
               </div>
             ) : !isExpanded ? (
               <div key="compact" className="h-full w-full">
@@ -461,7 +450,7 @@ function CommandPaletteWrapper({
 
       // Allow clicks inside Radix portals/popovers/dialogs/tooltips
       if (
-        target.closest("[data-radix-portal]") ||
+        target.closest("[data-radix-popper-content-wrapper]") ||
         target.closest("[role='dialog']") ||
         target.closest("[role='tooltip']")
       ) {
@@ -490,7 +479,7 @@ function CommandPaletteWrapper({
   return (
     <div
       ref={wrapperRef}
-      className={`pointer-events-none relative z-[10000] flex w-full items-center justify-center ${className || ""}`}
+      className={`z-nav pointer-events-none relative flex w-full items-center justify-center ${className || ""}`}
       style={{
         maxWidth: isExpanded ? "100%" : isSticky ? "400px" : "100%",
       }}

@@ -24,6 +24,8 @@ import {
   SystemRestart as Loader2,
 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
+import { Badge } from "~/components/ui/badge";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export function NarratorPlaygroundTab() {
   const notify = useNotify();
@@ -120,21 +122,19 @@ export function NarratorPlaygroundTab() {
     <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
       {/* Input Config Panel (Left) */}
       <div className="space-y-4 xl:col-span-7">
-        <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-          <div className="border-border/20 border-b pb-3">
+        <FacetCard className="space-y-4 p-5">
+          <div className="border-separator border-b pb-3">
             <div className="flex items-center gap-2">
-              <FileCode2 className="h-4 w-4 text-amber-400" />
-              <h3 className="text-foreground text-xs font-bold">Event Simulation Telemetry</h3>
+              <FileCode2 className="text-yellow h-4 w-4" />
+              <h3 className="text-label text-caption">Event Simulation Telemetry</h3>
             </div>
           </div>
 
           {/* Mode Switcher */}
-          <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
+          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
-              <Label className="text-foreground text-xs font-bold uppercase">
-                Sandbox Snapshot Mode
-              </Label>
-              <p className="text-muted-foreground text-xs">
+              <Label className="text-label text-subhead">Sandbox Snapshot Mode</Label>
+              <p className="text-label-secondary text-footnote">
                 Inject custom JSON metrics directly instead of querying database instances.
               </p>
             </div>
@@ -152,11 +152,9 @@ export function NarratorPlaygroundTab() {
 
           {/* Database Select Controls */}
           {!sandboxMode && (
-            <div className="border-border/20 bg-background/30 grid grid-cols-1 gap-3 rounded-xl border p-3.5 sm:grid-cols-3">
+            <div className="border-separator bg-fill-3 rounded-row grid grid-cols-1 gap-3 border p-4 sm:grid-cols-3">
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-xs font-semibold uppercase">
-                  1. Country
-                </Label>
+                <Label className="text-label-secondary text-subhead">1. Country</Label>
                 <Select
                   value={selectedCountryId}
                   onValueChange={(val) => {
@@ -164,7 +162,7 @@ export function NarratorPlaygroundTab() {
                     setSelectedEventId("");
                   }}
                 >
-                  <SelectTrigger className="border-border/30 bg-background/50 h-8 rounded-xl text-xs">
+                  <SelectTrigger size="sm">
                     <SelectValue placeholder="Choose nation..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -178,9 +176,7 @@ export function NarratorPlaygroundTab() {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-xs font-semibold uppercase">
-                  2. Event Type
-                </Label>
+                <Label className="text-label-secondary text-subhead">2. Event Type</Label>
                 <Select
                   value={selectedEventType}
                   onValueChange={(val: "issue" | "policy" | "decision") => {
@@ -188,7 +184,7 @@ export function NarratorPlaygroundTab() {
                     setSelectedEventId("");
                   }}
                 >
-                  <SelectTrigger className="border-border/30 bg-background/50 h-8 rounded-xl text-xs">
+                  <SelectTrigger size="sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -200,15 +196,13 @@ export function NarratorPlaygroundTab() {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-muted-foreground text-xs font-semibold uppercase">
-                  3. Live Incident
-                </Label>
+                <Label className="text-label-secondary text-subhead">3. Live Incident</Label>
                 <Select
                   value={selectedEventId}
                   onValueChange={setSelectedEventId}
                   disabled={eventsLoading || !selectedCountryId}
                 >
-                  <SelectTrigger className="border-border/30 bg-background/50 h-8 rounded-xl text-xs">
+                  <SelectTrigger size="sm">
                     <SelectValue placeholder={eventsLoading ? "Loading..." : "Choose event..."} />
                   </SelectTrigger>
                   <SelectContent>
@@ -226,27 +220,23 @@ export function NarratorPlaygroundTab() {
           {/* Title & Description */}
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                Event Title
-              </Label>
+              <Label className="text-label-secondary text-subhead">Event Title</Label>
               <Input
                 value={playgroundTitle}
                 onChange={(e) => setPlaygroundTitle(e.target.value)}
                 placeholder="e.g. Grain Tariff Act"
-                className="border-border/30 bg-background/50 h-8 rounded-xl text-xs font-semibold"
+                className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
               />
             </div>
 
             <div className="space-y-1">
-              <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                Event Details
-              </Label>
+              <Label className="text-label-secondary text-subhead">Event Details</Label>
               <Textarea
                 value={playgroundDescription}
                 onChange={(e) => setPlaygroundDescription(e.target.value)}
                 placeholder="Describe the context, severity, and options..."
                 rows={3}
-                className="border-border/30 bg-background/50 rounded-xl text-xs leading-relaxed"
+                className="md:text-footnote"
               />
             </div>
           </div>
@@ -254,21 +244,21 @@ export function NarratorPlaygroundTab() {
           {/* Sandbox JSON */}
           {sandboxMode && (
             <div className="space-y-1">
-              <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+              <Label className="text-label-secondary text-subhead">
                 Sandbox Country Snapshot (JSON)
               </Label>
               <Textarea
                 value={sandboxMetricsJson}
                 onChange={(e) => setSandboxMetricsJson(e.target.value)}
                 rows={5}
-                className="border-border/30 bg-background/50 rounded-xl font-mono text-xs leading-relaxed"
+                className="md:text-footnote font-mono"
               />
             </div>
           )}
 
           {/* Custom Prompt */}
           <div className="space-y-1">
-            <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            <Label className="text-label-secondary text-subhead">
               Prompt Override (Playground only)
             </Label>
             <Textarea
@@ -276,86 +266,84 @@ export function NarratorPlaygroundTab() {
               onChange={(e) => setCustomSystemPrompt(e.target.value)}
               placeholder="Override global system prompt rules temporarily to test modifications..."
               rows={2}
-              className="border-border/30 bg-background/50 rounded-xl font-mono text-xs leading-relaxed"
+              className="md:text-footnote font-mono"
             />
           </div>
 
           <Button
             onClick={handleTestFlavorize}
             disabled={testFlavorizeMutation.isPending}
-            className="h-8 w-full rounded-xl text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="w-full"
           >
             {testFlavorizeMutation.isPending ? (
               <>
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                 Consulting LLM Chronicle...
               </>
             ) : (
               <>
-                <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                <Sparkles className="mr-2 h-3.5 w-3.5" />
                 Draft Flavor Card
               </>
             )}
           </Button>
-        </div>
+        </FacetCard>
       </div>
 
       {/* Preview Card Panel (Right) */}
       <div className="space-y-4 xl:col-span-5">
         <div className="flex items-center justify-between">
-          <Label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Chronicle Card Mockup Preview
-          </Label>
+          <Label className="text-label-secondary text-subhead">Chronicle Card Mockup Preview</Label>
           {playgroundLatency !== null && (
-            <span className="rounded-md border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 font-mono text-xs font-bold text-cyan-400">
+            <Badge variant="teal" className="tabular-nums">
               {playgroundLatency}ms
-            </span>
+            </Badge>
           )}
         </div>
 
         {testFlavorizeMutation.isPending ? (
-          <div className="relative flex min-h-[160px] animate-pulse flex-col justify-center overflow-hidden rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5">
-            <div className="absolute top-0 left-0 h-full w-[3px] bg-amber-500/40" />
-            <div className="mb-2 flex items-center gap-1.5 text-xs font-bold tracking-wider text-amber-500/60 uppercase">
+          <div className="rounded-card border-yellow/20 bg-yellow/5 relative flex min-h-[160px] flex-col justify-center overflow-hidden border p-5">
+            <div className="bg-yellow/40 absolute top-0 left-0 h-full w-[3px]" />
+            <div className="text-eyebrow text-yellow mb-2 flex items-center gap-2">
               <ScrollText className="h-4 w-4" />
               <span>The Chronicle</span>
             </div>
-            <span className="text-muted-foreground font-serif text-xs leading-relaxed italic">
+            <span className="text-label-secondary text-footnote leading-relaxed italic">
               Drafting Chronicle narrative...
             </span>
           </div>
         ) : playgroundOutput ? (
-          <div className="relative min-h-[160px] overflow-hidden rounded-2xl border border-amber-500/30 bg-amber-500/5 p-5 shadow-[0_0_20px_rgba(245,158,11,0.06)]">
-            <div className="absolute top-0 left-0 h-full w-[3px] bg-amber-500/80" />
+          <div className="rounded-card border-yellow/30 bg-yellow/5 relative min-h-[160px] overflow-hidden border p-5">
+            <div className="bg-yellow/80 absolute top-0 left-0 h-full w-[3px]" />
             <div className="mb-2 flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-amber-400 uppercase">
+              <div className="text-eyebrow text-yellow flex items-center gap-2">
                 <ScrollText className="h-4 w-4" />
                 <span>The Chronicle</span>
               </div>
-              <span className="text-muted-foreground/60 font-mono text-xs uppercase italic">
+              <span className="text-label-secondary text-eyebrow italic tabular-nums">
                 {selectedEventType}
               </span>
             </div>
-            <span className="text-foreground font-serif text-xs leading-relaxed italic">
+            <span className="text-label text-footnote leading-relaxed italic">
               {playgroundOutput}
             </span>
           </div>
         ) : (
-          <div className="border-border/30 text-muted-foreground/60 bg-card/10 flex min-h-[160px] flex-col items-center justify-center rounded-2xl border border-dashed p-8 text-center text-xs italic">
-            <ScrollText className="text-muted-foreground/30 mb-2 h-8 w-8" />
+          <FacetCard className="text-label-secondary text-footnote flex min-h-[160px] flex-col items-center justify-center border-dashed p-8 text-center italic">
+            <ScrollText className="text-label-tertiary mb-2 h-8 w-8" />
             Configure the parameters on the left and run test to view the Paradox-style narrative
             wrapper.
-          </div>
+          </FacetCard>
         )}
 
-        <div className="border-border/30 bg-card/25 space-y-1.5 rounded-2xl border p-4 text-xs shadow-xs backdrop-blur-md">
-          <h4 className="text-foreground text-xs font-bold uppercase">Immersion Snapshots</h4>
-          <p className="text-muted-foreground text-xs leading-relaxed">
+        <FacetCard className="text-footnote space-y-2 p-4">
+          <h4 className="text-label text-subhead">Immersion Snapshots</h4>
+          <p className="text-label-secondary text-footnote leading-relaxed">
             During live simulation, when a player views an Issue, Policy, or Cabinet Decision, a
             contextual snapshot of live national metrics (GDP, stability, approval, government type)
             is passed alongside details to generate immersion flavor text.
           </p>
-        </div>
+        </FacetCard>
       </div>
     </div>
   );

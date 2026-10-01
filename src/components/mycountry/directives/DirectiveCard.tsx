@@ -18,7 +18,7 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { Button, buttonVariants } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Progress } from "~/components/ui/progress";
 import { cn } from "~/lib/utils";
 import { formatIxCountdown } from "~/lib/statecraft/calendar";
@@ -69,14 +69,14 @@ function Meter({
   const pct = Math.round(Math.max(0, Math.min(1, value)) * 100);
   return (
     <div className="min-w-0">
-      <div className="flex items-baseline justify-between gap-2 text-xs">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="text-foreground truncate font-medium">{detail}</span>
+      <div className="text-footnote flex items-baseline justify-between gap-2">
+        <span className="text-label-secondary">{label}</span>
+        <span className="text-label truncate font-medium">{detail}</span>
       </div>
       <Progress
         value={pct}
         aria-label={label}
-        className="bg-muted mt-1.5 h-1.5"
+        className="bg-fill-3 mt-2 h-1.5"
         indicatorClassName={barClass}
       />
     </div>
@@ -137,10 +137,10 @@ export function DirectiveCard({
       : `${linked.data.resolvedCount} of ${linked.data.totalCount} resolved`;
 
   return (
-    <FacetContainer depth={3} surface="solid" className="rounded-2xl">
+    <FacetCard className="rounded-card">
       <article>
         <div className="space-y-4 p-4 sm:p-5">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+          <div className="text-footnote flex flex-wrap items-center gap-x-3 gap-y-1">
             <Badge variant="outline" className={TONE_CLASSES[phase.tone].badge} title={phase.hint}>
               <span
                 className={cn("h-1.5 w-1.5 rounded-full", TONE_CLASSES[phase.tone].dot)}
@@ -148,21 +148,21 @@ export function DirectiveCard({
               />
               {phase.label}
             </Badge>
-            <span className="text-muted-foreground">{categoryLabel(intent.category)}</span>
-            <span className="text-muted-foreground" aria-hidden>
+            <span className="text-label-secondary">{categoryLabel(intent.category)}</span>
+            <span className="text-label-secondary" aria-hidden>
               ·
             </span>
-            <span className="text-muted-foreground">{meta.label}</span>
-            <span className="text-muted-foreground" aria-hidden>
+            <span className="text-label-secondary">{meta.label}</span>
+            <span className="text-label-secondary" aria-hidden>
               ·
             </span>
-            <span className="text-muted-foreground">{formatIxDate(intent.createdIxTime)}</span>
+            <span className="text-label-secondary">{formatIxDate(intent.createdIxTime)}</span>
           </div>
 
           <div>
-            <h3 className="text-foreground text-base leading-snug font-semibold">{intent.goal}</h3>
+            <h3 className="text-label text-title-3">{intent.goal}</h3>
             {parentGoal && (
-              <p className="text-muted-foreground mt-1 flex items-center gap-1.5 text-xs">
+              <p className="text-label-secondary text-footnote mt-1 flex items-center gap-2">
                 <GitFork className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 <span className="truncate">Follow-up to {parentGoal}</span>
               </p>
@@ -286,7 +286,7 @@ export function DirectiveCard({
             </div>
           </div>
           {isOpen && openResistance > 0 && !readOnly && (
-            <p className="text-muted-foreground -mt-2 text-xs">
+            <p className="text-label-secondary text-footnote -mt-2">
               Resolve {openResistance} open resistance issue{openResistance === 1 ? "" : "s"} before
               completing.
             </p>
@@ -294,7 +294,7 @@ export function DirectiveCard({
         </div>
 
         {expanded && (
-          <div id={panelId} className="border-border space-y-6 border-t p-4 sm:p-5">
+          <div id={panelId} className="border-separator space-y-6 border-t p-4 sm:p-5">
             <section>
               <h4 className="mb-2">
                 <Eyebrow>Recorded effects</Eyebrow>
@@ -307,11 +307,11 @@ export function DirectiveCard({
                 <h4 className="mb-2">
                   <Eyebrow>Levers pulled</Eyebrow>
                 </h4>
-                <ul className="space-y-1.5">
+                <ul className="space-y-2">
                   {changes.map((c, i) => (
-                    <li key={i} className="text-sm">
-                      <span className="text-foreground first-letter:uppercase">{c.label}</span>
-                      {c.detail && <span className="text-muted-foreground"> — {c.detail}</span>}
+                    <li key={i} className="text-body">
+                      <span className="text-label first-letter:uppercase">{c.label}</span>
+                      {c.detail && <span className="text-label-secondary"> — {c.detail}</span>}
                     </li>
                   ))}
                 </ul>
@@ -323,16 +323,16 @@ export function DirectiveCard({
                 <Eyebrow>Resistance</Eyebrow>
               </h4>
               {linked.isLoading ? (
-                <p className="text-muted-foreground text-sm">Loading…</p>
+                <p className="text-label-secondary text-body">Loading…</p>
               ) : (linked.data?.issues.length ?? 0) === 0 ? (
-                <p className="text-muted-foreground text-sm">No resistance issues were raised.</p>
+                <p className="text-label-secondary text-body">No resistance issues were raised.</p>
               ) : (
-                <FacetContainer depth={3} surface="solid" className="rounded-xl">
-                  <ul className="divide-border divide-y">
+                <FacetCard variant="inset" padding="none">
+                  <ul className="divide-separator divide-y">
                     {linked.data!.issues.map((issue) => {
                       const resolved = RESOLVED_ISSUE.has(issue.status);
                       return (
-                        <li key={issue.id} className="flex items-center gap-3 px-3 py-2.5">
+                        <li key={issue.id} className="flex items-center gap-3 px-3 py-2">
                           <span
                             className={cn(
                               "h-2 w-2 shrink-0 rounded-full",
@@ -341,8 +341,8 @@ export function DirectiveCard({
                             aria-hidden
                           />
                           <div className="min-w-0 flex-1">
-                            <p className="text-foreground truncate text-sm">{issue.title}</p>
-                            <p className="text-muted-foreground text-xs">
+                            <p className="text-label text-body truncate">{issue.title}</p>
+                            <p className="text-label-secondary text-footnote">
                               {ISSUE_STATUS_LABEL[issue.status] ?? issue.status}
                               {issue.chosenOptionLabel ? ` · ${issue.chosenOptionLabel}` : ""}
                             </p>
@@ -361,7 +361,7 @@ export function DirectiveCard({
                       );
                     })}
                   </ul>
-                </FacetContainer>
+                </FacetCard>
               )}
             </section>
 
@@ -370,12 +370,12 @@ export function DirectiveCard({
                 <h4 className="mb-2">
                   <Eyebrow>Summary</Eyebrow>
                 </h4>
-                <p className="text-muted-foreground text-sm leading-relaxed">{intent.summary}</p>
+                <p className="text-label-secondary text-body leading-relaxed">{intent.summary}</p>
               </section>
             )}
           </div>
         )}
       </article>
-    </FacetContainer>
+    </FacetCard>
   );
 }

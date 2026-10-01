@@ -56,7 +56,7 @@ export function EconomyTab({
   };
 
   return (
-    <FacetCard depth={1} className="relative overflow-hidden rounded-2xl">
+    <FacetCard className="rounded-card relative overflow-hidden">
       {/* Background wash system (desaturated flag wash + radial dot mesh) */}
       <MetricCardGrid
         metrics={[]} // empty metrics to just render background
@@ -77,22 +77,22 @@ export function EconomyTab({
 
       <FacetCardContent className="relative z-10 space-y-4 pt-4 pb-4">
         {/* ── Compact Header ── */}
-        <div className="border-border/10 flex items-center justify-between border-b pb-3">
+        <div className="border-separator flex items-center justify-between border-b pb-3">
           <div>
-            <div className="flex items-center gap-1.5">
-              <h3 className="text-foreground text-sm font-semibold">Economic Overview</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-label text-headline">Economic Overview</h3>
               <InlineHelpIcon
                 title="Economic Overview"
                 content="View key economic indicators, sectors, trade balances, and business environments. Toggles allow you to view detailed stats per capita or in totals."
               />
             </div>
-            <p className="text-muted-foreground/80 text-xs">
+            <p className="text-label-secondary text-footnote">
               GDP, trade, and sector analysis for {country.name}
             </p>
           </div>
           {!isPublicReadOnly && (
             <Link href={createUrl("/mycountry/editor")}>
-              <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs">
+              <Button size="sm" variant="outline" className="text-footnote h-8 gap-2">
                 <TrendingUp className="h-3.5 w-3.5" />
                 <span>Open Editor</span>
               </Button>
@@ -105,20 +105,23 @@ export function EconomyTab({
           <TooltipTrigger asChild>
             <div className="grid grid-cols-3 gap-3">
               {/* Metric 1: GDP */}
-              <button
+              <Button
+                type="button"
+                variant="bordered"
+                size="md"
                 onClick={() =>
                   setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     economyGdp: v.economyGdp === "perCapita" ? "total" : "perCapita",
                   }))
                 }
-                className="border-border bg-card hover:bg-accent/50 focus-visible:ring-ring flex h-24 cursor-pointer flex-col justify-between rounded-xl border p-3 text-left transition-[transform,background-color] duration-150 ease-out outline-none focus-visible:ring-2 active:scale-[0.98]"
+                className="h-auto flex-col justify-between gap-1 p-2 whitespace-normal"
               >
                 <Eyebrow className="block">
                   {metricView.economyGdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
                 </Eyebrow>
                 <div
-                  className="flex items-center gap-1.5"
+                  className="flex items-center gap-2"
                   onClick={(e) => {
                     e.stopPropagation();
                     openMetricModalAction(
@@ -134,7 +137,7 @@ export function EconomyTab({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
                       transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                      className="text-foreground flex items-center text-base font-bold tracking-tight hover:underline"
+                      className="text-label text-title-3 flex items-center hover:underline"
                     >
                       {metricView.economyGdp === "perCapita"
                         ? formatExactCurrency(economyData?.core.gdpPerCapita ?? 0, currency)
@@ -148,41 +151,44 @@ export function EconomyTab({
                     );
                     if (gdpGrowth > 0)
                       return (
-                        <span className="flex items-center gap-0.5 text-xs font-semibold text-emerald-500">
+                        <span className="text-caption text-green flex items-center gap-0.5 font-semibold">
                           <TrendingUp className="inline h-3 w-3" /> +{gdpGrowth.toFixed(1)}%
                         </span>
                       );
                     if (gdpGrowth < 0)
                       return (
-                        <span className="text-destructive flex items-center gap-0.5 text-xs font-semibold">
+                        <span className="text-destructive text-caption flex items-center gap-0.5 font-semibold">
                           <TrendingDown className="inline h-3 w-3" /> {gdpGrowth.toFixed(1)}%
                         </span>
                       );
-                    return <span className="text-muted-foreground text-xs">0.0%</span>;
+                    return <span className="text-label-secondary text-footnote">0.0%</span>;
                   })()}
                 </div>
-                <p className="text-muted-foreground truncate text-xs font-medium">
+                <p className="text-label-secondary text-caption truncate">
                   {metricView.economyGdp === "perCapita"
                     ? `${country.economicTier || "Developing"} · ${formatCompactCurrency(economyData?.core.nominalGDP ?? 0, "N/A", currency)} total`
                     : `Per capita: ${formatExactCurrency(economyData?.core.gdpPerCapita ?? 0, currency)}`}
                 </p>
-              </button>
+              </Button>
 
               {/* Metric 2: Fiscal */}
-              <button
+              <Button
+                type="button"
+                variant="bordered"
+                size="md"
                 onClick={() =>
                   setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     fiscal: v.fiscal === "balance" ? "revenue" : "balance",
                   }))
                 }
-                className="border-border bg-card hover:bg-accent/50 focus-visible:ring-ring flex h-24 cursor-pointer flex-col justify-between rounded-xl border p-3 text-left transition-[transform,background-color] duration-150 ease-out outline-none focus-visible:ring-2 active:scale-[0.98]"
+                className="h-auto flex-col justify-between gap-1 p-2 whitespace-normal"
               >
                 <Eyebrow className="block">
                   {metricView.fiscal === "balance" ? "Budget Balance" : "Tax Revenue"}
                 </Eyebrow>
                 <div
-                  className="mt-0.5 flex items-center gap-1.5"
+                  className="mt-0.5 flex items-center gap-2"
                   onClick={(e) => {
                     e.stopPropagation();
                     openMetricModalAction("government-spending", country.id);
@@ -195,7 +201,7 @@ export function EconomyTab({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
                       transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                      className="text-foreground text-lg font-bold tracking-tight hover:underline"
+                      className="text-label text-title-3 hover:underline"
                     >
                       {metricView.fiscal === "balance"
                         ? formatCompactCurrency(
@@ -207,30 +213,33 @@ export function EconomyTab({
                     </motion.p>
                   </AnimatePresence>
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                <p className="text-label-secondary text-footnote mt-0.5 truncate">
                   {metricView.fiscal === "balance"
                     ? (economyData?.fiscal?.budgetDeficitSurplus ?? 0) >= 0
                       ? "Fiscal Surplus"
                       : "Fiscal Deficit"
                     : `Tax revenue % of GDP`}
                 </p>
-              </button>
+              </Button>
 
               {/* Metric 3: Trade */}
-              <button
+              <Button
+                type="button"
+                variant="bordered"
+                size="md"
                 onClick={() =>
                   setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
                     trade: v.trade === "imports" ? "exports" : "imports",
                   }))
                 }
-                className="border-border bg-card hover:bg-accent/50 focus-visible:ring-ring flex h-24 cursor-pointer flex-col justify-between rounded-xl border p-3 text-left transition-[transform,background-color] duration-150 ease-out outline-none focus-visible:ring-2 active:scale-[0.98]"
+                className="h-auto flex-col justify-between gap-1 p-2 whitespace-normal"
               >
                 <Eyebrow className="block">
                   {metricView.trade === "imports" ? "Total Imports" : "Total Exports"}
                 </Eyebrow>
                 <div
-                  className="mt-0.5 flex items-center gap-1.5"
+                  className="mt-0.5 flex items-center gap-2"
                   onClick={(e) => {
                     e.stopPropagation();
                     openMetricModalAction("total-gdp", country.id);
@@ -243,7 +252,7 @@ export function EconomyTab({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
                       transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                      className="text-foreground text-lg font-bold tracking-tight hover:underline"
+                      className="text-label text-title-3 hover:underline"
                     >
                       {metricView.trade === "imports"
                         ? formatCompactCurrency(
@@ -259,33 +268,33 @@ export function EconomyTab({
                     </motion.p>
                   </AnimatePresence>
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                <p className="text-label-secondary text-footnote mt-0.5 truncate">
                   Net Balance: +3.0% (Surplus)
                 </p>
-              </button>
+              </Button>
             </div>
           </TooltipTrigger>
-          <TooltipContent side="bottom" className="text-xs">
+          <TooltipContent side="bottom" className="text-footnote">
             Click metric value to view history, click headers to toggle views
           </TooltipContent>
         </Tooltip>
 
         {/* ── Sub-Tabs Content (Folder Dossier Accordion Stack) ── */}
-        <div className="border-border/10 space-y-3 border-t pt-3">
+        <div className="border-separator space-y-3 border-t pt-3">
           {/* Dossier Section 1: Sectors */}
           <div className="flex flex-col">
             <div className="flex">
               <button
                 onClick={() => toggleSection("sectors")}
                 aria-expanded={expandedSection === "sectors"}
-                className={`focus-visible:ring-ring relative z-10 flex min-h-9 cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-sm font-semibold transition-[color,background-color,border-color] duration-150 outline-none focus-visible:ring-2 ${
+                className={`focus-visible:ring-tint rounded-t-row text-headline relative z-10 flex min-h-9 cursor-pointer items-center gap-2 border-x border-t px-4 py-2 transition-[color,background-color,border-color] duration-150 outline-none focus-visible:ring-2 ${
                   expandedSection === "sectors"
-                    ? "text-foreground border-border bg-card"
-                    : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"
+                    ? "text-label border-separator bg-surface"
+                    : "text-label-secondary hover:text-label border-transparent bg-transparent"
                 }`}
               >
                 <Building
-                  className={`h-3.5 w-3.5 ${expandedSection === "sectors" ? "text-foreground" : "text-muted-foreground"}`}
+                  className={`h-3.5 w-3.5 ${expandedSection === "sectors" ? "text-label" : "text-label-secondary"}`}
                 />
                 <span>Sectors & Distribution</span>
                 <motion.div
@@ -301,8 +310,10 @@ export function EconomyTab({
               initial={false}
               animate={{ height: expandedSection === "sectors" ? "auto" : 0 }}
               transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-              className={`bg-card relative overflow-hidden rounded-tr-xl rounded-b-xl transition-colors duration-200 ${
-                expandedSection === "sectors" ? "border-border border" : "border border-transparent"
+              className={`bg-surface rounded-tr-row rounded-b-row relative overflow-hidden transition-colors duration-200 ${
+                expandedSection === "sectors"
+                  ? "border-separator border"
+                  : "border border-transparent"
               }`}
             >
               <TextureOverlay

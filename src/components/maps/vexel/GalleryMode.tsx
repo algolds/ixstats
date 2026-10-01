@@ -2,6 +2,7 @@
 
 import { Refresh } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React, { useState, useEffect } from "react";
@@ -11,7 +12,6 @@ import { generateRandomComposition } from "~/lib/heraldry/generator";
 import { generateBlazon } from "~/lib/heraldry/blazon";
 import type { HeraldryComposition } from "~/lib/heraldry";
 import { api } from "~/trpc/react";
-import { FacetMaterial } from "~/components/ui/facet";
 
 export default function GalleryMode() {
   const router = useRouter();
@@ -73,49 +73,55 @@ export default function GalleryMode() {
   return (
     <div className="space-y-6">
       {/* Filters Toolbar */}
-      <FacetCard
-        surface="solid"
-        className="border-border bg-muted/40 text-muted-foreground grid grid-cols-1 gap-3 rounded-xl p-4 text-xs md:grid-cols-4"
-      >
+      <FacetCard className="text-label-secondary text-footnote grid grid-cols-1 gap-3 p-4 md:grid-cols-4">
         <div className="space-y-1">
-          <Eyebrow className="block">Culture Influence</Eyebrow>
-          <select
+          <Eyebrow id="vexel-gallery-culture" className="block">
+            Culture influence
+          </Eyebrow>
+          <OptionSelect
+            aria-labelledby="vexel-gallery-culture"
             value={cultureGroup}
-            onChange={(e) => setCultureGroup(e.target.value)}
-            className="border-border bg-card w-full rounded-lg border p-2 focus:outline-none"
-          >
-            <option value="">Standard (None)</option>
-            <option value="burgundian">Burgundian (Fleur-de-lis)</option>
-            <option value="germanic">Germanic (Eagle)</option>
-            <option value="nordic">Nordic (Lion)</option>
-            <option value="frankish">Frankish (Fleur-de-lis)</option>
-          </select>
+            onValueChange={setCultureGroup}
+            options={[
+              { value: "", label: "Standard (None)" },
+              { value: "burgundian", label: "Burgundian (Fleur-de-lis)" },
+              { value: "germanic", label: "Germanic (Eagle)" },
+              { value: "nordic", label: "Nordic (Lion)" },
+              { value: "frankish", label: "Frankish (Fleur-de-lis)" },
+            ]}
+          />
         </div>
 
         <div className="space-y-1">
-          <Eyebrow className="block">Religiosity</Eyebrow>
-          <select
+          <Eyebrow id="vexel-gallery-religion" className="block">
+            Religiosity
+          </Eyebrow>
+          <OptionSelect
+            aria-labelledby="vexel-gallery-religion"
             value={religion}
-            onChange={(e) => setReligion(e.target.value)}
-            className="border-border bg-card w-full rounded-lg border p-2 focus:outline-none"
-          >
-            <option value="">None</option>
-            <option value="christian">Christian (Motto)</option>
-            <option value="islamic">Islamic (Motto)</option>
-          </select>
+            onValueChange={setReligion}
+            options={[
+              { value: "", label: "None" },
+              { value: "christian", label: "Christian (Motto)" },
+              { value: "islamic", label: "Islamic (Motto)" },
+            ]}
+          />
         </div>
 
         <div className="space-y-1">
-          <Eyebrow className="block">Government</Eyebrow>
-          <select
+          <Eyebrow id="vexel-gallery-government" className="block">
+            Government
+          </Eyebrow>
+          <OptionSelect
+            aria-labelledby="vexel-gallery-government"
             value={governmentType}
-            onChange={(e) => setGovernmentType(e.target.value)}
-            className="border-border bg-card w-full rounded-lg border p-2 focus:outline-none"
-          >
-            <option value="">None</option>
-            <option value="republic">Republic (Round Shield)</option>
-            <option value="monarchy">Monarchy (Renaissance Shape)</option>
-          </select>
+            onValueChange={setGovernmentType}
+            options={[
+              { value: "", label: "None" },
+              { value: "republic", label: "Republic (Round Shield)" },
+              { value: "monarchy", label: "Monarchy (Renaissance Shape)" },
+            ]}
+          />
         </div>
 
         <div className="flex items-end">
@@ -133,12 +139,12 @@ export default function GalleryMode() {
 
       {/* Grid view */}
       {isLoading ? (
-        <div className="text-muted-foreground flex flex-col items-center justify-center gap-3 py-32 text-xs">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+        <div className="text-label-secondary text-footnote flex flex-col items-center justify-center gap-3 py-32">
+          <div className="border-tint h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
           <span>Forging procedural arms...</span>
         </div>
       ) : compositions.length === 0 ? (
-        <div className="text-muted-foreground py-20 text-center text-xs italic">
+        <div className="text-label-secondary text-footnote py-20 text-center italic">
           No candidates generated.
         </div>
       ) : (
@@ -147,11 +153,7 @@ export default function GalleryMode() {
             const blazon = generateBlazon(comp);
 
             return (
-              <FacetMaterial
-                key={idx}
-                material="satin"
-                className="group border-border relative overflow-hidden rounded-xl border shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-amber-500/25"
-              >
+              <FacetCard key={idx} className="group overflow-hidden">
                 <div className="flex flex-col items-center gap-4 p-4">
                   {/* Shield box */}
                   <div
@@ -166,14 +168,14 @@ export default function GalleryMode() {
                     <div>
                       <Eyebrow className="mb-1 block">Design {idx + 1}</Eyebrow>
                       <p
-                        className="text-muted-foreground line-clamp-2 px-2 font-serif text-xs italic"
+                        className="text-label-secondary text-footnote line-clamp-2 px-2 italic"
                         title={blazon}
                       >
                         {blazon}
                       </p>
                     </div>
 
-                    <div className="border-border mt-4 flex gap-1.5 border-t pt-3">
+                    <div className="border-separator mt-4 flex gap-2 border-t pt-3">
                       <Button
                         variant="outline"
                         size="sm"
@@ -193,7 +195,7 @@ export default function GalleryMode() {
                     </div>
                   </div>
                 </div>
-              </FacetMaterial>
+              </FacetCard>
             );
           })}
         </div>

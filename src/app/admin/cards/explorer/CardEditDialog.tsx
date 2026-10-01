@@ -1,19 +1,27 @@
 import React from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
+import { Switch } from "~/components/ui/switch";
 import { Input } from "~/components/ui/input";
 import { CardDisplay } from "~/components/cards/display/CardDisplay";
 import type { CardRarity } from "@prisma/client";
 import { LoreCategory, ArtworkSource, BROWSABLE_CATEGORIES } from "~/lib/cards/category-enums";
 import { getCategoryLabel } from "~/lib/cards/category-theme";
 import type { CardInstance } from "~/types/cards-display";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 interface CardEditDialogProps {
   isOpen: boolean;
@@ -67,24 +75,24 @@ export const CardEditDialog = React.memo(function CardEditDialog({
   if (!isOpen || !selectedCardForEdit) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="border-border bg-card/95 text-card-foreground max-w-4xl backdrop-blur-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between text-base font-bold">
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent size="wide" className="overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle className="flex items-center justify-between">
             <span>Card Studio: Edit Card Details</span>
-            <span className="text-muted-foreground font-mono text-xs">
+            <span className="text-label-secondary text-footnote font-mono">
               ID: {selectedCardForEdit.id}
             </span>
-          </DialogTitle>
-          <DialogDescription className="text-xs">
+          </SheetTitle>
+          <SheetDescription>
             Edit visual appearance, rarity, lore category, artwork source, and visibility state.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
         <div className="my-2 grid grid-cols-1 gap-6 md:grid-cols-12">
           {/* Left Column: Live Card Preview */}
           <div className="flex flex-col items-center justify-center md:col-span-5">
-            <div className="text-muted-foreground mb-2 text-center text-xs font-semibold">
+            <div className="text-label-secondary text-caption mb-2 text-center">
               Live Real-Time Card Preview
             </div>
             {livePreviewCard && (
@@ -99,85 +107,85 @@ export const CardEditDialog = React.memo(function CardEditDialog({
             {/* Origin & Title */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <label className="text-foreground mb-1 block text-xs font-semibold">
-                  Card Origin / Type
-                </label>
-                <select
-                  value={editCardType}
-                  onChange={(e) => setEditCardType(e.target.value)}
-                  className="border-border bg-card text-foreground hover:bg-accent h-9 w-full rounded-xl border px-3 text-xs font-semibold focus:outline-none"
-                >
-                  <option value="LORE">Wiki Lore Card (Wiki)</option>
-                  <option value="NS_IMPORT">NationStates Import (NS Import)</option>
-                  <option value="COMMONS_IMPORT">Commons Flag Import (Commons)</option>
-                  <option value="USER_CUSTOM">User Custom Import (Custom)</option>
-                </select>
+                <label className="text-label text-caption mb-1 block">Card Origin / Type</label>
+                <Select value={editCardType} onValueChange={(v) => setEditCardType(v)}>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="LORE">Wiki Lore Card (Wiki)</SelectItem>
+                    <SelectItem value="NS_IMPORT">NationStates Import (NS Import)</SelectItem>
+                    <SelectItem value="COMMONS_IMPORT">Commons Flag Import (Commons)</SelectItem>
+                    <SelectItem value="USER_CUSTOM">User Custom Import (Custom)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
-                <label className="text-foreground mb-1 block text-xs font-semibold">
-                  Card Title
-                </label>
+                <label className="text-label text-caption mb-1 block">Card Title</label>
                 <Input
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
                   placeholder="Article title..."
-                  className="border-border bg-card text-foreground h-9 text-xs font-semibold"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                 />
               </div>
             </div>
 
             {/* Lore Category */}
             <div>
-              <label className="text-foreground mb-1 block flex items-center justify-between text-xs font-semibold">
+              <label className="text-label text-caption mb-1 block flex items-center justify-between">
                 <span>Lore Category</span>
-                <span className="text-muted-foreground text-xs font-normal">
+                <span className="text-label-secondary text-footnote font-normal">
                   Sets background theme & icon watermark
                 </span>
               </label>
-              <select
-                value={editCategory === "NS_IMPORT" ? "" : editCategory}
-                onChange={(e) => setEditCategory(e.target.value as LoreCategory)}
-                className="border-border bg-card text-foreground hover:bg-accent h-9 w-full rounded-xl border px-3 text-xs font-semibold focus:outline-none"
+              <Select
+                value={(editCategory === "NS_IMPORT" ? "" : editCategory) || "__none__"}
+                onValueChange={(v) => setEditCategory((v === "__none__" ? "" : v) as LoreCategory)}
               >
-                <option value="">(Default / Unassigned)</option>
-                {BROWSABLE_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat} — {getCategoryLabel(cat)}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger size="sm" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">(Default / Unassigned)</SelectItem>
+                  {BROWSABLE_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat} — {getCategoryLabel(cat)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Rarity & Market Value */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-foreground mb-1 block text-xs font-semibold">
-                  Rarity Tier
-                </label>
-                <select
-                  value={editRarity}
-                  onChange={(e) => setEditRarity(e.target.value as CardRarity)}
-                  className="border-border bg-card text-foreground hover:bg-accent h-9 w-full rounded-xl border px-3 text-xs font-semibold focus:outline-none"
-                >
-                  <option value="COMMON">COMMON</option>
-                  <option value="UNCOMMON">UNCOMMON</option>
-                  <option value="RARE">RARE</option>
-                  <option value="ULTRA_RARE">ULTRA RARE</option>
-                  <option value="EPIC">EPIC</option>
-                  <option value="LEGENDARY">LEGENDARY</option>
-                </select>
+                <label className="text-label text-caption mb-1 block">Rarity Tier</label>
+                <Select value={editRarity} onValueChange={(v) => setEditRarity(v as CardRarity)}>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="COMMON">COMMON</SelectItem>
+                    <SelectItem value="UNCOMMON">UNCOMMON</SelectItem>
+                    <SelectItem value="RARE">RARE</SelectItem>
+                    <SelectItem value="ULTRA_RARE">ULTRA RARE</SelectItem>
+                    <SelectItem value="EPIC">EPIC</SelectItem>
+                    <SelectItem value="LEGENDARY">LEGENDARY</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
-                <label className="text-foreground mb-1 block text-xs font-semibold">
+                <label className="text-label text-caption mb-1 block">
                   Est. Market Value (IxC)
                 </label>
                 <Input
                   type="number"
                   value={editMarketValue}
                   onChange={(e) => setEditMarketValue(parseInt(e.target.value, 10) || 0)}
-                  className="border-border bg-card text-foreground h-9 text-xs font-semibold"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                 />
               </div>
             </div>
@@ -185,25 +193,27 @@ export const CardEditDialog = React.memo(function CardEditDialog({
             {/* Artwork Source & URL */}
             <div className="space-y-2">
               <div>
-                <label className="text-foreground mb-1 block text-xs font-semibold">
-                  Artwork Source Tier
-                </label>
-                <select
+                <label className="text-label text-caption mb-1 block">Artwork Source Tier</label>
+                <Select
                   value={editArtworkSource}
-                  onChange={(e) => setEditArtworkSource(e.target.value as ArtworkSource)}
-                  className="border-border bg-card text-foreground hover:bg-accent h-9 w-full rounded-xl border px-3 text-xs font-semibold focus:outline-none"
+                  onValueChange={(v) => setEditArtworkSource(v as ArtworkSource)}
                 >
-                  <option value="PROCEDURAL">Tier 1-2: Procedural Icon Emblem (No Image)</option>
-                  <option value="WIKI_FETCHED">Tier 3: Wiki Fetched Image</option>
-                  <option value="FLAG">Tier 3: National Flag Artwork</option>
-                  <option value="UPLOADED">Tier 3: Admin Custom Upload</option>
-                </select>
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PROCEDURAL">
+                      Tier 1-2: Procedural Icon Emblem (No Image)
+                    </SelectItem>
+                    <SelectItem value="WIKI_FETCHED">Tier 3: Wiki Fetched Image</SelectItem>
+                    <SelectItem value="FLAG">Tier 3: National Flag Artwork</SelectItem>
+                    <SelectItem value="UPLOADED">Tier 3: Admin Custom Upload</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
-                <label className="text-foreground mb-1 block text-xs font-semibold">
-                  Artwork URL
-                </label>
+                <label className="text-label text-caption mb-1 block">Artwork URL</label>
                 <Input
                   value={editArtworkUrl}
                   onChange={(e) => {
@@ -214,47 +224,40 @@ export const CardEditDialog = React.memo(function CardEditDialog({
                     }
                   }}
                   placeholder="https://... image URL (optional)"
-                  className="border-border bg-card text-foreground h-9 font-mono text-xs text-xs"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm) font-mono"
                 />
               </div>
             </div>
 
             {/* Visibility / Takedown Toggle */}
-            <div className="border-border bg-card/60 flex items-center justify-between rounded-xl border p-3">
+            <div className="border-separator bg-surface rounded-row flex items-center justify-between border p-3">
               <div>
-                <div className="text-foreground text-xs font-semibold">Card Visibility Status</div>
-                <div className="text-muted-foreground text-xs">
+                <div className="text-label text-caption">Card Visibility Status</div>
+                <div className="text-label-secondary text-footnote">
                   Hidden cards are retired from packs & marketplace.
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setEditIsRetired(!editIsRetired)}
-                className={`rounded-full px-3 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                  editIsRetired
-                    ? "border border-rose-500/30 bg-rose-500/20 text-rose-500"
-                    : "border border-emerald-500/30 bg-emerald-500/20 text-emerald-500"
-                }`}
-              >
+              <label className="text-footnote text-label-secondary flex items-center gap-2">
                 {editIsRetired ? "Hidden / Retired" : "Visible"}
-              </button>
+                <Switch
+                  checked={!editIsRetired}
+                  onCheckedChange={(visible) => setEditIsRetired(!visible)}
+                  aria-label="Card visible"
+                />
+              </label>
             </div>
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
+        <SheetFooter className="gap-2">
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button
-            onClick={onSave}
-            disabled={isPending}
-            className="bg-primary text-primary-foreground font-semibold hover:opacity-90"
-          >
+          <Button onClick={onSave} disabled={isPending}>
             Save Card Changes
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 });

@@ -36,22 +36,25 @@ export function CountryInfoTab({
     <div className="space-y-3">
       {/* Wiki intro */}
       {wikiRichIntro?.paragraphs && wikiRichIntro.paragraphs.length > 0 && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           {wikiRichIntro.paragraphs.slice(0, introExpanded ? 5 : 2).map((p: string, i: number) => (
             <WikiHtmlContent
               key={i}
               as="p"
-              className="text-foreground/80 text-xs leading-relaxed"
+              className="text-label-secondary text-footnote leading-relaxed"
               html={sanitizeWikiContent(p)}
             />
           ))}
           {wikiRichIntro.paragraphs.length > 2 && (
-            <button
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
               onClick={() => setIntroExpanded((v) => !v)}
-              className="text-xs font-medium text-blue-500 hover:underline"
+              className="text-blue h-auto px-0"
             >
               {introExpanded ? "Show less" : "Read more..."}
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -64,11 +67,11 @@ export function CountryInfoTab({
           const isInternal = baseWikiUrl.startsWith("/") || baseWikiUrl.includes("/wiki/");
           return (
             <div>
-              <Eyebrow className="flex items-center gap-1.5">
+              <Eyebrow className="flex items-center gap-2">
                 <BookOpen className="h-3 w-3" />
                 Table of contents ({wikiSections.filter((s) => s.level === 2).length})
               </Eyebrow>
-              <div className="mt-1.5 space-y-1">
+              <div className="mt-2 space-y-1">
                 {wikiSections
                   .filter((s) => s.level <= 3)
                   .map((section, i) => {
@@ -77,12 +80,12 @@ export function CountryInfoTab({
                       return (
                         <div
                           key={`${section.anchor}-${i}`}
-                          className="border-border rounded-md border p-2"
+                          className="border-separator rounded-control-sm border p-2"
                         >
                           {isInternal ? (
                             <Link
                               href={sectionUrl}
-                              className="text-foreground/90 block text-xs font-medium transition-colors hover:text-blue-500"
+                              className="text-label text-caption hover:text-blue block transition-colors"
                             >
                               {section.line}
                             </Link>
@@ -91,13 +94,13 @@ export function CountryInfoTab({
                               href={sectionUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-foreground/90 block text-xs font-medium transition-colors hover:text-blue-500"
+                              className="text-label text-caption hover:text-blue block transition-colors"
                             >
                               {section.line}
                             </a>
                           )}
                           {"preview" in section && section.preview && (
-                            <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs leading-snug">
+                            <p className="text-label-secondary text-footnote mt-0.5 line-clamp-2 leading-snug">
                               {section.preview as string}
                             </p>
                           )}
@@ -108,7 +111,7 @@ export function CountryInfoTab({
                       <Link
                         key={`${section.anchor}-${i}`}
                         href={sectionUrl}
-                        className="text-muted-foreground block truncate pl-3 text-xs transition-colors hover:text-blue-500"
+                        className="text-label-secondary text-footnote hover:text-blue block truncate pl-3 transition-colors"
                       >
                         {section.line}
                       </Link>
@@ -118,7 +121,7 @@ export function CountryInfoTab({
                         href={sectionUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-muted-foreground block truncate pl-3 text-xs transition-colors hover:text-blue-500"
+                        className="text-label-secondary text-footnote hover:text-blue block truncate pl-3 transition-colors"
                       >
                         {section.line}
                       </a>
@@ -132,16 +135,16 @@ export function CountryInfoTab({
       {/* Media Gallery */}
       {wikiImages && wikiImages.length > 0 && (
         <div>
-          <Eyebrow className="flex items-center gap-1.5">
+          <Eyebrow className="flex items-center gap-2">
             <ImageIcon className="h-3 w-3" />
             Media ({wikiImages.length})
           </Eyebrow>
-          <div className="mt-1.5 flex gap-1.5 overflow-x-auto pb-1">
+          <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
             {wikiImages.slice(0, 12).map((img, i) => (
               <button
                 key={`${img.title}-${i}`}
                 onClick={() => setLightboxSrc(img.url)}
-                className="border-border shrink-0 overflow-hidden rounded-md border transition-transform hover:scale-105"
+                className="border-separator rounded-control-sm shrink-0 overflow-hidden border transition-transform hover:scale-105"
               >
                 <img
                   src={img.thumbUrl}
@@ -175,7 +178,7 @@ export function CountryInfoTab({
         ))}
 
       {!wikiRichIntro && !wikiSections && !wikiImages && (
-        <div className="text-muted-foreground py-8 text-center text-xs">
+        <div className="text-label-secondary text-footnote py-8 text-center">
           No wiki article found for this country.
         </div>
       )}

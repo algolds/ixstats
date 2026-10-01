@@ -3,8 +3,9 @@
 import { motion } from "motion/react";
 import { CloudCheck, CloudSync, CloudXmark, FloppyDisk, SystemRestart, Undo } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { springSmooth } from "~/lib/design/motion";
 import { Button } from "~/components/ui/button";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import { describeSaveStatus, type EditorSaveStatus } from "./editor/editor-sections";
 
 interface EditorSaveBarProps {
@@ -60,12 +61,12 @@ export function EditorSaveBar({
         role="region"
         aria-label="Editor changes"
         initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0, transition: { duration: 0.2, ease: [0.23, 1, 0.32, 1] } }}
-        className="pointer-events-none fixed inset-x-0 bottom-4 z-[100] flex justify-center px-4 pb-[env(safe-area-inset-bottom)]"
+        animate={{ opacity: 1, y: 0, transition: springSmooth }}
+        className="z-sticky pointer-events-none fixed right-0 bottom-[calc(var(--shell-tabbar-height)+1rem)] left-(--shell-sidebar-width) flex justify-center px-4 pb-[env(safe-area-inset-bottom)]"
       >
-        <FacetContainer
-          depth={3}
-          className="pointer-events-auto flex w-full max-w-2xl flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl px-4 py-3"
+        <FacetMaterial
+          material="regular"
+          className="rounded-card shadow-floating pointer-events-auto flex w-full max-w-2xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3"
         >
           <div aria-live="polite" className="flex min-w-0 flex-1 items-center gap-3">
             <StatusIcon
@@ -75,22 +76,22 @@ export function EditorSaveBar({
                 status === "error"
                   ? "text-destructive"
                   : hasChanges
-                    ? "text-amber-500"
-                    : "text-muted-foreground",
+                    ? "text-tint"
+                    : "text-label-secondary",
                 status === "saving" && "animate-spin"
               )}
             />
             <div className="min-w-0">
               <p
-                className="text-foreground truncate text-sm font-semibold"
+                className="text-label text-headline truncate"
                 title="Compared with the country as you opened it or last saved it"
               >
                 {describeChanges(changeCount)}
               </p>
               <p
                 className={cn(
-                  "truncate text-xs",
-                  status === "error" ? "text-destructive" : "text-muted-foreground"
+                  "text-footnote truncate",
+                  status === "error" ? "text-destructive" : "text-label-secondary"
                 )}
               >
                 {describeSaveStatus(status, lastSyncedAt)}
@@ -100,9 +101,9 @@ export function EditorSaveBar({
                     <Button
                       type="button"
                       variant="link"
-                      size="xs"
+                      size="sm"
                       onClick={onRetry}
-                      className="text-destructive h-auto p-0 font-semibold underline"
+                      className="text-destructive h-auto p-0 underline"
                     >
                       Try again
                     </Button>
@@ -115,7 +116,7 @@ export function EditorSaveBar({
           <div className="flex shrink-0 items-center gap-2">
             <Button
               type="button"
-              variant="ghost"
+              variant="plain"
               size="sm"
               onClick={onUndo}
               disabled={!canUndo || isSaving}
@@ -127,7 +128,7 @@ export function EditorSaveBar({
             </Button>
             <Button
               type="button"
-              variant="outline"
+              variant="bordered"
               size="sm"
               onClick={onDiscard}
               disabled={!hasChanges || isSaving}
@@ -150,7 +151,7 @@ export function EditorSaveBar({
               {isSaving ? "Saving…" : "Save"}
             </Button>
           </div>
-        </FacetContainer>
+        </FacetMaterial>
       </motion.div>
     </>
   );

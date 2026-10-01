@@ -12,22 +12,22 @@ export default function VexelRegistryDetailPage({ params }: VexelRegistryDetailP
   const { id } = use(params);
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-8 font-sans text-zinc-100">
+    <div className="bg-grouped text-label min-h-screen p-8 font-sans">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-8 flex items-center justify-between border-b border-white/10 pb-6">
+        <header className="border-separator mb-8 flex items-center justify-between border-b pb-6">
           <div className="flex items-center gap-4">
             <Link
               href="/labs/vexel/registry"
-              className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
+              className="text-body text-label-secondary hover:text-label transition-colors"
             >
               &larr; Back to Registry
             </Link>
-            <div className="h-4 w-px bg-white/10" />
-            <h1 className="text-xl font-bold tracking-wider text-amber-500">🛡️ Roll of Arms</h1>
+            <div className="bg-separator h-4 w-px" />
+            <h1 className="text-title-2 text-label">🛡️ Roll of Arms</h1>
           </div>
           <Link
             href="/labs/vexel"
-            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-600"
+            className="rounded-control bg-tint text-body text-on-tint hover:bg-tint-hover px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
           >
             Create Your Own
           </Link>

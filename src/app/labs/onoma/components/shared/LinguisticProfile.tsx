@@ -11,8 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { cn } from "~/lib/utils";
 import type { MorphologyDetails } from "~/lib/onoma/morphology";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface LinguisticProfileProps {
   name: string;
@@ -109,59 +112,47 @@ export function LinguisticProfile({
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      className="border-border/30 animate-in fade-in slide-in-from-top-1 relative z-10 mt-3 w-full space-y-3 border-t pt-3 text-left duration-200"
+      className="border-separator animate-in fade-in slide-in-from-top-1 relative z-10 mt-3 w-full space-y-3 border-t pt-3 text-left duration-200"
     >
       {/* Header with Segmented Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="text-onoma-primary font-mono text-xs font-bold">⟨{name}⟩</span>
-          <span className="text-muted-foreground text-[11px]">
-            Gender:{" "}
-            <span className="text-foreground font-semibold uppercase">{morphology.gender}</span>
+          <span className="text-tint text-footnote font-mono font-semibold">⟨{name}⟩</span>
+          <span className="text-label-secondary text-caption">
+            Gender: <span className="text-label font-semibold uppercase">{morphology.gender}</span>
           </span>
         </div>
 
-        {/* Apple Segmented Switcher */}
-        <div className="border-border/50 bg-secondary/30 flex items-center rounded-lg border p-0.5 select-none">
-          <button
-            type="button"
-            onClick={() => setActiveTab("declensions")}
-            className={cn(
-              "cursor-pointer rounded-md px-2.5 py-0.5 font-mono text-[10px] font-semibold transition-all",
-              activeTab === "declensions"
-                ? "bg-background text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Declensions ({Object.keys(morphology.declensionTable).length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("lexicon")}
-            className={cn(
-              "cursor-pointer rounded-md px-2.5 py-0.5 font-mono text-[10px] font-semibold transition-all",
-              activeTab === "lexicon"
-                ? "bg-background text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Lexicon {definition ? "✓" : ""}
-          </button>
-        </div>
+        <SegmentedControl
+          size="sm"
+          asTabs
+          aria-label="Linguistic profile view"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          options={[
+            {
+              value: "declensions",
+              label: "Declensions",
+              badge: Object.keys(morphology.declensionTable).length,
+              badgeLabel: `${Object.keys(morphology.declensionTable).length} forms`,
+            },
+            { value: "lexicon", label: `Lexicon${definition ? " ✓" : ""}` },
+          ]}
+        />
       </div>
 
       {/* Stash metadata — word kind + date stashed */}
       {(originLabel || savedAt) && (
-        <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-[10px]">
+        <div className="text-label-secondary text-caption flex flex-wrap items-center gap-2">
           {originLabel && (
-            <span className="bg-onoma-primary/10 text-onoma-primary rounded px-1.5 py-0.5 font-bold capitalize">
+            <span className="bg-tint/10 text-tint rounded-control-sm px-2 py-0.5 font-semibold capitalize">
               {originLabel}
             </span>
           )}
           {savedAt && (
             <span>
               Stashed{" "}
-              <span className="text-foreground font-semibold">
+              <span className="text-label font-semibold">
                 {new Date(savedAt).toLocaleDateString(undefined, {
                   year: "numeric",
                   month: "short",
@@ -175,31 +166,31 @@ export function LinguisticProfile({
 
       {/* Tab 1: Case Declension Table */}
       {activeTab === "declensions" && (
-        <div className="border-border/30 bg-background/80 overflow-hidden rounded-xl border">
-          <div className="bg-secondary/20 border-border/30 text-muted-foreground grid grid-cols-12 border-b px-3 py-1.5 font-mono text-[9px] font-bold tracking-wider uppercase">
+        <div className="border-separator bg-surface rounded-row overflow-hidden border">
+          <div className="bg-fill-4 border-separator text-label-secondary text-eyebrow grid grid-cols-12 border-b px-3 py-2 font-mono">
             <span className="col-span-4">Grammatical Case</span>
             <span className="col-span-4">Singular</span>
             <span className="col-span-4">Plural</span>
           </div>
 
-          <div className="divide-border/15 divide-y">
+          <div className="divide-separator divide-y">
             {Object.entries(morphology.declensionTable).map(([caseName, declCase]) => (
               <div
                 key={caseName}
-                className="hover:bg-secondary/10 grid grid-cols-12 items-center px-3 py-1.5 text-xs transition-colors"
+                className="hover:bg-fill-4 text-footnote grid grid-cols-12 items-center px-3 py-2 transition-colors"
               >
                 <div className="col-span-4 flex flex-col pr-1">
-                  <span className="text-foreground text-[11px] font-semibold capitalize">
+                  <span className="text-label text-caption font-semibold capitalize">
                     {caseName}
                   </span>
-                  <span className="text-muted-foreground text-[9px] leading-tight">
+                  <span className="text-label-secondary text-caption leading-tight">
                     {declCase.descriptionSingular.split(" (")[0]}
                   </span>
                 </div>
-                <span className="text-onoma-primary col-span-4 font-mono text-xs font-semibold break-all">
+                <span className="text-tint text-footnote col-span-4 font-mono font-semibold break-all">
                   {declCase.singular}
                 </span>
-                <span className="text-onoma-primary col-span-4 font-mono text-xs font-semibold break-all">
+                <span className="text-tint text-footnote col-span-4 font-mono font-semibold break-all">
                   {declCase.plural}
                 </span>
               </div>
@@ -210,44 +201,40 @@ export function LinguisticProfile({
 
       {/* Tab 2: Lexicon Dictionary Entry */}
       {activeTab === "lexicon" && (
-        <div className="border-border/30 bg-background/80 space-y-2.5 rounded-xl border p-3.5">
-          <div className="border-border/20 flex items-center justify-between border-b pb-2">
-            <h4 className="text-foreground font-mono text-[10px] font-bold tracking-wider uppercase">
-              Conlang Lexicon Entry
-            </h4>
+        <div className="border-separator bg-surface rounded-row space-y-2 border p-4">
+          <div className="border-separator flex items-center justify-between border-b pb-2">
+            <h4 className="text-label text-subhead font-mono">Conlang Lexicon Entry</h4>
             {!isEditingDef && definition && (
-              <button
+              <Button
+                variant="link"
+                size="sm"
                 onClick={() => setIsEditingDef(true)}
-                className="text-onoma-primary cursor-pointer text-[10px] font-semibold hover:underline"
+                className="text-tint h-auto px-0"
               >
                 Edit Definition
-              </button>
+              </Button>
             )}
           </div>
 
           {!localSaved ? (
-            <p className="text-muted-foreground text-[11px] leading-relaxed italic">
+            <p className="text-label-secondary text-caption leading-relaxed italic">
               Save this candidate to your Local Stash to customize its etymological root and
               meaning.
             </p>
           ) : isEditingDef || !definition ? (
-            <form onSubmit={handleSaveDefinition} className="space-y-2.5 text-xs">
-              <div className="grid grid-cols-2 gap-2.5">
+            <form onSubmit={handleSaveDefinition} className="text-footnote space-y-2">
+              <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-muted-foreground font-mono text-[9px] font-bold uppercase">
+                  <label className="text-label-secondary text-subhead font-mono">
                     Part of Speech
                   </label>
                   <Select value={editPos} onValueChange={setEditPos}>
-                    <SelectTrigger className="border-border/60 bg-background hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-2.5 py-1 text-xs transition-colors focus:outline-none">
+                    <SelectTrigger className="text-footnote w-full">
                       <SelectValue placeholder="Select POS" />
                     </SelectTrigger>
-                    <SelectContent className="border-border/40 bg-popover/95 max-h-[200px] backdrop-blur-xl">
+                    <SelectContent className="max-h-[200px]">
                       {["Noun", "Verb", "Adjective", "Adverb", "Root", "Proper Noun"].map((pos) => (
-                        <SelectItem
-                          key={pos}
-                          value={pos}
-                          className="focus:text-foreground focus:bg-onoma-primary/10 cursor-pointer text-xs"
-                        >
+                        <SelectItem key={pos} value={pos} className="text-footnote">
                           {pos}
                         </SelectItem>
                       ))}
@@ -255,78 +242,76 @@ export function LinguisticProfile({
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-muted-foreground font-mono text-[9px] font-bold uppercase">
+                  <label className="text-label-secondary text-subhead font-mono">
                     Conlang Root
                   </label>
-                  <input
+                  <Input
                     type="text"
                     placeholder="e.g. *ver- (water)"
                     value={editRoot}
                     onChange={(e) => setEditRoot(e.target.value)}
-                    className="border-border/60 bg-background text-foreground focus:border-onoma-primary/60 w-full rounded-lg border px-2.5 py-1 font-mono text-xs focus:outline-none"
+                    className="text-footnote w-full font-mono"
                   />
                 </div>
               </div>
               <div className="space-y-1">
-                <label className="text-muted-foreground font-mono text-[9px] font-bold uppercase">
+                <label className="text-label-secondary text-subhead font-mono">
                   Definition / Gloss
                 </label>
-                <textarea
+                <Textarea
                   required
                   placeholder="Define semantic meaning..."
                   value={editMeaning}
                   onChange={(e) => setEditMeaning(e.target.value)}
-                  className="border-border/60 bg-background text-foreground focus:border-onoma-primary/60 h-14 w-full rounded-lg border px-2.5 py-1.5 text-xs focus:outline-none"
+                  className="text-footnote h-14 w-full"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-muted-foreground font-mono text-[9px] font-bold uppercase">
+                <label className="text-label-secondary text-subhead font-mono">
                   Etymology / Origin
                 </label>
-                <input
+                <Input
                   type="text"
                   placeholder="e.g. Derived from archaic High Caphirian"
                   value={editOrigin}
                   onChange={(e) => setEditOrigin(e.target.value)}
-                  className="border-border/60 bg-background text-foreground focus:border-onoma-primary/60 w-full rounded-lg border px-2.5 py-1 text-xs focus:outline-none"
+                  className="text-footnote w-full"
                 />
               </div>
               <div className="flex justify-end gap-2 pt-1">
                 {definition && (
-                  <button
+                  <Button
+                    variant="bordered"
+                    size="sm"
                     type="button"
                     onClick={() => setIsEditingDef(false)}
-                    className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-colors"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 )}
-                <button
-                  type="submit"
-                  className="bg-onoma-primary hover:bg-onoma-primary-light rounded-lg px-3 py-1 text-xs font-bold text-white transition-colors"
-                >
+                <Button size="sm" type="submit">
                   Save Definition
-                </button>
+                </Button>
               </div>
             </form>
           ) : (
-            <div className="space-y-2 text-xs">
+            <div className="text-footnote space-y-2">
               <div className="flex items-center justify-between">
-                <span className="bg-onoma-primary/15 text-onoma-primary rounded-md px-2 py-0.5 font-mono text-[10px] font-bold uppercase">
+                <span className="bg-tint/15 text-tint rounded-control-sm text-eyebrow px-2 py-0.5 font-mono">
                   {definition.partOfSpeech}
                 </span>
                 {definition.root && (
-                  <span className="text-muted-foreground font-mono text-[10px]">
-                    Root: <span className="text-foreground font-semibold">{definition.root}</span>
+                  <span className="text-label-secondary text-caption font-mono">
+                    Root: <span className="text-label font-semibold">{definition.root}</span>
                   </span>
                 )}
               </div>
-              <p className="text-foreground bg-secondary/15 border-border/20 rounded-lg border p-2.5 text-xs leading-relaxed italic">
+              <p className="text-label bg-fill-4 border-separator rounded-control text-footnote border p-3 leading-relaxed italic">
                 "{definition.meaning}"
               </p>
               {definition.origin && (
-                <p className="text-muted-foreground text-[10px] leading-normal">
-                  Origin: <span className="text-foreground font-medium">{definition.origin}</span>
+                <p className="text-label-secondary text-caption leading-normal">
+                  Origin: <span className="text-label font-medium">{definition.origin}</span>
                 </p>
               )}
             </div>

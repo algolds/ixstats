@@ -53,32 +53,32 @@ export function GlobalStatsOverview({ globalStats, isLoading }: GlobalStatsOverv
       label: "Total Population",
       value: formatPopulation(globalStats.totalPopulation),
       subValue: `${globalStats.countryCount} countries`,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50 dark:bg-blue-950",
+      color: "text-blue",
+      bgColor: "bg-blue/10",
     },
     {
       icon: DollarSign,
       label: "Total GDP",
       value: formatCurrency(globalStats.totalGdp),
       subValue: `Avg: ${formatCurrency(globalStats.averageGdpPerCapita)}/capita`,
-      color: "text-green-600",
-      bgColor: "bg-green-50 dark:bg-green-950",
+      color: "text-green",
+      bgColor: "bg-green/10",
     },
     {
       icon: TrendingUp,
       label: "Global Growth",
       value: formatGrowthRateFromDecimal(globalStats.globalGrowthRate),
       subValue: "Annual rate",
-      color: "text-purple-600",
-      bgColor: "bg-purple-50 dark:bg-purple-950",
+      color: "text-purple",
+      bgColor: "bg-purple/10",
     },
     {
       icon: Building2,
       label: "Economic Activity",
       value: `${globalStats.countryCount}`,
       subValue: "Active economies",
-      color: "text-orange-600",
-      bgColor: "bg-orange-50 dark:bg-orange-950",
+      color: "text-orange",
+      bgColor: "bg-orange/10",
     },
   ];
 
@@ -98,13 +98,13 @@ export function GlobalStatsOverview({ globalStats, isLoading }: GlobalStatsOverv
           {stats.map((stat, index) => (
             <div key={index} className="text-center">
               <div
-                className={`mb-3 inline-flex h-12 w-12 items-center justify-center rounded-lg ${stat.bgColor}`}
+                className={`rounded-control mb-3 inline-flex h-12 w-12 items-center justify-center ${stat.bgColor}`}
               >
                 <stat.icon className={`h-6 w-6 ${stat.color}`} />
               </div>
-              <div className="text-foreground text-2xl font-bold">{stat.value}</div>
-              <div className="text-muted-foreground text-sm font-medium">{stat.label}</div>
-              <div className="text-muted-foreground mt-1 text-xs">{stat.subValue}</div>
+              <div className="text-label text-title-1">{stat.value}</div>
+              <div className="text-label-secondary text-body font-medium">{stat.label}</div>
+              <div className="text-label-secondary text-footnote mt-1">{stat.subValue}</div>
             </div>
           ))}
         </div>
@@ -113,28 +113,28 @@ export function GlobalStatsOverview({ globalStats, isLoading }: GlobalStatsOverv
         <div className="mt-6 border-t pt-6">
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
             <div className="flex items-center gap-3">
-              <MapPin className="text-muted-foreground h-4 w-4" />
+              <MapPin className="text-label-secondary h-4 w-4" />
               <div>
-                <div className="text-sm font-medium">Avg Population Density</div>
-                <div className="text-muted-foreground text-xs">
+                <div className="text-body font-medium">Avg Population Density</div>
+                <div className="text-label-secondary text-footnote">
                   {globalStats.averagePopulationDensity.toLocaleString()}/km²
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Activity className="text-muted-foreground h-4 w-4" />
+              <Activity className="text-label-secondary h-4 w-4" />
               <div>
-                <div className="text-sm font-medium">Avg GDP Density</div>
-                <div className="text-muted-foreground text-xs">
+                <div className="text-body font-medium">Avg GDP Density</div>
+                <div className="text-label-secondary text-footnote">
                   {formatCurrency(globalStats.averageGdpDensity)}/km²
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Target className="text-muted-foreground h-4 w-4" />
+              <Target className="text-label-secondary h-4 w-4" />
               <div>
-                <div className="text-sm font-medium">Last Updated</div>
-                <div className="text-muted-foreground text-xs">
+                <div className="text-body font-medium">Last Updated</div>
+                <div className="text-label-secondary text-footnote">
                   {new Date(globalStats.timestamp).toLocaleTimeString()}
                 </div>
               </div>

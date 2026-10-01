@@ -22,7 +22,9 @@ export const ValidationCategory = React.memo(function ValidationCategory({
   const overallStatus = failures > 0 ? "fail" : warnings > 0 ? "warn" : "pass";
 
   return (
-    <Card className={`border ${getStatusBgColor(overallStatus)} transition-[color,background-color,border-color,box-shadow,opacity,transform]`}>
+    <Card
+      className={`border ${getStatusBgColor(overallStatus)} transition-[color,background-color,border-color,box-shadow,opacity,transform]`}
+    >
       <CardHeader
         className="cursor-pointer pb-3 select-none"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -30,38 +32,17 @@ export const ValidationCategory = React.memo(function ValidationCategory({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {isExpanded ? (
-              <ChevronDown className="text-muted-foreground h-4 w-4" />
+              <ChevronDown className="text-label-secondary h-4 w-4" />
             ) : (
-              <ChevronRight className="text-muted-foreground h-4 w-4" />
+              <ChevronRight className="text-label-secondary h-4 w-4" />
             )}
-            <CardTitle className="text-base">{category.category}</CardTitle>
+            <CardTitle className="text-body">{category.category}</CardTitle>
           </div>
-          <div className="flex items-center gap-1.5">
-            {passed > 0 && (
-              <Badge
-                variant="outline"
-                className="border-green-500/30 bg-green-500/10 text-xs text-green-400"
-              >
-                {passed} passed
-              </Badge>
-            )}
-            {warnings > 0 && (
-              <Badge
-                variant="outline"
-                className="border-amber-500/30 bg-amber-500/10 text-xs text-amber-400"
-              >
-                {warnings} warn
-              </Badge>
-            )}
-            {failures > 0 && (
-              <Badge
-                variant="outline"
-                className="border-red-500/30 bg-red-500/10 text-xs text-red-400"
-              >
-                {failures} fail
-              </Badge>
-            )}
-            <span className="text-muted-foreground ml-1 text-xs">{category.duration}ms</span>
+          <div className="flex items-center gap-2">
+            {passed > 0 && <Badge variant="green">{passed} passed</Badge>}
+            {warnings > 0 && <Badge variant="yellow">{warnings} warn</Badge>}
+            {failures > 0 && <Badge variant="red">{failures} fail</Badge>}
+            <span className="text-label-secondary text-footnote ml-1">{category.duration}ms</span>
           </div>
         </div>
       </CardHeader>

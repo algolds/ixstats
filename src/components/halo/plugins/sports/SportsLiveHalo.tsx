@@ -21,7 +21,7 @@ import type { DIViewProps } from "~/components/halo/types";
 
 type LiveActivityMatch = RouterOutputs["sports"]["getLiveActivities"][number];
 
-const ACCENT = "#ef4444"; // live red
+const ACCENT = "var(--color-red)"; // live red
 
 function shortFor(t: { name: string; shortName?: string | null }): string {
   return t.shortName || t.name.slice(0, 3).toUpperCase();
@@ -56,15 +56,12 @@ function LivePill({ match }: { match: LiveActivityMatch }) {
   const state = useLiveMatchState(match);
   if (!state) return null;
   return (
-    <span className="flex items-center gap-1.5">
-      <Radio className={`h-3 w-3 shrink-0 text-red-500 ${state.isFinal ? "" : "animate-pulse"}`} />
-      <PreText
-        className="text-foreground/90 text-xs font-semibold tabular-nums"
-        whiteSpace="nowrap"
-      >
+    <span className="flex items-center gap-2">
+      <Radio className={`text-red h-3 w-3 shrink-0 ${state.isFinal ? "" : "animate-pulse"}`} />
+      <PreText className="text-label text-caption font-semibold tabular-nums" whiteSpace="nowrap">
         {shortFor(match.homeTeam)} {state.homeScore}–{state.awayScore} {shortFor(match.awayTeam)}
       </PreText>
-      <PreText className="text-muted-foreground font-mono text-xs" whiteSpace="nowrap">
+      <PreText className="text-label-secondary text-footnote font-mono" whiteSpace="nowrap">
         {state.isFinal ? "FT" : `${state.minute}'`}
       </PreText>
     </span>
@@ -75,7 +72,7 @@ function SportsLiveView({ context }: DIViewProps) {
   const match = ((context as any)?.match ?? null) as LiveActivityMatch | null;
   const state = useLiveMatchState(match);
   if (!match || !state) {
-    return <div className="text-muted-foreground p-6 text-center text-sm">No live match.</div>;
+    return <div className="text-label-secondary text-body p-6 text-center">No live match.</div>;
   }
 
   return (
@@ -88,22 +85,22 @@ function SportsLiveView({ context }: DIViewProps) {
       />
       <div className="relative z-10 space-y-4">
         <div className="flex items-center justify-between">
-          <span className="flex items-center gap-1.5 rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
+          <span className="bg-red text-caption text-on-red flex items-center gap-2 rounded-full px-2 py-0.5 font-semibold">
             <Radio className={`h-2.5 w-2.5 ${state.isFinal ? "" : "animate-pulse"}`} />
             {state.isFinal ? "FULL TIME" : "LIVE"}
           </span>
-          <span className="text-muted-foreground truncate text-xs">{match.leagueName}</span>
+          <span className="text-label-secondary text-footnote truncate">{match.leagueName}</span>
         </div>
 
         <div className="flex items-center justify-around">
           <TeamBadge team={match.homeTeam} />
           <div className="space-y-1 text-center">
-            <div className="flex items-center justify-center gap-2 text-4xl font-extrabold tracking-tighter tabular-nums">
+            <div className="text-large-title flex items-center justify-center gap-2 tabular-nums">
               <span>{state.homeScore}</span>
-              <span className="text-foreground/20">:</span>
+              <span className="text-label-secondary">:</span>
               <span>{state.awayScore}</span>
             </div>
-            <div className="text-muted-foreground font-mono text-xs">
+            <div className="text-label-secondary text-footnote font-mono">
               {state.isFinal ? "FT" : `${state.minute}'`}
             </div>
           </div>
@@ -111,14 +108,14 @@ function SportsLiveView({ context }: DIViewProps) {
         </div>
 
         {/* Broadcast progress */}
-        <div className="bg-muted/40 h-1 overflow-hidden rounded-full">
+        <div className="bg-fill-4 h-1 overflow-hidden rounded-full">
           <div
-            className="h-full rounded-full bg-red-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-1000 ease-linear"
+            className="bg-red h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-1000 ease-linear"
             style={{ width: `${Math.round(state.progress * 100)}%` }}
           />
         </div>
 
-        <p className="text-muted-foreground min-h-[2rem] text-xs leading-relaxed italic">
+        <p className="text-label-secondary text-footnote min-h-[2rem] leading-relaxed italic">
           {state.lastEvent?.description ?? "Kickoff — the match is underway."}
         </p>
       </div>
@@ -130,12 +127,12 @@ function TeamBadge({ team }: { team: { name: string; shortName?: string | null; 
   return (
     <div className="flex w-1/3 flex-col items-center text-center">
       <div
-        className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold"
+        className="text-caption flex h-9 w-9 items-center justify-center rounded-full font-semibold"
         style={{ backgroundColor: `${team.color}20`, border: `2px solid ${team.color}` }}
       >
         {shortFor(team)}
       </div>
-      <p className="mt-1.5 max-w-full truncate text-xs font-bold">{team.name}</p>
+      <p className="text-caption mt-2 max-w-full truncate font-semibold">{team.name}</p>
     </div>
   );
 }

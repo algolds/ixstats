@@ -16,7 +16,7 @@ export function TemplateFieldIndicator({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-500/90 select-none dark:text-amber-400/90",
+        "border-tint/20 bg-tint-fill text-caption text-tint inline-flex items-center gap-1 rounded-full border px-2 py-0.5 select-none",
         className
       )}
       title="Value pre-filled from selected archetype template"

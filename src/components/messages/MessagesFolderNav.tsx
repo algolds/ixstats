@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Settings, SoundHigh, ChatBubble, User } from "iconoir-react";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import {
   Popover,
@@ -31,8 +32,8 @@ export const MESSAGE_FOLDERS: MessageFolderConfig[] = [
     icon: ChatBubble as any,
     title: "Messages",
     description: "Direct, diplomatic, and wiki discussions",
-    gradient: "text-emerald-500",
-    activeGlow: "bg-emerald-500/10 border-emerald-500/40",
+    gradient: "text-tint",
+    activeGlow: "bg-tint-fill border-tint/40",
     emptyTitle: "No messages yet",
     emptyDescription: "Start a conversation to see it here.",
   },
@@ -74,17 +75,17 @@ export function MessagesFolderNav({
   return (
     <div
       className={cn(
-        "border-border/40 relative z-20 flex w-full shrink-0 items-center justify-between gap-1.5 border-b bg-emerald-500/[0.04] px-3.5 py-3 transition-colors duration-500 dark:bg-emerald-500/10"
+        "border-separator relative flex w-full shrink-0 items-center justify-between gap-2 border-b px-4 py-3"
       )}
     >
-      <div className="relative z-10 flex items-center gap-2.5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-2xs">
-          <ChatBubble className="h-4 w-4" />
+      <div className="flex items-center gap-2">
+        <div className="bg-tint-fill text-tint rounded-control flex size-8 items-center justify-center">
+          <ChatBubble className="size-4" aria-hidden="true" />
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-foreground text-[13px] font-bold tracking-tight">Messages</span>
+          <span className="text-headline text-label">Messages</span>
           {totalUnread > 0 && (
-            <span className="flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full bg-emerald-500 px-1 text-xs leading-none font-bold text-white tabular-nums shadow-2xs">
+            <span className="bg-tint text-caption text-on-tint flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 leading-none tabular-nums">
               {totalUnread > 99 ? "99+" : totalUnread}
             </span>
           )}
@@ -94,44 +95,42 @@ export function MessagesFolderNav({
       {/* Settings popover button */}
       <Popover>
         <PopoverTrigger
-          className="hover:bg-accent/15 text-muted-foreground hover:text-foreground border-border/40 bg-card/50 relative z-10 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-xl border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "icon-sm" }),
+            "text-label-secondary"
+          )}
           aria-label="Message settings"
         >
-          <Settings className="h-3.5 w-3.5" />
+          <Settings />
         </PopoverTrigger>
-        <PopoverContent
-          side="bottom"
-          align="end"
-          className="border-border/60 bg-popover/95 text-popover-foreground w-64 shadow-xl backdrop-blur-xl"
-        >
+        <PopoverContent side="bottom" align="end" className="w-64">
           <PopoverHeader>
-            <PopoverTitle className="text-foreground text-sm font-semibold tracking-tight">
-              Message Settings
-            </PopoverTitle>
-            <PopoverDescription className="text-muted-foreground mt-1 text-xs">
+            <PopoverTitle className="text-headline text-label">Message Settings</PopoverTitle>
+            <PopoverDescription className="text-footnote text-label-secondary mt-1">
               Customize your messaging experience.
             </PopoverDescription>
           </PopoverHeader>
           <div className="mt-4 flex flex-col gap-3">
             <label className="flex cursor-pointer items-center justify-between gap-3">
-              <div className="text-foreground/90 flex items-center gap-2">
-                <SoundHigh className="text-muted-foreground h-3.5 w-3.5" />
-                <span className="text-xs font-semibold">Notification sounds</span>
+              <div className="text-label flex items-center gap-2">
+                <SoundHigh className="text-label-secondary size-4" aria-hidden="true" />
+                <span className="text-body">Notification sounds</span>
               </div>
               <div className="flex items-center gap-2">
                 {settings.notificationSounds && (
-                  <button
+                  <Button
                     type="button"
+                    variant="plain"
+                    size="sm"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       soundEffects.chime();
                     }}
                     title="Test notification sound"
-                    className="text-muted-foreground hover:text-foreground hover:bg-accent/20 cursor-pointer rounded px-1.5 py-0.5 text-xs font-medium transition-colors"
                   >
                     Test
-                  </button>
+                  </Button>
                 )}
                 <Switch
                   checked={settings.notificationSounds}
@@ -140,9 +139,9 @@ export function MessagesFolderNav({
               </div>
             </label>
             <label className="flex cursor-pointer items-center justify-between gap-3">
-              <div className="text-foreground/90 flex items-center gap-2">
-                <User className="text-muted-foreground h-3.5 w-3.5" />
-                <span className="text-xs font-semibold">Show account username</span>
+              <div className="text-label flex items-center gap-2">
+                <User className="text-label-secondary size-4" aria-hidden="true" />
+                <span className="text-body">Show account username</span>
               </div>
               <Switch
                 checked={settings.displayNamePreference === "account"}

@@ -4,6 +4,7 @@
  * Enhanced expanded card view with 3D viewer, tabs, market history, and social features
  */
 
+import { Button } from "~/components/ui/button";
 import React, { useMemo, useState } from "react";
 import {
   Xmark as X,
@@ -152,30 +153,28 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
         <DialogContent
           showCloseButton={false}
           className={cn(
-            "border-border/40 bg-card/85 border-border/50 flex h-auto max-h-[95vh] w-full max-w-4xl flex-col gap-0 overflow-hidden rounded-3xl border p-0 shadow-2xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
-            isTakedownModalOpen && "pointer-events-none scale-[0.98] blur-sm brightness-75"
+            "flex h-auto max-h-[95vh] w-full max-w-4xl flex-col gap-0 overflow-hidden p-0",
+            isTakedownModalOpen && "pointer-events-none opacity-60"
           )}
         >
           <DialogTitle className="sr-only">{card.title} Details</DialogTitle>
 
-          <DialogClose className="hover:bg-accent/80 text-muted-foreground focus:ring-ring absolute top-4 right-4 z-50 rounded-full p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-110 focus:ring-2 focus:outline-none">
+          <DialogClose className="hover:bg-fill-3 text-label-secondary focus-visible:outline-tint z-raised duration-fast absolute top-4 right-4 cursor-pointer rounded-full p-2 transition-colors focus-visible:outline-2">
             <X className="h-5 w-5" />
             <span className="sr-only">Close</span>
           </DialogClose>
 
           {/* Modal Header */}
-          <div className="border-border/40 flex flex-col gap-4 border-b p-4 sm:p-6">
+          <div className="border-separator flex flex-col gap-4 border-b p-4 sm:p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-foreground text-2xl font-bold tracking-tight sm:text-3xl">
-                    {card.title}
-                  </h2>
+                  <h2 className="text-label text-title-1 sm:text-large-title">{card.title}</h2>
                   <RarityBadge rarity={card.rarity} size="medium" />
                   {isIIWiki && <IIWikiBadge size="sm" />}
                   {isLoreCard && resolvedCategory && categoryLabel && (
                     <span
-                      className="border-border/40 text-foreground inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold shadow-xs backdrop-blur-md"
+                      className="border-separator text-label text-caption inline-flex items-center gap-2 rounded-full border px-3 py-1"
                       style={
                         categoryTheme
                           ? {
@@ -199,22 +198,16 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
 
               <div className="flex items-center gap-2">
                 {onShare && (
-                  <button
-                    onClick={() => onShare(card)}
-                    className="glass-hierarchy-interactive flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold"
-                  >
+                  <Button size="sm" variant="gray" onClick={() => onShare(card)}>
                     <Share2 className="h-3.5 w-3.5" />
                     Share
-                  </button>
+                  </Button>
                 )}
                 {onDownloadImage && (
-                  <button
-                    onClick={() => onDownloadImage(card)}
-                    className="glass-hierarchy-interactive flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold"
-                  >
+                  <Button size="sm" variant="gray" onClick={() => onDownloadImage(card)}>
                     <Download className="h-3.5 w-3.5" />
                     Save Image
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
@@ -226,44 +219,29 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
             onValueChange={setActiveTab}
             className="flex min-h-0 flex-1 flex-col"
           >
-            <div className="border-border/40 shrink-0 border-b px-4 sm:px-6">
+            <div className="border-separator shrink-0 border-b px-4 sm:px-6">
               <TabsList className="bg-transparent">
-                <TabsTrigger
-                  value="overview"
-                  className="data-[state=active]:bg-primary/20 text-xs font-medium"
-                >
-                  <Info className="mr-1.5 h-3.5 w-3.5" />
+                <TabsTrigger value="overview">
+                  <Info className="mr-2 h-3.5 w-3.5" />
                   Overview
                 </TabsTrigger>
-                <TabsTrigger
-                  value="market"
-                  className="data-[state=active]:bg-primary/20 text-xs font-medium"
-                >
-                  <BarChart3 className="mr-1.5 h-3.5 w-3.5" />
+                <TabsTrigger value="market">
+                  <BarChart3 className="mr-2 h-3.5 w-3.5" />
                   Market & Provenance
                 </TabsTrigger>
                 {isNsImportCard && (
-                  <TabsTrigger
-                    value="stats"
-                    className="data-[state=active]:bg-primary/20 text-xs font-medium"
-                  >
-                    <TrendingUp className="mr-1.5 h-3.5 w-3.5" />
+                  <TabsTrigger value="stats">
+                    <TrendingUp className="mr-2 h-3.5 w-3.5" />
                     Stats
                   </TabsTrigger>
                 )}
-                <TabsTrigger
-                  value="lore"
-                  className="data-[state=active]:bg-primary/20 text-xs font-medium"
-                >
-                  <BookOpen className="mr-1.5 h-3.5 w-3.5 text-amber-500" />
+                <TabsTrigger value="lore">
+                  <BookOpen className="mr-2 h-3.5 w-3.5" />
                   Lore
                 </TabsTrigger>
                 {comparisonCard && comparisonStats && (
-                  <TabsTrigger
-                    value="compare"
-                    className="data-[state=active]:bg-primary/20 text-xs font-medium"
-                  >
-                    <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" />
+                  <TabsTrigger value="compare">
+                    <ArrowRightLeft className="mr-2 h-3.5 w-3.5" />
                     Compare
                   </TabsTrigger>
                 )}
@@ -317,7 +295,7 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
           </Tabs>
 
           {isNsImportCard && (
-            <div className="border-border/40 bg-card/30 shrink-0 border-t p-3 sm:px-6">
+            <div className="border-separator bg-surface shrink-0 border-t p-3 sm:px-6">
               <NationStatesAttribution onRequestTakedown={() => setIsTakedownModalOpen(true)} />
             </div>
           )}

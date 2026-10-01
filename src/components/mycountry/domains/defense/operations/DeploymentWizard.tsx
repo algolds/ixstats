@@ -14,13 +14,13 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "~/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -167,17 +167,17 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
         <Button size="sm">Deploy Forces</Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Deploy Military Forces</DialogTitle>
-          <DialogDescription>
+      </SheetTrigger>
+      <SheetContent size="wide" className="overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Deploy Military Forces</SheetTitle>
+          <SheetDescription>
             Create a military operation and assign units and assets.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
         <div className="space-y-4">
           {/* Operation name and type */}
@@ -200,7 +200,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
                   {OP_TYPES.map((t) => (
                     <SelectItem key={t.value} value={t.value}>
                       <div className="flex items-center gap-2">
-                        <t.icon aria-hidden="true" className="text-muted-foreground h-4 w-4" />
+                        <t.icon aria-hidden="true" className="text-label-secondary h-4 w-4" />
                         <span>{t.label}</span>
                       </div>
                     </SelectItem>
@@ -260,10 +260,10 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
                     variant="outline"
                     pressed={selectedUnitIds.includes(unit.id)}
                     onPressedChange={() => toggleUnit(unit.id)}
-                    className="h-auto min-w-0 flex-col items-start gap-0 p-2 text-left text-xs data-[state=on]:border-rose-500/50"
+                    className="text-footnote data-[state=on]:border-red/50 h-auto min-w-0 flex-col items-start gap-0 p-2 text-left"
                   >
                     <span className="w-full truncate font-medium">{unit.name}</span>
-                    <span className="text-muted-foreground block w-full truncate font-normal">
+                    <span className="text-label-secondary block w-full truncate font-normal">
                       {unit.personnel?.toLocaleString() ?? 0} personnel
                     </span>
                   </Toggle>
@@ -283,10 +283,10 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
                     variant="outline"
                     pressed={selectedAssetIds.includes(asset.id)}
                     onPressedChange={() => toggleAsset(asset.id)}
-                    className="h-auto min-w-0 flex-col items-start gap-0 p-2 text-left text-xs data-[state=on]:border-rose-500/50"
+                    className="text-footnote data-[state=on]:border-red/50 h-auto min-w-0 flex-col items-start gap-0 p-2 text-left"
                   >
                     <span className="w-full truncate font-medium">{asset.name}</span>
-                    <span className="text-muted-foreground block w-full truncate font-normal">
+                    <span className="text-label-secondary block w-full truncate font-normal">
                       Qty: {asset.quantity ?? 0}
                     </span>
                   </Toggle>
@@ -296,12 +296,12 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
           )}
 
           {/* Cost preview */}
-          <div className="border-border rounded-lg border p-3">
+          <div className="border-separator rounded-control border p-3">
             <div className="mb-2 flex items-center gap-2">
-              <AlertTriangle aria-hidden="true" className="h-4 w-4 text-amber-600" />
-              <span className="text-foreground text-sm font-medium">Cost estimate</span>
+              <AlertTriangle aria-hidden="true" className="text-yellow h-4 w-4" />
+              <span className="text-label text-body font-medium">Cost estimate</span>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="text-body grid grid-cols-2 gap-3">
               <div>
                 <Eyebrow className="block">Daily cost</Eyebrow>
                 <p className="font-medium tabular-nums">{formatCurrency(estimatedDailyCost)}</p>
@@ -325,7 +325,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
                 : "Launch Operation"}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -1,0 +1,1154 @@
+/* ==========================================================================
+   FACET 3 — TOKENS
+   The single token source (docs/specs/2026-09-30-facet-3-design-system.md §1).
+
+   Every token is a CSS variable *and* a Tailwind utility. Values that switch
+   with appearance live in `@theme static` (light) and are overridden under
+   `:root[data-theme="dark"]`; aliases use `@theme inline` so they resolve at
+   the element (per-app tint scopes). No self-referential `@theme` entries.
+
+   Mirrored in TypeScript by src/lib/design/tokens.ts (checked by
+   src/tests/architecture/token-contrast.test.ts) and src/lib/design/motion.ts.
+
+   Theme selection: `html[data-theme="light"|"dark"]`, written pre-paint by the
+   inline script in src/app/layout.tsx. The legacy `.light` / `.dark` classes
+   are kept in sync for CSS that still targets them.
+   ========================================================================== */
+
+/* ─── Variants ───────────────────────────────────────────────────────────── */
+
+/* Tailwind `dark:` follows the theme attribute (and the legacy class). Feature code
+   should prefer roles, which already switch. */
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+/* Accessibility variants honour both the OS media query and the in-app override on <html>. */
+@custom-variant motion-reduce {
+  @media (prefers-reduced-motion: reduce) {
+    @slot;
+  }
+  &:where([data-motion="reduced"], [data-motion="reduced"] *) {
+    @slot;
+  }
+}
+@custom-variant motion-safe {
+  @media (prefers-reduced-motion: no-preference) {
+    &:not(:where([data-motion="reduced"], [data-motion="reduced"] *)) {
+      @slot;
+    }
+  }
+}
+@custom-variant contrast-more {
+  @media (prefers-contrast: more) {
+    @slot;
+  }
+  &:where([data-contrast="more"], [data-contrast="more"] *) {
+    @slot;
+  }
+}
+@custom-variant transparency-reduced {
+  @media (prefers-reduced-transparency: reduce) {
+    @slot;
+  }
+  &:where([data-transparency="reduced"], [data-transparency="reduced"] *) {
+    @slot;
+  }
+}
+@custom-variant compact (&:where([data-density="compact"], [data-density="compact"] *));
+
+/* ─── §2.1 Colour roles (light values; dark below) ───────────────────────── */
+
+@theme static {
+  /* Labels */
+  --color-label: #09090b;
+  --color-label-secondary: #52525b;
+  --color-label-tertiary: #a1a1aa;
+  --color-label-quaternary: #d4d4d8;
+  /* HIG vibrant secondary label: `label-secondary` inside `material-acrylic` (identity.css), where
+     chrome floats over arbitrary content — ≥ 4.5:1 over a black (light) / white (dark) backdrop
+     under the thinnest acrylic fill and its glow (token-contrast.test.ts, "acrylic"). */
+  --color-label-vibrant-secondary: #46464e;
+
+  /* Backgrounds & surfaces */
+  --color-background: #ffffff;
+  --color-background-grouped: #f2f3f6;
+  --color-surface: #ffffff;
+  --color-surface-secondary: #f2f3f6;
+  --color-surface-elevated: #ffffff;
+
+  /* Fills (label @ 16/12/8/5%) */
+  --color-fill: rgba(9, 9, 11, 0.16);
+  --color-fill-2: rgba(9, 9, 11, 0.12);
+  --color-fill-3: rgba(9, 9, 11, 0.08);
+  --color-fill-4: rgba(9, 9, 11, 0.05);
+
+  /* Selected segment / switch thumb over a fill track (raised in light, a stronger fill in dark) */
+  --color-control-thumb: #ffffff;
+
+  /* Modal scrim under dialogs, sheets and alert dialogs (light: 25% black; dark: 40%) */
+  --color-scrim: rgba(0, 0, 0, 0.25);
+
+  /* Separators */
+  --color-separator: rgba(0, 0, 0, 0.1);
+  --color-separator-opaque: #e4e4e7;
+
+  /* System colours (status & data) */
+  --color-red: #dc2626;
+  --color-orange: #c2410c;
+  --color-yellow: #a16207;
+  --color-green: #15803d;
+  --color-teal: #0f766e;
+  --color-blue: #1d4ed8;
+  --color-indigo: #4338ca;
+  --color-purple: #7e22ce;
+  --color-pink: #be185d;
+  --color-mint: #047857;
+  --color-cyan: #0e7490;
+  --color-brown: #8a5a2b;
+  --color-gray: #6b7280;
+  --color-on-system: #ffffff;
+}
+
+/* ─── Aliases (resolve at the element) ───────────────────────────────────── */
+
+@theme inline static {
+  --color-grouped: var(--color-background-grouped);
+
+  /* App tint (§2.2) — scoped per subtree by [data-app] */
+  --color-tint: var(--tint);
+  --color-tint-hover: var(--tint-hover);
+  --color-on-tint: var(--on-tint);
+  --color-tint-fill: var(--tint-fill);
+  /* Tint as text on its own fill (`Badge variant="tinted"`, a selected tinted chip): the tint pulled
+     20% toward the label, like the system-colour inks — the bare tint drops to 3.8:1 there. */
+  --color-tint-ink: color-mix(in srgb, var(--tint) 80%, var(--color-label));
+
+  /* on- pairs for system colours */
+  --color-on-red: var(--color-on-system);
+  --color-on-orange: var(--color-on-system);
+  --color-on-yellow: var(--color-on-system);
+  --color-on-green: var(--color-on-system);
+  --color-on-teal: var(--color-on-system);
+  --color-on-blue: var(--color-on-system);
+  --color-on-indigo: var(--color-on-system);
+  --color-on-purple: var(--color-on-system);
+  --color-on-pink: var(--color-on-system);
+  --color-on-mint: var(--color-on-system);
+  --color-on-cyan: var(--color-on-system);
+  --color-on-brown: var(--color-on-system);
+  --color-on-gray: var(--color-on-system);
+
+  /* Tinted fills (Badge colour variants, ActionPill pressed tones): text in `<colour>-ink` on a
+     15% fill of the colour. The ink is the colour pulled 20% toward the label, which keeps
+     12px text ≥ 4.5:1 on the fill over every background role in both themes
+     (token-contrast.test.ts). Same formula for every hue. */
+  --color-red-ink: color-mix(in srgb, var(--color-red) 80%, var(--color-label));
+  --color-orange-ink: color-mix(in srgb, var(--color-orange) 80%, var(--color-label));
+  --color-yellow-ink: color-mix(in srgb, var(--color-yellow) 80%, var(--color-label));
+  --color-green-ink: color-mix(in srgb, var(--color-green) 80%, var(--color-label));
+  --color-mint-ink: color-mix(in srgb, var(--color-mint) 80%, var(--color-label));
+  --color-teal-ink: color-mix(in srgb, var(--color-teal) 80%, var(--color-label));
+  --color-cyan-ink: color-mix(in srgb, var(--color-cyan) 80%, var(--color-label));
+  --color-blue-ink: color-mix(in srgb, var(--color-blue) 80%, var(--color-label));
+  --color-indigo-ink: color-mix(in srgb, var(--color-indigo) 80%, var(--color-label));
+  --color-purple-ink: color-mix(in srgb, var(--color-purple) 80%, var(--color-label));
+  --color-pink-ink: color-mix(in srgb, var(--color-pink) 80%, var(--color-label));
+  --color-brown-ink: color-mix(in srgb, var(--color-brown) 80%, var(--color-label));
+  --color-gray-ink: color-mix(in srgb, var(--color-gray) 80%, var(--color-label));
+
+  /* Status roles */
+  --color-destructive: var(--color-red);
+  --color-on-destructive: var(--color-on-red);
+  --color-warning: var(--color-orange);
+  --color-on-warning: var(--color-on-orange);
+  --color-caution: var(--color-yellow);
+  --color-on-caution: var(--color-on-yellow);
+  --color-success: var(--color-green);
+  --color-on-success: var(--color-on-green);
+  --color-info: var(--color-blue);
+  --color-on-info: var(--color-on-blue);
+  /* Status inks: text on a 15% fill of the status colour (status Badges, Alerts, toasts). */
+  --color-destructive-ink: var(--color-red-ink);
+  --color-warning-ink: var(--color-orange-ink);
+  --color-caution-ink: var(--color-yellow-ink);
+  --color-success-ink: var(--color-green-ink);
+  --color-info-ink: var(--color-blue-ink);
+  --color-error: var(--color-red); /* legacy name */
+
+  /* shadcn names → roles (kept until the migration finishes; §2.1) */
+  --color-foreground: var(--color-label);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-label);
+  --color-popover: var(--color-surface-elevated);
+  --color-popover-foreground: var(--color-label);
+  --color-primary: var(--tint);
+  --color-primary-foreground: var(--on-tint);
+  --color-secondary: var(--color-fill-3);
+  --color-secondary-foreground: var(--color-label);
+  --color-muted: var(--color-fill-3);
+  --color-muted-foreground: var(--color-label-secondary);
+  --color-accent: var(--color-fill-3);
+  --color-accent-foreground: var(--color-label);
+  --color-destructive-foreground: var(--color-on-red);
+  --color-border: var(--color-separator);
+  --color-input: var(--color-separator);
+  --color-ring: var(--tint);
+
+  /* §2.4 categorical series: blue, orange, green, purple, pink, teal, yellow, red */
+  --color-chart-1: var(--color-blue);
+  --color-chart-2: var(--color-orange);
+  --color-chart-3: var(--color-green);
+  --color-chart-4: var(--color-purple);
+  --color-chart-5: var(--color-pink);
+  --color-chart-6: var(--color-teal);
+  --color-chart-7: var(--color-yellow);
+  --color-chart-8: var(--color-red);
+}
+
+/* ─── §4 Shape · §5 Elevation & z · §8 Motion ────────────────────────────── */
+
+@theme static {
+  /* Concentric radius scale */
+  --radius-sheet: 1.25rem; /* 20 */
+  --radius-card: 1rem; /* 16 */
+  --radius-row: 0.75rem; /* 12 — grouped list, inset panel */
+  --radius-control-lg: 0.75rem; /* 12 — 44px controls */
+  --radius-control: 0.625rem; /* 10 — 36px controls */
+  --radius-control-sm: 0.5rem; /* 8 — 28px controls */
+
+  /* Elevation; alpha × --shadow-strength (dark mode: half strength) */
+  --shadow-card:
+    0 1px 2px 0 rgb(0 0 0 / calc(0.06 * var(--shadow-strength, 1))),
+    0 1px 3px 0 rgb(0 0 0 / calc(0.08 * var(--shadow-strength, 1)));
+  --shadow-floating:
+    0 8px 24px -4px rgb(0 0 0 / calc(0.14 * var(--shadow-strength, 1))),
+    0 2px 6px -1px rgb(0 0 0 / calc(0.08 * var(--shadow-strength, 1)));
+  --shadow-sheet:
+    0 24px 48px -12px rgb(0 0 0 / calc(0.24 * var(--shadow-strength, 1))),
+    0 8px 16px -8px rgb(0 0 0 / calc(0.12 * var(--shadow-strength, 1)));
+
+  /* One z-index scale (`z-base` … `z-command`) */
+  --z-index-base: 0;
+  --z-index-raised: 10;
+  --z-index-sticky: 100;
+  --z-index-chrome: 500; /* sidebar, tab bar, toolbars */
+  --z-index-nav: 5000;
+  --z-index-backdrop: 100000;
+  --z-index-sheet: 100001;
+  --z-index-popover: 100010;
+  --z-index-tooltip: 100020;
+  --z-index-toast: 100050;
+  --z-index-command: 110000;
+
+  /* Motion (§8). Springs are for motion/react — see src/lib/design/motion.ts. */
+  --duration-fast: 150ms; /* colour and opacity changes */
+  --duration-exit: 120ms; /* exits, always faster than entrances */
+  --ease-out-facet: cubic-bezier(0.23, 1, 0.32, 1);
+  --spring-snappy-stiffness: 520; /* controls */
+  --spring-snappy-damping: 38;
+  --spring-smooth-stiffness: 320; /* sheets, sidebar, navigation, layout */
+  --spring-smooth-damping: 32;
+  --spring-gentle-stiffness: 180; /* emphasis, reveals */
+  --spring-gentle-damping: 24;
+}
+
+@theme inline static {
+  /* `duration-fast` / `duration-exit` utilities */
+  --transition-duration-fast: var(--duration-fast);
+  --transition-duration-exit: var(--duration-exit);
+}
+
+/* ─── Legacy colour utilities (pre-Facet 3; migrate to roles) ─────────────── */
+
+@theme static {
+  --color-text-secondary: #d4d4d8;
+  --color-brand-primary: #6366f1;
+  --color-brand-secondary: #818cf8;
+
+  --color-poll: #ff8a65;
+  --color-discord: #5865f2;
+  --color-discord-hover: #4752c4;
+  --color-wiki: #1d4e89;
+  --color-wiki-hover: #184275;
+  --color-map-ocean: #0a1628;
+  --color-forum-accent: #f97316;
+  --color-forum-accent-hover: #fb923c;
+  --color-forum-accent-active: #ea580c;
+
+  --color-theme-gold: #b45309;
+  --color-theme-ocean: #0369a1;
+  --color-theme-emerald: #047857;
+  --color-theme-crimson: #b91c1c;
+  --color-theme-amethyst: #7e22ce;
+  --color-theme-slate: #334155;
+
+  --color-rarity-common: #60a5fa;
+  --color-rarity-uncommon: #34d399;
+  --color-rarity-rare: #a855f7;
+  --color-rarity-ultra-rare: #c084fc;
+  --color-rarity-epic: #fbbf24;
+  --color-rarity-legendary: #ffd700;
+
+  --color-gold-50: #fffbeb;
+  --color-gold-100: #fef3c7;
+  --color-gold-200: #fde68a;
+  --color-gold-300: #fcd34d;
+  --color-gold-400: #fbbf24;
+  --color-gold-500: #fbbf24;
+  --color-gold-600: #d97706;
+  --color-gold-700: #b45309;
+  --color-gold-800: #92400e;
+  --color-gold-900: #78350f;
+  --color-gold-950: #451a03;
+
+  /* Font families */
+  --font-eurostile: "Eurostile", sans-serif;
+  --font-eurostile-cond: "Eurostile Condensed", "Eurostile", sans-serif;
+  --font-eurostile-extd: "Eurostile Extended", "Eurostile", sans-serif;
+  --font-host-grotesk: "Host Grotesk", sans-serif;
+  --font-sangbleu-empire: "SangBleu Empire", Georgia, serif;
+  --font-sangbleu-kingdom: "SangBleu Kingdom", Georgia, serif;
+  --font-sangbleu-republic: "SangBleu Republic", Georgia, serif;
+  --font-sangbleu-sunrise: "SangBleu Sunrise", Georgia, serif;
+  --font-sangbleu-versailles: "SangBleu Versailles", Georgia, serif;
+  --font-sangbleu: "SangBleu", "SangBleu Empire", "SangBleu Kingdom", Georgia, serif;
+}
+
+/* WikiOS margin/highlighter suite — values live in styles/wiki-os/tokens.css. */
+@theme inline {
+  --color-margin-accent: var(--margin-accent);
+  --color-margin-accent-hover: var(--margin-accent-hover);
+  --color-margin-bg: var(--margin-accent-bg);
+  --color-margin-border: var(--margin-accent-border);
+  --color-margin-glow: var(--margin-accent-glow);
+}
+
+/* Onoma lab palette — registered for utilities only; the values (and light overrides) are
+   defined in styles/domains.css. */
+@theme reference {
+  --color-onoma-primary: #0091ff;
+  --color-onoma-primary-light: #33a7ff;
+  --color-onoma-primary-hover: #0080e6;
+  --color-onoma-primary-active: #006ec4;
+  --color-onoma-primary-muted: rgba(0, 145, 255, 0.6);
+  --color-onoma-accent: #fef036;
+  --color-onoma-accent-hover: #e5d82f;
+  --color-onoma-accent-muted: rgba(254, 240, 54, 0.6);
+  --color-onoma-surface: rgba(0, 145, 255, 0.06);
+  --color-onoma-surface-hover: rgba(0, 145, 255, 0.12);
+  --color-onoma-surface-active: rgba(0, 145, 255, 0.18);
+  --color-onoma-accent-surface: rgba(254, 240, 54, 0.08);
+  --color-onoma-border: rgba(0, 145, 255, 0.25);
+  --color-onoma-border-hover: rgba(0, 145, 255, 0.45);
+  --color-onoma-border-active: rgba(0, 145, 255, 0.65);
+  --color-onoma-accent-border: rgba(254, 240, 54, 0.3);
+  --color-onoma-glow: rgba(0, 145, 255, 0.35);
+  --color-onoma-accent-glow: rgba(254, 240, 54, 0.3);
+}
+
+/* ─── §3 Typefaces ─────────────────────────────────────────────────────────── */
+/* The single owner of the font stacks (the @font-face faces live in styles/typography.css).
+   Swiss for all UI; Azeret Mono only for code, IDs, coordinates and hashes; National /
+   Neutraface only through `text-display`. The legacy `data-typography="national|sovereign"`
+   preset still overrides `--font-sans`/`--font-mono`/`--font-display` there until presets go. */
+
+@theme static {
+  --font-sans: "Schibsted Grotesk", "Akzidenz-Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Azeret Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Facet 3.1: `font-mono` carries the v2 `.font-mono` figures — tabular with a slashed zero —
+     through Tailwind's own font-feature hook (no utility hijack). `font-data` is the same face
+     and features for every stat, figure, count and ID in the UI (Stat, Badge counts, table
+     numbers); `font-mono` stays for code, hashes and coordinates. */
+  --font-mono--font-feature-settings: "tnum" 1, "zero" 1;
+  --font-data: "Azeret Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-data--font-feature-settings: "tnum" 1, "zero" 1;
+  --font-serif: "Baskerville 10 Pro", "Baskerville", ui-serif, Georgia, serif;
+  --font-display: "National", "Neutraface 2", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ─── §3 Text styles (rem × --text-scale) ────────────────────────────────── */
+/* line-height / weight / tracking defer to `leading-*` / `font-*` / `tracking-*` when set.
+   Facet 3.1 (identity): display → title-3 are heavy and tight again, as the v2 headings
+   (`font-bold`/`font-extrabold tracking-tight`): display, large-title and title-1 are 800 at
+   -0.025em; title-2 700 at -0.025em; title-3 700 at -0.02em. Body styles are unchanged. Where a
+   face has no 800 cut loaded (Schibsted Grotesk ships 500–700 here) the browser renders 700. */
+
+@utility text-display {
+  font-family: var(--font-display);
+  font-size: calc(2.5rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(2.75rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 800);
+  letter-spacing: var(--tw-tracking, -0.025em);
+}
+@utility text-large-title {
+  font-size: calc(1.75rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(2.125rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 800);
+  letter-spacing: var(--tw-tracking, -0.025em);
+}
+@utility text-title-1 {
+  font-size: calc(1.375rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.75rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 800);
+  letter-spacing: var(--tw-tracking, -0.025em);
+}
+@utility text-title-2 {
+  font-size: calc(1.25rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.625rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 700);
+  letter-spacing: var(--tw-tracking, -0.025em);
+}
+@utility text-title-3 {
+  font-size: calc(1.0625rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.375rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 700);
+  letter-spacing: var(--tw-tracking, -0.02em);
+}
+@utility text-headline {
+  font-size: calc(0.875rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.25rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 600);
+  letter-spacing: var(--tw-tracking, 0);
+}
+@utility text-body {
+  font-size: calc(0.875rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.25rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 400);
+  letter-spacing: var(--tw-tracking, 0);
+}
+@utility text-callout {
+  font-size: calc(0.8125rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.125rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 400);
+  letter-spacing: var(--tw-tracking, 0);
+}
+@utility text-subhead {
+  font-size: calc(0.8125rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1.125rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 500);
+  letter-spacing: var(--tw-tracking, 0);
+}
+@utility text-footnote {
+  font-size: calc(0.75rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 400);
+  letter-spacing: var(--tw-tracking, 0.005em);
+}
+@utility text-caption {
+  font-size: calc(0.75rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 500);
+  letter-spacing: var(--tw-tracking, 0.01em);
+}
+/* Eyebrow: short uppercase data label above a value — used by the Eyebrow primitive only. */
+@utility text-eyebrow {
+  font-size: calc(0.75rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 500);
+  letter-spacing: var(--tw-tracking, 0.06em);
+  text-transform: uppercase;
+}
+
+/* ─── §5 Materials (floating chrome only; never nested) ──────────────────── */
+/* No position / z-index / radius / margin — those belong to the component. */
+
+@utility material-thin {
+  --material-blur: 12px;
+  --material-saturate: 150%;
+  background-color: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
+  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
+  border: 1px solid var(--color-separator-opaque);
+  --tw-inset-shadow: inset 0 1px 0 0 var(--material-highlight);
+  box-shadow:
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow, 0 0 #0000),
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+    var(--tw-shadow, 0 0 #0000);
+  @media (max-width: 768px) {
+    --material-blur: 8px;
+  }
+  @media (hover: hover) {
+    &:hover {
+      --material-highlight: var(--material-highlight-hover);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  &:where([data-transparency="reduced"] *) {
+    background-color: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@utility material-regular {
+  --material-blur: 20px;
+  --material-saturate: 170%;
+  background-color: color-mix(in srgb, var(--color-surface) 80%, transparent);
+  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
+  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
+  border: 1px solid var(--color-separator-opaque);
+  --tw-inset-shadow: inset 0 1px 0 0 var(--material-highlight);
+  box-shadow:
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow, 0 0 #0000),
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+    var(--tw-shadow, 0 0 #0000);
+  @media (max-width: 768px) {
+    --material-blur: 12px;
+  }
+  @media (hover: hover) {
+    &:hover {
+      --material-highlight: var(--material-highlight-hover);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  &:where([data-transparency="reduced"] *) {
+    background-color: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@utility material-thick {
+  --material-blur: 28px;
+  --material-saturate: 180%;
+  background-color: color-mix(in srgb, var(--color-surface-elevated) 88%, transparent);
+  -webkit-backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
+  backdrop-filter: blur(var(--material-blur)) saturate(var(--material-saturate));
+  border: 1px solid var(--color-separator-opaque);
+  --tw-inset-shadow: inset 0 1px 0 0 var(--material-highlight);
+  box-shadow:
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow, 0 0 #0000),
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+    var(--tw-shadow, 0 0 #0000);
+  @media (max-width: 768px) {
+    --material-blur: 20px;
+  }
+  @media (hover: hover) {
+    &:hover {
+      --material-highlight: var(--material-highlight-hover);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    background-color: var(--color-surface-elevated);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  &:where([data-transparency="reduced"] *) {
+    background-color: var(--color-surface-elevated);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* ─── Runtime values: appearance, app tints, preferences ─────────────────── */
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --text-scale: 1;
+    --shadow-strength: 1;
+    --material-highlight: rgba(255, 255, 255, 0.2);
+    --material-highlight-hover: rgba(255, 255, 255, 0.4);
+
+    /* Density (§4): component padding/gap multiplier and control heights 28/36/44 */
+    --density: 1;
+    --control-height-sm: 1.75rem;
+    --control-height: 2.25rem;
+    --control-height-lg: 2.75rem;
+
+    /* Legacy z-index names → the one scale (existing numeric values kept) */
+    --z-background: -1;
+    --z-surface: var(--z-index-base);
+    --z-floating: var(--z-index-sticky);
+    --z-overlay: 1000; /* no Facet 3 equivalent; migrate to z-chrome / z-sheet */
+    --z-navigation: var(--z-index-nav);
+    --z-backdrop: var(--z-index-backdrop);
+    --z-modal: var(--z-index-sheet);
+    --z-popover: var(--z-index-popover);
+    --z-tooltip: var(--z-index-tooltip);
+    --z-toast: var(--z-index-toast);
+    --z-command: var(--z-index-command);
+    --z-depth-background: var(--z-background);
+    --z-depth-surface: var(--z-surface);
+    --z-depth-floating: var(--z-floating);
+    --z-depth-overlay: var(--z-overlay);
+    --z-depth-navigation: var(--z-navigation);
+    --z-depth-popover: var(--z-popover);
+    --z-depth-tooltip: var(--z-tooltip);
+    --z-depth-toast: var(--z-toast);
+    --z-depth-backdrop: var(--z-backdrop);
+    --z-depth-modal: var(--z-modal);
+    --z-depth-command: var(--z-command);
+  }
+
+  /* §2.1 dark values */
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --shadow-strength: 0.5;
+    --material-highlight: rgba(255, 255, 255, 0.08);
+    --material-highlight-hover: rgba(255, 255, 255, 0.15);
+
+    --color-label: #f4f4f5;
+    --color-label-secondary: #a1a1aa;
+    --color-label-tertiary: #71717a;
+    --color-label-quaternary: #52525b;
+    --color-label-vibrant-secondary: #bebec6;
+
+    --color-background: #0b0c0f;
+    --color-background-grouped: #0b0c0f;
+    --color-surface: #16181d;
+    --color-surface-secondary: #1e2028;
+    --color-surface-elevated: #22252d;
+
+    --color-fill: rgba(244, 244, 245, 0.24);
+    --color-fill-2: rgba(244, 244, 245, 0.18);
+    --color-fill-3: rgba(244, 244, 245, 0.12);
+    --color-fill-4: rgba(244, 244, 245, 0.08);
+
+    --color-control-thumb: rgba(244, 244, 245, 0.24);
+    --color-scrim: rgba(0, 0, 0, 0.4);
+
+    --color-separator: rgba(255, 255, 255, 0.1);
+    --color-separator-opaque: #2a2d35;
+
+    --color-red: #f87171;
+    --color-orange: #fb923c;
+    --color-yellow: #facc15;
+    --color-green: #4ade80;
+    --color-teal: #2dd4bf;
+    --color-blue: #60a5fa;
+    --color-indigo: #818cf8;
+    --color-purple: #c084fc;
+    --color-pink: #f472b6;
+    --color-mint: #34d399;
+    --color-cyan: #22d3ee;
+    --color-brown: #d6a77a;
+    --color-gray: #9ca3af;
+    --color-on-system: #0b0c0f;
+  }
+
+  /* Legacy colour utilities — light values */
+  :root[data-theme="light"] {
+    --color-text-secondary: #52525b;
+    --color-poll: #ea580c;
+    --color-forum-accent: #ea580c;
+    --color-forum-accent-hover: #c2410c;
+    --color-forum-accent-active: #9a3412;
+    --color-theme-gold: #92400e;
+    --color-theme-ocean: #0284c7;
+    --color-theme-emerald: #059669;
+    --color-theme-crimson: #dc2626;
+    --color-theme-amethyst: #9333ea;
+    --color-theme-slate: #475569;
+    --color-rarity-common: #3b82f6;
+    --color-rarity-uncommon: #10b981;
+    --color-rarity-rare: #8b5cf6;
+    --color-rarity-ultra-rare: #a855f7;
+    --color-rarity-epic: #d97706;
+    --color-rarity-legendary: #b45309;
+  }
+
+  /* §2.2 App tints. Each scope sets its palette; the generic rules below derive
+     --tint / --tint-hover / --on-tint / --tint-fill on the scope element itself so
+     nested scopes and appearance changes resolve correctly. */
+  :root,
+  [data-app="admin"] {
+    --tint-light: #4338ca;
+    --tint-light-strong: #3730a3;
+    --on-tint-light: #ffffff;
+    --tint-dark: #818cf8;
+    --tint-dark-strong: #a5b4fc;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="mycountry"] {
+    --tint-light: #b45309;
+    --tint-light-strong: #92400e;
+    --on-tint-light: #ffffff;
+    --tint-dark: #fbbf24;
+    --tint-dark-strong: #fcd34d;
+    --on-tint-dark: #1c1917;
+  }
+  [data-app="maps"] {
+    --tint-light: #0369a1;
+    --tint-light-strong: #075985;
+    --on-tint-light: #ffffff;
+    --tint-dark: #38bdf8;
+    --tint-dark-strong: #7dd3fc;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="thinkpages"] {
+    --tint-light: #047857;
+    --tint-light-strong: #065f46;
+    --on-tint-light: #ffffff;
+    --tint-dark: #34d399;
+    --tint-dark-strong: #6ee7b7;
+    --on-tint-dark: #052e16;
+  }
+  [data-app="vault"] {
+    --tint-light: #9a3412;
+    --tint-light-strong: #7c2d12;
+    --on-tint-light: #ffffff;
+    --tint-dark: #fdba74;
+    --tint-dark-strong: #fed7aa;
+    --on-tint-dark: #1c1917;
+  }
+  [data-app="forum"] {
+    --tint-light: #c2410c;
+    --tint-light-strong: #9a3412;
+    --on-tint-light: #ffffff;
+    --tint-dark: #fb923c;
+    --tint-dark-strong: #fdba74;
+    --on-tint-dark: #1c1917;
+  }
+  [data-app="wiki"] {
+    --tint-light: #3730a3;
+    --tint-light-strong: #312e81;
+    --on-tint-light: #ffffff;
+    --tint-dark: #a5b4fc;
+    --tint-dark-strong: #c7d2fe;
+    --on-tint-dark: #0b0c0f;
+  }
+  [data-app="intel"] {
+    --tint-light: #be123c;
+    --tint-light-strong: #9f1239;
+    --on-tint-light: #ffffff;
+    --tint-dark: #fb7185;
+    --tint-dark-strong: #fda4af;
+    --on-tint-dark: #1c0a0f;
+  }
+  [data-app="sports"] {
+    --tint-light: #0f766e;
+    --tint-light-strong: #115e59;
+    --on-tint-light: #ffffff;
+    --tint-dark: #2dd4bf;
+    --tint-dark-strong: #5eead4;
+    --on-tint-dark: #042f2e;
+  }
+
+  :root,
+  [data-app] {
+    --tint: var(--tint-light);
+    --tint-hover: var(--tint-light-strong);
+    --on-tint: var(--on-tint-light);
+    --tint-fill: color-mix(in srgb, var(--tint) 14%, transparent);
+  }
+  :root[data-theme="dark"],
+  :root[data-theme="dark"] [data-app] {
+    --tint: var(--tint-dark);
+    --tint-hover: var(--tint-dark-strong);
+    --on-tint: var(--on-tint-dark);
+    --tint-fill: color-mix(in srgb, var(--tint) 18%, transparent);
+  }
+
+  /* §2.3 Increase Contrast: separators .20/.24, labels and tints one step stronger */
+  :root[data-contrast="more"] {
+    --color-label-secondary: #3f3f46;
+    --color-label-tertiary: #71717a;
+    --color-label-vibrant-secondary: #3f3f46;
+    --color-separator: rgba(0, 0, 0, 0.2);
+    --color-separator-opaque: #a1a1aa;
+  }
+  :root[data-contrast="more"],
+  :root[data-contrast="more"] [data-app] {
+    --tint: var(--tint-light-strong);
+    --tint-hover: color-mix(in srgb, var(--tint-light-strong) 85%, black);
+  }
+  :root[data-theme="dark"][data-contrast="more"] {
+    --color-label-secondary: #d4d4d8;
+    --color-label-tertiary: #a1a1aa;
+    --color-label-vibrant-secondary: #d4d4d8;
+    --color-separator: rgba(255, 255, 255, 0.24);
+    --color-separator-opaque: #52525b;
+  }
+  :root[data-theme="dark"][data-contrast="more"],
+  :root[data-theme="dark"][data-contrast="more"] [data-app] {
+    --tint: var(--tint-dark-strong);
+    --tint-hover: color-mix(in srgb, var(--tint-dark-strong) 85%, white);
+  }
+  @media (prefers-contrast: more) {
+    :root:not([data-theme="dark"]) {
+      --color-label-secondary: #3f3f46;
+      --color-label-tertiary: #71717a;
+      --color-label-vibrant-secondary: #3f3f46;
+      --color-separator: rgba(0, 0, 0, 0.2);
+      --color-separator-opaque: #a1a1aa;
+    }
+    :root:not([data-theme="dark"]),
+    :root:not([data-theme="dark"]) [data-app] {
+      --tint: var(--tint-light-strong);
+      --tint-hover: color-mix(in srgb, var(--tint-light-strong) 85%, black);
+    }
+    :root[data-theme="dark"] {
+      --color-label-secondary: #d4d4d8;
+      --color-label-tertiary: #a1a1aa;
+      --color-label-vibrant-secondary: #d4d4d8;
+      --color-separator: rgba(255, 255, 255, 0.24);
+      --color-separator-opaque: #52525b;
+    }
+    :root[data-theme="dark"],
+    :root[data-theme="dark"] [data-app] {
+      --tint: var(--tint-dark-strong);
+      --tint-hover: color-mix(in srgb, var(--tint-dark-strong) 85%, white);
+    }
+  }
+
+  /* Density: Compact multiplies component padding/gaps by 0.75; controls 28/32/40 (§4) */
+  :root[data-density="compact"] {
+    --density: 0.75;
+    --control-height-sm: 1.75rem;
+    --control-height: 2rem;
+    --control-height-lg: 2.5rem;
+  }
+
+  /* Reduce Motion (§8): the page stops smooth-scrolling; motion/react and the
+     motion-reduce: variant handle the rest. */
+  :root[data-motion="reduced"] {
+    scroll-behavior: auto;
+  }
+
+  html,
+  body {
+    background-color: var(--color-background-grouped);
+    color: var(--color-label);
+  }
+}
+
+/* ─── Facet 3.1 — identity (spec §16) ────────────────────────────────────── */
+/* The v2 identity restored on tokens. Scalars only: everything that mixes the app tint
+   (`--tint`) is composed at the element by the utilities/classes in styles/facet/identity.css,
+   because a custom property that reads `var(--tint)` on :root would bake the root tint into every
+   `[data-app]` subtree. Mirrored in src/lib/design/tokens.ts (`IDENTITY`) and checked by
+   token-contrast.test.ts (monochrome and gold primaries, glass hero legibility). */
+
+@theme static {
+  /* CutoutCard (v2 `rounded-[28px]`) */
+  --radius-cutout: 1.75rem;
+}
+
+@layer base {
+  :root {
+    /* Glass hero tier (`material-hero`, `FacetCard variant="glass"`) — v2 `.facet-hierarchy-parent`
+       light glass (white 90% → 70% at 135°) with the `.facet-depth-1` blur. */
+    --glass-hero-fill-from: 90%;
+    --glass-hero-fill-to: 70%;
+    --glass-hero-blur: 16px;
+    --glass-hero-blur-compact: 12px;
+    --glass-hero-saturate: 150%;
+    --glass-hero-rim: rgb(255 255 255 / 0.9);
+    --glass-hero-border-tint: 30%;
+    /* v2 `.facet-{domain}` wash: tint @ --refraction-medium (.15) → .05 at 50% → transparent. */
+    --glass-hero-wash-from: 15%;
+    --glass-hero-wash-mid: 5%;
+    --glass-hero-shadow: 0 2px 8px rgb(0 0 0 / 0.04), 0 4px 16px rgb(0 0 0 / 0.08);
+    --glass-hero-shadow-tint: 12%;
+    --glass-hero-shadow-hover: 0 2px 8px rgb(0 0 0 / 0.05), 0 4px 16px rgb(0 0 0 / 0.1);
+    --glass-hero-shadow-hover-tint: 18%;
+
+    /* Acrylic (`material-acrylic`: Halo, sidebar, tab bar) — v2 `.dynamic-island-shell`. */
+    --acrylic-fill: rgb(255 255 255 / 0.85);
+    --acrylic-fill-active: rgb(255 255 255 / 0.9);
+    --acrylic-border: rgb(0 0 0 / 0.08);
+    --acrylic-border-active: rgb(0 0 0 / 0.11);
+    --acrylic-blur: 28px;
+    --acrylic-blur-active: 32px;
+    --acrylic-saturate: 190%;
+    --acrylic-saturate-active: 200%;
+    --acrylic-rim: inset 0 1px 0 rgb(255 255 255 / 0.95), inset 0 -1px 0 rgb(0 0 0 / 0.03);
+    --acrylic-rim-active: inset 0 1px 0 rgb(255 255 255 / 1), inset 0 -1px 0 rgb(0 0 0 / 0.04);
+    --acrylic-shadow: 0 16px 36px -8px rgb(0 0 0 / 0.12), 0 4px 12px -2px rgb(0 0 0 / 0.04);
+    --acrylic-shadow-active: 0 20px 44px -8px rgb(0 0 0 / 0.14), 0 6px 14px -2px rgb(0 0 0 / 0.05);
+    /* Expanded sheet (`data-expanded="true"`) — v2 `.dynamic-island-shell[data-expanded]`. */
+    --acrylic-fill-expanded-from: rgb(255 255 255 / 0.94);
+    --acrylic-fill-expanded-to: rgb(250 250 253 / 0.89);
+    --acrylic-border-expanded: rgb(0 0 0 / 0.1);
+    --acrylic-blur-expanded: 40px;
+    --acrylic-saturate-expanded: 210%;
+    --acrylic-brightness-expanded: 102%;
+    --acrylic-rim-expanded:
+      inset 0 1.5px 1px rgb(255 255 255 / 1), inset 0 0 0 1px rgb(255 255 255 / 0.65),
+      inset 0 -1px 0 rgb(0 0 0 / 0.03);
+    --acrylic-shadow-expanded:
+      0 32px 64px -12px rgb(0 0 0 / 0.18), 0 12px 28px -4px rgb(0 0 0 / 0.08);
+
+    /* Refraction hairline (`<Refraction />`): v2 `.facet-refraction::after` stops. */
+    --refraction-peak: rgb(255 255 255 / 0.35);
+    --refraction-soft: rgb(255 255 255 / 0.2);
+    --refraction-opacity: 0.8;
+    --refraction-opacity-hover: 1;
+
+    /* Domain glow: v2 blob (`size-40 opacity-15 blur-3xl bg-<domain>`) and v2
+       `.dashboard-section-*` tinted shadow (tint 15% / 10%, hover 25% / 15%). */
+    --glow-opacity: 0.15;
+    --glow-blur: 64px;
+    --glow-shadow-tint: 15%;
+    --glow-shadow-tint-near: 10%;
+    --glow-shadow-tint-hover: 25%;
+    --glow-shadow-tint-near-hover: 15%;
+
+    /* Flag watermark: v2 DashboardHero (.14 light / .18 dark → .25 on hover, luminosity in light). */
+    --flag-watermark-opacity: 0.14;
+    --flag-watermark-opacity-hover: 0.25;
+    --flag-watermark-blend: luminosity;
+    /* HIG (spec §16.8): caps the flag's extremes so labels stay ≥ 4.5:1 over any flag. */
+    --flag-watermark-tone: contrast(0.7);
+
+    /* Physics: v2 press (`active:scale-[0.98]`, small controls `active:scale-95`) and lift
+       (`hover:-translate-y-0.5` + the `.facet-interactive` hover shadow). Reduce Motion drops the
+       transforms in the utilities themselves (identity.css). */
+    --facet-press-scale: 0.98;
+    --facet-lift-y: -2px;
+    --facet-lift-shadow: 0 8px 24px rgb(0 0 0 / 0.08), 0 3px 8px rgb(0 0 0 / 0.04);
+
+    /* Monochrome primary (`Button variant="filled"`): v2 `--primary: text-primary`. */
+    --primary-fill-mono: #18181b;
+    --primary-fill-mono-hover: #3f3f46;
+    --on-primary-mono: #fafafa;
+
+    /* MyCountry / Builder gold: v2 BUILDER_GOLD `from-amber-500 to-yellow-600`. Hover brightens
+       (amber-400 → yellow-500) instead of v2's darker stops, which fail AA with the dark label. */
+    --gold-from: #f59e0b;
+    --gold-to: #ca8a04;
+    --gold-from-hover: #fbbf24;
+    --gold-to-hover: #eab308;
+    --on-gold: #1c1917;
+    /* Gold rim: a light-catching top edge, a 1px edge that holds 3:1 against light surfaces
+       (amber-700), and the v2 `.dashboard-section-mycountry` glow (rgba(202,138,4,.1)). */
+    --gold-rim-edge: #b45309;
+    --gold-rim:
+      inset 0 1px 0 rgb(255 255 255 / 0.35), inset 0 0 0 1px var(--gold-rim-edge),
+      0 4px 12px rgb(202 138 4 / 0.1);
+    --gold-rim-hover:
+      inset 0 1px 0 rgb(255 255 255 / 0.45), inset 0 0 0 1px var(--gold-rim-edge),
+      0 8px 24px rgb(202 138 4 / 0.12);
+    /* `facet-gold-rim` / `rim="gold"`: the v2 `.facet-mycountry` border and top edge. Under
+       Increase Contrast the border becomes `--gold-rim-edge` (≥ 3:1). */
+    --gold-rim-border: rgb(202 138 4 / 0.3);
+    --gold-rim-highlight: rgb(255 215 0 / 0.3);
+    /* `accent="gold"`: amber-700 in light (the gold stops are < 3:1 on white), amber-500 in dark. */
+    --gold-accent: #b45309;
+
+    /* Accent fill (`bg-facet-accent-fill`, the CutoutCard header strip): the accent at the
+       `tint-fill` strength. */
+    --accent-fill-mix: 14%;
+
+    /* CutoutCard elevation: the v2 `--facet-shadow-cutout` stack on the label colour. */
+    --cutout-shadow:
+      0 1px 2px -1px color-mix(in oklab, var(--color-label) 8%, transparent),
+      0 4px 8px -2px color-mix(in oklab, var(--color-label) 6%, transparent),
+      0 8px 16px -4px color-mix(in oklab, var(--color-label) 5%, transparent);
+    --cutout-shadow-hover:
+      0 2px 4px -1px color-mix(in oklab, var(--color-label) 10%, transparent),
+      0 8px 16px -4px color-mix(in oklab, var(--color-label) 8%, transparent),
+      0 16px 32px -8px color-mix(in oklab, var(--color-label) 6%, transparent);
+
+    /* Achievement aurora / foil / ghost heraldry (v2 AchievementCardBackdrop). */
+    --aurora-opacity: 0.4;
+    --aurora-opacity-hover: 0.75;
+    --radiance-opacity: 0.45;
+    --radiance-opacity-hover: 0.7;
+    --foil-opacity: 0.6;
+    --heraldry-opacity: 0.065;
+  }
+
+  /* Dark: the more polished, glass-forward theme (deeper blur and saturation, brighter rim). */
+  :root[data-theme="dark"] {
+    --glass-hero-fill-from: 62%;
+    --glass-hero-fill-to: 72%;
+    --glass-hero-blur: 24px;
+    --glass-hero-blur-compact: 16px;
+    --glass-hero-saturate: 180%;
+    --glass-hero-rim: rgb(255 255 255 / 0.12);
+    --glass-hero-border-tint: 25%;
+    --glass-hero-wash-from: 10.5%;
+    --glass-hero-wash-mid: 2.5%;
+    --glass-hero-shadow: 0 4px 20px rgb(0 0 0 / 0.3);
+    --glass-hero-shadow-tint: 12%;
+    --glass-hero-shadow-hover: 0 12px 32px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.2);
+    --glass-hero-shadow-hover-tint: 20%;
+
+    --acrylic-fill: rgb(15 17 24 / 0.88);
+    --acrylic-fill-active: rgb(18 20 28 / 0.92);
+    --acrylic-border: rgb(255 255 255 / 0.12);
+    --acrylic-border-active: rgb(255 255 255 / 0.16);
+    --acrylic-rim: inset 0 1px 0 rgb(255 255 255 / 0.15), inset 0 -1px 0 rgb(0 0 0 / 0.4);
+    --acrylic-rim-active: inset 0 1px 0 rgb(255 255 255 / 0.2), inset 0 -1px 0 rgb(0 0 0 / 0.5);
+    --acrylic-shadow: 0 20px 48px -10px rgb(0 0 0 / 0.65), 0 8px 20px -4px rgb(0 0 0 / 0.45);
+    --acrylic-shadow-active: 0 24px 54px -10px rgb(0 0 0 / 0.72), 0 10px 24px -4px rgb(0 0 0 / 0.5);
+    --acrylic-fill-expanded-from: rgb(24 28 40 / 0.94);
+    --acrylic-fill-expanded-to: rgb(13 15 22 / 0.96);
+    --acrylic-border-expanded: rgb(255 255 255 / 0.15);
+    --acrylic-brightness-expanded: 104%;
+    --acrylic-rim-expanded:
+      inset 0 1px 1px rgb(255 255 255 / 0.28), inset 0 0 0 1px rgb(255 255 255 / 0.06),
+      inset 0 -1px 0 rgb(0 0 0 / 0.6);
+    --acrylic-shadow-expanded:
+      0 36px 72px -16px rgb(0 0 0 / 0.88), 0 16px 32px -6px rgb(0 0 0 / 0.6);
+
+    --refraction-peak: rgb(255 255 255 / 0.3);
+    --refraction-soft: rgb(255 255 255 / 0.12);
+
+    --flag-watermark-opacity: 0.18;
+    --flag-watermark-blend: normal;
+    --flag-watermark-tone: brightness(0.6);
+
+    --facet-lift-shadow: 0 12px 32px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.2);
+
+    --primary-fill-mono: #f4f4f5;
+    --primary-fill-mono-hover: #d4d4d8;
+    --on-primary-mono: #0b0c0f;
+
+    --gold-rim-edge: rgb(252 211 77 / 0.5);
+    --gold-accent: #f59e0b;
+    --accent-fill-mix: 18%;
+
+    --heraldry-opacity: 0.095;
+  }
+
+  /* The primary role: monochrome everywhere, gold inside MyCountry and the Builder. Declared on
+     each scope so a nested app (intel inside MyCountry) resets to monochrome. */
+  :root,
+  [data-app] {
+    --primary-fill: var(--primary-fill-mono);
+    --primary-fill-hover: var(--primary-fill-mono-hover);
+    --primary-fill-image: none;
+    --primary-fill-image-hover: none;
+    --on-primary: var(--on-primary-mono);
+    --primary-rim: 0 0 #0000;
+    --primary-rim-hover: 0 0 #0000;
+  }
+  [data-app="mycountry"] {
+    --primary-fill: var(--gold-to);
+    --primary-fill-hover: var(--gold-to-hover);
+    --primary-fill-image: linear-gradient(to right, var(--gold-from), var(--gold-to));
+    --primary-fill-image-hover: linear-gradient(to right, var(--gold-from-hover), var(--gold-to-hover));
+    --on-primary: var(--on-gold);
+    --primary-rim: var(--gold-rim);
+    --primary-rim-hover: var(--gold-rim-hover);
+  }
+}
+
+@theme inline static {
+  /* `bg-primary-fill`, `text-on-primary` (the monochrome/gold primary role) */
+  --color-primary-fill: var(--primary-fill);
+  --color-primary-fill-hover: var(--primary-fill-hover);
+  --color-on-primary: var(--on-primary);
+
+  /* Facet 3.1 accents (`accent` on FacetCard / CutoutCard / FacetMaterial, spec §16.3): the scoped
+     `--facet-accent`, or the app tint where no accent is set. `text-facet-accent` (icons),
+     `text-facet-accent-ink` (text on its fill), `bg-facet-accent-fill` (the header strip),
+     `border-facet-accent/30`… */
+  --color-facet-accent: var(--facet-accent, var(--tint));
+  --color-facet-accent-ink: color-mix(in srgb, var(--facet-accent, var(--tint)) 80%, var(--color-label));
+  --color-facet-accent-fill: color-mix(
+    in srgb,
+    var(--facet-accent, var(--tint)) var(--accent-fill-mix),
+    transparent
+  );
+}
+
+/* §4 Continuous corners where supported (sheet, card, row and control radii).
+   Covered forms: the base utilities and any variant of them (`md:rounded-card`,
+   `hover:rounded-control`) via four substring selectors, and the side/corner forms
+   (`rounded-t-sheet`, `rounded-tl-row`…) as plain class selectors. Variant + side
+   combinations (`md:rounded-t-sheet`) are not covered. Nothing else sets `corner-shape`. */
+@supports (corner-shape: squircle) {
+  @layer utilities {
+    [class*="rounded-sheet"],
+    [class*="rounded-card"],
+    [class*="rounded-row"],
+    [class*="rounded-control"],
+    .rounded-t-sheet,
+    .rounded-r-sheet,
+    .rounded-b-sheet,
+    .rounded-l-sheet,
+    .rounded-s-sheet,
+    .rounded-e-sheet,
+    .rounded-tl-sheet,
+    .rounded-tr-sheet,
+    .rounded-br-sheet,
+    .rounded-bl-sheet,
+    .rounded-ss-sheet,
+    .rounded-se-sheet,
+    .rounded-es-sheet,
+    .rounded-ee-sheet,
+    .rounded-t-card,
+    .rounded-r-card,
+    .rounded-b-card,
+    .rounded-l-card,
+    .rounded-s-card,
+    .rounded-e-card,
+    .rounded-tl-card,
+    .rounded-tr-card,
+    .rounded-br-card,
+    .rounded-bl-card,
+    .rounded-ss-card,
+    .rounded-se-card,
+    .rounded-es-card,
+    .rounded-ee-card,
+    .rounded-t-row,
+    .rounded-r-row,
+    .rounded-b-row,
+    .rounded-l-row,
+    .rounded-s-row,
+    .rounded-e-row,
+    .rounded-tl-row,
+    .rounded-tr-row,
+    .rounded-br-row,
+    .rounded-bl-row,
+    .rounded-ss-row,
+    .rounded-se-row,
+    .rounded-es-row,
+    .rounded-ee-row,
+    .rounded-t-control-lg,
+    .rounded-r-control-lg,
+    .rounded-b-control-lg,
+    .rounded-l-control-lg,
+    .rounded-s-control-lg,
+    .rounded-e-control-lg,
+    .rounded-tl-control-lg,
+    .rounded-tr-control-lg,
+    .rounded-br-control-lg,
+    .rounded-bl-control-lg,
+    .rounded-ss-control-lg,
+    .rounded-se-control-lg,
+    .rounded-es-control-lg,
+    .rounded-ee-control-lg,
+    .rounded-t-control,
+    .rounded-r-control,
+    .rounded-b-control,
+    .rounded-l-control,
+    .rounded-s-control,
+    .rounded-e-control,
+    .rounded-tl-control,
+    .rounded-tr-control,
+    .rounded-br-control,
+    .rounded-bl-control,
+    .rounded-ss-control,
+    .rounded-se-control,
+    .rounded-es-control,
+    .rounded-ee-control,
+    .rounded-t-control-sm,
+    .rounded-r-control-sm,
+    .rounded-b-control-sm,
+    .rounded-l-control-sm,
+    .rounded-s-control-sm,
+    .rounded-e-control-sm,
+    .rounded-tl-control-sm,
+    .rounded-tr-control-sm,
+    .rounded-br-control-sm,
+    .rounded-bl-control-sm,
+    .rounded-ss-control-sm,
+    .rounded-se-control-sm,
+    .rounded-es-control-sm,
+    .rounded-ee-control-sm {
+      corner-shape: squircle;
+    }
+  }
+}
+
+

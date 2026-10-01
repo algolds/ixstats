@@ -82,11 +82,11 @@ export function VaultSystemConfig() {
 
   return (
     <div className="space-y-6">
-      <Card className="border-border/50 bg-card/30 backdrop-blur-sm">
+      <Card>
         <CardHeader className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <CardTitle className="text-foreground text-lg font-bold">Vault Config</CardTitle>
-            <p className="text-muted-foreground mt-0.5 text-xs">
+            <CardTitle className="text-label text-title-3">Vault Config</CardTitle>
+            <p className="text-label-secondary text-footnote mt-0.5">
               Updates take effect immediately on active gameplay caps and credit generation.
             </p>
           </div>
@@ -95,14 +95,14 @@ export function VaultSystemConfig() {
           {isConfigLoading ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
               {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-20 w-full rounded-lg" />
+                <Skeleton key={i} className="rounded-control h-20 w-full" />
               ))}
             </div>
           ) : (
             <form onSubmit={handleSaveConfig} className="space-y-4">
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-                <div className="space-y-1.5">
-                  <Label htmlFor="cfg-active-cap" className="text-foreground/80">
+                <div className="space-y-2">
+                  <Label htmlFor="cfg-active-cap" className="text-label">
                     Daily Cap (Active)
                   </Label>
                   <div className="relative">
@@ -115,15 +115,15 @@ export function VaultSystemConfig() {
                       onChange={(e) =>
                         setConfigForm((f) => ({ ...f, activeDailyCap: Number(e.target.value) }))
                       }
-                      className="bg-background border-border/40 text-foreground pr-10 font-mono"
+                      className="pr-10 font-mono"
                     />
-                    <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-xs">
+                    <span className="text-label-secondary text-footnote absolute top-1/2 right-3 -translate-y-1/2">
                       IxC
                     </span>
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="cfg-social-cap" className="text-foreground/80">
+                <div className="space-y-2">
+                  <Label htmlFor="cfg-social-cap" className="text-label">
                     Daily Cap (Social)
                   </Label>
                   <div className="relative">
@@ -136,15 +136,15 @@ export function VaultSystemConfig() {
                       onChange={(e) =>
                         setConfigForm((f) => ({ ...f, socialDailyCap: Number(e.target.value) }))
                       }
-                      className="bg-background border-border/40 text-foreground pr-10 font-mono"
+                      className="pr-10 font-mono"
                     />
-                    <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-xs">
+                    <span className="text-label-secondary text-footnote absolute top-1/2 right-3 -translate-y-1/2">
                       IxC
                     </span>
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="cfg-xp" className="text-foreground/80">
+                <div className="space-y-2">
+                  <Label htmlFor="cfg-xp" className="text-label">
                     XP per Level
                   </Label>
                   <div className="relative">
@@ -157,15 +157,15 @@ export function VaultSystemConfig() {
                       onChange={(e) =>
                         setConfigForm((f) => ({ ...f, xpPerLevel: Number(e.target.value) }))
                       }
-                      className="bg-background border-border/40 text-foreground pr-12 font-mono"
+                      className="pr-12 font-mono"
                     />
-                    <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-xs">
+                    <span className="text-label-secondary text-footnote absolute top-1/2 right-3 -translate-y-1/2">
                       XP
                     </span>
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="cfg-streak" className="text-foreground/80">
+                <div className="space-y-2">
+                  <Label htmlFor="cfg-streak" className="text-label">
                     Max Streak Bonus
                   </Label>
                   <div className="relative">
@@ -178,15 +178,15 @@ export function VaultSystemConfig() {
                       onChange={(e) =>
                         setConfigForm((f) => ({ ...f, maxStreakBonus: Number(e.target.value) }))
                       }
-                      className="bg-background border-border/40 text-foreground pr-10 font-mono"
+                      className="pr-10 font-mono"
                     />
-                    <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-xs">
+                    <span className="text-label-secondary text-footnote absolute top-1/2 right-3 -translate-y-1/2">
                       IxC
                     </span>
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="cfg-premium" className="text-foreground/80">
+                <div className="space-y-2">
+                  <Label htmlFor="cfg-premium" className="text-label">
                     Premium Multiplier
                   </Label>
                   <div className="relative">
@@ -200,9 +200,9 @@ export function VaultSystemConfig() {
                       onChange={(e) =>
                         setConfigForm((f) => ({ ...f, premiumMultiplier: Number(e.target.value) }))
                       }
-                      className="bg-background border-border/40 text-foreground pr-8 font-mono"
+                      className="pr-8 font-mono"
                     />
-                    <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-xs">
+                    <span className="text-label-secondary text-footnote absolute top-1/2 right-3 -translate-y-1/2">
                       x
                     </span>
                   </div>
@@ -210,13 +210,13 @@ export function VaultSystemConfig() {
               </div>
 
               {/* System switches section */}
-              <div className="border-border/40 border-t pt-4">
+              <div className="border-separator border-t pt-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {/* Enable Earning */}
-                  <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
+                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-foreground text-xs font-semibold">Enable Earning</span>
-                      <span className="text-muted-foreground text-xs">
+                      <span className="text-label text-caption">Enable Earning</span>
+                      <span className="text-label-secondary text-footnote">
                         Enables user active & social credits.
                       </span>
                     </div>
@@ -228,10 +228,10 @@ export function VaultSystemConfig() {
                     />
                   </div>
                   {/* Enable Store Purchases */}
-                  <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
+                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-foreground text-xs font-semibold">Enable Store</span>
-                      <span className="text-muted-foreground text-xs">
+                      <span className="text-label text-caption">Enable Store</span>
+                      <span className="text-label-secondary text-footnote">
                         Allows buying dynamic storefront cosmetics.
                       </span>
                     </div>
@@ -243,10 +243,10 @@ export function VaultSystemConfig() {
                     />
                   </div>
                   {/* Enable Card Crafting */}
-                  <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
+                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-foreground text-xs font-semibold">Enable Crafting</span>
-                      <span className="text-muted-foreground text-xs">
+                      <span className="text-label text-caption">Enable Crafting</span>
+                      <span className="text-label-secondary text-footnote">
                         Allows fusing and evolving collector cards.
                       </span>
                     </div>
@@ -258,12 +258,10 @@ export function VaultSystemConfig() {
                     />
                   </div>
                   {/* Enable Card Packs */}
-                  <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
+                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-foreground text-xs font-semibold">
-                        Enable Card Packs
-                      </span>
-                      <span className="text-muted-foreground text-xs">
+                      <span className="text-label text-caption">Enable Card Packs</span>
+                      <span className="text-label-secondary text-footnote">
                         Enables pack purchases & award mutations.
                       </span>
                     </div>
@@ -275,12 +273,10 @@ export function VaultSystemConfig() {
                     />
                   </div>
                   {/* Enable P2P Trading */}
-                  <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
+                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-foreground text-xs font-semibold">
-                        Enable P2P Trading
-                      </span>
-                      <span className="text-muted-foreground text-xs">
+                      <span className="text-label text-caption">Enable P2P Trading</span>
+                      <span className="text-label-secondary text-footnote">
                         Allows player card negotiation trades.
                       </span>
                     </div>
@@ -292,12 +288,10 @@ export function VaultSystemConfig() {
                     />
                   </div>
                   {/* Enable Auctions */}
-                  <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
+                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-foreground text-xs font-semibold">
-                        Enable P2P Auctions
-                      </span>
-                      <span className="text-muted-foreground text-xs">
+                      <span className="text-label text-caption">Enable P2P Auctions</span>
+                      <span className="text-label-secondary text-footnote">
                         Enables card listings and active bidding.
                       </span>
                     </div>
@@ -309,12 +303,10 @@ export function VaultSystemConfig() {
                     />
                   </div>
                   {/* Maintenance Mode */}
-                  <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
+                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-destructive text-xs font-semibold">
-                        Maintenance Mode
-                      </span>
-                      <span className="text-muted-foreground text-xs">
+                      <span className="text-destructive text-caption">Maintenance Mode</span>
+                      <span className="text-label-secondary text-footnote">
                         Blocks all write operations globally.
                       </span>
                     </div>
@@ -326,10 +318,10 @@ export function VaultSystemConfig() {
                     />
                   </div>
                   {/* Exempt Staff from Card Limits */}
-                  <div className="border-border/40 bg-muted/30 flex items-center justify-between rounded-lg border p-3.5">
+                  <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-4">
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-foreground text-xs font-semibold">Exempt Staff</span>
-                      <span className="text-muted-foreground text-xs">
+                      <span className="text-label text-caption">Exempt Staff</span>
+                      <span className="text-label-secondary text-footnote">
                         Exempt role levels 20 & lower from capacity limit.
                       </span>
                     </div>
@@ -343,13 +335,8 @@ export function VaultSystemConfig() {
                 </div>
               </div>
 
-              <div className="border-border/40 flex justify-end border-t pt-4">
-                <Button
-                  type="submit"
-                  disabled={saveConfigMutation.isPending}
-                  size="sm"
-                  className="bg-amber-600 font-semibold text-white hover:bg-amber-700"
-                >
+              <div className="border-separator flex justify-end border-t pt-4">
+                <Button type="submit" disabled={saveConfigMutation.isPending} size="sm">
                   {saveConfigMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

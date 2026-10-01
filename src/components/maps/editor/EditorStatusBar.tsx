@@ -20,6 +20,7 @@ import type { EditorMode } from "~/hooks/useMapEditor";
 import { Badge } from "~/components/ui/badge";
 import { useTransientMapStore } from "~/components/maps/editor/utils/transientStore";
 import { timeAgo } from "~/lib/format/compact";
+import { Button } from "~/components/ui/button";
 
 interface EditorStatusBarProps {
   /** Optional override cursor coordinates [lng, lat] */
@@ -123,7 +124,7 @@ export function EditorStatusBar({
 
   return (
     <div
-      className="border-border bg-card text-muted-foreground flex h-7 shrink-0 items-center border-t px-2 text-xs"
+      className="border-separator bg-surface text-label-secondary text-footnote flex h-7 shrink-0 items-center border-t px-2"
       role="status"
       aria-live="polite"
     >
@@ -136,20 +137,20 @@ export function EditorStatusBar({
             <span>{formatCoord(activeCoords[0], "E", "W")}</span>
           </>
         ) : (
-          <span className="text-muted-foreground">— , —</span>
+          <span className="text-label-secondary">— , —</span>
         )}
       </div>
 
       {/* Separator */}
-      <div className="bg-border mx-2 h-3 w-px" />
+      <div className="bg-separator mx-2 h-3 w-px" />
 
       {/* Altitude + Climate */}
-      <div className="hidden min-w-[120px] items-center gap-1.5 md:flex">
-        <Mountain className="text-muted-foreground h-3 w-3 shrink-0" />
+      <div className="hidden min-w-[120px] items-center gap-2 md:flex">
+        <Mountain className="text-label-secondary h-3 w-3 shrink-0" />
         {activeTerrain?.elevation ? (
           <span className="truncate">{activeTerrain.elevation}</span>
         ) : (
-          <span className="text-muted-foreground">—</span>
+          <span className="text-label-secondary">—</span>
         )}
         {activeTerrain?.climate && (
           <>
@@ -160,19 +161,19 @@ export function EditorStatusBar({
       </div>
 
       {/* Separator */}
-      <div className="bg-border mx-2 hidden h-3 w-px md:block" />
+      <div className="bg-separator mx-2 hidden h-3 w-px md:block" />
 
       {/* Mode + hint (takes remaining space) */}
-      <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+      <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
         <Badge variant="secondary" className="shrink-0">
           {modeInfo.label}
         </Badge>
         {selectedCount > 0 && (
-          <Badge variant="outline" className="shrink-0 border-blue-500/30 text-blue-500">
+          <Badge variant="blue" className="shrink-0">
             {selectedCount} selected
           </Badge>
         )}
-        <span className="text-muted-foreground hidden truncate sm:inline">{modeInfo.hint}</span>
+        <span className="text-label-secondary hidden truncate sm:inline">{modeInfo.hint}</span>
       </div>
 
       {/* Save state */}
@@ -184,24 +185,26 @@ export function EditorStatusBar({
           <WarningTriangle className="h-3 w-3 shrink-0" />
           <span className="truncate">{error}</span>
           {onDismissError && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={onDismissError}
-              className="hover:bg-destructive/10 rounded p-0.5"
               aria-label="Dismiss error"
+              className="hover:bg-destructive/10 rounded-control-sm size-5"
             >
               <Xmark className="h-3 w-3" />
-            </button>
+            </Button>
           )}
         </span>
       ) : isSaving ? (
-        <span className="ml-2 flex shrink-0 items-center gap-1 text-amber-500">
+        <span className="text-yellow ml-2 flex shrink-0 items-center gap-1">
           <Spinner className="h-3 w-3 animate-spin" />
           Saving…
         </span>
       ) : hasUnsavedChanges ? (
         <span
-          className="ml-2 flex shrink-0 items-center gap-1 text-amber-500"
+          className="text-yellow ml-2 flex shrink-0 items-center gap-1"
           title="Finish or cancel the current drawing/edit before leaving"
         >
           <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
@@ -209,7 +212,7 @@ export function EditorStatusBar({
         </span>
       ) : lastSavedAt ? (
         <span
-          className="ml-2 hidden shrink-0 items-center gap-1 text-emerald-500 sm:flex"
+          className="text-green ml-2 hidden shrink-0 items-center gap-1 sm:flex"
           title={lastSavedAt.toLocaleString()}
         >
           <CheckCircle className="h-3 w-3" />
@@ -220,7 +223,7 @@ export function EditorStatusBar({
       {/* Feature count */}
       {featureCount !== undefined && (
         <>
-          <div className="bg-border mx-2 hidden h-3 w-px sm:block" />
+          <div className="bg-separator mx-2 hidden h-3 w-px sm:block" />
           <span className="hidden tabular-nums sm:inline">{featureCount} features</span>
         </>
       )}
@@ -228,23 +231,26 @@ export function EditorStatusBar({
       {/* Zoom */}
       {zoom !== undefined && (
         <>
-          <div className="bg-border mx-2 h-3 w-px" />
-          <span className="font-mono tabular-nums">z{zoom.toFixed(1)}</span>
+          <div className="bg-separator mx-2 h-3 w-px" />
+          <span className="tabular-nums">z{zoom.toFixed(1)}</span>
         </>
       )}
 
       {onShowShortcuts && (
         <>
-          <div className="bg-border mx-2 hidden h-3 w-px sm:block" />
-          <button
+          <div className="bg-separator mx-2 hidden h-3 w-px sm:block" />
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={onShowShortcuts}
-            className="hover:bg-accent hover:text-foreground hidden items-center gap-1 rounded px-1 py-0.5 transition-colors sm:flex"
             title="Keyboard shortcuts (?)"
+            aria-label="Keyboard shortcuts"
+            className="text-label-secondary hover:text-label hidden h-6 gap-1 px-1 sm:inline-flex"
           >
             <KeyCommand className="h-3 w-3" />
             <span>?</span>
-          </button>
+          </Button>
         </>
       )}
     </div>

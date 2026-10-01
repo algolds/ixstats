@@ -31,6 +31,9 @@ import { useNotify } from "~/hooks/useNotify";
 
 import type { AgendaItem, MeetingSchedulerProps } from "./meeting-scheduler-types";
 import { AGENDA_CATEGORIES, INTENT_TEMPLATES } from "./meeting-scheduler-intents";
+import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export function MeetingScheduler({
   countryId,
@@ -365,10 +368,10 @@ export function MeetingScheduler({
       <DialogContent className="max-w-[450px] gap-0 overflow-visible border-none bg-transparent p-0 shadow-none md:max-w-[830px]">
         <div className="flex h-[85vh] max-h-[85vh] w-full flex-col items-start gap-3 overflow-visible md:flex-row">
           {/* Card 1: Setup Details */}
-          <div className="bg-background border-border flex h-[85vh] max-h-[85vh] min-w-[320px] flex-1 flex-col overflow-hidden rounded-xl shadow-2xl backdrop-blur-md md:min-w-[450px]">
-            <DialogHeader className="shrink-0 border-b border-white/5 px-6 pt-6 pb-4">
+          <div className="bg-surface border-separator rounded-row shadow-floating flex h-[85vh] max-h-[85vh] min-w-[320px] flex-1 flex-col overflow-hidden md:min-w-[450px]">
+            <DialogHeader className="border-separator shrink-0 border-b px-6 pt-6 pb-4">
               <DialogTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-amber-500" />
+                <Calendar className="text-yellow h-5 w-5" />
                 Schedule Meeting
               </DialogTitle>
               <DialogDescription>
@@ -381,18 +384,13 @@ export function MeetingScheduler({
               <div className="flex-1 space-y-5 overflow-y-auto px-6 py-4">
                 {/* Linked Prefill Indicator */}
                 {defaultMeeting?.prefilledAgenda && (
-                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-200/90">
-                    <span className="mb-0.5 block text-xs font-semibold tracking-wider text-amber-500 uppercase">
-                      Linked Reference
-                    </span>
+                  <div className="rounded-control border-yellow/20 bg-yellow/5 text-footnote text-yellow/90 border p-3">
+                    <span className="text-eyebrow text-yellow mb-0.5 block">Linked Reference</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-foreground font-medium">
+                      <span className="text-label font-medium">
                         {defaultMeeting.prefilledAgenda.title}
                       </span>
-                      <Badge
-                        variant="outline"
-                        className="border-amber-500/35 bg-amber-500/10 px-1.5 py-0 text-xs font-semibold text-amber-400"
-                      >
+                      <Badge variant="yellow" className="font-semibold">
                         {defaultMeeting.prefilledAgenda.linkedIssueId
                           ? "CRISIS ISSUE"
                           : "DRAFT POLICY"}
@@ -404,7 +402,7 @@ export function MeetingScheduler({
                 {/* Intent Selector */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-muted-foreground text-xs font-semibold uppercase">
+                    <Label className="text-label-secondary text-eyebrow">
                       Select Agenda Intent
                     </Label>
                     {!isChangingIntent && (
@@ -412,7 +410,7 @@ export function MeetingScheduler({
                         type="button"
                         variant="ghost"
                         onClick={() => setIsChangingIntent(true)}
-                        className="h-5 cursor-pointer px-1.5 text-xs font-bold text-amber-500 hover:bg-amber-500/10 hover:text-amber-600"
+                        className="text-caption text-yellow hover:bg-yellow/10 hover:text-yellow h-5 cursor-pointer px-2 font-semibold"
                       >
                         Change Intent
                       </Button>
@@ -425,66 +423,44 @@ export function MeetingScheduler({
                         INTENT_TEMPLATES.find((t) => t.id === selectedTemplateId) ||
                         INTENT_TEMPLATES[0];
                       return (
-                        <div className="flex flex-col items-start rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 dark:bg-amber-500/10">
-                          <span className="text-xs font-semibold text-amber-900 dark:text-amber-100">
-                            {activeTpl.name}
-                          </span>
-                          <span className="mt-0.5 text-xs leading-snug text-amber-800/80 dark:text-amber-300/80">
+                        <div className="rounded-row border-tint bg-tint-fill flex flex-col items-start border p-3 text-left">
+                          <span className="text-headline text-label">{activeTpl.name}</span>
+                          <span className="text-footnote text-label-secondary mt-0.5 leading-snug">
                             {activeTpl.description}
                           </span>
                         </div>
                       );
                     })()
                   ) : (
-                    <div className="animate-in fade-in slide-in-from-top-1 grid grid-cols-2 gap-2 duration-200">
-                      {INTENT_TEMPLATES.map((tpl) => {
-                        const isSelected = selectedTemplateId === tpl.id;
-                        return (
-                          <button
-                            key={tpl.id}
-                            type="button"
-                            onClick={() => {
-                              handleSelectTemplate(tpl);
-                              setIsChangingIntent(false);
-                            }}
-                            className={cn(
-                              "flex cursor-pointer flex-col items-start rounded-lg border p-2.5 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
-                              isSelected
-                                ? "border-amber-500/40 bg-amber-500/10 shadow-sm dark:bg-amber-500/15"
-                                : "text-muted-foreground hover:text-foreground border-white/5 hover:border-white/10 hover:bg-white/[0.02]"
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                "font-semibold",
-                                isSelected
-                                  ? "text-amber-900 dark:text-amber-100"
-                                  : "text-foreground"
-                              )}
-                            >
-                              {tpl.name}
-                            </span>
-                            <span
-                              className={cn(
-                                "mt-0.5 line-clamp-1 text-xs leading-snug",
-                                isSelected
-                                  ? "text-amber-800/80 dark:text-amber-300/80"
-                                  : "text-muted-foreground"
-                              )}
-                            >
-                              {tpl.description}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <RadioCardGroup
+                      aria-label="Meeting intent"
+                      columns={2}
+                      className="animate-in fade-in slide-in-from-top-1 duration-200"
+                      value={selectedTemplateId ?? null}
+                      onValueChange={(id) => {
+                        const tpl = INTENT_TEMPLATES.find((t) => t.id === id);
+                        if (!tpl) return;
+                        handleSelectTemplate(tpl);
+                        setIsChangingIntent(false);
+                      }}
+                    >
+                      {INTENT_TEMPLATES.map((tpl) => (
+                        <RadioCard
+                          key={tpl.id}
+                          value={tpl.id}
+                          title={tpl.name}
+                          description={tpl.description}
+                          indicator={false}
+                        />
+                      ))}
+                    </RadioCardGroup>
                   )}
                 </div>
 
                 {/* Bilateral Target selector */}
                 {meetingType === "bilateral" && (
                   <div>
-                    <Label htmlFor="targetCountry" className="text-xs">
+                    <Label htmlFor="targetCountry" className="text-footnote">
                       Foreign Guest Country *
                     </Label>
                     <Select
@@ -492,7 +468,7 @@ export function MeetingScheduler({
                       onValueChange={setTargetCountryId}
                       disabled={!!defaultTargetCountryId}
                     >
-                      <SelectTrigger id="targetCountry" className="mt-1 h-9 text-xs">
+                      <SelectTrigger id="targetCountry" className="text-footnote mt-1 h-9">
                         <SelectValue placeholder="Select invited country..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -505,7 +481,7 @@ export function MeetingScheduler({
                                   <img
                                     src={c.flagUrl}
                                     alt=""
-                                    className="h-3 w-4 rounded object-cover"
+                                    className="h-3 w-4 rounded-xs object-cover"
                                   />
                                 )}
                                 {c.name}
@@ -520,7 +496,7 @@ export function MeetingScheduler({
                 {/* Basic Metadata */}
                 <div className="space-y-3">
                   <div>
-                    <Label htmlFor="title" className="text-xs">
+                    <Label htmlFor="title" className="text-footnote">
                       Session Title *
                     </Label>
                     <Input
@@ -533,7 +509,7 @@ export function MeetingScheduler({
                   </div>
 
                   <div>
-                    <Label htmlFor="description" className="text-xs">
+                    <Label htmlFor="description" className="text-footnote">
                       Context Notes
                     </Label>
                     <Textarea
@@ -547,7 +523,7 @@ export function MeetingScheduler({
 
                   {proposedIntents.length > 0 && (
                     <div>
-                      <Label htmlFor="intent-select" className="text-xs">
+                      <Label htmlFor="intent-select" className="text-footnote">
                         Link to Proposed Intent
                       </Label>
                       <Select
@@ -594,40 +570,23 @@ export function MeetingScheduler({
 
                 {/* Scheduling Date presets */}
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground text-xs font-semibold uppercase">
-                    Scheduled Date & Time
-                  </Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { id: "immediately", label: "Immediately" },
-                      { id: "tomorrow", label: "Tomorrow" },
-                      { id: "custom", label: "Custom Date..." },
-                    ].map((preset) => {
-                      const isActive = timePreset === preset.id;
-                      return (
-                        <button
-                          key={preset.id}
-                          type="button"
-                          onClick={() => setTimePreset(preset.id as any)}
-                          className={cn(
-                            "cursor-pointer rounded-md border py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                            isActive
-                              ? "border-amber-500/25 bg-amber-500/10 font-bold text-amber-900 dark:bg-amber-500/15 dark:text-amber-400"
-                              : "text-muted-foreground hover:text-foreground border-white/5 hover:border-white/10 hover:bg-white/[0.02]"
-                          )}
-                        >
-                          {preset.label}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <Label className="text-label-secondary text-eyebrow">Scheduled Date & Time</Label>
+                  <SegmentedControl
+                    aria-label="Scheduled date and time"
+                    fullWidth
+                    size="sm"
+                    value={timePreset}
+                    onValueChange={(v) => setTimePreset(v as any)}
+                    options={[
+                      { value: "immediately", label: "Immediately" },
+                      { value: "tomorrow", label: "Tomorrow" },
+                      { value: "custom", label: "Custom Date..." },
+                    ]}
+                  />
 
                   {timePreset === "custom" && (
-                    <div className="mt-2.5 space-y-2.5 rounded-lg border border-white/5 bg-white/[0.01] p-3">
-                      <Label
-                        htmlFor="custom-date"
-                        className="text-muted-foreground text-xs font-semibold uppercase"
-                      >
+                    <FacetCard variant="inset" padding="none" className="mt-2 space-y-2 p-3">
+                      <Label htmlFor="custom-date" className="text-label-secondary text-eyebrow">
                         Select Date
                       </Label>
                       <Input
@@ -648,26 +607,26 @@ export function MeetingScheduler({
                           setScheduledIxTime(newTime);
                         }}
                         required
-                        className="bg-background max-w-[180px] border-white/10 py-1.5 text-xs focus:border-amber-500/50"
+                        className="bg-surface border-separator text-footnote focus:border-yellow/50 max-w-[180px] py-2"
                       />
-                      <div className="flex items-center gap-1.5 rounded border border-amber-500/10 bg-amber-500/5 px-2.5 py-1 text-xs font-medium text-amber-500/90">
+                      <div className="border-yellow/10 bg-yellow/5 text-caption text-yellow/90 rounded-control-sm flex items-center gap-2 border px-3 py-1">
                         <Calendar className="h-3.5 w-3.5" />
                         <span>Scheduled Date:</span>
-                        <span className="text-foreground">
+                        <span className="text-label">
                           {IxTime.formatIxTime(scheduledIxTime, false).replace(" (ILT)", "")}
                         </span>
-                        <span className="text-muted-foreground ml-auto text-xs font-normal">
+                        <span className="text-label-secondary text-footnote ml-auto font-normal">
                           (09:00)
                         </span>
                       </div>
-                    </div>
+                    </FacetCard>
                   )}
                 </div>
 
                 {/* Attendees Smart Badges removed from Card 1 */}
               </div>
 
-              <DialogFooter className="mt-auto shrink-0 border-t border-white/5 px-6 py-4">
+              <DialogFooter className="border-separator mt-auto shrink-0 border-t px-6 py-4">
                 <Button
                   type="button"
                   variant="outline"
@@ -680,7 +639,7 @@ export function MeetingScheduler({
                 <Button
                   type="submit"
                   size="sm"
-                  className="cursor-pointer bg-amber-600 font-semibold text-white hover:bg-amber-700"
+                  className="cursor-pointer font-semibold"
                   disabled={
                     isSubmitting ||
                     agendaItems.length === 0 ||
@@ -694,31 +653,31 @@ export function MeetingScheduler({
           </div>
 
           {/* Card 2: Attached Agenda & Roster Panel */}
-          <div className="bg-background border-border animate-in fade-in slide-in-from-right-2 flex max-h-[85vh] w-full flex-col overflow-hidden rounded-xl shadow-2xl backdrop-blur-md duration-300 md:w-[350px]">
-            <div className="shrink-0 border-b border-white/5 px-5 pt-5 pb-3">
-              <h3 className="text-foreground flex items-center gap-1.5 text-sm font-semibold">
-                <Layers className="h-4 w-4 text-amber-500" />
+          <div className="bg-surface border-separator animate-in fade-in slide-in-from-right-2 rounded-row shadow-floating flex max-h-[85vh] w-full flex-col overflow-hidden duration-300 md:w-[350px]">
+            <div className="border-separator shrink-0 border-b px-5 pt-5 pb-3">
+              <h3 className="text-label text-headline flex items-center gap-2">
+                <Layers className="text-yellow h-4 w-4" />
                 Roster & Agenda
               </h3>
-              <p className="text-muted-foreground mt-0.5 text-xs">
+              <p className="text-label-secondary text-footnote mt-0.5">
                 {selectedOfficials.length} invited · {agendaItems.length} topics
               </p>
             </div>
 
             <div className="flex-1 space-y-5 overflow-y-auto p-5">
               {/* Section 1: Attendees */}
-              <div className="space-y-2.5">
-                <Label className="text-muted-foreground text-xs font-semibold uppercase">
+              <div className="space-y-2">
+                <Label className="text-label-secondary text-eyebrow">
                   Ministers & Attendees ({selectedOfficials.length} invited)
                 </Label>
 
                 {officialsLoading || (meetingType === "bilateral" && targetOfficialsLoading) ? (
-                  <div className="text-muted-foreground animate-pulse py-2 text-xs">
+                  <div className="text-label-secondary text-footnote animate-pulse py-2">
                     Loading officials...
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-2">
                       {selectedOfficials.map((id) => {
                         const official = allOfficials.find((o) => o.id === id);
                         if (!official) return null;
@@ -735,31 +694,34 @@ export function MeetingScheduler({
                           <div
                             key={id}
                             className={cn(
-                              "flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                              "text-footnote flex items-center gap-2 rounded-full border px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                               isRecommended
-                                ? "border-amber-500/20 bg-amber-500/10 text-amber-500/90 dark:text-amber-400"
-                                : "border-white/5 bg-white/5 text-slate-300"
+                                ? "border-yellow/20 bg-yellow/10 text-yellow/90"
+                                : "border-separator bg-fill-4 text-label-tertiary"
                             )}
                           >
                             <div className="flex max-w-[100px] min-w-0 flex-col text-left leading-tight">
                               <span className="truncate font-semibold">{official.name}</span>
-                              <span className="truncate text-xs opacity-60">
+                              <span className="text-footnote truncate opacity-60">
                                 {official.title}
                               </span>
                             </div>
-                            <button
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="icon-sm"
                               onClick={() => toggleOfficial(id)}
-                              className="text-muted-foreground ml-0.5 shrink-0 cursor-pointer hover:text-white"
+                              aria-label="Remove official"
+                              className="text-label-secondary hover:text-label ml-0.5 size-4 rounded-full"
                             >
                               <X className="h-3 w-3" />
-                            </button>
+                            </Button>
                           </div>
                         );
                       })}
 
                       {selectedOfficials.length === 0 && (
-                        <span className="text-muted-foreground/60 py-1 text-xs italic">
+                        <span className="text-label-tertiary text-footnote py-1 italic">
                           No attendees selected.
                         </span>
                       )}
@@ -775,8 +737,8 @@ export function MeetingScheduler({
                             }
                           }}
                         >
-                          <SelectTrigger className="h-7 w-fit min-w-[150px] cursor-pointer border-white/10 bg-white/5 py-1 text-xs">
-                            <Plus className="text-muted-foreground mr-1 h-3.5 w-3.5" />
+                          <SelectTrigger className="border-separator bg-fill-4 text-footnote h-7 w-fit min-w-[150px] cursor-pointer py-1">
+                            <Plus className="text-label-secondary mr-1 h-3.5 w-3.5" />
                             <span>Add Invitees...</span>
                           </SelectTrigger>
                           <SelectContent>
@@ -795,11 +757,11 @@ export function MeetingScheduler({
                 )}
               </div>
 
-              <div className="border-t border-white/5" />
+              <div className="border-separator border-t" />
 
               {/* Section 2: Agenda Topics */}
               <div className="space-y-3">
-                <Label className="text-muted-foreground text-xs font-semibold uppercase">
+                <Label className="text-label-secondary text-eyebrow">
                   Agenda Topics ({agendaItems.length} items · {totalAgendaDuration} min)
                 </Label>
 
@@ -811,47 +773,47 @@ export function MeetingScheduler({
                     return (
                       <div
                         key={index}
-                        className="overflow-hidden rounded-lg border border-white/5 bg-white/[0.01] transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                        className="rounded-control border-separator bg-fill-4 overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                       >
                         <div
                           onClick={() => setExpandedAgendaIndex(isExpanded ? null : index)}
-                          className="flex cursor-pointer items-center justify-between p-3 select-none hover:bg-white/[0.02]"
+                          className="hover:bg-fill-4 flex cursor-pointer items-center justify-between p-3 select-none"
                         >
                           <div className="flex min-w-0 flex-1 items-center gap-2">
                             <div
                               className={cn(
                                 "h-2.5 w-2.5 shrink-0 rounded-full",
-                                categoryConfig?.color ?? "bg-gray-500"
+                                categoryConfig?.color ?? "bg-fill"
                               )}
                             />
-                            <span className="text-foreground/90 truncate text-xs font-semibold">
+                            <span className="text-label text-caption truncate font-semibold">
                               {item.title}
                             </span>
-                            <Badge
-                              variant="outline"
-                              className="text-muted-foreground border-white/10 bg-white/5 px-1.5 py-0 font-mono text-xs"
-                            >
+                            <Badge variant="neutral" className="tabular-nums">
                               {item.duration}m
                             </Badge>
                           </div>
                           <div className="flex items-center gap-2">
-                            <button
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="icon-sm"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 removeAgendaItem(index);
                               }}
-                              className="text-muted-foreground cursor-pointer rounded p-1 hover:bg-white/5 hover:text-white"
+                              aria-label="Remove agenda item"
+                              className="text-label-secondary hover:text-label size-6"
                             >
                               <X className="h-3.5 w-3.5" />
-                            </button>
+                            </Button>
                           </div>
                         </div>
 
                         {isExpanded && (
-                          <div className="space-y-3 border-t border-white/5 bg-white/[0.02] p-3 text-xs">
+                          <div className="border-separator bg-fill-4 text-footnote space-y-3 border-t p-3">
                             <div>
-                              <Label className="text-muted-foreground text-xs uppercase">
+                              <Label className="text-label-secondary text-eyebrow">
                                 Topic Title
                               </Label>
                               <Input
@@ -861,13 +823,13 @@ export function MeetingScheduler({
                                   newItems[index]!.title = e.target.value;
                                   setAgendaItems(newItems);
                                 }}
-                                className="mt-1 h-8 text-xs"
+                                className="text-footnote mt-1 h-8"
                               />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-2.5">
+                            <div className="grid grid-cols-2 gap-2">
                               <div>
-                                <Label className="text-muted-foreground text-xs uppercase">
+                                <Label className="text-label-secondary text-eyebrow">
                                   Duration (mins)
                                 </Label>
                                 <Input
@@ -878,11 +840,11 @@ export function MeetingScheduler({
                                     newItems[index]!.duration = parseInt(e.target.value) || 15;
                                     setAgendaItems(newItems);
                                   }}
-                                  className="mt-1 h-8 text-xs"
+                                  className="text-footnote mt-1 h-8"
                                 />
                               </div>
                               <div>
-                                <Label className="text-muted-foreground text-xs uppercase">
+                                <Label className="text-label-secondary text-eyebrow">
                                   Category
                                 </Label>
                                 <Select
@@ -893,7 +855,7 @@ export function MeetingScheduler({
                                     setAgendaItems(newItems);
                                   }}
                                 >
-                                  <SelectTrigger className="mt-1 h-8 text-xs">
+                                  <SelectTrigger className="text-footnote mt-1 h-8">
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -908,7 +870,7 @@ export function MeetingScheduler({
                             </div>
 
                             <div>
-                              <Label className="text-muted-foreground text-xs uppercase">
+                              <Label className="text-label-secondary text-eyebrow">
                                 Description
                               </Label>
                               <Textarea
@@ -920,7 +882,7 @@ export function MeetingScheduler({
                                 }}
                                 placeholder="Describe this agenda topic's purpose..."
                                 rows={2}
-                                className="mt-1 text-xs"
+                                className="text-footnote mt-1"
                               />
                             </div>
                           </div>
@@ -936,7 +898,7 @@ export function MeetingScheduler({
                     placeholder="Type a new topic and press Enter..."
                     value={newAgendaTitle}
                     onChange={(e) => setNewAgendaTitle(e.target.value)}
-                    className="h-8 flex-1 border-white/10 bg-white/5 text-xs"
+                    className="border-separator bg-fill-4 text-footnote h-8 flex-1"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -948,9 +910,11 @@ export function MeetingScheduler({
                     type="button"
                     size="sm"
                     onClick={handleAddQuickAgendaTopic}
-                    className="h-8 cursor-pointer bg-amber-600 px-3 text-xs font-semibold text-white hover:bg-amber-700"
+                    aria-label="Add agenda topic"
+                    title="Add agenda topic"
+                    className="text-caption h-8 cursor-pointer px-3 font-semibold"
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus aria-hidden="true" className="h-4 w-4" />
                   </Button>
                 </div>
               </div>

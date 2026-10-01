@@ -8,7 +8,9 @@ import {
   ChatBubble as MessageSquare,
   Activity,
 } from "iconoir-react";
-import { Button } from "~/components/ui/button";
+import { FacetCard } from "~/components/ui/facet-container";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 
 type ActivityFilter = "all" | "achievements" | "diplomatic" | "economic" | "social" | "meta";
 type ActivityCategory = "all" | "game" | "platform" | "social";
@@ -23,12 +25,12 @@ interface ActivityFiltersProps {
 }
 
 const filterOptions: Array<{ value: ActivityFilter; label: string; icon: any; color: string }> = [
-  { value: "all", label: "All", icon: Activity, color: "text-slate-600" },
-  { value: "achievements", label: "Achievements", icon: Trophy, color: "text-amber-500" },
-  { value: "diplomatic", label: "Diplomatic", icon: Globe, color: "text-indigo-500" },
-  { value: "economic", label: "Economic", icon: TrendingUp, color: "text-green-500" },
-  { value: "social", label: "Social", icon: MessageSquare, color: "text-blue-500" },
-  { value: "meta", label: "Platform", icon: Activity, color: "text-cyan-500" },
+  { value: "all", label: "All", icon: Activity, color: "text-label-secondary" },
+  { value: "achievements", label: "Achievements", icon: Trophy, color: "text-yellow" },
+  { value: "diplomatic", label: "Diplomatic", icon: Globe, color: "text-indigo" },
+  { value: "economic", label: "Economic", icon: TrendingUp, color: "text-green" },
+  { value: "social", label: "Social", icon: MessageSquare, color: "text-blue" },
+  { value: "meta", label: "Platform", icon: Activity, color: "text-teal" },
 ];
 
 const categoryOptions: Array<{ value: ActivityCategory; label: string }> = [
@@ -45,55 +47,46 @@ export function ActivityFilters({
   onCategoryChange,
 }: ActivityFiltersProps) {
   return (
-    <div className="facet-hierarchy-child space-y-4 rounded-lg p-3 sm:p-4">
+    <FacetCard padding="md" className="space-y-4">
       {/* Activity Type Filters */}
       <div>
-        <h3 className="text-foreground mb-2 text-xs font-semibold sm:mb-3 sm:text-sm">
+        <h3 id="activity-type-label" className="text-subhead text-label mb-2">
           Activity Type
         </h3>
-        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+        <ToggleGroup
+          type="single"
+          disallowEmpty
+          aria-labelledby="activity-type-label"
+          value={filter}
+          onValueChange={(value) => value && onFilterChange(value as ActivityFilter)}
+          className="flex-wrap"
+        >
           {filterOptions.map((option) => {
             const Icon = option.icon;
-            const isActive = filter === option.value;
-
             return (
-              <Button
-                key={option.value}
-                variant={isActive ? "default" : "outline"}
-                size="sm"
-                onClick={() => onFilterChange(option.value)}
-                className={`text-xs sm:text-sm ${!isActive && `hover:${option.color}`}`}
-              >
-                <Icon className="mr-1 h-3.5 w-3.5 sm:mr-2 sm:h-4 sm:w-4" />
+              <ToggleGroupItem key={option.value} value={option.value} aria-label={option.label}>
+                <Icon aria-hidden className={option.color} />
                 <span className="hidden sm:inline">{option.label}</span>
                 <span className="sm:hidden">{option.label.substring(0, 4)}</span>
-              </Button>
+              </ToggleGroupItem>
             );
           })}
-        </div>
+        </ToggleGroup>
       </div>
 
       {/* Category Filters */}
       <div>
-        <h3 className="text-foreground mb-2 text-xs font-semibold sm:mb-3 sm:text-sm">Source</h3>
-        <div className="flex flex-wrap gap-1.5 sm:gap-2">
-          {categoryOptions.map((option) => {
-            const isActive = category === option.value;
-
-            return (
-              <Button
-                key={option.value}
-                variant={isActive ? "default" : "outline"}
-                size="sm"
-                onClick={() => onCategoryChange(option.value)}
-                className="text-xs sm:text-sm"
-              >
-                {option.label}
-              </Button>
-            );
-          })}
-        </div>
+        <h3 id="activity-source-label" className="text-subhead text-label mb-2">
+          Source
+        </h3>
+        <SegmentedControl
+          aria-labelledby="activity-source-label"
+          size="sm"
+          value={category}
+          onValueChange={onCategoryChange}
+          options={categoryOptions}
+        />
       </div>
-    </div>
+    </FacetCard>
   );
 }

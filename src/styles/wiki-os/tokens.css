@@ -1,0 +1,137 @@
+/* ===========================================================================
+   WIKIOS TOKENS — always loaded (imported by globals.css)
+
+   `--wikios-*` and the margin/highlighter `--margin-*` tokens are read by
+   components outside /wiki (navigation, stashes, blurbs, the margin drawer and
+   the `bg-margin-*` utilities registered in facet/tokens.css), so their
+   definitions cannot live in the route-scoped wiki-os.css bundle.
+
+   Facet 3 §12 (Phase 4): every WikiOS chrome token is an alias of a Facet role —
+   surfaces are opaque (`surface`, `surface-elevated`), borders are separators,
+   text is the label ramp, the accent is the Wiki tint (ink indigo, set by
+   `data-app="wiki"`), status colours are the system colours and the UI face is
+   the Swiss stack. Aliases resolve on every theme because the roles themselves
+   switch with `data-theme`. What WikiOS keeps of its own is the Reading style
+   (`--wikios-font-reading`, the MediaWiki body link colours) and the Margin
+   highlighter suite.
+
+   The accent aliases are declared on `:root` *and* every `[data-app]` scope:
+   a custom property that references `var(--tint)` resolves where it is
+   declared, so declaring it only on `:root` would pin it to the default tint.
+   Article pages override `--wikios-accent*` inline with the article's theme
+   colour (data), which still wins over these declarations.
+   =========================================================================== */
+
+@layer base {
+  :root {
+    /* Surfaces, separators, labels — Facet roles */
+    --wikios-bg: var(--color-background);
+    --wikios-surface: var(--color-surface);
+    --wikios-surface-hover: var(--color-surface-secondary);
+    --wikios-surface-card: var(--color-surface-secondary);
+    --wikios-border: var(--color-separator);
+    --wikios-border-subtle: var(--color-separator);
+    --wikios-border-strong: var(--color-separator-opaque);
+
+    --wikios-text: var(--color-label);
+    --wikios-text-muted: var(--color-label-secondary);
+    --wikios-text-dim: var(--color-label-tertiary);
+
+    /* Status — system colours */
+    --wikios-red: var(--color-red);
+    --wikios-green: var(--color-green);
+    --wikios-amber: var(--color-orange);
+    --wikios-purple: var(--color-purple);
+
+    /* Cards and popovers — opaque content, elevated floating layers (spec §5) */
+    --wikios-card-bg: var(--color-surface);
+    --wikios-card-border: var(--color-separator);
+    --wikios-card-shadow: var(--shadow-card);
+    --wikios-popover-bg: var(--color-surface-elevated);
+    --wikios-popover-border: var(--color-separator);
+    --wikios-popover-shadow: var(--shadow-floating);
+
+    /* Layout dimensions */
+    --wikios-content-max-width: 960px;
+    --wikios-infobox-width: 320px;
+    --wikios-toc-width: 200px;
+
+    /* Typography: Swiss UI face; the Reading style is the one sanctioned content style */
+    --wikios-font-reading: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+    --wikios-font-ui: var(--font-sans);
+    /* The fallback outside .wikios-brand-scope (a portal under <body>): next/font's family does not
+       resolve on :root, see .wikios-brand-scope below */
+    --wikios-font-brand: "Host Grotesk", sans-serif;
+    --wikios-font-mono: var(--font-mono);
+
+    /* Margin & highlighter suite (dark) */
+    --margin-accent: #fef036;
+    --margin-accent-hover: #fde047;
+    --margin-accent-text: #fef036;
+    --margin-accent-fg: #fef036;
+    --margin-accent-bg: rgba(254, 240, 54, 0.15);
+    --margin-accent-border: rgba(254, 240, 54, 0.4);
+    --margin-accent-glow: rgba(254, 240, 54, 0.35);
+    --margin-badge-bg: #fef036;
+    --margin-badge-text: #09090b;
+
+    /* Reading style: MediaWiki body links (dark, accessible) */
+    --wikios-link: #6890f0;
+    --wikios-link-visited: #a37cf0;
+    --wikios-link-hover: #8ab4f8;
+    --wikios-body-link: #6890f0;
+    --wikios-body-link-visited: #a37cf0;
+    --wikios-body-link-hover: #8ab4f8;
+  }
+
+  /* Facet 3.1 (spec §16): the v2 IxWiki brand blue — the laurel mark, the wordmark's "Ix" and
+     the mark's soft glow (c5c6b382 SculptedEmblemHero / WikiOSBrandLockup: `text-wiki`
+     #1d4e89, blue-400 in dark, `drop-shadow 0 4px 20px` at 20% / 38%). Brand marks only; the
+     app tint stays the Wiki tint for links, selection and focus. */
+  :root {
+    --wikios-brand: #1d4e89;
+    --wikios-brand-ix: #2563eb;
+    --wikios-brand-glow: rgb(29 78 137 / 0.2);
+  }
+  :root[data-theme="dark"] {
+    --wikios-brand: #60a5fa;
+    --wikios-brand-ix: #60a5fa;
+    --wikios-brand-glow: rgb(96 165 250 / 0.38);
+  }
+
+  /*
+   * The brand font. next/font defines `--font-host-grotesk` (the hashed family it generated) on the
+   * element that carries its `variable` class, not on :root, and a custom property that refers to
+   * another one takes the value it has where it is declared. So `--wikios-font-brand` is declared on
+   * that same element (the (wiki-os) layout's wrapper), where the variable resolves.
+   */
+  .wikios-brand-scope {
+    --wikios-font-brand: var(--font-host-grotesk), "Host Grotesk", sans-serif;
+  }
+
+  /* Accent = the app tint, resolved on each tint scope (see header). */
+  :root,
+  [data-app] {
+    --wikios-accent: var(--tint);
+    --wikios-accent-hover: var(--tint-hover);
+    --wikios-accent-subtle: var(--tint-fill);
+    --wikios-border-focus: var(--tint);
+  }
+
+  .light,
+  [data-theme="light"] {
+    /* Margin & highlighter suite (light) */
+    --margin-accent-text: #18181b;
+    --margin-accent-bg: rgba(254, 240, 54, 0.22);
+    --margin-accent-border: rgba(250, 204, 21, 0.6);
+    --margin-accent-glow: rgba(254, 240, 54, 0.45);
+
+    /* Reading style: traditional Wikipedia body links (light) */
+    --wikios-link: #36c;
+    --wikios-link-visited: #5a3696;
+    --wikios-link-hover: #447ff5;
+    --wikios-body-link: #36c;
+    --wikios-body-link-visited: #5a3696;
+    --wikios-body-link-hover: #447ff5;
+  }
+}

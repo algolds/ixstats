@@ -1,10 +1,17 @@
 import React from "react";
 import { Search } from "iconoir-react";
 import { Input } from "~/components/ui/input";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { LoreCategory } from "~/lib/cards/category-enums";
 import { getCategoryLabel } from "~/lib/cards/category-theme";
 import type { CardRarity } from "@prisma/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 export type CardTypeFilter = "all" | "NS_IMPORT" | "USER_CUSTOM" | "LORE_BATCH" | "COMMONS_IMPORT";
 export type SortByOption = "recent" | "marketValue" | "marketValue_asc" | "name" | "rarity";
@@ -49,14 +56,10 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
   setOffset,
 }: CardExplorerFiltersProps) {
   return (
-    <FacetContainer
-      depth={1}
-      enableRefraction={true}
-      className="bg-card/60 border-border flex flex-wrap items-center gap-2.5 rounded-2xl border p-3.5 shadow-sm backdrop-blur-xl"
-    >
+    <FacetCard className="flex flex-wrap items-center gap-2 p-4">
       {/* Search Input */}
       <div className="relative max-w-md min-w-[220px] flex-1">
-        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
+        <Search className="text-label-secondary pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
         <Input
           value={search}
           onChange={(e) => {
@@ -64,180 +67,152 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
             setOffset(0);
           }}
           placeholder="Search title, nation, or keyword..."
-          className="border-border bg-card/80 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary h-8.5 rounded-xl pl-8 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-1"
+          className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
         />
       </div>
 
       {/* Card Source / Importer Filter */}
-      <select
+      <Select
         value={cardTypeFilter}
-        onChange={(e) => {
-          setCardTypeFilter(e.target.value as CardTypeFilter);
+        onValueChange={(v) => {
+          setCardTypeFilter(v as CardTypeFilter);
           setOffset(0);
         }}
-        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
       >
-        <option value="all" className="bg-background text-foreground">
-          All Card Sources
-        </option>
-        <option value="LORE_BATCH" className="bg-background text-foreground">
-          Wiki Lore Cards
-        </option>
-        <option value="NS_IMPORT" className="bg-background text-foreground">
-          NS Official Imports
-        </option>
-        <option value="USER_CUSTOM" className="bg-background text-foreground">
-          User Imported / Custom
-        </option>
-        <option value="COMMONS_IMPORT" className="bg-background text-foreground">
-          Commons Flag Imports
-        </option>
-      </select>
+        <SelectTrigger size="sm">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Card Sources</SelectItem>
+          <SelectItem value="LORE_BATCH">Wiki Lore Cards</SelectItem>
+          <SelectItem value="NS_IMPORT">NS Official Imports</SelectItem>
+          <SelectItem value="USER_CUSTOM">User Imported / Custom</SelectItem>
+          <SelectItem value="COMMONS_IMPORT">Commons Flag Imports</SelectItem>
+        </SelectContent>
+      </Select>
 
       {/* Lore Category Filter */}
       {cardTypeFilter !== "NS_IMPORT" && (
-        <select
+        <Select
           value={categoryFilter}
-          onChange={(e) => {
-            setCategoryFilter(e.target.value as any);
+          onValueChange={(v) => {
+            setCategoryFilter(v as any);
             setOffset(0);
           }}
-          className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
         >
-          <option value="all" className="bg-background text-foreground">
-            All Lore Categories
-          </option>
-          {Object.values(LoreCategory).map((cat) => (
-            <option key={cat} value={cat} className="bg-background text-foreground">
-              {cat} — {getCategoryLabel(cat)}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger size="sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Lore Categories</SelectItem>
+            {Object.values(LoreCategory).map((cat) => (
+              <SelectItem key={cat} value={cat}>
+                {cat} — {getCategoryLabel(cat)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       )}
 
       {/* CTE Status Filter */}
       {cardTypeFilter !== "LORE_BATCH" && (
-        <select
+        <Select
           value={cteFilter}
-          onChange={(e) => {
-            setCteFilter(e.target.value as any);
+          onValueChange={(v) => {
+            setCteFilter(v as any);
             setOffset(0);
           }}
-          className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
         >
-          <option value="all" className="bg-background text-foreground">
-            All Nation States
-          </option>
-          <option value="active_only" className="bg-background text-foreground">
-            Active Nations Only
-          </option>
-          <option value="cte_only" className="bg-background text-foreground">
-            CTE / Defunct Only
-          </option>
-        </select>
+          <SelectTrigger size="sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Nation States</SelectItem>
+            <SelectItem value="active_only">Active Nations Only</SelectItem>
+            <SelectItem value="cte_only">CTE / Defunct Only</SelectItem>
+          </SelectContent>
+        </Select>
       )}
 
       {/* Takedown Filter */}
-      <select
+      <Select
         value={takedownFilter}
-        onChange={(e) => {
-          setTakedownFilter(e.target.value as any);
+        onValueChange={(v) => {
+          setTakedownFilter(v as any);
           setOffset(0);
         }}
-        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
       >
-        <option value="all" className="bg-background text-foreground">
-          All Visibility
-        </option>
-        <option value="visible" className="bg-background text-foreground">
-          Visible Cards
-        </option>
-        <option value="takedown" className="bg-background text-foreground">
-          Hidden / Retired
-        </option>
-      </select>
+        <SelectTrigger size="sm">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Visibility</SelectItem>
+          <SelectItem value="visible">Visible Cards</SelectItem>
+          <SelectItem value="takedown">Hidden / Retired</SelectItem>
+        </SelectContent>
+      </Select>
 
       {/* Season Filter */}
-      <select
-        value={season}
-        onChange={(e) => {
-          const val = e.target.value;
+      <Select
+        value={String(season)}
+        onValueChange={(v) => {
+          const val = v;
           setSeason(val === "all" ? "all" : parseInt(val, 10));
           setOffset(0);
         }}
-        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
       >
-        <option value="all" className="bg-background text-foreground">
-          All Seasons
-        </option>
-        <option value="1" className="bg-background text-foreground">
-          Season 1
-        </option>
-        <option value="2" className="bg-background text-foreground">
-          Season 2
-        </option>
-        <option value="3" className="bg-background text-foreground">
-          Season 3
-        </option>
-      </select>
+        <SelectTrigger size="sm">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Seasons</SelectItem>
+          <SelectItem value="1">Season 1</SelectItem>
+          <SelectItem value="2">Season 2</SelectItem>
+          <SelectItem value="3">Season 3</SelectItem>
+        </SelectContent>
+      </Select>
 
       {/* Rarity Filter */}
-      <select
+      <Select
         value={rarity}
-        onChange={(e) => {
-          setRarity(e.target.value as any);
+        onValueChange={(v) => {
+          setRarity(v as any);
           setOffset(0);
         }}
-        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
       >
-        <option value="all" className="bg-background text-foreground">
-          All Rarities
-        </option>
-        <option value="COMMON" className="bg-background text-foreground">
-          Common
-        </option>
-        <option value="UNCOMMON" className="bg-background text-foreground">
-          Uncommon
-        </option>
-        <option value="RARE" className="bg-background text-foreground">
-          Rare
-        </option>
-        <option value="ULTRA_RARE" className="bg-background text-foreground">
-          Ultra Rare
-        </option>
-        <option value="EPIC" className="bg-background text-foreground">
-          Epic
-        </option>
-        <option value="LEGENDARY" className="bg-background text-foreground">
-          Legendary
-        </option>
-      </select>
+        <SelectTrigger size="sm">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Rarities</SelectItem>
+          <SelectItem value="COMMON">Common</SelectItem>
+          <SelectItem value="UNCOMMON">Uncommon</SelectItem>
+          <SelectItem value="RARE">Rare</SelectItem>
+          <SelectItem value="ULTRA_RARE">Ultra Rare</SelectItem>
+          <SelectItem value="EPIC">Epic</SelectItem>
+          <SelectItem value="LEGENDARY">Legendary</SelectItem>
+        </SelectContent>
+      </Select>
 
       {/* Sort Option */}
-      <select
+      <Select
         value={sortBy}
-        onChange={(e) => {
-          setSortBy(e.target.value as SortByOption);
+        onValueChange={(v) => {
+          setSortBy(v as SortByOption);
           setOffset(0);
         }}
-        className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-medium shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
       >
-        <option value="recent" className="bg-background text-foreground">
-          Sort: Most Recent
-        </option>
-        <option value="marketValue" className="bg-background text-foreground">
-          Sort: Value (High to Low)
-        </option>
-        <option value="marketValue_asc" className="bg-background text-foreground">
-          Sort: Value (Low to High)
-        </option>
-        <option value="name" className="bg-background text-foreground">
-          Sort: Name (A-Z)
-        </option>
-        <option value="rarity" className="bg-background text-foreground">
-          Sort: Rarity Tier
-        </option>
-      </select>
-    </FacetContainer>
+        <SelectTrigger size="sm">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="recent">Sort: Most Recent</SelectItem>
+          <SelectItem value="marketValue">Sort: Value (High to Low)</SelectItem>
+          <SelectItem value="marketValue_asc">Sort: Value (Low to High)</SelectItem>
+          <SelectItem value="name">Sort: Name (A-Z)</SelectItem>
+          <SelectItem value="rarity">Sort: Rarity Tier</SelectItem>
+        </SelectContent>
+      </Select>
+    </FacetCard>
   );
 });

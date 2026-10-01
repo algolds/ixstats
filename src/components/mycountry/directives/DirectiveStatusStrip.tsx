@@ -36,13 +36,13 @@ function Tile({
       <Eyebrow className="block">{label}</Eyebrow>
       <span
         className={cn(
-          "text-foreground mt-1 block text-2xl leading-8 font-semibold tabular-nums",
+          "text-label text-title-1 mt-1 block leading-8 tabular-nums",
           tone && TONE_CLASSES[tone].text
         )}
       >
         {value}
       </span>
-      <span className="text-muted-foreground mt-0.5 block text-xs font-normal">{detail}</span>
+      <span className="text-label-secondary text-footnote mt-0.5 block font-normal">{detail}</span>
     </>
   );
   const cls = "block w-full px-4 py-3 text-left sm:px-5 sm:py-4";
@@ -81,11 +81,7 @@ export function DirectiveStatusStrip({
   const civCapKnown = !!cc && Number.isFinite(cc.capacity) && cc.capacity > 0;
 
   return (
-    <FacetCard
-      depth={2}
-      surface="solid"
-      className="divide-border grid grid-cols-1 divide-y overflow-hidden rounded-2xl sm:grid-cols-3 sm:divide-x sm:divide-y-0"
-    >
+    <FacetCard className="divide-separator rounded-card grid grid-cols-1 divide-y overflow-hidden sm:grid-cols-3 sm:divide-x sm:divide-y-0">
       <Tile
         label="Weekly slots"
         value={

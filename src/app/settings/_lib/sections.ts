@@ -58,9 +58,9 @@ export const SETTINGS_SECTIONS: SettingSectionConfig[] = [
   },
   {
     id: "appearance",
-    label: "Appearance & Theme",
+    label: "Appearance & accessibility",
     category: "Platform & Preferences",
-    description: "Light/dark mode, motion physics, and visual density toggles",
+    description: "Theme, density, text size, contrast, transparency, motion and sound",
     icon: Palette,
     glyphClass: "bg-indigo-500/15 text-indigo-500 dark:text-indigo-400",
     accentColor: "text-indigo-500",

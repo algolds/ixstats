@@ -11,7 +11,34 @@ import {
   Bell,
   NavArrowRight as ChevronRight,
 } from "iconoir-react";
+import { Button, type ButtonVariant } from "~/components/ui/button";
+import { FacetCard } from "~/components/ui/facet-container";
+import { HealthRing } from "~/components/ui/health-ring";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Stat } from "~/components/ui/stat";
 import { type LabConfig } from "../types";
+
+/*
+ * Lab-only *frames* (the configurator's `facet-material-*` from `styles/facet/lab.css`) around
+ * Facet 3 content: real primitives coloured by the tint, which `LabTemplates` scopes to the lab's
+ * accent colour.
+ */
+
+const NAV_ITEMS = ["Dashboard", "Analytics", "Settings"] as const;
+
+const VITALITY_RINGS = [
+  { label: "Econ", value: 87, color: "var(--color-chart-1)" },
+  { label: "Pop", value: 64, color: "var(--color-chart-2)" },
+  { label: "Diplo", value: 92, color: "var(--color-chart-3)" },
+  { label: "Gov", value: 71, color: "var(--color-chart-4)" },
+] as const;
+
+const BUTTON_STYLES: { label: string; variant: ButtonVariant }[] = [
+  { label: "Primary Action", variant: "filled" },
+  { label: "Secondary", variant: "tinted" },
+  { label: "Neutral", variant: "gray" },
+  { label: "Danger", variant: "destructive" },
+];
 
 interface ActionTemplateProps {
   config: LabConfig;
@@ -40,7 +67,7 @@ export function InteractiveActionTemplates({
   glassClickStates,
   setGlassClickStates,
 }: ActionTemplateProps) {
-  const { template, material, texture, textureOpacity, depth, customAccent } = config;
+  const { template, material, texture, textureOpacity, depth } = config;
 
   switch (template) {
     case "facet-button":
@@ -49,7 +76,7 @@ export function InteractiveActionTemplates({
           ref={previewRef}
           className={cn(
             generatedClassNames,
-            "flex cursor-pointer items-center justify-center gap-2 px-6 py-3.5 text-sm font-bold tracking-wide select-none"
+            "text-headline flex cursor-pointer items-center justify-center gap-2 px-6 py-4 select-none"
           )}
           style={{ ...dynamicStyles, ...accentVars }}
         >
@@ -59,7 +86,7 @@ export function InteractiveActionTemplates({
             className="z-0 rounded-[inherit]"
           />
           <div className="pointer-events-none relative z-10 flex items-center gap-2">
-            <Sparkles className="h-4.5 w-4.5" style={{ color: customAccent }} />
+            <Sparkles aria-hidden className="text-tint size-5" />
             <span>Simulate Trigger Command</span>
           </div>
         </div>
@@ -79,35 +106,28 @@ export function InteractiveActionTemplates({
           />
           <div className="pointer-events-auto relative z-10 flex items-center justify-between">
             <div className="pointer-events-none flex items-center gap-2">
-              <Shield className="h-4 w-4" style={{ color: customAccent }} />
-              <span className="text-sm font-bold">IxStats</span>
+              <Shield aria-hidden className="text-tint h-4 w-4" />
+              <span className="text-headline">IxStats</span>
             </div>
             <div className="relative z-20 flex items-center gap-3">
-              {["Dashboard", "Analytics", "Settings"].map((item) => (
-                <span
-                  key={item}
-                  onClick={() => setActiveNav(item)}
-                  className={cn(
-                    "cursor-pointer rounded-md px-2 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                    activeNav === item
-                      ? "text-foreground bg-white/10 font-bold shadow-xs dark:bg-black/25"
-                      : "text-muted-foreground hover:text-foreground hover:bg-white/5 dark:hover:bg-black/10"
-                  )}
-                  style={{
-                    color: activeNav === item ? customAccent : undefined,
-                  }}
-                >
-                  {item}
-                </span>
-              ))}
-              <div
+              <SegmentedControl
+                size="sm"
+                aria-label="Section"
+                value={activeNav}
+                onValueChange={setActiveNav}
+                options={NAV_ITEMS.map((item) => ({ value: item, label: item }))}
+              />
+              <Button
+                size="icon-sm"
                 onClick={() => setButtonClickCount((c) => c + 1)}
-                className="ml-2 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-xs font-bold text-white transition-transform active:scale-95"
-                style={{ backgroundColor: customAccent }}
+                className="rounded-full"
+                aria-label={`Profile (clicked ${buttonClickCount} times)`}
                 title={`Profile clicked ${buttonClickCount} times`}
               >
-                {buttonClickCount > 0 ? buttonClickCount : "A"}
-              </div>
+                <span className="text-caption tabular-nums">
+                  {buttonClickCount > 0 ? buttonClickCount : "A"}
+                </span>
+              </Button>
             </div>
           </div>
         </div>
@@ -126,54 +146,18 @@ export function InteractiveActionTemplates({
             className="z-0 rounded-[inherit]"
           />
           <div className="pointer-events-none relative z-10">
-            <h4 className="text-sm font-bold">National Vitality</h4>
-            <p className="text-muted-foreground text-xs">
+            <h4 className="text-headline">National Vitality</h4>
+            <p className="text-label-secondary text-footnote">
               {material} · depth {depth}
             </p>
           </div>
           <div className="pointer-events-none relative z-10 flex items-center justify-center gap-4">
-            {[
-              { label: "Econ", value: 87, color: "#10b981" },
-              { label: "Pop", value: 64, color: "#3b82f6" },
-              { label: "Diplo", value: 92, color: "#8b5cf6" },
-              { label: "Gov", value: 71, color: "#f59e0b" },
-            ].map((ring) => {
-              const circumference = 2 * Math.PI * 28;
-              const offset = circumference - (ring.value / 100) * circumference;
-              return (
-                <div key={ring.label} className="flex flex-col items-center gap-1.5">
-                  <svg width="72" height="72" className="-rotate-90">
-                    <circle
-                      cx="36"
-                      cy="36"
-                      r="28"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="5"
-                      className="text-border"
-                    />
-                    <circle
-                      cx="36"
-                      cy="36"
-                      r="28"
-                      fill="none"
-                      stroke={ring.color}
-                      strokeWidth="5"
-                      strokeLinecap="round"
-                      strokeDasharray={circumference}
-                      strokeDashoffset={offset}
-                      className="transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-700"
-                    />
-                  </svg>
-                  <span className="font-mono text-xs font-bold" style={{ color: ring.color }}>
-                    {ring.value}%
-                  </span>
-                  <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                    {ring.label}
-                  </span>
-                </div>
-              );
-            })}
+            {VITALITY_RINGS.map((ring) => (
+              <div key={ring.label} className="flex flex-col items-center gap-2">
+                <HealthRing value={ring.value} size={72} color={ring.color} label={ring.label} />
+                <span className="text-label-secondary text-eyebrow">{ring.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       );
@@ -191,40 +175,28 @@ export function InteractiveActionTemplates({
             className="z-0 rounded-[inherit]"
           />
           <div className="pointer-events-none relative z-10">
-            <h4 className="text-sm font-bold">Glass Button Variants</h4>
-            <p className="text-muted-foreground text-xs">
+            <h4 className="text-headline">Button styles</h4>
+            <p className="text-label-secondary text-footnote">
               {material} ·{" "}
               {depth === 1 ? "shallow" : depth === 2 ? "medium" : depth === 3 ? "deep" : "modal"}{" "}
               depth
             </p>
           </div>
           <div className="pointer-events-auto relative z-10 flex flex-col gap-2">
-            {[
-              { label: "Primary Action", color: customAccent },
-              { label: "Secondary", color: "#3b82f6" },
-              { label: "Neutral", color: "#6b7280" },
-              { label: "Danger", color: "#ef4444" },
-            ].map((btn) => {
+            {BUTTON_STYLES.map((btn) => {
               const isClicked = glassClickStates[btn.label] || false;
               return (
-                <button
+                <Button
                   key={btn.label}
+                  variant={btn.variant}
+                  aria-pressed={isClicked}
                   onClick={() =>
                     setGlassClickStates((prev) => ({ ...prev, [btn.label]: !isClicked }))
                   }
-                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold tracking-wide backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90 active:scale-98"
-                  style={{
-                    backgroundColor: isClicked ? `${btn.color}33` : `${btn.color}18`,
-                    borderColor: isClicked ? btn.color : `${btn.color}30`,
-                    color: btn.color,
-                    boxShadow: isClicked
-                      ? `inset 0 1px 0 ${btn.color}40, 0 0 12px ${btn.color}25`
-                      : `inset 0 1px 0 ${btn.color}20, 0 4px 12px ${btn.color}10`,
-                  }}
                 >
-                  <Zap className={cn("h-3.5 w-3.5", isClicked && "fill-current")} />
+                  <Zap aria-hidden className={cn("h-3.5 w-3.5", isClicked && "fill-current")} />
                   {btn.label} {isClicked && "✓"}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -246,46 +218,19 @@ export function InteractiveActionTemplates({
             opacity={textureOpacity}
             className="z-0 rounded-[inherit]"
           />
-          <div
-            className="pointer-events-none absolute -top-8 left-1/2 z-0 h-24 w-3/4 -translate-x-1/2 rounded-full opacity-30 blur-3xl"
-            style={{ backgroundColor: customAccent }}
-          />
           <div className="pointer-events-none relative z-10 mt-4 flex flex-col items-center gap-3">
-            <div
-              className="flex h-14 w-14 items-center justify-center rounded-2xl"
-              style={{
-                backgroundColor: `${customAccent}20`,
-                boxShadow: `0 0 30px ${customAccent}20`,
-              }}
-            >
-              <Shield className="h-7 w-7" style={{ color: customAccent }} />
+            <div className="rounded-card bg-tint-fill text-tint flex h-14 w-14 items-center justify-center">
+              <Shield aria-hidden className="h-7 w-7" />
             </div>
-            <h3
-              className="bg-clip-text text-2xl font-black tracking-tight text-transparent"
-              style={{
-                backgroundImage: `linear-gradient(to bottom, ${customAccent}, ${customAccent}99)`,
-              }}
-            >
-              IxStats
-            </h3>
-            <p className="text-muted-foreground max-w-[240px] text-xs leading-relaxed">
+            <h3 className="text-title-1 text-label">IxStats</h3>
+            <p className="text-label-secondary text-footnote max-w-[240px] leading-relaxed">
               Next-generation nation simulation platform with real-time analytics and diplomatic
               intelligence.
             </p>
           </div>
-          <div className="pointer-events-none relative z-10 flex items-center justify-center gap-3">
-            <div
-              className="rounded-lg px-4 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90"
-              style={{ backgroundColor: customAccent }}
-            >
-              Get Started
-            </div>
-            <div
-              className="rounded-lg border px-4 py-2 text-xs font-bold transition-colors"
-              style={{ borderColor: `${customAccent}40`, color: customAccent }}
-            >
-              Learn More
-            </div>
+          <div className="relative z-10 flex items-center justify-center gap-3">
+            <Button onClick={() => setButtonClickCount((c) => c + 1)}>Get Started</Button>
+            <Button variant="bordered">Learn More</Button>
           </div>
         </div>
       );
@@ -303,15 +248,8 @@ export function InteractiveActionTemplates({
             className="z-0 rounded-[inherit]"
           />
           <div className="pointer-events-none relative z-10">
-            <h3
-              className="bg-clip-text text-lg font-black tracking-tight text-transparent"
-              style={{
-                backgroundImage: `linear-gradient(to right, ${customAccent}, ${customAccent}bb, ${customAccent}66)`,
-              }}
-            >
-              System Overview
-            </h3>
-            <p className="text-muted-foreground mt-0.5 text-xs">
+            <h3 className="text-title-3 text-label">System Overview</h3>
+            <p className="text-label-secondary text-footnote mt-0.5">
               Real-time performance with {material} surface
             </p>
           </div>
@@ -324,31 +262,21 @@ export function InteractiveActionTemplates({
             ].map((metric) => {
               const Icon = metric.icon;
               return (
-                <div
-                  key={metric.label}
-                  className="rounded-xl border p-3"
-                  style={{ borderColor: `${customAccent}15` }}
-                >
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-3 w-3" style={{ color: customAccent }} />
-                    <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                      {metric.label}
-                    </span>
-                  </div>
-                  <div className="mt-1 flex items-baseline gap-1.5">
-                    <span className="font-mono text-lg font-bold">{metric.value}</span>
-                    <span className="text-muted-foreground font-mono text-xs">{metric.sub}</span>
-                  </div>
-                </div>
+                <FacetCard key={metric.label} variant="inset" className="p-3">
+                  <Stat
+                    label={metric.label}
+                    value={metric.value}
+                    hint={metric.sub}
+                    size="sm"
+                    icon={<Icon aria-hidden className="text-tint" />}
+                  />
+                </FacetCard>
               );
             })}
           </div>
-          <div
-            className="pointer-events-none relative z-10 flex items-center justify-between border-t pt-3"
-            style={{ borderColor: `${customAccent}10` }}
-          >
-            <span className="text-muted-foreground text-xs">Last updated 2m ago</span>
-            <ChevronRight className="text-muted-foreground h-3 w-3" />
+          <div className="border-separator pointer-events-none relative z-10 flex items-center justify-between border-t pt-3">
+            <span className="text-label-secondary text-footnote">Last updated 2m ago</span>
+            <ChevronRight className="text-label-secondary h-3 w-3" />
           </div>
         </div>
       );

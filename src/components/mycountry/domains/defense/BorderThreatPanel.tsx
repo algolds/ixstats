@@ -25,18 +25,18 @@ interface BorderThreatPanelProps {
 const threatLevelConfig = {
   minimal: {
     label: "Minimal",
-    color: "border-emerald-500/30 text-emerald-600",
-    indicator: "bg-emerald-500",
+    color: "border-green/30 text-green",
+    indicator: "bg-green",
   },
   low: {
     label: "Low",
-    color: "border-emerald-500/30 text-emerald-600",
-    indicator: "bg-emerald-500",
+    color: "border-green/30 text-green",
+    indicator: "bg-green",
   },
   moderate: {
     label: "Moderate",
-    color: "border-amber-500/30 text-amber-600",
-    indicator: "bg-amber-500",
+    color: "border-yellow/30 text-yellow",
+    indicator: "bg-yellow",
   },
   high: {
     label: "High",
@@ -53,10 +53,10 @@ const threatLevelConfig = {
 /** Diplomatic stance → semantic status colour; neutral/allied stay uncoloured. */
 const diplomaticConfig = {
   hostile: { label: "Hostile", color: "border-destructive/30 text-destructive" },
-  tense: { label: "Tense", color: "border-amber-500/30 text-amber-600" },
-  neutral: { label: "Neutral", color: "text-muted-foreground" },
-  friendly: { label: "Friendly", color: "border-emerald-500/30 text-emerald-600" },
-  allied: { label: "Allied", color: "border-emerald-500/30 text-emerald-600" },
+  tense: { label: "Tense", color: "border-yellow/30 text-yellow" },
+  neutral: { label: "Neutral", color: "text-label-secondary" },
+  friendly: { label: "Friendly", color: "border-green/30 text-green" },
+  allied: { label: "Allied", color: "border-green/30 text-green" },
 };
 
 function StatItem({
@@ -70,11 +70,11 @@ function StatItem({
 }) {
   return (
     <div className="flex items-center justify-between py-2">
-      <div className="text-muted-foreground flex items-center gap-2">
+      <div className="text-label-secondary flex items-center gap-2">
         <Icon aria-hidden="true" className="h-4 w-4" />
-        <span className="text-sm">{label}</span>
+        <span className="text-body">{label}</span>
       </div>
-      <span className="text-foreground text-sm font-semibold tabular-nums">{value}</span>
+      <span className="text-label text-headline tabular-nums">{value}</span>
     </div>
   );
 }
@@ -106,19 +106,19 @@ function ThreatRow({
     diplomaticConfig.neutral;
 
   return (
-    <div className="border-border/60 space-y-3 rounded-lg border p-4">
+    <div className="border-separator rounded-control space-y-3 border p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <Globe aria-hidden="true" className="text-muted-foreground h-4 w-4" />
-            <h4 className="text-foreground text-sm font-semibold">{threat.neighborName}</h4>
+            <Globe aria-hidden="true" className="text-label-secondary h-4 w-4" />
+            <h4 className="text-label text-headline">{threat.neighborName}</h4>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline" className="capitalize">
               {threat.borderType.replace("_", " ")}
             </Badge>
             {threat.borderLength != null && (
-              <span className="text-muted-foreground text-xs">
+              <span className="text-label-secondary text-footnote">
                 {threat.borderLength.toLocaleString()} km
               </span>
             )}
@@ -137,13 +137,13 @@ function ThreatRow({
       </div>
 
       <div className="space-y-1">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Threat score</span>
+        <div className="text-footnote flex items-center justify-between">
+          <span className="text-label-secondary">Threat score</span>
           <span className="font-medium tabular-nums">{threat.threatScore}/100</span>
         </div>
         <Progress
           value={threat.threatScore}
-          className="bg-muted h-2"
+          className="bg-fill-3 h-2"
           indicatorClassName={level.indicator}
         />
       </div>
@@ -156,14 +156,14 @@ function ThreatRow({
       </div>
 
       {threat.politicalStability != null && (
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Political stability</span>
+        <div className="text-footnote flex items-center justify-between">
+          <span className="text-label-secondary">Political stability</span>
           <span className="font-medium tabular-nums">{threat.politicalStability}/100</span>
         </div>
       )}
 
       {threat.notes && (
-        <p className="text-muted-foreground border-border/60 border-t pt-3 text-xs leading-relaxed">
+        <p className="text-label-secondary border-separator text-footnote border-t pt-3 leading-relaxed">
           {threat.notes}
         </p>
       )}
@@ -182,10 +182,10 @@ function MetricItem({
 }) {
   return (
     <div className="flex items-center gap-2 py-1">
-      <Icon aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+      <Icon aria-hidden="true" className="text-label-secondary h-3.5 w-3.5 shrink-0" />
       <div className="min-w-0">
         <Eyebrow className="block truncate">{label}</Eyebrow>
-        <div className="text-foreground text-sm font-semibold tabular-nums">{value ?? 0}</div>
+        <div className="text-label text-headline tabular-nums">{value ?? 0}</div>
       </div>
     </div>
   );
@@ -212,29 +212,31 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-foreground text-base font-semibold">Border security</h3>
-        <p className="text-muted-foreground text-sm">
+        <h3 className="text-label text-title-3">Border security</h3>
+        <p className="text-label-secondary text-body">
           Neighbor threat assessments and frontier readiness
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         {/* Border Security Overview */}
-        <FacetCard depth={1} surface="solid">
+        <FacetCard>
           <FacetCardHeader className="p-5 pb-3">
-            <h4 className="text-foreground flex items-center gap-2 text-sm font-semibold">
-              <Shield aria-hidden="true" className="h-4 w-4 text-rose-500" />
+            <h4 className="text-label text-headline flex items-center gap-2">
+              <Shield aria-hidden="true" className="text-red h-4 w-4" />
               Border Security Overview
             </h4>
-            <p className="text-muted-foreground text-xs">Current frontier posture and coverage</p>
+            <p className="text-label-secondary text-footnote">
+              Current frontier posture and coverage
+            </p>
           </FacetCardHeader>
           <FacetCardContent className="space-y-4 px-5 pb-5">
-            <div className="border-border/60 flex items-center justify-between border-b pb-4">
+            <div className="border-separator flex items-center justify-between border-b pb-4">
               <Eyebrow>Security level</Eyebrow>
               <div className="text-right">
-                <div className="text-foreground font-mono text-2xl font-semibold tabular-nums">
+                <div className="text-label text-title-1 tabular-nums">
                   {border?.overallSecurityLevel ?? 0}
-                  <span className="text-muted-foreground text-sm font-normal">/100</span>
+                  <span className="text-label-secondary text-body font-normal">/100</span>
                 </div>
                 <Badge variant="outline" className="mt-1 capitalize">
                   {border?.securityStatus ?? "unknown"}
@@ -242,7 +244,7 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
               </div>
             </div>
 
-            <div className="divide-border/60 divide-y">
+            <div className="divide-separator divide-y">
               <StatItem
                 label="Border length"
                 value={
@@ -267,13 +269,13 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
         </FacetCard>
 
         {/* Neighbor Threats */}
-        <FacetCard depth={1} surface="solid">
+        <FacetCard>
           <FacetCardHeader className="p-5 pb-3">
-            <h4 className="text-foreground flex items-center gap-2 text-sm font-semibold">
-              <AlertTriangle aria-hidden="true" className="h-4 w-4 text-rose-500" />
+            <h4 className="text-label text-headline flex items-center gap-2">
+              <AlertTriangle aria-hidden="true" className="text-red h-4 w-4" />
               Neighbor Threats
             </h4>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-label-secondary text-footnote">
               {threats.length === 0
                 ? "No assessments recorded"
                 : `${threats.length} neighbor${threats.length === 1 ? "" : "s"} assessed`}
@@ -281,12 +283,12 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
           </FacetCardHeader>
           <FacetCardContent className="px-5 pb-5">
             {threats.length === 0 ? (
-              <div className="border-border flex flex-col items-center justify-center rounded-lg border border-dashed py-10 text-center">
-                <Globe aria-hidden="true" className="text-muted-foreground mb-2 h-8 w-8" />
-                <p className="text-foreground text-sm font-medium">
+              <div className="border-separator rounded-control flex flex-col items-center justify-center border border-dashed py-10 text-center">
+                <Globe aria-hidden="true" className="text-label-secondary mb-2 h-8 w-8" />
+                <p className="text-label text-body font-medium">
                   No neighbor threat assessments recorded yet.
                 </p>
-                <p className="text-muted-foreground mt-1 max-w-xs text-xs">
+                <p className="text-label-secondary text-footnote mt-1 max-w-xs">
                   Threat assessments will appear here once intelligence evaluates neighboring
                   borders.
                 </p>

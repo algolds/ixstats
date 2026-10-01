@@ -14,7 +14,7 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Toggle } from "~/components/ui/toggle";
 import {
   DIRECTIVE_DOMAINS,
@@ -100,7 +100,7 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
               size="sm"
               pressed={domain === d}
               onPressedChange={() => setDomain(d)}
-              className="shrink-0 gap-1.5 rounded-full px-3 text-xs font-semibold max-sm:h-11"
+              className="text-caption shrink-0 gap-2 rounded-full px-3 font-semibold max-sm:h-11"
             >
               <span>{d}</span>
               <span className="tabular-nums opacity-60">{count}</span>
@@ -110,14 +110,14 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
       </div>
 
       {groups.length === 0 ? (
-        <FacetContainer depth={3} surface="solid" className="rounded-xl px-4 py-8 text-center">
-          <p className="text-foreground text-sm font-medium">No presets match</p>
-          <p className="text-muted-foreground mt-1 text-xs">
+        <FacetCard variant="inset" padding="none" className="px-4 py-8 text-center">
+          <p className="text-label text-body font-medium">No presets match</p>
+          <p className="text-label-secondary text-footnote mt-1">
             {query.trim()
               ? "Use your own wording as a custom goal, or clear the search."
               : "Try another domain."}
           </p>
-        </FacetContainer>
+        </FacetCard>
       ) : (
         <div className="space-y-6">
           {groups.map(({ domain: d, presets }) => {
@@ -125,7 +125,7 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
             return (
               <section key={d} aria-label={`${d} presets`} className="space-y-2">
                 <h4 className="flex items-center gap-2 px-1">
-                  <Icon className="text-muted-foreground h-3.5 w-3.5" aria-hidden />
+                  <Icon className="text-label-secondary h-3.5 w-3.5" aria-hidden />
                   <Eyebrow>{d}</Eyebrow>
                 </h4>
                 <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
@@ -134,13 +134,13 @@ export const DirectivePresetsCatalog = React.memo(function DirectivePresetsCatal
                       <Button
                         variant="outline"
                         onClick={() => onSelectGoal(p.label)}
-                        className="h-full min-h-11 w-full justify-start gap-3 rounded-xl px-3 py-3 text-left whitespace-normal hover:border-amber-500/40"
+                        className="rounded-row hover:border-yellow/40 h-full min-h-11 w-full justify-start gap-3 px-3 py-3 text-left whitespace-normal"
                       >
-                        <Icon className="text-muted-foreground" aria-hidden />
-                        <span className="text-foreground min-w-0 flex-1 text-sm leading-snug font-medium">
+                        <Icon className="text-label-secondary" aria-hidden />
+                        <span className="text-label text-body min-w-0 flex-1 leading-snug font-medium">
                           {p.label}
                         </span>
-                        <NavArrowRight className="text-muted-foreground/60" aria-hidden />
+                        <NavArrowRight className="text-label-tertiary" aria-hidden />
                       </Button>
                     </li>
                   ))}

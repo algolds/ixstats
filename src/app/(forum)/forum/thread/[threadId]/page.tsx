@@ -5,6 +5,7 @@
 import { useParams } from "next/navigation";
 import { ForumLayout } from "~/components/forum/shared/ForumLayout";
 import { ThreadRenderer } from "~/components/forum/reader/ThreadRenderer";
+import { EmptyState } from "~/components/ui/empty-state";
 
 export default function ThreadPage() {
   const params = useParams();
@@ -13,9 +14,7 @@ export default function ThreadPage() {
   if (isNaN(threadId)) {
     return (
       <ForumLayout>
-        <div className="py-12 text-center">
-          <h2 className="text-lg font-medium text-[var(--forum-text)]">Invalid thread</h2>
-        </div>
+        <EmptyState title="Invalid thread" />
       </ForumLayout>
     );
   }

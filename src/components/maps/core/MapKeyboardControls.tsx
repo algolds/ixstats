@@ -20,7 +20,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Keyframe as Keyboard, Xmark as X } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import type { IxWorldMapRef } from "./IxWorldMap";
 import { MAP_DEFAULTS, type ProjectionMode } from "~/lib/maps/map-config";
 
@@ -165,23 +165,23 @@ export function MapKeyboardControls({
       {/* Bottom-right: copyright + keyboard shortcut button. Sits left of MapLibre's compact
           attribution button and moves clear of the desktop side panel when one is open. */}
       <div
-        className={`absolute right-12 bottom-2.5 z-10 flex items-center gap-1.5 ${
+        className={`absolute right-12 bottom-3 z-10 flex items-center gap-2 ${
           sidePanelOpen ? "max-sm:hidden sm:right-[25rem]" : ""
         }`}
       >
-        <span className="text-muted-foreground text-right text-xs leading-tight select-none">
+        <span className="text-label-secondary text-footnote text-right leading-tight select-none">
           © 2026 Ixnay
           <br />
           Powered by IxStates
         </span>
         {/* Desktop only — keyboard shortcuts are irrelevant on touch devices */}
-        <FacetContainer depth={2} className="hidden rounded-lg sm:block">
+        <FacetMaterial material="regular" className="rounded-control hidden sm:block">
           <Button
             type="button"
             variant="ghost"
             size="xs"
             onClick={() => setShowHelp((v) => !v)}
-            className="text-muted-foreground"
+            className="text-label-secondary"
             title="Keyboard shortcuts (?)"
             aria-label="Keyboard shortcuts"
             aria-expanded={showHelp}
@@ -189,7 +189,7 @@ export function MapKeyboardControls({
             <Keyboard aria-hidden />
             <span>?</span>
           </Button>
-        </FacetContainer>
+        </FacetMaterial>
       </div>
 
       {/* Help overlay */}
@@ -197,20 +197,20 @@ export function MapKeyboardControls({
         <div
           className={`absolute right-12 bottom-12 z-20 w-56 ${sidePanelOpen ? "sm:right-[25rem]" : ""}`}
         >
-          <FacetContainer
-            depth={2}
+          <FacetMaterial
+            material="regular"
             role="region"
             aria-label="Keyboard shortcuts"
-            className="rounded-xl p-3"
+            className="rounded-row p-3"
           >
             <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-foreground text-sm font-semibold">Keyboard shortcuts</h3>
+              <h3 className="text-label text-headline">Keyboard shortcuts</h3>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowHelp(false)}
-                className="text-muted-foreground h-7 w-7"
+                className="text-label-secondary h-7 w-7"
                 aria-label="Close keyboard shortcuts"
               >
                 <X aria-hidden />
@@ -219,16 +219,16 @@ export function MapKeyboardControls({
             <div className="space-y-1">
               {SHORTCUTS.filter((sc) => sc.keys !== "M" || measureAvailable).map(
                 ({ keys, desc }) => (
-                  <div key={keys} className="flex items-center justify-between text-xs">
-                    <kbd className="bg-muted text-foreground rounded px-1.5 py-0.5 font-mono text-xs">
+                  <div key={keys} className="text-footnote flex items-center justify-between">
+                    <kbd className="bg-fill-3 text-label text-footnote rounded-control-sm px-2 py-0.5 tabular-nums">
                       {keys}
                     </kbd>
-                    <span className="text-muted-foreground">{desc}</span>
+                    <span className="text-label-secondary">{desc}</span>
                   </div>
                 )
               )}
             </div>
-          </FacetContainer>
+          </FacetMaterial>
         </div>
       )}
     </>

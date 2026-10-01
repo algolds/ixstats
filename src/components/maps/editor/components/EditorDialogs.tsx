@@ -86,20 +86,20 @@ export const EditorDialogs = React.memo(function EditorDialogs({
         open={showConfirmSaveModal}
         onOpenChange={(open) => !open && setShowConfirmSaveModal(false)}
       >
-        <AlertDialogContent className="facet-modal sm:max-w-md">
+        <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-base">
-              <ShieldAlert className="h-5 w-5 text-amber-500" aria-hidden />
+            <AlertDialogTitle className="text-body flex items-center gap-2">
+              <ShieldAlert className="text-yellow h-5 w-5" aria-hidden />
               Confirm border changes
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-xs leading-relaxed">
+            <AlertDialogDescription className="text-footnote leading-relaxed">
               You are about to save changes to feature border geometry. These changes will be
               applied directly to the map database.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="border-save-reason" className="text-muted-foreground text-xs">
+          <div className="space-y-2">
+            <Label htmlFor="border-save-reason" className="text-label-secondary text-footnote">
               Reason for edit
             </Label>
             <Textarea
@@ -107,7 +107,7 @@ export const EditorDialogs = React.memo(function EditorDialogs({
               value={saveReason}
               onChange={(e) => setSaveReason(e.target.value)}
               placeholder="e.g. Adjusted Caphiria boundary alignment..."
-              className="min-h-[80px] text-xs"
+              className="text-footnote min-h-[80px]"
               required
             />
           </div>
@@ -127,13 +127,13 @@ export const EditorDialogs = React.memo(function EditorDialogs({
         open={showExitConfirm}
         onOpenChange={(open) => !open && setShowExitConfirm(false)}
       >
-        <AlertDialogContent className="facet-modal sm:max-w-sm">
+        <AlertDialogContent className="sm:max-w-sm">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-base">
-              <AlertCircle className="h-5 w-5 text-amber-500" aria-hidden />
+            <AlertDialogTitle className="text-body flex items-center gap-2">
+              <AlertCircle className="text-yellow h-5 w-5" aria-hidden />
               Unsaved changes
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-xs leading-relaxed">
+            <AlertDialogDescription className="text-footnote leading-relaxed">
               You have unsaved changes in the editor. Exiting now will discard these modifications.
             </AlertDialogDescription>
           </AlertDialogHeader>

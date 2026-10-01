@@ -75,7 +75,7 @@ export function ToggleSwitch({ enabled, onToggle }: { enabled: boolean; onToggle
 
 export function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-muted-foreground px-1 pt-2 pb-1 text-xs font-semibold tracking-wider uppercase">
+    <div className="text-subhead text-label-secondary px-1 pt-2 pb-1">
       {typeof children === "string" ? <PreText whiteSpace="nowrap">{children}</PreText> : children}
     </div>
   );
@@ -91,7 +91,7 @@ export function AnimatedVolumeIcon({
   className?: string;
 }) {
   if (!enabled) {
-    return <VolumeX className={cn("text-muted-foreground", className)} />;
+    return <VolumeX className={cn("text-label-secondary", className)} />;
   }
 
   return (
@@ -103,7 +103,7 @@ export function AnimatedVolumeIcon({
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={cn("overflow-visible text-emerald-600 dark:text-emerald-400", className)}
+      className={cn("text-green overflow-visible", className)}
     >
       <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
       <motion.path

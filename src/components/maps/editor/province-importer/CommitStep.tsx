@@ -3,6 +3,7 @@
 import React, { memo } from "react";
 import { WarningTriangle as AlertTriangle, Refresh as Replace } from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
+import { Checkbox } from "~/components/ui/checkbox";
 
 interface CommitStepProps {
   importer: ReturnType<typeof useProvinceImporter>;
@@ -18,8 +19,8 @@ export const CommitStep = memo(function CommitStep({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-foreground text-sm font-medium">Import Summary</h3>
-        <p className="text-muted-foreground mt-1 text-xs">
+        <h3 className="text-label text-body font-medium">Import Summary</h3>
+        <p className="text-label-secondary text-footnote mt-1">
           Review and confirm the {importer.importScope === "cities" ? "city" : "province"} import.
         </p>
       </div>
@@ -27,31 +28,31 @@ export const CommitStep = memo(function CommitStep({
       {importer.importScope === "cities" ? (
         <>
           {/* Summary card */}
-          <div className="border-border space-y-2 rounded-lg border p-3">
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Cities to import</span>
-              <span className="text-foreground font-medium">{importer.alignedCities.length}</span>
+          <div className="border-separator rounded-control space-y-2 border p-3">
+            <div className="text-footnote flex justify-between">
+              <span className="text-label-secondary">Cities to import</span>
+              <span className="text-label font-medium">{importer.alignedCities.length}</span>
             </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">National capitals</span>
-              <span className="text-foreground font-medium">
+            <div className="text-footnote flex justify-between">
+              <span className="text-label-secondary">National capitals</span>
+              <span className="text-label font-medium">
                 {importer.alignedCities.filter((c) => c.isCapital).length}
               </span>
             </div>
           </div>
 
           {/* City list */}
-          <div className="border-border max-h-[200px] overflow-y-auto rounded-lg border">
+          <div className="border-separator rounded-control max-h-[200px] overflow-y-auto border">
             {importer.alignedCities.map((c, index) => (
               <div
                 key={index}
-                className="border-border/50 flex items-center justify-between border-b px-3 py-1.5 last:border-0"
+                className="border-separator flex items-center justify-between border-b px-3 py-2 last:border-0"
               >
-                <span className="text-foreground text-xs">
+                <span className="text-label text-footnote">
                   {c.name || `Unnamed City ${index + 1}`}
                 </span>
                 {c.isCapital && (
-                  <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-xs font-semibold">
+                  <span className="bg-tint-fill text-tint text-caption rounded-control-sm px-2 py-0.5 font-semibold">
                     Capital
                   </span>
                 )}
@@ -62,31 +63,31 @@ export const CommitStep = memo(function CommitStep({
       ) : (
         <>
           {/* Summary card */}
-          <div className="border-border space-y-2 rounded-lg border p-3">
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Provinces to create</span>
-              <span className="text-foreground font-medium">{provinces.length}</span>
+          <div className="border-separator rounded-control space-y-2 border p-3">
+            <div className="text-footnote flex justify-between">
+              <span className="text-label-secondary">Provinces to create</span>
+              <span className="text-label font-medium">{provinces.length}</span>
             </div>
             {importer.validationReport && (
               <>
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Coverage</span>
-                  <span className="text-foreground font-medium">
+                <div className="text-footnote flex justify-between">
+                  <span className="text-label-secondary">Coverage</span>
+                  <span className="text-label font-medium">
                     {importer.validationReport.coveragePercent}%
                   </span>
                 </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Gaps</span>
+                <div className="text-footnote flex justify-between">
+                  <span className="text-label-secondary">Gaps</span>
                   <span
-                    className={`font-medium ${importer.validationReport.gaps.length > 0 ? "text-amber-600" : "text-green-600"}`}
+                    className={`font-medium ${importer.validationReport.gaps.length > 0 ? "text-yellow" : "text-green"}`}
                   >
                     {importer.validationReport.gaps.length}
                   </span>
                 </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Overlaps</span>
+                <div className="text-footnote flex justify-between">
+                  <span className="text-label-secondary">Overlaps</span>
                   <span
-                    className={`font-medium ${importer.validationReport.overlaps.length > 0 ? "text-red-600" : "text-green-600"}`}
+                    className={`font-medium ${importer.validationReport.overlaps.length > 0 ? "text-red" : "text-green"}`}
                   >
                     {importer.validationReport.overlaps.length}
                   </span>
@@ -96,19 +97,19 @@ export const CommitStep = memo(function CommitStep({
           </div>
 
           {/* Province list */}
-          <div className="border-border max-h-[200px] overflow-y-auto rounded-lg border">
+          <div className="border-separator rounded-control max-h-[200px] overflow-y-auto border">
             {provinces.map((p) => (
               <div
                 key={p.sourceId}
-                className="border-border/50 flex items-center gap-2 border-b px-3 py-1.5 last:border-0"
+                className="border-separator flex items-center gap-2 border-b px-3 py-2 last:border-0"
               >
                 {p.color && (
                   <div
-                    className="border-border h-3 w-3 rounded border"
+                    className="border-separator h-3 w-3 rounded-xs border"
                     style={{ backgroundColor: p.color }}
                   />
                 )}
-                <span className="text-foreground text-xs">{p.name}</span>
+                <span className="text-label text-footnote">{p.name}</span>
               </div>
             ))}
           </div>
@@ -117,20 +118,18 @@ export const CommitStep = memo(function CommitStep({
 
       {/* Replace toggle (only if not cities-only) */}
       {importer.importScope !== "cities" && importer.existingSubdivisions.length > 0 && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+        <div className="rounded-control border-yellow/30 bg-yellow/5 border p-3">
           <label className="flex cursor-pointer items-start gap-2">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={importer.replaceExisting}
-              onChange={(e) => importer.setReplaceExisting(e.target.checked)}
-              className="border-border mt-0.5 rounded"
+              onCheckedChange={(c) => importer.setReplaceExisting(c === true)}
             />
             <div>
-              <span className="flex items-center gap-1 text-xs font-medium text-amber-500">
+              <span className="text-caption text-yellow flex items-center gap-1">
                 <Replace className="h-3 w-3" />
                 Replace existing subdivisions
               </span>
-              <p className="text-muted-foreground mt-0.5 text-xs">
+              <p className="text-label-secondary text-footnote mt-0.5">
                 Delete {importer.existingSubdivisions.length} existing subdivision
                 {importer.existingSubdivisions.length !== 1 ? "s" : ""} before importing. This
                 cannot be undone.
@@ -143,7 +142,7 @@ export const CommitStep = memo(function CommitStep({
       {importer.importScope !== "cities" &&
         importer.validationReport &&
         !importer.validationReport.valid && (
-          <div className="border-border flex items-start gap-2 rounded-lg border px-3 py-2 text-xs text-amber-500">
+          <div className="border-separator rounded-control text-footnote text-yellow flex items-start gap-2 border px-3 py-2">
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>
               Topology issues were detected. You can still import, but provinces may have gaps or

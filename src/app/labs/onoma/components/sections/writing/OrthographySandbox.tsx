@@ -5,12 +5,16 @@
 import React, { useState, useMemo } from "react";
 import { Eye, AlignLeft, AlignRight, ArrowDown, Copy, Check, Download } from "iconoir-react";
 import { motion, useReducedMotion } from "motion/react";
-import { FacetMaterial } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
 import type { Glyph, ScriptDirection, RenderToken } from "./types";
 import { useNameBank } from "~/hooks/useNameBank";
 import { CorpusSelector } from "../../shared/CorpusSelector";
 import { resolveCorpusWords } from "~/lib/onoma/data-bridge";
+import { Input } from "~/components/ui/input";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Slider } from "~/components/ui/slider";
 
 interface OrthographySandboxProps {
   glyphs: Glyph[];
@@ -194,126 +198,106 @@ export function OrthographySandbox({
   };
 
   return (
-    <FacetMaterial
-      material="satin"
-      className="border-border/30 flex flex-col space-y-4 rounded-2xl border p-4 shadow-sm"
-    >
+    <FacetCard variant="inset" padding="none" className="flex flex-col space-y-4 p-4">
       {/* Header Bar with Direction Segmented Control */}
-      <div className="border-border/40 flex flex-wrap items-center justify-between gap-3 border-b pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="bg-onoma-primary/10 text-onoma-primary dark:bg-onoma-primary/15 flex h-7 w-7 items-center justify-center rounded-xl">
+      <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-3">
+        <div className="flex items-center gap-2">
+          <div className="bg-tint/10 text-tint rounded-row flex h-7 w-7 items-center justify-center">
             <Eye className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-foreground text-xs font-bold tracking-wider uppercase">
-              Orthography Render Sandbox
-            </h3>
-            <p className="text-muted-foreground text-[10px]">
+            <h3 className="text-label text-subhead">Orthography Render Sandbox</h3>
+            <p className="text-label-secondary text-caption">
               Typesetting preview, dynamic font metrics & token inspector
             </p>
           </div>
         </div>
 
         {/* Direction Segmented Switcher (Apple Style) */}
-        <div className="border-border/40 bg-secondary/20 flex items-center gap-0.5 rounded-xl border p-0.5">
-          <button
-            type="button"
-            onClick={() => onDirectionChange("ltr")}
-            title="Left-to-Right script layout"
-            className={cn(
-              "flex h-7 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-[10px] font-semibold transition-all active:scale-95",
-              direction === "ltr"
-                ? "bg-background text-foreground font-bold shadow-2xs"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <AlignLeft className="h-3 w-3" />
-            <span>LTR</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onDirectionChange("rtl")}
-            title="Right-to-Left script layout"
-            className={cn(
-              "flex h-7 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-[10px] font-semibold transition-all active:scale-95",
-              direction === "rtl"
-                ? "bg-background text-foreground font-bold shadow-2xs"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <AlignRight className="h-3 w-3" />
-            <span>RTL</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onDirectionChange("ttb")}
-            title="Top-to-Bottom vertical script layout"
-            className={cn(
-              "flex h-7 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-[10px] font-semibold transition-all active:scale-95",
-              direction === "ttb"
-                ? "bg-background text-foreground font-bold shadow-2xs"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <ArrowDown className="h-3 w-3" />
-            <span>Vertical</span>
-          </button>
-        </div>
+        <SegmentedControl
+          size="sm"
+          aria-label="Script layout"
+          value={direction}
+          onValueChange={onDirectionChange}
+          options={[
+            {
+              value: "ltr",
+              label: "LTR",
+              icon: <AlignLeft />,
+              "aria-label": "Left-to-right script layout",
+            },
+            {
+              value: "rtl",
+              label: "RTL",
+              icon: <AlignRight />,
+              "aria-label": "Right-to-left script layout",
+            },
+            {
+              value: "ttb",
+              label: "Vertical",
+              icon: <ArrowDown />,
+              "aria-label": "Top-to-bottom vertical script layout",
+            },
+          ]}
+        />
       </div>
 
       {/* Input Field & Preset Phrases */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <input
+          <Input
             type="text"
             value={testText}
             onChange={(e) => setTestText(e.target.value)}
             placeholder="Type phonetic text (e.g. kaelen voss sha tur)..."
-            className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/60 focus:border-onoma-primary/60 focus:ring-onoma-primary/20 flex-1 rounded-xl border px-3.5 py-2 font-mono text-sm transition-all outline-none focus:ring-2"
+            className="text-body flex-1 font-mono"
           />
 
           {/* Export & Copy Suite */}
           <div className="flex items-center gap-1">
-            <button
+            <Button
+              variant="bordered"
+              size="sm"
               type="button"
               onClick={handleCopySvg}
               title="Copy Rendered SVG Markup"
-              className="hover:border-onoma-primary/40 hover:bg-secondary/40 border-border/40 bg-secondary/20 text-foreground flex h-9 cursor-pointer items-center gap-1.5 rounded-xl border px-3 text-xs font-semibold transition-all active:scale-[0.97]"
             >
               {copiedSvg ? (
-                <Check className="h-3.5 w-3.5 text-emerald-400" />
+                <Check className="text-green h-3.5 w-3.5" />
               ) : (
                 <Copy className="h-3.5 w-3.5" />
               )}
               <span className="hidden sm:inline">Copy SVG</span>
-            </button>
+            </Button>
 
-            <button
+            <Button
+              variant="bordered"
+              size="md"
               type="button"
               onClick={handleDownloadSvg}
               title="Download SVG Vector File"
-              className="hover:border-onoma-primary/40 hover:bg-secondary/40 border-border/40 bg-secondary/20 text-foreground flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border transition-all active:scale-[0.97]"
+              className="w-9 justify-center"
             >
               <Download className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Quick Sample Presets & Cross-System Corpus Ingestion */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-muted-foreground text-[10px] font-medium">Quick Phrases:</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-label-secondary text-caption font-medium">Quick Phrases:</span>
             {SAMPLE_PHRASES.map((sample) => (
-              <button
+              <Button
+                variant="bordered"
+                size="sm"
                 key={sample.label}
                 type="button"
                 onClick={() => setTestText(sample.text)}
-                className="border-border/30 bg-background/60 hover:border-onoma-primary/40 hover:bg-onoma-primary/10 text-muted-foreground hover:text-foreground cursor-pointer rounded-lg border px-2.5 py-1 font-mono text-[10px] transition-colors active:scale-[0.96]"
+                className="font-mono"
               >
                 {sample.label}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -333,19 +317,19 @@ export function OrthographySandbox({
       </div>
 
       {/* Main Typographic Render Canvas Slate */}
-      <div className="border-border/40 bg-card/60 relative min-h-[140px] overflow-x-auto rounded-2xl border p-6 shadow-inner select-none">
+      <div className="bg-surface-secondary rounded-row relative min-h-[140px] overflow-x-auto p-6 select-none">
         {glyphs.length === 0 ? (
-          <div className="text-muted-foreground flex h-24 flex-col items-center justify-center text-center text-xs italic">
+          <div className="text-label-secondary text-footnote flex h-24 flex-col items-center justify-center text-center italic">
             <span>Add glyphs above to begin rendering constructed language text.</span>
           </div>
         ) : testText.trim().length === 0 ? (
-          <div className="text-muted-foreground flex h-24 items-center justify-center text-xs italic">
+          <div className="text-label-secondary text-footnote flex h-24 items-center justify-center italic">
             Enter words or phrases above to preview script typography.
           </div>
         ) : (
           <div
             className={cn(
-              "flex flex-wrap items-center transition-all",
+              "flex flex-wrap items-center transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               direction === "rtl" && "flex-row-reverse",
               direction === "ttb" && "max-h-[320px] flex-col items-start overflow-y-auto"
             )}
@@ -377,9 +361,8 @@ export function OrthographySandbox({
                     onClick={() => setSelectedToken(tok)}
                     title={`⟨${tok.charOrPhoneme}⟩ — Click to inspect`}
                     className={cn(
-                      "border-border/10 bg-secondary/10 hover:border-onoma-primary/50 hover:bg-onoma-primary/10 group relative flex shrink-0 cursor-pointer items-center justify-center rounded-xl border transition-colors",
-                      selectedToken?.id === tok.id &&
-                        "border-onoma-primary ring-onoma-primary/30 bg-onoma-primary/15 ring-2"
+                      "border-separator bg-fill-4 hover:border-tint/50 hover:bg-tint/10 group rounded-row relative flex shrink-0 cursor-pointer items-center justify-center border transition-colors",
+                      selectedToken?.id === tok.id && "border-tint ring-tint/30 bg-tint/15 ring-2"
                     )}
                     style={{
                       width: glyphSize,
@@ -388,7 +371,7 @@ export function OrthographySandbox({
                   >
                     <svg
                       viewBox="0 0 128 128"
-                      className="stroke-foreground group-hover:stroke-onoma-primary drop-shadow-2xs h-full w-full fill-none transition-colors"
+                      className="stroke-separator group-hover:stroke-tint drop-shadow-2xs h-full w-full fill-none transition-colors"
                       style={{
                         strokeWidth: strokeWeight,
                         strokeLinecap: "round",
@@ -411,7 +394,7 @@ export function OrthographySandbox({
                     onForgeMissing?.(tok.charOrPhoneme);
                   }}
                   title={`Unmapped phoneme: '${tok.charOrPhoneme}' (Click to design)`}
-                  className="border-border/40 hover:border-onoma-primary/60 hover:bg-onoma-primary/10 text-muted-foreground hover:text-onoma-primary flex shrink-0 cursor-pointer items-center justify-center rounded-xl border border-dashed font-mono text-xs font-bold transition-all active:scale-95"
+                  className="border-separator hover:border-tint/60 hover:bg-tint/10 text-label-secondary hover:text-tint rounded-row text-footnote flex shrink-0 cursor-pointer items-center justify-center border border-dashed font-mono font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                   style={{
                     width: glyphSize,
                     height: glyphSize,
@@ -429,21 +412,22 @@ export function OrthographySandbox({
       {/* Phonetic Token Breakdown Stream */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+          <span className="text-label-secondary text-eyebrow">
             Phonetic Token Stream ({tokens.filter((t) => !t.isSpace && !t.isNewline).length} tokens)
           </span>
-          <span className="text-muted-foreground text-[9px]">
+          <span className="text-label-secondary text-caption">
             Click unmapped tokens to design instant glyphs
           </span>
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {tokens.map((tok) => {
             if (tok.isSpace || tok.isNewline) return null;
             return (
-              <button
+              <Button
                 key={`chip-${tok.id}`}
-                type="button"
+                variant="tinted"
+                size="sm"
                 onClick={() => {
                   setSelectedToken(tok);
                   if (tok.glyph && onSelectGlyphToEdit) {
@@ -453,98 +437,88 @@ export function OrthographySandbox({
                   }
                 }}
                 className={cn(
-                  "flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 font-mono text-[10px] transition-all active:scale-[0.96]",
-                  tok.glyph
-                    ? "border-onoma-primary/30 bg-onoma-primary/10 text-onoma-primary font-semibold shadow-2xs"
-                    : "border-onoma-primary/40 bg-onoma-primary/5 text-onoma-primary hover:bg-onoma-primary/15 border-dashed font-bold"
+                  "gap-2 font-mono",
+                  !tok.glyph && "border-tint/40 bg-tint/5 border border-dashed"
                 )}
               >
                 <span>{tok.charOrPhoneme}</span>
-                <span className="text-[9px] opacity-70">{tok.glyph ? "✓" : "+ Add"}</span>
-              </button>
+                <span className="text-caption opacity-70">{tok.glyph ? "✓" : "+ Add"}</span>
+              </Button>
             );
           })}
         </div>
       </div>
 
       {/* Typesetting Sliders with Tactile Numerical Badges */}
-      <div className="border-border/30 bg-secondary/10 grid grid-cols-2 gap-3 rounded-2xl border p-3.5 sm:grid-cols-4">
+      <div className="bg-surface-secondary rounded-row grid grid-cols-2 gap-3 p-4 sm:grid-cols-4">
         {/* Glyph Size Slider */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[10px]">
-            <span className="text-muted-foreground font-medium">Glyph Size</span>
-            <span className="text-foreground bg-secondary/40 py-0.2 rounded px-1 font-mono font-bold">
+        <div className="space-y-2">
+          <div className="text-caption flex items-center justify-between">
+            <span className="text-label-secondary font-medium">Glyph Size</span>
+            <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-semibold">
               {glyphSize}px
             </span>
           </div>
-          <input
-            type="range"
+          <Slider
             min={24}
             max={96}
             step={2}
-            value={glyphSize}
-            onChange={(e) => onGlyphSizeChange(Number(e.target.value))}
-            className="accent-onoma-primary bg-secondary/40 h-1.5 w-full cursor-pointer rounded-lg"
+            value={[Number(glyphSize)]}
+            onValueChange={([v = 24]) => onGlyphSizeChange(v)}
           />
         </div>
 
         {/* Letter Spacing Slider */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[10px]">
-            <span className="text-muted-foreground font-medium">Tracking</span>
-            <span className="text-foreground bg-secondary/40 py-0.2 rounded px-1 font-mono font-bold">
+        <div className="space-y-2">
+          <div className="text-caption flex items-center justify-between">
+            <span className="text-label-secondary font-medium">Tracking</span>
+            <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-semibold">
               {letterSpacing}px
             </span>
           </div>
-          <input
-            type="range"
+          <Slider
             min={-4}
             max={24}
             step={1}
-            value={letterSpacing}
-            onChange={(e) => setLetterSpacing(Number(e.target.value))}
-            className="accent-onoma-primary bg-secondary/40 h-1.5 w-full cursor-pointer rounded-lg"
+            value={[Number(letterSpacing)]}
+            onValueChange={([v = -4]) => setLetterSpacing(v)}
           />
         </div>
 
         {/* Word Spacing Slider */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[10px]">
-            <span className="text-muted-foreground font-medium">Word Gap</span>
-            <span className="text-foreground bg-secondary/40 py-0.2 rounded px-1 font-mono font-bold">
+        <div className="space-y-2">
+          <div className="text-caption flex items-center justify-between">
+            <span className="text-label-secondary font-medium">Word Gap</span>
+            <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-semibold">
               {wordSpacing}px
             </span>
           </div>
-          <input
-            type="range"
+          <Slider
             min={4}
             max={36}
             step={2}
-            value={wordSpacing}
-            onChange={(e) => setWordSpacing(Number(e.target.value))}
-            className="accent-onoma-primary bg-secondary/40 h-1.5 w-full cursor-pointer rounded-lg"
+            value={[Number(wordSpacing)]}
+            onValueChange={([v = 4]) => setWordSpacing(v)}
           />
         </div>
 
         {/* Baseline Shift Slider */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[10px]">
-            <span className="text-muted-foreground font-medium">Baseline Shift</span>
-            <span className="text-foreground bg-secondary/40 py-0.2 rounded px-1 font-mono font-bold">
+        <div className="space-y-2">
+          <div className="text-caption flex items-center justify-between">
+            <span className="text-label-secondary font-medium">Baseline Shift</span>
+            <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-semibold">
               {baselineOffset > 0 ? `+${baselineOffset}` : baselineOffset}px
             </span>
           </div>
-          <input
-            type="range"
+          <Slider
             min={-20}
             max={20}
             step={1}
-            value={baselineOffset}
-            onChange={(e) => onBaselineOffsetChange(Number(e.target.value))}
-            className="accent-onoma-primary bg-secondary/40 h-1.5 w-full cursor-pointer rounded-lg"
+            value={[Number(baselineOffset)]}
+            onValueChange={([v = -20]) => onBaselineOffsetChange(v)}
           />
         </div>
       </div>
-    </FacetMaterial>
+    </FacetCard>
   );
 }

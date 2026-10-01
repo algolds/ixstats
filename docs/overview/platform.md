@@ -41,7 +41,7 @@ IxStates follows an OS-inspired model (`Major.Minor.Patch` + permanent epoch **r
 | | Repository | v2 | Commons Media Explorer |
 | | Halo | v5 | Contextual Overlay System |
 | | Onoma | v4 | Conlang & Linguistics Studio |
-| **Design** | Facet | v2 | Refraction / Depth Design System |
+| **Design** | Facet | v3.1 | Refraction / Depth Design System |
 <!-- END_DOCS:VERSION_MATRIX -->
 
 ### Active Frameworks & Tooling

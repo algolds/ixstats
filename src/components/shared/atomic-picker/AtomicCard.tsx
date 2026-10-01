@@ -9,7 +9,7 @@
  */
 
 import React from "react";
-import { Badge, badgeVariants } from "~/components/ui/badge";
+import { Badge, badgeVariants, type SystemTintedColor } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Plus, Check, Flash as Zap, WarningTriangle as AlertTriangle } from "iconoir-react";
@@ -30,11 +30,32 @@ export interface AtomicCardProps<TType extends string = string> {
   currencyFormatter?: (amount: number) => string;
 }
 
+/**
+ * v2 (c5c6b382) colour identity: each component's own `color` paints its icon chip, its category
+ * badge and its selected ring — the v2 Tailwind hues mapped onto the Facet system colours, applied
+ * as the card's Facet accent (`accent`; the chip and ring read `facet-accent`).
+ */
+const COMPONENT_HUE: Record<string, SystemTintedColor> = {
+  emerald: "green",
+  green: "green",
+  blue: "blue",
+  indigo: "indigo",
+  purple: "indigo",
+  amber: "yellow",
+  yellow: "yellow",
+  orange: "orange",
+  red: "red",
+  teal: "cyan",
+  cyan: "cyan",
+  zinc: "gray",
+  gray: "gray",
+};
+
 /** Complexity reads as a semantic status: high is costly, medium a caution, low easy. */
 const COMPLEXITY_TEXT: Record<BaseAtomicComponent["metadata"]["complexity"], string> = {
   High: "text-destructive",
-  Medium: "text-orange-600",
-  Low: "text-emerald-600",
+  Medium: "text-orange",
+  Low: "text-green",
 };
 
 function AtomicCardComponent<TType extends string = string>({
@@ -49,6 +70,7 @@ function AtomicCardComponent<TType extends string = string>({
   conflictingWith = [],
   currencyFormatter = formatCurrency,
 }: AtomicCardProps<TType>) {
+  const hue = COMPONENT_HUE[component.color?.toLowerCase() ?? "blue"] ?? "blue";
   const Icon = component.icon;
 
   const hasSynergies = synergisticWith.length > 0;
@@ -66,11 +88,12 @@ function AtomicCardComponent<TType extends string = string>({
 
   return (
     <FacetCard
-      surface="solid"
+      accent={hue}
       data-state={isSelected ? "selected" : undefined}
       className={cn(
-        "group flex flex-col justify-between rounded-xl p-4 text-left transition-[border-color,box-shadow,opacity] duration-150 select-none",
-        isSelected ? "border-primary/60 ring-primary/20 ring-1" : "hover:border-foreground/20",
+        "group rounded-row flex flex-col justify-between p-4 text-left transition-[border-color,box-shadow,opacity] duration-150 select-none",
+        // A ring, not a border: the card's own `border-separator` wins Tailwind's utility order.
+        isSelected ? "ring-facet-accent/50 ring-2" : "hover:border-separator-opaque",
         disabled && "pointer-events-none opacity-50",
         !isSelected && !canSelectMore && "opacity-60"
       )}
@@ -79,18 +102,15 @@ function AtomicCardComponent<TType extends string = string>({
         {/* Title row */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-1 items-start gap-3">
-            <Icon
+            <span
               aria-hidden="true"
-              className={cn(
-                "mt-0.5 h-5 w-5 shrink-0",
-                isSelected ? "text-foreground" : "text-muted-foreground"
-              )}
-            />
+              className="rounded-control bg-facet-accent-fill text-facet-accent flex size-9 shrink-0 items-center justify-center"
+            >
+              <Icon className="h-5 w-5" />
+            </span>
             <div className="min-w-0 flex-1">
-              <h4 className="text-foreground truncate text-sm font-semibold tracking-tight">
-                {component.name}
-              </h4>
-              <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs leading-relaxed">
+              <h4 className="text-label text-headline truncate">{component.name}</h4>
+              <p className="text-label-secondary text-footnote mt-0.5 line-clamp-2 leading-relaxed">
                 {component.description}
               </p>
             </div>
@@ -104,13 +124,17 @@ function AtomicCardComponent<TType extends string = string>({
             aria-label={isSelected ? `Deselect ${component.name}` : `Select ${component.name}`}
             onClick={handleClick}
           >
-            {isSelected ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            {isSelected ? (
+              <Check aria-hidden="true" className="h-4 w-4" />
+            ) : (
+              <Plus aria-hidden="true" className="h-4 w-4" />
+            )}
           </Button>
         </div>
 
         {/* Badges */}
-        <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          <Badge variant="secondary" className="capitalize">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Badge variant={hue} className="capitalize">
             {component.category}
           </Badge>
 
@@ -118,7 +142,7 @@ function AtomicCardComponent<TType extends string = string>({
             {component.metadata.complexity}
           </Badge>
 
-          <Badge variant="outline" className="text-muted-foreground tabular-nums">
+          <Badge variant="outline" numeric className="text-label-secondary">
             {component.effectiveness}% eff.
           </Badge>
 
@@ -129,20 +153,15 @@ function AtomicCardComponent<TType extends string = string>({
                   type="button"
                   onClick={(e) => e.stopPropagation()}
                   aria-label={`${synergisticWith.length} synergies`}
-                  className={cn(
-                    badgeVariants({ variant: "outline" }),
-                    "cursor-help text-emerald-600 tabular-nums"
-                  )}
+                  className={cn(badgeVariants({ variant: "green" }), "cursor-help tabular-nums")}
                 >
                   <Zap aria-hidden="true" />
                   <span>+{synergisticWith.length}</span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs text-xs">
-                <p className="font-semibold text-emerald-600">
-                  Synergies ({synergisticWith.length})
-                </p>
-                <ul className="mt-1 list-disc space-y-0.5 pl-3 text-xs">
+              <TooltipContent side="top" className="text-footnote max-w-xs">
+                <p className="text-green-ink font-semibold">Synergies ({synergisticWith.length})</p>
+                <ul className="text-footnote mt-1 list-disc space-y-0.5 pl-3">
                   {synergisticWith.map((s, idx) => (
                     <li key={idx}>
                       {s.name} {s.score ? `(+${s.score}%)` : ""}
@@ -161,19 +180,19 @@ function AtomicCardComponent<TType extends string = string>({
                   onClick={(e) => e.stopPropagation()}
                   aria-label={`${conflictingWith.length} conflicts`}
                   className={cn(
-                    badgeVariants({ variant: "outline" }),
-                    "text-destructive cursor-help tabular-nums"
+                    badgeVariants({ variant: "destructive" }),
+                    "cursor-help tabular-nums"
                   )}
                 >
                   <AlertTriangle aria-hidden="true" />
                   <span>-{conflictingWith.length}</span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs text-xs">
+              <TooltipContent side="top" className="text-footnote max-w-xs">
                 <p className="text-destructive font-semibold">
                   Conflicts ({conflictingWith.length})
                 </p>
-                <ul className="mt-1 list-disc space-y-0.5 pl-3 text-xs">
+                <ul className="text-footnote mt-1 list-disc space-y-0.5 pl-3">
                   {conflictingWith.map((c, idx) => (
                     <li key={idx}>{c.name}</li>
                   ))}
@@ -185,7 +204,7 @@ function AtomicCardComponent<TType extends string = string>({
       </div>
 
       {/* Costs */}
-      <div className="border-border/60 text-muted-foreground mt-3 flex items-center justify-between border-t pt-2 text-xs tabular-nums">
+      <div className="border-separator text-label-secondary text-footnote mt-3 flex items-center justify-between border-t pt-2 tabular-nums">
         <span>Cost: {currencyFormatter(component.implementationCost)}</span>
         <span>Maint: {currencyFormatter(component.maintenanceCost)}/yr</span>
       </div>

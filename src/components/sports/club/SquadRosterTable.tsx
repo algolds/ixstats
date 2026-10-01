@@ -18,10 +18,10 @@ export interface SquadRosterTableProps {
 type SortField = "number" | "name" | "position" | "age" | "overall";
 
 function attributeBadgeClass(value: number): string {
-  if (value >= 90) return "bg-amber-400/20 text-amber-500 dark:text-amber-400 border-amber-400/40";
-  if (value >= 80) return "bg-emerald-400/20 text-emerald-500 dark:text-emerald-400 border-emerald-400/40";
-  if (value >= 70) return "bg-blue-400/20 text-blue-500 dark:text-blue-400 border-blue-400/40";
-  return "bg-muted/60 text-muted-foreground border-border/40";
+  if (value >= 90) return "bg-yellow/20 text-yellow border-yellow/40";
+  if (value >= 80) return "bg-green/20 text-green border-green/40";
+  if (value >= 70) return "bg-blue/20 text-blue border-blue/40";
+  return "bg-fill-3 text-label-secondary border-separator";
 }
 
 export function SquadRosterTable({
@@ -67,8 +67,8 @@ export function SquadRosterTable({
           break;
         case "overall":
         default:
-          valA = ((a.ratings as Record<string, number> | null)?.overall) ?? 50;
-          valB = ((b.ratings as Record<string, number> | null)?.overall) ?? 50;
+          valA = (a.ratings as Record<string, number> | null)?.overall ?? 50;
+          valB = (b.ratings as Record<string, number> | null)?.overall ?? 50;
           break;
       }
 
@@ -82,71 +82,91 @@ export function SquadRosterTable({
   const isFootball = sportPreset === "football";
 
   return (
-    <div className={cn("overflow-x-auto rounded-2xl border border-border/40 bg-card/60 backdrop-blur-xl shadow-lg", className)}>
-      <table className="w-full text-left text-xs border-collapse">
+    <div
+      className={cn(
+        "rounded-card border-separator bg-surface shadow-card overflow-x-auto border",
+        className
+      )}
+    >
+      <table className="text-footnote w-full border-collapse text-left">
         {/* Table Header */}
         <thead>
-          <tr className="border-b border-border/30 bg-muted/30 text-xs font-black uppercase tracking-wider text-muted-foreground select-none">
-            <th
-              onClick={() => handleSort("number")}
-              className="py-3 px-3 text-center w-12 cursor-pointer hover:text-foreground transition"
+          <tr className="border-separator bg-fill-4 text-eyebrow text-label-secondary border-b select-none">
+            <SortableTh
+              field="number"
+              sortField={sortField}
+              sortAsc={sortAsc}
+              onSort={handleSort}
+              className="w-12 px-3 py-3 text-center"
             >
               #
-            </th>
-            <th
-              onClick={() => handleSort("name")}
-              className="py-3 px-4 cursor-pointer hover:text-foreground transition min-w-[200px]"
+            </SortableTh>
+            <SortableTh
+              field="name"
+              sortField={sortField}
+              sortAsc={sortAsc}
+              onSort={handleSort}
+              className="min-w-[200px] px-4 py-3"
             >
               Athlete
-            </th>
-            <th
-              onClick={() => handleSort("position")}
-              className="py-3 px-3 text-center cursor-pointer hover:text-foreground transition"
+            </SortableTh>
+            <SortableTh
+              field="position"
+              sortField={sortField}
+              sortAsc={sortAsc}
+              onSort={handleSort}
+              className="px-3 py-3 text-center"
             >
               Pos
-            </th>
-            <th
-              onClick={() => handleSort("age")}
-              className="py-3 px-3 text-center cursor-pointer hover:text-foreground transition"
+            </SortableTh>
+            <SortableTh
+              field="age"
+              sortField={sortField}
+              sortAsc={sortAsc}
+              onSort={handleSort}
+              className="px-3 py-3 text-center"
             >
               Age
-            </th>
-            <th
-              onClick={() => handleSort("overall")}
-              className="py-3 px-3 text-center cursor-pointer hover:text-foreground transition"
+            </SortableTh>
+            <SortableTh
+              field="overall"
+              sortField={sortField}
+              sortAsc={sortAsc}
+              onSort={handleSort}
+              className="px-3 py-3 text-center"
             >
               OVR
-            </th>
+            </SortableTh>
 
             {/* Sport-Adaptive Columns */}
             {isHockey ? (
               <>
-                <th className="py-3 px-3 text-center">GP</th>
-                <th className="py-3 px-3 text-center">G</th>
-                <th className="py-3 px-3 text-center">A</th>
-                <th className="py-3 px-3 text-center">PTS</th>
+                <th className="px-3 py-3 text-center">GP</th>
+                <th className="px-3 py-3 text-center">G</th>
+                <th className="px-3 py-3 text-center">A</th>
+                <th className="px-3 py-3 text-center">PTS</th>
               </>
             ) : isFootball ? (
               <>
-                <th className="py-3 px-3 text-center">GP</th>
-                <th className="py-3 px-3 text-center">Pass</th>
-                <th className="py-3 px-3 text-center">Rush</th>
-                <th className="py-3 px-3 text-center">TD</th>
+                <th className="px-3 py-3 text-center">GP</th>
+                <th className="px-3 py-3 text-center">Pass</th>
+                <th className="px-3 py-3 text-center">Rush</th>
+                <th className="px-3 py-3 text-center">TD</th>
               </>
             ) : (
               <>
-                <th className="py-3 px-3 text-center">Apps</th>
-                <th className="py-3 px-3 text-center">G</th>
-                <th className="py-3 px-3 text-center">A</th>
+                <th className="px-3 py-3 text-center">Apps</th>
+                <th className="px-3 py-3 text-center">G</th>
+                <th className="px-3 py-3 text-center">A</th>
               </>
             )}
 
-            <th className="py-3 px-4 text-right">Action</th>
+            <th className="px-4 py-3 text-right">Action</th>
           </tr>
         </thead>
 
         {/* Table Body */}
-        <tbody className="divide-y divide-border/20">
+        <tbody className="divide-separator divide-y">
           {sortedPlayers.map((player) => {
             const ratings = (player.ratings as Record<string, number> | null) ?? {};
             const overall = ratings.overall ?? 50;
@@ -155,18 +175,17 @@ export function SquadRosterTable({
               <tr
                 key={player.id}
                 onClick={() => focusAthlete(player.id)}
-                data-cuelume-press="subtle"
-                className="group transition-colors hover:bg-muted/30 cursor-pointer active:scale-[0.99]"
+                className="group hover:bg-fill-4 cursor-pointer transition-colors"
               >
                 {/* Number */}
-                <td className="py-3 px-3 text-center font-mono font-bold text-muted-foreground">
+                <td className="text-label-secondary px-3 py-3 text-center font-medium tabular-nums">
                   {player.number ?? "—"}
                 </td>
 
                 {/* Athlete Name & Thumbnail */}
-                <td className="py-3 px-4">
+                <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-xl overflow-hidden border border-border/40 bg-muted/40 shrink-0">
+                    <div className="rounded-row border-separator bg-fill-3 h-8 w-8 shrink-0 overflow-hidden border">
                       <img
                         src={getPlayerPhotoUrl(player)}
                         alt=""
@@ -174,10 +193,10 @@ export function SquadRosterTable({
                       />
                     </div>
                     <div className="min-w-0">
-                      <p className="font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                      <p className="text-headline text-label group-hover:text-tint truncate transition-colors">
                         {player.firstName} {player.lastName}
                       </p>
-                      <p className="text-xs text-muted-foreground capitalize">
+                      <p className="text-footnote text-label-secondary capitalize">
                         {player.careerStage}
                       </p>
                     </div>
@@ -185,22 +204,20 @@ export function SquadRosterTable({
                 </td>
 
                 {/* Position */}
-                <td className="py-3 px-3 text-center">
-                  <Badge variant="outline" className="text-xs font-bold border-border/50">
-                    {player.position}
-                  </Badge>
+                <td className="px-3 py-3 text-center">
+                  <Badge variant="neutral">{player.position}</Badge>
                 </td>
 
                 {/* Age */}
-                <td className="py-3 px-3 text-center font-medium text-muted-foreground">
+                <td className="text-label-secondary px-3 py-3 text-center font-medium">
                   {player.age}
                 </td>
 
                 {/* Overall Rating */}
-                <td className="py-3 px-3 text-center">
+                <td className="px-3 py-3 text-center">
                   <Badge
                     variant="outline"
-                    className={cn("text-xs font-black px-2 py-0.5", attributeBadgeClass(overall))}
+                    className={cn("tabular-nums", attributeBadgeClass(overall))}
                   >
                     {overall}
                   </Badge>
@@ -209,67 +226,60 @@ export function SquadRosterTable({
                 {/* Sport-Adaptive Stat Values */}
                 {isHockey ? (
                   <>
-                    <td className="py-3 px-3 text-center font-mono font-semibold text-muted-foreground">
+                    <td className="text-label-secondary px-3 py-3 text-center font-medium tabular-nums">
                       {ratings.gamesPlayed ?? 0}
                     </td>
-                    <td className="py-3 px-3 text-center font-mono font-semibold text-foreground">
+                    <td className="text-label px-3 py-3 text-center font-medium tabular-nums">
                       {ratings.goals ?? 0}
                     </td>
-                    <td className="py-3 px-3 text-center font-mono font-semibold text-foreground">
+                    <td className="text-label px-3 py-3 text-center font-medium tabular-nums">
                       {ratings.assists ?? 0}
                     </td>
-                    <td className="py-3 px-3 text-center font-mono font-bold text-cyan-400">
+                    <td className="text-teal px-3 py-3 text-center font-medium tabular-nums">
                       {(ratings.goals ?? 0) + (ratings.assists ?? 0)}
                     </td>
                   </>
                 ) : isFootball ? (
                   <>
-                    <td className="py-3 px-3 text-center font-mono font-semibold text-muted-foreground">
+                    <td className="text-label-secondary px-3 py-3 text-center font-medium tabular-nums">
                       {ratings.gamesPlayed ?? 0}
                     </td>
-                    <td className="py-3 px-3 text-center font-mono font-semibold text-foreground">
+                    <td className="text-label px-3 py-3 text-center font-medium tabular-nums">
                       {ratings.passYards ?? 0}
                     </td>
-                    <td className="py-3 px-3 text-center font-mono font-semibold text-foreground">
+                    <td className="text-label px-3 py-3 text-center font-medium tabular-nums">
                       {ratings.rushYards ?? 0}
                     </td>
-                    <td className="py-3 px-3 text-center font-mono font-bold text-amber-400">
+                    <td className="text-yellow px-3 py-3 text-center font-medium tabular-nums">
                       {ratings.touchdowns ?? 0}
                     </td>
                   </>
                 ) : (
                   <>
-                    <td className="py-3 px-3 text-center font-mono font-semibold text-muted-foreground">
+                    <td className="text-label-secondary px-3 py-3 text-center font-medium tabular-nums">
                       {ratings.appearances ?? 0}
                     </td>
-                    <td className="py-3 px-3 text-center font-mono font-semibold text-foreground">
+                    <td className="text-label px-3 py-3 text-center font-medium tabular-nums">
                       {ratings.goals ?? 0}
                     </td>
-                    <td className="py-3 px-3 text-center font-mono font-semibold text-foreground">
+                    <td className="text-label px-3 py-3 text-center font-medium tabular-nums">
                       {ratings.assists ?? 0}
                     </td>
                   </>
                 )}
 
                 {/* Actions */}
-                <td className="py-3 px-4 text-right">
-                  <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                <td className="px-4 py-3 text-right">
+                  <div
+                    className="flex items-center justify-end gap-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     {onListPlayer && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => onListPlayer(player)}
-                        className="h-7 px-2 text-xs font-bold text-muted-foreground hover:text-foreground cursor-pointer"
-                      >
+                      <Button size="sm" variant="plain" onClick={() => onListPlayer(player)}>
                         Listing
                       </Button>
                     )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => focusAthlete(player.id)}
-                      className="h-7 px-2.5 text-xs font-bold border-border/40 bg-card hover:bg-muted/40 cursor-pointer"
-                    >
+                    <Button size="sm" variant="gray" onClick={() => focusAthlete(player.id)}>
                       Focus
                     </Button>
                   </div>
@@ -284,3 +294,37 @@ export function SquadRosterTable({
 }
 
 export default SquadRosterTable;
+
+/** A sortable column header: the `<th>` carries `aria-sort`, a button inside toggles it. */
+function SortableTh({
+  field,
+  sortField,
+  sortAsc,
+  onSort,
+  className,
+  children,
+}: {
+  field: SortField;
+  sortField: SortField;
+  sortAsc: boolean;
+  onSort: (field: SortField) => void;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const active = sortField === field;
+  return (
+    <th aria-sort={active ? (sortAsc ? "ascending" : "descending") : "none"} className={className}>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => onSort(field)}
+        className={cn(
+          "text-eyebrow h-auto px-1 py-0.5",
+          active ? "text-label" : "text-label-secondary hover:text-label"
+        )}
+      >
+        {children}
+      </Button>
+    </th>
+  );
+}

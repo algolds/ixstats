@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useId } from "react";
 import { Coins, EditPencil as Edit2, List, Check } from "iconoir-react";
 import { CurrencySelector, CurrencyInput, UNIFIED_CURRENCIES } from "./CurrencySelector";
 import { CurrencyIcon } from "./CurrencyIcon";
@@ -9,6 +9,8 @@ import { getCurrencyInfo, isValidCurrency } from "~/lib/utils";
 import { POPULAR_CURRENCIES } from "./identityUtils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 
 interface CurrencyAutocompleteProps {
   fieldName: string;
@@ -45,7 +47,7 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
       );
       const quick = POPULAR_CURRENCIES.find((c) => c.code === newValue);
       const info = getCurrencyInfo(newValue);
-      const symbol = unified ? unified.symbol : (quick ? quick.symbol : info.symbol);
+      const symbol = unified ? unified.symbol : quick ? quick.symbol : info.symbol;
       onChange(newValue, symbol);
       if (onSave && newValue.trim()) {
         onSave(fieldName, newValue.trim());
@@ -54,40 +56,41 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
     [onChange, onSave, fieldName]
   );
 
+  const labelId = useId();
   const currencyInfo = getCurrencyInfo(value);
   const isValid = !value || isValidCurrency(value);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" role="group" aria-labelledby={labelId}>
       <div className="flex items-center justify-between">
-        <label className="text-foreground flex items-center gap-2 text-sm font-medium">
-          <Coins className="text-muted-foreground h-4 w-4" />
+        <label id={labelId} className="text-label text-body flex items-center gap-2 font-medium">
+          <Coins aria-hidden className="text-label-secondary h-4 w-4" />
           <span>National Currency</span>
         </label>
-        <button
+        <Button
           type="button"
+          variant="plain"
+          size="sm"
           onClick={() => {
             soundEffects.toggle();
             setInputMode(inputMode === "selector" ? "input" : "selector");
           }}
-          className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground active:scale-[0.97] transition-[color,transform] duration-150 ease-out"
-          data-cuelume-press
         >
           {inputMode === "selector" ? (
             <>
-              <Edit2 className="h-3 w-3" />
+              <Edit2 aria-hidden />
               <span>Type Custom Currency</span>
             </>
           ) : (
             <>
-              <List className="h-3 w-3" />
+              <List aria-hidden />
               <span>Select from Standard List</span>
             </>
           )}
-        </button>
+        </Button>
       </div>
 
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         {/* Currency Selector Mode */}
         {inputMode === "selector" ? (
           <div className="space-y-2">
@@ -110,20 +113,19 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
 
             {/* Suggestions from database */}
             {((data?.global?.length ?? 0) > 0 || (data?.user?.length ?? 0) > 0) && (
-              <div className="rounded-lg border border-border/40 bg-muted/30 p-2 text-xs">
-                <div className="text-muted-foreground mb-1 text-xs font-bold uppercase tracking-wider">
-                  Community Currencies:
-                </div>
+              <div className="bg-surface-secondary rounded-row text-footnote p-2">
+                <div className="text-subhead text-label-secondary mb-1">Community currencies</div>
                 <div className="flex flex-wrap gap-1">
                   {data?.user?.slice(0, 5).map((suggestion) => (
-                    <button
+                    <Button
                       key={suggestion.id}
                       type="button"
+                      variant="gray"
+                      size="sm"
                       onClick={() => handleValueChange(suggestion.value)}
-                      className="rounded-md border border-border/50 bg-background/80 px-2 py-0.5 text-xs hover:bg-accent active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                     >
                       {suggestion.value}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -133,22 +135,24 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
 
         {/* Currency Meta Pill Badges */}
         {value && currencyInfo && (
-          <div className="flex items-center gap-2 text-xs">
+          <div className="text-footnote flex items-center gap-2">
             {currencyInfo.isISO ? (
-              <Badge variant="secondary" className="gap-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                <Check className="h-3 w-3" />
+              <Badge variant="success">
+                <Check aria-hidden />
                 <span>Standard ISO</span>
               </Badge>
             ) : (
-              <Badge variant="outline" className="border-border/60 bg-muted/30 text-foreground">
-                Custom Sovereign Currency
-              </Badge>
+              <Badge variant="neutral">Custom Sovereign Currency</Badge>
             )}
             {currencyInfo.symbol && (
-              <span className="text-muted-foreground inline-flex items-center gap-1.5 text-xs">
+              <span className="text-label-secondary text-footnote inline-flex items-center gap-2">
                 <span>Symbol:</span>
-                <span className="inline-flex items-center gap-1 rounded border border-border/50 bg-muted/40 px-1.5 py-0.5 text-foreground font-mono font-bold text-xs">
-                  <CurrencyIcon code={value} symbol={currencyInfo.symbol} className="h-3.5 w-3.5 shrink-0" />
+                <span className="bg-fill-3 rounded-control-sm text-caption text-label inline-flex items-center gap-1 px-2 py-0.5">
+                  <CurrencyIcon
+                    code={value}
+                    symbol={currencyInfo.symbol}
+                    className="h-3.5 w-3.5 shrink-0"
+                  />
                   <span>{currencyInfo.symbol}</span>
                 </span>
               </span>
@@ -157,36 +161,27 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
         )}
 
         {/* Quick Access Badges for Popular Currencies */}
-        <div className="space-y-1.5 pt-1">
-          <div className="text-muted-foreground text-xs font-bold uppercase tracking-wider">
-            Quick Select:
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {POPULAR_CURRENCIES.map(({ code, symbol, label }) => {
-              const isSelected = value === code;
-              return (
-                <button
-                  key={code}
-                  type="button"
-                  onClick={() => handleValueChange(code)}
-                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,transform,box-shadow] duration-150 ease-out active:scale-[0.97] ${
-                    isSelected
-                      ? "border-amber-500/50 bg-amber-500/15 text-amber-500 dark:text-amber-400 shadow-xs"
-                      : "border-border/40 bg-background/60 text-muted-foreground hover:border-border hover:bg-muted/40 hover:text-foreground"
-                  }`}
-                  title={label}
-                  data-cuelume-press
-                >
-                  <CurrencyIcon
-                    code={code}
-                    symbol={symbol}
-                    className="h-3.5 w-3.5 shrink-0 opacity-80 group-hover:opacity-100"
-                  />
-                  <span>{code}</span>
-                </button>
-              );
-            })}
-          </div>
+        <div className="space-y-2 pt-1">
+          <div className="text-subhead text-label-secondary">Quick select</div>
+          <ToggleGroup
+            type="single"
+            aria-label="Popular currencies"
+            variant="outline"
+            size="sm"
+            disallowEmpty
+            value={POPULAR_CURRENCIES.some((c) => c.code === value) ? value : ""}
+            onValueChange={(code) => {
+              if (code) handleValueChange(code);
+            }}
+            className="flex flex-wrap gap-2"
+          >
+            {POPULAR_CURRENCIES.map(({ code, symbol, label }) => (
+              <ToggleGroupItem key={code} value={code} title={label} className="gap-1">
+                <CurrencyIcon code={code} symbol={symbol} className="size-3.5 shrink-0" />
+                <span>{code}</span>
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
         </div>
       </div>
     </div>

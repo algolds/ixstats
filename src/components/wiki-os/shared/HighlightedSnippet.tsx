@@ -19,7 +19,7 @@ export function HighlightedSnippet({ text, ranges }: HighlightedSnippetProps) {
     if (start < at || end > text.length || end <= start) continue;
     if (start > at) parts.push(<Fragment key={`t${at}`}>{text.slice(at, start)}</Fragment>);
     parts.push(
-      <mark key={`m${start}`} className="text-foreground rounded-sm bg-transparent font-semibold">
+      <mark key={`m${start}`} className="text-label rounded-sm bg-transparent font-semibold">
         {text.slice(start, end)}
       </mark>
     );

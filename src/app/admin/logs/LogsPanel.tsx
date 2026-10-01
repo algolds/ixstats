@@ -23,6 +23,7 @@ import {
   SystemRestart as Loader2,
 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export function LogsPanel() {
   return <DedicatedLogsPage />;
@@ -138,94 +139,82 @@ export default function DedicatedLogsPage() {
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Fetched Logs
-          </p>
-          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
-            {entries.length}
-          </p>
-        </div>
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Errors / Warnings
-          </p>
+        <FacetCard className="p-4">
+          <p className="text-label-secondary text-eyebrow">Fetched Logs</p>
+          <p className="text-label text-title-2 mt-1 tabular-nums">{entries.length}</p>
+        </FacetCard>
+        <FacetCard className="p-4">
+          <p className="text-label-secondary text-eyebrow">Errors / Warnings</p>
           <p
-            className={`mt-1 font-mono text-xl font-bold tracking-tight ${errorCount > 0 ? "text-red-400" : "text-emerald-400"}`}
+            className={`text-title-2 mt-1 tabular-nums ${errorCount > 0 ? "text-red" : "text-green"}`}
           >
             {errorCount}
           </p>
-        </div>
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Auto-Refresh
-          </p>
-          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400">
+        </FacetCard>
+        <FacetCard className="p-4">
+          <p className="text-label-secondary text-eyebrow">Auto-Refresh</p>
+          <p className="text-title-2 text-teal mt-1 tabular-nums">
             {autoRefresh ? "8s Live" : "Paused"}
           </p>
-        </div>
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Level Scope
-          </p>
-          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
-            {selectedLevel}
-          </p>
-        </div>
+        </FacetCard>
+        <FacetCard className="p-4">
+          <p className="text-label-secondary text-eyebrow">Level Scope</p>
+          <p className="text-title-2 text-purple mt-1 tabular-nums">{selectedLevel}</p>
+        </FacetCard>
       </div>
 
       {/* Single-line Filter Rail */}
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <div className="relative max-w-xs min-w-[180px] flex-1">
-            <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+            <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Search log messages..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="border-border/30 bg-background/50 focus:border-border/60 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
             />
           </div>
 
           <Select value={selectedLevel} onValueChange={setSelectedLevel}>
-            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-32 rounded-xl text-xs backdrop-blur-md">
+            <SelectTrigger size="sm" className="w-32">
               <SelectValue placeholder="All Levels" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL" className="text-xs">
+              <SelectItem value="ALL" className="text-footnote">
                 All Levels
               </SelectItem>
-              <SelectItem value="DEBUG" className="text-xs">
+              <SelectItem value="DEBUG" className="text-footnote">
                 DEBUG
               </SelectItem>
-              <SelectItem value="INFO" className="text-xs">
+              <SelectItem value="INFO" className="text-footnote">
                 INFO
               </SelectItem>
-              <SelectItem value="WARN" className="text-xs">
+              <SelectItem value="WARN" className="text-footnote">
                 WARN
               </SelectItem>
-              <SelectItem value="ERROR" className="text-xs">
+              <SelectItem value="ERROR" className="text-footnote">
                 ERROR
               </SelectItem>
-              <SelectItem value="CRITICAL" className="text-xs">
+              <SelectItem value="CRITICAL" className="text-footnote">
                 CRITICAL
               </SelectItem>
-              <SelectItem value="FATAL" className="text-xs">
+              <SelectItem value="FATAL" className="text-footnote">
                 FATAL
               </SelectItem>
             </SelectContent>
           </Select>
 
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-36 rounded-xl text-xs backdrop-blur-md">
+            <SelectTrigger size="sm" className="w-36">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL" className="text-xs">
+              <SelectItem value="ALL" className="text-footnote">
                 All Categories
               </SelectItem>
               {LOG_CATEGORIES.map((cat) => (
-                <SelectItem key={cat} value={cat} className="text-xs">
+                <SelectItem key={cat} value={cat} className="text-footnote">
                   {cat}
                 </SelectItem>
               ))}
@@ -233,22 +222,22 @@ export default function DedicatedLogsPage() {
           </Select>
 
           <Select value={selectedUser} onValueChange={setSelectedUser}>
-            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-36 rounded-xl text-xs backdrop-blur-md">
+            <SelectTrigger size="sm" className="w-36">
               <SelectValue placeholder="All Users" />
             </SelectTrigger>
             <SelectContent className="max-h-56">
-              <SelectItem value="ALL" className="text-xs">
+              <SelectItem value="ALL" className="text-footnote">
                 All Users
               </SelectItem>
               {usersData?.map((u) => (
-                <SelectItem key={u.id} value={u.id} className="text-xs">
+                <SelectItem key={u.id} value={u.id} className="text-footnote">
                   {u.clerkUserId}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 px-2 text-xs select-none">
+          <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 px-2 select-none">
             <Switch
               id="nextjs-errors"
               checked={nextJsErrors}
@@ -258,7 +247,7 @@ export default function DedicatedLogsPage() {
             <span>Errors only</span>
           </label>
 
-          <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 px-2 text-xs select-none">
+          <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 px-2 select-none">
             <Switch
               id="auto-refresh"
               checked={autoRefresh}
@@ -275,9 +264,8 @@ export default function DedicatedLogsPage() {
             size="sm"
             onClick={() => void refetch()}
             disabled={isLoading || isFetching}
-            className="h-8 rounded-xl px-3 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
-            <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+            <RefreshCw className={`mr-2 h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
             Reload
           </Button>
           <Button
@@ -285,21 +273,20 @@ export default function DedicatedLogsPage() {
             size="sm"
             onClick={handleClearLogs}
             disabled={clearLogsMutation.isPending}
-            className="h-8 rounded-xl px-3 text-xs font-semibold transition-transform active:scale-[0.98]"
           >
-            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+            <Trash2 className="mr-2 h-3.5 w-3.5" />
             Purge Logs
           </Button>
         </div>
       </div>
 
       {/* Main Terminal Output */}
-      <div className="border-border/30 bg-card/25 overflow-hidden rounded-2xl border p-3 shadow-xs backdrop-blur-md">
+      <FacetCard className="overflow-hidden p-3">
         {isLoading ? (
           <div className="flex h-96 items-center justify-center">
             <div className="space-y-2 text-center">
-              <Loader2 className="text-primary mx-auto h-8 w-8 animate-spin" />
-              <p className="text-muted-foreground text-xs">
+              <Loader2 className="text-tint mx-auto h-8 w-8 animate-spin" />
+              <p className="text-label-secondary text-footnote">
                 Querying database systemLog entries...
               </p>
             </div>
@@ -309,10 +296,10 @@ export default function DedicatedLogsPage() {
             entries={entries}
             title={`System Event Stream (${entries.length} fetched)`}
             maxHeight={600}
-            className="border-border/20 text-foreground rounded-xl bg-black/10 dark:bg-black/40"
+            className="border-separator text-label rounded-row bg-fill-4"
           />
         )}
-      </div>
+      </FacetCard>
     </div>
   );
 }

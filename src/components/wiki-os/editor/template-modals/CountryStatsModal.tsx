@@ -1,15 +1,21 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import {
-  Xmark as X,
-  Search,
-  GraphUp as BarChart2,
-  SystemRestart as Loader2,
-  Compass,
-} from "iconoir-react";
+import { Search, GraphUp as BarChart2, SystemRestart as Loader2, Compass } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { Portal, type BaseModalProps } from "./types";
+import { Input } from "~/components/ui/input";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import type { BaseModalProps } from "./types";
+import { TemplateModalShell } from "./TemplateModalShell";
 
 const STAT_FIELDS = [
   { value: "population", label: "Population" },
@@ -55,16 +61,6 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
     }
   }, [isOpen]);
 
-  // Close on Escape keypress
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
   if (!isOpen) return null;
 
   const handleInsertStat = () => {
@@ -80,155 +76,123 @@ export function CountryStatsModal({ isOpen, onClose, onInsert }: BaseModalProps)
   };
 
   return (
-    <Portal>
-      <div
-        className="fixed inset-0 z-[100080] flex items-center justify-center bg-black/60 p-4 backdrop-blur-md"
-        onClick={onClose}
-      >
-        <div
-          className="border-border bg-card/95 text-foreground dark:bg-card/95 relative flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl dark:border-white/15"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="border-border bg-muted/30 flex items-center justify-between border-b px-6 py-4 dark:border-white/10 dark:bg-white/5">
-            <h3 className="text-foreground flex items-center gap-2 text-lg font-bold">
-              <BarChart2 className="h-5 w-5 text-amber-400" />
-              Insert Country Stat
-            </h3>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg p-1 transition-colors active:scale-95 dark:hover:bg-white/10"
-            >
-              <X className="h-5 w-5" />
-            </button>
+    <TemplateModalShell
+      isOpen={isOpen}
+      onClose={onClose}
+      icon={<BarChart2 className="text-yellow size-5 shrink-0" aria-hidden="true" />}
+      title="Insert Country Stat"
+    >
+      {/* Content */}
+      <div className="space-y-6 p-6">
+        {/* Step 1: Select Country */}
+        <div className="space-y-2">
+          <label className="text-subhead text-label block">1. Select Country</label>
+          <div className="relative">
+            <Search className="text-label-secondary absolute top-3 left-3 h-4 w-4" />
+            <Input
+              ref={firstInputRef}
+              type="text"
+              placeholder="Search country name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pr-3 pl-9"
+            />
           </div>
 
-          {/* Content */}
-          <div className="space-y-6 p-6">
-            {/* Step 1: Select Country */}
-            <div className="space-y-2">
-              <label className="text-foreground block text-xs font-semibold">
-                1. Select Country
-              </label>
-              <div className="relative">
-                <Search className="text-muted-foreground absolute top-2.5 left-3 h-4 w-4" />
-                <input
-                  ref={firstInputRef}
-                  type="text"
-                  placeholder="Search country name..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="border-input bg-secondary text-foreground focus:ring-ring w-full rounded-lg border py-2 pr-3 pl-9 text-sm focus:ring-2 focus:outline-none"
-                />
-              </div>
-
-              {/* List Results */}
-              <div className="border-border divide-border bg-muted/20 max-h-32 scrollbar-thin divide-y overflow-y-auto rounded-lg border">
-                {isLoading && (
-                  <div className="text-muted-foreground flex items-center gap-2 p-3 text-xs">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Loading...
-                  </div>
-                )}
-                {!isLoading &&
-                  countries?.map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => setSelectedCountry({ id: c.id, name: c.name })}
-                      className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition-colors ${
-                        selectedCountry?.id === c.id
-                          ? "bg-amber-500/20 font-semibold text-amber-400"
-                          : "text-foreground hover:bg-muted/50"
-                      }`}
-                    >
-                      <span className="flex items-center gap-2">
-                        {c.flagUrl && (
-                          <img
-                            src={c.flagUrl}
-                            alt=""
-                            className="border-border h-3 w-5 rounded-sm border object-cover"
-                          />
-                        )}
-                        {c.name}
-                      </span>
-                      {viewerCountryId && c.id === viewerCountryId && (
-                        <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-xs font-bold text-emerald-400 uppercase">
-                          My Country
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                {!isLoading && countries?.length === 0 && (
-                  <div className="text-muted-foreground p-3 text-center text-xs">
-                    No countries found.
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Selected Country Badge */}
-            {selectedCountry && (
-              <div className="border-border bg-muted/20 flex items-center justify-between rounded-lg border p-3">
-                <div>
-                  <span className="text-muted-foreground block text-xs">Selected Country</span>
-                  <span className="text-foreground text-sm font-bold">{selectedCountry.name}</span>
-                </div>
-                <Compass className="h-5 w-5 text-amber-400" />
+          {/* List Results */}
+          <div className="border-separator divide-separator bg-fill-4 rounded-control max-h-32 scrollbar-thin divide-y overflow-y-auto border">
+            {isLoading && (
+              <div className="text-label-secondary text-footnote flex items-center gap-2 p-3">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Loading...
               </div>
             )}
-
-            {/* Step 2: Select Stat */}
-            <div className="space-y-2">
-              <label className="text-foreground block text-xs font-semibold">
-                2. Choose Stat Attribute
-              </label>
-              <select
-                value={selectedStat}
-                onChange={(e) => setSelectedStat(e.target.value)}
-                className="border-input bg-secondary text-foreground focus:ring-ring w-full cursor-pointer rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
-              >
-                {STAT_FIELDS.map((stat) => (
-                  <option
-                    key={stat.value}
-                    value={stat.value}
-                    className="bg-popover text-foreground"
-                  >
-                    {stat.label}
-                  </option>
+            {!isLoading && countries && countries.length > 0 && (
+              <FacetListSection variant="plain" aria-label="Countries">
+                {countries.map((c) => (
+                  <FacetRow
+                    key={c.id}
+                    onClick={() => setSelectedCountry({ id: c.id, name: c.name })}
+                    selected={selectedCountry?.id === c.id}
+                    selectionStyle="tint"
+                    accessory="check"
+                    leading={
+                      c.flagUrl ? (
+                        <img
+                          src={c.flagUrl}
+                          alt=""
+                          className="border-separator rounded-control-sm h-3 w-5 border object-cover"
+                        />
+                      ) : undefined
+                    }
+                    title={c.name}
+                    trailing={
+                      viewerCountryId && c.id === viewerCountryId ? (
+                        <Badge variant="success">My Country</Badge>
+                      ) : undefined
+                    }
+                  />
                 ))}
-              </select>
-            </div>
-
-            {/* Preview syntax */}
-            {selectedCountry && (
-              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-center font-mono text-xs text-emerald-400">
-                Syntax:{" "}
-                {viewerCountryId && selectedCountry.id === viewerCountryId
-                  ? `{{MyCountry:${selectedStat}}}`
-                  : `{{CountryData:${selectedCountry.name}:${selectedStat}}}`}
+              </FacetListSection>
+            )}
+            {!isLoading && countries?.length === 0 && (
+              <div className="text-label-secondary text-footnote p-3 text-center">
+                No countries found.
               </div>
             )}
-
-            {/* Footer Actions */}
-            <div className="border-border flex items-center justify-end gap-3 border-t pt-4">
-              <button
-                onClick={onClose}
-                className="text-foreground hover:bg-muted rounded-lg px-4 py-2 text-sm font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleInsertStat}
-                disabled={!selectedCountry}
-                className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-black shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-400 active:scale-[0.97] disabled:opacity-50"
-              >
-                Insert Stat
-              </button>
-            </div>
           </div>
         </div>
+
+        {/* Selected Country Badge */}
+        {selectedCountry && (
+          <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-3">
+            <div>
+              <span className="text-label-secondary text-footnote block">Selected Country</span>
+              <span className="text-label text-headline">{selectedCountry.name}</span>
+            </div>
+            <Compass className="text-yellow h-5 w-5" />
+          </div>
+        )}
+
+        {/* Step 2: Select Stat */}
+        <div className="space-y-2">
+          <label id="country-stats-attribute" className="text-subhead text-label block">
+            2. Choose Stat Attribute
+          </label>
+          <Select value={selectedStat} onValueChange={setSelectedStat}>
+            <SelectTrigger aria-labelledby="country-stats-attribute" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STAT_FIELDS.map((stat) => (
+                <SelectItem key={stat.value} value={stat.value}>
+                  {stat.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Preview syntax */}
+        {selectedCountry && (
+          <div className="rounded-control bg-surface-secondary text-footnote text-label-secondary p-3 text-center font-mono">
+            Syntax:{" "}
+            {viewerCountryId && selectedCountry.id === viewerCountryId
+              ? `{{MyCountry:${selectedStat}}}`
+              : `{{CountryData:${selectedCountry.name}:${selectedStat}}}`}
+          </div>
+        )}
+
+        {/* Footer Actions */}
+        <div className="border-separator flex items-center justify-end gap-3 border-t pt-4">
+          <Button variant="gray" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleInsertStat} disabled={!selectedCountry}>
+            Insert Stat
+          </Button>
+        </div>
       </div>
-    </Portal>
+    </TemplateModalShell>
   );
 }

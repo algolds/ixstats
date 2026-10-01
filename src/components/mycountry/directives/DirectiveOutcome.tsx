@@ -17,20 +17,20 @@ export function DirectiveOutcome({ intentId }: { intentId: string }) {
   if (outcome.isLoading) {
     return (
       <div className="space-y-2" aria-busy="true">
-        <Skeleton className="h-10 w-full rounded-xl" />
-        <Skeleton className="h-10 w-full rounded-xl" />
+        <Skeleton className="rounded-row h-10 w-full" />
+        <Skeleton className="rounded-row h-10 w-full" />
       </div>
     );
   }
   if (outcome.error) {
     return (
-      <p className="text-muted-foreground text-sm">
+      <p className="text-label-secondary text-body">
         Recorded effects could not be loaded.{" "}
         <Button
           variant="link"
           size="xs"
           onClick={() => void outcome.refetch()}
-          className="text-foreground h-auto px-0 underline"
+          className="text-label h-auto px-0 underline"
         >
           Try again
         </Button>
@@ -50,7 +50,7 @@ export function DirectiveOutcome({ intentId }: { intentId: string }) {
 
   if (items.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">
+      <p className="text-label-secondary text-body">
         No stat changes were recorded. This directive worked through the budget and public
         signalling only, or predates effect tracking.
       </p>

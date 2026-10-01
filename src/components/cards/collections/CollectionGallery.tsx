@@ -4,6 +4,7 @@
  * Public collection browser with filtering, sorting, and leaderboards
  */
 
+import { springSmooth } from "~/lib/design/motion";
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import Link from "next/link";
@@ -23,6 +24,14 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface CollectionGalleryProps {
   /** Show leaderboard section */
@@ -122,30 +131,31 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div className="w-full flex-1 sm:max-w-md">
             <div className="relative">
-              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-white/50" />
+              <Search className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
                 type="text"
                 placeholder="Search collections or users..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="facet-hierarchy-child pl-10"
+                className="bg-surface-secondary border-separator border pl-10"
               />
             </div>
           </div>
 
           {/* Sort dropdown */}
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-white/70" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortOption)}
-              className="facet-hierarchy-child cursor-pointer rounded-lg border-none px-3 py-2 text-sm text-white outline-none"
-            >
-              <option value="newest">Newest</option>
-              <option value="mostValuable">Most Valuable</option>
-              <option value="mostCards">Most Cards</option>
-              <option value="topRated">Top Rated</option>
-            </select>
+            <Filter className="text-label-secondary h-4 w-4" />
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+              <SelectTrigger aria-label="Sort collections">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest</SelectItem>
+                <SelectItem value="mostValuable">Most Valuable</SelectItem>
+                <SelectItem value="mostCards">Most Cards</SelectItem>
+                <SelectItem value="topRated">Top Rated</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -155,31 +165,24 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="facet-hierarchy-parent rounded-lg p-4 sm:p-6"
+          className="bg-surface border-separator shadow-card rounded-control border p-4 sm:p-6"
         >
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-xl font-bold text-white">
-              <Trophy className="text-gold-400 h-5 w-5" />
+            <h2 className="text-title-2 text-label flex items-center gap-2">
+              <Trophy className="text-yellow h-5 w-5" />
               Top Collections
             </h2>
-            <div className="flex gap-2">
-              {(["mostValuable", "mostComplete", "mostCards"] as const).map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setLeaderboardCategory(cat)}
-                  className={cn(
-                    "rounded-lg px-3 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                    leaderboardCategory === cat
-                      ? "glass-hierarchy-interactive text-white"
-                      : "text-white/60 hover:text-white/80"
-                  )}
-                >
-                  {cat === "mostValuable" && "Value"}
-                  {cat === "mostComplete" && "Complete"}
-                  {cat === "mostCards" && "Cards"}
-                </button>
-              ))}
-            </div>
+            <SegmentedControl
+              size="sm"
+              aria-label="Leaderboard ranking"
+              value={leaderboardCategory}
+              onValueChange={setLeaderboardCategory}
+              options={[
+                { value: "mostValuable", label: "Value" },
+                { value: "mostComplete", label: "Complete" },
+                { value: "mostCards", label: "Cards" },
+              ]}
+            />
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -187,21 +190,23 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
               <Link
                 key={collection.id}
                 href={`/vault/collections/${collection.id}`}
-                className="facet-hierarchy-child rounded-lg p-3 transition-transform hover:scale-105"
+                className="bg-surface-secondary border-separator rounded-control border p-3 transition-transform"
               >
                 <div className="mb-2 flex items-start justify-between">
-                  <span className="text-gold-400 text-xs font-bold">#{collection.rank}</span>
+                  <span className="text-yellow text-footnote font-semibold">
+                    #{collection.rank}
+                  </span>
                   {collection.isPublic ? (
-                    <Globe className="h-3 w-3 text-blue-400" />
+                    <Globe className="text-blue h-3 w-3" />
                   ) : (
-                    <Lock className="text-gold-400 h-3 w-3" />
+                    <Lock className="text-yellow h-3 w-3" />
                   )}
                 </div>
-                <h3 className="mb-1 truncate text-sm font-semibold text-white">
-                  {collection.name}
-                </h3>
+                <h3 className="text-headline text-label mb-1 truncate">{collection.name}</h3>
                 {collection.description && (
-                  <p className="truncate text-xs text-white/60">{collection.description}</p>
+                  <p className="text-footnote text-label-secondary truncate">
+                    {collection.description}
+                  </p>
                 )}
               </Link>
             ))}
@@ -213,15 +218,15 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
-            <Grid3x3 className="mx-auto mb-3 h-12 w-12 text-white/20" />
-            <p className="text-sm text-white/50">Loading collections...</p>
+            <Grid3x3 className="text-label-tertiary mx-auto mb-3 h-12 w-12" />
+            <p className="text-body text-label-secondary">Loading collections...</p>
           </div>
         </div>
       ) : filteredCollections.length === 0 ? (
-        <div className="facet-hierarchy-child rounded-lg p-12 text-center">
-          <Grid3x3 className="mx-auto mb-4 h-16 w-16 text-white/20" />
-          <h3 className="mb-2 text-lg font-semibold text-white">No collections found</h3>
-          <p className="text-sm text-white/60">
+        <div className="bg-surface-secondary border-separator rounded-control border p-12 text-center">
+          <Grid3x3 className="text-label-tertiary mx-auto mb-4 h-16 w-16" />
+          <h3 className="text-title-3 text-label mb-2 font-semibold">No collections found</h3>
+          <p className="text-body text-label-secondary">
             {searchQuery
               ? "Try adjusting your search query"
               : "Be the first to create a public collection!"}
@@ -235,54 +240,52 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                 key={collection.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
+                transition={{ ...springSmooth, delay: index * 0.05 }}
               >
                 <Link href={`/vault/collections/${collection.id}`}>
-                  <Card className="facet-hierarchy-child h-full cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:scale-105">
+                  <Card className="h-full cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
                     <CardContent className="space-y-3 p-4">
                       {/* Header */}
                       <div className="flex items-start justify-between">
                         <div className="min-w-0 flex-1">
-                          <h3 className="truncate text-base font-bold text-white">
-                            {collection.name}
-                          </h3>
+                          <h3 className="text-headline text-label truncate">{collection.name}</h3>
                         </div>
                         {collection.isPublic ? (
-                          <Globe className="ml-2 h-4 w-4 shrink-0 text-blue-400" />
+                          <Globe className="text-blue ml-2 h-4 w-4 shrink-0" />
                         ) : (
-                          <Lock className="text-gold-400 ml-2 h-4 w-4 shrink-0" />
+                          <Lock className="text-yellow ml-2 h-4 w-4 shrink-0" />
                         )}
                       </div>
 
                       {/* Description */}
                       {collection.description && (
-                        <p className="line-clamp-2 text-xs text-white/70">
+                        <p className="text-footnote text-label-secondary line-clamp-2">
                           {collection.description}
                         </p>
                       )}
 
                       {/* Stats */}
-                      <div className="grid grid-cols-3 gap-2 border-t border-white/10 pt-2">
+                      <div className="border-separator grid grid-cols-3 gap-2 border-t pt-2">
                         <div className="text-center">
-                          <div className="text-xs text-white/50">Cards</div>
-                          <div className="text-sm font-bold text-white">0</div>
+                          <div className="text-footnote text-label-secondary">Cards</div>
+                          <div className="text-headline text-label">0</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-xs text-white/50">Value</div>
-                          <div className="flex items-center justify-center gap-0.5 text-sm font-bold text-amber-400">
+                          <div className="text-footnote text-label-secondary">Value</div>
+                          <div className="text-headline text-yellow flex items-center justify-center gap-0.5">
                             <IxCreditsSymbol className="h-3.5 w-3.5 shrink-0" />0
                           </div>
                         </div>
                         <div className="text-center">
-                          <div className="text-xs text-white/50">Likes</div>
-                          <div className="flex items-center justify-center gap-1 text-sm font-bold text-red-400">
+                          <div className="text-footnote text-label-secondary">Likes</div>
+                          <div className="text-headline text-red flex items-center justify-center gap-1">
                             <Heart className="h-3 w-3" />0
                           </div>
                         </div>
                       </div>
 
                       {/* View link */}
-                      <div className="flex items-center justify-center pt-2 text-xs text-white/60 transition-colors hover:text-white">
+                      <div className="text-footnote text-label-secondary hover:text-label flex items-center justify-center pt-2 transition-colors">
                         <Eye className="mr-1 h-3 w-3" />
                         View Collection
                       </div>
@@ -300,16 +303,16 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                 onClick={handlePrevPage}
                 disabled={currentPage === 0}
                 variant="outline"
-                className="facet-hierarchy-child"
+                className="bg-surface-secondary border"
               >
                 Previous
               </Button>
-              <span className="text-sm text-white/70">Page {currentPage + 1}</span>
+              <span className="text-body text-label-secondary">Page {currentPage + 1}</span>
               <Button
                 onClick={handleNextPage}
                 disabled={!hasMore}
                 variant="outline"
-                className="facet-hierarchy-child"
+                className="bg-surface-secondary border"
               >
                 Next
               </Button>

@@ -49,7 +49,7 @@ export default function WhatLinksHerePage() {
         )}
 
         {!isLoading && links.length === 0 && (
-          <p className="text-zinc-400">No pages link to &ldquo;{title}&rdquo;.</p>
+          <p className="text-label-secondary">No pages link to &ldquo;{title}&rdquo;.</p>
         )}
       </div>
     </WikiOSLayout>

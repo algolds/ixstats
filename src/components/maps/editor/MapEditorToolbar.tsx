@@ -19,7 +19,7 @@
 import React, { useCallback, useMemo, useState, useRef, memo } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Button } from "~/components/ui/button";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import { Tooltip } from "~/components/ui/tooltip";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { getPlugins } from "~/components/maps/editor/plugins/registry";
@@ -178,8 +178,8 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
   let lastGroup = -1;
 
   return (
-    <FacetContainer
-      depth={1}
+    <FacetMaterial
+      material="regular"
       role="toolbar"
       aria-label="Editor tools"
       aria-orientation={horizontal ? "horizontal" : "vertical"}
@@ -205,9 +205,9 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
             <div key={item.id} className={horizontal ? "flex items-center" : ""}>
               {showSep &&
                 (horizontal ? (
-                  <div className="bg-border mx-0.5 h-5 w-px" />
+                  <div className="bg-separator mx-0.5 h-5 w-px" />
                 ) : (
-                  <div className="bg-border my-0.5 h-px w-5" />
+                  <div className="bg-separator my-0.5 h-px w-5" />
                 ))}
               <Popover
                 open={activePopoverGroupId === item.id}
@@ -234,7 +234,7 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
                       aria-label={titleText}
                       aria-pressed={isActive}
                       className={`relative select-none ${horizontal ? "h-8 w-8" : "h-9 w-9"} ${
-                        isActive ? "" : "text-muted-foreground"
+                        isActive ? "" : "text-label-secondary"
                       } ${isToolDisabled ? "opacity-30" : ""}`}
                     >
                       <FallbackIcon aria-hidden />
@@ -249,7 +249,7 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
                   side={horizontal ? "top" : "right"}
                   align="center"
                   sideOffset={6}
-                  className="w-40 rounded-xl p-1"
+                  className="rounded-row w-40 p-1"
                 >
                   <div className="flex flex-col gap-0.5">
                     {item.tools.map((subTool) => {
@@ -265,7 +265,7 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
                             setActivePopoverGroupId(null);
                           }}
                           className={`w-full justify-between px-2 ${
-                            isSubActive ? "" : "text-muted-foreground"
+                            isSubActive ? "" : "text-label-secondary"
                           }`}
                         >
                           <div className="flex items-center gap-2">
@@ -273,10 +273,10 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
                             <span>{subTool.label}</span>
                           </div>
                           <span
-                            className={`rounded px-1 py-0.5 font-mono text-xs ${
+                            className={`text-footnote rounded-control-sm px-1 py-0.5 tabular-nums ${
                               isSubActive
-                                ? "bg-primary-foreground/20 text-primary-foreground"
-                                : "bg-muted text-muted-foreground"
+                                ? "bg-on-tint/20 text-on-tint"
+                                : "bg-fill-3 text-label-secondary"
                             }`}
                           >
                             {subTool.shortcut}
@@ -302,9 +302,9 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
             <div key={tool.mode} className={horizontal ? "flex items-center" : ""}>
               {showSep &&
                 (horizontal ? (
-                  <div className="bg-border mx-0.5 h-5 w-px" />
+                  <div className="bg-separator mx-0.5 h-5 w-px" />
                 ) : (
-                  <div className="bg-border my-0.5 h-px w-5" />
+                  <div className="bg-separator my-0.5 h-px w-5" />
                 ))}
               <Tooltip
                 content={tool.label}
@@ -320,7 +320,7 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
                   aria-label={titleText}
                   aria-pressed={isActive}
                   className={`${horizontal ? "h-8 w-8" : "h-9 w-9"} ${
-                    isActive ? "" : "text-muted-foreground"
+                    isActive ? "" : "text-label-secondary"
                   } ${isToolDisabled ? "opacity-30" : ""}`}
                 >
                   <FallbackIcon aria-hidden />
@@ -330,6 +330,6 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
           );
         }
       })}
-    </FacetContainer>
+    </FacetMaterial>
   );
 });

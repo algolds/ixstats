@@ -9,7 +9,7 @@ export const regionArchetypes: ArchetypeSeed[] = [
     name: "European",
     description: "Countries from Europe",
     icon: Globe,
-    color: "text-blue-500",
+    color: "text-blue",
     filter: (country: RealCountryData) => {
       const europeanCountries = [
         "Albania",
@@ -67,7 +67,7 @@ export const regionArchetypes: ArchetypeSeed[] = [
       ];
       return europeanCountries.includes(country.name);
     },
-    gradient: "from-blue-500/20 to-indigo-500/10",
+    gradient: "bg-blue/10",
     categoryId: "geographical-regions",
     priority: 8,
   },
@@ -76,7 +76,7 @@ export const regionArchetypes: ArchetypeSeed[] = [
     name: "Asian",
     description: "Countries from Asia",
     icon: Globe,
-    color: "text-red-500",
+    color: "text-red",
     filter: (country: RealCountryData) => {
       const asianCountries = [
         "Afghanistan",
@@ -125,7 +125,7 @@ export const regionArchetypes: ArchetypeSeed[] = [
       ];
       return asianCountries.includes(country.name);
     },
-    gradient: "from-red-500/20 to-orange-500/10",
+    gradient: "bg-red/10",
     categoryId: "geographical-regions",
     priority: 9,
   },
@@ -134,7 +134,7 @@ export const regionArchetypes: ArchetypeSeed[] = [
     name: "Americas",
     description: "Countries from North, Central & South America",
     icon: Globe,
-    color: "text-green-500",
+    color: "text-green",
     filter: (country: RealCountryData) => {
       const americanCountries = [
         "Antigua and Barbuda",
@@ -175,7 +175,7 @@ export const regionArchetypes: ArchetypeSeed[] = [
       ];
       return americanCountries.includes(country.name);
     },
-    gradient: "from-green-500/20 to-teal-500/10",
+    gradient: "bg-green/10",
     categoryId: "geographical-regions",
     priority: 10,
   },
@@ -184,7 +184,7 @@ export const regionArchetypes: ArchetypeSeed[] = [
     name: "African",
     description: "Countries from Africa",
     icon: Globe,
-    color: "text-orange-500",
+    color: "text-orange",
     filter: (country: RealCountryData) => {
       const africanCountries = [
         "Algeria",
@@ -244,7 +244,7 @@ export const regionArchetypes: ArchetypeSeed[] = [
       ];
       return africanCountries.includes(country.name);
     },
-    gradient: "from-orange-500/20 to-amber-500/10",
+    gradient: "bg-orange/10",
     categoryId: "geographical-regions",
     priority: 11,
   },
@@ -253,7 +253,7 @@ export const regionArchetypes: ArchetypeSeed[] = [
     name: "Oceanian",
     description: "Countries from Oceania and the Pacific",
     icon: Globe,
-    color: "text-teal-500",
+    color: "text-teal",
     filter: (country: RealCountryData) => {
       const oceanianCountries = [
         "Australia",
@@ -276,7 +276,7 @@ export const regionArchetypes: ArchetypeSeed[] = [
         (country.continent || "").toLowerCase().includes("oceania")
       );
     },
-    gradient: "from-teal-600/20 to-cyan-600/10",
+    gradient: "bg-teal/10",
     categoryId: "geographical-regions",
     priority: 12,
   },

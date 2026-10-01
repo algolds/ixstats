@@ -53,14 +53,11 @@ export function PostBody({
     <div className={className}>
       {/* Blurb Header Badge */}
       {blurbMeta?.isBlurb && (
-        <div className="mb-2.5 flex items-center gap-2 text-xs font-semibold text-blue-400">
-          <BookOpen className="h-3.5 w-3.5" />
-          <span className="tracking-tight">{blurbMeta.promptTitle ?? "Topic Tuesday"}</span>
+        <div className="text-caption text-tint mb-2 flex items-center gap-2">
+          <BookOpen className="size-3.5" aria-hidden="true" />
+          <span>{blurbMeta.promptTitle ?? "Topic Tuesday"}</span>
           {blurbMeta.promptSlug && (
-            <Link
-              href={`/thinkpages/topic/${blurbMeta.promptSlug}`}
-              className="text-blue-400/80 hover:text-blue-300 hover:underline"
-            >
+            <Link href={`/thinkpages/topic/${blurbMeta.promptSlug}`} className="hover:underline">
               View Topic →
             </Link>
           )}
@@ -74,8 +71,8 @@ export function PostBody({
         <div
           className={
             isHero
-              ? "mt-2 text-[20px] leading-relaxed font-normal whitespace-pre-wrap text-slate-100 select-text"
-              : "text-sm leading-relaxed font-normal whitespace-pre-wrap text-slate-200 select-text"
+              ? "text-title-2 text-label mt-2 leading-relaxed font-normal whitespace-pre-wrap select-text"
+              : "text-body text-label leading-relaxed whitespace-pre-wrap select-text"
           }
         >
           <WikiHtmlContent html={formatThinkpagesContentForDisplay(cleanContent)} />

@@ -88,10 +88,10 @@ export function GeographicSection({
             key={index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`rounded-lg border p-3 transition-colors ${
+            className={`rounded-control border p-3 transition-colors ${
               editingRegion === index.toString()
-                ? "border-emerald-500/50 bg-emerald-500/[0.04]"
-                : "border-white/10 bg-white/[0.01]"
+                ? "border-green/50 bg-green/[0.04]"
+                : "border-separator bg-surface"
             }`}
           >
             <div className="mb-2 flex items-center justify-between">
@@ -115,7 +115,7 @@ export function GeographicSection({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="text-body grid grid-cols-2 gap-2">
               <div>Population: {region.population.toLocaleString()}</div>
               <div>Urban: {region.urbanPercent}%</div>
               <div>Economic Activity: {region.economicActivity}%</div>
@@ -130,7 +130,7 @@ export function GeographicSection({
                 className="mt-3 space-y-2 border-t pt-3"
               >
                 <div className="space-y-1">
-                  <label className="flex items-center gap-2 text-sm font-medium">
+                  <label className="text-body flex items-center gap-2 font-medium">
                     <MapPin className="h-4 w-4" />
                     Region Name
                   </label>

@@ -170,12 +170,12 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
               : "Needs Attention",
       color:
         health.status === "excellent"
-          ? "text-green-600"
+          ? "text-green"
           : health.status === "good"
-            ? "text-blue-600"
+            ? "text-blue"
             : health.status === "fair"
-              ? "text-yellow-600"
-              : "text-red-600",
+              ? "text-yellow"
+              : "text-red",
     };
   };
 
@@ -188,17 +188,17 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Label className="text-sm font-medium">{label}</Label>
+            <Label className="text-body font-medium">{label}</Label>
             <Tooltip>
               <TooltipTrigger>
-                <HelpCircle className="text-muted-foreground h-3 w-3" />
+                <HelpCircle className="text-label-secondary h-3 w-3" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 <p>{def.description}</p>
               </TooltipContent>
             </Tooltip>
           </div>
-          <span className="text-sm font-medium">
+          <span className="text-body font-medium">
             {value.toFixed(def.step < 1 ? 1 : 0)}
             {def.isPercentage ? "%" : ""}
           </span>
@@ -236,11 +236,11 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="flex items-center gap-2 text-lg font-semibold">
-              <Calculator className="text-primary h-5 w-5" />
+            <h3 className="text-title-3 flex items-center gap-2">
+              <Calculator className="text-tint h-5 w-5" />
               Economic Modeling Engine
             </h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-label-secondary text-body">
               Build and simulate economic scenarios for {country.name}
             </p>
           </div>
@@ -288,13 +288,13 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
         {/* Model Health Status */}
         <Alert
           className={`border-l-4 ${
-            modelHealthDisplay.color === "text-green-600"
-              ? "border-l-green-500"
-              : modelHealthDisplay.color === "text-blue-600"
-                ? "border-l-blue-500"
-                : modelHealthDisplay.color === "text-yellow-600"
-                  ? "border-l-yellow-500"
-                  : "border-l-red-500"
+            modelHealthDisplay.color === "text-green"
+              ? "border-l-green"
+              : modelHealthDisplay.color === "text-blue"
+                ? "border-l-blue"
+                : modelHealthDisplay.color === "text-yellow"
+                  ? "border-l-yellow"
+                  : "border-l-red"
           }`}
         >
           <Activity className="h-4 w-4" />
@@ -325,10 +325,10 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
           <Card>
             <CardContent className="p-4">
               <div className="space-y-1 text-center">
-                <div className="text-2xl font-bold text-green-600">
+                <div className="text-title-1 text-green">
                   {formatPercentage(model.parameters.gdpGrowthRate)}
                 </div>
-                <div className="text-muted-foreground text-xs">GDP Growth</div>
+                <div className="text-label-secondary text-footnote">GDP Growth</div>
               </div>
             </CardContent>
           </Card>
@@ -336,10 +336,10 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
           <Card>
             <CardContent className="p-4">
               <div className="space-y-1 text-center">
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="text-title-1 text-blue">
                   {formatPercentage(model.parameters.inflationRate)}
                 </div>
-                <div className="text-muted-foreground text-xs">Inflation</div>
+                <div className="text-label-secondary text-footnote">Inflation</div>
               </div>
             </CardContent>
           </Card>
@@ -347,10 +347,10 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
           <Card>
             <CardContent className="p-4">
               <div className="space-y-1 text-center">
-                <div className="text-2xl font-bold text-orange-600">
+                <div className="text-title-1 text-orange">
                   {formatPercentage(model.parameters.unemploymentRate)}
                 </div>
-                <div className="text-muted-foreground text-xs">Unemployment</div>
+                <div className="text-label-secondary text-footnote">Unemployment</div>
               </div>
             </CardContent>
           </Card>
@@ -358,10 +358,8 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
           <Card>
             <CardContent className="p-4">
               <div className="space-y-1 text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {model.parameters.projectionYears}
-                </div>
-                <div className="text-muted-foreground text-xs">Years Forecast</div>
+                <div className="text-title-1 text-purple">{model.parameters.projectionYears}</div>
+                <div className="text-label-secondary text-footnote">Years Forecast</div>
               </div>
             </CardContent>
           </Card>
@@ -534,7 +532,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
                                 onClick={() => model.removeSectoralOutputYear(index)}
                                 disabled={model.sectoralOutputs.length <= 1}
                               >
-                                <Minus className="h-4 w-4 text-red-500" />
+                                <Minus className="text-red h-4 w-4" />
                               </Button>
                             )}
                           </TableCell>
@@ -583,14 +581,14 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
                           size="sm"
                           onClick={() => model.removePolicyEffect(index)}
                         >
-                          <Minus className="h-4 w-4 text-red-500" />
+                          <Minus className="text-red h-4 w-4" />
                         </Button>
                       )}
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div>
-                        <Label className="text-sm font-medium">Description</Label>
+                        <Label className="text-body font-medium">Description</Label>
                         <Input
                           value={policy.description}
                           onChange={(e) =>
@@ -601,7 +599,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
                       </div>
 
                       <div>
-                        <Label className="text-sm font-medium">Year Implemented</Label>
+                        <Label className="text-body font-medium">Year Implemented</Label>
                         <Input
                           type="number"
                           value={policy.yearImplemented}
@@ -613,7 +611,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
                       </div>
 
                       <div>
-                        <Label className="text-sm font-medium">Duration (Years)</Label>
+                        <Label className="text-body font-medium">Duration (Years)</Label>
                         <Input
                           type="number"
                           value={policy.durationYears}
@@ -625,7 +623,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
                       </div>
 
                       <div>
-                        <Label className="text-sm font-medium">GDP Effect (%)</Label>
+                        <Label className="text-body font-medium">GDP Effect (%)</Label>
                         <Input
                           type="number"
                           value={policy.gdpEffectPercentage}
@@ -638,7 +636,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
                       </div>
 
                       <div>
-                        <Label className="text-sm font-medium">Inflation Effect (%)</Label>
+                        <Label className="text-body font-medium">Inflation Effect (%)</Label>
                         <Input
                           type="number"
                           value={policy.inflationEffectPercentage}
@@ -655,7 +653,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
                       </div>
 
                       <div>
-                        <Label className="text-sm font-medium">Employment Effect (%)</Label>
+                        <Label className="text-body font-medium">Employment Effect (%)</Label>
                         <Input
                           type="number"
                           value={policy.employmentEffectPercentage}
@@ -784,7 +782,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
           <Info className="h-4 w-4" />
           <AlertDescription>
             <div className="font-medium">Model Summary</div>
-            <p className="mt-1 text-sm">
+            <p className="text-body mt-1">
               {model.parameters.projectionYears}-year economic model with{" "}
               {formatPercentage(model.parameters.gdpGrowthRate)} GDP growth,
               {formatPercentage(model.parameters.inflationRate)} inflation, and{" "}

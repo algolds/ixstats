@@ -233,24 +233,24 @@ export function CoordinatesMapEmbed({
   return (
     <div
       ref={elementRef}
-      className="wikios-ixworld-embed facet-hierarchy-child bg-map-ocean/40 relative overflow-hidden rounded-xl border border-white/10 backdrop-blur-md"
+      className="wikios-ixworld-embed bg-map-ocean/40 rounded-row border-separator relative overflow-hidden border"
       style={{ height: heightVal }}
     >
       {isInViewport && <div ref={containerRef} className="absolute inset-0 h-full w-full" />}
 
       {!mapReady && (
-        <div className="bg-map-ocean/60 absolute inset-0 z-10 flex flex-col items-center justify-center backdrop-blur-sm">
-          <Loader2 className="mb-2 h-6 w-6 animate-spin text-blue-400" />
-          <span className="text-xs font-medium text-zinc-400">Loading map...</span>
+        <div className="bg-map-ocean/60 absolute inset-0 z-10 flex flex-col items-center justify-center">
+          <Loader2 className="text-blue mb-2 h-6 w-6 animate-spin" />
+          <span className="text-caption text-label-secondary">Loading map...</span>
         </div>
       )}
 
       {/* Floating control bar or details overlay */}
       {mapReady && (
-        <div className="pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/75 px-2.5 py-1 text-xs text-zinc-300 backdrop-blur-md select-none">
-          <MapPin className="h-2.5 w-2.5 text-blue-400" />
+        <div className="material-thin rounded-control text-footnote text-label-secondary pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-2 px-3 py-1 select-none">
+          <MapPin className="text-blue h-2.5 w-2.5" />
           <span className="font-semibold">{titleVal || "Map Embed"}</span>
-          <span className="font-mono text-xs text-zinc-500">
+          <span className="text-footnote text-label-secondary font-mono">
             ({lat.toFixed(3)}, {lng.toFixed(3)})
           </span>
         </div>

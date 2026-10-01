@@ -54,23 +54,23 @@ export function ExpandableStatCard({
   const { countryCount = 0, avgGdpPerCapita = 0, avgPopulationDensity = 0 } = extraStats || {};
 
   return (
-    <FacetCard depth={2} className="relative w-full rounded-2xl sm:max-w-[220px] sm:min-w-[180px]">
+    <FacetCard depth={2} className="rounded-card relative w-full sm:max-w-[220px] sm:min-w-[180px]">
       <FacetCardContent className="flex flex-col items-start gap-2 p-4">
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
           data-cuelume-press="toggle"
-          className="focus-visible:ring-ring -m-1 flex w-[calc(100%+0.5rem)] flex-col items-start gap-2 rounded-lg p-1 text-left select-none focus-visible:ring-2 focus-visible:outline-none"
+          className="focus-visible:ring-tint rounded-control -m-1 flex w-[calc(100%+0.5rem)] flex-col items-start gap-2 p-1 text-left select-none focus-visible:ring-2 focus-visible:outline-none"
         >
           <span className="flex w-full items-center gap-2">
             {icon}
             <Eyebrow>{label}</Eyebrow>
-            <span className="text-muted-foreground ml-auto" aria-hidden="true">
+            <span className="text-label-secondary ml-auto" aria-hidden="true">
               {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </span>
           </span>
-          <span className="text-foreground block min-h-[32px] text-2xl font-semibold tabular-nums">
+          <span className="text-label text-title-1 block min-h-[32px] tabular-nums">
             {isLoading ? <Skeleton className="h-7 w-20" /> : (formattedValue ?? value)}
           </span>
         </button>
@@ -85,31 +85,31 @@ export function ExpandableStatCard({
               onClick={(e) => e.stopPropagation()}
             >
               {type === "population" && (
-                <div className="text-muted-foreground text-sm">
+                <div className="text-label-secondary text-body">
                   <div className="mb-2">Real-time population estimate:</div>
-                  <div className="text-foreground mb-2 text-3xl font-semibold tabular-nums">
+                  <div className="text-label text-large-title mb-2 tabular-nums">
                     {typeof value === "number" ? (
                       <NumberFlowDisplay value={value} duration={1500} />
                     ) : (
                       formattedValue
                     )}
                   </div>
-                  <div className="text-muted-foreground text-xs">
+                  <div className="text-label-secondary text-footnote">
                     This number updates as new data is imported.
                   </div>
                 </div>
               )}
               {type === "gdp" && (
                 <div className="space-y-2">
-                  <div className="text-muted-foreground mb-2 text-sm">Top 3 countries by GDP:</div>
+                  <div className="text-label-secondary text-body mb-2">Top 3 countries by GDP:</div>
                   <ol className="mb-2 space-y-1">
                     {topCountries.map((c, i) => (
                       <li key={c.name} className="flex items-center gap-2">
-                        <span className="text-muted-foreground text-sm font-semibold tabular-nums">
+                        <span className="text-label-secondary text-headline tabular-nums">
                           #{i + 1}
                         </span>
-                        <span className="text-foreground font-medium">{c.name}</span>
-                        <span className="text-muted-foreground ml-auto text-sm">
+                        <span className="text-label font-medium">{c.name}</span>
+                        <span className="text-label-secondary text-body ml-auto">
                           {formatCurrency(c.currentTotalGdp)}
                         </span>
                       </li>
@@ -117,11 +117,11 @@ export function ExpandableStatCard({
                   </ol>
                   <div className="mt-2 flex items-center gap-2">
                     <HealthRing value={gdpHealth} size={48} label="GDP Health" />
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-label-secondary text-footnote">
                       General health based on top GDP
                     </span>
                   </div>
-                  <div className="text-foreground mt-2 text-lg font-semibold tabular-nums">
+                  <div className="text-label text-title-3 mt-2 tabular-nums">
                     {typeof value === "number" ? (
                       <NumberFlowDisplay
                         value={value}
@@ -141,11 +141,11 @@ export function ExpandableStatCard({
                     <AccordionItem value="stats">
                       <AccordionTrigger>More Active Stats</AccordionTrigger>
                       <AccordionContent>
-                        <div className="space-y-2 text-sm">
+                        <div className="text-body space-y-2">
                           <div className="flex items-center gap-2">
                             <CheckCircle
                               aria-hidden="true"
-                              className="text-muted-foreground h-4 w-4"
+                              className="text-label-secondary h-4 w-4"
                             />
                             <span>Countries: </span>
                             <span className="ml-auto font-semibold">{countryCount}</span>
@@ -153,7 +153,7 @@ export function ExpandableStatCard({
                           <div className="flex items-center gap-2">
                             <BarChart3
                               aria-hidden="true"
-                              className="text-muted-foreground h-4 w-4"
+                              className="text-label-secondary h-4 w-4"
                             />
                             <span>Avg GDP/capita: </span>
                             <span className="ml-auto font-semibold">
@@ -161,7 +161,7 @@ export function ExpandableStatCard({
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Users aria-hidden="true" className="text-muted-foreground h-4 w-4" />
+                            <Users aria-hidden="true" className="text-label-secondary h-4 w-4" />
                             <span>Avg Pop. Density: </span>
                             <span className="ml-auto font-semibold">
                               {Math.round(avgPopulationDensity)}/km²

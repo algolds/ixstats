@@ -165,11 +165,11 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
         </div>
         {!panelsLocked ? (
           <div
-            className="bg-border h-1 w-full shrink-0 cursor-row-resize transition-colors hover:bg-blue-500/50"
+            className="bg-separator hover:bg-blue/50 h-1 w-full shrink-0 cursor-row-resize transition-colors"
             onMouseDown={handleVerticalSplitResize(side)}
           />
         ) : (
-          <div className="bg-border h-px w-full shrink-0" />
+          <div className="bg-separator h-px w-full shrink-0" />
         )}
         <div className="min-h-0 w-full flex-1">
           <EditorErrorBoundary name={`${side === "left" ? "Left" : "Right"}Panel-B`}>
@@ -244,11 +244,11 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
         </div>
         {!panelsLocked ? (
           <div
-            className="bg-border h-full w-1 shrink-0 cursor-col-resize transition-colors hover:bg-blue-500/50"
+            className="bg-separator hover:bg-blue/50 h-full w-1 shrink-0 cursor-col-resize transition-colors"
             onMouseDown={handleHorizontalSplitResize}
           />
         ) : (
-          <div className="bg-border h-full w-px shrink-0" />
+          <div className="bg-separator h-full w-px shrink-0" />
         )}
         <div className="h-full min-w-0 flex-1">
           <EditorErrorBoundary name="BottomPanel-B">{panelB}</EditorErrorBoundary>

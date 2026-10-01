@@ -1,174 +1,121 @@
 /* ==========================================================================
-   LAYOUT ENGINE — NAVIGATION, Z-INDEX HIERARCHY, & SCROLLBARS
+   LAYOUT — NAVIGATION OFFSETS & SCROLLBARS
+
+   Layered (`@layer base` for element defaults, `@layer components` for
+   classes). Removed 2026-09-30:
+   - `.navigation-bar { position: fixed !important; z-index: 50 }` — the nav's
+     own `fixed … z-(--z-navigation)` utilities now win (it sits at the nav
+     tier again instead of 50).
+   - `.sticky.top-6 { top: 80px !important }` — hijacked every `sticky top-6`;
+     callers that must clear the nav use `top-(--nav-height-desktop)` etc.
+   - `[data-radix-dialog-content|alert-dialog-content|portal|dialog-overlay]`
+     rules — Radix no longer emits these attributes (verified in
+     node_modules/@radix-ui); primitives set their own z tokens.
+   - `.extend-under-nav` and `.wikios-icon-rail` offsets (no callers); the
+     forum rail's compact offset moved to forum.css.
+   - `body.compact-mode …` selectors — the class lands on <html>, so they never
+     matched; now `html.compact-mode` / `[data-density="compact"]`.
    ========================================================================== */
 
-/* ─── 1. Navigation Offsets & Layout Containment ───────────────────────── */
+@layer base {
+  :root {
+    --nav-height-desktop: 64px;
+    --nav-height-mobile: 56px;
+    --nav-height-compact: 48px;
+  }
 
-:root {
-  --nav-height-desktop: 64px;
-  --nav-height-mobile: 56px;
-  --nav-height-compact: 48px;
-}
-
-/* Make the navigation bar fixed by default so it sits cleanly on top of page backgrounds */
-.navigation-bar {
-  position: fixed !important;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 50; /* Above background, but below dropdowns/overlays */
-  transform: translateZ(0);
-  will-change: transform, opacity;
-  backface-visibility: hidden;
-}
-
-/* Offset the main element's content by the height of the fixed navigation bar */
-main {
-  padding-top: var(--nav-height-mobile); /* standard mobile navigation height */
-}
-
-@media (min-width: 1024px) {
+  /* Offset the main element's content by the height of the fixed navigation bar */
   main {
-    padding-top: var(--nav-height-desktop); /* standard desktop navigation height */
+    padding-top: var(--nav-height-mobile);
+  }
+
+  @media (min-width: 1024px) {
+    main {
+      padding-top: var(--nav-height-desktop);
+    }
+  }
+
+  html.compact-mode main,
+  [data-density="compact"] main {
+    padding-top: var(--nav-height-compact);
+  }
+
+  /* Immersion & canvas pages have zero padding at the top */
+  body:has([data-maps-page]) main,
+  body:has([data-builder-content]) main,
+  body:has([data-immersion-page]) main {
+    padding-top: 0;
+  }
+
+  /* ─── Theme-compliant scrollbars ───────────────────────────────────────── */
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+  }
+
+  .dark *,
+  [data-theme="dark"] * {
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  }
+
+  /* WebKit (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.3);
+    border-radius: 9999px;
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.5);
+  }
+
+  .dark ::-webkit-scrollbar-thumb,
+  [data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1.5px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover,
+  [data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
   }
 }
 
-/* Support compact mode */
-body.compact-mode main {
-  padding-top: var(--nav-height-compact);
-}
-
-/* Immersion & Canvas pages have zero padding at the top */
-body:has([data-maps-page]) main,
-body:has([data-builder-content]) main,
-body:has([data-immersion-page]) main {
-  padding-top: 0 !important;
-}
-
-/* Background wrapper that extends to the top behind the navigation */
-.extend-under-nav {
-  position: absolute !important;
-  top: -56px;
-  left: 0;
-  right: 0;
-  bottom: 0;
-}
-
-@media (min-width: 1024px) {
-  .extend-under-nav {
-    top: -64px;
-  }
-}
-
-body.compact-mode .extend-under-nav {
-  top: -48px;
-}
-
-body:has([data-maps-page]) .extend-under-nav {
-  top: 0 !important;
-}
-
-/* ─── 2. Volumetric Z-Index Stacking Hierarchy ──────────────────────────── */
-
-[data-radix-dialog-content],
-[data-radix-alert-dialog-content] {
-  z-index: var(--z-modal) !important;
-  position: fixed !important;
-}
-
-/* Radix Portal elements (where most dropdowns render) */
-[data-radix-portal] {
-  z-index: 150000 !important;
-}
-
-/* Ensure dialog overlays are properly layered */
-[data-radix-dialog-overlay] {
-  z-index: var(--z-backdrop) !important;
-}
-
-
-/* Correct the sticky sidebar top position for standard mode (64px) on lg screens */
-.wikios-icon-rail,
-.forum-icon-rail {
-  top: 64px !important;
-  height: calc(100vh - 64px) !important;
-}
-
-/* Override for compact mode (48px) */
-body.compact-mode .wikios-icon-rail,
-body.compact-mode .forum-icon-rail {
-  top: 48px !important;
-  height: calc(100vh - 48px) !important;
-}
-
-/* Ensure sticky top-6 widgets in MyCountry, Dashboard, Vault, and Admin layouts sit below the navigation bar */
-.sticky.top-6 {
-  top: 80px !important; /* 64px nav height + 16px (1rem) spacing */
-}
-
-body.compact-mode .sticky.top-6 {
-  top: 64px !important; /* 48px nav height + 16px (1rem) spacing */
-}
-
-/* ─── 3. Global Theme-Compliant Scrollbars ──────────────────────────────── */
-
-/* Universal scrollbar rules for Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
-}
-
-.dark * {
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
-}
-
-/* Universal scrollbar rules for Webkit (Chrome, Safari, Edge, Opera) */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.3);
-  border-radius: 9999px;
-  border: 1.5px solid transparent;
-  background-clip: padding-box;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 0.5);
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border: 1.5px solid transparent;
-  background-clip: padding-box;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
-}
-
-/* Hard override to ensure explicitly hidden scrollbars stay hidden */
-.hide-scrollbar,
-.scrollbar-none,
-[scrollbar-width="none"] {
-  scrollbar-width: none !important;
-}
-
-.hide-scrollbar::-webkit-scrollbar,
-.scrollbar-none::-webkit-scrollbar {
-  display: none !important;
-}
-
-/* ─── 4. Reduced Motion Accessibility Guard ────────────────────────────── */
-
-@media (prefers-reduced-motion: reduce) {
+@layer components {
+  /* GPU promotion for the fixed navigation bar (position/z come from its utilities) */
   .navigation-bar {
-    transition: opacity 0.15s ease !important;
+    transform: translateZ(0);
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .navigation-bar {
+      transition: opacity 0.15s ease;
+    }
+  }
+
+  /* Hidden scrollbars. Tailwind's `scrollbar-none` sets scrollbar-width;
+     these add the WebKit half. */
+  .hide-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar,
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }

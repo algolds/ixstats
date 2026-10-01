@@ -14,7 +14,7 @@ import { api } from "~/trpc/react";
 import type { RouterOutputs } from "~/trpc/react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
-import { FacetCard, FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
@@ -186,45 +186,40 @@ export const IntentComposer = React.memo(function IntentComposer({
     const meta = tierMeta(res.intent.tier);
     return (
       <FacetCard
-        depth={2}
-        surface="solid"
         role="region"
         aria-label="Directive declared"
         aria-live="polite"
-        className="animate-in fade-in rounded-2xl p-4 duration-200 sm:p-6"
+        className="animate-in fade-in rounded-card p-4 duration-200 sm:p-6"
       >
         <div className="flex items-start gap-3">
           <CheckCircle className={cn("mt-0.5 h-6 w-6 shrink-0", TONE_CLASSES.positive.text)} />
           <div className="min-w-0 flex-1">
-            <h3 className="text-foreground text-lg font-semibold">Directive declared</h3>
-            <p className="text-foreground mt-1 text-sm font-medium">{declared.goal}</p>
-            <p className="text-muted-foreground mt-1 text-sm">
+            <h3 className="text-label text-title-3">Directive declared</h3>
+            <p className="text-label text-body mt-1 font-medium">{declared.goal}</p>
+            <p className="text-label-secondary text-body mt-1">
               {meta.label} approach · {categoryLabel(res.intent.category)}
               {res.intent.civCapCost ? ` · ${res.intent.civCapCost} CivCap held for a week` : ""}
             </p>
           </div>
         </div>
         {changes.length > 0 && (
-          <ul className="border-border mt-4 space-y-1.5 border-t pt-4">
+          <ul className="border-separator mt-4 space-y-2 border-t pt-4">
             {changes.map((c, i) => (
-              <li key={i} className="text-muted-foreground text-sm first-letter:uppercase">
+              <li key={i} className="text-label-secondary text-body first-letter:uppercase">
                 {c.label}
               </li>
             ))}
           </ul>
         )}
         {tierMaySpawnResistance(res.intent.tier) && (
-          <p className="text-muted-foreground mt-4 text-xs">
+          <p className="text-label-secondary text-footnote mt-4">
             Watch your issues: a resistance issue may follow. It must be resolved before this
             directive can be completed.
           </p>
         )}
         <div className="mt-6 flex flex-col gap-2 sm:flex-row">
           {onViewActive && (
-            <Button
-              className="bg-amber-500 text-amber-950 hover:bg-amber-500/90 max-sm:h-11"
-              onClick={onViewActive}
-            >
+            <Button className="max-sm:h-11" onClick={onViewActive}>
               View active directives
             </Button>
           )}
@@ -257,12 +252,7 @@ export const IntentComposer = React.memo(function IntentComposer({
         title="Choose a goal"
         description="Pick a preset, or describe what you want your government to achieve."
         action={
-          <Button
-            variant="ghost"
-            className="max-sm:h-11"
-            onClick={suggestOne}
-            data-cuelume-press="tick"
-          >
+          <Button variant="ghost" className="max-sm:h-11" onClick={suggestOne}>
             <DiceSix /> <span className="hidden sm:inline">Suggest one</span>
             <span className="sr-only sm:hidden">Suggest a goal</span>
           </Button>
@@ -270,25 +260,25 @@ export const IntentComposer = React.memo(function IntentComposer({
       >
         <div className="space-y-4">
           {followUpOf && (
-            <FacetContainer
-              depth={3}
-              surface="solid"
-              className="flex items-center gap-2 rounded-xl py-1 pr-1 pl-3 text-xs"
+            <FacetCard
+              variant="inset"
+              padding="none"
+              className="text-footnote flex items-center gap-2 py-1 pr-1 pl-3"
             >
-              <GitFork className="text-muted-foreground h-4 w-4 shrink-0" aria-hidden />
-              <span className="text-muted-foreground min-w-0 flex-1 truncate">
-                Follow-up to <span className="text-foreground font-medium">{followUpOf.goal}</span>
+              <GitFork className="text-label-secondary h-4 w-4 shrink-0" aria-hidden />
+              <span className="text-label-secondary min-w-0 flex-1 truncate">
+                Follow-up to <span className="text-label font-medium">{followUpOf.goal}</span>
               </span>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => onFollowUpChange?.(null)}
                 aria-label="Remove follow-up link"
-                className="text-muted-foreground max-sm:h-11 max-sm:w-11"
+                className="text-label-secondary max-sm:h-11 max-sm:w-11"
               >
                 <Xmark />
               </Button>
-            </FacetContainer>
+            </FacetCard>
           )}
 
           <form
@@ -304,7 +294,7 @@ export const IntentComposer = React.memo(function IntentComposer({
             </label>
             <div className="relative">
               <Search
-                className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
+                className="text-label-secondary pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
                 aria-hidden
               />
               <Input
@@ -315,7 +305,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                 autoComplete="off"
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search presets or type a goal, e.g. “cut youth unemployment”"
-                className="facet-refraction-none h-11 rounded-xl pr-11 pl-9 focus-visible:border-amber-500/60 focus-visible:ring-amber-500/30"
+                className="rounded-row focus-visible:border-yellow/60 focus-visible:ring-yellow/30 h-11 pr-11 pl-9"
               />
               {query && (
                 <Button
@@ -324,7 +314,7 @@ export const IntentComposer = React.memo(function IntentComposer({
                   size="icon"
                   onClick={() => setQuery("")}
                   aria-label="Clear"
-                  className="text-muted-foreground absolute top-1/2 right-1 -translate-y-1/2"
+                  className="text-label-secondary absolute top-1/2 right-1 -translate-y-1/2"
                 >
                   <Xmark />
                 </Button>
@@ -334,13 +324,11 @@ export const IntentComposer = React.memo(function IntentComposer({
               <Button
                 type="submit"
                 variant="outline"
-                className="h-auto min-h-11 w-full justify-start gap-3 rounded-xl px-3 py-2.5 text-left"
+                className="rounded-row h-auto min-h-11 w-full justify-start gap-3 px-3 py-2 text-left"
               >
-                <span className="text-muted-foreground shrink-0">Use as a custom goal:</span>
-                <span className="text-foreground min-w-0 flex-1 truncate font-medium">
-                  {trimmed}
-                </span>
-                <ArrowRight className="text-muted-foreground" aria-hidden />
+                <span className="text-label-secondary shrink-0">Use as a custom goal:</span>
+                <span className="text-label min-w-0 flex-1 truncate font-medium">{trimmed}</span>
+                <ArrowRight className="text-label-secondary" aria-hidden />
               </Button>
             )}
           </form>
@@ -367,9 +355,9 @@ export const IntentComposer = React.memo(function IntentComposer({
         title="Goal"
         description={
           <>
-            <span className="text-foreground font-medium">{goal}</span>
+            <span className="text-label font-medium">{goal}</span>
             {suggest.data && (
-              <span className="text-muted-foreground block text-xs">
+              <span className="text-label-secondary text-footnote block">
                 Handled as {categoryLabel(suggest.data.category)}
               </span>
             )}
@@ -389,16 +377,12 @@ export const IntentComposer = React.memo(function IntentComposer({
             <AlertDescription className="gap-2">
               <p>{suggestError}</p>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="text-foreground max-sm:h-11"
-                  onClick={changeGoal}
-                >
+                <Button variant="outline" className="text-label max-sm:h-11" onClick={changeGoal}>
                   Change goal
                 </Button>
                 <Button
                   variant="ghost"
-                  className="text-foreground max-sm:h-11"
+                  className="text-label max-sm:h-11"
                   onClick={() => void suggest.refetch()}
                 >
                   Try again
@@ -435,14 +419,18 @@ export const IntentComposer = React.memo(function IntentComposer({
               ) : (
                 <div className="space-y-3" aria-busy="true">
                   <Skeleton className="h-4 w-40" />
-                  <Skeleton className="h-24 w-full rounded-xl" />
-                  <Skeleton className="h-16 w-full rounded-xl" />
+                  <Skeleton className="rounded-row h-24 w-full" />
+                  <Skeleton className="rounded-row h-16 w-full" />
                 </div>
               )}
             </StepSection>
           </div>
 
-          <StepSection step={4} title="Review and declare" className="lg:sticky lg:top-20">
+          <StepSection
+            step={4}
+            title="Review and declare"
+            className="lg:sticky lg:top-(--shell-top-offset)"
+          >
             <DeclarePanel
               goal={goal}
               approachLabel={activePackage ? tierMeta(activePackage.tier).label : "—"}

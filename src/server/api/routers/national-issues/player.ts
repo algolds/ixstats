@@ -2,6 +2,9 @@
  * National Issues API Router
  *
  * Manages the National Issues Engine - dynamic decision/event generation system.
+ * Every procedure here is the owner's: it requires the nation's owner (the user acting as it,
+ * or its `ownerUserId`) or a privileged role (`~/server/shared/country-authorization`).
+ * Visitors read resolved outcomes through `countries.getPublicRecord`.
  * Provides endpoints for:
  * - Player issue inbox, response, and history
  * - Admin template CRUD, preview, and diagnostics
@@ -21,6 +24,10 @@ import { IxTime } from "~/lib/ixtime";
 import { revealConsequences } from "~/lib/statecraft/recon";
 import { isAppliedIssueConsequence } from "~/lib/national-issues/projection-effects";
 import { loadCivCapState, RECON_CAPACITY_COST } from "~/lib/government/civcap";
+import {
+  assertCountryResourceWriteAccess,
+  assertCountryWriteAccess,
+} from "~/server/shared/country-authorization";
 
 // Statecraft recon (S1.D). Tunables — see plans/statecraft-stage1.md.
 const RECON_DELAY_MS = 1.5 * 24 * 60 * 60 * 1000; // ~1.5 IxTime days; CONSTANT across gov quality (penalty = fog, not time)
@@ -49,8 +56,14 @@ async function loadReconContext(db: PrismaClient, countryId: string) {
 export const nationalIssuesPlayerRouter = createTRPCRouter({
   // ==================== PLAYER ENDPOINTS ====================
 
+  // Visibility: every procedure below is the nation's own inbox — the owner (the user acting as
+  // the nation or `Country.ownerUserId`) and privileged roles only; FORBIDDEN for other players.
+  // Visitors read resolved outcomes through `countries.getPublicRecord`.
+
   /**
-   * Get issues for a country. Triggers lazy evaluation if stale.
+   * Get issues for a country (the owner's inbox — open issues included). Triggers lazy
+   * evaluation if stale. Owner / privileged roles only; visitors read resolved outcomes through
+   * `countries.getPublicRecord`.
    */
   getMyIssues: protectedProcedure
     .input(
@@ -74,6 +87,8 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
       // Auto-generation is opt-in (narrative mode is the default). When off, issues
       // only appear via DM injection (plan 034) or prior generation.
       if (GAMEPLAY_FLAGS.issuesAutoGenerate) {
@@ -134,9 +149,16 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
     }),
 
   /**
-   * Get a single issue with full detail.
+   * Get a single issue with full detail (response options, applied consequences). Owner /
+   * privileged roles only.
    */
   getIssue: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    const owning = await ctx.db.nationalIssue.findUnique({
+      where: { id: input.id },
+      select: { countryId: true },
+    });
+    await assertCountryResourceWriteAccess(ctx, owning?.countryId, "Issue");
+
     const issue = await ctx.db.nationalIssue.findUnique({
       where: { id: input.id },
       include: {
@@ -160,15 +182,16 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
   }),
 
   /**
-   * Mark an issue as viewed.
+   * Mark an issue as viewed. Owner / privileged roles only.
    */
   markViewed: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const issue = await ctx.db.nationalIssue.findUnique({
         where: { id: input.id },
-        select: { status: true },
+        select: { status: true, countryId: true },
       });
+      await assertCountryResourceWriteAccess(ctx, issue?.countryId, "Issue");
 
       if (!issue) {
         throw new TRPCError({
@@ -205,10 +228,8 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
         where: { id: input.issueId },
         select: { countryId: true, reconReadyIxTime: true },
       });
+      await assertCountryResourceWriteAccess(ctx, issue?.countryId, "Issue");
       if (!issue) throw new TRPCError({ code: "NOT_FOUND", message: "Issue not found" });
-      if (ctx.user?.countryId !== issue.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Not your country's issue." });
-      }
       if (issue.reconReadyIxTime != null) {
         throw new TRPCError({
           code: "CONFLICT",
@@ -244,10 +265,8 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
         where: { id: input.issueId },
         select: { countryId: true, reconReadyIxTime: true, responseOptions: true },
       });
+      await assertCountryResourceWriteAccess(ctx, issue?.countryId, "Issue");
       if (!issue) throw new TRPCError({ code: "NOT_FOUND", message: "Issue not found" });
-      if (ctx.user?.countryId !== issue.countryId) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Not your country's issue." });
-      }
       const now = IxTime.getCurrentIxTime();
       if (issue.reconReadyIxTime == null) return { status: "none" as const };
       if (issue.reconReadyIxTime > now) {
@@ -286,7 +305,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
     }),
 
   /**
-   * Respond to an issue - the core player action.
+   * Respond to an issue - the core player action. Owner / privileged roles only.
    */
   respond: protectedProcedure
     .input(
@@ -300,6 +319,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
         where: { id: input.issueId },
         select: { countryId: true, responseOptions: true },
       });
+      await assertCountryResourceWriteAccess(ctx, issue?.countryId, "Issue");
 
       if (!issue) {
         throw new TRPCError({
@@ -380,7 +400,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
     }),
 
   /**
-   * Dismiss a non-urgent issue (only issues without deadlines).
+   * Dismiss a non-urgent issue (only issues without deadlines). Owner / privileged roles only.
    */
   dismiss: protectedProcedure
     .input(z.object({ id: z.string() }))
@@ -396,6 +416,7 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
           intentId: true,
         },
       });
+      await assertCountryResourceWriteAccess(ctx, issue?.countryId, "Issue");
 
       if (!issue) {
         throw new TRPCError({
@@ -463,11 +484,14 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
     }),
 
   /**
-   * Get pending issue count for badge display.
+   * Get pending issue count for badge display. Owner / privileged roles only (the public
+   * profile asks only when the viewer owns the nation).
    */
   getPendingCount: protectedProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
       const count = await ctx.db.nationalIssue.count({
         where: {
           countryId: input.countryId,
@@ -488,7 +512,9 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
     }),
 
   /**
-   * Get issue history with consequences.
+   * Get issue history with consequences — the owner's (or a privileged role's) full record,
+   * expired and dismissed issues and applied consequences included. FORBIDDEN for anyone else:
+   * visitors read resolved outcomes through `countries.getPublicRecord`.
    */
   getHistory: protectedProcedure
     .input(
@@ -499,6 +525,8 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+
       const where: any = {
         countryId: input.countryId,
         status: {

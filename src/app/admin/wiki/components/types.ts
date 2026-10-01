@@ -51,41 +51,41 @@ export const getIconComponent = (iconName?: string) => {
 export const getColorClass = (colorName?: string) => {
   switch (colorName) {
     case "amber":
-      return "text-amber-500";
+      return "text-yellow";
     case "slate":
-      return "text-slate-400";
+      return "text-label-secondary";
     case "cyan":
-      return "text-cyan-500";
+      return "text-teal";
     case "green":
-      return "text-emerald-500";
+      return "text-green";
     case "purple":
-      return "text-purple-500";
+      return "text-purple";
     case "pink":
-      return "text-pink-500";
+      return "text-pink";
     case "red":
-      return "text-red-500";
+      return "text-red";
     default:
-      return "text-amber-500";
+      return "text-yellow";
   }
 };
 
 export const getColorHex = (colorName: string) => {
   switch (colorName) {
     case "amber":
-      return "#f59e0b";
+      return "var(--color-chart-2)";
     case "slate":
-      return "#94a3b8";
+      return "var(--color-gray)";
     case "cyan":
-      return "#06b6d4";
+      return "var(--color-chart-6)";
     case "green":
-      return "#10b981";
+      return "var(--color-chart-3)";
     case "purple":
-      return "#a855f7";
+      return "var(--color-chart-4)";
     case "pink":
-      return "#ec4899";
+      return "var(--color-chart-5)";
     case "red":
-      return "#ef4444";
+      return "var(--color-chart-8)";
     default:
-      return "#f59e0b";
+      return "var(--color-chart-2)";
   }
 };

@@ -3,6 +3,7 @@
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import {
   Select,
   SelectContent,
@@ -52,35 +53,35 @@ export function DiplomaticScenariosHeader({
 }: DiplomaticScenariosHeaderProps) {
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <div className="relative max-w-sm min-w-[200px] flex-1">
-            <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+            <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Search scenarios..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="border-border/30 bg-background/50 focus:border-border/60 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
             />
           </div>
 
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-44 rounded-xl text-xs backdrop-blur-md">
+            <SelectTrigger size="sm" className="w-44">
               <SelectValue placeholder="Scenario Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all" className="text-xs">
+              <SelectItem value="all" className="text-footnote">
                 All Types
               </SelectItem>
               {SCENARIO_TYPES.map((t) => (
-                <SelectItem key={t.value} value={t.value} className="text-xs">
+                <SelectItem key={t.value} value={t.value} className="text-footnote">
                   {t.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 px-2 text-xs select-none">
+          <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 px-2 select-none">
             <Checkbox
               id="showInactive"
               checked={showInactive}
@@ -91,87 +92,78 @@ export function DiplomaticScenariosHeader({
           </label>
         </div>
 
-        <Button
-          onClick={onOpenAddDialog}
-          className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
-        >
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
+        <Button onClick={onOpenAddDialog}>
+          <Plus className="mr-2 h-3.5 w-3.5" />
           Create Scenario
         </Button>
       </div>
 
       {/* Advanced Tag Filter Pills */}
-      <div className="flex flex-wrap items-center gap-1.5 pt-1">
-        <span className="text-muted-foreground mr-1 text-xs font-medium">Filter by:</span>
+      <div className="flex flex-wrap items-center gap-2 pt-1">
+        <span className="text-label-secondary text-caption mr-1">Filter by:</span>
 
         {/* Relationship filters */}
-        {RELATIONSHIP_LEVELS.map((rel) => {
-          const isSelected = relationshipFilter.includes(rel.value);
-          return (
-            <button
-              key={rel.value}
-              type="button"
-              onClick={() => {
-                setRelationshipFilter((prev) =>
-                  isSelected ? prev.filter((r) => r !== rel.value) : [...prev, rel.value]
-                );
-              }}
-              className={`rounded-full px-3 py-1 text-xs transition-colors ${
-                isSelected
-                  ? "bg-blue-500 text-white"
-                  : "bg-white/5 text-[--intel-silver] hover:bg-white/10"
-              }`}
+        <ToggleGroup
+          type="multiple"
+          variant="pill"
+          size="sm"
+          aria-label="Relationship"
+          value={relationshipFilter}
+          onValueChange={setRelationshipFilter}
+          className="flex flex-wrap gap-2"
+        >
+          {RELATIONSHIP_LEVELS.map((item) => (
+            <ToggleGroupItem
+              key={item.value}
+              value={item.value}
+              className="data-[state=on]:bg-blue/15 data-[state=on]:text-blue-ink data-[state=on]:hover:bg-blue/20"
             >
-              {rel.label}
-            </button>
-          );
-        })}
+              {item.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
 
         {/* Difficulty filters */}
-        {DIFFICULTY_LEVELS.map((diff) => {
-          const isSelected = difficultyFilter.includes(diff.value);
-          return (
-            <button
-              key={diff.value}
-              type="button"
-              onClick={() => {
-                setDifficultyFilter((prev) =>
-                  isSelected ? prev.filter((d) => d !== diff.value) : [...prev, diff.value]
-                );
-              }}
-              className={`rounded-full px-3 py-1 text-xs transition-colors ${
-                isSelected
-                  ? "bg-yellow-500 font-medium text-black"
-                  : "bg-white/5 text-[--intel-silver] hover:bg-white/10"
-              }`}
+        <ToggleGroup
+          type="multiple"
+          variant="pill"
+          size="sm"
+          aria-label="Difficulty"
+          value={difficultyFilter}
+          onValueChange={setDifficultyFilter}
+          className="flex flex-wrap gap-2"
+        >
+          {DIFFICULTY_LEVELS.map((item) => (
+            <ToggleGroupItem
+              key={item.value}
+              value={item.value}
+              className="data-[state=on]:bg-yellow/15 data-[state=on]:text-yellow-ink data-[state=on]:hover:bg-yellow/20"
             >
-              {diff.label}
-            </button>
-          );
-        })}
+              {item.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
 
         {/* Time frame filters */}
-        {TIME_FRAMES.map((tf) => {
-          const isSelected = timeFrameFilter.includes(tf.value);
-          return (
-            <button
-              key={tf.value}
-              type="button"
-              onClick={() => {
-                setTimeFrameFilter((prev) =>
-                  isSelected ? prev.filter((t) => t !== tf.value) : [...prev, tf.value]
-                );
-              }}
-              className={`rounded-full px-3 py-1 text-xs transition-colors ${
-                isSelected
-                  ? "bg-cyan-500 text-white"
-                  : "bg-white/5 text-[--intel-silver] hover:bg-white/10"
-              }`}
+        <ToggleGroup
+          type="multiple"
+          variant="pill"
+          size="sm"
+          aria-label="Time frame"
+          value={timeFrameFilter}
+          onValueChange={setTimeFrameFilter}
+          className="flex flex-wrap gap-2"
+        >
+          {TIME_FRAMES.map((item) => (
+            <ToggleGroupItem
+              key={item.value}
+              value={item.value}
+              className="data-[state=on]:bg-teal/15 data-[state=on]:text-teal-ink data-[state=on]:hover:bg-teal/20"
             >
-              {tf.label}
-            </button>
-          );
-        })}
+              {item.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
       </div>
     </div>
   );

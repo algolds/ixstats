@@ -13,9 +13,9 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Card } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Stat } from "~/components/ui/stat";
 import { api } from "~/trpc/react";
 import { useAuth } from "@clerk/nextjs";
 
@@ -60,17 +60,11 @@ export function VaultTradingTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ArrowRightLeft className="h-4.5 w-4.5 text-blue-500 dark:text-blue-400" />
-          <h3 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-            P2P Trading Hub
-          </h3>
+          <ArrowRightLeft className="text-blue h-4.5 w-4.5" />
+          <h3 className="text-label-secondary text-eyebrow">P2P Trading Hub</h3>
         </div>
-        <Button
-          onClick={() => setCreateTradeOpen(true)}
-          className="border-none bg-gradient-to-r from-blue-600 to-cyan-600 text-xs font-bold text-white hover:from-blue-500 hover:to-cyan-500"
-          size="sm"
-        >
-          <Plus className="mr-1.5 h-3.5 w-3.5" /> New Trade
+        <Button onClick={() => setCreateTradeOpen(true)} size="sm">
+          <Plus className="mr-2 h-3.5 w-3.5" /> New Trade
         </Button>
       </div>
 
@@ -80,94 +74,66 @@ export function VaultTradingTab() {
           {
             label: "Active Trades",
             value: activeTrades?.length || 0,
-            color: "text-blue-600 dark:text-blue-400",
+            color: "text-blue",
             icon: ArrowRightLeft,
           },
           {
             label: "Completed",
             value: completedTrades,
-            color: "text-green-600 dark:text-green-400",
+            color: "text-green",
             icon: History,
           },
           {
             label: "Success Rate",
             value: `${successRate}%`,
-            color: "text-amber-600 dark:text-amber-400",
+            color: "text-yellow",
             icon: TrendingUp,
           },
         ].map((stat) => (
-          <div
-            key={stat.label}
-            className="facet-surface facet-refraction border-border/40 relative flex items-center gap-2.5 overflow-hidden rounded-xl border bg-black/5 p-2.5 shadow-lg backdrop-blur-md dark:bg-black/40"
-          >
-            <TextureOverlay texture="dots" opacity={0.03} />
-            <stat.icon className={cn("relative z-10 h-4 w-4 shrink-0", stat.color)} />
-            <div className="relative z-10 min-w-0 flex-1">
-              <p className="text-muted-foreground truncate text-xs font-semibold tracking-wider uppercase">
-                {stat.label}
-              </p>
-              <p
-                className={cn(
-                  "mt-1 font-mono text-base leading-none font-bold tabular-nums",
-                  stat.color
-                )}
-              >
-                {stat.value}
-              </p>
-            </div>
-          </div>
+          <FacetCard key={stat.label} padding="sm" className="flex items-center gap-3">
+            <stat.icon className={cn("size-4 shrink-0", stat.color)} aria-hidden />
+            <Stat size="sm" label={stat.label} value={stat.value} className="min-w-0 flex-1" />
+          </FacetCard>
         ))}
       </div>
 
       {/* Tabs */}
-      <Card className="facet-surface border-border/40 bg-black/5 p-4 dark:bg-black/25">
+      <FacetCard padding="md">
         <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-          <TabsList className="border-border/50 mb-4 rounded-xl border bg-black/5 p-1 dark:border-white/5 dark:bg-black/40">
-            <TabsTrigger
-              value="active"
-              className="text-muted-foreground data-[state=active]:text-foreground relative px-3 py-1.5 text-xs font-bold data-[state=active]:dark:text-white"
-            >
-              <ArrowRightLeft className="mr-1.5 h-3.5 w-3.5" /> Active Offer List
+          <TabsList className="mb-4">
+            <TabsTrigger value="active" className="relative">
+              <ArrowRightLeft className="mr-2 h-3.5 w-3.5" /> Active Offer List
               {activeTrades && activeTrades.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-blue-500 px-1.5 py-0 text-xs leading-none font-bold text-white">
+                <span className="bg-blue text-footnote text-on-blue ml-2 rounded-full px-2 py-0 leading-none font-semibold">
                   {activeTrades.length}
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger
-              value="incoming"
-              className="text-muted-foreground data-[state=active]:text-foreground relative px-3 py-1.5 text-xs font-bold data-[state=active]:dark:text-white"
-            >
-              <Inbox className="mr-1.5 h-3.5 w-3.5" /> Incoming Offers
+            <TabsTrigger value="incoming" className="relative">
+              <Inbox className="mr-2 h-3.5 w-3.5" /> Incoming Offers
               {incomingTrades.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-green-500 px-1.5 py-0 text-xs leading-none font-bold text-white">
+                <span className="bg-green text-footnote text-on-green ml-2 rounded-full px-2 py-0 leading-none font-semibold">
                   {incomingTrades.length}
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger
-              value="outgoing"
-              className="text-muted-foreground data-[state=active]:text-foreground relative px-3 py-1.5 text-xs font-bold data-[state=active]:dark:text-white"
-            >
-              <Send className="mr-1.5 h-3.5 w-3.5" /> Sent Offers
+            <TabsTrigger value="outgoing" className="relative">
+              <Send className="mr-2 h-3.5 w-3.5" /> Sent Offers
               {outgoingTrades.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0 text-xs leading-none font-bold text-white">
+                <span className="bg-tint text-caption text-on-tint ml-2 rounded-full px-2 leading-4 tabular-nums">
                   {outgoingTrades.length}
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger
-              value="history"
-              className="text-muted-foreground data-[state=active]:text-foreground relative px-3 py-1.5 text-xs font-bold data-[state=active]:dark:text-white"
-            >
-              <History className="mr-1.5 h-3.5 w-3.5" /> Trade History
+            <TabsTrigger value="history" className="relative">
+              <History className="mr-2 h-3.5 w-3.5" /> Trade History
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="active" className="space-y-3 outline-none">
             {activeLoading ? (
               <div className="flex items-center justify-center py-10">
-                <Skeleton className="h-20 w-full rounded-lg bg-white/5" />
+                <Skeleton className="rounded-control bg-fill-4 h-20 w-full" />
               </div>
             ) : activeTrades && activeTrades.length > 0 ? (
               activeTrades.map((trade: ActiveTradeItem) => (
@@ -179,18 +145,14 @@ export function VaultTradingTab() {
                 />
               ))
             ) : (
-              <div className="border-border/50 flex flex-col items-center justify-center rounded-lg border border-dashed py-10">
-                <ArrowRightLeft className="text-muted-foreground/30 mb-3 h-10 w-10" />
-                <p className="text-foreground/80 text-xs font-bold">No Active Trades</p>
-                <p className="text-muted-foreground mt-0.5 mb-3 text-xs">
+              <div className="border-separator rounded-control flex flex-col items-center justify-center border border-dashed py-10">
+                <ArrowRightLeft className="text-label-tertiary mb-3 h-10 w-10" />
+                <p className="text-label text-footnote font-semibold">No Active Trades</p>
+                <p className="text-label-secondary text-footnote mt-0.5 mb-3">
                   Start trading by creating a new offer
                 </p>
-                <Button
-                  onClick={() => setCreateTradeOpen(true)}
-                  size="sm"
-                  className="border-none bg-gradient-to-r from-blue-600 to-cyan-600 text-xs font-bold text-white hover:from-blue-500 hover:to-cyan-500"
-                >
-                  <Plus className="mr-1.5 h-3.5 w-3.5" /> Create Trade Offer
+                <Button onClick={() => setCreateTradeOpen(true)} size="sm">
+                  <Plus className="mr-2 h-3.5 w-3.5" /> Create Trade Offer
                 </Button>
               </div>
             )}
@@ -207,10 +169,10 @@ export function VaultTradingTab() {
                 />
               ))
             ) : (
-              <div className="border-border/50 flex flex-col items-center justify-center rounded-lg border border-dashed py-10">
-                <Inbox className="text-muted-foreground/30 mb-3 h-10 w-10" />
-                <p className="text-foreground/80 text-xs font-bold">No Incoming Trades</p>
-                <p className="text-muted-foreground mt-0.5 text-xs">
+              <div className="border-separator rounded-control flex flex-col items-center justify-center border border-dashed py-10">
+                <Inbox className="text-label-tertiary mb-3 h-10 w-10" />
+                <p className="text-label text-footnote font-semibold">No Incoming Trades</p>
+                <p className="text-label-secondary text-footnote mt-0.5">
                   You don't have any trade offers to review
                 </p>
               </div>
@@ -228,18 +190,14 @@ export function VaultTradingTab() {
                 />
               ))
             ) : (
-              <div className="border-border/50 flex flex-col items-center justify-center rounded-lg border border-dashed py-10">
-                <Send className="text-muted-foreground/30 mb-3 h-10 w-10" />
-                <p className="text-foreground/80 text-xs font-bold">No Outgoing Trades</p>
-                <p className="text-muted-foreground mt-0.5 mb-3 text-xs">
+              <div className="border-separator rounded-control flex flex-col items-center justify-center border border-dashed py-10">
+                <Send className="text-label-tertiary mb-3 h-10 w-10" />
+                <p className="text-label text-footnote font-semibold">No Outgoing Trades</p>
+                <p className="text-label-secondary text-footnote mt-0.5 mb-3">
                   You haven't sent any trade offers yet
                 </p>
-                <Button
-                  onClick={() => setCreateTradeOpen(true)}
-                  size="sm"
-                  className="border-none bg-gradient-to-r from-blue-600 to-cyan-600 text-xs font-bold text-white hover:from-blue-500 hover:to-cyan-500"
-                >
-                  <Plus className="mr-1.5 h-3.5 w-3.5" /> Create Trade Offer
+                <Button onClick={() => setCreateTradeOpen(true)} size="sm">
+                  <Plus className="mr-2 h-3.5 w-3.5" /> Create Trade Offer
                 </Button>
               </div>
             )}
@@ -249,7 +207,7 @@ export function VaultTradingTab() {
             <TradeHistory />
           </TabsContent>
         </Tabs>
-      </Card>
+      </FacetCard>
 
       <TradeOfferModal
         open={createTradeOpen}

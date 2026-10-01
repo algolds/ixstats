@@ -84,23 +84,17 @@ export default function CountriesSortBar({
                   onClick={() => onSortChange(opt.value as any, sortDirection)}
                 >
                   {opt.label}
-                  {sortField === opt.value && (
-                    <CheckCircle className="text-primary ml-auto h-4 w-4" />
-                  )}
+                  {sortField === opt.value && <CheckCircle className="text-tint ml-auto h-4 w-4" />}
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onSortChange(sortField, "asc")}>
                 Ascending{" "}
-                {sortDirection === "asc" && (
-                  <CheckCircle className="text-primary ml-auto h-4 w-4" />
-                )}
+                {sortDirection === "asc" && <CheckCircle className="text-tint ml-auto h-4 w-4" />}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onSortChange(sortField, "desc")}>
                 Descending{" "}
-                {sortDirection === "desc" && (
-                  <CheckCircle className="text-primary ml-auto h-4 w-4" />
-                )}
+                {sortDirection === "desc" && <CheckCircle className="text-tint ml-auto h-4 w-4" />}
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
@@ -111,14 +105,14 @@ export default function CountriesSortBar({
           <div className="relative flex items-center">
             <Search
               aria-hidden="true"
-              className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2"
+              className="text-label-secondary pointer-events-none absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2"
             />
             <Input
               placeholder="Search countries..."
               aria-label="Search countries"
               value={searchTerm || ""}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="facet-refraction-none h-10 w-full pl-9 sm:w-64"
+              className="h-10 w-full pl-9 sm:w-64"
               autoComplete="off"
             />
           </div>

@@ -144,10 +144,10 @@ export function WikiLinkWizard({
   // Linked state — show linked page with unlink option
   if (value && !isSearching) {
     return (
-      <div className="space-y-1.5">
-        <div className="border-border flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs">
-          <Link2 className="h-3 w-3 text-emerald-500" aria-hidden />
-          <span className="text-foreground flex-1 truncate font-medium">{value}</span>
+      <div className="space-y-2">
+        <div className="border-separator rounded-control-sm text-footnote flex items-center gap-2 border px-3 py-2">
+          <Link2 className="text-green h-3 w-3" aria-hidden />
+          <span className="text-label flex-1 truncate font-medium">{value}</span>
           <Button
             variant="ghost"
             size="icon"
@@ -162,7 +162,7 @@ export function WikiLinkWizard({
               href={infobox.pageUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-0.5"
+              className="text-label-secondary hover:bg-fill-3 hover:text-label rounded-control-sm p-0.5"
               title="Open on wiki"
             >
               <ExternalLink className="h-3 w-3" />
@@ -181,15 +181,15 @@ export function WikiLinkWizard({
 
         {/* Infobox preview + import */}
         {showInfobox && (
-          <FacetCard surface="solid" className="rounded-md p-2">
+          <FacetCard className="p-2">
             {infoboxLoading && (
-              <div className="text-muted-foreground flex items-center gap-2 py-2 text-xs">
+              <div className="text-label-secondary text-footnote flex items-center gap-2 py-2">
                 <Loader2 className="h-3 w-3 animate-spin" /> Parsing infobox...
               </div>
             )}
 
             {infobox && !infobox.hasInfobox && (
-              <div className="text-muted-foreground py-1 text-xs">
+              <div className="text-label-secondary text-footnote py-1">
                 No infobox found on this page.
               </div>
             )}
@@ -202,17 +202,15 @@ export function WikiLinkWizard({
                     .filter((f) => f.cleanValue && f.fieldType !== "unknown")
                     .slice(0, 12)
                     .map((f, i) => (
-                      <div key={i} className="flex items-center gap-1.5 text-xs">
-                        <span className="text-muted-foreground w-24 shrink-0 truncate">
-                          {f.key}
-                        </span>
-                        <span className="text-foreground truncate">{f.cleanValue}</span>
+                      <div key={i} className="text-footnote flex items-center gap-2">
+                        <span className="text-label-secondary w-24 shrink-0 truncate">{f.key}</span>
+                        <span className="text-label truncate">{f.cleanValue}</span>
                       </div>
                     ))}
                 </div>
 
                 {coordDistance !== null && coordDistance > 50 && (
-                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-amber-500">
+                  <div className="text-footnote text-yellow mt-2 flex items-center gap-2">
                     <AlertTriangle className="h-3 w-3 shrink-0" />
                     Wiki coords are {coordDistance.toLocaleString()} km from map position
                   </div>
@@ -222,7 +220,7 @@ export function WikiLinkWizard({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="mt-1.5 w-full justify-center"
+                    className="mt-2 w-full justify-center"
                     onClick={handleImport}
                   >
                     <Check className="h-3 w-3" /> Import fields to form
@@ -240,40 +238,40 @@ export function WikiLinkWizard({
   return (
     <div className="relative">
       <div className="relative">
-        <Search className="text-muted-foreground absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
+        <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
         <input
           ref={inputRef}
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder={placeholder}
-          className="border-border bg-background text-foreground w-full rounded-md border py-1.5 pr-2 pl-7 text-xs outline-none focus:ring-1 focus:ring-blue-400"
+          className="border-separator bg-surface text-label rounded-control-sm text-footnote focus:ring-blue/50 w-full border py-2 pr-2 pl-7 outline-none focus:ring-1"
         />
         {searchLoading && (
-          <Loader2 className="text-muted-foreground absolute top-1/2 right-2 h-3 w-3 -translate-y-1/2 animate-spin" />
+          <Loader2 className="text-label-secondary absolute top-1/2 right-2 h-3 w-3 -translate-y-1/2 animate-spin" />
         )}
       </div>
 
       {/* Search results dropdown */}
       {searchResults && searchResults.results.length > 0 && searchQuery.length >= 2 && (
-        <FacetCard
-          surface="solid"
-          className="absolute top-full right-0 left-0 z-20 mt-1 max-h-40 overflow-y-auto rounded-md"
-        >
+        <FacetCard className="absolute top-full right-0 left-0 z-20 mt-1 max-h-40 overflow-y-auto">
           {searchResults.results.map((r, i) => (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
               key={i}
               onClick={() => handleSelect(r.title)}
-              className="hover:bg-accent flex w-full items-start gap-2 px-2.5 py-1.5 text-left text-xs transition-colors"
+              className="h-auto min-h-(--control-height-sm) w-full justify-start gap-2 py-2 text-left whitespace-normal"
             >
-              <Link2 className="text-muted-foreground mt-0.5 h-3 w-3 shrink-0" />
+              <Link2 className="text-label-secondary mt-0.5 h-3 w-3 shrink-0" />
               <div className="min-w-0">
-                <div className="text-foreground truncate font-medium">{r.title}</div>
+                <div className="text-label truncate font-medium">{r.title}</div>
                 {r.description && (
-                  <div className="text-muted-foreground truncate text-xs">{r.description}</div>
+                  <div className="text-label-secondary text-footnote truncate">{r.description}</div>
                 )}
               </div>
-            </button>
+            </Button>
           ))}
         </FacetCard>
       )}
@@ -283,7 +281,7 @@ export function WikiLinkWizard({
         searchResults.results.length === 0 &&
         debouncedQuery.length >= 2 &&
         !searchLoading && (
-          <div className="text-muted-foreground mt-1 text-xs">
+          <div className="text-label-secondary text-footnote mt-1">
             No wiki pages found for &ldquo;{debouncedQuery}&rdquo;
           </div>
         )}
@@ -293,7 +291,7 @@ export function WikiLinkWizard({
         <Button
           variant="ghost"
           size="sm"
-          className="text-muted-foreground mt-1"
+          className="text-label-secondary mt-1"
           onClick={() => {
             setIsSearching(false);
             onChange(undefined);

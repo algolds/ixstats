@@ -24,6 +24,7 @@ import { Plus, Group as Users, Trash as Trash2, EditPencil as Pencil } from "ico
 import { api } from "~/trpc/react";
 import { useScrollToFocus } from "~/hooks/useScrollToFocus";
 import { ColorPickerInput } from "~/components/ui/color-picker";
+import { Slider } from "~/components/ui/slider";
 
 const IDEOLOGY_OPTIONS = [
   { value: "far_left", label: "Far Left", color: "#dc2626" },
@@ -146,11 +147,11 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
     IDEOLOGY_OPTIONS.find((o) => o.value === ideology)?.label ?? ideology;
 
   return (
-    <Card className="facet-hierarchy-child">
+    <Card className="">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-amber-600" />
+            <Users className="text-yellow h-4 w-4" />
             Political Parties
           </span>
           <Dialog
@@ -240,15 +241,15 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
                   </div>
                   <div>
                     <Label>Base Support ({formData.baseSupport}%)</Label>
-                    <input
-                      type="range"
+                    <Slider
+                      aria-label="Base support"
                       min={1}
                       max={80}
-                      value={formData.baseSupport}
-                      onChange={(e) =>
-                        setFormData({ ...formData, baseSupport: Number(e.target.value) })
+                      value={[formData.baseSupport]}
+                      onValueChange={([v]) =>
+                        v !== undefined && setFormData({ ...formData, baseSupport: v })
                       }
-                      className="mt-2 w-full"
+                      className="mt-2 w-full py-2"
                     />
                   </div>
                 </div>
@@ -267,9 +268,9 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
       </CardHeader>
       <CardContent>
         {parties.length === 0 ? (
-          <div className="text-muted-foreground py-6 text-center">
+          <div className="text-label-secondary py-6 text-center">
             <Users className="mx-auto mb-3 h-8 w-8 opacity-50" />
-            <p className="text-sm">
+            <p className="text-body">
               No political parties yet. Create your first party to get started.
             </p>
           </div>
@@ -279,7 +280,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
               <div
                 key={party.id}
                 data-focus-id={party.id}
-                className="hover:bg-muted/30 flex items-center justify-between rounded-lg border p-3 transition-colors"
+                className="hover:bg-fill-4 rounded-control flex items-center justify-between border p-3 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <div
@@ -290,11 +291,13 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{party.name}</span>
                       {party.shortName && (
-                        <span className="text-muted-foreground text-xs">({party.shortName})</span>
+                        <span className="text-label-secondary text-footnote">
+                          ({party.shortName})
+                        </span>
                       )}
                     </div>
-                    <div className="text-muted-foreground flex items-center gap-2 text-xs">
-                      <Badge variant="outline" className="text-xs">
+                    <div className="text-label-secondary text-footnote flex items-center gap-2">
+                      <Badge variant="outline" className="text-footnote">
                         {ideologyLabel(party.ideology)}
                       </Badge>
                       {party.leaderName && <span>Led by {party.leaderName}</span>}
@@ -303,8 +306,8 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="text-right">
-                    <div className="text-sm font-semibold">{party.currentSupport.toFixed(1)}%</div>
-                    <div className="text-muted-foreground text-xs">support</div>
+                    <div className="text-headline">{party.currentSupport.toFixed(1)}%</div>
+                    <div className="text-label-secondary text-footnote">support</div>
                   </div>
                   <Button
                     variant="ghost"
@@ -318,7 +321,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
                     variant="ghost"
                     size="sm"
                     onClick={() => deleteParty.mutate({ id: party.id })}
-                    className="h-7 w-7 p-0 text-red-500 hover:text-red-600"
+                    className="text-red hover:text-red h-7 w-7 p-0"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>

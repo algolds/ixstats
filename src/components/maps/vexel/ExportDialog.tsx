@@ -1,7 +1,8 @@
 "use client";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
-import { Eyebrow } from "~/components/ui/eyebrow";
+import { Badge } from "~/components/ui/badge";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import React, { useState } from "react";
 import { useVexelEditor } from "./VexelEditorProvider";
 
@@ -84,55 +85,42 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="facet-modal text-muted-foreground max-w-md gap-0 rounded-2xl p-6 text-xs">
-        <DialogHeader className="border-border mb-4 border-b pb-4">
-          <DialogTitle className="text-sm">Export achievements</DialogTitle>
+      <DialogContent className="text-label-secondary text-footnote max-w-md gap-0 p-6">
+        <DialogHeader className="border-separator mb-4 border-b pb-4">
+          <DialogTitle className="text-body">Export achievements</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Format selection */}
-          <div className="space-y-2">
-            <Eyebrow>Download Vectors</Eyebrow>
-            <button
-              onClick={handleDownloadSvg}
-              className="border-border bg-muted hover:border-border hover:bg-accent flex w-full items-center justify-between rounded-lg border px-4 py-2.5 text-left font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none"
-            >
-              <span>Download Vector SVG</span>
-              <span className="border-border text-muted-foreground rounded border px-1.5 py-0.5 font-mono text-xs">
-                SVG
-              </span>
-            </button>
-          </div>
-
-          <div className="space-y-2">
-            <Eyebrow>Download Raster Images</Eyebrow>
-            <div className="grid grid-cols-2 gap-2">
-              <button
+          <FacetList>
+            <FacetListSection header="Download vectors">
+              <FacetRow
+                title="Download vector SVG"
+                trailing={<Badge variant="neutral">SVG</Badge>}
+                onClick={handleDownloadSvg}
+              />
+            </FacetListSection>
+            <FacetListSection header="Download raster images">
+              <FacetRow
+                title="Small PNG"
+                subtitle={<span className="tabular-nums">256 × 256 px</span>}
+                disabled={exporting}
                 onClick={() => handleDownloadPng(256)}
+              />
+              <FacetRow
+                title="Large PNG"
+                subtitle={<span className="tabular-nums">1024 × 1024 px</span>}
                 disabled={exporting}
-                className="border-border bg-muted hover:border-border hover:bg-accent flex flex-col items-center gap-1 rounded-lg border px-4 py-2.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] disabled:opacity-50"
-              >
-                <span>Small PNG</span>
-                <span className="text-muted-foreground font-mono text-xs">256 x 256 px</span>
-              </button>
-
-              <button
                 onClick={() => handleDownloadPng(1024)}
-                disabled={exporting}
-                className="border-border bg-muted hover:border-border hover:bg-accent flex flex-col items-center gap-1 rounded-lg border px-4 py-2.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] disabled:opacity-50"
-              >
-                <span>Large PNG</span>
-                <span className="text-muted-foreground font-mono text-xs">1024 x 1024 px</span>
-              </button>
-            </div>
-          </div>
+              />
+            </FacetListSection>
+          </FacetList>
 
           {/* Commons attribution notice */}
           {customChargesUsed.length > 0 && (
-            <div className="rounded-lg border border-amber-500/10 bg-amber-500/5 p-3 text-xs leading-relaxed text-amber-500">
-              <span className="mb-1 block font-bold">Attribution required</span>
+            <div className="rounded-row bg-yellow/15 text-footnote text-yellow-ink p-3 leading-relaxed">
+              <span className="mb-1 block font-semibold">Attribution required</span>
               This composition includes charges imported from Wikimedia Commons:
-              <ul className="text-muted-foreground mt-1 list-disc space-y-0.5 pl-4 font-mono text-xs">
+              <ul className="text-label-secondary text-footnote mt-1 list-disc space-y-0.5 pl-4 font-mono">
                 {customChargesUsed.map((c, i) => (
                   <li key={i}>{c.chargeId}</li>
                 ))}

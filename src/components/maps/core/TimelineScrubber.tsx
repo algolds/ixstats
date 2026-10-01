@@ -16,7 +16,7 @@ import { IxTime } from "~/lib/ixtime";
 import { Slider } from "~/components/ui/slider";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 
 export interface TimelineScrubberProps {
   /** Current scrubber value (epoch ms). `null` = at "now", show live data. */
@@ -93,19 +93,19 @@ export function TimelineScrubber({ value, onChange, hidden, className }: Timelin
   if (!expanded && isAtNow) {
     return (
       <div {...stopMapEvents} className={`absolute right-4 bottom-12 z-20 ${className ?? ""}`}>
-        <FacetContainer depth={2} className="rounded-full">
+        <FacetMaterial material="regular" className="rounded-full">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={() => setExpanded(true)}
             aria-expanded={false}
-            className="text-muted-foreground rounded-full"
+            className="text-label-secondary rounded-full"
           >
             <Clock aria-hidden />
             Timeline
           </Button>
-        </FacetContainer>
+        </FacetMaterial>
       </div>
     );
   }
@@ -115,11 +115,11 @@ export function TimelineScrubber({ value, onChange, hidden, className }: Timelin
       {...stopMapEvents}
       className={`absolute right-4 bottom-12 z-20 w-80 max-w-[calc(100vw-2rem)] ${className ?? ""}`}
     >
-      <FacetContainer
-        depth={2}
+      <FacetMaterial
+        material="regular"
         role="group"
         aria-label="Historical timeline"
-        className="rounded-2xl p-4"
+        className="rounded-card p-4"
       >
         <div className="mb-2 flex items-center justify-between gap-2">
           <Eyebrow>Historical timeline</Eyebrow>
@@ -137,7 +137,7 @@ export function TimelineScrubber({ value, onChange, hidden, className }: Timelin
                 if (!isAtNow) onChange(null);
                 setExpanded(false);
               }}
-              className="text-muted-foreground h-7 w-7 rounded-full"
+              className="text-label-secondary h-7 w-7 rounded-full"
               aria-label={isAtNow ? "Close timeline" : "Return to present and close timeline"}
             >
               <Xmark aria-hidden />
@@ -154,7 +154,7 @@ export function TimelineScrubber({ value, onChange, hidden, className }: Timelin
           aria-label="Historical timeline scrubber"
         />
 
-        <div className="text-muted-foreground mt-2 flex items-center justify-between text-xs">
+        <div className="text-label-secondary text-footnote mt-2 flex items-center justify-between">
           <span>{IxTime.formatIxTime(minTime)}</span>
           <span className="mx-2 truncate" title={label}>
             {label}
@@ -162,11 +162,11 @@ export function TimelineScrubber({ value, onChange, hidden, className }: Timelin
           <span>{IxTime.formatIxTime(maxTime)}</span>
         </div>
 
-        <p className="text-muted-foreground mt-2 text-xs leading-snug">
+        <p className="text-label-secondary text-footnote mt-2 leading-snug">
           Shows the political layer as of the selected date. Snapshots reflect editor history;
           countries without edits show their current border at every date.
         </p>
-      </FacetContainer>
+      </FacetMaterial>
     </div>
   );
 }

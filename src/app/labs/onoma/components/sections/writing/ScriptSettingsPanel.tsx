@@ -9,11 +9,15 @@ import {
   FloppyDisk as Save,
   Plus,
   Compass,
-  Check,
 } from "iconoir-react";
-import { FacetMaterial } from "~/components/ui/facet";
-import { cn } from "~/lib/utils";
 import type { ScriptTypology, ScriptDirection, Glyph } from "./types";
+import { Input } from "~/components/ui/input";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface ScriptSettingsPanelProps {
   systems: any[] | undefined;
@@ -63,209 +67,161 @@ export function ScriptSettingsPanel({
   return (
     <div className="space-y-4">
       {/* Script Directory */}
-      <FacetMaterial
-        material="satin"
-        className="border-border/30 space-y-3 rounded-2xl border p-4 shadow-sm"
-      >
-        <div className="border-border/40 flex items-center justify-between border-b pb-2.5">
-          <div className="flex items-center gap-2.5">
-            <div className="bg-onoma-primary/10 text-onoma-primary dark:bg-onoma-primary/15 flex h-7 w-7 items-center justify-center rounded-xl">
+      <FacetCard variant="inset" padding="none" className="space-y-3 p-4">
+        <div className="border-separator flex items-center justify-between border-b pb-2">
+          <div className="flex items-center gap-2">
+            <div className="bg-tint/10 text-tint rounded-row flex h-7 w-7 items-center justify-center">
               <Feather className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-foreground text-xs font-bold tracking-wider uppercase">
-                Script Directory
-              </h3>
-              <p className="text-muted-foreground text-[10px]">Active & saved conlang scripts</p>
+              <h3 className="text-label text-subhead">Script Directory</h3>
+              <p className="text-label-secondary text-caption">Active & saved conlang scripts</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => onSelectSystem(null)}
-            className="hover:border-onoma-primary/40 hover:bg-onoma-primary/10 border-border/40 bg-secondary/20 text-onoma-primary flex cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 py-1 text-[10px] font-bold transition-all active:scale-[0.97]"
-          >
+          <Button variant="tinted" size="sm" onClick={() => onSelectSystem(null)}>
             <Plus className="h-3 w-3" />
             <span>New Script</span>
-          </button>
+          </Button>
         </div>
 
         {listLoading ? (
-          <div className="text-muted-foreground py-2 text-xs">Loading scripts...</div>
+          <div className="text-label-secondary text-footnote py-2">Loading scripts...</div>
         ) : !systems || systems.length === 0 ? (
-          <div className="text-muted-foreground py-2 text-xs italic">
+          <div className="text-label-secondary text-footnote py-2 italic">
             No writing systems saved yet. Create your first script below!
           </div>
         ) : (
-          <div className="flex flex-col gap-1.5">
+          <FacetListSection variant="plain" aria-label="Script systems">
             {systems.map((s: any) => {
-              const isSelected = selectedSystemId === s.id;
               const glyphCount = Array.isArray(s.glyphs) ? s.glyphs.length : 0;
-
               return (
-                <button
+                <FacetRow
                   key={s.id}
-                  type="button"
                   onClick={() => onSelectSystem(s.id)}
-                  className={cn(
-                    "flex cursor-pointer items-center justify-between rounded-xl border px-3 py-2 text-left text-xs transition-all active:scale-[0.98]",
-                    isSelected
-                      ? "border-onoma-primary/50 bg-onoma-primary/10 text-onoma-primary font-semibold shadow-xs"
-                      : "border-border/30 bg-background/50 hover:bg-secondary/20 text-foreground"
-                  )}
-                >
-                  <span className="truncate font-medium">{s.name}</span>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <span className="text-muted-foreground bg-secondary/40 rounded px-1.5 py-0.5 font-mono text-[9px] capitalize">
-                      {s.scriptType}
+                  selected={selectedSystemId === s.id}
+                  selectionStyle="tint"
+                  title={<span className="text-footnote truncate">{s.name}</span>}
+                  trailing={
+                    <span className="flex shrink-0 items-center gap-2">
+                      <Badge variant="neutral" className="font-mono capitalize">
+                        {s.scriptType}
+                      </Badge>
+                      <Badge variant="neutral" className="font-mono">
+                        {glyphCount} glyphs
+                      </Badge>
                     </span>
-                    <span className="text-muted-foreground bg-secondary/40 rounded px-1.5 py-0.5 font-mono text-[9px]">
-                      {glyphCount} glyphs
-                    </span>
-                  </div>
-                </button>
+                  }
+                />
               );
             })}
-          </div>
+          </FacetListSection>
         )}
-      </FacetMaterial>
+      </FacetCard>
 
       {/* Script Typology & Configuration Form */}
-      <FacetMaterial
-        material="satin"
-        className="border-border/30 space-y-4 rounded-2xl border p-4 shadow-sm"
-      >
-        <div className="border-border/40 flex items-center justify-between border-b pb-2.5">
-          <div className="flex items-center gap-2.5">
-            <div className="bg-secondary/40 text-foreground flex h-7 w-7 items-center justify-center rounded-xl">
+      <FacetCard variant="inset" padding="none" className="space-y-4 p-4">
+        <div className="border-separator flex items-center justify-between border-b pb-2">
+          <div className="flex items-center gap-2">
+            <div className="bg-fill-3 text-label rounded-row flex h-7 w-7 items-center justify-center">
               <Compass className="h-4 w-4" />
             </div>
             <div>
-              <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
-                Script Settings
-              </h4>
-              <p className="text-muted-foreground text-[10px]">
+              <h4 className="text-label text-subhead">Script Settings</h4>
+              <p className="text-label-secondary text-caption">
                 Typological model & reading direction
               </p>
             </div>
           </div>
 
           {selectedSystemId && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onDeleteSystem}
               disabled={isDeleting}
-              className="text-muted-foreground flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold transition-colors hover:bg-red-500/10 hover:text-red-400 active:scale-[0.97]"
+              className="text-label-secondary hover:text-red text-label-secondary hover:text-red hover:bg-red/10"
             >
               <Trash2 className="h-3 w-3" />
               <span>Delete</span>
-            </button>
+            </Button>
           )}
         </div>
 
-        <div className="space-y-3.5">
+        <div className="space-y-4">
           {/* Script Name */}
           <div>
-            <label className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
-              Script Name
-            </label>
-            <input
+            <label className="text-label-secondary text-subhead mb-1 block">Script Name</label>
+            <Input
               type="text"
               required
               value={systemName}
               onChange={(e) => onSystemNameChange(e.target.value)}
               placeholder="e.g. High Elvish Tengwar, Eldritch Runes"
-              className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/60 focus:border-onoma-primary/60 focus:ring-onoma-primary/20 w-full rounded-xl border px-3.5 py-2 text-xs font-medium transition-all outline-none focus:ring-2"
+              className="text-footnote w-full font-medium"
             />
           </div>
 
           {/* Typology Segmented Cards */}
           <div>
-            <label className="text-muted-foreground mb-1.5 block text-[10px] font-bold tracking-wider uppercase">
+            <label
+              id="script-typology-label"
+              className="text-label-secondary text-subhead mb-2 block"
+            >
               Typological Model
             </label>
-            <div className="grid grid-cols-2 gap-1.5">
-              {TYPOLOGY_OPTIONS.map((opt) => {
-                const isSelected = scriptType === opt.value;
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => onScriptTypeChange(opt.value)}
-                    className={cn(
-                      "flex cursor-pointer flex-col rounded-xl border p-2.5 text-left transition-all active:scale-[0.97]",
-                      isSelected
-                        ? "border-onoma-primary/60 bg-onoma-primary/10 text-foreground font-semibold shadow-xs"
-                        : "border-border/30 bg-background/50 hover:bg-secondary/20 text-muted-foreground"
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-foreground text-xs font-bold">{opt.label}</span>
-                      {isSelected && <Check className="text-onoma-primary h-3 w-3" />}
-                    </div>
-                    <span className="mt-0.5 text-[9px] opacity-75">{opt.desc}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <RadioCardGroup
+              aria-labelledby="script-typology-label"
+              columns={2}
+              value={scriptType}
+              onValueChange={(v) => onScriptTypeChange(v as ScriptTypology)}
+              className="gap-2"
+            >
+              {TYPOLOGY_OPTIONS.map((opt) => (
+                <RadioCard
+                  key={opt.value}
+                  value={opt.value}
+                  title={opt.label}
+                  description={opt.desc}
+                />
+              ))}
+            </RadioCardGroup>
           </div>
 
           {/* Direction Segmented Control */}
           <div>
-            <label className="text-muted-foreground mb-1.5 block text-[10px] font-bold tracking-wider uppercase">
+            <label
+              id="script-direction-label"
+              className="text-label-secondary text-subhead mb-2 block"
+            >
               Writing Direction
             </label>
-            <div className="border-border/40 bg-secondary/20 grid grid-cols-3 gap-1 rounded-xl border p-1">
-              <button
-                type="button"
-                onClick={() => onDirectionChange("ltr")}
-                className={cn(
-                  "cursor-pointer rounded-lg py-1.5 text-center text-[10px] font-semibold transition-all active:scale-[0.97]",
-                  direction === "ltr"
-                    ? "bg-background text-foreground font-bold shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Left → Right
-              </button>
-              <button
-                type="button"
-                onClick={() => onDirectionChange("rtl")}
-                className={cn(
-                  "cursor-pointer rounded-lg py-1.5 text-center text-[10px] font-semibold transition-all active:scale-[0.97]",
-                  direction === "rtl"
-                    ? "bg-background text-foreground font-bold shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Right → Left
-              </button>
-              <button
-                type="button"
-                onClick={() => onDirectionChange("ttb")}
-                className={cn(
-                  "cursor-pointer rounded-lg py-1.5 text-center text-[10px] font-semibold transition-all active:scale-[0.97]",
-                  direction === "ttb"
-                    ? "bg-background text-foreground font-bold shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Top → Bottom
-              </button>
-            </div>
+            <SegmentedControl
+              size="sm"
+              fullWidth
+              aria-labelledby="script-direction-label"
+              value={direction}
+              onValueChange={onDirectionChange}
+              options={[
+                { value: "ltr", label: "Left → Right" },
+                { value: "rtl", label: "Right → Left" },
+                { value: "ttb", label: "Top → Bottom" },
+              ]}
+            />
           </div>
 
           {/* Save Script System Action */}
-          <button
+          <Button
+            size="sm"
             type="button"
             onClick={onSaveSystem}
             disabled={isSaving || !systemName.trim()}
-            className="bg-onoma-primary hover:bg-onoma-primary-hover flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-semibold text-white shadow-xs transition-all active:scale-[0.97] disabled:opacity-40"
+            className="w-full justify-center"
           >
             <Save className="h-4 w-4" />
             <span>{isSaving ? "Saving System..." : "Save Writing System"}</span>
-          </button>
+          </Button>
         </div>
-      </FacetMaterial>
+      </FacetCard>
     </div>
   );
 }

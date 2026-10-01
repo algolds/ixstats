@@ -43,12 +43,12 @@ export const EmptyState = React.memo(function EmptyState({
   onEstablishEmbassy,
 }: EmptyStateProps) {
   return (
-    <FacetCard depth={1} className="rounded-2xl px-6 py-12">
+    <FacetCard className="rounded-card px-6 py-12">
       <div className="space-y-4 text-center">
-        <Building2 className="text-muted-foreground mx-auto h-8 w-8" />
+        <Building2 className="text-label-secondary mx-auto h-8 w-8" />
         <div>
-          <h3 className="text-foreground mb-1 text-base font-semibold">No embassies yet</h3>
-          <p className="text-muted-foreground mx-auto max-w-md text-sm">
+          <h3 className="text-label text-title-3 mb-1">No embassies yet</h3>
+          <p className="text-label-secondary text-body mx-auto max-w-md">
             Establish embassies with other countries to unlock atomic synergies and diplomatic
             bonuses.
           </p>

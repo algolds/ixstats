@@ -33,7 +33,7 @@ export function BuilderResetConfirmDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="sm:max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-foreground">
+          <AlertDialogTitle className="text-label">
             {isEdit ? "Discard Changes & Exit?" : "Reset Builder Progress?"}
           </AlertDialogTitle>
           <AlertDialogDescription className="leading-relaxed">

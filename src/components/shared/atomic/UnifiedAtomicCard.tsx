@@ -35,25 +35,25 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
 
   const getCardClasses = () => {
     if (isSelected) {
-      return `border-2 border-${themeClasses.selectedBorder} bg-${themeClasses.selectedBg} dark:bg-${themeClasses.selectedBgDark} shadow-lg`;
+      return `border-2 border-${themeClasses.selectedBorder} bg-${themeClasses.selectedBg} ${themeClasses.selectedBgDark} shadow-floating`;
     }
     if (hasConflict && !isSelected) {
-      return `border-2 border-${themeClasses.conflictBorder} bg-${themeClasses.conflictBg} dark:bg-${themeClasses.conflictBgDark} opacity-60`;
+      return `border-2 border-${themeClasses.conflictBorder} bg-${themeClasses.conflictBg} ${themeClasses.conflictBgDark} opacity-60`;
     }
     if (hasSynergy && !isSelected) {
-      return `border-2 border-${themeClasses.synergyBorder} bg-${themeClasses.synergyBg} dark:bg-${themeClasses.synergyBgDark}`;
+      return `border-2 border-${themeClasses.synergyBorder} bg-${themeClasses.synergyBg} ${themeClasses.synergyBgDark}`;
     }
     if (isDisabled) {
-      return "border-2 border-border opacity-50 cursor-not-allowed";
+      return "border-2 border-separator opacity-50 cursor-not-allowed";
     }
-    return `border-2 border-border hover:border-${themeClasses.primaryLight}/50 hover:shadow-md`;
+    return `border-2 border-separator hover:border-${themeClasses.primaryLight}/50 hover:shadow-card`;
   };
 
   const getIconColor = () => {
     if (isSelected) {
       return `text-${themeClasses.primary}`;
     }
-    return "text-muted-foreground";
+    return "text-label-secondary";
   };
 
   return (
@@ -64,18 +64,22 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
       whileHover={{ scale: isDisabled ? 1 : 1.02 }}
       whileTap={{ scale: isDisabled ? 1 : 0.98 }}
       transition={{ duration: 0.2 }}
-      className={cn("cursor-pointer rounded-lg p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]", getCardClasses(), className)}
+      className={cn(
+        "rounded-control cursor-pointer p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+        getCardClasses(),
+        className
+      )}
       onClick={isDisabled ? undefined : onToggle}
     >
       {/* Header */}
       <div className="mb-1 flex items-start justify-between">
-        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <div
             className={cn(
-              "shrink-0 rounded-md p-1",
+              "rounded-control-sm shrink-0 p-1",
               isSelected
                 ? `${getEffectivenessBgColor(component.effectiveness)} ${getIconColor()}`
-                : "bg-muted"
+                : "bg-fill-3"
             )}
           >
             {component.icon && typeof component.icon === "function" ? (
@@ -84,46 +88,42 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
               <Info className="h-3 w-3" />
             )}
           </div>
-          <h4 className="text-foreground truncate text-xs leading-tight font-semibold">
+          <h4 className="text-label text-caption truncate leading-tight font-semibold">
             {component.name}
           </h4>
         </div>
 
         <div className="ml-1 flex shrink-0 items-center gap-0.5">
-          <Badge variant="outline" className="h-4 px-1 text-xs leading-none">
+          <Badge variant="outline" className="text-footnote h-4 px-1 leading-none">
             {component.effectiveness}%
           </Badge>
-          {isSelected && <CheckCircle className="h-3 w-3 text-green-500 dark:text-green-400" />}
-          {hasConflict && !isSelected && (
-            <AlertCircle className="h-3 w-3 text-red-500 dark:text-red-400" />
-          )}
-          {hasSynergy && !isSelected && (
-            <TrendingUp className="h-3 w-3 text-green-500 dark:text-green-400" />
-          )}
+          {isSelected && <CheckCircle className="text-green h-3 w-3" />}
+          {hasConflict && !isSelected && <AlertCircle className="text-red h-3 w-3" />}
+          {hasSynergy && !isSelected && <TrendingUp className="text-green h-3 w-3" />}
         </div>
       </div>
 
       {/* Description */}
-      <p className="text-muted-foreground mb-1 line-clamp-2 text-xs leading-snug">
+      <p className="text-label-secondary text-footnote mb-1 line-clamp-2 leading-snug">
         {component.description}
       </p>
 
       {/* Metadata */}
       <div className="space-y-0.5">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Impl:</span>
+        <div className="text-footnote flex items-center justify-between">
+          <span className="text-label-secondary">Impl:</span>
           <span className="font-medium">${(component.implementationCost / 1000).toFixed(0)}k</span>
         </div>
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Annual:</span>
+        <div className="text-footnote flex items-center justify-between">
+          <span className="text-label-secondary">Annual:</span>
           <span className="font-medium">${(component.maintenanceCost / 1000).toFixed(0)}k</span>
         </div>
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">Complexity:</span>
+        <div className="text-footnote flex items-center justify-between">
+          <span className="text-label-secondary">Complexity:</span>
           <Badge
             variant="secondary"
             className={cn(
-              "h-3.5 px-1 text-xs leading-none",
+              "text-footnote h-3.5 px-1 leading-none",
               getComplexityBgColor(component.metadata.complexity),
               getComplexityColor(component.metadata.complexity)
             )}
@@ -134,17 +134,17 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
       </div>
 
       {/* Additional Metadata */}
-      <div className="border-border/50 mt-1 flex items-center gap-2 border-t pt-1">
-        <span className="text-muted-foreground flex items-center gap-0.5 text-xs">
+      <div className="border-separator mt-1 flex items-center gap-2 border-t pt-1">
+        <span className="text-label-secondary text-footnote flex items-center gap-0.5">
           <Clock className="h-2.5 w-2.5" />
           {component.metadata.timeToImplement}
         </span>
-        <span className="text-muted-foreground flex items-center gap-0.5 text-xs">
+        <span className="text-label-secondary text-footnote flex items-center gap-0.5">
           <Users className="h-2.5 w-2.5" />
           {component.metadata.staffRequired}
         </span>
         {component.metadata.technologyRequired && (
-          <span className="flex items-center gap-0.5 text-xs text-blue-500 dark:text-blue-400">
+          <span className="text-footnote text-blue flex items-center gap-0.5">
             <Zap className="h-2.5 w-2.5" />
             Tech
           </span>
@@ -153,8 +153,8 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
 
       {/* Prerequisites */}
       {component.prerequisites.length > 0 && (
-        <div className="border-border/50 mt-1 border-t pt-1">
-          <p className="text-muted-foreground truncate text-xs">
+        <div className="border-separator mt-1 border-t pt-1">
+          <p className="text-label-secondary text-footnote truncate">
             <span className="font-medium">Requires:</span>{" "}
             {component.prerequisites
               .map((p) =>

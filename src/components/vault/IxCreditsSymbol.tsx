@@ -6,6 +6,14 @@ import { cn } from "~/lib/utils";
 interface IxCreditsSymbolProps extends React.SVGProps<SVGSVGElement> {
   size?: number | string;
   variant?: "ic" | "double-slash";
+  /**
+   * Hide the symbol from assistive technology. By default it is the unit of the figure next to
+   * it (`role="img"`, `aria-label="IxCredits"`), so "1,250" is announced as "IxCredits 1,250".
+   * Pass `decorative` when a visible unit label already names the currency ("IxCredits",
+   * "IxC") or the symbol is pure ornament, so it is not announced twice. An explicit
+   * `aria-hidden` does the same.
+   */
+  decorative?: boolean;
 }
 
 /**
@@ -16,15 +24,23 @@ interface IxCreditsSymbolProps extends React.SVGProps<SVGSVGElement> {
  *
  * Optimized with a tight 13:20 aspect ratio viewBox to remove horizontal padding
  * and sit flush next to numeric text values.
+ *
+ * Accessible name: "IxCredits" (`role="img"`) unless `decorative` (or `aria-hidden`).
  */
 export function IxCreditsSymbol({
   className,
   size = "1em",
   variant = "ic",
+  decorative = false,
   ...props
 }: IxCreditsSymbolProps) {
+  const hidden = decorative || props["aria-hidden"] === true || props["aria-hidden"] === "true";
+  const a11y = hidden
+    ? ({ "aria-hidden": true } as const)
+    : ({ role: "img", "aria-label": "IxCredits" } as const);
   return (
     <svg
+      {...a11y}
       xmlns="http://www.w3.org/2000/svg"
       width={size}
       height={size}

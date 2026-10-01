@@ -11,6 +11,7 @@ import {
   PHONOLOGY_RULES_KEY,
   OVERRIDES_UPDATED_EVENT,
 } from "~/lib/onoma/ipa-overrides";
+import { Button } from "~/components/ui/button";
 
 interface ConlangDataManagerPanelProps {
   onImportComplete: (backup: any) => void;
@@ -169,32 +170,29 @@ export function ConlangDataManagerPanel({ onImportComplete }: ConlangDataManager
   };
 
   return (
-    <div className="border-border/40 bg-secondary/5 space-y-4 rounded-xl border p-4 text-left">
-      <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
-        Browser Conlang Data Manager
-      </h4>
-      <p className="text-muted-foreground text-[10px] leading-normal">
+    <div className="border-separator bg-fill-4 rounded-row space-y-4 border p-4 text-left">
+      <h4 className="text-label text-subhead">Browser Conlang Data Manager</h4>
+      <p className="text-label-secondary text-caption leading-normal">
         All conlang dictionary definitions, custom pronunciation rules, and overrides are stored
         device-locally. Use these controls to backup, restore, or clear your data.
       </p>
 
       <div className="grid gap-3 pt-1 sm:grid-cols-3">
         {/* Backup / Export */}
-        <button
-          onClick={handleExportData}
-          className="border-border/60 bg-background text-foreground hover:bg-secondary/40 flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors"
-        >
-          <Download className="text-onoma-primary h-3.5 w-3.5" /> Export Backup File
-        </button>
+        <Button variant="bordered" size="sm" onClick={handleExportData} className="justify-center">
+          <Download className="text-tint h-3.5 w-3.5" /> Export Backup File
+        </Button>
 
         {/* Restore / Import */}
-        <label className="border-border/60 bg-background text-foreground hover:bg-secondary/40 flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors select-none">
-          <Upload className="h-3.5 w-3.5 text-emerald-500" /> Import Backup File
+        <label className="border-separator bg-background text-label hover:bg-fill-3 rounded-control text-footnote flex cursor-pointer items-center justify-center gap-2 border px-3 py-2 font-semibold transition-colors select-none">
+          <Upload className="text-green h-3.5 w-3.5" /> Import Backup File
           <input type="file" accept=".json" onChange={handleImportData} className="hidden" />
         </label>
 
         {/* Clear Actions */}
-        <button
+        <Button
+          variant="bordered"
+          size="md"
           onClick={() => {
             if (
               confirm(
@@ -204,10 +202,10 @@ export function ConlangDataManagerPanel({ onImportComplete }: ConlangDataManager
               handleClearData("all");
             }
           }}
-          className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs font-semibold text-red-600 transition-colors hover:bg-red-500/10"
+          className="text-red hover:bg-red/10 justify-center"
         >
           <Trash2 className="h-3.5 w-3.5" /> Clear All Data
-        </button>
+        </Button>
       </div>
     </div>
   );

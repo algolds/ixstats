@@ -34,7 +34,9 @@ import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { growthModifierToLevelShift } from "~/lib/economy/calculations";
 import { GROWTH_EFFECT_YEARS } from "~/lib/intent/assemble";
 
-function makeDb(intent: { id: string; countryId: string } | null) {
+type IntentFixture = { id: string; countryId: string; status: string; tier: string };
+
+function makeDb(intent: IntentFixture | null) {
   return {
     intent: {
       findUnique: jest.fn(async () => intent),
@@ -69,12 +71,20 @@ function makeDb(intent: { id: string; countryId: string } | null) {
   };
 }
 
+// A signed-out visitor: getOutcome serves enacted directives to anyone.
 const ctxFor = (db: ReturnType<typeof makeDb>) =>
   createMockRouterContext({ db, auth: { userId: null }, user: null }) as never;
+// suggest is the owner's (it reads the nation's weekly slots and broker standing).
+const ownerCtxFor = (db: ReturnType<typeof makeDb>) =>
+  createMockRouterContext({
+    db,
+    auth: { userId: "owner_clerk" },
+    user: { id: "owner_db", clerkUserId: "owner_clerk", countryId: "c1", role: { name: "member" } },
+  }) as never;
 
 describe("intent.getOutcome", () => {
   it("returns the directive's ledger rows (numeric before/after) and its GDP effect", async () => {
-    const db = makeDb({ id: "intent_1", countryId: "c1" });
+    const db = makeDb({ id: "intent_1", countryId: "c1", status: "active", tier: "measured" });
     const caller = createCallerFactory(intentRouter)(ctxFor(db));
     const out = await caller.getOutcome({ intentId: "intent_1" });
 
@@ -109,7 +119,7 @@ describe("intent.getOutcome", () => {
 describe("intent.suggest", () => {
   it("adds the GDP level shift commit() would record to each package", async () => {
     const db = makeDb(null);
-    const caller = createCallerFactory(intentRouter)(ctxFor(db));
+    const caller = createCallerFactory(intentRouter)(ownerCtxFor(db));
     const res = await caller.suggest({ countryId: "c1", goal: "Create industrial jobs" });
 
     for (const p of res.packages) {

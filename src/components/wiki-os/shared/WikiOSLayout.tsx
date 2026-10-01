@@ -201,39 +201,39 @@ export function WikiOSLayout({
         </WikiOSContentWrapper>
       </DashboardSidebarLayout>
 
-      <footer className="wikios-main-footer text-muted-foreground/40 mt-16 flex flex-col items-center justify-center gap-3.5 border-t border-white/5 pt-8 pb-10 text-center text-xs font-[var(--wikios-font-brand)]">
+      <footer className="wikios-main-footer text-label-secondary border-separator text-footnote mt-16 flex flex-col items-center justify-center gap-4 border-t pt-8 pb-10 text-center font-[var(--wikios-font-brand)]">
         <Popover>
           <PopoverTrigger asChild>
-            <button className="group flex cursor-pointer flex-col items-center justify-center gap-2 opacity-80 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none hover:opacity-100 active:scale-95">
-              <WikiOSLogomark className="h-7 w-auto text-zinc-900 transition-transform duration-300 group-hover:scale-105 dark:text-zinc-100" />
-              <div className="text-muted-foreground/70 group-hover:text-muted-foreground flex items-center gap-1.5 text-xs font-[var(--wikios-font-brand)] font-medium tracking-wide">
-                <span className="text-foreground/80 group-hover:text-foreground font-semibold">
+            <button className="group flex cursor-pointer flex-col items-center justify-center gap-2 opacity-80 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none hover:opacity-100 active:scale-[0.98]">
+              <WikiOSLogomark className="text-label h-7 w-auto transition-transform duration-300" />
+              <div className="text-label-secondary group-hover:text-label-secondary text-caption flex items-center gap-2 font-[var(--wikios-font-brand)]">
+                <span className="text-label-secondary group-hover:text-label font-semibold">
                   Powered by wikiOS
                 </span>
-                <span className="text-muted-foreground/40">•</span>
-                <span className="text-muted-foreground/60 font-medium tabular-nums">
+                <span className="text-label-secondary">•</span>
+                <span className="text-label-secondary font-medium tabular-nums">
                   v{WIKIOS_VERSION}
                 </span>
               </div>
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-80 p-4 text-left font-[var(--wikios-font-ui)]">
-            <PopoverTitle className="mb-1 text-sm font-[var(--wikios-font-brand)] font-bold text-[var(--wikios-text)]">
+            <PopoverTitle className="text-headline text-label mb-1 font-[var(--wikios-font-brand)]">
               About WikiOS
             </PopoverTitle>
-            <PopoverDescription className="text-xs leading-relaxed text-[var(--wikios-text-muted)]">
+            <PopoverDescription className="text-footnote text-label-secondary leading-relaxed">
               WikiOS is the next-generation sovereign wiki engine and reading environment for
               IxStates and worldbuilding communities.
             </PopoverDescription>
           </PopoverContent>
         </Popover>
 
-        <div className="text-muted-foreground/60 flex items-center justify-center gap-4 text-xs font-[var(--wikios-font-ui)]">
-          <a href={ixstatesHref("/terms")} className="transition-colors hover:text-amber-400">
+        <div className="text-label-secondary text-footnote flex items-center justify-center gap-4 font-[var(--wikios-font-ui)]">
+          <a href={ixstatesHref("/terms")} className="hover:text-yellow transition-colors">
             Terms of Service
           </a>
           <span>•</span>
-          <a href={ixstatesHref("/privacy")} className="transition-colors hover:text-amber-400">
+          <a href={ixstatesHref("/privacy")} className="hover:text-yellow transition-colors">
             Privacy Policy
           </a>
         </div>

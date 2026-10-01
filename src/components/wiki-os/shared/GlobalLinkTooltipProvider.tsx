@@ -15,7 +15,9 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { createPortal } from "react-dom";
+import { Badge } from "~/components/ui/badge";
+import { VirtualAnchorHoverCard } from "~/components/ui/hover-card";
+import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import {
   OpenBook as BookOpen,
@@ -32,14 +34,13 @@ import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 // ──────────────────────────────────────────────
 
 type DetectedLink =
-  | { kind: "wiki"; title: string; wiki: "ixwiki" | "iiwiki"; x: number; y: number }
-  | { kind: "forum"; threadId: number; x: number; y: number };
+  { kind: "wiki"; title: string; wiki: "ixwiki" | "iiwiki" } | { kind: "forum"; threadId: number };
 
 /** An absolute link to an article of the wiki, by the configured public host. */
 const ABSOLUTE_WIKI_LINK = new RegExp(`(?:https?:\\/\\/)?${mediaWikiHostPattern()}\\/wiki\\/([^#?]+)`);
 
 /** Parse a link href and return detection info, or null if not a recognized link */
-function detectLink(href: string, rect: DOMRect): DetectedLink | null {
+function detectLink(href: string): DetectedLink | null {
   // Wiki links: <public host>/wiki/Title, /wiki/Title (relative), or /wiki/Title (WikiOS)
   const ixMatch =
     href.match(ABSOLUTE_WIKI_LINK) ??
@@ -63,7 +64,7 @@ function detectLink(href: string, rect: DOMRect): DetectedLink | null {
       lowerTitle.startsWith("wiki:")
     )
       return null;
-    return { kind: "wiki", title, wiki: "ixwiki", x: clampX(rect), y: rect.bottom + 4 };
+    return { kind: "wiki", title, wiki: "ixwiki" };
   }
 
   // IIWiki links
@@ -85,7 +86,7 @@ function detectLink(href: string, rect: DOMRect): DetectedLink | null {
       lowerTitle.startsWith("wiki:")
     )
       return null;
-    return { kind: "wiki", title, wiki: "iiwiki", x: clampX(rect), y: rect.bottom + 4 };
+    return { kind: "wiki", title, wiki: "iiwiki" };
   }
 
   // Forum thread links: forum.ixwiki.com/threads/title.123/ or /threads/123/
@@ -93,18 +94,11 @@ function detectLink(href: string, rect: DOMRect): DetectedLink | null {
   if (forumMatch) {
     const threadId = parseInt(forumMatch[1]!, 10);
     if (!isNaN(threadId) && threadId > 0) {
-      return { kind: "forum", threadId, x: clampX(rect), y: rect.bottom + 4 };
+      return { kind: "forum", threadId };
     }
   }
 
   return null;
-}
-
-function clampX(rect: DOMRect): number {
-  return Math.min(
-    Math.max(rect.left, 8),
-    (typeof window !== "undefined" ? window.innerWidth : 1200) - 340
-  );
 }
 
 // ──────────────────────────────────────────────
@@ -112,7 +106,10 @@ function clampX(rect: DOMRect): number {
 // ──────────────────────────────────────────────
 
 export function GlobalLinkTooltips() {
-  const [activeLink, setActiveLink] = useState<DetectedLink | null>(null);
+  // The detected link and the <a> it came from (the hover card's virtual anchor). Kept after the
+  // card closes so its content stays put during the exit animation.
+  const [active, setActive] = useState<{ link: DetectedLink; el: HTMLElement } | null>(null);
+  const [open, setOpen] = useState(false);
   const showTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const activeElementRef = useRef<HTMLElement | null>(null);
@@ -122,7 +119,8 @@ export function GlobalLinkTooltips() {
     if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
     activeElementRef.current = el;
     showTimeoutRef.current = setTimeout(() => {
-      setActiveLink(link);
+      setActive({ link, el });
+      setOpen(true);
     }, 350);
   }, []);
 
@@ -130,7 +128,7 @@ export function GlobalLinkTooltips() {
     if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
     if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
     hideTimeoutRef.current = setTimeout(() => {
-      setActiveLink(null);
+      setOpen(false);
       activeElementRef.current = null;
     }, 200);
   }, []);
@@ -154,8 +152,7 @@ export function GlobalLinkTooltips() {
       const href = link.getAttribute("href") ?? "";
       if (!href) return;
 
-      const rect = link.getBoundingClientRect();
-      const detected = detectLink(href, rect);
+      const detected = detectLink(href);
       if (!detected) return;
 
       // Don't re-trigger for the same element
@@ -189,25 +186,33 @@ export function GlobalLinkTooltips() {
     };
   }, [show, hide, keepOpen]);
 
-  if (!activeLink || typeof document === "undefined") return null;
-
-  return createPortal(
-    <div
-      className="global-link-tooltip border-border bg-card animate-in fade-in-0 zoom-in-95 fixed z-[9999] w-80 rounded-xl border p-3 shadow-xl duration-150"
-      style={{ left: activeLink.x, top: activeLink.y }}
+  // Hover card anchored to the hovered <a> (found by delegation, so a virtual anchor): below the
+  // link, start-aligned, flipping/shifting to stay on screen.
+  return (
+    <VirtualAnchorHoverCard
+      anchor={active?.el ?? null}
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) {
+          setOpen(false);
+          activeElementRef.current = null;
+        }
+      }}
+      side="bottom"
+      align="start"
+      className="global-link-tooltip w-80 p-3"
       onMouseEnter={keepOpen}
       onMouseLeave={() => {
-        setActiveLink(null);
+        setOpen(false);
         activeElementRef.current = null;
       }}
     >
-      {activeLink.kind === "wiki" ? (
-        <WikiTooltipBody title={activeLink.title} wiki={activeLink.wiki} />
-      ) : (
-        <ForumTooltipBody threadId={activeLink.threadId} />
-      )}
-    </div>,
-    document.body
+      {active?.link.kind === "wiki" ? (
+        <WikiTooltipBody title={active.link.title} wiki={active.link.wiki} />
+      ) : active?.link.kind === "forum" ? (
+        <ForumTooltipBody threadId={active.link.threadId} />
+      ) : null}
+    </VirtualAnchorHoverCard>
   );
 }
 
@@ -226,26 +231,26 @@ function WikiTooltipBody({ title, wiki }: { title: string; wiki: "ixwiki" | "iiw
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <BookOpen className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-        <span className="text-foreground truncate text-sm font-semibold">{title}</span>
-        <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-xs font-medium">
+        <BookOpen className="text-tint size-3.5 shrink-0" aria-hidden="true" />
+        <span className="text-label text-headline truncate">{title}</span>
+        <Badge variant="neutral" className="ml-auto">
           {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
-        </span>
+        </Badge>
       </div>
       {intro?.text ? (
-        <p className="text-foreground/80 line-clamp-4 text-xs leading-relaxed">
+        <p className="text-label-secondary text-footnote line-clamp-4 leading-relaxed">
           {intro.text.substring(0, 300)}
           {intro.text.length > 300 ? "…" : ""}
         </p>
       ) : (
-        <div className="bg-muted h-10 animate-pulse rounded" />
+        <Skeleton className="rounded-control-sm h-10 w-full" />
       )}
       <a
         href={articleUrl}
         {...(wiki === "ixwiki" ? {} : { target: "_blank", rel: "noopener noreferrer" })}
-        className="flex items-center gap-1 text-xs font-medium text-blue-600 transition-colors hover:text-blue-500"
+        className="text-caption text-tint hover:text-tint-hover flex items-center gap-1 transition-colors"
       >
-        Read full article <ExternalLink className="h-2.5 w-2.5" />
+        Read full article <ExternalLink className="size-3" />
       </a>
     </div>
   );
@@ -267,10 +272,10 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-orange-500" />
-          <span className="text-foreground text-sm font-medium">Loading thread...</span>
+          <MessageSquare className="text-orange h-3.5 w-3.5 shrink-0" />
+          <span className="text-headline text-label">Loading thread...</span>
         </div>
-        <div className="bg-muted h-10 animate-pulse rounded" />
+        <Skeleton className="rounded-control-sm h-10 w-full" />
       </div>
     );
   }
@@ -278,31 +283,27 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <MessageSquare className="h-3.5 w-3.5 shrink-0 text-orange-500" />
-        <span className="text-foreground truncate text-sm font-semibold">{thread.title}</span>
+        <MessageSquare className="text-orange h-3.5 w-3.5 shrink-0" />
+        <span className="text-label text-headline truncate">{thread.title}</span>
       </div>
-      {thread.forumName && (
-        <span className="inline-block rounded-full bg-orange-500/10 px-1.5 py-0.5 text-xs font-medium text-orange-400">
-          {thread.forumName}
-        </span>
-      )}
+      {thread.forumName && <Badge variant="orange">{thread.forumName}</Badge>}
       {thread.excerpt && (
-        <p className="text-foreground/80 line-clamp-3 text-xs leading-relaxed">
+        <p className="text-label-secondary text-footnote line-clamp-3 leading-relaxed">
           {thread.excerpt.substring(0, 250)}
           {thread.excerpt.length > 250 ? "…" : ""}
         </p>
       )}
-      <div className="text-muted-foreground flex items-center gap-3 text-xs">
+      <div className="text-label-secondary text-footnote flex items-center gap-3">
         <span className="flex items-center gap-0.5">
-          <Users className="h-2.5 w-2.5" />
+          <Users className="size-3" />
           {thread.author}
         </span>
         <span className="flex items-center gap-0.5">
-          <MessageSquare className="h-2.5 w-2.5" />
+          <MessageSquare className="size-3" />
           {thread.replyCount} replies
         </span>
         <span className="flex items-center gap-0.5">
-          <Eye className="h-2.5 w-2.5" />
+          <Eye className="size-3" />
           {thread.viewCount}
         </span>
       </div>
@@ -310,9 +311,9 @@ function ForumTooltipBody({ threadId }: { threadId: number }) {
         href={forumUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-1 text-xs font-medium text-orange-500 transition-colors hover:text-orange-400"
+        className="text-caption text-tint hover:text-tint-hover flex items-center gap-1 transition-colors"
       >
-        Open thread <ExternalLink className="h-2.5 w-2.5" />
+        Open thread <ExternalLink className="size-3" />
       </a>
     </div>
   );

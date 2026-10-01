@@ -9,13 +9,7 @@ import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Toggle } from "~/components/ui/toggle";
 import { Progress } from "~/components/ui/progress";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils";
 
 export interface DefconLevelInfo {
@@ -35,7 +29,7 @@ export const DEFCON_LEVELS: DefconLevelInfo[] = [
     status: "Peacetime",
     costMod: "-10% Maint",
     readinessMod: "Baseline",
-    cls: "border-emerald-500/30 text-emerald-600",
+    cls: "border-green/30 text-green",
   },
   {
     level: 4,
@@ -43,7 +37,7 @@ export const DEFCON_LEVELS: DefconLevelInfo[] = [
     status: "Nominal",
     costMod: "Base Maint",
     readinessMod: "+5% Alert",
-    cls: "border-border text-muted-foreground",
+    cls: "border-separator text-label-secondary",
   },
   {
     level: 3,
@@ -51,7 +45,7 @@ export const DEFCON_LEVELS: DefconLevelInfo[] = [
     status: "Elevated",
     costMod: "+15% Maint",
     readinessMod: "+12% Alert",
-    cls: "border-amber-500/30 text-amber-600",
+    cls: "border-yellow/30 text-yellow",
   },
   {
     level: 2,
@@ -59,7 +53,7 @@ export const DEFCON_LEVELS: DefconLevelInfo[] = [
     status: "High Alert",
     costMod: "+30% Maint",
     readinessMod: "+20% Alert",
-    cls: "border-orange-500/30 text-orange-600",
+    cls: "border-orange/30 text-orange",
   },
   {
     level: 1,
@@ -118,35 +112,33 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
   ];
 
   return (
-    <FacetCard depth={1} className="rounded-3xl">
+    <FacetCard className="rounded-card">
       <FacetCardHeader className="p-4 pb-3">
         <div className="flex min-w-0 items-center gap-2">
-          <Target aria-hidden="true" className="h-4 w-4 shrink-0 text-rose-500" />
-          <h3 className="text-foreground min-w-0 text-sm font-semibold">
-            Strategic readiness overview
-          </h3>
-          <Dialog>
-            <DialogTrigger asChild>
+          <Target aria-hidden="true" className="text-red h-4 w-4 shrink-0" />
+          <h3 className="text-label text-headline min-w-0">Strategic readiness overview</h3>
+          <Sheet>
+            <SheetTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
                 className="ml-auto h-8 w-8 shrink-0"
                 aria-label="About strategic readiness metrics"
               >
-                <HelpCircle className="text-muted-foreground h-4 w-4" />
+                <HelpCircle className="text-label-secondary h-4 w-4" />
               </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Info aria-hidden="true" className="text-muted-foreground h-5 w-5" />
+            </SheetTrigger>
+            <SheetContent size="wide" className="overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  <Info aria-hidden="true" className="text-label-secondary h-5 w-5" />
                   Strategic Readiness Metrics
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 text-sm">
+                </SheetTitle>
+              </SheetHeader>
+              <div className="text-body space-y-4">
                 <div>
                   <h4 className="mb-2 font-semibold">Overall Readiness</h4>
-                  <p className="text-muted-foreground">
+                  <p className="text-label-secondary">
                     Measures the ability of your forces to deploy and conduct operations
                     immediately. Factors include equipment availability, personnel training, and
                     supply stockpiles.
@@ -154,7 +146,7 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
                 </div>
                 <div>
                   <h4 className="mb-2 font-semibold">Technology Level</h4>
-                  <p className="text-muted-foreground">
+                  <p className="text-label-secondary">
                     Reflects the sophistication of your military equipment and systems. Higher
                     technology levels provide tactical advantages but require more maintenance and
                     training.
@@ -162,14 +154,14 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
                 </div>
                 <div>
                   <h4 className="mb-2 font-semibold">Force Morale</h4>
-                  <p className="text-muted-foreground">
+                  <p className="text-label-secondary">
                     Indicates the motivation and esprit de corps of your military personnel. High
                     morale improves combat effectiveness and reduces desertion rates.
                   </p>
                 </div>
                 <div>
                   <h4 className="mb-2 font-semibold">Improving Readiness</h4>
-                  <ul className="text-muted-foreground list-inside list-disc space-y-1">
+                  <ul className="text-label-secondary list-inside list-disc space-y-1">
                     <li>Increase operations & maintenance budget for better equipment upkeep</li>
                     <li>Invest in training programs to improve personnel competency</li>
                     <li>Modernize equipment through procurement to boost technology levels</li>
@@ -178,10 +170,10 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
                   </ul>
                 </div>
               </div>
-            </DialogContent>
-          </Dialog>
+            </SheetContent>
+          </Sheet>
         </div>
-        <p className="text-muted-foreground text-xs">
+        <p className="text-label-secondary text-footnote">
           Aggregate readiness metrics across all branches
         </p>
       </FacetCardHeader>
@@ -190,11 +182,11 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
           {metrics.map((m) => {
             const pct = toPercent(m.value);
             return (
-              <div key={m.label} className="min-w-0 space-y-1.5">
+              <div key={m.label} className="min-w-0 space-y-2">
                 <Eyebrow className="block truncate" title={m.title}>
                   {m.label}
                 </Eyebrow>
-                <div className="text-foreground font-mono text-lg font-semibold tabular-nums">
+                <div className="text-label text-title-3 tabular-nums">
                   {Math.min(100, Math.max(0, Math.round(pct)))}%
                 </div>
                 <Progress value={pct} className="h-1.5" />
@@ -204,11 +196,11 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
         </div>
 
         {/* Strategic defense posture: DEFCON level and force projection goal */}
-        <div className="border-border/60 space-y-4 border-t pt-4">
+        <div className="border-separator space-y-4 border-t pt-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-1">
               <Eyebrow id={defconLabelId}>DEFCON alert status</Eyebrow>
-              <Badge variant="outline" className={cn("font-mono", activeDefcon.cls)}>
+              <Badge variant="outline" className={cn("tabular-nums", activeDefcon.cls)}>
                 {activeDefcon.status} · {activeDefcon.readinessMod} · {activeDefcon.costMod}
               </Badge>
             </div>
@@ -227,7 +219,7 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
                   size="sm"
                   pressed={defcon === d.level}
                   onPressedChange={() => setDefcon(d.level)}
-                  className="min-w-0 font-mono"
+                  className="min-w-0 tabular-nums"
                   title={`${d.label}: ${d.status} (${d.costMod}, ${d.readinessMod})`}
                 >
                   {/* Five columns in the rail are too narrow for the status words; the
@@ -241,7 +233,7 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-1">
               <Eyebrow id={projectionLabelId}>Force projection goal</Eyebrow>
-              <span className="text-foreground text-xs font-medium">
+              <span className="text-label text-caption">
                 {PROJECTION_GOALS.find((p) => p.id === projection)?.label}
               </span>
             </div>
@@ -259,11 +251,11 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
                   variant="outline"
                   pressed={projection === p.id}
                   onPressedChange={() => setProjection(p.id)}
-                  className="h-auto min-w-0 flex-col items-start gap-0 px-2 py-1.5 text-left"
+                  className="h-auto min-w-0 flex-col items-start gap-0 px-2 py-2 text-left"
                   title={p.desc}
                 >
-                  <span className="w-full truncate text-xs font-semibold">{p.label}</span>
-                  <span className="text-muted-foreground w-full truncate text-xs font-normal">
+                  <span className="text-caption w-full truncate font-semibold">{p.label}</span>
+                  <span className="text-label-secondary text-footnote w-full truncate font-normal">
                     {p.desc}
                   </span>
                 </Toggle>

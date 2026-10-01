@@ -1,9 +1,9 @@
-import { describe, it, expect } from "@jest/globals";
 import {
   getHighResFlagUrl,
   formatFullWordNumber,
   formatFullWordCurrency,
   getComplexityBadgeClass,
+  getComplexityBadgeVariant,
   getArchetypeColorClass,
   getStepLabel,
 } from "../components/enhanced/steps/foundation/foundationUtils";
@@ -68,30 +68,33 @@ describe("foundationUtils", () => {
   });
 
   describe("getComplexityBadgeClass", () => {
-    it("returns rose styling for high complexity", () => {
-      expect(getComplexityBadgeClass("high")).toContain("text-rose-600");
+    it("returns red (destructive) styling for high complexity", () => {
+      expect(getComplexityBadgeClass("high")).toContain("text-red");
+      expect(getComplexityBadgeVariant("high")).toBe("destructive");
     });
 
-    it("returns emerald styling for low complexity", () => {
-      expect(getComplexityBadgeClass("low")).toContain("text-emerald-600");
+    it("returns green (success) styling for low complexity", () => {
+      expect(getComplexityBadgeClass("low")).toContain("text-green");
+      expect(getComplexityBadgeVariant("low")).toBe("success");
     });
 
-    it("defaults to blue styling for medium complexity", () => {
-      expect(getComplexityBadgeClass("medium")).toContain("text-blue-600");
+    it("defaults to blue (info) styling for medium complexity", () => {
+      expect(getComplexityBadgeClass("medium")).toContain("text-blue");
+      expect(getComplexityBadgeVariant("medium")).toBe("info");
     });
   });
 
   describe("getArchetypeColorClass", () => {
-    it("returns emerald styling for social democratic archetypes", () => {
-      expect(getArchetypeColorClass("nordic-welfare")).toContain("text-emerald-600");
+    it("returns green styling for social democratic archetypes", () => {
+      expect(getArchetypeColorClass("nordic-welfare")).toContain("text-green");
     });
 
-    it("returns cyan styling for free market / silicon valley archetypes", () => {
-      expect(getArchetypeColorClass("silicon-valley")).toContain("text-cyan-600");
+    it("returns teal styling for free market / silicon valley archetypes", () => {
+      expect(getArchetypeColorClass("silicon-valley")).toContain("text-teal");
     });
 
-    it("returns rose styling for command / state planned archetypes", () => {
-      expect(getArchetypeColorClass("soviet-command")).toContain("text-rose-600");
+    it("returns red styling for command / state planned archetypes", () => {
+      expect(getArchetypeColorClass("soviet-command")).toContain("text-red");
     });
   });
 

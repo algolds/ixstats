@@ -1,18 +1,13 @@
 "use client";
 
 import React, { memo } from "react";
-import {
-  Search,
-  Xmark as X,
-  HelpCircle,
-  Bell,
-  Settings,
-} from "iconoir-react";
+import { Search, Xmark as X, HelpCircle, Bell, Settings } from "iconoir-react";
 import { BuilderProgressView } from "./BuilderProgressView";
 import type { DIViewProps, ViewMode } from "~/components/halo/types";
 import type { BuilderFilterState } from "~/app/builder/components/builder-filter-context";
 import type { BuilderContextValue } from "~/app/builder/components/enhanced/context/BuilderStateContext";
 import type { RealCountryData } from "~/app/builder/lib/economy-types";
+import { Button } from "~/components/ui/button";
 
 /**
  * Upgrades a flag URL to a high-resolution or SVG version if it is from FlagCDN or Wikimedia Commons.
@@ -58,72 +53,81 @@ function BuilderViewComponent({ onClose, onSwitchMode, filter, context }: Builde
   const flagUrl = getHighResFlagUrl(rawFlagUrl);
 
   return (
-    <div className="relative flex w-full flex-col p-4 text-left text-foreground select-none sm:p-5">
+    <div className="text-label relative flex w-full flex-col p-4 text-left select-none sm:p-5">
       {/* Background Refracted Flag Watermark */}
       {flagUrl && (
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit] select-none">
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.12] blur-[6px] saturate-[85%] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-700 dark:opacity-[0.06] dark:saturate-[50%]"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.12] blur-[6px] saturate-[85%] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150"
             style={{ backgroundImage: `url(${flagUrl})` }}
           />
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 mix-blend-overlay" />
         </div>
       )}
 
       {/* Top Header */}
       <div className="relative z-10 mb-2 flex items-center justify-end pb-1">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {onSwitchMode && (
             <>
-              <button
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => onSwitchMode("search" as ViewMode)}
-                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-accent/20 hover:text-foreground active:scale-[0.97]"
+                className="text-label-secondary hover:text-label"
                 title="Global Search"
                 type="button"
-                data-cuelume-press
+                aria-label="Global Search"
               >
-                <Search className="h-4 w-4" />
-              </button>
-              <button
+                <Search aria-hidden />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => onSwitchMode("notifications" as ViewMode)}
-                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-accent/20 hover:text-foreground active:scale-[0.97]"
+                className="text-label-secondary hover:text-label"
                 title="Notifications"
                 type="button"
-                data-cuelume-press
+                aria-label="Notifications"
               >
-                <Bell className="h-4 w-4" />
-              </button>
-              <button
+                <Bell aria-hidden />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => onSwitchMode("settings" as ViewMode)}
-                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-accent/20 hover:text-foreground active:scale-[0.97]"
+                className="text-label-secondary hover:text-label"
                 title="Settings"
                 type="button"
-                data-cuelume-press
+                aria-label="Settings"
               >
-                <Settings className="h-4 w-4" />
-              </button>
+                <Settings aria-hidden />
+              </Button>
             </>
           )}
           {filter && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => filter.setWelcomeModalOpen(true)}
-              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-amber-500/15 hover:text-amber-400 active:scale-[0.97]"
+              className="text-label-secondary hover:text-yellow"
               title="Open Welcome Guide"
               type="button"
-              data-cuelume-press
+              aria-label="Open Welcome Guide"
             >
-              <HelpCircle className="h-4 w-4" />
-            </button>
+              <HelpCircle aria-hidden />
+            </Button>
           )}
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={onClose}
-            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-accent/20 hover:text-foreground active:scale-[0.97]"
+            className="text-label-secondary hover:text-label"
             title="Collapse Hero"
             type="button"
-            data-cuelume-press
+            aria-label="Collapse Hero"
           >
-            <X className="h-4 w-4" />
-          </button>
+            <X aria-hidden />
+          </Button>
         </div>
       </div>
 

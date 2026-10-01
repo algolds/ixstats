@@ -64,52 +64,50 @@ export function InventorySidebarContent({
   return (
     <div className="space-y-3">
       {/* Stats */}
-      <FacetCard
-        depth={1}
-        className="border-border rounded-xl bg-cyan-500/10 p-3 dark:bg-cyan-500/10"
-      >
+      <FacetCard className="rounded-row bg-teal/10 p-3">
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            My Cards
-          </span>
-          <Layers className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+          <span className="text-label-secondary text-eyebrow">My Cards</span>
+          <Layers className="text-teal h-3.5 w-3.5" />
         </div>
-        <div className="mt-1.5 flex items-baseline gap-1">
-          <span className="text-xl font-bold tracking-tight text-cyan-600 tabular-nums dark:text-cyan-400">
+        <div className="mt-2 flex items-baseline gap-1">
+          <span className="text-title-2 text-teal tabular-nums">
             {totalCards} / {150 + capacityBoost}
           </span>
-          <span className="text-muted-foreground text-xs">cards</span>
+          <span className="text-label-secondary text-footnote">cards</span>
         </div>
-        <div className="mt-1.5 flex items-center gap-3 text-xs">
+        <div className="text-footnote mt-2 flex items-center gap-3">
           <div className="flex items-center gap-1">
-            <IxCreditsSymbol className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
-            <span className="font-bold text-amber-600 dark:text-amber-400">
+            <IxCreditsSymbol className="text-yellow h-3 w-3 shrink-0" />
+            <span className="text-yellow font-semibold">
               <NumberFlow value={totalValue} />
             </span>
           </div>
           <div className="flex items-center gap-1">
-            <Copy className="h-3 w-3 shrink-0 text-indigo-600 dark:text-indigo-400" />
-            <span className="font-bold text-indigo-600 dark:text-indigo-400">0</span>
+            <Copy className="text-indigo h-3 w-3 shrink-0" />
+            <span className="text-indigo font-semibold">0</span>
           </div>
         </div>
       </FacetCard>
 
       {/* Search */}
       <div className="relative">
-        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2 h-3 w-3 -translate-y-1/2" />
+        <Search className="text-label-secondary pointer-events-none absolute top-1/2 left-2 h-3 w-3 -translate-y-1/2" />
         <Input
           value={filters.search}
           onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
           placeholder="Search cards..."
-          className="border-border/50 placeholder:text-muted-foreground/50 bg-muted/30 focus:bg-background h-7 pr-6 pl-6.5 text-xs"
+          className="border-separator placeholder:text-label-tertiary bg-fill-4 focus:bg-background text-footnote h-7 pr-6 pl-6"
         />
         {filters.search && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Clear search"
             onClick={() => setFilters((prev) => ({ ...prev, search: "" }))}
-            className="absolute top-1/2 right-1.5 -translate-y-1/2"
+            className="text-label-secondary absolute top-1/2 right-1 size-5 -translate-y-1/2"
           >
-            <X className="text-muted-foreground hover:text-foreground h-3 w-3 transition-colors" />
-          </button>
+            <X className="text-label-secondary hover:text-label h-3 w-3 transition-colors" />
+          </Button>
         )}
       </div>
 
@@ -122,12 +120,11 @@ export function InventorySidebarContent({
       >
         <SelectTrigger
           className={cn(
-            "h-7 w-full px-2 text-xs",
-            filters.rarity !== "all" &&
-              "border-amber-500/30 bg-amber-500/20 font-bold text-amber-600 dark:text-amber-300"
+            "text-footnote h-7 w-full px-2",
+            filters.rarity !== "all" && "bg-tint-fill text-tint font-medium"
           )}
         >
-          <Sparkles className="mr-1.5 h-3 w-3 shrink-0" />
+          <Sparkles className="mr-2 h-3 w-3 shrink-0" />
           <SelectValue placeholder="Rarity" />
         </SelectTrigger>
         <SelectContent>
@@ -150,12 +147,11 @@ export function InventorySidebarContent({
       >
         <SelectTrigger
           className={cn(
-            "h-7 w-full px-2 text-xs",
-            filters.cardType !== "all" &&
-              "border-cyan-500/30 bg-cyan-500/20 font-bold text-cyan-600 dark:text-cyan-300"
+            "text-footnote h-7 w-full px-2",
+            filters.cardType !== "all" && "border-teal/30 bg-teal/20 text-teal font-semibold"
           )}
         >
-          <FileText className="mr-1.5 h-3 w-3 shrink-0" />
+          <FileText className="mr-2 h-3 w-3 shrink-0" />
           <SelectValue placeholder="Type" />
         </SelectTrigger>
         <SelectContent>
@@ -175,12 +171,11 @@ export function InventorySidebarContent({
       >
         <SelectTrigger
           className={cn(
-            "h-7 w-full px-2 text-xs",
-            filters.season !== "all" &&
-              "border-amber-500/30 bg-amber-500/10 font-bold text-amber-600 dark:text-amber-400"
+            "text-footnote h-7 w-full px-2",
+            filters.season !== "all" && "bg-tint-fill text-tint font-medium"
           )}
         >
-          <Calendar className="mr-1.5 h-3 w-3 shrink-0" />
+          <Calendar className="mr-2 h-3 w-3 shrink-0" />
           <SelectValue placeholder="Season" />
         </SelectTrigger>
         <SelectContent>
@@ -191,14 +186,12 @@ export function InventorySidebarContent({
         </SelectContent>
       </Select>
 
-      <div className="border-border/40 space-y-3 border-t pt-3">
+      <div className="border-separator space-y-3 border-t pt-3">
         {/* Sort */}
         <div>
-          <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">
-            Sort By
-          </p>
+          <p className="text-label-secondary text-eyebrow mb-1">Sort By</p>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="h-7 w-full text-xs">
+            <SelectTrigger className="text-footnote h-7 w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -212,9 +205,7 @@ export function InventorySidebarContent({
 
         {/* View Mode */}
         <div>
-          <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">
-            View
-          </p>
+          <p className="text-label-secondary text-eyebrow mb-1">View</p>
           <div className="flex gap-1">
             {(["grid", "list", "compact"] as ViewMode[]).map((mode) => (
               <Button
@@ -222,7 +213,7 @@ export function InventorySidebarContent({
                 variant={viewMode === mode ? "default" : "outline"}
                 size="sm"
                 onClick={() => setViewMode(mode)}
-                className="h-6 flex-1 text-xs font-semibold"
+                className="text-footnote h-6 flex-1 font-semibold"
               >
                 {mode === "grid" ? (
                   <>
@@ -244,21 +235,21 @@ export function InventorySidebarContent({
 
         {/* Multi-Select & Hide Value */}
         <div className="flex flex-col gap-1">
-          <label className="hover:bg-muted/50 flex cursor-pointer items-center gap-2 rounded-lg p-1.5 transition-colors">
+          <label className="hover:bg-fill-3 rounded-control flex cursor-pointer items-center gap-2 p-2 transition-colors">
             <Checkbox
               checked={selectMode}
               onCheckedChange={(checked) => setSelectMode(checked as boolean)}
               className="h-3.5 w-3.5"
             />
-            <span className="text-xs font-medium">Multi-Select Mode</span>
+            <span className="text-footnote font-medium">Multi-Select Mode</span>
           </label>
-          <label className="hover:bg-muted/50 flex cursor-pointer items-center gap-2 rounded-lg p-1.5 transition-colors">
+          <label className="hover:bg-fill-3 rounded-control flex cursor-pointer items-center gap-2 p-2 transition-colors">
             <Checkbox
               checked={hideValue}
               onCheckedChange={(checked) => setHideValue(checked as boolean)}
               className="h-3.5 w-3.5"
             />
-            <span className="text-xs font-medium">Hide Card Values</span>
+            <span className="text-footnote font-medium">Hide Card Values</span>
           </label>
         </div>
       </div>
@@ -268,12 +259,14 @@ export function InventorySidebarContent({
         filters.rarity !== "all" ||
         filters.cardType !== "all" ||
         filters.season !== "all") && (
-        <button
+        <Button
+          variant="bordered"
+          size="sm"
           onClick={onResetFilters}
-          className="border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/50 flex w-full items-center justify-center gap-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors"
+          className="text-label-secondary w-full"
         >
           <X className="h-3 w-3" /> Clear Filters
-        </button>
+        </Button>
       )}
     </div>
   );

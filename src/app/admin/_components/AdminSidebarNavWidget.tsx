@@ -35,6 +35,9 @@ import {
   Trophy,
 } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
+import { cn } from "~/lib/utils/cn";
+import { SearchField } from "~/components/ui/search-field";
+import { buttonVariants } from "~/components/ui/button";
 
 export interface NavItem {
   label: string;
@@ -70,7 +73,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/platform",
             icon: Settings,
             description: "Time, growth multipliers, and database explorer",
-            glyphClass: "bg-indigo-500/15 text-indigo-500 dark:text-indigo-400",
+            glyphClass: "bg-indigo/15 text-indigo",
             section: "platform",
           },
           {
@@ -78,7 +81,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/bot",
             icon: Cpu,
             description: "Scheduled worker tasks, Discord bot sync, and status",
-            glyphClass: "bg-emerald-500/15 text-emerald-500 dark:text-emerald-400",
+            glyphClass: "bg-green/15 text-green",
             section: "bot",
           },
           {
@@ -86,7 +89,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/notifications",
             icon: Bell,
             description: "Alert rules and system dispatch logs",
-            glyphClass: "bg-rose-500/15 text-rose-500 dark:text-rose-400",
+            glyphClass: "bg-red/15 text-red",
             section: "notifications",
           },
         ],
@@ -106,7 +109,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/realms",
             icon: Sparkles,
             description: "Community regions, custom worlds, and player access",
-            glyphClass: "bg-pink-500/15 text-pink-500 dark:text-pink-400",
+            glyphClass: "bg-pink/15 text-pink",
             section: "realms",
           },
         ],
@@ -126,7 +129,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/maps",
             icon: Map,
             description: "Map editor and GIS vector layers",
-            glyphClass: "bg-teal-500/15 text-teal-500 dark:text-teal-400",
+            glyphClass: "bg-teal/15 text-teal",
             section: "maps",
           },
           {
@@ -134,7 +137,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/maps/style-editor",
             icon: Palette,
             description: "Map color palettes and layer styles",
-            glyphClass: "bg-blue-500/15 text-blue-500 dark:text-blue-400",
+            glyphClass: "bg-blue/15 text-blue",
             section: "style-editor",
           },
         ],
@@ -147,7 +150,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/wikios-settings",
             icon: BookOpen,
             description: "MediaWiki API bridge and link routing",
-            glyphClass: "bg-sky-500/15 text-sky-500 dark:text-sky-400",
+            glyphClass: "bg-blue/15 text-blue",
             section: "wikios-settings",
           },
           {
@@ -155,7 +158,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/lorescanner",
             icon: Search,
             description: "Automatic article backlink scanner",
-            glyphClass: "bg-blue-500/15 text-blue-500 dark:text-blue-400",
+            glyphClass: "bg-blue/15 text-blue",
             section: "lorescanner",
           },
           {
@@ -163,7 +166,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/image-repo",
             icon: Layers,
             description: "Media repository and upload manager",
-            glyphClass: "bg-teal-500/15 text-teal-500 dark:text-teal-400",
+            glyphClass: "bg-teal/15 text-teal",
             section: "image-repo",
           },
           {
@@ -171,7 +174,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/stash",
             icon: FolderHeart,
             description: "Offline article cache and user storage quotas",
-            glyphClass: "bg-indigo-500/15 text-indigo-500 dark:text-indigo-400",
+            glyphClass: "bg-indigo/15 text-indigo",
             section: "stash",
           },
         ],
@@ -184,7 +187,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/vault",
             icon: Coins,
             description: "Credit balances, streaks, and store inventory",
-            glyphClass: "bg-amber-500/15 text-amber-500 dark:text-amber-400",
+            glyphClass: "bg-yellow/15 text-yellow",
             section: "vault",
           },
           {
@@ -192,7 +195,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/cards",
             icon: Package,
             description: "Packs, season rotations, and lore card sync",
-            glyphClass: "bg-orange-500/15 text-orange-500 dark:text-orange-400",
+            glyphClass: "bg-orange/15 text-orange",
             section: "cards",
           },
           {
@@ -200,7 +203,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/achievements",
             icon: Award,
             description: "Badges, point tiers, and unlock rules",
-            glyphClass: "bg-yellow-500/15 text-yellow-500 dark:text-yellow-400",
+            glyphClass: "bg-yellow/15 text-yellow",
             section: "achievements",
           },
         ],
@@ -213,7 +216,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/thinkpages",
             icon: Globe,
             description: "Post feeds, rate limits, and author rules",
-            glyphClass: "bg-purple-500/15 text-purple-500 dark:text-purple-400",
+            glyphClass: "bg-purple/15 text-purple",
             section: "thinkpages",
           },
           {
@@ -221,7 +224,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/blurbs",
             icon: MessageCircle,
             description: "Writing prompts and flagged post moderation",
-            glyphClass: "bg-violet-500/15 text-violet-500 dark:text-violet-400",
+            glyphClass: "bg-purple/15 text-purple",
             section: "blurbs",
           },
           {
@@ -229,7 +232,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/polls",
             icon: Vote,
             description: "Poll creation, duration, and vote counts",
-            glyphClass: "bg-fuchsia-500/15 text-fuchsia-500 dark:text-fuchsia-400",
+            glyphClass: "bg-pink/15 text-pink",
             section: "polls",
           },
         ],
@@ -242,7 +245,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/myleague",
             icon: Trophy,
             description: "League fixtures, teams, and tournament schedules",
-            glyphClass: "bg-emerald-500/15 text-emerald-500 dark:text-emerald-400",
+            glyphClass: "bg-green/15 text-green",
             section: "myleague",
           },
         ],
@@ -262,7 +265,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/countries",
             icon: Globe,
             description: "Live nation stats and manual metric overrides",
-            glyphClass: "bg-emerald-500/15 text-emerald-500 dark:text-emerald-400",
+            glyphClass: "bg-green/15 text-green",
             section: "countries",
           },
           {
@@ -270,7 +273,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/calculations",
             icon: Cpu,
             description: "Macroeconomic formula definitions",
-            glyphClass: "bg-amber-500/15 text-amber-500 dark:text-amber-400",
+            glyphClass: "bg-yellow/15 text-yellow",
             section: "calculations",
           },
           {
@@ -278,7 +281,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/rings-audit",
             icon: Activity,
             description: "Vitality dimensions and index weight validation",
-            glyphClass: "bg-green-500/15 text-green-500 dark:text-green-400",
+            glyphClass: "bg-green/15 text-green",
             section: "rings-audit",
           },
           {
@@ -286,7 +289,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/reference-data",
             icon: Database,
             description: "Simulation enums and lookup tables",
-            glyphClass: "bg-cyan-500/15 text-cyan-500 dark:text-cyan-400",
+            glyphClass: "bg-teal/15 text-teal",
             section: "reference-data",
           },
         ],
@@ -299,7 +302,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/storyteller",
             icon: Gamepad2,
             description: "Global events, crises, and intervention triggers",
-            glyphClass: "bg-purple-500/15 text-purple-500 dark:text-purple-400",
+            glyphClass: "bg-purple/15 text-purple",
             section: "storyteller",
           },
           {
@@ -307,7 +310,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/national-issues",
             icon: Newspaper,
             description: "Issue templates and multiple-choice dilemma options",
-            glyphClass: "bg-rose-500/15 text-rose-500 dark:text-rose-400",
+            glyphClass: "bg-red/15 text-red",
             section: "national-issues",
           },
           {
@@ -315,7 +318,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/diplomatic-options",
             icon: Bookmark,
             description: "Diplomatic stances, priorities, and pacts",
-            glyphClass: "bg-blue-500/15 text-blue-500 dark:text-blue-400",
+            glyphClass: "bg-blue/15 text-blue",
             section: "diplomatic-options",
           },
           {
@@ -323,7 +326,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/diplomatic-scenarios",
             icon: Shield,
             description: "Scenario outcomes and conflict chains",
-            glyphClass: "bg-purple-500/15 text-purple-500 dark:text-purple-400",
+            glyphClass: "bg-purple/15 text-purple",
             section: "diplomatic-scenarios",
           },
           {
@@ -331,7 +334,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/npc-personalities",
             icon: Users,
             description: "NPC leader archetypes and reaction thresholds",
-            glyphClass: "bg-violet-500/15 text-violet-500 dark:text-violet-400",
+            glyphClass: "bg-purple/15 text-purple",
             section: "npc-personalities",
           },
         ],
@@ -344,7 +347,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/military-equipment",
             icon: Package,
             description: "Unit stats, defense systems, and unit costs",
-            glyphClass: "bg-red-500/15 text-red-500 dark:text-red-400",
+            glyphClass: "bg-red/15 text-red",
             section: "military-equipment",
           },
           {
@@ -352,7 +355,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/economic-archetypes",
             icon: Trophy,
             description: "Macroeconomic policy templates",
-            glyphClass: "bg-amber-500/15 text-amber-500 dark:text-amber-400",
+            glyphClass: "bg-yellow/15 text-yellow",
             section: "economic-archetypes",
           },
           {
@@ -360,7 +363,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/economic-components",
             icon: Layers,
             description: "Economic building blocks and modifiers",
-            glyphClass: "bg-amber-500/15 text-amber-500 dark:text-amber-400",
+            glyphClass: "bg-yellow/15 text-yellow",
             section: "economic-components",
           },
           {
@@ -368,7 +371,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/government-components",
             icon: Database,
             description: "Civic institutions and governance modules",
-            glyphClass: "bg-cyan-500/15 text-cyan-500 dark:text-cyan-400",
+            glyphClass: "bg-teal/15 text-teal",
             section: "government-components",
           },
           {
@@ -376,7 +379,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/intelligence-templates",
             icon: Shield,
             description: "Intel report structures and schemas",
-            glyphClass: "bg-sky-500/15 text-sky-500 dark:text-sky-400",
+            glyphClass: "bg-blue/15 text-blue",
             section: "intelligence-templates",
           },
         ],
@@ -396,7 +399,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/users",
             icon: Users,
             description: "Account roster and nation claims",
-            glyphClass: "bg-amber-500/15 text-amber-500 dark:text-amber-400",
+            glyphClass: "bg-yellow/15 text-yellow",
             section: "users",
           },
           {
@@ -404,7 +407,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/user-roles",
             icon: Shield,
             description: "Role permissions and VIP keys",
-            glyphClass: "bg-cyan-500/15 text-cyan-500 dark:text-cyan-400",
+            glyphClass: "bg-teal/15 text-teal",
             section: "user-roles",
           },
           {
@@ -412,7 +415,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/logs",
             icon: Terminal,
             description: "Audit trail and admin action logs",
-            glyphClass: "bg-indigo-500/15 text-indigo-500 dark:text-indigo-400",
+            glyphClass: "bg-indigo/15 text-indigo",
             section: "logs",
           },
           {
@@ -420,7 +423,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/membership",
             icon: Award,
             description: "Subscription levels and access perks",
-            glyphClass: "bg-yellow-500/15 text-yellow-500 dark:text-yellow-400",
+            glyphClass: "bg-yellow/15 text-yellow",
             section: "membership",
           },
         ],
@@ -440,7 +443,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/narrator",
             icon: MessageCircle,
             description: "Voice models, prompt sandbox, and response cache",
-            glyphClass: "bg-amber-500/15 text-amber-500 dark:text-amber-400",
+            glyphClass: "bg-yellow/15 text-yellow",
             section: "narrator",
           },
           {
@@ -448,7 +451,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/onoma",
             icon: Languages,
             description: "Phonetic rules and name generation",
-            glyphClass: "bg-indigo-500/15 text-indigo-500 dark:text-indigo-400",
+            glyphClass: "bg-indigo/15 text-indigo",
             section: "onoma",
           },
           {
@@ -456,7 +459,7 @@ const NAV_GROUPS: NavGroup[] = [
             href: "/admin/facet-lab",
             icon: Layers,
             description: "Facet glass materials and token inspector",
-            glyphClass: "bg-teal-500/15 text-teal-500 dark:text-teal-400",
+            glyphClass: "bg-teal/15 text-teal",
             section: "facet-lab",
           },
         ],
@@ -509,12 +512,15 @@ interface AdminSidebarNavWidgetProps {
   activeSection?: string;
   onNavigate?: (section: string) => void;
   className?: string;
+  /** Marks the rail as app-local sub-navigation (hidden under the new navigation shell). */
+  "data-app-subnav"?: string;
 }
 
 export function AdminSidebarNavWidget({
   activeSection,
   onNavigate,
   className = "",
+  "data-app-subnav": appSubnav,
 }: AdminSidebarNavWidgetProps) {
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState("");
@@ -547,46 +553,67 @@ export function AdminSidebarNavWidget({
     }).filter((group) => group.subgroups.length > 0);
   }, [searchQuery]);
 
+  // Sidebar-style nav row: the `ghost` Button at the 36px control height (follows Compact
+  // density), left-aligned, with tint selection for the current section.
+  const rowClass = (active: boolean) =>
+    cn(
+      buttonVariants({ variant: "ghost", size: "md" }),
+      "group text-callout flex w-full justify-start gap-2 px-2 text-left font-normal",
+      active
+        ? "bg-tint-fill text-tint hover:bg-tint/20 font-medium"
+        : "text-label-secondary hover:text-label"
+    );
+
+  const rowBody = (item: NavItem) => {
+    const Icon = item.icon;
+    return (
+      <>
+        <span
+          aria-hidden
+          className={cn(
+            "rounded-control-sm flex size-6 shrink-0 items-center justify-center",
+            item.glyphClass
+          )}
+        >
+          <Icon className="size-3.5" />
+        </span>
+        <span className="min-w-0 flex-1 truncate">{item.label}</span>
+      </>
+    );
+  };
+
   return (
     <aside
-      className={`facet-sidebar w-full flex-col p-4 shadow-sm lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:overflow-y-auto ${className}`}
+      data-app-subnav={appSubnav}
+      className={cn(
+        "flex w-full flex-col lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:overflow-y-auto",
+        className
+      )}
       aria-label="Admin Navigation"
     >
-      {/* Search Filter */}
-      <div className="relative mb-5">
-        <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-3.5 w-3.5" />
-        <input
-          type="text"
-          placeholder="Filter tools & applications..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="border-border/30 bg-background/50 placeholder:text-muted-foreground focus:border-border/60 text-foreground w-full rounded-xl border py-1.5 pr-3 pl-8 text-xs backdrop-blur-md focus:outline-none"
-        />
-        {searchQuery && (
-          <button
-            onClick={() => setSearchQuery("")}
-            className="text-muted-foreground hover:text-foreground absolute top-2.5 right-2.5 text-xs"
-          >
-            Clear
-          </button>
-        )}
-      </div>
+      {/* Search filter */}
+      <SearchField
+        size="sm"
+        placeholder="Filter tools & applications..."
+        aria-label="Filter admin tools"
+        value={searchQuery}
+        onValueChange={setSearchQuery}
+        containerClassName="mb-5"
+      />
 
       <nav className="space-y-5">
         {filteredGroups.map((group) => (
-          <div key={group.title} className="space-y-1.5">
-            <h3 className="text-muted-foreground/70 px-2 text-xs font-bold tracking-wider uppercase">
-              {group.title}
-            </h3>
+          <div key={group.title} className="space-y-2">
+            <h3 className="text-subhead text-label-secondary px-2">{group.title}</h3>
 
-            {/* Apple Inset-Grouped Surface */}
-            <div className="border-border/30 bg-card/25 space-y-2.5 rounded-2xl border p-1 backdrop-blur-md">
+            {/* Inset-grouped rail surface (v2: a thin glass group) */}
+            <div className="material-thin border-separator space-y-2 rounded-2xl border p-1">
               {group.subgroups.map((sub, sIdx) => (
                 <div
                   key={sub.subtitle}
-                  className={sIdx > 0 ? "border-border/15 border-t pt-2" : ""}
+                  className={sIdx > 0 ? "border-separator border-t pt-2" : ""}
                 >
-                  <div className="text-muted-foreground/50 px-2 py-0.5 text-xs font-semibold tracking-wider uppercase">
+                  <div className="text-footnote text-label-secondary px-2 py-0.5">
                     {sub.subtitle}
                   </div>
 
@@ -599,29 +626,17 @@ export function AdminSidebarNavWidget({
                         currentSection,
                         item.section
                       );
-                      const Icon = item.icon;
 
                       if (onNavigate) {
                         return (
                           <button
                             key={item.href}
+                            type="button"
                             onClick={() => onNavigate(item.section)}
-                            className={`group flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
-                              active
-                                ? "bg-foreground/[0.08] dark:bg-foreground/[0.12] text-foreground font-semibold shadow-xs"
-                                : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground"
-                            }`}
+                            aria-current={active ? "page" : undefined}
+                            className={rowClass(active)}
                           >
-                            <div
-                              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-[8px] transition-transform ${item.glyphClass} ${
-                                active ? "scale-105" : "group-hover:scale-105"
-                              }`}
-                            >
-                              <Icon className="h-3.5 w-3.5" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <span className="block truncate">{item.label}</span>
-                            </div>
+                            {rowBody(item)}
                           </button>
                         );
                       }
@@ -630,22 +645,10 @@ export function AdminSidebarNavWidget({
                         <Link
                           key={item.href}
                           href={item.href}
-                          className={`group flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
-                            active
-                              ? "bg-foreground/[0.08] dark:bg-foreground/[0.12] text-foreground font-semibold shadow-xs"
-                              : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground"
-                          }`}
+                          aria-current={active ? "page" : undefined}
+                          className={rowClass(active)}
                         >
-                          <div
-                            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-[8px] transition-transform ${item.glyphClass} ${
-                              active ? "scale-105" : "group-hover:scale-105"
-                            }`}
-                          >
-                            <Icon className="h-3.5 w-3.5" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <span className="block truncate">{item.label}</span>
-                          </div>
+                          {rowBody(item)}
                         </Link>
                       );
                     })}

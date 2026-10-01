@@ -7,7 +7,7 @@ interface AvatarGlowProps {
   avatarGlow: AvatarGlowConfig;
   children: React.ReactNode;
   className?: string;
-  roundedClass?: string; // "rounded-full" or "rounded-sm"
+  roundedClass?: string; // "rounded-full" or "rounded-control-sm"
 }
 
 export function AvatarGlow({

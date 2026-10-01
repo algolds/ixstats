@@ -8,21 +8,23 @@ import {
   ScaleFrameEnlarge as Scale,
   StatUp as TrendingUp,
   KeyCommand as Command,
-  NavArrowRight,
+  ArrowUpRight,
   Compass,
   WarningCircle as AlertCircle,
   Xmark as X,
 } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/DrillSheets";
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 import { formatGrowthPeek } from "./ExecutiveActionCards";
-import { STATUS_TEXT, type StatusTone } from "./status-tone";
+import { type StatusTone } from "./status-tone";
+import { HUE_ACCENT, HUE_BADGE, type DomainHue } from "./domain-hue";
+import { FlagWatermark, WatermarkGlyph } from "~/components/ui/facet/identity/FlagWatermark";
+import { assetUrl } from "~/lib/base-path";
 
 interface Opportunity {
   id: string;
@@ -35,6 +37,8 @@ interface Opportunity {
   directiveGoal: string;
   icon: typeof Shield;
   tone: StatusTone;
+  /** v2 hero hue (`badgeCls`/`borderCls`): the glass wash, border, glow and badge colour. */
+  hue: DomainHue;
   intentId?: string;
   drillKind?: Exclude<V2Drill, { kind: "intent" } | null>;
 }
@@ -164,6 +168,7 @@ function ExecutiveOpportunityHeroComponent({
         directiveGoal: `Resolve national policy issue: ${topIssue.title}`,
         icon: AlertCircle,
         tone: isUrgent ? "critical" : "warning",
+        hue: "red",
         drillKind: { kind: "issue", issueId: topIssue.id },
       };
     }
@@ -182,6 +187,7 @@ function ExecutiveOpportunityHeroComponent({
         directiveGoal: "Rebalance military readiness and reinforce defensive border posture",
         icon: Shield,
         tone: "critical",
+        hue: "red",
         drillKind: { kind: "defense" },
       };
     }
@@ -201,6 +207,7 @@ function ExecutiveOpportunityHeroComponent({
           "Authorize civil service staffing expansion and administrative restructuring",
         icon: Scale,
         tone: "warning",
+        hue: "indigo",
         drillKind: { kind: "politics" },
       };
     }
@@ -231,6 +238,7 @@ function ExecutiveOpportunityHeroComponent({
         directiveGoal: `Accelerate implementation of ${topIntent.goal}`,
         icon: Command,
         tone: "accent",
+        hue: "yellow",
         intentId: topIntent.id,
       };
     }
@@ -250,6 +258,7 @@ function ExecutiveOpportunityHeroComponent({
           "Establish bilateral economic trade agreement and expand diplomatic alliances",
         icon: Handshake,
         tone: "neutral",
+        hue: "cyan",
         drillKind: { kind: "relations" },
       };
     }
@@ -268,6 +277,7 @@ function ExecutiveOpportunityHeroComponent({
           "Implement targeted macroeconomic development directive and tax incentive package",
         icon: TrendingUp,
         tone: "neutral",
+        hue: "green",
         drillKind: { kind: "economy" },
       };
     }
@@ -298,6 +308,9 @@ function ExecutiveOpportunityHeroComponent({
             }
           : null;
 
+  const accent = HUE_ACCENT[opportunity.hue];
+  const flagUrl = assetUrl(country?.flagUrl || country?.flag);
+
   return (
     <AnimatePresence mode="wait" initial={false}>
       <motion.section
@@ -309,75 +322,87 @@ function ExecutiveOpportunityHeroComponent({
         transition={{ type: "spring", stiffness: 450, damping: 32 }}
         className="w-full"
       >
-        <FacetCard depth={2} interactive="none" className="relative rounded-3xl p-4 sm:p-6">
+        {/* The v2 priority hero (c5c6b382) on the Facet 3.1 glass hero: the priority's hue is the
+            card's accent — the glass wash, border, glow and badge (v2 `borderCls`/`badgeCls`) —
+            the country's flag bleeds off the top-right corner and the priority's glyph sits as a
+            fine watermark. */}
+        <FacetCard variant="glass" glow accent={accent} className="group p-5 sm:p-6">
+          <FlagWatermark src={flagUrl} />
+          <WatermarkGlyph icon={Icon} className="text-facet-accent opacity-[0.06]" />
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            data-cuelume-press="whisper"
             onClick={() => handleDismiss(opportunity.id)}
-            className="text-muted-foreground absolute top-2 right-2 size-11 rounded-full sm:top-3 sm:right-3 sm:size-8"
+            className="text-label-secondary absolute top-2 right-2 z-10 size-11 rounded-full sm:top-3 sm:right-3 sm:size-8"
             aria-label="Dismiss this priority for now"
             title="Dismiss for this session"
           >
             <X aria-hidden="true" />
           </Button>
 
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl min-w-0 space-y-1.5 pr-10">
-              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-                <Eyebrow className={cn("flex items-center gap-1.5", STATUS_TEXT[opportunity.tone])}>
+          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl min-w-0 space-y-3 pr-10">
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={cn(
+                    "text-footnote inline-flex items-center gap-2 rounded-full border px-3 py-1 font-semibold",
+                    HUE_BADGE
+                  )}
+                >
                   <Icon aria-hidden="true" className="size-3.5 shrink-0" />
                   {opportunity.subtitle}
-                </Eyebrow>
+                </span>
                 {opportunity.metricLabel && opportunity.metricValue && (
-                  <span className="text-muted-foreground tabular-nums">
-                    · {opportunity.metricLabel}{" "}
-                    <span className="text-foreground font-medium">{opportunity.metricValue}</span>
+                  <span className="border-separator bg-surface text-label-secondary text-footnote rounded-full border px-3 py-1">
+                    {opportunity.metricLabel}:{" "}
+                    <span className="text-label font-data font-semibold tabular-nums">
+                      {opportunity.metricValue}
+                    </span>
                   </span>
                 )}
-              </p>
-              <h2
-                id="priority-title"
-                className="text-foreground text-xl leading-snug font-semibold tracking-tight sm:text-2xl"
-              >
+              </div>
+              <h2 id="priority-title" className="text-label text-title-2 sm:text-title-1">
                 {opportunity.title}
               </h2>
-              <p className="text-muted-foreground line-clamp-3 text-sm leading-relaxed">
+              <p className="text-label-secondary text-body line-clamp-3 leading-relaxed">
                 {opportunity.description}
               </p>
             </div>
 
-            <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+            <div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:flex-col">
               {isIssue ? (
                 <Button
                   type="button"
+                  size="lg"
                   onClick={() => onOpenDrill?.(opportunity.drillKind!)}
-                  className="h-11 sm:h-9"
+                  className="group/cta h-11 font-semibold"
                 >
                   <Compass aria-hidden="true" />
                   <span>Open issue brief</span>
+                  <ArrowUpRight aria-hidden="true" className={CTA_ARROW} />
                 </Button>
               ) : (
                 <Button
                   type="button"
-                  data-cuelume-press="bloom"
+                  size="lg"
                   onClick={() => onDeclare?.(opportunity.directiveGoal)}
-                  className="h-11 sm:h-9"
+                  className="group/cta h-11 font-semibold"
                 >
                   <Command aria-hidden="true" />
                   <span>{opportunity.intentId ? "Follow-up Directive" : "Declare Directive"}</span>
+                  <ArrowUpRight aria-hidden="true" className={CTA_ARROW} />
                 </Button>
               )}
               {secondary && (
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="outline"
                   onClick={secondary.onClick}
-                  className="h-11 sm:h-9"
+                  className="bg-surface h-11 sm:h-9"
                 >
+                  <Compass aria-hidden="true" className="text-facet-accent" />
                   <span>{secondary.label}</span>
-                  <NavArrowRight aria-hidden="true" className="opacity-60" />
                 </Button>
               )}
             </div>
@@ -387,6 +412,13 @@ function ExecutiveOpportunityHeroComponent({
     </AnimatePresence>
   );
 }
+
+/**
+ * v2 CTA arrow: dimmed at rest, drifting up-right on hover and keyboard focus (no drift under
+ * Reduce Motion).
+ */
+const CTA_ARROW =
+  "opacity-70 transition-[opacity,translate] duration-150 group-hover/cta:opacity-100 group-focus-visible/cta:opacity-100 motion-safe:group-hover/cta:translate-x-0.5 motion-safe:group-hover/cta:-translate-y-0.5 motion-safe:group-focus-visible/cta:translate-x-0.5 motion-safe:group-focus-visible/cta:-translate-y-0.5";
 
 const DRILL_LABEL: Partial<Record<Opportunity["domain"], string>> = {
   defense: "defense",

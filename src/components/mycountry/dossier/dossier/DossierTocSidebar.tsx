@@ -19,6 +19,8 @@ import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/fa
 import { Badge } from "~/components/ui/badge";
 import type { CountryInfobox } from "~/types/dossier";
 import type { WikiSource } from "~/lib/wiki-os/config";
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 export interface TocItem {
   id: string;
@@ -240,61 +242,52 @@ export function DossierTocSidebar({
   const totalEntries = Object.values(groupedFolders).reduce((acc, arr) => acc + arr.length, 0);
 
   return (
-    <div className="space-y-4 lg:sticky lg:top-20">
+    <div className="space-y-4 lg:sticky lg:top-(--shell-top-offset)">
       {/* Searchable Dynamic Dossier Table of Contents */}
-      <FacetCard depth={1} interactive="none" className="overflow-hidden rounded-2xl">
-        <FacetCardHeader className="border-border gap-0 border-b px-4 py-3 pb-2">
+      <FacetCard className="rounded-card overflow-hidden">
+        <FacetCardHeader className="border-separator gap-0 border-b px-4 py-3 pb-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-foreground flex items-center gap-2 text-sm font-semibold">
-              <Layers className="text-muted-foreground h-4 w-4" />
+            <h3 className="text-label text-headline flex items-center gap-2">
+              <Layers className="text-label-secondary h-4 w-4" />
               Dossier
             </h3>
-            <Badge variant="outline" className="text-muted-foreground font-mono">
+            <Badge variant="outline" className="text-label-secondary tabular-nums">
               {totalEntries} Entries
             </Badge>
           </div>
 
           {/* Search Input */}
-          <div className="relative mt-2.5">
-            <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-3.5 w-3.5" />
+          <div className="relative mt-2">
+            <Search className="text-label-secondary absolute top-3 left-3 h-3.5 w-3.5" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search pages & subfolders..."
               aria-label="Search dossier"
-              className="text-foreground placeholder:text-muted-foreground border-input bg-background focus-visible:ring-ring w-full rounded-lg border py-1.5 pr-3 pl-8 text-xs outline-none focus-visible:ring-2"
+              className="text-label placeholder:text-label-secondary border-separator bg-surface focus-visible:ring-tint rounded-control text-footnote w-full border py-2 pr-3 pl-8 outline-none focus-visible:ring-2"
             />
           </div>
 
-          {/* Source Filter Pills */}
-          <div
-            className="bg-muted/50 mt-2 flex gap-1 rounded-lg p-0.5"
-            role="group"
+          {/* Source filter */}
+          <SegmentedControl
             aria-label="Source"
-          >
-            {(["all", "wiki", "native"] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setSourceFilter(mode)}
-                aria-pressed={sourceFilter === mode}
-                data-cuelume-press="tick"
-                className={`focus-visible:ring-ring flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors outline-none focus-visible:ring-2 ${
-                  sourceFilter === mode
-                    ? "bg-background text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {mode === "all" ? "All" : mode === "wiki" ? "Wiki" : "Canvas"}
-              </button>
-            ))}
-          </div>
+            className="mt-2"
+            fullWidth
+            size="sm"
+            value={sourceFilter}
+            onValueChange={(v) => setSourceFilter(v as typeof sourceFilter)}
+            options={[
+              { value: "all", label: "All" },
+              { value: "wiki", label: "Wiki" },
+              { value: "native", label: "Canvas" },
+            ]}
+          />
         </FacetCardHeader>
 
         <FacetCardContent className="max-h-96 space-y-2 overflow-y-auto p-2">
           {Object.keys(groupedFolders).length === 0 ? (
-            <div className="text-muted-foreground p-4 text-center text-xs">
+            <div className="text-label-secondary text-footnote p-4 text-center">
               No dossier folders or pages found.
             </div>
           ) : (
@@ -302,38 +295,40 @@ export function DossierTocSidebar({
               const isOpen = searchQuery.trim().length > 0 || openFolders[folderName] !== false;
 
               return (
-                <div key={folderName} className="border-border rounded-lg border">
+                <div key={folderName} className="border-separator rounded-control border">
                   {/* Folder Header Button */}
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => toggleFolder(folderName)}
                     aria-expanded={isOpen}
-                    className="text-foreground hover:bg-accent/50 flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-xs font-semibold transition-colors"
+                    className="text-label h-auto min-h-(--control-height-sm) w-full justify-between justify-start py-2 text-left whitespace-normal"
                   >
                     <div className="flex min-w-0 items-center gap-2">
                       {isOpen ? (
-                        <FolderOpen className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+                        <FolderOpen className="text-label-secondary h-3.5 w-3.5 shrink-0" />
                       ) : (
-                        <Folder className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+                        <Folder className="text-label-secondary h-3.5 w-3.5 shrink-0" />
                       )}
                       <span className="truncate">{folderName}</span>
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-1.5">
-                      <span className="text-muted-foreground bg-muted rounded px-1.5 py-0.5 font-mono text-xs">
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-label-secondary bg-fill-3 text-footnote rounded-control-sm px-2 py-0.5 tabular-nums">
                         {items.length}
                       </span>
                       {isOpen ? (
-                        <ChevronDown className="text-muted-foreground h-3.5 w-3.5" />
+                        <ChevronDown className="text-label-secondary h-3.5 w-3.5" />
                       ) : (
-                        <ChevronRight className="text-muted-foreground h-3.5 w-3.5" />
+                        <ChevronRight className="text-label-secondary h-3.5 w-3.5" />
                       )}
                     </div>
-                  </button>
+                  </Button>
 
                   {/* Subfolder Item List (Pages & Sections) */}
                   {isOpen && (
-                    <div className="border-border space-y-0.5 border-t pt-1 pr-1 pb-1 pl-4">
+                    <div className="border-separator space-y-0.5 border-t pt-1 pr-1 pb-1 pl-4">
                       {items.map((item) => {
                         const isSelected = activeSectionId === item.id;
                         return (
@@ -342,27 +337,27 @@ export function DossierTocSidebar({
                             type="button"
                             aria-current={isSelected ? "true" : undefined}
                             onClick={() => handleItemClick(item)}
-                            className={`flex w-full items-center justify-between rounded px-2 py-1 text-left text-xs transition-[background-color,border-color,transform] duration-150 ${
+                            className={`text-footnote rounded-control-sm flex w-full items-center justify-between px-2 py-1 text-left transition-[background-color,border-color,transform] duration-150 ${
                               isSelected
-                                ? "bg-accent text-foreground font-semibold"
+                                ? "bg-fill-3 text-label font-semibold"
                                 : item.isPage
-                                  ? "text-foreground hover:bg-accent/50 font-medium"
-                                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                                  ? "text-label hover:bg-fill-3 font-medium"
+                                  : "text-label-secondary hover:text-label hover:bg-fill-3"
                             }`}
                           >
                             <div className="flex min-w-0 items-center gap-2">
                               {item.isPage ? (
-                                <Globe className="text-muted-foreground h-3 w-3 shrink-0" />
+                                <Globe className="text-label-secondary h-3 w-3 shrink-0" />
                               ) : item.source === "wiki" ? (
-                                <BookOpen className="text-muted-foreground h-3 w-3 shrink-0" />
+                                <BookOpen className="text-label-secondary h-3 w-3 shrink-0" />
                               ) : (
-                                <FileText className="text-muted-foreground h-3 w-3 shrink-0" />
+                                <FileText className="text-label-secondary h-3 w-3 shrink-0" />
                               )}
-                              <span className="truncate text-xs font-medium">{item.title}</span>
+                              <span className="text-caption truncate">{item.title}</span>
                             </div>
 
                             {item.isPage ? (
-                              <ExternalLink className="text-muted-foreground h-3 w-3 shrink-0" />
+                              <ExternalLink className="text-label-secondary h-3 w-3 shrink-0" />
                             ) : (
                               <ChevronRight className="h-3 w-3 shrink-0 opacity-40" />
                             )}

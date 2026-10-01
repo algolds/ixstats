@@ -6,93 +6,93 @@
 export const chartColorPalette = {
   // Primary colors for main data series
   primary: [
-    "hsl(var(--color-brand-primary-hsl))",
-    "hsl(var(--color-brand-secondary-hsl))",
-    "hsl(var(--color-brand-tertiary-hsl))",
-    "hsl(var(--color-success-hsl))",
-    "hsl(var(--color-warning-hsl))",
-    "hsl(var(--color-error-hsl))",
+    "var(--color-brand-primary)",
+    "var(--color-brand-secondary)",
+    "var(--color-purple-500)",
+    "var(--color-success)",
+    "var(--color-warning)",
+    "var(--color-error)",
   ],
 
   // Semantic colors
   semantic: {
-    success: "hsl(var(--color-success-hsl))",
-    warning: "hsl(var(--color-warning-hsl))",
-    error: "hsl(var(--color-error-hsl))",
-    info: "hsl(var(--color-brand-primary-hsl))",
+    success: "var(--color-success)",
+    warning: "var(--color-warning)",
+    error: "var(--color-error)",
+    info: "var(--color-brand-primary)",
   },
 
   // Economic tier colors
   economicTiers: {
-    "Tier 1": "hsl(var(--color-success-hsl))",
-    "Tier 2": "hsl(var(--color-brand-primary-hsl))",
-    "Tier 3": "hsl(var(--color-warning-hsl))",
-    "Tier 4": "hsl(var(--color-error-hsl))",
-    "Tier 5": "hsl(var(--color-error-dark-hsl))",
+    "Tier 1": "var(--color-success)",
+    "Tier 2": "var(--color-brand-primary)",
+    "Tier 3": "var(--color-warning)",
+    "Tier 4": "var(--color-error)",
+    "Tier 5": "var(--color-error-dark)",
   },
 
   // Social class colors
   socialClasses: {
-    "Upper Class": "hsl(var(--color-brand-primary-hsl))",
-    "Upper Middle Class": "hsl(var(--color-brand-secondary-hsl))",
-    "Middle Class": "hsl(var(--color-success-hsl))",
-    "Lower Middle Class": "hsl(var(--color-warning-hsl))",
-    "Lower Class": "hsl(var(--color-error-hsl))",
+    "Upper Class": "var(--color-brand-primary)",
+    "Upper Middle Class": "var(--color-brand-secondary)",
+    "Middle Class": "var(--color-success)",
+    "Lower Middle Class": "var(--color-warning)",
+    "Lower Class": "var(--color-error)",
   },
 
   // Government spending categories
   governmentSpending: {
-    Defense: "hsl(var(--color-brand-primary-hsl))",
-    Education: "hsl(var(--color-brand-secondary-hsl))",
-    Healthcare: "hsl(var(--color-error-hsl))",
-    Infrastructure: "hsl(var(--color-success-hsl))",
-    "Social Security": "hsl(var(--color-warning-hsl))",
-    Other: "hsl(var(--color-text-muted-hsl))",
+    Defense: "var(--color-brand-primary)",
+    Education: "var(--color-brand-secondary)",
+    Healthcare: "var(--color-error)",
+    Infrastructure: "var(--color-success)",
+    "Social Security": "var(--color-warning)",
+    Other: "var(--color-text-muted)",
   },
 
   // Age demographics
   ageGroups: {
-    "0-15": "hsl(var(--color-brand-secondary-hsl))",
-    "16-64": "hsl(var(--color-success-hsl))",
-    "65+": "hsl(var(--color-error-hsl))",
+    "0-15": "var(--color-brand-secondary)",
+    "16-64": "var(--color-success)",
+    "65+": "var(--color-error)",
   },
 
   // Geographic regions
   regions: {
-    North: "hsl(var(--color-brand-primary-hsl))",
-    South: "hsl(var(--color-brand-secondary-hsl))",
-    East: "hsl(var(--color-success-hsl))",
-    West: "hsl(var(--color-warning-hsl))",
-    Central: "hsl(var(--color-error-hsl))",
+    North: "var(--color-brand-primary)",
+    South: "var(--color-brand-secondary)",
+    East: "var(--color-success)",
+    West: "var(--color-warning)",
+    Central: "var(--color-error)",
   },
 
   // Education levels
   educationLevels: {
-    "No Formal Education": "hsl(var(--color-error-hsl))",
-    "Primary Education": "hsl(var(--color-warning-hsl))",
-    "Secondary Education": "hsl(var(--color-success-hsl))",
-    "Higher Education": "hsl(var(--color-brand-secondary-hsl))",
+    "No Formal Education": "var(--color-error)",
+    "Primary Education": "var(--color-warning)",
+    "Secondary Education": "var(--color-success)",
+    "Higher Education": "var(--color-brand-secondary)",
   },
 
   // Citizenship status
   citizenshipStatus: {
-    Citizens: "hsl(var(--color-brand-primary-hsl))",
-    "Permanent Residents": "hsl(var(--color-success-hsl))",
-    "Temporary Residents": "hsl(var(--color-warning-hsl))",
-    Other: "hsl(var(--color-error-hsl))",
+    Citizens: "var(--color-brand-primary)",
+    "Permanent Residents": "var(--color-success)",
+    "Temporary Residents": "var(--color-warning)",
+    Other: "var(--color-error)",
   },
 
   // Gender demographics
   gender: {
-    Male: "hsl(var(--color-brand-primary-hsl))",
-    Female: "hsl(var(--color-brand-secondary-hsl))",
-    Other: "hsl(var(--color-warning-hsl))",
+    Male: "var(--color-brand-primary)",
+    Female: "var(--color-brand-secondary)",
+    Other: "var(--color-warning)",
   },
 
   // Urban/Rural split
   urbanRural: {
-    Urban: "hsl(var(--color-brand-primary-hsl))",
-    Rural: "hsl(var(--color-success-hsl))",
+    Urban: "var(--color-brand-primary)",
+    Rural: "var(--color-success)",
   },
 };
 

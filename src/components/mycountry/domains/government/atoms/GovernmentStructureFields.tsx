@@ -58,7 +58,7 @@ export function GovernmentStructureFields({
       {/* Basic Information */}
       {hideGovernmentType ? (
         <div className="space-y-2">
-          <Label htmlFor="governmentName" className="text-muted-foreground text-sm font-medium">
+          <Label htmlFor="governmentName" className="text-label-secondary text-body font-medium">
             Government Name
           </Label>
           <Input
@@ -73,7 +73,7 @@ export function GovernmentStructureFields({
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="governmentName" className="text-muted-foreground text-sm font-medium">
+            <Label htmlFor="governmentName" className="text-label-secondary text-body font-medium">
               Government Name
             </Label>
             <Input
@@ -87,7 +87,7 @@ export function GovernmentStructureFields({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="governmentType" className="text-muted-foreground text-sm font-medium">
+            <Label htmlFor="governmentType" className="text-label-secondary text-body font-medium">
               Government Type
             </Label>
             <Input
@@ -114,7 +114,7 @@ export function GovernmentStructureFields({
           <div className="flex items-center justify-between">
             <Label
               htmlFor="headOfState"
-              className="text-muted-foreground flex items-center text-sm font-medium"
+              className="text-label-secondary text-body flex items-center font-medium"
             >
               <Crown className="mr-1 h-4 w-4" />
               Head of State
@@ -127,7 +127,7 @@ export function GovernmentStructureFields({
               aria-pressed={isGovHeadLocked}
               className={cn(
                 "gap-1 font-semibold",
-                isGovHeadLocked ? "text-amber-600" : "text-muted-foreground"
+                isGovHeadLocked ? "text-yellow" : "text-label-secondary"
               )}
               title={
                 isGovHeadLocked
@@ -160,7 +160,7 @@ export function GovernmentStructureFields({
         <div className="space-y-2">
           <Label
             htmlFor="headOfGovernment"
-            className="text-muted-foreground flex items-center text-sm font-medium"
+            className="text-label-secondary text-body flex items-center font-medium"
           >
             <Briefcase className="mr-1 h-4 w-4" />
             Head of Government
@@ -192,7 +192,7 @@ export function GovernmentStructureFields({
           <div className="space-y-2">
             <Label
               htmlFor="legislatureName"
-              className="text-muted-foreground flex items-center text-sm font-medium"
+              className="text-label-secondary text-body flex items-center font-medium"
             >
               <Users className="mr-1 h-4 w-4" />
               Legislature
@@ -209,7 +209,7 @@ export function GovernmentStructureFields({
           <div className="space-y-2">
             <Label
               htmlFor="executiveName"
-              className="text-muted-foreground flex items-center text-sm font-medium"
+              className="text-label-secondary text-body flex items-center font-medium"
             >
               <Briefcase className="mr-1 h-4 w-4" />
               Executive
@@ -226,7 +226,7 @@ export function GovernmentStructureFields({
           <div className="space-y-2">
             <Label
               htmlFor="judicialName"
-              className="text-muted-foreground flex items-center text-sm font-medium"
+              className="text-label-secondary text-body flex items-center font-medium"
             >
               <Scale className="mr-1 h-4 w-4" />
               Judiciary

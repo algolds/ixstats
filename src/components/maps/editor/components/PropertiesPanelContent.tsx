@@ -309,16 +309,16 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
       <div className="space-y-4 px-3 py-3">
         <div className="flex items-center justify-between">
           <Eyebrow>Selection</Eyebrow>
-          <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-xs font-medium">
+          <span className="bg-tint-fill text-tint text-caption rounded-control-sm px-2 py-0.5">
             {editor.selectedIds.size} features selected
           </span>
         </div>
 
         {selectedSubdivisions.length > 1 && (
-          <FacetCard surface="solid" className="space-y-3 rounded-lg p-3">
+          <FacetCard className="space-y-3 p-3">
             <div className="flex flex-col gap-1">
-              <span className="text-foreground text-xs font-semibold">Combine regions</span>
-              <span className="text-muted-foreground text-xs">
+              <span className="text-label text-caption font-semibold">Combine regions</span>
+              <span className="text-label-secondary text-footnote">
                 Merge, subtract, or find overlapping areas of selected regions.
               </span>
             </div>
@@ -350,14 +350,14 @@ export const PropertiesPanelContent = memo(function PropertiesPanelContent({
           </FacetCard>
         )}
 
-        <FacetCard surface="solid" className="space-y-2 rounded-lg p-3">
+        <FacetCard className="space-y-2 p-3">
           <Eyebrow className="block">Selected items</Eyebrow>
           <div className="max-h-48 space-y-1 overflow-y-auto">
             {editor.allFeatures
               .filter((f: EditorFeature) => editor.selectedIds.has(f.id))
               .map((f: EditorFeature) => (
-                <div key={f.id} className="flex items-center justify-between text-xs">
-                  <span className="text-foreground/80 max-w-[180px] truncate">
+                <div key={f.id} className="text-footnote flex items-center justify-between">
+                  <span className="text-label-secondary max-w-[180px] truncate">
                     {f.name || f.id}
                   </span>
                   <Eyebrow>{f.type}</Eyebrow>

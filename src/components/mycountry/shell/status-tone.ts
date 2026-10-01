@@ -8,14 +8,10 @@ export type StatusTone = "critical" | "warning" | "accent" | "neutral";
 /** Text colour for a status label or glyph. */
 export const STATUS_TEXT: Record<StatusTone, string> = {
   critical: "text-destructive",
-  warning: "text-orange-600",
-  accent: "text-(--facet-mycountry)",
-  neutral: "text-muted-foreground",
+  warning: "text-orange",
+  accent: "text-tint",
+  neutral: "text-label-secondary",
 };
 
-/**
- * The one MyCountry-gold filled action per surface (Declare Directive in the header). Applied as
- * a className on `<Button>`, never as a bespoke button.
- */
-export const MYCOUNTRY_PRIMARY_ACTION =
-  "bg-amber-500 font-semibold text-amber-950 shadow-sm hover:bg-amber-400";
+// The MyCountry gold primary is the plain `<Button>` inside `data-app="mycountry"` (Facet 3.1 §16.3):
+// no class needed.

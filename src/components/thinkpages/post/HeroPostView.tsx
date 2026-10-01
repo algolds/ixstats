@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { springGentle } from "~/lib/design/motion";
 import { motion } from "motion/react";
 // oxlint-disable-next-line eslint/no-unused-vars
 import {
@@ -33,6 +34,7 @@ import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { cn } from "~/lib/utils";
 
 import { ACCOUNT_TYPE_ICONS, ACCOUNT_TYPE_COLORS } from "./ThinkpagesPostUtils";
+import { Refraction } from "~/components/ui/facet";
 
 export interface HeroPostViewProps {
   post: any;
@@ -105,9 +107,11 @@ export function HeroPostView({
     <motion.div
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="group border-border/60 bg-card/85 hover:border-border hover:bg-card/95 relative space-y-4 overflow-hidden rounded-2xl border p-5 shadow-sm backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-md"
+      transition={springGentle}
+      className="group material-hero text-label relative isolate space-y-4 overflow-hidden rounded-2xl p-5"
     >
+      {/* v2 hero post: the glass card (Facet 3.1 glass hero tier) with its refraction hairline. */}
+      <Refraction />
       {/* Header section */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -115,10 +119,10 @@ export function HeroPostView({
             onClick={() => onAccountClick?.(post.account.id)}
             className="shrink-0 transition-transform hover:scale-105"
           >
-            <Avatar className="border-border/40 h-12 w-12 border">
+            <Avatar className="border-separator h-12 w-12 border">
               <AvatarImage src={proxyDiscordUrl(post.account.profileImageUrl)} />
               <AvatarFallback
-                className={`text-sm font-semibold ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"}`}
+                className={`text-headline ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-fill-2 text-label-secondary"}`}
               >
                 {post.account.displayName
                   .split(" ")
@@ -129,30 +133,30 @@ export function HeroPostView({
             </Avatar>
           </button>
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-2">
               <PersonaAuthorCard username={post.account.username ?? ""}>
                 <button
                   onClick={() => onAccountClick?.(post.account.id)}
-                  className="text-base leading-snug font-bold text-slate-100 hover:underline"
+                  className="text-headline text-label leading-snug hover:underline"
                 >
                   {post.account.displayName}
                 </button>
               </PersonaAuthorCard>
               {post.account.verified && (
                 <span
-                  className="inline-flex h-4 w-4 items-center justify-center text-sm"
+                  className="text-body inline-flex h-4 w-4 items-center justify-center"
                   title="Verified"
                 >
                   ✅
                 </span>
               )}
               {post.account.country && (
-                <span className="border-border/40 bg-muted/40 text-muted-foreground inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs font-medium">
+                <span className="border-separator bg-fill-4 text-label-secondary rounded-control-sm text-caption inline-flex items-center gap-1 border px-2 py-0.5">
                   {post.account.country.flag && (
                     <img
                       src={normalizeFlagUrl(post.account.country.flag) ?? undefined}
                       alt=""
-                      className="h-2.5 w-3.5 rounded-sm object-cover"
+                      className="rounded-control-sm h-2.5 w-3.5 object-cover"
                       onError={(e) => {
                         e.currentTarget.style.display = "none";
                       }}
@@ -163,14 +167,14 @@ export function HeroPostView({
               )}
             </div>
             <div className="mt-0.5 flex items-center gap-2">
-              <span className="text-muted-foreground text-sm">@{post.account.username}</span>
-              <span className="text-muted-foreground/60 text-xs">·</span>
+              <span className="text-label-secondary text-body">@{post.account.username}</span>
+              <span className="text-label-tertiary text-footnote">·</span>
               <div
                 className={cn(
-                  "flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium tracking-wide uppercase",
+                  "rounded-control-sm text-caption flex items-center gap-1 px-2 py-0.5",
                   ACCOUNT_TYPE_COLORS[
                     post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS
-                  ] || "bg-gray-500/20 text-gray-500"
+                  ] || "bg-fill-2 text-label-secondary"
                 )}
               >
                 {React.createElement(
@@ -191,38 +195,26 @@ export function HeroPostView({
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-muted-foreground hover:bg-accent/20 hover:text-foreground h-9 w-9 rounded-full"
+                className="text-label-secondary hover:bg-fill-4 hover:text-label size-9 rounded-full"
               >
                 <MoreHorizontal className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="border-border/60 bg-card/95 w-56 backdrop-blur-xl"
-            >
+            <DropdownMenuContent align="end" className="border-separator bg-surface w-56">
               {canEdit && (
-                <DropdownMenuItem
-                  onClick={handleEdit}
-                  className="text-foreground hover:bg-accent/20"
-                >
-                  <Edit className="mr-2 h-4 w-4" />
+                <DropdownMenuItem onClick={handleEdit} className="text-label hover:bg-fill-4">
+                  <Edit />
                   <span>Edit Post</span>
                 </DropdownMenuItem>
               )}
               {currentUserAccountId && (
                 <>
-                  <DropdownMenuItem
-                    onClick={handlePin}
-                    className="text-foreground hover:bg-accent/20"
-                  >
-                    <Pin className="mr-2 h-4 w-4" />
+                  <DropdownMenuItem onClick={handlePin} className="text-label hover:bg-fill-4">
+                    <Pin />
                     <span>{post.pinned ? "Unpin Post" : "Pin Post"}</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={handleBookmark}
-                    className="text-foreground hover:bg-accent/20"
-                  >
-                    <Bookmark className="mr-2 h-4 w-4" />
+                  <DropdownMenuItem onClick={handleBookmark} className="text-label hover:bg-fill-4">
+                    <Bookmark />
                     <span>Bookmark Post</span>
                   </DropdownMenuItem>
                 </>
@@ -230,9 +222,9 @@ export function HeroPostView({
               {currentUserAccountId && !isOwnPost && (
                 <DropdownMenuItem
                   onClick={handleFlag}
-                  className="text-red-400 hover:bg-red-500/20 hover:text-red-300"
+                  className="text-red hover:bg-red/20 hover:text-red"
                 >
-                  <Flag className="mr-2 h-4 w-4" />
+                  <Flag />
                   <span>Report Post</span>
                 </DropdownMenuItem>
               )}
@@ -241,9 +233,9 @@ export function HeroPostView({
                   <DropdownMenuSeparator className="bg-border/40" />
                   <DropdownMenuItem
                     onClick={handleDelete}
-                    className="font-medium text-red-500 hover:bg-red-500/20 hover:text-red-400"
+                    className="text-red hover:bg-red/20 hover:text-red font-medium"
                   >
-                    <Trash2 className="mr-2 h-4 w-4" />
+                    <Trash2 />
                     <span>Delete Post</span>
                   </DropdownMenuItem>
                 </>
@@ -303,7 +295,7 @@ export function HeroPostView({
           {post.hashtags.map((hashtag: string, index: number) => (
             <button
               key={index}
-              className="text-sm font-medium text-blue-400 hover:text-blue-300 hover:underline"
+              className="text-body text-blue hover:text-blue font-medium hover:underline"
             >
               #{hashtag}
             </button>
@@ -312,7 +304,7 @@ export function HeroPostView({
       )}
 
       {/* Timestamp Row */}
-      <div className="text-muted-foreground py-1 text-sm">
+      <div className="text-label-secondary text-body py-1">
         {new Date(post.timestamp).toLocaleTimeString(undefined, {
           hour: "2-digit",
           minute: "2-digit",
@@ -327,18 +319,18 @@ export function HeroPostView({
       </div>
 
       {/* Status Counters Row */}
-      <div className="border-border/40 text-muted-foreground flex gap-4 border-t border-b py-3 text-sm font-medium">
+      <div className="border-separator text-label-secondary text-body flex gap-4 border-t border-b py-3 font-medium">
         <div>
-          <span className="text-foreground font-bold">{post.likeCount || 0}</span>
-          <span className="text-muted-foreground ml-1 font-normal">Likes</span>
+          <span className="text-label font-semibold">{post.likeCount || 0}</span>
+          <span className="text-label-secondary ml-1 font-normal">Likes</span>
         </div>
         <div>
-          <span className="text-foreground font-bold">{post.repostCount || 0}</span>
-          <span className="text-muted-foreground ml-1 font-normal">Reposts</span>
+          <span className="text-label font-semibold">{post.repostCount || 0}</span>
+          <span className="text-label-secondary ml-1 font-normal">Reposts</span>
         </div>
         <div>
-          <span className="text-foreground font-bold">{post.replyCount || 0}</span>
-          <span className="text-muted-foreground ml-1 font-normal">Replies</span>
+          <span className="text-label font-semibold">{post.replyCount || 0}</span>
+          <span className="text-label-secondary ml-1 font-normal">Replies</span>
         </div>
       </div>
 

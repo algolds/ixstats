@@ -9,6 +9,7 @@ import { staggerContainer, staggerItem } from "./TabMotionConfig";
 import { cn } from "~/lib/utils";
 
 import { VitalityBreakdownModal } from "~/components/mycountry/shared/modals/VitalityBreakdownModal";
+import { Button } from "~/components/ui/button";
 
 export interface VitalityRing {
   id: string;
@@ -109,9 +110,9 @@ export function VitalityRingsDisplay({
 
   // Get overall status color based on score
   const getOverallStatusColor = (score: number) => {
-    if (score >= 80) return "text-emerald-500";
-    if (score >= 60) return "text-foreground";
-    if (score >= 40) return "text-amber-500";
+    if (score >= 80) return "text-green";
+    if (score >= 60) return "text-label";
+    if (score >= 40) return "text-yellow";
     return "text-destructive";
   };
 
@@ -137,16 +138,16 @@ export function VitalityRingsDisplay({
   const itemProps = animate ? { variants: staggerItem } : {};
 
   return (
-    <FacetCard depth={2} className={cn("rounded-2xl", className)}>
+    <FacetCard className={cn("rounded-card", className)}>
       {(title || subtitle) && (
         <FacetCardHeader className="p-5 pb-2">
           {title && (
-            <h3 className="text-foreground flex items-center gap-2 text-base font-semibold">
-              <Activity className="text-muted-foreground h-4 w-4" />
+            <h3 className="text-label text-title-3 flex items-center gap-2">
+              <Activity className="text-label-secondary h-4 w-4" />
               {title}
             </h3>
           )}
-          {subtitle && <p className="text-muted-foreground text-sm">{subtitle}</p>}
+          {subtitle && <p className="text-label-secondary text-body">{subtitle}</p>}
         </FacetCardHeader>
       )}
       <FacetCardContent className="px-5 pt-2 pb-5">
@@ -185,9 +186,9 @@ export function VitalityRingsDisplay({
                 </div>
                 {showLabels && (
                   <div className="mt-2 text-center">
-                    <p className="text-foreground text-xs font-medium">{ring.label}</p>
+                    <p className="text-label text-caption">{ring.label}</p>
                     {ring.description && size !== "sm" && (
-                      <p className="text-muted-foreground mt-0.5 max-w-[100px] text-xs">
+                      <p className="text-label-secondary text-footnote mt-0.5 max-w-[100px]">
                         {ring.description}
                       </p>
                     )}
@@ -201,26 +202,25 @@ export function VitalityRingsDisplay({
         {/* Overall Score Section */}
         {showOverallScore && (
           <motion.div
-            className="border-border mt-4 border-t pt-4"
+            className="border-separator mt-4 border-t pt-4"
             initial={animate ? { opacity: 0, y: 10 } : undefined}
             animate={animate ? { opacity: 1, y: 0 } : undefined}
             transition={{ delay: 0.1, duration: 0.2 }}
           >
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-foreground text-sm font-semibold">Overall National Health</h4>
-                <p className="text-muted-foreground text-xs">Average of all vitality indicators</p>
+                <h4 className="text-label text-headline">Overall National Health</h4>
+                <p className="text-label-secondary text-footnote">
+                  Average of all vitality indicators
+                </p>
               </div>
               <div className="text-right">
                 <span
-                  className={cn(
-                    "text-2xl font-semibold tabular-nums",
-                    getOverallStatusColor(overallScore)
-                  )}
+                  className={cn("text-title-1 tabular-nums", getOverallStatusColor(overallScore))}
                 >
                   {overallScore.toFixed(1)}%
                 </span>
-                <p className={cn("text-xs font-medium", getOverallStatusColor(overallScore))}>
+                <p className={cn("text-caption", getOverallStatusColor(overallScore))}>
                   {getOverallStatusLabel(overallScore)}
                 </p>
               </div>
@@ -251,15 +251,20 @@ export function QuickVitalityRings({
 
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon-sm"
         onClick={() => setIsOpen(true)}
-        className={cn(
-          "hover:bg-accent/50 focus-visible:ring-ring flex cursor-pointer items-center gap-2 rounded-xl p-1 transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]",
-          className
-        )}
         title="Click for Vitality Index Breakdown"
         aria-label="Open vitality index breakdown"
+        className={cn(
+          "rounded-control-sm size-5",
+          cn(
+            "hover:bg-fill-3 focus-visible:ring-tint rounded-row flex cursor-pointer items-center gap-2 p-1 transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]",
+            className
+          )
+        )}
       >
         {rings.map((ring) => (
           <HealthRing
@@ -271,7 +276,7 @@ export function QuickVitalityRings({
             tooltip={`${ring.label}: ${ring.value}/100 — Click for breakdown`}
           />
         ))}
-      </button>
+      </Button>
 
       <VitalityBreakdownModal
         isOpen={isOpen}

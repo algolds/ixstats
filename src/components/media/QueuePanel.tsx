@@ -1,9 +1,11 @@
 "use client";
 
+import { cn } from "~/lib/utils";
 import React from "react";
 import { useIxMediaActions, useIxMediaState } from "./MediaContext";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Play, Trash as Trash2, XmarkCircle as XCircle } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 
 export function QueuePanel() {
   const { queue, currentIndex } = useIxMediaState();
@@ -19,20 +21,22 @@ export function QueuePanel() {
   return (
     <div className="flex w-full flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-bold tracking-wider uppercase opacity-70">Up Next</h3>
+        <h3 className="text-subhead text-label-secondary">Up Next</h3>
         {queue.length > 0 && (
-          <button
+          <Button
+            variant="plain"
+            size="sm"
             onClick={clearQueue}
-            className="flex items-center gap-1 text-xs font-medium text-red-500 transition-colors hover:text-red-600"
+            className="text-red hover:bg-red/10"
           >
             <XCircle className="h-3.5 w-3.5" />
             Clear Queue
-          </button>
+          </Button>
         )}
       </div>
 
       {queue.length === 0 ? (
-        <div className="text-muted-foreground rounded-lg border border-dashed border-black/10 py-8 text-center text-sm dark:border-white/10">
+        <div className="text-label-secondary rounded-control border-separator text-body border border-dashed py-8 text-center">
           Queue is empty
         </div>
       ) : (
@@ -43,52 +47,62 @@ export function QueuePanel() {
             return (
               <FacetCard
                 key={`${track.id}-${idx}`}
-                className={`flex items-center justify-between gap-3 border p-3 ${
-                  isActive ? "border-primary/40 bg-primary/5" : "border-black/5 dark:border-white/5"
-                }`}
+                className={cn(
+                  "flex items-center justify-between gap-3 border p-3",
+                  isActive ? "border-tint/40 bg-tint-fill" : "border-separator"
+                )}
               >
                 <div className="flex min-w-0 items-center gap-3">
                   {track.coverArt && (
                     <img
                       src={track.coverArt}
-                      className="h-10 w-10 flex-shrink-0 rounded object-cover"
+                      className="rounded-control-sm size-10 flex-shrink-0 object-cover"
                       alt={track.title}
                     />
                   )}
                   <div className="flex min-w-0 flex-col">
                     <span
-                      className={`truncate text-xs font-bold ${isActive ? "text-primary" : ""}`}
+                      className={cn(
+                        "text-headline truncate",
+                        isActive ? "text-tint" : "text-label"
+                      )}
                     >
                       {track.title}
                     </span>
-                    <span className="text-muted-foreground truncate text-xs">
+                    <span className="text-label-secondary text-footnote truncate">
                       {track.subtitle || "No artist"}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex flex-shrink-0 items-center gap-2">
-                  <span className="text-muted-foreground font-mono text-xs">
+                  <span className="text-label-secondary text-footnote tabular-nums">
                     {formatTime(track.duration)}
                   </span>
 
                   {!isActive && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Play now"
                       onClick={() => playTrack(track)}
-                      className="text-muted-foreground hover:text-foreground p-1 transition-colors"
                       title="Play now"
+                      className="text-label-secondary"
                     >
                       <Play className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   )}
 
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Remove from queue"
                     onClick={() => removeFromQueue(idx)}
-                    className="text-muted-foreground p-1 transition-colors hover:text-red-500"
                     title="Remove from queue"
+                    className="text-label-secondary hover:text-red"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  </Button>
                 </div>
               </FacetCard>
             );

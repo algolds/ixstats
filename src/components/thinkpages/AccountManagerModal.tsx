@@ -35,11 +35,11 @@ export function AccountManagerModal({
       }}
     >
       <DialogContent
-        className="glass-hierarchy-modal flex max-h-[90vh] max-w-lg flex-col overflow-hidden p-0"
+        className="flex max-h-[90vh] max-w-lg flex-col overflow-hidden p-0"
         data-dialog-nested="true"
       >
-        <DialogHeader className="border-border/40 shrink-0 border-b px-6 pt-6 pb-4">
-          <DialogTitle className="text-lg font-semibold">Account Manager</DialogTitle>
+        <DialogHeader className="border-separator shrink-0 border-b px-6 pt-6 pb-4">
+          <DialogTitle className="text-title-3">Account Manager</DialogTitle>
         </DialogHeader>
         <div className="flex-1 overflow-x-hidden overflow-y-auto p-6">
           <EnhancedAccountManager

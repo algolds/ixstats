@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useId } from "react";
 import { Autocomplete } from "~/components/ui/autocomplete";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils/cn";
@@ -61,6 +61,8 @@ export const IdentityAutocomplete = React.memo(function IdentityAutocomplete({
     { enabled: isOpen && !disabled }
   );
 
+  const inputId = useId();
+
   const handleBlur = useCallback(() => {
     if (value.trim() && onSave && !disabled) {
       onSave(fieldName, value.trim());
@@ -68,18 +70,20 @@ export const IdentityAutocomplete = React.memo(function IdentityAutocomplete({
   }, [value, onSave, fieldName, disabled]);
 
   return (
-    <div className="space-y-1.5">
-      <label className="text-foreground flex items-center justify-between text-xs font-semibold">
-        <span className="flex items-center gap-1.5">
-          {Icon && (
-            <Icon className={cn("h-3.5 w-3.5", iconClassName || "text-muted-foreground")} />
-          )}
+    <div className="space-y-2">
+      <label
+        htmlFor={inputId}
+        className="text-label text-caption flex items-center justify-between font-semibold"
+      >
+        <span className="flex items-center gap-2">
+          {Icon && <Icon className={cn("h-3.5 w-3.5", iconClassName || "text-label-secondary")} />}
           <span>{label || formatFieldLabel(fieldName)}</span>
           <ChangedFieldDot name={fieldName} value={value} />
         </span>
         {extraLabelElement}
       </label>
       <Autocomplete
+        id={inputId}
         fieldName={fieldName}
         value={value}
         onChange={onChange}
@@ -88,10 +92,7 @@ export const IdentityAutocomplete = React.memo(function IdentityAutocomplete({
         placeholder={placeholder}
         disabled={disabled}
         defaultSuggestions={defaultSuggestions}
-        className={cn(
-          size === "sm" && "h-8 text-xs",
-          className
-        )}
+        className={cn(size === "sm" && "text-footnote h-8", className)}
         globalSuggestions={
           data?.global.map((s) => ({
             id: s.id,

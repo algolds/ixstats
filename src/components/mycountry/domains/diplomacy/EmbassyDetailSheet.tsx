@@ -1,13 +1,7 @@
 "use client";
 
 import { api } from "~/trpc/react";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -48,11 +42,11 @@ function InfoRow({
 }) {
   return (
     <div className="flex items-start justify-between gap-2">
-      <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
+      <span className="text-label-secondary text-footnote flex items-center gap-2">
         {Icon && <Icon className="h-3 w-3" />}
         {label}
       </span>
-      <span className="text-foreground text-right text-xs font-medium">{value}</span>
+      <span className="text-label text-caption text-right">{value}</span>
     </div>
   );
 }
@@ -61,9 +55,9 @@ function StatBar({ label, value, max }: { label: string; value: number; max: num
   const pct = Math.min(100, (value / max) * 100);
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="text-foreground font-medium tabular-nums">{value}</span>
+      <div className="text-footnote mb-1 flex items-center justify-between">
+        <span className="text-label-secondary">{label}</span>
+        <span className="text-label font-medium tabular-nums">{value}</span>
       </div>
       <Progress value={pct} className="h-1.5" />
     </div>
@@ -121,21 +115,21 @@ export function EmbassyDetailSheet({
     const s = status?.toLowerCase() ?? "active";
     if (s === "active")
       return (
-        <Badge variant="outline" className="text-emerald-500">
+        <Badge variant="green">
           <CheckCircle />
           Active
         </Badge>
       );
     if (s === "closed")
       return (
-        <Badge variant="outline" className="text-destructive">
+        <Badge variant="destructive">
           <XCircle />
           Closed
         </Badge>
       );
     if (s === "under_construction")
       return (
-        <Badge variant="outline" className="text-amber-500">
+        <Badge variant="yellow">
           <Clock />
           Building
         </Badge>
@@ -157,27 +151,27 @@ export function EmbassyDetailSheet({
   const activeMissions = missions.filter((m) => m.status === "active");
 
   return (
-    <Dialog
+    <Sheet
       open={isOpen}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
-      <DialogContent className="flex max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
-        <DialogHeader className="px-6 pt-6 pb-0">
-          <DialogTitle className="flex items-start gap-2">
-            <Building2 className="text-muted-foreground mt-0.5 h-5 w-5 shrink-0" />
+      <SheetContent className="flex flex-col gap-0 overflow-hidden p-0">
+        <SheetHeader className="px-6 pt-6 pb-0">
+          <SheetTitle className="flex items-start gap-2">
+            <Building2 className="text-label-secondary mt-0.5 h-5 w-5 shrink-0" />
             <span className="line-clamp-2">
               {isLoading ? "Loading…" : (embassy?.name ?? "Embassy Not Found")}
             </span>
-          </DialogTitle>
+          </SheetTitle>
           {embassy && (
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+            <div className="flex flex-wrap items-center gap-2 pt-1">
               {getStatusBadge(embassy.status)}
               {getLevelBadge(embassy.level)}
             </div>
           )}
-        </DialogHeader>
+        </SheetHeader>
 
         {isLoading ? (
           <div className="space-y-4 px-6 py-4">
@@ -211,22 +205,25 @@ export function EmbassyDetailSheet({
                   value={`${embassy.staffCount ?? 0} personnel`}
                   icon={Users}
                 />
-                <InfoRow
-                  label="Budget"
-                  value={`$${(embassy.budget ?? 0).toLocaleString()}/mo`}
-                  icon={DollarSign}
-                />
+                {/* Served only to the nation that runs the embassy. */}
+                {embassy.budget != null && (
+                  <InfoRow
+                    label="Budget"
+                    value={`$${embassy.budget.toLocaleString()}/mo`}
+                    icon={DollarSign}
+                  />
+                )}
               </div>
 
               <Separator />
 
               {/* Performance Stats */}
               <div>
-                <Eyebrow className="mb-2 flex items-center gap-1.5">
+                <Eyebrow className="mb-2 flex items-center gap-2">
                   <TrendingUp className="h-3.5 w-3.5" />
                   Performance
                 </Eyebrow>
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   <StatBar label="Effectiveness" value={embassy.effectiveness ?? 0} max={100} />
                   <StatBar label="Influence" value={embassy.influence ?? 0} max={100} />
                   <StatBar label="Reputation" value={embassy.reputation ?? 0} max={100} />
@@ -239,7 +236,7 @@ export function EmbassyDetailSheet({
                 <>
                   <Separator />
                   <div>
-                    <Eyebrow className="mb-2 flex items-center gap-1.5">
+                    <Eyebrow className="mb-2 flex items-center gap-2">
                       <Zap className="h-3.5 w-3.5" />
                       Active Missions ({activeMissions.length})
                     </Eyebrow>
@@ -247,16 +244,16 @@ export function EmbassyDetailSheet({
                       {activeMissions.map((m) => (
                         <div
                           key={m.id}
-                          className="border-border bg-card rounded-lg border p-2 text-xs"
+                          className="border-separator bg-surface rounded-control text-footnote border p-2"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-foreground font-medium">{m.name}</span>
+                            <span className="text-label font-medium">{m.name}</span>
                             <Badge variant="outline">{m.type}</Badge>
                           </div>
                           {m.progress != null && (
-                            <div className="mt-1.5">
+                            <div className="mt-2">
                               <Progress value={m.progress} className="h-1" />
-                              <span className="text-muted-foreground mt-0.5 block text-xs">
+                              <span className="text-label-secondary text-footnote mt-0.5 block">
                                 {m.progress}% complete
                               </span>
                             </div>
@@ -273,7 +270,7 @@ export function EmbassyDetailSheet({
                 <>
                   <Separator />
                   <div>
-                    <Eyebrow className="mb-2 flex items-center gap-1.5">
+                    <Eyebrow className="mb-2 flex items-center gap-2">
                       <Star className="h-3.5 w-3.5" />
                       Specialization
                     </Eyebrow>
@@ -284,20 +281,20 @@ export function EmbassyDetailSheet({
             </div>
 
             {/* Footer */}
-            <DialogFooter className="border-border border-t px-6 py-4">
+            <SheetFooter className="border-separator border-t px-6 py-4">
               <Button variant="outline" size="sm" onClick={onClose}>
                 Close
               </Button>
               {embassy.status === "active" && (
                 <>
-                  <Button size="sm" variant="outline" className="gap-1.5" disabled>
+                  <Button size="sm" variant="outline" className="gap-2" disabled>
                     <ArrowUpCircle className="h-3 w-3" />
                     Upgrade (Coming Soon)
                   </Button>
                   <Button
                     size="sm"
                     variant="destructive"
-                    className="gap-1.5"
+                    className="gap-2"
                     onClick={() => closeMutation.mutate({ embassyId: embassy.id })}
                     disabled={closeMutation.isPending}
                   >
@@ -311,7 +308,7 @@ export function EmbassyDetailSheet({
                   <Button
                     size="sm"
                     variant="default"
-                    className="gap-1.5"
+                    className="gap-2"
                     onClick={() => reopenMutation.mutate({ embassyId: embassy.id })}
                     disabled={reopenMutation.isPending}
                   >
@@ -321,7 +318,7 @@ export function EmbassyDetailSheet({
                   <Button
                     size="sm"
                     variant="destructive"
-                    className="gap-1.5"
+                    className="gap-2"
                     onClick={() => severMutation.mutate({ embassyId: embassy.id })}
                     disabled={severMutation.isPending}
                   >
@@ -330,14 +327,14 @@ export function EmbassyDetailSheet({
                   </Button>
                 </>
               )}
-            </DialogFooter>
+            </SheetFooter>
           </>
         ) : (
-          <div className="text-muted-foreground flex flex-1 items-center justify-center">
+          <div className="text-label-secondary flex flex-1 items-center justify-center">
             Embassy not found.
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

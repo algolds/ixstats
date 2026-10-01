@@ -73,16 +73,16 @@ export function WikiOSProfileWidget({
           src={avatarUrl}
           alt={displayName}
           onError={() => setImgError(true)}
-          className="h-9 w-9 rounded-xl border border-[var(--wikios-border)] object-cover"
+          className="rounded-row border-separator h-9 w-9 border object-cover"
         />
       ) : (
-        <div className="grid h-9 w-9 place-items-center rounded-xl border border-[var(--wikios-border)] bg-white/5 text-xs font-bold text-[var(--wikios-text-muted)]">
+        <div className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary grid h-9 w-9 place-items-center border font-semibold">
           {initials}
         </div>
       )}
       {withBadge && rank != null && (
         <span
-          className="absolute -right-1 -bottom-1 grid min-w-[14px] place-items-center rounded-full border border-[var(--wikios-border)] px-0.5 text-xs leading-[14px] font-bold text-white shadow-sm"
+          className="border-separator text-caption shadow-card absolute -right-1 -bottom-1 grid min-w-[14px] place-items-center rounded-full border px-0.5 leading-[14px] font-semibold text-white"
           style={{ backgroundColor: hoverBorderColor }}
         >
           #{rank}
@@ -100,7 +100,7 @@ export function WikiOSProfileWidget({
         <TooltipTrigger asChild>
           <Link
             href={profileHref}
-            className="hover:bg-foreground/5 flex items-center justify-center rounded-xl px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+            className="hover:bg-fill-4 rounded-row flex items-center justify-center px-3 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
           >
             {renderAvatar(true)}
           </Link>
@@ -118,10 +118,10 @@ export function WikiOSProfileWidget({
     return (
       <Link
         href={profileHref}
-        className="group relative z-50 flex w-max items-center rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-card-bg)] px-2.5 py-1 pr-4 shadow-lg backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-in-out outline-none"
+        className="group rounded-row border-separator bg-surface shadow-floating relative z-50 flex w-max items-center border px-3 py-1 pr-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-in-out outline-none"
       >
         {renderAvatar(true)}
-        <span className="w-auto flex-1 overflow-hidden pl-3 text-left text-xs font-semibold whitespace-nowrap text-[var(--wikios-text-muted)] opacity-100 group-hover:text-[var(--wikios-text)]">
+        <span className="text-caption text-label-secondary group-hover:text-label w-auto flex-1 overflow-hidden pl-3 text-left font-semibold whitespace-nowrap opacity-100">
           {displayName}
         </span>
       </Link>
@@ -132,32 +132,30 @@ export function WikiOSProfileWidget({
   return (
     <Link
       href={profileHref}
-      className="group bg-foreground/[0.03] hover:bg-foreground/[0.06] relative block w-full overflow-hidden rounded-xl border border-[var(--wikios-border)] p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-[var(--hover-border-color)]"
+      className="group bg-fill-4 hover:bg-fill-3 rounded-row border-separator relative block w-full overflow-hidden border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-[var(--hover-border-color)]"
       style={
         {
           "--hover-border-color": hoverBorderColor,
         } as React.CSSProperties
       }
     >
-      <TextureOverlay texture="chevron" opacity={0.06} className="rounded-xl" />
-      <div className="relative z-10 flex items-center gap-2.5">
+      <TextureOverlay texture="chevron" opacity={0.05} className="rounded-row" />
+      <div className="relative z-10 flex items-center gap-2">
         {renderAvatar(true)}
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold text-[var(--wikios-text)]">
-            {displayName}
-          </div>
+          <div className="text-headline text-label truncate">{displayName}</div>
           {rank != null && (
-            <div className="text-xs font-semibold" style={{ color: hoverBorderColor }}>
+            <div className="text-caption font-semibold" style={{ color: hoverBorderColor }}>
               Rank #{rank}
             </div>
           )}
         </div>
       </div>
 
-      <div className="relative z-10 mt-2 flex flex-col gap-1 border-t border-[var(--wikios-border)] pt-2">
+      <div className="border-separator relative z-10 mt-2 flex flex-col gap-1 border-t pt-2">
         {registration && (
-          <div className="flex items-center gap-1.5 text-xs text-[var(--wikios-text-muted)]">
-            <Calendar className="h-3 w-3 shrink-0 text-[var(--wikios-text-muted)]" />
+          <div className="text-footnote text-label-secondary flex items-center gap-2">
+            <Calendar className="text-label-secondary h-3 w-3 shrink-0" />
             <span className="truncate">
               Joined{" "}
               {new Date(registration).toLocaleDateString("en-US", {
@@ -168,20 +166,20 @@ export function WikiOSProfileWidget({
           </div>
         )}
         {editCount != null && (
-          <div className="flex items-center gap-1.5 text-xs text-[var(--wikios-text-muted)]">
-            <FileText className="h-3 w-3 shrink-0 text-[var(--wikios-text-dim)]" />
+          <div className="text-footnote text-label-secondary flex items-center gap-2">
+            <FileText className="text-label-secondary h-3 w-3 shrink-0" />
             <span className="truncate">{editCount.toLocaleString()} edits</span>
           </div>
         )}
         {lorescore > 0 && (
-          <div className="flex items-center gap-1.5 text-xs text-[var(--wikios-text-muted)]">
-            <Scroll className="h-3 w-3 shrink-0 text-indigo-500 dark:text-indigo-400/90" />
+          <div className="text-footnote text-label-secondary flex items-center gap-2">
+            <Scroll className="text-indigo h-3 w-3 shrink-0" />
             <span className="truncate">{lorescore.toLocaleString()} Lorescore</span>
           </div>
         )}
         {lorewards > 0 && (
-          <div className="flex items-center gap-1.5 text-xs text-[var(--wikios-text-muted)]">
-            <Trophy className="h-3 w-3 shrink-0 text-amber-500 dark:text-amber-400/90" />
+          <div className="text-footnote text-label-secondary flex items-center gap-2">
+            <Trophy className="text-yellow h-3 w-3 shrink-0" />
             <span className="truncate">
               {lorewards.toLocaleString()} Loreward{lorewards !== 1 ? "s" : ""} won
             </span>

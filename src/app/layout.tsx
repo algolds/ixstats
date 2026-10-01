@@ -9,10 +9,10 @@ import { facetClerkAppearance } from "~/lib/clerk/theme";
 import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/context/theme-context";
 import { AuthProvider } from "~/context/auth-context";
-import { MotionConfig } from "motion/react";
 import { IconoirProvider } from "iconoir-react";
 import { Navigation, NavigationTransitionHandler } from "~/app/_components";
 import { SetupRedirect } from "~/app/_components/SetupRedirect";
+import { AppShell } from "~/components/shell/AppShell";
 import { WebGLErrorHandler } from "~/components/ui/webgl-error-handler";
 import {
   ChunkLoadErrorBoundary,
@@ -31,6 +31,8 @@ import { ExecutiveNotificationProvider } from "~/context/ExecutiveNotificationCo
 import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { LazyGameProviders } from "~/components/providers/LazyGameProviders";
 import { CuelumeSoundProvider } from "~/components/providers/CuelumeSoundProvider";
+import { FacetMotionConfig } from "~/components/providers/FacetMotionConfig";
+import { APPEARANCE_INIT_SCRIPT, FACET_NAV_DEFAULT } from "~/lib/design/appearance";
 
 // Removed force-dynamic to enable static generation and ISR where possible
 // Dynamic data is handled through proper React boundaries and tRPC
@@ -78,8 +80,9 @@ function AppContent({
           an explicit strokeWidth prop on an icon still wins.
         */}
         <IconoirProvider iconProps={ICON_DEFAULTS}>
-          {/* One switch honours prefers-reduced-motion for every `motion` element in the tree. */}
-          <MotionConfig reducedMotion="user">
+          {/* One switch honours Reduce Motion (the OS or the in-app setting) for every `motion`
+              element in the tree. */}
+          <FacetMotionConfig>
             <AbilityProvider>
               <IxTimeProvider>
                 <ExecutiveNotificationProvider>
@@ -90,19 +93,22 @@ function AppContent({
                       <GlobalLinkTooltips />
                       <NavigationTransitionHandler />
                       <CuelumeSoundProvider />
-                      <div className="flex min-h-screen flex-col">
-                        <Navigation />
-                        {!isStandalone && <SetupRedirect />}
+                      {/* The legacy top bar, or the Facet 3 shell (AppSidebar / TabBar / Halo
+                          island) when the `facet-nav` flag is on — see ~/components/shell. */}
+                      <AppShell
+                        legacyNav={<Navigation />}
+                        beforeMain={!isStandalone && <SetupRedirect />}
+                      >
                         {/* Media providers + MiniPlayer live in the (wiki-os) layout (narrator only). */}
-                        <main className="flex flex-1 flex-col">{children}</main>
-                      </div>
+                        {children}
+                      </AppShell>
                     </LazyGameProviders>
                     <Toaster />
                   </WikiContextProvider>
                 </ExecutiveNotificationProvider>
               </IxTimeProvider>
             </AbilityProvider>
-          </MotionConfig>
+          </FacetMotionConfig>
         </IconoirProvider>
       </ThemeProvider>
     </TRPCReactProvider>
@@ -115,6 +121,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const dashboardPath = withBasePath("/dashboard");
   const signInPath = withBasePath("/sign-in");
   const signUpPath = withBasePath("/sign-up");
+  // Per-request CSP nonce (set by src/proxy.ts); inline scripts without it are blocked.
+  const nonce = headersList.get("x-csp-nonce") ?? undefined;
 
   if (!isClerkConfigured) {
     throw new Error(
@@ -125,15 +133,28 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang="en"
+      // Server default; the pre-paint script below rewrites theme + preference attributes
+      // (data-theme, data-density, data-contrast, data-transparency, data-motion, data-sound,
+      // --text-scale, and the navigation shell's data-nav / data-sidebar) from storage / the OS
+      // before first paint, hence suppressHydrationWarning.
       className={`dark ${geist.variable} ${playfair.variable}`}
+      data-theme="dark"
+      data-nav={FACET_NAV_DEFAULT ? "facet" : undefined}
       suppressHydrationWarning
     >
+      <head>
+        <script
+          nonce={nonce}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: APPEARANCE_INIT_SCRIPT }}
+        />
+      </head>
       <body className="min-h-screen transition-colors duration-200">
         <ChunkLoadErrorHandler />
         <ChunkLoadErrorBoundary>
           <ClerkProvider
             publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-            nonce={headersList.get("x-csp-nonce") ?? undefined}
+            nonce={nonce}
             signInUrl={signInPath}
             signUpUrl={signUpPath}
             signInFallbackRedirectUrl={dashboardPath}

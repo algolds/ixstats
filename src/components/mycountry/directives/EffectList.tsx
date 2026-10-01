@@ -1,6 +1,6 @@
 import React from "react";
 import { ArrowDown, ArrowUp, Minus } from "iconoir-react";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { TONE_CLASSES } from "./directive-model";
 
@@ -21,8 +21,8 @@ export interface EffectItem {
  */
 export function EffectList({ items, className }: { items: EffectItem[]; className?: string }) {
   return (
-    <FacetContainer depth={3} surface="solid" className={cn("rounded-xl", className)}>
-      <ul className="divide-border divide-y">
+    <FacetCard variant="inset" padding="none" className={className}>
+      <ul className="divide-separator divide-y">
         {items.map((item) => {
           const tone =
             item.favorable == null
@@ -33,13 +33,15 @@ export function EffectList({ items, className }: { items: EffectItem[]; classNam
           const Icon =
             item.direction === "up" ? ArrowUp : item.direction === "down" ? ArrowDown : Minus;
           return (
-            <li key={item.key} className="flex items-center gap-3 px-3 py-2.5">
+            <li key={item.key} className="flex items-center gap-3 px-3 py-2">
               <Icon className={cn("h-4 w-4 shrink-0", tone.text)} aria-hidden />
               <div className="min-w-0 flex-1">
-                <p className="text-foreground text-sm">{item.label}</p>
-                {item.caption && <p className="text-muted-foreground text-xs">{item.caption}</p>}
+                <p className="text-label text-body">{item.label}</p>
+                {item.caption && (
+                  <p className="text-label-secondary text-footnote">{item.caption}</p>
+                )}
               </div>
-              <span className={cn("shrink-0 text-sm font-semibold tabular-nums", tone.text)}>
+              <span className={cn("text-headline shrink-0 tabular-nums", tone.text)}>
                 {item.value}
               </span>
               {item.favorable != null && (
@@ -51,6 +53,6 @@ export function EffectList({ items, className }: { items: EffectItem[]; classNam
           );
         })}
       </ul>
-    </FacetContainer>
+    </FacetCard>
   );
 }

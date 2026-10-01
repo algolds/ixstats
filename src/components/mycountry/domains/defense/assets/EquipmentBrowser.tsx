@@ -16,6 +16,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { MILITARY_ERAS } from "~/lib/military/equipment";
 import type { CatalogManufacturer } from "~/lib/military/player-catalog";
 import type { EquipmentPreset } from "./asset-config";
+import { FacetCard } from "~/components/ui/facet-container";
 
 interface EquipmentBrowserProps {
   equipment: EquipmentPreset[];
@@ -43,16 +44,17 @@ function EquipmentRow({
   const imageUrl = equipment.imageUrl;
 
   return (
-    <button
-      type="button"
+    <FacetCard
+      variant="inset"
+      padding="sm"
       onClick={() => onSelect(equipment)}
-      className="border-border bg-card hover:border-foreground/30 focus-visible:ring-ring flex w-full cursor-pointer items-start gap-3 rounded-lg border p-3 text-left transition-[border-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.99]"
+      className="flex w-full items-start gap-3 text-left"
     >
       {imageUrl && (
         <img
           src={imageUrl}
           alt=""
-          className="h-14 w-20 shrink-0 rounded-md object-cover"
+          className="rounded-control-sm h-14 w-20 shrink-0 object-cover"
           onError={(e) => {
             e.currentTarget.style.display = "none";
           }}
@@ -60,29 +62,29 @@ function EquipmentRow({
       )}
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex flex-wrap items-center gap-2">
-          <h5 className="text-foreground text-sm font-medium">{equipment.name}</h5>
+          <h5 className="text-label text-body font-medium">{equipment.name}</h5>
           <Badge variant="outline">{equipment.category}</Badge>
           <Badge variant="secondary">{era?.label.split(" ")[0]}</Badge>
         </div>
-        <p className="text-muted-foreground text-xs">
+        <p className="text-label-secondary text-footnote">
           {manufacturer ? `${manufacturer.name} • ${manufacturer.country}` : equipment.manufacturer}
         </p>
-        <div className="mt-2 flex items-center gap-4 text-xs">
+        <div className="text-footnote mt-2 flex items-center gap-4">
           <span>
-            <span className="text-muted-foreground">Cost:</span> $
+            <span className="text-label-secondary">Cost:</span> $
             <NumberFlowDisplay value={equipment.acquisitionCost ?? 0} format="compact" />
           </span>
           {equipment.range && (
             <span>
-              <span className="text-muted-foreground">Range:</span> {equipment.range} km
+              <span className="text-label-secondary">Range:</span> {equipment.range} km
             </span>
           )}
         </div>
       </div>
-      <span className="text-foreground border-border shrink-0 rounded-md border px-3 py-1.5 text-xs font-medium">
+      <span className="text-label border-separator rounded-control-sm text-caption shrink-0 border px-3 py-2">
         Select
       </span>
-    </button>
+    </FacetCard>
   );
 }
 
@@ -110,7 +112,7 @@ export const EquipmentBrowser = React.memo(function EquipmentBrowser({
         <div className="relative">
           <Search
             aria-hidden="true"
-            className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
+            className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
           />
           <Input
             value={searchQuery}
@@ -150,7 +152,9 @@ export const EquipmentBrowser = React.memo(function EquipmentBrowser({
       {/* Equipment List */}
       <div className="grid max-h-96 grid-cols-1 gap-2 overflow-y-auto">
         {isLoading &&
-          Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-lg" />)}
+          Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="rounded-control h-20" />
+          ))}
         {equipment.map((item) => (
           <EquipmentRow
             key={item.key}
@@ -160,7 +164,7 @@ export const EquipmentBrowser = React.memo(function EquipmentBrowser({
           />
         ))}
         {!isLoading && equipment.length === 0 && (
-          <div className="text-muted-foreground py-6 text-center text-sm">
+          <div className="text-label-secondary text-body py-6 text-center">
             No equipment found matching your criteria
           </div>
         )}

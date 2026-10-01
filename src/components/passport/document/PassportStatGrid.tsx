@@ -4,6 +4,9 @@ import React from "react";
 import Link from "next/link";
 import { ChatBubble as MessageSquare, Spark as Sparkles, Trophy } from "iconoir-react";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
+import { FACET_INSET_SURFACE } from "~/components/ui/facet-container";
+import { Stat } from "~/components/ui/stat";
+import { cn } from "~/lib/utils";
 import type { PassportPayload, PassportVault, PassportVisibility } from "../types";
 
 interface PassportStatGridProps {
@@ -14,6 +17,12 @@ interface PassportStatGridProps {
   onOpenLorewards: () => void;
   onOpenVault: () => void;
 }
+
+/** An inset panel (`FacetCard variant="inset"` styling on a button or link). */
+const STAT_CELL = cn(FACET_INSET_SURFACE, "w-full p-3");
+/** v2 cells: a rim in the cell's accent on hover and keyboard focus, and the press scale. */
+const STAT_CELL_INTERACTIVE =
+  "hover:bg-fill-3 border border-transparent hover:border-yellow/30 focus-visible:border-yellow/30 facet-press focus-visible:outline-tint cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2";
 
 /** Category breadth of the whole live collection (e.g. "3/12", "Military focus"). */
 function categorySummary(focus: PassportVault["focus"]): { label: string; sub: string } {
@@ -40,27 +49,29 @@ export const PassportStatGrid = React.memo(function PassportStatGrid({
   const focus = categorySummary(vault?.focus ?? null);
 
   return (
-    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
       {visibility.accolades && (
         <button
           type="button"
           onClick={onOpenLorewards}
-          data-cuelume-press="soft"
-          className="group w-full cursor-pointer space-y-0.5 rounded-xl border border-black/6 bg-black/[0.02] p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-amber-500/30 hover:bg-black/[0.04] active:scale-[0.97] dark:border-white/8 dark:bg-white/[0.02] dark:hover:bg-white/[0.04]"
-          title="Click to view Lorewards Civic Accolades"
+          className={cn(STAT_CELL, STAT_CELL_INTERACTIVE, "text-left")}
+          title="View Lorewards civic accolades"
         >
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-xs text-stone-400 uppercase transition-colors group-hover:text-amber-500">
-              Lorewards
-            </span>
-            <Trophy className="h-3 w-3 text-amber-500" />
-          </div>
-          <p className="text-foreground text-sm font-bold">
-            {lorewards?.rank ? `#${lorewards.rank}` : "Unranked"}
-          </p>
-          <p className="font-mono text-xs text-amber-500">
-            {lorewards?.totalScore ? `${lorewards.totalScore.toLocaleString()} pts` : "0 pts"}
-          </p>
+          <Stat
+            size="sm"
+            label="Lorewards"
+            icon={<Trophy aria-hidden className="text-yellow" />}
+            iconPlacement="trailing"
+            value={lorewards?.rank ? `#${lorewards.rank}` : "Unranked"}
+            hint={
+              <span>
+                <span className="font-data tabular-nums">
+                  {(lorewards?.totalScore ?? 0).toLocaleString()}
+                </span>{" "}
+                pts
+              </span>
+            }
+          />
         </button>
       )}
 
@@ -68,50 +79,63 @@ export const PassportStatGrid = React.memo(function PassportStatGrid({
         <button
           type="button"
           onClick={onOpenVault}
-          data-cuelume-press="soft"
-          className="w-full cursor-pointer space-y-0.5 rounded-xl border border-black/6 bg-black/[0.02] p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/[0.04] active:scale-[0.97] dark:border-white/8 dark:bg-white/[0.02] dark:hover:bg-white/[0.04]"
+          className={cn(STAT_CELL, STAT_CELL_INTERACTIVE, "text-left")}
         >
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-xs text-stone-400 uppercase">Focus</span>
-            <Sparkles className="h-3 w-3 text-amber-500" />
-          </div>
-          <p className="text-foreground text-sm font-bold">{focus.label}</p>
-          <p className="text-muted-foreground truncate font-mono text-xs">{focus.sub}</p>
+          <Stat
+            size="sm"
+            label="Focus"
+            icon={<Sparkles aria-hidden className="text-yellow" />}
+            iconPlacement="trailing"
+            value={focus.label}
+            hint={<span className="block truncate">{focus.sub}</span>}
+          />
         </button>
       )}
 
       {visibility.forumStats && (
-        <div className="space-y-0.5 rounded-xl border border-black/6 bg-black/[0.02] p-2.5 dark:border-white/8 dark:bg-white/[0.02]">
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-xs text-stone-400 uppercase">Forum</span>
-            <MessageSquare className="h-3 w-3 text-blue-500" />
-          </div>
-          <p className="text-foreground text-sm font-bold">
-            {forumStats ? `${forumStats.messageCount.toLocaleString()} Posts` : "—"}
-          </p>
-          <p className="text-muted-foreground font-mono text-xs">
-            {forumStats ? `${forumStats.reactionScore.toLocaleString()} reactions` : "Not linked"}
-          </p>
+        <div className={STAT_CELL}>
+          <Stat
+            size="sm"
+            label="Forum"
+            icon={<MessageSquare aria-hidden className="text-blue" />}
+            iconPlacement="trailing"
+            value={forumStats ? `${forumStats.messageCount.toLocaleString()} posts` : "—"}
+            hint={
+              forumStats ? (
+                <span>
+                  <span className="font-data tabular-nums">
+                    {forumStats.reactionScore.toLocaleString()}
+                  </span>{" "}
+                  reactions
+                </span>
+              ) : (
+                "Not linked"
+              )
+            }
+          />
         </div>
       )}
 
       {vault && (
-        <Link
-          href="/vault"
-          data-cuelume-press="soft"
-          className="block cursor-pointer space-y-0.5 rounded-xl border border-black/6 bg-black/[0.02] p-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/[0.04] active:scale-[0.97] dark:border-white/8 dark:bg-white/[0.02] dark:hover:bg-white/[0.04]"
-        >
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-xs text-stone-400 uppercase">IxCredits</span>
-            <IxCreditsSymbol className="h-3 w-3 text-amber-500" />
-          </div>
-          <p className="text-foreground flex items-center gap-1 text-sm font-bold">
-            <IxCreditsSymbol className="h-3 w-3 shrink-0 text-amber-500" />
-            {vault.credits.toLocaleString()}
-          </p>
-          <p className="text-muted-foreground font-mono text-xs">
-            {vault.totalCards.toLocaleString()} cards · Lv {vault.collectorLevel}
-          </p>
+        <Link href="/vault" className={cn(STAT_CELL, STAT_CELL_INTERACTIVE, "block")}>
+          <Stat
+            size="sm"
+            label="IxCredits"
+            icon={<IxCreditsSymbol aria-hidden className="text-yellow" />}
+            iconPlacement="trailing"
+            value={
+              <span className="inline-flex items-center gap-1">
+                <IxCreditsSymbol aria-hidden className="text-yellow size-3.5 shrink-0" />
+                {vault.credits.toLocaleString()}
+              </span>
+            }
+            hint={
+              <span>
+                <span className="font-data tabular-nums">{vault.totalCards.toLocaleString()}</span>{" "}
+                cards · Lv {vault.collectorLevel}
+              </span>
+            }
+          />
         </Link>
       )}
     </div>

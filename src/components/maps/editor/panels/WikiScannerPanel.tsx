@@ -54,12 +54,12 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
   const hasScanned = scanProgress === 100 && !scanning;
 
   return (
-    <div className="flex flex-col gap-3 px-3 py-3 text-xs">
+    <div className="text-footnote flex flex-col gap-3 px-3 py-3">
       <div className="flex items-start gap-2">
-        <BookOpen className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+        <BookOpen className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
         <div className="min-w-0 flex-1">
-          <p className="text-foreground font-semibold">Wiki links</p>
-          <p className="text-muted-foreground">
+          <p className="text-label font-semibold">Wiki links</p>
+          <p className="text-label-secondary">
             {totalLinked} linked · {totalUnlinked} without a page
           </p>
         </div>
@@ -76,14 +76,14 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
       </div>
 
       {(scanning || scanningConflicts) && (
-        <div className="space-y-1.5" aria-live="polite">
-          <div className="bg-muted h-1.5 overflow-hidden rounded-full">
+        <div className="space-y-2" aria-live="polite">
+          <div className="bg-fill-3 h-1.5 overflow-hidden rounded-full">
             <div
-              className="bg-primary h-full rounded-full transition-[width] duration-200"
+              className="bg-tint h-full rounded-full transition-[width] duration-200"
               style={{ width: `${scanning ? scanProgress : 100}%` }}
             />
           </div>
-          <p className="text-muted-foreground">
+          <p className="text-label-secondary">
             {scanning
               ? `Searching IxWiki… ${scanProgress}%`
               : "Checking linked pages for conflicts…"}
@@ -98,17 +98,17 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
       )}
 
       {!scanning && !hasScanned && (
-        <p className="text-muted-foreground rounded-md border border-dashed px-3 py-4 text-center">
+        <p className="text-label-secondary rounded-control-sm border border-dashed px-3 py-4 text-center">
           Scan to find IxWiki pages for features that are not linked yet. Searches run three at a
           time, so large maps take a moment.
         </p>
       )}
 
       {hasScanned && (
-        <section className="space-y-1.5">
+        <section className="space-y-2">
           <Eyebrow className="block">Suggested links ({withSuggestions.length})</Eyebrow>
           {withSuggestions.length === 0 ? (
-            <p className="text-muted-foreground italic">No new matches found.</p>
+            <p className="text-label-secondary italic">No new matches found.</p>
           ) : (
             <ul className="space-y-1">
               {withSuggestions.map((r) => {
@@ -116,7 +116,7 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
                 return (
                   <li
                     key={r.featureId}
-                    className="border-border/60 hover:bg-accent/40 flex items-center gap-2 rounded-md border px-2 py-1.5"
+                    className="border-separator hover:bg-fill-3 rounded-control-sm flex items-center gap-2 border px-2 py-2"
                   >
                     <button
                       type="button"
@@ -124,10 +124,8 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
                       className="min-w-0 flex-1 text-left"
                       title="Show on map"
                     >
-                      <span className="text-foreground block truncate font-medium">
-                        {r.featureName}
-                      </span>
-                      <span className="text-muted-foreground block truncate">
+                      <span className="text-label block truncate font-medium">{r.featureName}</span>
+                      <span className="text-label-secondary block truncate">
                         → {best.title}{" "}
                         <span className="tabular-nums">({Math.round(best.confidence * 100)}%)</span>
                       </span>
@@ -152,7 +150,7 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
             </ul>
           )}
           {linked.size > 0 && (
-            <p className="flex items-center gap-1 text-emerald-500">
+            <p className="text-green flex items-center gap-1">
               <Check className="h-3 w-3" /> {linked.size} linked this session
             </p>
           )}
@@ -160,10 +158,10 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
       )}
 
       {hasScanned && !scanningConflicts && (
-        <section className="space-y-1.5">
+        <section className="space-y-2">
           <Eyebrow className="block">Map vs wiki conflicts ({conflicts.length})</Eyebrow>
           {conflicts.length === 0 ? (
-            <p className="text-muted-foreground italic">
+            <p className="text-label-secondary italic">
               Linked features agree with their infoboxes.
             </p>
           ) : (
@@ -171,18 +169,18 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
               {conflicts.map((c) => (
                 <li
                   key={`${c.featureId}-${c.field}`}
-                  className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 px-2 py-1.5"
+                  className="rounded-control-sm border-yellow/30 bg-yellow/5 flex items-start gap-2 border px-2 py-2"
                 >
-                  <WarningTriangle className="mt-0.5 h-3 w-3 shrink-0 text-amber-500" />
+                  <WarningTriangle className="text-yellow mt-0.5 h-3 w-3 shrink-0" />
                   <button
                     type="button"
                     onClick={() => onFocusFeature?.(c.featureId)}
                     className="min-w-0 flex-1 text-left"
                   >
-                    <span className="text-foreground block truncate font-medium">
+                    <span className="text-label block truncate font-medium">
                       {c.featureName} · {c.field}
                     </span>
-                    <span className="text-muted-foreground block truncate">
+                    <span className="text-label-secondary block truncate">
                       Map {c.mapValue} · Wiki {c.wikiValue}
                     </span>
                   </button>

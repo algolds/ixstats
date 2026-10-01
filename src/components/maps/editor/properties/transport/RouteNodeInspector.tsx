@@ -21,6 +21,8 @@ import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/maps/map-config";
 import { polylineLengthKm } from "~/lib/maps/geo-math";
 import { api } from "~/trpc/react";
 import { calculateRouteTravelTime, resolveRouteBaseSpeed } from "~/lib/economy/travel-time";
+import { Checkbox } from "~/components/ui/checkbox";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 
 interface RouteNodeInspectorProps {
   routeId: string;
@@ -215,8 +217,8 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
 
   if (isLoading && !route) {
     return (
-      <div className="text-muted-foreground flex flex-col items-center justify-center py-12 text-center text-xs">
-        <Loader2 className="text-primary mb-2 h-5 w-5 animate-spin" />
+      <div className="text-label-secondary text-footnote flex flex-col items-center justify-center py-12 text-center">
+        <Loader2 className="text-tint mb-2 h-5 w-5 animate-spin" />
         <span>Loading route details...</span>
       </div>
     );
@@ -228,13 +230,13 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
   };
 
   return (
-    <div className="text-foreground space-y-3.5 text-xs">
+    <div className="text-label text-footnote space-y-4">
       {/* Navigation Breadcrumb Header */}
-      <div className="border-border/40 flex items-center justify-between border-b pb-2">
+      <div className="border-separator flex items-center justify-between border-b pb-2">
         <Button
           variant="ghost"
           size="sm"
-          className="text-muted-foreground"
+          className="text-label-secondary"
           type="button"
           onClick={onCancel}
         >
@@ -253,29 +255,26 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Route Name"
-            className="border-border/40 bg-background/50 text-foreground placeholder:text-muted-foreground focus:border-primary w-full rounded-md border px-2.5 py-1.5 text-xs focus:outline-none"
+            className="border-separator bg-surface text-label placeholder:text-label-secondary focus:border-tint rounded-control-sm text-footnote w-full border px-3 py-2 focus:outline-none"
           />
         </div>
 
         <div className="space-y-1">
           <Eyebrow className="block">Route Sub-Type</Eyebrow>
           <div className="relative">
-            <select
+            <OptionSelect
+              aria-label="Route type"
+              size="sm"
+              className="w-full pl-6"
               value={routeType}
-              onChange={(e) => setRouteType(e.target.value)}
-              className="border-border/40 bg-background/50 text-foreground focus:border-primary w-full rounded-md border px-2.5 py-1.5 pl-6 text-xs focus:outline-none"
-            >
-              {ROUTE_TYPE_KEYS.map((key) => {
-                const s = ROUTE_STYLES[key];
-                return (
-                  <option key={key} value={key}>
-                    {s?.label ?? key}
-                  </option>
-                );
-              })}
-            </select>
+              onValueChange={setRouteType}
+              options={ROUTE_TYPE_KEYS.map((key) => ({
+                value: key,
+                label: ROUTE_STYLES[key]?.label ?? key,
+              }))}
+            />
             <span
-              className="pointer-events-none absolute top-1/2 left-2.5 h-2 w-2 -translate-y-1/2 rounded-full"
+              className="pointer-events-none absolute top-1/2 left-3 h-2 w-2 -translate-y-1/2 rounded-full"
               style={{ backgroundColor: activeStyle.color }}
             />
           </div>
@@ -284,16 +283,19 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
             <Eyebrow className="block">Status</Eyebrow>
-            <select
+            <OptionSelect
+              aria-label="Status"
               value={status}
-              onChange={(e) => setStatus(e.target.value as typeof status)}
-              className="border-border/40 bg-background/50 text-foreground focus:border-primary w-full rounded-md border px-2 py-1.5 text-xs capitalize focus:outline-none"
-            >
-              <option value="operational">Operational</option>
-              <option value="under_construction">Under Construction</option>
-              <option value="planned">Planned</option>
-              <option value="abandoned">Abandoned</option>
-            </select>
+              onValueChange={(v) => setStatus(v as typeof status)}
+              options={[
+                { value: "operational", label: "Operational" },
+                { value: "under_construction", label: "Under Construction" },
+                { value: "planned", label: "Planned" },
+                { value: "abandoned", label: "Abandoned" },
+              ]}
+              size="sm"
+              className="w-full"
+            />
           </div>
 
           <div className="space-y-1">
@@ -305,18 +307,16 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
               value={speedKmh ?? ""}
               onChange={(e) => setSpeedKmh(e.target.value ? Number(e.target.value) : undefined)}
               placeholder={String(baseSpeed)}
-              className="border-border/40 bg-background/50 text-foreground focus:border-primary w-full rounded-md border px-2 py-1.5 font-mono text-xs tabular-nums focus:outline-none"
+              className="border-separator bg-surface text-label focus:border-tint rounded-control-sm text-footnote w-full border px-2 py-2 tabular-nums focus:outline-none"
             />
           </div>
         </div>
 
         <div className="flex items-center justify-between pt-0.5">
-          <label className="text-foreground flex cursor-pointer items-center gap-1.5 text-xs">
-            <input
-              type="checkbox"
+          <label className="text-label text-footnote flex cursor-pointer items-center gap-2">
+            <Checkbox
               checked={isInternational}
-              onChange={(e) => setIsInternational(e.target.checked)}
-              className="border-border/60 text-primary focus:ring-primary/20 h-3.5 w-3.5 rounded"
+              onCheckedChange={(c) => setIsInternational(c === true)}
             />
             <span>International Corridor</span>
           </label>
@@ -325,48 +325,41 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
 
       {/* Metrics Banner */}
       <div className="grid grid-cols-2 gap-2">
-        <FacetCard
-          surface="solid"
-          className="flex items-center justify-between rounded-lg px-3 py-2 text-xs"
-        >
-          <div className="flex items-center gap-1.5">
-            <RouteIcon className="text-primary h-3.5 w-3.5" />
-            <span className="text-muted-foreground text-xs">Distance</span>
+        <FacetCard className="text-footnote flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-2">
+            <RouteIcon className="text-tint h-3.5 w-3.5" />
+            <span className="text-label-secondary text-footnote">Distance</span>
           </div>
-          <span className="text-foreground font-mono text-xs font-semibold tabular-nums">
+          <span className="text-label text-caption font-semibold tabular-nums">
             {liveLengthKm.toFixed(1)} km
           </span>
         </FacetCard>
-        <FacetCard
-          surface="solid"
-          className="flex items-center justify-between rounded-lg px-3 py-2 text-xs"
-        >
-          <div className="flex items-center gap-1.5">
-            <Clock className="text-primary h-3.5 w-3.5" />
-            <span className="text-muted-foreground text-xs">Est. Time</span>
+        <FacetCard className="text-footnote flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-2">
+            <Clock className="text-tint h-3.5 w-3.5" />
+            <span className="text-label-secondary text-footnote">Est. Time</span>
           </div>
-          <span className="text-foreground font-mono text-xs font-semibold tabular-nums">
+          <span className="text-label text-caption font-semibold tabular-nums">
             {travelTime.formattedTime}
           </span>
         </FacetCard>
       </div>
 
       {/* Path Nodes List */}
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Eyebrow className="block">Path Vertices & Nodes</Eyebrow>
-          <span className="text-muted-foreground text-xs">{currentVertices.length} points</span>
+          <span className="text-label-secondary text-footnote">
+            {currentVertices.length} points
+          </span>
         </div>
 
         {currentVertices.length === 0 ? (
-          <div className="border-border/60 text-muted-foreground rounded-md border border-dashed p-4 text-center text-xs">
+          <div className="border-separator text-label-secondary rounded-control-sm text-footnote border border-dashed p-4 text-center">
             No vertices recorded for this route.
           </div>
         ) : (
-          <FacetCard
-            surface="solid"
-            className="max-h-48 space-y-1 overflow-y-auto rounded-md p-1.5"
-          >
+          <FacetCard className="max-h-48 space-y-1 overflow-y-auto p-2">
             {currentVertices.map((coord, idx) => {
               const isStart = idx === 0;
               const isEnd = idx === currentVertices.length - 1;
@@ -374,38 +367,30 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
               return (
                 <div
                   key={idx}
-                  className="group bg-background/60 hover:bg-background flex items-center justify-between rounded px-2 py-1 text-xs transition"
+                  className="group bg-surface hover:bg-surface text-footnote rounded-control-sm flex items-center justify-between px-2 py-1 transition"
                 >
-                  <div className="flex min-w-0 items-center gap-1.5">
+                  <div className="flex min-w-0 items-center gap-2">
                     <MapPin
                       className={`h-3 w-3 shrink-0 ${
-                        isStart ? "text-emerald-500" : isEnd ? "text-red-500" : "text-primary"
+                        isStart ? "text-green" : isEnd ? "text-red" : "text-tint"
                       }`}
                     />
-                    <span className="text-muted-foreground font-mono text-xs tabular-nums">
+                    <span className="text-label-secondary text-footnote tabular-nums">
                       #{idx + 1}
                     </span>
-                    {isStart && (
-                      <Badge variant="outline" className="border-emerald-500/30 text-emerald-500">
-                        Start
-                      </Badge>
-                    )}
-                    {isEnd && (
-                      <Badge variant="outline" className="border-destructive/30 text-destructive">
-                        End
-                      </Badge>
-                    )}
+                    {isStart && <Badge variant="green">Start</Badge>}
+                    {isEnd && <Badge variant="destructive">End</Badge>}
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <span className="text-muted-foreground font-mono text-xs tabular-nums">
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-label-secondary text-footnote font-mono tabular-nums">
                       {coord[0].toFixed(4)}°, {coord[1].toFixed(4)}°
                     </span>
                     {onFlyToCoords && (
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-muted-foreground h-6 w-6"
+                        className="text-label-secondary h-6 w-6"
                         type="button"
                         onClick={() => onFlyToCoords(coord)}
                         title="Focus on map"
@@ -431,21 +416,21 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
           </FacetCard>
         )}
 
-        <div className="bg-muted/20 text-muted-foreground rounded px-2 py-1.5 text-xs leading-relaxed">
+        <div className="bg-fill-4 text-label-secondary text-footnote rounded-control-sm px-2 py-2 leading-relaxed">
           Tip: Drag vertex pins on the map to reshape. Click midpoint pins to add nodes. Right-click
           vertex to delete.
         </div>
       </div>
 
       {errorMessage && (
-        <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-md border p-2 text-xs">
+        <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-control-sm text-footnote border p-2">
           {errorMessage}
         </div>
       )}
 
       {/* Actions */}
-      <div className="space-y-1.5 pt-1">
-        <div className="flex items-center gap-1.5">
+      <div className="space-y-2 pt-1">
+        <div className="flex items-center gap-2">
           <Button
             size="sm"
             className="flex-1 justify-center"
@@ -479,7 +464,7 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
           <Button
             variant="ghost"
             size="sm"
-            className="text-muted-foreground"
+            className="text-label-secondary"
             type="button"
             onClick={onCancel}
           >
@@ -488,7 +473,7 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
 
           {confirmDelete ? (
             <div className="flex items-center gap-1">
-              <span className="text-destructive text-xs">Confirm?</span>
+              <span className="text-destructive text-footnote">Confirm?</span>
               <Button
                 variant="destructive"
                 size="xs"

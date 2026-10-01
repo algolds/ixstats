@@ -1,6 +1,14 @@
 "use client";
 
+import { useId } from "react";
 import { api } from "~/trpc/react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 export interface BuilderRealmPickerProps {
   /** The chosen realm id; null/undefined → the server's default (the active nation's realm, else IxWorld). */
@@ -13,13 +21,14 @@ export interface BuilderRealmPickerProps {
  * realm it only says so when the player is already at their nation cap there.
  */
 export function BuilderRealmPicker({ value, onChange }: BuilderRealmPickerProps) {
+  const labelId = useId();
   const { data } = api.realms.builderRealms.useQuery(undefined, { staleTime: 60_000 });
   if (!data || data.realms.length === 0) return null;
 
   const selectedId = value ?? data.defaultRealmId;
   const selected = data.realms.find((realm) => realm.id === selectedId);
   const full = selected && !selected.canCreate && (
-    <p role="status" className="text-xs text-amber-600">
+    <p role="status" className="text-footnote text-caution">
       You hold {selected.held} of {selected.cap} {selected.cap === 1 ? "nation" : "nations"} allowed
       in {selected.name}.
     </p>
@@ -29,20 +38,21 @@ export function BuilderRealmPicker({ value, onChange }: BuilderRealmPickerProps)
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-muted-foreground flex items-center gap-2 text-xs">
-        <span>Found in</span>
-        <select
-          value={selectedId}
-          onChange={(event) => onChange(event.target.value)}
-          className="border-border/60 bg-background text-foreground rounded-lg border px-2 py-1 text-xs"
-        >
-          {data.realms.map((realm) => (
-            <option key={realm.id} value={realm.id} disabled={!realm.canCreate}>
-              {realm.name} ({realm.held}/{realm.cap})
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="text-label-secondary text-footnote flex items-center gap-2">
+        <span id={labelId}>Found in</span>
+        <Select value={selectedId} onValueChange={onChange}>
+          <SelectTrigger size="sm" aria-labelledby={labelId}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {data.realms.map((realm) => (
+              <SelectItem key={realm.id} value={realm.id} disabled={!realm.canCreate}>
+                {realm.name} ({realm.held}/{realm.cap})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       {full}
     </div>
   );

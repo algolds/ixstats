@@ -121,8 +121,8 @@ export function AssetManager({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <h4 className="text-foreground flex items-center gap-2 text-sm font-semibold">
-            <Target aria-hidden="true" className="h-4 w-4 text-rose-500" />
+          <h4 className="text-label text-headline flex items-center gap-2">
+            <Target aria-hidden="true" className="text-red h-4 w-4" />
             Assets ({assetsList.length})
           </h4>
           <Select value={filterType} onValueChange={setFilterType}>
@@ -153,7 +153,7 @@ export function AssetManager({
 
             return (
               <div key={type} className="space-y-2">
-                <div className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
+                <div className="text-label-secondary text-body flex items-center gap-2 font-medium">
                   <Icon aria-hidden="true" className="h-4 w-4" />
                   {config?.label} ({typeAssets.length})
                 </div>
@@ -174,7 +174,7 @@ export function AssetManager({
           })}
         </div>
       ) : (
-        <div className="text-muted-foreground border-border rounded-lg border border-dashed py-6 text-center text-sm">
+        <div className="text-label-secondary border-separator rounded-control text-body border border-dashed py-6 text-center">
           No assets yet. Add your first asset to get started.
         </div>
       )}
@@ -187,7 +187,7 @@ export function AssetManager({
               <DialogTitle>{viewingImage.name}</DialogTitle>
               <DialogDescription>Equipment Image - Click outside to close</DialogDescription>
             </DialogHeader>
-            <div className="bg-muted relative w-full overflow-hidden rounded-lg">
+            <div className="bg-fill-3 rounded-control relative w-full overflow-hidden">
               <img
                 src={viewingImage.url}
                 alt={viewingImage.name}

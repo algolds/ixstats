@@ -2,9 +2,7 @@
 
 import React, { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { motion } from "motion/react";
 import {
-  Star,
   Trophy,
   Dollar as DollarSign,
   Group as Users,
@@ -15,18 +13,22 @@ import {
   GraduationCap,
   Heart,
   Bank as Landmark,
-  Search,
   Crown,
   Medal,
   Trophy as Award,
-  SystemRestart as Loader2,
 } from "iconoir-react";
 import { cn, formatPercent, formatYears } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
 import { api } from "~/trpc/react";
-import { Input } from "~/components/ui/input";
+import { Badge } from "~/components/ui/badge";
+import { EmptyState } from "~/components/ui/empty-state";
+import { FacetCard } from "~/components/ui/facet-container";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { SearchField } from "~/components/ui/search-field";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Skeleton } from "~/components/ui/skeleton";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 
 interface AchievementEntry {
   countryId: string;
@@ -115,7 +117,7 @@ function FlagGraphic({ countryName, flag }: { countryName: string; flag?: string
       <img
         src={flag}
         alt={`Flag of ${countryName}`}
-        className="border-border/60 h-5 w-7 shrink-0 rounded border object-cover shadow-sm"
+        className="border-separator h-5 w-7 shrink-0 rounded-xs border object-cover"
       />
     );
   }
@@ -123,10 +125,16 @@ function FlagGraphic({ countryName, flag }: { countryName: string; flag?: string
     <UnifiedCountryFlag
       countryName={countryName}
       size="sm"
-      className="h-5 w-7 rounded object-cover shadow-sm"
+      className="h-5 w-7 rounded-xs object-cover"
     />
   );
 }
+
+const PODIUM = {
+  1: { icon: Crown, label: "Gold champion", badge: "caution" },
+  2: { icon: Medal, label: "Silver runner-up", badge: "neutral" },
+  3: { icon: Award, label: "Bronze podium", badge: "warning" },
+} as const;
 
 function PodiumCard({
   rank,
@@ -141,69 +149,30 @@ function PodiumCard({
   secondary: string;
   flag?: string | null;
 }) {
-  const styles = {
-    1: {
-      badgeBg: "bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/40 shadow-sm",
-      cardBg: "from-amber-500/15 via-amber-500/5 to-card border-amber-500/30",
-      icon: Crown,
-      iconColor: "text-amber-500 dark:text-amber-400 drop-shadow-sm",
-      label: "Gold Champion",
-    },
-    2: {
-      badgeBg: "bg-muted/80 text-foreground border-border/60 shadow-sm",
-      cardBg: "from-muted/60 via-muted/20 to-card border-border/60",
-      icon: Medal,
-      iconColor: "text-muted-foreground",
-      label: "Silver Runner-Up",
-    },
-    3: {
-      badgeBg: "bg-amber-700/15 text-amber-700 dark:text-amber-400 border-amber-700/30 shadow-sm",
-      cardBg: "from-amber-700/15 via-amber-700/5 to-card border-amber-700/30",
-      icon: Award,
-      iconColor: "text-amber-600 dark:text-amber-500",
-      label: "Bronze Podium",
-    },
-  }[rank];
-
-  const Icon = styles.icon;
+  const podium = PODIUM[rank];
+  const Icon = podium.icon;
 
   return (
-    <motion.div
-      whileHover={{ y: -3, scale: 1.015 }}
-      whileTap={{ scale: 0.985 }}
-      transition={{ type: "spring", stiffness: 400, damping: 28 }}
-      className={cn(
-        "relative overflow-hidden rounded-3xl border border-t-white/15 bg-gradient-to-b p-5 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-        styles.cardBg
-      )}
-    >
-      <TextureOverlay texture="dots" opacity={0.03} />
-      <div className="relative z-10 flex items-center justify-between">
+    <FacetCard padding="md" className="space-y-4">
+      <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              "flex h-7 w-7 items-center justify-center rounded-full border text-xs font-bold tabular-nums backdrop-blur-md",
-              styles.badgeBg
-            )}
-          >
+          <Badge variant={podium.badge} className="tabular-nums">
             #{rank}
-          </span>
-          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            {styles.label}
-          </span>
+          </Badge>
+          <span className="text-label-secondary text-footnote">{podium.label}</span>
         </div>
-        <Icon className={cn("h-5 w-5", styles.iconColor)} />
+        <Icon aria-hidden className="text-label-secondary size-5" />
       </div>
 
-      <div className="relative z-10 mt-4 space-y-1">
+      <div className="space-y-1">
         <div className="flex items-center gap-2">
           <FlagGraphic countryName={name} flag={flag} />
-          <div className="text-foreground truncate text-base font-bold">{name}</div>
+          <div className="text-label text-title-3 truncate">{name}</div>
         </div>
-        <div className="text-foreground font-mono text-2xl font-bold tabular-nums">{primary}</div>
-        <div className="text-muted-foreground text-xs">{secondary}</div>
+        <div className="text-label text-title-1 tabular-nums">{primary}</div>
+        <div className="text-label-secondary text-footnote">{secondary}</div>
       </div>
-    </motion.div>
+    </FacetCard>
   );
 }
 
@@ -221,51 +190,24 @@ function Row({
   flag?: string | null;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: 0.2,
-        delay: Math.min(index * 0.02, 0.2),
-        ease: [0.23, 1, 0.32, 1],
-      }}
-      whileHover={{ y: -2, scale: 1.004 }}
-      whileTap={{ scale: 0.985 }}
-      className={cn(
-        "border-border/60 hover:border-border flex items-center justify-between rounded-2xl border border-t-white/10 p-4 backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:shadow-lg",
-        index < 3
-          ? "via-card/75 to-card/75 border-amber-500/30 bg-gradient-to-r from-amber-500/10"
-          : "bg-card/70 dark:bg-card/50"
-      )}
-    >
-      <div className="flex items-center gap-4">
-        <div
-          className={cn(
-            "w-8 text-center font-mono text-xl font-bold tabular-nums",
-            index === 0
-              ? "text-amber-500 drop-shadow-sm dark:text-amber-400"
-              : index === 1
-                ? "text-muted-foreground"
-                : index === 2
-                  ? "text-amber-700 dark:text-amber-500"
-                  : "text-muted-foreground/60"
-          )}
-        >
-          {index + 1}
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <FlagGraphic countryName={name} flag={flag} />
-            <div className="text-foreground font-bold">{name}</div>
-          </div>
-          <div className="text-muted-foreground text-xs">{secondary}</div>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <Star className="h-4.5 w-4.5 fill-amber-400/20 text-amber-500 dark:text-amber-400" />
-        <span className="text-foreground font-mono text-lg font-bold tabular-nums">{primary}</span>
-      </div>
-    </motion.div>
+    <FacetRow
+      leading={
+        <span className="flex items-center gap-3">
+          <span
+            className={cn(
+              "text-headline w-7 text-center tabular-nums",
+              index < 3 ? "text-label" : "text-label-secondary"
+            )}
+          >
+            {index + 1}
+          </span>
+          <FlagGraphic countryName={name} flag={flag} />
+        </span>
+      }
+      title={name}
+      subtitle={secondary}
+      trailing={<span className="text-headline text-label tabular-nums">{primary}</span>}
+    />
   );
 }
 
@@ -322,118 +264,101 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
         }));
 
   const mainContent = (
-    <div className="border-border/60 bg-card/75 dark:border-border/40 dark:bg-card/60 relative overflow-hidden rounded-3xl border border-t-white/20 p-6 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] dark:border-t-white/10">
-      <TextureOverlay texture="dots" opacity={0.03} />
-
-      <div className="relative z-10 space-y-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h3 className="text-foreground text-xl font-bold tracking-tight">
-              Global World Leaderboards
-            </h3>
-            <p className="text-muted-foreground text-xs font-medium">
-              Rankings across {active.label.toLowerCase()} • {limit} nations displayed
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative w-full sm:w-64">
-              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-              <Input
-                type="text"
-                placeholder="Search nation..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="border-border/60 bg-background/60 text-foreground placeholder:text-muted-foreground h-9 rounded-full pl-9 text-xs font-medium focus:border-amber-500/50"
-              />
-            </div>
-
-            <div className="border-border/60 bg-muted/40 flex items-center gap-1 rounded-full border p-1 text-xs backdrop-blur-md">
-              {[10, 25, 50, 100].map((l) => (
-                <button
-                  key={l}
-                  onClick={() => setLimit(l)}
-                  className={cn(
-                    "rounded-full px-2.5 py-0.5 font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-                    limit === l
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {l}
-                </button>
-              ))}
-            </div>
-          </div>
+    <FacetCard padding="lg" className="space-y-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-label text-title-2">Global world leaderboards</h2>
+          <p className="text-label-secondary text-footnote">
+            Rankings across {active.label.toLowerCase()} • {limit} nations displayed
+          </p>
         </div>
 
-        <div className="border-border/50 flex flex-wrap items-center gap-2 border-b pb-3">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveDomain(cat.id)}
-              className={cn(
-                "rounded-full px-3 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-                activeDomain === cat.id
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground border"
-              )}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <SearchField
+            size="sm"
+            placeholder="Search nation..."
+            aria-label="Search nation"
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+            containerClassName="w-full sm:w-64"
+          />
 
-        <div className="flex flex-wrap gap-2">
+          <SegmentedControl
+            aria-label="Nations displayed"
+            size="sm"
+            value={String(limit)}
+            onValueChange={(value) => setLimit(Number(value))}
+            options={[10, 25, 50, 100].map((l) => ({ value: String(l), label: String(l) }))}
+          />
+        </div>
+      </div>
+
+      <div className="border-separator space-y-3 border-b pb-4">
+        <SegmentedControl
+          aria-label="Category"
+          size="sm"
+          value={activeDomain}
+          onValueChange={setActiveDomain}
+          options={CATEGORIES.map((cat) => ({ value: cat.id, label: cat.label }))}
+          className="max-w-full overflow-x-auto"
+        />
+
+        <ToggleGroup
+          type="single"
+          aria-label="Metric"
+          size="sm"
+          variant="pill"
+          value={filter}
+          onValueChange={(value) => {
+            if (value) setFilter(value as FilterId);
+          }}
+          className="flex-wrap"
+        >
           {visibleFilters.map((f) => {
             const Icon = f.icon;
             return (
-              <button
-                key={f.id}
-                onClick={() => setFilter(f.id)}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-                  filter === f.id
-                    ? "border-amber-500/30 bg-amber-500/15 text-amber-600 shadow-sm dark:text-amber-300"
-                    : "border-border/60 bg-muted/40 text-muted-foreground hover:bg-muted/70 hover:text-foreground"
-                )}
-              >
-                <Icon className="h-3.5 w-3.5" />
+              <ToggleGroupItem key={f.id} value={f.id} className="gap-2">
+                <Icon aria-hidden className="size-3.5" />
                 {f.label}
-              </button>
+              </ToggleGroupItem>
             );
           })}
+        </ToggleGroup>
+      </div>
+
+      {!isLoading && topThree && topThree.length >= 3 && !searchQuery && (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <PodiumCard
+            rank={1}
+            name={topThree[0].countryName}
+            primary={topThree[0].primary}
+            secondary={topThree[0].secondary}
+            flag={topThree[0].flag}
+          />
+          <PodiumCard
+            rank={2}
+            name={topThree[1].countryName}
+            primary={topThree[1].primary}
+            secondary={topThree[1].secondary}
+            flag={topThree[1].flag}
+          />
+          <PodiumCard
+            rank={3}
+            name={topThree[2].countryName}
+            primary={topThree[2].primary}
+            secondary={topThree[2].secondary}
+            flag={topThree[2].flag}
+          />
         </div>
+      )}
 
-        {!isLoading && topThree && topThree.length >= 3 && !searchQuery && (
-          <div className="grid grid-cols-1 gap-4 pt-2 md:grid-cols-3">
-            <PodiumCard
-              rank={1}
-              name={topThree[0].countryName}
-              primary={topThree[0].primary}
-              secondary={topThree[0].secondary}
-              flag={topThree[0].flag}
-            />
-            <PodiumCard
-              rank={2}
-              name={topThree[1].countryName}
-              primary={topThree[1].primary}
-              secondary={topThree[1].secondary}
-              flag={topThree[1].flag}
-            />
-            <PodiumCard
-              rank={3}
-              name={topThree[2].countryName}
-              primary={topThree[2].primary}
-              secondary={topThree[2].secondary}
-              flag={topThree[2].flag}
-            />
-          </div>
-        )}
-
-        {filter === "achievements" ? (
-          filteredAchievements && filteredAchievements.length > 0 ? (
-            <div className="space-y-2.5">
+      {filter === "achievements" ? (
+        filteredAchievements && filteredAchievements.length > 0 ? (
+          <FacetList>
+            <FacetListSection
+              aria-label="Achievement rankings"
+              groupClassName="bg-surface-secondary"
+            >
               {filteredAchievements.map((entry, index) => (
                 <Row
                   key={entry.countryId}
@@ -444,18 +369,23 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
                   secondary={`${entry.achievementCount} achievements • ${entry.rareAchievements} rare+`}
                 />
               ))}
-            </div>
-          ) : (
-            <div className="text-muted-foreground py-12 text-center text-xs">
-              No achievement data available for search query
-            </div>
-          )
-        ) : isLoading ? (
-          <div className="flex h-48 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-amber-500 dark:text-amber-400" />
-          </div>
-        ) : countryBoard && countryBoard.length > 0 ? (
-          <div className="space-y-2.5">
+            </FacetListSection>
+          </FacetList>
+        ) : (
+          <EmptyState compact title="No achievement data available for search query" />
+        )
+      ) : isLoading ? (
+        <div aria-busy className="space-y-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="rounded-row h-14" />
+          ))}
+        </div>
+      ) : countryBoard && countryBoard.length > 0 ? (
+        <FacetList>
+          <FacetListSection
+            aria-label={`${active.label} rankings`}
+            groupClassName="bg-surface-secondary"
+          >
             {countryBoard.map((entry, index) => (
               <Row
                 key={entry.countryId}
@@ -466,14 +396,12 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
                 secondary={`${entry.economicTier} • ${entry.populationTier}`}
               />
             ))}
-          </div>
-        ) : (
-          <div className="text-muted-foreground py-12 text-center text-xs">
-            No nation metrics found matching your criteria
-          </div>
-        )}
-      </div>
-    </div>
+          </FacetListSection>
+        </FacetList>
+      ) : (
+        <EmptyState compact title="No nation metrics found matching your criteria" />
+      )}
+    </FacetCard>
   );
 
   return mainContent;

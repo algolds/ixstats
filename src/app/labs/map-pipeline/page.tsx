@@ -17,7 +17,7 @@ import { MapPipelineTelemetry } from "~/components/maps/pipeline/MapPipelineTele
 const IxWorldMap = dynamic(() => import("~/components/maps/core/IxWorldMap"), {
   ssr: false,
   loading: () => (
-    <div className="bg-background text-muted-foreground absolute inset-0 flex items-center justify-center text-sm">
+    <div className="bg-background text-label-secondary text-body absolute inset-0 flex items-center justify-center">
       Loading MapLibre Viewport...
     </div>
   ),
@@ -99,7 +99,7 @@ export default function MapPipelineLabPage() {
   }, [mapData, activeLayers]);
 
   return (
-    <div className="bg-background text-foreground relative flex h-screen w-full overflow-hidden">
+    <div className="bg-background text-label relative flex h-screen w-full overflow-hidden">
       {/* Left Sidebar: Pipeline Controls & Parameter Sliders */}
       <div className="z-20 h-full w-80 shrink-0">
         <MapPipelineControls
@@ -124,7 +124,7 @@ export default function MapPipelineLabPage() {
             className="h-full w-full"
           />
         ) : (
-          <div className="text-muted-foreground absolute inset-0 flex items-center justify-center text-sm">
+          <div className="text-label-secondary text-body absolute inset-0 flex items-center justify-center">
             No map data generated yet. Click &quot;Run Map Pipeline&quot;.
           </div>
         )}

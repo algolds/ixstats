@@ -29,8 +29,8 @@ export const ComponentLibrary = React.memo(function ComponentLibrary({
   if (components.length === 0) {
     return (
       <Alert>
-        <Info className="text-muted-foreground h-4 w-4" />
-        <AlertDescription className="text-xs">
+        <Info className="text-label-secondary h-4 w-4" />
+        <AlertDescription className="text-footnote">
           No economic components match your search criteria. Try adjusting your filters or search
           query.
         </AlertDescription>
@@ -39,7 +39,7 @@ export const ComponentLibrary = React.memo(function ComponentLibrary({
   }
 
   return (
-    <div className="scrollbar-thumb-border/40 hover:scrollbar-thumb-border/70 max-h-[640px] scrollbar-thin scrollbar-track-transparent overflow-y-auto pr-1.5 xl:max-h-[720px]">
+    <div className="scrollbar-thumb-border/40 hover:scrollbar-thumb-border/70 max-h-[640px] scrollbar-thin scrollbar-track-transparent overflow-y-auto pr-2 xl:max-h-[720px]">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {components.map((componentType) => {
           const component = ATOMIC_ECONOMIC_COMPONENTS[componentType];

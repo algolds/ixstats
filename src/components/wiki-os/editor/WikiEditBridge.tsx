@@ -32,7 +32,7 @@ function EditorLoading({ text = "Loading editor..." }: { text?: string }) {
   return (
     <div className="wikios-loading flex min-h-[400px] flex-col items-center justify-center">
       <div className="wikios-loading-spinner" />
-      <p className="mt-4 text-sm text-zinc-400">{text}</p>
+      <p className="text-body text-label-secondary mt-4">{text}</p>
     </div>
   );
 }
@@ -327,7 +327,7 @@ export function WikiEditBridge({
       <div className="wikios-edit-bridge relative min-h-[600px] w-full">
         <div
           role="alert"
-          className="mb-4 rounded-xl border border-border bg-card/75 p-4 text-sm text-foreground"
+          className="rounded-row border-separator bg-surface text-body text-label mb-4 border p-4"
         >
           <p>
             <strong>Older draft found:</strong> this page changed after you saved your local draft.
@@ -360,7 +360,7 @@ export function WikiEditBridge({
       {conflict && (
         <div
           role="alert"
-          className="mb-4 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-foreground"
+          className="rounded-row border-red/30 bg-red/10 text-body text-label mb-4 border p-4"
         >
           <p>
             <strong>Edit Conflict Detected:</strong> someone else saved this page after you opened
@@ -378,13 +378,19 @@ export function WikiEditBridge({
       )}
 
       {restoredOverCurrent && !conflict && (
-        <p role="status" className="mb-4 rounded-xl border border-border bg-card/75 px-4 py-2 text-sm text-foreground">
+        <p
+          role="status"
+          className="rounded-row border-separator bg-surface text-body text-label mb-4 border px-4 py-2"
+        >
           <strong>This is your text, not the current version:</strong> saving will replace the current version with it.
         </p>
       )}
 
       {setAsideText !== null && !conflict && (
-        <div role="status" className="mb-4 rounded-xl border border-border bg-card/75 p-4 text-sm text-foreground">
+        <div
+          role="status"
+          className="rounded-row border-separator bg-surface text-body text-label mb-4 border p-4"
+        >
           <p>
             <strong>Your version was set aside.</strong> The editor now shows the page as it is
             published. Your unsaved text is kept until you save or close this editor.

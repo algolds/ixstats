@@ -13,10 +13,18 @@ import {
   Filter,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Input } from "~/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { Card } from "~/components/ui/card";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Stat } from "~/components/ui/stat";
 import { Skeleton } from "~/components/ui/skeleton";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import { useAuctionBid } from "~/hooks/marketplace/useAuctionBid";
@@ -154,105 +162,91 @@ export function VaultAuctionsTab() {
       {/* Header with Create Listing button */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ShoppingCart className="h-4.5 w-4.5 text-amber-600 dark:text-amber-500" />
-          <h3 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-            Auction House
-          </h3>
+          <ShoppingCart className="text-tint h-4.5 w-4.5" />
+          <h3 className="text-label-secondary text-eyebrow">Auction House</h3>
         </div>
-        <Button
-          size="sm"
-          onClick={() => setCreateAuctionOpen(true)}
-          className="border-none bg-gradient-to-r from-amber-600 to-yellow-600 text-xs font-bold text-white hover:from-amber-500 hover:to-yellow-500"
-        >
-          <Plus className="mr-1.5 h-3.5 w-3.5" /> Sell Card
+        <Button size="sm" onClick={() => setCreateAuctionOpen(true)}>
+          <Plus className="mr-2 h-3.5 w-3.5" /> Sell Card
         </Button>
       </div>
 
       {/* Stats strip */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           {
             label: "Active Auctions",
             value: activeAuctions.length,
-            color: "text-amber-600 dark:text-amber-400",
+            color: "text-yellow",
             icon: Gavel,
           },
           {
             label: "My Listings",
             value: myListings.length,
-            color: "text-blue-600 dark:text-blue-400",
+            color: "text-blue",
             icon: Store,
           },
           {
             label: "My Bids",
             value: myBids.length,
-            color: "text-indigo-600 dark:text-indigo-400",
+            color: "text-indigo",
             icon: TrendingUp,
           },
           {
             label: "My History",
             value: myHistory.length,
-            color: "text-green-600 dark:text-green-400",
+            color: "text-green",
             icon: History,
           },
         ].map((stat) => (
-          <div
-            key={stat.label}
-            className="facet-surface facet-refraction border-border/40 relative flex items-center gap-2.5 overflow-hidden rounded-xl border bg-black/5 p-2.5 shadow-lg backdrop-blur-md dark:bg-black/40"
-          >
-            <TextureOverlay texture="dots" opacity={0.03} />
-            <stat.icon className={cn("relative z-10 h-4 w-4 shrink-0", stat.color)} />
-            <div className="relative z-10 min-w-0 flex-1">
-              <p className="text-muted-foreground truncate text-xs font-semibold tracking-wider uppercase">
-                {stat.label}
-              </p>
-              <p
-                className={cn(
-                  "mt-1 font-mono text-base leading-none font-bold tabular-nums",
-                  stat.color
-                )}
-              >
-                {stat.value}
-              </p>
-            </div>
-          </div>
+          <FacetCard key={stat.label} padding="sm" className="flex items-center gap-3">
+            <stat.icon className={cn("size-4 shrink-0", stat.color)} aria-hidden />
+            <Stat size="sm" label={stat.label} value={stat.value} className="min-w-0 flex-1" />
+          </FacetCard>
         ))}
       </div>
 
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-2">
-        <Filter className="text-muted-foreground h-3.5 w-3.5" />
-        <select
-          value={filters.rarity}
-          onChange={(e) => {
-            setFilters((f) => ({ ...f, rarity: e.target.value }));
+        <Filter className="text-label-secondary size-4" aria-hidden />
+        <Select
+          value={filters.rarity || "all"}
+          onValueChange={(value) => {
+            setFilters((f) => ({ ...f, rarity: value === "all" ? "" : value }));
             setOffset(0);
           }}
-          className="border-border/50 bg-muted/30 text-foreground h-7 rounded-md border px-2 text-xs font-medium"
         >
-          <option value="">All Rarities</option>
-          <option value="COMMON">Common</option>
-          <option value="UNCOMMON">Uncommon</option>
-          <option value="RARE">Rare</option>
-          <option value="EPIC">Epic</option>
-          <option value="LEGENDARY">Legendary</option>
-          <option value="MYTHIC">Mythic</option>
-        </select>
-        <select
-          value={filters.cardType}
-          onChange={(e) => {
-            setFilters((f) => ({ ...f, cardType: e.target.value }));
+          <SelectTrigger size="sm" aria-label="Rarity" className="w-36">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Rarities</SelectItem>
+            <SelectItem value="COMMON">Common</SelectItem>
+            <SelectItem value="UNCOMMON">Uncommon</SelectItem>
+            <SelectItem value="RARE">Rare</SelectItem>
+            <SelectItem value="EPIC">Epic</SelectItem>
+            <SelectItem value="LEGENDARY">Legendary</SelectItem>
+            <SelectItem value="MYTHIC">Mythic</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={filters.cardType || "all"}
+          onValueChange={(value) => {
+            setFilters((f) => ({ ...f, cardType: value === "all" ? "" : value }));
             setOffset(0);
           }}
-          className="border-border/50 bg-muted/30 text-foreground h-7 rounded-md border px-2 text-xs font-medium"
         >
-          <option value="">All Types</option>
-          <option value="NATION">Nation</option>
-          <option value="LORE">Lore</option>
-          <option value="NS_IMPORT">NS Import</option>
-          <option value="SPECIAL">Special</option>
-        </select>
-        <input
+          <SelectTrigger size="sm" aria-label="Card type" className="w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="NATION">Nation</SelectItem>
+            <SelectItem value="LORE">Lore</SelectItem>
+            <SelectItem value="NS_IMPORT">NS Import</SelectItem>
+            <SelectItem value="SPECIAL">Special</SelectItem>
+          </SelectContent>
+        </Select>
+        <Input
           type="number"
           min="0"
           placeholder="Min price"
@@ -261,10 +255,10 @@ export function VaultAuctionsTab() {
             setFilters((f) => ({ ...f, minPrice: e.target.value }));
             setOffset(0);
           }}
-          className="border-border/50 bg-muted/30 text-foreground h-7 w-20 rounded-md border px-2 font-mono text-xs placeholder:text-slate-400 dark:placeholder:text-slate-600"
+          className="h-(--control-height-sm) w-24 tabular-nums"
         />
-        <span className="text-muted-foreground text-xs">—</span>
-        <input
+        <span className="text-label-secondary text-footnote">—</span>
+        <Input
           type="number"
           min="0"
           placeholder="Max price"
@@ -273,68 +267,57 @@ export function VaultAuctionsTab() {
             setFilters((f) => ({ ...f, maxPrice: e.target.value }));
             setOffset(0);
           }}
-          className="border-border/50 bg-muted/30 text-foreground h-7 w-20 rounded-md border px-2 font-mono text-xs placeholder:text-slate-400 dark:placeholder:text-slate-600"
+          className="h-(--control-height-sm) w-24 tabular-nums"
         />
-        <select
-          value={filters.sortBy}
-          onChange={(e) => {
-            setFilters((f) => ({ ...f, sortBy: e.target.value }));
+        <Select
+          value={filters.sortBy || "all"}
+          onValueChange={(value) => {
+            setFilters((f) => ({ ...f, sortBy: value === "all" ? "" : value }));
             setOffset(0);
           }}
-          className="border-border/50 bg-muted/30 text-foreground ml-auto h-7 rounded-md border px-2 text-xs font-medium"
         >
-          <option value="ending_soon">Ending Soon</option>
-          <option value="newest">Newest</option>
-          <option value="price_low">Price Low-High</option>
-          <option value="price_high">Price High-Low</option>
-        </select>
+          <SelectTrigger size="sm" aria-label="Sort" className="ml-auto w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ending_soon">Ending Soon</SelectItem>
+            <SelectItem value="newest">Newest</SelectItem>
+            <SelectItem value="price_low">Price Low-High</SelectItem>
+            <SelectItem value="price_high">Price High-Low</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Tabs */}
-      <Card className="facet-surface border-border/40 bg-black/5 p-4 dark:bg-black/25">
+      <FacetCard padding="md">
         <Tabs value={selectedTab} onValueChange={handleTabChange}>
-          <TabsList className="border-border/50 mb-4 rounded-xl border bg-black/5 p-1 dark:border-white/5 dark:bg-black/40">
-            <TabsTrigger
-              value="browse"
-              className="text-muted-foreground data-[state=active]:text-foreground px-3 py-1.5 text-xs font-bold data-[state=active]:dark:text-white"
-            >
-              <ShoppingCart className="mr-1.5 h-3.5 w-3.5" /> Browse Auctions
+          <TabsList className="mb-4">
+            <TabsTrigger value="browse">
+              <ShoppingCart className="mr-2 h-3.5 w-3.5" /> Browse Auctions
             </TabsTrigger>
-            <TabsTrigger
-              value="ending"
-              className="text-muted-foreground data-[state=active]:text-foreground px-3 py-1.5 text-xs font-bold data-[state=active]:dark:text-white"
-            >
-              <Clock className="mr-1.5 h-3.5 w-3.5" /> Ending Soon
+            <TabsTrigger value="ending">
+              <Clock className="mr-2 h-3.5 w-3.5" /> Ending Soon
             </TabsTrigger>
-            <TabsTrigger
-              value="listings"
-              className="text-muted-foreground data-[state=active]:text-foreground relative px-3 py-1.5 text-xs font-bold data-[state=active]:dark:text-white"
-            >
-              <Store className="mr-1.5 h-3.5 w-3.5" /> My Listings
+            <TabsTrigger value="listings" className="relative">
+              <Store className="mr-2 h-3.5 w-3.5" /> My Listings
               {myListings.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0 text-xs leading-none font-bold text-white">
+                <span className="bg-tint text-caption text-on-tint ml-2 rounded-full px-2 leading-4 tabular-nums">
                   {myListings.length}
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger
-              value="bids"
-              className="text-muted-foreground data-[state=active]:text-foreground relative px-3 py-1.5 text-xs font-bold data-[state=active]:dark:text-white"
-            >
-              <Gavel className="mr-1.5 h-3.5 w-3.5" /> My Bids
+            <TabsTrigger value="bids" className="relative">
+              <Gavel className="mr-2 h-3.5 w-3.5" /> My Bids
               {myBids.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-blue-500 px-1.5 py-0 text-xs leading-none font-bold text-white">
+                <span className="bg-blue text-footnote text-on-blue ml-2 rounded-full px-2 py-0 leading-none font-semibold">
                   {myBids.length}
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger
-              value="history"
-              className="text-muted-foreground data-[state=active]:text-foreground relative px-3 py-1.5 text-xs font-bold data-[state=active]:dark:text-white"
-            >
-              <History className="mr-1.5 h-3.5 w-3.5" /> History
+            <TabsTrigger value="history" className="relative">
+              <History className="mr-2 h-3.5 w-3.5" /> History
               {myHistory.length > 0 && (
-                <span className="ml-1.5 rounded-full bg-green-500 px-1.5 py-0 text-xs leading-none font-bold text-white">
+                <span className="bg-green text-footnote text-on-green ml-2 rounded-full px-2 py-0 leading-none font-semibold">
                   {myHistory.length}
                 </span>
               )}
@@ -346,23 +329,23 @@ export function VaultAuctionsTab() {
             {activeLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-20 rounded-lg bg-white/5" />
+                  <Skeleton key={i} className="rounded-control bg-fill-4 h-20" />
                 ))}
               </div>
             ) : activeAuctions.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10">
-                <ShoppingCart className="text-muted-foreground/20 mb-3 h-10 w-10" />
-                <p className="text-foreground/80 text-xs font-bold">No Active Auctions</p>
-                <p className="text-muted-foreground mt-0.5 mb-3 text-xs">
+                <ShoppingCart className="text-label-tertiary mb-3 h-10 w-10" />
+                <p className="text-label text-footnote font-semibold">No Active Auctions</p>
+                <p className="text-label-secondary text-footnote mt-0.5 mb-3">
                   Be the first to list a card for sale!
                 </p>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="border-input hover:bg-accent text-foreground bg-transparent text-xs"
+                  className="bg-transparent"
                   onClick={() => setCreateAuctionOpen(true)}
                 >
-                  <Plus className="mr-1.5 h-3.5 w-3.5" /> List a Card
+                  <Plus className="mr-2 h-3.5 w-3.5" /> List a Card
                 </Button>
               </div>
             ) : (
@@ -386,7 +369,7 @@ export function VaultAuctionsTab() {
                   size="sm"
                   variant="outline"
                   onClick={handleLoadMore}
-                  className="border-border/50 hover:bg-accent text-foreground bg-transparent text-xs"
+                  className="bg-transparent"
                 >
                   Load More Auctions
                 </Button>
@@ -399,14 +382,14 @@ export function VaultAuctionsTab() {
             {endingSoonLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-20 rounded-lg bg-white/5" />
+                  <Skeleton key={i} className="rounded-control bg-fill-4 h-20" />
                 ))}
               </div>
             ) : endingSoon.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10">
-                <Clock className="text-muted-foreground/20 mb-3 h-10 w-10" />
-                <p className="text-foreground/80 text-xs font-bold">No Auctions Ending Soon</p>
-                <p className="text-muted-foreground mt-0.5 text-xs">Check back later!</p>
+                <Clock className="text-label-tertiary mb-3 h-10 w-10" />
+                <p className="text-label text-footnote font-semibold">No Auctions Ending Soon</p>
+                <p className="text-label-secondary text-footnote mt-0.5">Check back later!</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3">
@@ -430,23 +413,23 @@ export function VaultAuctionsTab() {
             {myListingsLoading ? (
               <div className="space-y-2">
                 {[1, 2].map((i) => (
-                  <Skeleton key={i} className="h-20 rounded-lg bg-white/5" />
+                  <Skeleton key={i} className="rounded-control bg-fill-4 h-20" />
                 ))}
               </div>
             ) : myListings.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10">
-                <Store className="text-muted-foreground/20 mb-3 h-10 w-10" />
-                <p className="text-foreground/80 text-xs font-bold">No Active Listings</p>
-                <p className="text-muted-foreground mt-0.5 mb-3 text-xs">
+                <Store className="text-label-tertiary mb-3 h-10 w-10" />
+                <p className="text-label text-footnote font-semibold">No Active Listings</p>
+                <p className="text-label-secondary text-footnote mt-0.5 mb-3">
                   Sell your card duplicate holdings on the market
                 </p>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="border-input hover:bg-accent text-foreground bg-transparent text-xs"
+                  className="bg-transparent"
                   onClick={() => setCreateAuctionOpen(true)}
                 >
-                  <Plus className="mr-1.5 h-3.5 w-3.5" /> Sell a Card
+                  <Plus className="mr-2 h-3.5 w-3.5" /> Sell a Card
                 </Button>
               </div>
             ) : (
@@ -458,28 +441,28 @@ export function VaultAuctionsTab() {
                   return (
                     <div
                       key={auction.id}
-                      className="facet-surface flex items-center justify-between rounded-lg border border-amber-500/25 bg-black/5 p-3 dark:bg-black/20"
+                      className="rounded-control border-yellow/25 bg-surface-secondary flex items-center justify-between border p-3"
                     >
-                      <div className="flex items-center gap-2.5">
-                        <Store className="h-4 w-4 text-amber-600 dark:text-amber-500" />
+                      <div className="flex items-center gap-2">
+                        <Store className="text-tint h-4 w-4" />
                         <div>
-                          <span className="text-xs font-bold text-slate-900 dark:text-white/95">
+                          <span className="text-footnote text-label font-semibold">
                             {card?.title ?? "Unknown"}
                           </span>
-                          <p className="text-muted-foreground text-xs">
+                          <p className="text-label-secondary text-footnote">
                             {bidCount} bid{bidCount !== 1 ? "s" : ""}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-0.5 font-mono text-sm font-bold text-amber-600 dark:text-amber-500">
+                        <span className="text-headline text-yellow flex items-center gap-0.5 tabular-nums">
                           <IxCreditsSymbol className="h-3 w-3 shrink-0" />
                           {currentBid.toLocaleString()}
                         </span>
                         <Button
                           size="sm"
                           variant="outline"
-                          className="border-input hover:bg-destructive/10 hover:text-destructive text-foreground h-7 bg-transparent text-xs"
+                          className="hover:bg-destructive/10 hover:text-destructive bg-transparent"
                           disabled={bidCount > 0 || cancelAuction.isPending}
                           title={
                             bidCount > 0
@@ -503,14 +486,14 @@ export function VaultAuctionsTab() {
             {myBidsLoading ? (
               <div className="space-y-2">
                 {[1, 2].map((i) => (
-                  <Skeleton key={i} className="h-20 rounded-lg bg-white/5" />
+                  <Skeleton key={i} className="rounded-control bg-fill-4 h-20" />
                 ))}
               </div>
             ) : myBids.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10">
-                <Gavel className="text-muted-foreground/20 mb-3 h-10 w-10" />
-                <p className="text-foreground/80 text-xs font-bold">No Active Bids</p>
-                <p className="text-muted-foreground mt-0.5 text-xs">
+                <Gavel className="text-label-tertiary mb-3 h-10 w-10" />
+                <p className="text-label text-footnote font-semibold">No Active Bids</p>
+                <p className="text-label-secondary text-footnote mt-0.5">
                   Browse the auction items and start bidding
                 </p>
               </div>
@@ -528,15 +511,15 @@ export function VaultAuctionsTab() {
                   return (
                     <div
                       key={auction.id}
-                      className="facet-surface flex items-center justify-between rounded-lg border border-blue-500/25 bg-black/5 p-3 dark:bg-black/20"
+                      className="rounded-control border-blue/25 bg-surface-secondary flex items-center justify-between border p-3"
                     >
-                      <div className="flex items-center gap-2.5">
-                        <Gavel className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                      <div className="flex items-center gap-2">
+                        <Gavel className="text-blue h-4 w-4" />
                         <div>
-                          <span className="text-xs font-bold text-slate-900 dark:text-white/95">
+                          <span className="text-footnote text-label font-semibold">
                             {card?.title ?? "Unknown"}
                           </span>
-                          <p className="text-muted-foreground flex items-center gap-1 text-xs">
+                          <p className="text-label-secondary text-footnote flex items-center gap-1">
                             <Clock className="h-2.5 w-2.5" />
                             {minsLeft > 60
                               ? `${Math.floor(minsLeft / 60)}h ${minsLeft % 60}m`
@@ -545,7 +528,7 @@ export function VaultAuctionsTab() {
                           </p>
                         </div>
                       </div>
-                      <span className="flex items-center gap-0.5 font-mono text-sm font-bold text-blue-500 dark:text-blue-400">
+                      <span className="text-headline text-blue flex items-center gap-0.5 tabular-nums">
                         <IxCreditsSymbol className="h-3 w-3 shrink-0" />
                         {currentBid.toLocaleString()}
                       </span>
@@ -561,14 +544,14 @@ export function VaultAuctionsTab() {
             {historyLoading ? (
               <div className="space-y-2">
                 {[1, 2].map((i) => (
-                  <Skeleton key={i} className="h-20 rounded-lg bg-white/5" />
+                  <Skeleton key={i} className="rounded-control bg-fill-4 h-20" />
                 ))}
               </div>
             ) : myHistory.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10">
-                <History className="text-muted-foreground/20 mb-3 h-10 w-10" />
-                <p className="text-foreground/80 text-xs font-bold">No Auction History</p>
-                <p className="text-muted-foreground mt-0.5 text-xs">
+                <History className="text-label-tertiary mb-3 h-10 w-10" />
+                <p className="text-label text-footnote font-semibold">No Auction History</p>
+                <p className="text-label-secondary text-footnote mt-0.5">
                   Past auctions you listed or bid on will appear here
                 </p>
               </div>
@@ -587,22 +570,22 @@ export function VaultAuctionsTab() {
                           : "Ended";
                   const badgeColor =
                     role === "cancelled"
-                      ? "border-red-500/30 text-red-500"
+                      ? "border-red/30 text-red"
                       : role === "won"
-                        ? "border-green-500/30 text-green-500"
-                        : "border-blue-500/30 text-blue-500";
+                        ? "border-green/30 text-green"
+                        : "border-blue/30 text-blue";
                   return (
                     <div
                       key={auction.id}
-                      className="facet-surface flex items-center justify-between rounded-lg border border-green-500/15 bg-black/5 p-3 dark:bg-black/20"
+                      className="rounded-control border-green/15 bg-surface-secondary flex items-center justify-between border p-3"
                     >
-                      <div className="flex items-center gap-2.5">
-                        <History className="h-4 w-4 text-green-500 dark:text-green-400" />
+                      <div className="flex items-center gap-2">
+                        <History className="text-green h-4 w-4" />
                         <div>
-                          <span className="text-xs font-bold text-slate-900 dark:text-white/95">
+                          <span className="text-footnote text-label font-semibold">
                             {card?.title ?? "Unknown"}
                           </span>
-                          <p className="text-muted-foreground flex items-center gap-1 text-xs">
+                          <p className="text-label-secondary text-footnote flex items-center gap-1">
                             {auction.updatedAt
                               ? new Date(auction.updatedAt).toLocaleDateString()
                               : new Date(auction.endTime).toLocaleDateString()}
@@ -612,14 +595,14 @@ export function VaultAuctionsTab() {
                       <div className="flex items-center gap-2">
                         <span
                           className={cn(
-                            "rounded-full border px-1.5 py-0 text-xs leading-none font-bold uppercase",
+                            "text-eyebrow rounded-full border px-2 py-0 leading-none",
                             badgeColor
                           )}
                         >
                           {badgeLabel}
                         </span>
                         {(auction.finalPrice ?? auction.currentBid) != null && (
-                          <span className="flex items-center gap-0.5 font-mono text-sm font-bold text-green-600 dark:text-green-400">
+                          <span className="text-headline text-green flex items-center gap-0.5 tabular-nums">
                             <IxCreditsSymbol className="h-3 w-3 shrink-0" />
                             {(auction.finalPrice ?? auction.currentBid).toLocaleString()}
                           </span>
@@ -636,7 +619,7 @@ export function VaultAuctionsTab() {
                   size="sm"
                   variant="outline"
                   onClick={handleHistoryLoadMore}
-                  className="border-border/50 hover:bg-accent text-foreground bg-transparent text-xs"
+                  className="bg-transparent"
                 >
                   Load More History
                 </Button>
@@ -644,7 +627,7 @@ export function VaultAuctionsTab() {
             )}
           </TabsContent>
         </Tabs>
-      </Card>
+      </FacetCard>
 
       <CardDetailsModal
         card={detailCard}

@@ -23,14 +23,14 @@ export function EconomyBusinessSection({
           type="button"
           onClick={onToggle}
           aria-expanded={isExpanded}
-          className={`focus-visible:ring-ring relative z-10 flex min-h-9 cursor-pointer items-center gap-2 rounded-t-xl border-x border-t px-4 py-2 text-sm font-semibold transition-[color,background-color,border-color] duration-150 outline-none focus-visible:ring-2 ${
+          className={`focus-visible:ring-tint rounded-t-row text-headline relative z-10 flex min-h-9 cursor-pointer items-center gap-2 border-x border-t px-4 py-2 transition-[color,background-color,border-color] duration-150 outline-none focus-visible:ring-2 ${
             isExpanded
-              ? "text-foreground border-border bg-card"
-              : "text-muted-foreground hover:text-foreground border-transparent bg-transparent"
+              ? "text-label border-separator bg-surface"
+              : "text-label-secondary hover:text-label border-transparent bg-transparent"
           }`}
         >
           <Briefcase
-            className={`h-3.5 w-3.5 ${isExpanded ? "text-foreground" : "text-muted-foreground"}`}
+            className={`h-3.5 w-3.5 ${isExpanded ? "text-label" : "text-label-secondary"}`}
           />
           <span>Business & Innovation Climate</span>
           <motion.div
@@ -46,8 +46,8 @@ export function EconomyBusinessSection({
         initial={false}
         animate={{ height: isExpanded ? "auto" : 0 }}
         transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-        className={`bg-card relative overflow-hidden rounded-tr-xl rounded-b-xl transition-colors duration-200 ${
-          isExpanded ? "border-border border" : "border border-transparent"
+        className={`bg-surface rounded-tr-row rounded-b-row relative overflow-hidden transition-colors duration-200 ${
+          isExpanded ? "border-separator border" : "border border-transparent"
         }`}
       >
         <TextureOverlay
@@ -56,26 +56,26 @@ export function EconomyBusinessSection({
           className="pointer-events-none absolute inset-0 z-0"
         />
         <div className="relative z-10 space-y-4 p-4">
-          <div className="bg-muted/50 grid grid-cols-2 gap-4 rounded-xl p-3 md:grid-cols-4">
+          <div className="bg-fill-3 rounded-row grid grid-cols-2 gap-4 p-3 md:grid-cols-4">
             <div className="min-w-0">
               <Eyebrow className="block">Doing Business</Eyebrow>
-              <p className="text-foreground mt-0.5 text-sm font-bold">Rank #45</p>
-              <p className="text-muted-foreground/80 mt-0.5 text-xs">Out of 190 countries</p>
+              <p className="text-label text-headline mt-0.5">Rank #45</p>
+              <p className="text-label-secondary text-footnote mt-0.5">Out of 190 countries</p>
             </div>
             <div className="min-w-0">
               <Eyebrow className="block">Startup Formation</Eyebrow>
-              <p className="text-foreground mt-0.5 text-sm font-bold">12.5</p>
-              <p className="text-muted-foreground/80 mt-0.5 text-xs">Per 1,000 citizens</p>
+              <p className="text-label text-headline mt-0.5">12.5</p>
+              <p className="text-label-secondary text-footnote mt-0.5">Per 1,000 citizens</p>
             </div>
             <div className="min-w-0">
               <Eyebrow className="block">R&D Investment</Eyebrow>
-              <p className="text-foreground mt-0.5 text-sm font-bold">2.8%</p>
-              <p className="text-muted-foreground/80 mt-0.5 text-xs">Share of GDP</p>
+              <p className="text-label text-headline mt-0.5">2.8%</p>
+              <p className="text-label-secondary text-footnote mt-0.5">Share of GDP</p>
             </div>
             <div className="min-w-0">
               <Eyebrow className="block">FDI Inflow</Eyebrow>
-              <p className="text-foreground mt-0.5 text-sm font-bold">2.5%</p>
-              <p className="text-muted-foreground/80 mt-0.5 text-xs">Of nominal GDP</p>
+              <p className="text-label text-headline mt-0.5">2.5%</p>
+              <p className="text-label-secondary text-footnote mt-0.5">Of nominal GDP</p>
             </div>
           </div>
 

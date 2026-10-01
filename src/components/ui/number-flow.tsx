@@ -272,9 +272,9 @@ export function NumberFlowDisplay({
   }
 
   const trendClasses = {
-    up: "text-green-500",
-    down: "text-red-500",
-    stable: "text-gray-500",
+    up: "text-green",
+    down: "text-red",
+    stable: "text-label-secondary",
   };
 
   return (

@@ -17,6 +17,8 @@ import {
 } from "iconoir-react";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { Badge } from "~/components/ui/badge";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Skeleton } from "~/components/ui/skeleton";
 import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
 import {
   WikiLinkPreview,
@@ -43,15 +45,15 @@ export const SOURCE_CONFIG: Record<
   string,
   { icon: typeof Rss; color: string; bg: string; label: string }
 > = {
-  activity: { icon: Rss, color: "text-blue-400", bg: "bg-blue-500/10", label: "Activity" },
+  activity: { icon: Rss, color: "text-blue", bg: "bg-blue/10", label: "Activity" },
   thinkpages: {
     icon: Users,
-    color: "text-blue-400",
-    bg: "bg-blue-500/10",
+    color: "text-blue",
+    bg: "bg-blue/10",
     label: "Social",
   },
   wiki: { icon: BookOpen, color: "text-wiki", bg: "bg-wiki/10", label: "Wiki" },
-  forum: { icon: MessageCircle, color: "text-orange-400", bg: "bg-orange-500/10", label: "Forum" },
+  forum: { icon: MessageCircle, color: "text-orange", bg: "bg-orange/10", label: "Forum" },
 };
 
 export function getActivityLabel(activity: any): {
@@ -64,9 +66,9 @@ export function getActivityLabel(activity: any): {
   const title = (activity.content?.title ?? "").toLowerCase();
 
   if (title.includes("point of interest") || title.includes("poi"))
-    return { label: "POI", icon: MapIcon, color: "text-emerald-400", bg: "bg-emerald-500/10" };
+    return { label: "POI", icon: MapIcon, color: "text-green", bg: "bg-green/10" };
   if (title.includes("city") || title.includes("settlement"))
-    return { label: "City", icon: MapIcon, color: "text-emerald-400", bg: "bg-emerald-500/10" };
+    return { label: "City", icon: MapIcon, color: "text-green", bg: "bg-green/10" };
   if (
     title.includes("subdivision") ||
     title.includes("province") ||
@@ -76,11 +78,11 @@ export function getActivityLabel(activity: any): {
     return {
       label: "Subdivision",
       icon: MapIcon,
-      color: "text-emerald-400",
-      bg: "bg-emerald-500/10",
+      color: "text-green",
+      bg: "bg-green/10",
     };
   if (cat === "map" || title.includes("map") || title.includes("claim"))
-    return { label: "Maps", icon: MapIcon, color: "text-emerald-400", bg: "bg-emerald-500/10" };
+    return { label: "Maps", icon: MapIcon, color: "text-green", bg: "bg-green/10" };
   if (
     cat === "economic" ||
     title.includes("gdp") ||
@@ -90,8 +92,8 @@ export function getActivityLabel(activity: any): {
     return {
       label: "Economy",
       icon: TrendingUp,
-      color: "text-emerald-400",
-      bg: "bg-emerald-500/10",
+      color: "text-green",
+      bg: "bg-green/10",
     };
   if (
     cat === "diplomatic" ||
@@ -99,26 +101,26 @@ export function getActivityLabel(activity: any): {
     title.includes("diplom") ||
     title.includes("treaty")
   )
-    return { label: "Diplomacy", icon: Globe, color: "text-cyan-400", bg: "bg-cyan-500/10" };
+    return { label: "Diplomacy", icon: Globe, color: "text-teal", bg: "bg-teal/10" };
   if (
     cat === "military" ||
     title.includes("military") ||
     title.includes("defense") ||
     title.includes("deploy")
   )
-    return { label: "Defense", icon: Shield, color: "text-red-400", bg: "bg-red-500/10" };
+    return { label: "Defense", icon: Shield, color: "text-red", bg: "bg-red/10" };
   if (
     cat === "political" ||
     title.includes("govern") ||
     title.includes("politic") ||
     title.includes("election")
   )
-    return { label: "Politics", icon: Landmark, color: "text-indigo-400", bg: "bg-indigo-500/10" };
+    return { label: "Politics", icon: Landmark, color: "text-indigo", bg: "bg-indigo/10" };
   if (cat === "crisis" || title.includes("crisis"))
-    return { label: "Crisis", icon: AlertTriangle, color: "text-red-400", bg: "bg-red-500/10" };
+    return { label: "Crisis", icon: AlertTriangle, color: "text-red", bg: "bg-red/10" };
   if (cat === "achievement" || title.includes("tier") || title.includes("achieve"))
-    return { label: "Achievement", icon: Trophy, color: "text-amber-400", bg: "bg-amber-500/10" };
-  return { label: "Activity", icon: Rss, color: "text-blue-400", bg: "bg-blue-500/10" };
+    return { label: "Achievement", icon: Trophy, color: "text-yellow", bg: "bg-yellow/10" };
+  return { label: "Activity", icon: Rss, color: "text-blue", bg: "bg-blue/10" };
 }
 
 export const UnifiedFeedItem = memo(function UnifiedFeedItem({
@@ -180,23 +182,24 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
   }
 
   return (
-    <div className="group border-border/50 bg-card/75 hover:border-border/80 hover:bg-card/95 relative overflow-hidden rounded-2xl border p-4 shadow-xs backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:shadow-md">
+    <FacetCard padding="md" className="group">
       <div className="flex items-start gap-3">
-        {/* Source icon — wiki uses the W logo */}
+        {/* Source icon — wiki uses the W logo; v2 domain-tinted chip that grows on card hover */}
         <div
+          aria-hidden
           className={cn(
-            "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-xs transition-transform duration-200 group-hover:scale-105",
-            isWiki ? "border-wiki/30 bg-wiki/10" : cn(resolvedConfig.bg, "border-border/30")
+            "rounded-row border-separator ease-out-facet mt-0.5 flex size-9 shrink-0 items-center justify-center border transition-[scale] duration-200 group-focus-within:scale-105 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-focus-within:scale-100 motion-reduce:group-hover:scale-100",
+            resolvedConfig.bg
           )}
         >
           {isWiki ? (
-            <WikiOSLogomark className="h-4.5 w-4.5 text-wiki" />
+            <WikiOSLogomark className="text-wiki size-4.5" />
           ) : (
-            <Icon className={cn("h-4.5 w-4.5", resolvedConfig.color)} />
+            <Icon className={cn("size-4.5", resolvedConfig.color)} />
           )}
         </div>
 
-        <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="min-w-0 flex-1 space-y-2">
           {/* Header Row: Title on Left, Badges / Timestamp / Open Link on Right */}
           <FeedItemHeader
             activity={activity}
@@ -212,12 +215,14 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
           />
 
           {/* Subtitle / Author Row */}
-          <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-xs font-medium tracking-tight">
+          <div className="text-label-secondary text-footnote flex flex-wrap items-center gap-2">
             {isGrouped ? (
               isWiki ? (
                 <span>
-                  <span className="text-foreground font-semibold">{activity._editCount}</span> edits
-                  by{" "}
+                  <span className="text-label font-data font-medium tabular-nums">
+                    {activity._editCount}
+                  </span>{" "}
+                  edits by{" "}
                   {activity._editors.map((editor: string, idx: number) => (
                     <span key={editor}>
                       {idx > 0 && ", "}
@@ -227,9 +232,11 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
                 </span>
               ) : (
                 <span>
-                  <span className="text-foreground font-semibold">{activity._editCount}</span>{" "}
+                  <span className="text-label font-data font-medium tabular-nums">
+                    {activity._editCount}
+                  </span>{" "}
                   updates by{" "}
-                  <span className="text-foreground font-semibold">
+                  <span className="text-label font-medium">
                     {activity._editors?.[0] ?? "unknown"}
                   </span>
                 </span>
@@ -242,7 +249,7 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
                 </span>
               ) : activity.poll && activity.user.name === "User" ? null : (
                 <span>
-                  by <span className="text-foreground/90 font-semibold">{activity.user.name}</span>
+                  by <span className="text-label font-medium">{activity.user.name}</span>
                 </span>
               ))
             )}
@@ -252,7 +259,7 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
           {!isGrouped && descHtml && (
             <WikiHtmlContent
               html={descHtml}
-              className="text-muted-foreground/90 pt-0.5 text-xs leading-relaxed tracking-tight break-words whitespace-pre-wrap"
+              className="text-label-secondary text-callout pt-0.5 break-words whitespace-pre-wrap"
             />
           )}
 
@@ -274,7 +281,7 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
           {isGrouped && <FeedGroupedDrawer subEdits={activity._subEdits} isWiki={isWiki} />}
         </div>
       </div>
-    </div>
+    </FacetCard>
   );
 });
 
@@ -286,9 +293,9 @@ export function FeedExternalLink({ url }: { url: string; title?: string }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 flex items-center gap-1 rounded-lg border px-2 py-0.5 text-xs font-medium tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.95]"
+      className="text-label-secondary hover:text-label bg-fill-3 hover:bg-fill-2 rounded-control-sm text-caption duration-fast ease-out-facet focus-visible:outline-tint flex items-center gap-1 px-2 py-0.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
     >
-      <ExternalLink className="h-3 w-3" />
+      <ExternalLink aria-hidden className="size-3.5" />
       <span>Open</span>
     </a>
   );
@@ -301,4 +308,17 @@ export function FeedExternalLink({ url }: { url: string; title?: string }) {
   if (forumMatch)
     return <ForumLinkPreview threadId={parseInt(forumMatch[1]!, 10)}>{link}</ForumLinkPreview>;
   return link;
+}
+
+/** Loading placeholder shaped like a feed card. */
+export function FeedItemSkeleton() {
+  return (
+    <FacetCard padding="md" aria-hidden className="flex items-start gap-3">
+      <Skeleton className="rounded-row size-9 shrink-0" />
+      <div className="flex-1 space-y-2">
+        <Skeleton className="rounded-control-sm h-4 w-3/4" />
+        <Skeleton className="rounded-control-sm h-3 w-1/2" />
+      </div>
+    </FacetCard>
+  );
 }

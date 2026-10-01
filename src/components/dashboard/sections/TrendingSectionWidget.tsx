@@ -16,12 +16,9 @@ import {
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Tooltip } from "~/components/ui/tooltip-card";
-import {
-  CutoutCard,
-  CutoutCardContent,
-  CutoutCorner,
-  cutoutCardSurfaceClassName,
-} from "~/components/ui/cutout-card";
+import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { wikiTitleFromArticleUrl } from "~/lib/wiki-os/config";
@@ -41,49 +38,42 @@ type FilterTab = "all" | "forum" | "wiki";
 
 const DEFAULT_SOURCE = {
   icon: Activity,
-  color: "text-amber-700 dark:text-amber-300",
-  bg: "bg-amber-500/15 border-amber-500/30",
-  label: "Live Activity",
+  color: "text-yellow",
+  label: "Live activity",
 };
 
 const TRENDING_SOURCE: Record<
   string,
-  { icon: typeof Rss | typeof Activity; color: string; bg: string; label: string }
+  { icon: typeof Rss | typeof Activity; color: string; label: string }
 > = {
   thinkpages: {
     icon: Newspaper,
-    color: "text-blue-700 dark:text-blue-300",
-    bg: "bg-blue-500/15 border-blue-500/30",
+    color: "text-blue",
     label: "ThinkPages",
   },
   forum: {
     icon: MessageSquare,
-    color: "text-orange-600 dark:text-orange-400",
-    bg: "bg-orange-500/15 border-orange-500/30",
+    color: "text-orange",
     label: "Forum",
   },
   wiki: {
     icon: BookOpen,
     color: "text-wiki",
-    bg: "bg-wiki/15 border-wiki/30",
     label: "Wiki",
   },
   ixstats: {
     icon: Activity,
-    color: "text-amber-700 dark:text-amber-300",
-    bg: "bg-amber-500/15 border-amber-500/30",
-    label: "Live Activity",
+    color: "text-yellow",
+    label: "Live activity",
   },
   general: {
     icon: Activity,
-    color: "text-amber-700 dark:text-amber-300",
-    bg: "bg-amber-500/15 border-amber-500/30",
-    label: "Live Activity",
+    color: "text-yellow",
+    label: "Live activity",
   },
   crisis: {
     icon: AlertTriangle,
-    color: "text-red-700 dark:text-red-300",
-    bg: "bg-red-500/15 border-red-500/30",
+    color: "text-red",
     label: "Crisis",
   },
 };
@@ -142,25 +132,25 @@ export function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwi
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <WikiOSLogomark className="h-3.5 w-3.5 shrink-0 text-wiki" />
-        <span className="text-foreground truncate text-sm font-semibold">{title}</span>
-        <span className="bg-muted text-muted-foreground ml-auto shrink-0 rounded-md px-1.5 py-0.5 text-xs font-medium">
+        <WikiOSLogomark aria-hidden className="text-wiki size-3.5 shrink-0" />
+        <span className="text-label text-headline truncate">{title}</span>
+        <Badge variant="neutral" className="ml-auto">
           {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
-        </span>
+        </Badge>
       </div>
-      <div className="flex items-start gap-2.5">
+      <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           {intro?.text ? (
-            <p className="text-foreground/80 line-clamp-3 text-xs leading-relaxed">
+            <p className="text-label-secondary text-footnote line-clamp-3">
               {intro.text.substring(0, 300)}
               {intro.text.length > 300 ? "…" : ""}
             </p>
           ) : (
-            <div className="bg-muted h-10 animate-pulse rounded" />
+            <Skeleton className="rounded-control-sm h-10" />
           )}
         </div>
         {leadImage && (
-          <div className="border-border/40 relative h-14 w-18 shrink-0 overflow-hidden rounded-lg border bg-black/5 dark:border-white/10">
+          <div className="border-separator bg-fill-4 rounded-control relative h-14 w-18 shrink-0 overflow-hidden border">
             <img src={leadImage} alt={title} className="h-full w-full object-cover" />
           </div>
         )}
@@ -178,41 +168,38 @@ export function ForumPreviewContent({ threadId }: { threadId: number }) {
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <MessageSquare className="h-3.5 w-3.5 shrink-0 text-orange-500" />
-          <span className="text-foreground text-sm font-medium">Loading thread...</span>
+          <MessageSquare aria-hidden className="text-label-secondary size-3.5 shrink-0" />
+          <span className="text-label text-headline">Loading thread...</span>
         </div>
-        <div className="bg-muted h-10 animate-pulse rounded" />
+        <Skeleton className="rounded-control-sm h-10" />
       </div>
     );
   }
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <MessageSquare className="h-3.5 w-3.5 shrink-0 text-orange-500" />
-        <span className="text-foreground truncate text-sm font-semibold">{thread.title}</span>
+        <MessageSquare aria-hidden className="text-label-secondary size-3.5 shrink-0" />
+        <span className="text-label text-headline truncate">{thread.title}</span>
       </div>
-      {thread.forumName && (
-        <span className="inline-block rounded-md bg-orange-500/10 px-1.5 py-0.5 text-xs font-medium text-orange-400">
-          {thread.forumName}
-        </span>
-      )}
+      {thread.forumName && <Badge variant="neutral">{thread.forumName}</Badge>}
       {thread.excerpt && (
-        <p className="text-foreground/80 line-clamp-3 text-xs leading-relaxed">
+        <p className="text-label-secondary text-footnote line-clamp-3">
           {thread.excerpt.substring(0, 250)}
           {thread.excerpt.length > 250 ? "…" : ""}
         </p>
       )}
-      <div className="text-muted-foreground flex items-center gap-3 text-xs">
-        <span className="flex items-center gap-0.5">
-          <Users className="h-2.5 w-2.5" />
+      <div className="text-label-secondary text-footnote flex items-center gap-3 tabular-nums">
+        <span className="flex items-center gap-1">
+          <Users aria-hidden className="size-3.5" />
           {thread.author}
         </span>
-        <span className="flex items-center gap-0.5">
-          <MessageSquare className="h-2.5 w-2.5" />
+        <span className="flex items-center gap-1">
+          <MessageSquare aria-hidden className="size-3.5" />
           {thread.replyCount} replies
         </span>
-        <span className="flex items-center gap-0.5">
-          <Eye className="h-2.5 w-2.5" />
+        <span className="flex items-center gap-1">
+          <Eye aria-hidden className="size-3.5" />
+          <span className="sr-only">Views: </span>
           {thread.viewCount}
         </span>
       </div>
@@ -297,50 +284,43 @@ export function TrendingSectionWidget() {
   }, [trendingData, activeFilter]);
 
   return (
+    // v2 (c5c6b382): a CutoutCard with the amber cutout tab header.
     <CutoutCard
-      className={cn(cutoutCardSurfaceClassName, "no-wiki-tooltip overflow-hidden rounded-xl")}
+      variant="card"
+      accent="orange"
+      retint
+      className="no-wiki-tooltip"
       trackPointerHover={false}
     >
-      {/* Cutout tab header */}
-      <div className="relative bg-amber-500/10 px-4 pt-3 pb-5">
-        <div className="text-card-foreground flex items-center gap-2 text-xs font-semibold tracking-tight">
-          <Flame className="h-4 w-4 text-amber-500" />
-          <span>Trending Topics</span>
-        </div>
-        <CutoutCorner className="text-card absolute -bottom-px left-0" size={20} />
-        <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={20} />
-      </div>
+      <CutoutCardHeader icon={<Flame />} as="h2">
+        Trending topics
+      </CutoutCardHeader>
 
-      <CutoutCardContent className="space-y-3 px-4 pt-0 pb-4">
-        {/* Category Segment Control Bar */}
-        <div className="border-border/40 bg-accent/10 grid grid-cols-3 gap-1 rounded-xl border p-1 backdrop-blur-md">
-          {(["all", "forum", "wiki"] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveFilter(tab)}
-              className={cn(
-                "cursor-pointer rounded-lg py-1 text-center text-xs font-medium capitalize transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97]",
-                activeFilter === tab
-                  ? "border-border/60 bg-card text-foreground border font-semibold shadow-xs"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/15 font-medium"
-              )}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+      <div className="space-y-3 px-4 pb-4">
+        <SegmentedControl
+          aria-label="Trending source"
+          size="sm"
+          fullWidth
+          value={activeFilter}
+          onValueChange={setActiveFilter}
+          options={[
+            { value: "all", label: "All" },
+            { value: "forum", label: "Forum" },
+            { value: "wiki", label: "Wiki" },
+          ]}
+        />
 
         <div className="space-y-2 pt-1">
           {isLoading && (
-            <div className="space-y-2 py-4">
-              <div className="bg-muted/40 h-10 animate-pulse rounded-xl" />
-              <div className="bg-muted/40 h-10 animate-pulse rounded-xl" />
-              <div className="bg-muted/40 h-10 animate-pulse rounded-xl" />
+            <div className="space-y-2 py-2">
+              <Skeleton className="rounded-row h-12" />
+              <Skeleton className="rounded-row h-12" />
+              <Skeleton className="rounded-row h-12" />
             </div>
           )}
 
           {!isLoading && trendingItems.length === 0 && (
-            <p className="text-muted-foreground py-6 text-center text-xs font-medium">
+            <p className="text-label-secondary text-callout py-6 text-center">
               No trending content found
             </p>
           )}
@@ -391,56 +371,54 @@ export function TrendingSectionWidget() {
                 <W
                   key={item.id}
                   {...(linkProps as any)}
-                  className="group/item border-border/40 bg-card/40 hover:bg-card/80 flex cursor-pointer items-start gap-2.5 rounded-xl border p-2.5 shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-amber-500/40 active:scale-[0.98]"
+                  className="group/item bg-surface-secondary border-separator hover:border-tint/40 hover:bg-fill-3 rounded-row facet-press facet-press-subtle focus-visible:outline-tint flex cursor-pointer items-start gap-3 border p-3 focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
-                  <div
-                    className={cn(
-                      "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border shadow-xs backdrop-blur-md transition-transform duration-200 group-hover/item:scale-110",
-                      src.bg
-                    )}
+                  {/* v2 source chip; the glyph grows on hover. */}
+                  <span
+                    aria-hidden
+                    className="bg-surface border-separator rounded-control-sm mt-0.5 flex size-6 shrink-0 items-center justify-center border"
                   >
-                    <SrcIcon className={cn("h-3 w-3", src.color)} />
-                  </div>
+                    <SrcIcon
+                      className={cn(
+                        "ease-out-facet duration-fast size-3.5 transition-[scale] group-hover/item:scale-110 group-focus-visible/item:scale-110 motion-reduce:transition-none motion-reduce:group-hover/item:scale-100 motion-reduce:group-focus-visible/item:scale-100",
+                        src.color
+                      )}
+                    />
+                  </span>
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-foreground truncate text-xs font-semibold tracking-tight transition-colors group-hover/item:text-amber-600 dark:group-hover/item:text-amber-400">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-label text-headline group-hover/item:text-tint group-focus-visible/item:text-tint truncate transition-colors">
                         {displayTitle}
                       </span>
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "shrink-0 border px-1.5 py-0 text-xs font-semibold tracking-wider uppercase",
-                          src.color,
-                          src.bg
-                        )}
-                      >
-                        {src.label}
-                      </Badge>
+                      <Badge variant="neutral">{src.label}</Badge>
                     </div>
 
                     {displayExcerpt && (
-                      <p className="text-muted-foreground/80 mt-0.5 line-clamp-1 text-xs leading-snug font-normal">
+                      <p className="text-label-secondary text-footnote mt-0.5 line-clamp-1">
                         {displayExcerpt}
                       </p>
                     )}
 
-                    <div className="text-muted-foreground/70 mt-1 flex items-center gap-2.5 text-xs font-medium tabular-nums">
+                    <div className="text-label-secondary text-footnote font-data mt-1 flex items-center gap-3 tabular-nums">
                       {item.engagement?.likes > 0 && (
-                        <span className="flex items-center gap-0.5 text-red-500">
-                          <Heart className="h-2.5 w-2.5 fill-current" />
+                        <span className="flex items-center gap-1">
+                          <Heart aria-hidden className="text-red size-3.5 fill-current" />
+                          <span className="sr-only">Likes: </span>
                           {item.engagement.likes}
                         </span>
                       )}
                       {item.engagement?.replies > 0 && (
-                        <span className="flex items-center gap-0.5 text-indigo-600 dark:text-indigo-400">
-                          <MessageSquare className="h-2.5 w-2.5" />
+                        <span className="flex items-center gap-1">
+                          <MessageSquare aria-hidden className="text-indigo size-3.5" />
+                          <span className="sr-only">Replies: </span>
                           {item.engagement.replies}
                         </span>
                       )}
                       {item.engagement?.views > 0 && (
-                        <span className="flex items-center gap-0.5">
-                          <Eye className="h-2.5 w-2.5" />
+                        <span className="flex items-center gap-1">
+                          <Eye aria-hidden className="size-3.5" />
+                          <span className="sr-only">Views: </span>
                           {item.engagement.views}
                         </span>
                       )}
@@ -472,7 +450,7 @@ export function TrendingSectionWidget() {
               return el;
             })}
         </div>
-      </CutoutCardContent>
+      </div>
     </CutoutCard>
   );
 }

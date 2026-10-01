@@ -19,49 +19,49 @@ export const SECTION_THEME_MAP: Record<SectionId, PrimitiveTheme> = {
 // Enhanced color schemes with CSS custom properties and glass effects
 export const SECTION_COLOR_SCHEMES: Record<PrimitiveTheme, SectionColorScheme> = {
   gold: {
-    primary: "hsl(var(--color-warning-hsl))",
-    secondary: "hsl(var(--color-warning-hsl) / 0.8)",
+    primary: "var(--color-warning)",
+    secondary: "color-mix(in srgb, var(--color-warning) 80%, transparent)",
     accent: "hsl(45, 93%, 58%)", // Bright gold accent
-    background: "hsl(var(--color-warning-hsl) / 0.05)",
-    border: "hsl(var(--color-warning-hsl) / 0.3)",
-    text: "hsl(var(--color-warning-dark-hsl))",
-    muted: "hsl(var(--color-warning-hsl) / 0.6)",
+    background: "color-mix(in srgb, var(--color-warning) 5%, transparent)",
+    border: "color-mix(in srgb, var(--color-warning) 30%, transparent)",
+    text: "var(--color-warning-dark)",
+    muted: "color-mix(in srgb, var(--color-warning) 60%, transparent)",
   },
   blue: {
-    primary: "hsl(var(--color-brand-primary-hsl))",
-    secondary: "hsl(var(--color-brand-secondary-hsl))",
+    primary: "var(--color-brand-primary)",
+    secondary: "var(--color-brand-secondary)",
     accent: "hsl(217, 91%, 60%)", // Bright blue accent
-    background: "hsl(var(--color-brand-primary-hsl) / 0.05)",
-    border: "hsl(var(--color-brand-primary-hsl) / 0.3)",
-    text: "hsl(var(--color-brand-primary-dark-hsl))",
-    muted: "hsl(var(--color-brand-primary-hsl) / 0.6)",
+    background: "color-mix(in srgb, var(--color-brand-primary) 5%, transparent)",
+    border: "color-mix(in srgb, var(--color-brand-primary) 30%, transparent)",
+    text: "var(--color-indigo-600)",
+    muted: "color-mix(in srgb, var(--color-brand-primary) 60%, transparent)",
   },
   emerald: {
-    primary: "hsl(var(--color-success-hsl))",
-    secondary: "hsl(var(--color-success-hsl) / 0.8)",
+    primary: "var(--color-success)",
+    secondary: "color-mix(in srgb, var(--color-success) 80%, transparent)",
     accent: "hsl(160, 84%, 39%)", // Bright emerald accent
-    background: "hsl(var(--color-success-hsl) / 0.05)",
-    border: "hsl(var(--color-success-hsl) / 0.3)",
-    text: "hsl(var(--color-success-dark-hsl))",
-    muted: "hsl(var(--color-success-hsl) / 0.6)",
+    background: "color-mix(in srgb, var(--color-success) 5%, transparent)",
+    border: "color-mix(in srgb, var(--color-success) 30%, transparent)",
+    text: "var(--color-success-dark)",
+    muted: "color-mix(in srgb, var(--color-success) 60%, transparent)",
   },
   purple: {
-    primary: "hsl(var(--color-purple-hsl))",
-    secondary: "hsl(var(--color-purple-hsl) / 0.8)",
+    primary: "var(--color-purple-500)",
+    secondary: "color-mix(in srgb, var(--color-purple-500) 80%, transparent)",
     accent: "hsl(262, 83%, 58%)", // Bright purple accent
-    background: "hsl(var(--color-purple-hsl) / 0.05)",
-    border: "hsl(var(--color-purple-hsl) / 0.3)",
-    text: "hsl(var(--color-purple-dark-hsl))",
-    muted: "hsl(var(--color-purple-hsl) / 0.6)",
+    background: "color-mix(in srgb, var(--color-purple-500) 5%, transparent)",
+    border: "color-mix(in srgb, var(--color-purple-500) 30%, transparent)",
+    text: "var(--color-purple-600)",
+    muted: "color-mix(in srgb, var(--color-purple-500) 60%, transparent)",
   },
   red: {
-    primary: "hsl(var(--color-error-hsl))",
-    secondary: "hsl(var(--color-error-hsl) / 0.8)",
+    primary: "var(--color-error)",
+    secondary: "color-mix(in srgb, var(--color-error) 80%, transparent)",
     accent: "hsl(0, 84%, 60%)", // Bright red accent
-    background: "hsl(var(--color-error-hsl) / 0.05)",
-    border: "hsl(var(--color-error-hsl) / 0.3)",
-    text: "hsl(var(--color-error-dark-hsl))",
-    muted: "hsl(var(--color-error-hsl) / 0.6)",
+    background: "color-mix(in srgb, var(--color-error) 5%, transparent)",
+    border: "color-mix(in srgb, var(--color-error) 30%, transparent)",
+    text: "var(--color-error-dark)",
+    muted: "color-mix(in srgb, var(--color-error) 60%, transparent)",
   },
   default: {
     primary: "hsl(217, 91%, 60%)", // Bright blue as fallback
@@ -76,23 +76,24 @@ export const SECTION_COLOR_SCHEMES: Record<PrimitiveTheme, SectionColorScheme> =
 
 // Glass depth configurations for consistent visual hierarchy
 export const GLASS_DEPTHS = {
+  // Facet 3: opaque roles (content is never glass); names kept for callers.
   base: {
-    backdrop: "backdrop-blur-sm",
-    bg: "bg-[var(--color-bg-secondary)]/70 dark:bg-[var(--color-bg-secondary)]/80",
-    border: "border-[var(--color-border-primary)]/30 dark:border-[var(--color-border-primary)]/40",
-    shadow: "shadow-sm dark:shadow-md",
+    backdrop: "",
+    bg: "bg-surface-secondary",
+    border: "border-separator",
+    shadow: "",
   },
   elevated: {
-    backdrop: "backdrop-blur-md",
-    bg: "bg-[var(--color-bg-secondary)]/80 dark:bg-[var(--color-bg-secondary)]/90",
-    border: "border-[var(--color-border-primary)]/40 dark:border-[var(--color-border-primary)]/50",
-    shadow: "shadow-lg dark:shadow-xl",
+    backdrop: "",
+    bg: "bg-surface",
+    border: "border-separator",
+    shadow: "shadow-card",
   },
   modal: {
-    backdrop: "backdrop-blur-lg",
-    bg: "bg-[var(--color-bg-secondary)]/90 dark:bg-[var(--color-bg-secondary)]/95",
-    border: "border-[var(--color-border-primary)]/50 dark:border-[var(--color-border-primary)]/60",
-    shadow: "shadow-2xl dark:shadow-3xl",
+    backdrop: "",
+    bg: "bg-surface-elevated",
+    border: "border-separator",
+    shadow: "shadow-floating",
   },
 };
 
@@ -201,14 +202,11 @@ export function getGlassClasses(
     glassConfig.bg,
     glassConfig.border,
     glassConfig.shadow,
-    "rounded-lg",
-    "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out",
-    "hover:shadow-lg hover:bg-[var(--color-bg-secondary)]/80",
-    "dark:hover:bg-[var(--color-bg-secondary)]/95",
-    "focus-within:shadow-lg focus-within:bg-[var(--color-bg-secondary)]/85",
-    "dark:focus-within:bg-[var(--color-bg-secondary)]/95",
-    "group-hover:shadow-md",
-  ].join(" ");
+    "rounded-control",
+    "transition-[border-color,box-shadow] duration-fast ease-out-facet",
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 // Export section theme mapping for external use

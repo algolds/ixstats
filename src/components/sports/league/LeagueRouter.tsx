@@ -8,10 +8,13 @@ import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { SportsShell } from "~/components/sports/core/SportsShell";
 import { type SportsNavSection } from "~/components/sports/core/SportsSidebarNav";
-import { LeagueControlDeck, ReigningChampionWidget } from "~/components/sports/league/LeagueBrandWidgets";
+import {
+  LeagueControlDeck,
+  ReigningChampionWidget,
+} from "~/components/sports/league/LeagueBrandWidgets";
 import { ChampionshipRevealOverlay } from "~/components/sports/core/ChampionshipRevealOverlay";
 import { ARCHETYPE_LABELS, getSportTheme } from "~/lib/sports/theming";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 
 // Tab Sub-Components
 import { LeagueOverviewTab } from "~/components/sports/league/tabs/LeagueOverviewTab";
@@ -45,7 +48,8 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
   const router = useRouter();
   const { focusOrganization, focusMatch } = useSportsFocus();
 
-  const sectionParam = (searchParams.get("section") || searchParams.get("tab")) as SportsNavSection | null;
+  const sectionParam = (searchParams.get("section") ||
+    searchParams.get("tab")) as SportsNavSection | null;
   const [activeSection, setActiveSection] = useState<SportsNavSection>(sectionParam || "overview");
 
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -114,7 +118,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
 
   const simulateMatchDay = api.sports.simulateMatchDay.useMutation({
     onSuccess: () => {
-      soundEffects.bloom();
+      soundCues.success();
       void utils.sports.getLeague.invalidate({ id: leagueId });
       void utils.sports.getSchedule.invalidate({ seasonId: seasonId ?? "" });
       void utils.sports.getStandings.invalidate({ seasonId: seasonId ?? "" });
@@ -123,7 +127,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
 
   const simulateFullSeason = api.sports.simulateFullSeason.useMutation({
     onSuccess: (data) => {
-      soundEffects.bloom();
+      soundCues.success();
       void utils.sports.getLeague.invalidate({ id: leagueId });
       void utils.sports.getSchedule.invalidate({ seasonId: seasonId ?? "" });
       void utils.sports.getStandings.invalidate({ seasonId: seasonId ?? "" });
@@ -139,7 +143,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
 
   const transitionSeason = api.sports.transitionToNextSeason.useMutation({
     onSuccess: (data: unknown) => {
-      soundEffects.bloom();
+      soundCues.success();
       void utils.sports.getLeague.invalidate({ id: leagueId });
       const res = data as { newSeason?: { id: string } } | null;
       if (res?.newSeason) {
@@ -219,7 +223,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
   const nextMatchIxTime = nextScheduledMatch?.scheduledIxTime ?? null;
 
   // Matches for the live matchday tape strip
-  const currentMatchDay = activeSeason ? nextMatchDay ?? 1 : 1;
+  const currentMatchDay = activeSeason ? (nextMatchDay ?? 1) : 1;
   const matchdayTapeMatches = useMemo<MatchdayTapeItem[]>(() => {
     if (!schedule?.matches) return [];
     return schedule.matches
@@ -276,10 +280,10 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
   if (isLoading) {
     return (
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
-        <Skeleton className="h-36 w-full rounded-3xl" />
+        <Skeleton className="rounded-sheet h-36 w-full" />
         <div className="grid gap-6 lg:grid-cols-4">
-          <Skeleton className="h-96 rounded-2xl" />
-          <Skeleton className="h-96 rounded-2xl lg:col-span-3" />
+          <Skeleton className="rounded-card h-96" />
+          <Skeleton className="rounded-card h-96 lg:col-span-3" />
         </div>
       </div>
     );
@@ -287,10 +291,15 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
 
   if (!league) {
     return (
-      <div className="mx-auto max-w-xl py-20 text-center space-y-4">
-        <h2 className="text-xl font-black text-foreground">Competition Not Found</h2>
-        <p className="text-xs text-muted-foreground">The requested sports league does not exist or has been archived.</p>
-        <Button onClick={() => router.push("/myleague")} className="rounded-xl font-bold text-xs">
+      <div className="mx-auto max-w-xl space-y-4 py-20 text-center">
+        <h2 className="text-title-2 text-label">Competition Not Found</h2>
+        <p className="text-footnote text-label-secondary">
+          The requested sports league does not exist or has been archived.
+        </p>
+        <Button
+          onClick={() => router.push("/myleague")}
+          className="rounded-row text-footnote font-semibold"
+        >
           Return to MyLeague Lobby
         </Button>
       </div>
@@ -355,7 +364,9 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
           }
           isSimulatingMatchDay={simulateMatchDay.isPending}
           onSimulateFullSeason={
-            activeSeason ? () => simulateFullSeason.mutate({ seasonId: activeSeason.id }) : undefined
+            activeSeason
+              ? () => simulateFullSeason.mutate({ seasonId: activeSeason.id })
+              : undefined
           }
           isSimulatingFullSeason={simulateFullSeason.isPending}
           onTransitionSeason={
@@ -403,10 +414,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
 
       case "teams":
         return (
-          <LeagueTeamsTab
-            teams={league.teams}
-            onTeamClick={(tId) => focusOrganization(tId)}
-          />
+          <LeagueTeamsTab teams={league.teams} onTeamClick={(tId) => focusOrganization(tId)} />
         );
 
       case "bracket":
@@ -439,12 +447,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
         );
 
       case "history":
-        return (
-          <LeagueArchiveTab
-            leagueId={league.id}
-            sportPreset={league.sportPreset}
-          />
-        );
+        return <LeagueArchiveTab leagueId={league.id} sportPreset={league.sportPreset} />;
 
       case "overview":
       default:
@@ -463,7 +466,9 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
             onNavigate={handleNavigate}
             onTeamClick={(tId) => focusOrganization(tId)}
             onMatchClick={handleMatchClick}
-            onSimulateMatchDay={(sId: string, mDay: number) => simulateMatchDay.mutate({ seasonId: sId, matchDay: mDay })}
+            onSimulateMatchDay={(sId: string, mDay: number) =>
+              simulateMatchDay.mutate({ seasonId: sId, matchDay: mDay })
+            }
             isSimulatingMatchDay={simulateMatchDay.isPending}
             onSimulateFullSeason={(sId: string) => simulateFullSeason.mutate({ seasonId: sId })}
             isSimulatingFullSeason={simulateFullSeason.isPending}
@@ -509,18 +514,19 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
       />
 
       {/* Team Edit Modal */}
-      {editTeamId && (() => {
-        const t = league.teams?.find((tm) => tm.id === editTeamId);
-        if (!t) return null;
-        return (
-          <TeamSettingsModal
-            team={t}
-            open={!!editTeamId}
-            onOpenChange={(o) => !o && setEditTeamId(null)}
-            onSaved={() => void utils.sports.getLeague.invalidate({ id: league.id })}
-          />
-        );
-      })()}
+      {editTeamId &&
+        (() => {
+          const t = league.teams?.find((tm) => tm.id === editTeamId);
+          if (!t) return null;
+          return (
+            <TeamSettingsModal
+              team={t}
+              open={!!editTeamId}
+              onOpenChange={(o) => !o && setEditTeamId(null)}
+              onSaved={() => void utils.sports.getLeague.invalidate({ id: league.id })}
+            />
+          );
+        })()}
 
       {/* Full-Screen Championship Takeover Reveal */}
       {celebratingChampion && (
@@ -542,7 +548,10 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
             ? () => {
                 const nextMatch = schedule.matches.find((m) => m.status === "scheduled");
                 if (nextMatch) {
-                  simulateMatchDay.mutate({ seasonId: activeSeason.id, matchDay: nextMatch.matchDay });
+                  simulateMatchDay.mutate({
+                    seasonId: activeSeason.id,
+                    matchDay: nextMatch.matchDay,
+                  });
                 }
               }
             : undefined

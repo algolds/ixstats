@@ -25,22 +25,25 @@ export function UnclaimedTerritoryView({
   return (
     <div>
       {wikiRichIntro?.paragraphs && wikiRichIntro.paragraphs.length > 0 && (
-        <div className="mb-3 space-y-1.5">
+        <div className="mb-3 space-y-2">
           {wikiRichIntro.paragraphs.slice(0, introExpanded ? 5 : 1).map((p: string, i: number) => (
             <WikiHtmlContent
               key={i}
               as="p"
-              className="text-foreground/80 text-xs leading-relaxed"
+              className="text-label-secondary text-footnote leading-relaxed"
               html={sanitizeWikiContent(p)}
             />
           ))}
           {wikiRichIntro.paragraphs.length > 1 && (
-            <button
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
               onClick={() => setIntroExpanded((v) => !v)}
-              className="text-xs font-medium text-blue-500 hover:underline"
+              className="text-blue h-auto px-0"
             >
               {introExpanded ? "Show less" : "Read more..."}
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -53,7 +56,7 @@ export function UnclaimedTerritoryView({
         />
       </div>
 
-      <p className="text-muted-foreground mt-3 flex items-center justify-center gap-1.5 text-xs font-medium">
+      <p className="text-label-secondary text-caption mt-3 flex items-center justify-center gap-2">
         <Globe className="h-3.5 w-3.5" aria-hidden />
         Unclaimed territory
       </p>

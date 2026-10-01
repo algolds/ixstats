@@ -45,7 +45,7 @@ export function CollectionEditDeleteModals({
     <>
       {/* Edit modal */}
       <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-        <DialogContent className="glass-hierarchy-modal">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Collection</DialogTitle>
             <DialogDescription>Update your collection details</DialogDescription>
@@ -57,7 +57,7 @@ export function CollectionEditDeleteModals({
                 id="edit-name"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="facet-hierarchy-child"
+                className="bg-surface-secondary border-separator border"
               />
             </div>
             <div>
@@ -66,7 +66,7 @@ export function CollectionEditDeleteModals({
                 id="edit-description"
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
-                className="facet-hierarchy-child"
+                className="bg-surface-secondary border-separator border"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -82,11 +82,7 @@ export function CollectionEditDeleteModals({
               </Label>
             </div>
             <div className="flex gap-2">
-              <Button
-                onClick={onSaveEdit}
-                disabled={!editName}
-                className="from-gold-500 flex-1 bg-gradient-to-r to-orange-500 text-black"
-              >
+              <Button onClick={onSaveEdit} disabled={!editName} className="flex-1 text-black">
                 Save Changes
               </Button>
               <Button onClick={() => setEditModalOpen(false)} variant="outline" className="flex-1">
@@ -99,7 +95,7 @@ export function CollectionEditDeleteModals({
 
       {/* Delete confirmation modal */}
       <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-        <DialogContent className="glass-hierarchy-modal">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Collection</DialogTitle>
             <DialogDescription>

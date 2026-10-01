@@ -14,7 +14,7 @@ export function PositionTooltip({ position, children }: PositionTooltipProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent side="top" className="text-xs">
+      <TooltipContent side="top" className="text-footnote">
         {fullName}
       </TooltipContent>
     </Tooltip>

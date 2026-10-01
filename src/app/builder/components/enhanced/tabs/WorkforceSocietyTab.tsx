@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "motion/react";
 import { Group as Users, Globe } from "iconoir-react";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { soundEffects } from "~/lib/sound/cuelume";
-import { cn } from "~/lib/utils";
 import { LaborEmploymentTab } from "./LaborEmploymentTab";
 import { DemographicsPopulationTab } from "./DemographicsPopulationTab";
 import type { EconomyBuilderState } from "~/types/economy-builder";
@@ -28,80 +27,36 @@ export function WorkforceSocietyTab({
 
   return (
     <div className="space-y-6">
-      <FacetCard
-        depth="base"
-        theme="emerald"
-        className="border-emerald-500/20"
-        texture="chevron"
-        textureOpacity={0.04}
-      >
-        <div className="flex flex-col gap-4 border-b border-border/40 bg-white/[0.02] px-6 py-4 sm:flex-row sm:items-center sm:justify-between dark:bg-black/[0.1]">
+      <FacetCard>
+        <div className="border-separator bg-surface flex flex-col gap-4 border-b px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             {subTab === "labor" ? (
-              <Users className="h-5 w-5 text-emerald-400" />
+              <Users className="text-green h-5 w-5" />
             ) : (
-              <Globe className="h-5 w-5 text-emerald-400" />
+              <Globe className="text-green h-5 w-5" />
             )}
-            <h3 className="text-base font-bold text-foreground">
+            <h2 className="text-headline text-label">
               {subTab === "labor" ? "Labor Market & Employment" : "Demographics & Population"}
-            </h3>
+            </h2>
           </div>
 
-          {/* Apple Sub-Segmented Control */}
-          <div className="relative inline-flex items-center rounded-xl border border-border/40 bg-muted/40 p-1 backdrop-blur-md">
-            <button
-              type="button"
-              onClick={() => {
-                soundEffects.press();
-                setSubTab("labor");
-              }}
-              data-cuelume-press
-              className={cn(
-                "relative z-10 flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors active:scale-[0.97]",
-                subTab === "labor"
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {subTab === "labor" && (
-                <motion.span
-                  layoutId="workforce-subtab-pill"
-                  transition={{ type: "spring", duration: 0.35, bounce: 0.15 }}
-                  className="absolute inset-0 rounded-lg bg-background shadow-xs ring-1 ring-black/5 dark:ring-white/10"
-                />
-              )}
-              <span className="relative z-10 flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5" />
-                Labor & Wages
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                soundEffects.press();
-                setSubTab("demographics");
-              }}
-              data-cuelume-press
-              className={cn(
-                "relative z-10 flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors active:scale-[0.97]",
-                subTab === "demographics"
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {subTab === "demographics" && (
-                <motion.span
-                  layoutId="workforce-subtab-pill"
-                  transition={{ type: "spring", duration: 0.35, bounce: 0.15 }}
-                  className="absolute inset-0 rounded-lg bg-background shadow-xs ring-1 ring-black/5 dark:ring-white/10"
-                />
-              )}
-              <span className="relative z-10 flex items-center gap-1.5">
-                <Globe className="h-3.5 w-3.5" />
-                Demographics & Society
-              </span>
-            </button>
-          </div>
+          <SegmentedControl
+            aria-label="Workforce view"
+            size="sm"
+            value={subTab}
+            onValueChange={(next) => {
+              soundEffects.press();
+              setSubTab(next);
+            }}
+            options={[
+              { value: "labor", label: "Labor & Wages", icon: <Users aria-hidden /> },
+              {
+                value: "demographics",
+                label: "Demographics & Society",
+                icon: <Globe aria-hidden />,
+              },
+            ]}
+          />
         </div>
 
         <FacetCardContent className="p-6">

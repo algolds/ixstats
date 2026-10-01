@@ -35,28 +35,28 @@ export function SectorMetrics({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Economic Sectors Configuration</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-title-1">Economic Sectors Configuration</h2>
+          <p className="text-label-secondary">
             Configure your economy's sector composition and characteristics
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground mr-1 text-xs">Status:</span>
+          <span className="text-label-secondary text-footnote mr-1">Status:</span>
           <div className="flex items-center gap-2">
             <span
-              className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${
+              className={`text-caption rounded-full border px-3 py-1 font-semibold ${
                 gdpValid
-                  ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
-                  : "border-amber-500/20 bg-amber-500/10 text-amber-400"
+                  ? "border-green/20 bg-green/10 text-green"
+                  : "border-caution/20 bg-caution/10 text-caution"
               }`}
             >
               GDP: {(100 - totalGDP).toFixed(1)}% remaining
             </span>
             <span
-              className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${
+              className={`text-caption rounded-full border px-3 py-1 font-semibold ${
                 employmentValid
-                  ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
-                  : "border-amber-500/20 bg-amber-500/10 text-amber-400"
+                  ? "border-green/20 bg-green/10 text-green"
+                  : "border-caution/20 bg-caution/10 text-caution"
               }`}
             >
               Emp: {(100 - totalEmployment).toFixed(1)}% remaining

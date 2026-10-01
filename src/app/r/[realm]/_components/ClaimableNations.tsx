@@ -46,14 +46,14 @@ export function ClaimableNations({
   );
 
   return (
-    <section className="border-border bg-card/70 rounded-2xl border p-6">
-      <h2 className="text-foreground mb-1 text-sm font-bold">Claimable nations · {pages.length}</h2>
-      <p className="text-muted-foreground mb-3 text-xs">
+    <section className="border-separator bg-surface rounded-card border p-6">
+      <h2 className="text-label text-headline mb-1">Claimable nations · {pages.length}</h2>
+      <p className="text-label-secondary text-footnote mb-3">
         {isSignedIn ? (
           "Claim the nation whose wiki page you created."
         ) : (
           <>
-            <Link href={signInHref} className="text-primary underline-offset-4 hover:underline">
+            <Link href={signInHref} className="text-tint underline-offset-4 hover:underline">
               Sign in to claim
             </Link>{" "}
             the nation whose wiki page you created.
@@ -64,10 +64,13 @@ export function ClaimableNations({
         {pages.map((page) => {
           const isSubmitted = submitted.has(page.title);
           return (
-            <li key={page.title} className="hover:bg-muted flex items-center gap-2 rounded-xl p-2">
+            <li
+              key={page.title}
+              className="hover:bg-fill-3 rounded-row flex items-center gap-2 p-2"
+            >
               <Link
                 href={createUrl(wikiReaderPath(page.title, parseWikiSource(page.wikiSource)))}
-                className="text-foreground truncate text-sm hover:underline"
+                className="text-label text-body truncate hover:underline"
               >
                 {page.title}
               </Link>

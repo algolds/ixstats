@@ -1,5 +1,6 @@
 "use client";
 
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import React, { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -32,7 +33,6 @@ import {
 } from "~/components/ui/select";
 // oxlint-disable-next-line eslint/no-unused-vars
 import {
-  NavArrowRight as ChevronRight,
   SystemRestart as Loader2,
   Gift,
   ArrowSeparateVertical as ArrowUpDown,
@@ -43,6 +43,14 @@ import {
 } from "iconoir-react";
 
 import { FacetDataTable, type FacetColumn } from "~/components/ui/data-table";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 export function VaultUserDirectory() {
   const notify = useNotify();
@@ -289,18 +297,18 @@ export function VaultUserDirectory() {
               <img
                 src={user.country.flag}
                 alt=""
-                className="h-4 w-6 shrink-0 rounded-sm object-cover"
+                className="rounded-control-sm h-4 w-6 shrink-0 object-cover"
               />
             )}
             <div className="min-w-0">
               <div
-                className="text-foreground max-w-[200px] truncate font-semibold"
+                className="text-label max-w-[200px] truncate font-semibold"
                 title={`Clerk ID: ${user.clerkUserId}`}
               >
                 {user.country?.name ?? user.wikiUsername ?? user.clerkUserId}
               </div>
               {user.country?.name && (
-                <div className="text-muted-foreground flex max-w-[220px] flex-wrap gap-x-2 gap-y-0.5 text-xs">
+                <div className="text-label-secondary text-footnote flex max-w-[220px] flex-wrap gap-x-2 gap-y-0.5">
                   {user.wikiUsername && <span>Wiki: {user.wikiUsername}</span>}
                   {user.forumUsername && <span>Forum: {user.forumUsername}</span>}
                   {user.discordUsername && <span>Discord: {user.discordUsername}</span>}
@@ -318,7 +326,7 @@ export function VaultUserDirectory() {
         mobileRole: "badge",
         accessor: (user: any) => user.vault?.credits ?? 0,
         render: (_val: unknown, user: any) => (
-          <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+          <span className="text-yellow font-semibold tabular-nums">
             {(user.vault?.credits ?? 0).toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
@@ -335,7 +343,7 @@ export function VaultUserDirectory() {
         mobileLabel: "Earned",
         accessor: (user: any) => user.vault?.lifetimeEarned ?? 0,
         render: (_val: unknown, user: any) => (
-          <span className="text-muted-foreground font-mono text-xs">
+          <span className="text-label-secondary text-footnote tabular-nums">
             {(user.vault?.lifetimeEarned ?? 0).toLocaleString(undefined, {
               maximumFractionDigits: 1,
             })}
@@ -351,7 +359,7 @@ export function VaultUserDirectory() {
         mobileLabel: "Spent",
         accessor: (user: any) => user.vault?.lifetimeSpent ?? 0,
         render: (_val: unknown, user: any) => (
-          <span className="text-muted-foreground font-mono text-xs">
+          <span className="text-label-secondary text-footnote tabular-nums">
             {(user.vault?.lifetimeSpent ?? 0).toLocaleString(undefined, {
               maximumFractionDigits: 1,
             })}
@@ -365,12 +373,7 @@ export function VaultUserDirectory() {
         mobileRole: "field",
         accessor: (user: any) => user.vault?.loginStreak ?? 0,
         render: (_val: unknown, user: any) => (
-          <Badge
-            variant="outline"
-            className="border-orange-500/20 bg-orange-500/5 text-orange-600 dark:text-orange-400"
-          >
-            {user.vault?.loginStreak ?? 0}d
-          </Badge>
+          <Badge variant="orange">{user.vault?.loginStreak ?? 0}d</Badge>
         ),
       },
       {
@@ -380,12 +383,7 @@ export function VaultUserDirectory() {
         mobileRole: "field",
         accessor: (user: any) => user.vault?.vaultLevel ?? 1,
         render: (_val: unknown, user: any) => (
-          <Badge
-            variant="outline"
-            className="border-blue-500/20 bg-blue-500/5 text-blue-600 dark:text-blue-400"
-          >
-            Lvl {user.vault?.vaultLevel ?? 1}
-          </Badge>
+          <Badge variant="blue">Lvl {user.vault?.vaultLevel ?? 1}</Badge>
         ),
       },
       {
@@ -396,33 +394,30 @@ export function VaultUserDirectory() {
         render: (_val: unknown, user: any) => (
           <div className="flex items-center justify-center">
             <DropdownMenu>
-              <DropdownMenuTrigger className="border-border/40 bg-background text-foreground hover:bg-muted inline-flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold select-none">
+              <DropdownMenuTrigger className="border-separator bg-background text-label hover:bg-fill-4 rounded-control text-caption inline-flex h-8 cursor-pointer items-center justify-center gap-2 border px-3 py-2 select-none">
                 <MoreHorizontal className="h-3.5 w-3.5 shrink-0" />
                 <span>Actions</span>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="bg-popover border-border text-foreground w-44"
-              >
+              <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuItem
                   onClick={() => handleOpenAdjust(user)}
                   className="cursor-pointer gap-2 py-2"
                 >
-                  <ArrowUpDown className="h-3.5 w-3.5 text-amber-500" />
+                  <ArrowUpDown className="text-yellow h-3.5 w-3.5" />
                   <span>Adjust Credits</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => handleOpenPack(user)}
                   className="cursor-pointer gap-2 py-2"
                 >
-                  <Gift className="h-3.5 w-3.5 text-blue-500" />
+                  <Gift className="text-blue h-3.5 w-3.5" />
                   <span>Award Card Pack</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => handleOpenCosmetics(user)}
                   className="cursor-pointer gap-2 py-2"
                 >
-                  <Gem className="h-3.5 w-3.5 text-purple-500" />
+                  <Gem className="text-purple h-3.5 w-3.5" />
                   <span>Manage Cosmetics</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -440,7 +435,7 @@ export function VaultUserDirectory() {
                   }}
                   className="cursor-pointer gap-2 py-2"
                 >
-                  <Flame className="h-3.5 w-3.5 text-orange-500" />
+                  <Flame className="text-orange h-3.5 w-3.5" />
                   <span>Adjust Streak</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -456,7 +451,7 @@ export function VaultUserDirectory() {
                   }}
                   className="cursor-pointer gap-2 py-2"
                 >
-                  <History className="h-3.5 w-3.5 text-slate-400" />
+                  <History className="text-label-secondary h-3.5 w-3.5" />
                   <span>Transaction History</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -494,39 +489,37 @@ export function VaultUserDirectory() {
 
       {/* Adjust Credits Dialog */}
       <Dialog open={isAdjustOpen} onOpenChange={setIsAdjustOpen}>
-        <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-md shadow-2xl backdrop-blur-md dark:bg-slate-900/98">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-2">
-              Adjust Credits Balance
-            </DialogTitle>
+            <DialogTitle className="flex items-center gap-2">Adjust Credits Balance</DialogTitle>
           </DialogHeader>
 
           {selectedUser && (
             <form onSubmit={handleAdjustSubmit} className="space-y-4 py-2">
-              <div className="bg-muted/30 border-border/40 rounded-lg border p-3">
-                <div className="text-muted-foreground text-xs">Target User</div>
+              <div className="bg-fill-4 border-separator rounded-control border p-3">
+                <div className="text-label-secondary text-footnote">Target User</div>
                 <div className="mt-0.5 flex items-center gap-2">
                   {selectedUser.country?.flag && (
                     <img
                       src={selectedUser.country.flag}
                       alt=""
-                      className="h-4 w-6 shrink-0 rounded-sm object-cover"
+                      className="rounded-control-sm h-4 w-6 shrink-0 object-cover"
                     />
                   )}
-                  <div className="text-foreground truncate text-sm font-semibold">
+                  <div className="text-label text-headline truncate">
                     {selectedUser.displayName}
                   </div>
                 </div>
-                <div className="mt-1 flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Current Balance:</span>
-                  <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                <div className="text-footnote mt-1 flex items-center justify-between">
+                  <span className="text-label-secondary">Current Balance:</span>
+                  <span className="text-yellow font-semibold tabular-nums">
                     {selectedUser.credits.toLocaleString()} IxC
                   </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="adjust-amount">Adjustment Amount</Label>
                   <Input
                     id="adjust-amount"
@@ -536,23 +529,20 @@ export function VaultUserDirectory() {
                     value={adjustAmount}
                     onChange={(e) => setAdjustAmount(e.target.value)}
                     required
-                    className="bg-background border-border/40 text-foreground font-mono"
+                    className="font-mono"
                   />
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-label-secondary text-footnote">
                     Positive adds, negative subtracts.
                   </span>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <Label htmlFor="adjust-type">Transaction Type</Label>
                   <Select value={adjustType} onValueChange={setAdjustType}>
-                    <SelectTrigger
-                      id="adjust-type"
-                      className="bg-background border-border/40 text-foreground"
-                    >
+                    <SelectTrigger id="adjust-type">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
-                    <SelectContent className="bg-popover border-border/50 text-foreground">
+                    <SelectContent>
                       <SelectItem value="ADMIN_ADJUSTMENT">Admin Adjustment</SelectItem>
                       <SelectItem value="EARN_ACTIVE">Earn Active Gameplay</SelectItem>
                       <SelectItem value="EARN_SOCIAL">Earn Social Engagement</SelectItem>
@@ -563,7 +553,7 @@ export function VaultUserDirectory() {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="adjust-source">System Source</Label>
                 <Input
                   id="adjust-source"
@@ -571,11 +561,10 @@ export function VaultUserDirectory() {
                   value={adjustSource}
                   onChange={(e) => setAdjustSource(e.target.value)}
                   required
-                  className="bg-background border-border/40 text-foreground"
                 />
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="adjust-reason">Audit Reason</Label>
                 <Input
                   id="adjust-reason"
@@ -584,16 +573,13 @@ export function VaultUserDirectory() {
                   value={adjustReason}
                   onChange={(e) => setAdjustReason(e.target.value)}
                   required
-                  className="bg-background border-border/40 text-foreground"
                 />
               </div>
 
-              <div className="border-border/40 bg-muted/20 flex items-center justify-between rounded-lg border p-3">
+              <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-3">
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-foreground text-xs font-semibold">
-                    Send Alert Notification
-                  </span>
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-label text-caption">Send Alert Notification</span>
+                  <span className="text-label-secondary text-footnote">
                     Send notification directly to user profile feed.
                   </span>
                 </div>
@@ -604,11 +590,7 @@ export function VaultUserDirectory() {
                 <Button type="button" variant="outline" onClick={() => setIsAdjustOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={adjustMutation.isPending}
-                  className="bg-amber-600 font-semibold text-white hover:bg-amber-700"
-                >
+                <Button type="submit" disabled={adjustMutation.isPending}>
                   {adjustMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -626,11 +608,9 @@ export function VaultUserDirectory() {
 
       {/* Adjust Streak Dialog */}
       <Dialog open={isStreakOpen} onOpenChange={setIsStreakOpen}>
-        <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-sm shadow-2xl backdrop-blur-md dark:bg-slate-900/98">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-2">
-              Adjust Login Streak
-            </DialogTitle>
+            <DialogTitle className="flex items-center gap-2">Adjust Login Streak</DialogTitle>
           </DialogHeader>
 
           {selectedUser && (
@@ -644,20 +624,24 @@ export function VaultUserDirectory() {
               }}
               className="space-y-4 py-2"
             >
-              <div className="bg-muted/30 border-border/40 rounded-lg border p-3">
-                <div className="text-muted-foreground text-xs">Target User</div>
+              <div className="bg-fill-4 border-separator rounded-control border p-3">
+                <div className="text-label-secondary text-footnote">Target User</div>
                 <div className="mt-0.5 flex items-center gap-2">
                   {selectedUser.country?.flag && (
-                    <img src={selectedUser.country.flag} alt="" className="h-4 w-6 rounded-sm" />
+                    <img
+                      src={selectedUser.country.flag}
+                      alt=""
+                      className="rounded-control-sm h-4 w-6"
+                    />
                   )}
-                  <div className="text-foreground font-semibold">{selectedUser.displayName}</div>
+                  <div className="text-label font-semibold">{selectedUser.displayName}</div>
                 </div>
-                <div className="text-muted-foreground mt-2 text-sm">
+                <div className="text-label-secondary text-body mt-2">
                   Current Streak: {selectedUserVault?.loginStreak ?? "-"} days
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="streak-delta">Streak Delta (positive or negative)</Label>
                 <Input
                   id="streak-delta"
@@ -665,7 +649,6 @@ export function VaultUserDirectory() {
                   step="1"
                   value={String(streakDelta)}
                   onChange={(e) => setStreakDelta(Number(e.target.value))}
-                  className="bg-background border-border/40 text-foreground"
                 />
               </div>
 
@@ -673,115 +656,104 @@ export function VaultUserDirectory() {
                 <Button type="button" variant="outline" onClick={() => setIsStreakOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-amber-600 text-white">
-                  Apply
-                </Button>
+                <Button type="submit">Apply</Button>
               </DialogFooter>
             </form>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Transaction History Dialog */}
-      <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-        <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-3xl shadow-2xl backdrop-blur-md dark:bg-slate-900/98">
-          <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-2">
-              Transaction History
-            </DialogTitle>
-          </DialogHeader>
+      {/* Transaction history sheet */}
+      <Sheet open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+        <SheetContent size="wide" className="overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">Transaction History</SheetTitle>
+          </SheetHeader>
 
           <div className="py-2">
             {listTransactionsQuery.isLoading ? (
               <div className="space-y-2">
                 {[...Array(6)].map((_, i) => (
-                  <Skeleton key={i} className="h-8 w-full rounded-lg" />
+                  <Skeleton key={i} className="rounded-control h-8 w-full" />
                 ))}
               </div>
             ) : (
-              <div className="border-border/40 bg-muted/20 max-h-80 overflow-x-auto overflow-y-auto rounded-lg border">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-muted-foreground bg-muted/30 text-xs">
-                      <th className="px-3 py-2 text-left">Time</th>
-                      <th className="px-3 py-2 text-right">Amount</th>
-                      <th className="px-3 py-2 text-left">Type</th>
-                      <th className="px-3 py-2 text-left">Source</th>
-                      <th className="px-3 py-2 text-right">Balance</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {listTransactionsQuery.data?.transactions?.map((tx: any) => (
-                      <tr key={tx.id} className="border-border/40 hover:bg-muted/30 border-t">
-                        <td className="text-muted-foreground px-3 py-2 text-xs">
-                          {new Date(tx.createdAt).toLocaleString()}
-                        </td>
-                        <td
-                          className={`px-3 py-2 text-right font-mono font-bold ${tx.credits >= 0 ? "text-emerald-500" : "text-red-400"}`}
-                        >
-                          {tx.credits >= 0 ? "+" : ""}
-                          {tx.credits}
-                        </td>
-                        <td className="px-3 py-2 text-xs">{tx.type}</td>
-                        <td className="text-muted-foreground max-w-[200px] truncate px-3 py-2 text-xs">
-                          {tx.source}
-                        </td>
-                        <td className="px-3 py-2 text-right font-mono text-xs">
-                          {tx.balanceAfter}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <Table containerClassName="max-h-80">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="px-3">Time</TableHead>
+                    <TableHead className="px-3 text-right">Amount</TableHead>
+                    <TableHead className="px-3">Type</TableHead>
+                    <TableHead className="px-3">Source</TableHead>
+                    <TableHead className="px-3 text-right">Balance</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {listTransactionsQuery.data?.transactions?.map((tx: any) => (
+                    <TableRow key={tx.id} className="border-t">
+                      <TableCell className="text-label-secondary text-footnote px-3">
+                        {new Date(tx.createdAt).toLocaleString()}
+                      </TableCell>
+                      <TableCell
+                        className={`px-3 py-2 text-right font-semibold tabular-nums ${tx.credits >= 0 ? "text-green" : "text-red"}`}
+                      >
+                        {tx.credits >= 0 ? "+" : ""}
+                        {tx.credits}
+                      </TableCell>
+                      <TableCell className="text-footnote px-3">{tx.type}</TableCell>
+                      <TableCell className="text-label-secondary text-footnote max-w-[200px] truncate px-3">
+                        {tx.source}
+                      </TableCell>
+                      <TableCell className="text-footnote px-3 text-right">
+                        {tx.balanceAfter}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </div>
 
-          <DialogFooter>
+          <SheetFooter>
             <Button variant="outline" onClick={() => setIsHistoryOpen(false)}>
               Close
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
       {/* Award Pack Dialog */}
       <Dialog open={isPackOpen} onOpenChange={setIsPackOpen}>
-        <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-md shadow-2xl backdrop-blur-md dark:bg-slate-900/98">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-2">
-              Award Card Pack
-            </DialogTitle>
+            <DialogTitle className="flex items-center gap-2">Award Card Pack</DialogTitle>
           </DialogHeader>
 
           {selectedUser && (
             <form onSubmit={handlePackSubmit} className="space-y-4 py-2">
-              <div className="bg-muted/30 border-border/40 rounded-lg border p-3">
-                <div className="text-muted-foreground text-xs">Recipient User</div>
+              <div className="bg-fill-4 border-separator rounded-control border p-3">
+                <div className="text-label-secondary text-footnote">Recipient User</div>
                 <div className="mt-0.5 flex items-center gap-2">
                   {selectedUser.country?.flag && (
                     <img
                       src={selectedUser.country.flag}
                       alt=""
-                      className="h-4 w-6 shrink-0 rounded-sm object-cover"
+                      className="rounded-control-sm h-4 w-6 shrink-0 object-cover"
                     />
                   )}
-                  <div className="text-foreground truncate text-sm font-semibold">
+                  <div className="text-label text-headline truncate">
                     {selectedUser.displayName}
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="pack-select">Select Card Pack Template</Label>
                 <Select value={selectedPackId} onValueChange={setSelectedPackId}>
-                  <SelectTrigger
-                    id="pack-select"
-                    className="bg-background border-border/40 text-foreground"
-                  >
+                  <SelectTrigger id="pack-select">
                     <SelectValue placeholder="Choose a pack configurations..." />
                   </SelectTrigger>
-                  <SelectContent className="bg-popover border-border/50 text-foreground">
+                  <SelectContent>
                     {packsData?.packs?.map((pack: any) => (
                       <SelectItem key={pack.id} value={pack.id}>
                         {pack.name} ({pack.cardCount} cards, {pack.packType})
@@ -797,7 +769,7 @@ export function VaultUserDirectory() {
                 </Select>
               </div>
 
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <Label htmlFor="pack-method">Acquired Method</Label>
                 <Input
                   id="pack-method"
@@ -805,16 +777,13 @@ export function VaultUserDirectory() {
                   value={packMethod}
                   onChange={(e) => setPackMethod(e.target.value)}
                   required
-                  className="bg-background border-border/40 text-foreground"
                 />
               </div>
 
-              <div className="border-border/40 bg-muted/20 flex items-center justify-between rounded-lg border p-3">
+              <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-3">
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-foreground text-xs font-semibold">
-                    Send Alert Notification
-                  </span>
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-label text-caption">Send Alert Notification</span>
+                  <span className="text-label-secondary text-footnote">
                     Notify user they received a new pack configuration.
                   </span>
                 </div>
@@ -825,11 +794,7 @@ export function VaultUserDirectory() {
                 <Button type="button" variant="outline" onClick={() => setIsPackOpen(false)}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={awardPackMutation.isPending}
-                  className="bg-blue-600 font-semibold text-white hover:bg-blue-700"
-                >
+                <Button type="submit" disabled={awardPackMutation.isPending}>
                   {awardPackMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -847,33 +812,33 @@ export function VaultUserDirectory() {
 
       {/* Manage Cosmetics Dialog */}
       <Dialog open={isCosmeticsOpen} onOpenChange={setIsCosmeticsOpen}>
-        <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-lg shadow-2xl backdrop-blur-md dark:bg-slate-900/98">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="text-foreground flex items-center gap-2 font-black">
-              <Gem className="h-5 w-5 text-purple-500" />
+            <DialogTitle className="flex items-center gap-2">
+              <Gem className="text-purple h-5 w-5" />
               Manage Cosmetics & Upgrades
             </DialogTitle>
           </DialogHeader>
 
           {selectedUser && (
             <div className="space-y-4 py-2">
-              <div className="bg-muted/30 border-border/40 rounded-lg border p-3">
-                <div className="text-muted-foreground text-xs">Target User</div>
+              <div className="bg-fill-4 border-separator rounded-control border p-3">
+                <div className="text-label-secondary text-footnote">Target User</div>
                 <div className="mt-0.5 flex items-center gap-2">
                   {selectedUser.country?.flag && (
                     <img
                       src={selectedUser.country.flag}
                       alt=""
-                      className="h-4 w-6 shrink-0 rounded-sm object-cover"
+                      className="rounded-control-sm h-4 w-6 shrink-0 object-cover"
                     />
                   )}
-                  <div className="text-foreground truncate text-sm font-semibold">
+                  <div className="text-label text-headline truncate">
                     {selectedUser.displayName}
                   </div>
                 </div>
               </div>
 
-              <div className="border-border/40 bg-muted/20 max-h-80 space-y-2 overflow-y-auto rounded-lg border p-2">
+              <div className="border-separator bg-fill-4 rounded-control max-h-80 space-y-2 overflow-y-auto border p-2">
                 {storeItems?.map((item: any) => {
                   const ownedItemIds = userPurchases?.purchasedItemIds || [];
                   const isOwned = ownedItemIds.includes(item.id);
@@ -891,22 +856,22 @@ export function VaultUserDirectory() {
                   return (
                     <div
                       key={item.id}
-                      className="border-border/30 bg-card/25 flex items-center justify-between rounded-lg border p-2"
+                      className="border-separator bg-surface rounded-control flex items-center justify-between border p-2"
                     >
-                      <div className="flex items-start gap-2.5">
-                        <div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded bg-purple-500/10 text-purple-500 dark:bg-purple-500/20 dark:text-purple-400">
+                      <div className="flex items-start gap-2">
+                        <div className="rounded-control-sm bg-purple/10 text-purple mt-0.5 flex h-7 w-7 items-center justify-center">
                           <Gem className="h-4 w-4" />
                         </div>
                         <div>
-                          <div className="text-foreground text-xs font-semibold">{item.name}</div>
-                          <div className="text-muted-foreground line-clamp-1 max-w-[280px] text-xs">
+                          <div className="text-label text-caption">{item.name}</div>
+                          <div className="text-label-secondary text-footnote line-clamp-1 max-w-[280px]">
                             {item.description}
                           </div>
-                          <div className="mt-1 flex items-center gap-1.5">
-                            <Badge variant="outline" className="px-1 py-0 text-xs capitalize">
+                          <div className="mt-1 flex items-center gap-2">
+                            <Badge variant="outline" className="px-1 py-0 capitalize">
                               {item.category}
                             </Badge>
-                            <span className="font-mono text-xs text-amber-600 dark:text-amber-400">
+                            <span className="text-footnote text-yellow tabular-nums">
                               {item.price} IxC
                             </span>
                           </div>
@@ -925,10 +890,10 @@ export function VaultUserDirectory() {
                                 itemId: item.id,
                               })
                             }
-                            className={`h-7 px-2.5 text-xs font-bold ${
+                            className={`text-caption h-7 px-3 ${
                               isEquipped
-                                ? "bg-purple-600 text-white hover:bg-purple-700"
-                                : "border-purple-500/30 bg-purple-500/5 text-purple-500 hover:bg-purple-500/10 hover:text-purple-400"
+                                ? "bg-purple text-on-purple hover:bg-purple"
+                                : "border-purple/30 bg-purple/5 text-purple hover:bg-purple/10 hover:text-purple"
                             }`}
                           >
                             {isTogglePending ? "..." : isEquipped ? "Equipped" : "Equip"}
@@ -945,14 +910,13 @@ export function VaultUserDirectory() {
                                 itemId: item.id,
                               })
                             }
-                            className="h-7 px-2.5 text-xs font-bold text-white"
                           >
                             {isPending ? "Revoking..." : "Revoke"}
                           </Button>
                         ) : (
                           <Button
                             size="sm"
-                            variant="outline"
+                            variant="tinted"
                             disabled={isPending}
                             onClick={() =>
                               grantItemMutation.mutate({
@@ -960,7 +924,6 @@ export function VaultUserDirectory() {
                                 itemId: item.id,
                               })
                             }
-                            className="h-7 border-emerald-500/30 bg-emerald-500/5 px-2.5 text-xs font-bold text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-400"
                           >
                             {isPending ? "Granting..." : "Grant"}
                           </Button>
@@ -971,13 +934,13 @@ export function VaultUserDirectory() {
                 })}
 
                 {(!storeItems || storeItems.length === 0) && (
-                  <p className="text-muted-foreground py-4 text-center text-xs">
+                  <p className="text-label-secondary text-footnote py-4 text-center">
                     No store items configured.
                   </p>
                 )}
               </div>
 
-              <DialogFooter className="border-border/40 border-t pt-3">
+              <DialogFooter className="border-separator border-t pt-3">
                 <Button variant="outline" onClick={() => setIsCosmeticsOpen(false)}>
                   Close
                 </Button>

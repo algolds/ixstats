@@ -1,4 +1,6 @@
 "use client";
+
+import "~/styles/card-art.css";
 // src/components/cards/pack-opening/Stage3_CardReveal.tsx
 // Stage 3: Sequential card flip reveals with rarity effects
 
@@ -121,7 +123,7 @@ export const Stage3_CardReveal = React.memo<Stage3_CardRevealProps>(
           <>
             {/* Radial burst */}
             <motion.div
-              className="pointer-events-none absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-yellow-400/30 via-orange-400/30 to-red-400/30"
+              className="card-art-linear-r pointer-events-none absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full from-yellow-400/30 via-orange-400/30 to-red-400/30"
               initial={{ scale: 0.2, opacity: 1 }}
               animate={{ scale: [0.2, 2, 3], opacity: [1, 0.5, 0] }}
               transition={{ duration: 1.2, ease: "easeOut" }}
@@ -265,7 +267,7 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
           )}
           {/* Card back */}
           <div
-            className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/30 to-indigo-500/30 backdrop-blur-sm"
+            className="rounded-card card-art-linear-br absolute inset-0 from-blue-500/30 to-indigo-500/30"
             style={{
               backfaceVisibility: "hidden",
             }}
@@ -273,7 +275,7 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
             {/* Glass refraction shimmer effect during flip */}
             {isFlipped && (
               <motion.div
-                className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 via-transparent to-white/20"
+                className="rounded-card card-art-linear-br absolute inset-0 from-white/20 via-transparent to-white/20"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: [0, 0.6, 0] }}
                 transition={{ duration: 0.4 }}
@@ -289,7 +291,7 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
 
           {/* Card front */}
           <div
-            className="absolute inset-0 rounded-2xl"
+            className="rounded-card absolute inset-0"
             style={{
               backfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
@@ -297,7 +299,7 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
           >
             {/* Enhanced rarity glow with pulsing effect */}
             <motion.div
-              className="absolute -inset-2 rounded-2xl blur-xl"
+              className="rounded-card absolute -inset-2 blur-xl"
               style={{
                 backgroundColor: rarityColor,
               }}
@@ -319,7 +321,7 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
                 <>
                   {/* Primary shimmer burst */}
                   <motion.div
-                    className="pointer-events-none absolute inset-0 rounded-2xl"
+                    className="rounded-card pointer-events-none absolute inset-0"
                     style={{
                       background: `radial-gradient(circle at center, ${rarityColor}40 0%, transparent 70%)`,
                     }}
@@ -380,9 +382,9 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
               )}
 
             {/* Card content */}
-            <div className="relative h-full w-full overflow-hidden rounded-2xl bg-gradient-to-br from-white/10 to-white/5 p-1">
+            <div className="rounded-card card-art-linear-br relative h-full w-full overflow-hidden from-white/10 to-white/5 p-1">
               {/* Card image with holographic fallback */}
-              <div className="relative h-full w-full overflow-hidden rounded-xl">
+              <div className="rounded-row relative h-full w-full overflow-hidden">
                 <CardHolographicCover cardType={card.cardType} rarity={card.rarity} />
                 <div
                   className="absolute inset-0 bg-cover bg-center"
@@ -391,21 +393,21 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
                   }}
                 >
                   {/* Gradient overlay */}
-                  <div className="h-full w-full bg-gradient-to-t from-black/80 via-transparent to-transparent p-4">
+                  <div className="card-art-linear-t h-full w-full from-black/80 via-transparent to-transparent p-4">
                     {/* Card info */}
                     <div className="absolute right-0 bottom-0 left-0 p-4">
-                      <div className="text-sm font-medium tracking-wide text-white/60 uppercase">
+                      <div className="text-body font-medium tracking-wide text-white/60 uppercase">
                         {card.rarity.replace("_", " ")}
                       </div>
-                      <div className="mt-1 text-xl font-bold text-white">
+                      <div className="text-title-2 mt-1 font-bold text-white">
                         {card.name || card.title || "Unknown Card"}
                       </div>
-                      <div className="mt-1 text-sm text-white/70">Season {card.season}</div>
+                      <div className="text-body mt-1 text-white/70">Season {card.season}</div>
                     </div>
 
                     {/* Rarity badge */}
                     <div
-                      className="absolute top-4 right-4 rounded-full px-3 py-1 text-xs font-bold tracking-wide uppercase"
+                      className="text-footnote absolute top-4 right-4 rounded-full px-3 py-1 font-bold tracking-wide uppercase"
                       style={{
                         backgroundColor: `${rarityColor}80`,
                         color: "white",
@@ -422,7 +424,7 @@ const CardRevealItem = React.memo<CardRevealItemProps>(
             {/* Shine effect on reveal */}
             {isFlipped && (
               <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                className="card-art-linear-r absolute inset-0 from-transparent via-white/30 to-transparent"
                 initial={{ x: "-100%" }}
                 animate={{ x: "200%" }}
                 transition={{

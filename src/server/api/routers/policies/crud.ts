@@ -7,7 +7,10 @@ import { TRPCError } from "@trpc/server";
 import { getPolicyDecretals } from "~/lib/policies/registry";
 import type { PrismaClient } from "@prisma/client";
 import { loadCivCapState } from "~/lib/government/civcap";
-import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import {
+  assertCountryWriteAccess,
+  hasCountryWriteAccess,
+} from "~/server/shared/country-authorization";
 
 /** Policy recon context: the shared CivCap state (lib/government/civcap.ts) + an efficiency flag. */
 async function loadPolicyReconContext(db: PrismaClient, countryId: string) {
@@ -178,6 +181,10 @@ export const policiesCrudRouter = createTRPCRouter({
       });
     }),
 
+  /**
+   * A country's policies. Drafts are the owner's: the owner and privileged roles get every
+   * status, everyone else enacted and past policies only (never `draft`).
+   */
   getPolicies: publicProcedure
     .input(
       z.object({
@@ -203,6 +210,11 @@ export const policiesCrudRouter = createTRPCRouter({
       if (input.category) where.category = input.category;
       if (input.status) where.status = input.status;
 
+      if (!(await hasCountryWriteAccess(ctx, input.countryId))) {
+        if (input.status === "draft") return [];
+        if (!input.status) where.status = { not: "draft" };
+      }
+
       return await ctx.db.policy.findMany({
         where,
         orderBy: [{ priority: "asc" }, { effectiveDate: "desc" }],
@@ -211,9 +223,11 @@ export const policiesCrudRouter = createTRPCRouter({
 
   // ==================== ENHANCED POLICY INTEGRATION ====================
 
-  getPolicyReconContext: publicProcedure
+  /** The nation's CivCap state (capacity, usage, breakdown). Owner / privileged roles only. */
+  getPolicyReconContext: protectedProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
       return await loadPolicyReconContext(ctx.db, input.countryId);
     }),
 });

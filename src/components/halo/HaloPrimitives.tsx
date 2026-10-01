@@ -11,11 +11,12 @@ import React, {
   useState,
 } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { cn } from "~/lib/utils/cn";
+import { springSnappy } from "~/lib/design/motion";
+import { DynamicIslandEffects } from "./DynamicIslandEffects";
 
-// Spring physics — Apple HIG fluid spring: critically damped settle (damping ratio ~1.0)
-export const stiffness = 420;
-export const damping = 38;
-export const mass = 0.8; // lighter mass = faster acceleration into target shape
+// The island morphs with the Facet snappy spring (spec §8): it answers a press directly, at the
+// same settle speed as the controls inside it.
 const MAX_HEIGHT_MOBILE_ULTRA = 400;
 const MAX_HEIGHT_MOBILE_MASSIVE = 700;
 
@@ -163,11 +164,7 @@ export const useScheduledAnimations = (animations: Array<{ size: SizePresets; de
 };
 
 export const HaloOuterWrapper = ({ children }: { children: ReactNode }) => {
-  return (
-    <div className="z-[10000] flex h-full w-full items-center justify-center bg-transparent">
-      {children}
-    </div>
-  );
+  return <div className="z-raised flex h-full w-full items-center justify-center">{children}</div>;
 };
 
 export const isCompactSize = (size: SizePresets | undefined): boolean => {
@@ -329,24 +326,25 @@ export const DynamicIslandContent = ({
             borderRadius: currentSize.borderRadius,
             opacity: isCompactSize(state.size) ? 0.8 : 0.3,
           }}
-          transition={{
-            type: "spring",
-            stiffness,
-            damping,
-            mass,
-          }}
+          transition={springSnappy}
         >
-          <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-r from-red-500/35 via-orange-500/35 to-red-500/35 blur-xl" />
-          <div className="absolute inset-0 rounded-[inherit] bg-gradient-to-r from-red-400/25 via-red-500/25 to-orange-400/25 blur-lg" />
+          {/* v2 red → orange alert glow, on the system colours. */}
+          <div className="bg-destructive/35 transparency-reduced:hidden absolute inset-0 rounded-[inherit] blur-xl contrast-more:hidden" />
+          <div className="bg-orange/25 transparency-reduced:hidden absolute inset-0 rounded-[inherit] blur-lg contrast-more:hidden" />
         </motion.div>
       )}
 
       <motion.div
         id={id}
         data-expanded={!isCompact ? "true" : undefined}
-        className={`dynamic-island-shell relative mx-auto items-center justify-center text-center transition-colors duration-200 ${
-          isImpersonating ? "!border-red-500/80 !shadow-[0_0_15px_rgba(239,68,68,0.45)]" : ""
-        }`}
+        // Halo is the v2 acrylic island (spec §16.1 #6, v2 `.dynamic-island-shell`): 28px / 190%
+        // as the pill, the 40px / 210% frosted sheet once `data-expanded` opens it into a panel,
+        // over the v2 blue / indigo / cyan glow underlay with the four refraction edges. Content
+        // inside stays on opaque roles.
+        className={cn(
+          "material-acrylic facet-acrylic-brand relative mx-auto items-center justify-center text-center",
+          isImpersonating && "ring-destructive ring-2"
+        )}
         initial={{
           width: dimensions.width,
           height: targetHeight,
@@ -357,12 +355,7 @@ export const DynamicIslandContent = ({
           height: targetHeight,
           borderRadius: currentSize.borderRadius,
         }}
-        transition={{
-          type: "spring",
-          stiffness,
-          damping,
-          mass,
-        }}
+        transition={springSnappy}
         style={{
           transform: "translateZ(0)",
           WebkitFontSmoothing: "antialiased",
@@ -372,28 +365,11 @@ export const DynamicIslandContent = ({
         }}
         {...props}
       >
-        {/* Specular edge highlight (Apple physical acrylic top lip glare) */}
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit]">
-          <div className="absolute top-0 left-0 h-[1.5px] w-full bg-gradient-to-r from-transparent via-white/60 to-transparent dark:via-white/30" />
-          <div className="absolute top-0 right-1/4 left-1/4 h-[1px] bg-white/40 blur-[0.5px] dark:bg-white/20" />
-        </div>
-
-        <AnimatePresence>
-          {!isCompact && (
-            <motion.div
-              key="card-backdrop-scrim"
-              className="pointer-events-none absolute inset-0 z-0 rounded-[inherit] bg-gradient-to-b from-white/[0.04] via-transparent to-black/[0.08] dark:from-white/[0.02] dark:to-black/[0.25]"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25, ease: "easeInOut" }}
-            />
-          )}
-        </AnimatePresence>
+        <DynamicIslandEffects />
 
         <div
           ref={contentRef}
-          className={`relative z-[10001] h-auto w-full ${isAutoHeight ? "overflow-visible" : "overflow-hidden"}`}
+          className={`z-raised relative h-auto w-full ${isAutoHeight ? "overflow-visible" : "overflow-hidden"}`}
         >
           <AnimatePresence>{children}</AnimatePresence>
         </div>
@@ -456,7 +432,8 @@ export const Halo = ({ children, id, ...props }: { children: ReactNode; id: stri
   if (!mounted) {
     return (
       <HaloOuterWrapper>
-        <div className="bg-card/95 border-border relative mx-auto h-11 items-center justify-center rounded-full px-4 text-center backdrop-blur-xl">
+        <div className="material-acrylic facet-acrylic-brand relative isolate mx-auto h-11 items-center justify-center rounded-full px-4 text-center">
+          <DynamicIslandEffects />
           {children}
         </div>
       </HaloOuterWrapper>
@@ -485,12 +462,7 @@ export const HaloContainer = ({ className, children }: DynamicContainerProps) =>
         opacity: 1,
         scale: 1,
         y: 0,
-        transition: {
-          type: "spring" as const,
-          stiffness,
-          damping,
-          mass,
-        },
+        transition: springSnappy,
       }}
       exit={{ opacity: 0, scale: 0.98, y: 10, transition: { duration: 0.15, ease: "easeOut" } }}
       className={className}
@@ -512,12 +484,7 @@ export const DynamicDiv = ({ className, children }: DynamicChildrenProps) => {
       animate={{
         opacity: 1,
         scale: 1,
-        transition: {
-          type: "spring",
-          stiffness,
-          damping,
-          mass,
-        },
+        transition: springSnappy,
       }}
       exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15, ease: "easeOut" } }}
       className={className}
@@ -540,7 +507,7 @@ export const DynamicTitle = ({ className, children }: MotionProps) => {
       animate={{
         opacity: 1,
         scale: 1,
-        transition: { type: "spring", stiffness, damping, mass },
+        transition: springSnappy,
       }}
     >
       {children}
@@ -556,7 +523,7 @@ export const DynamicDescription = ({ className, children }: MotionProps) => {
       animate={{
         opacity: 1,
         scale: 1,
-        transition: { type: "spring", stiffness, damping, mass },
+        transition: springSnappy,
       }}
     >
       {children}

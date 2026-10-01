@@ -33,6 +33,9 @@ import {
   resolveRouteBaseSpeed,
 } from "~/lib/economy/travel-time";
 import { api } from "~/trpc/react";
+import { Checkbox } from "~/components/ui/checkbox";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 
 export interface FeaturePropertyUpdates {
   name?: string;
@@ -310,20 +313,20 @@ export const FeatureInspector = React.memo(function FeatureInspector({
   );
 
   return (
-    <div className="space-y-3 text-xs select-none">
+    <div className="text-footnote space-y-3 select-none">
       {/* Top Header Bar */}
-      <FacetCard surface="solid" className="flex items-center justify-between rounded-xl p-3">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <div className="bg-primary/10 text-primary ring-primary/20 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1">
+      <FacetCard className="flex items-center justify-between p-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="bg-tint-fill text-tint ring-tint/20 rounded-control flex h-8 w-8 shrink-0 items-center justify-center ring-1">
             <Icon className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <h3 className="text-foreground truncate text-sm leading-tight font-semibold">
+            <div className="flex items-center gap-2">
+              <h3 className="text-label text-headline truncate leading-tight">
                 {name || "Untitled Feature"}
               </h3>
             </div>
-            <p className="text-muted-foreground truncate text-xs capitalize">
+            <p className="text-label-secondary text-footnote truncate capitalize">
               {feature.type === "subdivision" ? "Region" : feature.type}
             </p>
           </div>
@@ -331,13 +334,13 @@ export const FeatureInspector = React.memo(function FeatureInspector({
 
         <div className="flex items-center gap-1">
           {isMutating ? (
-            <div className="text-muted-foreground flex items-center gap-1 pr-1 text-xs">
-              <div className="border-muted-foreground/20 border-t-primary h-3 w-3 animate-spin rounded-full border-2" />
+            <div className="text-label-secondary text-footnote flex items-center gap-1 pr-1">
+              <div className="border-separator border-t-primary h-3 w-3 animate-spin rounded-full border-2" />
               <span>Saving…</span>
             </div>
           ) : (
-            <span className="text-muted-foreground flex items-center gap-1 pr-1 text-xs">
-              <Check className="h-3 w-3 text-emerald-500" />
+            <span className="text-label-secondary text-footnote flex items-center gap-1 pr-1">
+              <Check className="text-green h-3 w-3" />
               <span>Saved</span>
             </span>
           )}
@@ -346,7 +349,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
             <Button
               variant="ghost"
               size="icon"
-              className="text-muted-foreground h-6 w-6"
+              className="text-label-secondary h-6 w-6"
               onClick={onClose}
               title="Deselect"
             >
@@ -357,11 +360,14 @@ export const FeatureInspector = React.memo(function FeatureInspector({
       </FacetCard>
 
       {/* Accordion Card 1: Details */}
-      <FacetCard surface="solid" className="overflow-hidden rounded-xl">
-        <button
+      <FacetCard className="overflow-hidden">
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => setOpenIdentity((v) => !v)}
-          className="hover:bg-muted/20 flex w-full items-center justify-between px-3 py-2 text-left font-medium transition-colors"
+          aria-expanded={openIdentity}
+          className="h-auto min-h-(--control-height-sm) w-full justify-between justify-start py-2 text-left whitespace-normal"
         >
           <Eyebrow>Details</Eyebrow>
           {openIdentity ? (
@@ -369,108 +375,102 @@ export const FeatureInspector = React.memo(function FeatureInspector({
           ) : (
             <ChevronDown className="h-3.5 w-3.5 opacity-60" />
           )}
-        </button>
+        </Button>
 
         {openIdentity && (
-          <div className="border-border/40 space-y-2.5 border-t p-3">
+          <div className="border-separator space-y-2 border-t p-3">
             {/* Feature Name */}
             <div className="space-y-1">
-              <span className="text-muted-foreground text-xs font-medium">Name</span>
+              <span className="text-label-secondary text-caption">Name</span>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onBlur={handleNameBlur}
                 placeholder="e.g. Caphiria"
-                className="border-border/60 bg-background text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:ring-primary w-full rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors focus:ring-1 focus:outline-none"
+                className="border-separator bg-surface text-label placeholder:text-label-tertiary focus:border-tint focus:ring-tint rounded-control text-caption w-full border px-3 py-2 transition-colors focus:ring-1 focus:outline-none"
               />
             </div>
 
             {/* City: Type selector */}
             {feature.type === "city" && (
               <div className="space-y-1">
-                <span className="text-muted-foreground text-xs font-medium">Type</span>
-                <div className="flex flex-wrap gap-1">
+                <span id="inspector-city-type" className="text-label-secondary text-caption">
+                  Type
+                </span>
+                <ToggleGroup
+                  type="single"
+                  disallowEmpty
+                  variant="outline"
+                  size="sm"
+                  aria-labelledby="inspector-city-type"
+                  value={cityType}
+                  onValueChange={(t) => t && handleCityTypeChange(t)}
+                >
                   {CITY_TYPES.map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => handleCityTypeChange(t)}
-                      className={`rounded-md px-2 py-1 text-xs font-medium capitalize transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
-                        cityType === t
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "border-border/60 bg-card/60 text-muted-foreground hover:bg-accent/40 hover:text-foreground border"
-                      }`}
-                    >
+                    <ToggleGroupItem key={t} value={t} className="capitalize">
                       {t}
-                    </button>
+                    </ToggleGroupItem>
                   ))}
-                </div>
+                </ToggleGroup>
               </div>
             )}
 
             {/* Route Settings */}
             {feature.type === "route" && (
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 <div className="space-y-1">
-                  <span className="text-muted-foreground text-xs font-medium">Route sub-type</span>
-                  <select
+                  <span className="text-label-secondary text-caption">Route sub-type</span>
+                  <OptionSelect
+                    aria-label="Route type"
+                    size="sm"
                     value={routeType}
-                    onChange={(e) => handleRouteTypeChange(e.target.value)}
-                    className="border-border/60 bg-background text-foreground focus:border-primary w-full rounded-lg border px-2.5 py-1.5 text-xs font-medium focus:outline-none"
-                  >
-                    {ROUTE_TYPE_KEYS.map((key) => {
-                      const style = ROUTE_STYLES[key];
-                      return (
-                        <option key={key} value={key}>
-                          {style?.label ?? key}
-                        </option>
-                      );
-                    })}
-                  </select>
+                    onValueChange={(v) => handleRouteTypeChange(v)}
+                    options={ROUTE_TYPE_KEYS.map((key) => ({
+                      value: key,
+                      label: ROUTE_STYLES[key]?.label ?? key,
+                    }))}
+                  />
                 </div>
 
                 <div className="space-y-1">
-                  <span className="text-muted-foreground text-xs font-medium">
-                    Operational status
-                  </span>
-                  <select
+                  <span className="text-label-secondary text-caption">Operational status</span>
+                  <OptionSelect
+                    aria-label="Operational status"
                     value={routeStatus}
-                    onChange={(e) => handleRouteStatusChange(e.target.value)}
-                    className="border-border/60 bg-background text-foreground focus:border-primary w-full rounded-lg border px-2.5 py-1.5 text-xs font-medium capitalize focus:outline-none"
-                  >
-                    <option value="operational">Operational</option>
-                    <option value="under_construction">Under Construction</option>
-                    <option value="planned">Planned</option>
-                    <option value="abandoned">Abandoned</option>
-                  </select>
+                    onValueChange={(v) => handleRouteStatusChange(v)}
+                    options={[
+                      { value: "operational", label: "Operational" },
+                      { value: "under_construction", label: "Under Construction" },
+                      { value: "planned", label: "Planned" },
+                      { value: "abandoned", label: "Abandoned" },
+                    ]}
+                    size="sm"
+                    className="w-full"
+                  />
                 </div>
 
                 <label className="flex cursor-pointer items-center gap-2 pt-0.5">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={isInternational}
-                    onChange={(e) => handleInternationalChange(e.target.checked)}
-                    className="border-border/60 text-primary focus:ring-primary/20 h-3.5 w-3.5 rounded"
+                    onCheckedChange={(c) => handleInternationalChange(c === true)}
                   />
-                  <span className="text-foreground text-xs font-medium">
-                    International Corridor
-                  </span>
+                  <span className="text-label text-caption">International Corridor</span>
                 </label>
 
                 {/* Velocity & Transit Telemetry Card */}
-                <div className="border-border space-y-2 rounded-lg border p-2.5">
+                <div className="border-separator rounded-control space-y-2 border p-2">
                   <div className="flex items-center justify-between">
-                    <Eyebrow className="flex items-center gap-1.5">
-                      <Gauge className="text-primary h-3 w-3" /> Velocity & Transit
+                    <Eyebrow className="flex items-center gap-2">
+                      <Gauge className="text-tint h-3 w-3" /> Velocity & Transit
                     </Eyebrow>
                     {travelTime?.isInstantaneous ? (
-                      <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-xs font-medium">
+                      <span className="bg-tint-fill text-tint text-caption rounded-control-sm px-2 py-0.5">
                         Light Speed
                       </span>
                     ) : (
-                      <span className="text-foreground flex items-center gap-1 font-mono text-xs font-bold tabular-nums">
-                        <Clock className="text-primary h-3 w-3 opacity-80" />
+                      <span className="text-label text-caption flex items-center gap-1 font-semibold tabular-nums">
+                        <Clock className="text-tint h-3 w-3 opacity-80" />
                         {travelTime?.formattedTime ?? "—"}
                       </span>
                     )}
@@ -480,13 +480,13 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                     <>
                       {/* Speed custom input */}
                       <div className="space-y-1">
-                        <div className="text-muted-foreground flex items-center justify-between text-xs">
+                        <div className="text-label-secondary text-footnote flex items-center justify-between">
                           <span>Design Speed</span>
-                          <span className="text-foreground font-mono font-medium tabular-nums">
+                          <span className="text-label font-medium tabular-nums">
                             {routeSpeed} km/h
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-2">
                           <input
                             type="number"
                             min={5}
@@ -494,48 +494,48 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                             step={5}
                             value={routeSpeed}
                             onChange={(e) => handleSpeedChange(parseInt(e.target.value, 10) || 5)}
-                            className="border-border/60 bg-background text-foreground focus:border-primary w-24 rounded border px-2 py-1 font-mono text-xs tabular-nums focus:outline-none"
+                            className="border-separator bg-surface text-label focus:border-tint text-footnote rounded-control-sm w-24 border px-2 py-1 tabular-nums focus:outline-none"
                           />
-                          <span className="text-muted-foreground text-xs">km/h</span>
+                          <span className="text-label-secondary text-footnote">km/h</span>
                         </div>
 
                         {/* Presets */}
                         {getSpeedPresets(routeType).length > 0 && (
-                          <div className="flex flex-wrap gap-1 pt-1">
+                          <ToggleGroup
+                            type="single"
+                            disallowEmpty
+                            variant="outline"
+                            size="sm"
+                            aria-label="Speed presets"
+                            className="pt-1"
+                            value={String(routeSpeed)}
+                            onValueChange={(v) => v && handleSpeedChange(Number(v))}
+                          >
                             {getSpeedPresets(routeType).map((preset) => (
-                              <button
-                                key={preset.speed}
-                                type="button"
-                                onClick={() => handleSpeedChange(preset.speed)}
-                                className={`rounded px-1.5 py-0.5 text-xs font-medium transition active:scale-[0.98] ${
-                                  routeSpeed === preset.speed
-                                    ? "bg-primary text-primary-foreground shadow-2xs"
-                                    : "border-border/40 bg-muted/40 text-muted-foreground hover:bg-accent hover:text-foreground border"
-                                }`}
-                              >
+                              <ToggleGroupItem key={preset.speed} value={String(preset.speed)}>
                                 {preset.label}
-                              </button>
+                              </ToggleGroupItem>
                             ))}
-                          </div>
+                          </ToggleGroup>
                         )}
                       </div>
 
                       {/* Travel summary stats */}
-                      <div className="border-border/30 grid grid-cols-2 gap-2 border-t pt-2 text-xs">
+                      <div className="border-separator text-footnote grid grid-cols-2 gap-2 border-t pt-2">
                         <div>
-                          <span className="text-muted-foreground block">Effective Speed</span>
-                          <span className="text-foreground font-mono font-medium tabular-nums">
+                          <span className="text-label-secondary block">Effective Speed</span>
+                          <span className="text-label font-medium tabular-nums">
                             {travelTime?.effectiveSpeedKmh} km/h
                           </span>
                           {Boolean(travelTime && travelTime.terrainPenaltyPercent > 0) && (
-                            <span className="block text-xs font-medium text-amber-500">
+                            <span className="text-caption text-yellow block">
                               -{travelTime?.terrainPenaltyPercent}% terrain drag
                             </span>
                           )}
                         </div>
                         <div>
-                          <span className="text-muted-foreground block">Dwell Overhead</span>
-                          <span className="text-foreground font-mono font-medium tabular-nums">
+                          <span className="text-label-secondary block">Dwell Overhead</span>
+                          <span className="text-label font-medium tabular-nums">
                             {travelTime?.dwellTimeMinutes
                               ? `+${travelTime.dwellTimeMinutes}m stops`
                               : "Continuous"}
@@ -547,18 +547,18 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                 </div>
 
                 {typeof feature.properties?.lengthKm === "number" && (
-                  <div className="border-border flex items-center justify-between rounded-lg border px-2.5 py-1.5 text-xs">
-                    <span className="text-muted-foreground">Route Length</span>
-                    <span className="text-foreground font-mono font-medium tabular-nums">
+                  <div className="border-separator rounded-control text-footnote flex items-center justify-between border px-3 py-2">
+                    <span className="text-label-secondary">Route Length</span>
+                    <span className="text-label font-medium tabular-nums">
                       {(feature.properties.lengthKm as number).toFixed(1)} km
                     </span>
                   </div>
                 )}
 
                 {/* Route Nodes Summary & Direct Map Edit Trigger */}
-                <div className="space-y-1.5 pt-1">
+                <div className="space-y-2 pt-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-xs font-medium">
+                    <span className="text-label-secondary text-caption">
                       Path Nodes ({routeVertices.length})
                     </span>
                     {onEditRoute && (
@@ -575,11 +575,11 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                   </div>
 
                   {routeVertices.length > 0 && (
-                    <div className="border-border max-h-28 space-y-1 overflow-y-auto rounded-md border p-1.5">
+                    <div className="border-separator rounded-control-sm max-h-28 space-y-1 overflow-y-auto border p-2">
                       {routeVertices.slice(0, 10).map((pt, i) => (
                         <div
                           key={i}
-                          className="text-muted-foreground flex items-center justify-between font-mono text-xs"
+                          className="text-label-secondary text-footnote flex items-center justify-between tabular-nums"
                         >
                           <span>
                             #{i + 1}{" "}
@@ -591,7 +591,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                         </div>
                       ))}
                       {routeVertices.length > 10 && (
-                        <div className="text-muted-foreground pt-0.5 text-center text-xs">
+                        <div className="text-label-secondary text-footnote pt-0.5 text-center">
                           + {routeVertices.length - 10} more nodes
                         </div>
                       )}
@@ -604,41 +604,40 @@ export const FeatureInspector = React.memo(function FeatureInspector({
             {/* Region: Level */}
             {feature.type === "subdivision" && (
               <div className="space-y-1">
-                <span className="text-muted-foreground text-xs font-medium">Level</span>
-                <select
-                  value={subdivisionLevel}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
+                <span className="text-label-secondary text-caption">Level</span>
+                <OptionSelect
+                  aria-label="Level"
+                  value={String(subdivisionLevel)}
+                  onValueChange={(v) => {
+                    const val = parseInt(v, 10);
                     setSubdivisionLevel(val);
                     void onUpdateFeature({ level: val });
                   }}
-                  className="border-border/60 bg-background text-foreground focus:border-primary w-full rounded-lg border px-2.5 py-1.5 text-xs font-medium focus:outline-none"
-                >
-                  {SUBDIVISION_LEVELS.map((item) => (
-                    <option key={item.level} value={item.level}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
+                  options={SUBDIVISION_LEVELS.map((item) => ({
+                    value: String(item.level),
+                    label: item.label,
+                  }))}
+                  size="sm"
+                  className="w-full"
+                />
               </div>
             )}
 
             {/* Region assignment (for non-subdivisions) */}
             {feature.type !== "subdivision" && subdivisions.length > 0 && (
               <div className="space-y-1">
-                <span className="text-muted-foreground text-xs font-medium">Region</span>
-                <select
+                <span className="text-label-secondary text-caption">Region</span>
+                <OptionSelect
+                  aria-label="Region"
                   value={subdivisionId}
-                  onChange={(e) => handleSubdivisionChange(e.target.value)}
-                  className="border-border/60 bg-background text-foreground focus:border-primary w-full rounded-lg border px-2.5 py-1.5 text-xs font-medium focus:outline-none"
-                >
-                  <option value="">None</option>
-                  {subdivisions.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name || s.id}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={(v) => handleSubdivisionChange(v)}
+                  options={[
+                    { value: "", label: "None" },
+                    ...subdivisions.map((s) => ({ value: s.id, label: s.name || s.id })),
+                  ]}
+                  size="sm"
+                  className="w-full"
+                />
               </div>
             )}
           </div>
@@ -646,11 +645,14 @@ export const FeatureInspector = React.memo(function FeatureInspector({
       </FacetCard>
 
       {/* Accordion Card 2: Location & Hydrology */}
-      <FacetCard surface="solid" className="overflow-hidden rounded-xl">
-        <button
+      <FacetCard className="overflow-hidden">
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => setOpenSpatial((v) => !v)}
-          className="hover:bg-muted/20 flex w-full items-center justify-between px-3 py-2 text-left font-medium transition-colors"
+          aria-expanded={openSpatial}
+          className="h-auto min-h-(--control-height-sm) w-full justify-between justify-start py-2 text-left whitespace-normal"
         >
           <Eyebrow>
             {feature.type === "river"
@@ -664,10 +666,10 @@ export const FeatureInspector = React.memo(function FeatureInspector({
           ) : (
             <ChevronDown className="h-3.5 w-3.5 opacity-60" />
           )}
-        </button>
+        </Button>
 
         {openSpatial && (
-          <div className="border-border/40 space-y-2.5 border-t p-3">
+          <div className="border-separator space-y-2 border-t p-3">
             {feature.type === "river" ? (
               <RiverHydrologySection feature={feature} />
             ) : feature.type === "lake" ? (
@@ -687,27 +689,27 @@ export const FeatureInspector = React.memo(function FeatureInspector({
 
                 {/* Live Elevation & Terrain */}
                 {coords && (
-                  <div className="border-border space-y-2 rounded-lg border p-2.5">
+                  <div className="border-separator rounded-control space-y-2 border p-2">
                     <div className="flex items-center justify-between">
                       <Eyebrow>Elevation & Terrain</Eyebrow>
                       {sampleTerrain.isLoading && (
-                        <div className="border-muted-foreground/20 border-t-primary h-2.5 w-2.5 animate-spin rounded-full border-2" />
+                        <div className="border-separator border-t-primary h-2.5 w-2.5 animate-spin rounded-full border-2" />
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <div className="border-border/30 bg-muted/20 rounded p-1.5">
-                        <span className="text-muted-foreground text-xs">Elevation</span>
-                        <p className="text-foreground font-mono text-xs font-semibold tabular-nums">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="border-separator bg-fill-4 rounded-control-sm p-2">
+                        <span className="text-label-secondary text-footnote">Elevation</span>
+                        <p className="text-label text-caption font-semibold tabular-nums">
                           {sampleTerrain.data?.midpoint != null
                             ? `${sampleTerrain.data.midpoint.toLocaleString()} m`
                             : "—"}
                         </p>
                       </div>
 
-                      <div className="border-border/30 bg-muted/20 rounded p-1.5">
-                        <span className="text-muted-foreground text-xs">Terrain zone</span>
-                        <p className="text-foreground font-mono text-xs font-semibold">
+                      <div className="border-separator bg-fill-4 rounded-control-sm p-2">
+                        <span className="text-label-secondary text-footnote">Terrain zone</span>
+                        <p className="text-label text-caption font-semibold tabular-nums">
                           {sampleTerrain.data?.zoneName || "Lowland"}
                         </p>
                       </div>
@@ -715,9 +717,9 @@ export const FeatureInspector = React.memo(function FeatureInspector({
 
                     {sampleTerrain.data?.elevationMin != null &&
                       sampleTerrain.data?.elevationMax != null && (
-                        <div className="border-border/30 bg-muted/20 flex items-center justify-between rounded px-2 py-1 text-xs">
-                          <span className="text-muted-foreground">Zone range</span>
-                          <span className="text-foreground font-mono font-medium">
+                        <div className="border-separator bg-fill-4 text-footnote rounded-control-sm flex items-center justify-between px-2 py-1">
+                          <span className="text-label-secondary">Zone range</span>
+                          <span className="text-label font-medium tabular-nums">
                             {sampleTerrain.data.elevationMin}m to {sampleTerrain.data.elevationMax}m
                           </span>
                         </div>
@@ -731,11 +733,14 @@ export const FeatureInspector = React.memo(function FeatureInspector({
       </FacetCard>
 
       {/* Accordion Card 3: Wiki */}
-      <FacetCard surface="solid" className="overflow-hidden rounded-xl">
-        <button
+      <FacetCard className="overflow-hidden">
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => setOpenWiki((v) => !v)}
-          className="hover:bg-muted/20 flex w-full items-center justify-between px-3 py-2 text-left font-medium transition-colors"
+          aria-expanded={openWiki}
+          className="h-auto min-h-(--control-height-sm) w-full justify-between justify-start py-2 text-left whitespace-normal"
         >
           <Eyebrow>Wiki article</Eyebrow>
           {openWiki ? (
@@ -743,12 +748,12 @@ export const FeatureInspector = React.memo(function FeatureInspector({
           ) : (
             <ChevronDown className="h-3.5 w-3.5 opacity-60" />
           )}
-        </button>
+        </Button>
 
         {openWiki && (
-          <div className="border-border/40 space-y-2.5 border-t p-3">
+          <div className="border-separator space-y-2 border-t p-3">
             <div className="space-y-1">
-              <span className="text-muted-foreground text-xs font-medium">Article title</span>
+              <span className="text-label-secondary text-caption">Article title</span>
               <WikiLinkWizard
                 value={wikiPageTitle}
                 onChange={handleWikiChange}
@@ -762,7 +767,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                 href={`/wiki/${encodeURIComponent(wikiPageTitle)}`}
                 target="_blank"
                 rel="noreferrer"
-                className="border-border/60 bg-card/60 hover:bg-accent/40 text-foreground flex items-center justify-center gap-1.5 rounded-lg border py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                className="border-separator bg-surface hover:bg-fill-3 text-label rounded-control text-caption flex items-center justify-center gap-2 border py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
               >
                 <ExternalLink className="h-3.5 w-3.5 opacity-70" />
                 <span>Open in Wiki</span>
@@ -773,11 +778,14 @@ export const FeatureInspector = React.memo(function FeatureInspector({
       </FacetCard>
 
       {/* Accordion Card 4: Actions */}
-      <FacetCard surface="solid" className="overflow-hidden rounded-xl">
-        <button
+      <FacetCard className="overflow-hidden">
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => setOpenActions((v) => !v)}
-          className="hover:bg-muted/20 flex w-full items-center justify-between px-3 py-2 text-left font-medium transition-colors"
+          aria-expanded={openActions}
+          className="h-auto min-h-(--control-height-sm) w-full justify-between justify-start py-2 text-left whitespace-normal"
         >
           <Eyebrow>Actions</Eyebrow>
           {openActions ? (
@@ -785,10 +793,10 @@ export const FeatureInspector = React.memo(function FeatureInspector({
           ) : (
             <ChevronDown className="h-3.5 w-3.5 opacity-60" />
           )}
-        </button>
+        </Button>
 
         {openActions && (
-          <div className="border-border/40 border-t p-3">
+          <div className="border-separator border-t p-3">
             <GeometryActionsBar
               feature={feature}
               onCenter={onCenter}

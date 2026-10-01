@@ -1,101 +1,60 @@
 "use client";
 
 import React from "react";
-import { cn } from "~/lib/utils";
+import { AcrylicGlow, Refraction } from "~/components/ui/facet/identity/Glow";
 
 /**
- * Shared Style Constants for the Dynamic Island / Halo glass aesthetic
+ * The Halo island's acrylic effects (Facet 3.1, spec §16) — the v2 DynamicIslandEffects layers
+ * rebuilt on the identity primitives: the coloured glow underlay (`AcrylicGlow`, three blurred
+ * layers in the app tint) and the four refraction edges (`Refraction edges="all"`). The looping
+ * shimmer stays retired (spec §8).
+ *
+ * The material itself is the `material-acrylic` utility (v2 `.dynamic-island-shell`: 28px / 190%
+ * blur, white 85% / obsidian 88%, inset rim, deep shadow; brighter on hover, focus-within and
+ * `data-expanded="true"`). Prefer `<FacetMaterial material="acrylic" glow>` (which renders both
+ * layers); use this component when the island animates its own `motion` box:
+ *
+ * ```tsx
+ * <motion.div layout className="material-acrylic relative isolate overflow-hidden rounded-full">
+ *   <DynamicIslandEffects />
+ *   …
+ * </motion.div>
+ * ```
  */
-export const DYNAMIC_ISLAND_STYLE = {
-  background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
-  backdropFilter: "blur(20px) saturate(190%)",
-  WebkitBackdropFilter: "blur(20px) saturate(190%)",
-} as const;
-
-export const DYNAMIC_ISLAND_BORDER_CLASS =
-  "border border-white/20 dark:border-white/10 shadow-lg shadow-black/20";
+export const DYNAMIC_ISLAND_MATERIAL_CLASS = "material-acrylic";
 
 export interface DynamicIslandEffectsProps {
-  /** Optional custom class for the outer wrappers */
+  /** Optional custom class for the glow layer */
   className?: string;
-  /** Opacity level for the colorful background glow layers (default: 0.4 / 40%) */
+  /** Opacity of the glow underlay (v2 default: 0.4 / 40%) */
   glowOpacity?: number;
-  /** Whether to show the colorful glow layers (default: true) */
+  /** Whether to show the glow underlay (default: true) */
   showGlow?: boolean;
-  /** Whether to show the pulse shimmer animation (default: true) */
+  /** Whether to draw the four refraction edges (default: true) */
+  showRefraction?: boolean;
+  /** @deprecated Ignored — Facet retires looping shimmers (spec §8). */
   showShimmer?: boolean;
-  /** The primary axis orientation of the gradients and shimmers (default: "horizontal") */
+  /** Axis of the glow gradients (default: "horizontal") */
   orientation?: "horizontal" | "vertical";
 }
 
-/**
- * Reusable component containing the multi-layer glows, refraction edges,
- * and shimmer animations that form the Dynamic Island / Halo visual style.
- */
 export function DynamicIslandEffects({
   className,
   glowOpacity = 0.4,
   showGlow = true,
-  showShimmer = true,
+  showRefraction = true,
   orientation = "horizontal",
 }: DynamicIslandEffectsProps) {
-  const isVertical = orientation === "vertical";
-  const gradientDirection = isVertical ? "bg-gradient-to-b" : "bg-gradient-to-r";
-
   return (
     <>
-      {/* Multi-layer colorful background glow (hero card pattern) */}
       {showGlow && (
-        <div
-          className={cn(
-            "pointer-events-none absolute inset-0 z-0 transition-opacity duration-350",
-            className
-          )}
-          style={{ opacity: glowOpacity }}
-        >
-          <div
-            className={cn(
-              "absolute inset-0 blur-xl",
-              gradientDirection,
-              "from-blue-500/20 via-indigo-500/20 to-blue-500/20"
-            )}
-          />
-          <div
-            className={cn(
-              "absolute inset-0 blur-lg",
-              gradientDirection,
-              "from-cyan-400/15 via-indigo-500/15 to-blue-500/15"
-            )}
-          />
-          <div
-            className={cn(
-              "absolute inset-0 blur-md",
-              gradientDirection,
-              "from-blue-300/10 via-indigo-300/10 to-cyan-300/10"
-            )}
-          />
-        </div>
+        <AcrylicGlow
+          opacity={glowOpacity}
+          orientation={orientation}
+          className={className ?? "-z-10"}
+        />
       )}
-
-      {/* Refraction edges */}
-      <div className="pointer-events-none absolute inset-0 z-0">
-        <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/35 to-transparent" />
-        <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/25 to-transparent" />
-        <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/35 to-transparent" />
-        <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/25 to-transparent" />
-
-        {/* Inner Shimmer */}
-        {showShimmer && (
-          <div
-            className={cn(
-              "absolute inset-0 animate-pulse",
-              gradientDirection,
-              "from-transparent via-white/10 to-transparent"
-            )}
-            style={{ animationDuration: "3s", animationTimingFunction: "ease-in-out" }}
-          />
-        )}
-      </div>
+      {showRefraction && <Refraction edges="all" />}
     </>
   );
 }

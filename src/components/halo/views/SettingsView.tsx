@@ -43,6 +43,7 @@ import {
   SectionLabel,
   AnimatedVolumeIcon,
 } from "./settings/SettingsControls";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 // ─── Main component ──────────────────────────────────────────────────────────
 
@@ -64,7 +65,6 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
   const handleToggleMorePrefs = useCallback(
     (expanded: boolean) => {
-      soundEffects.press();
       setMorePrefsExpanded(expanded);
       setSize(expanded ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM);
     },
@@ -127,7 +127,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
       <div className="p-4">
         <SettingsHeader onClose={onClose} isOnWikiPage={isOnWikiPage} />
         <div className="py-8 text-center">
-          <PreText className="text-muted-foreground text-sm" whiteSpace="nowrap">
+          <PreText className="text-label-secondary text-body" whiteSpace="nowrap">
             Loading…
           </PreText>
         </div>
@@ -156,19 +156,19 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
           <SectionLabel>Appearance</SectionLabel>
 
           {/* Theme */}
-          <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:bg-black/[0.04] dark:hover:bg-white/[0.06]">
-            <div className="bg-primary/15 shrink-0 rounded-md p-1.5">
+          <div className="rounded-control hover:bg-fill-3 flex items-center gap-3 px-3 py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none">
+            <div className="bg-tint/15 rounded-control-sm shrink-0 p-2">
               {effectiveTheme === "dark" ? (
-                <Moon className="text-primary h-3.5 w-3.5" />
+                <Moon className="text-tint h-3.5 w-3.5" />
               ) : (
-                <Sun className="text-primary h-3.5 w-3.5" />
+                <Sun className="text-tint h-3.5 w-3.5" />
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <PreText className="text-foreground block text-sm font-medium" whiteSpace="nowrap">
+              <PreText className="text-label text-body block font-medium" whiteSpace="nowrap">
                 Theme
               </PreText>
-              <PreText className="text-muted-foreground block text-xs" whiteSpace="nowrap">
+              <PreText className="text-label-secondary text-footnote block" whiteSpace="nowrap">
                 {theme === "system" ? "Auto" : theme === "dark" ? "Dark" : "Light"}
               </PreText>
             </div>
@@ -177,15 +177,14 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
           {/* Compact Mode */}
           <SettingsRow
-            icon={<Layout className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />}
-            iconBg="bg-indigo-500/15"
+            icon={<Layout className="text-indigo h-3.5 w-3.5" />}
+            iconBg="bg-indigo/15"
             label="Compact Mode"
             description="Denser UI layout"
           >
             <ToggleSwitch
               enabled={compactMode}
               onToggle={() => {
-                soundEffects.toggle();
                 toggleCompactMode();
               }}
             />
@@ -194,7 +193,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
           {/* Sound */}
           <SettingsRow
             icon={<AnimatedVolumeIcon enabled={soundEnabled} isHovered={soundIconHovered} />}
-            iconBg={soundEnabled ? "bg-emerald-500/15" : "bg-muted/15"}
+            iconBg={soundEnabled ? "bg-green/15" : "bg-fill-4"}
             label="Sound"
             description={soundEnabled ? "Enabled" : "Muted"}
             onIconClick={soundEnabled ? () => previewSound("chime") : undefined}
@@ -216,19 +215,18 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
             <SettingsRow
               icon={
                 mediaThemeMode === "plinth" ? (
-                  <Square className="h-3.5 w-3.5 text-emerald-500" />
+                  <Square className="text-green h-3.5 w-3.5" />
                 ) : (
-                  <SunMoon className="h-3.5 w-3.5 text-cyan-500" />
+                  <SunMoon className="text-teal h-3.5 w-3.5" />
                 )
               }
-              iconBg={mediaThemeMode === "plinth" ? "bg-emerald-500/15" : "bg-cyan-500/15"}
+              iconBg={mediaThemeMode === "plinth" ? "bg-green/15" : "bg-teal/15"}
               label="Image Appearance"
               description={mediaThemeMode === "plinth" ? "Light Backplate" : "Adaptive Dark"}
             >
               <Switch
                 checked={mediaThemeMode === "plinth"}
                 onCheckedChange={(checked) => {
-                  soundEffects.toggle();
                   setMediaThemeMode(checked ? "plinth" : "auto");
                 }}
               />
@@ -237,96 +235,74 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
           {/* More Preferences Trigger Row (Wiki) — smoothly toggles the side panel */}
           {isOnWikiPage && (
-            <button
-              type="button"
-              onClick={() => handleToggleMorePrefs(!morePrefsExpanded)}
-              className={cn(
-                "group flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.985]",
-                morePrefsExpanded
-                  ? "border border-blue-500/25 bg-blue-500/10 text-blue-400 shadow-xs"
-                  : "border border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
-              )}
-            >
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <div
-                  className={cn(
-                    "shrink-0 rounded-md p-1.5",
-                    morePrefsExpanded ? "bg-blue-500/20" : "bg-blue-500/15"
-                  )}
-                >
-                  <BookOpen className="h-3.5 w-3.5 text-blue-500" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <PreText
-                    className={cn(
-                      "block text-sm font-medium",
-                      morePrefsExpanded ? "text-blue-400" : "text-foreground"
-                    )}
-                    whiteSpace="nowrap"
-                  >
-                    {morePrefsExpanded ? "Reader Preferences" : "More Preferences"}
-                  </PreText>
-                  <PreText className="text-muted-foreground block text-xs" whiteSpace="nowrap">
-                    {morePrefsExpanded ? "" : "Citations, TOC, search, & links"}
-                  </PreText>
-                </div>
-              </div>
-              <ChevronRight
-                className={cn(
-                  "h-4 w-4 transition-transform duration-200",
-                  morePrefsExpanded
-                    ? "rotate-90 text-blue-400"
-                    : "text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5"
-                )}
-              />
-            </button>
+            <FacetList variant="plain">
+              <FacetListSection aria-label="Reader preferences">
+                <FacetRow
+                  onClick={() => handleToggleMorePrefs(!morePrefsExpanded)}
+                  selected={morePrefsExpanded}
+                  selectionStyle="tint"
+                  aria-current={false}
+                  leading={
+                    <span
+                      className={cn(
+                        "rounded-control-sm block p-2",
+                        morePrefsExpanded ? "bg-blue/20" : "bg-blue/15"
+                      )}
+                    >
+                      <BookOpen className="text-blue size-3.5" />
+                    </span>
+                  }
+                  title={morePrefsExpanded ? "Reader Preferences" : "More Preferences"}
+                  subtitle={morePrefsExpanded ? undefined : "Citations, TOC, search, & links"}
+                  accessory={
+                    <ChevronRight
+                      aria-hidden
+                      className={cn(
+                        "duration-fast ease-out-facet size-4 transition-transform",
+                        morePrefsExpanded ? "text-tint rotate-90" : "text-label-tertiary"
+                      )}
+                    />
+                  }
+                />
+              </FacetListSection>
+            </FacetList>
           )}
 
           {/* Account */}
           {isSignedIn ? (
             <>
               <SectionLabel>Account</SectionLabel>
-              <button
-                onClick={() => (window.location.href = createAbsoluteUrl("/settings"))}
-                className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:bg-black/[0.04] active:scale-[0.985] dark:hover:bg-white/[0.06]"
-              >
-                <div className="shrink-0 rounded-md bg-blue-500/15 p-1.5">
-                  <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <PreText
-                    className="text-foreground block text-sm font-medium"
-                    whiteSpace="nowrap"
-                  >
-                    Account Settings
-                  </PreText>
-                  <PreText className="text-muted-foreground block text-xs" whiteSpace="nowrap">
-                    Profile, preferences, &amp; security
-                  </PreText>
-                </div>
-                <ChevronRight className="text-muted-foreground/50 h-3.5 w-3.5" />
-              </button>
+              <FacetList variant="plain">
+                <FacetListSection aria-label="Account">
+                  <FacetRow
+                    onClick={() => (window.location.href = createAbsoluteUrl("/settings"))}
+                    leading={
+                      <span className="rounded-control-sm bg-blue/15 block p-2">
+                        <User className="text-blue size-3.5" />
+                      </span>
+                    }
+                    title="Account Settings"
+                    subtitle="Profile, preferences, & security"
+                    accessory="chevron"
+                  />
+                </FacetListSection>
+              </FacetList>
 
               {/* Footer Actions: Admin (left) + Sign Out (right) */}
-              <div className="border-border/40 mt-1 flex items-center justify-between border-t pt-2 dark:border-white/10">
+              <div className="border-separator mt-1 flex items-center justify-between border-t pt-2">
                 {isAdmin ? (
                   <Button
-                    asChild
+                    type="button"
                     size="sm"
                     variant="ghost"
-                    className="text-muted-foreground h-7 px-2.5 text-xs hover:bg-red-500/10 hover:text-red-500"
+                    className="text-label-secondary hover:bg-red/10 hover:text-red"
+                    onClick={() => {
+                      onClose();
+                      window.location.href = createAbsoluteUrl("/admin");
+                    }}
                   >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        window.location.href = createAbsoluteUrl("/admin");
-                      }}
-                      className="flex cursor-pointer items-center gap-1.5"
-                    >
-                      <Settings className="h-3 w-3 text-red-500" />
-                      <span>Admin</span>
-                    </button>
+                    <Settings aria-hidden className="text-red" />
+                    <span>Admin</span>
                   </Button>
                 ) : (
                   <div />
@@ -336,12 +312,12 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                   asChild
                   size="sm"
                   variant="ghost"
-                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-7 px-2.5 text-xs"
+                  className="text-label-secondary hover:text-destructive hover:bg-destructive/10"
                 >
                   <SignOutButton>
-                    <div className="flex cursor-pointer items-center gap-1.5">
+                    <div className="flex cursor-pointer items-center gap-2">
                       <LogOut className="h-3 w-3" />
-                      <PreText className="text-xs" whiteSpace="nowrap">
+                      <PreText className="text-footnote" whiteSpace="nowrap">
                         Sign Out
                       </PreText>
                     </div>
@@ -350,7 +326,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               </div>
             </>
           ) : (
-            <div className="border-border mt-3 border-t pt-4 text-center">
+            <div className="border-separator mt-3 border-t pt-4 text-center">
               <Button
                 size="sm"
                 onClick={() =>
@@ -367,12 +343,12 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
         {/* ── Additive 2nd Column (Smoothly reveals alongside on More Preferences) ── */}
         {morePrefsExpanded && (
-          <div className="animate-in fade-in slide-in-from-right-4 min-w-0 space-y-1 border-t border-white/10 pt-2 duration-200 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
+          <div className="animate-in fade-in slide-in-from-right-4 border-separator min-w-0 space-y-1 border-t pt-2 duration-200 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
             <SectionLabel>Reader Preferences</SectionLabel>
 
             {/* Citations */}
             <SettingsRow
-              icon={<MessageSquare className="h-3.5 w-3.5 text-wiki" />}
+              icon={<MessageSquare className="text-wiki h-3.5 w-3.5" />}
               iconBg="bg-wiki/15"
               label="Citation Tooltips"
               description="Hover source preview cards"
@@ -380,7 +356,6 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               <ToggleSwitch
                 enabled={showCiteTooltips}
                 onToggle={() => {
-                  soundEffects.toggle();
                   setShowCiteTooltips(!showCiteTooltips);
                 }}
               />
@@ -388,15 +363,14 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
             {/* Article TOC */}
             <SettingsRow
-              icon={<List className="h-3.5 w-3.5 text-cyan-400" />}
-              iconBg="bg-cyan-500/15"
+              icon={<List className="text-teal h-3.5 w-3.5" />}
+              iconBg="bg-teal/15"
               label="Article TOC"
               description="Floating outline navigator"
             >
               <ToggleSwitch
                 enabled={showWikiToc}
                 onToggle={() => {
-                  soundEffects.toggle();
                   setShowWikiToc(!showWikiToc);
                 }}
               />
@@ -404,15 +378,14 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
             {/* Quick Search */}
             <SettingsRow
-              icon={<Search className="h-3.5 w-3.5 text-blue-400" />}
-              iconBg="bg-blue-500/15"
+              icon={<Search className="text-blue h-3.5 w-3.5" />}
+              iconBg="bg-blue/15"
               label="Quick Search"
               description="Index wiki articles in search"
             >
               <ToggleSwitch
                 enabled={dynamicSearchWiki}
                 onToggle={() => {
-                  soundEffects.toggle();
                   setDynamicSearchWiki(!dynamicSearchWiki);
                 }}
               />
@@ -420,15 +393,14 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
             {/* Open in New Tab */}
             <SettingsRow
-              icon={<ExternalLink className="h-3.5 w-3.5 text-emerald-400" />}
-              iconBg="bg-emerald-500/15"
+              icon={<ExternalLink className="text-green h-3.5 w-3.5" />}
+              iconBg="bg-green/15"
               label="Open in New Tab"
               description="External link target"
             >
               <ToggleSwitch
                 enabled={openInNewTab}
                 onToggle={() => {
-                  soundEffects.toggle();
                   setOpenInNewTab(!openInNewTab);
                 }}
               />
@@ -436,29 +408,24 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
             {/* Deep Wiki Settings Link */}
             <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  router.push(withBasePath("/settings#wiki-settings"));
-                }}
-                className="hover:bg-accent/10 group flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2.5 text-left transition-colors"
-              >
-                <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                  <div className="shrink-0 rounded-md bg-indigo-500/15 p-1.5">
-                    <BookOpen className="h-3.5 w-3.5 text-indigo-400" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <span className="text-foreground block truncate text-xs font-semibold">
-                      Wiki System Settings
-                    </span>
-                    <span className="text-muted-foreground block truncate text-xs">
-                      Autonomous lore scanner &amp; sources
-                    </span>
-                  </div>
-                </div>
-                <ChevronRight className="text-muted-foreground group-hover:text-foreground h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-              </button>
+              <FacetList variant="plain">
+                <FacetListSection aria-label="Wiki system settings">
+                  <FacetRow
+                    onClick={() => {
+                      onClose();
+                      router.push(withBasePath("/settings#wiki-settings"));
+                    }}
+                    leading={
+                      <span className="rounded-control-sm bg-indigo/15 block p-2">
+                        <BookOpen className="text-indigo size-3.5" />
+                      </span>
+                    }
+                    title="Wiki System Settings"
+                    subtitle="Autonomous lore scanner & sources"
+                    accessory="chevron"
+                  />
+                </FacetListSection>
+              </FacetList>
             </div>
           </div>
         )}
@@ -482,35 +449,42 @@ function SettingsHeader({
 }) {
   return (
     <div className="mb-3 flex items-center justify-between">
-      <div className="text-foreground flex items-center gap-2 text-sm font-semibold">
+      <div className="text-label text-headline flex items-center gap-2">
         {isOnWikiPage ? (
-          <BookOpen className="h-4 w-4 text-blue-400" />
+          <BookOpen className="text-blue h-4 w-4" />
         ) : (
-          <Settings className="h-4 w-4 text-blue-400" />
+          <Settings className="text-blue h-4 w-4" />
         )}
         <PreText whiteSpace="nowrap">{isOnWikiPage ? "Wiki Settings" : "Settings"}</PreText>
       </div>
       <div className="flex items-center gap-1">
         {onRefresh && (
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={onRefresh}
             disabled={isRefreshing}
             title="Refresh data"
-            className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 items-center justify-center rounded-md transition-colors disabled:opacity-40"
+            className="text-label-secondary hover:text-label"
+            aria-label="Refresh data"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-          </button>
+            <RefreshCw aria-hidden className={isRefreshing ? "animate-spin" : ""} />
+          </Button>
         )}
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
           onClick={() => {
             soundEffects.droplet();
             onClose();
           }}
-          data-cuelume-press="droplet"
-          className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex h-7 w-7 items-center justify-center rounded-md transition-colors"
+          aria-label="Close"
+          className="text-label-secondary hover:text-label"
         >
-          <X className="h-3.5 w-3.5" />
-        </button>
+          <X aria-hidden />
+        </Button>
       </div>
     </div>
   );
@@ -538,7 +512,7 @@ function SettingsRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none hover:bg-black/[0.04] dark:hover:bg-white/[0.06]">
+    <div className="rounded-control hover:bg-fill-3 flex items-center gap-3 px-3 py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none">
       {onIconClick ? (
         <button
           type="button"
@@ -549,22 +523,23 @@ function SettingsRow({
           onMouseEnter={() => onIconHover?.(true)}
           onMouseLeave={() => onIconHover?.(false)}
           title={iconTitle}
+          aria-label={iconTitle}
           className={cn(
-            "shrink-0 cursor-pointer rounded-md p-1.5 transition-colors active:scale-95",
+            "rounded-control-sm focus-visible:outline-tint shrink-0 cursor-pointer p-2 transition-colors focus-visible:outline-2 active:scale-[0.98]",
             iconBg
           )}
         >
           {icon}
         </button>
       ) : (
-        <div className={`shrink-0 rounded-md p-1.5 ${iconBg}`}>{icon}</div>
+        <div className={`rounded-control-sm shrink-0 p-2 ${iconBg}`}>{icon}</div>
       )}
       <div className="min-w-0 flex-1">
-        <PreText className="text-foreground block text-sm font-medium" whiteSpace="nowrap">
+        <PreText className="text-label text-body block font-medium" whiteSpace="nowrap">
           {label}
         </PreText>
         {description && (
-          <PreText className="text-muted-foreground block text-xs" whiteSpace="nowrap">
+          <PreText className="text-label-secondary text-footnote block" whiteSpace="nowrap">
             {description}
           </PreText>
         )}

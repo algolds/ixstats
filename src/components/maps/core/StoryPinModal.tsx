@@ -35,9 +35,11 @@ import { RelatedPinCard } from "~/components/maps/core/components/RelatedPinCard
 import { getCategoryIcon, IMPORTANCE_LABELS } from "~/components/maps/core/utils/story-pin-helpers";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
+import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { FacetCard } from "~/components/ui/facet-container";
+import { FACET_PROSE } from "~/components/maps/shared/facet-prose";
+import { cn } from "~/lib/utils/cn";
 
 const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
 
@@ -63,17 +65,17 @@ export const StoryPinModal = memo(function StoryPinModal({
 
   if (state.isLoading) {
     return (
-      <Dialog open onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="facet-modal rounded-2xl p-8 sm:max-w-3xl">
-          <DialogTitle className="sr-only">Loading story</DialogTitle>
-          <Skeleton className="h-6 w-48 rounded" />
+      <Sheet open onOpenChange={(open) => !open && onClose()}>
+        <SheetContent size="wide" className="overflow-y-auto p-8">
+          <SheetTitle className="sr-only">Loading story</SheetTitle>
+          <Skeleton className="rounded-control-sm h-6 w-48" />
           <div className="mt-2 space-y-3">
-            <Skeleton className="h-40 w-full rounded-xl" />
-            <Skeleton className="h-4 w-3/4 rounded" />
-            <Skeleton className="h-4 w-1/2 rounded" />
+            <Skeleton className="rounded-row h-40 w-full" />
+            <Skeleton className="h-4 w-3/4 rounded-xs" />
+            <Skeleton className="h-4 w-1/2 rounded-xs" />
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     );
   }
 
@@ -104,8 +106,8 @@ export const StoryPinModal = memo(function StoryPinModal({
         />
       )}
 
-      <Dialog open onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="facet-modal flex max-h-[85vh] flex-col gap-0 overflow-hidden rounded-2xl p-0 sm:max-w-3xl">
+      <Sheet open onOpenChange={(open) => !open && onClose()}>
+        <SheetContent size="wide" className="flex flex-col gap-0 overflow-hidden p-0">
           {/* ── Hero / Header ── */}
           <div className="shrink-0">
             {heroImage && (
@@ -116,23 +118,19 @@ export const StoryPinModal = memo(function StoryPinModal({
 
             <div className="px-5 pt-4 pr-12 pb-4">
               {/* Category + Importance badges */}
-              <div className="mb-1.5 flex items-center gap-2">
+              <div className="mb-2 flex items-center gap-2">
                 <Badge variant="outline" className="capitalize">
                   <CategoryIcon style={color ? { color } : undefined} aria-hidden />
                   {category}
                 </Badge>
                 {pin.importance >= 1 && (
-                  <Badge variant="outline" className="border-amber-500/30 text-amber-500">
-                    {IMPORTANCE_LABELS[pin.importance]}
-                  </Badge>
+                  <Badge variant="yellow">{IMPORTANCE_LABELS[pin.importance]}</Badge>
                 )}
               </div>
-              <DialogTitle className="text-xl leading-tight font-semibold sm:text-2xl">
-                {pin.title}
-              </DialogTitle>
+              <SheetTitle className="text-title-2 sm:text-title-1">{pin.title}</SheetTitle>
               {/* Country + Timeline */}
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-muted-foreground">{pin.country.name}</span>
+              <div className="text-footnote mt-1 flex flex-wrap items-center gap-2">
+                <span className="text-label-secondary">{pin.country.name}</span>
                 {(pin.ixTimeYear != null || pin.eraLabel) && (
                   <TimelineEraBadge
                     eraLabel={pin.eraLabel ?? undefined}
@@ -143,7 +141,7 @@ export const StoryPinModal = memo(function StoryPinModal({
               </div>
               {/* Storyline breadcrumb */}
               {hasStoryline && (
-                <p className="text-muted-foreground mt-1 text-xs">
+                <p className="text-label-secondary text-footnote mt-1">
                   {storyline.title} · Event {currentStorylineIdx + 1} of {storyline.pins.length}
                 </p>
               )}
@@ -151,12 +149,17 @@ export const StoryPinModal = memo(function StoryPinModal({
           </div>
 
           {/* ── Scrollable Body ── */}
-          <div className="border-border min-h-0 flex-1 overflow-y-auto border-t">
+          <div className="border-separator min-h-0 flex-1 overflow-y-auto border-t">
             <div className="flex flex-col gap-6 p-5 lg:flex-row">
               {/* Main content column */}
               <div className="min-w-0 flex-1 space-y-5">
                 {pin.content && (
-                  <div className="prose prose-sm dark:prose-invert prose-headings:text-foreground prose-p:text-foreground prose-a:text-blue-500 prose-img:rounded-lg max-w-none">
+                  <div
+                    className={cn(
+                      FACET_PROSE,
+                      "prose-sm prose-p:text-label prose-img:rounded-control"
+                    )}
+                  >
                     {pin.contentFormat === "markdown" ? (
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{pin.content}</ReactMarkdown>
                     ) : (
@@ -167,12 +170,12 @@ export const StoryPinModal = memo(function StoryPinModal({
 
                 {/* Wiki integration section */}
                 {wikiEnrichment?.intro && (
-                  <FacetCard surface="solid" className="rounded-xl p-4">
+                  <FacetCard variant="inset" className="p-4">
                     <Eyebrow className="mb-2 flex items-center gap-2">
                       <BookOpen className="h-3.5 w-3.5" aria-hidden />
                       From IxWiki
                     </Eyebrow>
-                    <p className="text-foreground text-xs leading-relaxed">
+                    <p className="text-label text-footnote leading-relaxed">
                       {wikiEnrichment.intro}
                     </p>
                     {wikiEnrichment.wikiUrl &&
@@ -208,7 +211,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                           type="button"
                           key={`photo-${i}`}
                           onClick={() => state.setLightboxSrc(url)}
-                          className="border-border shrink-0 overflow-hidden rounded-lg border transition-transform hover:scale-105"
+                          className="border-separator rounded-control shrink-0 overflow-hidden border transition-transform hover:scale-105"
                         >
                           <img
                             src={url}
@@ -223,7 +226,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                           type="button"
                           key={`wiki-${i}`}
                           onClick={() => state.setLightboxSrc(img.url)}
-                          className="border-border shrink-0 overflow-hidden rounded-lg border transition-transform hover:scale-105"
+                          className="border-separator rounded-control shrink-0 overflow-hidden border transition-transform hover:scale-105"
                         >
                           <img
                             src={img.thumbUrl || img.url}
@@ -252,7 +255,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                 {relatedPins && relatedPins.length > 0 && (
                   <div>
                     <Eyebrow className="mb-2 block">Related events</Eyebrow>
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       {relatedPins.slice(0, 5).map((rp) => (
                         <RelatedPinCard key={rp.id} pin={rp} onNavigate={state.handleNavigatePin} />
                       ))}
@@ -264,7 +267,7 @@ export const StoryPinModal = memo(function StoryPinModal({
           </div>
 
           {/* ── Footer Actions ── */}
-          <div className="border-border flex shrink-0 flex-wrap items-center gap-2 border-t px-5 py-3">
+          <div className="border-separator flex shrink-0 flex-wrap items-center gap-2 border-t px-5 py-3">
             {wikiEnrichment?.wikiUrl &&
               (wikiIsInternal ? (
                 <Button asChild variant="outline" size="sm">
@@ -292,7 +295,7 @@ export const StoryPinModal = memo(function StoryPinModal({
             <Button
               size="sm"
               onClick={state.handleFlyTo}
-              className="bg-blue-600 text-white hover:bg-blue-600/90"
+              className="bg-blue text-on-blue hover:bg-blue/90"
             >
               <MapPin aria-hidden />
               Fly to location
@@ -318,8 +321,8 @@ export const StoryPinModal = memo(function StoryPinModal({
               </Button>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </>
   );
 });

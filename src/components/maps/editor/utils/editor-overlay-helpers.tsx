@@ -3,7 +3,7 @@
 import React, { Component, type ReactNode } from "react";
 import { Map, WarningCircle as AlertCircle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import { Skeleton } from "~/components/ui/skeleton";
 import type { Geometry, Position } from "geojson";
 
@@ -13,19 +13,22 @@ export function EditorLoadingScreen({ countryName }: { countryName?: string | nu
   return (
     <div
       role="status"
-      className="bg-background absolute inset-0 z-40 flex items-center justify-center p-6"
+      className="bg-surface absolute inset-0 z-40 flex items-center justify-center p-6"
     >
-      <FacetContainer depth={2} className="w-full max-w-xs space-y-4 rounded-2xl p-6 text-center">
-        <Map className="text-muted-foreground mx-auto h-6 w-6" aria-hidden />
+      <FacetMaterial
+        material="regular"
+        className="rounded-card w-full max-w-xs space-y-4 p-6 text-center"
+      >
+        <Map className="text-label-secondary mx-auto h-6 w-6" aria-hidden />
         <div>
-          <h2 className="text-foreground text-sm font-semibold">Loading map editor…</h2>
-          {countryName && <p className="text-muted-foreground mt-1 text-xs">{countryName}</p>}
+          <h2 className="text-label text-headline">Loading map editor…</h2>
+          {countryName && <p className="text-label-secondary text-footnote mt-1">{countryName}</p>}
         </div>
         <div className="space-y-2" aria-hidden>
           <Skeleton className="h-3 w-full" />
           <Skeleton className="mx-auto h-3 w-2/3" />
         </div>
-      </FacetContainer>
+      </FacetMaterial>
     </div>
   );
 }
@@ -78,7 +81,9 @@ export class EditorErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoun
       return (
         <div className="flex flex-col items-center justify-center gap-2 p-4 text-center">
           <AlertCircle className="text-destructive h-5 w-5" aria-hidden />
-          <p className="text-muted-foreground text-xs">{this.props.name} encountered an error</p>
+          <p className="text-label-secondary text-footnote">
+            {this.props.name} encountered an error
+          </p>
           <Button
             variant="secondary"
             size="xs"

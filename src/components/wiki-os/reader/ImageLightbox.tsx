@@ -4,7 +4,6 @@
 // is a separate chunk, fetched on the first click, not with every article.
 
 import React, { useState, useEffect, useCallback } from "react";
-import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import {
   resolveHighResWikiImage,
@@ -70,8 +69,5 @@ export function useImageLightbox(containerRef: React.RefObject<HTMLElement | nul
     return null;
   }
 
-  return createPortal(
-    <ImageLightboxModal image={activeImage} onClose={handleClose} />,
-    document.body
-  );
+  return <ImageLightboxModal image={activeImage} onClose={handleClose} />;
 }

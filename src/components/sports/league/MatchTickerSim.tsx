@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent } from "~/components/ui/card";
+import { FacetCard } from "~/components/ui/facet-container";
+import { springGentle } from "~/lib/design/motion";
 import {
   Play,
   Pause,
@@ -89,148 +90,125 @@ export function MatchTickerSim({
   const currentMinute = currentStep ? currentStep.t : 90;
 
   return (
-    <Card className="facet-hierarchy-child border-border relative overflow-hidden rounded-3xl">
-      {/* Background glow highlights dynamically using home & away team colors */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-40"
-        style={{
-          background: `linear-gradient(135deg, ${homeTeam.color}20, transparent, ${awayTeam.color}20)`,
-        }}
-      />
+    <FacetCard padding="lg" className="space-y-6 overflow-hidden">
+      {/* Header Live / Sim control panel */}
+      <div className="flex items-center justify-between">
+        <Badge variant="destructive">
+          <span className="size-1.5 rounded-full bg-current" aria-hidden />
+          Live simulator
+        </Badge>
+        <div className="flex gap-2">
+          <Button
+            size="icon"
+            variant="ghost"
+            aria-label={isPlaying ? "Pause" : "Play"}
+            onClick={() => setIsPlaying(!isPlaying)}
+          >
+            {isPlaying ? <Pause /> : <Play />}
+          </Button>
+          <Button size="icon" variant="ghost" aria-label="Restart" onClick={handleReset}>
+            <RotateCcw />
+          </Button>
+        </div>
+      </div>
 
-      <CardContent className="relative z-10 space-y-6 p-6">
-        {/* Header Live / Sim control panel */}
-        <div className="flex items-center justify-between">
-          <Badge className="flex items-center gap-1 bg-red-600 px-2 py-0.5 font-bold text-white dark:bg-red-500">
-            <span className="h-1.5 w-1.5 rounded-full bg-white" />
-            LIVE SIMULATOR
-          </Badge>
-          <div className="flex gap-2">
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="text-foreground hover:bg-muted"
+      {/* Dynamic Island Alert Overlay */}
+      <div className="flex h-16 items-center justify-center">
+        <AnimatePresence mode="wait">
+          {alertEvent && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: -8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              transition={springGentle}
+              className={cn(
+                "text-headline flex items-center gap-2 rounded-full px-4 py-2",
+                alertEvent.type === "goal"
+                  ? "bg-green/15 text-green"
+                  : alertEvent.type === "card"
+                    ? "bg-yellow/15 text-yellow"
+                    : alertEvent.type === "injury"
+                      ? "bg-red/15 text-red"
+                      : "bg-blue/15 text-blue"
+              )}
             >
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={handleReset}
-              className="text-foreground hover:bg-muted"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </Button>
+              {alertEvent.type === "goal" && <Flame className="size-4" aria-hidden />}
+              {alertEvent.type === "card" && <Shield className="h-4 w-4" />}
+              {alertEvent.type === "injury" && <Activity className="text-red h-4 w-4" />}
+              {alertEvent.type === "tactic_shift" && <Users className="h-4 w-4" />}
+              <span>
+                {alertEvent.type === "goal" && `GOAL! (${alertEvent.t}')`}
+                {alertEvent.type === "card" && `CARD / PENALTY (${alertEvent.t}')`}
+                {alertEvent.type === "injury" && `INJURY DETECTED (${alertEvent.t}')`}
+                {alertEvent.type === "tactic_shift" && `TACTICAL SHIFT (${alertEvent.t}')`}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Scoreboard display */}
+      <div className="relative flex items-center justify-around py-4">
+        {/* Home team */}
+        <div className="flex w-1/3 flex-col items-center text-center">
+          <div
+            className="text-caption text-label bg-surface-secondary flex size-10 items-center justify-center rounded-full"
+            style={{
+              backgroundColor: `${homeTeam.color}20`,
+              border: `2px solid ${homeTeam.color}`,
+            }}
+          >
+            {homeTeam.shortName || homeTeam.name.slice(0, 3).toUpperCase()}
           </div>
+          <p className="text-headline mt-2 max-w-full truncate">{homeTeam.name}</p>
         </div>
 
-        {/* Dynamic Island Alert Overlay */}
-        <div className="flex h-16 items-center justify-center">
+        {/* Scores & Clock */}
+        <div className="w-1/3 space-y-2 text-center">
+          <div className="text-large-title text-label flex items-center justify-center gap-3 tabular-nums">
+            <span>{homeScore}</span>
+            <span className="text-label-tertiary">:</span>
+            <span>{awayScore}</span>
+          </div>
+          <Badge variant="neutral" className="tabular-nums">
+            {currentMinute}' min
+          </Badge>
+        </div>
+
+        {/* Away team */}
+        <div className="flex w-1/3 flex-col items-center text-center">
+          <div
+            className="text-caption text-label bg-surface-secondary flex size-10 items-center justify-center rounded-full"
+            style={{
+              backgroundColor: `${awayTeam.color}20`,
+              border: `2px solid ${awayTeam.color}`,
+            }}
+          >
+            {awayTeam.shortName || awayTeam.name.slice(0, 3).toUpperCase()}
+          </div>
+          <p className="text-headline mt-2 max-w-full truncate">{awayTeam.name}</p>
+        </div>
+      </div>
+
+      {/* Live commentary feeds banner */}
+      <div className="border-separator border-t pt-4">
+        <h4 className="text-subhead text-label-secondary mb-2">Live commentary</h4>
+        <div className="relative h-12 overflow-hidden">
           <AnimatePresence mode="wait">
-            {alertEvent && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8, y: -20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.8, y: 20 }}
-                className={cn(
-                  "z-20 flex items-center gap-3 rounded-full border px-6 py-2.5 text-sm font-semibold shadow-xl backdrop-blur-xl",
-                  alertEvent.type === "goal"
-                    ? "border-emerald-500/30 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                    : alertEvent.type === "card"
-                      ? "border-yellow-500/30 bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
-                      : alertEvent.type === "injury"
-                        ? "border-red-500/30 bg-red-500/20 text-red-600 dark:text-red-400"
-                        : "border-blue-500/30 bg-blue-500/20 text-blue-600 dark:text-blue-400"
-                )}
+            {currentStep && (
+              <motion.p
+                key={traceIndex}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="text-label-secondary text-callout"
               >
-                {alertEvent.type === "goal" && (
-                  <Flame className="h-4 w-4 animate-bounce text-emerald-600 dark:text-emerald-400" />
-                )}
-                {alertEvent.type === "card" && <Shield className="h-4 w-4" />}
-                {alertEvent.type === "injury" && (
-                  <Activity className="h-4 w-4 text-red-600 dark:text-red-400" />
-                )}
-                {alertEvent.type === "tactic_shift" && <Users className="h-4 w-4" />}
-                <span>
-                  {alertEvent.type === "goal" && `GOAL! (${alertEvent.t}')`}
-                  {alertEvent.type === "card" && `CARD / PENALTY (${alertEvent.t}')`}
-                  {alertEvent.type === "injury" && `INJURY DETECTED (${alertEvent.t}')`}
-                  {alertEvent.type === "tactic_shift" && `TACTICAL SHIFT (${alertEvent.t}')`}
-                </span>
-              </motion.div>
+                {currentStep.description || "Both squads vying for possession."}
+              </motion.p>
             )}
           </AnimatePresence>
         </div>
-
-        {/* Scoreboard display */}
-        <div className="relative flex items-center justify-around py-4">
-          {/* Home team */}
-          <div className="flex w-1/3 flex-col items-center text-center">
-            <div
-              className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold shadow-md"
-              style={{
-                backgroundColor: `${homeTeam.color}20`,
-                border: `2px solid ${homeTeam.color}`,
-              }}
-            >
-              {homeTeam.shortName || homeTeam.name.slice(0, 3).toUpperCase()}
-            </div>
-            <p className="mt-2 max-w-full truncate text-sm font-bold">{homeTeam.name}</p>
-          </div>
-
-          {/* Scores & Clock */}
-          <div className="w-1/3 space-y-2 text-center">
-            <div className="flex items-center justify-center gap-3 text-5xl font-bold tracking-tight tabular-nums">
-              <span>{homeScore}</span>
-              <span className="text-foreground/20">:</span>
-              <span>{awayScore}</span>
-            </div>
-            <Badge
-              variant="outline"
-              className="border-border bg-muted/40 text-muted-foreground font-mono"
-            >
-              {currentMinute}' min
-            </Badge>
-          </div>
-
-          {/* Away team */}
-          <div className="flex w-1/3 flex-col items-center text-center">
-            <div
-              className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold shadow-md"
-              style={{
-                backgroundColor: `${awayTeam.color}20`,
-                border: `2px solid ${awayTeam.color}`,
-              }}
-            >
-              {awayTeam.shortName || awayTeam.name.slice(0, 3).toUpperCase()}
-            </div>
-            <p className="mt-2 max-w-full truncate text-sm font-bold">{awayTeam.name}</p>
-          </div>
-        </div>
-
-        {/* Live commentary feeds banner */}
-        <div className="border-border border-t pt-4">
-          <p className="text-muted-foreground mb-2 text-xs font-bold tracking-wider uppercase">
-            Live Commentary
-          </p>
-          <div className="relative h-12 overflow-hidden">
-            <AnimatePresence mode="wait">
-              {currentStep && (
-                <motion.p
-                  key={traceIndex}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="text-muted-foreground text-xs leading-relaxed italic"
-                >
-                  {currentStep.description || "Both squads vying for possession."}
-                </motion.p>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </FacetCard>
   );
 }

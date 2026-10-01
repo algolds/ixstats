@@ -7,6 +7,8 @@ import React, { memo } from "react";
 import { Puzzle, Sparks as Sparkles, Map as MapIcon } from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { useEditorModalContext } from "../../context/EditorModalContext";
+import { Button } from "~/components/ui/button";
+import { cn } from "~/lib/utils";
 
 export interface TemplateDropdownProps {
   /** Invoked after the popover closes, before the target modal opens (e.g. restoreSelection in visual mode). */
@@ -19,14 +21,14 @@ export interface TemplateDropdownProps {
   align?: "start" | "end";
 }
 
-const itemClass =
-  "flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--wikios-border)]";
+/** A command row in the template popover. */
+const itemClass = "text-label w-full justify-start";
 
 export const TemplateDropdown = memo(function TemplateDropdown({
   onSelect,
   onBeforeOpen,
   triggerContent,
-  triggerClassName = "wikios-editor-format-btn",
+  triggerClassName,
   align = "end",
 }: TemplateDropdownProps) {
   const modal = useEditorModalContext();
@@ -39,46 +41,56 @@ export const TemplateDropdown = memo(function TemplateDropdown({
 
   return (
     <Popover open={modal.templatesOpen} onOpenChange={modal.setTemplatesOpen}>
-      <PopoverTrigger className={triggerClassName} title="Insert Template" onClick={onBeforeOpen}>
-        {triggerContent ?? <Puzzle className="h-3.5 w-3.5" />}
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size={triggerContent ? "sm" : "icon-sm"}
+          className={cn("text-label-secondary", triggerClassName)}
+          title="Insert Template"
+          aria-label={triggerContent ? undefined : "Insert Template"}
+          onClick={onBeforeOpen}
+        >
+          {triggerContent ?? <Puzzle className="size-3.5" />}
+        </Button>
       </PopoverTrigger>
-      <PopoverContent
-        align={align}
-        className="glass-none z-[10001] w-56 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-1 text-[var(--wikios-text)] shadow-2xl"
-      >
-        <div className="flex flex-col gap-0.5 text-xs">
-          <button
-            type="button"
+      <PopoverContent align={align} className="text-label w-56 p-1">
+        <div className="text-footnote flex flex-col gap-0.5">
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => handleSelect(modal.setShowInfoboxModal)}
             className={itemClass}
           >
-            <Puzzle className="h-3.5 w-3.5 text-blue-400" />
+            <Puzzle className="text-tint h-3.5 w-3.5" />
             <span>Infobox Country</span>
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => handleSelect(modal.setShowCountryStatsModal)}
             className={itemClass}
           >
-            <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+            <Sparkles className="text-yellow h-3.5 w-3.5" />
             <span>Country Stats</span>
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => handleSelect(modal.setShowBusinessStatsModal)}
             className={itemClass}
           >
-            <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+            <Sparkles className="text-teal h-3.5 w-3.5" />
             <span>Business Stats</span>
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => handleSelect(modal.setShowMapCoordsModal)}
             className={itemClass}
           >
-            <MapIcon className="h-3.5 w-3.5 text-emerald-400" />
+            <MapIcon className="text-green h-3.5 w-3.5" />
             <span>Map Coords &amp; Embeds</span>
-          </button>
+          </Button>
         </div>
       </PopoverContent>
     </Popover>

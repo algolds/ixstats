@@ -69,8 +69,8 @@ export function VaultSidebarLayout({
         {/* Main Layout — sidebar widgets + content */}
         <div className="flex gap-4 sm:gap-6">
           {/* Desktop: Fixed sidebar widgets */}
-          <div className="relative z-30 hidden shrink-0 lg:block">
-            <div className="sticky top-20 space-y-4">
+          <div className="z-raised relative hidden shrink-0 lg:block">
+            <div className="sticky top-(--shell-top-offset) space-y-4">
               <DashboardPlayerWidget />
               <VaultWidget />
               <DashboardQuickLinks />
@@ -79,10 +79,10 @@ export function VaultSidebarLayout({
 
           {/* Main Content */}
           <div className="min-w-0 flex-1">
-            {/* Mobile: Horizontal nav strip */}
-            <div className="mb-4 lg:hidden">
-              <div className="facet-hierarchy-child border-border bg-background/60 scrollbar-none overflow-x-auto rounded-xl border p-1.5 backdrop-blur-md dark:bg-black/30">
-                <div className="flex min-w-max gap-1.5">
+            {/* Mobile: Horizontal nav strip (hidden under the new shell: the TabBar lists it) */}
+            <div data-app-subnav="" className="mb-4 lg:hidden">
+              <div className="bg-surface border-separator rounded-row scrollbar-none overflow-x-auto border p-1">
+                <div className="flex min-w-max gap-1">
                   {mobileNavItems.map((item) => {
                     const isActive =
                       item.id === "dashboard"
@@ -109,11 +109,12 @@ export function VaultSidebarLayout({
                       <Link
                         key={item.id}
                         href={item.href}
+                        aria-current={isActive ? "page" : undefined}
                         className={cn(
-                          "rounded-lg border px-3 py-1.5 text-xs font-bold whitespace-nowrap transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
+                          "text-footnote focus-visible:outline-tint rounded-control duration-fast px-3 py-2 font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2",
                           isActive
-                            ? "border-amber-500/30 bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent"
+                            ? "bg-tint-fill text-tint"
+                            : "text-label-secondary hover:text-label hover:bg-fill-3"
                         )}
                       >
                         {item.label}

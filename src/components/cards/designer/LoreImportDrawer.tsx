@@ -20,7 +20,6 @@ import {
   SystemRestart as Loader2,
   Xmark as X,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import {
   Dialog,
@@ -47,6 +46,7 @@ import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 import type { CardDesignState } from "./types";
 import type { LoreCategory } from "~/lib/cards/category-enums";
 import type { CardRarity } from "@prisma/client";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 interface LoreImportDrawerProps {
   isOpen: boolean;
@@ -196,16 +196,16 @@ export function LoreImportDrawer({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="border-border bg-background flex h-[85vh] max-h-[750px] max-w-4xl flex-col gap-0 overflow-hidden p-0">
+      <DialogContent className="border-separator bg-background flex h-[85vh] max-h-[750px] max-w-4xl flex-col gap-0 overflow-hidden p-0">
         {/* Header */}
-        <DialogHeader className="border-border bg-card/50 border-b p-5 pb-4">
+        <DialogHeader className="border-separator bg-surface border-b p-5 pb-4">
           <div className="flex items-center gap-3">
-            <div className="bg-primary/10 text-primary rounded-lg p-2">
+            <div className="bg-tint-fill text-tint rounded-control p-2">
               <BookOpen className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-base font-semibold">LoreScanner</DialogTitle>
-              <DialogDescription className="text-muted-foreground text-xs">
+              <DialogTitle className="text-headline">LoreScanner</DialogTitle>
+              <DialogDescription className="text-label-secondary text-footnote">
                 Search articles from WikiOS, IIWiki, or your saved Stashes.
               </DialogDescription>
             </div>
@@ -213,7 +213,7 @@ export function LoreImportDrawer({
         </DialogHeader>
 
         {/* Source Tabs */}
-        <div className="border-border bg-muted/30 border-b p-3">
+        <div className="border-separator bg-fill-4 border-b p-3">
           <Tabs
             value={source}
             onValueChange={(val) => {
@@ -221,7 +221,7 @@ export function LoreImportDrawer({
               setSelectedItem(null);
             }}
           >
-            <TabsList className="bg-muted/60 grid h-9 w-full grid-cols-4 rounded-lg p-1">
+            <TabsList className="bg-fill-3 rounded-control grid h-9 w-full grid-cols-4 p-1">
               {(Object.keys(SOURCE_CONFIGS) as LoreSource[]).map((key) => {
                 const cfg = SOURCE_CONFIGS[key];
                 const Icon = cfg.icon;
@@ -229,7 +229,7 @@ export function LoreImportDrawer({
                   <TabsTrigger
                     key={key}
                     value={key}
-                    className="flex items-center justify-center gap-1.5 rounded-md text-xs font-medium"
+                    className="rounded-control-sm text-footnote flex items-center justify-center gap-2 font-medium"
                   >
                     <Icon className="h-3.5 w-3.5" />
                     <span>{cfg.name}</span>
@@ -241,23 +241,25 @@ export function LoreImportDrawer({
         </div>
 
         {/* Search & Filter Toolbar */}
-        <div className="border-border bg-card/30 flex items-center gap-2 border-b p-3">
+        <div className="border-separator bg-surface flex items-center gap-2 border-b p-3">
           <div className="relative flex-1">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+            <Search className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={`Search ${SOURCE_CONFIGS[source].label.toLowerCase()}...`}
-              className="h-9 pr-8 pl-9 text-xs"
+              className="text-footnote h-9 pr-8 pl-9"
             />
             {query && (
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Clear search"
                 onClick={() => setQuery("")}
-                className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2.5 -translate-y-1/2"
+                className="text-label-secondary absolute top-1/2 right-2 size-6 -translate-y-1/2"
               >
                 <X className="h-3.5 w-3.5" />
-              </button>
+              </Button>
             )}
           </div>
 
@@ -267,7 +269,7 @@ export function LoreImportDrawer({
               value={selectedStashId || "all"}
               onValueChange={(v) => setSelectedStashId(v === "all" ? undefined : v)}
             >
-              <SelectTrigger className="h-9 w-[180px] text-xs">
+              <SelectTrigger className="text-footnote h-9 w-[180px]">
                 <SelectValue placeholder="All Stashes" />
               </SelectTrigger>
               <SelectContent>
@@ -283,89 +285,86 @@ export function LoreImportDrawer({
         </div>
 
         {/* Split Body: Left List (40%), Right Inspector (60%) */}
-        <div className="divide-border grid min-h-0 flex-1 grid-cols-1 divide-y overflow-hidden md:grid-cols-12 md:divide-x md:divide-y-0">
+        <div className="divide-separator grid min-h-0 flex-1 grid-cols-1 divide-y overflow-hidden md:grid-cols-12 md:divide-x md:divide-y-0">
           {/* Left Column: Search Results List */}
           <div className="flex h-full flex-col space-y-1 overflow-y-auto p-2 md:col-span-5">
             {isSearching ? (
-              <div className="text-muted-foreground flex h-48 flex-col items-center justify-center gap-2 text-xs">
-                <Loader2 className="text-primary h-5 w-5 animate-spin" />
+              <div className="text-label-secondary text-footnote flex h-48 flex-col items-center justify-center gap-2">
+                <Loader2 className="text-tint h-5 w-5 animate-spin" />
                 <span>Searching {SOURCE_CONFIGS[source].name}...</span>
               </div>
             ) : isSearchError ? (
-              <div className="text-destructive flex h-48 flex-col items-center justify-center p-4 text-center text-xs">
+              <div className="text-destructive text-footnote flex h-48 flex-col items-center justify-center p-4 text-center">
                 <p>Failed to search {SOURCE_CONFIGS[source].name}.</p>
-                <p className="text-muted-foreground mt-1 text-xs">Please try again.</p>
+                <p className="text-label-secondary text-footnote mt-1">Please try again.</p>
               </div>
             ) : !searchResults?.items || searchResults.items.length === 0 ? (
-              <div className="text-muted-foreground flex h-48 flex-col items-center justify-center p-4 text-center text-xs">
+              <div className="text-label-secondary text-footnote flex h-48 flex-col items-center justify-center p-4 text-center">
                 <BookOpen className="mb-2 h-6 w-6 opacity-30" />
                 <p>No results found for &quot;{debouncedQuery}&quot;</p>
-                <p className="text-muted-foreground/70 mt-1 text-xs">Try another keyword.</p>
+                <p className="text-label-tertiary text-footnote mt-1">Try another keyword.</p>
               </div>
             ) : (
-              searchResults.items.map((item, idx) => {
-                const isSelected =
-                  selectedItem?.id === item.id || selectedItem?.title === item.title;
-                const itemImg = (item as any).imageUrl as string | null | undefined;
-                return (
-                  <button
-                    key={`${item.id}-${idx}`}
-                    type="button"
-                    onClick={() => setSelectedItem(item)}
-                    className={cn(
-                      "flex w-full items-start gap-2.5 rounded-lg border p-2.5 text-left transition-colors",
-                      isSelected
-                        ? "bg-accent border-accent text-accent-foreground shadow-xs"
-                        : "hover:bg-muted/60 text-foreground border-transparent"
-                    )}
-                  >
-                    {/* Search Entry Thumbnail */}
-                    <div className="bg-muted border-border/80 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md border">
-                      {itemImg ? (
-                        <img
-                          src={proxyCardArtwork(itemImg)}
-                          alt={item.title}
-                          className="h-full w-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = "none";
-                          }}
-                        />
-                      ) : (
-                        <BookOpen className="text-muted-foreground/50 h-4 w-4" />
-                      )}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex w-full items-center justify-between gap-1.5">
-                        <span className="truncate text-xs font-semibold">{item.title}</span>
-                        {"stashName" in item && Boolean((item as any).stashName) && (
-                          <Badge variant="secondary" className="shrink-0 px-1.5 py-0 text-xs">
+              <FacetListSection variant="plain" aria-label="Search results">
+                {searchResults.items.map((item, idx) => {
+                  const isSelected =
+                    selectedItem?.id === item.id || selectedItem?.title === item.title;
+                  const itemImg = (item as any).imageUrl as string | null | undefined;
+                  return (
+                    <FacetRow
+                      key={`${item.id}-${idx}`}
+                      onClick={() => setSelectedItem(item)}
+                      selected={isSelected}
+                      selectionStyle="tint"
+                      itemClassName="rounded-control overflow-hidden"
+                      leading={
+                        <span className="bg-fill-3 border-separator rounded-control-sm flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border">
+                          {itemImg ? (
+                            <img
+                              src={proxyCardArtwork(itemImg)}
+                              alt={item.title}
+                              className="h-full w-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <BookOpen className="text-label-tertiary h-4 w-4" />
+                          )}
+                        </span>
+                      }
+                      title={
+                        <span className="text-footnote block truncate font-semibold">
+                          {item.title}
+                        </span>
+                      }
+                      subtitle={<span className="line-clamp-2">{item.snippet}</span>}
+                      trailing={
+                        "stashName" in item && Boolean((item as any).stashName) ? (
+                          <Badge variant="secondary" className="text-footnote shrink-0 px-2 py-0">
                             {(item as any).stashName}
                           </Badge>
-                        )}
-                      </div>
-                      <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs leading-relaxed">
-                        {item.snippet}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })
+                        ) : undefined
+                      }
+                    />
+                  );
+                })}
+              </FacetListSection>
             )}
           </div>
 
           {/* Right Column: Article Inspector */}
-          <div className="bg-muted/10 flex h-full flex-col justify-between space-y-4 overflow-y-auto p-4 md:col-span-7">
+          <div className="bg-fill-4 flex h-full flex-col justify-between space-y-4 overflow-y-auto p-4 md:col-span-7">
             {selectedItem ? (
               <>
                 <div className="space-y-3">
                   {/* Title & Badges */}
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h3 className="text-foreground text-base leading-tight font-semibold">
+                      <h3 className="text-label text-headline leading-tight">
                         {selectedItem.title}
                       </h3>
-                      <p className="text-muted-foreground mt-0.5 flex items-center gap-1.5 text-xs">
+                      <p className="text-label-secondary text-footnote mt-0.5 flex items-center gap-2">
                         <span>Source: {SOURCE_CONFIGS[source].name}</span>
                         {selectedItem.stashName && (
                           <>
@@ -377,11 +376,11 @@ export function LoreImportDrawer({
                     </div>
 
                     {activeMetadata && (
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        <Badge variant="outline" className="font-mono text-xs font-semibold">
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Badge variant="outline" className="text-footnote font-semibold">
                           {activeMetadata.rarity}
                         </Badge>
-                        <Badge variant="secondary" className="text-xs font-medium">
+                        <Badge variant="secondary" className="text-footnote font-medium">
                           {activeMetadata.category}
                         </Badge>
                       </div>
@@ -390,22 +389,22 @@ export function LoreImportDrawer({
 
                   {/* Metadata Chips */}
                   {activeMetadata && (
-                    <div className="border-border bg-card grid grid-cols-3 gap-2 rounded-lg border p-2.5 text-xs">
+                    <div className="border-separator bg-surface rounded-control text-footnote grid grid-cols-3 gap-2 border p-3">
                       <div className="flex items-center gap-2">
-                        <Tag className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+                        <Tag className="text-label-secondary h-3.5 w-3.5 shrink-0" />
                         <div className="truncate">
-                          <div className="text-muted-foreground text-xs">Category</div>
-                          <div className="text-foreground truncate font-medium">
+                          <div className="text-label-secondary text-footnote">Category</div>
+                          <div className="text-label truncate font-medium">
                             {activeMetadata.subcategory}
                           </div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <Coins className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+                        <Coins className="text-label-secondary h-3.5 w-3.5 shrink-0" />
                         <div>
-                          <div className="text-muted-foreground text-xs">Catalog Value</div>
-                          <div className="text-foreground flex items-center gap-1 font-mono font-medium">
+                          <div className="text-label-secondary text-footnote">Catalog Value</div>
+                          <div className="text-label flex items-center gap-1 font-medium tabular-nums">
                             <IxCreditsSymbol className="h-3 w-3 shrink-0" />
                             {activeMetadata.marketValue.toLocaleString()}
                           </div>
@@ -413,10 +412,10 @@ export function LoreImportDrawer({
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <FileText className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
+                        <FileText className="text-label-secondary h-3.5 w-3.5 shrink-0" />
                         <div>
-                          <div className="text-muted-foreground text-xs">Artwork</div>
-                          <div className="text-foreground font-medium">
+                          <div className="text-label-secondary text-footnote">Artwork</div>
+                          <div className="text-label font-medium">
                             {activeMetadata.hasImage ? "Wiki Image" : "Procedural"}
                           </div>
                         </div>
@@ -426,8 +425,8 @@ export function LoreImportDrawer({
 
                   {/* Wiki Image Preview Banner */}
                   {activeMetadata?.imageUrl && (
-                    <div className="border-border bg-card flex items-center gap-3 rounded-lg border p-2.5">
-                      <div className="bg-muted border-border relative h-14 w-14 shrink-0 overflow-hidden rounded-md border">
+                    <div className="border-separator bg-surface rounded-control flex items-center gap-3 border p-3">
+                      <div className="bg-fill-3 border-separator rounded-control-sm relative h-14 w-14 shrink-0 overflow-hidden border">
                         <img
                           src={proxyCardArtwork(activeMetadata.imageUrl)}
                           alt={activeMetadata.title}
@@ -439,13 +438,13 @@ export function LoreImportDrawer({
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <div className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
+                        <div className="text-label text-footnote flex items-center gap-2 font-semibold">
                           <span>Wiki Article Image Detected</span>
-                          <Badge variant="secondary" className="px-1.5 py-0 text-xs">
+                          <Badge variant="secondary" className="text-footnote px-2 py-0">
                             Auto-Import
                           </Badge>
                         </div>
-                        <p className="text-muted-foreground mt-0.5 truncate font-mono text-xs">
+                        <p className="text-label-secondary text-footnote mt-0.5 truncate font-mono">
                           {activeMetadata.imageUrl}
                         </p>
                       </div>
@@ -454,18 +453,18 @@ export function LoreImportDrawer({
 
                   {/* Formatted Excerpt Preview */}
 
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label className="text-muted-foreground text-xs font-medium">
+                      <label className="text-label-secondary text-footnote font-medium">
                         Wikitext Excerpt
                       </label>
-                      <span className="text-muted-foreground text-xs">MediaWiki Parser</span>
+                      <span className="text-label-secondary text-footnote">MediaWiki Parser</span>
                     </div>
 
-                    <div className="border-border bg-card text-foreground max-h-52 overflow-y-auto rounded-lg border p-3.5 text-xs leading-relaxed">
+                    <div className="border-separator bg-surface text-label rounded-control text-footnote max-h-52 overflow-y-auto border p-4 leading-relaxed">
                       {isLoadingMeta && source !== "iiwiki" ? (
-                        <div className="text-muted-foreground flex items-center justify-center gap-2 py-8">
-                          <Loader2 className="text-primary h-4 w-4 animate-spin" />
+                        <div className="text-label-secondary flex items-center justify-center gap-2 py-8">
+                          <Loader2 className="text-tint h-4 w-4 animate-spin" />
                           <span>Fetching article wikitext...</span>
                         </div>
                       ) : (
@@ -480,24 +479,24 @@ export function LoreImportDrawer({
                 </div>
 
                 {/* Footer Actions */}
-                <div className="border-border flex items-center justify-between gap-2 border-t pt-3">
+                <div className="border-separator flex items-center justify-between gap-2 border-t pt-3">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => handleApplyImport(false)}
-                    className="text-muted-foreground text-xs"
+                    className="text-label-secondary text-footnote"
                   >
                     Import Text Only
                   </Button>
 
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={onClose} className="text-xs">
+                    <Button variant="outline" size="sm" onClick={onClose}>
                       Cancel
                     </Button>
                     <Button
                       size="sm"
                       onClick={() => handleApplyImport(true)}
-                      className="gap-1.5 text-xs"
+                      className="text-footnote gap-2"
                     >
                       <Check className="h-3.5 w-3.5" />
                       Import to Card
@@ -506,7 +505,7 @@ export function LoreImportDrawer({
                 </div>
               </>
             ) : (
-              <div className="text-muted-foreground flex h-full flex-col items-center justify-center p-6 text-center text-xs">
+              <div className="text-label-secondary text-footnote flex h-full flex-col items-center justify-center p-6 text-center">
                 <BookOpen className="mb-2 h-8 w-8 opacity-30" />
                 <p>Select an article from the list to preview.</p>
               </div>

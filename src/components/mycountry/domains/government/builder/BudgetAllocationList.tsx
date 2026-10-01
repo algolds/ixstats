@@ -70,12 +70,10 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-foreground text-xl font-semibold tracking-tight">
-            Budget Allocation
-          </h2>
+          <h3 className="text-label text-title-2">Budget Allocation</h3>
         </div>
         <Alert>
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertTriangle className="text-yellow h-4 w-4" />
           <AlertDescription>
             Add departments first in the Administration tab before setting up budget allocations.
           </AlertDescription>
@@ -88,14 +86,12 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-foreground text-xl font-semibold tracking-tight">
-            Budget Allocation
-          </h2>
-          <p className="text-muted-foreground mt-1 text-xs">
+          <h3 className="text-label text-title-2">Budget Allocation</h3>
+          <p className="text-label-secondary text-footnote mt-1">
             Distribute funding across active ministries and manage fiscal limits
           </p>
         </div>
-        <div className="flex items-center gap-1.5 self-end sm:self-auto">
+        <div className="flex items-center gap-2 self-end sm:self-auto">
           <Button variant="outline" size="sm" onClick={onExpandAll}>
             <ChevronDown className="h-3.5 w-3.5" />
             Expand All
@@ -106,7 +102,7 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
           </Button>
           {!isReadOnly && (
             <Button variant="outline" size="sm" onClick={onFixAllocations}>
-              <CheckCircle className="h-3.5 w-3.5 text-amber-600" />
+              <CheckCircle className="text-yellow h-3.5 w-3.5" />
               Fix Allocations
             </Button>
           )}
@@ -122,12 +118,9 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
             <div
               key={idx}
               role="status"
-              className="text-foreground flex items-start gap-2.5 rounded-lg border border-amber-500/40 p-3 text-xs"
+              className="text-label rounded-control border-yellow/40 text-footnote flex items-start gap-2 border p-3"
             >
-              <AlertTriangle
-                aria-hidden="true"
-                className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"
-              />
+              <AlertTriangle aria-hidden="true" className="text-yellow mt-0.5 h-4 w-4 shrink-0" />
               <div className="leading-relaxed">{warning}</div>
             </div>
           ))}

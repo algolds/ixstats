@@ -26,7 +26,7 @@ export const TAX_CHANNELS: TaxChannel[] = [
     max: 50,
     step: 0.5,
     accent: "emerald",
-    accentClass: "text-emerald-400",
+    accentClass: "text-green",
     fallbackWeight: 0.12,
   },
   {
@@ -39,7 +39,7 @@ export const TAX_CHANNELS: TaxChannel[] = [
     max: 60,
     step: 0.5,
     accent: "cyan",
-    accentClass: "text-cyan-400",
+    accentClass: "text-cyan",
     fallbackWeight: 0.18,
   },
   {
@@ -52,7 +52,7 @@ export const TAX_CHANNELS: TaxChannel[] = [
     max: 30,
     step: 0.5,
     accent: "amber",
-    accentClass: "text-amber-400",
+    accentClass: "text-yellow",
     fallbackWeight: 0.15,
   },
   {
@@ -65,7 +65,7 @@ export const TAX_CHANNELS: TaxChannel[] = [
     max: 25,
     step: 0.5,
     accent: "indigo",
-    accentClass: "text-indigo-400",
+    accentClass: "text-indigo",
     fallbackWeight: 0.05,
   },
   {
@@ -78,7 +78,7 @@ export const TAX_CHANNELS: TaxChannel[] = [
     max: 10,
     step: 0.1,
     accent: "blue",
-    accentClass: "text-blue-400",
+    accentClass: "text-blue",
     fallbackWeight: 0.03,
   },
   {
@@ -91,21 +91,21 @@ export const TAX_CHANNELS: TaxChannel[] = [
     max: 40,
     step: 0.5,
     accent: "red",
-    accentClass: "text-red-400",
+    accentClass: "text-red",
     fallbackWeight: 0.07,
   },
 ];
 
 export const ACCENT_BG: Record<string, string> = {
-  emerald: "bg-emerald-500",
-  cyan: "bg-cyan-500",
-  amber: "bg-amber-500",
-  indigo: "bg-indigo-500",
-  blue: "bg-blue-500",
-  red: "bg-red-500",
-  purple: "bg-indigo-500",
-  teal: "bg-cyan-500",
-  rose: "bg-red-500",
+  emerald: "bg-green",
+  cyan: "bg-cyan",
+  amber: "bg-yellow",
+  indigo: "bg-indigo",
+  blue: "bg-blue",
+  red: "bg-red",
+  purple: "bg-indigo",
+  teal: "bg-cyan",
+  rose: "bg-red",
 };
 
 export interface FiscalRatesRow {

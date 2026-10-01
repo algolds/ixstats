@@ -42,16 +42,16 @@ const MODAL_ICONS: Record<string, typeof Train> = {
 
 /** TAMI rating → semantic status colour (only the dot and score carry it). */
 const RATING_THEMES = {
-  world_class: { text: "text-emerald-600", dot: "bg-emerald-500" },
-  advanced: { text: "text-foreground", dot: "bg-foreground/60" },
-  developing: { text: "text-orange-600", dot: "bg-orange-500" },
+  world_class: { text: "text-green", dot: "bg-green" },
+  advanced: { text: "text-label", dot: "bg-label-tertiary" },
+  developing: { text: "text-orange", dot: "bg-orange" },
   underdeveloped: { text: "text-destructive", dot: "bg-destructive" },
 } as const;
 
 const CONDITION_TEXT_THEMES = {
-  optimal: "text-emerald-600",
-  adequate: "text-foreground",
-  deteriorating: "text-orange-600",
+  optimal: "text-green",
+  adequate: "text-label",
+  deteriorating: "text-orange",
   failing: "text-destructive",
 } as const;
 
@@ -79,13 +79,13 @@ function TransitStat({
   footer: React.ReactNode;
 }) {
   return (
-    <FacetCard surface="solid" className="flex flex-col justify-between rounded-xl p-3.5">
-      <div className="flex items-center gap-1.5">
-        {Icon && <Icon aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />}
+    <FacetCard className="flex flex-col justify-between p-4">
+      <div className="flex items-center gap-2">
+        {Icon && <Icon aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />}
         <Eyebrow>{label}</Eyebrow>
       </div>
-      <div className="my-2 flex items-baseline gap-1.5">{children}</div>
-      <div className="flex items-center justify-between gap-2 text-xs">{footer}</div>
+      <div className="my-2 flex items-baseline gap-2">{children}</div>
+      <div className="text-footnote flex items-center justify-between gap-2">{footer}</div>
     </FacetCard>
   );
 }
@@ -100,21 +100,21 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
   );
 
   if (isLoading) {
-    return <Skeleton className="h-48 rounded-2xl" aria-label="Loading transit profile" />;
+    return <Skeleton className="rounded-card h-48" aria-label="Loading transit profile" />;
   }
 
   if (!profile || profile.totalOperationalKm === 0) {
     return (
-      <FacetCard className="rounded-2xl">
+      <FacetCard className="rounded-card">
         <FacetCardHeader className="flex-row items-center justify-between gap-2 p-4 pb-2">
           <div className="flex min-w-0 items-center gap-2">
-            <RouteIcon aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
-            <h3 className="text-foreground text-sm font-semibold">National transit and mobility</h3>
+            <RouteIcon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
+            <h3 className="text-label text-headline">National transit and mobility</h3>
           </div>
           <MapEditorLink label="Open Map Editor" />
         </FacetCardHeader>
         <FacetCardContent className="px-4 pb-4">
-          <p className="text-muted-foreground text-xs leading-relaxed">
+          <p className="text-label-secondary text-footnote leading-relaxed">
             No operational transport routes mapped. Build highways, railways, or shipping lanes in
             the Map Editor to establish national transit connectivity and unlock GDP dividends.
           </p>
@@ -129,16 +129,14 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
     CONDITION_TEXT_THEMES[degradation.condition] ?? CONDITION_TEXT_THEMES.adequate;
 
   return (
-    <FacetCard className="rounded-2xl">
+    <FacetCard className="rounded-card">
       {/* Header */}
       <FacetCardHeader className="flex-row flex-wrap items-center justify-between gap-2 p-4 pb-3">
         <div className="flex min-w-0 items-center gap-2">
-          <RouteIcon aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
+          <RouteIcon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
           <div className="min-w-0">
-            <h3 className="text-foreground text-sm font-semibold">
-              Transit accessibility and mobility (TAMI)
-            </h3>
-            <p className="text-muted-foreground text-xs">
+            <h3 className="text-label text-headline">Transit accessibility and mobility (TAMI)</h3>
+            <p className="text-label-secondary text-footnote">
               Spatial velocity and intercity transit efficiency
             </p>
           </div>
@@ -152,21 +150,16 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
           <TransitStat
             label="Mobility score"
             footer={
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-2">
                 <span aria-hidden="true" className={cn("h-2 w-2 rounded-full", ratingTheme.dot)} />
-                <span className="text-foreground font-medium">{tami.ratingLabel}</span>
+                <span className="text-label font-medium">{tami.ratingLabel}</span>
               </span>
             }
           >
-            <span
-              className={cn(
-                "font-mono text-3xl font-semibold tracking-tight tabular-nums",
-                ratingTheme.text
-              )}
-            >
+            <span className={cn("text-large-title tabular-nums", ratingTheme.text)}>
               {tami.tamiScore}
             </span>
-            <span className="text-muted-foreground text-xs">/ 100</span>
+            <span className="text-label-secondary text-footnote">/ 100</span>
           </TransitStat>
 
           <TransitStat
@@ -174,17 +167,17 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
             icon={Gauge}
             footer={
               <>
-                <span className="text-muted-foreground">Total network</span>
-                <span className="text-foreground font-mono font-medium tabular-nums">
+                <span className="text-label-secondary">Total network</span>
+                <span className="text-label font-medium tabular-nums">
                   {totalOperationalKm.toLocaleString()} km
                 </span>
               </>
             }
           >
-            <span className="text-foreground font-mono text-3xl font-semibold tracking-tight tabular-nums">
+            <span className="text-label text-large-title tabular-nums">
               {modalSummary.overallWeightedSpeedKmh}
             </span>
-            <span className="text-muted-foreground text-xs">km/h</span>
+            <span className="text-label-secondary text-footnote">km/h</span>
           </TransitStat>
 
           <TransitStat
@@ -192,22 +185,17 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
             icon={Shield}
             footer={
               <>
-                <span className="text-muted-foreground">Condition</span>
+                <span className="text-label-secondary">Condition</span>
                 <span className={cn("font-medium capitalize", conditionTextClass)}>
                   {degradation.conditionLabel}
                 </span>
               </>
             }
           >
-            <span
-              className={cn(
-                "font-mono text-3xl font-semibold tracking-tight tabular-nums",
-                conditionTextClass
-              )}
-            >
+            <span className={cn("text-large-title tabular-nums", conditionTextClass)}>
               {(degradation.speedDegradationFactor * 100).toFixed(0)}%
             </span>
-            <span className="text-muted-foreground text-xs">speed retention</span>
+            <span className="text-label-secondary text-footnote">speed retention</span>
           </TransitStat>
         </div>
 
@@ -220,9 +208,9 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
                 const Icon = MODAL_ICONS[key] ?? RouteIcon;
                 return (
                   <FacetCard
+                    variant="inset"
                     key={key}
-                    surface="solid"
-                    className="flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-xs"
+                    className="text-footnote flex items-center justify-between gap-2 px-3 py-2"
                   >
                     <div className="flex min-w-0 items-center gap-2">
                       {/* Route-type colour from the map legend (data, not decoration) */}
@@ -233,12 +221,12 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
                       />
                       <Icon
                         aria-hidden="true"
-                        className="text-muted-foreground h-3.5 w-3.5 shrink-0"
+                        className="text-label-secondary h-3.5 w-3.5 shrink-0"
                       />
-                      <span className="text-foreground truncate font-medium">{group.label}</span>
+                      <span className="text-label truncate font-medium">{group.label}</span>
                     </div>
-                    <span className="text-foreground shrink-0 font-mono font-medium tabular-nums">
-                      {group.avgSpeedKmh} <span className="text-muted-foreground">km/h</span>
+                    <span className="text-label shrink-0 font-medium tabular-nums">
+                      {group.avgSpeedKmh} <span className="text-label-secondary">km/h</span>
                     </span>
                   </FacetCard>
                 );
@@ -251,24 +239,24 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
         {topCorridors.length > 0 && (
           <div className="space-y-2">
             <Eyebrow className="block">Primary intercity travel corridors</Eyebrow>
-            <FacetCard surface="solid" className="max-h-48 overflow-y-auto rounded-xl">
-              <ul className="divide-border/60 divide-y">
+            <FacetCard variant="inset" padding="none" className="max-h-48 overflow-y-auto">
+              <ul className="divide-separator divide-y">
                 {topCorridors.map((c) => (
                   <li
                     key={c.id}
-                    className="flex items-center justify-between gap-3 px-3 py-2 text-xs"
+                    className="text-footnote flex items-center justify-between gap-3 px-3 py-2"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="text-foreground truncate font-medium">{c.name}</div>
-                      <div className="text-muted-foreground flex items-center gap-2">
+                      <div className="text-label truncate font-medium">{c.name}</div>
+                      <div className="text-label-secondary flex items-center gap-2">
                         <span className="capitalize">{c.routeType.replace("_", " ")}</span>
-                        <span className="font-mono tabular-nums">· {c.lengthKm} km</span>
-                        <span className="font-mono tabular-nums">· {c.effectiveSpeedKmh} km/h</span>
+                        <span className="tabular-nums">· {c.lengthKm} km</span>
+                        <span className="tabular-nums">· {c.effectiveSpeedKmh} km/h</span>
                       </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-1.5">
-                      <Clock aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
-                      <span className="text-foreground font-mono font-semibold tabular-nums">
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Clock aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
+                      <span className="text-label font-semibold tabular-nums">
                         {c.formattedTravelTime}
                       </span>
                     </div>

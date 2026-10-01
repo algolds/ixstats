@@ -139,7 +139,7 @@ export function MyCountryTabsList({
 
   if (variant === "underline") {
     return (
-      <div className="border-border relative flex [scrollbar-width:none] items-center gap-1 overflow-x-auto overflow-y-hidden border-b pb-0.5 select-none [-ms-overflow-style:none] sm:gap-2 [&::-webkit-scrollbar]:hidden">
+      <div className="border-separator relative flex [scrollbar-width:none] items-center gap-1 overflow-x-auto overflow-y-hidden border-b pb-0.5 select-none [-ms-overflow-style:none] sm:gap-2 [&::-webkit-scrollbar]:hidden">
         {resolvedTabs.map((tab) => {
           const isActive = resolvedActiveTab === tab.id;
           const Icon = tab.icon;
@@ -148,28 +148,23 @@ export function MyCountryTabsList({
               key={tab.id}
               type="button"
               aria-current={isActive ? "page" : undefined}
-              data-cuelume-press="page"
-              data-cuelume-hover="tick"
               onClick={() => handleChange(tab.id)}
               className={cn(
-                "focus-visible:ring-ring relative flex min-h-9 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-[color,background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98] sm:text-sm",
+                "focus-visible:ring-tint rounded-control text-caption sm:text-body relative flex min-h-9 items-center gap-2 px-3 py-2 transition-[color,background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]",
                 isActive
-                  ? "text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  ? "text-label font-semibold"
+                  : "text-label-secondary hover:text-label hover:bg-fill-3"
               )}
             >
               <Icon
-                className={cn(
-                  "h-4 w-4 shrink-0",
-                  isActive ? "text-amber-500" : "text-muted-foreground"
-                )}
+                className={cn("h-4 w-4 shrink-0", isActive ? "text-tint" : "text-label-secondary")}
               />
               <span>{tab.label}</span>
               {tab.badge !== undefined && tab.badge > 0 && (
                 <span
                   className={cn(
-                    "ml-1 flex items-center justify-center rounded-md px-1.5 py-0.5 text-xs leading-none font-semibold tabular-nums",
-                    isActive ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
+                    "rounded-control-sm text-caption ml-1 flex items-center justify-center px-2 py-0.5 leading-none font-semibold tabular-nums",
+                    isActive ? "bg-label text-background" : "bg-fill-3 text-label-secondary"
                   )}
                 >
                   {tab.badge}
@@ -178,7 +173,7 @@ export function MyCountryTabsList({
               {isActive && (
                 <motion.div
                   layoutId="factbookUnderline"
-                  className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-amber-500"
+                  className="bg-yellow absolute inset-x-2 bottom-0 h-0.5 rounded-full"
                   transition={{ type: "spring", bounce: 0.15, duration: 0.25 }}
                 />
               )}
@@ -198,10 +193,10 @@ export function MyCountryTabsList({
         tone="mycountry"
         size="sm"
         className={cn(
-          "w-full min-w-fit rounded-xl p-1",
+          "rounded-row w-full min-w-fit p-1",
           variant === "rail"
-            ? "bg-muted/50 border-0 shadow-none"
-            : "bg-muted/50 border-border border"
+            ? "bg-fill-3 border-0 shadow-none"
+            : "bg-fill-3 border-separator border"
         )}
       />
     </div>

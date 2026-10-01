@@ -1,4 +1,6 @@
 "use client";
+
+import "~/styles/card-art.css";
 /**
  * HolographicOverlay Component
  * Provides premium holographic effects for IxCards
@@ -74,8 +76,8 @@ interface Particle {
  * @example
  * ```tsx
  * <div className="relative">
- *   <img src={cardArt} />
- *   <HolographicOverlay rarity="LEGENDARY" />
+ * <img src={cardArt} />
+ * <HolographicOverlay rarity="LEGENDARY" />
  * </div>
  * ```
  */
@@ -204,7 +206,7 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
       <div
         ref={containerRef}
         className={cn(
-          "pointer-events-none absolute inset-0 overflow-hidden rounded-2xl",
+          "rounded-card pointer-events-none absolute inset-0 overflow-hidden",
           className
         )}
         onMouseEnter={() => setIsHovered(true)}
@@ -260,7 +262,7 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
             {lightRays.map((ray, index) => (
               <motion.div
                 key={index}
-                className="pointer-events-none absolute w-1 origin-left bg-gradient-to-r from-white/60 to-transparent"
+                className="card-art-linear-r pointer-events-none absolute w-1 origin-left from-white/60 to-transparent"
                 style={{
                   left: `${mousePosition.x}px`,
                   top: `${mousePosition.y}px`,
@@ -286,7 +288,7 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
         {/* Premium border glow */}
         {borderConfig.animated && (
           <motion.div
-            className={cn("absolute inset-0 rounded-2xl border-2", borderConfig.glow)}
+            className={cn("rounded-card absolute inset-0 border-2", borderConfig.glow)}
             style={{
               borderImageSource: `linear-gradient(135deg, var(--tw-gradient-stops))`,
               borderImageSlice: 1,
@@ -322,10 +324,10 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
           >
             <motion.div
               className={cn(
-                "flex h-12 w-12 items-center justify-center rounded-full text-2xl",
-                "bg-gradient-to-br",
+                "text-title-1 flex h-12 w-12 items-center justify-center rounded-full",
+                "card-art-linear-br",
                 foilStamp.color,
-                "shadow-lg backdrop-blur-sm"
+                "shadow-floating"
               )}
               style={{
                 textShadow: "0 0 10px rgba(255,255,255,0.8)",
@@ -386,7 +388,7 @@ export const HolographicOverlay = React.memo<HolographicOverlayProps>(
         {/* Shimmer sweep effect on hover */}
         {isHovered && (
           <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+            className="card-art-linear-r absolute inset-0 from-transparent via-white/30 to-transparent"
             style={{
               transform: "skewX(-20deg)",
             }}

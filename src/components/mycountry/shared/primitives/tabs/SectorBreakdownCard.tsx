@@ -62,51 +62,51 @@ function formatCurrency(
 function getColorClasses(color: string) {
   const colorMap: Record<string, { bg: string; text: string; progress: string; border: string }> = {
     emerald: {
-      bg: "bg-muted/50",
-      text: "text-foreground",
-      progress: "bg-emerald-500",
+      bg: "bg-fill-3",
+      text: "text-label",
+      progress: "bg-green",
       border: "border-transparent",
     },
     green: {
-      bg: "bg-muted/50",
-      text: "text-foreground",
-      progress: "bg-emerald-500",
+      bg: "bg-fill-3",
+      text: "text-label",
+      progress: "bg-green",
       border: "border-transparent",
     },
     cyan: {
-      bg: "bg-muted/50",
-      text: "text-foreground",
-      progress: "bg-cyan-500",
+      bg: "bg-fill-3",
+      text: "text-label",
+      progress: "bg-cyan",
       border: "border-transparent",
     },
     indigo: {
-      bg: "bg-muted/50",
-      text: "text-foreground",
-      progress: "bg-indigo-500",
+      bg: "bg-fill-3",
+      text: "text-label",
+      progress: "bg-indigo",
       border: "border-transparent",
     },
     purple: {
-      bg: "bg-muted/50",
-      text: "text-foreground",
-      progress: "bg-indigo-500",
+      bg: "bg-fill-3",
+      text: "text-label",
+      progress: "bg-indigo",
       border: "border-transparent",
     },
     amber: {
-      bg: "bg-muted/50",
-      text: "text-foreground",
-      progress: "bg-amber-500",
+      bg: "bg-fill-3",
+      text: "text-label",
+      progress: "bg-yellow",
       border: "border-transparent",
     },
     red: {
-      bg: "bg-muted/50",
-      text: "text-foreground",
-      progress: "bg-red-500",
+      bg: "bg-fill-3",
+      text: "text-label",
+      progress: "bg-red",
       border: "border-transparent",
     },
     blue: {
-      bg: "bg-muted/50",
-      text: "text-foreground",
-      progress: "bg-blue-500",
+      bg: "bg-fill-3",
+      text: "text-label",
+      progress: "bg-blue",
       border: "border-transparent",
     },
   };
@@ -139,7 +139,7 @@ const SectorGridItemImage = React.memo(function SectorGridItemImage({
     <AnimatePresence>
       <motion.div
         key={imageUrl}
-        className="absolute inset-0 z-0 overflow-hidden rounded-xl"
+        className="rounded-row absolute inset-0 z-0 overflow-hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -194,14 +194,14 @@ export function SectorBreakdownCard({
       stable: Minus,
     };
     const colors = {
-      up: "text-emerald-500",
+      up: "text-green",
       down: "text-destructive",
-      stable: "text-muted-foreground",
+      stable: "text-label-secondary",
     };
 
     const Icon = icons[trend];
     return (
-      <div className={cn("flex items-center gap-1 text-xs", colors[trend])}>
+      <div className={cn("text-footnote flex items-center gap-1", colors[trend])}>
         <Icon className="h-3 w-3" />
         {value !== undefined && (
           <span>
@@ -216,8 +216,8 @@ export function SectorBreakdownCard({
   const cardInner = (
     <>
       <FacetCardHeader className="p-4 pb-2">
-        <h3 className="text-foreground text-sm font-semibold">{title}</h3>
-        {subtitle && <p className="text-muted-foreground text-xs">{subtitle}</p>}
+        <h3 className="text-label text-headline">{title}</h3>
+        {subtitle && <p className="text-label-secondary text-footnote">{subtitle}</p>}
       </FacetCardHeader>
       <FacetCardContent className="px-4 pb-4">
         <Wrapper
@@ -236,7 +236,7 @@ export function SectorBreakdownCard({
                 <ItemWrapper key={sector.id} {...itemProps}>
                   <div
                     className={cn(
-                      "relative rounded-xl p-3 text-center",
+                      "rounded-row relative p-3 text-center",
                       hasImage ? "overflow-hidden" : "",
                       hasImage ? "" : colors.bg,
                       colors.border,
@@ -249,14 +249,12 @@ export function SectorBreakdownCard({
                         <IconComponent
                           className={cn(
                             "mx-auto mb-2 h-6 w-6",
-                            hasImage ? "text-white" : "text-muted-foreground"
+                            hasImage ? "text-white" : "text-label-secondary"
                           )}
                         />
                       )}
                       {sector.value > 0 && (
-                        <div
-                          className={cn("text-lg font-bold", hasImage ? "text-white" : colors.text)}
-                        >
+                        <div className={cn("text-title-3", hasImage ? "text-white" : colors.text)}>
                           {valueAsPeople
                             ? formatPopulation(sector.value, "0")
                             : formatCurrency(sector.value, "compact", _currency)}
@@ -264,8 +262,8 @@ export function SectorBreakdownCard({
                       )}
                       <div
                         className={cn(
-                          "mt-1 text-xs",
-                          hasImage ? "text-white/80" : "text-muted-foreground"
+                          "text-footnote mt-1",
+                          hasImage ? "text-white/80" : "text-label-secondary"
                         )}
                       >
                         {sector.name}
@@ -273,8 +271,8 @@ export function SectorBreakdownCard({
                       {sector.description && (
                         <div
                           className={cn(
-                            "text-xs opacity-70",
-                            hasImage ? "text-white/60" : "text-muted-foreground"
+                            "text-footnote opacity-70",
+                            hasImage ? "text-white/60" : "text-label-secondary"
                           )}
                         >
                           ({sector.description})
@@ -282,7 +280,7 @@ export function SectorBreakdownCard({
                       )}
                       <div
                         className={cn(
-                          "mt-2 text-sm font-medium",
+                          "text-body mt-2 font-medium",
                           hasImage ? "text-white" : colors.text
                         )}
                       >
@@ -305,17 +303,17 @@ export function SectorBreakdownCard({
                 <div className="group">
                   <div className="mb-1 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      {IconComponent && <IconComponent className="text-muted-foreground h-4 w-4" />}
-                      <span className="text-foreground text-sm font-medium">{sector.name}</span>
+                      {IconComponent && <IconComponent className="text-label-secondary h-4 w-4" />}
+                      <span className="text-label text-body font-medium">{sector.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground text-sm">
+                      <span className="text-label-secondary text-body">
                         {sector.percentage.toFixed(1)}%
                       </span>
                       {sector.value > 0 && (
                         <>
-                          <span className="text-muted-foreground text-sm">•</span>
-                          <span className={cn("text-sm font-medium", colors.text)}>
+                          <span className="text-label-secondary text-body">•</span>
+                          <span className={cn("text-body font-medium", colors.text)}>
                             {valueAsPeople
                               ? formatPopulation(sector.value, "0")
                               : formatCurrency(sector.value, "compact", _currency)}
@@ -328,7 +326,7 @@ export function SectorBreakdownCard({
                     </div>
                   </div>
                   {showProgressBars && (
-                    <div className="bg-muted h-2 overflow-hidden rounded-full">
+                    <div className="bg-fill-3 h-2 overflow-hidden rounded-full">
                       {/* Categorical series colour: the bar is the chart. Animates transform only. */}
                       <motion.div
                         className={cn("h-full w-full origin-left rounded-full", colors.progress)}
@@ -345,9 +343,9 @@ export function SectorBreakdownCard({
         </Wrapper>
 
         {totalValue !== undefined && (
-          <div className="border-border mt-3 flex items-center justify-between border-t pt-3">
-            <span className="text-muted-foreground text-sm font-medium">Total</span>
-            <span className="text-foreground text-lg font-semibold tabular-nums">
+          <div className="border-separator mt-3 flex items-center justify-between border-t pt-3">
+            <span className="text-label-secondary text-body font-medium">Total</span>
+            <span className="text-label text-title-3 tabular-nums">
               {valueAsPeople
                 ? formatPopulation(totalValue, "0")
                 : formatCurrency(totalValue, "compact", _currency)}
@@ -374,11 +372,7 @@ export function SectorBreakdownCard({
     );
   }
 
-  return (
-    <FacetCard depth={2} className={cn("rounded-2xl", className)}>
-      {cardInner}
-    </FacetCard>
-  );
+  return <FacetCard className={cn("rounded-card", className)}>{cardInner}</FacetCard>;
 }
 
 /**
@@ -396,11 +390,11 @@ export function QuickSectorGrid({
       {sectors.map((sector) => {
         const colors = getColorClasses(sector.color);
         return (
-          <div key={sector.id} className="bg-muted/50 rounded-xl p-3 text-center">
-            <div className="text-foreground text-xl font-semibold tabular-nums">
+          <div key={sector.id} className="bg-fill-3 rounded-row p-3 text-center">
+            <div className="text-label text-title-2 tabular-nums">
               {formatCurrency(sector.value)}
             </div>
-            <div className="text-muted-foreground mt-1 text-xs">{sector.name}</div>
+            <div className="text-label-secondary text-footnote mt-1">{sector.name}</div>
             <Badge variant="outline" className="mt-1">
               {sector.percentage.toFixed(1)}%
             </Badge>

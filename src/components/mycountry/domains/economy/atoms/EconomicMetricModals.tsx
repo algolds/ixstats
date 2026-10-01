@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { FacetCard } from "~/components/ui/facet-container";
@@ -139,24 +139,24 @@ export function EconomicMetricModals({
   const getTabIcon = () => {
     switch (activeTab) {
       case "components":
-        return <Package aria-hidden="true" className="text-muted-foreground h-5 w-5" />;
+        return <Package aria-hidden="true" className="text-label-secondary h-5 w-5" />;
       case "interactions":
-        return <Zap aria-hidden="true" className="text-muted-foreground h-5 w-5" />;
+        return <Zap aria-hidden="true" className="text-label-secondary h-5 w-5" />;
       case "effectiveness":
-        return <Target aria-hidden="true" className="text-muted-foreground h-5 w-5" />;
+        return <Target aria-hidden="true" className="text-label-secondary h-5 w-5" />;
       case "costs":
-        return <DollarSign aria-hidden="true" className="text-muted-foreground h-5 w-5" />;
+        return <DollarSign aria-hidden="true" className="text-label-secondary h-5 w-5" />;
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[88vh] max-w-xl overflow-hidden p-0">
-        <DialogHeader className="border-border/60 border-b px-6 pt-6 pb-4">
-          <DialogTitle className="text-foreground flex items-center gap-2 text-base font-semibold">
+    <Sheet open={isOpen} onOpenChange={handleOpenChange}>
+      <SheetContent className="flex flex-col overflow-hidden p-0">
+        <SheetHeader className="border-separator border-b px-6 pt-6 pb-4">
+          <SheetTitle className="text-label text-title-3 flex items-center gap-2">
             {getTabIcon()}
             {getTabTitle()}
-          </DialogTitle>
+          </SheetTitle>
 
           <FacetTabs
             tabs={METRIC_TABS}
@@ -166,9 +166,9 @@ export function EconomicMetricModals({
             tone="neutral"
             className="mt-3 w-full"
           />
-        </DialogHeader>
+        </SheetHeader>
 
-        <div className="max-h-[60vh] overflow-y-auto px-6 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
           {/* Tab 1: Components */}
           {activeTab === "components" && (
             <SelectedComponentsList
@@ -183,12 +183,12 @@ export function EconomicMetricModals({
             <div className="space-y-6">
               {/* Active Synergies */}
               <div>
-                <h3 className="text-foreground mb-3 flex items-center gap-2 text-sm font-semibold">
-                  <Zap aria-hidden="true" className="h-4 w-4 text-emerald-500" />
+                <h3 className="text-label text-headline mb-3 flex items-center gap-2">
+                  <Zap aria-hidden="true" className="text-green h-4 w-4" />
                   Active synergies ({synergies.length})
                 </h3>
                 {synergies.length === 0 ? (
-                  <p className="text-muted-foreground text-xs italic">No active synergies.</p>
+                  <p className="text-label-secondary text-footnote italic">No active synergies.</p>
                 ) : (
                   <div className="space-y-2">
                     {synergies.map((synergy, index) => {
@@ -197,23 +197,20 @@ export function EconomicMetricModals({
                       if (!component1 || !component2) return null;
                       return (
                         <FacetCard
+                          variant="inset"
                           key={`${synergy.component1}-${synergy.component2}-${index}`}
-                          surface="solid"
-                          className="rounded-xl p-3"
+                          className="p-3"
                         >
                           <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0 flex-1">
-                              <p className="text-foreground text-xs font-semibold">
+                              <p className="text-label text-caption font-semibold">
                                 {component1.name} + {component2.name}
                               </p>
-                              <p className="text-muted-foreground mt-0.5 text-xs">
+                              <p className="text-label-secondary text-footnote mt-0.5">
                                 {synergy.description}
                               </p>
                             </div>
-                            <Badge
-                              variant="outline"
-                              className="shrink-0 text-emerald-500 tabular-nums"
-                            >
+                            <Badge variant="green" className="shrink-0 tabular-nums">
                               +{synergy.bonus}%
                             </Badge>
                           </div>
@@ -226,12 +223,12 @@ export function EconomicMetricModals({
 
               {/* Active Conflicts */}
               <div>
-                <h3 className="text-foreground mb-3 flex items-center gap-2 text-sm font-semibold">
+                <h3 className="text-label text-headline mb-3 flex items-center gap-2">
                   <AlertTriangle aria-hidden="true" className="text-destructive h-4 w-4" />
                   Active conflicts ({conflicts.length})
                 </h3>
                 {conflicts.length === 0 ? (
-                  <p className="text-muted-foreground text-xs italic">No active conflicts.</p>
+                  <p className="text-label-secondary text-footnote italic">No active conflicts.</p>
                 ) : (
                   <div className="space-y-2">
                     {conflicts.map((conflict, index) => {
@@ -240,16 +237,16 @@ export function EconomicMetricModals({
                       if (!component1 || !component2) return null;
                       return (
                         <FacetCard
+                          variant="inset"
                           key={`${conflict.component1}-${conflict.component2}-${index}`}
-                          surface="solid"
-                          className="rounded-xl p-3"
+                          className="p-3"
                         >
                           <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0 flex-1">
-                              <p className="text-foreground text-xs font-semibold">
+                              <p className="text-label text-caption font-semibold">
                                 {component1.name} vs {component2.name}
                               </p>
-                              <p className="text-muted-foreground mt-0.5 text-xs">
+                              <p className="text-label-secondary text-footnote mt-0.5">
                                 {conflict.description}
                               </p>
                             </div>
@@ -272,31 +269,28 @@ export function EconomicMetricModals({
           {/* Tab 3: Effectiveness */}
           {activeTab === "effectiveness" && (
             <div className="space-y-6">
-              <FacetCard
-                surface="solid"
-                className="grid grid-cols-2 gap-4 rounded-xl p-4 text-center"
-              >
+              <FacetCard variant="inset" className="grid grid-cols-2 gap-4 p-4 text-center">
                 <div className="space-y-1">
                   <Eyebrow className="block">Base score</Eyebrow>
-                  <p className="text-foreground text-xl font-semibold tabular-nums">
+                  <p className="text-label text-title-2 tabular-nums">
                     {effectiveness.baseEffectiveness.toFixed(1)}%
                   </p>
                 </div>
                 <div className="space-y-1">
                   <Eyebrow className="block">Synergy bonus</Eyebrow>
-                  <p className="text-xl font-semibold text-emerald-500 tabular-nums">
+                  <p className="text-title-2 text-green tabular-nums">
                     +{effectiveness.synergyBonus.toFixed(1)}%
                   </p>
                 </div>
                 <div className="mt-2 space-y-1">
                   <Eyebrow className="block">Conflict penalty</Eyebrow>
-                  <p className="text-destructive text-xl font-semibold tabular-nums">
+                  <p className="text-destructive text-title-2 tabular-nums">
                     -{effectiveness.conflictPenalty.toFixed(1)}%
                   </p>
                 </div>
                 <div className="mt-2 space-y-1">
                   <Eyebrow className="block">Total score</Eyebrow>
-                  <p className="text-foreground text-xl font-semibold tabular-nums">
+                  <p className="text-label text-title-2 tabular-nums">
                     {effectiveness.totalEffectiveness.toFixed(1)}%
                   </p>
                 </div>
@@ -305,16 +299,18 @@ export function EconomicMetricModals({
               <div className="space-y-3">
                 <Eyebrow className="block">Component contributions</Eyebrow>
                 {selectedComponentObjects.length === 0 ? (
-                  <p className="text-muted-foreground text-xs italic">No components selected.</p>
+                  <p className="text-label-secondary text-footnote italic">
+                    No components selected.
+                  </p>
                 ) : (
                   <div className="max-h-[30vh] space-y-2 overflow-y-auto pr-1">
                     {selectedComponentObjects.map((comp) => (
                       <div
                         key={comp.id}
-                        className="border-border/40 flex items-center justify-between border-b pb-2 text-xs"
+                        className="border-separator text-footnote flex items-center justify-between border-b pb-2"
                       >
-                        <span className="text-foreground font-semibold">{comp.name}</span>
-                        <span className="text-muted-foreground font-mono font-bold">
+                        <span className="text-label font-semibold">{comp.name}</span>
+                        <span className="text-label-secondary font-semibold tabular-nums">
                           {comp.effectiveness}% base
                         </span>
                       </div>
@@ -328,19 +324,16 @@ export function EconomicMetricModals({
           {/* Tab 4: Costs */}
           {activeTab === "costs" && (
             <div className="space-y-6">
-              <FacetCard
-                surface="solid"
-                className="grid grid-cols-2 gap-4 rounded-xl p-4 text-center"
-              >
+              <FacetCard variant="inset" className="grid grid-cols-2 gap-4 p-4 text-center">
                 <div className="space-y-1">
                   <Eyebrow className="block">Implementation</Eyebrow>
-                  <p className="text-foreground font-mono text-xl font-bold tabular-nums">
+                  <p className="text-label text-title-2 tabular-nums">
                     ${implementationCost.toLocaleString()}
                   </p>
                 </div>
                 <div className="space-y-1">
                   <Eyebrow className="block">Annual maintenance</Eyebrow>
-                  <p className="text-foreground font-mono text-xl font-bold tabular-nums">
+                  <p className="text-label text-title-2 tabular-nums">
                     ${maintenanceCost.toLocaleString()}/yr
                   </p>
                 </div>
@@ -349,26 +342,28 @@ export function EconomicMetricModals({
               <div className="space-y-3">
                 <Eyebrow className="block">Expenditure by component</Eyebrow>
                 {selectedComponentObjects.length === 0 ? (
-                  <p className="text-muted-foreground text-xs italic">No components selected.</p>
+                  <p className="text-label-secondary text-footnote italic">
+                    No components selected.
+                  </p>
                 ) : (
                   <div className="max-h-[30vh] space-y-2 overflow-y-auto pr-1">
                     {selectedComponentObjects.map((comp) => (
                       <div
                         key={comp.id}
-                        className="border-border/40 flex items-center justify-between border-b pb-2 text-xs"
+                        className="border-separator text-footnote flex items-center justify-between border-b pb-2"
                       >
                         <div className="flex flex-col">
-                          <span className="text-foreground font-semibold">{comp.name}</span>
-                          <span className="text-muted-foreground text-xs capitalize">
+                          <span className="text-label font-semibold">{comp.name}</span>
+                          <span className="text-label-secondary text-footnote capitalize">
                             {comp.category}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 font-mono text-xs">
-                          <span className="text-foreground">
+                        <div className="text-footnote flex items-center gap-3 tabular-nums">
+                          <span className="text-label">
                             ${comp.implementationCost.toLocaleString()}
                           </span>
-                          <span className="text-muted-foreground">/</span>
-                          <span className="text-muted-foreground">
+                          <span className="text-label-secondary">/</span>
+                          <span className="text-label-secondary">
                             ${comp.maintenanceCost.toLocaleString()}/yr
                           </span>
                         </div>
@@ -380,7 +375,7 @@ export function EconomicMetricModals({
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

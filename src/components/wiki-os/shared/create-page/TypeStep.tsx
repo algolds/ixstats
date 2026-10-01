@@ -8,8 +8,8 @@ import {
   Bank as Landmark,
   Sparks as Sparkles,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
 import { type PageType } from "../CreatePageModal";
+import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 
 interface TypeStepProps {
   pageType: PageType;
@@ -70,42 +70,28 @@ export function TypeStep({ pageType, setPageType }: TypeStepProps) {
 
   return (
     <div className="space-y-3">
-      <label className="block text-xs font-medium tracking-wider text-[var(--wikios-text-muted)] uppercase">
-        Select Page Type
-      </label>
-      <div className="grid max-h-[45vh] scrollbar-thin grid-cols-2 gap-2 overflow-y-auto pr-1">
+      <p className="text-subhead text-label-secondary">Select page type</p>
+      <RadioCardGroup
+        aria-label="Page type"
+        value={pageType}
+        onValueChange={(v) => setPageType(v as PageType)}
+        className="grid max-h-[45vh] scrollbar-thin grid-cols-2 gap-2 overflow-y-auto p-1"
+      >
         {items.map((item) => {
           const Icon = item.icon;
           return (
-            <button
+            <RadioCard
               key={item.id}
-              type="button"
-              onClick={() => setPageType(item.id as PageType)}
-              className={cn(
-                "flex items-start gap-2.5 rounded-xl border p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                pageType === item.id
-                  ? "border-[var(--wikios-accent)] bg-[var(--wikios-accent)]/[0.08] text-[var(--wikios-text)]"
-                  : "bg-foreground/[0.03] hover:bg-foreground/[0.06] border-[var(--wikios-border)] text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
-              )}
-            >
-              <Icon
-                className={cn(
-                  "mt-0.5 h-4 w-4",
-                  pageType === item.id
-                    ? "text-[var(--wikios-accent)]"
-                    : "text-[var(--wikios-text-dim)]"
-                )}
-              />
-              <div>
-                <div className="text-xs font-semibold text-[var(--wikios-text)]">{item.label}</div>
-                <div className="mt-0.5 text-xs leading-tight text-[var(--wikios-text-dim)]">
-                  {item.desc}
-                </div>
-              </div>
-            </button>
+              value={item.id}
+              indicator={false}
+              icon={<Icon className="size-4" />}
+              title={item.label}
+              description={item.desc}
+              className="gap-2"
+            />
           );
         })}
-      </div>
+      </RadioCardGroup>
     </div>
   );
 }

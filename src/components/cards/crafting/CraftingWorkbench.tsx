@@ -9,7 +9,14 @@ import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { CometCard } from "~/components/ui/comet-card";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Stat } from "~/components/ui/stat";
+import { EmptyState } from "~/components/ui/empty-state";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { useNotify } from "~/hooks/useNotify";
 import { CardDisplay } from "../display/CardDisplay";
 import { CraftingAnimation } from "./CraftingAnimation";
 import type { CardInstance } from "~/types/cards-display";
@@ -79,6 +86,7 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
     enabled: !!recipeId,
   });
 
+  const notify = useNotify();
   const craftMutation = api.crafting.craftCard.useMutation({
     onSuccess: (result) => {
       setCraftingResult(result);
@@ -86,7 +94,7 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
       onCraftComplete?.(result);
     },
     onError: (error) => {
-      alert(`Crafting failed: ${error.message}`);
+      notify.error("Crafting failed", error.message);
       setCrafting(false);
     },
   });
@@ -135,7 +143,7 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
       .map((slot) => slot.card!.ownershipId ?? slot.card!.id);
 
     if (materialCardIds.length !== cardSlots.length) {
-      alert("Please fill all card slots before crafting");
+      notify.error("Please fill all card slots before crafting");
       return;
     }
 
@@ -163,44 +171,46 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
 
   if (!recipeId) {
     return (
-      <CometCard className="p-8 text-center" glassDepth="child">
-        <div className="text-lg text-white/60">Select a recipe to begin crafting</div>
-      </CometCard>
+      <FacetCard>
+        <EmptyState title="Select a recipe to begin crafting" />
+      </FacetCard>
     );
   }
 
   if (recipeLoading) {
     return (
-      <CometCard className="p-8 text-center" glassDepth="child">
-        <div className="animate-pulse text-white/60">Loading recipe...</div>
-      </CometCard>
+      <FacetCard padding="lg" className="space-y-4" aria-busy="true" aria-label="Loading recipe">
+        <Skeleton className="mx-auto h-7 w-48" />
+        <Skeleton className="mx-auto h-4 w-64" />
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+          <Skeleton className="rounded-row h-[300px]" />
+          <Skeleton className="rounded-row h-[300px]" />
+          <Skeleton className="rounded-row h-[300px]" />
+        </div>
+      </FacetCard>
     );
   }
 
   if (!recipeData) {
     return (
-      <CometCard className="p-8 text-center" glassDepth="child">
-        <div className="text-red-400">Recipe not found</div>
-      </CometCard>
+      <FacetCard>
+        <EmptyState title="Recipe not found" />
+      </FacetCard>
     );
   }
 
   return (
     <>
-      <CometCard className="space-y-6 p-6" glassDepth="child">
+      <FacetCard padding="lg" className="space-y-6">
         {/* Recipe header */}
         <div className="space-y-2 text-center">
-          <h2 className="text-2xl font-bold tracking-tight text-white">{recipeData.name}</h2>
+          <h2 className="text-title-1 text-label">{recipeData.name}</h2>
           {recipeData.description && (
-            <p className="text-sm text-white/70">{recipeData.description}</p>
+            <p className="text-body text-label-secondary">{recipeData.description}</p>
           )}
-          <div className="flex items-center justify-center gap-4 text-sm">
-            <div className="rounded-full bg-white/10 px-3 py-1 font-semibold text-white/90">
-              {recipeData.recipeType}
-            </div>
-            <div className="rounded-full bg-indigo-500/20 px-3 py-1 font-semibold text-indigo-300">
-              {recipeData.resultRarity}
-            </div>
+          <div className="text-body flex items-center justify-center gap-4">
+            <Badge variant="neutral">{recipeData.recipeType}</Badge>
+            <Badge variant="tinted">{recipeData.resultRarity}</Badge>
           </div>
         </div>
 
@@ -210,25 +220,37 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
             <motion.div
               key={slot.id}
               className={cn(
-                "relative min-h-[300px] rounded-xl border-2 border-dashed p-4",
+                "rounded-row relative min-h-[300px] border-2 border-dashed p-4",
                 "flex items-center justify-center transition-colors",
                 slot.card
-                  ? "border-green-500/50 bg-green-500/5"
-                  : "cursor-pointer border-white/30 bg-white/5 hover:border-white/50"
+                  ? "border-green/50 bg-green/5"
+                  : "border-separator bg-surface-secondary hover:bg-fill-4 cursor-pointer"
               )}
+              role={slot.card ? undefined : "button"}
+              tabIndex={slot.card || crafting ? undefined : 0}
+              aria-label={slot.card ? undefined : "Add a card to this slot"}
+              onKeyDown={(e) => {
+                if ((e.key === "Enter" || e.key === " ") && !slot.card && !crafting) {
+                  e.preventDefault();
+                  setSelectedSlot(slot.id);
+                  setShowCardPicker(true);
+                }
+              }}
               onClick={() => {
                 if (!slot.card && !crafting) {
                   setSelectedSlot(slot.id);
                   setShowCardPicker(true);
                 }
               }}
-              whileHover={!slot.card && !crafting ? { scale: 1.02 } : {}}
             >
               {slot.card ? (
                 <div className="relative">
                   <CardDisplay card={slot.card} size="small" />
-                  <button
-                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-xs font-bold text-white transition-colors hover:bg-red-600"
+                  <Button
+                    size="icon-sm"
+                    variant="destructive"
+                    aria-label="Remove card"
+                    className="absolute -top-2 -right-2 rounded-full"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleRemoveCard(slot.id);
@@ -236,15 +258,15 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
                     disabled={crafting}
                   >
                     ×
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <div className="text-center">
-                  <div className="mb-2 text-4xl">🎴</div>
-                  <div className="text-sm text-white/60">
+                  <div className="text-large-title mb-2">🎴</div>
+                  <div className="text-body text-label-secondary">
                     {slot.required ? "Required" : "Optional"}
                   </div>
-                  <div className="mt-1 text-xs text-white/40">Click to add card</div>
+                  <div className="text-footnote text-label-tertiary mt-1">Click to add card</div>
                 </div>
               )}
             </motion.div>
@@ -254,58 +276,54 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
         {/* Crafting info */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {/* Success rate */}
-          <CometCard className="p-4 text-center" glassDepth="interactive">
-            <div className="mb-1 text-xs text-white/60 uppercase">Success Rate</div>
-            <div
-              className={cn(
-                "text-2xl font-bold tabular-nums",
-                successRate >= 80
-                  ? "text-green-400"
-                  : successRate >= 50
-                    ? "text-yellow-400"
-                    : "text-orange-400"
-              )}
-            >
-              {successRate.toFixed(0)}%
-            </div>
-          </CometCard>
+          <div className="bg-surface-secondary rounded-row p-4">
+            <Stat
+              label="Success Rate"
+              value={
+                <span
+                  className={cn(
+                    successRate >= 80
+                      ? "text-green"
+                      : successRate >= 50
+                        ? "text-yellow"
+                        : "text-orange"
+                  )}
+                >
+                  {successRate.toFixed(0)}%
+                </span>
+              }
+            />
+          </div>
 
           {/* Cost */}
-          <CometCard className="p-4 text-center" glassDepth="interactive">
-            <div className="mb-1 text-xs text-white/60 uppercase">Cost</div>
-            <div
-              className={cn(
-                "text-2xl font-bold tabular-nums",
-                hasEnoughCredits ? "text-green-400" : "text-red-400"
-              )}
-            >
-              {recipeData.ixCreditsCost.toLocaleString()}
-            </div>
-            <div className="text-xs text-white/40">IxCredits</div>
-          </CometCard>
+          <div className="bg-surface-secondary rounded-row p-4">
+            <Stat
+              label="Cost"
+              value={
+                <span className={hasEnoughCredits ? "text-green" : "text-red"}>
+                  {recipeData.ixCreditsCost.toLocaleString()}
+                </span>
+              }
+              hint="IxCredits"
+            />
+          </div>
 
           {/* XP Reward */}
-          <CometCard className="p-4 text-center" glassDepth="interactive">
-            <div className="mb-1 text-xs text-white/60 uppercase">XP Reward</div>
-            <div className="text-2xl font-bold text-blue-400 tabular-nums">
-              +{recipeData.collectorXPGain}
-            </div>
-            <div className="text-xs text-white/40">Collector XP</div>
-          </CometCard>
+          <div className="bg-surface-secondary rounded-row p-4">
+            <Stat label="XP Reward" value={`+${recipeData.collectorXPGain}`} hint="Collector XP" />
+          </div>
         </div>
 
         {/* Craft button */}
         <motion.button
           className={cn(
-            "w-full rounded-xl py-4 text-lg font-bold tracking-tight",
-            "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+            "focus-visible:outline-tint rounded-control-lg text-headline duration-fast h-(--control-height-lg) w-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
             allSlotsFilled && hasEnoughCredits && !crafting
-              ? "bg-gradient-to-r from-indigo-500 to-blue-500 text-white shadow-lg shadow-indigo-500/50 hover:from-indigo-600 hover:to-blue-600"
-              : "cursor-not-allowed bg-white/10 text-white/40"
+              ? "bg-tint text-on-tint hover:bg-tint-hover cursor-pointer"
+              : "bg-fill-3 text-label-tertiary cursor-not-allowed"
           )}
           disabled={!allSlotsFilled || !hasEnoughCredits || crafting}
           onClick={handleCraft}
-          whileHover={allSlotsFilled && hasEnoughCredits && !crafting ? { scale: 1.02 } : {}}
           whileTap={allSlotsFilled && hasEnoughCredits && !crafting ? { scale: 0.98 } : {}}
         >
           {crafting ? "Crafting..." : "Craft Card"}
@@ -313,52 +331,39 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
 
         {/* Validation messages */}
         {!allSlotsFilled && (
-          <div className="text-center text-sm text-orange-400">Fill all card slots to craft</div>
+          <div className="text-body text-orange text-center">Fill all card slots to craft</div>
         )}
         {allSlotsFilled && !hasEnoughCredits && (
-          <div className="text-center text-sm text-red-400">Insufficient IxCredits</div>
+          <div className="text-body text-red text-center">Insufficient IxCredits</div>
         )}
-      </CometCard>
+      </FacetCard>
 
-      {/* Card picker modal */}
-      <AnimatePresence>
-        {showCardPicker && selectedSlot && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowCardPicker(false)}
-          >
-            <motion.div
-              className="max-h-[80vh] w-full max-w-4xl overflow-y-auto"
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <CometCard className="p-6" glassDepth="modal">
-                <h3 className="mb-4 text-xl font-bold tracking-tight text-white">Select a Card</h3>
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-                  {pickableCards.map((card) => (
-                    <motion.div
-                      key={card.ownershipId ?? card.id}
-                      whileHover={{ scale: 1.05 }}
-                      onClick={() => handleCardSelect(selectedSlot, card)}
-                      className="cursor-pointer"
-                    >
-                      <CardDisplay card={card} size="small" />
-                    </motion.div>
-                  ))}
-                </div>
-                {pickableCards.length === 0 && (
-                  <div className="py-8 text-center text-white/60">No cards available</div>
-                )}
-              </CometCard>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Card picker */}
+      <Dialog
+        open={showCardPicker && !!selectedSlot}
+        onOpenChange={(open) => {
+          if (!open) setShowCardPicker(false);
+        }}
+      >
+        <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Select a Card</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {pickableCards.map((card) => (
+              <button
+                type="button"
+                key={card.ownershipId ?? card.id}
+                onClick={() => selectedSlot && handleCardSelect(selectedSlot, card)}
+                className="focus-visible:outline-tint rounded-row cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                <CardDisplay card={card} size="small" />
+              </button>
+            ))}
+          </div>
+          {pickableCards.length === 0 && <EmptyState compact title="No cards available" />}
+        </DialogContent>
+      </Dialog>
 
       {/* Crafting animation */}
       <AnimatePresence>

@@ -45,6 +45,7 @@ interface CountryPortalProps {
 }
 
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
+import { Refraction } from "~/components/ui/facet";
 
 export function CountryPortal({ country, subcategories, pages }: CountryPortalProps) {
   const { data: summary } = api.mycountry.getNationalSummary.useQuery(
@@ -66,53 +67,54 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8 pb-16 select-none">
       {/* ── Apple-Grade Masthead Card ── */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/20 bg-white/70 p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_6px_24px_rgba(0,0,0,0.06)] backdrop-blur-xl sm:p-8 dark:border-white/10 dark:bg-zinc-900/70 dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_8px_32px_rgba(0,0,0,0.4)]">
+      <div className="material-hero text-label relative isolate overflow-hidden rounded-3xl p-6 sm:p-8">
+        <Refraction />
         <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
           <div className="flex items-start gap-5 sm:items-center">
             {country.flagUrl ? (
               <img
                 src={country.flagUrl}
                 alt=""
-                className="border-border/80 h-14 w-22 shrink-0 rounded-2xl border object-cover shadow-md sm:h-16 sm:w-26"
+                className="border-separator rounded-card shadow-card h-14 w-22 shrink-0 border object-cover sm:h-16 sm:w-26"
               />
             ) : (
-              <div className="bg-muted border-border flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border">
-                <FileText className="text-muted-foreground h-7 w-7" />
+              <div className="bg-fill-3 border-separator rounded-card flex h-16 w-16 shrink-0 items-center justify-center border">
+                <FileText className="text-label-secondary h-7 w-7" />
               </div>
             )}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Link
                   href={withBasePath("/util/categories")}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-500/15 dark:text-emerald-400"
+                  className="border-green/20 bg-green/10 text-caption text-green hover:bg-green/15 inline-flex items-center gap-2 rounded-full border px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                 >
                   <span>Nations</span>
                 </Link>
                 {country.economicTier && (
-                  <span className="bg-muted/80 text-muted-foreground border-border/60 rounded-full border px-2.5 py-0.5 text-xs font-semibold">
+                  <span className="bg-fill-2 text-label-secondary border-separator text-caption rounded-full border px-3 py-0.5 font-semibold">
                     {country.economicTier}
                   </span>
                 )}
               </div>
-              <h1 className="text-foreground font-brand text-2xl font-bold tracking-tight sm:text-4xl">
+              <h1 className="text-label font-brand text-title-1 sm:text-large-title">
                 {country.name}
               </h1>
             </div>
           </div>
 
           {/* Quick Action Navigation Buttons */}
-          <div className="flex shrink-0 flex-wrap items-center gap-2.5">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Link
               href={withBasePath(`/wiki/${slug}`)}
-              className="border-border/60 text-foreground inline-flex items-center gap-2 rounded-xl border bg-white/60 px-3.5 py-2 text-xs font-semibold shadow-sm backdrop-blur-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-blue-500/40 hover:bg-white/90 active:scale-[0.97] dark:bg-zinc-800/60 dark:hover:bg-zinc-800/90"
+              className="border-separator text-label rounded-row bg-surface text-caption shadow-card hover:border-tint/40 hover:bg-surface inline-flex items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
-              <ExternalLink className="h-3.5 w-3.5 text-blue-500" />
+              <ExternalLink className="text-tint h-3.5 w-3.5" />
               <span>Wiki Article</span>
             </Link>
 
             <Link
               href={ixstatesHref(`/countries/${country.slug ?? country.id}`)}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-blue-500 active:scale-[0.97]"
+              className="rounded-row bg-tint text-caption text-on-tint shadow-card hover:bg-tint inline-flex items-center gap-2 px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               <TrendingUp className="h-3.5 w-3.5" />
               <span>National Dashboard</span>
@@ -228,7 +230,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
         {/* Right column (sidebar) */}
         <div className="wikios-portal-sidebar">
           {/* Map */}
-          <div className="wikios-portal-map facet-hierarchy-child">
+          <div className="wikios-portal-map rounded-card border-separator bg-surface border">
             <CountryMapEmbed
               countryId={country.id}
               height="h-56"
@@ -240,7 +242,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
 
           {/* Blurbs */}
           {blurbs.length > 0 && (
-            <div className="wikios-portal-blurbs facet-hierarchy-child">
+            <div className="wikios-portal-blurbs rounded-card border-separator bg-surface border">
               <h3 className="wikios-portal-blurbs-title">Country Voices</h3>
               {blurbs.map((r) => (
                 <Link
@@ -277,7 +279,7 @@ function VitalityCard({
   color: string;
 }) {
   return (
-    <div className="wikios-portal-vitality-card facet-hierarchy-child">
+    <div className="wikios-portal-vitality-card rounded-card border-separator bg-surface border">
       <span className="wikios-portal-vitality-value" style={{ color }}>
         {value === null ? "—" : Math.round(value)}
       </span>
@@ -296,7 +298,7 @@ function MetricCard({
   value: string;
 }) {
   return (
-    <div className="wikios-portal-metric facet-hierarchy-child">
+    <div className="wikios-portal-metric rounded-row border-separator bg-surface border">
       <div className="wikios-portal-metric-icon">{icon}</div>
       <div>
         <div className="wikios-portal-metric-value">{value}</div>

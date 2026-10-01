@@ -14,10 +14,11 @@ import {
 } from "iconoir-react";
 import { GlassSelectBox } from "../../../primitives/enhanced";
 import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
+import { Toggle } from "~/components/ui/toggle";
 import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { IdentityAutocomplete } from "./IdentityAutocomplete";
 import { BasicInfoCoreIndicators } from "./BasicInfoCoreIndicators";
-import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { api } from "~/trpc/react";
 import { MapPickerModal } from "~/components/maps/core/MapPickerModal";
@@ -253,10 +254,7 @@ export const BasicInfoForm = React.memo(
       const next = !isCustomOfficialName;
       setIsCustomOfficialName(next);
       if (!next) {
-        const autoName = formatCeremonialName(
-          identity.countryName || "",
-          selectedGovernmentType
-        );
+        const autoName = formatCeremonialName(identity.countryName || "", selectedGovernmentType);
         onIdentityChange("officialName", autoName);
         onCustomOfficialNameChange(autoName);
       }
@@ -347,28 +345,22 @@ export const BasicInfoForm = React.memo(
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-6 text-left lg:grid-cols-2">
           {/* Administrative Profile Card */}
-          <FacetCard
-            depth="base"
-            theme="gold"
-            className="z-10 !overflow-visible border-amber-500/20"
-            texture="chevron"
-            textureOpacity={0.06}
-          >
-            <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-              <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                <Crown className="h-5 w-5 text-amber-400" />
-                 Administrative Profile
+          <FacetCard texture="chevron" textureOpacity={0.04} className="z-10 overflow-visible">
+            <div className="border-separator border-b px-6 py-4">
+              <h3 className="text-label text-headline flex items-center gap-2">
+                <Crown className="text-tint h-5 w-5" />
+                Administrative Profile
               </h3>
             </div>
             <FacetCardContent className="space-y-4 p-6">
               {/* 1. Country Name (Primary Sovereign Form) */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-foreground flex items-center gap-2 text-sm font-medium">
-                    <Globe className="text-muted-foreground h-4 w-4" />
+                  <label className="text-label text-body flex items-center gap-2 font-medium">
+                    <Globe className="text-label-secondary h-4 w-4" />
                     <span>Country Name</span>
                     <span
-                      className="h-1.5 w-1.5 rounded-full bg-amber-500 inline-block"
+                      className="bg-tint inline-block h-1.5 w-1.5 rounded-full"
                       title="Required primary field"
                     />
                   </label>
@@ -376,7 +368,7 @@ export const BasicInfoForm = React.memo(
                     foundationCountry?.name && identity.countryName === foundationCountry.name
                   ) && <TemplateFieldIndicator />}
                 </div>
-                <p className="text-muted-foreground text-xs leading-tight">
+                <p className="text-label-secondary text-footnote leading-tight">
                   Short form name of your sovereign nation
                 </p>
                 <Input
@@ -388,42 +380,35 @@ export const BasicInfoForm = React.memo(
               </div>
 
               {/* 2. Unified Constitutional Governance (Government Type + Ceremonial Official Name) */}
-              <div className="space-y-3 rounded-xl border border-border/30 bg-card/30 p-3.5">
+              <div className="rounded-row border-separator bg-surface space-y-3 border p-4">
                 <div className="flex items-center justify-between">
-                  <label className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-                    <Crown className="text-amber-400 h-3.5 w-3.5" />
+                  <label className="text-label text-caption flex items-center gap-2 font-semibold">
+                    <Crown className="text-tint h-3.5 w-3.5" />
                     <span>Constitutional Form & Ceremonial Title</span>
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    size="sm"
+                    variant={isCustomOfficialName ? "tinted" : "plain"}
                     onClick={toggleCustomOfficialName}
-                    data-cuelume-press
-                    className={cn(
-                      "flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-                      isCustomOfficialName
-                        ? "border border-amber-500/30 bg-amber-500/10 text-amber-400"
-                        : "text-muted-foreground/80 hover:bg-white/5 hover:text-foreground"
-                    )}
                   >
                     {isCustomOfficialName ? (
                       <>
-                        <Lock className="h-3 w-3" />
+                        <Lock aria-hidden />
                         <span>Reset to Auto</span>
                       </>
                     ) : (
                       <>
-                        <Edit3 className="h-3 w-3" />
+                        <Edit3 aria-hidden />
                         <span>Customize Title</span>
                       </>
                     )}
-                  </button>
+                  </Button>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1">
-                    <span className="text-muted-foreground block text-xs font-medium">
-                      Government Type
-                    </span>
+                    <span className="text-label-secondary text-caption block">Government Type</span>
                     <GlassSelectBox
                       label=""
                       icon={Crown}
@@ -438,7 +423,7 @@ export const BasicInfoForm = React.memo(
                   </div>
 
                   <div className="space-y-1">
-                    <span className="text-muted-foreground block text-xs font-medium">
+                    <span className="text-label-secondary text-caption block">
                       Ceremonial Official Name
                     </span>
                     {isCustomOfficialName ? (
@@ -446,11 +431,11 @@ export const BasicInfoForm = React.memo(
                         value={identity.officialName ?? ""}
                         onChange={handleOfficialNameChange}
                         placeholder="The Republic of..."
-                        className="h-9 text-xs font-medium"
+                        className="text-caption h-9"
                       />
                     ) : (
                       <div
-                        className="flex h-9 items-center rounded-lg border border-border/40 bg-muted/20 px-3 text-xs font-medium text-foreground/90 select-none"
+                        className="rounded-control border-separator bg-fill-4 text-caption text-label/90 flex h-9 items-center border px-3 select-none"
                         title="Auto-formatted based on Country Name and Government Type"
                       >
                         <span className="truncate">{displayedCeremonialName}</span>
@@ -467,23 +452,21 @@ export const BasicInfoForm = React.memo(
                       onChange={(e) => onCustomOfficialNameChange(e.target.value)}
                       onBlur={(e) => onCustomOfficialNameBlur?.(e.target.value)}
                       placeholder="Enter custom official name..."
-                      className="h-9 text-xs"
+                      className="text-footnote h-9"
                     />
                   </div>
                 )}
               </div>
 
               {/* 3. Civic Geography & Demonym */}
-              <div className="space-y-3 rounded-xl border border-border/30 bg-card/30 p-3.5">
+              <div className="rounded-row border-separator bg-surface space-y-3 border p-4">
                 <div className="flex items-center justify-between">
-                  <label className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-                    <Building className="text-teal-400 h-3.5 w-3.5" />
+                  <label className="text-label text-caption flex items-center gap-2 font-semibold">
+                    <Building className="text-teal h-3.5 w-3.5" />
                     <span>Civic Geography & Demonym</span>
                   </label>
                   {isLargestLocked && (
-                    <span className="text-xs text-teal-400/80 font-medium">
-                      Largest City = Capital
-                    </span>
+                    <span className="text-caption text-teal/80">Largest City = Capital</span>
                   )}
                 </div>
 
@@ -495,53 +478,47 @@ export const BasicInfoForm = React.memo(
                     onChange={handleCapitalCityChange}
                     placeholder="Capital city name"
                     icon={Building}
-                    iconClassName="text-teal-400"
+                    iconClassName="text-teal"
                     onSave={handleCapitalCitySave}
                     extraLabelElement={
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2">
                         {countryId && (
-                          <button
+                          <Button
                             type="button"
+                            size="sm"
+                            variant="plain"
                             onClick={() => {
                               soundEffects.press();
                               setIsMapPickerOpen(true);
                             }}
-                            className="flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 focus:outline-none dark:text-emerald-400 dark:hover:text-emerald-300 active:scale-95 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                             title="Select Capital location on map"
-                            data-cuelume-press
                           >
-                            <MapPin className="h-3 w-3" />
+                            <MapPin aria-hidden />
                             <span>Pick on Map</span>
-                          </button>
+                          </Button>
                         )}
-                        <button
-                          type="button"
-                          onClick={toggleLargestLock}
-                          className={cn(
-                            "flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none active:scale-95",
-                            isLargestLocked
-                              ? "text-amber-500 bg-amber-500/10 dark:text-amber-400"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
-                          )}
+                        <Toggle
+                          size="sm"
+                          pressed={isLargestLocked}
+                          onPressedChange={() => toggleLargestLock()}
                           title={
                             isLargestLocked
                               ? "Unlock Largest City to set a different value"
                               : "Set Largest City to match Capital City"
                           }
-                          data-cuelume-press
                         >
                           {isLargestLocked ? (
                             <>
-                              <Link2 className="h-3 w-3" />
+                              <Link2 aria-hidden />
                               <span>Linked</span>
                             </>
                           ) : (
                             <>
-                              <Link2Off className="text-muted-foreground/60 h-3 w-3" />
+                              <Link2Off aria-hidden className="text-label-tertiary" />
                               <span>Unlinked</span>
                             </>
                           )}
-                        </button>
+                        </Toggle>
                       </div>
                     }
                   />
@@ -553,7 +530,7 @@ export const BasicInfoForm = React.memo(
                     onChange={handleDemonymChange}
                     placeholder="Demonym (e.g. American, Eldorian)"
                     icon={Users}
-                    iconClassName="text-teal-400"
+                    iconClassName="text-teal"
                     onSave={onFieldSave}
                   />
                 </div>
@@ -578,7 +555,7 @@ export const BasicInfoForm = React.memo(
                     onChange={handleLargestCityChange}
                     placeholder={isLargestLocked ? "Same as Capital City" : "Largest city name"}
                     icon={MapPin}
-                    iconClassName="text-teal-400"
+                    iconClassName="text-teal"
                     onSave={onFieldSave}
                     disabled={isLargestLocked}
                   />
@@ -589,16 +566,10 @@ export const BasicInfoForm = React.memo(
 
           {isEditMode ? (
             /* Edit Mode: Government Structure card replaces Core Indicators */
-            <FacetCard
-              depth="base"
-              theme="indigo"
-              className="border-indigo-500/20"
-              texture="chevron"
-              textureOpacity={0.06}
-            >
-              <div className="border-border/40 border-b bg-white/[0.02] px-6 py-4 dark:bg-black/[0.1]">
-                <h3 className="text-foreground flex items-center gap-2 text-base font-bold">
-                  <Crown className="h-5 w-5 text-indigo-400" />
+            <FacetCard texture="chevron" textureOpacity={0.04}>
+              <div className="border-separator border-b px-6 py-4">
+                <h3 className="text-label text-headline flex items-center gap-2">
+                  <Crown className="text-indigo h-5 w-5" />
                   Government Structure
                 </h3>
               </div>

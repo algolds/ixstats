@@ -42,32 +42,32 @@ export const getActiveColorClass = (itemId: string): string => {
   switch (itemId) {
     case "search":
     case "backlinks":
-      return "text-cyan-600 dark:text-cyan-400 border-cyan-500/30 bg-cyan-500/10";
+      return "text-teal border-teal/30 bg-teal/10";
     case "main":
     case "edit":
-      return "text-blue-600 dark:text-blue-400 border-blue-500/30 bg-blue-500/10";
+      return "text-tint border-tint/30 bg-tint/10";
     case "recent":
     case "history":
-      return "text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10";
+      return "text-yellow border-yellow/30 bg-yellow/10";
     case "margin":
-      return "text-stone-950 border-yellow-400/60 bg-margin-accent shadow-xs";
+      return "text-(--margin-badge-text) border-yellow/60 bg-margin-accent";
     case "random":
-      return "text-indigo-600 dark:text-indigo-400 border-indigo-500/30 bg-indigo-500/10";
+      return "text-indigo border-indigo/30 bg-indigo/10";
     case "stashes":
-      return "text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10";
+      return "text-yellow border-yellow/30 bg-yellow/10";
     case "images":
     case "talk":
-      return "text-indigo-600 dark:text-indigo-400 border-indigo-500/30 bg-indigo-500/10";
+      return "text-indigo border-indigo/30 bg-indigo/10";
     case "utilities":
-      return "text-cyan-600 dark:text-cyan-400 border-cyan-500/30 bg-cyan-500/10";
+      return "text-teal border-teal/30 bg-teal/10";
     case "admin":
-      return "text-red-600 dark:text-red-400 border-red-500/30 bg-red-500/10";
+      return "text-red border-red/30 bg-red/10";
     case "lorewards":
-      return "text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10";
+      return "text-yellow border-yellow/30 bg-yellow/10";
     case "create-page":
-      return "text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10";
+      return "text-green border-green/30 bg-green/10";
     default:
-      return "text-blue-600 dark:text-blue-400 border-blue-500/30 bg-blue-500/10";
+      return "text-tint border-tint/30 bg-tint/10";
   }
 };
 
@@ -119,7 +119,7 @@ export function FisheyeRailItem({
       className="relative origin-center"
     >
       <motion.div
-        className="pointer-events-none absolute inset-0 rounded-xl blur-md"
+        className="rounded-row pointer-events-none absolute inset-0 blur-md"
         style={{
           boxShadow: `0 0 16px 3px ${glowColor}`,
           opacity: springGlowOpacity,

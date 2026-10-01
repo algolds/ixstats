@@ -24,17 +24,17 @@ function ForumBreadcrumb() {
 
   return (
     <span
-      className={`flex items-center gap-1.5 overflow-hidden transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
+      className={`flex items-center gap-2 overflow-hidden transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
         isCollapsed ? "max-w-[100px]" : "max-w-[220px]"
       }`}
     >
-      <MessageSquare className="h-3 w-3 shrink-0 text-orange-400 opacity-70" />
-      <PreText className="text-foreground/80 truncate text-xs font-medium" whiteSpace="nowrap">
+      <MessageSquare className="text-orange h-3 w-3 shrink-0 opacity-70" />
+      <PreText className="text-label text-caption truncate" whiteSpace="nowrap">
         {label}
       </PreText>
       {unreadAlerts > 0 && (
         <PreText
-          className="flex h-3.5 min-w-3.5 shrink-0 items-center justify-center rounded-full bg-orange-500 px-1 text-xs font-bold text-white"
+          className="bg-orange text-caption text-on-orange flex h-3.5 min-w-3.5 shrink-0 items-center justify-center rounded-full px-1 font-semibold"
           whiteSpace="nowrap"
         >
           {String(unreadAlerts)}
@@ -53,9 +53,9 @@ export function ForumHalo() {
       priority: 10,
       center: <ForumBreadcrumb />,
       expandedViews: { forum: ForumView },
-      accentColor: "#f97316",
+      accentColor: "var(--color-orange)",
       stickyLabel: "Forum",
-      badge: unreadAlerts > 0 ? { color: "#f97316", pulse: true } : undefined,
+      badge: unreadAlerts > 0 ? { color: "var(--color-orange)", pulse: true } : undefined,
     }),
     [unreadAlerts]
   );

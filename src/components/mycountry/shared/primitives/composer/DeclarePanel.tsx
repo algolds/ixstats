@@ -4,7 +4,7 @@ import React from "react";
 import { GitFork, Lock, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { formatIxCountdown } from "~/lib/statecraft/calendar";
@@ -31,9 +31,9 @@ export interface DeclarePanelProps {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-2.5">
-      <dt className="text-muted-foreground shrink-0 text-sm">{label}</dt>
-      <dd className="text-foreground min-w-0 text-right text-sm font-medium">{children}</dd>
+    <div className="flex items-start justify-between gap-4 py-2">
+      <dt className="text-label-secondary text-body shrink-0">{label}</dt>
+      <dd className="text-label text-body min-w-0 text-right font-medium">{children}</dd>
     </div>
   );
 }
@@ -73,7 +73,7 @@ export function DeclarePanel({
 
   return (
     <div className="space-y-4">
-      <dl className="divide-border divide-y">
+      <dl className="divide-separator divide-y">
         <Row label="Goal">
           <span className="line-clamp-3">{goal}</span>
         </Row>
@@ -95,7 +95,7 @@ export function DeclarePanel({
             <span className="tabular-nums">
               {slots.usedThisWeek} of {slots.cap} used
               {slotsLeft != null && slotsLeft > 0 && (
-                <span className="text-muted-foreground font-normal"> · this uses 1</span>
+                <span className="text-label-secondary font-normal"> · this uses 1</span>
               )}
             </span>
           ) : (
@@ -105,14 +105,14 @@ export function DeclarePanel({
       </dl>
 
       {followUpOf && (
-        <FacetContainer
-          depth={3}
-          surface="solid"
-          className="flex items-center gap-2 rounded-xl py-1 pr-1 pl-3 text-xs"
+        <FacetCard
+          variant="inset"
+          padding="none"
+          className="text-footnote flex items-center gap-2 py-1 pr-1 pl-3"
         >
-          <GitFork className="text-muted-foreground h-4 w-4 shrink-0" aria-hidden />
-          <span className="text-muted-foreground min-w-0 flex-1 truncate">
-            Follow-up to <span className="text-foreground font-medium">{followUpOf.goal}</span>
+          <GitFork className="text-label-secondary h-4 w-4 shrink-0" aria-hidden />
+          <span className="text-label-secondary min-w-0 flex-1 truncate">
+            Follow-up to <span className="text-label font-medium">{followUpOf.goal}</span>
           </span>
           {onClearFollowUp && (
             <Button
@@ -120,18 +120,18 @@ export function DeclarePanel({
               size="icon"
               onClick={onClearFollowUp}
               aria-label="Remove follow-up link"
-              className="text-muted-foreground max-sm:h-11 max-sm:w-11"
+              className="text-label-secondary max-sm:h-11 max-sm:w-11"
             >
               <Xmark />
             </Button>
           )}
-        </FacetContainer>
+        </FacetCard>
       )}
 
       {goesOver && !blockedReason && (
-        <Alert role="note" className="border-amber-500/30 text-amber-600">
+        <Alert role="note" className="border-yellow/30 text-yellow">
           <WarningTriangle aria-hidden />
-          <AlertDescription className="text-xs">
+          <AlertDescription className="text-footnote">
             This puts you over civil-service capacity. You can still declare it, but recon and
             policy previews become less reliable until capacity frees up.
           </AlertDescription>
@@ -141,7 +141,7 @@ export function DeclarePanel({
       {error && (
         <Alert variant="destructive" className="border-destructive/30">
           <WarningCircle aria-hidden />
-          <AlertDescription className="text-xs">{error}</AlertDescription>
+          <AlertDescription className="text-footnote">{error}</AlertDescription>
         </Alert>
       )}
 
@@ -149,13 +149,12 @@ export function DeclarePanel({
         size="lg"
         onClick={onDeclare}
         disabled={isPending || !!blockedReason || disabled}
-        data-cuelume-press="press"
-        className="w-full bg-amber-500 px-4 text-amber-950 hover:bg-amber-500/90 max-sm:h-11"
+        className="w-full px-4 max-sm:h-11"
       >
         {isPending ? "Declaring…" : "Declare directive"}
       </Button>
       {blockedReason && (
-        <p className="text-muted-foreground flex items-start gap-2 text-xs">
+        <p className="text-label-secondary text-footnote flex items-start gap-2">
           <Lock className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
           <span>{blockedReason}</span>
         </p>

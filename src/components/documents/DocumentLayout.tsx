@@ -204,7 +204,7 @@ export function DocumentLayout({ meta, sections, back, children }: DocumentLayou
 
         <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
           {/* Sticky Table of Contents */}
-          <div className="sticky top-24 hidden lg:col-span-4 lg:block print:hidden">
+          <div className="sticky top-[calc(var(--shell-top-offset)+1rem)] hidden lg:col-span-4 lg:block print:hidden">
             <div className="border-border bg-card/60 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-xl">
               <div className="border-border/50 flex items-center justify-between border-b pb-3">
                 <h3 className="text-muted-foreground flex items-center gap-2 text-xs font-bold tracking-wider uppercase">

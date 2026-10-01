@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useIxMedia } from "./MediaContext";
-import { FacetModal } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
+import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
+import { Slider } from "~/components/ui/slider";
 import {
-  Xmark as X,
   Play,
   Pause,
   FastArrowRight as SkipForward,
@@ -17,6 +18,13 @@ import { WaveformVisualizer } from "./WaveformVisualizer";
 import { QueuePanel } from "./QueuePanel";
 import { ChapterNavigator } from "./ChapterNavigator";
 import { TranscriptViewer } from "./TranscriptViewer";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 export function FullPlayer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const {
@@ -47,28 +55,24 @@ export function FullPlayer({ isOpen, onClose }: { isOpen: boolean; onClose: () =
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-md">
-      <FacetModal className="relative flex max-h-[90vh] w-full max-w-lg flex-col gap-6 overflow-hidden overflow-y-auto border border-black/10 p-6 shadow-2xl dark:border-white/10">
-        <button
-          onClick={onClose}
-          className="text-muted-foreground hover:text-foreground absolute top-4 right-4 rounded-full p-1 transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-        >
-          <X className="h-4 w-4" />
-        </button>
-
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent
+        aria-describedby={undefined}
+        className="flex flex-col gap-6 overflow-y-auto sm:max-w-md"
+      >
         <div className="mt-2 flex flex-col items-center gap-4 text-center">
           {activeTrack.coverArt && (
-            <div className="relative h-48 w-48 overflow-hidden rounded-2xl border border-black/5 shadow-xl dark:border-white/5">
+            <div className="rounded-card border-separator shadow-card relative size-48 overflow-hidden border">
               <img src={activeTrack.coverArt} className="h-full w-full object-cover" alt="Cover" />
             </div>
           )}
           <div>
-            <h2 className="text-lg font-bold tracking-tight">{activeTrack.title}</h2>
-            <p className="text-muted-foreground text-sm">{activeTrack.subtitle}</p>
+            <SheetTitle className="text-title-3">{activeTrack.title}</SheetTitle>
+            <p className="text-body text-label-secondary">{activeTrack.subtitle}</p>
           </div>
         </div>
 
-        {/* Waveform Visualizer & Seek */}
+        {/* Waveform visualizer & seek */}
         <div className="flex flex-col gap-2">
           <WaveformVisualizer
             peaks={activeTrack.peaks}
@@ -76,7 +80,7 @@ export function FullPlayer({ isOpen, onClose }: { isOpen: boolean; onClose: () =
             duration={duration}
             onSeek={seekTrack}
           />
-          <div className="text-muted-foreground flex items-center justify-between font-mono text-xs">
+          <div className="text-footnote text-label-secondary flex items-center justify-between tabular-nums">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>
           </div>
@@ -84,91 +88,85 @@ export function FullPlayer({ isOpen, onClose }: { isOpen: boolean; onClose: () =
 
         {/* Player controls */}
         <div className="flex items-center justify-center gap-6">
-          <button
-            onClick={skipPrevious}
-            className="text-muted-foreground hover:text-foreground p-2 transition-colors"
+          <Button variant="ghost" size="icon-lg" onClick={skipPrevious} aria-label="Previous">
+            <SkipBack className="size-5" aria-hidden="true" />
+          </Button>
+          <Button
+            size="icon-lg"
+            className="size-14 rounded-full"
+            onClick={isPlaying ? pauseTrack : resumeTrack}
+            aria-label={isPlaying ? "Pause" : "Play"}
           >
-            <SkipBack className="h-5 w-5" />
-          </button>
-          {isPlaying ? (
-            <button
-              onClick={pauseTrack}
-              className="bg-primary text-primary-foreground rounded-full p-3.5 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105"
-            >
-              <Pause className="h-6 w-6 fill-current" />
-            </button>
-          ) : (
-            <button
-              onClick={resumeTrack}
-              className="bg-primary text-primary-foreground rounded-full p-3.5 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105"
-            >
-              <Play className="ml-0.5 h-6 w-6 fill-current" />
-            </button>
-          )}
-          <button
-            onClick={skipNext}
-            className="text-muted-foreground hover:text-foreground p-2 transition-colors"
-          >
-            <SkipForward className="h-5 w-5" />
-          </button>
+            {isPlaying ? (
+              <Pause className="size-6 fill-current" aria-hidden="true" />
+            ) : (
+              <Play className="ml-0.5 size-6 fill-current" aria-hidden="true" />
+            )}
+          </Button>
+          <Button variant="ghost" size="icon-lg" onClick={skipNext} aria-label="Next">
+            <SkipForward className="size-5" aria-hidden="true" />
+          </Button>
         </div>
 
-        {/* Sliders and utility buttons */}
-        <div className="grid grid-cols-2 gap-4 border-t border-black/5 pt-4 dark:border-white/5">
-          {/* Volume Control */}
-          <div className="flex flex-col gap-1.5">
-            <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-              <Volume2 className="h-3.5 w-3.5" />
-              <span>Volume</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value={volume}
-              onChange={(e) => changeVolume(Number(e.target.value))}
-              className="accent-primary h-1 w-full cursor-pointer appearance-none rounded-lg bg-black/10 dark:bg-white/10"
+        {/* Volume and speed */}
+        <div className="border-separator grid grid-cols-2 gap-4 border-t pt-4">
+          <div className="flex flex-col gap-2">
+            <span className="text-footnote text-label-secondary flex items-center gap-2">
+              <Volume2 className="size-3.5" aria-hidden="true" />
+              Volume
+            </span>
+            <Slider
+              min={0}
+              max={1}
+              step={0.05}
+              value={[volume]}
+              onValueChange={(v) => changeVolume(v[0] ?? volume)}
+              aria-label="Volume"
             />
           </div>
 
-          {/* Speed Control */}
-          <div className="flex flex-col gap-1.5">
-            <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-              <Gauge className="h-3.5 w-3.5" />
-              <span>Speed</span>
-            </div>
-            <select
-              value={speed}
-              onChange={(e) => changeSpeed(Number(e.target.value))}
-              className="w-full rounded border border-black/10 bg-black/5 p-1 text-xs dark:border-white/10 dark:bg-white/5"
+          <div className="flex flex-col gap-2">
+            <span
+              id="media-player-speed"
+              className="text-footnote text-label-secondary flex items-center gap-2"
             >
-              <option value="0.5">0.5x</option>
-              <option value="0.75">0.75x</option>
-              <option value="1.0">1.0x (Normal)</option>
-              <option value="1.25">1.25x</option>
-              <option value="1.5">1.5x</option>
-              <option value="2.0">2.0x</option>
-            </select>
+              <Gauge className="size-3.5" aria-hidden="true" />
+              Speed
+            </span>
+            <Select value={String(speed)} onValueChange={(v) => changeSpeed(Number(v))}>
+              <SelectTrigger size="sm" aria-labelledby="media-player-speed" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0.5">0.5x</SelectItem>
+                <SelectItem value="0.75">0.75x</SelectItem>
+                <SelectItem value="1">1.0x (Normal)</SelectItem>
+                <SelectItem value="1.25">1.25x</SelectItem>
+                <SelectItem value="1.5">1.5x</SelectItem>
+                <SelectItem value="2">2.0x</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
         <ChapterNavigator />
         <TranscriptViewer />
 
-        {/* Queue Toggle Button */}
-        <div className="flex flex-col gap-3 border-t border-black/5 pt-4 dark:border-white/5">
-          <button
+        {/* Queue */}
+        <div className="border-separator flex flex-col gap-3 border-t pt-4">
+          <Button
+            variant="plain"
+            size="sm"
+            className="self-start"
             onClick={() => setShowQueue(!showQueue)}
-            className="text-muted-foreground hover:text-foreground flex items-center gap-2 self-start text-xs font-medium transition-colors"
           >
-            <ListMusic className="h-4 w-4" />
-            <span>{showQueue ? "Hide Queue" : "Show Queue"}</span>
-          </button>
+            <ListMusic aria-hidden="true" />
+            {showQueue ? "Hide Queue" : "Show Queue"}
+          </Button>
 
           {showQueue && <QueuePanel />}
         </div>
-      </FacetModal>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 }

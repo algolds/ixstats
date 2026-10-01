@@ -4,7 +4,6 @@ import React from "react";
 import { ClockRotateRight as History, ArrowUp, ArrowDown } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { FacetCard } from "~/components/ui/facet-container";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 
@@ -23,31 +22,29 @@ export interface VaultRecentActivityCardProps {
 
 export function VaultRecentActivityCard({ loading, activities }: VaultRecentActivityCardProps) {
   return (
+    // A ledger list: opaque (Facet 3.1 dense data), with v2's dot texture and tinted shadow.
     <FacetCard
-      depth={2}
-      className={cn(
-        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
-      )}
+      padding="lg"
+      glow="shadow"
+      texture="dots"
+      textureOpacity={0.03}
+      className="overflow-hidden"
     >
-      <TextureOverlay texture="dots" opacity={0.03} />
-
-      <div className="border-border/40 relative z-10 mb-4 flex items-center gap-2.5 border-b pb-4">
-        <div className="text-muted-foreground flex h-8 w-8 items-center justify-center rounded-xl border border-slate-500/30 bg-slate-500/15 shadow-sm backdrop-blur-md">
-          <History className="text-muted-foreground h-4.5 w-4.5" />
+      <div className="border-separator mb-4 flex items-center gap-2 border-b pb-4">
+        <div className="text-label-secondary rounded-row border-separator bg-fill-3 shadow-card flex h-8 w-8 items-center justify-center border">
+          <History aria-hidden className="text-label-secondary h-4.5 w-4.5" />
         </div>
-        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-          Recent Activity
-        </span>
+        <span className="text-label-secondary text-eyebrow">Recent activity</span>
       </div>
 
       {loading ? (
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="bg-muted/40 h-12 w-full rounded-2xl" />
+            <Skeleton key={i} className="bg-fill-3 rounded-card h-12 w-full" />
           ))}
         </div>
       ) : !activities || activities.length === 0 ? (
-        <p className="text-muted-foreground py-8 text-center text-xs italic">
+        <p className="text-label-secondary text-footnote py-8 text-center italic">
           No transactions recorded
         </p>
       ) : (
@@ -57,15 +54,17 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
             return (
               <div
                 key={activity.id}
-                className="border-border/40 bg-muted/30 hover:bg-muted/60 flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-3 text-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.985] dark:bg-white/5 dark:hover:bg-white/10"
+                // A ledger row, not a control: no hover wash or press (Facet 3.1 HIG).
+                className="border-separator bg-fill-4 rounded-card text-footnote flex items-center justify-between border px-4 py-3"
               >
                 <div className="flex items-center gap-3">
                   <div
+                    aria-hidden
                     className={cn(
-                      "flex h-7 w-7 items-center justify-center rounded-full border shadow-sm backdrop-blur-md",
+                      "shadow-card flex h-7 w-7 items-center justify-center rounded-full border",
                       isEarn
-                        ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                        : "border-red-500/30 bg-red-500/15 text-red-600 dark:text-red-400"
+                        ? "border-green/30 bg-green/15 text-green"
+                        : "border-red/30 bg-red/15 text-red"
                     )}
                   >
                     {isEarn ? (
@@ -75,24 +74,20 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
                     )}
                   </div>
                   <div>
-                    <p className="text-foreground font-bold tracking-tight">
-                      {activity.source.replace(/_/g, " ")}
-                    </p>
-                    <p className="text-muted-foreground mt-0.5 text-xs">
+                    <p className="text-label font-semibold">{activity.source.replace(/_/g, " ")}</p>
+                    <p className="text-label-secondary text-footnote mt-0.5">
                       {new Date(activity.createdAt).toLocaleString()}
                     </p>
                   </div>
                 </div>
                 <span
                   className={cn(
-                    "flex items-center gap-0.5 font-mono text-sm font-bold tracking-tight",
-                    isEarn
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-red-600 dark:text-red-400"
+                    "text-body font-data flex items-center gap-0.5 font-semibold tabular-nums",
+                    isEarn ? "text-green-ink" : "text-red-ink"
                   )}
                 >
                   {isEarn ? "+" : "-"}
-                  <IxCreditsSymbol className="h-3 w-3 shrink-0" />
+                  <IxCreditsSymbol aria-hidden className="h-3 w-3 shrink-0" />
                   {Math.abs(activity.amount).toLocaleString()}
                 </span>
               </div>

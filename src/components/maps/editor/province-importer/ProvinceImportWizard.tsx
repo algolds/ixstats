@@ -22,6 +22,7 @@ import { ValidationStep } from "./ValidationStep";
 import { CommitStep } from "./CommitStep";
 import { BorderConformanceModal } from "../BorderConformanceModal";
 import type { ImportStep } from "~/lib/maps/province-importer/types";
+import { StepIndicator } from "~/components/ui/step-indicator";
 
 interface ProvinceImportWizardProps {
   importer: ReturnType<typeof useProvinceImporter>;
@@ -55,10 +56,10 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
   }, [importer, onComplete]);
 
   return (
-    <div className="bg-card flex h-full flex-col">
+    <div className="bg-surface flex h-full flex-col">
       {/* Header */}
-      <div className="border-border flex items-center justify-between border-b px-4 py-3">
-        <h2 className="text-foreground text-sm font-semibold">
+      <div className="border-separator flex items-center justify-between border-b px-4 py-3">
+        <h2 className="text-label text-headline">
           {importer.importScope === "cities"
             ? "Import Cities"
             : importer.importScope === "provinces"
@@ -68,7 +69,7 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
         <Button
           variant="ghost"
           size="icon"
-          className="text-muted-foreground h-6 w-6"
+          className="text-label-secondary h-6 w-6"
           onClick={handleClose}
         >
           <X className="h-4 w-4" />
@@ -76,37 +77,26 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
       </div>
 
       {/* Step Indicator */}
-      <div className="border-border flex items-center gap-0.5 border-b px-3 py-2">
-        {STEP_CONFIG.map((s, i) => {
-          const Icon = s.icon;
-          const isActive = importer.step === s.key;
-          const isPast = importer.stepIndex > i;
-          return (
-            <React.Fragment key={s.key}>
-              {i > 0 && <div className={`h-px w-3 ${isPast ? "bg-primary" : "bg-border"}`} />}
-              <button
-                onClick={() => isPast && importer.goToStep(s.key)}
-                disabled={!isPast}
-                className={`flex items-center gap-1 rounded px-1.5 py-1 text-xs font-medium transition-colors ${
-                  isActive
-                    ? "bg-primary/10 text-primary"
-                    : isPast
-                      ? "text-primary/70 hover:bg-accent cursor-pointer"
-                      : "text-muted-foreground"
-                }`}
-              >
-                <Icon className="h-3 w-3" />
-                <span className="hidden sm:inline">{s.label}</span>
-              </button>
-            </React.Fragment>
-          );
-        })}
-      </div>
+      <StepIndicator
+        aria-label="Import steps"
+        className="border-separator border-b px-3 py-2"
+        steps={STEP_CONFIG.map((s) => ({
+          id: s.key,
+          label: s.label,
+          icon: <s.icon aria-hidden />,
+        }))}
+        current={importer.stepIndex}
+        onStepClick={(index) => {
+          const step = STEP_CONFIG[index];
+          if (step) importer.goToStep(step.key);
+        }}
+        compactOnPhones
+      />
 
       {/* Step Content */}
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {importer.error && (
-          <div className="bg-destructive/10 text-destructive mb-3 rounded-lg px-3 py-2 text-xs">
+          <div className="bg-destructive/10 text-destructive rounded-control text-footnote mb-3 px-3 py-2">
             {importer.error}
           </div>
         )}
@@ -120,11 +110,11 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
       </div>
 
       {/* Footer Navigation */}
-      <div className="border-border flex items-center justify-between border-t px-4 py-3">
+      <div className="border-separator flex items-center justify-between border-t px-4 py-3">
         <Button
           variant="ghost"
           size="sm"
-          className="text-muted-foreground"
+          className="text-label-secondary"
           onClick={importer.goBack}
           disabled={!importer.canGoBack || importer.isProcessing}
         >
@@ -132,7 +122,7 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
           Back
         </Button>
 
-        <div className="text-muted-foreground text-xs">
+        <div className="text-label-secondary text-footnote">
           {importer.importScope === "cities"
             ? `${importer.alignedCities.length} city/cities aligned`
             : `${importer.includedCount} province${importer.includedCount !== 1 ? "s" : ""} selected`}

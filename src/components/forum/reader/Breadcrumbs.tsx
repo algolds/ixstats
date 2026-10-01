@@ -21,16 +21,14 @@ export function ForumBreadcrumbs({ items }: ForumBreadcrumbsProps) {
   return (
     <nav className="forum-breadcrumbs" aria-label="Breadcrumb">
       {allItems.map((item, idx) => (
-        <span key={idx} className="flex items-center gap-1.5">
+        <span key={idx} className="flex items-center gap-2">
           {idx > 0 && <ChevronRight className="forum-breadcrumbs-separator h-3 w-3" />}
           {item.href && idx < allItems.length - 1 ? (
-            <Link href={withBasePath(item.href)} className="hover:text-[var(--forum-accent)]">
+            <Link href={withBasePath(item.href)} className="hover:text-tint">
               {item.label}
             </Link>
           ) : (
-            <span className={idx === allItems.length - 1 ? "text-[var(--forum-text)]" : ""}>
-              {item.label}
-            </span>
+            <span className={idx === allItems.length - 1 ? "text-label" : ""}>{item.label}</span>
           )}
         </span>
       ))}

@@ -4,6 +4,7 @@ import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   Select,
   SelectTrigger,
@@ -131,9 +132,17 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
   if (isSandbox) {
     const data = simulationResults
       ? [
-          { name: `${teamAName} Wins`, value: simulationResults.winsA, fill: "#3b82f6" },
-          { name: "Draws", value: simulationResults.draws, fill: "#64748b" },
-          { name: `${teamBName} Wins`, value: simulationResults.winsB, fill: "#f43f5e" },
+          {
+            name: `${teamAName} Wins`,
+            value: simulationResults.winsA,
+            fill: "var(--color-chart-1)",
+          },
+          { name: "Draws", value: simulationResults.draws, fill: "var(--color-gray)" },
+          {
+            name: `${teamBName} Wins`,
+            value: simulationResults.winsB,
+            fill: "var(--color-chart-8)",
+          },
         ]
       : [];
 
@@ -152,7 +161,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
 
         <div className="space-y-3">
           <div className="space-y-1">
-            <div className="flex justify-between text-xs">
+            <div className="text-footnote flex justify-between">
               <span>Home Overall: {teamAOverall}</span>
             </div>
             <Slider
@@ -165,7 +174,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
           </div>
 
           <div className="space-y-1">
-            <div className="flex justify-between text-xs">
+            <div className="text-footnote flex justify-between">
               <span>Away Overall: {teamBOverall}</span>
             </div>
             <Slider
@@ -178,7 +187,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
           </div>
 
           <div className="space-y-1">
-            <div className="flex justify-between text-xs">
+            <div className="text-footnote flex justify-between">
               <span>Home Advantage Weight: {homeAdvantage}</span>
             </div>
             <Slider
@@ -192,13 +201,11 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
         </div>
 
         {/* Spiritual Blessings & Storyteller Modifiers */}
-        <div className="border-border/40 grid grid-cols-2 gap-3 border-t pt-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-amber-500/80 uppercase">
-              Home Saint Blessing
-            </Label>
+        <div className="border-separator grid grid-cols-2 gap-3 border-t pt-3">
+          <div className="space-y-2">
+            <Label className="text-subhead text-yellow">Home Saint Blessing</Label>
             <Select value={homeSaint} onValueChange={setHomeSaint}>
-              <SelectTrigger className="bg-background/50 h-8 border-amber-500/20 text-xs">
+              <SelectTrigger size="sm">
                 <SelectValue placeholder="Select Saint" />
               </SelectTrigger>
               <SelectContent>
@@ -208,29 +215,25 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
                 <SelectItem value="Saint Magador">Saint Magador (+5 ELO)</SelectItem>
               </SelectContent>
             </Select>
-            <div className="mt-1 flex items-center gap-1.5">
-              <input
-                type="checkbox"
+            <div className="mt-1 flex items-center gap-2">
+              <Checkbox
                 id="homeScandal"
                 checked={homeScandal}
-                onChange={(e) => setHomeScandal(e.target.checked)}
-                className="border-border text-primary focus:ring-primary h-3.5 w-3.5 rounded"
+                onCheckedChange={(checked) => setHomeScandal(checked === true)}
               />
               <label
                 htmlFor="homeScandal"
-                className="text-muted-foreground cursor-pointer text-xs select-none"
+                className="text-label-secondary text-footnote cursor-pointer select-none"
               >
                 Country Scandal (-8 ELO)
               </label>
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-amber-500/80 uppercase">
-              Away Saint Blessing
-            </Label>
+          <div className="space-y-2">
+            <Label className="text-subhead text-yellow">Away Saint Blessing</Label>
             <Select value={awaySaint} onValueChange={setAwaySaint}>
-              <SelectTrigger className="bg-background/50 h-8 border-amber-500/20 text-xs">
+              <SelectTrigger size="sm">
                 <SelectValue placeholder="Select Saint" />
               </SelectTrigger>
               <SelectContent>
@@ -240,17 +243,15 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
                 <SelectItem value="Saint Magador">Saint Magador (+5 ELO)</SelectItem>
               </SelectContent>
             </Select>
-            <div className="mt-1 flex items-center gap-1.5">
-              <input
-                type="checkbox"
+            <div className="mt-1 flex items-center gap-2">
+              <Checkbox
                 id="awayScandal"
                 checked={awayScandal}
-                onChange={(e) => setAwayScandal(e.target.checked)}
-                className="border-border text-primary focus:ring-primary h-3.5 w-3.5 rounded"
+                onCheckedChange={(checked) => setAwayScandal(checked === true)}
               />
               <label
                 htmlFor="awayScandal"
-                className="text-muted-foreground cursor-pointer text-xs select-none"
+                className="text-label-secondary text-footnote cursor-pointer select-none"
               >
                 Country Scandal (-8 ELO)
               </label>
@@ -274,17 +275,15 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
 
         {singleResult && (
           <div className="space-y-3">
-            <div className="bg-muted/30 space-y-1 rounded-lg border p-3 text-center text-xs">
-              <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                Simulated Result
-              </p>
-              <div className="text-xl font-bold">
+            <div className="bg-fill-4 rounded-control text-footnote space-y-1 border p-3 text-center">
+              <p className="text-label-secondary text-eyebrow">Simulated Result</p>
+              <div className="text-title-2">
                 {teamAName} {singleResult.homeScore} - {singleResult.awayScore} {teamBName}
               </div>
               <Badge variant={singleResult.upset ? "destructive" : "secondary"} className="mt-1">
                 {singleResult.upset ? "Upset!" : "Expected Outcome"}
               </Badge>
-              <p className="text-muted-foreground mt-1 text-xs">
+              <p className="text-label-secondary text-footnote mt-1">
                 Home Strength: {singleResult.keyStats?.homeStrength} &middot; Away Strength:{" "}
                 {singleResult.keyStats?.awayStrength}
               </p>
@@ -293,28 +292,26 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
             {/* Match Events Ticker Trace */}
             {singleResult.trace && singleResult.trace.length > 0 && (
               <div className="space-y-2">
-                <h6 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                  Match Events Ticker
-                </h6>
-                <div className="thin-scrollbar bg-muted/10 max-h-[160px] space-y-1.5 overflow-y-auto rounded border p-2 pr-1 text-left font-mono text-xs">
+                <h6 className="text-label-secondary text-subhead">Match Events Ticker</h6>
+                <div className="thin-scrollbar bg-fill-4 rounded-control-sm text-footnote max-h-[160px] space-y-2 overflow-y-auto border p-2 pr-1 text-left font-mono">
                   {singleResult.trace.map((step: any, idx: number) => (
                     <div
                       key={idx}
-                      className="border-border/5 flex gap-1.5 border-b py-0.5 font-mono leading-relaxed last:border-0"
+                      className="border-separator flex gap-2 border-b py-0.5 font-mono leading-relaxed last:border-0"
                     >
-                      <span className="min-w-[28px] font-bold text-amber-500">{step.t}'</span>
+                      <span className="text-yellow min-w-[28px] font-semibold">{step.t}'</span>
                       <span
                         className={cn(
                           "flex-1",
                           step.type === "goal"
-                            ? "font-semibold text-emerald-400"
+                            ? "text-green font-semibold"
                             : step.type === "penalty" || step.type === "card"
-                              ? "text-red-400"
+                              ? "text-red"
                               : step.type === "fight"
-                                ? "font-semibold text-orange-400"
+                                ? "text-orange font-semibold"
                                 : step.type === "tactic_shift"
-                                  ? "text-cyan-400 italic"
-                                  : "text-muted-foreground"
+                                  ? "text-teal italic"
+                                  : "text-label-secondary"
                         )}
                       >
                         {step.description}
@@ -329,9 +326,9 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
 
         {simulationResults && (
           <div className="space-y-3">
-            <div className="bg-muted/40 rounded border p-3 text-xs">
-              <h5 className="mb-1 text-center font-bold">100x Simulation Stats</h5>
-              <div className="mt-2 grid grid-cols-2 gap-2 text-center font-mono text-xs">
+            <div className="bg-fill-3 rounded-control-sm text-footnote border p-3">
+              <h5 className="mb-1 text-center font-semibold">100x Simulation Stats</h5>
+              <div className="text-footnote mt-2 grid grid-cols-2 gap-2 text-center tabular-nums">
                 <div>
                   Avg Goals {teamAName}: {simulationResults.avgGoalsA}
                 </div>
@@ -345,12 +342,12 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
                 <BarChart data={data}>
                   <XAxis
                     dataKey="name"
-                    stroke="#888888"
+                    stroke="var(--color-label-secondary)"
                     fontSize={9}
                     tickLine={false}
                     axisLine={false}
                   />
-                  <Tooltip cursor={{ fill: "rgba(255,255,255,0.05)" }} />
+                  <Tooltip cursor={{ fill: "var(--color-fill-4)" }} />
                   <Bar dataKey="value" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -364,7 +361,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
   // DB Mode
   return (
     <div className="space-y-4">
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label>Select League</Label>
         <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
           <SelectTrigger>
@@ -381,7 +378,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
       </div>
 
       {dbLeague && dbLeague.seasons && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label>Select Season</Label>
           <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
             <SelectTrigger>
@@ -400,7 +397,7 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
 
       {dbSeason && dbSeason.matches && (
         <div className="space-y-3">
-          <h5 className="text-xs font-semibold">
+          <h5 className="text-caption">
             Completed Matches: {dbSeason.matches.filter((m) => m.status === "completed").length}
           </h5>
           <div className="thin-scrollbar max-h-[300px] space-y-2 overflow-y-auto pr-1">
@@ -408,16 +405,19 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
               .filter((m) => m.status === "completed")
               .slice(0, 10)
               .map((m) => (
-                <div key={m.id} className="bg-muted/10 space-y-1 rounded border p-2 text-xs">
+                <div
+                  key={m.id}
+                  className="bg-fill-4 rounded-control-sm text-footnote space-y-1 border p-2"
+                >
                   <div className="flex justify-between font-semibold">
                     <span>{m.homeTeam.name}</span>
-                    <span className="font-bold text-cyan-400">
+                    <span className="text-teal font-semibold">
                       {m.homeScore} - {m.awayScore}
                     </span>
                     <span>{m.awayTeam.name}</span>
                   </div>
                   {m.matchStats && (
-                    <p className="text-muted-foreground/80 text-center font-mono text-xs">
+                    <p className="text-label-secondary text-footnote text-center tabular-nums">
                       Resolved: {new Date(m.resolvedIxTime || 0).toLocaleDateString()}
                     </p>
                   )}

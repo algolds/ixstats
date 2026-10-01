@@ -18,6 +18,8 @@ import { Badge } from "~/components/ui/badge";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { formatDistanceToNow } from "date-fns";
 import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
 
 interface ActivityData {
   id: string;
@@ -54,32 +56,32 @@ interface ActivityFeedItemProps {
 const activityTypeConfig = {
   achievement: {
     icon: Trophy,
-    color: "text-amber-400",
-    bgColor: "bg-amber-500/10",
+    color: "text-yellow",
+    bgColor: "bg-yellow/10",
     label: "Achievement",
   },
   economic: {
     icon: TrendingUp,
-    color: "text-green-400",
-    bgColor: "bg-green-500/10",
+    color: "text-green",
+    bgColor: "bg-green/10",
     label: "Economic",
   },
   diplomatic: {
     icon: Globe,
-    color: "text-indigo-400",
-    bgColor: "bg-indigo-500/10",
+    color: "text-indigo",
+    bgColor: "bg-indigo/10",
     label: "Diplomatic",
   },
   social: {
     icon: MessageSquare,
-    color: "text-blue-400",
-    bgColor: "bg-blue-500/10",
+    color: "text-blue",
+    bgColor: "bg-blue/10",
     label: "Social",
   },
   meta: {
     icon: Activity,
-    color: "text-cyan-400",
-    bgColor: "bg-cyan-500/10",
+    color: "text-teal",
+    bgColor: "bg-teal/10",
     label: "Platform",
   },
 };
@@ -90,13 +92,11 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
   const IconComponent = config.icon;
 
   return (
-    <div className="facet-hierarchy-child group rounded-lg p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-[1.01] sm:p-6">
+    <FacetCard className="group p-4 sm:p-6">
       {/* Header */}
       <div className="mb-3 flex items-start gap-3 sm:mb-4 sm:gap-4">
         {/* Icon */}
-        <div
-          className={`rounded-full p-2 sm:p-3 ${config.bgColor} shrink-0 transition-transform group-hover:scale-110`}
-        >
+        <div className={`shrink-0 rounded-full p-2 sm:p-3 ${config.bgColor}`}>
           <IconComponent className={`h-4 w-4 sm:h-5 sm:w-5 ${config.color}`} />
         </div>
 
@@ -104,16 +104,14 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
         <div className="min-w-0 flex-1">
           {/* Title and Badge */}
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <h3 className="text-foreground text-sm font-semibold break-words sm:text-base">
-              {activity.content.title}
-            </h3>
-            <Badge variant="outline" className={`text-xs ${config.color}`}>
+            <h3 className="text-headline text-label break-words">{activity.content.title}</h3>
+            <Badge variant="outline" className={`text-footnote ${config.color}`}>
               {config.label}
             </Badge>
           </div>
 
           {/* User/Country Info */}
-          <div className="text-muted-foreground mb-2 flex flex-wrap items-center gap-1.5 text-xs sm:gap-2 sm:text-sm">
+          <div className="text-label-secondary text-footnote sm:text-body mb-2 flex flex-wrap items-center gap-2 sm:gap-2">
             {activity.user.countryName && (
               <>
                 <UnifiedCountryFlag
@@ -134,7 +132,7 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
               </>
             )}
             <Clock className="h-3 w-3 shrink-0" />
-            <span className="text-xs">
+            <span className="text-footnote">
               {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
             </span>
           </div>
@@ -146,7 +144,7 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
             <>
               {/* Description */}
               <p
-                className={`text-muted-foreground text-sm ${
+                className={`text-label-secondary text-body ${
                   !expanded && activity.content.description.length > 150 ? "line-clamp-2" : ""
                 }`}
               >
@@ -155,9 +153,12 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
 
               {/* Expand Button */}
               {activity.content.description.length > 150 && (
-                <button
+                <Button
+                  variant="plain"
+                  size="sm"
                   onClick={() => setExpanded(!expanded)}
-                  className="text-primary mt-2 flex items-center gap-1 text-xs font-medium hover:underline"
+                  className="mt-1 px-0"
+                  aria-expanded={expanded}
                 >
                   {expanded ? (
                     <>
@@ -168,22 +169,22 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
                       <ChevronDown className="h-3 w-3" /> Show more
                     </>
                   )}
-                </button>
+                </Button>
               )}
             </>
           )}
 
           {/* Metadata */}
           {expanded && activity.content.metadata && (
-            <div className="bg-muted/30 mt-3 rounded-lg p-3">
-              <div className="text-muted-foreground text-xs font-medium">Additional Details:</div>
+            <div className="bg-surface-secondary rounded-row mt-3 p-3">
+              <div className="text-label-secondary text-caption">Additional Details:</div>
               <div className="mt-2 space-y-1">
                 {Object.entries(activity.content.metadata).map(([key, value]) => (
-                  <div key={key} className="flex items-center gap-2 text-xs">
-                    <span className="text-muted-foreground capitalize">
+                  <div key={key} className="text-footnote flex items-center gap-2">
+                    <span className="text-label-secondary capitalize">
                       {key.replace(/([A-Z])/g, " $1").trim()}:
                     </span>
-                    <span className="text-foreground font-medium">{String(value)}</span>
+                    <span className="text-label font-medium">{String(value)}</span>
                   </div>
                 ))}
               </div>
@@ -193,21 +194,21 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
       </div>
 
       {/* Footer - Engagement Stats */}
-      <div className="border-border flex flex-wrap items-center justify-between gap-2 border-t pt-3 sm:pt-4">
+      <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-t pt-3 sm:pt-4">
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="text-muted-foreground flex items-center gap-1 text-xs sm:gap-1.5 sm:text-sm">
+          <div className="text-label-secondary text-footnote sm:text-body flex items-center gap-1 sm:gap-2">
             <Heart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span>{activity.engagement.likes}</span>
           </div>
-          <div className="text-muted-foreground flex items-center gap-1 text-xs sm:gap-1.5 sm:text-sm">
+          <div className="text-label-secondary text-footnote sm:text-body flex items-center gap-1 sm:gap-2">
             <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span>{activity.engagement.comments}</span>
           </div>
-          <div className="text-muted-foreground flex items-center gap-1 text-xs sm:gap-1.5 sm:text-sm">
+          <div className="text-label-secondary text-footnote sm:text-body flex items-center gap-1 sm:gap-2">
             <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span>{activity.engagement.shares}</span>
           </div>
-          <div className="text-muted-foreground hidden items-center gap-1.5 text-sm sm:flex">
+          <div className="text-label-secondary text-body hidden items-center gap-2 sm:flex">
             <Eye className="h-4 w-4" />
             <span>{activity.engagement.views}</span>
           </div>
@@ -215,11 +216,11 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
 
         {/* Priority Indicator */}
         {activity.priority === "high" || activity.priority === "critical" ? (
-          <Badge variant="destructive" className="text-xs">
+          <Badge variant="destructive" className="text-footnote">
             {activity.priority === "critical" ? "Critical" : "High Priority"}
           </Badge>
         ) : null}
       </div>
-    </div>
+    </FacetCard>
   );
 }

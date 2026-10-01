@@ -17,6 +17,8 @@ import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { DiffViewer } from "~/components/diff-viewer";
 import { withBasePath } from "~/lib/base-path";
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 export interface RevisionDiffViewProps {
   /** The older revision's reference; undefined means "the revision before `torev`". */
@@ -55,7 +57,7 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
         <div>
           <Link
             href={withBasePath(backHref)}
-            className="text-muted-foreground hover:text-wiki inline-flex items-center gap-1.5 text-xs font-medium transition-colors"
+            className="text-label-secondary hover:text-tint text-caption inline-flex items-center gap-2 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             {backLabel}
@@ -63,13 +65,13 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
         </div>
 
         {isLoading && (
-          <div className="border-border/40 bg-card/50 flex h-64 items-center justify-center rounded-2xl border">
-            <div className="border-wiki h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
+          <div className="border-separator bg-surface rounded-card flex h-64 items-center justify-center border">
+            <div className="border-tint h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
         )}
 
         {error && (
-          <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-xs text-red-400">
+          <div className="rounded-card border-red/30 bg-red/10 text-footnote text-red border p-6">
             Failed to load revision comparison: {error.message}
           </div>
         )}
@@ -77,67 +79,50 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
         {data && (
           <div className="space-y-4">
             {/* Diff Meta Card */}
-            <div className="border-border/40 bg-card/75 space-y-4 rounded-2xl border p-6 backdrop-blur-xl">
+            <div className="border-separator bg-surface rounded-card space-y-4 border p-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <span className="text-wiki text-xs font-semibold tracking-wider uppercase">
-                    Comparing Revisions
-                  </span>
-                  <h2 className="text-foreground mt-1 text-lg font-bold">
+                  <span className="text-tint text-eyebrow">Comparing Revisions</span>
+                  <h2 className="text-label text-title-3 mt-1">
                     r{data.from.revid} &rarr; r{data.to.revid}
                   </h2>
                 </div>
 
                 {/* Layout Switcher */}
                 <div className="flex items-center gap-2">
-                  <div className="border-border/40 bg-secondary/50 flex rounded-xl border p-0.5">
-                    <button
-                      type="button"
-                      onClick={() => setLayout("unified")}
-                      className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                        layout === "unified"
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <AlignLeft className="h-3.5 w-3.5" />
-                      Unified
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setLayout("split")}
-                      className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                        layout === "split"
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      <Columns2 className="h-3.5 w-3.5" />
-                      Split
-                    </button>
-                  </div>
+                  <SegmentedControl
+                    size="sm"
+                    aria-label="Diff layout"
+                    value={layout}
+                    onValueChange={setLayout}
+                    options={[
+                      { value: "unified", label: "Unified", icon: <AlignLeft /> },
+                      { value: "split", label: "Split", icon: <Columns2 /> },
+                    ]}
+                  />
 
                   {/* Undo Button (a parked revision was never the page's text: nothing to go back to) */}
                   {data.from.parked ? (
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-label-secondary text-caption">
                       r{data.from.revid} never went live, so it cannot be restored.
                     </span>
                   ) : !undoConfirm ? (
-                    <button
-                      type="button"
+                    <Button
+                      variant="tinted"
+                      size="sm"
                       onClick={() => {
                         revertMutation.reset();
                         setUndoConfirm(true);
                       }}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-[0.98]"
+                      className="bg-yellow/10 text-yellow hover:bg-yellow/20"
                     >
                       <Undo className="h-3.5 w-3.5" />
                       Revert to r{data.from.revid}
-                    </button>
+                    </Button>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
+                      <Button
+                        size="sm"
                         disabled={revertMutation.isPending || !revContent}
                         onClick={() => {
                           if (revContent) {
@@ -148,20 +133,20 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
                             });
                           }
                         }}
-                        className="rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-semibold text-black hover:bg-amber-400 active:scale-[0.98]"
+                        className="bg-yellow hover:bg-yellow/80 text-black"
                       >
                         {revertMutation.isPending ? "Reverting…" : "Confirm Revert"}
-                      </button>
-                      <button
-                        type="button"
+                      </Button>
+                      <Button
+                        variant="gray"
+                        size="sm"
                         onClick={() => {
                           revertMutation.reset();
                           setUndoConfirm(false);
                         }}
-                        className="border-border/50 bg-secondary text-foreground hover:bg-secondary/80 rounded-xl border px-3 py-1.5 text-xs font-medium"
                       >
                         Cancel
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -171,14 +156,14 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
               {revertMutation.error && (
                 <div
                   role="alert"
-                  className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400"
+                  className="rounded-row border-red/30 bg-red/10 text-caption text-red flex items-center gap-2 border px-3 py-2"
                 >
                   <WarningTriangle className="h-4 w-4 shrink-0" />
                   {revertMutation.error.message}
                 </div>
               )}
               {revertMutation.isSuccess && (
-                <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-400">
+                <div className="rounded-row border-green/30 bg-green/10 text-caption text-green flex items-center gap-2 border px-3 py-2">
                   <Check className="h-4 w-4" />
                   Successfully reverted to revision r{data.from.revid}.
                 </div>
@@ -186,7 +171,7 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
             </div>
 
             {/* DiffViewer Component */}
-            <div className="border-border/40 bg-card/60 overflow-hidden rounded-2xl border p-4">
+            <div className="border-separator bg-surface rounded-card overflow-hidden border p-4">
               <DiffViewer
                 hunks={data.hunks}
                 trailingSkipped={data.trailingSkipped}
@@ -204,7 +189,7 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
         )}
 
         {!isLoading && !data && !torev && (
-          <div className="border-border/50 bg-card/30 text-muted-foreground rounded-2xl border border-dashed p-12 text-center text-xs">
+          <div className="border-separator bg-surface text-label-secondary rounded-card text-footnote border border-dashed p-12 text-center">
             No revisions selected for comparison. Specify <code>?to=REV</code> or{" "}
             <code>?from=REV&to=REV</code> in the URL.
           </div>

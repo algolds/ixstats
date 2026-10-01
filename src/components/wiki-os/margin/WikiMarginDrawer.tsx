@@ -9,8 +9,6 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   ChatBubble as MessageSquare,
   DesignPencil as Highlighter,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  Bookmark,
   Xmark as X,
   Expand as Maximize2,
   Collapse as Minimize2,
@@ -19,7 +17,9 @@ import {
   HelpCircle,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { springSmooth, tweenExit, tweenFast } from "~/lib/design/motion";
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { api } from "~/trpc/react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 
@@ -116,17 +116,17 @@ export function WikiMarginDrawer({
 
   // Keyboard shortcut listener: Escape to close
   useEffect(() => {
-    if (!isOpen) return;
+    // The help dialog handles its own Escape.
+    if (!isOpen || helpOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        soundEffects.release();
         onClose();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, helpOpen, onClose]);
 
   // Touch swipe-to-dismiss gesture tracking
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -143,7 +143,6 @@ export function WikiMarginDrawer({
       const velocity = deltaX / Math.max(deltaTime, 1);
 
       if (deltaX > 80 || velocity > 0.11) {
-        soundEffects.release();
         onClose();
       }
     }
@@ -178,136 +177,115 @@ export function WikiMarginDrawer({
         {isOpen && (
           <motion.div
             key="wikios-margin-backdrop"
+            aria-hidden="true"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            transition={tweenFast}
             onClick={onClose}
-            className="fixed inset-0 top-14 z-30 bg-black/35 backdrop-blur-xs lg:hidden"
+            className="z-chrome fixed inset-x-0 top-14 bottom-(--shell-tabbar-height) bg-black/25 lg:hidden"
           />
         )}
         {isOpen && (
           <motion.aside
             key="wikios-margin-drawer"
-            initial={{ transform: "translateX(100%)" }}
-            animate={{ transform: "translateX(0%)" }}
-            exit={{ transform: "translateX(100%)" }}
-            transition={{
-              type: "spring",
-              damping: 32,
-              stiffness: 380,
-              mass: 0.7,
-            }}
+            aria-label="Margin"
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%", transition: tweenExit }}
+            transition={springSmooth}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
             className={cn(
-              "fixed top-14 right-0 bottom-0 z-35 flex flex-col border-l border-[var(--wikios-border)] shadow-2xl backdrop-blur-2xl transition-[width] duration-300",
-              "bg-[var(--wikios-surface)]/80 text-[var(--wikios-text)]",
+              // Floating side inspector (non-modal: the article stays interactive), so chrome
+              // material rather than a modal Sheet.
+              "material-regular z-chrome border-separator text-label shadow-floating fixed top-14 right-0 bottom-(--shell-tabbar-height) flex flex-col border-l",
               isExpandedFull ? "w-full sm:w-[440px]" : "w-full sm:w-80"
             )}
           >
-            {/* Header Lockup (Matches Left Sidebar Profile / Nav Header Parity) */}
-            <div className="flex shrink-0 items-center justify-between border-b border-[var(--wikios-border)] bg-[var(--wikios-surface)]/80 p-3 backdrop-blur-xl">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <div className="wikios-sidebar-icon-box bg-margin-accent flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-yellow-400/60 font-bold text-stone-950 shadow-[0_0_14px_rgba(254,240,54,0.45)]">
-                  <Highlighter className="h-4 w-4" />
+            {/* Header */}
+            <div className="border-separator flex shrink-0 items-center justify-between gap-2 border-b p-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <div className="bg-margin-accent rounded-row flex size-9 shrink-0 items-center justify-center text-(--margin-badge-text)">
+                  <Highlighter className="size-4" aria-hidden="true" />
                 </div>
                 <div className="flex min-w-0 flex-col">
-                  <span className="text-xs font-bold tracking-tight text-[var(--wikios-text)]">
-                    Margin
-                  </span>
-                  <span className="max-w-[160px] truncate text-xs text-[var(--wikios-text-dim)]">
+                  <span className="text-headline text-label">Margin</span>
+                  <span className="text-footnote text-label-secondary max-w-[160px] truncate">
                     {articleTitle.replace(/_/g, " ")}
                   </span>
                 </div>
               </div>
 
-              {/* Compact Window Actions */}
+              {/* Window actions */}
               <div className="flex items-center gap-1">
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => setHelpOpen(true)}
-                  className="hover:bg-margin-accent/15 flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-[var(--wikios-border)] bg-white/5 text-[var(--wikios-text-dim)] shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-yellow-400/50 hover:text-[var(--wikios-text)] active:scale-95"
                   title="Margin Guide & Shortcuts"
+                  aria-label="Margin Guide & Shortcuts"
+                  className="text-label-secondary"
                 >
-                  <HelpCircle className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  type="button"
+                  <HelpCircle aria-hidden="true" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => {
                     const next = !isExpandedFull;
                     setIsExpandedFull(next);
                     onExpandedChange?.(next);
                   }}
-                  className="hidden h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-[var(--wikios-border)] bg-white/5 text-[var(--wikios-text-dim)] shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-95 sm:flex"
                   title={isExpandedFull ? "Standard (320px)" : "Wider (440px)"}
+                  aria-label={isExpandedFull ? "Standard width" : "Wider"}
+                  className="text-label-secondary hidden sm:inline-flex"
                 >
                   {isExpandedFull ? (
-                    <Minimize2 className="h-3 w-3" />
+                    <Minimize2 aria-hidden="true" />
                   ) : (
-                    <Maximize2 className="h-3 w-3" />
+                    <Maximize2 aria-hidden="true" />
                   )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    soundEffects.release();
-                    onClose();
-                  }}
-                  className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-[var(--wikios-border)] bg-white/5 text-[var(--wikios-text-dim)] shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-400 active:scale-95"
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={onClose}
                   title="Close (Esc)"
+                  aria-label="Close Margin"
+                  className="text-label-secondary"
                 >
-                  <X className="h-3.5 w-3.5" />
-                </button>
+                  <X aria-hidden="true" />
+                </Button>
               </div>
             </div>
 
-            {/* Segmented Highlighter Tab Rail Switcher */}
-            <div className="shrink-0 border-b border-[var(--wikios-border)] bg-[var(--wikios-card-bg)]/30 px-3 pt-2.5 pb-2 backdrop-blur-md">
-              <div className="relative grid grid-cols-2 gap-1 rounded-xl border border-[var(--wikios-border)] bg-white/5 p-1 shadow-xs">
-                {tabs.map((tab) => {
+            {/* Tabs */}
+            <div className="border-separator shrink-0 border-b px-3 py-2">
+              <SegmentedControl
+                aria-label="Margin sections"
+                fullWidth
+                size="sm"
+                value={activeTab}
+                onValueChange={setActiveTab}
+                options={tabs.map((tab) => {
                   const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => {
-                        soundEffects.press();
-                        setActiveTab(tab.id);
-                      }}
-                      className={cn(
-                        "relative flex cursor-pointer items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
-                        isActive
-                          ? "font-bold text-[var(--wikios-text)] shadow-xs"
-                          : "text-[var(--wikios-text-muted)] hover:text-[var(--wikios-text)]"
-                      )}
-                    >
-                      {isActive && (
-                        <motion.div
-                          layoutId="margin-compact-tab-pill"
-                          transition={{ type: "spring", stiffness: 450, damping: 32 }}
-                          className="absolute inset-0 rounded-lg border border-yellow-400/50 bg-[var(--wikios-surface)] shadow-xs"
-                        />
-                      )}
-                      <Icon
-                        className={cn(
-                          "relative z-10 h-3.5 w-3.5 transition-colors",
-                          isActive
-                            ? "dark:text-margin-accent text-yellow-600"
-                            : "text-[var(--wikios-text-dim)]"
+                  return {
+                    value: tab.id,
+                    icon: <Icon aria-hidden="true" />,
+                    label: (
+                      <span className="flex items-center gap-1">
+                        {tab.label}
+                        {tab.badge !== undefined && (
+                          <span className="bg-margin-accent text-caption rounded-full px-2 leading-4 text-(--margin-badge-text) tabular-nums">
+                            {tab.badge}
+                          </span>
                         )}
-                      />
-                      <span className="relative z-10">{tab.label}</span>
-                      {tab.badge !== undefined && (
-                        <span className="py-0.2 bg-margin-accent relative z-10 ml-0.5 rounded-full px-1.5 text-xs leading-none font-black text-stone-950 shadow-xs">
-                          {tab.badge}
-                        </span>
-                      )}
-                    </button>
-                  );
+                      </span>
+                    ),
+                  };
                 })}
-              </div>
+              />
             </div>
 
             {/* Scrollable Content Canvas */}
@@ -355,34 +333,30 @@ export function WikiMarginDrawer({
               )}
             </div>
 
-            {/* Sleek Footbar Wayfinding & Quick Tools (Parity with Left Sidebar Nav Tools) */}
-            <div className="flex shrink-0 items-center justify-between border-t border-[var(--wikios-border)] bg-[var(--wikios-surface)]/80 px-3 py-2 text-xs text-[var(--wikios-text-dim)] backdrop-blur-xl select-none">
-              <span className="max-w-[130px] truncate font-medium">
+            {/* Footer: quick tools */}
+            <div className="border-separator flex shrink-0 items-center justify-between gap-2 border-t px-3 py-2 select-none">
+              <span className="text-footnote text-label-secondary max-w-[130px] truncate">
                 {articleTitle.replace(/_/g, " ")}
               </span>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveModal("history");
-                  }}
-                  className="hover:bg-margin-accent/15 flex cursor-pointer items-center gap-1 rounded-lg border border-[var(--wikios-border)] bg-white/5 px-2 py-0.5 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-yellow-400/50 hover:text-[var(--wikios-text)] active:scale-95"
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setActiveModal("history")}
                   title="Revision History"
                 >
-                  <Clock className="dark:text-margin-accent h-3 w-3 text-yellow-600" />
-                  <span>History</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveModal("backlinks");
-                  }}
-                  className="flex cursor-pointer items-center gap-1 rounded-lg border border-[var(--wikios-border)] bg-white/5 px-2 py-0.5 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-300 active:scale-95"
+                  <Clock aria-hidden="true" />
+                  History
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setActiveModal("backlinks")}
                   title="What Links Here"
                 >
-                  <Link2 className="h-3 w-3 text-cyan-400" />
-                  <span>Backlinks</span>
-                </button>
+                  <Link2 aria-hidden="true" />
+                  Backlinks
+                </Button>
               </div>
             </div>
           </motion.aside>

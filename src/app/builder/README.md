@@ -77,3 +77,5 @@ All routers are registered in `src/server/api/root.ts`.
 - Update `docs/systems/builder.md` and `src/content/help/getting-started/*` after changing steps or data contracts.
 - Keep section definitions in `lib/builder-theme.ts` in sync with router/sidebar UI.
 - Ensure new fields persist to Prisma and surface in MyCountry; include backfill logic for required fields.
+- Keep the heading outline: one h1 per page (`FoundationHero`, the Archetype sub-step's title, the visually hidden h1 in `BuilderStudioHeader` / `FoundationPathSelector` / `ImportSection`, or `EditorHeader` in edit mode); step content starts at h2 and never skips a level (Facet spec §16.8, pinned by `src/tests/architecture/facet-hig-leftovers.test.ts`).
+- Image actions revealed on hover must stay usable on touch screens: add `IMAGE_SCRIM_TOUCH_CLUSTER` / `IMAGE_SCRIM_TOUCH_ACTION` or `IMAGE_SCRIM_TOUCH_BAND` from `lib/image-scrim.ts`, and keep each action a labelled button with a 44pt target.

@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { ImportWizard } from "~/components/cards/ns-import";
 import { NationStatesAttribution } from "~/components/cards/display/NationStatesAttribution";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
+import { Button } from "~/components/ui/button";
 
 export default function NSImportPage() {
   const router = useRouter();
@@ -32,41 +33,41 @@ export default function NSImportPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900/20 via-purple-900/20 to-indigo-900/20 p-6">
+    <div className="min-h-screen p-6">
       <div className="mx-auto max-w-4xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="mb-2 text-4xl font-bold text-white">NationStates Deck Import</h1>
-          <p className="text-white/70">
+          <h1 className="text-large-title text-label mb-2">NationStates Deck Import</h1>
+          <p className="text-label-secondary">
             Import your NationStates trading card collection into IxCards
           </p>
         </div>
 
         {!showWizard ? (
-          <div className="glass-parent space-y-6 p-8">
+          <div className="border-separator bg-surface rounded-row space-y-6 border p-8">
             <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-white">How It Works</h2>
+              <h2 className="text-title-1 text-label">How It Works</h2>
 
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <div className="bg-gold-400 flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-bold text-gray-900">
+                  <div className="bg-tint-fill text-tint flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold">
                     1
                   </div>
                   <div>
-                    <div className="font-semibold text-white">Verify Nation Ownership</div>
-                    <div className="text-sm text-white/60">
+                    <div className="text-label font-semibold">Verify Nation Ownership</div>
+                    <div className="text-body text-label-secondary">
                       Prove you own your NationStates nation with a quick verification process
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="bg-gold-400 flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-bold text-gray-900">
+                  <div className="bg-tint-fill text-tint flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold">
                     2
                   </div>
                   <div>
-                    <div className="font-semibold text-white">Preview Your Deck</div>
-                    <div className="text-sm text-white/60">
+                    <div className="text-label font-semibold">Preview Your Deck</div>
+                    <div className="text-body text-label-secondary">
                       See your collection before importing - including total cards, rarity
                       distribution, and deck value
                     </div>
@@ -74,24 +75,24 @@ export default function NSImportPage() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="bg-gold-400 flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-bold text-gray-900">
+                  <div className="bg-tint-fill text-tint flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold">
                     3
                   </div>
                   <div>
-                    <div className="font-semibold text-white">Import Your Cards</div>
-                    <div className="text-sm text-white/60">
+                    <div className="text-label font-semibold">Import Your Cards</div>
+                    <div className="text-body text-label-secondary">
                       Automatically import your entire deck with duplicate handling options
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="bg-gold-400 flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-bold text-gray-900">
+                  <div className="bg-tint-fill text-tint flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold">
                     4
                   </div>
                   <div>
-                    <div className="font-semibold text-white">Earn Bonus Credits</div>
-                    <div className="text-sm text-white/60">
+                    <div className="text-label font-semibold">Earn Bonus Credits</div>
+                    <div className="text-body text-label-secondary">
                       Get 10 IxCredits per card imported (max 500{" "}
                       <IxCreditsSymbol className="inline h-3.5 w-3.5 align-middle" /> bonus)
                     </div>
@@ -100,10 +101,10 @@ export default function NSImportPage() {
               </div>
             </div>
 
-            <div className="glass-child rounded-lg border border-blue-400/20 bg-blue-500/10 p-4">
+            <div className="rounded-control border-blue/20 bg-blue/10 border p-4">
               <div className="flex items-start gap-3">
                 <svg
-                  className="mt-0.5 h-5 w-5 shrink-0 text-blue-400"
+                  className="text-blue mt-0.5 h-5 w-5 shrink-0"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -113,28 +114,26 @@ export default function NSImportPage() {
                     clipRule="evenodd"
                   />
                 </svg>
-                <div className="text-sm text-white/80">
-                  <strong className="text-white">Note:</strong> You must own a NationStates nation
+                <div className="text-body text-label">
+                  <strong className="text-label">Note:</strong> You must own a NationStates nation
                   and have cards in your deck to import. The verification process ensures you own
                   the nation you're importing from.
                 </div>
               </div>
             </div>
 
-            <button
-              onClick={() => setShowWizard(true)}
-              className="facet-interactive w-full rounded-lg px-6 py-4 text-lg font-semibold text-white transition-colors hover:bg-white/20"
-            >
+            <Button size="lg" onClick={() => setShowWizard(true)} className="w-full">
               Start Import Wizard
-            </button>
+            </Button>
 
             <div className="text-center">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => router.push("/vault")}
-                className="text-sm text-white/60 transition-colors hover:text-white"
+                className="text-label-secondary"
               >
                 Back to MyVault
-              </button>
+              </Button>
             </div>
 
             <NationStatesAttribution className="text-center" />

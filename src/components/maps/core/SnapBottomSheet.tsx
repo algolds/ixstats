@@ -290,7 +290,7 @@ export function SnapBottomSheet({
         ref={sheetRef}
         role="region"
         aria-label="Details"
-        className="bg-card ring-border/50 absolute inset-x-0 bottom-0 flex flex-col rounded-t-2xl shadow-2xl ring-1"
+        className="bg-surface ring-separator rounded-t-card shadow-floating absolute inset-x-0 bottom-0 flex flex-col ring-1"
         style={{
           pointerEvents: "auto",
           height: `${sheetHeight}px`,
@@ -305,10 +305,10 @@ export function SnapBottomSheet({
           onClick={handleHandleClick}
           aria-expanded={expanded}
           aria-label={snap === "full" ? "Collapse details" : "Show more details"}
-          className="focus-visible:ring-ring flex w-full shrink-0 cursor-grab touch-none flex-col items-center justify-center rounded-t-2xl focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset active:cursor-grabbing"
+          className="focus-visible:ring-tint rounded-t-card flex w-full shrink-0 cursor-grab touch-none flex-col items-center justify-center focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset active:cursor-grabbing"
           style={{ minHeight: `${DRAG_HANDLE_HEIGHT}px` }}
         >
-          <span className="bg-muted-foreground/30 h-1 w-10 rounded-full" />
+          <span className="bg-fill-2 h-1 w-10 rounded-full" />
         </button>
 
         {/* Peek content — always visible */}
@@ -317,7 +317,7 @@ export function SnapBottomSheet({
             {peekContent}
             {/* Hint text */}
             <div
-              className="text-muted-foreground mt-1 flex items-center justify-center gap-1 text-xs transition-opacity duration-200"
+              className="text-label-secondary text-footnote mt-1 flex items-center justify-center gap-1 transition-opacity duration-200"
               style={{ opacity: hintVisible && snap === "peek" ? 0.7 : 0 }}
               aria-hidden
             >

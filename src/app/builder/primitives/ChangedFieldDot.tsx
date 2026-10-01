@@ -38,7 +38,7 @@ export function ChangedFieldDot({ name, value }: ChangedFieldDotProps) {
   if (!name || !isFieldChanged(index, name, value)) return null;
   return (
     <span className="inline-flex shrink-0 items-center" title="Changed">
-      <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+      <span aria-hidden="true" className="bg-tint h-1.5 w-1.5 rounded-full" />
       <span className="sr-only">(changed)</span>
     </span>
   );

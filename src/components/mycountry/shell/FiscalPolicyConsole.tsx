@@ -133,19 +133,19 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
   return (
     <div className="space-y-4">
       {/* ── Section 1: Tax rate controls (opaque: it also renders inside the drill sheet) ── */}
-      <FacetCard surface="solid" className="rounded-2xl">
+      <FacetCard className="rounded-card">
         <FacetCardHeader className="flex-row flex-wrap items-center justify-between gap-3 p-4 pb-3">
           <div className="flex items-center gap-2">
-            <Percent aria-hidden="true" className="text-muted-foreground h-4 w-4 shrink-0" />
-            <h3 className="text-foreground text-sm font-semibold">National Tax Rate Controls</h3>
+            <Percent aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
+            <h3 className="text-label text-headline">National Tax Rate Controls</h3>
           </div>
           <div className="text-right">
             <Eyebrow className="block">Total revenue</Eyebrow>
-            <p className="text-foreground font-mono text-base font-semibold tabular-nums">
+            <p className="text-label text-title-3 tabular-nums">
               {yields.total != null ? (
                 <>
                   <CurrencyFlow value={yields.total} />
-                  <span className="text-muted-foreground ml-1 text-xs font-medium">/ yr</span>
+                  <span className="text-label-secondary text-caption ml-1">/ yr</span>
                 </>
               ) : (
                 "—"
@@ -156,7 +156,7 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
 
         <FacetCardContent className="space-y-3 px-4 pb-4">
           {taxEfficiency == null && yields.total != null && (
-            <p className="text-muted-foreground text-xs">
+            <p className="text-label-secondary text-footnote">
               No collection efficiency is recorded, so revenue is shown before collection losses.
             </p>
           )}

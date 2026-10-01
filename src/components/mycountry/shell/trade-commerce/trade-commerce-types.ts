@@ -15,15 +15,15 @@ export interface CustomSector {
 }
 
 export const ACCENT_BG: Record<AccentColor, string> = {
-  emerald: "bg-emerald-500",
-  cyan: "bg-cyan-500",
-  amber: "bg-amber-500",
-  indigo: "bg-indigo-500",
-  red: "bg-red-500",
-  blue: "bg-blue-500",
-  purple: "bg-indigo-500",
-  rose: "bg-red-500",
-  teal: "bg-cyan-500",
+  emerald: "bg-green",
+  cyan: "bg-cyan",
+  amber: "bg-yellow",
+  indigo: "bg-indigo",
+  red: "bg-red",
+  blue: "bg-blue",
+  purple: "bg-indigo",
+  rose: "bg-red",
+  teal: "bg-cyan",
 };
 
 import { formatCompact } from "~/lib/format/compact";

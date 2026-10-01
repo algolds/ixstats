@@ -36,12 +36,12 @@ src/
 ### Root Layout Providers (`src/app/layout.tsx`)
 1. **`ClerkProvider`**: Authentication context. Required — the root layout throws at render if the Clerk keys are not configured.
 2. **`TRPCReactProvider`**: Client-side query client and cache manager wrapping tRPC hooks (`src/trpc/react.tsx`).
-3. **`ThemeProvider`** (`src/context/theme-context.tsx`): Theme context (light / dark / system), wrapped in a `MotionConfig reducedMotion="user"`.
+3. **`ThemeProvider`** (`src/context/theme-context.tsx`): Theme and preference context (light / dark / system — default system; density, contrast, transparency, motion, text size), wrapped in a `MotionConfig reducedMotion="user"`. The same attributes are applied pre-paint by the inline script in the root layout (see [Tokens](#tokens-facet-3)).
 4. **`AbilityProvider` → `IxTimeProvider` → `ExecutiveNotificationProvider` → `WikiContextProvider` → `LazyGameProviders`**: Permissions, IxTime clock, executive notifications, wiki context, and lazily loaded gameplay providers.
 5. **`CuelumeSoundProvider`**: Bootstraps the **Cuelume** audio-tactile engine, delegates declarative `data-cuelume-*` listeners globally to the `document`, and plays subtle route transition cues (`soundEffects.arrival()`).
 6. **`<Navigation />`** (`src/app/_components/navigation.tsx`): Global navigation bar, which hosts the Halo `CommandPalette` (`src/components/halo/`).
 
-> See **[Facet Design System & Interaction Bible](../reference/facet-design-system.md)** for complete specifications on volumetric Z-depth, compounding blur hierarchy, physical materials, 100% Radix primitive standards, Cuelume audio matrices, and Apple/Emil Kowalski motion physics.
+> See the **[Facet 3 reference](../reference/facet-design-system.md)** for colour roles and app tints, text styles, radii, materials, z-index, motion, the primitives (FacetCard, FacetList, controls, Sheet, dialogs), sound, appearance and accessibility preferences, and the guard tests.
 
 ---
 
@@ -138,6 +138,31 @@ The platform UI is built on **Facet** — a tactile, refraction-based design lan
 - **`FacetCard`** (`src/components/ui/facet-container.tsx`): Container with depth levels (`depth={1..4}`), subtle refraction borders, and optional flag ambient glow.
 - **`FacetTabs`** (`src/components/ui/facet/tabs/FacetTabs.tsx`): Spring-physics tab bar with sliding sheen indicator (`tone: "neutral" | "accent" | "mycountry" | "forum" | "sdi"`).
 - **`BaseMetricDetailsModal`** (`src/components/mycountry/shared/modals/metric-details/BaseMetricDetailsModal.tsx`): Universal 4-tab drilldown modal (Overview, Trends, Comparison, Details).
+
+### Tokens (Facet 3)
+
+All design tokens live in one file, **`src/styles/facet/tokens.css`** (imported first by `globals.css`), mirrored in
+TypeScript by `src/lib/design/tokens.ts` (values) and `src/lib/design/motion.ts` (springs). Every token is a CSS
+variable and a Tailwind utility — see the [Facet 3 specification](../specs/2026-09-30-facet-3-design-system.md):
+
+- **Colour roles** — `text-label`, `text-label-secondary|tertiary|quaternary`, `bg-background`, `bg-grouped`,
+  `bg-surface`, `bg-surface-secondary|elevated`, `bg-fill` … `bg-fill-4`, `border-separator(-opaque)`; system colours
+  `red`…`pink` with `on-*` pairs; status aliases `destructive|warning|caution|success|info`; `chart-1…8`. The shadcn
+  names (`foreground`, `muted-foreground`, `card`, `border`, `primary`…) are aliases of these roles.
+- **App tint** — `bg-tint`, `text-tint`, `text-on-tint`, `bg-tint-fill`, `bg-tint-hover`; `primary` and `ring` alias
+  the tint. Each app root sets `data-app="mycountry|maps|thinkpages|vault|forum|wiki|intel|sports|admin"`.
+- **Type** — `text-display`, `text-large-title`, `text-title-1|2|3`, `text-headline`, `text-body`, `text-callout`,
+  `text-subhead`, `text-footnote`, `text-caption` (rem × `--text-scale`).
+- **Shape, depth, motion** — `rounded-sheet|card|row|control-lg|control|control-sm`; `material-thin|regular|thick`
+  (floating chrome only); `shadow-card|floating|sheet`; `z-base` … `z-command`; `duration-fast`, `duration-exit`,
+  `ease-out-facet`.
+- **Appearance & accessibility** — one selector, `html[data-theme="light"|"dark"]`, plus `data-density`,
+  `data-contrast="more"`, `data-transparency="reduced"`, `data-motion="reduced"`, `data-sound="off"` and
+  `--text-scale` on `<html>`. A blocking, nonce-carrying inline script in `src/app/layout.tsx` writes them before
+  first paint (`src/lib/design/appearance.ts`, shared with `ThemeProvider`). The `motion-reduce:`, `contrast-more:`,
+  `transparency-reduced:` and `compact:` variants honour both the media query and the attribute.
+- **Guard** — `src/tests/architecture/token-contrast.test.ts` checks the CSS against the TS values and computes WCAG
+  contrast for every required pair.
 
 ### Styling Best Practices:
 1. **Tailwind CSS v4**: Configured via CSS `@theme` tokens. Avoid legacy Tailwind v3 JavaScript configs.

@@ -18,13 +18,13 @@ import {
 import { Slider } from "~/components/ui/slider";
 import { Checkbox } from "~/components/ui/checkbox";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
   Settings,
@@ -74,12 +74,12 @@ export function EquipmentFormDialog({
   ];
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Equipment" : "Add Equipment"}</DialogTitle>
-          <DialogDescription>Configure military equipment catalog entry</DialogDescription>
-        </DialogHeader>
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent size="wide" className="flex flex-col overflow-hidden">
+        <SheetHeader>
+          <SheetTitle>{isEditing ? "Edit Equipment" : "Add Equipment"}</SheetTitle>
+          <SheetDescription>Configure military equipment catalog entry</SheetDescription>
+        </SheetHeader>
 
         {/* Tab Navigation */}
         <Tabs
@@ -87,7 +87,7 @@ export function EquipmentFormDialog({
           onValueChange={setActiveTab}
           className="flex flex-1 flex-col overflow-hidden"
         >
-          <TabsList className="flex shrink-0 gap-2 overflow-x-auto border-b border-white/10 pb-2">
+          <TabsList className="border-separator flex shrink-0 gap-2 overflow-x-auto border-b pb-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -125,20 +125,20 @@ export function EquipmentFormDialog({
         </Tabs>
 
         {/* Footer Actions */}
-        <DialogFooter className="shrink-0 border-t border-white/10 pt-4">
+        <SheetFooter className="border-separator shrink-0 border-t pt-4">
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button
+            variant="destructive"
             onClick={onSave}
             disabled={!formData.name || !formData.key || isPending}
-            className="bg-red-500/20 text-red-500 hover:bg-red-500/30"
           >
             {isPending ? "Saving..." : isEditing ? "Update Equipment" : "Create Equipment"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -157,7 +157,7 @@ function GeneralTab({
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-foreground mb-2 block text-sm font-medium">
+        <label className="text-label text-body mb-2 block font-medium">
           Equipment Key * {isEditing && "(Cannot be changed)"}
         </label>
         <Input
@@ -166,13 +166,13 @@ function GeneralTab({
           placeholder="e.g., F35_LIGHTNING_II"
           disabled={isEditing}
         />
-        <p className="text-muted-foreground mt-1 text-xs">
+        <p className="text-label-secondary text-footnote mt-1">
           Unique identifier (uppercase, underscores)
         </p>
       </div>
 
       <div>
-        <label className="text-foreground mb-2 block text-sm font-medium">Name *</label>
+        <label className="text-label text-body mb-2 block font-medium">Name *</label>
         <Input
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -181,7 +181,7 @@ function GeneralTab({
       </div>
 
       <div>
-        <label className="text-foreground mb-2 block text-sm font-medium">Manufacturer *</label>
+        <label className="text-label text-body mb-2 block font-medium">Manufacturer *</label>
         <Select
           value={formData.manufacturer}
           onValueChange={(value) => setFormData({ ...formData, manufacturer: value })}
@@ -201,7 +201,7 @@ function GeneralTab({
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">Category *</label>
+          <label className="text-label text-body mb-2 block font-medium">Category *</label>
           <Select
             value={formData.category}
             onValueChange={(value) =>
@@ -224,7 +224,7 @@ function GeneralTab({
         </div>
 
         <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">Subcategory</label>
+          <label className="text-label text-body mb-2 block font-medium">Subcategory</label>
           <Select
             value={formData.subcategory}
             onValueChange={(value) => setFormData({ ...formData, subcategory: value })}
@@ -244,7 +244,7 @@ function GeneralTab({
       </div>
 
       <div>
-        <label className="text-foreground mb-2 block text-sm font-medium">Era *</label>
+        <label className="text-label text-body mb-2 block font-medium">Era *</label>
         <Select
           value={formData.era}
           onValueChange={(value) => setFormData({ ...formData, era: value })}
@@ -268,7 +268,7 @@ function GeneralTab({
           checked={formData.isActive}
           onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked as boolean })}
         />
-        <label htmlFor="isActive" className="text-foreground cursor-pointer text-sm">
+        <label htmlFor="isActive" className="text-label text-body cursor-pointer">
           Active (visible in procurement system)
         </label>
       </div>
@@ -298,17 +298,15 @@ function SpecificationsTab({
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-foreground mb-2 block text-sm font-medium">
-          Specifications (JSON)
-        </label>
+        <label className="text-label text-body mb-2 block font-medium">Specifications (JSON)</label>
         <Textarea
           value={specJson}
           onChange={(e) => handleSpecChange(e.target.value)}
           placeholder='{"crew": 1, "speed": "Mach 1.6", "range": "2200 km", "ceiling": "50000 ft", ...}'
           rows={15}
-          className="font-mono text-xs"
+          className="md:text-footnote font-mono"
         />
-        <p className="text-muted-foreground mt-1 text-xs">
+        <p className="text-label-secondary text-footnote mt-1">
           Example fields: crew, speed, range, ceiling, armor, armament, weight, length, wingspan,
           etc.
         </p>
@@ -339,17 +337,15 @@ function CapabilitiesTab({
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-foreground mb-2 block text-sm font-medium">
-          Capabilities (JSON)
-        </label>
+        <label className="text-label text-body mb-2 block font-medium">Capabilities (JSON)</label>
         <Textarea
           value={capJson}
           onChange={(e) => handleCapChange(e.target.value)}
           placeholder='{"role": ["multirole fighter"], "strengths": ["stealth", "advanced avionics"], "weaknesses": ["high cost"], ...}'
           rows={15}
-          className="font-mono text-xs"
+          className="md:text-footnote font-mono"
         />
-        <p className="text-muted-foreground mt-1 text-xs">
+        <p className="text-label-secondary text-footnote mt-1">
           Example fields: role, strengths, weaknesses, special_features, combat_radius, payload,
           etc.
         </p>
@@ -368,7 +364,7 @@ function CostsTab({
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-foreground mb-2 block text-sm font-medium">
+        <label className="text-label text-body mb-2 block font-medium">
           Acquisition Cost ($) *
         </label>
         <Input
@@ -380,13 +376,13 @@ function CostsTab({
           min={0}
           step={100000}
         />
-        <p className="text-muted-foreground mt-1 text-xs">
+        <p className="text-label-secondary text-footnote mt-1">
           Current: ${(formData.acquisitionCost / 1000000).toFixed(2)}M
         </p>
       </div>
 
       <div>
-        <label className="text-foreground mb-2 block text-sm font-medium">
+        <label className="text-label text-body mb-2 block font-medium">
           Maintenance Cost ($/year) *
         </label>
         <Input
@@ -398,13 +394,13 @@ function CostsTab({
           min={0}
           step={10000}
         />
-        <p className="text-muted-foreground mt-1 text-xs">
+        <p className="text-label-secondary text-footnote mt-1">
           Current: ${(formData.maintenanceCost / 1000).toFixed(0)}K/year
         </p>
       </div>
 
       <div>
-        <label className="text-foreground mb-2 block text-sm font-medium">
+        <label className="text-label text-body mb-2 block font-medium">
           Technology Level: {formData.technologyLevel}
         </label>
         <Slider
@@ -414,13 +410,13 @@ function CostsTab({
           max={100}
           step={1}
         />
-        <p className="text-muted-foreground mt-1 text-xs">
+        <p className="text-label-secondary text-footnote mt-1">
           Range: 60 (basic) to 100 (cutting edge)
         </p>
       </div>
 
       <div>
-        <label className="text-foreground mb-2 block text-sm font-medium">Crew Requirement *</label>
+        <label className="text-label text-body mb-2 block font-medium">Crew Requirement *</label>
         <Input
           type="number"
           value={formData.crewRequirement}
@@ -432,7 +428,7 @@ function CostsTab({
       </div>
 
       <div>
-        <label className="text-foreground mb-2 block text-sm font-medium">
+        <label className="text-label text-body mb-2 block font-medium">
           Annual Maintenance Hours
         </label>
         <Input
@@ -458,7 +454,7 @@ function MediaTab({
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-foreground mb-2 block text-sm font-medium">Image URL</label>
+        <label className="text-label text-body mb-2 block font-medium">Image URL</label>
         <Input
           value={formData.imageUrl}
           onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
@@ -468,7 +464,7 @@ function MediaTab({
           <img
             src={formData.imageUrl}
             alt="Preview"
-            className="mt-2 h-32 w-32 rounded-lg border border-white/10 object-cover"
+            className="rounded-control border-separator mt-2 h-32 w-32 border object-cover"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = "none";
             }}
@@ -477,7 +473,7 @@ function MediaTab({
       </div>
 
       <div>
-        <label className="text-foreground mb-2 block text-sm font-medium">Description</label>
+        <label className="text-label text-body mb-2 block font-medium">Description</label>
         <Textarea
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -487,7 +483,7 @@ function MediaTab({
       </div>
 
       <div>
-        <label className="text-foreground mb-2 block text-sm font-medium">Historical Context</label>
+        <label className="text-label text-body mb-2 block font-medium">Historical Context</label>
         <Textarea
           value={formData.historicalContext}
           onChange={(e) => setFormData({ ...formData, historicalContext: e.target.value })}

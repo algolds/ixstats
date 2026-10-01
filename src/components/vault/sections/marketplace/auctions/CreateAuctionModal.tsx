@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 export interface CreateAuctionModalProps {
   open: boolean;
@@ -100,92 +101,90 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
   };
 
   const rarityColor: Record<string, string> = {
-    LEGENDARY: "text-amber-600 dark:text-amber-400",
-    EPIC: "text-purple-600 dark:text-purple-400",
-    RARE: "text-blue-600 dark:text-blue-400",
-    UNCOMMON: "text-green-600 dark:text-green-400",
-    COMMON: "text-slate-500 dark:text-slate-400",
+    LEGENDARY: "text-yellow",
+    EPIC: "text-purple",
+    RARE: "text-blue",
+    UNCOMMON: "text-green",
+    COMMON: "text-label-secondary",
   };
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-md backdrop-blur-md">
+      <DialogContent className="border-separator bg-surface-elevated text-label max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-sm font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-500">
-            Create Auction Listing
-          </DialogTitle>
+          <DialogTitle>Create Auction Listing</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Step 1: Select Card */}
           <div>
-            <label className="text-muted-foreground mb-1.5 block text-xs font-semibold tracking-wider uppercase">
+            <label className="text-label-secondary text-eyebrow mb-2 block">
               Select Card to Sell
             </label>
             {inventoryLoading ? (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-10 rounded-lg bg-white/5" />
+                  <Skeleton key={i} className="rounded-control bg-fill-4 h-10" />
                 ))}
               </div>
             ) : cards.length === 0 ? (
-              <p className="text-muted-foreground py-3 text-center text-xs">
+              <p className="text-label-secondary text-footnote py-3 text-center">
                 No cards in inventory
               </p>
             ) : (
-              <div className="border-border/50 max-h-48 space-y-1 overflow-y-auto rounded-lg border bg-black/5 p-1.5 dark:border-white/10 dark:bg-black/40">
+              <div className="border-separator rounded-control bg-surface-secondary max-h-48 space-y-1 overflow-y-auto border p-2">
                 {cards.length > 0 ? (
-                  cards.map((card: any) => (
-                    <button
-                      key={card.id}
-                      onClick={() => setSelectedCardId(card.id)}
-                      className={cn(
-                        "flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                        selectedCardId === card.id
-                          ? "bg-amber-500/10 ring-1 ring-amber-500/35 dark:bg-amber-500/20 dark:ring-amber-400/50"
-                          : "hover:bg-black/5 dark:hover:bg-white/5"
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="bg-muted border-border/50 relative h-8 w-8 shrink-0 overflow-hidden rounded border dark:border-white/5">
-                          <CardHolographicCover
-                            cardType={card.cardType}
-                            rarity={card.rarity}
-                            title={card.title}
-                          />
-                          {card.artwork && (
-                            <img
-                              src={proxyCardArtwork(card.artwork)}
-                              alt={card.title}
-                              className="absolute inset-0 h-full w-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = "none";
-                              }}
+                  <FacetListSection variant="plain" aria-label="Cards in inventory">
+                    {cards.map((card: any) => (
+                      <FacetRow
+                        key={card.id}
+                        onClick={() => setSelectedCardId(card.id)}
+                        selected={selectedCardId === card.id}
+                        selectionStyle="tint"
+                        itemClassName="rounded-control-sm overflow-hidden"
+                        leading={
+                          <span className="bg-fill-3 border-separator relative block h-8 w-8 shrink-0 overflow-hidden rounded border">
+                            <CardHolographicCover
+                              cardType={card.cardType}
+                              rarity={card.rarity}
+                              title={card.title}
                             />
-                          )}
-                        </div>
-                        <div>
-                          <span className="text-xs font-semibold text-slate-900 dark:text-white/90">
-                            {card.title}
-                          </span>
-                          <span
-                            className={cn(
-                              "ml-2 text-xs font-bold uppercase",
-                              rarityColor[card.rarity] || "text-slate-400"
+                            {card.artwork && (
+                              <img
+                                src={proxyCardArtwork(card.artwork)}
+                                alt={card.title}
+                                className="absolute inset-0 h-full w-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = "none";
+                                }}
+                              />
                             )}
-                          >
-                            {card.rarity}
                           </span>
-                        </div>
-                      </div>
-                      <span className="flex items-center gap-0.5 font-mono text-xs text-amber-600 dark:text-amber-400">
-                        <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
-                        {(card.marketValue || 0).toLocaleString()}
-                      </span>
-                    </button>
-                  ))
+                        }
+                        title={
+                          <span className="text-footnote font-semibold">
+                            {card.title}
+                            <span
+                              className={cn(
+                                "text-eyebrow ml-2",
+                                rarityColor[card.rarity] || "text-label-secondary"
+                              )}
+                            >
+                              {card.rarity}
+                            </span>
+                          </span>
+                        }
+                        trailing={
+                          <span className="text-footnote text-yellow flex items-center gap-0.5 tabular-nums">
+                            <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
+                            {(card.marketValue || 0).toLocaleString()}
+                          </span>
+                        }
+                      />
+                    ))}
+                  </FacetListSection>
                 ) : (
-                  <div className="py-6 text-center text-xs text-slate-400">
+                  <div className="text-footnote text-label-secondary py-6 text-center">
                     No available cards — all your cards are either already listed or locked in
                     trades
                   </div>
@@ -199,7 +198,7 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
             <>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-muted-foreground mb-1 flex items-center gap-1 text-xs font-bold tracking-wider uppercase">
+                  <label className="text-label-secondary text-eyebrow mb-1 flex items-center gap-1">
                     Starting Bid (<IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />)
                   </label>
                   <Input
@@ -208,11 +207,11 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
                     value={startingPrice}
                     onChange={(e) => setStartingPrice(e.target.value)}
                     placeholder="100"
-                    className="border-input text-foreground h-8 bg-black/5 font-mono text-xs dark:bg-black/20"
+                    className="border-separator text-label bg-surface-secondary text-footnote h-8 tabular-nums"
                   />
                 </div>
                 <div>
-                  <label className="text-muted-foreground mb-1 block text-xs font-bold tracking-wider uppercase">
+                  <label className="text-label-secondary text-eyebrow mb-1 block">
                     Buyout Price (optional)
                   </label>
                   <Input
@@ -221,27 +220,27 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
                     value={buyoutPrice}
                     onChange={(e) => setBuyoutPrice(e.target.value)}
                     placeholder="None"
-                    className="border-input text-foreground h-8 bg-black/5 font-mono text-xs dark:bg-black/20"
+                    className="border-separator text-label bg-surface-secondary text-footnote h-8 tabular-nums"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-muted-foreground mb-1 block text-xs font-bold tracking-wider uppercase">
+                <label className="text-label-secondary text-eyebrow mb-1 block">
                   Listing Duration
                 </label>
                 <Select value={duration} onValueChange={(v) => setDuration(v as "30" | "60")}>
-                  <SelectTrigger className="border-input text-foreground h-8 w-full bg-black/5 text-xs dark:bg-black/20">
+                  <SelectTrigger className="border-separator text-label bg-surface-secondary text-footnote h-8 w-full">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-popover border-border text-foreground">
+                  <SelectContent className="bg-surface-elevated border-separator text-label">
                     <SelectItem value="30">30 minutes (Express)</SelectItem>
                     <SelectItem value="60">60 minutes (Standard)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <p className="text-muted-foreground text-xs leading-tight">
+              <p className="text-label-secondary text-footnote leading-tight">
                 Listing fee: 5 IxCredits • Market fee: 10% on sales over 100 IxCredits
               </p>
             </>
@@ -249,19 +248,13 @@ export function CreateAuctionModal({ open, onClose }: CreateAuctionModalProps) {
         </div>
 
         <DialogFooter className="mt-4 flex gap-2 sm:gap-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleClose}
-            className="border-input text-foreground hover:bg-accent bg-transparent text-xs"
-          >
+          <Button variant="outline" size="sm" onClick={handleClose} className="bg-transparent">
             Cancel
           </Button>
           <Button
             size="sm"
             onClick={handleSubmit}
             disabled={!selectedCardId || !startingPrice || createAuction.isPending}
-            className="border-none bg-gradient-to-r from-amber-600 to-yellow-600 text-xs font-bold text-white"
           >
             {createAuction.isPending ? "Creating..." : "Create Listing"}
           </Button>

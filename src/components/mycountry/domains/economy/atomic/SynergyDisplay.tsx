@@ -31,8 +31,6 @@ export const SynergyDisplay = React.memo(function SynergyDisplay({
   conflicts,
   components,
 }: SynergyDisplayProps) {
-  if (components.length === 0) return null;
-
   const synergyItems: SynergyItem[] = useMemo(() => {
     return synergies.map((s) => ({
       comp1Name: formatComponentName(s.component1),
@@ -52,6 +50,8 @@ export const SynergyDisplay = React.memo(function SynergyDisplay({
       type: "conflict" as const,
     }));
   }, [conflicts]);
+
+  if (components.length === 0) return null;
 
   return <SharedSynergyDisplay synergies={synergyItems} conflicts={conflictItems} />;
 });

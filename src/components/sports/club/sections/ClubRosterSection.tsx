@@ -3,7 +3,9 @@
 import React, { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Card, CardContent } from "~/components/ui/card";
+import { FacetCard } from "~/components/ui/facet-container";
+import { EmptyState } from "~/components/ui/empty-state";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { PlayerCard } from "~/components/sports/PlayerCard";
 import { PlayerTrainingButton } from "~/components/sports/club/PlayerTrainingButton";
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
@@ -12,21 +14,24 @@ import type { PlayerRatings } from "~/lib/sports/types";
 import { cn } from "~/lib/utils";
 
 const CAREER_STAGE_STYLES: Record<string, { label: string; className: string }> = {
-  rookie: { label: "Rookie", className: "border-blue-500/30 bg-blue-500/10 text-blue-400" },
+  rookie: { label: "Rookie", className: "border-blue/30 bg-blue/10 text-blue" },
   developing: {
     label: "Developing",
-    className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+    className: "border-green/30 bg-green/10 text-green",
   },
-  prime: { label: "Prime", className: "border-amber-500/30 bg-amber-500/10 text-amber-400" },
+  prime: { label: "Prime", className: "border-yellow/30 bg-yellow/10 text-yellow" },
   plateau: {
     label: "Plateau",
-    className: "border-slate-500/30 bg-slate-500/10 text-slate-400",
+    className: "border-separator bg-fill-3 text-label-secondary",
   },
   declining: {
     label: "Declining",
-    className: "border-red-500/30 bg-red-500/10 text-red-400",
+    className: "border-red/30 bg-red/10 text-red",
   },
-  retired: { label: "Retired", className: "border-muted-foreground/30 bg-muted text-muted-foreground" },
+  retired: {
+    label: "Retired",
+    className: "border-muted-foreground/30 bg-fill-3 text-label-secondary",
+  },
 };
 
 export interface RosterPlayerItem {
@@ -82,49 +87,31 @@ export function ClubRosterSection({
     <div className="space-y-8">
       {/* Active Roster */}
       <div>
-        <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/20 pb-4">
+        <div className="border-separator mb-4 flex flex-col justify-between gap-3 border-b pb-4 sm:flex-row sm:items-center">
           <div>
-            <h3 className="text-foreground text-lg font-bold">Active Roster</h3>
-            <p className="text-muted-foreground text-xs font-semibold">
+            <h3 className="text-label text-title-3">Active Roster</h3>
+            <p className="text-label-secondary text-footnote tabular-nums">
               {players.length} Athletes Registered
             </p>
           </div>
 
           {/* View Mode Toggle */}
-          <div className="flex items-center rounded-xl border border-border/40 bg-muted/20 p-0.5 text-xs font-bold">
-            <button
-              type="button"
-              onClick={() => setViewMode("table")}
-              className={cn(
-                "px-3 py-1 rounded-lg transition cursor-pointer",
-                viewMode === "table"
-                  ? "bg-card text-foreground shadow-xs font-black"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Squad Table
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("cards")}
-              className={cn(
-                "px-3 py-1 rounded-lg transition cursor-pointer",
-                viewMode === "cards"
-                  ? "bg-card text-foreground shadow-xs font-black"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Card Grid
-            </button>
-          </div>
+          <SegmentedControl
+            size="sm"
+            aria-label="Roster view"
+            value={viewMode}
+            onValueChange={setViewMode}
+            options={[
+              { value: "table", label: "Squad Table" },
+              { value: "cards", label: "Card Grid" },
+            ]}
+          />
         </div>
 
         {players.length === 0 ? (
-          <Card className="facet-hierarchy-child rounded-2xl border border-border/40 p-8 text-center backdrop-blur-md">
-            <CardContent className="py-6">
-              <p className="text-muted-foreground text-xs font-semibold">No athletes currently on the active roster.</p>
-            </CardContent>
-          </Card>
+          <FacetCard>
+            <EmptyState compact title="No athletes currently on the active roster." />
+          </FacetCard>
         ) : viewMode === "table" ? (
           <SquadRosterTable
             players={players}
@@ -137,21 +124,22 @@ export function ClubRosterSection({
               const ratings = (player.ratings as Record<string, number> | undefined) ?? {};
               return (
                 <div key={player.id} className="flex flex-col items-center gap-3">
-                  <div
+                  <button
+                    type="button"
                     onClick={() => focusAthlete(player.id)}
-                    className="cursor-pointer transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                    aria-label={`Open ${player.firstName} ${player.lastName}`}
+                    className="focus-visible:outline-tint rounded-card duration-fast ease-out-facet cursor-pointer transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 active:scale-[0.98]"
                   >
                     <PlayerCard
                       player={player as Parameters<typeof PlayerCard>[0]["player"]}
                       team={{ name: team.name, color: teamColor, logo: team.logo }}
                     />
-                  </div>
+                  </button>
                   <div className="relative z-10 flex w-[320px] gap-2 px-2">
                     <Button
                       size="sm"
-                      variant="outline"
-                      data-cuelume-press="subtle"
-                      className="border-border/50 bg-card/60 text-foreground hover:bg-muted/40 h-8 flex-1 text-xs font-semibold rounded-xl active:scale-[0.98] cursor-pointer"
+                      variant="gray"
+                      className="flex-1"
                       onClick={() => onListPlayer(player)}
                     >
                       Manage Listing
@@ -176,32 +164,30 @@ export function ClubRosterSection({
         )}
       </div>
 
-
       {/* Coaching Staff */}
       {coaches.length > 0 && (
-        <div className="border-border/30 border-t pt-6">
-          <h3 className="text-foreground mb-4 text-base font-bold">Coaching Staff</h3>
+        <div className="border-separator border-t pt-6">
+          <h3 className="text-label text-headline mb-4">Coaching Staff</h3>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {coaches.map((coach) => {
-              const stageStyle = CAREER_STAGE_STYLES[coach.careerStage] ?? CAREER_STAGE_STYLES.prime;
+              const stageStyle =
+                CAREER_STAGE_STYLES[coach.careerStage] ?? CAREER_STAGE_STYLES.prime;
               return (
-                <Card key={coach.id} className="facet-hierarchy-child bg-card/45 border-border/40 rounded-2xl backdrop-blur-md">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="text-foreground text-sm font-bold">
-                          {coach.firstName} {coach.lastName}
-                        </h4>
-                        <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider">
-                          {coach.role} • Age {coach.age}
-                        </p>
-                      </div>
-                      <Badge variant="outline" className={stageStyle?.className}>
-                        {stageStyle?.label ?? coach.careerStage}
-                      </Badge>
+                <FacetCard key={coach.id} padding="md">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-label text-headline">
+                        {coach.firstName} {coach.lastName}
+                      </h4>
+                      <p className="text-label-secondary text-footnote">
+                        {coach.role} • Age {coach.age}
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
+                    <Badge variant="outline" className={stageStyle?.className}>
+                      {stageStyle?.label ?? coach.careerStage}
+                    </Badge>
+                  </div>
+                </FacetCard>
               );
             })}
           </div>

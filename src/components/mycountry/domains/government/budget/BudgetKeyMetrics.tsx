@@ -50,17 +50,15 @@ export function BudgetKeyMetrics({
   ];
 
   return (
-    <FacetCard depth={1} surface="solid">
-      <dl className="divide-border/60 grid grid-cols-2 divide-y lg:grid-cols-4 lg:divide-x lg:divide-y-0">
+    <FacetCard>
+      <dl className="divide-separator grid grid-cols-2 divide-y lg:grid-cols-4 lg:divide-x lg:divide-y-0">
         {metrics.map((m) => (
           <div key={m.label} className="min-w-0 p-4">
             <dt>
               <Eyebrow>{m.label}</Eyebrow>
             </dt>
-            <dd className="text-foreground mt-1 truncate font-mono text-xl font-semibold tracking-tight tabular-nums">
-              {m.value}
-            </dd>
-            <dd className="text-muted-foreground mt-1 truncate font-mono text-xs tabular-nums">
+            <dd className="text-label text-title-2 mt-1 truncate tabular-nums">{m.value}</dd>
+            <dd className="text-label-secondary text-footnote mt-1 truncate tabular-nums">
               {m.sub}
             </dd>
           </div>

@@ -5,14 +5,15 @@ import { Trophy } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Stat } from "~/components/ui/stat";
 import { Skeleton } from "~/components/ui/skeleton";
 
 /** Club legacy: titles, all-time record and season-by-season finishes (plan 321 Step 4). */
 export function ClubHistorySection({ teamId }: { teamId: string }) {
   const { data: history, isLoading } = api.sports.getTeamHistory.useQuery({ teamId });
 
-  if (isLoading) return <Skeleton className="mx-auto h-64 max-w-3xl rounded-2xl" />;
+  if (isLoading) return <Skeleton className="rounded-card mx-auto h-64 max-w-3xl" />;
 
   const seasons = history ?? [];
   const titles = seasons.filter((s) => s.isChampion).length;
@@ -35,37 +36,36 @@ export function ClubHistorySection({ teamId }: { teamId: string }) {
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="grid grid-cols-3 gap-3">
         {summary.map((item) => (
-          <Card key={item.label} className="gap-1 rounded-2xl py-4 text-center">
-            <Eyebrow className="block">{item.label}</Eyebrow>
-            <p className="text-foreground text-2xl font-black tabular-nums">{item.value}</p>
-          </Card>
+          <FacetCard key={item.label} padding="md">
+            <Stat label={item.label} value={item.value} />
+          </FacetCard>
         ))}
       </div>
 
-      <Card className="rounded-2xl">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-foreground text-sm font-bold">Season by Season</CardTitle>
+          <CardTitle>Season by Season</CardTitle>
         </CardHeader>
-        <CardContent className="divide-border/20 divide-y">
+        <CardContent className="divide-separator divide-y">
           {seasons.length === 0 ? (
-            <p className="text-muted-foreground py-4 text-center text-xs font-semibold">
+            <p className="text-label-secondary text-footnote py-4 text-center">
               No season records yet.
             </p>
           ) : (
             seasons.map((season) => (
               <div
                 key={season.seasonId}
-                className="flex items-center justify-between py-2.5 text-xs first:pt-0 last:pb-0"
+                className="flex items-center justify-between py-3 first:pt-0 last:pb-0"
               >
                 <div>
-                  <p className="text-foreground font-bold">Season {season.seasonNumber}</p>
-                  <p className="text-muted-foreground font-semibold tabular-nums">
+                  <p className="text-headline text-label">Season {season.seasonNumber}</p>
+                  <p className="text-footnote text-label-secondary tabular-nums">
                     {season.wins}W · {season.draws}D · {season.losses}L · {season.points} pts
                   </p>
                 </div>
                 {season.isChampion && (
-                  <Badge variant="outline" className="text-xs font-bold">
-                    <Trophy className="mr-1 h-3.5 w-3.5" /> Champion
+                  <Badge variant="caution">
+                    <Trophy /> Champion
                   </Badge>
                 )}
               </div>

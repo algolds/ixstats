@@ -2,11 +2,7 @@
 
 import React from "react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import {
-  WarningTriangle,
-  InfoCircle,
-  WarningCircle as AlertCircle,
-} from "iconoir-react";
+import { WarningTriangle, InfoCircle, WarningCircle as AlertCircle } from "iconoir-react";
 import type { BuilderAlert } from "../lib/builder-alerts";
 import { cn } from "~/lib/utils";
 
@@ -19,7 +15,7 @@ export function SectionAlerts({ alerts, className }: SectionAlertsProps) {
   if (!alerts || alerts.length === 0) return null;
 
   return (
-    <div className={cn("space-y-2.5", className)}>
+    <div className={cn("space-y-2", className)}>
       {alerts.map((alert, idx) => {
         const isError = alert.severity === "error";
         const isWarning = alert.severity === "warning";
@@ -29,23 +25,16 @@ export function SectionAlerts({ alerts, className }: SectionAlertsProps) {
             key={`${alert.section}-${alert.field ?? idx}-${alert.message}`}
             variant={isError ? "destructive" : "default"}
             className={cn(
-              "border py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
+              "border py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
               isError && "border-destructive/30 bg-destructive/5 text-destructive",
-              isWarning &&
-                "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:border-amber-500/20 dark:bg-amber-500/5 dark:text-amber-400",
-              !isError &&
-                !isWarning &&
-                "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:border-blue-500/20 dark:bg-blue-500/5 dark:text-blue-400"
+              isWarning && "border-caution/30 bg-caution/10 text-caution",
+              !isError && !isWarning && "border-blue/30 bg-blue/10 text-blue"
             )}
           >
-            {isError && <WarningTriangle className="h-4 w-4 shrink-0 text-destructive" />}
-            {isWarning && (
-              <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-            )}
-            {!isError && !isWarning && (
-              <InfoCircle className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
-            )}
-            <AlertDescription className="text-xs leading-relaxed font-medium">
+            {isError && <WarningTriangle className="text-destructive h-4 w-4 shrink-0" />}
+            {isWarning && <AlertCircle className="text-caution h-4 w-4 shrink-0" />}
+            {!isError && !isWarning && <InfoCircle className="text-blue h-4 w-4 shrink-0" />}
+            <AlertDescription className="text-caption leading-relaxed">
               {alert.message}
             </AlertDescription>
           </Alert>

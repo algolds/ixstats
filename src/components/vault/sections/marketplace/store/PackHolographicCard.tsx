@@ -38,31 +38,31 @@ export const getPackConfig = (packType: string) => {
   const type = packType.toUpperCase();
   if (type.includes("LEGENDARY") || type.includes("MYTHIC"))
     return {
-      color: "text-purple-600 dark:text-purple-400",
-      borderColor: "border-purple-500/30",
+      color: "text-purple",
+      borderColor: "border-purple/30",
       glowColor: "rgba(168,85,247,0.3)",
       icon: Star,
       label: "Elite",
     };
   if (type.includes("PREMIUM") || type.includes("GOLD"))
     return {
-      color: "text-amber-600 dark:text-amber-400",
-      borderColor: "border-amber-500/30",
+      color: "text-yellow",
+      borderColor: "border-yellow/30",
       glowColor: "rgba(245,158,11,0.3)",
       icon: Sparkles,
       label: "Premium",
     };
   if (type.includes("EVENT") || type.includes("LIMITED"))
     return {
-      color: "text-red-600 dark:text-red-400",
-      borderColor: "border-red-500/30",
+      color: "text-red",
+      borderColor: "border-red/30",
       glowColor: "rgba(239,68,68,0.3)",
       icon: Sparkles,
       label: "Event",
     };
   return {
-    color: "text-cyan-600 dark:text-cyan-400",
-    borderColor: "border-cyan-500/30",
+    color: "text-teal",
+    borderColor: "border-teal/30",
     glowColor: "rgba(6,182,212,0.3)",
     icon: Gift,
     label: "Special",
@@ -116,7 +116,7 @@ export function PackHolographicCard({
         onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className="border-border/50 relative w-44 rounded-2xl border bg-black/5 p-2 shadow-2xl backdrop-blur-md transition-shadow hover:shadow-[0_15px_30px_var(--glow)] dark:border-white/10 dark:bg-black/40"
+        className="border-separator bg-surface rounded-card shadow-card duration-fast hover:shadow-floating relative w-44 border p-2 transition-shadow"
         style={{
           transformStyle: "preserve-3d",
           rotateX,
@@ -132,54 +132,52 @@ export function PackHolographicCard({
             onClick={(e) => {
               e.stopPropagation();
             }}
-            className="absolute top-3 right-3 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white/80 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/40 hover:bg-black/85 hover:text-white active:scale-95"
+            className="absolute top-3 right-3 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white/80 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/85 active:scale-95"
             title="View Pack Details"
           >
             <Info className="h-3.5 w-3.5" />
           </DialogTrigger>
-          <DialogContent className="border-border/50 bg-popover/98 text-foreground max-w-sm p-5 backdrop-blur-md">
+          <DialogContent className="max-w-sm p-5">
             <DialogHeader>
-              <DialogTitle className="text-sm font-semibold tracking-wider text-cyan-600 uppercase dark:text-cyan-400">
-                {pack.name}
-              </DialogTitle>
-              <DialogDescription className="text-muted-foreground mt-2 text-xs leading-relaxed">
+              <DialogTitle className="text-headline text-label">{pack.name}</DialogTitle>
+              <DialogDescription className="text-label-secondary text-footnote mt-2 leading-relaxed">
                 {pack.description || "No detailed description available for this card pack."}
               </DialogDescription>
             </DialogHeader>
-            <div className="border-border/50 mt-4 space-y-2 border-t pt-3 text-xs">
+            <div className="border-separator text-footnote mt-4 space-y-2 border-t pt-3">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Price</span>
-                <span className="font-bold text-amber-500">{pack.priceCredits} Credits</span>
+                <span className="text-label-secondary">Price</span>
+                <span className="text-yellow font-semibold">{pack.priceCredits} Credits</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Cards Included</span>
-                <span className="font-bold">{pack.cardCount} cards</span>
+                <span className="text-label-secondary">Cards Included</span>
+                <span className="font-semibold">{pack.cardCount} cards</span>
               </div>
               {pack.guaranteedRarity && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Guaranteed Rarity</span>
-                  <span className="font-bold text-purple-400">
+                  <span className="text-label-secondary">Guaranteed Rarity</span>
+                  <span className="text-purple font-semibold">
                     {pack.guaranteedRarity.replace("_", " ")}
                   </span>
                 </div>
               )}
               {pack.season && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Season</span>
-                  <span className="font-bold">Season {pack.season}</span>
+                  <span className="text-label-secondary">Season</span>
+                  <span className="font-semibold">Season {pack.season}</span>
                 </div>
               )}
               {pack.cardType && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Card Type</span>
-                  <span className="font-bold text-cyan-400 uppercase">{pack.cardType}</span>
+                  <span className="text-label-secondary">Card Type</span>
+                  <span className="font-semibold">{pack.cardType}</span>
                 </div>
               )}
             </div>
           </DialogContent>
         </Dialog>
 
-        <div className="relative aspect-[3/4.2] w-full overflow-hidden rounded-xl bg-slate-950">
+        <div className="rounded-row bg-surface-secondary relative aspect-[3/4.2] w-full overflow-hidden">
           <PackHolographicCover
             packType={pack.packType}
             guaranteedRarity={pack.guaranteedRarity}
@@ -190,29 +188,19 @@ export function PackHolographicCard({
           />
         </div>
 
-        <div className="mt-2.5 space-y-2 px-1">
+        <div className="mt-2 space-y-2 px-1">
           <div className="flex items-center justify-between">
-            <span className="text-foreground line-clamp-1 text-xs font-semibold">
-              {pack.name}
-            </span>
-            <Badge
-              variant="outline"
-              className={cn(
-                "px-1 py-0 text-xs font-medium tracking-wider uppercase",
-                config.color
-              )}
-            >
+            <span className="text-label text-footnote line-clamp-1 font-semibold">{pack.name}</span>
+            <Badge variant="outline" className={cn("text-eyebrow px-1 py-0", config.color)}>
               {config.label}
             </Badge>
           </div>
-          <p className="text-muted-foreground line-clamp-2 text-xs leading-tight">
+          <p className="text-label-secondary text-footnote line-clamp-2 leading-tight">
             {pack.description || `${pack.cardCount} premium cards included`}
           </p>
           <div className="pt-1">{actionButton}</div>
         </div>
       </motion.div>
-
-      <div className="mt-2 h-1.5 w-32 rounded-full bg-black/20 blur-[4px] dark:bg-black/45" />
     </div>
   );
 }

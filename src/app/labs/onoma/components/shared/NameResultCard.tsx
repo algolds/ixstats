@@ -17,7 +17,6 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { translateToIPA } from "~/lib/onoma/phonology";
 import {
   resolveIpa,
@@ -32,6 +31,9 @@ import { speakName } from "~/lib/onoma/browser-speech";
 import { classifyCulture } from "~/lib/onoma/lexicon/culture-classifier";
 import { PronunciationEditor } from "./PronunciationEditor";
 import { LinguisticProfile } from "./LinguisticProfile";
+import { Button } from "~/components/ui/button";
+import { ActionPill } from "~/components/ui/action-pill";
+import { Toggle } from "~/components/ui/toggle";
 
 interface NameResultCardProps {
   name: string;
@@ -227,81 +229,73 @@ export function NameResultCard({
 
   return (
     <FacetCard
+      variant="inset"
+      padding="none"
       depth={showDetailsModal ? 2 : 1}
       onClick={expandOnCardClick ? () => setShowDetailsModal(!showDetailsModal) : undefined}
       className={cn(
-        "group relative flex flex-col justify-start gap-3.5 overflow-hidden rounded-2xl border px-4 py-4 transition-all duration-300 ease-out",
+        "group rounded-card relative flex flex-col justify-start gap-4 overflow-hidden border px-4 py-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out",
         expandOnCardClick && "cursor-pointer select-none",
         // Default border/background colors matching the fit score
-        fitColor === "emerald" && "border-emerald-500/20 bg-emerald-500/[0.015]",
-        fitColor === "amber" && "border-amber-500/20 bg-amber-500/[0.015]",
-        fitColor === "red" && "border-red-500/10 bg-red-500/[0.01]",
-        !fitColor && "border-border/40 bg-secondary/5",
+        fitColor === "emerald" && "border-green/20 bg-emerald-500/[0.015]",
+        fitColor === "amber" && "border-yellow/20 bg-amber-500/[0.015]",
+        fitColor === "red" && "border-red/10 bg-red-500/[0.01]",
+        !fitColor && "border-separator bg-fill-4",
         // Expanded details modal border styles
         showDetailsModal
           ? cn(
-              "z-20 col-span-1 shadow-lg ring-1 sm:col-span-2",
-              fitColor === "emerald" &&
-                "border-emerald-500/35 shadow-emerald-500/5 ring-emerald-500/20",
-              fitColor === "amber" && "border-amber-500/35 shadow-amber-500/5 ring-amber-500/20",
-              fitColor === "red" && "border-red-500/25 shadow-red-500/5 ring-red-500/10",
-              !fitColor &&
-                "border-onoma-primary/30 bg-onoma-primary/[0.01] shadow-onoma-primary/5 ring-onoma-primary/10"
+              "shadow-floating z-20 col-span-1 ring-1 sm:col-span-2",
+              fitColor === "emerald" && "border-green/35 ring-green/20",
+              fitColor === "amber" && "border-yellow/35 ring-yellow/20",
+              fitColor === "red" && "border-red/25 ring-red/10",
+              !fitColor && "border-tint/30 bg-tint/5 ring-tint/10"
             )
           : cn(
               "z-10 col-span-1",
-              fitColor === "emerald" && "hover:border-emerald-500/40 hover:shadow-xs",
-              fitColor === "amber" && "hover:border-amber-500/40 hover:shadow-xs",
-              fitColor === "red" && "hover:border-red-500/30 hover:shadow-xs",
-              !fitColor && "hover:border-onoma-primary/40 hover:shadow-xs"
+              fitColor === "emerald" && "hover:border-green/40 hover:shadow-card",
+              fitColor === "amber" && "hover:border-yellow/40 hover:shadow-card",
+              fitColor === "red" && "hover:border-red/30 hover:shadow-card",
+              !fitColor && "hover:border-tint/40 hover:shadow-card"
             )
       )}
     >
-      {/* Texture Overlay */}
-      <div className="pointer-events-none absolute -inset-2 opacity-[0.08] transition-all duration-500 ease-out group-hover:translate-x-1 group-hover:translate-y-1 group-hover:opacity-20 group-hover:blur-[1px] dark:opacity-45 dark:group-hover:opacity-85">
-        <TextureOverlay texture="diamonds" className="mix-blend-overlay" />
-      </div>
-
       {/* Main Top Row */}
       <div className="relative z-10 flex w-full min-w-0 items-start justify-between gap-3">
         {/* Name Display Stack */}
-        <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
           <span
-            className="text-foreground group-hover:text-onoma-primary w-full leading-none font-bold tracking-tight whitespace-nowrap transition-colors duration-300"
+            className="text-label group-hover:text-tint w-full leading-none font-semibold whitespace-nowrap transition-colors duration-300"
             style={{ fontSize: dynamicFontSize }}
             title={name}
           >
             {name}
           </span>
-          <div className="flex w-full min-w-0 flex-wrap items-center gap-1.5">
+          <div className="flex w-full min-w-0 flex-wrap items-center gap-2">
             {/* IPA badge — click to hear the exact phonetic pronunciation */}
             {ipa && (
               <span className="flex min-w-0 flex-shrink-0 items-center">
-                <button
-                  type="button"
+                <ActionPill
                   onClick={handlePlayPronunciation}
                   title="Click to hear phonetic pronunciation"
+                  aria-label={`Play pronunciation /${ipa}/`}
+                  icon={<Volume2 className="text-tint" />}
                   className={cn(
-                    "text-muted-foreground border-border/40 bg-secondary/15 hover:bg-onoma-primary/10 hover:text-onoma-primary flex cursor-pointer items-center gap-1 border py-0.5 pr-2.5 pl-2 font-mono text-[11px] tracking-[0.02em] whitespace-nowrap transition-all duration-200 select-none active:scale-[0.94]",
-                    allowCustomize ? "rounded-l-full" : "rounded-full",
-                    hasOverride && "border-onoma-primary/40 text-onoma-primary"
+                    "border-separator bg-fill-4 hover:bg-tint/10 hover:text-tint border font-mono tracking-[0.02em]",
+                    allowCustomize && "rounded-r-none",
+                    hasOverride && "border-tint/40 text-tint"
                   )}
                   style={dynamicIpaFontSize ? { fontSize: dynamicIpaFontSize } : undefined}
                 >
-                  <Volume2 className="text-onoma-primary h-3 w-3 flex-shrink-0" />
-                  <span className="whitespace-nowrap">{ipa}</span>
-                </button>
+                  {ipa}
+                </ActionPill>
                 {allowCustomize && (
-                  <button
-                    type="button"
+                  <ActionPill
                     onClick={openPronEditor}
                     title={hasOverride ? "Edit custom pronunciation" : "Customize IPA / voice"}
-                    className={cn(
-                      "text-muted-foreground border-border/40 bg-secondary/15 hover:bg-onoma-primary/10 hover:text-onoma-primary flex flex-shrink-0 cursor-pointer items-center rounded-r-full border border-l-0 px-1.5 py-0.5 transition-all duration-200 select-none active:scale-[0.94]"
-                    )}
-                  >
-                    <Pencil className="h-2.5 w-2.5" />
-                  </button>
+                    aria-label={hasOverride ? "Edit custom pronunciation" : "Customize IPA / voice"}
+                    icon={<Pencil />}
+                    className="border-separator bg-fill-4 hover:bg-tint/10 hover:text-tint rounded-l-none border border-l-0 px-2"
+                  />
                 )}
               </span>
             )}
@@ -311,77 +305,75 @@ export function NameResultCard({
         {/* Action Buttons */}
         <div
           className={cn(
-            "border-border/40 bg-background/90 flex flex-shrink-0 items-center gap-0.5 rounded-lg border px-1 py-0.5 shadow-sm backdrop-blur-md transition-all duration-200 ease-out select-none",
+            "border-separator bg-surface rounded-control shadow-card flex flex-shrink-0 items-center gap-0.5 border px-1 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out select-none",
             showDetailsModal
               ? "pointer-events-auto opacity-100"
               : "pointer-events-none opacity-0 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
           )}
         >
           {/* Linguistic Details Button (Toggles expand/shrink) */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowDetailsModal(!showDetailsModal);
-            }}
+          <Toggle
+            size="sm"
+            pressed={showDetailsModal}
+            onClick={(e) => e.stopPropagation()}
+            onPressedChange={setShowDetailsModal}
             title={showDetailsModal ? "Hide linguistic details" : "Show linguistic details"}
-            className={cn(
-              "cursor-pointer rounded-md p-1.5 transition-all duration-100 ease-out active:scale-[0.92]",
-              showDetailsModal
-                ? "bg-onoma-primary/20 text-onoma-primary ring-onoma-primary/30 shadow-[0_0_12px_rgba(0,145,255,0.25)] ring-1"
-                : "text-muted-foreground hover:bg-onoma-primary/10 hover:text-onoma-primary"
-            )}
+            aria-label="Linguistic details"
+            className="text-label-secondary hover:text-tint px-0"
           >
             <Languages className="h-4 w-4" />
-          </button>
+          </Toggle>
 
           {/* Copy Button */}
-          <button
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={handleCopy}
             title="Copy name to clipboard"
-            className="text-muted-foreground cursor-pointer rounded-md p-1.5 transition-all duration-100 ease-out hover:bg-emerald-500/10 hover:text-emerald-600 active:scale-[0.92] dark:hover:text-emerald-400"
+            aria-label="Copy name to clipboard"
+            className="text-label-secondary hover:text-green hover:bg-green/10"
           >
-            {copied ? (
-              <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            ) : (
-              <Copy className="h-4 w-4" />
-            )}
-          </button>
+            {copied ? <Check className="text-green h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          </Button>
 
           {/* Save/Bookmark Button (Onoma Local Stash) */}
           {onSave && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={handleSave}
               disabled={localSaved || saving}
               title={localSaved ? "Saved to Local Stash" : "Save to Local Stash"}
+              aria-label={localSaved ? "Saved to Local Stash" : "Save to Local Stash"}
               className={cn(
-                "cursor-pointer rounded-md p-1.5 transition-all duration-100 ease-out active:scale-[0.92] disabled:opacity-50",
                 localSaved
-                  ? "bg-onoma-primary/20 text-onoma-primary ring-onoma-primary/30 scale-105 shadow-[0_0_12px_rgba(0,145,255,0.35)] ring-1"
-                  : "text-muted-foreground hover:bg-onoma-primary/10 hover:text-onoma-primary"
+                  ? "bg-tint-fill text-tint"
+                  : "text-label-secondary hover:bg-tint/10 hover:text-tint"
               )}
             >
               {saving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Bookmark
-                  className={cn("h-4 w-4", localSaved && "fill-onoma-primary text-onoma-primary")}
-                />
+                <Bookmark className={cn("h-4 w-4", localSaved && "fill-tint text-tint")} />
               )}
-            </button>
+            </Button>
           )}
 
           {/* Use/Redirect Button */}
           {onUse && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={(e) => {
                 e.stopPropagation();
                 onUse(name);
               }}
               title="Deploy name in game"
-              className="text-muted-foreground cursor-pointer rounded-md p-1.5 transition-all duration-100 ease-out hover:bg-amber-500/10 hover:text-amber-500 active:scale-[0.92]"
+              aria-label="Deploy name in game"
+              className="text-label-secondary hover:text-yellow hover:bg-yellow/10"
             >
               <ArrowUpRight className="h-4 w-4" />
-            </button>
+            </Button>
           )}
 
           {/* Consumer-supplied actions (e.g. move-to-folder, delete) */}

@@ -16,6 +16,7 @@ import {
 } from "~/components/ui/select";
 import { Crown, User, Check, WarningCircle as AlertCircle } from "iconoir-react";
 import { AdminHeader } from "../_components/AdminHeader";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export function MembershipPanel() {
   const { user } = useUser();
@@ -61,24 +62,19 @@ export function MembershipPanel() {
       />
 
       <div className="mx-auto max-w-xl">
-        <div className="border-border/30 bg-card/25 space-y-5 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+        <FacetCard className="space-y-5 p-5">
           {user && (
-            <div className="border-border/30 bg-background/40 flex items-center justify-between rounded-xl border p-3">
+            <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-3">
               <div className="flex items-center gap-3">
-                <div className="bg-primary/10 border-primary/20 rounded-lg border p-2">
-                  <User className="text-primary h-5 w-5" />
+                <div className="bg-tint-fill border-tint/20 rounded-control border p-2">
+                  <User className="text-tint h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-foreground text-xs font-semibold">Current Session</p>
-                  <p className="text-muted-foreground font-mono text-xs">{user.id}</p>
+                  <p className="text-label text-caption">Current Session</p>
+                  <p className="text-label-secondary text-footnote font-mono">{user.id}</p>
                 </div>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={upgradeSelf}
-                className="text-xs active:scale-[0.98]"
-              >
+              <Button variant="outline" size="sm" onClick={upgradeSelf}>
                 Use My ID
               </Button>
             </div>
@@ -86,21 +82,19 @@ export function MembershipPanel() {
 
           <div className="space-y-4">
             <div>
-              <label className="text-foreground mb-1.5 block text-xs font-medium">User ID *</label>
+              <label className="text-label text-caption mb-2 block">User ID *</label>
               <Input
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
                 placeholder="user_..."
-                className="font-mono text-xs"
+                className="rounded-control-sm md:text-footnote h-(--control-height-sm) font-mono"
               />
             </div>
 
             <div>
-              <label className="text-foreground mb-1.5 block text-xs font-medium">
-                Target Membership Tier
-              </label>
+              <label className="text-label text-caption mb-2 block">Target Membership Tier</label>
               <Select value={tier} onValueChange={(val: any) => setTier(val)}>
-                <SelectTrigger className="text-xs">
+                <SelectTrigger size="sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -114,16 +108,16 @@ export function MembershipPanel() {
 
             {message && (
               <div
-                className={`flex items-center gap-2 rounded-xl border p-3 text-xs ${
+                className={`rounded-row text-footnote flex items-center gap-2 border p-3 ${
                   message.type === "success"
-                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-                    : "border-red-500/20 bg-red-500/10 text-red-300"
+                    ? "border-green/20 bg-green/10 text-green"
+                    : "border-red/20 bg-red/10 text-red"
                 }`}
               >
                 {message.type === "success" ? (
-                  <Check className="h-4 w-4 shrink-0 text-emerald-400" />
+                  <Check className="text-green h-4 w-4 shrink-0" />
                 ) : (
-                  <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+                  <AlertCircle className="text-red h-4 w-4 shrink-0" />
                 )}
                 <span>{message.text}</span>
               </div>
@@ -132,12 +126,12 @@ export function MembershipPanel() {
             <Button
               onClick={handleUpdateMembership}
               disabled={updateMembershipMutation.isPending || !userId.trim()}
-              className="w-full text-xs active:scale-[0.98]"
+              className="w-full"
             >
               {updateMembershipMutation.isPending ? "Updating Tier..." : "Apply Membership Tier"}
             </Button>
           </div>
-        </div>
+        </FacetCard>
       </div>
     </div>
   );

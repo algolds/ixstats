@@ -4,34 +4,42 @@ import { useState, useMemo } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
-import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
+import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Input } from "~/components/ui/input";
+import { SearchField } from "~/components/ui/search-field";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import { EmptyState } from "~/components/ui/empty-state";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { Stat } from "~/components/ui/stat";
+import { springSmooth } from "~/lib/design/motion";
 import {
   Plus,
   Trophy,
   Group as Users,
   Star,
-  Search,
   ControlSlider as SlidersHorizontal,
   Calendar,
   Component as Layers,
   Link as Link2,
   Check,
-  Activity,
   ArrowRight,
-  Book,
 } from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import { LeagueCreator } from "~/components/sports/league/LeagueCreator";
 import { LeagueCover } from "~/components/sports/LeagueCover";
 import { withBasePath } from "~/lib/base-path";
-import { cn } from "~/lib/utils";
+import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
 import { FacetCard } from "~/components/ui/facet-container";
 import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
-import { getSportColors, type SportPresetKey } from "~/lib/sports/presets";
+import { type SportPresetKey } from "~/lib/sports/presets";
 import { SPORT_LABELS, ARCHETYPE_LABELS } from "~/lib/sports/theming";
 
 const MYLEAGUE_HELP_STEPS: HeroHelpStep[] = [
@@ -53,12 +61,12 @@ const MYLEAGUE_HELP_STEPS: HeroHelpStep[] = [
   },
 ];
 
-const STATUS_ACCENT_CLASSES: Record<string, string> = {
-  active: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  in_progress: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  paused: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  completed: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
-  archived: "bg-slate-500/10 text-slate-400 border-slate-500/20",
+const STATUS_BADGE: Record<string, BadgeVariant> = {
+  active: "success",
+  in_progress: "success",
+  paused: "caution",
+  completed: "info",
+  archived: "neutral",
 };
 
 export default function MyLeaguePage() {
@@ -117,227 +125,177 @@ export default function MyLeaguePage() {
     return Array.from(set);
   }, [leagues]);
 
-  const featuredSportColors = featuredLeague
-    ? getSportColors(featuredLeague.sportPreset as SportPresetKey)
-    : null;
-
   return (
     <div className="container mx-auto max-w-7xl space-y-8 px-4 py-8">
+      {/* Phone title under the new navigation shell (nothing with the flag off). */}
+      <ShellPageHeader title="MyLeague" className="px-0 pt-0" />
       {/* Dynamic League Creator Dialog */}
       <LeagueCreator open={showCreator} onOpenChange={setShowCreator} />
 
-      {/* ─── COMMAND STUDIO HEADER ─── */}
-      <div className="relative overflow-hidden rounded-3xl border border-border/40 bg-card/60 p-6 shadow-xl backdrop-blur-xl md:p-8">
-        {/* Glow backdrop */}
-        <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-amber-500/10 blur-[120px]" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-cyan-500/10 blur-[120px]" />
-
-        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      {/* ─── COMMAND STUDIO HEADER ─── v2 glass hero (no glow: sports stay flat) */}
+      <FacetCard variant="glass" padding="lg">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Badge
-                variant="outline"
-                className="border-amber-500/30 bg-amber-500/10 text-xs font-black uppercase tracking-wider text-amber-400"
-              >
-                COMPETITION ENGINE
-              </Badge>
+              <Eyebrow className="text-tint">Competition engine</Eyebrow>
               <HeroHelpModal
                 title="MyLeague Guide"
                 steps={MYLEAGUE_HELP_STEPS}
-                accentClass="text-amber-400"
+                accentClass="text-tint"
               />
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground md:text-4xl">
-              MyLeague <span className="text-muted-foreground font-light text-2xl">Studio</span>
+            <h1 className="text-large-title text-label">
+              MyLeague <span className="text-label-secondary font-normal">Studio</span>
             </h1>
-            <p className="max-w-2xl text-xs text-muted-foreground leading-relaxed sm:text-sm">
-              Operate sporting associations, schedule fixtures, and simulate matches with deterministic state machines and historical almanacs.
+            <p className="text-callout text-label-secondary max-w-2xl">
+              Operate sporting associations, schedule fixtures, and simulate matches with
+              deterministic state machines and historical almanacs.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={() => router.push(withBasePath("/myclub"))}
-              data-cuelume-press="subtle"
-              className="border-border/60 bg-card/80 text-foreground font-bold shadow-sm transition hover:bg-muted/40 active:scale-[0.98] cursor-pointer"
-            >
-              <Users className="mr-2 h-4 w-4 text-cyan-400" />
+            <Button variant="gray" onClick={() => router.push(withBasePath("/myclub"))}>
+              <Users />
               MyClub Portfolio
             </Button>
-            <Button
-              onClick={() => setShowCreator(true)}
-              data-cuelume-press="subtle"
-              className="bg-primary text-primary-foreground font-bold shadow-md transition hover:bg-primary/90 active:scale-[0.98] cursor-pointer"
-            >
-              <Plus className="mr-2 h-4 w-4" />
+            <Button onClick={() => setShowCreator(true)}>
+              <Plus />
               Create League
             </Button>
           </div>
         </div>
-      </div>
+      </FacetCard>
 
       {/* ─── FEATURED ASSOCIATION HERO ─── */}
       {featuredLeague && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-muted-foreground">
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-              Featured Competition
-            </span>
-          </div>
-
-          <div
-            className="group relative overflow-hidden rounded-3xl border border-border/40 bg-card/80 p-6 shadow-2xl backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 md:p-8"
-            style={
-              featuredSportColors
-                ? {
-                    boxShadow: `0 20px 40px -15px hsla(${featuredSportColors.accentColor}, 0.15)`,
-                  }
-                : undefined
-            }
+        <section className="space-y-3" aria-labelledby="featured-competition">
+          <h2
+            id="featured-competition"
+            className="text-subhead text-label-secondary flex items-center gap-2 px-1"
           >
-            {/* Background Cover Overlay */}
-            <div className="absolute inset-0 z-0">
-              <LeagueCover
-                sportPreset={featuredLeague.sportPreset}
-                coverImage={featuredLeague.coverImage}
-                seed={featuredLeague.id}
-                alt=""
-                className="h-full w-full object-cover opacity-20 blur-[1px] transition-transform duration-700 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-card via-card/80 to-transparent" />
-            </div>
+            <Star className="text-yellow size-4" aria-hidden />
+            Featured competition
+          </h2>
 
-            <div className="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-end">
-              <div className="max-w-2xl space-y-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge className="border border-amber-500/30 bg-amber-500/20 px-2.5 py-0.5 text-xs font-black uppercase tracking-wider text-amber-400">
-                    Spotlight
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className="border-border bg-background/60 text-xs font-bold uppercase text-foreground"
-                  >
-                    {SPORT_LABELS[featuredLeague.sportPreset] || featuredLeague.sportPreset}
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "text-xs font-bold uppercase",
-                      STATUS_ACCENT_CLASSES[featuredLeague.status] ?? "text-muted-foreground"
-                    )}
-                  >
-                    {featuredLeague.status}
-                  </Badge>
-                </div>
+          <FacetCard variant="glass" className="overflow-hidden">
+            <div className="flex flex-col md:flex-row">
+              <div className="bg-fill-3 relative h-48 shrink-0 overflow-hidden md:h-auto md:w-80">
+                <LeagueCover
+                  sportPreset={featuredLeague.sportPreset}
+                  coverImage={featuredLeague.coverImage}
+                  seed={featuredLeague.id}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              </div>
 
-                <div>
-                  <h2 className="text-3xl font-black tracking-tight text-foreground md:text-4xl">
-                    {featuredLeague.name}
-                  </h2>
-                  <p className="mt-2 text-xs text-muted-foreground leading-relaxed md:text-sm">
-                    Premier {SPORT_LABELS[featuredLeague.sportPreset] || featuredLeague.sportPreset} competition. Run matches, inspect athlete rosters, track live scoreboards, and explore all-time champions.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-3 pt-1">
-                  <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-card/60 px-3.5 py-2 text-xs font-bold text-muted-foreground backdrop-blur-md">
-                    <Users className="h-4 w-4 text-cyan-400" />
-                    <span className="text-foreground">{featuredLeague.teamCount}</span> Franchises
+              <div className="flex flex-1 flex-col justify-between gap-6 p-5 md:flex-row md:items-end md:p-6">
+                <div className="max-w-2xl space-y-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="tinted">Spotlight</Badge>
+                    <Badge variant="neutral">
+                      {SPORT_LABELS[featuredLeague.sportPreset] || featuredLeague.sportPreset}
+                    </Badge>
+                    <Badge
+                      variant={STATUS_BADGE[featuredLeague.status] ?? "neutral"}
+                      className="capitalize"
+                    >
+                      {featuredLeague.status}
+                    </Badge>
                   </div>
-                  <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-card/60 px-3.5 py-2 text-xs font-bold text-muted-foreground backdrop-blur-md">
-                    <Calendar className="h-4 w-4 text-emerald-400" />
-                    <span className="text-foreground">{featuredLeague.seasonCount}</span> Seasons
+
+                  <div>
+                    <h3 className="text-title-1 text-label">{featuredLeague.name}</h3>
+                    <p className="text-callout text-label-secondary mt-2">
+                      Premier{" "}
+                      {SPORT_LABELS[featuredLeague.sportPreset] || featuredLeague.sportPreset}{" "}
+                      competition. Run matches, inspect athlete rosters, track live scoreboards, and
+                      explore all-time champions.
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2 rounded-xl border border-border/40 bg-card/60 px-3.5 py-2 text-xs font-bold text-muted-foreground backdrop-blur-md">
-                    <Layers className="h-4 w-4 text-indigo-400" />
-                    <span className="text-foreground">
-                      {ARCHETYPE_LABELS[featuredLeague.archetype] || featuredLeague.archetype}
+
+                  <div className="text-footnote text-label-secondary flex flex-wrap gap-x-5 gap-y-2">
+                    <span className="flex items-center gap-2">
+                      <Users className="size-4" aria-hidden />
+                      <span className="text-label font-medium tabular-nums">
+                        {featuredLeague.teamCount}
+                      </span>{" "}
+                      Franchises
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <Calendar className="size-4" aria-hidden />
+                      <span className="text-label font-medium tabular-nums">
+                        {featuredLeague.seasonCount}
+                      </span>{" "}
+                      Seasons
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <Layers className="size-4" aria-hidden />
+                      <span className="text-label font-medium">
+                        {ARCHETYPE_LABELS[featuredLeague.archetype] || featuredLeague.archetype}
+                      </span>
                     </span>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex w-full flex-col gap-3 sm:w-auto">
                 <Button
+                  size="lg"
+                  variant="tinted"
+                  className="group/btn w-full sm:w-auto"
                   onClick={() => router.push(withBasePath(`/myleague/${featuredLeague.id}`))}
-                  data-cuelume-press="subtle"
-                  className="group/btn flex h-12 items-center justify-center gap-2 rounded-xl bg-foreground px-6 font-bold text-background shadow-lg transition hover:bg-foreground/90 active:scale-[0.98] cursor-pointer"
                 >
                   <span>Enter Competition</span>
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                  <ArrowRight className="transition-transform group-hover/btn:translate-x-0.5" />
                 </Button>
               </div>
             </div>
-          </div>
+          </FacetCard>
         </section>
       )}
 
       {/* ─── SPORT FILTER CHIPS & SEARCH ─── */}
       <section className="space-y-6">
-        <div className="flex flex-col gap-4 border-b border-border/30 pb-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="border-separator flex flex-col gap-4 border-b pb-4 lg:flex-row lg:items-center lg:justify-between">
           {/* Sport Preset Filter Chips */}
-          <div className="flex max-w-full flex-wrap gap-2 overflow-x-auto pb-1">
-            <button
-              onClick={() => setSelectedSport("all")}
-              className={cn(
-                "flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none select-none active:scale-[0.98]",
-                selectedSport === "all"
-                  ? "border-foreground bg-foreground text-background shadow-md"
-                  : "border-border/60 bg-card/40 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-              )}
-            >
-              <span>All Sports</span>
-            </button>
+          <ToggleGroup
+            type="single"
+            disallowEmpty
+            aria-label="Sport"
+            value={selectedSport}
+            onValueChange={(value) => setSelectedSport(value || "all")}
+            className="max-w-full flex-wrap"
+          >
+            <ToggleGroupItem value="all">All Sports</ToggleGroupItem>
             {sportsList.map((sport) => (
-              <button
-                key={sport}
-                onClick={() => setSelectedSport(sport)}
-                className={cn(
-                  "flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] outline-none select-none active:scale-[0.98]",
-                  selectedSport === sport
-                    ? "border-foreground bg-foreground text-background shadow-md"
-                    : "border-border/60 bg-card/40 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-                )}
-              >
-                <span>{SPORT_LABELS[sport] || sport}</span>
-              </button>
+              <ToggleGroupItem key={sport} value={sport}>
+                {SPORT_LABELS[sport] || sport}
+              </ToggleGroupItem>
             ))}
-          </div>
+          </ToggleGroup>
 
           {/* Search and Status Dropdown */}
           <div className="flex min-w-0 flex-wrap items-center gap-3">
-            <div className="relative min-w-[220px] flex-1">
-              <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search associations..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-10 rounded-xl border-border/60 bg-card/40 ps-9 text-xs transition placeholder:text-muted-foreground/60 hover:bg-card/60 focus-visible:ring-1"
-              />
-            </div>
+            <SearchField
+              placeholder="Search associations..."
+              value={search}
+              onValueChange={setSearch}
+              aria-label="Search associations"
+              containerClassName="min-w-[220px] flex-1"
+            />
 
-            <div className="relative">
-              <SlidersHorizontal className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="h-10 cursor-pointer appearance-none rounded-xl border border-border/60 bg-card/40 py-0 ps-9 pe-8 text-xs font-bold text-foreground transition hover:bg-card/60 outline-none focus-visible:ring-1"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                  backgroundPosition: `right 10px center`,
-                  backgroundSize: `14px`,
-                  backgroundRepeat: `no-repeat`,
-                }}
-              >
-                <option value="all">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="paused">Paused</option>
-                <option value="completed">Completed</option>
-                <option value="archived">Archived</option>
-              </select>
-            </div>
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger className="w-44" aria-label="Status">
+                <SlidersHorizontal className="text-label-secondary size-4" aria-hidden />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="paused">Paused</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="archived">Archived</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -345,27 +303,20 @@ export default function MyLeaguePage() {
         {isLoading ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Card
-                key={i}
-                className="overflow-hidden rounded-2xl border border-border/40 bg-card/40 p-1"
-              >
-                <CardHeader className="pb-3">
-                  <Skeleton className="h-6 w-3/4 rounded-lg" />
-                  <Skeleton className="mt-2 h-4 w-1/2 rounded-md" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Skeleton className="h-24 w-full rounded-xl" />
-                  <Skeleton className="h-9 w-full rounded-xl" />
-                </CardContent>
-              </Card>
+              <FacetCard key={i} className="overflow-hidden">
+                <Skeleton className="h-40 w-full rounded-none" />
+                <div className="space-y-3 p-5">
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              </FacetCard>
             ))}
           </div>
         ) : filteredLeagues.length > 0 ? (
           <motion.div layout className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <AnimatePresence mode="popLayout">
               {filteredLeagues.map((league) => {
-                const sportColor =
-                  getSportColors(league.sportPreset as SportPresetKey)?.accentColor || "#3b82f6";
                 const isUserOwned = !league.isCanonical;
 
                 return (
@@ -375,34 +326,31 @@ export default function MyLeaguePage() {
                     initial={{ opacity: 0, scale: 0.96 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.96 }}
-                    transition={{ duration: 0.2 }}
+                    transition={springSmooth}
                   >
-                    <div
+                    <FacetCard
                       onClick={() => router.push(withBasePath(`/myleague/${league.id}`))}
-                      className="group flex h-full cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border border-border/40 bg-card/60 shadow-md backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:-translate-y-1 hover:border-border hover:shadow-xl active:scale-[0.98]"
+                      aria-label={`Open ${league.name}`}
+                      className="group flex h-full flex-col justify-between overflow-hidden"
                     >
                       {/* Image Banner */}
-                      <div className="relative h-40 overflow-hidden bg-muted">
+                      <div className="bg-fill-3 relative h-40 overflow-hidden">
                         <LeagueCover
                           sportPreset={league.sportPreset}
                           coverImage={league.coverImage ?? league.logo}
                           seed={league.id}
                           alt={league.name}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="h-full w-full object-cover"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-card via-card/50 to-transparent" />
 
                         {/* Badges */}
                         <div className="absolute inset-x-3 top-3 flex items-start justify-between">
-                          <Badge className="rounded-lg border border-white/10 bg-black/60 px-2.5 py-1 text-xs font-black uppercase tracking-wider text-white backdrop-blur-md">
+                          <Badge variant="neutral" className="bg-surface text-label">
                             {SPORT_LABELS[league.sportPreset] || league.sportPreset}
                           </Badge>
                           <Badge
-                            className={cn(
-                              "rounded-lg border px-2.5 py-1 text-xs font-bold uppercase shadow-sm",
-                              STATUS_ACCENT_CLASSES[league.status] ??
-                                "border-border text-muted-foreground"
-                            )}
+                            variant={STATUS_BADGE[league.status] ?? "neutral"}
+                            className="bg-surface capitalize"
                           >
                             {league.status}
                           </Badge>
@@ -413,87 +361,74 @@ export default function MyLeaguePage() {
                       <div className="flex flex-1 flex-col justify-between p-5">
                         <div className="space-y-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            <span className="text-footnote text-label-secondary">
                               {ARCHETYPE_LABELS[league.archetype] || league.archetype}
                             </span>
-                            {isUserOwned && (
-                              <Badge
-                                variant="outline"
-                                className="rounded border-cyan-500/30 bg-cyan-500/10 px-1.5 py-0 text-xs font-bold text-cyan-400"
-                              >
-                                Custom
-                              </Badge>
-                            )}
+                            {isUserOwned && <Badge variant="tinted">Custom</Badge>}
                           </div>
-                          <h3 className="line-clamp-1 text-lg font-black text-foreground transition-colors group-hover:text-primary">
+                          <h3 className="text-title-3 text-label group-hover:text-tint line-clamp-1 transition-colors">
                             {league.name}
                           </h3>
 
-                          <div className="grid grid-cols-2 gap-2 pt-2 text-xs font-bold uppercase">
-                            <div className="flex flex-col justify-center rounded-xl border border-border/30 bg-muted/20 p-2.5">
-                              <span className="text-xs text-muted-foreground font-medium">Franchises</span>
-                              <span className="mt-0.5 text-sm font-black text-foreground">
-                                {league.teamCount}
-                              </span>
+                          <div className="grid grid-cols-2 gap-2 pt-2">
+                            <div className="bg-surface-secondary rounded-row p-3">
+                              <Stat size="sm" label="Franchises" value={league.teamCount} />
                             </div>
-                            <div className="flex flex-col justify-center rounded-xl border border-border/30 bg-muted/20 p-2.5">
-                              <span className="text-xs text-muted-foreground font-medium">Seasons</span>
-                              <span className="mt-0.5 text-sm font-black text-foreground">
-                                {league.seasonCount}
-                              </span>
+                            <div className="bg-surface-secondary rounded-row p-3">
+                              <Stat size="sm" label="Seasons" value={league.seasonCount} />
                             </div>
                           </div>
                         </div>
 
                         <div className="mt-5 flex items-center gap-2">
                           <Button
+                            variant="gray"
+                            className="flex-1"
                             onClick={(e) => {
                               e.stopPropagation();
                               router.push(withBasePath(`/myleague/${league.id}`));
                             }}
-                            className="h-10 flex-1 cursor-pointer rounded-xl border border-border/60 bg-card/80 text-xs font-bold text-foreground transition hover:bg-muted/40"
-                            variant="outline"
                           >
                             Open Hub
                           </Button>
                           <Button
+                            variant="gray"
+                            size="icon"
                             onClick={(e) => {
                               e.stopPropagation();
                               copyInvite(league.id);
                             }}
                             title="Copy competition invite link"
-                            className="h-10 w-10 shrink-0 cursor-pointer rounded-xl border border-border/60 bg-card/80 p-0 text-muted-foreground transition hover:bg-muted/40 hover:text-foreground"
-                            variant="outline"
+                            aria-label="Copy competition invite link"
                           >
                             {copiedId === league.id ? (
-                              <Check className="h-4 w-4 text-emerald-400" />
+                              <Check className="text-success" />
                             ) : (
-                              <Link2 className="h-4 w-4" />
+                              <Link2 />
                             )}
                           </Button>
                         </div>
                       </div>
-                    </div>
+                    </FacetCard>
                   </motion.div>
                 );
               })}
             </AnimatePresence>
           </motion.div>
         ) : (
-          <div className="rounded-3xl border border-border/40 bg-card/40 p-12 text-center backdrop-blur-md">
-            <Trophy className="mx-auto mb-4 h-12 w-12 text-muted-foreground/40" />
-            <h3 className="text-lg font-bold text-foreground">No Competitions Found</h3>
-            <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
-              Try adjusting your search query, selecting another sport chip, or launch a brand new competition.
-            </p>
-            <Button
-              className="mt-6 font-bold cursor-pointer"
-              onClick={() => setShowCreator(true)}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create League
-            </Button>
-          </div>
+          <FacetCard>
+            <EmptyState
+              icon={<Trophy />}
+              title="No Competitions Found"
+              message="Try adjusting your search query, selecting another sport chip, or launch a brand new competition."
+              action={
+                <Button onClick={() => setShowCreator(true)}>
+                  <Plus />
+                  Create League
+                </Button>
+              }
+            />
+          </FacetCard>
         )}
       </section>
     </div>

@@ -64,47 +64,49 @@ export function RollupSettingsModal({
   const worst = Math.min(popPct, gdpPct);
   const coverageTone =
     worst >= 100
-      ? "bg-muted text-emerald-500"
+      ? "bg-fill-3 text-green"
       : worst >= 50
-        ? "bg-muted text-amber-500"
-        : "bg-muted text-destructive";
+        ? "bg-fill-3 text-yellow"
+        : "bg-fill-3 text-destructive";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {trigger ?? (
-          <button
+          <Button
             type="button"
-            className="border-border bg-card hover:bg-accent/50 focus-visible:ring-ring flex w-full items-center justify-between gap-2 rounded-xl border p-3 text-left transition-colors outline-none focus-visible:ring-2"
+            variant="ghost"
+            size="sm"
             aria-label="Open rollup settings"
+            className="h-auto min-h-(--control-height-sm) w-full justify-between justify-start gap-2 py-2 text-left whitespace-normal"
           >
             <div className="flex items-center gap-2">
-              <BarChart3 className="text-muted-foreground h-4 w-4" />
+              <BarChart3 className="text-label-secondary h-4 w-4" />
               <div>
-                <div className="text-foreground text-xs font-semibold">Geographic Rollups</div>
-                <div className="text-muted-foreground text-xs">
+                <div className="text-label text-caption font-semibold">Geographic Rollups</div>
+                <div className="text-label-secondary text-footnote">
                   Mode: {geoRollupMode} · Pop {popPct}% · GDP {gdpPct}%
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <span
-                className={`rounded-md px-1.5 py-0.5 font-mono text-xs font-medium ${coverageTone}`}
+                className={`rounded-control-sm text-caption px-2 py-0.5 tabular-nums ${coverageTone}`}
               >
                 {worst}%
               </span>
-              <Settings className="text-muted-foreground h-3.5 w-3.5" />
+              <Settings className="text-label-secondary h-3.5 w-3.5" />
             </div>
-          </button>
+          </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-1.5 text-sm">
+          <DialogTitle className="text-body flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Geographic Rollups & Reconciliation
           </DialogTitle>
-          <DialogDescription className="text-xs">
+          <DialogDescription className="text-footnote">
             Choose how city + subdivision data should reconcile against national totals.
           </DialogDescription>
         </DialogHeader>
@@ -181,12 +183,12 @@ function RollupBody({
       <div className="space-y-2">
         <CoverageMeter label="Population coverage" percent={popPct} />
         <CoverageMeter label="GDP coverage" percent={gdpPct} />
-        <div className="text-muted-foreground/70 text-xs">
+        <div className="text-label-secondary text-footnote">
           City pop: {rollups.cityPopulationSum.toLocaleString()} · Sub pop:{" "}
           {rollups.subdivisionPopulationSum.toLocaleString()} · National:{" "}
           {nationalPopulation.toLocaleString()}
         </div>
-        <div className="text-muted-foreground/70 text-xs">
+        <div className="text-label-secondary text-footnote">
           City GDP: {Math.round(rollups.cityGdpContributionSum).toLocaleString()} · Sub GDP:{" "}
           {Math.round(rollups.subdivisionGdpContributionSum).toLocaleString()} · National:{" "}
           {Math.round(nationalGdp).toLocaleString()}
@@ -194,29 +196,24 @@ function RollupBody({
       </div>
 
       {/* Rollup mode selector */}
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Eyebrow id="rollup-mode-label" className="block">
           Rollup mode
         </Eyebrow>
         <div
-          className="bg-muted/50 flex rounded-lg p-0.5"
+          className="bg-fill-3 rounded-control flex p-0.5"
           role="group"
           aria-labelledby="rollup-mode-label"
         >
           {(["hybrid", "top-down", "bottom-up"] as const).map((m) => (
-            <button
-              key={m}
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
+              key={m}
               onClick={() => handleModeChange(m)}
               disabled={updateMode.isPending}
               aria-pressed={mode === m}
-              data-cuelume-press="tick"
-              className={cn(
-                "focus-visible:ring-ring min-h-8 flex-1 rounded-md px-2 py-1.5 text-xs font-medium capitalize transition-[color,background-color,box-shadow,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]",
-                mode === m
-                  ? "bg-background text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
               title={
                 m === "hybrid"
                   ? "Sim values authoritative; geography shown as-is"
@@ -224,12 +221,26 @@ function RollupBody({
                     ? "Geography rebalanced to match national (scales up)"
                     : "National recomputed from sum (only when coverage is complete)"
               }
+              aria-label={
+                m === "hybrid"
+                  ? "Sim values authoritative; geography shown as-is"
+                  : m === "top-down"
+                    ? "Geography rebalanced to match national (scales up)"
+                    : "National recomputed from sum (only when coverage is complete)"
+              }
+              className={cn(
+                "rounded-control-sm size-5",
+                cn(
+                  "focus-visible:ring-tint rounded-control-sm text-caption min-h-8 flex-1 px-2 py-2 capitalize transition-[color,background-color,box-shadow,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]",
+                  mode === m ? "bg-surface text-label" : "text-label-secondary hover:text-label"
+                )
+              )}
             >
               {m}
-            </button>
+            </Button>
           ))}
         </div>
-        <p className="text-muted-foreground/60 text-xs">
+        <p className="text-label-tertiary text-footnote">
           {mode === "hybrid"
             ? "Sim baseline; geography rolls up as-is."
             : mode === "top-down"
@@ -255,12 +266,12 @@ function RollupBody({
       </Button>
 
       {/* Demographic Redistribution */}
-      <div className="border-border my-2 space-y-3 border-t pt-3">
-        <div className="text-foreground flex items-center gap-1 text-xs font-semibold">
+      <div className="border-separator my-2 space-y-3 border-t pt-3">
+        <div className="text-label text-caption flex items-center gap-1 font-semibold">
           <Settings className="h-3.5 w-3.5" />
           Demographic Redistribution
         </div>
-        <p className="text-muted-foreground/60 text-xs">
+        <p className="text-label-tertiary text-footnote">
           Auto-assign populations and GDP to cities within each subdivision based on their
           province's totals and weights.
         </p>
@@ -273,7 +284,7 @@ function RollupBody({
           />
           <label
             htmlFor="scaleExisting"
-            className="text-muted-foreground cursor-pointer text-xs font-medium select-none"
+            className="text-label-secondary text-caption cursor-pointer select-none"
           >
             Scale existing populations proportionally (if non-zero)
           </label>
@@ -301,13 +312,12 @@ function RollupBody({
 
 function CoverageMeter({ label, percent }: { label: string; percent: number }) {
   const clamped = Math.max(0, Math.min(100, percent));
-  const color =
-    clamped >= 100 ? "bg-emerald-500" : clamped >= 50 ? "bg-amber-500" : "bg-destructive";
+  const color = clamped >= 100 ? "bg-green" : clamped >= 50 ? "bg-yellow" : "bg-destructive";
   return (
     <div>
-      <div className="text-muted-foreground flex items-center justify-between text-xs">
+      <div className="text-label-secondary text-footnote flex items-center justify-between">
         <span>{label}</span>
-        <span className="text-foreground/80 font-mono">{clamped}%</span>
+        <span className="text-label-secondary tabular-nums">{clamped}%</span>
       </div>
       <Progress value={clamped} className="mt-0.5 h-1.5" indicatorClassName={color} />
     </div>

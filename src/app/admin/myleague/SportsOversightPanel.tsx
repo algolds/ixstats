@@ -5,6 +5,7 @@ import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
+import { Slider } from "~/components/ui/slider";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -43,25 +44,33 @@ import {
 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { getAllPresets } from "~/lib/sports";
+import { Input } from "~/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 const statusMeta: Record<string, { label: string; className: string }> = {
   active: {
     label: "Active",
-    className: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+    className: "bg-green/10 text-green border-green/30",
   },
-  draft: { label: "Draft", className: "bg-muted/50 text-muted-foreground border-border" },
-  archived: { label: "Archived", className: "bg-amber-500/10 text-amber-400 border-amber-500/30" },
-  suspended: { label: "Suspended", className: "bg-red-500/10 text-red-400 border-red-500/30" },
+  draft: { label: "Draft", className: "bg-fill-3 text-label-secondary border-separator" },
+  archived: { label: "Archived", className: "bg-yellow/10 text-yellow border-yellow/30" },
+  suspended: { label: "Suspended", className: "bg-red/10 text-red border-red/30" },
 };
 
 const archetypeMeta: Record<string, { label: string; className: string }> = {
-  league: { label: "League", className: "bg-blue-500/10 text-blue-400 border-blue-500/30" },
+  league: { label: "League", className: "bg-blue/10 text-blue border-blue/30" },
   division_conference: {
     label: "Division / Conference",
-    className: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+    className: "bg-green/10 text-green border-green/30",
   },
-  bracket: { label: "Bracket", className: "bg-red-500/10 text-red-400 border-red-500/30" },
-  circuit: { label: "Circuit", className: "bg-amber-500/10 text-amber-400 border-amber-500/30" },
+  bracket: { label: "Bracket", className: "bg-red/10 text-red border-red/30" },
+  circuit: { label: "Circuit", className: "bg-yellow/10 text-yellow border-yellow/30" },
 };
 
 // ─── Sub-Component for Advanced Operations ───────────────────────────────
@@ -147,19 +156,14 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
               }
             }}
             disabled={resetSeasonMutation.isPending}
-            className="border-red-500/20 text-xs font-bold text-red-400 hover:bg-red-500/5"
+            className="text-destructive"
           >
             {resetSeasonMutation.isPending ? "Resetting..." : "Reset Season Data"}
           </Button>
         )}
 
         {activeSeason && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setMatchOverrideOpen(true)}
-            className="text-xs font-bold"
-          >
+          <Button variant="outline" size="sm" onClick={() => setMatchOverrideOpen(true)}>
             Override Match Score
           </Button>
         )}
@@ -170,18 +174,12 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
             size="sm"
             onClick={() => regenerateScheduleMutation.mutate({ seasonId: activeSeasonId })}
             disabled={regenerateScheduleMutation.isPending}
-            className="text-xs font-bold"
           >
             {regenerateScheduleMutation.isPending ? "Regenerating..." : "Regenerate Matches"}
           </Button>
         )}
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExportData}
-          className="text-xs font-bold"
-        >
+        <Button variant="outline" size="sm" onClick={handleExportData}>
           Export League JSON
         </Button>
       </div>
@@ -196,48 +194,41 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
 
           <form onSubmit={handleOverrideScore} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-muted-foreground block text-xs font-bold uppercase">
-                Select Match
-              </label>
-              <select
-                value={selectedMatchId}
-                onChange={(e) => setSelectedMatchId(e.target.value)}
-                className="text-foreground border-border/40 bg-background w-full rounded-xl border p-2 text-xs focus:outline-none"
-                required
-              >
-                <option value="">-- Choose Match --</option>
-                {schedule?.matches?.map((m: any) => (
-                  <option key={m.id} value={m.id}>
-                    Matchday {m.matchDay}: {m.homeTeam.name} vs {m.awayTeam.name} ({m.status})
-                  </option>
-                ))}
-              </select>
+              <label className="text-label-secondary text-subhead block">Select Match</label>
+              <Select value={selectedMatchId} onValueChange={setSelectedMatchId} required>
+                <SelectTrigger size="sm" className="w-full">
+                  <SelectValue placeholder="-- Choose Match --" />
+                </SelectTrigger>
+                <SelectContent>
+                  {schedule?.matches?.map((m: any) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      Matchday {m.matchDay}: {m.homeTeam.name} vs {m.awayTeam.name} ({m.status})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-muted-foreground block text-xs font-bold uppercase">
-                  Home Score
-                </label>
-                <input
+                <label className="text-label-secondary text-subhead block">Home Score</label>
+                <Input
                   type="number"
                   min="0"
                   value={homeScore}
                   onChange={(e) => setHomeScore(Number(e.target.value))}
-                  className="text-foreground border-border/40 bg-background w-full rounded-xl border p-2 font-mono text-xs focus:outline-none"
+                  className="w-full font-mono"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-muted-foreground block text-xs font-bold uppercase">
-                  Away Score
-                </label>
-                <input
+                <label className="text-label-secondary text-subhead block">Away Score</label>
+                <Input
                   type="number"
                   min="0"
                   value={awayScore}
                   onChange={(e) => setAwayScore(Number(e.target.value))}
-                  className="text-foreground border-border/40 bg-background w-full rounded-xl border p-2 font-mono text-xs focus:outline-none"
+                  className="w-full font-mono"
                   required
                 />
               </div>
@@ -469,17 +460,16 @@ function AINarratorLab() {
   };
 
   return (
-    <Card className="facet-hierarchy-child border-border/50 bg-card/40 relative overflow-hidden p-6">
+    <Card className="relative overflow-hidden p-6">
       {/* Background radial glow */}
-      <div className="pointer-events-none absolute -top-20 -right-20 h-44 w-44 rounded-full bg-amber-500/5 blur-3xl" />
 
       <div className="space-y-6">
         <div>
-          <h2 className="text-foreground flex items-center gap-2 text-xl font-black">
-            <Sparkles className="h-5 w-5 text-amber-400" />
+          <h2 className="text-label text-title-2 flex items-center gap-2">
+            <Sparkles className="text-yellow h-5 w-5" />
             AI Narrator Test Lab
           </h2>
-          <p className="text-muted-foreground mt-1 text-xs">
+          <p className="text-label-secondary text-footnote mt-1">
             Test and preview live generated commentary across different sports configurations.
           </p>
         </div>
@@ -488,123 +478,118 @@ function AINarratorLab() {
           {/* Controls & Inputs (Left) */}
           <div className="space-y-4 md:col-span-6">
             <div className="space-y-2">
-              <label className="text-muted-foreground block text-xs font-bold uppercase">
-                Sport Preset
-              </label>
-              <select
-                value={sport}
-                onChange={(e) => handleLoadTemplate(e.target.value)}
-                className="text-foreground border-border/40 bg-background w-full rounded-xl border p-2.5 text-xs font-semibold focus:outline-none"
-              >
-                <option value="soccer">Soccer ⚽</option>
-                <option value="f1">Formula 1 🏎️</option>
-                <option value="boxing">Boxing 🥊</option>
-                <option value="basketball">Basketball 🏀</option>
-                <option value="football">Football 🏈</option>
-                <option value="hockey">Hockey 🏒</option>
-                <option value="baseball">Baseball ⚾</option>
-              </select>
+              <label className="text-label-secondary text-subhead block">Sport Preset</label>
+              <Select value={sport} onValueChange={(v) => handleLoadTemplate(v)}>
+                <SelectTrigger size="sm" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="soccer">Soccer ⚽</SelectItem>
+                  <SelectItem value="f1">Formula 1 🏎️</SelectItem>
+                  <SelectItem value="boxing">Boxing 🥊</SelectItem>
+                  <SelectItem value="basketball">Basketball 🏀</SelectItem>
+                  <SelectItem value="football">Football 🏈</SelectItem>
+                  <SelectItem value="hockey">Hockey 🏒</SelectItem>
+                  <SelectItem value="baseball">Baseball ⚾</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Advanced Settings Toggle */}
             <div className="pt-1 select-none">
-              <button
+              <Button
                 type="button"
+                size="sm"
+                variant="ghost"
                 onClick={() => setShowConfig(!showConfig)}
-                className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs font-bold transition select-none active:scale-[0.98]"
+                aria-expanded={showConfig}
+                className="text-label-secondary hover:text-label"
               >
-                <Settings className="h-3.5 w-3.5" />
+                <Settings aria-hidden />
                 {showConfig ? "Hide Advanced Settings" : "Configure AI Settings"}
-              </button>
+              </Button>
             </div>
 
             {/* Config Fields */}
             {showConfig && (
-              <div className="border-border/30 bg-card/25 space-y-3.5 rounded-2xl border p-4 backdrop-blur-md">
-                <div className="border-border/20 flex items-center gap-2 border-b pb-2.5 select-none">
-                  <input
-                    type="checkbox"
+              <div className="border-separator rounded-row space-y-4 border p-4">
+                <div className="border-separator flex items-center gap-2 border-b pb-2 select-none">
+                  <Switch
                     id="applyGlobally"
                     checked={applyGlobally}
-                    onChange={(e) => {
-                      const v = e.target.checked;
+                    onCheckedChange={(v) => {
                       setApplyGlobally(v);
                       saveConfig("applyGlobally", v);
                     }}
-                    className="border-border/40 bg-background text-primary accent-primary h-3.5 w-3.5 cursor-pointer rounded"
                   />
-                  <label
-                    htmlFor="applyGlobally"
-                    className="text-foreground cursor-pointer text-xs font-bold tracking-wider uppercase"
-                  >
+                  <label htmlFor="applyGlobally" className="text-label text-subhead cursor-pointer">
                     Apply settings globally (Write to DB)
                   </label>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-muted-foreground block text-xs font-bold uppercase">
-                      Provider
-                    </label>
-                    <select
+                  <div className="space-y-2">
+                    <label className="text-label-secondary text-subhead block">Provider</label>
+                    <Select
                       value={provider}
-                      onChange={(e) => {
-                        setProvider(e.target.value);
-                        saveConfig("provider", e.target.value);
+                      onValueChange={(v) => {
+                        setProvider(v);
+                        saveConfig("provider", v);
                       }}
-                      className="text-foreground border-border/40 bg-background w-full rounded-xl border p-2 text-xs font-semibold focus:outline-none"
                     >
-                      <option value="nvidia">Nvidia</option>
-                      <option value="openrouter">OpenRouter</option>
-                      <option value="openai">OpenAI</option>
-                      <option value="custom">Custom (OpenAI-like)</option>
-                    </select>
+                      <SelectTrigger size="sm" className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nvidia">Nvidia</SelectItem>
+                        <SelectItem value="openrouter">OpenRouter</SelectItem>
+                        <SelectItem value="openai">OpenAI</SelectItem>
+                        <SelectItem value="custom">Custom (OpenAI-like)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-muted-foreground block text-xs font-bold uppercase">
+                  <div className="space-y-2">
+                    <label
+                      id="sports-ai-temperature"
+                      className="text-label-secondary text-subhead block tabular-nums"
+                    >
                       Temp ({temperature})
                     </label>
-                    <input
-                      type="range"
+                    <Slider
+                      aria-labelledby="sports-ai-temperature"
                       min={0}
                       max={1}
                       step={0.1}
-                      value={temperature}
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value);
+                      value={[temperature]}
+                      onValueChange={([v]) => {
+                        if (v === undefined) return;
                         setTemperature(v);
                         saveConfig("temperature", v);
                       }}
-                      className="h-8 w-full cursor-pointer accent-amber-400"
+                      className="h-8"
                     />
                   </div>
                 </div>
 
-                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-white/10 bg-slate-950 p-2">
+                <label className="rounded-control border-separator bg-surface flex cursor-pointer items-center justify-between gap-3 border p-2">
                   <span>
-                    <span className="text-muted-foreground block text-xs font-bold uppercase">
-                      Reasoning Mode
-                    </span>
-                    <span className="text-muted-foreground/70 block text-xs">
+                    <span className="text-label-secondary text-eyebrow block">Reasoning Mode</span>
+                    <span className="text-label-secondary text-footnote block">
                       Higher quality, much slower. Off = fast commentary.
                     </span>
                   </span>
-                  <input
-                    type="checkbox"
+                  <Switch
                     checked={reasoning}
-                    onChange={(e) => {
-                      setReasoning(e.target.checked);
-                      saveConfig("reasoning", e.target.checked);
+                    onCheckedChange={(v) => {
+                      setReasoning(v);
+                      saveConfig("reasoning", v);
                     }}
-                    className="h-4 w-4 cursor-pointer accent-amber-400"
                   />
                 </label>
 
-                <div className="space-y-1.5">
-                  <label className="text-muted-foreground block text-xs font-bold uppercase">
-                    API Key
-                  </label>
-                  <input
+                <div className="space-y-2">
+                  <label className="text-label-secondary text-subhead block">API Key</label>
+                  <Input
                     type="password"
                     value={apiKey}
                     onChange={(e) => {
@@ -612,15 +597,13 @@ function AINarratorLab() {
                       saveConfig("apiKey", e.target.value);
                     }}
                     placeholder="Read from env if empty"
-                    className="text-foreground w-full rounded-lg border border-white/10 bg-slate-950 p-2 text-xs"
+                    className="w-full"
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-muted-foreground block text-xs font-bold uppercase">
-                    Model Name
-                  </label>
-                  <input
+                <div className="space-y-2">
+                  <label className="text-label-secondary text-subhead block">Model Name</label>
+                  <Input
                     type="text"
                     value={modelName}
                     onChange={(e) => {
@@ -628,15 +611,13 @@ function AINarratorLab() {
                       saveConfig("modelName", e.target.value);
                     }}
                     placeholder={placeholders.modelName}
-                    className="text-foreground w-full rounded-lg border border-white/10 bg-slate-950 p-2 font-mono text-xs"
+                    className="w-full font-mono"
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-muted-foreground block text-xs font-bold uppercase">
-                    Base API URL
-                  </label>
-                  <input
+                <div className="space-y-2">
+                  <label className="text-label-secondary text-subhead block">Base API URL</label>
+                  <Input
                     type="text"
                     value={apiUrl}
                     onChange={(e) => {
@@ -644,26 +625,21 @@ function AINarratorLab() {
                       saveConfig("apiUrl", e.target.value);
                     }}
                     placeholder={placeholders.apiUrl}
-                    className="text-foreground w-full rounded-lg border border-white/10 bg-slate-950 p-2 font-mono text-xs"
+                    className="w-full font-mono"
                   />
                 </div>
 
-                <div className="flex items-center justify-between gap-2 border-t border-white/5 pt-2">
-                  <span className="text-muted-foreground text-xs">
+                <div className="border-separator flex items-center justify-between gap-2 border-t pt-2">
+                  <span className="text-label-secondary text-footnote">
                     {applyGlobally ? "Settings will be written globally." : "Local storage only."}
                   </span>
-                  <div className="flex gap-1.5">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleResetConfig}
-                      className="h-6 rounded-lg border-rose-500/30 bg-rose-500/5 px-2 text-xs font-bold text-rose-400 hover:bg-rose-500/20 hover:text-rose-300"
-                    >
+                  <div className="flex gap-2">
+                    <Button type="button" variant="destructive" onClick={handleResetConfig}>
                       Reset Defaults
                     </Button>
                     <Button
                       type="button"
-                      variant="default"
+                      variant="filled"
                       onClick={() => {
                         saveGlobalSettingsMutation.mutate(
                           {
@@ -692,7 +668,6 @@ function AINarratorLab() {
                         );
                       }}
                       disabled={saveGlobalSettingsMutation.isPending}
-                      className="h-6 rounded-lg bg-amber-500 px-2.5 text-xs font-bold text-slate-950 hover:bg-amber-600"
                     >
                       {saveGlobalSettingsMutation.isPending ? "Saving..." : "Save Config"}
                     </Button>
@@ -701,18 +676,10 @@ function AINarratorLab() {
               </div>
             )}
 
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-muted-foreground text-xs font-bold uppercase">
-                  Play-by-Play Events
-                </label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAddEvent}
-                  className="h-6 rounded-full border-white/10 bg-white/5 px-2.5 text-xs font-bold text-white"
-                >
+                <label className="text-label-secondary text-subhead">Play-by-Play Events</label>
+                <Button type="button" variant="outline" size="sm" onClick={handleAddEvent}>
                   + Add Event
                 </Button>
               </div>
@@ -720,22 +687,22 @@ function AINarratorLab() {
               <div className="max-h-[380px] space-y-2 overflow-y-auto pr-1">
                 {events.map((event, idx) => (
                   <div key={idx} className="flex items-center gap-2">
-                    <span className="text-muted-foreground w-6 text-right font-mono text-xs font-black">
+                    <span className="text-label-secondary text-caption w-6 text-right tabular-nums">
                       {idx * 10}'
                     </span>
-                    <input
+                    <Input
                       type="text"
                       value={event}
                       onChange={(e) => handleEventChange(idx, e.target.value)}
                       placeholder="e.g. Referee blows whistle / Goal scored..."
-                      className="text-foreground border-border/40 bg-background flex-1 rounded-xl border p-2 text-xs focus:outline-none"
+                      className="flex-1"
                     />
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       onClick={() => handleRemoveEvent(idx)}
-                      className="h-8 w-8 rounded-full p-0 text-rose-400 hover:text-rose-300 active:scale-[0.98]"
+                      className="text-destructive w-8 p-0"
                     >
                       ×
                     </Button>
@@ -748,7 +715,7 @@ function AINarratorLab() {
               type="button"
               onClick={handleRunTest}
               disabled={runTestMutation.isPending}
-              className="mt-2 w-full gap-2 rounded-xl font-bold active:scale-[0.98]"
+              className="mt-2 w-full gap-2"
             >
               {runTestMutation.isPending ? (
                 <>
@@ -767,35 +734,28 @@ function AINarratorLab() {
           {/* Results Card (Right) */}
           <div className="space-y-4 md:col-span-6">
             <div className="flex items-center justify-between select-none">
-              <label className="text-muted-foreground text-xs font-bold uppercase">
+              <label className="text-label-secondary text-subhead">
                 Generated Broadcast Output
               </label>
               {latency != null && (
-                <Badge
-                  variant="outline"
-                  className="border-cyan-500/30 bg-cyan-500/10 text-xs font-bold text-cyan-400"
-                >
-                  Latency: {latency.toLocaleString()}ms
-                </Badge>
+                <Badge variant="teal">Latency: {latency.toLocaleString()}ms</Badge>
               )}
             </div>
 
-            <div className="relative max-h-[460px] min-h-[360px] overflow-y-auto rounded-2xl border border-white/10 bg-slate-950/50 p-4 backdrop-blur-md">
+            <div className="rounded-card border-separator bg-fill-3 relative max-h-[460px] min-h-[360px] overflow-y-auto border p-4">
               {runTestMutation.isPending ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center space-y-3 p-6 text-center">
-                  <Sparkles className="h-8 w-8 animate-spin text-amber-400" />
+                  <Sparkles className="text-yellow h-8 w-8 animate-spin" />
                   <div>
-                    <p className="text-xs font-bold text-white">
-                      Transmitting mock telemetry to LLM...
-                    </p>
-                    <p className="mt-1 max-w-[280px] text-xs text-white/50">
+                    <p className="text-caption text-label">Transmitting mock telemetry to LLM...</p>
+                    <p className="text-footnote text-label mt-1 max-w-[280px]">
                       Generating immersive, custom-style commentary via the Nvidia Nemotron engine.
                     </p>
                   </div>
                 </div>
               ) : outputs.length === 0 ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-xs text-white/40 italic">
-                  <Sparkles className="mb-2 h-7 w-7 text-amber-500/40 opacity-55" />
+                <div className="text-footnote text-label absolute inset-0 flex flex-col items-center justify-center p-6 text-center italic">
+                  <Sparkles className="text-yellow mb-2 h-7 w-7 opacity-55" />
                   Set up event inputs on the left and click run to stream generated play-by-play
                   commentary.
                 </div>
@@ -804,17 +764,17 @@ function AINarratorLab() {
                   {outputs.map((out, idx) => (
                     <div
                       key={idx}
-                      className="border-b border-white/5 pb-3 text-xs leading-relaxed last:border-b-0 last:pb-0"
+                      className="border-separator text-footnote border-b pb-3 leading-relaxed last:border-b-0 last:pb-0"
                     >
-                      <div className="mb-1.5 flex items-center gap-2">
-                        <span className="rounded border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 font-mono text-xs font-bold text-amber-300">
+                      <div className="mb-2 flex items-center gap-2">
+                        <Badge variant="yellow" className="tabular-nums">
                           {idx * 10}' Event
-                        </span>
-                        <span className="max-w-[200px] truncate text-xs text-white/40 italic">
+                        </Badge>
+                        <span className="text-footnote text-label max-w-[200px] truncate italic">
                           "{events[idx]}"
                         </span>
                       </div>
-                      <p className="rounded-r-xl border-l border-amber-400 bg-white/5 p-2 pl-1 font-medium text-white/90">
+                      <p className="rounded-r-row border-yellow bg-fill-4 text-label border-l p-2 pl-1 font-medium">
                         {out}
                       </p>
                     </div>
@@ -881,10 +841,10 @@ function NotificationSettingsCard() {
   };
 
   return (
-    <Card className="facet-hierarchy-parent border-border/60 bg-card/40">
+    <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Auto-Notifications</CardTitle>
-        <p className="text-muted-foreground text-xs">
+        <CardTitle className="text-body">Auto-Notifications</CardTitle>
+        <p className="text-label-secondary text-footnote">
           Master on/off switches for every automatic sports post and alert. Applies to all leagues.
         </p>
       </CardHeader>
@@ -892,11 +852,11 @@ function NotificationSettingsCard() {
         {NOTIFY_TOGGLES.map((t) => (
           <div
             key={t.key}
-            className="facet-hierarchy-child border-border/50 bg-card/30 flex items-start justify-between gap-3 rounded-lg border p-3"
+            className="bg-surface-secondary border-separator rounded-control flex items-start justify-between gap-3 border p-3"
           >
             <div>
-              <div className="text-foreground text-sm font-medium">{t.label}</div>
-              <p className="text-muted-foreground mt-0.5 text-xs leading-snug">{t.hint}</p>
+              <div className="text-label text-body font-medium">{t.label}</div>
+              <p className="text-label-secondary text-footnote mt-0.5 leading-snug">{t.hint}</p>
             </div>
             <Switch
               checked={data?.[t.key] ?? true}
@@ -995,7 +955,7 @@ export default function SportsOversightPanel() {
       return (
         <div className="space-y-3 py-6">
           {Array.from({ length: 5 }, (_, i) => (
-            <Skeleton key={i} className="h-10 w-full rounded-lg" />
+            <Skeleton key={i} className="rounded-control h-10 w-full" />
           ))}
         </div>
       );
@@ -1004,8 +964,8 @@ export default function SportsOversightPanel() {
     if (isError) {
       return (
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <AlertTriangle className="h-10 w-10 text-red-400" />
-          <p className="text-muted-foreground text-sm">Failed to load leagues.</p>
+          <AlertTriangle className="text-red h-10 w-10" />
+          <p className="text-label-secondary text-body">Failed to load leagues.</p>
           <Button variant="outline" size="sm" onClick={() => void refetch()}>
             Retry
           </Button>
@@ -1016,8 +976,8 @@ export default function SportsOversightPanel() {
     if (!leagueList || leagueList.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <Trophy className="text-muted-foreground/40 h-10 w-10" />
-          <p className="text-muted-foreground text-sm">No leagues found.</p>
+          <Trophy className="text-label-tertiary h-10 w-10" />
+          <p className="text-label-secondary text-body">No leagues found.</p>
         </div>
       );
     }
@@ -1039,11 +999,11 @@ export default function SportsOversightPanel() {
           {leagueList.map((league) => {
             const status = statusMeta[league.status] ?? {
               label: league.status,
-              className: "bg-muted/50 text-muted-foreground border-border",
+              className: "bg-fill-3 text-label-secondary border-separator",
             };
             const archetype = archetypeMeta[league.archetype] ?? {
               label: league.archetype,
-              className: "bg-muted/50 text-muted-foreground border-border",
+              className: "bg-fill-3 text-label-secondary border-separator",
             };
             const icon = getSportIcon(league.sportPreset);
 
@@ -1055,37 +1015,34 @@ export default function SportsOversightPanel() {
                     <span className="max-w-[180px] truncate">{league.name}</span>
                     {league.id === featuredId && (
                       <Star
-                        className="h-3.5 w-3.5 shrink-0 fill-amber-500 text-amber-500"
+                        className="fill-yellow text-yellow h-3.5 w-3.5 shrink-0"
                         aria-label="Featured on lobby"
                       />
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="text-muted-foreground capitalize">
+                <TableCell className="text-label-secondary capitalize">
                   {league.sportPreset}
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={cn("text-xs", archetype.className)}>
+                  <Badge variant="outline" className={cn("text-footnote", archetype.className)}>
                     {archetype.label}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right tabular-nums">{league.teamCount}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={cn("text-xs", status.className)}>
+                  <Badge variant="outline" className={cn("text-footnote", status.className)}>
                     {status.label}
                   </Badge>
                 </TableCell>
                 <TableCell>
                   {league.isCanonical ? (
-                    <Badge
-                      variant="outline"
-                      className="border-purple-500/30 bg-purple-500/10 text-xs text-purple-400"
-                    >
+                    <Badge variant="purple">
                       <Shield className="mr-1 h-3 w-3" />
                       Canonical
                     </Badge>
                   ) : (
-                    <span className="text-muted-foreground text-xs">—</span>
+                    <span className="text-label-secondary text-footnote">—</span>
                   )}
                 </TableCell>
                 <TableCell>
@@ -1108,7 +1065,7 @@ export default function SportsOversightPanel() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-red-400 hover:text-red-300"
+                      className="text-destructive"
                       onClick={() => setDeleteTarget({ id: league.id, name: league.name })}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -1128,15 +1085,15 @@ export default function SportsOversightPanel() {
       <NotificationSettingsCard />
 
       {/* Overview stats cards */}
-      <div className="facet-hierarchy-parent border-border/60 bg-card/40 rounded-xl border p-6">
+      <div className="border-separator bg-surface rounded-row border p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="border-border/50 bg-muted/30 flex h-12 w-12 items-center justify-center rounded-xl border text-purple-400">
+            <div className="border-separator bg-fill-4 rounded-row text-purple flex h-12 w-12 items-center justify-center border">
               <Trophy className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-foreground text-2xl font-bold">Sports Admin Oversight</h1>
-              <p className="text-muted-foreground text-sm">
+              <h1 className="text-label text-title-1">Sports Admin Oversight</h1>
+              <p className="text-label-secondary text-body">
                 System oversight, canonical league creation and simulated state auditing
               </p>
             </div>
@@ -1149,35 +1106,27 @@ export default function SportsOversightPanel() {
 
         {/* Global stats row */}
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-4">
-          <div className="facet-hierarchy-child border-border/50 bg-card/30 rounded-lg border p-3">
-            <span className="text-muted-foreground text-xs font-medium uppercase">
-              Total Leagues
-            </span>
-            <div className="text-foreground mt-0.5 text-xl font-bold tabular-nums">
+          <div className="bg-surface-secondary border-separator rounded-control border p-3">
+            <span className="text-label-secondary text-eyebrow">Total Leagues</span>
+            <div className="text-label text-title-2 mt-0.5 tabular-nums">
               {globalStats?.totalLeagues ?? 0}
             </div>
           </div>
-          <div className="facet-hierarchy-child border-border/50 bg-card/30 rounded-lg border p-3">
-            <span className="text-muted-foreground text-xs font-medium uppercase">
-              Simulated Matches
-            </span>
-            <div className="mt-0.5 text-xl font-bold text-purple-400 tabular-nums">
+          <div className="bg-surface-secondary border-separator rounded-control border p-3">
+            <span className="text-label-secondary text-eyebrow">Simulated Matches</span>
+            <div className="text-title-2 text-purple mt-0.5 tabular-nums">
               {globalStats?.totalMatches ?? 0}
             </div>
           </div>
-          <div className="facet-hierarchy-child border-border/50 bg-card/30 rounded-lg border p-3">
-            <span className="text-muted-foreground text-xs font-medium uppercase">
-              Total Players
-            </span>
-            <div className="mt-0.5 text-xl font-bold text-emerald-400 tabular-nums">
+          <div className="bg-surface-secondary border-separator rounded-control border p-3">
+            <span className="text-label-secondary text-eyebrow">Total Players</span>
+            <div className="text-title-2 text-green mt-0.5 tabular-nums">
               {globalStats?.totalPlayers ?? 0}
             </div>
           </div>
-          <div className="facet-hierarchy-child border-border/50 bg-card/30 rounded-lg border p-3">
-            <span className="text-muted-foreground text-xs font-medium uppercase">
-              LLM News Auto-Posts
-            </span>
-            <div className="mt-0.5 text-xl font-bold text-amber-400 tabular-nums">
+          <div className="bg-surface-secondary border-separator rounded-control border p-3">
+            <span className="text-label-secondary text-eyebrow">LLM News Auto-Posts</span>
+            <div className="text-title-2 text-yellow mt-0.5 tabular-nums">
               {globalStats?.llmPosts ?? 0}
             </div>
           </div>
@@ -1186,13 +1135,13 @@ export default function SportsOversightPanel() {
 
       {managedLeagueId && managedLeague ? (
         /* Expanded Drill-down League Manage Panel */
-        <Card className="facet-hierarchy-child border-border/50 bg-card/40 relative p-6">
+        <Card className="relative p-6">
           <Button
             variant="ghost"
             onClick={() => setManagedLeagueId(null)}
-            className="text-muted-foreground hover:text-foreground absolute top-4 right-4 text-xs font-bold"
+            className="absolute top-4 right-4"
           >
-            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back to List
+            <ArrowLeft className="mr-2 h-3.5 w-3.5" /> Back to List
           </Button>
 
           <div className="space-y-6">
@@ -1202,15 +1151,13 @@ export default function SportsOversightPanel() {
                   {getSportIcon(managedLeague.sportPreset)} {managedLeague.sportPreset}
                 </Badge>
                 {managedLeague.isCanonical ? (
-                  <Badge className="border-purple-500/20 bg-purple-500/10 text-purple-400">
-                    Canonical League
-                  </Badge>
+                  <Badge variant="purple">Canonical League</Badge>
                 ) : (
                   <Badge variant="secondary">User Created</Badge>
                 )}
               </div>
-              <h2 className="text-foreground mt-2 text-2xl font-black">{managedLeague.name}</h2>
-              <p className="text-muted-foreground mt-1 text-xs">ID: {managedLeague.id}</p>
+              <h2 className="text-label text-title-1 mt-2">{managedLeague.name}</h2>
+              <p className="text-label-secondary text-footnote mt-1">ID: {managedLeague.id}</p>
 
               <div className="mt-3">
                 <Button
@@ -1219,22 +1166,21 @@ export default function SportsOversightPanel() {
                   onClick={() => handleToggleFeatured(managedLeague.id)}
                   disabled={setFeaturedMutation.isPending}
                   className={cn(
-                    "gap-1.5 text-xs font-bold",
-                    managedLeague.id === featuredId &&
-                      "bg-amber-500 text-slate-950 hover:bg-amber-600"
+                    "text-caption gap-2",
+                    managedLeague.id === featuredId && "bg-yellow text-label hover:bg-yellow"
                   )}
                 >
                   <Star
                     className={cn(
                       "h-3.5 w-3.5",
-                      managedLeague.id === featuredId && "fill-slate-950"
+                      managedLeague.id === featuredId && "fill-label-secondary"
                     )}
                   />
                   {managedLeague.id === featuredId
                     ? "Featured on Lobby — Unset"
                     : "Set as Featured League"}
                 </Button>
-                <p className="text-muted-foreground mt-1.5 text-xs">
+                <p className="text-label-secondary text-footnote mt-2">
                   The featured league is shown as the hero on the MyLeague lobby. Only one at a
                   time.
                 </p>
@@ -1254,35 +1200,27 @@ export default function SportsOversightPanel() {
 
               <TabsContent value="info" className="mt-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-muted/10 border-border/10 rounded-xl border p-4">
-                    <span className="text-muted-foreground block text-xs font-bold uppercase">
-                      Archetype
-                    </span>
-                    <span className="text-foreground text-sm font-semibold capitalize">
+                  <div className="bg-fill-4 border-separator rounded-row border p-4">
+                    <span className="text-label-secondary text-eyebrow block">Archetype</span>
+                    <span className="text-label text-headline capitalize">
                       {managedLeague.archetype}
                     </span>
                   </div>
-                  <div className="bg-muted/10 border-border/10 rounded-xl border p-4">
-                    <span className="text-muted-foreground block text-xs font-bold uppercase">
-                      Teams Count
-                    </span>
-                    <span className="text-foreground text-sm font-semibold">
+                  <div className="bg-fill-4 border-separator rounded-row border p-4">
+                    <span className="text-label-secondary text-eyebrow block">Teams Count</span>
+                    <span className="text-label text-headline">
                       {managedLeague.teamCount} Teams
                     </span>
                   </div>
-                  <div className="bg-muted/10 border-border/10 rounded-xl border p-4">
-                    <span className="text-muted-foreground block text-xs font-bold uppercase">
-                      promotion Zone
-                    </span>
-                    <span className="text-foreground text-sm font-semibold">
+                  <div className="bg-fill-4 border-separator rounded-row border p-4">
+                    <span className="text-label-secondary text-eyebrow block">promotion Zone</span>
+                    <span className="text-label text-headline">
                       {managedLeague.promotionCount} Teams
                     </span>
                   </div>
-                  <div className="bg-muted/10 border-border/10 rounded-xl border p-4">
-                    <span className="text-muted-foreground block text-xs font-bold uppercase">
-                      relegation Zone
-                    </span>
-                    <span className="text-foreground text-sm font-semibold">
+                  <div className="bg-fill-4 border-separator rounded-row border p-4">
+                    <span className="text-label-secondary text-eyebrow block">relegation Zone</span>
+                    <span className="text-label text-headline">
                       {managedLeague.relegationCount} Teams
                     </span>
                   </div>
@@ -1290,9 +1228,9 @@ export default function SportsOversightPanel() {
               </TabsContent>
 
               <TabsContent value="danger" className="mt-6 space-y-4">
-                <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
-                  <h3 className="text-sm font-bold text-red-400">Destructive Actions</h3>
-                  <p className="text-muted-foreground mt-1 text-xs">
+                <div className="rounded-card border-red/20 bg-red/10 border p-4">
+                  <h3 className="text-headline text-red">Destructive Actions</h3>
+                  <p className="text-label-secondary text-footnote mt-1">
                     These operations are irreversibly destructive and will wipe out season matches,
                     standings or the league completely.
                   </p>
@@ -1303,7 +1241,6 @@ export default function SportsOversightPanel() {
                       onClick={() =>
                         handleToggleCanonical(managedLeague.id, managedLeague.isCanonical)
                       }
-                      className="border-amber-500/20 text-xs font-bold text-amber-400 hover:bg-amber-500/5"
                     >
                       {managedLeague.isCanonical
                         ? "Remove Canonical Status"
@@ -1315,7 +1252,6 @@ export default function SportsOversightPanel() {
                       onClick={() =>
                         setDeleteTarget({ id: managedLeague.id, name: managedLeague.name })
                       }
-                      className="text-xs font-bold"
                     >
                       Force-Delete League Completely
                     </Button>
@@ -1332,45 +1268,43 @@ export default function SportsOversightPanel() {
             <TabsTrigger value="all">All Leagues</TabsTrigger>
             <TabsTrigger value="canonical">Canonical Leagues</TabsTrigger>
             <TabsTrigger value="create">Create Canonical</TabsTrigger>
-            <TabsTrigger value="narrator" className="gap-1.5 text-amber-400">
+            <TabsTrigger value="narrator" className="text-yellow gap-2">
               <Sparkles className="h-3.5 w-3.5" />
               AI Narrator Lab
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="all">
-            <Card className="facet-hierarchy-child border-border/50 bg-card/40">
+            <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">All Leagues</CardTitle>
+                <CardTitle className="text-body">All Leagues</CardTitle>
               </CardHeader>
               <CardContent>{renderTable(leagues, true)}</CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="canonical">
-            <Card className="facet-hierarchy-child border-border/50 bg-card/40">
+            <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Canonical Leagues</CardTitle>
+                <CardTitle className="text-body">Canonical Leagues</CardTitle>
               </CardHeader>
               <CardContent>{renderTable(canonicalLeagues, true)}</CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="create">
-            <Card className="facet-hierarchy-child border-border/50 bg-card/40">
+            <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Create Canonical League</CardTitle>
+                <CardTitle className="text-body">Create Canonical League</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
-                  <div className="bg-primary/10 flex h-16 w-16 items-center justify-center rounded-full">
-                    <Shield className="text-primary h-8 w-8" />
+                  <div className="bg-tint-fill flex h-16 w-16 items-center justify-center rounded-full">
+                    <Shield className="text-tint h-8 w-8" />
                   </div>
                   <div>
-                    <h3 className="text-foreground text-sm font-semibold">
-                      Standard League Builder
-                    </h3>
-                    <p className="text-muted-foreground mt-1 max-w-[280px] text-xs">
+                    <h3 className="text-label text-headline">Standard League Builder</h3>
+                    <p className="text-label-secondary text-footnote mt-1 max-w-[280px]">
                       Construct a custom canonical league structure bound to the global system
                       presets.
                     </p>
@@ -1403,11 +1337,12 @@ export default function SportsOversightPanel() {
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-red-400">Irreversible Deletion</DialogTitle>
+            <DialogTitle className="text-red">Irreversible Deletion</DialogTitle>
             <DialogDescription>
               Are you absolutely certain you want to delete{" "}
-              <span className="font-bold text-white">"{deleteTarget?.name}"</span>? All associated
-              matches, teams, rosters, historical standings, and records will be deleted forever.
+              <span className="text-label font-semibold">"{deleteTarget?.name}"</span>? All
+              associated matches, teams, rosters, historical standings, and records will be deleted
+              forever.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4 gap-2">

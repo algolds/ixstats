@@ -4,6 +4,9 @@ import React, { useMemo } from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
+import { FacetCard } from "~/components/ui/facet-container";
+import { EmptyState } from "~/components/ui/empty-state";
+import { Eyebrow } from "~/components/ui/eyebrow";
 import {
   Trophy,
   Play,
@@ -20,8 +23,8 @@ import { NextMatchCountdown } from "~/components/sports/league/NextMatchCountdow
 import { LatestResults, type MatchEvent } from "~/components/sports/LatestResults";
 import { StandingsTable, type StandingsRow } from "~/components/sports/StandingsTable";
 import type { SportsNavSection } from "~/components/sports/core/SportsSidebarNav";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { cn } from "~/lib/utils";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 interface StandingLeader {
   teamId: string;
@@ -123,7 +126,6 @@ export function LeagueOverviewTab({
 
   const handleSimulate = () => {
     if (!activeSeason || !nextMatchDay) return;
-    soundEffects.bloom();
     onSimulateMatchDay(activeSeason.id, nextMatchDay);
   };
 
@@ -132,65 +134,50 @@ export function LeagueOverviewTab({
       {/* ─── SPLIT COCKPIT (OPTION A) ─── */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left 2/3 Column: Standings Table */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="space-y-4 lg:col-span-2">
           <div className="flex items-center justify-between px-1">
-            <span className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-muted-foreground">
-              <Trophy className="h-4 w-4 text-amber-400" />
+            <h3 className="text-subhead text-label-secondary flex items-center gap-2">
+              <Trophy className="text-yellow size-4" aria-hidden />
               Standings
-            </span>
-            <button
-              type="button"
-              onClick={() => onNavigate("standings")}
-              className="text-xs font-bold text-muted-foreground hover:text-foreground transition flex items-center gap-1 cursor-pointer active:scale-[0.98]"
-            >
+            </h3>
+            <Button variant="plain" size="sm" onClick={() => onNavigate("standings")}>
               <span>Full Table</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
+              <ArrowRight />
+            </Button>
           </div>
 
           {standingsLoading ? (
-            <div className="space-y-2 rounded-2xl border border-border/40 bg-card/60 p-6">
-              <Skeleton className="h-8 w-full rounded-xl" />
-              <Skeleton className="h-8 w-full rounded-xl" />
-              <Skeleton className="h-8 w-full rounded-xl" />
-              <Skeleton className="h-8 w-full rounded-xl" />
-              <Skeleton className="h-8 w-full rounded-xl" />
-            </div>
+            <FacetCard padding="lg" className="space-y-2">
+              <Skeleton className="rounded-row h-8 w-full" />
+              <Skeleton className="rounded-row h-8 w-full" />
+              <Skeleton className="rounded-row h-8 w-full" />
+              <Skeleton className="rounded-row h-8 w-full" />
+              <Skeleton className="rounded-row h-8 w-full" />
+            </FacetCard>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-border/40 bg-card/60 backdrop-blur-xl shadow-lg">
-              <StandingsTable
-                standings={standingsRows.slice(0, 8)}
-                onTeamClick={onTeamClick}
-              />
-            </div>
+            <FacetCard className="overflow-hidden">
+              <StandingsTable standings={standingsRows.slice(0, 8)} onTeamClick={onTeamClick} />
+            </FacetCard>
           )}
         </div>
 
         {/* Right 1/3 Column: Next Round & Top Teams */}
         <div className="space-y-6">
           {/* Next Up / Simulation Card */}
-          <div className="relative overflow-hidden rounded-2xl border border-border/40 bg-card/75 p-5 shadow-lg backdrop-blur-xl space-y-4">
+          <FacetCard padding="md" className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
-                Next Round
-              </span>
-              <Badge
-                variant="outline"
-                className={cn(
-                  "text-xs font-black uppercase tracking-wider",
-                  activeSeason ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-border/40"
-                )}
-              >
+              <Eyebrow>Next Round</Eyebrow>
+              <Badge variant={activeSeason ? "success" : "neutral"}>
                 {activeSeason ? `Round ${nextMatchDay ?? 1}` : "Completed"}
               </Badge>
             </div>
 
             {activeSeason ? (
               <div className="space-y-3">
-                <h3 className="text-base font-black text-foreground">
+                <h3 className="text-headline text-label">
                   {nextMatchDay ? `Round ${nextMatchDay}` : "Championship"}
                 </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
+                <p className="text-callout text-label-secondary">
                   Simulate matches for this round to update standings and results.
                 </p>
 
@@ -203,17 +190,17 @@ export function LeagueOverviewTab({
                 <Button
                   onClick={handleSimulate}
                   disabled={isSimulatingMatchDay}
-                  data-cuelume-press="subtle"
-                  className="w-full h-11 gap-2 rounded-xl bg-primary text-xs font-black text-primary-foreground shadow-md transition hover:opacity-90 active:scale-[0.98] cursor-pointer"
+                  size="lg"
+                  className="w-full"
                 >
                   {isSimulatingMatchDay ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="animate-spin" />
                       <span>Simulating...</span>
                     </>
                   ) : (
                     <>
-                      <Play className="h-4 w-4 fill-current" />
+                      <Play className="fill-current" />
                       <span>Simulate Round (Space)</span>
                     </>
                   )}
@@ -221,23 +208,23 @@ export function LeagueOverviewTab({
               </div>
             ) : latestSeason?.status === "completed" ? (
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
-                  <Trophy className="h-4 w-4 shrink-0" />
+                <div className="text-headline text-yellow flex items-center gap-2">
+                  <Trophy className="size-4 shrink-0" aria-hidden />
                   <span>Season {latestSeason.seasonNumber} Completed</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Won by {latestSeason.champion?.name ?? "Champion"}. Advance to start the next season.
+                <p className="text-footnote text-label-secondary">
+                  Won by {latestSeason.champion?.name ?? "Champion"}. Advance to start the next
+                  season.
                 </p>
                 {onTransitionSeason && (
                   <Button
                     onClick={() => onTransitionSeason(latestSeason.id)}
                     disabled={isTransitioningSeason}
-                    data-cuelume-press="subtle"
-                    className="w-full h-10 rounded-xl bg-amber-500 hover:bg-amber-600 text-black font-black text-xs active:scale-[0.98] cursor-pointer"
+                    className="w-full"
                   >
                     {isTransitioningSeason ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="animate-spin" />
                         <span>Starting Season...</span>
                       </>
                     ) : (
@@ -248,24 +235,23 @@ export function LeagueOverviewTab({
               </div>
             ) : (
               <div className="space-y-3">
-                <p className="text-xs text-muted-foreground">
+                <p className="text-footnote text-label-secondary">
                   Start Season 1 to generate the schedule and standings.
                 </p>
                 {onStartSeason && (
                   <Button
                     onClick={() => onStartSeason(leagueId)}
                     disabled={isStartingSeason}
-                    data-cuelume-press="subtle"
-                    className="w-full h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs active:scale-[0.98] cursor-pointer"
+                    className="w-full"
                   >
                     {isStartingSeason ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="animate-spin" />
                         <span>Starting...</span>
                       </>
                     ) : (
                       <>
-                        <Play className="mr-2 h-4 w-4 fill-white" />
+                        <Play className="fill-current" />
                         <span>Start Season 1</span>
                       </>
                     )}
@@ -273,81 +259,79 @@ export function LeagueOverviewTab({
                 )}
               </div>
             )}
-          </div>
+          </FacetCard>
 
           {/* Top Teams */}
           {topContenders.length > 0 && (
-            <div className="rounded-2xl border border-border/40 bg-card/60 p-5 backdrop-blur-xl shadow-md space-y-3">
-              <span className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-muted-foreground">
-                <Flame className="h-3.5 w-3.5 text-amber-400" />
+            <FacetCard padding="md" className="space-y-3">
+              <h3 className="text-subhead text-label-secondary flex items-center gap-2">
+                <Flame className="text-orange size-4" aria-hidden />
                 Top Teams
-              </span>
+              </h3>
 
-              <div className="space-y-2">
+              <FacetListSection variant="plain" aria-label="Top teams">
                 {topContenders.map((contender, idx) => {
                   const ptsGap = contender.points - leaderPoints;
                   return (
-                    <div
+                    <FacetRow
                       key={contender.team.id}
                       onClick={() => onTeamClick(contender.teamId)}
-                      data-cuelume-press="subtle"
-                      className={cn(
-                        "group flex items-center justify-between rounded-xl border p-2.5 transition hover:bg-muted/30 cursor-pointer active:scale-[0.98]",
-                        idx === 0
-                          ? "border-amber-400/40 bg-amber-400/10"
-                          : "border-border/30 bg-card/40"
-                      )}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="font-mono text-xs font-black text-muted-foreground w-4 text-center">
-                          {idx + 1}
+                      itemClassName={cn("rounded-row overflow-hidden", idx === 0 && "bg-yellow/10")}
+                      leading={
+                        <span className="flex items-center gap-2">
+                          <span className="text-footnote text-label-secondary w-4 text-center font-semibold tabular-nums">
+                            {idx + 1}
+                          </span>
+                          <span className="border-separator bg-surface rounded-control-sm flex size-7 shrink-0 items-center justify-center overflow-hidden border">
+                            {contender.team.logo ? (
+                              <img
+                                src={withBasePath(contender.team.logo)}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <Shield className="text-label-secondary size-3.5" aria-hidden />
+                            )}
+                          </span>
                         </span>
-                        <div className="h-7 w-7 rounded-lg overflow-hidden border border-border/40 bg-background/80 shrink-0 flex items-center justify-center">
-                          {contender.team.logo ? (
-                            <img src={withBasePath(contender.team.logo)} alt="" className="h-full w-full object-cover" />
-                          ) : (
-                            <Shield className="h-3.5 w-3.5 text-muted-foreground" />
-                          )}
-                        </div>
-                        <span className="font-bold text-foreground text-xs truncate">
+                      }
+                      title={
+                        <span className="text-footnote block truncate font-medium">
                           {contender.team.name}
                         </span>
-                      </div>
-
-                      <div className="text-right shrink-0">
-                        <span className="font-mono font-black text-xs text-foreground">
-                          {contender.points} pts
-                        </span>
-                        {idx > 0 && (
-                          <span className="block text-xs font-bold text-muted-foreground">
-                            {ptsGap} pts
+                      }
+                      trailing={
+                        <span className="shrink-0 text-right">
+                          <span className="text-footnote text-label block font-semibold tabular-nums">
+                            {contender.points} pts
                           </span>
-                        )}
-                      </div>
-                    </div>
+                          {idx > 0 && (
+                            <span className="text-footnote text-label-secondary block tabular-nums">
+                              {ptsGap} pts
+                            </span>
+                          )}
+                        </span>
+                      }
+                    />
                   );
                 })}
-              </div>
-            </div>
+              </FacetListSection>
+            </FacetCard>
           )}
         </div>
       </div>
 
       {/* ─── Recent Results ─── */}
-      <section className="space-y-4 border-t border-border/20 pt-6">
+      <section className="border-separator space-y-4 border-t pt-6">
         <div className="flex items-center justify-between px-1">
-          <span className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-muted-foreground">
-            <Activity className="h-4 w-4 text-cyan-400" />
+          <h3 className="text-subhead text-label-secondary flex items-center gap-2">
+            <Activity className="size-4" aria-hidden />
             Recent Results
-          </span>
-          <button
-            type="button"
-            onClick={() => onNavigate("schedule")}
-            className="text-xs font-bold text-muted-foreground hover:text-foreground transition flex items-center gap-1 cursor-pointer active:scale-[0.98]"
-          >
+          </h3>
+          <Button variant="plain" size="sm" onClick={() => onNavigate("schedule")}>
             <span>Full Schedule</span>
-            <ArrowRight className="h-3.5 w-3.5" />
-          </button>
+            <ArrowRight />
+          </Button>
         </div>
 
         {latestResultsMatches.length > 0 ? (
@@ -357,13 +341,14 @@ export function LeagueOverviewTab({
             onMatchClick={onMatchClick}
           />
         ) : (
-          <div className="rounded-2xl border border-border/40 bg-card/40 p-8 text-center backdrop-blur-md">
-            <Calendar className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
-            <p className="text-xs font-bold text-foreground">No Matches Played Yet</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Simulate a round above to view match results.
-            </p>
-          </div>
+          <FacetCard>
+            <EmptyState
+              compact
+              icon={<Calendar />}
+              title="No Matches Played Yet"
+              message="Simulate a round above to view match results."
+            />
+          </FacetCard>
         )}
       </section>
     </div>

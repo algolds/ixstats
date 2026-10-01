@@ -12,6 +12,20 @@ import type { FeatureCollection } from "geojson";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
 
+/**
+ * Fallback paint for features without their own SVG fill/stroke: the `gray` system colour and the
+ * secondary label role, read from the theme at draw time (MapLibre paint cannot take CSS
+ * variables). The literals only apply when no theme value resolves (tests, SSR).
+ */
+function resolveFallbackPaint(el: HTMLElement | null): { fill: string; stroke: string } {
+  const style = el && typeof getComputedStyle === "function" ? getComputedStyle(el) : null;
+  const read = (name: string, fallback: string) => style?.getPropertyValue(name).trim() || fallback;
+  return {
+    fill: read("--color-gray", "#6b7280"),
+    stroke: read("--color-label-secondary", "#52525b"),
+  };
+}
+
 interface SvgPreviewMapProps {
   geojson: FeatureCollection | null;
   layerType: string;
@@ -57,6 +71,7 @@ export function SvgPreviewMap({
 
       map.on("load", () => {
         if (isCancelled()) return;
+        const fallback = resolveFallbackPaint(containerRef.current);
         // Add preview source
         map.addSource("preview-data", {
           type: "geojson",
@@ -69,7 +84,7 @@ export function SvgPreviewMap({
           type: "fill",
           source: "preview-data",
           paint: {
-            "fill-color": ["coalesce", ["get", "fill"], "#94a3b8"],
+            "fill-color": ["coalesce", ["get", "fill"], fallback.fill],
             "fill-opacity": 0.85,
           },
         });
@@ -80,7 +95,7 @@ export function SvgPreviewMap({
           type: "line",
           source: "preview-data",
           paint: {
-            "line-color": ["coalesce", ["get", "stroke"], "#334155"],
+            "line-color": ["coalesce", ["get", "stroke"], fallback.stroke],
             "line-width": 0.5,
           },
         });
@@ -131,13 +146,13 @@ export function SvgPreviewMap({
   }, [initMap]);
 
   if (!geojson) {
-    return <Skeleton className={`w-full rounded-lg ${className}`} style={{ height }} />;
+    return <Skeleton className={`rounded-control w-full ${className}`} style={{ height }} />;
   }
 
   return (
     <div
       ref={containerRef}
-      className={`border-border w-full rounded-lg border ${className}`}
+      className={`border-separator rounded-control w-full border ${className}`}
       style={{ height }}
     />
   );

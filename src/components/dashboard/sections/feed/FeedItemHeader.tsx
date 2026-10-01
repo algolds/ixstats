@@ -39,9 +39,9 @@ export function FeedExternalLink({ url }: { url: string }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-muted-foreground hover:text-foreground border-border/50 bg-accent/10 hover:bg-accent/20 flex items-center gap-1 rounded-lg border px-2 py-0.5 text-xs font-medium tracking-tight transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.95]"
+      className="text-label-secondary hover:text-label bg-fill-3 hover:bg-fill-2 rounded-control-sm text-caption duration-fast ease-out-facet focus-visible:outline-tint flex items-center gap-1 px-2 py-0.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
     >
-      <ExternalLink className="h-3 w-3" />
+      <ExternalLink aria-hidden className="size-3.5" />
       <span>Open</span>
     </a>
   );
@@ -81,25 +81,23 @@ export function FeedItemHeader({
         {isWiki && wikiPageTitle ? (
           <Link
             href={wikiHref ?? "#"}
-            className="text-foreground hover:text-wiki truncate text-sm font-semibold tracking-tight transition-colors"
+            className="text-label text-headline truncate underline-offset-2 hover:underline"
           >
             {wikiPageTitle}
           </Link>
         ) : sportsBulletin ? (
-          <span className="text-foreground truncate text-sm font-semibold tracking-tight">
-            Sports News Bulletin
-          </span>
+          <span className="text-label text-headline truncate">Sports news bulletin</span>
         ) : (
           <WikiHtmlContent
             html={titleHtml}
             as="span"
-            className="text-foreground truncate text-sm font-semibold tracking-tight"
+            className="text-label text-headline truncate"
           />
         )}
 
         {activity._isNew && (
-          <Badge className="shrink-0 rounded-full border-wiki/30 bg-wiki/15 text-xs font-semibold tracking-wider text-wiki uppercase">
-            NEW
+          <Badge variant="info" className="shrink-0">
+            New
           </Badge>
         )}
       </div>
@@ -107,37 +105,31 @@ export function FeedItemHeader({
       {/* Right-aligned metadata chips */}
       <div className="flex shrink-0 items-center gap-2">
         {!isWiki && (
-          <Badge
-            variant="outline"
-            className={cn(
-              "shrink-0 rounded-full border-current/30 text-xs font-medium tracking-wider uppercase",
-              resolvedConfig.color
-            )}
-          >
+          <Badge variant="neutral" className="shrink-0">
             {resolvedConfig.label}
           </Badge>
         )}
 
         {/* Wiki total bytes pill */}
         {isWiki && isGrouped && activity._totalBytes !== undefined && (
-          <span
-            className={cn(
-              "inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium tracking-tight tabular-nums shadow-xs",
+          <Badge
+            variant={
               activity._totalBytes > 0
-                ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                ? "success"
                 : activity._totalBytes < 0
-                  ? "border-red-500/25 bg-red-500/10 text-red-600 dark:text-red-400"
-                  : "text-muted-foreground border-border/40 bg-accent/10"
-            )}
+                  ? "destructive"
+                  : "neutral"
+            }
+            className="tabular-nums"
           >
             {activity._totalBytes > 0 ? "+" : ""}
             {activity._totalBytes} bytes
-          </span>
+          </Badge>
         )}
 
         {/* Timestamp */}
-        <span className="text-muted-foreground/70 flex items-center gap-1 text-xs font-normal tracking-normal tabular-nums">
-          <Clock className="h-3 w-3" />
+        <span className="text-label-secondary text-footnote flex items-center gap-1 tabular-nums">
+          <Clock aria-hidden className="size-3.5" />
           {timeAgo(new Date(activity.timestamp))}
         </span>
 

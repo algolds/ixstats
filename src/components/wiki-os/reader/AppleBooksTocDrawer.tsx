@@ -1,10 +1,9 @@
 "use client";
 // src/components/wiki-os/reader/AppleBooksTocDrawer.tsx
 
-import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "motion/react";
-import { Xmark as X } from "iconoir-react";
+import { useState, useEffect } from "react";
+import { List } from "iconoir-react";
+import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 import { cn } from "~/lib/utils";
 
@@ -26,13 +25,6 @@ export function AppleBooksTocDrawer({
   themeColors,
 }: AppleBooksTocDrawerProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setMounted(true);
-  }, []);
-
   // Scroll spy to highlight the active section as the user scrolls
   useEffect(() => {
     if (!isOpen) return;
@@ -59,18 +51,6 @@ export function AppleBooksTocDrawer({
     return () => window.removeEventListener("scroll", tick);
   }, [entries, isOpen]);
 
-  // Lock body scrolling when the drawer is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isOpen]);
-
   const handleNavigate = (id: string) => {
     const el = document.getElementById(id);
     if (el) {
@@ -82,90 +62,43 @@ export function AppleBooksTocDrawer({
     onClose();
   };
 
-  if (!mounted) return null;
+  return (
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent aria-describedby={undefined} className="flex flex-col gap-0 p-0 sm:max-w-xs">
+        {/* Header */}
+        <div className="border-separator flex shrink-0 items-center gap-2 border-b px-6 py-5 pr-14">
+          <List className="text-label-secondary size-4" aria-hidden="true" />
+          <SheetTitle className="text-headline">Table of Contents</SheetTitle>
+        </div>
 
-  return createPortal(
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 z-[100020] bg-black/40 backdrop-blur-[2px] transition-opacity"
-          />
-
-          {/* Drawer Panel */}
-          <motion.div
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="text-foreground fixed top-0 right-0 bottom-0 z-[100021] flex h-full w-80 max-w-[85vw] flex-col border-l border-white/10 bg-zinc-950/95 shadow-2xl backdrop-blur-3xl dark:bg-black/90"
-          >
-            {/* Header */}
-            <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-6 py-5">
-              <div className="flex items-center gap-2">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  className="text-muted-foreground"
-                >
-                  <path d="M2 4h12M2 8h8M2 12h10" />
-                </svg>
-                <h3 className="text-foreground text-sm font-bold tracking-wider uppercase">
-                  Table of Contents
-                </h3>
-              </div>
+        {/* Entries */}
+        <nav
+          aria-label="Table of Contents"
+          className="flex-1 space-y-1 overflow-y-auto px-4 py-4 select-none"
+        >
+          {entries.map((item) => {
+            const isActive = activeId === item.id;
+            return (
               <button
-                onClick={onClose}
-                className="text-muted-foreground hover:text-foreground cursor-pointer rounded-full p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:bg-white/10 active:scale-90"
-                aria-label="Close Table of Contents"
+                key={item.id}
+                type="button"
+                onClick={() => handleNavigate(item.id)}
+                aria-current={isActive ? "location" : undefined}
+                className={cn(
+                  "rounded-control text-callout duration-fast flex w-full cursor-pointer items-center gap-2 border-l-2 px-3 py-2 text-left transition-colors",
+                  isActive
+                    ? "bg-fill-4 text-label font-medium"
+                    : "text-label-secondary hover:bg-fill-4 hover:text-label border-transparent",
+                  item.level === 3 ? "pl-6" : item.level > 3 ? "pl-9" : ""
+                )}
+                style={isActive ? { borderLeftColor: themeColors.primary } : undefined}
               >
-                <X className="h-4 w-4" />
+                <span className="truncate">{item.text}</span>
               </button>
-            </div>
-
-            {/* List Entries */}
-            <div className="flex-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-1 overflow-y-auto px-4 py-4 select-none">
-              {entries.map((item) => {
-                const isActive = activeId === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleNavigate(item.id)}
-                    className={cn(
-                      "flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none",
-                      isActive
-                        ? "bg-white/10 text-white"
-                        : "text-muted-foreground hover:text-foreground hover:bg-white/5",
-                      item.level === 3 ? "pl-6" : item.level > 3 ? "pl-9" : ""
-                    )}
-                    style={
-                      isActive
-                        ? {
-                            borderLeft: `2.5px solid ${themeColors.primary}`,
-                            paddingLeft:
-                              item.level === 3 ? "21.5px" : item.level > 3 ? "33.5px" : "9.5px",
-                          }
-                        : {}
-                    }
-                  >
-                    <span className="truncate">{item.text}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>,
-    document.body
+            );
+          })}
+        </nav>
+      </SheetContent>
+    </Sheet>
   );
 }

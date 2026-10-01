@@ -4,18 +4,20 @@
 // without needing to scroll to the references section.
 
 import { useEffect, useState, useCallback, useRef, type RefObject } from "react";
-import { createPortal } from "react-dom";
 import { createElement } from "react";
 import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
+import { VirtualAnchorPopover } from "~/components/ui/popover";
 
 interface TooltipState {
   html: string;
-  x: number;
-  y: number;
+  /** The citation link the tooltip points at (a virtual anchor: found by delegation). */
+  anchor: HTMLElement;
 }
 
 export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
+  // Kept after closing so the content stays during the exit animation.
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [open, setOpen] = useState(false);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const show = useCallback(
@@ -48,19 +50,15 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
       const html = clone.innerHTML.trim();
       if (!html) return;
 
-      // Position tooltip above the reference link
-      const rect = anchor.getBoundingClientRect();
-      setTooltip({
-        html,
-        x: rect.left + rect.width / 2,
-        y: rect.top,
-      });
+      // Shown above the reference link
+      setTooltip({ html, anchor });
+      setOpen(true);
     },
     [contentRef]
   );
 
   const hide = useCallback(() => {
-    hideTimeoutRef.current = setTimeout(() => setTooltip(null), 150);
+    hideTimeoutRef.current = setTimeout(() => setOpen(false), 150);
   }, []);
 
   // Keep tooltip alive when hovering the tooltip itself
@@ -102,29 +100,31 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
   // one object per footnote HTML: a new one each render would write the tooltip's DOM again (React 19)
   const tooltipMarkup = useHtmlMarkup(tooltip?.html ?? "");
 
-  // Render the tooltip portal
-  const portal = tooltip
-    ? createPortal(
-        createElement(
-          "div",
-          // oxlint-disable-next-line
-          {
-            className: "wikios-cite-tooltip",
-            style: {
-              left: `${tooltip.x}px`,
-              top: `${tooltip.y}px`,
-            },
-            onMouseEnter: tooltipMouseEnter,
-            onMouseLeave: tooltipMouseLeave,
-          },
-          createElement("div", {
-            className: "wikios-cite-tooltip-inner",
-            dangerouslySetInnerHTML: tooltipMarkup,
-          })
-        ),
-        document.body
-      )
-    : null;
-
-  return portal;
+  // The tooltip: a popover above the citation (flips below near the top of the viewport). The
+  // inner `.wikios-cite-tooltip-inner` keeps the reading-face footnote styling and its arrow, which
+  // is hidden when the card flips.
+  return createElement(
+    VirtualAnchorPopover,
+    {
+      surface: "none",
+      anchor: tooltip?.anchor ?? null,
+      open,
+      onOpenChange: (next: boolean) => {
+        if (!next) setOpen(false);
+      },
+      side: "top",
+      sideOffset: 0,
+      role: "tooltip",
+      className:
+        "relative z-tooltip max-w-[min(420px,90vw)] pb-2 data-[side=bottom]:pt-2 data-[side=bottom]:pb-0 data-[side=bottom]:*:after:hidden",
+      onMouseEnter: tooltipMouseEnter,
+      onMouseLeave: tooltipMouseLeave,
+    },
+    tooltip
+      ? createElement("div", {
+          className: "wikios-cite-tooltip-inner",
+          dangerouslySetInnerHTML: tooltipMarkup,
+        })
+      : null
+  );
 }

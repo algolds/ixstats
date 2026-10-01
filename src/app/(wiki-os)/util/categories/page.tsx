@@ -12,13 +12,15 @@ import {
 } from "iconoir-react";
 import { motion, useReducedMotion } from "motion/react";
 import { api } from "~/trpc/react";
-import { cn } from "~/lib/utils";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { DOMAIN_CATEGORIES } from "./_components/constants";
 import { DomainCategoriesGrid } from "./_components/DomainCategoriesGrid";
 import { AlphabetIndexBar } from "./_components/AlphabetIndexBar";
 import { SovereignNationsGrid } from "./_components/SovereignNationsGrid";
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Refraction } from "~/components/ui/facet";
 
 export default function CategoriesIndexPage() {
   const reduceMotion = useReducedMotion();
@@ -93,41 +95,42 @@ export default function CategoriesIndexPage() {
           initial={reduceMotion ? false : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="relative overflow-hidden rounded-3xl border border-white/20 bg-white/70 p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6),0_6px_24px_rgba(0,0,0,0.06)] backdrop-blur-xl sm:p-8 dark:border-white/10 dark:bg-zinc-900/70 dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_8px_32px_rgba(0,0,0,0.4)]"
+          className="material-hero text-label relative isolate overflow-hidden rounded-3xl p-6 sm:p-8"
         >
-          <TextureOverlay texture="paperGrain" opacity={0.06} />
+          <Refraction />
+          <TextureOverlay texture="paperGrain" opacity={0.05} />
 
           <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
             <div className="max-w-xl space-y-2">
-              <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400">
+              <div className="border-tint/20 bg-tint/10 text-caption text-tint inline-flex items-center gap-2 rounded-full border px-3 py-1 font-semibold">
                 <Folder className="h-3.5 w-3.5" />
                 <span>Knowledge Taxonomy</span>
               </div>
-              <h1 className="text-foreground font-brand text-2xl font-bold tracking-tight sm:text-3xl">
+              <h1 className="text-label font-brand text-title-1 sm:text-large-title">
                 Category Directory
               </h1>
-              <p className="text-muted-foreground text-sm leading-relaxed">
+              <p className="text-label-secondary text-body leading-relaxed">
                 Explore IxWiki articles through structured worldbuilding domains, sovereign nation
                 portals, and encyclopedic topic classifications.
               </p>
             </div>
 
-            <div className="flex shrink-0 flex-wrap items-center gap-2.5">
-              <div className="border-border/60 flex items-center gap-2 rounded-2xl border bg-white/50 px-3.5 py-2 backdrop-blur-sm dark:bg-zinc-800/50">
-                <Layers className="h-4 w-4 text-blue-500" />
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <div className="border-separator rounded-card bg-surface flex items-center gap-2 border px-4 py-2">
+                <Layers className="text-tint h-4 w-4" />
                 <div className="text-left">
-                  <div className="text-foreground text-xs font-bold">12 Domains</div>
-                  <div className="text-muted-foreground text-xs">Primary Portals</div>
+                  <div className="text-label text-caption font-semibold">12 Domains</div>
+                  <div className="text-label-secondary text-footnote">Primary Portals</div>
                 </div>
               </div>
 
-              <div className="border-border/60 flex items-center gap-2 rounded-2xl border bg-white/50 px-3.5 py-2 backdrop-blur-sm dark:bg-zinc-800/50">
-                <IconoirGlobe className="h-4 w-4 text-emerald-500" />
+              <div className="border-separator rounded-card bg-surface flex items-center gap-2 border px-4 py-2">
+                <IconoirGlobe className="text-green h-4 w-4" />
                 <div className="text-left">
-                  <div className="text-foreground text-xs font-bold">
+                  <div className="text-label text-caption font-semibold">
                     {countries.length} Nations
                   </div>
-                  <div className="text-muted-foreground text-xs">Geopolitical Portals</div>
+                  <div className="text-label-secondary text-footnote">Geopolitical Portals</div>
                 </div>
               </div>
             </div>
@@ -135,7 +138,7 @@ export default function CategoriesIndexPage() {
 
           <div className="relative z-10 mt-6">
             <div className="relative flex items-center">
-              <Search className="text-muted-foreground pointer-events-none absolute left-3.5 h-4 w-4" />
+              <Search className="text-label-secondary pointer-events-none absolute left-4 h-4 w-4" />
               <input
                 type="text"
                 value={searchQuery}
@@ -146,59 +149,37 @@ export default function CategoriesIndexPage() {
                   }
                 }}
                 placeholder="Search all categories, worldbuilding topics, or sovereign nations..."
-                className="border-border/80 placeholder:text-muted-foreground/60 text-foreground w-full rounded-2xl border bg-white/80 py-3 pr-10 pl-10 text-sm shadow-inner transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:bg-zinc-950/80"
+                className="border-separator placeholder:text-label-tertiary text-label rounded-card bg-surface text-body focus:border-tint focus:ring-tint/20 w-full border py-3 pr-10 pl-10 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-2 focus:outline-none"
               />
               {searchQuery && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Clear search"
                   onClick={() => setSearchQuery("")}
-                  className="text-muted-foreground hover:text-foreground hover:bg-muted absolute right-3.5 rounded-full p-1 transition-colors"
+                  className="text-label-secondary absolute right-3 rounded-full"
                 >
                   <X className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               )}
             </div>
           </div>
         </motion.div>
 
         {/* Navigation Tabs */}
-        <div className="border-border/60 flex flex-col items-start justify-between gap-4 border-b pb-3 sm:flex-row sm:items-center">
-          <div className="bg-muted/60 border-border/50 flex items-center gap-1.5 rounded-xl border p-1">
-            <button
-              onClick={() => setActiveTab("domains")}
-              className={cn(
-                "cursor-pointer rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                activeTab === "domains"
-                  ? "text-foreground bg-white shadow-sm dark:bg-zinc-800"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Domain Portals
-            </button>
-            <button
-              onClick={() => setActiveTab("all-categories")}
-              className={cn(
-                "cursor-pointer rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                activeTab === "all-categories"
-                  ? "text-foreground bg-white shadow-sm dark:bg-zinc-800"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              All Categories (A–Z)
-            </button>
-            <button
-              onClick={() => setActiveTab("nations")}
-              className={cn(
-                "cursor-pointer rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                activeTab === "nations"
-                  ? "text-foreground bg-white shadow-sm dark:bg-zinc-800"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Countries ({countries.length})
-            </button>
-          </div>
+        <div className="border-separator flex flex-col items-start justify-between gap-4 border-b pb-3 sm:flex-row sm:items-center">
+          <SegmentedControl
+            aria-label="Category views"
+            value={activeTab}
+            onValueChange={setActiveTab}
+            options={[
+              { value: "domains", label: "Domain Portals" },
+              { value: "all-categories", label: "All Categories (A–Z)" },
+              { value: "nations", label: `Countries (${countries.length})` },
+            ]}
+          />
 
-          <div className="text-muted-foreground text-xs font-medium">
+          <div className="text-label-secondary text-caption">
             {activeTab === "domains" && `${filteredDomains.length} domains available`}
             {activeTab === "all-categories" &&
               `${cleanedLiveCategories.length} live categories listed`}

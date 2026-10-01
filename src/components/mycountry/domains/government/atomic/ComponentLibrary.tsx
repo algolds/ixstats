@@ -46,7 +46,7 @@ export const ComponentLibrary = React.memo<ComponentLibraryProps>(
     if (componentEntries.length === 0) {
       return (
         <div className="px-4 py-12 text-center">
-          <p className="text-muted-foreground text-sm">
+          <p className="text-label-secondary text-body">
             No components available. Try adjusting your search or filters.
           </p>
         </div>
@@ -57,7 +57,7 @@ export const ComponentLibrary = React.memo<ComponentLibraryProps>(
       <div
         className={
           enableInlineScroll
-            ? "scrollbar-thumb-border/40 hover:scrollbar-thumb-border/70 max-h-[640px] scrollbar-thin scrollbar-track-transparent overflow-y-auto pr-1.5 xl:max-h-[720px]"
+            ? "scrollbar-thumb-border/40 hover:scrollbar-thumb-border/70 max-h-[640px] scrollbar-thin scrollbar-track-transparent overflow-y-auto pr-2 xl:max-h-[720px]"
             : undefined
         }
       >

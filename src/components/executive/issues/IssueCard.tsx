@@ -15,6 +15,7 @@ import {
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { IxTime } from "~/lib/ixtime";
+import { Button } from "~/components/ui/button";
 
 interface IssueCardProps {
   issue: {
@@ -37,53 +38,53 @@ interface IssueCardProps {
 const DOMAIN_CONFIG: Record<string, { icon: typeof TrendingUp; color: string; label: string }> = {
   economic: {
     icon: TrendingUp,
-    color: "text-emerald-500",
+    color: "text-green",
     label: "Economic",
   },
   political: {
     icon: Landmark,
-    color: "text-indigo-500",
+    color: "text-indigo",
     label: "Political",
   },
-  social: { icon: Users, color: "text-blue-500", label: "Social" },
-  military: { icon: Shield, color: "text-red-500", label: "Military" },
+  social: { icon: Users, color: "text-blue", label: "Social" },
+  military: { icon: Shield, color: "text-red", label: "Military" },
   diplomatic: {
     icon: Globe,
-    color: "text-cyan-500",
+    color: "text-cyan",
     label: "Diplomatic",
   },
   infrastructure: {
     icon: Building,
-    color: "text-amber-500",
+    color: "text-yellow",
     label: "Infrastructure",
   },
   environmental: {
     icon: Leaf,
-    color: "text-green-500",
+    color: "text-green",
     label: "Environmental",
   },
 };
 
 const SEVERITY_STYLES: Record<string, string> = {
-  critical: "border-l-red-500 bg-red-500/5",
-  CRITICAL: "border-l-red-500 bg-red-500/5",
-  high: "border-l-amber-500 bg-amber-500/5",
-  HIGH: "border-l-amber-500 bg-amber-500/5",
-  medium: "border-l-blue-500 bg-blue-500/5",
-  MEDIUM: "border-l-blue-500 bg-blue-500/5",
-  low: "border-l-slate-400 bg-slate-400/5",
-  LOW: "border-l-slate-400 bg-slate-400/5",
+  critical: "border-l-red bg-red/5",
+  CRITICAL: "border-l-red bg-red/5",
+  high: "border-l-yellow bg-yellow/5",
+  HIGH: "border-l-yellow bg-yellow/5",
+  medium: "border-l-blue bg-blue/5",
+  MEDIUM: "border-l-blue bg-blue/5",
+  low: "border-l-separator bg-fill-4",
+  LOW: "border-l-separator bg-fill-4",
 };
 
 const SEVERITY_BADGE: Record<string, string> = {
-  critical: "bg-red-500/20 text-red-400 border-red-500/30",
-  CRITICAL: "bg-red-500/20 text-red-400 border-red-500/30",
-  high: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-  HIGH: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-  medium: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  MEDIUM: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  low: "bg-slate-500/20 text-slate-400 border-slate-500/30",
-  LOW: "bg-slate-500/20 text-slate-400 border-slate-500/30",
+  critical: "bg-red/20 text-red-ink border-red/30",
+  CRITICAL: "bg-red/20 text-red-ink border-red/30",
+  high: "bg-yellow/20 text-yellow-ink border-yellow/30",
+  HIGH: "bg-yellow/20 text-yellow-ink border-yellow/30",
+  medium: "bg-blue/20 text-blue-ink border-blue/30",
+  MEDIUM: "bg-blue/20 text-blue-ink border-blue/30",
+  low: "bg-fill-3 text-label-secondary border-separator",
+  LOW: "bg-fill-3 text-label-secondary border-separator",
 };
 
 function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCardProps) {
@@ -117,41 +118,40 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
   return (
     <div
       onClick={() => onView(issue.id)}
-      className={`group w-full cursor-pointer rounded-lg border border-l-4 border-white/10 p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/20 hover:bg-white/5 ${severityStyle}`}
+      className={`group rounded-control border-separator hover:border-separator hover:bg-fill-4 w-full cursor-pointer border border-l-4 p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] ${severityStyle}`}
     >
       <div className="flex items-start gap-3">
-        <div className={`mt-0.5 rounded-full bg-white/10 p-1.5 ${domainConfig.color}`}>
+        <div className={`bg-fill-4 mt-0.5 rounded-full p-2 ${domainConfig.color}`}>
           <DomainIcon className="h-3.5 w-3.5" />
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-center gap-2">
-            <h4 className="group-hover:text-foreground truncate text-sm font-medium transition-colors">
+            <h4 className="group-hover:text-label text-body truncate font-medium transition-colors">
               {issue.title}
             </h4>
             {isNew && (
-              <Badge
-                variant="outline"
-                className="shrink-0 border-amber-500/30 bg-amber-500/20 px-1.5 py-0 text-xs text-amber-400"
-              >
+              <Badge variant="yellow" className="shrink-0">
                 NEW
               </Badge>
             )}
           </div>
 
           {variant === "full" && (
-            <p className="text-muted-foreground mb-2 line-clamp-2 text-xs">{issue.description}</p>
+            <p className="text-label-secondary text-footnote mb-2 line-clamp-2">
+              {issue.description}
+            </p>
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className={`px-1.5 py-0 text-xs ${badgeStyle}`}>
+            <Badge variant="outline" className={`text-footnote px-2 py-0 ${badgeStyle}`}>
               {issue.severity.toUpperCase()}
             </Badge>
-            <span className={`text-xs ${domainConfig.color}`}>{domainConfig.label}</span>
+            <span className={`text-footnote ${domainConfig.color}`}>{domainConfig.label}</span>
 
             {hasDeadline && (
               <span
-                className={`flex items-center gap-1 text-xs ${isUrgent ? "text-red-400" : "text-muted-foreground"}`}
+                className={`text-footnote flex items-center gap-1 ${isUrgent ? "text-red" : "text-label-secondary"}`}
               >
                 {isUrgent ? <Flame className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                 {timeRemainingText}
@@ -165,21 +165,24 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
               issue.severity !== "high" &&
               issue.severity !== "HIGH" &&
               issue.urgency <= 70 && (
-                <button
+                <Button
+                  type="button"
+                  variant="gray"
+                  size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDismiss(issue.id);
                   }}
-                  className="ml-auto cursor-pointer rounded border border-white/15 bg-white/5 px-2 py-0.5 text-xs font-medium text-slate-300 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/30 hover:bg-white/10"
+                  className="ml-auto"
                 >
                   Delegate (-15 CivCap)
-                </button>
+                </Button>
               )}
           </div>
         </div>
 
         {(issue.severity === "critical" || issue.severity === "CRITICAL") && (
-          <AlertTriangle className="h-4 w-4 shrink-0 text-red-400" />
+          <AlertTriangle className="text-red h-4 w-4 shrink-0" />
         )}
       </div>
     </div>

@@ -128,47 +128,47 @@ export function PlatformSettingsPanel({ defaultTab = "general" }: PlatformSettin
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="bg-card/40 border-border/40 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
+        <TabsList className="bg-fill-3 rounded-row flex w-full flex-wrap justify-start gap-1 p-1">
           <TabsTrigger
             value="general"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <TrendingUp className="h-4 w-4 text-emerald-400" />
+            <TrendingUp className="text-green h-4 w-4" />
             Economic Controls
           </TabsTrigger>
           <TabsTrigger
             value="autosave"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <Activity className="h-4 w-4 text-emerald-400" />
+            <Activity className="text-green h-4 w-4" />
             Autosave Monitor
           </TabsTrigger>
           <TabsTrigger
             value="time"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <Clock className="h-4 w-4 text-blue-400" />
+            <Clock className="text-blue h-4 w-4" />
             Time Override
           </TabsTrigger>
           <TabsTrigger
             value="system-health"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <HeartPulse className="h-4 w-4 text-rose-400" />
+            <HeartPulse className="text-red h-4 w-4" />
             System Diagnostics
           </TabsTrigger>
           <TabsTrigger
             value="navigation"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <Navigation className="h-4 w-4 text-cyan-400" />
+            <Navigation className="text-teal h-4 w-4" />
             Navigation Controls
           </TabsTrigger>
           <TabsTrigger
             value="database"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <Database className="h-4 w-4 text-indigo-400" />
+            <Database className="text-indigo h-4 w-4" />
             Database Explorer
           </TabsTrigger>
         </TabsList>

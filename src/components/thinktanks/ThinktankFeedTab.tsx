@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { springGentle } from "~/lib/design/motion";
 import { motion } from "motion/react";
 import {
   RssFeed,
@@ -16,7 +17,20 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
+import { EmptyState } from "~/components/ui/empty-state";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
@@ -61,6 +75,8 @@ export function ThinktankFeedTab({
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [mediaUrlInput, setMediaUrlInput] = useState("");
   const [showMediaInput, setShowMediaInput] = useState(false);
+  /** The post awaiting the moderator's removal confirmation (AlertDialog, spec §7.3). */
+  const [pendingRemovePostId, setPendingRemovePostId] = useState<string | null>(null);
 
   // Queries
   const { data: feedData, isLoading: isLoadingFeed } = api.thinkpages.getGroupFeed.useQuery(
@@ -148,161 +164,151 @@ export function ThinktankFeedTab({
       {/* ── Main Content / Feed Container (Frosted Blur if not joined) ── */}
       <div
         className={cn(
-          "mx-auto max-w-3xl space-y-6 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 md:p-6",
+          "mx-auto max-w-3xl space-y-6 p-4 transition-[opacity,filter] duration-300 md:p-6",
           !isMember && !readOnly && "pointer-events-none opacity-40 blur-[5px] filter select-none"
         )}
       >
         {readOnly && (
-          <div className="border-border/50 bg-muted/30 text-muted-foreground rounded-2xl border p-4 text-xs">
+          <div className="bg-surface-secondary text-callout text-label-secondary rounded-row p-4">
             {readOnlyNotice}
           </div>
         )}
 
         {/* ── Group Feed Composer ── */}
         {!readOnly && (
-        <div className="border-border/50 bg-card/60 overflow-hidden rounded-2xl border p-4 shadow-lg backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] dark:border-white/10 dark:bg-white/[0.03]">
-          <form onSubmit={handlePublish} className="space-y-3">
-            {/* Multi-Persona Selector Chips */}
-            {allowPersonaPosting && accounts.length > 0 && (
-              <div className="border-border/30 flex flex-wrap items-center gap-1.5 border-b pb-2">
-                <span className="text-muted-foreground mr-1 flex items-center gap-1 text-xs font-semibold">
-                  <Group className="h-3 w-3 text-blue-500" /> Post as:
-                </span>
-                {accounts.map((acc: any) => {
-                  const isSelected = (selectedAccountId || accounts[0]?.id) === acc.id;
-                  return (
-                    <button
-                      type="button"
-                      key={acc.id}
-                      onClick={() => {
-                        soundEffects.press();
-                        setSelectedAccountId(acc.id);
-                      }}
-                      className={cn(
-                        "flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
-                        isSelected
-                          ? "bg-emerald-600 text-white shadow-sm dark:bg-emerald-500"
-                          : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
-                      )}
-                    >
-                      <span className="h-2 w-2 rounded-full bg-current opacity-70" />
-                      <span>{acc.displayName || acc.username}</span>
-                      <span className="text-xs opacity-75">({acc.accountType})</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+          <div className="border-separator bg-surface rounded-card shadow-card overflow-hidden border p-4">
+            <form onSubmit={handlePublish} className="space-y-3">
+              {/* Multi-Persona Selector Chips */}
+              {allowPersonaPosting && accounts.length > 0 && (
+                <div className="border-separator flex flex-wrap items-center gap-2 border-b pb-2">
+                  <span className="text-footnote text-label-secondary mr-1 flex items-center gap-1">
+                    <Group className="size-3.5" aria-hidden="true" /> Post as:
+                  </span>
+                  <ToggleGroup
+                    type="single"
+                    aria-label="Post as"
+                    variant="pill"
+                    size="sm"
+                    disallowEmpty
+                    value={selectedAccountId || accounts[0]?.id}
+                    onValueChange={(id) => {
+                      if (id) setSelectedAccountId(id);
+                    }}
+                  >
+                    {accounts.map((acc: any) => (
+                      <ToggleGroupItem key={acc.id} value={acc.id} className="gap-1">
+                        <span className="size-2 rounded-full bg-current" aria-hidden="true" />
+                        <span>{acc.displayName || acc.username}</span>
+                        <span className="text-label-secondary">({acc.accountType})</span>
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+                </div>
+              )}
 
-            {/* Content Textarea */}
-            <Textarea
-              placeholder={`Share a note, idea, or update with ${groupName}...`}
-              value={postContent}
-              onChange={(e) => setPostContent(e.target.value)}
-              className="placeholder:text-muted-foreground/60 min-h-[90px] resize-none border-0 bg-transparent p-1 text-sm shadow-none focus-visible:ring-0"
-            />
+              {/* Content Textarea */}
+              <Textarea
+                placeholder={`Share a note, idea, or update with ${groupName}...`}
+                value={postContent}
+                onChange={(e) => setPostContent(e.target.value)}
+                className="min-h-[90px] resize-none border-0 bg-transparent p-1 shadow-none"
+              />
 
-            {/* Quick Intent Tag Presets */}
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              {[
-                { label: "💡 Note to self", tag: "note-to-self" },
-                { label: "🤝 Collaborative", tag: "collaborative" },
-                { label: "🔍 Critique wanted", tag: "critique" },
-                { label: "🗺️ Lore & Maps", tag: "lore" },
-              ].map((item) => (
-                <button
-                  type="button"
-                  key={item.tag}
-                  onClick={() => {
-                    soundEffects.press();
-                    if (!postContent.includes(item.label)) {
-                      setPostContent((prev) => `${item.label}\n\n${prev}`.trim());
-                    }
-                  }}
-                  className="border-border/40 bg-muted/30 text-muted-foreground hover:bg-accent/40 hover:text-foreground rounded-md border px-2 py-0.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Media URL Row */}
-            {showMediaInput && (
-              <div className="bg-muted/40 border-border/40 flex items-center gap-2 rounded-xl border px-3 py-1.5">
-                <MediaImage className="text-muted-foreground h-4 w-4" />
-                <input
-                  type="url"
-                  placeholder="Paste image or media URL..."
-                  value={mediaUrlInput}
-                  onChange={(e) => setMediaUrlInput(e.target.value)}
-                  className="text-foreground placeholder:text-muted-foreground w-full bg-transparent text-xs outline-none"
-                />
-              </div>
-            )}
-
-            {/* Composer Action Toolbar */}
-            <div className="border-border/30 flex items-center justify-between border-t pt-2">
-              <div className="flex items-center gap-1">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    soundEffects.press();
-                    setShowMediaInput((prev) => !prev);
-                  }}
-                  className={cn(
-                    "h-8 rounded-lg px-2.5 text-xs",
-                    showMediaInput
-                      ? "bg-accent text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <MediaImage className="mr-1.5 h-3.5 w-3.5" />
-                  Media
-                </Button>
+              {/* Quick Intent Tag Presets */}
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                {[
+                  { label: "💡 Note to self", tag: "note-to-self" },
+                  { label: "🤝 Collaborative", tag: "collaborative" },
+                  { label: "🔍 Critique wanted", tag: "critique" },
+                  { label: "🗺️ Lore & Maps", tag: "lore" },
+                ].map((item) => (
+                  <Button
+                    type="button"
+                    variant="gray"
+                    size="sm"
+                    key={item.tag}
+                    onClick={() => {
+                      if (!postContent.includes(item.label)) {
+                        setPostContent((prev) => `${item.label}\n\n${prev}`.trim());
+                      }
+                    }}
+                    className="rounded-full"
+                  >
+                    {item.label}
+                  </Button>
+                ))}
               </div>
 
-              <div className="flex items-center gap-3">
-                <span className="text-muted-foreground text-xs">
-                  {postContent.length} / 5000
-                </span>
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={!postContent.trim() || createPostMutation.isPending}
-                  className="h-8 rounded-xl bg-emerald-600 px-4 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 active:scale-95 dark:bg-emerald-500 dark:hover:bg-emerald-600"
-                >
-                  <Send className="mr-1.5 h-3.5 w-3.5" />
-                  {createPostMutation.isPending ? "Posting..." : "Post Note"}
-                </Button>
+              {/* Media URL Row */}
+              {showMediaInput && (
+                <div className="bg-fill-4 border-separator rounded-row flex items-center gap-2 border px-3 py-2">
+                  <MediaImage className="text-label-secondary h-4 w-4" />
+                  <input
+                    type="url"
+                    placeholder="Paste image or media URL..."
+                    value={mediaUrlInput}
+                    onChange={(e) => setMediaUrlInput(e.target.value)}
+                    className="text-label placeholder:text-label-secondary text-footnote w-full bg-transparent outline-none"
+                  />
+                </div>
+              )}
+
+              {/* Composer Action Toolbar */}
+              <div className="border-separator flex items-center justify-between border-t pt-2">
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      soundEffects.press();
+                      setShowMediaInput((prev) => !prev);
+                    }}
+                    className={cn(
+                      "rounded-control text-footnote h-8 px-3",
+                      showMediaInput
+                        ? "bg-fill-3 text-label"
+                        : "text-label-secondary hover:text-label"
+                    )}
+                  >
+                    <MediaImage />
+                    Media
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-label-secondary text-footnote">
+                    {postContent.length} / 5000
+                  </span>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={!postContent.trim() || createPostMutation.isPending}
+                  >
+                    <Send />
+                    {createPostMutation.isPending ? "Posting..." : "Post Note"}
+                  </Button>
+                </div>
               </div>
-            </div>
-          </form>
-        </div>
+            </form>
+          </div>
         )}
 
         {/* ── Feed Timeline ── */}
         <div className="space-y-4">
           {isLoadingFeed ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
-              </div>
-              <p className="text-muted-foreground text-xs font-medium">Loading group timeline...</p>
+              <span className="border-tint size-5 animate-spin rounded-full border-2 border-t-transparent" />
+              <p className="text-footnote text-label-secondary">Loading group timeline...</p>
             </div>
           ) : posts.length === 0 ? (
-            <div className="border-border/60 flex flex-col items-center justify-center rounded-2xl border border-dashed py-16 text-center">
-              <div className="bg-muted/60 text-muted-foreground flex h-12 w-12 items-center justify-center rounded-2xl">
-                <RssFeed className="h-6 w-6" />
-              </div>
-              <h3 className="text-foreground mt-3 text-sm font-semibold">
-                No Notes or Updates Yet
-              </h3>
-              <p className="text-muted-foreground mt-1 max-w-sm text-xs">
-                Be the first to share an idea, note to self, or update in this group.
-              </p>
-            </div>
+            <FacetCard>
+              <EmptyState
+                icon={<RssFeed />}
+                title="No Notes or Updates Yet"
+                message="Be the first to share an idea, note to self, or update in this group."
+              />
+            </FacetCard>
           ) : (
             posts.map((post: any) => {
               const personaAccount = post.account;
@@ -337,12 +343,12 @@ export function ThinktankFeedTab({
               return (
                 <div
                   key={post.id}
-                  className="border-border/40 bg-card/60 hover:border-border/80 overflow-hidden rounded-2xl border p-4.5 shadow-sm backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 dark:border-white/10 dark:bg-white/[0.02]"
+                  className="border-separator bg-surface rounded-card shadow-card overflow-hidden border p-4"
                 >
                   {/* Author row */}
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="border-border/50 bg-muted text-foreground flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border font-bold">
+                      <div className="border-separator bg-fill-3 text-label rounded-control flex size-9 shrink-0 items-center justify-center overflow-hidden border">
                         {avatarUrl ? (
                           <img
                             src={avatarUrl}
@@ -350,30 +356,25 @@ export function ThinktankFeedTab({
                             className="h-full w-full object-cover"
                           />
                         ) : countryFlag ? (
-                          <span className="text-base">{countryFlag}</span>
+                          <span className="text-body">{countryFlag}</span>
                         ) : (
-                          <User className="text-muted-foreground h-4 w-4" />
+                          <User className="text-label-secondary size-4" aria-hidden="true" />
                         )}
                       </div>
                       <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-foreground text-xs font-bold">{displayName}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-headline text-label">{displayName}</span>
                           {countryName && (
-                            <span className="text-muted-foreground text-xs">
+                            <span className="text-label-secondary text-footnote">
                               · {countryFlag && allowPersonaPosting ? `${countryFlag} ` : ""}
                               {countryName}
                             </span>
                           )}
                           {showPersonaBadge && (
-                            <Badge
-                              variant="outline"
-                              className="border-blue-500/30 bg-blue-500/10 text-xs font-semibold text-blue-600 dark:text-blue-400"
-                            >
-                              {personaAccount.accountType}
-                            </Badge>
+                            <Badge variant="info">{personaAccount.accountType}</Badge>
                           )}
                         </div>
-                        <span className="text-muted-foreground text-xs">
+                        <span className="text-label-secondary text-footnote">
                           {new Date(post.createdAt).toLocaleDateString()}
                         </span>
                       </div>
@@ -381,13 +382,13 @@ export function ThinktankFeedTab({
                   </div>
 
                   {/* Body Content */}
-                  <div className="text-foreground/90 mt-3 text-xs leading-relaxed whitespace-pre-wrap">
+                  <div className="text-body text-label mt-3 whitespace-pre-wrap">
                     {post.content}
                   </div>
 
                   {/* Media attachments */}
                   {post.mediaUrls && post.mediaUrls.length > 0 && (
-                    <div className="border-border/40 mt-3 overflow-hidden rounded-xl border bg-black/20">
+                    <div className="border-separator bg-fill-3 rounded-row mt-3 overflow-hidden border">
                       <img
                         src={post.mediaUrls[0]}
                         alt="Post media"
@@ -398,42 +399,35 @@ export function ThinktankFeedTab({
                   )}
 
                   {/* Actions Footer */}
-                  <div className="border-border/20 text-muted-foreground mt-3.5 flex items-center gap-4 border-t pt-2.5">
-                    <button
-                      onClick={() => soundEffects.press()}
-                      className="hover:text-foreground flex items-center gap-1 text-xs transition-colors"
-                    >
-                      <Heart className="h-3.5 w-3.5" />
+                  <div className="border-separator text-footnote text-label-secondary mt-3 flex items-center gap-4 border-t pt-2 tabular-nums">
+                    {/* Engagement counts (read-only here; react from the full post view). */}
+                    <span className="flex items-center gap-1">
+                      <Heart className="size-3.5" aria-hidden="true" />
                       <span>{post.reactions?.length ?? 0}</span>
-                    </button>
-                    <button
-                      onClick={() => soundEffects.press()}
-                      className="hover:text-foreground flex items-center gap-1 text-xs transition-colors"
-                    >
-                      <ChatBubble className="h-3.5 w-3.5" />
+                      <span className="sr-only">reactions</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <ChatBubble className="size-3.5" aria-hidden="true" />
                       <span>{post.replies?.length ?? 0}</span>
-                    </button>
-                    <button
-                      onClick={() => soundEffects.press()}
-                      className="hover:text-foreground flex items-center gap-1 text-xs transition-colors"
-                    >
-                      <Repeat className="h-3.5 w-3.5" />
+                      <span className="sr-only">replies</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Repeat className="size-3.5" aria-hidden="true" />
                       <span>{post.repostsCount ?? 0}</span>
-                    </button>
+                      <span className="sr-only">reposts</span>
+                    </span>
                     {canModerate && (
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         disabled={removePostMutation.isPending}
-                        onClick={() => {
-                          if (!confirm("Remove this post from the feed?")) return;
-                          soundEffects.press();
-                          removePostMutation.mutate({ groupId, postId: post.id });
-                        }}
-                        className="ml-auto flex items-center gap-1 text-xs transition-colors hover:text-red-500"
+                        onClick={() => setPendingRemovePostId(post.id)}
+                        className="text-label-secondary hover:text-destructive ml-auto"
                       >
-                        <Trash className="h-3.5 w-3.5" />
+                        <Trash aria-hidden="true" />
                         <span>Remove</span>
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -443,24 +437,48 @@ export function ThinktankFeedTab({
         </div>
       </div>
 
+      <AlertDialog
+        open={pendingRemovePostId !== null}
+        onOpenChange={(open) => !open && setPendingRemovePostId(null)}
+      >
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove this post from the feed?</AlertDialogTitle>
+            <AlertDialogDescription>Members will no longer see it.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (pendingRemovePostId) {
+                  removePostMutation.mutate({ groupId, postId: pendingRemovePostId });
+                }
+                setPendingRemovePostId(null);
+              }}
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* ── Floating Frosted Glass Overlay (Apple Design) ── */}
       {!isMember && !readOnly && (
-        <div className="bg-background/20 absolute inset-0 z-20 flex items-center justify-center p-4 backdrop-blur-xs">
+        <div className="absolute inset-0 z-10 flex items-center justify-center p-4">
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 28 }}
-            className="border-border/60 bg-card/85 dark:bg-card/90 flex w-full max-w-md flex-col items-center justify-center rounded-3xl border p-6 text-center shadow-2xl backdrop-blur-2xl md:p-8 dark:border-white/15"
+            transition={springGentle}
+            className="border-separator bg-surface-elevated rounded-card shadow-floating flex w-full max-w-md flex-col items-center justify-center border p-6 text-center md:p-8"
           >
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 shadow-xs dark:text-emerald-400">
-              <Group className="h-7 w-7" />
+            <div className="bg-tint-fill text-tint rounded-card flex size-14 items-center justify-center">
+              <Group className="size-7" aria-hidden="true" />
             </div>
 
-            <h3 className="text-foreground mt-4 text-base font-bold tracking-tight">
-              Join {groupName}
-            </h3>
+            <h3 className="text-title-3 text-label mt-4">Join {groupName}</h3>
 
-            <p className="text-muted-foreground mt-1.5 max-w-xs text-xs leading-relaxed">
+            <p className="text-callout text-label-secondary mt-2 max-w-xs">
               Join this group to post notes, read the full feed, and join the discussion.
             </p>
 
@@ -475,9 +493,9 @@ export function ThinktankFeedTab({
                 soundEffects.press();
                 joinMutation.mutate({ groupId });
               }}
-              className="mt-5 w-full max-w-xs cursor-pointer rounded-xl bg-emerald-600 font-semibold text-white shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-emerald-700 active:scale-[0.97] dark:bg-emerald-500 dark:hover:bg-emerald-600"
+              className="mt-5 w-full max-w-xs"
             >
-              <Plus className="mr-1.5 h-4 w-4" />
+              <Plus />
               {joinMutation.isPending ? "Joining Group..." : "Join Group"}
             </Button>
           </motion.div>

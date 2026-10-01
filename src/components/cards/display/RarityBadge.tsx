@@ -48,19 +48,19 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
 
     // Size-specific classes
     const sizeClasses = {
-      small: "px-2 py-0.5 text-xs gap-1",
-      medium: "px-2.5 py-1 text-xs gap-1.5",
-      large: "px-3.5 py-1.5 text-sm gap-2",
+      small: "px-2 py-0.5 text-footnote gap-1",
+      medium: "px-3 py-1 text-footnote gap-2",
+      large: "px-4 py-2 text-body gap-2",
     };
 
     return (
       <motion.div
         className={cn(
           // Base styles
-          "inline-flex items-center justify-center font-bold tracking-wide",
-          "rounded-full border shadow-xs backdrop-blur-md",
+          "inline-flex items-center justify-center font-semibold",
+          "shadow-card rounded-full border",
           // Glass background
-          "bg-background/80 dark:bg-black/50",
+          "bg-surface-secondary",
           // Rarity-specific styles
           config.color,
           config.borderColor,
@@ -107,9 +107,7 @@ export const RarityBadge = React.memo<RarityBadgeProps>(
 
         {/* Label or Season */}
         {season !== undefined ? (
-          <span className="text-foreground relative z-10 leading-none font-bold tracking-wide">
-            S{season}
-          </span>
+          <span className="text-label relative z-10 leading-none font-semibold">S{season}</span>
         ) : (
           <span className="relative z-10 leading-none">{config.label}</span>
         )}

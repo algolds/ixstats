@@ -22,12 +22,9 @@ import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { MEDIA_THEME_OPTIONS } from "~/lib/wiki-os/transformers/media-theme";
 import { pageEditHref, pageTalkPair } from "~/lib/wiki-os/page-tools";
 import { articleHref } from "~/lib/wiki-os/wiki-path";
-import {
-  CutoutCard,
-  CutoutCardContent,
-  CutoutCorner,
-  cutoutCardSurfaceClassName,
-} from "~/components/ui/cutout-card";
+import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Button } from "~/components/ui/button";
 
 interface WikiOSArticleToolbarWidgetProps {
   title: string;
@@ -53,13 +50,13 @@ export function WikiOSArticleToolbarWidget({
   const getModeIcon = (mode: string) => {
     switch (mode) {
       case "auto":
-        return <SunMoon className="h-3 w-3 text-cyan-400" />;
+        return <SunMoon className="text-teal h-3 w-3" />;
       case "plinth":
-        return <Square className="h-3 w-3 text-emerald-400" />;
+        return <Square className="text-green h-3 w-3" />;
       case "raw":
-        return <Eye className="h-3 w-3 text-zinc-400" />;
+        return <Eye className="text-label-secondary h-3 w-3" />;
       default:
-        return <SunMoon className="h-3 w-3 text-cyan-400" />;
+        return <SunMoon className="text-teal h-3 w-3" />;
     }
   };
 
@@ -70,10 +67,10 @@ export function WikiOSArticleToolbarWidget({
         {isSignedIn && (
           <Link
             href={withBasePath(pageEditHref(title, slug))}
-            className="rail-glow-blue rail-animate-bounce flex h-10 w-10 items-center justify-center rounded-xl border border-blue-500/20 bg-blue-500/5 text-blue-400 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105 hover:bg-blue-500/15 active:scale-95"
+            className="rail-glow-blue rail-animate-bounce rounded-row border-tint/20 bg-tint/5 text-tint shadow-card hover:bg-tint/15 flex h-10 w-10 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             title="Edit Article"
           >
-            <FileEdit className="h-4.5 w-4.5" />
+            <FileEdit className="size-4.5" />
           </Link>
         )}
 
@@ -81,37 +78,42 @@ export function WikiOSArticleToolbarWidget({
         {pairHref && (
           <Link
             href={pairHref}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-sky-500/20 bg-sky-500/5 text-sky-400 shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105 hover:bg-sky-500/15 active:scale-95"
+            className="rounded-row border-cyan/20 bg-cyan/5 text-cyan shadow-card hover:bg-cyan/15 flex h-10 w-10 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             title={pairLabel}
           >
-            <ChatBubble className="h-4.5 w-4.5" />
+            <ChatBubble className="size-4.5" />
           </Link>
         )}
 
         {/* Margin */}
-        <button
-          type="button"
+        <Button
+          variant="tinted"
+          size="icon-lg"
+          aria-pressed={isMarginOpen}
+          aria-label="Margin"
           onClick={() => toggleMargin()}
           className={cn(
-            "rail-glow-highlighter rail-animate-wiggle flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border shadow-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105 active:scale-95",
+            "rail-glow-highlighter rail-animate-wiggle rounded-row shadow-card size-10 border",
             isMarginOpen
               ? "border-margin-accent bg-margin-accent/25 text-margin-accent ring-margin-accent/40 shadow-margin-accent/20 ring-2"
               : "border-margin-accent/20 bg-margin-accent/10 text-margin-accent hover:bg-margin-accent/20"
           )}
           title={isMarginOpen ? "Hide Margin (T)" : "Show Margin (Threads, Markup) [T]"}
         >
-          <Highlighter className="h-4.5 w-4.5" />
-        </button>
+          <Highlighter className="size-4.5" />
+        </Button>
 
         {/* Media Theme Quick Cycle */}
-        <button
-          type="button"
+        <Button
+          variant="tinted"
+          size="icon-lg"
+          aria-label={`Media theme: ${mediaThemeMode}`}
           onClick={cycleMediaThemeMode}
-          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/5 text-cyan-400 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105 hover:bg-cyan-500/15 active:scale-95"
+          className="rounded-row border-teal/20 bg-teal/5 text-teal hover:bg-teal/15 size-10 border"
           title={`Media Theme: ${mediaThemeMode} (Click to cycle Auto / Plinth / Raw)`}
         >
           {getModeIcon(mediaThemeMode)}
-        </button>
+        </Button>
 
         {/* Stash */}
         <StashButton title={title} isAuthenticated={isSignedIn} isCollapsed={true} />
@@ -120,121 +122,107 @@ export function WikiOSArticleToolbarWidget({
   }
 
   return (
-    <CutoutCard
-      className={cn(
-        cutoutCardSurfaceClassName,
-        "w-48 overflow-hidden rounded-xl border-blue-500/20 bg-gradient-to-b from-blue-500/5 to-transparent"
-      )}
-      trackPointerHover={false}
-      texture="dots"
-      textureOpacity={0.06}
-    >
-      <div className="relative bg-blue-500/10 px-3 pt-2.5 pb-4">
-        <div className="text-card-foreground flex items-center gap-1.5 text-xs font-bold text-blue-400">
-          <FileEdit className="h-3.5 w-3.5" />
-          Page Tools
-        </div>
-        <CutoutCorner className="text-card absolute -bottom-px left-0" size={16} />
-        <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={16} />
-      </div>
+    // v2 (c5c6b382): a CutoutCard with the tinted cutout tab header.
+    <CutoutCard variant="card" trackPointerHover={false} className="w-48 rounded-xl">
+      <CutoutCardHeader
+        as="h2"
+        icon={<FileEdit aria-hidden="true" />}
+        cornerSize={16}
+        className="px-3 pt-2 pb-4"
+      >
+        Page tools
+      </CutoutCardHeader>
 
-      <CutoutCardContent className="space-y-1 p-3 pt-1">
+      <div className="space-y-0.5 p-2">
         {/* Edit */}
         {isSignedIn && (
-          <Link
-            href={withBasePath(pageEditHref(title, slug))}
-            className="text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5"
-          >
-            <FileEdit className="h-3.5 w-3.5 shrink-0 text-blue-400" />
-            <span>Edit Article</span>
-          </Link>
+          <Button asChild variant="ghost" className={toolRowClassName}>
+            <Link href={withBasePath(pageEditHref(title, slug))}>
+              <FileEdit className="text-tint size-3.5 shrink-0" aria-hidden="true" />
+              <span>Edit Article</span>
+            </Link>
+          </Button>
         )}
 
         {/* Discussion */}
         {pairHref && (
-          <Link
-            href={pairHref}
-            className="text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5"
-          >
-            <ChatBubble className="h-3.5 w-3.5 shrink-0 text-sky-400" />
-            <span>{pairLabel}</span>
-          </Link>
+          <Button asChild variant="ghost" className={toolRowClassName}>
+            <Link href={pairHref}>
+              <ChatBubble className="text-cyan size-3.5 shrink-0" aria-hidden="true" />
+              <span>{pairLabel}</span>
+            </Link>
+          </Button>
         )}
 
         {/* Margin */}
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          aria-pressed={isMarginOpen}
           onClick={() => toggleMargin()}
           className={cn(
-            "flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-left text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-            isMarginOpen
-              ? "bg-margin-accent/20 text-margin-accent font-bold"
-              : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+            toolRowClassName,
+            "justify-between",
+            isMarginOpen && "bg-margin-bg hover:bg-margin-bg text-label"
           )}
         >
-          <div className="flex items-center gap-2">
-            <Highlighter className="text-margin-accent h-3.5 w-3.5 shrink-0" />
+          <span className="flex items-center gap-2">
+            <Highlighter className="text-margin-accent size-3.5 shrink-0" aria-hidden="true" />
             <span>{isMarginOpen ? "Hide Margin" : "Show Margin"}</span>
-          </div>
-          <kbd className="py-0.2 rounded border border-white/10 bg-white/5 px-1 font-mono text-xs text-slate-400">
+          </span>
+          <kbd className="rounded-control-sm border-separator bg-fill-4 text-caption text-label-secondary border px-1">
             T
           </kbd>
-        </button>
+        </Button>
 
         {/* History */}
-        <button
+        <Button
+          variant="ghost"
           onClick={() => setActiveModal("history")}
-          className="text-muted-foreground hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5"
-          type="button"
+          className={toolRowClassName}
         >
-          <Clock className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+          <Clock className="text-label-secondary size-3.5 shrink-0" aria-hidden="true" />
           <span>Revision History</span>
-        </button>
+        </Button>
 
         {/* Backlinks */}
-        <button
+        <Button
+          variant="ghost"
           onClick={() => setActiveModal("backlinks")}
-          className="text-muted-foreground hover:text-foreground flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/5"
-          type="button"
+          className={toolRowClassName}
         >
-          <Link2 className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
+          <Link2 className="text-label-secondary size-3.5 shrink-0" aria-hidden="true" />
           <span>What Links Here</span>
-        </button>
+        </Button>
 
-        {/* Media Theme Mode Segmented Selector: Auto | Plinth */}
-        <div className="mt-2 space-y-1.5 border-t border-white/5 pt-2">
-          <div className="flex items-center justify-between px-1 text-xs font-bold tracking-wider text-slate-400 uppercase">
-            <span>Media Theme</span>
-            <span className="text-xs font-semibold text-cyan-400 capitalize">{mediaThemeMode}</span>
+        {/* Media theme */}
+        <div className="border-separator mt-2 space-y-2 border-t px-1 pt-2">
+          <div className="flex items-center justify-between">
+            <span className="text-subhead text-label-secondary">Media Theme</span>
+            <span className="text-caption text-label-secondary capitalize">{mediaThemeMode}</span>
           </div>
-          <div className="grid grid-cols-2 gap-1 rounded-lg border border-white/5 bg-black/20 p-0.5 dark:bg-black/30">
-            {MEDIA_THEME_OPTIONS.map((opt) => {
-              const isSelected = mediaThemeMode === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setMediaThemeMode(opt.value)}
-                  className={`flex cursor-pointer flex-col items-center justify-center rounded-md px-1 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                    isSelected
-                      ? "border border-blue-500/30 bg-blue-500/20 text-blue-300 shadow-sm"
-                      : "border border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
-                  }`}
-                  title={`${opt.label}: ${opt.description}`}
-                >
-                  {getModeIcon(opt.value)}
-                  <span className="mt-0.5 scale-90">{opt.shortLabel}</span>
-                </button>
-              );
-            })}
-          </div>
+          <SegmentedControl
+            aria-label="Media theme"
+            size="sm"
+            fullWidth
+            value={mediaThemeMode}
+            onValueChange={setMediaThemeMode}
+            options={MEDIA_THEME_OPTIONS.map((opt) => ({
+              value: opt.value,
+              label: opt.shortLabel,
+              icon: getModeIcon(opt.value),
+            }))}
+          />
         </div>
 
-        {/* Stash Button */}
-        <div className="mt-2 border-t border-white/5 px-1 pt-2">
+        {/* Stash */}
+        <div className="border-separator mt-2 border-t px-1 pt-2">
           <StashButton title={title} isAuthenticated={isSignedIn} />
         </div>
-      </CutoutCardContent>
+      </div>
     </CutoutCard>
   );
 }
+
+/** A command row in the Page Tools card (a ghost `Button`). */
+const toolRowClassName =
+  "text-callout text-label h-auto w-full justify-start px-2 py-2 font-normal";

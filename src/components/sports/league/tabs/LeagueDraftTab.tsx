@@ -17,39 +17,28 @@ export function LeagueDraftTab({ picks, sportPreset, onTeamClick }: LeagueDraftT
   const title = isSoccer ? "Transfers" : "Draft Board";
 
   return (
-    <FacetCard
-      depth={2}
-      className="relative overflow-hidden rounded-3xl border border-border/40 bg-card/75 p-6 shadow-xl backdrop-blur-2xl md:p-8 space-y-6"
-    >
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-border/20 pb-4">
+    <FacetCard className="relative space-y-6 overflow-hidden p-6 md:p-8">
+      <div className="border-separator flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/50 bg-background/60 text-foreground shadow-xs">
-            <Trophy className="h-5 w-5 text-amber-400" />
+          <div className="rounded-row border-separator bg-surface-secondary text-label shadow-card flex h-9 w-9 items-center justify-center border">
+            <Trophy className="text-yellow h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-base font-black tracking-tight text-foreground">
-              {title}
-            </h3>
-            <p className="text-xs font-semibold text-muted-foreground">
-              {isSoccer
-                ? "Completed transfers and signings."
-                : "Round-by-round draft selections."}
+            <h3 className="text-headline text-label">{title}</h3>
+            <p className="text-footnote text-label-secondary font-semibold">
+              {isSoccer ? "Completed transfers and signings." : "Round-by-round draft selections."}
             </p>
           </div>
         </div>
         <Badge
           variant="outline"
-          className="border-border/60 bg-muted/30 px-2.5 py-1 text-xs font-bold text-foreground w-fit"
+          className="border-separator bg-fill-4 text-footnote text-label w-fit px-3 py-1 font-semibold"
         >
           {picks.length} Selections
         </Badge>
       </div>
 
-      <DraftPicksView
-        picks={picks}
-        isSoccer={isSoccer}
-        onTeamClick={onTeamClick}
-      />
+      <DraftPicksView picks={picks} isSoccer={isSoccer} onTeamClick={onTeamClick} />
     </FacetCard>
   );
 }

@@ -2,20 +2,30 @@ import * as React from "react";
 
 import { cn } from "~/lib/utils/cn";
 
+/**
+ * Shared field styling (spec §7.2): `fill-3` background with a hairline, `rounded-control`, no blur
+ * or refraction; 2px tint focus ring; system red when `aria-invalid`. 16px text below `md` so iOS
+ * does not zoom on focus, `text-body` above.
+ */
+export const fieldStyles = [
+  "border border-separator bg-fill-3 text-label placeholder:text-label-tertiary",
+  "selection:bg-tint selection:text-on-tint",
+  "transition-[color,background-color,border-color,box-shadow] duration-150 ease-out-facet",
+  "hover:bg-fill-2",
+  "outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-tint",
+  "aria-invalid:border-destructive aria-invalid:focus-visible:outline-destructive",
+  "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-fill-3",
+].join(" ");
+
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (
     <input
       type={type}
       data-slot="input"
       className={cn(
-        "file:text-foreground placeholder:text-muted-foreground/70 selection:bg-primary selection:text-primary-foreground",
-        "border-border/70 bg-background/40 flex h-9 w-full min-w-0 rounded-md border",
-        "px-3 py-1 text-base shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 outline-none hover:shadow-xs dark:shadow-[0_1px_2px_rgba(0,0,0,0.2)]",
-        "file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium",
-        "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-        "hover:border-border hover:bg-background/60",
-        "focus-visible:border-ring focus-visible:bg-background/90 focus-visible:ring-ring/25 focus-visible:ring-[2.5px]",
-        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+        fieldStyles,
+        "flex h-(--control-height) w-full min-w-0 rounded-control px-3 py-1 text-base md:text-body",
+        "file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-body file:font-medium file:text-label",
         className
       )}
       {...props}

@@ -5,7 +5,6 @@ import { Component as Layers, ArrowRight, Download } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { FacetCard } from "~/components/ui/facet-container";
 import { CardDisplay } from "~/components/cards/display/CardDisplay";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
@@ -29,51 +28,51 @@ export function VaultCardHoldingsCard({
   getRarityBorder,
 }: VaultCardHoldingsCardProps) {
   return (
+    // v2 (c5c6b382): a glass showcase card with the dot texture.
     <FacetCard
-      depth={2}
-      className={cn(
-        "relative overflow-hidden rounded-3xl p-6 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:border-amber-500/30"
-      )}
+      variant="glass"
+      padding="lg"
+      texture="dots"
+      textureOpacity={0.04}
+      className="overflow-hidden"
     >
-      <TextureOverlay texture="dots" opacity={0.04} />
-
-      <div className="border-border/40 relative z-10 mb-4 flex items-center justify-between border-b pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/15 text-amber-600 shadow-sm backdrop-blur-md dark:text-amber-400">
-            <Layers className="h-4.5 w-4.5 text-amber-600 dark:text-amber-400" />
+      <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
+        <div className="flex items-center gap-2">
+          <div className="rounded-row bg-tint-fill text-tint shadow-card flex h-8 w-8 items-center justify-center border font-medium">
+            <Layers aria-hidden className="text-tint h-4.5 w-4.5" />
           </div>
-          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Card Holdings
-          </span>
+          <span className="text-label-secondary text-eyebrow">Card holdings</span>
         </div>
         {featuredCards.length > 0 && (
-          <button
+          <Button
+            variant="link"
+            size="sm"
             onClick={() => onNavigate?.("cards")}
-            className="flex items-center gap-1 text-xs font-bold text-amber-600 transition-transform hover:underline active:scale-95 dark:text-amber-400"
+            className="text-footnote text-yellow-ink h-auto gap-1 px-0 font-semibold"
           >
-            Manage Portfolio <ArrowRight className="h-3 w-3" />
-          </button>
+            Manage portfolio <ArrowRight aria-hidden className="h-3 w-3" />
+          </Button>
         )}
       </div>
 
       {topCardsLoading ? (
         <div className="flex justify-center py-8">
-          <Skeleton className="bg-muted/40 h-64 w-44 rounded-2xl" />
+          <Skeleton className="bg-fill-3 rounded-card h-64 w-44" />
         </div>
       ) : featuredCards.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-center">
-          <Layers className="text-muted-foreground/40 mb-3 h-10 w-10" />
-          <span className="text-foreground block text-xs font-bold">Portfolio Empty</span>
-          <p className="text-muted-foreground mt-1 mb-3 text-xs">
+          <Layers aria-hidden className="text-label-tertiary mb-3 h-10 w-10" />
+          <span className="text-label text-footnote block font-semibold">Portfolio empty</span>
+          <p className="text-label-secondary text-footnote mt-1 mb-3">
             Import cards or open packs to populate your assets.
           </p>
           <Button
             size="sm"
             variant="outline"
             onClick={() => onNavigate?.("import")}
-            className="h-8 rounded-full border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-600 hover:bg-amber-500/20 active:scale-95 dark:text-amber-400"
+            className="border-yellow/30 bg-yellow/10 text-footnote text-yellow-ink hover:bg-yellow/20 h-8 rounded-full font-semibold"
           >
-            <Download className="mr-1.5 h-3.5 w-3.5" /> NS Import
+            <Download aria-hidden className="h-3.5 w-3.5" /> NS import
           </Button>
         </div>
       ) : (
@@ -91,20 +90,24 @@ export function VaultCardHoldingsCard({
 
           {/* Other assets list */}
           {featuredCards.length > 1 && (
-            <div className="border-border/40 space-y-2 border-t pt-3">
+            <div className="border-separator space-y-2 border-t pt-3">
               {featuredCards.slice(1, 3).map((card) => (
-                <div
+                // Facet 3.1 HIG: the row looked pressable (hover wash, press scale) but did nothing;
+                // it is now a real button into the cards section, with the press physics.
+                <button
+                  type="button"
                   key={card.id}
-                  className="border-border/40 bg-muted/30 hover:bg-muted/60 flex cursor-pointer items-center justify-between rounded-xl border px-3 py-2 text-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.985] dark:bg-white/5 dark:hover:bg-white/10"
+                  onClick={() => onNavigate?.("cards")}
+                  className="border-separator bg-fill-4 hover:bg-fill-3 rounded-row text-footnote facet-press facet-press-subtle focus-visible:outline-tint flex w-full cursor-pointer items-center justify-between border px-3 py-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
-                  <span className="text-foreground max-w-[130px] truncate font-semibold">
+                  <span className="text-label max-w-[130px] truncate font-semibold">
                     {card.title}
                   </span>
-                  <span className="flex items-center gap-0.5 font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
-                    <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
+                  <span className="text-footnote text-yellow-ink font-data flex items-center gap-0.5 font-semibold tabular-nums">
+                    <IxCreditsSymbol aria-hidden className="h-2.5 w-2.5 shrink-0" />
                     {card.marketValue.toLocaleString()}
                   </span>
-                </div>
+                </button>
               ))}
             </div>
           )}

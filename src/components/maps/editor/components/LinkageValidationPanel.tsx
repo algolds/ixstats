@@ -1,7 +1,6 @@
 "use client";
 
 import { FacetCard } from "~/components/ui/facet-container";
-import { FacetTabs } from "~/components/ui/facet";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React from "react";
@@ -10,18 +9,20 @@ import { cn } from "~/lib/utils";
 import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import type {
   LinkageValidationData,
   LinkageIssue,
   LinkageLinkedItem,
   LinkageUnlinkedItem,
 } from "../types/editor-state";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 const VALIDATION_TABS = [
-  { id: "issues", label: "Issues" },
-  { id: "linked", label: "Linked" },
-  { id: "unlinked", label: "Unlinked" },
-  { id: "features", label: "Features" },
+  { value: "issues", label: "Issues" },
+  { value: "linked", label: "Linked" },
+  { value: "unlinked", label: "Unlinked" },
+  { value: "features", label: "Features" },
 ];
 
 export interface LinkageFeatureItem {
@@ -73,13 +74,11 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
 }: LinkageValidationPanelProps) {
   const realm = useMapRealm();
   return (
-    <div className="space-y-4 p-3 text-xs">
-      <FacetCard surface="solid" className="flex items-center justify-between rounded-lg p-3">
+    <div className="text-footnote space-y-4 p-3">
+      <FacetCard className="flex items-center justify-between p-3">
         <div className="space-y-0.5">
           <Eyebrow className="block">Issues / Desyncs</Eyebrow>
-          <span className="text-foreground text-xl font-bold">
-            {validationData?.issues?.length ?? 0}
-          </span>
+          <span className="text-label text-title-2">{validationData?.issues?.length ?? 0}</span>
         </div>
         <div className="flex gap-1">
           <Button
@@ -105,24 +104,24 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
         </div>
       </FacetCard>
 
-      <FacetCard surface="solid" className="overflow-hidden rounded-lg">
-        <div className="border-border border-b p-1.5">
-          <FacetTabs
-            tabs={VALIDATION_TABS}
-            activeTab={validationTab}
-            onChange={(tab) => setValidationTab(tab as typeof validationTab)}
+      <FacetCard className="overflow-hidden">
+        <div className="border-separator border-b p-2">
+          <SegmentedControl
+            aria-label="Validation view"
+            asTabs
+            fullWidth
+            options={VALIDATION_TABS}
+            value={validationTab}
+            onValueChange={(tab) => setValidationTab(tab as typeof validationTab)}
             size="sm"
-            tone="neutral"
-            showTexture={false}
-            className="w-full"
           />
         </div>
 
-        <div className="max-h-[300px] space-y-1.5 overflow-y-auto p-3">
+        <div className="max-h-[300px] space-y-2 overflow-y-auto p-3">
           {validationTab === "issues" &&
             validationData &&
             (!validationData.issues || validationData.issues.length === 0 ? (
-              <p className="text-muted-foreground py-4 text-center italic">
+              <p className="text-label-secondary py-4 text-center italic">
                 No linkage issues found.
               </p>
             ) : (
@@ -140,19 +139,19 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                       countryId: item.countryId,
                     });
                   }}
-                  className="border-border/30 bg-muted/10 hover:border-primary/40 hover:bg-primary/5 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.99]"
+                  className="border-separator bg-fill-4 hover:border-tint/40 hover:bg-tint-fill rounded-control flex cursor-pointer items-center justify-between border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.99]"
                 >
-                  <div className="flex items-center gap-1.5 truncate">
+                  <div className="flex items-center gap-2 truncate">
                     {item.countryFlag && (
                       <img
                         src={item.countryFlag}
                         alt=""
-                        className="border-border/35 h-3.5 w-5 rounded border object-cover"
+                        className="border-separator h-3.5 w-5 rounded-xs border object-cover"
                       />
                     )}
-                    <span className="text-foreground truncate font-medium">{item.countryName}</span>
+                    <span className="text-label truncate font-medium">{item.countryName}</span>
                   </div>
-                  <span className="text-muted-foreground font-mono text-xs">
+                  <span className="text-label-secondary text-footnote tabular-nums">
                     {item.featureName}
                   </span>
                 </div>
@@ -162,7 +161,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
           {validationTab === "linked" &&
             validationData &&
             (validationData.linked.length === 0 ? (
-              <p className="text-muted-foreground py-4 text-center italic">No linked features.</p>
+              <p className="text-label-secondary py-4 text-center italic">No linked features.</p>
             ) : (
               validationData.linked.map((item: LinkageLinkedItem) => (
                 <div
@@ -178,19 +177,19 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                       countryId: item.countryId,
                     });
                   }}
-                  className="border-border/30 bg-muted/10 hover:border-primary/40 hover:bg-primary/5 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.99]"
+                  className="border-separator bg-fill-4 hover:border-tint/40 hover:bg-tint-fill rounded-control flex cursor-pointer items-center justify-between border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.99]"
                 >
-                  <div className="flex items-center gap-1.5 truncate">
+                  <div className="flex items-center gap-2 truncate">
                     {item.countryFlag && (
                       <img
                         src={item.countryFlag}
                         alt=""
-                        className="border-border/35 h-3.5 w-5 rounded border object-cover"
+                        className="border-separator h-3.5 w-5 rounded-xs border object-cover"
                       />
                     )}
-                    <span className="text-foreground truncate font-medium">{item.countryName}</span>
+                    <span className="text-label truncate font-medium">{item.countryName}</span>
                   </div>
-                  <span className="text-muted-foreground font-mono text-xs">
+                  <span className="text-label-secondary text-footnote tabular-nums">
                     {item.featureName}
                   </span>
                 </div>
@@ -200,7 +199,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
           {validationTab === "unlinked" &&
             validationData &&
             (validationData.unlinked.length === 0 ? (
-              <p className="text-muted-foreground py-4 text-center italic">All countries linked.</p>
+              <p className="text-label-secondary py-4 text-center italic">All countries linked.</p>
             ) : (
               validationData.unlinked.map((item: LinkageUnlinkedItem) => (
                 <div
@@ -209,24 +208,24 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                     setActiveCountryId(item.countryId);
                     setMapSelectedCountry(null);
                   }}
-                  className="border-border/30 bg-muted/10 flex items-center justify-between rounded-lg border p-2"
+                  className="border-separator bg-fill-4 rounded-control flex items-center justify-between border p-2"
                 >
-                  <div className="flex items-center gap-1.5 truncate">
+                  <div className="flex items-center gap-2 truncate">
                     {item.countryFlag && (
                       <img
                         src={item.countryFlag}
                         alt=""
-                        className="border-border/35 h-3.5 w-5 rounded border object-cover"
+                        className="border-separator h-3.5 w-5 rounded-xs border object-cover"
                       />
                     )}
-                    <span className="text-foreground truncate font-medium">{item.countryName}</span>
+                    <span className="text-label truncate font-medium">{item.countryName}</span>
                   </div>
                   <span
                     className={cn(
-                      "inline-flex items-center rounded-full px-2 py-0.5 text-xs leading-tight font-semibold",
+                      "text-caption inline-flex items-center rounded-full px-2 py-0.5 leading-tight font-semibold",
                       item.hasGeometry
-                        ? "border border-amber-500/30 text-amber-500"
-                        : "bg-muted text-muted-foreground"
+                        ? "border-yellow/30 text-yellow border"
+                        : "bg-fill-3 text-label-secondary"
                     )}
                   >
                     {item.hasGeometry ? "Orphaned" : "No Geometry"}
@@ -243,19 +242,20 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                   placeholder="Search features..."
                   value={featureSearch}
                   onChange={(e) => setFeatureSearch(e.target.value)}
-                  className="bg-background border-border focus:ring-primary w-full rounded border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
+                  className="bg-surface border-separator focus:ring-tint text-footnote rounded-control-sm w-full border px-2 py-1 focus:ring-1 focus:outline-none"
                 />
-                <select
+                <OptionSelect
+                  aria-label="Filter features"
+                  size="sm"
+                  className="w-auto"
                   value={featureFilter}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                    setFeatureFilter(e.target.value as "all" | "linked" | "unlinked")
-                  }
-                  className="bg-background border-border focus:ring-primary rounded border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
-                >
-                  <option value="all">All</option>
-                  <option value="linked">Linked</option>
-                  <option value="unlinked">Unlinked</option>
-                </select>
+                  onValueChange={(v) => setFeatureFilter(v as "all" | "linked" | "unlinked")}
+                  options={[
+                    { value: "all", label: "All" },
+                    { value: "linked", label: "Linked" },
+                    { value: "unlinked", label: "Unlinked" },
+                  ]}
+                />
               </div>
               <div className="max-h-[160px] space-y-1 overflow-y-auto pr-0.5">
                 {filteredFeatures.map((feat) => (
@@ -276,23 +276,21 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                         setActiveCountryId(null);
                       }
                     }}
-                    className="border-border/30 bg-muted/10 hover:border-primary/40 hover:bg-primary/5 flex cursor-pointer items-center justify-between rounded-lg border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.99]"
+                    className="border-separator bg-fill-4 hover:border-tint/40 hover:bg-tint-fill rounded-control flex cursor-pointer items-center justify-between border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.99]"
                   >
-                    <div className="flex items-center gap-1.5 truncate">
+                    <div className="flex items-center gap-2 truncate">
                       <div
-                        className="border-border/40 h-3 w-3 shrink-0 rounded-full border shadow-sm"
+                        className="border-separator shadow-card h-3 w-3 shrink-0 rounded-full border"
                         style={{ backgroundColor: feat.fillColor }}
                       />
-                      <span className="text-foreground truncate font-medium">
-                        {feat.displayName}
-                      </span>
+                      <span className="text-label truncate font-medium">{feat.displayName}</span>
                     </div>
                     <span
                       className={cn(
-                        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold",
+                        "text-caption inline-flex items-center rounded-full px-2 py-0.5 font-semibold",
                         feat.isClaimed
-                          ? "border border-emerald-500/30 text-emerald-500"
-                          : "bg-muted text-muted-foreground"
+                          ? "border-green/30 text-green border"
+                          : "bg-fill-3 text-label-secondary"
                       )}
                     >
                       {feat.isClaimed ? "Linked" : "Unlinked"}

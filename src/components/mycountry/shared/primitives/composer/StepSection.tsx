@@ -30,22 +30,16 @@ export function StepSection({
 }: StepSectionProps) {
   const headingId = `directive-step-${step}`;
   return (
-    <FacetCard
-      depth={2}
-      surface="solid"
-      role="region"
-      aria-labelledby={headingId}
-      className={cn("rounded-2xl", className)}
-    >
+    <FacetCard role="region" aria-labelledby={headingId} className={cn("rounded-card", className)}>
       <FacetCardHeader className="flex-row items-start gap-3 p-4 sm:p-6">
         <div className="min-w-0 flex-1">
           <Eyebrow className="block">
             Step {step} of {STEP_COUNT}
           </Eyebrow>
-          <h3 id={headingId} className="text-foreground mt-1 text-base leading-6 font-semibold">
+          <h3 id={headingId} className="text-label text-title-3 mt-1 leading-6">
             {title}
           </h3>
-          {description && <p className="text-muted-foreground mt-0.5 text-sm">{description}</p>}
+          {description && <p className="text-label-secondary text-body mt-0.5">{description}</p>}
         </div>
         {action && <div className="shrink-0">{action}</div>}
       </FacetCardHeader>

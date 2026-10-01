@@ -5,6 +5,7 @@
  * Phase 3: P2P Trading System
  */
 
+import { Skeleton } from "~/components/ui/skeleton";
 import React from "react";
 import { useAuth } from "@clerk/nextjs";
 import { motion } from "motion/react";
@@ -75,36 +76,36 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
         return {
           icon: CheckCircle,
           label: "Completed",
-          color: "text-green-400",
-          bgColor: "bg-green-500/20",
+          color: "text-green",
+          bgColor: "bg-green/20",
         };
       case "REJECTED":
         return {
           icon: XCircle,
           label: "Declined",
-          color: "text-red-400",
-          bgColor: "bg-red-500/20",
+          color: "text-red",
+          bgColor: "bg-red/20",
         };
       case "CANCELLED":
         return {
           icon: XCircle,
           label: "Cancelled",
-          color: "text-amber-400",
-          bgColor: "bg-amber-500/20",
+          color: "text-yellow",
+          bgColor: "bg-yellow/20",
         };
       case "EXPIRED":
         return {
           icon: Clock,
           label: "Expired",
-          color: "text-white/40",
-          bgColor: "bg-white/5",
+          color: "text-label-tertiary",
+          bgColor: "bg-fill-4",
         };
       default:
         return {
           icon: Clock,
           label: status,
-          color: "text-white/60",
-          bgColor: "bg-white/10",
+          color: "text-label-secondary",
+          bgColor: "bg-fill-3",
         };
     }
   };
@@ -113,9 +114,7 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="facet-hierarchy-child animate-pulse rounded-lg p-4">
-            <div className="h-20 rounded bg-white/5" />
-          </div>
+          <Skeleton key={i} className="rounded-row h-28 w-full" />
         ))}
       </div>
     );
@@ -123,11 +122,11 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
 
   if (filteredTrades.length === 0) {
     return (
-      <div className="facet-hierarchy-child rounded-lg p-8 text-center">
-        <ArrowRightLeft className="mx-auto mb-3 h-12 w-12 text-white/20" />
-        <p className="text-white/60">No trade history yet</p>
+      <div className="bg-surface-secondary border-separator rounded-control border p-8 text-center">
+        <ArrowRightLeft className="text-label-tertiary mx-auto mb-3 h-12 w-12" />
+        <p className="text-label-secondary">No trade history yet</p>
         {filterStatus && (
-          <p className="mt-1 text-sm text-white/40">Try removing filters to see more</p>
+          <p className="text-body text-label-tertiary mt-1">Try removing filters to see more</p>
         )}
       </div>
     );
@@ -150,8 +149,8 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              "facet-hierarchy-child cursor-pointer rounded-lg p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-[1.01]",
-              onTradeClick && "hover:bg-white/5"
+              "bg-surface-secondary border-separator rounded-control cursor-pointer border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+              onTradeClick && "hover:bg-fill-4"
             )}
             onClick={() => onTradeClick?.(trade.id)}
           >
@@ -159,20 +158,20 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
               <div className="min-w-0 flex-1">
                 {/* Header */}
                 <div className="mb-2 flex items-center gap-3">
-                  <div className={cn("rounded-full p-1.5", statusConfig.bgColor)}>
+                  <div className={cn("rounded-full p-2", statusConfig.bgColor)}>
                     <StatusIcon className={cn("h-4 w-4", statusConfig.color)} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h4 className="truncate font-semibold text-white">
+                    <h4 className="text-label truncate font-semibold">
                       Trade with {partner.country?.name || "Unknown"}
                     </h4>
-                    <p className="text-xs text-white/60">
+                    <p className="text-footnote text-label-secondary">
                       {format(new Date(trade.updatedAt), "MMM d, yyyy 'at' h:mm a")}
                     </p>
                   </div>
                   <div
                     className={cn(
-                      "rounded-full px-2 py-1 text-xs font-medium",
+                      "text-footnote rounded-full px-2 py-1 font-medium",
                       statusConfig.bgColor,
                       statusConfig.color
                     )}
@@ -183,21 +182,21 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
 
                 {/* Trade summary */}
                 <div className="mt-3 grid grid-cols-2 gap-3">
-                  <div className="glass-hierarchy-interactive rounded-lg p-2">
-                    <p className="mb-1 text-xs text-white/60">You Offered</p>
+                  <div className="bg-fill-3 rounded-control p-2">
+                    <p className="text-footnote text-label-secondary mb-1">You Offered</p>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-sm font-semibold text-blue-400">
+                      <span className="text-headline text-blue">
                         {isInitiator
                           ? trade.initiatorCardIds.length
                           : trade.recipientCardIds.length}
                       </span>
-                      <span className="text-xs text-white/40">
+                      <span className="text-footnote text-label-tertiary">
                         card{trade.initiatorCardIds.length !== 1 ? "s" : ""}
                       </span>
                     </div>
                     {((isInitiator && trade.initiatorCredits > 0) ||
                       (!isInitiator && trade.recipientCredits > 0)) && (
-                      <p className="mt-1 text-xs text-amber-400">
+                      <p className="text-footnote text-yellow mt-1">
                         +
                         {isInitiator
                           ? trade.initiatorCredits.toLocaleString()
@@ -207,21 +206,21 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
                     )}
                   </div>
 
-                  <div className="glass-hierarchy-interactive rounded-lg p-2">
-                    <p className="mb-1 text-xs text-white/60">You Received</p>
+                  <div className="bg-fill-3 rounded-control p-2">
+                    <p className="text-footnote text-label-secondary mb-1">You Received</p>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-sm font-semibold text-green-400">
+                      <span className="text-headline text-green">
                         {isInitiator
                           ? trade.recipientCardIds.length
                           : trade.initiatorCardIds.length}
                       </span>
-                      <span className="text-xs text-white/40">
+                      <span className="text-footnote text-label-tertiary">
                         card{trade.recipientCardIds.length !== 1 ? "s" : ""}
                       </span>
                     </div>
                     {((isInitiator && trade.recipientCredits > 0) ||
                       (!isInitiator && trade.initiatorCredits > 0)) && (
-                      <p className="mt-1 text-xs text-amber-400">
+                      <p className="text-footnote text-yellow mt-1">
                         +
                         {isInitiator
                           ? trade.recipientCredits.toLocaleString()
@@ -234,14 +233,16 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
 
                 {/* Trade message preview */}
                 {trade.message && (
-                  <p className="mt-2 truncate text-xs text-white/50 italic">"{trade.message}"</p>
+                  <p className="text-footnote text-label-secondary mt-2 truncate italic">
+                    "{trade.message}"
+                  </p>
                 )}
               </div>
 
               {/* Arrow indicator */}
               {onTradeClick && (
                 <div className="shrink-0">
-                  <ChevronRight className="h-5 w-5 text-white/40" />
+                  <ChevronRight className="text-label-tertiary h-5 w-5" />
                 </div>
               )}
             </div>
@@ -256,16 +257,16 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
             variant="outline"
-            className="facet-hierarchy-child"
+            className="bg-surface-secondary border-separator border"
           >
             Previous
           </Button>
-          <span className="text-sm text-white/60">Page {page + 1}</span>
+          <span className="text-body text-label-secondary">Page {page + 1}</span>
           <Button
             onClick={() => setPage((p) => p + 1)}
             disabled={!hasMore}
             variant="outline"
-            className="facet-hierarchy-child"
+            className="bg-surface-secondary border-separator border"
           >
             Next
           </Button>

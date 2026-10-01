@@ -20,6 +20,7 @@ import {
 import { motion } from "motion/react";
 import { withBasePath, stripBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
 
 interface WikiUtilitiesRibbonProps {
   onSearchClick?: () => void;
@@ -74,7 +75,7 @@ export function WikiUtilitiesRibbon({
   return (
     <div
       className={cn(
-        "border-border/50 bg-card/60 mb-6 flex flex-col gap-2.5 rounded-2xl border p-1.5 shadow-xs backdrop-blur-xl select-none sm:flex-row sm:items-center sm:justify-between",
+        "border-separator bg-surface rounded-card mb-6 flex flex-col gap-2 border p-2 select-none sm:flex-row sm:items-center sm:justify-between",
         className
       )}
     >
@@ -91,23 +92,23 @@ export function WikiUtilitiesRibbon({
               data-cuelume-press="soft"
               data-cuelume-hover="tick"
               className={cn(
-                "relative z-10 flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
+                "rounded-row text-caption relative z-10 flex shrink-0 items-center gap-2 px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
                 isActive
-                  ? "font-semibold text-black shadow-xs dark:text-black"
-                  : "text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
+                  ? "font-semibold text-black"
+                  : "text-label-secondary hover:bg-fill-3 hover:text-label"
               )}
             >
               {isActive && (
                 <motion.div
                   layoutId="activeUtilityRibbonTab"
                   transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
-                  className="bg-wiki absolute inset-0 -z-10 rounded-xl shadow-sm"
+                  className="bg-tint rounded-row shadow-card absolute inset-0 -z-10"
                 />
               )}
               <Icon className="h-3.5 w-3.5" />
               <span>{tab.label}</span>
               {tab.badge && !isActive && (
-                <span className="bg-wiki/15 py-0.2 text-wiki rounded-md px-1 text-xs font-bold tracking-wider uppercase">
+                <span className="bg-tint/15 py-0.2 text-tint rounded-control-sm text-eyebrow px-1">
                   {tab.badge}
                 </span>
               )}
@@ -117,36 +118,28 @@ export function WikiUtilitiesRibbon({
       </div>
 
       {/* Quick Launch Action Buttons */}
-      <div className="border-border/30 flex shrink-0 items-center gap-1.5 border-t pt-1.5 sm:border-t-0 sm:pt-0 sm:pl-2">
+      <div className="border-separator flex shrink-0 items-center gap-2 border-t pt-2 sm:border-t-0 sm:pt-0 sm:pl-2">
         {onSearchClick && (
-          <button
-            type="button"
+          <Button
+            variant="gray"
+            size="sm"
             onClick={onSearchClick}
-            data-cuelume-press="tap"
-            data-cuelume-hover="tick"
-            className="border-border/40 bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             title="Spotlight Search (⌘K)"
+            className="text-label-secondary"
           >
-            <Search className="text-muted-foreground h-3.5 w-3.5" />
+            <Search className="text-label-secondary h-3.5 w-3.5" />
             <span className="hidden md:inline">Search</span>
-            <kbd className="border-border/40 bg-background/50 py-0.2 text-muted-foreground hidden rounded border px-1 font-mono text-xs lg:inline-block">
+            <kbd className="border-separator bg-surface py-0.2 text-label-secondary rounded-control-sm text-footnote hidden border px-1 tabular-nums lg:inline-block">
               ⌘K
             </kbd>
-          </button>
+          </Button>
         )}
 
         {onCreatePageClick && (
-          <button
-            type="button"
-            onClick={onCreatePageClick}
-            data-cuelume-press="tap"
-            data-cuelume-hover="tick"
-            className="bg-wiki/15 border-wiki/30 text-wiki hover:bg-wiki/25 inline-flex cursor-pointer items-center gap-1 rounded-xl border px-2.5 py-1.5 text-xs font-bold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-            title="Create New Page"
-          >
+          <Button variant="tinted" size="sm" onClick={onCreatePageClick} title="Create New Page">
             <Plus className="h-3.5 w-3.5" />
             <span>New Page</span>
-          </button>
+          </Button>
         )}
       </div>
     </div>

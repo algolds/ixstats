@@ -16,67 +16,68 @@ type Status =
   | "rc"
   | "stable";
 
+/** Status → system colour: a dot in the colour and the label in its `-ink` (AA on surfaces). */
 const STATUS_CONFIG: Record<Status, { label: string; dot: string; text: string }> = {
   operational: {
     label: "Operational",
-    dot: "bg-emerald-500",
-    text: "text-emerald-700 dark:text-emerald-400",
+    dot: "bg-green",
+    text: "text-green-ink",
   },
   degraded: {
     label: "Degraded",
-    dot: "bg-amber-500",
-    text: "text-amber-700 dark:text-amber-400",
+    dot: "bg-yellow",
+    text: "text-yellow-ink",
   },
   "partial-outage": {
     label: "Partial Outage",
-    dot: "bg-orange-500",
-    text: "text-orange-700 dark:text-orange-400",
+    dot: "bg-orange",
+    text: "text-orange-ink",
   },
   "major-outage": {
     label: "Major Outage",
-    dot: "bg-red-500",
-    text: "text-red-700 dark:text-red-400",
+    dot: "bg-red",
+    text: "text-red-ink",
   },
   maintenance: {
     label: "Maintenance",
-    dot: "bg-blue-500",
-    text: "text-blue-700 dark:text-blue-400",
+    dot: "bg-blue",
+    text: "text-blue-ink",
   },
   incident: {
     label: "Incident",
-    dot: "bg-red-500",
-    text: "text-red-700 dark:text-red-400",
+    dot: "bg-red",
+    text: "text-red-ink",
   },
   unknown: {
     label: "Unknown",
-    dot: "bg-zinc-400 dark:bg-zinc-500",
-    text: "text-zinc-600 dark:text-zinc-400",
+    dot: "bg-gray",
+    text: "text-gray-ink",
   },
   // Release channel statuses
   developer: {
     label: "Developer",
-    dot: "bg-indigo-500",
-    text: "text-indigo-700 dark:text-indigo-400",
+    dot: "bg-indigo",
+    text: "text-indigo-ink",
   },
   alpha: {
     label: "Alpha",
-    dot: "bg-amber-500",
-    text: "text-amber-700 dark:text-amber-400",
+    dot: "bg-yellow",
+    text: "text-yellow-ink",
   },
   beta: {
     label: "Beta",
-    dot: "bg-blue-500",
-    text: "text-blue-700 dark:text-blue-400",
+    dot: "bg-blue",
+    text: "text-blue-ink",
   },
   rc: {
     label: "RC",
-    dot: "bg-cyan-500",
-    text: "text-cyan-700 dark:text-cyan-400",
+    dot: "bg-cyan",
+    text: "text-cyan-ink",
   },
   stable: {
     label: "Stable",
-    dot: "bg-emerald-500",
-    text: "text-emerald-700 dark:text-emerald-400",
+    dot: "bg-green",
+    text: "text-green-ink",
   },
 };
 
@@ -85,9 +86,9 @@ const statusIndicatorVariants = cva(
   {
     variants: {
       size: {
-        sm: "h-6 px-2.5 text-xs [&>[data-slot=status-dot]]:size-1.5",
-        md: "h-7 px-3 text-xs [&>[data-slot=status-dot]]:size-2",
-        lg: "h-8 px-3.5 text-sm [&>[data-slot=status-dot]]:size-2.5",
+        sm: "h-6 px-2 text-caption [&>[data-slot=status-dot]]:size-1.5",
+        md: "h-7 px-3 text-caption [&>[data-slot=status-dot]]:size-2",
+        lg: "h-8 px-3 text-footnote [&>[data-slot=status-dot]]:size-2.5",
       },
     },
     defaultVariants: {
@@ -116,11 +117,7 @@ function StatusIndicator({ status, label, size, className, ...props }: StatusInd
       data-status={status}
       role="status"
       aria-label={displayLabel}
-      className={cn(
-        statusIndicatorVariants({ size }),
-        "border-border/60 bg-card shadow-xs",
-        className
-      )}
+      className={cn(statusIndicatorVariants({ size }), "border-separator bg-surface", className)}
       {...props}
     >
       <span
@@ -128,7 +125,12 @@ function StatusIndicator({ status, label, size, className, ...props }: StatusInd
         className={cn("relative shrink-0 rounded-full", config.dot)}
         aria-hidden="true"
       >
-        <span className={cn("absolute inset-0 animate-ping rounded-full opacity-40", config.dot)} />
+        <span
+          className={cn(
+            "absolute inset-0 animate-ping rounded-full opacity-40 motion-reduce:animate-none",
+            config.dot
+          )}
+        />
       </span>
       <span className={cn("whitespace-nowrap", config.text)}>{displayLabel}</span>
     </span>

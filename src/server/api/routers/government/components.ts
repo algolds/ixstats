@@ -1,7 +1,8 @@
 // src/server/api/routers/government.ts
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/economy/atomic-data";
 import { ATOMIC_TAX_COMPONENTS } from "~/lib/government/tax/atomic-tax-components";
@@ -22,9 +23,11 @@ export const governmentComponentsRouter = createTRPCRouter({
   // Aggregates government / economic / tax components: staff is consumed by both
   // active and still-implementing components, while only implementing ones appear
   // in the rollout queue (with a progress estimate based on createdAt → implementationDate).
-  getCivilServiceStatus: publicProcedure
+  // Owner/privileged only: civil-service capacity is private like CivCap.
+  getCivilServiceStatus: protectedProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
       // implementationDate is stored in IxTime (game time), so compare against IxTime now.
       const nowMs = IxTime.getCurrentIxTime();
       const now = new Date(nowMs);

@@ -15,7 +15,11 @@ export function ImageLightbox({ src, alt = "", onClose }: ImageLightboxProps) {
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="w-auto max-w-[90vw] border-0 bg-transparent p-0 shadow-none backdrop-blur-none sm:max-w-[90vw]">
         <DialogTitle className="sr-only">{alt || "Image"}</DialogTitle>
-        <img src={src} alt={alt} className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain" />
+        <img
+          src={src}
+          alt={alt}
+          className="rounded-control max-h-[90vh] max-w-[90vw] object-contain"
+        />
       </DialogContent>
     </Dialog>
   );

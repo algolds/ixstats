@@ -9,14 +9,14 @@ export function SourceWikiNote({ title, wikiSource }: { title: string; wikiSourc
   const { name, baseUrl } = WIKI_SOURCES[wikiSource];
   const origin = baseUrl.replace(/\/+$/u, "");
   return (
-    <p className="text-muted-foreground mt-2 mb-3 flex items-center gap-1.5 px-1 text-xs">
+    <p className="text-label-secondary text-footnote mt-2 mb-3 flex items-center gap-2 px-1">
       <Lock className="h-3 w-3 shrink-0" aria-hidden />
       <span>From {name} — read only ·</span>
       <a
         href={`${origin}/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`}
         target="_blank"
         rel="noreferrer"
-        className="hover:text-foreground underline-offset-4 hover:underline"
+        className="hover:text-label underline-offset-4 hover:underline"
       >
         open on {new URL(origin).host}
       </a>

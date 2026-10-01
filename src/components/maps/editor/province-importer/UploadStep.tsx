@@ -9,6 +9,7 @@ import {
   SystemRestart as Loader2,
 } from "iconoir-react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface UploadStepProps {
   importer: ReturnType<typeof useProvinceImporter>;
@@ -74,8 +75,8 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-foreground text-sm font-medium">Upload Province Map</h3>
-        <p className="text-muted-foreground mt-1 text-xs">
+        <h3 className="text-label text-body font-medium">Upload Province Map</h3>
+        <p className="text-label-secondary text-footnote mt-1">
           Upload an SVG or PNG file containing your province/subdivision boundaries. SVG files from
           Inkscape work best — provinces are detected from path groups.
         </p>
@@ -84,28 +85,18 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
       {/* Scope picker */}
       <div className="space-y-2">
         <Eyebrow className="block">Import Scope</Eyebrow>
-        <div className="grid grid-cols-3 gap-2">
-          {(
-            [
-              { id: "both", label: "Provinces & Cities" },
-              { id: "provinces", label: "Provinces Only" },
-              { id: "cities", label: "Cities Only" },
-            ] as const
-          ).map((scope) => (
-            <button
-              key={scope.id}
-              type="button"
-              onClick={() => importer.setImportScope(scope.id)}
-              className={`rounded-lg border px-3 py-2 text-center text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                importer.importScope === scope.id
-                  ? "border-primary bg-primary/10 text-primary shadow-sm"
-                  : "border-border hover:bg-accent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {scope.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          aria-label="Import scope"
+          fullWidth
+          size="sm"
+          value={importer.importScope}
+          onValueChange={(v) => importer.setImportScope(v as typeof importer.importScope)}
+          options={[
+            { value: "both", label: "Provinces & Cities" },
+            { value: "provinces", label: "Provinces Only" },
+            { value: "cities", label: "Cities Only" },
+          ]}
+        />
       </div>
 
       <div
@@ -113,10 +104,10 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-8 transition-colors ${
+        className={`rounded-row flex cursor-pointer flex-col items-center justify-center border-2 border-dashed p-8 transition-colors ${
           isDragActive
-            ? "border-primary bg-primary/5"
-            : "border-border hover:border-primary/50 hover:bg-accent/50"
+            ? "border-tint bg-tint-fill"
+            : "border-separator hover:border-tint/50 hover:bg-fill-3"
         } ${importer.isProcessing ? "pointer-events-none opacity-50" : ""}`}
       >
         <input
@@ -129,19 +120,19 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
 
         {importer.isProcessing ? (
           <>
-            <Loader2 className="text-primary mb-3 h-8 w-8 animate-spin" />
-            <p className="text-foreground text-sm font-medium">Processing...</p>
-            <p className="text-muted-foreground mt-1 text-xs">
+            <Loader2 className="text-tint mb-3 h-8 w-8 animate-spin" />
+            <p className="text-label text-body font-medium">Processing...</p>
+            <p className="text-label-secondary text-footnote mt-1">
               Parsing provinces from uploaded file
             </p>
           </>
         ) : (
           <>
-            <Upload className="text-muted-foreground mb-3 h-8 w-8" />
-            <p className="text-foreground text-sm font-medium">
+            <Upload className="text-label-secondary mb-3 h-8 w-8" />
+            <p className="text-label text-body font-medium">
               {isDragActive ? "Drop file here" : "Drag & drop or click to upload"}
             </p>
-            <div className="text-muted-foreground mt-2 flex items-center gap-3 text-xs">
+            <div className="text-label-secondary text-footnote mt-2 flex items-center gap-3">
               <span className="flex items-center gap-1">
                 <FileText className="h-3 w-3" /> SVG
               </span>
@@ -156,14 +147,14 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
 
       {/* Existing subdivisions info */}
       {importer.existingSubdivisions.length > 0 && (
-        <div className="border-border rounded-lg border px-3 py-2 text-xs text-amber-500">
+        <div className="border-separator rounded-control text-footnote text-yellow border px-3 py-2">
           This country has {importer.existingSubdivisions.length} existing subdivision
           {importer.existingSubdivisions.length !== 1 ? "s" : ""}. You can choose to replace them in
           the final step.
         </div>
       )}
 
-      <div className="text-muted-foreground text-xs">
+      <div className="text-label-secondary text-footnote">
         <strong>Tips:</strong> For best results, use an Inkscape SVG where each province is a
         separate path or group. Name your groups/paths with province names. For PNG files, use
         distinct fill colors for each province.

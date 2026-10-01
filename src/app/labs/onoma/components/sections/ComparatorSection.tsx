@@ -5,7 +5,6 @@
 
 import { useState, useMemo } from "react";
 import { GitCompare, SoundHigh as Volume2, WarningCircle as AlertCircle } from "iconoir-react";
-import { FacetMaterial } from "~/components/ui/facet";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { translateToIPA } from "~/lib/onoma/phonology";
 import { speakName } from "~/lib/onoma/browser-speech";
@@ -17,6 +16,8 @@ import {
   compareDynamicWordLists,
   type DynamicComparisonResult,
 } from "~/lib/onoma/data-bridge";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
 
 interface ComparatorSectionProps {
   hideHeader?: boolean;
@@ -123,20 +124,18 @@ export default function ComparatorSection({
   };
 
   const getDistanceColor = (dist: number) => {
-    if (dist <= 30) return "border-emerald-500/30 bg-emerald-500/5 text-emerald-500";
-    if (dist <= 60) return "border-amber-500/30 bg-amber-500/5 text-amber-500";
-    return "border-red-500/30 bg-red-500/5 text-red-500";
+    if (dist <= 30) return "border-green/30 bg-green/5 text-green";
+    if (dist <= 60) return "border-yellow/30 bg-yellow/5 text-yellow";
+    return "border-red/30 bg-red/5 text-red";
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       {!hideHeader && (
-        <div className="border-border/40 space-y-1 border-b pb-4">
-          <h2 className="text-foreground text-xl font-bold tracking-tight">
-            Linguistic Comparison
-          </h2>
-          <p className="text-muted-foreground mt-0.5 text-xs">
+        <div className="border-separator space-y-1 border-b pb-4">
+          <h2 className="text-label text-title-2 font-bold">Linguistic Comparison</h2>
+          <p className="text-label-secondary text-footnote mt-0.5">
             Analyze phonetic distance, bigram entropy, and synthesize hybrid vocabulary between
             natural cultures and custom conlangs.
           </p>
@@ -168,222 +167,223 @@ export default function ComparatorSection({
       {/* Linguistic Distance Dashboard */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {/* Composite distance card */}
-        <FacetMaterial
-          material="satin"
-          className={`flex flex-col items-center justify-center rounded-xl border p-4 text-center ${getDistanceColor(
+        <FacetCard
+          variant="inset"
+          padding="none"
+          className={`flex flex-col items-center justify-center p-4 text-center ${getDistanceColor(
             comparison.linguisticDistance
           )}`}
         >
           <GitCompare className="mb-2 h-6 w-6 opacity-80" />
-          <span className="font-mono text-3xl font-extrabold tracking-tight">
+          <span className="text-large-title font-mono font-bold">
             {comparison.linguisticDistance}
           </span>
-          <span className="mt-1 text-xs font-bold tracking-wider uppercase opacity-85">
-            Linguistic Distance
-          </span>
-          <span className="mt-1 text-[10px] opacity-70">
+          <span className="text-eyebrow mt-1 opacity-85">Linguistic Distance</span>
+          <span className="text-caption mt-1 opacity-70">
             {comparison.linguisticDistance >= 75
               ? "Mutually Unintelligible (Completely Alien)"
               : comparison.linguisticDistance >= 45
                 ? "Divergent (Distinct Dialects)"
                 : "Cognate / Close Cousins"}
           </span>
-        </FacetMaterial>
+        </FacetCard>
 
         {/* Phoneme overlap card */}
-        <FacetMaterial material="satin" className="border-border/20 border p-4 text-center">
-          <span className="text-foreground font-mono text-3xl font-extrabold tracking-tight">
+        <FacetCard variant="inset" padding="none" className="p-4 text-center">
+          <span className="text-label text-large-title font-mono font-bold">
             {comparison.phonemeOverlap}%
           </span>
-          <span className="text-muted-foreground mt-1 block text-xs font-bold tracking-wider uppercase">
+          <span className="text-label-secondary text-eyebrow mt-1 block">
             Phoneme Inventory Overlap
           </span>
-          <span className="text-muted-foreground mt-1 block text-[10px]">
+          <span className="text-label-secondary text-caption mt-1 block">
             Jaccard overlap coefficient of sound charts
           </span>
-        </FacetMaterial>
+        </FacetCard>
 
         {/* Bigram similarity card */}
-        <FacetMaterial material="satin" className="border-border/20 border p-4 text-center">
-          <GitCompare className="mx-auto mb-2 h-6 w-6 text-indigo-500 opacity-80" />
-          <span className="text-foreground font-mono text-3xl font-extrabold tracking-tight">
+        <FacetCard variant="inset" padding="none" className="p-4 text-center">
+          <GitCompare className="text-indigo mx-auto mb-2 h-6 w-6 opacity-80" />
+          <span className="text-label text-large-title font-mono font-bold">
             {comparison.bigramSimilarity}%
           </span>
-          <span className="text-muted-foreground mt-1 block text-xs font-bold tracking-wider uppercase">
+          <span className="text-label-secondary text-eyebrow mt-1 block">
             Bigram Cosine Similarity
           </span>
-          <span className="text-muted-foreground mt-1 block text-[10px]">
+          <span className="text-label-secondary text-caption mt-1 block">
             Phonotactic structure vector correlation
           </span>
-        </FacetMaterial>
+        </FacetCard>
       </div>
 
       {/* Phoneme Inventories compare */}
       <div className="space-y-3">
-        <h3 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-          Phoneme Inventory Overlap Analysis
-        </h3>
-        <FacetMaterial material="satin" className="border-border/20 space-y-4 border p-4">
+        <h3 className="text-label-secondary text-subhead">Phoneme Inventory Overlap Analysis</h3>
+        <FacetCard variant="inset" padding="none" className="space-y-4 p-4">
           {/* Shared sounds */}
-          <div className="space-y-1.5">
-            <span className="text-[11px] font-bold text-emerald-500">
+          <div className="space-y-2">
+            <span className="text-caption text-green font-semibold">
               Shared Phonemes ({comparison.sharedPhonemes.length})
             </span>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               {comparison.sharedPhonemes.map((ph) => (
                 <span
                   key={ph}
-                  className="rounded border border-emerald-500/10 bg-emerald-500/10 px-2 py-0.5 font-mono text-sm text-emerald-600 dark:text-emerald-400"
+                  className="rounded-control-sm border-green/10 bg-green/10 text-body text-green border px-2 py-0.5 font-mono"
                 >
                   /{ph}/
                 </span>
               ))}
               {comparison.sharedPhonemes.length === 0 && (
-                <span className="text-muted-foreground text-xs italic">No shared sounds.</span>
+                <span className="text-label-secondary text-footnote italic">No shared sounds.</span>
               )}
             </div>
           </div>
 
-          <div className="border-border/10 grid grid-cols-1 gap-4 border-t pt-2 sm:grid-cols-2">
+          <div className="border-separator grid grid-cols-1 gap-4 border-t pt-2 sm:grid-cols-2">
             {/* Unique to A */}
-            <div className="space-y-1.5">
-              <span className="text-onoma-primary text-[11px] font-bold capitalize">
+            <div className="space-y-2">
+              <span className="text-tint text-caption font-semibold capitalize">
                 Unique to {corpusA.label} ({comparison.uniqueToA.length})
               </span>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {comparison.uniqueToA.map((ph) => (
                   <span
                     key={ph}
-                    className="border-onoma-primary/10 bg-onoma-primary/10 text-onoma-primary rounded border px-2 py-0.5 font-mono text-sm"
+                    className="border-tint/10 bg-tint/10 text-tint rounded-control-sm text-body border px-2 py-0.5 font-mono"
                   >
                     /{ph}/
                   </span>
                 ))}
                 {comparison.uniqueToA.length === 0 && (
-                  <span className="text-muted-foreground text-xs italic">None.</span>
+                  <span className="text-label-secondary text-footnote italic">None.</span>
                 )}
               </div>
             </div>
 
             {/* Unique to B */}
-            <div className="space-y-1.5">
-              <span className="text-[11px] font-bold text-indigo-500 capitalize">
+            <div className="space-y-2">
+              <span className="text-caption text-indigo font-semibold capitalize">
                 Unique to {corpusB.label} ({comparison.uniqueToB.length})
               </span>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {comparison.uniqueToB.map((ph) => (
                   <span
                     key={ph}
-                    className="rounded border border-indigo-500/10 bg-indigo-500/10 px-2 py-0.5 font-mono text-sm text-indigo-600 dark:text-indigo-400"
+                    className="rounded-control-sm border-indigo/10 bg-indigo/10 text-body text-indigo border px-2 py-0.5 font-mono"
                   >
                     /{ph}/
                   </span>
                 ))}
                 {comparison.uniqueToB.length === 0 && (
-                  <span className="text-muted-foreground text-xs italic">None.</span>
+                  <span className="text-label-secondary text-footnote italic">None.</span>
                 )}
               </div>
             </div>
           </div>
-        </FacetMaterial>
+        </FacetCard>
       </div>
 
       {/* Phonetic Diversity / Shannon Entropy comparison */}
       <div className="space-y-3">
-        <h3 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-          Phonetic Diversity & Entropy
-        </h3>
-        <FacetMaterial material="satin" className="border-border/20 border p-4">
+        <h3 className="text-label-secondary text-subhead">Phonetic Diversity & Entropy</h3>
+        <FacetCard variant="inset" padding="none" className="p-4">
           <div className="space-y-3">
-            <div className="text-muted-foreground flex items-center justify-between text-xs">
+            <div className="text-label-secondary text-footnote flex items-center justify-between">
               <span>Entropy Difference</span>
-              <span className="text-foreground font-mono font-bold">
+              <span className="text-label font-mono font-semibold">
                 {comparison.entropyDelta.toFixed(3)} bits
               </span>
             </div>
             {/* Visual bar comparing entropy */}
             <div className="space-y-2">
               <div>
-                <div className="mb-1 flex justify-between text-[11px]">
-                  <span className="text-foreground capitalize">{corpusA.label}</span>
+                <div className="text-caption mb-1 flex justify-between">
+                  <span className="text-label capitalize">{corpusA.label}</span>
                   <span className="font-mono font-semibold">
                     {comparison.entropyA.toFixed(3)} bits
                   </span>
                 </div>
-                <div className="bg-secondary/30 h-2 w-full overflow-hidden rounded-full">
+                <div className="bg-fill-3 h-2 w-full overflow-hidden rounded-full">
                   <div
-                    className="bg-onoma-primary h-full rounded-full"
+                    className="bg-tint h-full rounded-full"
                     style={{ width: `${Math.min(100, (comparison.entropyA / 4.7) * 100)}%` }}
                   />
                 </div>
               </div>
 
               <div>
-                <div className="mb-1 flex justify-between text-[11px]">
-                  <span className="text-foreground capitalize">{corpusB.label}</span>
+                <div className="text-caption mb-1 flex justify-between">
+                  <span className="text-label capitalize">{corpusB.label}</span>
                   <span className="font-mono font-semibold">
                     {comparison.entropyB.toFixed(3)} bits
                   </span>
                 </div>
-                <div className="bg-secondary/30 h-2 w-full overflow-hidden rounded-full">
+                <div className="bg-fill-3 h-2 w-full overflow-hidden rounded-full">
                   <div
-                    className="h-full rounded-full bg-indigo-500"
+                    className="bg-indigo h-full rounded-full"
                     style={{ width: `${Math.min(100, (comparison.entropyB / 4.7) * 100)}%` }}
                   />
                 </div>
               </div>
             </div>
           </div>
-        </FacetMaterial>
+        </FacetCard>
       </div>
 
       {/* Sample outputs Side-by-Side */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="space-y-3">
-          <h3 className="text-muted-foreground text-xs font-bold tracking-wider capitalize uppercase">
+          <h3 className="text-label-secondary text-subhead capitalize">
             {corpusA.label} Sample Names
           </h3>
-          <div className="border-border/20 divide-border/10 bg-background/35 divide-y overflow-hidden rounded-lg border">
+          <div className="border-separator divide-separator bg-surface rounded-control divide-y overflow-hidden border">
             {samplesA.map((item, idx) => (
               <div
                 key={idx}
-                className="hover:bg-secondary/15 flex items-center justify-between p-2.5 text-xs transition-colors"
+                className="hover:bg-fill-4 text-footnote flex items-center justify-between p-3 transition-colors"
               >
                 <div>
-                  <span className="text-foreground font-semibold">{item.name}</span>
-                  <span className="text-muted-foreground ml-2 font-mono">{item.ipa}</span>
+                  <span className="text-label font-semibold">{item.name}</span>
+                  <span className="text-label-secondary ml-2 font-mono">{item.ipa}</span>
                 </div>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => playName(item.name, item.ipa, corpusA.fallbackCulture)}
-                  className="hover:bg-secondary/40 text-muted-foreground cursor-pointer rounded p-1 transition-colors hover:text-amber-500"
+                  aria-label="Play pronunciation"
+                  className="text-label-secondary hover:text-yellow"
                 >
                   <Volume2 className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             ))}
           </div>
         </div>
 
         <div className="space-y-3">
-          <h3 className="text-muted-foreground text-xs font-bold tracking-wider capitalize uppercase">
+          <h3 className="text-label-secondary text-subhead capitalize">
             {corpusB.label} Sample Names
           </h3>
-          <div className="border-border/20 divide-border/10 bg-background/35 divide-y overflow-hidden rounded-lg border">
+          <div className="border-separator divide-separator bg-surface rounded-control divide-y overflow-hidden border">
             {samplesB.map((item, idx) => (
               <div
                 key={idx}
-                className="hover:bg-secondary/15 flex items-center justify-between p-2.5 text-xs transition-colors"
+                className="hover:bg-fill-4 text-footnote flex items-center justify-between p-3 transition-colors"
               >
                 <div>
-                  <span className="text-foreground font-semibold">{item.name}</span>
-                  <span className="text-muted-foreground ml-2 font-mono">{item.ipa}</span>
+                  <span className="text-label font-semibold">{item.name}</span>
+                  <span className="text-label-secondary ml-2 font-mono">{item.ipa}</span>
                 </div>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => playName(item.name, item.ipa, corpusB.fallbackCulture)}
-                  className="hover:bg-secondary/40 text-muted-foreground cursor-pointer rounded p-1 transition-colors hover:text-amber-500"
+                  aria-label="Play pronunciation"
+                  className="text-label-secondary hover:text-yellow"
                 >
                   <Volume2 className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             ))}
           </div>
@@ -391,17 +391,19 @@ export default function ComparatorSection({
       </div>
 
       {/* Blend preview workbench */}
-      <div className="border-border/10 space-y-3 border-t pt-3">
+      <div className="border-separator space-y-3 border-t pt-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+          <h3 className="text-label-secondary text-subhead">
             Linguistic Hybridization (Blend Preview)
           </h3>
-          <button
+          <Button
+            variant="filled"
+            size="md"
             onClick={handleBlendPreview}
-            className="flex cursor-pointer items-center justify-center rounded-lg bg-amber-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition-all hover:bg-amber-600 active:scale-95"
+            className="justify-center"
           >
             Blend Profiles
-          </button>
+          </Button>
         </div>
 
         {hybridNames.length > 0 ? (
@@ -409,13 +411,15 @@ export default function ComparatorSection({
             {hybridNames.map((item, idx) => (
               <div
                 key={idx}
-                className="border-border/20 bg-secondary/10 flex items-center justify-between rounded-lg border p-2.5 text-xs"
+                className="border-separator bg-fill-4 rounded-control text-footnote flex items-center justify-between border p-3"
               >
                 <div>
-                  <span className="text-foreground font-bold">{item.name}</span>
-                  <span className="text-muted-foreground ml-2 font-mono">{item.ipa}</span>
+                  <span className="text-label font-semibold">{item.name}</span>
+                  <span className="text-label-secondary ml-2 font-mono">{item.ipa}</span>
                 </div>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() =>
                     playName(
                       item.name,
@@ -423,16 +427,17 @@ export default function ComparatorSection({
                       `${corpusA.fallbackCulture}+${corpusB.fallbackCulture}`
                     )
                   }
-                  className="hover:bg-secondary/45 text-muted-foreground cursor-pointer rounded p-1 transition-colors hover:text-amber-500"
+                  aria-label="Play pronunciation"
+                  className="text-label-secondary hover:text-yellow"
                 >
                   <Volume2 className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             ))}
           </div>
         ) : (
-          <div className="border-border/10 text-muted-foreground bg-secondary/5 rounded-lg border p-6 text-center text-xs">
-            <AlertCircle className="text-muted-foreground mx-auto mb-2 h-5 w-5 opacity-60" />
+          <div className="border-separator text-label-secondary bg-fill-4 rounded-control text-footnote border p-6 text-center">
+            <AlertCircle className="text-label-secondary mx-auto mb-2 h-5 w-5 opacity-60" />
             Click &quot;Blend Profiles&quot; to generate hybrid names trained on 50/50 combined
             linguistic inputs.
           </div>

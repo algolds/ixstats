@@ -6,6 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
+import { Stat } from "~/components/ui/stat";
 // oxlint-disable-next-line eslint/no-unused-vars
 import {
   Bank as Landmark,
@@ -13,9 +14,12 @@ import {
   Trophy,
   Sparks as Sparkles,
   HelpCircle,
+  Xmark,
 } from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
+import { useNotify } from "~/hooks/useNotify";
+import { springSmooth, tweenFast } from "~/lib/design/motion";
 
 export interface ClubSponsor {
   type?: string | null;
@@ -46,14 +50,15 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
   const [activeCard, setActiveCard] = useState<number | null>(null);
   const [newPrice, setNewPrice] = useState<number>(team.ticketPrice ?? 15);
   const [updatingPrice, setUpdatingPrice] = useState(false);
+  const notify = useNotify();
 
   const upgradeStadium = api.sports.upgradeStadium.useMutation({
     onSuccess: () => {
       refetchTeam();
-      alert("Stadium upgraded successfully! Capacity increased by 1,000 seats.");
+      notify.success("Stadium upgraded successfully! Capacity increased by 1,000 seats.");
     },
     onError: (err) => {
-      alert(err.message || "Failed to upgrade stadium");
+      notify.error(err.message || "Failed to upgrade stadium");
     },
   });
 
@@ -61,20 +66,20 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
     onSuccess: () => {
       refetchTeam();
       setUpdatingPrice(false);
-      alert("Ticket price updated successfully!");
+      notify.success("Ticket price updated successfully!");
     },
     onError: (err) => {
-      alert(err.message || "Failed to set ticket price");
+      notify.error(err.message || "Failed to set ticket price");
     },
   });
 
   const selectSponsor = api.sports.selectSponsor.useMutation({
     onSuccess: () => {
       refetchTeam();
-      alert("Sponsorship contract activated successfully!");
+      notify.success("Sponsorship contract activated successfully!");
     },
     onError: (err) => {
-      alert(err.message || "Failed to activate sponsorship");
+      notify.error(err.message || "Failed to activate sponsorship");
     },
   });
 
@@ -85,18 +90,11 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
       id: 0,
       title: "Sovereign Wallet & Budget",
       description: "Manage club balances and pricing structures",
-      color:
-        "from-card/90 to-card/60 border-border dark:from-slate-800 dark:to-slate-900 dark:border-slate-700/50",
       icon: Landmark,
       content: (
         <div className="space-y-4 pt-2">
-          <div className="border-border bg-muted/40 flex items-center justify-between rounded-xl border p-4">
-            <div>
-              <p className="text-muted-foreground text-xs font-bold uppercase">
-                Current Ticket Price
-              </p>
-              <p className="text-foreground text-2xl font-bold">₷{team.ticketPrice}</p>
-            </div>
+          <div className="bg-surface rounded-row flex items-center justify-between p-4">
+            <Stat label="Current Ticket Price" value={`₷${team.ticketPrice}`} />
             <div className="flex items-center gap-2">
               <Input
                 type="number"
@@ -104,7 +102,8 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                 max={100}
                 value={newPrice}
                 onChange={(e) => setNewPrice(Number(e.target.value))}
-                className="border-border bg-background/50 h-8 w-16 text-center"
+                aria-label="New ticket price"
+                className="h-8 w-20 text-center tabular-nums"
               />
               <Button
                 size="sm"
@@ -113,14 +112,12 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                   setTicketPrice.mutate({ teamId: team.id, price: newPrice });
                 }}
                 disabled={updatingPrice || setTicketPrice.isPending}
-                style={{ backgroundColor: team.color || "#3b82f6" }}
-                className="font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90"
               >
                 {setTicketPrice.isPending ? "..." : "Save"}
               </Button>
             </div>
           </div>
-          <p className="text-muted-foreground text-xs leading-relaxed">
+          <p className="text-label-secondary text-footnote">
             Ticket pricing scales attendance dynamically. Setting prices too high (above ₷30) will
             reduce seat sales, while lower pricing guarantees sold-out crowds but reduces matchday
             ticketing margins.
@@ -132,31 +129,24 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
       id: 1,
       title: "Stadium & Expansion Vouchers",
       description: "Expand seating capacity to maximize ticketing limits",
-      color:
-        "from-emerald-500/10 to-emerald-600/5 border-emerald-500/30 dark:from-emerald-950 dark:to-emerald-900 dark:border-emerald-800/40",
       icon: ArrowUpRight,
       content: (
         <div className="space-y-4 pt-2">
-          <div className="flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
-            <div>
-              <p className="text-xs font-bold text-emerald-600 uppercase dark:text-emerald-400">
-                Current Capacity
-              </p>
-              <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
-                {team.stadiumCapacity?.toLocaleString() ?? "5,000"} seats
-              </p>
-            </div>
+          <div className="bg-surface rounded-row flex items-center justify-between p-4">
+            <Stat
+              label="Current Capacity"
+              value={`${team.stadiumCapacity?.toLocaleString() ?? "5,000"} seats`}
+            />
             <Button
               size="sm"
-              variant="outline"
-              className="border-emerald-500/30 bg-emerald-500/20 text-emerald-700 hover:bg-emerald-500/30 dark:text-emerald-200"
+              variant="tinted"
               onClick={() => upgradeStadium.mutate({ teamId: team.id })}
               disabled={upgradeStadium.isPending}
             >
               {upgradeStadium.isPending ? "Upgrading..." : "Expand (+1k seats)"}
             </Button>
           </div>
-          <p className="text-xs leading-relaxed text-emerald-800/80 dark:text-emerald-300/80">
+          <p className="text-label-secondary text-footnote">
             Stadium expansions cost a flat ₷1,000 Sovereigns and instantly add 1,000 additional
             seats, allowing you to generate more matchday revenue during high-popularity matches.
           </p>
@@ -167,41 +157,26 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
       id: 2,
       title: "Sponsorship Contracts",
       description: "Configure sponsorship packages for baseline and win bonuses",
-      color:
-        "from-amber-500/10 to-amber-600/5 border-amber-500/30 dark:from-amber-950 dark:to-orange-950 dark:border-amber-800/40",
       icon: Trophy,
       content: (
         <div className="space-y-4 pt-2">
           {currentSponsor ? (
-            <div className="mb-2 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
-              <Badge
-                className="mb-1 font-bold text-white"
-                style={{ backgroundColor: team.color || "#3b82f6" }}
-              >
+            <div className="bg-surface rounded-row mb-2 p-4">
+              <Badge variant="tinted" className="mb-1">
                 Active Partner
               </Badge>
-              <h5 className="font-bold text-amber-900 dark:text-amber-200">
-                {currentSponsor.name}
-              </h5>
-              <div className="mt-2 grid grid-cols-2 gap-2 border-t border-amber-500/20 pt-2 text-xs">
-                <div>
-                  <span className="text-muted-foreground block text-xs uppercase">Base Fee</span>
-                  <span className="text-foreground font-semibold">
-                    ₷{currentSponsor.baseFee} / home match
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground block text-xs uppercase">
-                    Win Bonus
-                  </span>
-                  <span className="text-foreground font-semibold">
-                    ₷{currentSponsor.winBonus} / win
-                  </span>
-                </div>
+              <h5 className="text-headline text-label">{currentSponsor.name}</h5>
+              <div className="border-separator mt-2 grid grid-cols-2 gap-2 border-t pt-2">
+                <Stat
+                  size="sm"
+                  label="Base Fee"
+                  value={`₷${currentSponsor.baseFee} / home match`}
+                />
+                <Stat size="sm" label="Win Bonus" value={`₷${currentSponsor.winBonus} / win`} />
               </div>
             </div>
           ) : (
-            <div className="mb-2 text-xs text-amber-700/80 dark:text-amber-300/80">
+            <div className="text-label-secondary text-footnote mb-2">
               Select a sponsor below to secure passive funding:
             </div>
           )}
@@ -228,7 +203,9 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
               },
             ].map((s) => (
               <button
+                type="button"
                 key={s.type}
+                aria-pressed={currentSponsor?.name === s.name}
                 onClick={() =>
                   selectSponsor.mutate({
                     teamId: team.id,
@@ -236,26 +213,18 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                   })
                 }
                 disabled={selectSponsor.isPending}
-                style={
-                  currentSponsor?.name === s.name && team.color
-                    ? { borderColor: team.color, backgroundColor: `${team.color}20` }
-                    : undefined
-                }
                 className={cn(
-                  "flex items-center justify-between rounded-lg border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  "focus-visible:outline-tint rounded-row duration-fast ease-out-facet flex cursor-pointer items-center justify-between gap-3 border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait",
                   currentSponsor?.name === s.name
-                    ? ""
-                    : "border-border bg-muted/40 hover:bg-muted/80 text-foreground"
+                    ? "border-tint bg-tint-fill"
+                    : "border-separator bg-surface hover:bg-fill-4"
                 )}
               >
                 <div>
-                  <p className="text-xs font-bold">{s.name}</p>
-                  <p className="text-muted-foreground text-xs">{s.desc}</p>
+                  <p className="text-headline text-label">{s.name}</p>
+                  <p className="text-label-secondary text-footnote">{s.desc}</p>
                 </div>
-                <Badge
-                  variant="outline"
-                  className="border-amber-500/30 text-xs text-amber-600 dark:text-amber-400"
-                >
+                <Badge variant="neutral" className="shrink-0 tabular-nums">
                   {s.payout}
                 </Badge>
               </button>
@@ -267,19 +236,19 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
   ];
 
   return (
-    <Card className="facet-hierarchy-child border-border bg-card/45 overflow-hidden rounded-3xl backdrop-blur-lg">
+    <Card className="overflow-hidden">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-xl font-bold">
-          <Sparkles className="h-5 w-5 text-amber-500" />
+        <CardTitle className="text-title-2 flex items-center gap-2">
+          <Sparkles className="text-tint size-5" aria-hidden />
           Club Command Desk
         </CardTitle>
-        <CardDescription className="text-muted-foreground">
+        <CardDescription>
           Touch a voucher card below to reveal details and execute operations.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="relative flex h-[420px] flex-col gap-3 md:h-[450px]">
-          {cards.map((card, _idx) => {
+          {cards.map((card) => {
             const isExpanded = activeCard === card.id;
             const Icon = card.icon;
 
@@ -287,42 +256,43 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
               <motion.div
                 key={card.id}
                 layout
-                onClick={() => {
-                  if (!isExpanded) setActiveCard(card.id);
-                }}
+                transition={springSmooth}
                 className={cn(
-                  "flex cursor-pointer flex-col rounded-2xl border bg-gradient-to-br p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                  card.color,
-                  isExpanded
-                    ? "z-10 flex-1 scale-[1.01] shadow-2xl"
-                    : "h-16 overflow-hidden hover:translate-y-[-4px]"
+                  "bg-surface-secondary rounded-row flex flex-col",
+                  isExpanded ? "flex-1 p-4" : "overflow-hidden"
                 )}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
-                      <Icon className="h-4 w-4" />
+                  <button
+                    type="button"
+                    aria-expanded={isExpanded}
+                    onClick={() => {
+                      if (!isExpanded) setActiveCard(card.id);
+                    }}
+                    className={cn(
+                      "focus-visible:outline-tint rounded-row flex flex-1 items-center gap-3 text-left focus-visible:outline-2 focus-visible:-outline-offset-2",
+                      !isExpanded && "hover:bg-fill-4 cursor-pointer p-4"
+                    )}
+                  >
+                    <div className="bg-tint-fill text-tint rounded-control-sm flex size-8 items-center justify-center">
+                      <Icon className="size-4" aria-hidden />
                     </div>
                     <div>
-                      <h4 className="text-sm leading-none font-bold">{card.title}</h4>
+                      <h4 className="text-headline text-label">{card.title}</h4>
                       {!isExpanded && (
-                        <p className="text-muted-foreground mt-1 text-xs leading-none">
-                          {card.description}
-                        </p>
+                        <p className="text-label-secondary text-footnote">{card.description}</p>
                       )}
                     </div>
-                  </div>
+                  </button>
                   {isExpanded && (
                     <Button
-                      size="icon"
-                      variant="ghost"
-                      className="text-muted-foreground hover:text-foreground h-6 w-6"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveCard(null);
-                      }}
+                      size="icon-sm"
+                      variant="plain"
+                      aria-label="Close"
+                      className="text-label-secondary"
+                      onClick={() => setActiveCard(null)}
                     >
-                      &times;
+                      <Xmark />
                     </Button>
                   )}
                 </div>
@@ -330,9 +300,10 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                 <AnimatePresence>
                   {isExpanded && (
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
+                      transition={tweenFast}
                       className="mt-4 flex-1 overflow-y-auto"
                     >
                       {card.content}

@@ -284,7 +284,7 @@ export const Card3DViewer = React.memo<Card3DViewerProps>(
         {/* Flip indicator (subtle) */}
         {enableFlip && !isDragging && (
           <motion.div
-            className="pointer-events-none absolute right-2 bottom-2 z-10 rounded-full bg-black/60 p-2 backdrop-blur-sm"
+            className="pointer-events-none absolute right-2 bottom-2 z-10 rounded-full bg-black/60 p-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.6 }}
             whileHover={{ opacity: 1 }}

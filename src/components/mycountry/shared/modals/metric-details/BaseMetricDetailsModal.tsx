@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
@@ -179,49 +179,20 @@ export function BaseMetricDetailsModal({
     if (!tabs.some((t) => t.id === activeTab)) setActiveTab(tabs[0]?.id || "overview");
   }, [tabs, activeTab]);
 
-  // Enhanced escape functionality and body scroll lock
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && isOpen) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "hidden";
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen, onClose]);
-
+  // Escape and scroll locking come from the Sheet primitive (Radix Dialog).
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent
-        className={cn(
-          // Glass physics styling
-          "facet-modal facet-material-paper !fixed",
-          // Sizing
-          "max-h-[90vh] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)]",
-          "sm:w-[calc(100vw-4rem)] sm:max-w-[calc(100vw-4rem)]",
-          "lg:max-w-5xl",
-          // Scrolling
-          "overflow-y-auto"
-        )}
-      >
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent size="wide" className="overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
             <Icon className={cn("h-5 w-5", iconColor || theme.textHighlight)} />
             {title}
             {countryName && (
-              <span className="text-muted-foreground font-normal">— {countryName}</span>
+              <span className="text-label-secondary font-normal">— {countryName}</span>
             )}
-          </DialogTitle>
-          {description && <DialogDescription>{description}</DialogDescription>}
-        </DialogHeader>
+          </SheetTitle>
+          {description && <SheetDescription>{description}</SheetDescription>}
+        </SheetHeader>
 
         <Tabs
           value={activeTab}
@@ -229,14 +200,14 @@ export function BaseMetricDetailsModal({
           className="mt-4 flex w-full flex-1 flex-col"
         >
           {/* Tab List with Controls */}
-          <div className="border-border mb-4 flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
-            <TabsList className="bg-muted/50 flex w-full gap-1 rounded-xl p-1 sm:w-auto">
+          <div className="border-separator mb-4 flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <TabsList className="bg-fill-3 rounded-row flex w-full gap-1 p-1 sm:w-auto">
               {tabs.map((tab) => (
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
                   className={cn(
-                    "flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs sm:flex-none sm:text-sm"
+                    "rounded-control text-footnote sm:text-body flex min-h-9 flex-1 items-center justify-center gap-2 px-3 py-2 sm:flex-none"
                   )}
                 >
                   <tab.icon className="h-3.5 w-3.5" />
@@ -250,7 +221,7 @@ export function BaseMetricDetailsModal({
               <div className="flex items-center gap-2">
                 {showTimeRange && (
                   <Select value={timeRange} onValueChange={(v) => setTimeRange(v as TimeRange)}>
-                    <SelectTrigger className="h-8 w-28 text-xs">
+                    <SelectTrigger className="text-footnote h-8 w-28">
                       <SelectValue placeholder="Time range" />
                     </SelectTrigger>
                     <SelectContent>
@@ -265,7 +236,7 @@ export function BaseMetricDetailsModal({
 
                 {showChartType && (
                   <Select value={chartType} onValueChange={(v) => setChartType(v as ChartType)}>
-                    <SelectTrigger className="h-8 w-24 text-xs">
+                    <SelectTrigger className="text-footnote h-8 w-24">
                       <SelectValue placeholder="Chart type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -301,8 +272,8 @@ export function BaseMetricDetailsModal({
             </TabsContent>
           ))}
         </Tabs>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
 

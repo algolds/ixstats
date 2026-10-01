@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, SystemRestart as Loader2 } from "iconoir-react";
+import { SystemRestart as Loader2 } from "iconoir-react";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
-import { Input } from "~/components/ui/input";
+import { SearchField } from "~/components/ui/search-field";
 import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
 
 function GifIcon({ className }: { className?: string }) {
   return (
@@ -119,39 +118,34 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
               variant="ghost"
               size="sm"
               disabled={disabled}
-              className={cn(
-                "text-muted-foreground hover:bg-muted hover:text-foreground h-8 w-8 cursor-pointer rounded-xl p-0 transition-colors",
-                disabled && "cursor-not-allowed opacity-50"
-              )}
+              aria-label="Insert GIF"
+              className="text-tint hover:bg-tint-fill hover:text-tint size-8 p-0"
             >
-              <GifIcon className="h-5 w-5" />
+              <GifIcon className="size-5" />
             </Button>
           )}
         </PopoverTrigger>
-        <PopoverContent
-          align="start"
-          className="border-border bg-popover/98 text-popover-foreground z-[200000] w-80 overflow-hidden rounded-2xl border p-0 shadow-2xl backdrop-blur-2xl"
-        >
+        <PopoverContent align="start" className="w-80 overflow-hidden p-0">
           {/* Search */}
-          <div className="border-border/60 relative border-b p-2">
-            <Search className="text-muted-foreground absolute top-4 left-4 h-3.5 w-3.5" />
-            <Input
+          <div className="border-separator border-b p-2">
+            <SearchField
+              size="sm"
               placeholder="Search GIPHY..."
+              aria-label="Search GIFs"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="border-input bg-secondary text-foreground focus:bg-secondary/80 h-8 pl-8 text-xs"
+              onValueChange={setSearchQuery}
             />
           </div>
 
           {/* GIFs Grid View Area */}
           <div className="thin-scrollbar h-72 overflow-y-auto p-2">
             {isLoading && gifs.length === 0 ? (
-              <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-2 text-xs">
-                <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
+              <div className="text-footnote text-label-secondary flex h-full flex-col items-center justify-center gap-2">
+                <Loader2 className="size-5 animate-spin" aria-hidden="true" />
                 <span>Searching GIPHY...</span>
               </div>
             ) : error ? (
-              <div className="flex h-full flex-col items-center justify-center p-4 text-center text-xs text-rose-500">
+              <div className="text-footnote text-destructive flex h-full flex-col items-center justify-center p-4 text-center">
                 {error}
               </div>
             ) : gifs.length > 0 ? (
@@ -159,9 +153,11 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
                 {gifs.map((gif) => (
                   <button
                     key={gif.id}
+                    type="button"
                     onClick={() => handleSelectGif(gif)}
                     title={gif.title}
-                    className="border-border/40 group relative aspect-video overflow-hidden rounded-lg border transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-[1.02] hover:border-emerald-500/50"
+                    aria-label={gif.title || "GIF"}
+                    className="border-separator hover:border-tint group rounded-control-sm relative aspect-video overflow-hidden border transition-[border-color,scale] duration-150 hover:scale-[1.02]"
                   >
                     <img
                       src={gif.images.fixed_height.url}
@@ -169,12 +165,12 @@ export const GifPicker = React.forwardRef<HTMLButtonElement, GifPickerProps>(
                       className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-black/20 opacity-0 transition-opacity group-hover:opacity-100" />
+                    <div className="bg-fill-4 absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100" />
                   </button>
                 ))}
               </div>
             ) : (
-              <div className="text-muted-foreground flex h-full items-center justify-center text-xs">
+              <div className="text-footnote text-label-secondary flex h-full items-center justify-center">
                 No GIFs found. Try searching for something else!
               </div>
             )}

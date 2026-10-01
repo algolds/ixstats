@@ -4,6 +4,7 @@
 // Add/edit dialog for defense manufacturers.
 
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import {
   Dialog,
@@ -51,7 +52,7 @@ export function ManufacturerFormDialog({
 
         <div className="space-y-4">
           <div>
-            <label className="text-foreground mb-2 block text-sm font-medium">Name *</label>
+            <label className="text-label text-body mb-2 block font-medium">Name *</label>
             <Input
               value={manufacturerFormData.name}
               onChange={(e) =>
@@ -62,7 +63,7 @@ export function ManufacturerFormDialog({
           </div>
 
           <div>
-            <label className="text-foreground mb-2 block text-sm font-medium">Country *</label>
+            <label className="text-label text-body mb-2 block font-medium">Country *</label>
             <Input
               value={manufacturerFormData.country}
               onChange={(e) =>
@@ -73,7 +74,7 @@ export function ManufacturerFormDialog({
           </div>
 
           <div>
-            <label className="text-foreground mb-2 block text-sm font-medium">Specialties</label>
+            <label className="text-label text-body mb-2 block font-medium">Specialties</label>
             <MultiSelect
               options={SPECIALTIES}
               value={manufacturerFormData.specialty}
@@ -86,7 +87,7 @@ export function ManufacturerFormDialog({
           </div>
 
           <div>
-            <label className="text-foreground mb-2 block text-sm font-medium">Founded</label>
+            <label className="text-label text-body mb-2 block font-medium">Founded</label>
             <Input
               type="number"
               value={manufacturerFormData.founded || ""}
@@ -103,7 +104,7 @@ export function ManufacturerFormDialog({
           </div>
 
           <div>
-            <label className="text-foreground mb-2 block text-sm font-medium">Description</label>
+            <label className="text-label text-body mb-2 block font-medium">Description</label>
             <Input
               value={manufacturerFormData.description}
               onChange={(e) =>
@@ -117,19 +118,14 @@ export function ManufacturerFormDialog({
           </div>
 
           <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
+            <Checkbox
               id="isActive"
               checked={manufacturerFormData.isActive}
-              onChange={(e) =>
-                setManufacturerFormData({ ...manufacturerFormData, isActive: e.target.checked })
+              onCheckedChange={(checked) =>
+                setManufacturerFormData({ ...manufacturerFormData, isActive: checked === true })
               }
-              className="border-border rounded"
             />
-            <label
-              htmlFor="isActive"
-              className="text-foreground cursor-pointer text-sm font-medium"
-            >
+            <label htmlFor="isActive" className="text-label text-body cursor-pointer font-medium">
               Active
             </label>
           </div>

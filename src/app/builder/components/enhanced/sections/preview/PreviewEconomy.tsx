@@ -33,8 +33,8 @@ export const PreviewEconomy = memo(function PreviewEconomy({
   if (!laborEmployment && !demographics && !coreIndicators) {
     return (
       <div className="py-8 text-center">
-        <Factory className="mx-auto mb-3 h-10 w-10 text-muted-foreground/60" />
-        <p className="text-sm text-muted-foreground">No economy configuration set</p>
+        <Factory className="text-label-tertiary mx-auto mb-3 h-10 w-10" />
+        <p className="text-body text-label-secondary">No economy configuration set</p>
       </div>
     );
   }
@@ -44,71 +44,67 @@ export const PreviewEconomy = memo(function PreviewEconomy({
       {/* Core Indicators */}
       {coreIndicators && (
         <div className="space-y-2">
-          <h4 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            <TrendingUp className="h-3.5 w-3.5 text-primary" />
+          <h3 className="text-eyebrow text-label-secondary flex items-center gap-2">
+            <TrendingUp className="text-tint h-3.5 w-3.5" />
             Baseline
-          </h4>
+          </h3>
           <PreviewCoreIndicators coreIndicators={coreIndicators} currency={currency} />
         </div>
       )}
 
       {/* Labor & Employment */}
       {laborEmployment && (
-        <div className="space-y-2.5">
-          <h4 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            <Briefcase className="h-3.5 w-3.5 text-primary" />
+        <div className="space-y-2">
+          <h3 className="text-eyebrow text-label-secondary flex items-center gap-2">
+            <Briefcase className="text-tint h-3.5 w-3.5" />
             Labor
-          </h4>
+          </h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <div className="rounded-xl border border-border/40 bg-card/40 p-3 text-center backdrop-blur-md">
-              <div className="text-base font-bold text-foreground">
+            <div className="rounded-row border-separator bg-surface border p-3 text-center">
+              <div className="text-headline text-label">
                 {laborEmployment.laborForceParticipationRate}%
               </div>
-              <div className="mt-0.5 text-xs text-muted-foreground">Participation</div>
+              <div className="text-footnote text-label-secondary mt-0.5">Participation</div>
             </div>
-            <div className="rounded-xl border border-border/40 bg-card/40 p-3 text-center backdrop-blur-md">
-              <div className="text-base font-bold text-foreground">
-                {laborEmployment.employmentRate}%
-              </div>
-              <div className="mt-0.5 text-xs text-muted-foreground">Employment</div>
+            <div className="rounded-row border-separator bg-surface border p-3 text-center">
+              <div className="text-headline text-label">{laborEmployment.employmentRate}%</div>
+              <div className="text-footnote text-label-secondary mt-0.5">Employment</div>
             </div>
-            <div className="rounded-xl border border-border/40 bg-card/40 p-3 text-center backdrop-blur-md">
-              <div className="text-base font-bold text-foreground">
-                {laborEmployment.unemploymentRate}%
-              </div>
-              <div className="mt-0.5 text-xs text-muted-foreground">Unemployment</div>
+            <div className="rounded-row border-separator bg-surface border p-3 text-center">
+              <div className="text-headline text-label">{laborEmployment.unemploymentRate}%</div>
+              <div className="text-footnote text-label-secondary mt-0.5">Unemployment</div>
             </div>
             <div
-              className="rounded-xl border border-border/40 bg-card/40 p-3 text-center backdrop-blur-md"
+              className="rounded-row border-separator bg-surface border p-3 text-center"
               title={
                 laborEmployment.totalWorkforce
                   ? `${laborEmployment.totalWorkforce.toLocaleString()} total workforce`
                   : undefined
               }
             >
-              <div className="text-base font-bold text-foreground">
+              <div className="text-headline text-label">
                 {formatCompactNumber(laborEmployment.totalWorkforce)}
               </div>
-              <div className="mt-0.5 text-xs text-muted-foreground">Workforce</div>
+              <div className="text-footnote text-label-secondary mt-0.5">Workforce</div>
               {laborEmployment.totalWorkforce && laborEmployment.totalWorkforce >= 1e6 && (
-                <div className="mt-0.5 truncate font-mono text-xs text-muted-foreground/70">
+                <div className="text-footnote text-label-secondary mt-0.5 truncate font-mono">
                   {laborEmployment.totalWorkforce.toLocaleString()}
                 </div>
               )}
             </div>
-            <div className="rounded-xl border border-border/40 bg-card/40 p-3 text-center backdrop-blur-md">
-              <div className="text-base font-bold text-foreground">
+            <div className="rounded-row border-separator bg-surface border p-3 text-center">
+              <div className="text-headline text-label">
                 {laborEmployment.averageWorkweekHours} hrs
               </div>
-              <div className="mt-0.5 text-xs text-muted-foreground">Work Week</div>
+              <div className="text-footnote text-label-secondary mt-0.5">Work Week</div>
             </div>
-            <div className="rounded-xl border border-border/40 bg-card/40 p-3 text-center backdrop-blur-md">
-              <div className="truncate text-base font-bold text-foreground">
+            <div className="rounded-row border-separator bg-surface border p-3 text-center">
+              <div className="text-headline text-label truncate">
                 {laborEmployment.averageAnnualIncome
                   ? formatCurrencyLocal(laborEmployment.averageAnnualIncome)
                   : "N/A"}
               </div>
-              <div className="mt-0.5 text-xs text-muted-foreground">Average Income</div>
+              <div className="text-footnote text-label-secondary mt-0.5">Average Income</div>
             </div>
           </div>
         </div>
@@ -116,46 +112,46 @@ export const PreviewEconomy = memo(function PreviewEconomy({
 
       {/* Demographics */}
       {demographics && (
-        <div className="space-y-2.5">
-          <h4 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            <Users className="h-3.5 w-3.5 text-primary" />
+        <div className="space-y-2">
+          <h3 className="text-eyebrow text-label-secondary flex items-center gap-2">
+            <Users className="text-tint h-3.5 w-3.5" />
             Demographics
-          </h4>
+          </h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {demographics.ageDistribution && demographics.ageDistribution.length > 0 ? (
-              demographics.ageDistribution.map((item, i) => (
-                <div
-                  key={i}
-                  className="rounded-xl border border-border/40 bg-card/40 p-3 text-center backdrop-blur-md"
-                >
-                  <div className="text-base font-bold text-foreground">{item.percent ?? 0}%</div>
-                  <div className="mt-0.5 text-xs text-muted-foreground">
-                    {item.group || (i === 0 ? "Youth" : i === 1 ? "Working Age" : "Elderly")}
+            {demographics.ageDistribution && demographics.ageDistribution.length > 0
+              ? demographics.ageDistribution.map((item, i) => (
+                  <div
+                    key={i}
+                    className="rounded-row border-separator bg-surface border p-3 text-center"
+                  >
+                    <div className="text-headline text-label">{item.percent ?? 0}%</div>
+                    <div className="text-footnote text-label-secondary mt-0.5">
+                      {item.group || (i === 0 ? "Youth" : i === 1 ? "Working Age" : "Elderly")}
+                    </div>
                   </div>
-                </div>
-              ))
-            ) : null}
+                ))
+              : null}
             {demographics.urbanRuralSplit && (
-              <div className="rounded-xl border border-border/40 bg-card/40 p-3 text-center backdrop-blur-md">
-                <div className="text-base font-bold text-foreground">
+              <div className="rounded-row border-separator bg-surface border p-3 text-center">
+                <div className="text-headline text-label">
                   {demographics.urbanRuralSplit.urban}%
                 </div>
-                <div className="mt-0.5 text-xs text-muted-foreground">Urban Population</div>
+                <div className="text-footnote text-label-secondary mt-0.5">Urban Population</div>
               </div>
             )}
-            <div className="rounded-xl border border-border/40 bg-card/40 p-3 text-center backdrop-blur-md">
-              <div className="text-base font-bold text-foreground">
+            <div className="rounded-row border-separator bg-surface border p-3 text-center">
+              <div className="text-headline text-label">
                 {demographics.lifeExpectancy ? `${demographics.lifeExpectancy} yrs` : "N/A"}
               </div>
-              <div className="mt-0.5 text-xs text-muted-foreground">Life Expectancy</div>
+              <div className="text-footnote text-label-secondary mt-0.5">Life Expectancy</div>
             </div>
-            <div className="rounded-xl border border-border/40 bg-card/40 p-3 text-center backdrop-blur-md">
-              <div className="text-base font-bold text-foreground">
+            <div className="rounded-row border-separator bg-surface border p-3 text-center">
+              <div className="text-headline text-label">
                 {demographics.populationGrowthRate !== undefined
                   ? `${demographics.populationGrowthRate}%`
                   : "N/A"}
               </div>
-              <div className="mt-0.5 text-xs text-muted-foreground">Population Growth</div>
+              <div className="text-footnote text-label-secondary mt-0.5">Population Growth</div>
             </div>
           </div>
         </div>

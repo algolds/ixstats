@@ -101,9 +101,9 @@ export function EditorConfirmHost() {
       {current && (
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-base">{current.title}</AlertDialogTitle>
+            <AlertDialogTitle className="text-body">{current.title}</AlertDialogTitle>
             {current.description && (
-              <AlertDialogDescription className="text-xs leading-relaxed">
+              <AlertDialogDescription className="text-footnote leading-relaxed">
                 {current.description}
               </AlertDialogDescription>
             )}

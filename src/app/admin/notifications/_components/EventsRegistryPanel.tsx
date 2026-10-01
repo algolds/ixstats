@@ -35,15 +35,15 @@ import {
 import { formatDistanceToNow } from "date-fns";
 
 const CATEGORY_COLORS: Record<string, string> = {
-  economic: "border-emerald-500/30 bg-emerald-500/10",
-  diplomatic: "border-blue-500/30 bg-blue-500/10",
-  governance: "border-violet-500/30 bg-violet-500/10",
-  social: "border-pink-500/30 bg-pink-500/10",
-  security: "border-red-500/30 bg-red-500/10",
-  intelligence: "border-cyan-500/30 bg-cyan-500/10",
-  crisis: "border-orange-500/30 bg-orange-500/10",
-  achievement: "border-yellow-500/30 bg-yellow-500/10",
-  system: "border-gray-500/30 bg-gray-500/10",
+  economic: "border-green/30 bg-green/10",
+  diplomatic: "border-blue/30 bg-blue/10",
+  governance: "border-purple/30 bg-purple/10",
+  social: "border-pink/30 bg-pink/10",
+  security: "border-red/30 bg-red/10",
+  intelligence: "border-teal/30 bg-teal/10",
+  crisis: "border-orange/30 bg-orange/10",
+  achievement: "border-yellow/30 bg-yellow/10",
+  system: "border-separator bg-fill-3",
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -140,8 +140,8 @@ export function EventsRegistryPanel() {
     return (
       <Card>
         <CardContent className="flex items-center justify-center p-12">
-          <div className="text-muted-foreground flex items-center gap-2">
-            <Activity className="h-4 w-4 animate-pulse" />
+          <div className="text-label-secondary flex items-center gap-2">
+            <Activity aria-hidden className="h-4 w-4" />
             Loading events...
           </div>
         </CardContent>
@@ -159,39 +159,37 @@ export function EventsRegistryPanel() {
           <Card>
             <CardContent className="flex items-center justify-between p-4">
               <div>
-                <p className="text-muted-foreground text-xs font-medium">Total Events</p>
-                <p className="text-2xl font-bold">{data.total}</p>
+                <p className="text-label-secondary text-caption">Total Events</p>
+                <p className="text-title-1">{data.total}</p>
               </div>
-              <BarChart3 className="text-muted-foreground h-6 w-6" />
+              <BarChart3 className="text-label-secondary h-6 w-6" />
             </CardContent>
           </Card>
           <Card>
             <CardContent className="flex items-center justify-between p-4">
               <div>
-                <p className="text-xs font-medium text-green-500">Enabled</p>
-                <p className="text-2xl font-bold text-green-500">{data.enabled}</p>
+                <p className="text-caption text-green">Enabled</p>
+                <p className="text-title-1 text-green">{data.enabled}</p>
               </div>
-              <Power className="h-6 w-6 text-green-500" />
+              <Power className="text-green h-6 w-6" />
             </CardContent>
           </Card>
           <Card>
             <CardContent className="flex items-center justify-between p-4">
               <div>
-                <p className="text-xs font-medium text-red-500">Disabled</p>
-                <p className="text-2xl font-bold text-red-500">{data.disabled}</p>
+                <p className="text-caption text-red">Disabled</p>
+                <p className="text-title-1 text-red">{data.disabled}</p>
               </div>
-              <PowerOff className="h-6 w-6 text-red-500" />
+              <PowerOff className="text-red h-6 w-6" />
             </CardContent>
           </Card>
           <Card>
             <CardContent className="flex items-center justify-between p-4">
               <div>
-                <p className="text-muted-foreground text-xs font-medium">Categories</p>
-                <p className="text-2xl font-bold">
-                  {new Set(data.configs.map((c) => c.category)).size}
-                </p>
+                <p className="text-label-secondary text-caption">Categories</p>
+                <p className="text-title-1">{new Set(data.configs.map((c) => c.category)).size}</p>
               </div>
-              <Filter className="text-muted-foreground h-6 w-6" />
+              <Filter className="text-label-secondary h-6 w-6" />
             </CardContent>
           </Card>
         </div>
@@ -217,7 +215,7 @@ export function EventsRegistryPanel() {
               variant="outline"
               size="sm"
             >
-              <Power className="mr-2 h-4 w-4 text-green-500" />
+              <Power className="text-green mr-2 h-4 w-4" />
               Enable All
             </Button>
             <Button
@@ -226,7 +224,7 @@ export function EventsRegistryPanel() {
               variant="outline"
               size="sm"
             >
-              <PowerOff className="mr-2 h-4 w-4 text-red-500" />
+              <PowerOff className="text-red mr-2 h-4 w-4" />
               Disable All
             </Button>
             <Button onClick={() => refetch()} variant="ghost" size="sm">
@@ -244,11 +242,9 @@ export function EventsRegistryPanel() {
             <CardContent className="p-4">
               <div className="flex flex-wrap items-end gap-3">
                 <div className="min-w-[200px] flex-1">
-                  <label className="text-muted-foreground mb-1 block text-xs font-medium">
-                    Search
-                  </label>
+                  <label className="text-label-secondary text-caption mb-1 block">Search</label>
                   <div className="relative">
-                    <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
+                    <Search className="text-label-secondary absolute top-2 left-2 h-4 w-4" />
                     <Input
                       placeholder="Search events..."
                       value={search}
@@ -259,9 +255,7 @@ export function EventsRegistryPanel() {
                 </div>
 
                 <div className="w-[160px]">
-                  <label className="text-muted-foreground mb-1 block text-xs font-medium">
-                    Category
-                  </label>
+                  <label className="text-label-secondary text-caption mb-1 block">Category</label>
                   <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                     <SelectTrigger>
                       <SelectValue placeholder="All Categories" />
@@ -278,9 +272,7 @@ export function EventsRegistryPanel() {
                 </div>
 
                 <div className="w-[160px]">
-                  <label className="text-muted-foreground mb-1 block text-xs font-medium">
-                    Source
-                  </label>
+                  <label className="text-label-secondary text-caption mb-1 block">Source</label>
                   <Select value={sourceFilter} onValueChange={setSourceFilter}>
                     <SelectTrigger>
                       <SelectValue placeholder="All Sources" />
@@ -297,7 +289,7 @@ export function EventsRegistryPanel() {
                 </div>
 
                 <div className="w-[160px]">
-                  <label className="text-muted-foreground mb-1 block text-xs font-medium">
+                  <label className="text-label-secondary text-caption mb-1 block">
                     Trigger Type
                   </label>
                   <Select value={triggerFilter} onValueChange={setTriggerFilter}>
@@ -316,9 +308,7 @@ export function EventsRegistryPanel() {
                 </div>
 
                 <div className="w-[140px]">
-                  <label className="text-muted-foreground mb-1 block text-xs font-medium">
-                    Status
-                  </label>
+                  <label className="text-label-secondary text-caption mb-1 block">Status</label>
                   <Select
                     value={statusFilter}
                     onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
@@ -335,7 +325,7 @@ export function EventsRegistryPanel() {
                 </div>
               </div>
 
-              <p className="text-muted-foreground mt-2 text-xs">
+              <p className="text-label-secondary text-footnote mt-2">
                 {filtered.length} event{filtered.length !== 1 ? "s" : ""} found
               </p>
             </CardContent>
@@ -346,15 +336,13 @@ export function EventsRegistryPanel() {
             {Array.from(grouped.entries()).map(([category, events]) => (
               <div key={category}>
                 <div className="mb-3 flex items-center gap-2">
-                  <h3 className="text-lg font-semibold">{CATEGORY_LABELS[category] ?? category}</h3>
-                  <Badge variant="outline" className="text-xs">
-                    {events.length}
-                  </Badge>
+                  <h3 className="text-title-3">{CATEGORY_LABELS[category] ?? category}</h3>
+                  <Badge variant="outline">{events.length}</Badge>
                   <div className="ml-auto flex gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-6 text-xs"
+
                       onClick={() => batchToggleMutation.mutate({ enabled: true, category })}
                       disabled={batchToggleMutation.isPending}
                     >
@@ -363,7 +351,7 @@ export function EventsRegistryPanel() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-6 text-xs"
+
                       onClick={() => batchToggleMutation.mutate({ enabled: false, category })}
                       disabled={batchToggleMutation.isPending}
                     >
@@ -377,23 +365,23 @@ export function EventsRegistryPanel() {
                     <Card
                       key={event.id}
                       className={`border ${
-                        CATEGORY_COLORS[event.category] ?? "border-border bg-card"
+                        CATEGORY_COLORS[event.category] ?? "border-separator bg-surface"
                       } ${!event.enabled ? "opacity-60" : ""}`}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <h4 className="truncate text-sm font-medium">{event.name}</h4>
+                              <h4 className="text-body truncate font-medium">{event.name}</h4>
                               <Badge
                                 variant={event.enabled ? "default" : "secondary"}
-                                className="h-5 text-xs"
+                                className="h-5"
                               >
                                 {event.enabled ? "ON" : "OFF"}
                               </Badge>
                             </div>
                             {event.description && (
-                              <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
+                              <p className="text-label-secondary text-footnote mt-1 line-clamp-2">
                                 {event.description}
                               </p>
                             )}
@@ -405,24 +393,18 @@ export function EventsRegistryPanel() {
                           />
                         </div>
 
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                          <Badge variant="outline" className="text-xs">
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Badge variant="outline">
                             <Bell className="mr-1 h-3 w-3" />
                             {event.category}
                           </Badge>
-                          {event.source && (
-                            <Badge variant="outline" className="text-xs">
-                              {event.source}
-                            </Badge>
-                          )}
+                          {event.source && <Badge variant="outline">{event.source}</Badge>}
                           {event.triggerType && (
-                            <Badge variant="outline" className="text-xs">
-                              {event.triggerType}
-                            </Badge>
+                            <Badge variant="outline">{event.triggerType}</Badge>
                           )}
                         </div>
 
-                        <div className="text-muted-foreground mt-2 flex items-center gap-3 text-xs">
+                        <div className="text-label-secondary text-footnote mt-2 flex items-center gap-3">
                           {event.lastTriggered ? (
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
@@ -437,7 +419,7 @@ export function EventsRegistryPanel() {
                             </span>
                           )}
                           <span>{event.triggerCount} triggers</span>
-                          <span className="font-mono text-xs">{event.eventKey}</span>
+                          <span className="text-footnote font-mono">{event.eventKey}</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -452,9 +434,9 @@ export function EventsRegistryPanel() {
       {!isLoading && !hasConfigs && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center gap-3 p-12">
-            <Bell className="text-muted-foreground h-12 w-12" />
-            <p className="text-muted-foreground text-sm">No notification events configured yet.</p>
-            <p className="text-muted-foreground text-xs">
+            <Bell className="text-label-secondary h-12 w-12" />
+            <p className="text-label-secondary text-body">No notification events configured yet.</p>
+            <p className="text-label-secondary text-footnote">
               Click "Seed Default Events" to populate from the registry.
             </p>
           </CardContent>

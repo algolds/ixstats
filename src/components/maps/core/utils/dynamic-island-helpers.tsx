@@ -39,7 +39,7 @@ export function FlagIcon({ name }: { name: string }) {
     <img
       src={flagUrl}
       alt=""
-      className="border-border h-3.5 w-5 shrink-0 rounded-sm border object-cover"
+      className="border-separator h-3.5 w-5 shrink-0 rounded-xs border object-cover"
     />
   );
 }

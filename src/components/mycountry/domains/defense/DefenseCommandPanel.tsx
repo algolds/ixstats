@@ -101,7 +101,7 @@ export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
         tabs={tabs}
         activeTab={activeTab}
         onChange={setActiveTab}
-        activeClassName="text-rose-500"
+        activeClassName="text-red"
       />
 
       {activeTab === "branches" && <CommandPanel countryId={countryId} />}

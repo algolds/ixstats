@@ -11,15 +11,15 @@ interface TimelineEraBadgeProps {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  battle: "bg-red-500/10 text-red-500 border-red-500/20",
-  founding: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-  treaty: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  cultural: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20",
-  religious: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-  natural: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-  trade: "bg-orange-500/10 text-orange-500 border-orange-500/20",
-  exploration: "bg-cyan-500/10 text-cyan-500 border-cyan-500/20",
-  disaster: "bg-red-500/10 text-red-500 border-red-500/20",
+  battle: "bg-red/10 text-red-ink border-red/20",
+  founding: "bg-yellow/10 text-yellow-ink border-yellow/20",
+  treaty: "bg-blue/10 text-blue-ink border-blue/20",
+  cultural: "bg-indigo/10 text-indigo-ink border-indigo/20",
+  religious: "bg-green/10 text-green-ink border-green/20",
+  natural: "bg-green/10 text-green-ink border-green/20",
+  trade: "bg-orange/10 text-orange-ink border-orange/20",
+  exploration: "bg-cyan/10 text-cyan-ink border-cyan/20",
+  disaster: "bg-red/10 text-red-ink border-red/20",
 };
 
 export const TimelineEraBadge = memo(function TimelineEraBadge({
@@ -28,19 +28,18 @@ export const TimelineEraBadge = memo(function TimelineEraBadge({
   category = "cultural",
   className = "",
 }: TimelineEraBadgeProps) {
-  const colorClass =
-    CATEGORY_COLORS[category] || "bg-muted/40 text-muted-foreground border-border/40";
+  const colorClass = CATEGORY_COLORS[category] || "bg-fill-3 text-label-secondary border-separator";
 
   if (!eraLabel && ixTimeYear === undefined) return null;
 
   return (
     <div
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium tracking-tight ${colorClass} ${className}`}
+      className={`text-caption inline-flex items-center gap-2 rounded-full border px-2 py-0.5 ${colorClass} ${className}`}
     >
       <Clock className="h-3 w-3 shrink-0 opacity-70" />
       {eraLabel && <span className="font-semibold">{eraLabel}</span>}
       {ixTimeYear !== undefined && (
-        <span className="font-mono opacity-90">
+        <span className="tabular-nums opacity-90">
           {ixTimeYear >= 0 ? `${ixTimeYear} AT` : `${Math.abs(ixTimeYear)} BT`}
         </span>
       )}

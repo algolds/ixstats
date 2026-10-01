@@ -29,7 +29,7 @@ export const PresetsInspectorNode = React.memo(function PresetsInspectorNode({
   if (isSandbox) {
     return (
       <div className="space-y-4">
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label>Select Sport Preset</Label>
           <Select
             value={selectedSport}
@@ -48,43 +48,43 @@ export const PresetsInspectorNode = React.memo(function PresetsInspectorNode({
           </Select>
         </div>
 
-        <Card className="facet-hierarchy-child border-border/50 bg-card/50">
+        <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-              <Trophy className="h-4 w-4 text-amber-500" />
+            <CardTitle className="text-headline flex items-center gap-2">
+              <Trophy className="text-yellow h-4 w-4" />
               Preset Configuration
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-xs">
-            <div className="border-border/40 grid grid-cols-2 gap-2 border-b pb-2">
+          <CardContent className="text-footnote space-y-3">
+            <div className="border-separator grid grid-cols-2 gap-2 border-b pb-2">
               <div>
-                <span className="text-muted-foreground">Archetype</span>
+                <span className="text-label-secondary">Archetype</span>
                 <p className="font-semibold capitalize">{activePreset.archetype}</p>
               </div>
               <div>
-                <span className="text-muted-foreground">Roster Size</span>
+                <span className="text-label-secondary">Roster Size</span>
                 <p className="font-semibold">{activePreset.rosterSize}</p>
               </div>
             </div>
-            <div className="border-border/40 grid grid-cols-2 gap-2 border-b pb-2">
+            <div className="border-separator grid grid-cols-2 gap-2 border-b pb-2">
               <div>
-                <span className="text-muted-foreground">Team Range</span>
+                <span className="text-label-secondary">Team Range</span>
                 <p className="font-semibold">
                   {activePreset.minTeamCount} - {activePreset.maxTeamCount}
                 </p>
               </div>
               <div>
-                <span className="text-muted-foreground">Federation</span>
+                <span className="text-label-secondary">Federation</span>
                 <p className="truncate font-semibold" title={activePreset.federationName}>
                   {activePreset.federationShort}
                 </p>
               </div>
             </div>
             <div>
-              <span className="text-muted-foreground">Rating Vectors</span>
+              <span className="text-label-secondary">Rating Vectors</span>
               <div className="mt-1 flex flex-wrap gap-1">
                 {activePreset.ratingVector.map((v) => (
-                  <Badge key={v} variant="secondary" className="text-xs">
+                  <Badge key={v} variant="secondary">
                     {v}
                   </Badge>
                 ))}
@@ -99,18 +99,18 @@ export const PresetsInspectorNode = React.memo(function PresetsInspectorNode({
   // DB Mode
   return (
     <div className="space-y-4">
-      <h4 className="text-sm font-semibold">Database Presets list</h4>
+      <h4 className="text-headline">Database Presets list</h4>
       <div className="thin-scrollbar max-h-[400px] space-y-2 overflow-y-auto">
         {presetList.map((p) => (
           <div
             key={p.key}
-            className="bg-muted/20 flex items-center justify-between rounded-lg border p-3 text-xs"
+            className="bg-fill-4 rounded-control text-footnote flex items-center justify-between border p-3"
           >
             <div className="flex items-center gap-2">
-              <span className="text-2xl">{p.icon}</span>
+              <span className="text-title-1">{p.icon}</span>
               <div>
                 <p className="font-semibold">{p.name}</p>
-                <p className="text-muted-foreground text-xs capitalize">
+                <p className="text-label-secondary text-footnote capitalize">
                   {p.archetype} &middot; {p.federationShort}
                 </p>
               </div>

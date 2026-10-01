@@ -2,13 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import {
-  Xmark,
-  Shield,
-  User,
-  Activity,
-  ArrowRight,
-} from "iconoir-react";
+import { Xmark, Shield, User, Activity, ArrowRight } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useSportsFocus } from "./SportsFocusProvider";
 import { AthleteCareerHistory } from "./AthleteCareerHistory";
@@ -20,23 +14,24 @@ import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 // ─── Attribute badge styling ────────────────────────────────────────────────
 function attributeBadgeClass(value: number): string {
-  if (value >= 90) return "bg-amber-400/20 text-amber-500 dark:text-amber-400 border-amber-400/40";
-  if (value >= 80) return "bg-emerald-400/20 text-emerald-500 dark:text-emerald-400 border-emerald-400/40";
-  if (value >= 70) return "bg-blue-400/20 text-blue-500 dark:text-blue-400 border-blue-400/40";
-  return "bg-muted/60 text-muted-foreground border-border/40";
+  if (value >= 90) return "bg-yellow/20 text-yellow border-yellow/40";
+  if (value >= 80) return "bg-green/20 text-green border-green/40";
+  if (value >= 70) return "bg-blue/20 text-blue border-blue/40";
+  return "bg-fill-3 text-label-secondary border-separator";
 }
 
 // ─── Career stage styling ───────────────────────────────────────────────────
 const CAREER_STAGE_STYLES: Record<string, { label: string; className: string }> = {
-  rookie: { label: "Rookie", className: "border-blue-500/30 bg-blue-500/10 text-blue-400" },
-  developing: { label: "Developing", className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" },
-  prime: { label: "Prime", className: "border-amber-500/30 bg-amber-500/10 text-amber-400" },
-  plateau: { label: "Plateau", className: "border-border/60 bg-muted/60 text-muted-foreground" },
-  declining: { label: "Declining", className: "border-red-500/30 bg-red-500/10 text-red-400" },
-  retired: { label: "Retired", className: "border-border/40 bg-muted/40 text-muted-foreground/60" },
+  rookie: { label: "Rookie", className: "border-blue/30 bg-blue/10 text-blue" },
+  developing: { label: "Developing", className: "border-green/30 bg-green/10 text-green" },
+  prime: { label: "Prime", className: "border-yellow/30 bg-yellow/10 text-yellow" },
+  plateau: { label: "Plateau", className: "border-separator bg-fill-3 text-label-secondary" },
+  declining: { label: "Declining", className: "border-red/30 bg-red/10 text-red" },
+  retired: { label: "Retired", className: "border-separator bg-fill-3 text-label-tertiary" },
 };
 
 // ─── Organization (Club) Focus View ─────────────────────────────────────────
@@ -61,23 +56,23 @@ function OrganizationFocusContent({
     return (
       <div className="space-y-4 p-1">
         <div className="flex items-center gap-3">
-          <Skeleton className="h-14 w-14 rounded-2xl" />
+          <Skeleton className="rounded-card h-14 w-14" />
           <div className="flex-1 space-y-2">
-            <Skeleton className="h-5 w-32 rounded-lg" />
-            <Skeleton className="h-4 w-20 rounded-md" />
+            <Skeleton className="rounded-control h-5 w-32" />
+            <Skeleton className="rounded-control-sm h-4 w-20" />
           </div>
         </div>
-        <Skeleton className="h-28 w-full rounded-2xl" />
-        <Skeleton className="h-48 w-full rounded-2xl" />
+        <Skeleton className="rounded-card h-28 w-full" />
+        <Skeleton className="rounded-card h-48 w-full" />
       </div>
     );
   }
 
   if (!team) {
     return (
-      <div className="py-12 text-center text-muted-foreground">
-        <Shield className="mx-auto mb-2 h-10 w-10 text-muted-foreground/40" />
-        <p className="text-xs font-semibold">Club information unavailable</p>
+      <div className="text-label-secondary py-12 text-center">
+        <Shield className="text-label-tertiary mx-auto mb-2 h-10 w-10" />
+        <p className="text-footnote font-semibold">Club information unavailable</p>
       </div>
     );
   }
@@ -94,9 +89,9 @@ function OrganizationFocusContent({
   return (
     <div className="space-y-5">
       {/* Club Identity Header */}
-      <div className="flex items-center gap-3.5">
+      <div className="flex items-center gap-4">
         <div
-          className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border/50 shadow-md text-2xl font-black"
+          className="rounded-card border-separator shadow-card text-title-1 flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden border"
           style={{ backgroundColor: team.color ? `${team.color}20` : "rgba(255,255,255,0.05)" }}
         >
           {team.logo ? (
@@ -106,12 +101,10 @@ function OrganizationFocusContent({
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <h3 className="truncate text-base font-black tracking-tight text-foreground">
-              {team.name}
-            </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-headline text-label truncate">{team.name}</h3>
           </div>
-          <p className="truncate text-xs text-muted-foreground font-medium">
+          <p className="text-footnote text-label-secondary truncate font-medium">
             {team.shortName ?? team.city ?? theme.name}
             {team.city ? ` · ${team.city}` : ""}
           </p>
@@ -124,66 +117,64 @@ function OrganizationFocusContent({
           clearFocus();
           router.push(withBasePath(`/myclub/${team.id}`));
         }}
-        data-cuelume-press="subtle"
-        className="w-full justify-between rounded-xl border border-border/40 bg-card hover:bg-muted/40 text-foreground font-bold text-xs py-2 px-3 shadow-sm transition active:scale-[0.98] cursor-pointer"
+        className="rounded-row border-separator bg-surface hover:bg-fill-3 text-label text-footnote shadow-card w-full cursor-pointer justify-between border px-3 py-2 font-semibold transition active:scale-[0.98]"
       >
         <span className="flex items-center gap-2">
-          <Shield className="h-4 w-4 text-cyan-400" />
+          <Shield className="text-teal h-4 w-4" />
           Open Club Headquarters
         </span>
-        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+        <ArrowRight className="text-label-secondary h-3.5 w-3.5" />
       </Button>
 
       {/* Top Squad Athletes Preview */}
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">
+          <span className="text-eyebrow text-label-secondary">
             Key Athletes ({activePlayers.length})
           </span>
-          <span className="text-xs text-muted-foreground/60 font-semibold">Click to focus</span>
+          <span className="text-footnote text-label-tertiary font-semibold">Click to focus</span>
         </div>
 
-        <div className="space-y-1.5">
+        <FacetListSection aria-label="Top players">
           {topPlayers.map((player) => {
             const ratings = (player.ratings as Record<string, number> | null) ?? {};
             const ovr = ratings.overall ?? 50;
 
             return (
-              <button
+              <FacetRow
                 key={player.id}
-                type="button"
                 onClick={() => focusAthlete(player.id)}
-                data-cuelume-press="subtle"
-                className="w-full flex items-center justify-between rounded-xl border border-border/30 bg-muted/20 hover:bg-muted/40 p-2.5 transition text-left active:scale-[0.98] cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="h-7 w-7 rounded-lg overflow-hidden border border-border/30 bg-muted/40 shrink-0">
+                leading={
+                  <span className="rounded-control border-separator bg-fill-3 block h-7 w-7 shrink-0 overflow-hidden border">
                     <img
                       src={getPlayerPhotoUrl(player)}
                       alt=""
                       className="h-full w-full object-cover"
                     />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-foreground truncate">
-                      {player.firstName} {player.lastName}
-                    </p>
-                    <p className="text-xs text-muted-foreground font-medium">
-                      {player.position} · Age {player.age}
-                    </p>
-                  </div>
-                </div>
-
-                <Badge
-                  variant="outline"
-                  className={cn("text-xs font-black px-1.5 py-0.5", attributeBadgeClass(ovr))}
-                >
-                  {ovr}
-                </Badge>
-              </button>
+                  </span>
+                }
+                title={
+                  <span className="text-footnote block truncate font-semibold">
+                    {player.firstName} {player.lastName}
+                  </span>
+                }
+                subtitle={`${player.position} · Age ${player.age}`}
+                trailing={
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-footnote px-2 py-0.5 font-semibold tabular-nums",
+                      attributeBadgeClass(ovr)
+                    )}
+                  >
+                    {ovr}
+                  </Badge>
+                }
+                accessory="chevron"
+              />
             );
           })}
-        </div>
+        </FacetListSection>
       </div>
     </div>
   );
@@ -219,23 +210,23 @@ function AthleteFocusContent({
     return (
       <div className="space-y-4 p-1">
         <div className="flex items-center gap-3">
-          <Skeleton className="h-16 w-16 rounded-2xl" />
+          <Skeleton className="rounded-card h-16 w-16" />
           <div className="flex-1 space-y-2">
-            <Skeleton className="h-5 w-32 rounded-lg" />
-            <Skeleton className="h-4 w-24 rounded-md" />
+            <Skeleton className="rounded-control h-5 w-32" />
+            <Skeleton className="rounded-control-sm h-4 w-24" />
           </div>
         </div>
-        <Skeleton className="h-24 w-full rounded-2xl" />
-        <Skeleton className="h-40 w-full rounded-2xl" />
+        <Skeleton className="rounded-card h-24 w-full" />
+        <Skeleton className="rounded-card h-40 w-full" />
       </div>
     );
   }
 
   if (!athlete) {
     return (
-      <div className="py-12 text-center text-muted-foreground">
-        <User className="mx-auto mb-2 h-10 w-10 text-muted-foreground/40" />
-        <p className="text-xs font-semibold">Athlete information unavailable</p>
+      <div className="text-label-secondary py-12 text-center">
+        <User className="text-label-tertiary mx-auto mb-2 h-10 w-10" />
+        <p className="text-footnote font-semibold">Athlete information unavailable</p>
       </div>
     );
   }
@@ -243,8 +234,8 @@ function AthleteFocusContent({
   return (
     <div className="space-y-5">
       {/* Athlete Identity Header */}
-      <div className="flex items-center gap-3.5">
-        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-border/50 bg-muted/40 shadow-md">
+      <div className="flex items-center gap-4">
+        <div className="rounded-card border-separator bg-fill-3 shadow-card relative h-16 w-16 shrink-0 overflow-hidden border">
           <img
             src={getPlayerPhotoUrl(athlete)}
             alt={`${athlete.firstName} ${athlete.lastName}`}
@@ -253,19 +244,22 @@ function AthleteFocusContent({
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <h3 className="truncate text-base font-black tracking-tight text-foreground">
+          <div className="flex items-center gap-2">
+            <h3 className="text-headline text-label truncate">
               {athlete.firstName} {athlete.lastName}
             </h3>
           </div>
-          <div className="flex items-center gap-2 mt-1">
-            <Badge variant="outline" className="text-xs font-bold border-border/50">
+          <div className="mt-1 flex items-center gap-2">
+            <Badge variant="outline" className="text-footnote border-separator font-semibold">
               {athlete.position}
             </Badge>
-            <Badge variant="outline" className={cn("text-xs font-bold", stageInfo?.className)}>
+            <Badge
+              variant="outline"
+              className={cn("text-footnote font-semibold", stageInfo?.className)}
+            >
               {stageInfo?.label ?? "Active"}
             </Badge>
-            <span className="text-xs text-muted-foreground font-semibold">
+            <span className="text-footnote text-label-secondary font-semibold">
               Age {athlete.age}
             </span>
           </div>
@@ -274,53 +268,50 @@ function AthleteFocusContent({
         <div className="text-right">
           <Badge
             variant="outline"
-            className={cn("text-sm font-black px-2 py-0.5", attributeBadgeClass(overall))}
+            className={cn("text-body px-2 py-0.5 font-semibold", attributeBadgeClass(overall))}
           >
             {overall}
           </Badge>
-          <span className="block text-xs font-bold text-muted-foreground mt-0.5">OVR</span>
+          <span className="text-footnote text-label-secondary mt-0.5 block font-semibold">OVR</span>
         </div>
       </div>
 
       {/* Team Link */}
       {athlete.team && (
-        <button
-          type="button"
-          onClick={() => athlete.team && focusOrganization(athlete.team.id)}
-          data-cuelume-press="subtle"
-          className="w-full flex items-center justify-between rounded-xl border border-border/40 bg-card hover:bg-muted/40 p-2.5 transition text-left active:scale-[0.98] cursor-pointer"
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <Shield className="h-4 w-4 text-cyan-400 shrink-0" />
-            <span className="text-xs font-bold text-foreground truncate">
-              {athlete.team.name}
-            </span>
-          </div>
-          <span className="text-xs text-muted-foreground font-semibold">Focus Club →</span>
-        </button>
+        <FacetListSection aria-label="Club">
+          <FacetRow
+            onClick={() => athlete.team && focusOrganization(athlete.team.id)}
+            leading={<Shield className="text-teal h-4 w-4 shrink-0" />}
+            title={
+              <span className="text-footnote block truncate font-semibold">
+                {athlete.team.name}
+              </span>
+            }
+            trailing="Focus Club"
+            accessory="chevron"
+          />
+        </FacetListSection>
       )}
 
       {/* Ratings & Skills Matrix */}
       {skillKeys.length > 0 && (
-        <div className="space-y-2.5">
-          <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">
-            Attributes & Skills
-          </span>
+        <div className="space-y-2">
+          <span className="text-eyebrow text-label-secondary">Attributes & Skills</span>
           <div className="grid grid-cols-2 gap-2">
             {skillKeys.map((key) => {
               const val = ratings[key] ?? 50;
               return (
                 <div
                   key={key}
-                  className="flex items-center justify-between rounded-xl border border-border/30 bg-muted/20 px-3 py-2"
+                  className="rounded-row border-separator bg-fill-4 flex items-center justify-between border px-3 py-2"
                 >
-                  <span className="text-xs font-medium capitalize text-muted-foreground">
+                  <span className="text-footnote text-label-secondary font-medium capitalize">
                     {key.replace(/([A-Z])/g, " $1").toLowerCase()}
                   </span>
                   <span
                     className={cn(
-                      "text-xs font-black",
-                      val >= 80 ? "text-emerald-400" : val >= 70 ? "text-blue-400" : "text-foreground"
+                      "text-footnote font-semibold",
+                      val >= 80 ? "text-green" : val >= 70 ? "text-blue" : "text-label"
                     )}
                   >
                     {val}
@@ -348,17 +339,17 @@ function MatchFocusContent({ matchId }: { matchId: string }) {
   if (isLoading) {
     return (
       <div className="space-y-4 p-1">
-        <Skeleton className="h-24 w-full rounded-2xl" />
-        <Skeleton className="h-32 w-full rounded-2xl" />
+        <Skeleton className="rounded-card h-24 w-full" />
+        <Skeleton className="rounded-card h-32 w-full" />
       </div>
     );
   }
 
   if (!match) {
     return (
-      <div className="py-12 text-center text-muted-foreground">
-        <Activity className="mx-auto mb-2 h-10 w-10 text-muted-foreground/40" />
-        <p className="text-xs font-semibold">Match details unavailable</p>
+      <div className="text-label-secondary py-12 text-center">
+        <Activity className="text-label-tertiary mx-auto mb-2 h-10 w-10" />
+        <p className="text-footnote font-semibold">Match details unavailable</p>
       </div>
     );
   }
@@ -368,42 +359,40 @@ function MatchFocusContent({ matchId }: { matchId: string }) {
   return (
     <div className="space-y-5">
       {/* Match Scoreboard Snippet */}
-      <div className="rounded-2xl border border-border/40 bg-card/60 p-4 text-center space-y-3">
-        <Badge variant="outline" className="text-xs font-bold uppercase tracking-wider">
+      <div className="rounded-card border-separator bg-surface space-y-3 border p-4 text-center">
+        <Badge variant="outline" className="text-eyebrow">
           {isCompleted ? "Full Time" : `Matchday ${match.matchDay ?? 1}`}
         </Badge>
 
         <div className="flex items-center justify-between gap-4 px-2">
           {/* Home */}
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={() => focusOrganization(match.homeTeam.id)}
-            data-cuelume-press="subtle"
-            className="flex-1 text-center min-w-0 group hover:underline cursor-pointer active:scale-[0.98]"
+            className="group h-auto min-w-0 flex-1 flex-col gap-0 px-2 py-1 text-center"
           >
-            <p className="text-xs font-bold text-foreground group-hover:text-primary truncate">
+            <p className="text-footnote text-label group-hover:text-tint truncate font-semibold">
               {match.homeTeam.name}
             </p>
-            <span className="text-xs text-muted-foreground">Focus Club →</span>
-          </button>
+            <span className="text-footnote text-label-secondary">Focus Club →</span>
+          </Button>
 
           {/* Score */}
-          <div className="text-xl font-black text-foreground tracking-tight px-3 py-1 rounded-xl bg-muted/40 border border-border/40">
+          <div className="text-title-2 text-label rounded-row bg-fill-3 border-separator border px-3 py-1">
             {isCompleted ? `${match.homeScore ?? 0} - ${match.awayScore ?? 0}` : "VS"}
           </div>
 
           {/* Away */}
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={() => focusOrganization(match.awayTeam.id)}
-            data-cuelume-press="subtle"
-            className="flex-1 text-center min-w-0 group hover:underline cursor-pointer active:scale-[0.98]"
+            className="group h-auto min-w-0 flex-1 flex-col gap-0 px-2 py-1 text-center"
           >
-            <p className="text-xs font-bold text-foreground group-hover:text-primary truncate">
+            <p className="text-footnote text-label group-hover:text-tint truncate font-semibold">
               {match.awayTeam.name}
             </p>
-            <span className="text-xs text-muted-foreground">Focus Club →</span>
-          </button>
+            <span className="text-footnote text-label-secondary">Focus Club →</span>
+          </Button>
         </div>
       </div>
     </div>
@@ -425,30 +414,28 @@ export function SportsFocusPanel({
   return (
     <aside
       className={cn(
-        "facet-hierarchy-parent w-80 xl:w-96 shrink-0 rounded-3xl border border-border/40 bg-card/85 p-5 shadow-xl backdrop-blur-2xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+        "bg-surface border-separator shadow-card rounded-card w-80 shrink-0 border p-5 xl:w-96",
         className
       )}
     >
       {/* Header bar with dismiss */}
-      <div className="flex items-center justify-between border-b border-border/20 pb-3.5 mb-4">
+      <div className="border-separator mb-4 flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-2">
-          <Badge
-            variant="outline"
-            className="border-amber-500/30 bg-amber-500/10 text-amber-400 text-xs font-black uppercase tracking-wider px-2 py-0.5"
-          >
+          <Badge variant="tinted" className="capitalize">
             {focus.type} Focus
           </Badge>
         </div>
 
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={clearFocus}
-          data-cuelume-press="subtle"
-          className="rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-muted/40 transition active:scale-[0.95] cursor-pointer"
           title="Close Focus"
+          aria-label="Close focus"
+          className="text-label-secondary rounded-full"
         >
-          <Xmark className="h-4 w-4" />
-        </button>
+          <Xmark className="size-4" />
+        </Button>
       </div>
 
       {/* Body switched on focus.type */}
@@ -473,12 +460,10 @@ export function SportsFocusSheet({ sportPreset }: { sportPreset?: string }) {
     <Sheet open={!!focus} onOpenChange={(open) => !open && clearFocus()}>
       <SheetContent
         side="bottom"
-        className="max-h-[85vh] rounded-t-3xl border-t border-border/40 bg-card/95 backdrop-blur-2xl p-6 overflow-y-auto"
+        className="rounded-t-sheet border-separator bg-surface max-h-[85vh] overflow-y-auto border-t p-6"
       >
         <SheetHeader className="pb-4">
-          <SheetTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">
-            {focus?.type} Focus
-          </SheetTitle>
+          <SheetTitle className="text-eyebrow text-label-secondary">{focus?.type} Focus</SheetTitle>
         </SheetHeader>
 
         {focus?.type === "organization" && (

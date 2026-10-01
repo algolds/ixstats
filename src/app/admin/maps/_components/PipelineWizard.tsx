@@ -10,6 +10,7 @@
  * The Quick Update mode preserves existing featureId→countryId linkages automatically.
  */
 
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { FacetCard } from "~/components/ui/facet-container";
 import { useState, useRef, useCallback, useMemo } from "react";
 import { api } from "~/trpc/react";
@@ -55,6 +56,14 @@ import {
   Flash as Zap,
   Settings as Settings2,
 } from "iconoir-react";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 // ─── Quick Update Types & Helpers ───────────────────────────────────────────
 
@@ -123,30 +132,16 @@ export function PipelineWizard() {
   return (
     <div className="space-y-4">
       {/* Mode toggle */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => setMode("quick")}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-            mode === "quick"
-              ? "border border-blue-500/30 bg-blue-500/20 text-blue-400"
-              : "text-muted-foreground hover:text-foreground border border-transparent"
-          }`}
-        >
-          <Zap className="h-3.5 w-3.5" />
-          Quick Update
-        </button>
-        <button
-          onClick={() => setMode("full")}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-            mode === "full"
-              ? "border border-blue-500/30 bg-blue-500/20 text-blue-400"
-              : "text-muted-foreground hover:text-foreground border border-transparent"
-          }`}
-        >
-          <Settings2 className="h-3.5 w-3.5" />
-          Full Pipeline
-        </button>
-      </div>
+      <SegmentedControl
+        asTabs
+        aria-label="Pipeline mode"
+        value={mode}
+        onValueChange={setMode}
+        options={[
+          { value: "quick", label: "Quick Update", icon: <Zap /> },
+          { value: "full", label: "Full Pipeline", icon: <Settings2 /> },
+        ]}
+      />
 
       {mode === "quick" ? <QuickUpdatePanel /> : <FullPipelinePanel />}
     </div>
@@ -281,13 +276,13 @@ function QuickUpdatePanel() {
   return (
     <div className="space-y-4">
       {error && (
-        <div className="border-destructive/30 text-destructive flex items-center gap-2 rounded-lg border px-4 py-3">
+        <div className="border-destructive/30 text-destructive rounded-control flex items-center gap-2 border px-4 py-3">
           <AlertTriangle className="h-4 w-4 shrink-0" />
-          <span className="text-sm">{error}</span>
+          <span className="text-body">{error}</span>
           <Button
             variant="ghost"
             size="sm"
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive ml-auto"
+            className="text-destructive ml-auto"
             onClick={() => setError(null)}
           >
             &times;
@@ -298,9 +293,9 @@ function QuickUpdatePanel() {
       {stage === "select" && (
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <label className="text-foreground text-sm font-medium">Layer:</label>
+            <label className="text-label text-body font-medium">Layer:</label>
             <Select value={selectedLayer} onValueChange={(v) => setSelectedLayer(v as LayerOption)}>
-              <SelectTrigger className="border-border bg-muted/50 w-48">
+              <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -318,20 +313,18 @@ function QuickUpdatePanel() {
             onDragLeave={onDragLeave}
             onDrop={onDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-12 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+            className={`rounded-row flex cursor-pointer flex-col items-center justify-center gap-3 border-2 border-dashed p-12 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
               isDragging
-                ? "bg-accent border-blue-500"
-                : "border-border bg-muted/30 hover:border-border hover:bg-muted/50"
+                ? "bg-fill-3 border-blue"
+                : "border-separator bg-fill-4 hover:border-separator hover:bg-fill-4"
             }`}
           >
-            <FileUp
-              className={`h-10 w-10 ${isDragging ? "text-blue-500" : "text-muted-foreground"}`}
-            />
+            <FileUp className={`h-10 w-10 ${isDragging ? "text-blue" : "text-label-secondary"}`} />
             <div className="text-center">
-              <p className="text-foreground text-sm font-medium">
+              <p className="text-label text-body font-medium">
                 Drop SVG file here or click to browse
               </p>
-              <p className="text-muted-foreground mt-1 text-xs">
+              <p className="text-label-secondary text-footnote mt-1">
                 Layer type will be auto-detected from filename. Quick Update changes IxWorld's map;
                 use Full Pipeline to import another realm's.
               </p>
@@ -349,8 +342,8 @@ function QuickUpdatePanel() {
 
       {stage === "processing" && (
         <div className="flex flex-col items-center gap-3 py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
-          <p className="text-muted-foreground text-sm">
+          <Loader2 className="text-blue h-8 w-8 animate-spin" />
+          <p className="text-label-secondary text-body">
             Processing SVG... parsing, converting, computing diff
           </p>
         </div>
@@ -360,8 +353,8 @@ function QuickUpdatePanel() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-foreground text-lg font-semibold">{result.fileName}</h3>
-              <p className="text-muted-foreground text-sm">
+              <h3 className="text-label text-title-3">{result.fileName}</h3>
+              <p className="text-label-secondary text-body">
                 Layer:{" "}
                 <Badge variant="outline" className="ml-1">
                   {result.layerType}
@@ -370,13 +363,8 @@ function QuickUpdatePanel() {
                 {result.featureCount} features parsed
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={reset}
-              className="border-border text-muted-foreground"
-            >
-              <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Start Over
+            <Button variant="outline" size="sm" onClick={reset}>
+              <RotateCcw className="mr-2 h-3.5 w-3.5" /> Start Over
             </Button>
           </div>
 
@@ -416,9 +404,9 @@ function QuickUpdatePanel() {
           )}
 
           {result.diff?.summary && result.diff.summary.linkagesLost > 0 && (
-            <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 px-4 py-3 text-amber-500">
+            <div className="rounded-control border-yellow/30 text-yellow flex items-center gap-2 border px-4 py-3">
               <AlertTriangle className="h-4 w-4 shrink-0" />
-              <span className="text-sm">
+              <span className="text-body">
                 {result.diff.summary.linkagesLost} feature(s) with country linkages will be removed.
                 {result.diff.removed
                   .filter((r) => r.countryName)
@@ -431,7 +419,7 @@ function QuickUpdatePanel() {
           <Button
             variant="ghost"
             size="sm"
-            className="text-muted-foreground"
+
             onClick={() => setDetailsExpanded(!detailsExpanded)}
           >
             {detailsExpanded ? (
@@ -443,84 +431,75 @@ function QuickUpdatePanel() {
           </Button>
 
           {detailsExpanded && result.diff && (
-            <FacetCard surface="solid" className="max-h-64 overflow-y-auto rounded-lg">
-              <table className="w-full text-sm">
-                <thead className="bg-muted text-muted-foreground sticky top-0 text-left text-xs">
-                  <tr>
-                    <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2">Feature ID</th>
-                    <th className="px-3 py-2">Name</th>
-                    <th className="px-3 py-2">Country Link</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-border/50 divide-y">
-                  {result.diff.added.map((f) => (
+            <Table containerClassName="max-h-64">
+              <TableHeader sticky>
+                <TableRow>
+                  <TableHead className="px-3">Status</TableHead>
+                  <TableHead className="px-3">Feature ID</TableHead>
+                  <TableHead className="px-3">Name</TableHead>
+                  <TableHead className="px-3">Country Link</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {result.diff.added.map((f) => (
+                  <DiffRow
+                    key={f.featureId}
+                    status="added"
+                    featureId={f.featureId}
+                    displayName={f.displayName}
+                  />
+                ))}
+                {result.diff.modified.map((f) => (
+                  <DiffRow
+                    key={f.featureId}
+                    status="modified"
+                    featureId={f.featureId}
+                    displayName={f.displayName}
+                  />
+                ))}
+                {result.diff.removed.map((f) => (
+                  <DiffRow
+                    key={f.featureId}
+                    status="removed"
+                    featureId={f.featureId}
+                    displayName={f.displayName}
+                    countryName={f.countryName}
+                  />
+                ))}
+                {result.diff.unchanged.slice(0, 20).map((f) => {
+                  const link = result.diff!.preservedLinkages.find(
+                    (l) => l.featureId === f.featureId
+                  );
+                  return (
                     <DiffRow
                       key={f.featureId}
-                      status="added"
+                      status="unchanged"
                       featureId={f.featureId}
                       displayName={f.displayName}
+                      countryName={link?.countryName}
                     />
-                  ))}
-                  {result.diff.modified.map((f) => (
-                    <DiffRow
-                      key={f.featureId}
-                      status="modified"
-                      featureId={f.featureId}
-                      displayName={f.displayName}
-                    />
-                  ))}
-                  {result.diff.removed.map((f) => (
-                    <DiffRow
-                      key={f.featureId}
-                      status="removed"
-                      featureId={f.featureId}
-                      displayName={f.displayName}
-                      countryName={f.countryName}
-                    />
-                  ))}
-                  {result.diff.unchanged.slice(0, 20).map((f) => {
-                    const link = result.diff!.preservedLinkages.find(
-                      (l) => l.featureId === f.featureId
-                    );
-                    return (
-                      <DiffRow
-                        key={f.featureId}
-                        status="unchanged"
-                        featureId={f.featureId}
-                        displayName={f.displayName}
-                        countryName={link?.countryName}
-                      />
-                    );
-                  })}
-                  {result.diff.unchanged.length > 20 && (
-                    <tr>
-                      <td
-                        colSpan={4}
-                        className="text-muted-foreground px-3 py-2 text-center text-xs"
-                      >
-                        ...and {result.diff.unchanged.length - 20} more unchanged features
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </FacetCard>
+                  );
+                })}
+                {result.diff.unchanged.length > 20 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      className="text-label-secondary text-footnote px-3 text-center"
+                    >
+                      ...and {result.diff.unchanged.length - 20} more unchanged features
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           )}
 
           <div className="flex gap-3 pt-2">
-            <Button
-              onClick={handleCommit}
-              className="bg-emerald-600 text-white hover:bg-emerald-500"
-            >
-              <Upload className="mr-1.5 h-4 w-4" />
+            <Button onClick={handleCommit}>
+              <Upload className="mr-2 h-4 w-4" />
               Apply Update
             </Button>
-            <Button
-              variant="outline"
-              onClick={reset}
-              className="border-border text-muted-foreground"
-            >
+            <Button variant="outline" onClick={reset}>
               Cancel
             </Button>
           </div>
@@ -529,22 +508,22 @@ function QuickUpdatePanel() {
 
       {stage === "committing" && (
         <div className="flex flex-col items-center gap-3 py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
-          <p className="text-muted-foreground text-sm">Applying update... writing to database</p>
+          <Loader2 className="text-green h-8 w-8 animate-spin" />
+          <p className="text-label-secondary text-body">Applying update... writing to database</p>
         </div>
       )}
 
       {stage === "done" && result && (
         <div className="flex flex-col items-center gap-4 py-12">
-          <CheckCircle2 className="h-12 w-12 text-emerald-500" />
+          <CheckCircle2 className="text-green h-12 w-12" />
           <div className="text-center">
-            <h3 className="text-foreground text-lg font-semibold">Update Applied</h3>
-            <p className="text-muted-foreground mt-1 text-sm">
+            <h3 className="text-label text-title-3">Update Applied</h3>
+            <p className="text-label-secondary text-body mt-1">
               {result.featureCount} features committed to{" "}
               <Badge variant="outline">{result.layerType}</Badge> layer
             </p>
           </div>
-          <Button variant="outline" onClick={reset} className="border-border text-foreground">
+          <Button variant="outline" onClick={reset}>
             Upload Another
           </Button>
         </div>
@@ -699,9 +678,9 @@ function FullPipelinePanel() {
   const currentIdx = steps.findIndex((s) => s.id === step);
 
   return (
-    <FacetCard className="rounded-xl p-6">
-      <h3 className="text-foreground mb-4 text-lg font-semibold">Full Pipeline Wizard</h3>
-      <p className="text-muted-foreground mb-4 text-xs">
+    <FacetCard className="rounded-row p-6">
+      <h3 className="text-label text-title-3 mb-4">Full Pipeline Wizard</h3>
+      <p className="text-label-secondary text-footnote mb-4">
         Multi-step wizard for importing SVG/PNG maps with coordinate calibration. For single-layer
         updates, use Quick Update mode instead.
       </p>
@@ -711,12 +690,12 @@ function FullPipelinePanel() {
         {steps.map((s, i) => (
           <div key={s.id} className="flex items-center gap-2">
             <div
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-medium ${
+              className={`text-caption flex h-8 w-8 items-center justify-center rounded-full ${
                 i < currentIdx
-                  ? "bg-emerald-500/20 text-emerald-500"
+                  ? "bg-green/20 text-green"
                   : i === currentIdx
-                    ? "bg-blue-500 text-white"
-                    : "bg-muted text-muted-foreground"
+                    ? "bg-blue text-on-blue"
+                    : "bg-fill-3 text-label-secondary"
               }`}
             >
               {i < currentIdx ? (
@@ -726,19 +705,19 @@ function FullPipelinePanel() {
               )}
             </div>
             <span
-              className={`text-xs ${
-                i === currentIdx ? "text-foreground font-medium" : "text-muted-foreground"
+              className={`text-footnote ${
+                i === currentIdx ? "text-label font-medium" : "text-label-secondary"
               }`}
             >
               {s.label}
             </span>
-            {i < steps.length - 1 && <div className="bg-muted mx-1 h-px w-6" />}
+            {i < steps.length - 1 && <div className="bg-fill-3 mx-1 h-px w-6" />}
           </div>
         ))}
       </div>
 
       {error && (
-        <div className="border-destructive/30 text-destructive mb-4 flex items-start gap-2 rounded-lg border p-3 text-sm">
+        <div className="border-destructive/30 text-destructive rounded-control text-body mb-4 flex items-start gap-2 border p-3">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>
@@ -746,17 +725,17 @@ function FullPipelinePanel() {
 
       {step === "upload" && (
         <div className="flex flex-col items-center gap-4 py-8">
-          <div className="border-border rounded-xl border-2 border-dashed p-8 text-center">
-            <Upload className="text-muted-foreground mx-auto mb-3 h-10 w-10" />
-            <p className="text-foreground mb-2 text-sm font-medium">Drop your map file here</p>
-            <p className="text-muted-foreground mb-4 text-xs">
+          <div className="border-separator rounded-row border-2 border-dashed p-8 text-center">
+            <Upload className="text-label-secondary mx-auto mb-3 h-10 w-10" />
+            <p className="text-label text-body mb-2 font-medium">Drop your map file here</p>
+            <p className="text-label-secondary text-footnote mb-4">
               SVG files with Inkscape layers, or flat-colour PNG/JPEG political maps (one colour per
               nation, up to {MAX_PNG_MB} MB and {MAX_PNG_MEGAPIXELS} megapixels)
             </p>
             <div className="mb-4 flex items-center justify-center gap-3">
-              <label className="text-foreground text-sm font-medium">Target realm:</label>
+              <label className="text-label text-body font-medium">Target realm:</label>
               <Select value={targetRealmId} onValueChange={setTargetRealmId}>
-                <SelectTrigger className="border-border bg-muted/50 w-48">
+                <SelectTrigger className="w-48">
                   <SelectValue placeholder="IxWorld (default)" />
                 </SelectTrigger>
                 <SelectContent>
@@ -781,7 +760,7 @@ function FullPipelinePanel() {
             </Button>
           </div>
           {file && (
-            <p className="text-muted-foreground text-sm">
+            <p className="text-label-secondary text-body">
               Selected: {file.name} ({(file.size / 1024).toFixed(0)} KB)
             </p>
           )}
@@ -822,9 +801,9 @@ function FullPipelinePanel() {
 
       {step === "complete" && importResult && (
         <div className="space-y-4 py-4 text-center">
-          <CheckCircle className="mx-auto h-12 w-12 text-emerald-500" />
-          <p className="text-foreground text-lg font-medium">Import Complete</p>
-          <p className="text-muted-foreground text-sm">
+          <CheckCircle className="text-green mx-auto h-12 w-12" />
+          <p className="text-label text-title-3">Import Complete</p>
+          <p className="text-label-secondary text-body">
             {importResult.imported} features imported successfully. Shared vertex index has been
             rebuilt.
           </p>
@@ -850,10 +829,10 @@ function SvgDetectionStep({
 }) {
   return (
     <div className="space-y-4">
-      <p className="text-muted-foreground text-sm">
-        File loaded: <span className="text-foreground font-medium">{fileName}</span>
+      <p className="text-label-secondary text-body">
+        File loaded: <span className="text-label font-medium">{fileName}</span>
       </p>
-      <p className="text-muted-foreground text-sm">
+      <p className="text-label-secondary text-body">
         The pipeline will parse this SVG file, detect layers, convert coordinates, and enrich
         altitude features with elevation metadata.
       </p>
@@ -876,23 +855,23 @@ function PreviewStep({
 }) {
   return (
     <div className="space-y-4">
-      <FacetCard surface="solid" className="rounded-lg p-4">
-        <h4 className="text-foreground mb-2 text-sm font-medium">Pipeline Results</h4>
+      <FacetCard className="rounded-control p-4">
+        <h4 className="text-label text-body mb-2 font-medium">Pipeline Results</h4>
         <div className="space-y-1">
           {Object.entries(result.metadata.featureCounts).map(([layer, count]) => (
-            <div key={layer} className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{layer}</span>
-              <span className="text-foreground font-medium">{count} features</span>
+            <div key={layer} className="text-body flex justify-between">
+              <span className="text-label-secondary">{layer}</span>
+              <span className="text-label font-medium">{count} features</span>
             </div>
           ))}
         </div>
       </FacetCard>
 
       {result.metadata.warnings.length > 0 && (
-        <div className="rounded-lg border border-amber-500/30 p-3">
-          <p className="mb-1 text-xs font-medium text-amber-500">Warnings</p>
+        <div className="rounded-control border-yellow/30 border p-3">
+          <p className="text-caption text-yellow mb-1">Warnings</p>
           {result.metadata.warnings.map((w, i) => (
-            <p key={i} className="text-xs text-amber-500/80">
+            <p key={i} className="text-footnote text-yellow">
               {w}
             </p>
           ))}
@@ -900,10 +879,10 @@ function PreviewStep({
       )}
 
       {!result.validation.valid && (
-        <div className="border-destructive/30 rounded-lg border p-3">
-          <p className="text-destructive mb-1 text-xs font-medium">Validation Errors</p>
+        <div className="border-destructive/30 rounded-control border p-3">
+          <p className="text-destructive text-caption mb-1">Validation Errors</p>
           {result.validation.errors.map((e, i) => (
-            <p key={i} className="text-destructive/80 text-xs">
+            <p key={i} className="text-destructive/80 text-footnote">
               {e}
             </p>
           ))}
@@ -927,10 +906,10 @@ function PipelineLog({ log }: { log: string[] }) {
   if (log.length === 0) return null;
   return (
     <details className="mt-4">
-      <summary className="text-muted-foreground hover:text-muted-foreground cursor-pointer text-xs">
+      <summary className="text-label-secondary hover:text-label-secondary text-footnote cursor-pointer">
         Pipeline Log ({log.length} entries)
       </summary>
-      <pre className="border-border bg-card text-muted-foreground mt-2 max-h-40 overflow-auto rounded border p-2 text-xs">
+      <pre className="border-separator bg-surface text-label-secondary rounded-control-sm text-footnote mt-2 max-h-40 overflow-auto border p-2">
         {log.join("\n")}
       </pre>
     </details>
@@ -953,17 +932,13 @@ function ImportStep({
   const total = Object.values(featureCounts).reduce((a, b) => a + b, 0);
   return (
     <div className="space-y-4">
-      <p className="text-muted-foreground text-sm">
+      <p className="text-label-secondary text-body">
         Ready to import {total} features into{" "}
-        <span className="text-foreground font-medium">{realmName}</span>. This will merge with that
+        <span className="text-label font-medium">{realmName}</span>. This will merge with that
         realm&apos;s existing map data.
       </p>
       <div className="flex gap-2">
-        <Button
-          onClick={onImport}
-          disabled={busy}
-          className="bg-emerald-600 text-white hover:bg-emerald-500"
-        >
+        <Button onClick={onImport} disabled={busy}>
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
           {busy ? "Importing..." : "Import to Database"}
         </Button>
@@ -1042,9 +1017,9 @@ function PngColourStep({
   if (colours && colours.length > 0) {
     return (
       <div className="space-y-2">
-        <p className="text-muted-foreground text-sm">
+        <p className="text-label-secondary text-body">
           {colours.length} colours detected — nations of{" "}
-          <span className="text-foreground font-medium">{realmName}</span>
+          <span className="text-label font-medium">{realmName}</span>
         </p>
         <ColourNationMapper
           colours={colours}
@@ -1059,9 +1034,9 @@ function PngColourStep({
 
   return (
     <div className="space-y-4">
-      <p className="text-muted-foreground text-sm">
+      <p className="text-label-secondary text-body">
         The pipeline first finds the map&apos;s colours; you then name each one after a nation of{" "}
-        <span className="text-foreground font-medium">{realmName}</span> before it is vectorised.
+        <span className="text-label font-medium">{realmName}</span> before it is vectorised.
       </p>
       <Button onClick={analyse} disabled={runPipeline.isPending}>
         {runPipeline.isPending ? (
@@ -1089,20 +1064,20 @@ function DiffBadge({
   color: string;
 }) {
   const colorMap: Record<string, string> = {
-    emerald: "border-emerald-500/30 text-emerald-500",
-    blue: "border-blue-500/30 text-blue-500",
+    emerald: "border-green/30 text-green",
+    blue: "border-blue/30 text-blue",
     red: "border-destructive/30 text-destructive",
-    slate: "border-border text-muted-foreground",
-    amber: "border-amber-500/30 text-amber-500",
+    slate: "border-separator text-label-secondary",
+    amber: "border-yellow/30 text-yellow",
   };
 
   return (
     <div
-      className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${colorMap[color] ?? colorMap.slate}`}
+      className={`rounded-control flex items-center gap-2 border px-3 py-2 ${colorMap[color] ?? colorMap.slate}`}
     >
       <Icon className="h-4 w-4" />
-      <span className="text-sm font-medium">{count}</span>
-      <span className="text-xs opacity-70">{label}</span>
+      <span className="text-body font-medium">{count}</span>
+      <span className="text-footnote opacity-70">{label}</span>
     </div>
   );
 }
@@ -1119,32 +1094,34 @@ function DiffRow({
   countryName?: string;
 }) {
   const statusConfig = {
-    added: { className: "border-emerald-500/30 text-emerald-500", label: "New" },
-    modified: { className: "border-blue-500/30 text-blue-500", label: "Modified" },
+    added: { className: "border-green/30 text-green", label: "New" },
+    modified: { className: "border-blue/30 text-blue", label: "Modified" },
     removed: { className: "border-destructive/30 text-destructive", label: "Removed" },
-    unchanged: { className: "text-muted-foreground", label: "—" },
+    unchanged: { className: "text-label-secondary", label: "—" },
   };
   const cfg = statusConfig[status];
 
   return (
-    <tr className="text-foreground">
-      <td className="px-3 py-1.5">
+    <TableRow className="text-label">
+      <TableCell className="px-3 py-2">
         <Badge variant="outline" className={cfg.className}>
           {cfg.label}
         </Badge>
-      </td>
-      <td className="text-muted-foreground px-3 py-1.5 font-mono text-xs">{featureId}</td>
-      <td className="px-3 py-1.5 text-sm">{displayName}</td>
-      <td className="px-3 py-1.5">
+      </TableCell>
+      <TableCell className="text-label-secondary text-footnote px-3 py-2 font-mono">
+        {featureId}
+      </TableCell>
+      <TableCell className="text-body px-3 py-2">{displayName}</TableCell>
+      <TableCell className="px-3 py-2">
         {countryName ? (
-          <span className="inline-flex items-center gap-1 text-xs text-amber-500">
+          <span className="text-footnote text-yellow inline-flex items-center gap-1">
             <Link2 className="h-3 w-3" />
             {countryName}
           </span>
         ) : (
-          <span className="text-muted-foreground text-xs">—</span>
+          <span className="text-label-secondary text-footnote">—</span>
         )}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }

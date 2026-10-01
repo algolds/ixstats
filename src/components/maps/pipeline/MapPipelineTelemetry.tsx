@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { Activity, Component as Layers } from "iconoir-react";
 import type { NormalizedCountryPayload } from "~/lib/maps/pipeline/azgaar-normalizer";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import type {
   GeoProfilePayload,
   ResourcePlacementPayload,
@@ -56,78 +58,50 @@ export function MapPipelineTelemetry({
     : [];
 
   return (
-    <div className="bg-card/90 border-border text-card-foreground flex h-full flex-col border-l text-sm backdrop-blur-md">
+    <div className="bg-surface border-separator text-label text-body flex h-full flex-col border-l">
       {/* Header */}
-      <div className="border-border border-b p-4">
-        <h2 className="text-primary flex items-center gap-2 text-base font-semibold">
+      <div className="border-separator border-b p-4">
+        <h2 className="text-tint text-title-3 flex items-center gap-2">
           <Activity className="h-4 w-4" /> Pipeline Telemetry & Inspector
         </h2>
-        <p className="text-muted-foreground text-xs">
+        <p className="text-label-secondary text-footnote">
           PostGIS Spatial Analysis & GeoProfile Statistics
         </p>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="border-border bg-muted/40 grid grid-cols-4 border-b text-xs font-medium">
-        <button
-          onClick={() => setActiveTab("stats")}
-          className={`border-b-2 px-2 py-2.5 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-            activeTab === "stats"
-              ? "border-primary text-primary bg-primary/5 font-semibold"
-              : "text-muted-foreground hover:text-foreground border-transparent"
-          }`}
-        >
-          Stats
-        </button>
-        <button
-          onClick={() => setActiveTab("geoprofile")}
-          className={`border-b-2 px-2 py-2.5 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-            activeTab === "geoprofile"
-              ? "border-primary text-primary bg-primary/5 font-semibold"
-              : "text-muted-foreground hover:text-foreground border-transparent"
-          }`}
-        >
-          GeoProfile
-        </button>
-        <button
-          onClick={() => setActiveTab("resources")}
-          className={`border-b-2 px-2 py-2.5 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-            activeTab === "resources"
-              ? "border-primary text-primary bg-primary/5 font-semibold"
-              : "text-muted-foreground hover:text-foreground border-transparent"
-          }`}
-        >
-          Resources
-        </button>
-        <button
-          onClick={() => setActiveTab("logs")}
-          className={`border-b-2 px-2 py-2.5 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-            activeTab === "logs"
-              ? "border-primary text-primary bg-primary/5 font-semibold"
-              : "text-muted-foreground hover:text-foreground border-transparent"
-          }`}
-        >
-          Logs
-        </button>
+      <div className="border-separator border-b p-2">
+        <SegmentedControl
+          aria-label="Telemetry section"
+          asTabs
+          fullWidth
+          size="sm"
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as typeof activeTab)}
+          options={[
+            { value: "stats", label: "Stats" },
+            { value: "geoprofile", label: "GeoProfile" },
+            { value: "resources", label: "Resources" },
+            { value: "logs", label: "Logs" },
+          ]}
+        />
       </div>
 
       {/* Country Selection Dropdown */}
       {(activeTab === "geoprofile" || activeTab === "resources") && (
-        <div className="border-border bg-background/30 border-b p-3">
-          <label className="text-muted-foreground mb-1 block text-xs">
+        <div className="border-separator bg-surface border-b p-3">
+          <label className="text-label-secondary text-footnote mb-1 block">
             Target Nation Inspector
           </label>
-          <select
+          <OptionSelect
+            aria-label="Country"
             value={selectedCountryId}
-            onChange={(e) => setSelectedCountryId(e.target.value)}
-            className="bg-background border-input text-foreground w-full rounded-md border px-2.5 py-1.5 text-xs"
-          >
-            {countries.map((c) => (
-              <option key={c.featureId} value={c.featureId}>
-                {c.name} ({c.featureId})
-              </option>
-            ))}
-          </select>
+            onValueChange={setSelectedCountryId}
+            options={countries.map((c) => ({
+              value: c.featureId,
+              label: `${c.name} (${c.featureId})`,
+            }))}
+          />
         </div>
       )}
 
@@ -136,45 +110,41 @@ export function MapPipelineTelemetry({
         {activeTab === "stats" && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div className="border-border bg-background/40 rounded-md border p-3">
-                <div className="text-muted-foreground text-xs">Execution Speed</div>
-                <div className="text-primary font-mono text-lg font-bold">
+              <div className="border-separator bg-surface rounded-control-sm border p-3">
+                <div className="text-label-secondary text-footnote">Execution Speed</div>
+                <div className="text-tint text-title-3 tabular-nums">
                   {stats.generationTimeMs} ms
                 </div>
               </div>
-              <div className="border-border bg-background/40 rounded-md border p-3">
-                <div className="text-muted-foreground text-xs">Mesh Resolution</div>
-                <div className="text-foreground font-mono text-lg font-bold">
-                  {stats.cellCount} cells
-                </div>
+              <div className="border-separator bg-surface rounded-control-sm border p-3">
+                <div className="text-label-secondary text-footnote">Mesh Resolution</div>
+                <div className="text-label text-title-3 tabular-nums">{stats.cellCount} cells</div>
               </div>
-              <div className="border-border bg-background/40 rounded-md border p-3">
-                <div className="text-muted-foreground text-xs">Nations Generated</div>
-                <div className="font-mono text-lg font-bold text-emerald-500">
-                  {stats.countryCount}
-                </div>
+              <div className="border-separator bg-surface rounded-control-sm border p-3">
+                <div className="text-label-secondary text-footnote">Nations Generated</div>
+                <div className="text-title-3 text-green tabular-nums">{stats.countryCount}</div>
               </div>
-              <div className="border-border bg-background/40 rounded-md border p-3">
-                <div className="text-muted-foreground text-xs">Cities Placed</div>
-                <div className="font-mono text-lg font-bold text-cyan-500">{stats.cityCount}</div>
+              <div className="border-separator bg-surface rounded-control-sm border p-3">
+                <div className="text-label-secondary text-footnote">Cities Placed</div>
+                <div className="text-title-3 text-cyan tabular-nums">{stats.cityCount}</div>
               </div>
-              <div className="border-border bg-background/40 rounded-md border p-3">
-                <div className="text-muted-foreground text-xs">Rivers Traced</div>
-                <div className="font-mono text-lg font-bold text-blue-500">{stats.riverCount}</div>
+              <div className="border-separator bg-surface rounded-control-sm border p-3">
+                <div className="text-label-secondary text-footnote">Rivers Traced</div>
+                <div className="text-title-3 text-blue tabular-nums">{stats.riverCount}</div>
               </div>
-              <div className="border-border bg-background/40 rounded-md border p-3">
-                <div className="text-muted-foreground text-xs">Shared Vertices</div>
-                <div className="font-mono text-lg font-bold text-indigo-500">
+              <div className="border-separator bg-surface rounded-control-sm border p-3">
+                <div className="text-label-secondary text-footnote">Shared Vertices</div>
+                <div className="text-title-3 text-indigo tabular-nums">
                   {stats.sharedVerticesCount}
                 </div>
               </div>
             </div>
 
-            <div className="border-border bg-background/40 space-y-2 rounded-md border p-3">
-              <div className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-                <Layers className="text-primary h-3.5 w-3.5" /> Active 5-Layer Dataset Output
+            <div className="border-separator bg-surface rounded-control-sm space-y-2 border p-3">
+              <div className="text-label text-caption flex items-center gap-2 font-semibold">
+                <Layers className="text-tint h-3.5 w-3.5" /> Active 5-Layer Dataset Output
               </div>
-              <div className="text-muted-foreground space-y-1 font-mono text-xs">
+              <div className="text-label-secondary text-footnote space-y-1 tabular-nums">
                 <div>• political (Nations)</div>
                 <div>• altitudes (9 Elevation Zones)</div>
                 <div>• climate (Trewartha Biomes)</div>
@@ -188,53 +158,55 @@ export function MapPipelineTelemetry({
         {activeTab === "geoprofile" && (
           <div className="space-y-4">
             {!activeProfile ? (
-              <p className="text-muted-foreground text-xs italic">
+              <p className="text-label-secondary text-footnote italic">
                 No GeoProfile data computed for this nation.
               </p>
             ) : (
               <>
-                <div className="border-border bg-background/40 space-y-2 rounded-md border p-3">
-                  <div className="text-primary text-xs font-semibold">
+                <div className="border-separator bg-surface rounded-control-sm space-y-2 border p-3">
+                  <div className="text-tint text-caption font-semibold">
                     {activeCountry?.name} GeoProfile
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="text-footnote grid grid-cols-2 gap-2">
                     <div>
-                      <span className="text-muted-foreground">Arable Land:</span>{" "}
-                      <span className="font-mono font-medium text-emerald-500">
+                      <span className="text-label-secondary">Arable Land:</span>{" "}
+                      <span className="text-green font-medium tabular-nums">
                         {activeProfile.arableLandPercent}%
                       </span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Coastline:</span>{" "}
-                      <span className="font-mono font-medium text-cyan-500">
+                      <span className="text-label-secondary">Coastline:</span>{" "}
+                      <span className="text-cyan font-medium tabular-nums">
                         {activeProfile.coastlineKm} km
                       </span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Landlocked:</span>{" "}
-                      <span className="font-mono">{activeProfile.isLandlocked ? "Yes" : "No"}</span>
+                      <span className="text-label-secondary">Landlocked:</span>{" "}
+                      <span className="tabular-nums">
+                        {activeProfile.isLandlocked ? "Yes" : "No"}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Island Nation:</span>{" "}
-                      <span className="font-mono">{activeProfile.isIsland ? "Yes" : "No"}</span>
+                      <span className="text-label-secondary">Island Nation:</span>{" "}
+                      <span className="tabular-nums">{activeProfile.isIsland ? "Yes" : "No"}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="border-border bg-background/40 space-y-2 rounded-md border p-3">
-                  <div className="text-foreground text-xs font-semibold">Sim Economy Modifiers</div>
-                  <div className="grid grid-cols-3 gap-2 text-center font-mono text-xs">
-                    <div className="bg-background border-border rounded border p-1.5">
-                      <div className="text-muted-foreground text-xs">GDP</div>
-                      <div className="font-bold text-emerald-500">{activeProfile.gdpModifier}x</div>
+                <div className="border-separator bg-surface rounded-control-sm space-y-2 border p-3">
+                  <div className="text-label text-caption font-semibold">Sim Economy Modifiers</div>
+                  <div className="text-footnote grid grid-cols-3 gap-2 text-center tabular-nums">
+                    <div className="bg-surface border-separator rounded-control-sm border p-2">
+                      <div className="text-label-secondary text-footnote">GDP</div>
+                      <div className="text-green font-semibold">{activeProfile.gdpModifier}x</div>
                     </div>
-                    <div className="bg-background border-border rounded border p-1.5">
-                      <div className="text-muted-foreground text-xs">Trade</div>
-                      <div className="font-bold text-cyan-500">{activeProfile.tradeModifier}x</div>
+                    <div className="bg-surface border-separator rounded-control-sm border p-2">
+                      <div className="text-label-secondary text-footnote">Trade</div>
+                      <div className="text-cyan font-semibold">{activeProfile.tradeModifier}x</div>
                     </div>
-                    <div className="bg-background border-border rounded border p-1.5">
-                      <div className="text-muted-foreground text-xs">Infra Cost</div>
-                      <div className="text-primary font-bold">
+                    <div className="bg-surface border-separator rounded-control-sm border p-2">
+                      <div className="text-label-secondary text-footnote">Infra Cost</div>
+                      <div className="text-tint font-semibold">
                         {activeProfile.infraCostModifier}x
                       </div>
                     </div>
@@ -242,15 +214,15 @@ export function MapPipelineTelemetry({
                 </div>
 
                 {/* Climate Breakdown */}
-                <div className="border-border bg-background/40 space-y-2 rounded-md border p-3">
-                  <div className="text-foreground text-xs font-semibold">Climate Distribution</div>
-                  <div className="space-y-1.5 text-xs">
+                <div className="border-separator bg-surface rounded-control-sm space-y-2 border p-3">
+                  <div className="text-label text-caption font-semibold">Climate Distribution</div>
+                  <div className="text-footnote space-y-2">
                     {activeProfile.climateDistribution.map((c, i) => (
-                      <div key={i} className="text-foreground flex items-center justify-between">
+                      <div key={i} className="text-label flex items-center justify-between">
                         <span>
                           {c.name} ({c.type})
                         </span>
-                        <span className="text-primary font-mono">{c.percentArea}%</span>
+                        <span className="text-tint tabular-nums">{c.percentArea}%</span>
                       </div>
                     ))}
                   </div>
@@ -262,26 +234,26 @@ export function MapPipelineTelemetry({
 
         {activeTab === "resources" && (
           <div className="space-y-3">
-            <div className="text-foreground text-xs font-semibold">
+            <div className="text-label text-caption font-semibold">
               Procedurally Placed Geographic Resources ({activeResources.length})
             </div>
             {activeResources.length === 0 ? (
-              <p className="text-muted-foreground text-xs italic">
+              <p className="text-label-secondary text-footnote italic">
                 No resources placed for this nation.
               </p>
             ) : (
               activeResources.map((res, i) => (
                 <div
                   key={i}
-                  className="border-border bg-background/40 space-y-1 rounded-md border p-2.5"
+                  className="border-separator bg-surface rounded-control-sm space-y-1 border p-2"
                 >
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-foreground font-medium">{res.name}</span>
-                    <span className="bg-primary/10 text-primary border-primary/20 rounded border px-1.5 py-0.5 font-mono text-xs uppercase">
+                  <div className="text-footnote flex items-center justify-between">
+                    <span className="text-label font-medium">{res.name}</span>
+                    <span className="bg-tint-fill text-tint border-tint/20 text-eyebrow rounded-control-sm border px-2 py-0.5 tabular-nums">
                       {res.resourceType}
                     </span>
                   </div>
-                  <div className="text-muted-foreground flex justify-between font-mono text-xs">
+                  <div className="text-label-secondary text-footnote flex justify-between tabular-nums">
                     <span>Qty: {(res.quantity * 100).toFixed(0)}%</span>
                     <span>Quality: {(res.quality * 100).toFixed(0)}%</span>
                     <span>
@@ -295,9 +267,9 @@ export function MapPipelineTelemetry({
         )}
 
         {activeTab === "logs" && (
-          <div className="border-border bg-background/80 text-foreground max-h-96 space-y-1 overflow-x-auto rounded-md border p-3 font-mono text-xs">
+          <div className="border-separator bg-surface text-label rounded-control-sm text-footnote max-h-96 space-y-1 overflow-x-auto border p-3 tabular-nums">
             {log.length === 0 ? (
-              <div className="text-muted-foreground italic">
+              <div className="text-label-secondary italic">
                 No logs recorded yet. Run map pipeline.
               </div>
             ) : (

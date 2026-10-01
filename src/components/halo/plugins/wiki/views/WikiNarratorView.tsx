@@ -45,19 +45,19 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
       <div className="animate-in fade-in zoom-in-95 flex w-full flex-col gap-3 p-4 duration-150 select-none">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <ShieldAlert className="h-4 w-4 text-amber-400" />
-            <span className="text-foreground text-xs font-bold">Early Access Feature</span>
+            <ShieldAlert className="text-yellow h-4 w-4" />
+            <span className="text-label text-caption font-semibold">Early Access Feature</span>
           </div>
           <Button
             size="sm"
             variant="ghost"
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground h-7 w-7 rounded-lg p-0"
+            className="text-label-secondary hover:text-label size-7 p-0"
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
-        <p className="text-muted-foreground text-xs">
+        <p className="text-label-secondary text-footnote">
           WikiOS Audio Narrator is currently restricted to system owners, administrators, and beta
           testers.
         </p>
@@ -66,7 +66,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
             size="sm"
             variant="outline"
             onClick={() => onSwitchMode("plugin:wiki")}
-            className="border-border/50 w-full gap-1.5 rounded-lg text-xs font-semibold"
+            className="border-separator w-full"
           >
             <BookOpen className="h-3.5 w-3.5" />
             Go to Wiki Workspace
@@ -87,7 +87,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
       <div className="flex items-center justify-between gap-2 px-1 pb-1">
         <div className="flex min-w-0 items-center gap-2">
           <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border shadow-2xs"
+            className="rounded-control flex h-7 w-7 shrink-0 items-center justify-center border"
             style={{
               backgroundColor: getRgbaColor(accentColor, 0.12),
               borderColor: getRgbaColor(accentColor, 0.25),
@@ -97,26 +97,21 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
             <Headphones className="h-3.5 w-3.5" />
           </div>
           <div className="flex min-w-0 flex-col">
-            <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-              Now Playing · Narrator
-            </span>
-            <span
-              className="truncate text-sm font-bold tracking-tight"
-              style={{ color: accentColor }}
-            >
+            <span className="text-label-secondary text-eyebrow">Now Playing · Narrator</span>
+            <span className="text-headline truncate" style={{ color: accentColor }}>
               {articleTitle || "Wiki Article"}
             </span>
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-2">
           {/* Progress Reading Pill */}
           {narratorState && narratorState.totalBlocks > 0 && (
-            <div className="text-muted-foreground bg-muted/40 border-border/30 flex items-center gap-1 rounded-md border px-1.5 py-0.5 font-mono text-xs tabular-nums">
+            <div className="text-label-secondary bg-fill-4 border-separator rounded-control-sm text-footnote flex items-center gap-1 border px-2 py-0.5 font-mono tabular-nums">
               <span>
                 {narratorState.activeBlockIndex + 1}/{narratorState.totalBlocks}
               </span>
-              <span className="text-foreground font-bold">({Math.round(displayPercent)}%)</span>
+              <span className="text-label font-semibold">({Math.round(displayPercent)}%)</span>
             </div>
           )}
 
@@ -126,7 +121,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
               size="sm"
               variant="outline"
               onClick={() => onSwitchMode("plugin:wiki")}
-              className="border-border/50 hover:bg-muted/60 h-7 cursor-pointer gap-1.5 rounded-lg px-2 text-xs font-semibold active:scale-95"
+              className="border-separator hover:bg-fill-4"
             >
               <BookOpen className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Workspace</span>
@@ -138,7 +133,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
             size="sm"
             variant="ghost"
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground h-7 w-7 cursor-pointer rounded-lg p-0 active:scale-95"
+            className="text-label-secondary hover:text-label size-7 p-0"
           >
             <X className="h-4 w-4" />
           </Button>

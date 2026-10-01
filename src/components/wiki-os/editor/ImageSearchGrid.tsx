@@ -1,6 +1,6 @@
 "use client";
 // src/components/wiki-os/editor/ImageSearchGrid.tsx
-// Visual image search with glass-physics cards — IxWiki + Wikimedia Commons.
+// Visual image search with card tiles — IxWiki + Wikimedia Commons.
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import {
@@ -18,6 +18,9 @@ import {
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { getImageUrl } from "~/lib/wiki-os/transformers/image-url";
+import { Button } from "~/components/ui/button";
+import { SearchField } from "~/components/ui/search-field";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface ImageResult {
   title: string;
@@ -100,49 +103,31 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
     <div className={cn("wikios-imgs", compact && "wikios-imgs-compact")}>
       {/* Header bar — tabs + search in one row */}
       <div className="wikios-imgs-header">
-        <div className="wikios-imgs-tabs">
-          <button
-            onClick={() => {
-              setTab("ixwiki");
-              setExpandedImage(null);
-            }}
-            className={cn("wikios-imgs-tab", tab === "ixwiki" && "wikios-imgs-tab-active")}
-          >
-            <Database className="h-3.5 w-3.5" /> IxWiki
-          </button>
-          <button
-            onClick={() => {
-              setTab("commons");
-              setExpandedImage(null);
-            }}
-            className={cn("wikios-imgs-tab", tab === "commons" && "wikios-imgs-tab-active")}
-          >
-            <Globe className="h-3.5 w-3.5" /> Commons
-          </button>
-        </div>
-        <div className="wikios-imgs-search">
-          <Search className="h-3.5 w-3.5" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => handleSearch(e.target.value)}
-            placeholder={
-              tab === "ixwiki" ? "Search IxWiki files..." : "Search Wikimedia Commons..."
-            }
-            className="wikios-imgs-search-input"
-          />
-          {query && (
-            <button
-              onClick={() => {
-                setQuery("");
-                setDebouncedQuery("");
-              }}
-              className="wikios-imgs-search-clear"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          )}
-        </div>
+        <SegmentedControl
+          size="sm"
+          aria-label="Image source"
+          value={tab}
+          onValueChange={(next) => {
+            setTab(next);
+            setExpandedImage(null);
+          }}
+          options={[
+            { value: "ixwiki", label: "IxWiki", icon: <Database /> },
+            { value: "commons", label: "Commons", icon: <Globe /> },
+          ]}
+        />
+        <SearchField
+          size="sm"
+          value={query}
+          onChange={(e) => handleSearch(e.target.value)}
+          onClear={() => {
+            setQuery("");
+            setDebouncedQuery("");
+          }}
+          placeholder={tab === "ixwiki" ? "Search IxWiki files..." : "Search Wikimedia Commons..."}
+          aria-label="Search images"
+          containerClassName="min-w-0 flex-1"
+        />
       </div>
 
       {/* Status line */}
@@ -221,30 +206,35 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
                     {img.title.replace(/^File:/, "").replace(/_/g, " ")}
                   </span>
                   <div className="wikios-imgs-card-actions">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Copy wikitext"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleCopy(img);
                       }}
-                      className="wikios-imgs-card-btn"
                       title="Copy wikitext"
+                      className="size-6"
                     >
                       {copiedId === img.url ? (
-                        <Check className="h-3 w-3 text-green-400" />
+                        <Check className="text-green h-3 w-3" />
                       ) : (
                         <Copy className="h-3 w-3" />
                       )}
-                    </button>
-                    <a
-                      href={img.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="wikios-imgs-card-btn"
-                      title="Open full size"
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
+                    </Button>
+                    <Button asChild variant="ghost" size="icon-sm" className="size-6">
+                      <a
+                        href={img.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        title="Open full size"
+                        aria-label="Open full size"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -255,9 +245,15 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
         {/* Detail panel — shows when an image is expanded (standalone page only) */}
         {!compact && expandedImage && (
           <div className="wikios-imgs-detail">
-            <button onClick={() => setExpandedImage(null)} className="wikios-imgs-detail-close">
+            <Button
+              variant="gray"
+              size="icon-sm"
+              aria-label="Close details"
+              onClick={() => setExpandedImage(null)}
+              className="absolute top-2 right-2 z-10 rounded-full"
+            >
               <X className="h-3.5 w-3.5" />
-            </button>
+            </Button>
             <div className="wikios-imgs-detail-preview">
               <img src={expandedImage.url} alt={expandedImage.title} referrerPolicy="no-referrer" />
             </div>
@@ -272,10 +268,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
                 {expandedImage.mime && <span>{expandedImage.mime}</span>}
               </div>
               <div className="wikios-imgs-detail-actions">
-                <button
-                  onClick={() => handleCopy(expandedImage)}
-                  className="wikios-imgs-detail-btn"
-                >
+                <Button size="sm" onClick={() => handleCopy(expandedImage)}>
                   {copiedId === expandedImage.url ? (
                     <>
                       <Check className="h-3 w-3" /> Copied!
@@ -285,15 +278,12 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
                       <Copy className="h-3 w-3" /> Copy wikitext
                     </>
                   )}
-                </button>
-                <a
-                  href={expandedImage.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="wikios-imgs-detail-btn wikios-imgs-detail-btn-secondary"
-                >
-                  <ExternalLink className="h-3 w-3" /> View full size
-                </a>
+                </Button>
+                <Button asChild variant="gray" size="sm">
+                  <a href={expandedImage.url} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-3 w-3" /> View full size
+                  </a>
+                </Button>
               </div>
             </div>
           </div>

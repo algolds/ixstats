@@ -12,6 +12,7 @@ import {
   Spark,
 } from "iconoir-react";
 import { Input } from "~/components/ui/input";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Badge } from "~/components/ui/badge";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { cn } from "~/lib/utils";
@@ -80,25 +81,18 @@ export function ThinktankRosterTab({
     switch (role.toLowerCase()) {
       case "owner":
         return (
-          <Badge className="border-amber-500/30 bg-amber-500/10 text-xs font-semibold text-amber-600 dark:text-amber-400">
-            <Crown className="mr-1 h-3 w-3" /> Owner
+          <Badge variant="caution">
+            <Crown /> Owner
           </Badge>
         );
       case "admin":
         return (
-          <Badge className="border-emerald-500/30 bg-emerald-500/10 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-            <Shield className="mr-1 h-3 w-3" /> Admin
+          <Badge variant="tinted">
+            <Shield /> Admin
           </Badge>
         );
       default:
-        return (
-          <Badge
-            variant="outline"
-            className="text-muted-foreground border-border/40 text-xs font-medium"
-          >
-            Member
-          </Badge>
-        );
+        return <Badge variant="outline">Member</Badge>;
     }
   };
 
@@ -110,19 +104,19 @@ export function ThinktankRosterTab({
       {/* Search and Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-foreground text-base font-bold tracking-tight">
-            Members ({members.length})
-          </h2>
-          <p className="text-muted-foreground text-xs">Members and administrators of this group.</p>
+          <h2 className="text-title-3 text-label">Members ({members.length})</h2>
+          <p className="text-footnote text-label-secondary">
+            Members and administrators of this group.
+          </p>
         </div>
 
         <div className="relative w-full sm:w-64">
-          <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+          <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
           <Input
             placeholder="Search roster..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-card/60 border-border/40 placeholder:text-muted-foreground/60 h-8.5 rounded-xl pl-8 text-xs focus-visible:ring-emerald-500/30"
+            className="bg-surface pl-8"
           />
         </div>
       </div>
@@ -130,15 +124,13 @@ export function ThinktankRosterTab({
       {/* Roster Grid */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {filteredMembers.length === 0 ? (
-          <div className="border-border/60 col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed py-16 text-center">
-            <div className="bg-muted/60 text-muted-foreground mb-2 flex h-10 w-10 items-center justify-center rounded-2xl">
-              <User className="h-5 w-5" />
-            </div>
-            <p className="text-foreground text-xs font-semibold">No matching members found</p>
-            <p className="text-muted-foreground mt-0.5 text-xs">
-              Try refining your search query.
-            </p>
-          </div>
+          <EmptyState
+            compact
+            className="col-span-full py-16"
+            icon={<User />}
+            title="No matching members found"
+            message={"Try refining your search query."}
+          />
         ) : (
           filteredMembers.map((member) => {
             const country = member.user?.country;
@@ -162,11 +154,11 @@ export function ThinktankRosterTab({
             return (
               <div
                 key={member.id || member.userId}
-                className="border-border/40 bg-card/60 hover:bg-card/80 flex items-center justify-between rounded-2xl border p-3.5 shadow-sm backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:border-emerald-500/30 dark:border-white/10 dark:bg-white/[0.02]"
+                className="bg-surface-secondary rounded-row flex items-center justify-between p-3"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   {/* Avatar / Flag Icon */}
-                  <div className="border-border/50 flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-emerald-500/10 font-bold text-emerald-600 dark:text-emerald-400">
+                  <div className="border-separator bg-tint-fill text-tint rounded-control flex size-10 shrink-0 items-center justify-center overflow-hidden border">
                     {avatarUrl ? (
                       <img
                         src={avatarUrl}
@@ -174,7 +166,7 @@ export function ThinktankRosterTab({
                         className="h-full w-full object-cover"
                       />
                     ) : country?.flag ? (
-                      <span className="text-lg">{country.flag}</span>
+                      <span className="text-title-3">{country.flag}</span>
                     ) : (
                       <User className="h-5 w-5" />
                     )}
@@ -182,25 +174,21 @@ export function ThinktankRosterTab({
 
                   {/* Member Name & Subtitle */}
                   <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-foreground truncate text-xs font-bold">
-                        {displayName}
-                      </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-headline text-label truncate">{displayName}</span>
                       {isSelf && (
-                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                          (You)
-                        </span>
+                        <span className="text-caption text-tint font-semibold">(You)</span>
                       )}
                     </div>
                     {subtitle && (
-                      <p className="text-muted-foreground truncate text-xs">{subtitle}</p>
+                      <p className="text-footnote text-label-secondary truncate">{subtitle}</p>
                     )}
                     <div className="mt-1 flex items-center gap-2">{getRoleBadge(member.role)}</div>
                   </div>
                 </div>
 
                 {/* Right: Join Date & Actions */}
-                <div className="text-muted-foreground flex shrink-0 flex-col items-end gap-1 text-xs">
+                <div className="text-label-secondary text-footnote flex shrink-0 flex-col items-end gap-1">
                   <span>
                     {new Date(member.joinedAt).toLocaleDateString(undefined, {
                       month: "short",

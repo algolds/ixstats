@@ -4,20 +4,15 @@ import * as React from "react";
 import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
 
 import { cn } from "~/lib/utils/cn";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { presentMotionClassName } from "~/components/ui/dialog";
+import { VirtualAnchorPopover, type VirtualAnchorPopoverProps } from "~/components/ui/popover";
 
 function HoverCard({ ...props }: React.ComponentProps<typeof HoverCardPrimitive.Root>) {
   return <HoverCardPrimitive.Root data-slot="hover-card" {...props} />;
 }
 
 function HoverCardTrigger({ ...props }: React.ComponentProps<typeof HoverCardPrimitive.Trigger>) {
-  return (
-    <HoverCardPrimitive.Trigger
-      data-cuelume-hover="tick"
-      data-slot="hover-card-trigger"
-      {...props}
-    />
-  );
+  return <HoverCardPrimitive.Trigger data-slot="hover-card-trigger" {...props} />;
 }
 
 function HoverCardPortal({ ...props }: React.ComponentProps<typeof HoverCardPrimitive.Portal>) {
@@ -30,9 +25,6 @@ function HoverCardContent({
   sideOffset = 4,
   ...props
 }: React.ComponentProps<typeof HoverCardPrimitive.Content>) {
-  React.useEffect(() => {
-    soundEffects.whisper();
-  }, []);
   return (
     <HoverCardPrimitive.Portal>
       <HoverCardPrimitive.Content
@@ -40,9 +32,8 @@ function HoverCardContent({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          "bg-popover text-popover-foreground border-border/50 z-[100050] w-64 rounded-xl border p-4 shadow-lg outline-none",
-          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
-          "data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+          "z-popover rounded-card border-separator bg-surface-elevated text-label shadow-floating w-64 origin-(--radix-hover-card-content-transform-origin) border p-4 outline-none",
+          presentMotionClassName,
           className
         )}
         {...props}
@@ -53,4 +44,37 @@ function HoverCardContent({
 
 const HoverCardArrow = HoverCardPrimitive.Arrow;
 
-export { HoverCard, HoverCardTrigger, HoverCardContent, HoverCardPortal, HoverCardArrow };
+export type VirtualAnchorHoverCardProps = Omit<VirtualAnchorPopoverProps, "surface">;
+
+/**
+ * A hover card anchored to a `VirtualAnchor` (an element found by event delegation, a range, a
+ * rect) — for previews whose trigger is not a React element (`HoverCard` needs a
+ * `HoverCardTrigger`). Same look as `HoverCardContent`; never takes focus. The caller owns the
+ * hover timing: pass `anchor` (or `null`) after its open/close delays and keep it open from the
+ * card's own `onMouseEnter`/`onMouseLeave`. No ARIA role unless you pass one.
+ */
+function VirtualAnchorHoverCard({
+  className,
+  sideOffset = 4,
+  role,
+  ...props
+}: VirtualAnchorHoverCardProps) {
+  return (
+    <VirtualAnchorPopover
+      surface="elevated"
+      sideOffset={sideOffset}
+      role={role}
+      className={cn("w-64", className)}
+      {...props}
+    />
+  );
+}
+
+export {
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardContent,
+  HoverCardPortal,
+  HoverCardArrow,
+  VirtualAnchorHoverCard,
+};

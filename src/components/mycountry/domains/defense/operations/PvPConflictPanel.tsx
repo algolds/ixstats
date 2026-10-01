@@ -8,7 +8,7 @@ import {
   Trophy,
   Community as HandshakeIcon,
 } from "iconoir-react";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -115,8 +115,8 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-foreground flex items-center gap-2 text-sm font-semibold">
-          <Swords aria-hidden="true" className="h-4 w-4 text-rose-500" />
+        <h3 className="text-label text-headline flex items-center gap-2">
+          <Swords aria-hidden="true" className="text-red h-4 w-4" />
           Military conflicts
         </h3>
         <div className="flex gap-2">
@@ -167,18 +167,18 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                   />
                 </div>
                 {npcTargetsQuery.error && (
-                  <div role="alert" className="text-destructive text-sm">
+                  <div role="alert" className="text-destructive text-body">
                     {npcTargetsQuery.error.message}
                   </div>
                 )}
                 {npcTargets?.length === 0 && (
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-label-secondary text-footnote">
                     Strikes target NPC (unclaimed) nations you have diplomatic relations with. Open
                     relations with one under Diplomacy first.
                   </p>
                 )}
                 {resolvePvNPCMutation.error && (
-                  <div role="alert" className="text-destructive text-sm">
+                  <div role="alert" className="text-destructive text-body">
                     {resolvePvNPCMutation.error.message}
                   </div>
                 )}
@@ -238,7 +238,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                   />
                 </div>
                 {proposeMutation.error && (
-                  <div role="alert" className="text-destructive text-sm">
+                  <div role="alert" className="text-destructive text-body">
                     {proposeMutation.error.message}
                   </div>
                 )}
@@ -264,9 +264,9 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
         <div
           role="status"
           className={cn(
-            "rounded-lg border p-3 text-sm",
+            "rounded-control text-body border p-3",
             strikeResult.won
-              ? "border-emerald-500/30 text-emerald-600"
+              ? "border-green/30 text-green"
               : "border-destructive/30 text-destructive"
           )}
         >
@@ -281,21 +281,17 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
         <div className="space-y-2">
           <Eyebrow className="block">Incoming challenges</Eyebrow>
           {pendingForMe.map((c) => (
-            <FacetContainer
-              key={c.id}
-              depth={3}
-              surface="solid"
-              enableRefraction={false}
-              className="rounded-lg border-amber-500/40 p-3"
-            >
+            <FacetCard variant="inset" key={c.id} className="border-yellow/40 border p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <span className="text-foreground text-sm font-medium">
+                  <span className="text-label text-body font-medium">
                     {c.initiator?.name ?? "Unknown"}
                   </span>
-                  <span className="text-muted-foreground ml-2 text-xs">challenges you</span>
+                  <span className="text-label-secondary text-footnote ml-2">challenges you</span>
                   {c.reason && (
-                    <p className="text-muted-foreground mt-1 text-xs">&quot;{c.reason}&quot;</p>
+                    <p className="text-label-secondary text-footnote mt-1">
+                      &quot;{c.reason}&quot;
+                    </p>
                   )}
                 </div>
                 <div className="flex gap-2">
@@ -316,7 +312,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                   </Button>
                 </div>
               </div>
-            </FacetContainer>
+            </FacetCard>
           ))}
         </div>
       )}
@@ -331,15 +327,9 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
               const isInitiator = c.initiatorId === countryId;
               const opponent = isInitiator ? c.defender : c.initiator;
               return (
-                <FacetContainer
-                  key={c.id}
-                  depth={3}
-                  surface="solid"
-                  enableRefraction={false}
-                  className="rounded-lg p-3 text-sm"
-                >
+                <FacetCard variant="inset" key={c.id} className="text-body p-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Swords aria-hidden="true" className="h-3.5 w-3.5 text-rose-500" />
+                    <Swords aria-hidden="true" className="text-red h-3.5 w-3.5" />
                     <span>
                       vs <span className="font-medium">{opponent?.name ?? "Unknown"}</span>
                     </span>
@@ -348,7 +338,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                       {c.status}
                     </Badge>
                   </div>
-                </FacetContainer>
+                </FacetCard>
               );
             })}
         </div>
@@ -365,30 +355,21 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
             const draw = c.winner === "draw" || c.winner === "declined";
 
             return (
-              <div key={c.id} className="border-border rounded-lg border p-3 text-sm">
+              <div key={c.id} className="border-separator rounded-control text-body border p-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {draw ? (
                       <HandshakeIcon
                         aria-hidden="true"
-                        className="text-muted-foreground h-3.5 w-3.5"
+                        className="text-label-secondary h-3.5 w-3.5"
                       />
                     ) : won ? (
-                      <Trophy aria-hidden="true" className="h-3.5 w-3.5 text-emerald-600" />
+                      <Trophy aria-hidden="true" className="text-green h-3.5 w-3.5" />
                     ) : (
                       <X aria-hidden="true" className="text-destructive h-3.5 w-3.5" />
                     )}
                     <span>vs {opponent?.name ?? "Unknown"}</span>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        draw
-                          ? "text-muted-foreground"
-                          : won
-                            ? "border-emerald-500/30 text-emerald-600"
-                            : "border-destructive/30 text-destructive"
-                      )}
-                    >
+                    <Badge variant={draw ? "neutral" : won ? "success" : "destructive"}>
                       {draw
                         ? c.winner === "declined"
                           ? "Declined"
@@ -399,7 +380,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                     </Badge>
                   </div>
                   {(c.initiatorCasualties > 0 || c.defenderCasualties > 0) && (
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-label-secondary text-footnote">
                       {isInitiator ? c.initiatorCasualties : c.defenderCasualties} casualties
                     </span>
                   )}
@@ -411,7 +392,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
       )}
 
       {(!conflicts || conflicts.length === 0) && (
-        <p className="text-muted-foreground py-4 text-center text-xs">
+        <p className="text-label-secondary text-footnote py-4 text-center">
           No conflict history. Challenge other nations or engage NPC targets.
         </p>
       )}

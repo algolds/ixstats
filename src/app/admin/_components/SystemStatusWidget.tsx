@@ -14,15 +14,13 @@ import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
-import { PreText } from "~/components/ui/pretext";
-import {
-  CutoutCard,
-  CutoutCardContent,
-  CutoutCorner,
-  cutoutCardSurfaceClassName,
-} from "~/components/ui/cutout-card";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { CutoutCard, CutoutCorner } from "~/components/ui/cutout-card";
 
-export function SystemStatusWidget() {
+/** The console's live status: IxTime, bot connection and system health. */
+function useSystemStatus() {
   const [liveFormattedTime, setLiveFormattedTime] = useState("");
 
   const { data: systemStatus, isLoading: statusLoading } = api.admin.getSystemStatus.useQuery(
@@ -48,8 +46,108 @@ export function SystemStatusWidget() {
     return () => clearInterval(interval);
   }, []);
 
-  const botAvailable = botStatus?.botHealth?.available ?? false;
-  const warningCount = systemStatus?.warnings?.length ?? 0;
+  return {
+    systemStatus,
+    statusLoading,
+    botStatusLoading,
+    configData,
+    liveFormattedTime,
+    botAvailable: botStatus?.botHealth?.available ?? false,
+    warningCount: systemStatus?.warnings?.length ?? 0,
+  };
+}
+
+function StatusDot({ tone }: { tone: "green" | "red" | "yellow" }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "size-1.5 shrink-0 rounded-full",
+        tone === "green" ? "bg-green" : tone === "red" ? "bg-red" : "bg-yellow"
+      )}
+    />
+  );
+}
+
+function formatLastRecalc(timestamp: string | number | Date | undefined | null) {
+  return timestamp
+    ? new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : "N/A";
+}
+
+/**
+ * The status strip shown above the console under the new navigation shell, where the admin rail
+ * (and the rail's `SystemStatusWidget`) is hidden in favour of the AppSidebar.
+ */
+export function SystemStatusStrip({ className }: { className?: string }) {
+  const s = useSystemStatus();
+  return (
+    <FacetCard
+      role="status"
+      aria-label="System console"
+      className={cn(
+        "text-footnote flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2 tabular-nums",
+        className
+      )}
+    >
+      <span className="text-headline text-label flex items-center gap-2">
+        <Shield aria-hidden className="text-tint size-4" />
+        System console
+      </span>
+      <span className="flex items-center gap-2" title="Current IxTime">
+        <Clock aria-hidden className="text-label-secondary size-3.5" />
+        <span className="text-label font-medium">
+          {s.liveFormattedTime || s.systemStatus?.ixTime?.formattedIxTime || "N/A"}
+        </span>
+        {s.configData?.timeMultiplier !== undefined && (
+          <span className="text-label-secondary">({s.configData.timeMultiplier.toFixed(1)}x)</span>
+        )}
+      </span>
+      <span className="flex items-center gap-2">
+        <StatusDot tone={s.botAvailable ? "green" : "red"} />
+        <span className="text-label-secondary">Discord bot</span>
+        <span className="text-label">{s.botAvailable ? "Connected" : "Disconnected"}</span>
+      </span>
+      <span className="flex items-center gap-2">
+        <span className="text-label-secondary">Countries</span>
+        <span className="text-label font-data font-medium">
+          {s.systemStatus?.countryCount ?? 0}
+        </span>
+      </span>
+      <span className="flex items-center gap-2">
+        <span className="text-label-secondary">Storyteller events</span>
+        <span className="text-label font-data font-medium">
+          {s.systemStatus?.activeStorytellerEffects ?? 0}
+        </span>
+      </span>
+      <span className="flex items-center gap-2">
+        <span className="text-label-secondary">Last recalc</span>
+        <span className="text-label font-medium">
+          {formatLastRecalc(s.systemStatus?.lastCalculation?.timestamp)}
+        </span>
+      </span>
+      {s.warningCount > 0 ? (
+        <Badge variant="warning">
+          <AlertTriangle aria-hidden />
+          {s.warningCount} warnings
+        </Badge>
+      ) : (
+        <Badge variant="success">Healthy</Badge>
+      )}
+    </FacetCard>
+  );
+}
+
+export function SystemStatusWidget() {
+  const {
+    systemStatus,
+    statusLoading,
+    botStatusLoading,
+    configData,
+    liveFormattedTime,
+    botAvailable,
+    warningCount,
+  } = useSystemStatus();
 
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window !== "undefined") {
@@ -65,40 +163,38 @@ export function SystemStatusWidget() {
   };
 
   return (
-    <CutoutCard
-      className={cn(
-        cutoutCardSurfaceClassName,
-        "border-border/30 bg-card/40 w-full overflow-hidden rounded-xl border shadow-sm backdrop-blur-md"
-      )}
-      trackPointerHover={false}
-    >
-      {/* Cutout Header Tab (clickable to toggle collapse) */}
-      <div
-        className="relative cursor-pointer bg-indigo-500/10 px-4 pt-3 pb-5 transition-colors select-none hover:bg-indigo-500/15"
+    // v2 (c5c6b382): a CutoutCard whose tinted header tab toggles the collapse.
+    <CutoutCard variant="card" trackPointerHover={false} className="w-full rounded-xl">
+      {/* Cutout header tab (toggles collapse) */}
+      <Button
+        variant="ghost"
         onClick={toggleCollapsed}
+        aria-expanded={!isCollapsed}
+        className="bg-tint-fill hover:bg-tint/15 relative h-auto w-full justify-between rounded-none px-4 pt-3 pb-5 text-left focus-visible:-outline-offset-2 active:scale-100"
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-indigo-500/15 p-1 text-indigo-500">
-              <Shield className="h-4 w-4" />
-            </div>
-            <PreText className="text-foreground text-xs font-bold tracking-wider uppercase">
-              System Console
-            </PreText>
-          </div>
-          <div className="text-muted-foreground hover:text-foreground mr-1 rounded p-0.5 transition-colors">
-            {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-          </div>
-        </div>
-        <CutoutCorner className="text-card absolute -bottom-px left-0" size={16} />
-        <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={16} />
-      </div>
+        <CutoutCorner className="text-surface absolute -bottom-px left-0" size={16} />
+        <CutoutCorner className="text-surface absolute right-0 -bottom-px -scale-x-100" size={16} />
+        <span className="flex items-center gap-2">
+          <span className="bg-tint-fill text-tint rounded-control-sm p-1">
+            <Shield aria-hidden className="size-4" />
+          </span>
+          <span className="text-headline text-label">System console</span>
+        </span>
+        <span className="text-label-secondary">
+          {isCollapsed ? (
+            <ChevronDown aria-hidden className="size-4" />
+          ) : (
+            <ChevronUp aria-hidden className="size-4" />
+          )}
+          <span className="sr-only">{isCollapsed ? "Expand" : "Collapse"}</span>
+        </span>
+      </Button>
 
       {isCollapsed ? (
-        <div className="border-border/10 flex items-center justify-between gap-1.5 overflow-hidden border-t bg-black/10 px-3 py-2 text-xs">
+        <div className="text-footnote flex items-center justify-between gap-2 overflow-hidden px-3 py-2 tabular-nums">
           {/* IxTime */}
           <span
-            className="max-w-[100px] shrink-0 truncate font-mono font-bold whitespace-nowrap text-blue-600 dark:text-blue-400"
+            className="text-label max-w-[100px] shrink-0 truncate font-medium whitespace-nowrap"
             title="Current IxTime"
           >
             {liveFormattedTime || systemStatus?.ixTime?.formattedIxTime || "Time"}
@@ -108,47 +204,35 @@ export function SystemStatusWidget() {
             className="flex shrink-0 items-center gap-1 overflow-hidden"
             title={botAvailable ? "Bot Connected" : "Bot Offline"}
           >
-            <span
-              className={cn(
-                "h-1.5 w-1.5 shrink-0 rounded-full",
-                botAvailable ? "bg-green-500" : "bg-red-500"
-              )}
-            />
-            <span className="text-muted-foreground truncate font-semibold whitespace-nowrap">
-              Bot
-            </span>
+            <StatusDot tone={botAvailable ? "green" : "red"} />
+            <span className="text-label-secondary truncate whitespace-nowrap">Bot</span>
           </span>
           {/* System Status (warnings count) */}
           <span
             className="flex shrink-0 items-center gap-1 overflow-hidden"
             title={warningCount > 0 ? `${warningCount} warnings active` : "System Health Ok"}
           >
-            <span
-              className={cn(
-                "h-1.5 w-1.5 shrink-0 rounded-full",
-                warningCount > 0 ? "bg-amber-500" : "bg-green-500"
-              )}
-            />
-            <span className="text-muted-foreground truncate font-semibold whitespace-nowrap">
+            <StatusDot tone={warningCount > 0 ? "yellow" : "green"} />
+            <span className="text-label-secondary truncate whitespace-nowrap">
               {warningCount > 0 ? `${warningCount} Alert` : "Healthy"}
             </span>
           </span>
         </div>
       ) : (
-        <CutoutCardContent className="space-y-3 p-4 pt-1">
+        <div className="space-y-3 p-4 pt-1 tabular-nums">
           {/* Live IxTime Display */}
           <div className="space-y-1">
-            <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-wider uppercase">
-              <Clock className="h-3 w-3 text-blue-400" />
+            <div className="text-eyebrow text-label-secondary flex items-center gap-2">
+              <Clock aria-hidden className="size-3.5" />
               IxTime
             </div>
             {statusLoading ? (
               <Skeleton className="h-5 w-full" />
             ) : (
-              <div className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
+              <div className="text-headline text-label">
                 {liveFormattedTime || systemStatus?.ixTime?.formattedIxTime || "N/A"}
                 {configData?.timeMultiplier !== undefined && (
-                  <span className="text-muted-foreground ml-1.5 text-xs font-normal">
+                  <span className="text-footnote text-label-secondary ml-2 font-normal">
                     ({configData.timeMultiplier.toFixed(1)}x)
                   </span>
                 )}
@@ -158,21 +242,16 @@ export function SystemStatusWidget() {
 
           {/* Discord Bot Status */}
           <div className="space-y-1">
-            <div className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium tracking-wider uppercase">
-              <Bot className="h-3 w-3 text-green-400" />
+            <div className="text-eyebrow text-label-secondary flex items-center gap-2">
+              <Bot aria-hidden className="size-3.5" />
               Discord Bot
             </div>
             {botStatusLoading ? (
               <Skeleton className="h-5 w-full" />
             ) : (
               <div className="flex items-center gap-2">
-                <span
-                  className={cn(
-                    "h-2 w-2 rounded-full",
-                    botAvailable ? "bg-green-500" : "bg-red-500"
-                  )}
-                />
-                <span className="text-xs font-medium">
+                <StatusDot tone={botAvailable ? "green" : "red"} />
+                <span className="text-callout text-label">
                   {botAvailable ? "Connected" : "Disconnected"}
                 </span>
               </div>
@@ -180,63 +259,54 @@ export function SystemStatusWidget() {
           </div>
 
           {/* Quick System Indicators */}
-          <div className="border-border/30 space-y-1.5 border-t pt-2.5">
-            {/* Countries */}
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground flex items-center gap-1.5">
-                <Activity className="h-3 w-3 text-emerald-400" />
+          <dl className="border-separator text-footnote space-y-2 border-t pt-3">
+            <div className="flex items-center justify-between">
+              <dt className="text-label-secondary flex items-center gap-2">
+                <Activity aria-hidden className="size-3.5" />
                 Countries
-              </span>
-              <span className="font-bold">
+              </dt>
+              <dd className="text-label font-medium">
                 {statusLoading ? (
                   <Skeleton className="h-3 w-8" />
                 ) : (
                   (systemStatus?.countryCount ?? 0)
                 )}
-              </span>
+              </dd>
             </div>
 
-            {/* Active Storyteller Effects */}
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Storyteller Events</span>
-              <span className="font-bold">
+            <div className="flex items-center justify-between">
+              <dt className="text-label-secondary">Storyteller Events</dt>
+              <dd className="text-label font-medium">
                 {statusLoading ? (
                   <Skeleton className="h-3 w-8" />
                 ) : (
                   (systemStatus?.activeStorytellerEffects ?? 0)
                 )}
-              </span>
+              </dd>
             </div>
 
-            {/* Last Calculation Time */}
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Last Recalc</span>
-              <span className="text-muted-foreground font-mono font-semibold">
+            <div className="flex items-center justify-between">
+              <dt className="text-label-secondary">Last Recalc</dt>
+              <dd className="text-label font-medium">
                 {statusLoading ? (
                   <Skeleton className="h-3 w-12" />
-                ) : systemStatus?.lastCalculation?.timestamp ? (
-                  new Date(systemStatus.lastCalculation.timestamp).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
                 ) : (
-                  "N/A"
+                  formatLastRecalc(systemStatus?.lastCalculation?.timestamp)
                 )}
-              </span>
+              </dd>
             </div>
 
-            {/* Warnings */}
             {warningCount > 0 && (
-              <div className="mt-1 flex items-center justify-between rounded-md border border-amber-500/15 bg-amber-500/5 px-2 py-1 text-xs">
-                <span className="flex items-center gap-1.5 text-amber-500">
-                  <AlertTriangle className="h-3 w-3" />
+              <div className="bg-warning/10 rounded-control-sm mt-1 flex items-center justify-between px-2 py-1">
+                <dt className="text-warning flex items-center gap-2">
+                  <AlertTriangle aria-hidden className="size-3.5" />
                   Warnings
-                </span>
-                <span className="font-bold text-amber-600 dark:text-amber-400">{warningCount}</span>
+                </dt>
+                <dd className="text-warning font-semibold">{warningCount}</dd>
               </div>
             )}
-          </div>
-        </CutoutCardContent>
+          </dl>
+        </div>
       )}
     </CutoutCard>
   );

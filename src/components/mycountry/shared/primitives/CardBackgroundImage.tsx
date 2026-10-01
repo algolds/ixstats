@@ -80,14 +80,12 @@ export function CardBackgroundImage({
     }
   }, [imageUrl]);
 
-  // Fallback gradient when no image
-  const fallbackClass = getFallbackGradient(cardType);
-
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-xl",
-        !hasImage && `bg-gradient-to-br ${fallbackClass}`,
+        "rounded-row relative overflow-hidden",
+        // No image: a flat inset surface (Facet 3 — no decorative gradient washes).
+        !hasImage && "bg-surface-secondary",
         className
       )}
     >

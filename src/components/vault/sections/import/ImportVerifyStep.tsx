@@ -33,35 +33,34 @@ export function ImportVerifyStep({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-foreground text-xl font-bold tracking-tight">Verify Ownership</h2>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Prove you own{" "}
-          <span className="font-semibold text-amber-600 dark:text-amber-400">{nationName}</span> via
+        <h2 className="text-label text-title-2">Verify Ownership</h2>
+        <p className="text-label-secondary text-body mt-1">
+          Prove you own <span className="text-yellow font-semibold">{nationName}</span> via
           NationStates login verification
         </p>
       </div>
 
       {/* Instructions */}
-      <FacetCard depth={2} className="space-y-3 rounded-xl p-5">
-        <h4 className="text-foreground text-sm font-bold">Instructions</h4>
-        <ol className="text-muted-foreground list-inside space-y-2.5 text-sm">
+      <FacetCard className="rounded-row space-y-3 p-5">
+        <h4 className="text-label text-headline">Instructions</h4>
+        <ol className="text-label-secondary text-body list-inside space-y-2">
           <li className="flex items-start gap-2">
-            <span className="bg-muted/60 text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold">
+            <span className="bg-fill-3 text-label text-footnote flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-semibold">
               1
             </span>
             <span>
               Click the link below to open NationStates verification.{" "}
-              <strong className="text-foreground">Log in if prompted.</strong>
+              <strong className="text-label">Log in if prompted.</strong>
             </span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="bg-muted/60 text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold">
+            <span className="bg-fill-3 text-label text-footnote flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-semibold">
               2
             </span>
             NationStates will display a verification code
           </li>
           <li className="flex items-start gap-2">
-            <span className="bg-muted/60 text-foreground flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold">
+            <span className="bg-fill-3 text-label text-footnote flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-semibold">
               3
             </span>
             Copy that code and paste it in the field below
@@ -75,7 +74,7 @@ export function ImportVerifyStep({
           href={verificationUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-5 py-3.5 text-sm font-bold text-blue-600 transition-colors hover:bg-blue-500/20 active:scale-[0.98] dark:text-blue-400"
+          className="rounded-row border-blue/30 bg-blue/10 text-headline text-blue hover:bg-blue/20 flex items-center justify-center gap-2 border px-5 py-4 transition-colors active:scale-[0.98]"
         >
           <ExternalLink className="h-4 w-4" />
           Open NationStates Verification Page
@@ -83,12 +82,9 @@ export function ImportVerifyStep({
       )}
 
       {/* Code input */}
-      <FacetCard
-        depth={2}
-        className="space-y-2 rounded-xl border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-orange-500/5 p-5"
-      >
-        <label className="text-xs font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400">
-          Paste Verification Code from NationStates
+      <FacetCard rim="tint" className="rounded-row bg-tint-fill space-y-2 p-5">
+        <label className="text-eyebrow text-yellow-ink">
+          Paste verification code from NationStates
         </label>
         <Input
           value={checksum}
@@ -99,20 +95,16 @@ export function ImportVerifyStep({
             }
           }}
           placeholder="Paste the code NationStates gave you..."
-          className="glass-hierarchy-interactive bg-background h-12 font-mono text-base"
+          className="bg-background text-body h-12 font-mono"
         />
       </FacetCard>
 
       {/* Actions */}
       <div className="flex gap-3">
-        <Button variant="outline" onClick={onBack} className="border-border/60">
+        <Button variant="outline" onClick={onBack}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>
-        <Button
-          onClick={onVerify}
-          disabled={!checksum.trim() || isPending}
-          className="flex-1 bg-amber-500 font-bold text-black shadow-xs hover:bg-amber-400 active:scale-[0.98] dark:bg-amber-400 dark:text-black dark:hover:bg-amber-300"
-        >
+        <Button onClick={onVerify} disabled={!checksum.trim() || isPending} className="flex-1">
           {isPending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (

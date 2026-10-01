@@ -42,15 +42,9 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       {/* Sector Composition */}
-      <FacetCard
-        depth="base"
-        theme="emerald"
-        className="border-emerald-500/20"
-        texture="chevron"
-        textureOpacity={0.04}
-      >
+      <FacetCard>
         <FacetCardContent className="p-6">
-          <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
+          <h3 className="text-headline text-green mb-4 flex items-center space-x-2">
             <PieChart className="h-5 w-5" />
             <span>Sector Composition</span>
           </h3>
@@ -65,15 +59,9 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
       </FacetCard>
 
       {/* Employment Types */}
-      <FacetCard
-        depth="base"
-        theme="emerald"
-        className="border-emerald-500/20"
-        texture="chevron"
-        textureOpacity={0.04}
-      >
+      <FacetCard>
         <FacetCardContent className="p-6">
-          <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
+          <h3 className="text-headline text-green mb-4 flex items-center space-x-2">
             <BarChart3 className="h-5 w-5" />
             <span>Employment Types</span>
           </h3>
@@ -89,15 +77,9 @@ export function SectorSummaryCards({ economyBuilder }: SectorSummaryCardsProps) 
       </FacetCard>
 
       {/* Age Distribution */}
-      <FacetCard
-        depth="base"
-        theme="emerald"
-        className="border-emerald-500/20"
-        texture="chevron"
-        textureOpacity={0.04}
-      >
+      <FacetCard>
         <FacetCardContent className="p-6">
-          <h3 className="mb-4 flex items-center space-x-2 text-base font-semibold text-emerald-500 dark:text-emerald-400">
+          <h3 className="text-headline text-green mb-4 flex items-center space-x-2">
             <Users className="h-5 w-5" />
             <span>Age Distribution</span>
           </h3>

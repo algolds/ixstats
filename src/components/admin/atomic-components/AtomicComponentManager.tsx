@@ -11,6 +11,7 @@ import { AtomicComponentStats } from "./AtomicComponentStats";
 import { AtomicComponentCard } from "./AtomicComponentCard";
 import { EconomicTemplateDialog } from "~/components/admin/economic-components/EconomicTemplateDialog";
 import { Skeleton } from "~/components/ui/skeleton";
+import { FacetCard } from "~/components/ui/facet-container";
 
 interface AtomicComponentManagerProps {
   domain: "economy" | "government";
@@ -23,16 +24,16 @@ export function AtomicComponentManager({ domain }: AtomicComponentManagerProps) 
   if (catalog.isLoading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-36 w-full rounded-2xl" />
+        <Skeleton className="rounded-card h-36 w-full" />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Skeleton className="h-24 rounded-xl" />
-          <Skeleton className="h-24 rounded-xl" />
-          <Skeleton className="h-24 rounded-xl" />
-          <Skeleton className="h-24 rounded-xl" />
+          <Skeleton className="rounded-row h-24" />
+          <Skeleton className="rounded-row h-24" />
+          <Skeleton className="rounded-row h-24" />
+          <Skeleton className="rounded-row h-24" />
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-56 rounded-xl" />
+            <Skeleton key={i} className="rounded-row h-56" />
           ))}
         </div>
       </div>
@@ -63,11 +64,11 @@ export function AtomicComponentManager({ domain }: AtomicComponentManagerProps) 
       />
 
       {catalog.filteredComponents.length === 0 ? (
-        <div className="border-border/40 bg-card/20 rounded-2xl border p-12 text-center backdrop-blur-md">
-          <p className="text-muted-foreground text-sm">
+        <FacetCard className="p-12 text-center">
+          <p className="text-label-secondary text-body">
             No {label} components match the current filters.
           </p>
-        </div>
+        </FacetCard>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {catalog.filteredComponents.map((component) => (

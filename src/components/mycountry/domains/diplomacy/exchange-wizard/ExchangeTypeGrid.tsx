@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { cn } from "~/lib/utils";
+import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 import { WIZARD_EXCHANGE_TYPES, type WizardExchangeType } from "./exchange-wizard-config";
 
 interface ExchangeTypeGridProps {
@@ -18,44 +18,30 @@ export const ExchangeTypeGrid = React.memo(function ExchangeTypeGrid({
   onSelect,
   className,
 }: ExchangeTypeGridProps) {
+  const types = Object.entries(WIZARD_EXCHANGE_TYPES).filter(
+    ([, config]) => config.primary === primary
+  );
+  // Both grids share one selection: a type from the other grid leaves this one unchecked.
+  const value = types.some(([key]) => key === selected) ? selected : null;
   return (
-    <div className={className}>
-      {Object.entries(WIZARD_EXCHANGE_TYPES)
-        .filter(([, config]) => config.primary === primary)
-        .map(([key, config]) => {
-          const Icon = config.icon;
-          const isSelected = selected === key;
-          return (
-            <button
-              key={key}
-              type="button"
-              aria-pressed={isSelected}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onSelect(key as WizardExchangeType);
-              }}
-              className={cn(
-                "bg-card focus-visible:ring-ring pointer-events-auto cursor-pointer rounded-xl border p-2.5 transition-[color,background-color,border-color,box-shadow,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]",
-                isSelected
-                  ? "border-ring bg-accent ring-ring ring-1"
-                  : "border-border hover:bg-accent/50"
-              )}
-            >
-              <div className="pointer-events-none flex flex-col items-center gap-1 text-center">
-                <Icon
-                  className={cn(
-                    "h-4 w-4",
-                    isSelected ? "text-foreground" : "text-muted-foreground"
-                  )}
-                />
-                <span className="text-foreground text-xs leading-tight font-medium">
-                  {config.label}
-                </span>
-              </div>
-            </button>
-          );
-        })}
-    </div>
+    <RadioCardGroup
+      aria-label={primary ? "Exchange type" : "More exchange types"}
+      value={value}
+      onValueChange={(key) => onSelect(key as WizardExchangeType)}
+      className={className}
+    >
+      {types.map(([key, config]) => {
+        const Icon = config.icon;
+        return (
+          <RadioCard
+            key={key}
+            value={key}
+            icon={<Icon aria-hidden />}
+            title={config.label}
+            indicator={false}
+          />
+        );
+      })}
+    </RadioCardGroup>
   );
 });

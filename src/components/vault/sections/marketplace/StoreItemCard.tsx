@@ -73,26 +73,22 @@ export function StoreItemCard({
     y.set(0);
   };
 
-  const qualityColors: Record<string, { text: string; border: string; bg: string }> = {
+  const qualityColors: Record<string, { text: string; border: string }> = {
     LEGENDARY: {
-      text: "text-amber-600 dark:text-amber-400",
-      border: "border-amber-500/30",
-      bg: "from-amber-500/10 to-yellow-500/5",
+      text: "text-yellow",
+      border: "border-yellow/30",
     },
     EPIC: {
-      text: "text-purple-600 dark:text-purple-400",
-      border: "border-purple-500/30",
-      bg: "from-purple-500/10 to-pink-500/5",
+      text: "text-purple",
+      border: "border-purple/30",
     },
     RARE: {
-      text: "text-blue-600 dark:text-blue-400",
-      border: "border-blue-500/30",
-      bg: "from-blue-500/10 to-cyan-500/5",
+      text: "text-blue",
+      border: "border-blue/30",
     },
     COMMON: {
-      text: "text-slate-500 dark:text-slate-400",
-      border: "border-slate-500/30",
-      bg: "from-slate-500/5 to-slate-500/2",
+      text: "text-label-secondary",
+      border: "border-separator",
     },
   };
 
@@ -106,9 +102,9 @@ export function StoreItemCard({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className={cn(
-          "facet-surface relative flex h-auto min-h-[280px] w-44 flex-col justify-between rounded-2xl border p-4 shadow-xl backdrop-blur-md transition-shadow hover:shadow-[0_15px_30px_var(--glow)]",
+          "bg-surface rounded-card shadow-card duration-fast hover:shadow-floating relative flex h-auto min-h-[280px] w-44 flex-col justify-between border p-4 transition-shadow",
           colors.border,
-          isPreviewing && "border-cyan-500/60 shadow-[0_0_15px_var(--glow)]"
+          isPreviewing && "border-tint"
         )}
         style={{
           transformStyle: "preserve-3d",
@@ -120,26 +116,18 @@ export function StoreItemCard({
           ["--glow" as string]: item.glowColor,
         }}
       >
-        {/* Quality indicator glow line */}
-        <div
-          className={cn(
-            "absolute inset-0 -z-10 rounded-2xl bg-gradient-to-b opacity-45",
-            colors.bg
-          )}
-        />
-
         {/* Card Header */}
         <div className="flex items-center justify-between">
           <Badge
             variant="outline"
-            className={cn("px-1 py-0 text-xs font-bold uppercase", colors.text, colors.border)}
+            className={cn("text-eyebrow px-1 py-0", colors.text, colors.border)}
           >
             {item.badgeText}
           </Badge>
           {isOwned ? (
             <Badge
               variant="outline"
-              className="border-emerald-500/35 bg-emerald-500/20 px-1 py-0 text-xs font-bold text-emerald-600 uppercase dark:text-emerald-400"
+              className="border-green/35 bg-green/20 text-eyebrow text-green px-1 py-0"
             >
               {maxPurchases > 1 ? "Maxed Out" : "Owned"}
             </Badge>
@@ -147,7 +135,7 @@ export function StoreItemCard({
             purchaseCount > 0 && (
               <Badge
                 variant="outline"
-                className="border-amber-500/35 bg-amber-500/20 px-1 py-0 text-xs font-bold text-amber-600 uppercase dark:text-emerald-400"
+                className="border-yellow/35 bg-yellow/20 text-eyebrow text-yellow px-1 py-0"
               >
                 Owned x{purchaseCount}
               </Badge>
@@ -159,32 +147,30 @@ export function StoreItemCard({
         <div className="flex flex-1 flex-col items-center justify-center py-4">
           <div
             className={cn(
-              "mb-2 rounded-xl border bg-black/5 p-3.5 shadow-inner dark:bg-black/40",
+              "rounded-row bg-surface-secondary mb-2 border p-4 shadow-inner",
               colors.border
             )}
           >
             <Icon className={cn("h-7 w-7", colors.text)} />
           </div>
-          <h4 className="text-center text-xs font-semibold tracking-tight text-slate-900 dark:text-white/95">
-            {item.name}
-          </h4>
-          <p className="text-muted-foreground mt-1 text-center text-xs leading-tight">
+          <h4 className="text-footnote text-label text-center font-semibold">{item.name}</h4>
+          <p className="text-label-secondary text-footnote mt-1 text-center leading-tight">
             {item.description}
           </p>
         </div>
 
         {/* Card Button / Footer */}
-        <div className="border-border/50 flex w-full flex-col gap-1 border-t pt-1.5">
+        <div className="border-separator flex w-full flex-col gap-1 border-t pt-2">
           {item.category === "cosmetics" && onPreview && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => onPreview(item)}
               className={cn(
-                "h-7 w-full border text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
+                "text-footnote h-7 w-full border font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
                 isPreviewing
-                  ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-600 shadow-[0_0_8px_rgba(6,182,212,0.25)] dark:text-cyan-400"
-                  : "border-border/40 hover:bg-secondary/40 text-muted-foreground hover:text-foreground"
+                  ? "border-tint/50 bg-tint-fill text-tint"
+                  : "border-separator hover:bg-fill-3 text-label-secondary hover:text-label"
               )}
             >
               {isPreviewing ? "Previewing" : "Preview"}
@@ -193,21 +179,8 @@ export function StoreItemCard({
           <Button
             onClick={() => onPurchase(item)}
             disabled={isPurchasing || isOwned}
-            className={cn(
-              "h-8 w-full border-none py-2 text-xs font-bold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
-              isOwned
-                ? "bg-secondary text-muted-foreground border-border/50 cursor-not-allowed border"
-                : isPurchasing
-                  ? "bg-secondary/80 text-muted-foreground cursor-wait"
-                  : cn(
-                      "bg-gradient-to-r shadow-[0_0_12px_rgba(0,0,0,0.2)]",
-                      item.quality === "LEGENDARY"
-                        ? "from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500"
-                        : item.quality === "EPIC"
-                          ? "from-purple-650 hover:from-purple-550 to-pink-600 hover:to-pink-500"
-                          : "from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500"
-                    )
-            )}
+            variant={isOwned || isPurchasing ? "gray" : "filled"}
+            className={cn("w-full", isPurchasing && "cursor-wait")}
             size="sm"
           >
             {isOwned ? (
@@ -216,10 +189,10 @@ export function StoreItemCard({
               "Acquiring..."
             ) : (
               <span className="flex items-center justify-center gap-1">
-                <ShoppingCart className="h-3 w-3 text-white" />
+                <ShoppingCart className="size-3.5" />
                 <span>Buy</span>
-                <span className="ml-0.5 inline-flex items-center gap-0.5 align-middle font-mono text-xs opacity-90">
-                  <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0 text-white" />
+                <span className="text-footnote ml-0.5 inline-flex items-center gap-0.5 align-middle tabular-nums opacity-90">
+                  <IxCreditsSymbol className="size-3 shrink-0" />
                   {item.price.toLocaleString()}
                 </span>
               </span>
@@ -227,9 +200,6 @@ export function StoreItemCard({
           </Button>
         </div>
       </motion.div>
-
-      {/* Grounding shadow overlay */}
-      <div className="mt-2 h-1.5 w-32 rounded-full bg-black/20 blur-[4px] dark:bg-black/45" />
     </div>
   );
 }

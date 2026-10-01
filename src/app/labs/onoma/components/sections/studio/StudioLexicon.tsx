@@ -27,6 +27,9 @@ import {
 } from "~/components/ui/select";
 import { LexiconAnalysis } from "./LexiconAnalysis";
 import { LexiconDefinitionForm } from "./LexiconDefinitionForm";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
+import { ActionPill } from "~/components/ui/action-pill";
 
 interface StudioLexiconProps {
   state: StudioState;
@@ -139,28 +142,30 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
     <div className="animate-in fade-in grid items-start gap-6 duration-300 lg:grid-cols-12">
       {/* Left Column: Terms List (4/12) */}
       <div className="space-y-4 lg:col-span-4">
-        <FacetCard className="border-border/40 bg-secondary/5 space-y-4 border p-4">
+        <FacetCard variant="inset" padding="none" className="space-y-4 p-4">
           <div className="space-y-1">
-            <h3 className="text-foreground text-sm font-bold tracking-tight">Lexicon Terms</h3>
-            <p className="text-muted-foreground text-xs">Stashed names and defined vocabulary.</p>
+            <h3 className="text-label text-body font-semibold">Lexicon Terms</h3>
+            <p className="text-label-secondary text-footnote">
+              Stashed names and defined vocabulary.
+            </p>
           </div>
 
           {/* Search */}
           <div className="relative">
-            <Search className="text-muted-foreground absolute top-2.5 left-3 h-4 w-4" />
-            <input
+            <Search className="text-label-secondary absolute top-2 left-3 h-4 w-4" />
+            <Input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search terms, roots..."
-              className="border-border/60 bg-background text-foreground placeholder-muted-foreground focus:border-onoma-primary/50 w-full rounded-xl border py-2 pr-4 pl-9 text-sm focus:outline-none"
+              className="text-body w-full pr-4 pl-9"
             />
           </div>
 
           {/* List */}
           <div className="max-h-[500px] space-y-2 overflow-y-auto pr-1">
             {filteredTerms.length === 0 ? (
-              <p className="text-muted-foreground py-6 text-center text-xs">
+              <p className="text-label-secondary text-footnote py-6 text-center">
                 {searchTerm
                   ? "No matching terms found."
                   : "No terms in lexicon. Stash names in the workshop to define them."}
@@ -174,28 +179,30 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                     key={name}
                     onClick={() => setSelectedTerm(name)}
                     className={cn(
-                      "group flex w-full cursor-pointer items-center justify-between rounded-xl border p-3 text-left transition-all duration-200 select-none",
+                      "group rounded-row flex w-full cursor-pointer items-center justify-between border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none",
                       isSelected
-                        ? "text-foreground border-onoma-primary/30 bg-onoma-primary/10"
-                        : "bg-background hover:bg-secondary/20 border-border/40 text-foreground"
+                        ? "text-label border-tint/30 bg-tint/10"
+                        : "bg-background hover:bg-fill-4 border-separator text-label"
                     )}
                   >
                     <div className="min-w-0 space-y-0.5 pr-2">
-                      <span className="block truncate font-mono text-sm font-bold">{name}</span>
+                      <span className="text-body block truncate font-mono font-semibold">
+                        {name}
+                      </span>
                       {def ? (
-                        <span className="text-muted-foreground block truncate text-[10px]">
-                          <span className="text-onoma-primary mr-1 font-bold">
-                            [{def.partOfSpeech}]
-                          </span>
+                        <span className="text-label-secondary text-caption block truncate">
+                          <span className="text-tint mr-1 font-semibold">[{def.partOfSpeech}]</span>
                           {def.meaning}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground block truncate text-[10px] italic">
+                        <span className="text-label-secondary text-caption block truncate italic">
                           Undefined stashed word
                         </span>
                       )}
                     </div>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={async (e) => {
                         e.stopPropagation();
                         if (
@@ -207,10 +214,11 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                         }
                       }}
                       title="Delete term"
-                      className="text-muted-foreground cursor-pointer rounded-lg p-1 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500"
+                      aria-label="Delete term"
+                      className="text-label-secondary hover:text-red hover:bg-red/10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 );
               })
@@ -222,22 +230,26 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
       {/* Right Column: Selected Term Details (8/12) */}
       <div className="lg:col-span-8">
         {selectedTerm ? (
-          <FacetCard className="border-border/40 bg-secondary/5 animate-in fade-in space-y-6 border p-5 duration-300">
+          <FacetCard
+            variant="inset"
+            padding="none"
+            className="animate-in fade-in space-y-6 p-5 duration-300"
+          >
             {/* Word Title Header */}
-            <div className="border-border/40 flex items-start justify-between border-b pb-4">
+            <div className="border-separator flex items-start justify-between border-b pb-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-foreground font-mono text-xl font-bold">{selectedTerm}</h3>
+                  <h3 className="text-label text-title-2 font-mono font-bold">{selectedTerm}</h3>
                   {definitions[selectedTerm]?.partOfSpeech && (
-                    <span className="bg-onoma-primary/10 text-onoma-primary rounded-md px-2 py-0.5 text-xs font-bold uppercase">
+                    <span className="bg-tint/10 text-tint rounded-control-sm text-eyebrow px-2 py-0.5">
                       {definitions[selectedTerm].partOfSpeech}
                     </span>
                   )}
                 </div>
-                <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-[10px] font-semibold">
+                <div className="text-label-secondary text-caption mt-1 flex flex-wrap items-center gap-2 font-semibold">
                   {effectiveIpa && (
                     <span className="flex items-center">
-                      <button
+                      <ActionPill
                         onClick={async () => {
                           try {
                             await speakName({
@@ -254,42 +266,45 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                           }
                         }}
                         title="Listen to pronunciation"
+                        aria-label={`Listen to pronunciation /${effectiveIpa}/`}
+                        icon={<Volume2 />}
                         className={cn(
-                          "text-muted-foreground border-border/40 bg-background hover:bg-onoma-primary/10 hover:text-onoma-primary flex cursor-pointer items-center gap-1 rounded-l-full border px-2.5 py-0.5 font-mono text-[10px] transition-all duration-200",
-                          hasOverride && "border-onoma-primary/40 text-onoma-primary"
+                          "border-separator bg-surface hover:bg-tint/10 hover:text-tint rounded-r-none border font-mono",
+                          hasOverride && "border-tint/40 text-tint"
                         )}
                       >
-                        <Volume2 className="h-3 w-3" />
-                        <span>{effectiveIpa}</span>
-                      </button>
-                      <button
-                        type="button"
+                        {effectiveIpa}
+                      </ActionPill>
+                      <ActionPill
+                        pressed={editingPron}
                         onClick={() => setEditingPron(!editingPron)}
                         title={hasOverride ? "Edit custom pronunciation" : "Customize IPA / voice"}
+                        aria-label={
+                          hasOverride ? "Edit custom pronunciation" : "Customize IPA / voice"
+                        }
+                        icon={<Pencil />}
                         className={cn(
-                          "text-muted-foreground border-border/40 bg-background hover:bg-onoma-primary/10 hover:text-onoma-primary flex cursor-pointer items-center rounded-r-full border border-l-0 px-2 py-0.5 transition-all duration-200 select-none",
-                          hasOverride && "border-onoma-primary/40 text-onoma-primary"
+                          "border-separator bg-surface hover:bg-tint/10 hover:text-tint rounded-l-none border border-l-0 px-2",
+                          hasOverride && "border-tint/40 text-tint"
                         )}
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </button>
+                      />
                     </span>
                   )}
                   <span>
-                    Culture: <span className="text-foreground capitalize">{classifiedCulture}</span>
+                    Culture: <span className="text-label capitalize">{classifiedCulture}</span>
                   </span>
                   {stashedEntry && (
                     <>
                       <span>•</span>
                       {originLabel && (
-                        <span className="bg-onoma-primary/10 text-onoma-primary rounded px-1.5 py-0.5 text-[9px] font-bold capitalize">
+                        <span className="bg-tint/10 text-tint rounded-control-sm text-caption px-2 py-0.5 font-semibold capitalize">
                           {originLabel}
                         </span>
                       )}
                       <span>•</span>
                       <span>
                         Stashed{" "}
-                        <span className="text-foreground font-semibold">
+                        <span className="text-label font-semibold">
                           {new Date(stashedEntry.createdAt).toLocaleDateString(undefined, {
                             year: "numeric",
                             month: "short",
@@ -302,44 +317,48 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                 </div>
               </div>
 
-              <button
+              <Button
+                variant="bordered"
+                size="sm"
                 onClick={() => {
                   if (confirm(`Are you sure you want to delete "${selectedTerm}"?`)) {
                     handleDeleteTerm(selectedTerm);
                   }
                 }}
-                className="text-muted-foreground bg-background border-border/40 flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs transition-all hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-500"
+                className="text-label-secondary hover:text-red hover:bg-red/10"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 <span>Delete Word</span>
-              </button>
+              </Button>
             </div>
 
             {/* Inline Pronunciation Editor */}
             {editingPron && (
-              <div className="border-border/20 animate-in slide-in-from-top-1 bg-onoma-primary/[0.02] relative z-10 w-full space-y-2.5 rounded-xl border p-3 text-left duration-200">
+              <div className="border-separator animate-in slide-in-from-top-1 bg-tint/5 rounded-row relative z-10 w-full space-y-2 border p-3 text-left duration-200">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-foreground text-[10px] font-bold tracking-wider uppercase">
-                    Customize Pronunciation
-                  </h4>
-                  <button
+                  <h4 className="text-label text-subhead">Customize Pronunciation</h4>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => setEditingPron(false)}
                     title="Close"
-                    className="text-muted-foreground hover:text-onoma-primary cursor-pointer rounded p-0.5"
+                    aria-label="Close"
+                    className="text-label-secondary hover:text-tint"
                   >
                     <X className="h-3.5 w-3.5" />
-                  </button>
+                  </Button>
                 </div>
 
                 <div className="space-y-0.5">
                   <div className="flex items-center justify-between">
-                    <label className="text-muted-foreground text-[8px] font-bold uppercase">
+                    <label className="text-label-secondary text-subhead">
                       IPA (drives Read Naturally phonemes)
                     </label>
                     {speechConfig?.kokoro?.enabled &&
                       speechConfig?.kokoro?.engine === "kokoro-fastapi" && (
-                        <button
-                          type="button"
+                        <Button
+                          variant="link"
+                          size="sm"
                           onClick={async () => {
                             try {
                               const res = await suggestMutation.mutateAsync({ text: selectedTerm });
@@ -354,27 +373,27 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                             }
                           }}
                           disabled={suggestMutation.isPending}
-                          className="text-onoma-primary flex cursor-pointer items-center gap-1 text-[8px] font-bold select-none hover:underline disabled:opacity-50"
+                          className="text-tint h-auto px-0"
                         >
                           {suggestMutation.isPending ? "Suggesting..." : "Suggest IPA"}
-                        </button>
+                        </Button>
                       )}
                   </div>
-                  <input
+                  <Input
                     type="text"
                     value={ipaDraft}
                     onChange={(e) => setIpaDraft(e.target.value)}
                     placeholder="/ˈeksɑːmpl/"
-                    className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-1 font-mono text-xs focus:outline-none"
+                    className="text-footnote w-full font-mono"
                   />
                   {speechConfig?.kokoro?.enabled &&
                     (() => {
                       const result = ipaToKokoroPhonemes(ipaDraft);
                       return (
-                        <div className="text-muted-foreground mt-1 flex flex-wrap gap-1 font-mono text-[9px]">
+                        <div className="text-label-secondary text-caption mt-1 flex flex-wrap gap-1 font-mono">
                           <span>Phonemes: {result.phonemes || "(empty)"}</span>
                           {result.dropped.length > 0 && (
-                            <span className="font-semibold text-amber-500">
+                            <span className="text-yellow font-semibold">
                               (dropped: {result.dropped.join(", ")})
                             </span>
                           )}
@@ -384,29 +403,20 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                 </div>
 
                 <div className="space-y-0.5">
-                  <label className="text-muted-foreground text-[8px] font-bold uppercase">
-                    Voice
-                  </label>
+                  <label className="text-label-secondary text-subhead">Voice</label>
                   <Select
                     value={voiceDraft || "default"}
                     onValueChange={(val) => setVoiceDraft(val === "default" ? "" : val)}
                   >
-                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-2 py-1 text-xs transition-colors focus:outline-none">
+                    <SelectTrigger className="text-footnote w-full">
                       <SelectValue placeholder="Default / culture voice" />
                     </SelectTrigger>
-                    <SelectContent className="border-border/40 bg-background/95 max-h-[200px] backdrop-blur-md">
-                      <SelectItem
-                        value="default"
-                        className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                      >
+                    <SelectContent className="max-h-[200px]">
+                      <SelectItem value="default" className="text-footnote">
                         Default / culture voice
                       </SelectItem>
                       {(voicesData?.voices ?? []).map((v: string) => (
-                        <SelectItem
-                          key={v}
-                          value={v}
-                          className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                        >
+                        <SelectItem key={v} value={v} className="text-footnote">
                           {v}
                         </SelectItem>
                       ))}
@@ -414,27 +424,22 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                   </Select>
                 </div>
 
-                <div className="flex items-center justify-between gap-1.5 pt-0.5">
-                  <button
+                <div className="flex items-center justify-between gap-2 pt-0.5">
+                  <Button
+                    variant="bordered"
+                    size="sm"
                     onClick={resetPron}
                     title="Reset to defaults"
-                    className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 flex cursor-pointer items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-bold transition-colors"
                   >
                     <RotateCcw className="h-3 w-3" /> Reset
-                  </button>
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={previewPron}
-                      className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 flex cursor-pointer items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-bold transition-colors"
-                    >
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="bordered" size="sm" onClick={previewPron}>
                       <Volume2 className="h-3 w-3" /> Preview
-                    </button>
-                    <button
-                      onClick={savePron}
-                      className="bg-onoma-primary hover:bg-onoma-primary-light cursor-pointer rounded px-2.5 py-0.5 text-[9px] font-bold text-white transition-colors"
-                    >
+                    </Button>
+                    <Button size="sm" onClick={savePron}>
                       Save
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -442,11 +447,10 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
 
             {/* Transcriptions Grid */}
             <div className="space-y-2">
-              <h4 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                Orthographic Transcriptions
-              </h4>
+              <h4 className="text-label-secondary text-subhead">Orthographic Transcriptions</h4>
               <div className="grid gap-3 sm:grid-cols-3">
-                <div
+                <Button
+                  variant="bordered"
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(selectedTermCyrillic);
@@ -455,20 +459,21 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                       // clipboard unavailable (permission denied / insecure context) — nothing copied
                     }
                   }}
-                  className="border-border/40 bg-background group hover:border-onoma-primary/40 cursor-pointer rounded-xl border p-3 text-center transition-all duration-200 select-none"
+                  className="rounded-row group hover:border-tint/40 h-auto flex-col gap-0 p-3 font-normal whitespace-normal"
                 >
-                  <span className="text-muted-foreground mb-1 block text-xs text-[10px] font-bold tracking-wider uppercase">
+                  <span className="text-label-secondary text-eyebrow text-caption mb-1 block">
                     Cyrillic
                   </span>
-                  <span className="text-onoma-primary font-mono text-sm font-bold">
+                  <span className="text-tint text-body font-mono font-semibold">
                     {selectedTermCyrillic}
                   </span>
-                  <span className="text-muted-foreground mt-1 block text-[9px] opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="text-label-secondary text-caption mt-1 block opacity-0 transition-opacity group-hover:opacity-100">
                     Click to copy
                   </span>
-                </div>
+                </Button>
 
-                <div
+                <Button
+                  variant="bordered"
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(selectedTermGreek);
@@ -477,20 +482,21 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                       // clipboard unavailable (permission denied / insecure context) — nothing copied
                     }
                   }}
-                  className="border-border/40 bg-background group hover:border-onoma-primary/40 cursor-pointer rounded-xl border p-3 text-center transition-all duration-200 select-none"
+                  className="rounded-row group hover:border-tint/40 h-auto flex-col gap-0 p-3 font-normal whitespace-normal"
                 >
-                  <span className="text-muted-foreground mb-1 block text-xs text-[10px] font-bold tracking-wider uppercase">
+                  <span className="text-label-secondary text-eyebrow text-caption mb-1 block">
                     Greek
                   </span>
-                  <span className="text-onoma-primary font-mono text-sm font-bold">
+                  <span className="text-tint text-body font-mono font-semibold">
                     {selectedTermGreek}
                   </span>
-                  <span className="text-muted-foreground mt-1 block text-[9px] opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="text-label-secondary text-caption mt-1 block opacity-0 transition-opacity group-hover:opacity-100">
                     Click to copy
                   </span>
-                </div>
+                </Button>
 
-                <div
+                <Button
+                  variant="bordered"
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(selectedTermArabic);
@@ -499,25 +505,25 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                       // clipboard unavailable (permission denied / insecure context) — nothing copied
                     }
                   }}
-                  className="border-border/40 bg-background group hover:border-onoma-primary/40 cursor-pointer rounded-xl border p-3 text-center transition-all duration-200 select-none"
+                  className="rounded-row group hover:border-tint/40 h-auto flex-col gap-0 p-3 font-normal whitespace-normal"
                   dir="rtl"
                 >
                   <span
-                    className="text-muted-foreground mb-1 block text-left font-sans text-xs text-[10px] font-bold tracking-wider uppercase"
+                    className="text-label-secondary text-eyebrow text-caption mb-1 block text-left font-sans"
                     dir="ltr"
                   >
                     Arabic
                   </span>
-                  <span className="text-onoma-primary font-mono text-sm font-bold">
+                  <span className="text-tint text-body font-mono font-semibold">
                     {selectedTermArabic}
                   </span>
                   <span
-                    className="text-muted-foreground mt-1 block text-left font-sans text-[9px] opacity-0 transition-opacity group-hover:opacity-100"
+                    className="text-label-secondary text-caption mt-1 block text-left font-sans opacity-0 transition-opacity group-hover:opacity-100"
                     dir="ltr"
                   >
                     Click to copy
                   </span>
-                </div>
+                </Button>
               </div>
             </div>
 
@@ -532,38 +538,36 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
             {selectedTermMorphology && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-                    Noun Declension (Cases)
-                  </h4>
-                  <span className="text-muted-foreground text-[10px] font-semibold">
+                  <h4 className="text-label-secondary text-subhead">Noun Declension (Cases)</h4>
+                  <span className="text-label-secondary text-caption font-semibold">
                     Gender:{" "}
-                    <span className="text-onoma-primary font-bold uppercase">
+                    <span className="text-tint font-semibold uppercase">
                       {selectedTermMorphology.gender}
                     </span>
                   </span>
                 </div>
 
-                <div className="border-border/40 bg-background overflow-hidden rounded-xl border">
-                  <div className="bg-secondary/10 border-border/40 text-muted-foreground grid grid-cols-3 border-b px-3 py-2 text-[10px] font-bold tracking-wider uppercase">
+                <div className="border-separator bg-background rounded-row overflow-hidden border">
+                  <div className="bg-fill-4 border-separator text-label-secondary text-eyebrow grid grid-cols-3 border-b px-3 py-2">
                     <span>Case</span>
                     <span>Singular</span>
                     <span>Plural</span>
                   </div>
 
-                  <div className="divide-border/20 divide-y text-xs">
+                  <div className="divide-separator text-footnote divide-y">
                     {Object.entries(selectedTermMorphology.declensionTable).map(
                       ([caseName, declCase]) => (
-                        <div key={caseName} className="grid grid-cols-3 items-center px-3 py-2.5">
+                        <div key={caseName} className="grid grid-cols-3 items-center px-3 py-2">
                           <div className="flex flex-col pr-1">
-                            <span className="text-foreground font-bold capitalize">{caseName}</span>
-                            <span className="text-muted-foreground mt-0.5 text-[9px] leading-normal">
+                            <span className="text-label font-semibold capitalize">{caseName}</span>
+                            <span className="text-label-secondary text-caption mt-0.5 leading-normal">
                               {declCase.descriptionSingular.split(" (")[0]}
                             </span>
                           </div>
-                          <span className="text-onoma-primary truncate font-mono font-semibold">
+                          <span className="text-tint truncate font-mono font-semibold">
                             {declCase.singular}
                           </span>
-                          <span className="text-onoma-primary truncate font-mono font-semibold">
+                          <span className="text-tint truncate font-mono font-semibold">
                             {declCase.plural}
                           </span>
                         </div>
@@ -588,10 +592,14 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
             />
           </FacetCard>
         ) : (
-          <FacetCard className="border-border/40 bg-secondary/5 text-muted-foreground flex min-h-[400px] flex-col items-center justify-center border border-dashed p-8 text-center text-sm">
-            <BookOpen className="text-onoma-primary/40 mb-3 h-8 w-8 animate-pulse" />
+          <FacetCard
+            variant="inset"
+            padding="none"
+            className="text-label-secondary text-body flex min-h-[400px] flex-col items-center justify-center border-dashed p-8 text-center"
+          >
+            <BookOpen className="text-tint/40 mb-3 h-8 w-8" />
             <p className="font-semibold">No word selected</p>
-            <p className="text-muted-foreground mt-1 text-xs">
+            <p className="text-label-secondary text-footnote mt-1">
               Select a conlang vocabulary term from the left list to view script transcriptions,
               noun case declensions, and edit its lexical definition.
             </p>

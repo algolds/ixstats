@@ -76,7 +76,7 @@ interface ResponseOption {
 /**
  * v2 issue drill — the modern twin of the legacy IssueDetailModal. Renders inside
  * the right-side drill sheet with recon / respond / dismiss, and a post-resolve
- * "Declare Follow-Up Directive" CTA wired to the composer pre-fill conduit.
+ * "Declare follow-up Directive" CTA wired to the composer pre-fill conduit.
  */
 export interface IssueDetailBriefProps {
   issueId: string;
@@ -151,16 +151,16 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
   if (issueQuery.isLoading) {
     return (
       <div className="space-y-4" role="status" aria-label="Loading issue">
-        <Skeleton className="h-40 rounded-xl" />
-        <Skeleton className="h-24 rounded-xl" />
-        <Skeleton className="h-24 rounded-xl" />
+        <Skeleton className="rounded-row h-40" />
+        <Skeleton className="rounded-row h-24" />
+        <Skeleton className="rounded-row h-24" />
       </div>
     );
   }
 
   if (!issue) {
     return (
-      <div className="text-muted-foreground py-8 text-center text-sm">
+      <div className="text-label-secondary text-body py-8 text-center">
         This issue could not be loaded.
       </div>
     );
@@ -223,13 +223,13 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
     issue.severity.toLowerCase() === "critical"
       ? "text-destructive"
       : issue.severity.toLowerCase() === "high"
-        ? "text-amber-500"
-        : "text-muted-foreground";
+        ? "text-yellow"
+        : "text-label-secondary";
 
   return (
     <div className="space-y-5 pb-4">
       {/* Issue Hero */}
-      <FacetCard surface="solid" className="flex flex-col gap-3 rounded-xl p-5">
+      <FacetCard className="flex flex-col gap-3 p-5">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline">
             <DomainIcon />
@@ -239,10 +239,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
             {issue.severity.toLowerCase()}
           </Badge>
           {hasDeadline && !isResolved && (
-            <Badge
-              variant="outline"
-              className={isUrgent ? "text-destructive" : "text-muted-foreground"}
-            >
+            <Badge variant={isUrgent ? "destructive" : "outline"}>
               {isUrgent ? <Flame /> : <Clock />}
               {timeRemainingText}
             </Badge>
@@ -250,18 +247,18 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
         </div>
 
         <div>
-          <h2 className="text-foreground text-lg leading-snug font-semibold">{issue.title}</h2>
+          <h2 className="text-label text-title-3">{issue.title}</h2>
           {issue.intentId && (
-            <Badge variant="secondary" className="mt-1.5">
+            <Badge variant="secondary" className="mt-2">
               <Command />
               Linked to an active directive
             </Badge>
           )}
         </div>
 
-        <p className="text-muted-foreground text-sm leading-relaxed">{issue.description}</p>
+        <p className="text-label-secondary text-body leading-relaxed">{issue.description}</p>
         {issue.longDescription && (
-          <div className="text-muted-foreground border-border border-l-2 pl-3 text-xs leading-relaxed whitespace-pre-line">
+          <div className="text-label-secondary border-separator text-footnote border-l-2 pl-3 leading-relaxed whitespace-pre-line">
             {issue.longDescription}
           </div>
         )}
@@ -269,21 +266,21 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
 
       {/* Outcome Display (after response) */}
       {(isResolved || showOutcome) && (issue.consequenceLog || options.length > 0) && (
-        <FacetCard surface="solid" className="flex flex-col gap-2.5 rounded-xl p-4">
+        <FacetCard className="flex flex-col gap-2 p-4">
           <div className="flex flex-wrap items-center gap-2">
-            <CheckCircle className="h-4 w-4 text-emerald-500" />
-            <span className="text-foreground text-sm font-semibold">
+            <CheckCircle className="text-green h-4 w-4" />
+            <span className="text-label text-headline">
               {issue.status === "auto_resolved" ? "Auto-Resolved" : "Decision Made"}
             </span>
             {issue.ixCreditsAwarded > 0 && (
-              <Badge variant="outline" className="text-amber-500">
+              <Badge variant="yellow">
                 +{issue.ixCreditsAwarded}
                 <IxCreditsSymbol className="h-3 w-3 shrink-0" />
               </Badge>
             )}
           </div>
           {issue.consequenceLog && (
-            <p className="text-muted-foreground text-xs leading-relaxed whitespace-pre-line">
+            <p className="text-label-secondary text-footnote leading-relaxed whitespace-pre-line">
               {issue.consequenceLog}
             </p>
           )}
@@ -296,10 +293,10 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                 onClose?.();
                 onDeclare(chosenDirective);
               }}
-              className="mt-1 bg-amber-500 text-amber-950 hover:bg-amber-500/90"
+              className="mt-1"
             >
-              <Command className="h-4 w-4" />
-              Declare Follow-Up Directive
+              <Command aria-hidden="true" className="h-4 w-4" />
+              Declare follow-up Directive
               <ArrowUpRight className="h-4 w-4" />
             </Button>
           )}
@@ -308,14 +305,14 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
 
       {/* Statecraft Recon */}
       {!isResolved && !showOutcome && reconQuery.data && reconQuery.data.status !== "disabled" && (
-        <FacetCard surface="solid" className="flex flex-col gap-2.5 rounded-xl p-4">
-          <h3 className="text-foreground flex items-center gap-2 text-sm font-semibold">
-            <Sliders className="text-muted-foreground h-4 w-4" />
+        <FacetCard className="flex flex-col gap-2 p-4">
+          <h3 className="text-label text-headline flex items-center gap-2">
+            <Sliders className="text-label-secondary h-4 w-4" />
             Cabinet Research
           </h3>
           {reconQuery.data.status === "none" && (
             <div className="flex items-center justify-between gap-3">
-              <p className="text-muted-foreground text-xs leading-relaxed">
+              <p className="text-label-secondary text-footnote leading-relaxed">
                 Commission a meeting to reveal the hard projected effects behind each option. Costs
                 administrative capacity.
               </p>
@@ -332,7 +329,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
             </div>
           )}
           {reconQuery.data.status === "pending" && (
-            <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+            <p className="text-label-secondary text-footnote flex items-center gap-2">
               <Clock className="h-3.5 w-3.5" />
               Your team is researching — findings land in{" "}
               {Math.max(
@@ -347,11 +344,13 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
           {reconQuery.data.status === "ready" && (
             <div className="space-y-2">
               {(reconQuery.data.options as ReconOptionItem[]).map((o: ReconOptionItem) => (
-                <div key={o.optionId} className="bg-muted/50 rounded-lg p-2.5">
-                  <p className="text-foreground mb-1 text-xs font-semibold">{o.label}</p>
-                  <div className="flex flex-wrap gap-1.5">
+                <div key={o.optionId} className="bg-fill-3 rounded-control p-2">
+                  <p className="text-label text-caption mb-1 font-semibold">{o.label}</p>
+                  <div className="flex flex-wrap gap-2">
                     {o.reveals.length === 0 && (
-                      <span className="text-muted-foreground text-xs">No measurable effects.</span>
+                      <span className="text-label-secondary text-footnote">
+                        No measurable effects.
+                      </span>
                     )}
                     {o.reveals.map((r: ReconRevealItem, i: number) => {
                       const field = r.targetField
@@ -367,15 +366,18 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                               : `${r.operation === "subtract" ? "-" : "+"}${Math.abs(r.value)}`;
                       const cls =
                         r.state === "greyed"
-                          ? "text-muted-foreground/60"
+                          ? "text-label-tertiary"
                           : r.state === "questioned"
-                            ? "text-amber-500"
-                            : "text-emerald-500";
+                            ? "text-yellow"
+                            : "text-green";
                       return (
                         <span
                           key={i}
                           title={r.reason ?? undefined}
-                          className={cn("bg-background rounded px-1.5 py-0.5 text-xs", cls)}
+                          className={cn(
+                            "bg-surface text-footnote rounded-control-sm px-2 py-0.5",
+                            cls
+                          )}
                         >
                           {field}: {val}
                           {r.state === "questioned" ? " ?" : ""}
@@ -385,7 +387,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                   </div>
                 </div>
               ))}
-              <p className="text-muted-foreground text-xs">
+              <p className="text-label-secondary text-footnote">
                 Greyed = your government can&apos;t assess it · &ldquo;?&rdquo; = may be inaccurate.
               </p>
             </div>
@@ -397,13 +399,13 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
       {!isResolved && !showOutcome && (
         <div className="space-y-3">
           {/* Unified 4-Branch Lifecycle Action Strip */}
-          <FacetCard surface="solid" className="space-y-3 rounded-xl p-3.5">
-            <div className="border-border flex items-center justify-between gap-2 border-b pb-2">
-              <Eyebrow className="flex items-center gap-1.5">
-                <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+          <FacetCard className="space-y-3 p-4">
+            <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
+              <Eyebrow className="flex items-center gap-2">
+                <AlertTriangle className="text-yellow h-3.5 w-3.5" />
                 Executive issue resolution
               </Eyebrow>
-              <span className="text-muted-foreground text-xs">4 action pathways</span>
+              <span className="text-label-secondary text-footnote">4 action pathways</span>
             </div>
 
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -443,19 +445,18 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
             </div>
           </FacetCard>
 
-          <div id="issue-brief-options" className="space-y-2.5 pt-1">
+          <div id="issue-brief-options" className="space-y-2 pt-1">
             {options.map((option: ResponseOption) => {
               const isConfirming = confirmingOptionId === option.id;
               return (
                 <FacetCard
                   key={option.id}
-                  surface="solid"
                   className={cn(
-                    "flex items-start justify-between gap-3 rounded-xl p-4 transition-[border-color,box-shadow] duration-150",
+                    "rounded-row flex items-start justify-between gap-3 p-4 transition-[border-color,box-shadow] duration-150",
                     isConfirming
                       ? option.isRisky
                         ? "border-destructive ring-destructive/40 ring-1"
-                        : "border-ring ring-ring ring-1"
+                        : "border-ring ring-tint ring-1"
                       : option.isRisky
                         ? "border-destructive/40"
                         : "hover:border-ring/60"
@@ -464,15 +465,15 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                   <div className="min-w-0 flex-1">
                     <h4
                       className={cn(
-                        "mb-1 text-sm font-semibold",
-                        option.isRisky ? "text-destructive" : "text-foreground"
+                        "text-headline mb-1",
+                        option.isRisky ? "text-destructive" : "text-label"
                       )}
                     >
                       {option.label}
                     </h4>
-                    <p className="text-muted-foreground mb-2 text-xs">{option.description}</p>
+                    <p className="text-label-secondary text-footnote mb-2">{option.description}</p>
 
-                    <div className="flex flex-wrap gap-2 text-xs">
+                    <div className="text-footnote flex flex-wrap gap-2">
                       {option.previewEffects.publicApproval != null &&
                         option.previewEffects.publicApproval !== 0 && (
                           <EffectBadge
@@ -502,7 +503,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                     </div>
 
                     {option.recommendedDirective && (
-                      <p className="text-muted-foreground bg-muted/50 mt-2.5 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs">
+                      <p className="text-label-secondary bg-fill-3 rounded-control text-footnote mt-2 flex items-center gap-2 px-3 py-2">
                         <Command className="h-3 w-3 shrink-0" />
                         <span className="line-clamp-2">
                           Recommended directive: &ldquo;{option.recommendedDirective}&rdquo;
@@ -511,7 +512,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                     )}
 
                     {option.isRisky && (
-                      <p className="text-destructive mt-2 flex items-start gap-1.5 text-xs leading-snug">
+                      <p className="text-destructive text-footnote mt-2 flex items-start gap-2 leading-snug">
                         <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         Risky choice — carries risk of negative outcomes or stability backlash.
                       </p>
@@ -520,7 +521,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
 
                   <div className="shrink-0">
                     {isConfirming ? (
-                      <div className="flex gap-1.5">
+                      <div className="flex gap-2">
                         <Button
                           type="button"
                           variant="ghost"
@@ -582,17 +583,18 @@ function PathwayButton({
   accent?: boolean;
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="bordered"
+      size="md"
       onClick={onClick}
       disabled={disabled}
-      data-cuelume-press=""
-      className="border-border bg-background hover:bg-accent focus-visible:ring-ring flex min-h-16 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border p-2.5 text-center transition-[background-color,transform] duration-150 ease-out outline-none focus-visible:ring-2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+      className="h-auto flex-col justify-center gap-1 p-2 whitespace-normal disabled:opacity-50"
     >
-      <Icon className={cn("h-4 w-4", accent ? "text-amber-500" : "text-muted-foreground")} />
-      <span className="text-foreground text-xs font-semibold">{label}</span>
-      <span className="text-muted-foreground font-mono text-xs">{sub}</span>
-    </button>
+      <Icon className={cn("h-4 w-4", accent ? "text-yellow" : "text-label-secondary")} />
+      <span className="text-label text-caption font-semibold">{label}</span>
+      <span className="text-label-secondary text-footnote tabular-nums">{sub}</span>
+    </Button>
   );
 }
 
@@ -608,10 +610,10 @@ function EffectBadge({
   isNumeric?: boolean;
 }) {
   const IMPACT_TONE: Record<string, string> = {
-    positive: "text-emerald-500",
-    moderate_positive: "text-emerald-500",
-    minor_positive: "text-emerald-500/80",
-    negligible: "text-muted-foreground",
+    positive: "text-green",
+    moderate_positive: "text-green",
+    minor_positive: "text-green/80",
+    negligible: "text-label-secondary",
     minor_negative: "text-destructive/80",
     moderate_negative: "text-destructive",
     significant_negative: "text-destructive",
@@ -619,8 +621,7 @@ function EffectBadge({
   };
 
   if (isNumeric && value != null) {
-    const tone =
-      value > 0 ? "text-emerald-500" : value < 0 ? "text-destructive" : "text-muted-foreground";
+    const tone = value > 0 ? "text-green" : value < 0 ? "text-destructive" : "text-label-secondary";
     return (
       <span className={cn("inline-flex items-center gap-0.5 font-semibold", tone)}>
         {value > 0 ? "+" : ""}
@@ -634,7 +635,7 @@ function EffectBadge({
       <span
         className={cn(
           "inline-flex items-center gap-0.5 font-semibold",
-          IMPACT_TONE[impact] ?? "text-muted-foreground"
+          IMPACT_TONE[impact] ?? "text-label-secondary"
         )}
       >
         {label}

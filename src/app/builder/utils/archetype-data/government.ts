@@ -15,7 +15,7 @@ export const governmentArchetypes: ArchetypeSeed[] = [
     name: "Democratic",
     description: "Full or flawed democracies",
     icon: Vote,
-    color: "text-blue-600",
+    color: "text-blue",
     filter: (country: RealCountryData) => {
       // This is a simplified heuristic - in reality would use democracy index
       const democraticCountries = [
@@ -48,7 +48,7 @@ export const governmentArchetypes: ArchetypeSeed[] = [
       ];
       return democraticCountries.includes(country.name);
     },
-    gradient: "from-blue-600/20 to-cyan-600/10",
+    gradient: "bg-blue/10",
     categoryId: "political-systems",
     priority: 12,
   },
@@ -57,7 +57,7 @@ export const governmentArchetypes: ArchetypeSeed[] = [
     name: "Federal",
     description: "Federal system of government",
     icon: Building,
-    color: "text-purple-600",
+    color: "text-purple",
     filter: (country: RealCountryData) => {
       const federalCountries = [
         "Argentina",
@@ -85,7 +85,7 @@ export const governmentArchetypes: ArchetypeSeed[] = [
       ];
       return federalCountries.includes(country.name);
     },
-    gradient: "from-purple-600/20 to-violet-600/10",
+    gradient: "bg-purple/10",
     categoryId: "political-systems",
     priority: 13,
   },
@@ -94,7 +94,7 @@ export const governmentArchetypes: ArchetypeSeed[] = [
     name: "Monarchy",
     description: "Constitutional or absolute monarchy",
     icon: Crown,
-    color: "text-amber-600",
+    color: "text-yellow",
     filter: (country: RealCountryData) => {
       const monarchies = [
         "Andorra",
@@ -128,7 +128,7 @@ export const governmentArchetypes: ArchetypeSeed[] = [
       ];
       return monarchies.includes(country.name);
     },
-    gradient: "from-amber-600/20 to-yellow-600/10",
+    gradient: "bg-yellow/10",
     categoryId: "political-systems",
     priority: 14,
   },
@@ -137,7 +137,7 @@ export const governmentArchetypes: ArchetypeSeed[] = [
     name: "Common Law",
     description: "English common law legal tradition",
     icon: Gavel,
-    color: "text-teal-600",
+    color: "text-teal",
     filter: (country: RealCountryData) => {
       const commonLawCountries = [
         "Antigua and Barbuda",
@@ -197,7 +197,7 @@ export const governmentArchetypes: ArchetypeSeed[] = [
       ];
       return commonLawCountries.includes(country.name);
     },
-    gradient: "from-teal-600/20 to-cyan-600/10",
+    gradient: "bg-teal/10",
     categoryId: "legal-systems",
     priority: 15,
   },
@@ -206,7 +206,7 @@ export const governmentArchetypes: ArchetypeSeed[] = [
     name: "Civil Law",
     description: "Continental European civil law tradition",
     icon: BookOpen,
-    color: "text-indigo-600",
+    color: "text-indigo",
     filter: (country: RealCountryData) => {
       const civilLawCountries = [
         "Albania",
@@ -269,7 +269,7 @@ export const governmentArchetypes: ArchetypeSeed[] = [
       ];
       return civilLawCountries.includes(country.name);
     },
-    gradient: "from-indigo-600/20 to-purple-600/10",
+    gradient: "bg-indigo/10",
     categoryId: "legal-systems",
     priority: 16,
   },

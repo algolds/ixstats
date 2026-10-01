@@ -2,6 +2,7 @@
 // src/components/media-search/WikiRepositoryTab.tsx
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { withBasePath } from "~/lib/base-path";
 import { isMediaWikiUrl, publicArticleUrl } from "~/lib/wiki-os/config";
 import { cn } from "~/lib/utils";
@@ -15,7 +16,6 @@ import {
   ZoomIn,
   ControlSlider as SlidersHorizontal,
 } from "iconoir-react";
-import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { CommonsCategoryBrowser } from "~/components/wiki-os/commons/CommonsCategoryBrowser";
@@ -24,6 +24,7 @@ import { TextureOverlay } from "~/components/ui/texture-overlay";
 import type { CommonsImage } from "./types";
 import { getImageType, getImageOrientation } from "./types";
 import { MyStashTab } from "./MyStashTab";
+import { SearchField } from "~/components/ui/search-field";
 
 function dedupeImages(existing: CommonsImage[], incoming: CommonsImage[]): CommonsImage[] {
   const seen = new Set(existing.map((img) => img.pageid));
@@ -135,10 +136,7 @@ export function WikiRepositoryTab({
     );
 
   // 3. Local/External Wiki files query (ixwiki / iiwiki)
-  const localIsBrowseMode =
-    wikiSource === "wiki" &&
-    !debouncedWikiQuery &&
-    !!browsingCategory;
+  const localIsBrowseMode = wikiSource === "wiki" && !debouncedWikiQuery && !!browsingCategory;
   const { data: wikiFileData, isFetching: isFetchingWikiFiles } = api.wikios.searchFiles.useQuery(
     {
       query: debouncedWikiQuery || undefined,
@@ -278,98 +276,35 @@ export function WikiRepositoryTab({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Header controls & tabs */}
-      <div className="border-border/10 bg-card/5 flex flex-col gap-2 border-b p-3">
+      <div className="border-separator bg-surface flex flex-col gap-2 border-b p-3">
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Wiki Sub-tabs */}
-            <div
-              role="tablist"
+            <SegmentedControl
+              asTabs
               aria-label="Repository image sources"
-              className="inline-flex items-center gap-1 p-1 rounded-lg bg-muted/60 border border-border/40 backdrop-blur-md"
-            >
-              <button
-                role="tab"
-                type="button"
-                aria-selected={wikiSource === "commons"}
-                onClick={() => setWikiSource("commons")}
-                className={cn(
-                  "px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] select-none cursor-pointer",
-                  wikiSource === "commons"
-                    ? "bg-background text-foreground font-semibold shadow-xs border border-border/50"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
-                )}
-              >
-                <Globe className="h-3.5 w-3.5 shrink-0" />
-                <span>Commons</span>
-              </button>
-              <button
-                role="tab"
-                type="button"
-                aria-selected={wikiSource === "wiki"}
-                onClick={() => setWikiSource("wiki")}
-                className={cn(
-                  "px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] select-none cursor-pointer",
-                  wikiSource === "wiki"
-                    ? "bg-background text-foreground font-semibold shadow-xs border border-border/50"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
-                )}
-              >
-                <Database className="h-3.5 w-3.5 shrink-0" />
-                <span>Wiki</span>
-              </button>
-              <button
-                role="tab"
-                type="button"
-                aria-selected={wikiSource === "stash"}
-                onClick={() => setWikiSource("stash")}
-                className={cn(
-                  "px-3 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] select-none cursor-pointer",
-                  wikiSource === "stash"
-                    ? "bg-background text-foreground font-semibold shadow-xs border border-border/50"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
-                )}
-              >
-                <Bookmark className="h-3.5 w-3.5 shrink-0" />
-                <span>My Stash</span>
-              </button>
-            </div>
+              size="sm"
+              value={wikiSource}
+              onValueChange={setWikiSource}
+              options={[
+                { value: "commons", label: "Commons", icon: <Globe aria-hidden="true" /> },
+                { value: "wiki", label: "Wiki", icon: <Database aria-hidden="true" /> },
+                { value: "stash", label: "My Stash", icon: <Bookmark aria-hidden="true" /> },
+              ]}
+            />
 
             {/* Apple Scope Toggle: IxWiki (Local) vs IIWiki (External) */}
             {wikiSource === "wiki" && (
-              <div
-                role="radiogroup"
+              <SegmentedControl
                 aria-label="Wiki source selection"
-                className="inline-flex items-center gap-0.5 p-0.5 rounded-md bg-muted/60 border border-border/40 backdrop-blur-sm animate-in fade-in zoom-in-95 duration-150"
-              >
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={wikiSubSource === "ixwiki"}
-                  onClick={() => setWikiSubSource("ixwiki")}
-                  className={cn(
-                    "px-2.5 py-1 rounded text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] cursor-pointer select-none",
-                    wikiSubSource === "ixwiki"
-                      ? "bg-background text-foreground font-semibold shadow-2xs border border-border/50"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-                  )}
-                >
-                  IxWiki
-                </button>
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={wikiSubSource === "iiwiki"}
-                  onClick={() => setWikiSubSource("iiwiki")}
-                  className={cn(
-                    "px-2.5 py-1 rounded text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] cursor-pointer select-none",
-                    wikiSubSource === "iiwiki"
-                      ? "bg-background text-foreground font-semibold shadow-2xs border border-border/50"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-                  )}
-                >
-                  IIWiki
-                </button>
-              </div>
+                size="sm"
+                value={wikiSubSource}
+                onValueChange={setWikiSubSource}
+                options={[
+                  { value: "ixwiki", label: "IxWiki" },
+                  { value: "iiwiki", label: "IIWiki" },
+                ]}
+              />
             )}
           </div>
 
@@ -381,10 +316,10 @@ export function WikiRepositoryTab({
                 size="sm"
                 onClick={() => setIsCategoryExpanded((prev) => !prev)}
                 className={cn(
-                  "flex h-8 items-center gap-1.5 text-xs font-medium rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] cursor-pointer",
+                  "text-caption rounded-control flex h-8 cursor-pointer items-center gap-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]",
                   isCategoryExpanded
-                    ? "border-primary/40 bg-primary/10 text-primary hover:bg-primary/15"
-                    : "border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                    ? "border-tint/40 bg-tint-fill text-tint hover:bg-tint-fill"
+                    : "border-separator text-label-secondary hover:text-label hover:bg-fill-3"
                 )}
               >
                 <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
@@ -397,157 +332,114 @@ export function WikiRepositoryTab({
         {wikiSource !== "stash" && (
           <>
             {/* Search input with 1-tap clear */}
-            <div className="relative">
-              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-              <Input
-                placeholder={
-                  wikiSource === "commons"
-                    ? 'Search Commons... e.g. "medieval castle", "royal portrait"'
-                    : `Search ${wikiSubSource === "iiwiki" ? "IIWiki" : "IxWiki"} files...`
-                }
-                value={wikiSearchQuery}
-                onChange={(e) => setWikiSearchQuery(e.target.value)}
-                className="h-9 pl-9 pr-8 text-xs bg-muted/30 border-border/50 focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-ring"
-              />
-              {wikiSearchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setWikiSearchQuery("")}
-                  className="absolute top-1/2 right-2.5 -translate-y-1/2 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.95] cursor-pointer"
-                  title="Clear search"
-                  aria-label="Clear search"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
+            <SearchField
+              placeholder={
+                wikiSource === "commons"
+                  ? 'Search Commons... e.g. "medieval castle", "royal portrait"'
+                  : `Search ${wikiSubSource === "iiwiki" ? "IIWiki" : "IxWiki"} files...`
+              }
+              aria-label="Search files"
+              value={wikiSearchQuery}
+              onValueChange={setWikiSearchQuery}
+            />
 
             {/* Filters bar */}
             {isCategoryExpanded && (
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+              <div className="text-footnote flex flex-wrap items-center justify-between gap-3 pt-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
                 <div className="flex flex-wrap items-center gap-3">
                   {/* File Type Segmented Control */}
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase select-none">
-                      Type:
-                    </span>
-                    <div
-                      role="radiogroup"
+                  <div className="flex items-center gap-2">
+                    <span className="text-footnote text-label-secondary select-none">Type:</span>
+                    <SegmentedControl
                       aria-label="Filter by file type"
-                      className="inline-flex items-center gap-0.5 p-0.5 rounded-md bg-muted/60 border border-border/40 backdrop-blur-sm"
-                    >
-                      {(["all", "jpg", "png", "svg"] as const).map((type) => (
-                        <button
-                          key={type}
-                          type="button"
-                          role="radio"
-                          aria-checked={fileTypeFilter === type}
-                          onClick={() => setFileTypeFilter(type)}
-                          className={cn(
-                            "rounded px-2 py-0.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] select-none cursor-pointer uppercase",
-                            fileTypeFilter === type
-                              ? "bg-background text-foreground font-semibold shadow-2xs border border-border/50"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-                          )}
-                        >
-                          {type}
-                        </button>
-                      ))}
-                    </div>
+                      size="sm"
+                      value={fileTypeFilter}
+                      onValueChange={setFileTypeFilter}
+                      options={[
+                        { value: "all", label: "All" },
+                        { value: "jpg", label: "JPG" },
+                        { value: "png", label: "PNG" },
+                        { value: "svg", label: "SVG" },
+                      ]}
+                    />
                   </div>
 
                   {/* Orientation Segmented Control */}
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase select-none">
-                      Orient:
-                    </span>
-                    <div
-                      role="radiogroup"
+                  <div className="flex items-center gap-2">
+                    <span className="text-footnote text-label-secondary select-none">Orient:</span>
+                    <SegmentedControl
                       aria-label="Filter by orientation"
-                      className="inline-flex items-center gap-0.5 p-0.5 rounded-md bg-muted/60 border border-border/40 backdrop-blur-sm"
-                    >
-                      {(["all", "landscape", "portrait", "square"] as const).map((orient) => (
-                        <button
-                          key={orient}
-                          type="button"
-                          role="radio"
-                          aria-checked={orientationFilter === orient}
-                          onClick={() => setOrientationFilter(orient)}
-                          className={cn(
-                            "rounded px-2 py-0.5 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97] select-none cursor-pointer",
-                            orientationFilter === orient
-                              ? "bg-background text-foreground font-semibold shadow-2xs border border-border/50"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-                          )}
-                        >
-                          {orient === "landscape"
-                            ? "Land"
-                            : orient === "portrait"
-                              ? "Port"
-                              : orient === "square"
-                                ? "Sq"
-                                : "All"}
-                        </button>
-                      ))}
-                    </div>
+                      size="sm"
+                      value={orientationFilter}
+                      onValueChange={setOrientationFilter}
+                      options={[
+                        { value: "all", label: "All" },
+                        { value: "landscape", label: "Land" },
+                        { value: "portrait", label: "Port" },
+                        { value: "square", label: "Sq" },
+                      ]}
+                    />
                   </div>
                 </div>
 
                 {(fileTypeFilter !== "all" || orientationFilter !== "all") && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="link"
+                    size="sm"
                     onClick={() => {
                       setFileTypeFilter("all");
                       setOrientationFilter("all");
                     }}
-                    className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground active:scale-[0.97] transition-[color,background-color,border-color,box-shadow,opacity,transform] underline underline-offset-2"
+                    className="text-label-secondary h-auto px-0"
                   >
                     Reset Filters
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
 
             {/* Active Category Chips */}
             {wikiSource === "commons" && activeCategories.length > 0 && (
-              <div className="mt-1 flex flex-wrap gap-1.5">
+              <div className="mt-1 flex flex-wrap gap-2">
                 {activeCategories.map((cat) => (
                   <span
                     key={cat}
-                    className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/60 px-2.5 py-0.5 text-xs font-medium text-foreground backdrop-blur-sm shadow-2xs"
+                    className="border-separator bg-fill-3 text-caption text-label inline-flex items-center gap-1 rounded-full border px-3 py-0.5"
                   >
                     <span>{cat}</span>
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={() => handleToggleCategory(cat)}
-                      className="rounded-full p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors active:scale-[0.95] cursor-pointer"
                       title={`Remove ${cat} filter`}
                       aria-label={`Remove ${cat} filter`}
+                      className="text-label-secondary size-5 rounded-full"
                     >
                       <X className="h-2.5 w-2.5" />
-                    </button>
+                    </Button>
                   </span>
                 ))}
               </div>
             )}
 
             {browsingCategory && !isSearchMode && (
-              <div className="mt-1 flex flex-wrap gap-1.5">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-muted/40 px-2.5 py-0.5 text-xs font-medium text-foreground">
-                  <span className="text-muted-foreground">Browsing:</span>
+              <div className="mt-1 flex flex-wrap gap-2">
+                <span className="border-separator bg-fill-3 text-caption text-label inline-flex items-center gap-2 rounded-full border px-3 py-0.5">
+                  <span className="text-label-secondary">Browsing:</span>
                   <span className="font-semibold">{browsingCategory}</span>
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => {
                       setBrowsingCategory(null);
                       setWikiImages([]);
                     }}
-                    className="rounded-full p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors active:scale-[0.95] cursor-pointer"
                     title="Clear folder filter"
                     aria-label="Clear folder filter"
+                    className="text-label-secondary size-5 rounded-full"
                   >
                     <X className="h-2.5 w-2.5" />
-                  </button>
+                  </Button>
                 </span>
               </div>
             )}
@@ -568,7 +460,7 @@ export function WikiRepositoryTab({
           {/* Category Browser sidebar */}
           <div
             className={cn(
-              "border-border/10 bg-card/5 shrink-0 border-r transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
+              "border-separator bg-surface shrink-0 border-r transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
               isCategoryExpanded ? "w-60" : "w-0 overflow-hidden"
             )}
           >
@@ -588,11 +480,11 @@ export function WikiRepositoryTab({
             {(isFetchingCommonsSearch || isFetchingCommonsCat || isFetchingWikiFiles) &&
             wikiImages.length === 0 ? (
               <div className="flex h-48 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
+                <Loader2 className="text-tint h-8 w-8 animate-spin" />
               </div>
             ) : filteredWikiImages.length > 0 ? (
               <div className="flex-1">
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                   {filteredWikiImages.map((img, index) => {
                     const isSelected = selectedImageObj?.pageid === img.pageid;
                     const cleanTitle = img.title.replace(/^File:/, "").replace(/_/g, " ");
@@ -601,13 +493,14 @@ export function WikiRepositoryTab({
                       <button
                         key={`${img.pageid}-${img.title}-${index}`}
                         type="button"
+                        aria-pressed={isSelected}
                         onClick={() => onSelectImage(img)}
                         onDoubleClick={onDoubleClickConfirm}
                         className={cn(
-                          "group relative flex flex-col overflow-hidden rounded-lg border bg-card text-left select-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
+                          "group rounded-control bg-surface relative flex flex-col overflow-hidden border text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-[0.98]",
                           isSelected
-                            ? "border-blue-500 ring-2 ring-blue-500/30 shadow-sm"
-                            : "border-border/50 hover:border-border hover:shadow-xs"
+                            ? "border-tint ring-tint/30 shadow-card ring-2"
+                            : "border-separator hover:border-separator"
                         )}
                         style={{ contentVisibility: "auto", containIntrinsicSize: "auto 180px" }}
                       >
@@ -621,26 +514,28 @@ export function WikiRepositoryTab({
                           opacity={0.03}
                           className="mix-blend-overlay"
                         />
-                        <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted/20">
+                        <div className="bg-fill-4 relative aspect-[4/3] w-full overflow-hidden">
                           <img
                             src={img.thumbUrl}
                             alt={cleanTitle}
                             loading="lazy"
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            className="h-full w-full object-cover transition-transform duration-300"
                             onContextMenu={(e) => e.preventDefault()}
                           />
-                          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-[2px] transition-opacity duration-200 group-hover:opacity-100">
-                            <div className="rounded-full border border-white/20 bg-black/60 p-1.5 text-white shadow-md">
+                          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                            <div className="border-separator shadow-card rounded-full border bg-black/60 p-2 text-white">
                               <ZoomIn className="h-4 w-4" />
                             </div>
                           </div>
                         </div>
                         <div className="flex flex-col gap-0.5 p-2 text-left">
-                          <span className="truncate text-xs font-medium text-foreground/90 group-hover:text-foreground">
+                          <span className="text-caption text-label group-hover:text-label truncate">
                             {cleanTitle}
                           </span>
-                          <span className="text-xs text-muted-foreground">
-                            {img.width > 0 && img.height > 0 ? `${img.width}×${img.height}` : "Vector"}
+                          <span className="text-footnote text-label-secondary">
+                            {img.width > 0 && img.height > 0
+                              ? `${img.width}×${img.height}`
+                              : "Vector"}
                           </span>
                         </div>
                       </button>
@@ -654,7 +549,7 @@ export function WikiRepositoryTab({
                       variant="ghost"
                       size="sm"
                       onClick={handleWikiLoadMore}
-                      className="h-8 text-xs"
+                      className="text-footnote h-8"
                     >
                       Load More Images
                     </Button>
@@ -662,7 +557,7 @@ export function WikiRepositoryTab({
                 )}
               </div>
             ) : (
-              <div className="text-muted-foreground py-12 text-center text-xs">
+              <div className="text-label-secondary text-footnote py-12 text-center">
                 {wikiSearchQuery || browsingCategory
                   ? "No images match filters/search."
                   : "Search or select a category sidebar folder to browse images."}
@@ -672,7 +567,7 @@ export function WikiRepositoryTab({
 
           {/* Right Side Detail Panel */}
           {selectedImageObj && (
-            <div className="border-border/40 w-80 shrink-0 overflow-y-auto border-l bg-card/40 backdrop-blur-md">
+            <div className="border-separator bg-surface w-80 shrink-0 overflow-y-auto border-l">
               <CommonsDetailPanel
                 image={selectedImageObj}
                 onClose={() => {

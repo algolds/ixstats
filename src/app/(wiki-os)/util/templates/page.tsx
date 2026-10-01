@@ -5,10 +5,14 @@
 import React, { useState, useMemo } from "react";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { ViewGrid, Search, Code, Check, Spark, Packages, Copy, Eye, List } from "iconoir-react";
-import { motion } from "motion/react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { SearchField } from "~/components/ui/search-field";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { MASTER_TEMPLATE_PRESETS } from "~/lib/wiki-os/templates/master-presets";
 import { VisualInfoboxPreviewCard } from "~/components/wiki-os/templates/VisualInfoboxPreviewCard";
 
@@ -101,17 +105,15 @@ export default function WikiTemplatesPage() {
     <WikiOSLayout title="Template Registry & Infobox Suite">
       <div className="mx-auto w-full max-w-7xl space-y-6 pb-16">
         {/* Header Banner */}
-        <div className="border-border/60 bg-card/60 rounded-3xl border p-6 shadow-xs backdrop-blur-xl">
+        <div className="border-separator bg-surface rounded-card border p-6">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-            <div className="flex items-center gap-3.5">
-              <div className="bg-wiki/15 text-wiki border-wiki/20 rounded-2xl border p-3 shadow-inner">
+            <div className="flex items-center gap-4">
+              <div className="bg-tint/15 text-tint border-tint/20 rounded-card border p-3">
                 <ViewGrid className="h-6 w-6" />
               </div>
               <div>
-                <h1 className="text-foreground text-xl font-bold">
-                  Template Registry & Infobox Suite
-                </h1>
-                <p className="text-muted-foreground mt-0.5 text-xs">
+                <h1 className="text-label text-title-2">Template Registry & Infobox Suite</h1>
+                <p className="text-label-secondary text-footnote mt-0.5">
                   Unified polymorphic realm factbooks, dynamic variant schemas, and live simulation
                   data connectors
                 </p>
@@ -120,222 +122,146 @@ export default function WikiTemplatesPage() {
 
             <Badge
               variant="outline"
-              className="bg-wiki/10 text-wiki border-wiki/30 flex w-fit items-center gap-1.5 px-3 py-1.5 text-xs"
+              className="bg-tint/10 text-tint border-tint/30 text-footnote flex w-fit items-center gap-2 px-3 py-2"
             >
               <Spark className="h-3.5 w-3.5" /> Polymorphic Engine & Visual Factbook
             </Badge>
           </div>
 
           <div className="mt-5 flex flex-col items-stretch justify-between gap-3 lg:flex-row lg:items-center">
-            <div className="relative max-w-md flex-1">
-              <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search templates (e.g. Country, Ship, Person, Citation)..."
-                className="border-border/60 bg-background/80 text-foreground placeholder:text-muted-foreground/60 focus:border-wiki w-full rounded-xl border py-2 pr-4 pl-10 text-xs shadow-inner focus:outline-none"
-              />
-            </div>
+            <SearchField
+              value={search}
+              onValueChange={setSearch}
+              placeholder="Search templates (e.g. Country, Ship, Person, Citation)..."
+              aria-label="Search templates"
+              containerClassName="max-w-md flex-1"
+            />
 
             {/* Category Filter Pills */}
-            <div className="flex flex-wrap gap-1">
+            <ToggleGroup
+              type="single"
+              disallowEmpty
+              variant="pill"
+              size="sm"
+              aria-label="Template category"
+              value={activeCategory}
+              onValueChange={(v) => v && setActiveCategory(v)}
+              className="flex flex-wrap gap-1"
+            >
               {categories.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  data-cuelume-press="soft"
-                  data-cuelume-hover="tick"
-                  onClick={() => setActiveCategory(c.id)}
-                  className={`cursor-pointer rounded-xl px-3 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
-                    activeCategory === c.id
-                      ? "bg-wiki/20 text-wiki border-wiki/30 border font-bold shadow-xs"
-                      : "bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent"
-                  }`}
-                >
+                <ToggleGroupItem key={c.id} value={c.id}>
                   {c.label}
-                </button>
+                </ToggleGroupItem>
               ))}
-            </div>
+            </ToggleGroup>
           </div>
         </div>
 
         {/* Master Catalog & Inspector Workspace */}
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
           {/* Left Column: Template Catalog (4 cols) */}
-          <div className="border-border/60 bg-card/40 h-[720px] space-y-2 overflow-y-auto rounded-3xl border p-4 backdrop-blur-xl lg:col-span-4">
-            <div className="text-muted-foreground flex items-center justify-between px-2 py-1 text-xs font-bold tracking-wider uppercase">
+          <div className="border-separator bg-surface rounded-card h-[720px] space-y-2 overflow-y-auto border p-4 lg:col-span-4">
+            <div className="text-label-secondary text-eyebrow flex items-center justify-between px-2 py-1">
               <span>Curated Templates ({searchResults?.templates?.length ?? 0})</span>
             </div>
 
             {isLoading ? (
-              <div className="text-muted-foreground py-12 text-center text-xs">
+              <div className="text-label-secondary text-footnote py-12 text-center">
                 Loading template registry...
               </div>
             ) : searchResults?.templates && searchResults.templates.length > 0 ? (
-              searchResults.templates.map((tmpl) => (
-                <button
-                  key={tmpl.name}
-                  type="button"
-                  data-cuelume-press="soft"
-                  data-cuelume-hover="tick"
-                  onClick={() => setSelectedTemplateName(tmpl.name)}
-                  className={`flex w-full cursor-pointer flex-col gap-1 rounded-2xl px-3.5 py-3 text-left text-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
-                    selectedTemplateName.toLowerCase() === tmpl.name.toLowerCase()
-                      ? "bg-wiki/15 border-wiki/30 text-foreground border font-semibold shadow-sm"
-                      : "hover:bg-muted/50 text-muted-foreground hover:text-foreground border border-transparent"
-                  }`}
-                >
-                  <div className="flex w-full items-center justify-between">
-                    <span className="text-foreground truncate font-bold">{tmpl.name}</span>
-                    {tmpl.isCanonical && (
-                      <span className="bg-wiki/20 text-wiki rounded-md px-1.5 py-0.5 text-xs font-bold tracking-wider uppercase">
-                        Master
-                      </span>
-                    )}
-                  </div>
-                  {tmpl.description && (
-                    <span className="text-muted-foreground line-clamp-1 text-xs">
-                      {tmpl.description}
-                    </span>
-                  )}
-                </button>
-              ))
+              <FacetListSection variant="plain" aria-label="Templates">
+                {searchResults.templates.map((tmpl) => (
+                  <FacetRow
+                    key={tmpl.name}
+                    onClick={() => setSelectedTemplateName(tmpl.name)}
+                    selected={selectedTemplateName.toLowerCase() === tmpl.name.toLowerCase()}
+                    selectionStyle="tint"
+                    itemClassName="rounded-row overflow-hidden"
+                    title={<span className="block truncate">{tmpl.name}</span>}
+                    subtitle={
+                      tmpl.description ? (
+                        <span className="line-clamp-1">{tmpl.description}</span>
+                      ) : undefined
+                    }
+                    trailing={tmpl.isCanonical ? <Badge variant="tinted">Master</Badge> : undefined}
+                  />
+                ))}
+              </FacetListSection>
             ) : (
-              <div className="text-muted-foreground py-12 text-center text-xs">
+              <div className="text-label-secondary text-footnote py-12 text-center">
                 No templates match query.
               </div>
             )}
           </div>
 
           {/* Right Column: Template Inspector & Visual Preview (8 cols) */}
-          <div className="border-border/60 bg-card/40 flex min-h-[720px] flex-col justify-between space-y-6 rounded-3xl border p-6 backdrop-blur-xl lg:col-span-8">
+          <div className="border-separator bg-surface rounded-card flex min-h-[720px] flex-col justify-between space-y-6 border p-6 lg:col-span-8">
             <div className="space-y-5">
               {/* Title & View Switcher Bar */}
-              <div className="border-border/40 flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-center">
+              <div className="border-separator flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-center">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-foreground text-xl font-bold">{selectedTemplateName}</h2>
-                    <span className="bg-wiki/15 text-wiki rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase">
+                    <h2 className="text-label text-title-2">{selectedTemplateName}</h2>
+                    <span className="bg-tint/15 text-tint text-eyebrow rounded-full px-3 py-0.5">
                       {templateData?.category || "Template"}
                     </span>
                   </div>
-                  <p className="text-muted-foreground mt-0.5 text-xs">
+                  <p className="text-label-secondary text-footnote mt-0.5">
                     {templateData?.description || "Canonical WikiOS Schema & Component"}
                   </p>
                 </div>
 
                 {/* View Mode Segmented Bar */}
                 <div className="flex items-center gap-2">
-                  <div className="border-border/60 bg-secondary/50 flex items-center rounded-xl border p-1 shadow-inner">
-                    <button
-                      type="button"
-                      data-cuelume-press="tap"
-                      onClick={() => setViewMode("visual")}
-                      className={`relative z-10 flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
-                        viewMode === "visual"
-                          ? "font-bold text-black shadow-xs"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {viewMode === "visual" && (
-                        <motion.div
-                          layoutId="activeInspectorView"
-                          transition={{ type: "spring", bounce: 0.15, duration: 0.3 }}
-                          className="bg-wiki absolute inset-0 -z-10 rounded-lg shadow-xs"
-                        />
-                      )}
-                      <Eye className="h-3.5 w-3.5" />
-                      <span>Visual Preview</span>
-                    </button>
+                  <SegmentedControl
+                    size="sm"
+                    aria-label="Inspector view"
+                    value={viewMode}
+                    onValueChange={setViewMode}
+                    options={[
+                      { value: "visual", label: "Visual Preview", icon: <Eye /> },
+                      { value: "schema", label: "Parameters", icon: <List /> },
+                      { value: "wikitext", label: "Wikitext", icon: <Code /> },
+                    ]}
+                  />
 
-                    <button
-                      type="button"
-                      data-cuelume-press="tap"
-                      onClick={() => setViewMode("schema")}
-                      className={`relative z-10 flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
-                        viewMode === "schema"
-                          ? "font-bold text-black shadow-xs"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {viewMode === "schema" && (
-                        <motion.div
-                          layoutId="activeInspectorView"
-                          transition={{ type: "spring", bounce: 0.15, duration: 0.3 }}
-                          className="bg-wiki absolute inset-0 -z-10 rounded-lg shadow-xs"
-                        />
-                      )}
-                      <List className="h-3.5 w-3.5" />
-                      <span>Parameters</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      data-cuelume-press="tap"
-                      onClick={() => setViewMode("wikitext")}
-                      className={`relative z-10 flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
-                        viewMode === "wikitext"
-                          ? "font-bold text-black shadow-xs"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {viewMode === "wikitext" && (
-                        <motion.div
-                          layoutId="activeInspectorView"
-                          transition={{ type: "spring", bounce: 0.15, duration: 0.3 }}
-                          className="bg-wiki absolute inset-0 -z-10 rounded-lg shadow-xs"
-                        />
-                      )}
-                      <Code className="h-3.5 w-3.5" />
-                      <span>Wikitext</span>
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    data-cuelume-press="tap"
-                    onClick={handleCopy}
-                    className="border-border/60 bg-secondary/80 text-foreground hover:bg-secondary inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-                  >
+                  <Button variant="gray" size="sm" onClick={handleCopy} aria-label="Copy code">
                     {copied ? (
-                      <Check className="h-3.5 w-3.5 text-emerald-400" />
+                      <Check className="text-green size-3.5" />
                     ) : (
-                      <Copy className="text-wiki h-3.5 w-3.5" />
+                      <Copy className="text-tint size-3.5" />
                     )}
                     <span className="hidden sm:inline">{copied ? "Copied" : "Copy Code"}</span>
-                  </button>
+                  </Button>
                 </div>
               </div>
 
               {/* Dynamic Variant Switcher Pill Bar */}
               {presetMatch?.variants && presetMatch.variants.length > 0 && (
-                <div className="border-border/40 bg-secondary/25 space-y-2 rounded-2xl border p-3.5">
+                <div className="border-separator bg-fill-4 rounded-card space-y-2 border p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-foreground text-xs font-bold tracking-wider uppercase">
-                      Polymorphic Variant / Subtype
-                    </span>
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-label text-subhead">Polymorphic Variant / Subtype</span>
+                    <span className="text-label-secondary text-footnote">
                       Swaps live field sets & visual rendering
                     </span>
                   </div>
-                  <div className="flex flex-wrap gap-1.5 pt-1">
+                  <ToggleGroup
+                    type="single"
+                    disallowEmpty
+                    variant="pill"
+                    size="sm"
+                    aria-label="Variant"
+                    value={selectedVariantId}
+                    onValueChange={(v) => v && setSelectedVariantId(v)}
+                    className="flex flex-wrap gap-2 pt-1"
+                  >
                     {presetMatch.variants.map((v) => (
-                      <button
-                        key={v.id}
-                        type="button"
-                        data-cuelume-press="soft"
-                        onClick={() => setSelectedVariantId(v.id)}
-                        className={`cursor-pointer rounded-xl px-3 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
-                          selectedVariantId === v.id
-                            ? "bg-wiki font-bold text-black shadow-md"
-                            : "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"
-                        }`}
-                      >
+                      <ToggleGroupItem key={v.id} value={v.id}>
                         {v.label}
-                      </button>
+                      </ToggleGroupItem>
                     ))}
-                  </div>
+                  </ToggleGroup>
                 </div>
               )}
 
@@ -354,30 +280,29 @@ export default function WikiTemplatesPage() {
 
                   <div className="w-full flex-1 space-y-4">
                     {/* Live Schema Metadata Card */}
-                    <div className="border-border/40 bg-secondary/15 space-y-3 rounded-2xl border p-4">
+                    <div className="border-separator bg-fill-4 rounded-card space-y-3 border p-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-foreground text-xs font-bold">
+                        <span className="text-label text-caption font-semibold">
                           Factbook Specification
                         </span>
-                        <Badge variant="outline" className="border-border/60 font-mono text-xs">
+                        <Badge
+                          variant="outline"
+                          className="border-separator text-footnote tabular-nums"
+                        >
                           {previewParams.length} parameters
                         </Badge>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="bg-background/60 border-border/30 rounded-xl border p-2.5">
-                          <div className="text-muted-foreground text-xs font-semibold uppercase">
-                            Template Class
-                          </div>
-                          <div className="text-foreground mt-0.5 font-medium">
+                      <div className="text-footnote grid grid-cols-2 gap-2">
+                        <div className="bg-surface border-separator rounded-row border p-3">
+                          <div className="text-label-secondary text-subhead">Template Class</div>
+                          <div className="text-label mt-0.5 font-medium">
                             {templateData?.category || presetMatch?.category || "Factbook"}
                           </div>
                         </div>
-                        <div className="bg-background/60 border-border/30 rounded-xl border p-2.5">
-                          <div className="text-muted-foreground text-xs font-semibold uppercase">
-                            Active Subtype
-                          </div>
-                          <div className="text-foreground mt-0.5 font-medium">
+                        <div className="bg-surface border-separator rounded-row border p-3">
+                          <div className="text-label-secondary text-eyebrow">Active Subtype</div>
+                          <div className="text-label mt-0.5 font-medium">
                             {activeVariant?.label || "Standard"}
                           </div>
                         </div>
@@ -385,21 +310,21 @@ export default function WikiTemplatesPage() {
                     </div>
 
                     {/* Instant Wikitext Snippet */}
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                        <span className="text-label-secondary text-subhead">
                           Wikitext Invocation
                         </span>
-                        <button
-                          type="button"
-                          data-cuelume-press="tap"
+                        <Button
+                          variant="link"
+                          size="sm"
                           onClick={handleCopy}
-                          className="text-wiki cursor-pointer text-xs transition-transform hover:underline active:scale-[0.98]"
+                          className="h-auto px-0"
                         >
                           {copied ? "Copied wikitext" : "Copy wikitext"}
-                        </button>
+                        </Button>
                       </div>
-                      <pre className="border-border/40 bg-background/90 text-foreground/90 max-h-72 overflow-y-auto rounded-2xl border p-3.5 font-mono text-xs leading-relaxed shadow-inner">
+                      <pre className="border-separator bg-surface text-label rounded-card text-footnote max-h-72 overflow-y-auto border p-4 leading-relaxed tabular-nums">
                         {sampleWikitext}
                       </pre>
                     </div>
@@ -410,12 +335,12 @@ export default function WikiTemplatesPage() {
               {/* ── View Mode: 2. Schema Parameters Matrix ── */}
               {viewMode === "schema" && (
                 <div className="space-y-3">
-                  <h3 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                  <h3 className="text-label-secondary text-subhead">
                     Parameters ({paramEntries.length || previewParams.length})
                   </h3>
 
                   {previewParams.length === 0 ? (
-                    <div className="text-muted-foreground py-12 text-center text-xs">
+                    <div className="text-label-secondary text-footnote py-12 text-center">
                       Standard template without explicit parameters.
                     </div>
                   ) : (
@@ -423,19 +348,19 @@ export default function WikiTemplatesPage() {
                       {previewParams.map((p) => (
                         <div
                           key={p.name}
-                          className="border-border/40 bg-card/60 space-y-1 rounded-2xl border p-3 shadow-xs"
+                          className="border-separator bg-surface rounded-card space-y-1 border p-3"
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-foreground font-mono text-xs font-bold">
+                            <span className="text-label text-caption font-semibold tabular-nums">
                               {p.name}
                             </span>
                             {p.type && (
-                              <Badge variant="secondary" className="text-xs">
+                              <Badge variant="secondary" className="text-footnote">
                                 {p.type}
                               </Badge>
                             )}
                           </div>
-                          <p className="text-muted-foreground line-clamp-2 text-xs">
+                          <p className="text-label-secondary text-footnote line-clamp-2">
                             {p.label || p.example || "Parameter field"}
                           </p>
                         </div>
@@ -449,14 +374,14 @@ export default function WikiTemplatesPage() {
               {viewMode === "wikitext" && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-xs font-bold">
+                    <span className="text-label-secondary text-caption font-semibold">
                       Complete Wikitext Starter Code
                     </span>
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-label-secondary text-footnote">
                       Ready to paste into source editor
                     </span>
                   </div>
-                  <pre className="border-border/40 bg-background/90 text-foreground/90 max-h-[460px] overflow-y-auto rounded-2xl border p-4 font-mono text-xs leading-relaxed shadow-inner">
+                  <pre className="border-separator bg-surface text-label rounded-card text-footnote max-h-[460px] overflow-y-auto border p-4 leading-relaxed tabular-nums">
                     {sampleWikitext}
                   </pre>
                 </div>

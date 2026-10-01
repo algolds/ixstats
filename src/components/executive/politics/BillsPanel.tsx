@@ -13,12 +13,14 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { FacetCard } from "~/components/ui/facet-container";
 
 interface BillsPanelProps {
   countryId: string;
@@ -39,22 +41,22 @@ const IDEOLOGIES = [
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   in_committee: {
     label: "In Committee",
-    className: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border-0",
+    className: "bg-yellow/10 text-yellow-ink border-0",
   },
   active: {
     label: "Passed",
-    className: "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-400 border-0",
+    className: "bg-green/10 text-green-ink border-0",
   },
   rejected: {
     label: "Rejected",
-    className: "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400 border-0",
+    className: "bg-red/10 text-red-ink border-0",
   },
 };
 
 const VOTE_ICON = {
-  yes: <Check className="h-3 w-3 text-green-600" />,
-  no: <X className="h-3 w-3 text-red-600" />,
-  abstain: <Minus className="text-muted-foreground h-3 w-3" />,
+  yes: <Check className="text-green h-3 w-3" />,
+  no: <X className="text-red h-3 w-3" />,
+  abstain: <Minus className="text-label-secondary h-3 w-3" />,
 } as const;
 
 // S3.A: a fogged vote projection before calling the floor. Precision gated by standing.
@@ -62,26 +64,24 @@ function WhipCount({ billId }: { billId: string }) {
   const { data } = api.legislation.previewBillVote.useQuery({ billId }, { staleTime: 30_000 });
   if (!data) return null;
   if (!data.available) {
-    return <p className="text-muted-foreground/60 text-xs italic">{data.reason}</p>;
+    return <p className="text-label-tertiary text-footnote italic">{data.reason}</p>;
   }
   const w = data.whip;
   const color =
     w.level === "greyed"
-      ? "text-muted-foreground/60"
+      ? "text-label-tertiary"
       : w.verdict === "pass" || w.verdict === "leaning_pass"
-        ? "text-emerald-500"
+        ? "text-green"
         : w.verdict === "too_close"
-          ? "text-amber-500"
-          : "text-red-500";
+          ? "text-yellow"
+          : "text-red";
   return (
-    <div className="rounded-md border border-amber-500/15 bg-amber-500/[0.03] p-2">
-      <p className="flex items-center gap-1.5 text-xs font-semibold">
-        <Gavel className="h-3 w-3 text-amber-500" /> Whip Count
-        <span className="text-muted-foreground/50 ml-auto font-normal">
-          standing {data.standing}%
-        </span>
+    <div className="rounded-control-sm border-yellow/15 bg-yellow/5 border p-2">
+      <p className="text-caption flex items-center gap-2 font-semibold">
+        <Gavel className="text-yellow h-3 w-3" /> Whip Count
+        <span className="text-label-tertiary ml-auto font-normal">standing {data.standing}%</span>
       </p>
-      <p className={`mt-1 text-xs ${color}`}>
+      <p className={`text-footnote mt-1 ${color}`}>
         {w.caption}
         {w.yesSeats != null ? ` (${w.yesSeats}–${w.noSeats})` : ""}
       </p>
@@ -122,17 +122,20 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
   return (
     <>
       {/* Trigger Card - Facet Compliant */}
-      <button
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
         onClick={() => setIsOpen(true)}
-        className="facet-hierarchy-child border-border hover:bg-muted/10 flex w-full cursor-pointer items-center justify-between rounded-xl border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:shadow-md active:scale-[0.99]"
+        className="h-auto min-h-(--control-height-sm) w-full justify-between justify-start py-2 text-left whitespace-normal"
       >
         <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-indigo-500/10 p-2.5">
-            <Gavel className="h-5 w-5 text-indigo-500" />
+          <div className="rounded-control bg-indigo/10 p-2">
+            <Gavel className="text-indigo h-5 w-5" />
           </div>
           <div>
-            <h4 className="text-sm font-semibold">Bills on the Floor</h4>
-            <p className="text-muted-foreground mt-0.5 text-xs">
+            <h4 className="text-headline">Bills on the Floor</h4>
+            <p className="text-label-secondary text-footnote mt-0.5">
               {bills && bills.length > 0
                 ? `${committeeCount} pending, ${activeCount} passed laws`
                 : "No legislative bills proposed yet"}
@@ -141,35 +144,35 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
         </div>
         <div className="flex items-center gap-2">
           {committeeCount > 0 && (
-            <Badge className="border border-amber-500/20 bg-amber-500/10 text-xs font-semibold text-amber-500 hover:bg-amber-500/20">
+            <Badge variant="yellow" className="font-semibold">
               {committeeCount} Pending
             </Badge>
           )}
-          <ChevronRight className="text-muted-foreground h-4 w-4" />
+          <ChevronRight className="text-label-secondary h-4 w-4" />
         </div>
-      </button>
+      </Button>
 
       {/* Floor Vote Modal */}
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="bg-card border-border max-h-[85vh] max-w-xl overflow-y-auto md:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Gavel className="h-5 w-5 text-indigo-500" />
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent size="wide" className="overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Gavel className="text-indigo h-5 w-5" />
               <span>Legislative Floor</span>
-            </DialogTitle>
-            <DialogDescription>
+            </SheetTitle>
+            <SheetDescription>
               Propose new laws, view the voting alignment of seated parties, and call floor votes.
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
 
           <div className="space-y-4 pt-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold">Bills list</span>
+              <span className="text-headline">Bills list</span>
               {canManage && (
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-7 gap-1 text-xs"
+                  className="text-footnote h-7 gap-1"
                   onClick={() => setShowForm((v) => !v)}
                 >
                   <Plus className="h-3 w-3" />
@@ -179,16 +182,16 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
             </div>
 
             {showForm && canManage && (
-              <div className="bg-muted/30 border-border/50 space-y-2 rounded-xl border p-3">
+              <FacetCard variant="inset" padding="none" className="space-y-2 p-3">
                 <input
-                  className="bg-background border-border w-full rounded-md border px-2 py-1.5 text-sm focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                  className="bg-surface border-separator rounded-control-sm text-body focus:ring-indigo w-full border px-2 py-2 focus:ring-1 focus:outline-none"
                   placeholder="Bill name (e.g. Healthcare Reform Act)"
                   value={name}
                   maxLength={120}
                   onChange={(e) => setName(e.target.value)}
                 />
                 <textarea
-                  className="bg-background border-border w-full rounded-md border px-2 py-1.5 text-sm focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                  className="bg-surface border-separator rounded-control-sm text-body focus:ring-indigo w-full border px-2 py-2 focus:ring-1 focus:outline-none"
                   placeholder="What the bill does…"
                   rows={2}
                   value={description}
@@ -196,28 +199,25 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                   onChange={(e) => setDescription(e.target.value)}
                 />
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-muted-foreground text-xs">Lean</label>
-                    <select
-                      className="bg-background border-border rounded-md border px-2 py-1 text-xs"
+                  <div className="flex items-center gap-2">
+                    <label className="text-label-secondary text-footnote">Lean</label>
+                    <OptionSelect
+                      aria-label="Lean"
                       value={ideology}
-                      onChange={(e) => setIdeology(e.target.value as typeof ideology)}
-                    >
-                      {IDEOLOGIES.map((i) => (
-                        <option key={i.value} value={i.value}>
-                          {i.label}
-                        </option>
-                      ))}
-                    </select>
+                      onValueChange={(v) => setIdeology(v as typeof ideology)}
+                      options={IDEOLOGIES}
+                      size="sm"
+                      className="w-full"
+                    />
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-muted-foreground text-xs">Growth effect %</label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-label-secondary text-footnote">Growth effect %</label>
                     <input
                       type="number"
                       step={0.5}
                       min={-5}
                       max={5}
-                      className="bg-background border-border w-16 rounded-md border px-2 py-1 text-xs"
+                      className="bg-surface border-separator rounded-control-sm text-footnote w-16 border px-2 py-1"
                       value={gdpEffect}
                       onChange={(e) => setGdpEffect(Number(e.target.value))}
                     />
@@ -225,7 +225,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                 </div>
                 <Button
                   size="sm"
-                  className="h-7 w-full text-xs"
+                  className="text-footnote h-7 w-full"
                   disabled={!name.trim() || !description.trim() || propose.isPending}
                   onClick={() =>
                     propose.mutate({ countryId, name, description, ideology, gdpEffect })
@@ -233,7 +233,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                 >
                   {propose.isPending ? "Submitting…" : "Submit to Committee"}
                 </Button>
-              </div>
+              </FacetCard>
             )}
 
             {bills && bills.length > 0 ? (
@@ -245,23 +245,25 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                   return (
                     <div
                       key={bill.id}
-                      className="bg-muted/30 border-border/30 rounded-xl border p-3"
+                      className="bg-fill-4 border-separator rounded-row border p-3"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <button
-                          className="min-w-0 flex-1 truncate text-left text-sm font-medium transition-colors hover:text-indigo-500"
+                          type="button"
+                          aria-expanded={isBillExpanded}
+                          className="text-body hover:text-tint min-w-0 flex-1 truncate text-left font-medium transition-colors"
                           onClick={() => setExpanded(isBillExpanded ? null : bill.id)}
                         >
                           {bill.name}
                         </button>
                         <div className="flex items-center gap-2">
                           {result && (
-                            <span className="text-muted-foreground bg-muted rounded px-1.5 py-0.5 text-xs tabular-nums">
+                            <span className="text-label-secondary bg-fill-3 text-footnote rounded-control-sm px-2 py-0.5 tabular-nums">
                               {result.yesSeats}–{result.noSeats}
                             </span>
                           )}
                           <Badge
-                            className={`px-2 py-0.5 text-xs font-semibold ${statusMeta.className}`}
+                            className={`text-caption px-2 py-0.5 font-semibold ${statusMeta.className}`}
                           >
                             {statusMeta.label}
                           </Badge>
@@ -269,7 +271,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-6 border-indigo-500/20 bg-indigo-500/5 px-2.5 text-xs text-indigo-600 hover:bg-indigo-500/10 dark:text-indigo-400"
+                              className="border-indigo/20 bg-indigo/5 text-footnote text-indigo-ink hover:bg-indigo/10 h-6 px-3"
                               disabled={holdVote.isPending}
                               onClick={() => holdVote.mutate({ billId: bill.id })}
                             >
@@ -279,37 +281,35 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                         </div>
                       </div>
                       {isBillExpanded && (
-                        <div className="text-muted-foreground border-border/40 mt-2 space-y-2 border-t pt-2 text-xs">
+                        <div className="text-label-secondary border-separator text-footnote mt-2 space-y-2 border-t pt-2">
                           <p>{bill.description}</p>
                           {bill.gdpEffect !== 0 && (
-                            <p className="font-semibold text-indigo-500/90">
+                            <p className="text-indigo/90 font-semibold">
                               Projected Growth Effect: {bill.gdpEffect > 0 ? "+" : ""}
                               {bill.gdpEffect}% GDP
                             </p>
                           )}
                           {bill.status === "in_committee" && <WhipCount billId={bill.id} />}
                           {result && (
-                            <div className="bg-muted/40 border-border/20 space-y-1 rounded-lg border p-2.5">
-                              <p className="text-foreground mb-1 text-xs font-medium">
-                                Floor Vote Breakdown
-                              </p>
+                            <FacetCard variant="inset" padding="none" className="space-y-1 p-2">
+                              <p className="text-label text-caption mb-1">Floor Vote Breakdown</p>
                               {result.breakdown.map((pv) => (
                                 <div
                                   key={pv.partyId}
-                                  className="border-border/10 flex items-center justify-between gap-1.5 border-b py-0.5 last:border-b-0"
+                                  className="border-separator flex items-center justify-between gap-2 border-b py-0.5 last:border-b-0"
                                 >
-                                  <div className="flex min-w-0 items-center gap-1.5">
+                                  <div className="flex min-w-0 items-center gap-2">
                                     {VOTE_ICON[pv.vote]}
-                                    <span className="text-foreground/90 truncate font-medium">
+                                    <span className="text-label truncate font-medium">
                                       {pv.partyName}
                                     </span>
                                   </div>
-                                  <span className="text-muted-foreground text-xs">
+                                  <span className="text-label-secondary text-footnote">
                                     {pv.seats} seats
                                   </span>
                                 </div>
                               ))}
-                            </div>
+                            </FacetCard>
                           )}
                         </div>
                       )}
@@ -318,15 +318,15 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                 })}
               </div>
             ) : (
-              <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-8 text-center">
+              <div className="text-label-secondary flex flex-col items-center justify-center gap-2 py-8 text-center">
                 <Gavel className="h-8 w-8 opacity-30" />
-                <p className="text-sm">No bills before the legislature</p>
-                {canManage && <p className="text-xs">Draft a bill and call it to a vote.</p>}
+                <p className="text-body">No bills before the legislature</p>
+                {canManage && <p className="text-footnote">Draft a bill and call it to a vote.</p>}
               </div>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

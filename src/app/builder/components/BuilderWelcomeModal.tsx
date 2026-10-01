@@ -29,7 +29,6 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetContainer } from "~/components/ui/facet-container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { BUILDER_VERSION } from "~/lib/buildVersion";
 
@@ -38,28 +37,28 @@ const STORAGE_KEY = "mycountry-builder-welcome-seen";
 const MAIN_STEPS = [
   {
     icon: Globe,
-    bg: "bg-amber-500/10",
+    bg: "bg-yellow/10",
     title: "1. Foundation",
     description:
       "Choose a real-world template as a baseline, start with a blank slate, or import an IIWiki country page.",
   },
   {
     icon: Fingerprint,
-    bg: "bg-teal-500/10",
+    bg: "bg-teal/10",
     title: "2. Identity",
     description:
       "Choose your nation's name, visual flag, national motto, state model, and write your historic description.",
   },
   {
     icon: Shield,
-    bg: "bg-cyan-500/10",
+    bg: "bg-teal/10",
     title: "3. Government",
     description:
       "Select and stack up to 15 active component blocks representing ministries, legislatures, and courts. Discover powerful gameplay combos and synergies.",
   },
   {
     icon: Coins,
-    bg: "bg-emerald-500/10",
+    bg: "bg-green/10",
     title: "4. Economics",
     description:
       "Tune fiscal parameters, set sector priorities (services/industry/tech), select tax rates, and allocate budget.",
@@ -175,13 +174,13 @@ export function BuilderWelcomeModal({
             <div className="flex items-center gap-3">
               <MyCountryLogo size="md" variant="icon-only" animated={false} />
               <div>
-                <DialogTitle className="text-lg">MyCountry Builder Guide</DialogTitle>
-                <DialogDescription className="text-xs">
+                <DialogTitle className="text-title-3">MyCountry Builder Guide</DialogTitle>
+                <DialogDescription className="text-footnote">
                   Create your custom nation exactly as you want it.
                 </DialogDescription>
               </div>
             </div>
-            <Badge variant="outline" className="font-mono">
+            <Badge variant="outline" className="tabular-nums">
               v{BUILDER_VERSION}
             </Badge>
           </div>
@@ -192,65 +191,56 @@ export function BuilderWelcomeModal({
           <TabsList
             role="tablist"
             aria-label="Builder guide"
-            className="border-border gap-1 overflow-x-auto border-b px-6 pb-2"
+            className="border-separator gap-1 overflow-x-auto border-b px-6 pb-2"
           >
             {TABS.map((tab, i) => (
-              <TabsTrigger key={tab} role="tab" value={String(i)} className="px-3 py-1.5 text-xs">
+              <TabsTrigger key={tab} role="tab" value={String(i)}>
                 {tab}
               </TabsTrigger>
             ))}
           </TabsList>
 
           {/* Content pages */}
-          <div className="flex max-h-[380px] min-h-[300px] flex-col overflow-y-auto px-6 py-4">
+          <div className="flex max-h-96 min-h-72 flex-col overflow-y-auto px-6 py-4">
             <TabsContent value="0" role="tabpanel" className="space-y-4 text-left">
               <div className="space-y-2">
-                <h3 className="text-foreground text-sm font-semibold">
-                  Welcome to the MyCountry Builder!
-                </h3>
-                <p className="text-muted-foreground text-xs leading-relaxed">
+                <h3 className="text-label text-headline">Welcome to the MyCountry Builder!</h3>
+                <p className="text-footnote text-label-secondary">
                   Here, you will construct a sovereign state from the ground up by choosing its
                   unique identity and policies. You can customize your country by selecting its
                   government, economy, industries, culture, and more.
                 </p>
-                <p className="text-muted-foreground text-xs leading-relaxed">
+                <p className="text-footnote text-label-secondary">
                   Once finalized, your country joins the World with other players. You will be able
                   to draft laws, enage in diplomacy, trade or form treaties, and more. Your actions
                   will affect your country's development and its relations with other countries.
                 </p>
               </div>
 
-              <FacetContainer depth={3} surface="solid" className="rounded-xl p-3">
-                <div className="mb-1.5 flex items-center gap-2">
-                  <BookOpen aria-hidden="true" className="h-4 w-4 text-amber-500" />
-                  <h4 className="text-foreground text-xs font-semibold">How It Works</h4>
+              <div className="bg-surface-secondary rounded-row p-3">
+                <div className="mb-2 flex items-center gap-2">
+                  <BookOpen aria-hidden="true" className="text-tint h-4 w-4" />
+                  <h4 className="text-headline text-label">How It Works</h4>
                 </div>
-                <p className="text-muted-foreground text-xs leading-relaxed">
+                <p className="text-footnote text-label-secondary">
                   Every decision applies real-time modifiers to your GDP growth, stability index,
                   and currency value. All components and sliders can be customized and re-allocated
                   at any time without penalty once your nation is active.
                 </p>
-              </FacetContainer>
+              </div>
             </TabsContent>
 
-            <TabsContent value="1" role="tabpanel" className="grid grid-cols-2 gap-2.5 text-left">
+            <TabsContent value="1" role="tabpanel" className="grid grid-cols-2 gap-2 text-left">
               {MAIN_STEPS.map((step) => {
                 const Icon = step.icon;
                 return (
-                  <FacetContainer
-                    key={step.title}
-                    depth={3}
-                    surface="solid"
-                    className="rounded-xl p-3"
-                  >
-                    <div className="mb-1.5 flex items-center gap-2">
-                      <Icon aria-hidden="true" className="text-muted-foreground h-3.5 w-3.5" />
-                      <h4 className="text-foreground text-xs font-semibold">{step.title}</h4>
+                  <div key={step.title} className="bg-surface-secondary rounded-row p-3">
+                    <div className="mb-2 flex items-center gap-2">
+                      <Icon aria-hidden="true" className="text-tint h-3.5 w-3.5" />
+                      <h4 className="text-headline text-label">{step.title}</h4>
                     </div>
-                    <p className="text-muted-foreground text-xs leading-relaxed">
-                      {step.description}
-                    </p>
-                  </FacetContainer>
+                    <p className="text-footnote text-label-secondary">{step.description}</p>
+                  </div>
                 );
               })}
             </TabsContent>
@@ -259,34 +249,27 @@ export function BuilderWelcomeModal({
               {ADVANCED_TIPS.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <FacetContainer
+                  <div
                     key={item.title}
-                    depth={3}
-                    surface="solid"
-                    className="flex items-start gap-3 rounded-lg p-2.5"
+                    className="bg-surface-secondary rounded-row flex items-start gap-3 p-3"
                   >
-                    <Icon
-                      aria-hidden="true"
-                      className="text-muted-foreground mt-0.5 h-3.5 w-3.5 shrink-0"
-                    />
+                    <Icon aria-hidden="true" className="text-tint mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <div className="space-y-0.5">
-                      <h4 className="text-foreground text-xs font-semibold">{item.title}</h4>
-                      <p className="text-muted-foreground text-xs leading-normal">
-                        {item.description}
-                      </p>
+                      <h4 className="text-headline text-label">{item.title}</h4>
+                      <p className="text-footnote text-label-secondary">{item.description}</p>
                     </div>
-                  </FacetContainer>
+                  </div>
                 );
               })}
             </TabsContent>
 
-            <TabsContent value="3" role="tabpanel" className="space-y-3.5 text-left">
+            <TabsContent value="3" role="tabpanel" className="space-y-4 text-left">
               <Eyebrow className="block">Common Questions</Eyebrow>
               <dl className="space-y-3">
                 {FAQS.map((faq) => (
                   <div key={faq.q} className="space-y-1">
-                    <dt className="text-foreground text-xs font-semibold">{faq.q}</dt>
-                    <dd className="text-muted-foreground text-xs leading-relaxed">{faq.a}</dd>
+                    <dt className="text-headline text-label">{faq.q}</dt>
+                    <dd className="text-footnote text-label-secondary">{faq.a}</dd>
                   </div>
                 ))}
               </dl>
@@ -295,13 +278,8 @@ export function BuilderWelcomeModal({
         </Tabs>
 
         {/* Footer */}
-        <DialogFooter className="border-border border-t px-6 py-4">
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleClose}
-            className="bg-amber-600 font-semibold text-white hover:bg-amber-600/90"
-          >
+        <DialogFooter className="border-separator border-t px-6 py-4">
+          <Button type="button" size="sm" onClick={handleClose}>
             Start Building
           </Button>
         </DialogFooter>

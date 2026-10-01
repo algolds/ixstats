@@ -8,16 +8,18 @@ import { WikiLinkWizard } from "../WikiLinkWizard";
 
 import { MapPin, ModernTv as Mountain, SystemRestart as Loader2 } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { Checkbox } from "~/components/ui/checkbox";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 
 const CITY_TYPES = ["capital", "city", "town", "village", "hamlet", "port", "fortress"];
 
 const inputClasses =
-  "w-full rounded-lg border border-border bg-background px-3 py-2.5 sm:py-1.5 text-base sm:text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
+  "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label placeholder:text-label-secondary transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
 
 const selectClasses =
-  "w-full rounded-lg border border-border bg-background px-3 py-2.5 sm:py-1.5 text-base sm:text-sm text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
+  "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
 
-const labelClasses = "text-muted-foreground text-xs font-medium";
+const labelClasses = "text-label-secondary text-caption";
 
 interface CityPropertyFormProps {
   form: CityFormData;
@@ -60,46 +62,42 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
         className={inputClasses}
         autoFocus
       />
-      <select
+      <OptionSelect
+        aria-label="City type"
         value={form.cityType}
-        onChange={(e) => onChange({ ...form, cityType: e.target.value })}
-        className={selectClasses}
-      >
-        {CITY_TYPES.map((t) => (
-          <option key={t} value={t}>
-            {t.charAt(0).toUpperCase() + t.slice(1)}
-          </option>
-        ))}
-      </select>
+        onValueChange={(v) => onChange({ ...form, cityType: v })}
+        options={CITY_TYPES.map((t) => ({
+          value: t,
+          label: t.charAt(0).toUpperCase() + t.slice(1),
+        }))}
+        size="sm"
+        className="w-full"
+      />
 
       {/* Coordinate Picker Block */}
       {countryId && (
-        <FacetCard
-          surface="solid"
-          className="flex items-center justify-between rounded-lg px-3 py-2 text-xs"
-        >
-          <div className="text-muted-foreground text-left font-medium">
+        <FacetCard className="text-footnote flex items-center justify-between px-3 py-2">
+          <div className="text-label-secondary text-left font-medium">
             Coordinates:{" "}
             {activeCoords ? (
-              <span className="text-foreground font-semibold tabular-nums">
+              <span className="text-label font-semibold tabular-nums">
                 {activeCoords[1].toFixed(4)}&deg; N, {activeCoords[0].toFixed(4)}&deg; E
               </span>
             ) : (
               <span className="italic">Not placed yet</span>
             )}
           </div>
-          <button
+          <Button
             type="button"
+            variant={isPickingLocation ? "tinted" : "plain"}
+            size="sm"
+            aria-pressed={isPickingLocation}
             onClick={() => setIsPickingLocation?.(!isPickingLocation)}
-            className={`flex shrink-0 items-center gap-1 font-semibold transition-colors focus:outline-none active:scale-[0.98] ${
-              isPickingLocation
-                ? "font-bold text-amber-500 hover:text-amber-400"
-                : "text-emerald-500 hover:text-emerald-400"
-            }`}
+            className="shrink-0"
           >
-            <MapPin className="h-3.5 w-3.5" />
+            <MapPin className="size-3.5" aria-hidden />
             <span>{isPickingLocation ? "Click on Map..." : "Pick on Map"}</span>
-          </button>
+          </Button>
         </FacetCard>
       )}
 
@@ -120,7 +118,7 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
           <div className="flex items-center justify-between">
             <label className={labelClasses}>Elevation (m)</label>
             {derivedFromZone && sampleTerrain.data && (
-              <span className="text-muted-foreground text-xs">
+              <span className="text-label-secondary text-footnote">
                 from zone: {sampleTerrain.data.zoneName}
               </span>
             )}
@@ -176,21 +174,17 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
         />
       </div>
       <div className="space-y-1">
-        <label className="text-foreground/80 flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
+        <label className="text-label-secondary text-body flex items-center gap-2">
+          <Checkbox
             checked={form.isNationalCapital}
-            onChange={(e) => onChange({ ...form, isNationalCapital: e.target.checked })}
-            className="border-border text-primary focus:ring-primary rounded"
+            onCheckedChange={(c) => onChange({ ...form, isNationalCapital: c === true })}
           />
           National capital
         </label>
-        <label className="text-foreground/80 flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
+        <label className="text-label-secondary text-body flex items-center gap-2">
+          <Checkbox
             checked={form.isSubdivisionCapital}
-            onChange={(e) => onChange({ ...form, isSubdivisionCapital: e.target.checked })}
-            className="border-border text-primary focus:ring-primary rounded"
+            onCheckedChange={(c) => onChange({ ...form, isSubdivisionCapital: c === true })}
           />
           Regional capital
         </label>
@@ -206,29 +200,23 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
         currentCoords={pendingCoordinates ?? undefined}
         placeholder="Search wiki to link..."
       />
-      <select
+      <OptionSelect
+        aria-label="Subdivision"
         value={form.subdivisionId ?? "auto"}
-        onChange={(e) =>
+        onValueChange={(v) =>
           onChange({
             ...form,
-            subdivisionId:
-              e.target.value === "auto"
-                ? "auto"
-                : e.target.value === "none"
-                  ? "none"
-                  : e.target.value || undefined,
+            subdivisionId: v === "auto" ? "auto" : v === "none" ? "none" : v || undefined,
           })
         }
-        className={selectClasses}
-      >
-        <option value="auto">&mdash; Auto-detect Region (Recommended) &mdash;</option>
-        <option value="none">&mdash; None &mdash;</option>
-        {subdivisions.map((sub) => (
-          <option key={sub.id} value={sub.id}>
-            {sub.name}
-          </option>
-        ))}
-      </select>
+        options={[
+          { value: "auto", label: "&mdash; Auto-detect Region (Recommended) &mdash;" },
+          { value: "none", label: "&mdash; None &mdash;" },
+          ...subdivisions.map((sub) => ({ value: sub.id, label: sub.name })),
+        ]}
+        size="sm"
+        className="w-full"
+      />
     </div>
   );
 });

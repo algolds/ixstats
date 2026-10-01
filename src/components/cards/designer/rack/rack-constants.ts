@@ -16,7 +16,7 @@ export const COLOR_PRESETS = [
     id: "auto",
     label: "Auto (Category Accent)",
     value: "",
-    bgClass: "bg-gradient-to-tr from-amber-500 via-cyan-400 to-rose-500",
+    bgClass: "card-art-linear-tr from-amber-500 via-cyan-400 to-rose-500",
   },
   { id: "gold", label: "Imperial Gold", value: "#f59e0b", bgClass: "bg-amber-500" },
   { id: "cyan", label: "Electric Cyan", value: "#06b6d4", bgClass: "bg-cyan-500" },

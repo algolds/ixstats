@@ -27,6 +27,15 @@ import { useNotify } from "~/hooks/useNotify";
 import { Plus, EditPencil as Pencil, Trash as Trash2, Eye, Shield, Search } from "iconoir-react";
 import { AdminHeader } from "../_components/AdminHeader";
 import { Skeleton } from "~/components/ui/skeleton";
+import { FacetCard } from "~/components/ui/facet-container";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "~/components/ui/table";
 
 interface IntelligenceTemplate {
   id: string;
@@ -180,85 +189,75 @@ export function IntelligenceTemplatesPanel() {
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Total Templates
-          </p>
-          <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
-            {templates?.length || 0}
-          </p>
-        </div>
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Restricted Clearance
-          </p>
-          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-amber-400">
+        <FacetCard className="p-4">
+          <p className="text-label-secondary text-eyebrow">Total Templates</p>
+          <p className="text-label text-title-2 mt-1 tabular-nums">{templates?.length || 0}</p>
+        </FacetCard>
+        <FacetCard className="p-4">
+          <p className="text-label-secondary text-eyebrow">Restricted Clearance</p>
+          <p className="text-title-2 text-yellow mt-1 tabular-nums">
             {templates?.filter((t: any) => t.classification === "RESTRICTED").length || 0}
           </p>
-        </div>
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Public Briefings
-          </p>
-          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-cyan-400">
+        </FacetCard>
+        <FacetCard className="p-4">
+          <p className="text-label-secondary text-eyebrow">Public Briefings</p>
+          <p className="text-title-2 text-teal mt-1 tabular-nums">
             {templates?.filter((t: any) => t.classification === "PUBLIC").length || 0}
           </p>
-        </div>
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Active Registry
-          </p>
-          <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
+        </FacetCard>
+        <FacetCard className="p-4">
+          <p className="text-label-secondary text-eyebrow">Active Registry</p>
+          <p className="text-title-2 text-green mt-1 tabular-nums">
             {templates?.filter((t: any) => t.isActive).length || 0}
           </p>
-        </div>
+        </FacetCard>
       </div>
 
       {/* Filter & Action Rail */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <div className="relative max-w-sm min-w-[200px] flex-1">
-            <Search className="text-muted-foreground absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+            <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
             <Input
               placeholder="Search templates..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="border-border/30 bg-background/50 focus:border-border/60 h-8 rounded-xl pl-8 text-xs backdrop-blur-md"
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
             />
           </div>
 
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-44 rounded-xl text-xs backdrop-blur-md">
+            <SelectTrigger size="sm" className="w-44">
               <SelectValue placeholder="All Report Types" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all" className="text-xs">
+              <SelectItem value="all" className="text-footnote">
                 All Report Types
               </SelectItem>
-              <SelectItem value="economic" className="text-xs">
+              <SelectItem value="economic" className="text-footnote">
                 Economic Report
               </SelectItem>
-              <SelectItem value="political" className="text-xs">
+              <SelectItem value="political" className="text-footnote">
                 Political Report
               </SelectItem>
-              <SelectItem value="security" className="text-xs">
+              <SelectItem value="security" className="text-footnote">
                 Security Report
               </SelectItem>
             </SelectContent>
           </Select>
 
           <Select value={classificationFilter} onValueChange={setClassificationFilter}>
-            <SelectTrigger className="border-border/30 bg-background/50 h-8 w-36 rounded-xl text-xs backdrop-blur-md">
+            <SelectTrigger size="sm" className="w-36">
               <SelectValue placeholder="All Clearances" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all" className="text-xs">
+              <SelectItem value="all" className="text-footnote">
                 All Clearances
               </SelectItem>
-              <SelectItem value="PUBLIC" className="text-xs">
+              <SelectItem value="PUBLIC" className="text-footnote">
                 PUBLIC
               </SelectItem>
-              <SelectItem value="RESTRICTED" className="text-xs">
+              <SelectItem value="RESTRICTED" className="text-footnote">
                 RESTRICTED
               </SelectItem>
             </SelectContent>
@@ -270,9 +269,8 @@ export function IntelligenceTemplatesPanel() {
             resetForm();
             setIsAddDialogOpen(true);
           }}
-          className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
         >
-          <Plus className="mr-1.5 h-3.5 w-3.5" />
+          <Plus className="mr-2 h-3.5 w-3.5" />
           Add Template
         </Button>
       </div>
@@ -281,99 +279,108 @@ export function IntelligenceTemplatesPanel() {
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-12 w-full rounded-xl" />
+            <Skeleton key={i} className="rounded-row h-12 w-full" />
           ))}
         </div>
       ) : filteredTemplates.length === 0 ? (
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-12 text-center backdrop-blur-md">
-          <p className="text-muted-foreground text-xs">
+        <FacetCard className="p-12 text-center">
+          <p className="text-label-secondary text-footnote">
             No intelligence templates matching filters.
           </p>
-        </div>
+        </FacetCard>
       ) : (
-        <div className="border-border/30 bg-card/25 overflow-x-auto rounded-2xl border shadow-xs backdrop-blur-md">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="border-border/30 bg-muted/20 text-muted-foreground border-b font-semibold">
-                <th className="px-4 py-2.5 text-left font-medium">Report Type & Summary</th>
-                <th className="px-4 py-2.5 text-left font-medium">Classification</th>
-                <th className="px-4 py-2.5 text-left font-medium">Clearance</th>
-                <th className="px-4 py-2.5 text-left font-medium">Confidence</th>
-                <th className="px-4 py-2.5 text-left font-medium">Status</th>
-                <th className="px-4 py-2.5 text-right font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-border/15 divide-y">
+        <FacetCard>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="px-4">Report Type & Summary</TableHead>
+                <TableHead className="px-4">Classification</TableHead>
+                <TableHead className="px-4">Clearance</TableHead>
+                <TableHead className="px-4">Confidence</TableHead>
+                <TableHead className="px-4">Status</TableHead>
+                <TableHead className="px-4 text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredTemplates.map((template: any) => (
-                <tr key={template.id} className="hover:bg-foreground/[0.02] transition-colors">
-                  <td className="px-4 py-2.5">
-                    <div className="text-foreground font-semibold">
+                <TableRow key={template.id}>
+                  <TableCell className="px-4">
+                    <div className="text-label font-semibold">
                       {REPORT_TYPE_LABELS[template.reportType] || template.reportType}
                     </div>
                     {template.summaryTemplate && (
-                      <div className="text-muted-foreground max-w-sm truncate text-xs">
+                      <div className="text-label-secondary text-footnote max-w-sm truncate">
                         {template.summaryTemplate}
                       </div>
                     )}
-                  </td>
-                  <td className="px-4 py-2.5">
+                  </TableCell>
+                  <TableCell className="px-4">
                     <span
-                      className={`inline-block rounded-md border px-2 py-0.5 text-xs font-semibold uppercase ${
+                      className={`rounded-control-sm text-eyebrow inline-block border px-2 py-0.5 ${
                         template.classification === "RESTRICTED"
-                          ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                          : "border-cyan-500/30 bg-cyan-500/10 text-cyan-400"
+                          ? "border-yellow/30 bg-yellow/10 text-yellow"
+                          : "border-teal/30 bg-teal/10 text-teal"
                       }`}
                     >
                       {template.classification}
                     </span>
-                  </td>
-                  <td className="text-muted-foreground px-4 py-2.5 font-mono">
+                  </TableCell>
+                  <TableCell className="text-label-secondary px-4">
                     Level {template.minimumLevel}+
-                  </td>
-                  <td className="text-foreground px-4 py-2.5 font-mono font-medium">
+                  </TableCell>
+                  <TableCell className="text-label px-4 font-medium">
                     {template.confidenceBase}%
-                  </td>
-                  <td className="px-4 py-2.5">
+                  </TableCell>
+                  <TableCell className="px-4">
                     <span
-                      className={`inline-block rounded-md px-2 py-0.5 text-xs font-semibold ${
+                      className={`rounded-control-sm text-caption inline-block px-2 py-0.5 ${
                         template.isActive
-                          ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
-                          : "bg-muted/50 text-muted-foreground border-border border"
+                          ? "border-green/20 bg-green/10 text-green border"
+                          : "bg-fill-3 text-label-secondary border-separator border"
                       }`}
                     >
                       {template.isActive ? "Active" : "Inactive"}
                     </span>
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
+                  </TableCell>
+                  <TableCell className="px-4 text-right">
                     <div className="inline-flex items-center gap-1">
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="Preview"
                         onClick={() => setPreviewTemplate(template)}
-                        className="text-muted-foreground hover:bg-muted/50 hover:text-foreground rounded-lg p-1 transition-transform active:scale-[0.98]"
+
                         title="Preview"
                       >
                         <Eye className="h-3.5 w-3.5" />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="Edit"
                         onClick={() => handleEdit(template)}
-                        className="text-muted-foreground hover:bg-muted/50 hover:text-foreground rounded-lg p-1 transition-transform active:scale-[0.98]"
+
                         title="Edit"
                       >
                         <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="Delete"
                         onClick={() => handleDelete(template.id)}
-                        className="rounded-lg p-1 text-red-400 transition-transform hover:bg-red-500/10 hover:text-red-300 active:scale-[0.98]"
+                        className="text-destructive"
                         title="Delete"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      </Button>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </FacetCard>
       )}
 
       {/* Add/Edit Dialog */}
@@ -400,16 +407,14 @@ export function IntelligenceTemplatesPanel() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-foreground mb-1.5 block text-xs font-medium">
-                  Report Type
-                </label>
+                <label className="text-label text-caption mb-2 block">Report Type</label>
                 <Select
                   value={formData.reportType}
                   onValueChange={(val: any) =>
                     setFormData((prev) => ({ ...prev, reportType: val }))
                   }
                 >
-                  <SelectTrigger className="text-xs">
+                  <SelectTrigger size="sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -421,16 +426,14 @@ export function IntelligenceTemplatesPanel() {
               </div>
 
               <div>
-                <label className="text-foreground mb-1.5 block text-xs font-medium">
-                  Classification
-                </label>
+                <label className="text-label text-caption mb-2 block">Classification</label>
                 <Select
                   value={formData.classification}
                   onValueChange={(val: any) =>
                     setFormData((prev) => ({ ...prev, classification: val }))
                   }
                 >
-                  <SelectTrigger className="text-xs">
+                  <SelectTrigger size="sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -442,9 +445,7 @@ export function IntelligenceTemplatesPanel() {
             </div>
 
             <div>
-              <label className="text-foreground mb-1.5 block text-xs font-medium">
-                Summary Template
-              </label>
+              <label className="text-label text-caption mb-2 block">Summary Template</label>
               <Textarea
                 value={formData.summaryTemplate}
                 onChange={(e) =>
@@ -452,14 +453,12 @@ export function IntelligenceTemplatesPanel() {
                 }
                 placeholder="Template text with {{tags}}..."
                 rows={3}
-                className="text-xs"
+                className="md:text-footnote"
               />
             </div>
 
             <div>
-              <label className="text-foreground mb-1.5 block text-xs font-medium">
-                Findings Template
-              </label>
+              <label className="text-label text-caption mb-2 block">Findings Template</label>
               <Textarea
                 value={formData.findingsTemplate}
                 onChange={(e) =>
@@ -467,15 +466,13 @@ export function IntelligenceTemplatesPanel() {
                 }
                 placeholder="Findings section format..."
                 rows={4}
-                className="text-xs"
+                className="md:text-footnote"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-foreground mb-1.5 block text-xs font-medium">
-                  Minimum Level Required
-                </label>
+                <label className="text-label text-caption mb-2 block">Minimum Level Required</label>
                 <Input
                   type="number"
                   min={1}
@@ -487,14 +484,12 @@ export function IntelligenceTemplatesPanel() {
                       minimumLevel: parseInt(e.target.value) || 1,
                     }))
                   }
-                  className="text-xs"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                 />
               </div>
 
               <div>
-                <label className="text-foreground mb-1.5 block text-xs font-medium">
-                  Confidence Base (%)
-                </label>
+                <label className="text-label text-caption mb-2 block">Confidence Base (%)</label>
                 <Input
                   type="number"
                   min={1}
@@ -506,7 +501,7 @@ export function IntelligenceTemplatesPanel() {
                       confidenceBase: parseInt(e.target.value) || 50,
                     }))
                   }
-                  className="text-xs"
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                 />
               </div>
             </div>
@@ -519,15 +514,10 @@ export function IntelligenceTemplatesPanel() {
                   setIsAddDialogOpen(false);
                   setEditingTemplate(null);
                 }}
-                className="text-xs active:scale-[0.98]"
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={createMutation.isPending || updateMutation.isPending}
-                className="text-xs active:scale-[0.98]"
-              >
+              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
                 {editingTemplate ? "Update" : "Create"}
               </Button>
             </DialogFooter>
@@ -546,29 +536,24 @@ export function IntelligenceTemplatesPanel() {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 text-xs">
-              <div className="bg-card/40 border-border/40 rounded-xl border p-4">
-                <h4 className="text-foreground mb-1 font-semibold">Summary Structure</h4>
-                <p className="text-muted-foreground whitespace-pre-wrap">
+            <div className="text-footnote space-y-4">
+              <div className="bg-surface border-separator rounded-row border p-4">
+                <h4 className="text-label mb-1 font-semibold">Summary Structure</h4>
+                <p className="text-label-secondary whitespace-pre-wrap">
                   {previewTemplate.summaryTemplate}
                 </p>
               </div>
 
-              <div className="bg-card/40 border-border/40 rounded-xl border p-4">
-                <h4 className="text-foreground mb-1 font-semibold">Findings Structure</h4>
-                <p className="text-muted-foreground whitespace-pre-wrap">
+              <div className="bg-surface border-separator rounded-row border p-4">
+                <h4 className="text-label mb-1 font-semibold">Findings Structure</h4>
+                <p className="text-label-secondary whitespace-pre-wrap">
                   {previewTemplate.findingsTemplate}
                 </p>
               </div>
             </div>
 
             <DialogFooter>
-              <Button
-                onClick={() => setPreviewTemplate(null)}
-                className="text-xs active:scale-[0.98]"
-              >
-                Close
-              </Button>
+              <Button onClick={() => setPreviewTemplate(null)}>Close</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

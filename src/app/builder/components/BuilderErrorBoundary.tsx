@@ -7,7 +7,7 @@ import {
   HomeSimple as Home,
   ArrowLeft,
 } from "iconoir-react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { createUrl } from "~/lib/utils";
@@ -93,13 +93,16 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
       // Default error UI
       return (
         <div className="container mx-auto px-4 py-8">
-          <Card className="facet-hierarchy-parent mx-auto max-w-2xl">
+          <Card className="mx-auto max-w-2xl">
             <CardHeader className="text-center">
-              <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-red-500" />
-              <CardTitle className="text-2xl font-bold text-red-700">Builder Error</CardTitle>
+              <AlertTriangle className="text-red mx-auto mb-4 h-12 w-12" />
+              {/* A heading (CardTitle is a div): the fallback replaces a step's content or the page. */}
+              <h2 data-slot="card-title" className="text-title-1 text-red leading-none">
+                Builder Error
+              </h2>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Alert className="border-red-200 bg-red-50">
+              <Alert className="border-red/30 bg-red/10">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   An unexpected error occurred in the country builder. This could be due to
@@ -110,17 +113,17 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
 
               {/* Error details (development only) */}
               {process.env.NODE_ENV === "development" && this.state.error && (
-                <div className="mt-4 rounded-lg bg-gray-100 p-4">
-                  <h4 className="mb-2 font-semibold text-gray-800">Error Details:</h4>
-                  <pre className="max-h-32 overflow-auto text-xs text-gray-600">
+                <div className="bg-surface-secondary rounded-row mt-4 p-4">
+                  <h3 className="text-headline text-label mb-2">Error Details:</h3>
+                  <pre className="text-footnote text-label-secondary max-h-32 overflow-auto">
                     {this.state.error.message}
                   </pre>
                   {this.state.errorInfo && (
                     <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-gray-500">
+                      <summary className="text-footnote text-label-secondary cursor-pointer">
                         Component Stack
                       </summary>
-                      <pre className="mt-1 max-h-32 overflow-auto text-xs text-gray-500">
+                      <pre className="text-footnote text-label-secondary mt-1 max-h-32 overflow-auto">
                         {this.state.errorInfo.componentStack}
                       </pre>
                     </details>
@@ -169,7 +172,7 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
               </div>
 
               {/* User guidance */}
-              <div className="text-muted-foreground pt-4 text-center text-sm">
+              <div className="text-label-secondary text-body pt-4 text-center">
                 <p>If this problem persists, try clearing your draft and starting over.</p>
               </div>
             </CardContent>

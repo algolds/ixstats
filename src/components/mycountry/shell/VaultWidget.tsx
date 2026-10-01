@@ -33,7 +33,7 @@ import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { PreText } from "~/components/ui/pretext";
 import { useTheme } from "~/context/theme-context";
 import { Button } from "~/components/ui/button";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 
 import { Eyebrow } from "~/components/ui/eyebrow";
@@ -101,32 +101,32 @@ export function VaultWidget() {
 
   return (
     <CutoutCard
-      className={cn(cutoutCardSurfaceClassName, "w-48 overflow-hidden rounded-2xl")}
+      className={cn(cutoutCardSurfaceClassName, "rounded-card w-48 overflow-hidden")}
       trackPointerHover={false}
       texture="dots"
       textureOpacity={0.05}
     >
       {/* Header: plain glyph in the Vault accent and a sentence-case title */}
-      <div className="border-border flex items-center gap-2 border-b px-3 py-2.5">
-        <Wallet aria-hidden="true" className="size-4 shrink-0 text-amber-600" />
-        <h3 className="text-foreground text-sm font-semibold tracking-tight">IxVault</h3>
+      <div className="border-separator flex items-center gap-2 border-b px-3 py-2">
+        <Wallet aria-hidden="true" className="text-yellow size-4 shrink-0" />
+        <h3 className="text-label text-headline">IxVault</h3>
       </div>
-      <CutoutCardContent className="space-y-2.5 p-3 pt-2.5">
-        <div className="space-y-2.5">
+      <CutoutCardContent className="space-y-2 p-3 pt-2">
+        <div className="space-y-2">
           {!isMainVaultPage && (
             <>
               {/* Balance */}
               <div>
                 <Eyebrow className="block">IxCredits</Eyebrow>
-                <div className="flex items-center gap-1.5 pt-0.5">
-                  <IxCreditsSymbol className="size-4 shrink-0 text-amber-600" />
-                  <p className="text-foreground text-base font-bold tracking-tight tabular-nums sm:text-lg">
-                    {balanceLoading ? (
-                      <Skeleton className="h-5 w-16" />
-                    ) : (
-                      Math.round(balanceData?.credits ?? 0).toLocaleString()
-                    )}
-                  </p>
+                <div className="flex items-center gap-2 pt-0.5">
+                  <IxCreditsSymbol decorative className="text-yellow size-4 shrink-0" />
+                  {balanceLoading ? (
+                    <Skeleton className="h-5 w-16" />
+                  ) : (
+                    <p className="text-label text-title-3 sm:text-title-3 tabular-nums">
+                      {Math.round(balanceData?.credits ?? 0).toLocaleString()}
+                    </p>
+                  )}
                   {passiveIncomeData && passiveIncomeData.dailyDividend > 0 && (
                     <Button
                       type="button"
@@ -135,8 +135,8 @@ export function VaultWidget() {
                       aria-pressed={showPassiveIncome}
                       onClick={() => setShowPassiveIncome((prev) => !prev)}
                       className={cn(
-                        "text-muted-foreground ml-auto size-7",
-                        showPassiveIncome && "bg-accent text-foreground"
+                        "text-label-secondary ml-auto size-7",
+                        showPassiveIncome && "bg-fill-3 text-label"
                       )}
                       title={
                         showPassiveIncome
@@ -159,21 +159,21 @@ export function VaultWidget() {
               {todayEarnings && todayEarnings.sources.length > 0 && (
                 <div>
                   <Eyebrow className="mb-1 block">Today&apos;s earnings</Eyebrow>
-                  <div className="space-y-1 text-xs">
+                  <div className="text-footnote space-y-1">
                     {todayEarnings.sources.map((source) => (
                       <div
                         key={source.type}
-                        className="text-muted-foreground flex justify-between text-xs font-normal tracking-normal"
+                        className="text-label-secondary text-footnote flex justify-between font-normal"
                       >
                         <span>{source.label}</span>
-                        <span className="font-semibold text-emerald-600 tabular-nums">
+                        <span className="text-green font-semibold tabular-nums">
                           +{Math.round(source.amount).toLocaleString()}
                         </span>
                       </div>
                     ))}
-                    <div className="border-border/40 flex justify-between border-t pt-1 text-xs font-medium tracking-tight">
-                      <span className="text-foreground">Total</span>
-                      <span className="text-foreground flex items-center gap-0.5 font-bold tabular-nums">
+                    <div className="border-separator text-caption flex justify-between border-t pt-1">
+                      <span className="text-label">Total</span>
+                      <span className="text-label flex items-center gap-0.5 font-semibold tabular-nums">
                         +<IxCreditsSymbol className="h-3 w-3 shrink-0" />
                         {Math.round(todayEarnings.total).toLocaleString()}
                       </span>
@@ -184,33 +184,32 @@ export function VaultWidget() {
 
               {/* Treasury Revenue Projection */}
               {showPassiveIncome && passiveIncomeData && passiveIncomeData.dailyDividend > 0 && (
-                <FacetContainer
-                  depth={3}
-                  surface="solid"
-                  className="animate-in fade-in slide-in-from-top-1 rounded-xl p-2.5 duration-200"
+                <FacetCard
+                  variant="inset"
+                  className="animate-in fade-in slide-in-from-top-1 p-2 duration-200"
                 >
                   <Eyebrow className="mb-1 flex items-center gap-1">
                     <Coins aria-hidden="true" className="size-3" />
                     Treasury revenue
                   </Eyebrow>
-                  <div className="text-muted-foreground space-y-1 text-xs">
-                    <div className="flex justify-between text-xs font-normal tracking-normal">
+                  <div className="text-label-secondary text-footnote space-y-1">
+                    <div className="text-footnote flex justify-between font-normal">
                       <span>Daily</span>
-                      <span className="text-foreground flex items-center gap-0.5 font-semibold tabular-nums">
+                      <span className="text-label flex items-center gap-0.5 font-semibold tabular-nums">
                         +<IxCreditsSymbol className="h-3 w-3 shrink-0" />
                         {Math.round(passiveIncomeData.dailyDividend).toLocaleString()}
                       </span>
                     </div>
-                    <div className="flex justify-between text-xs font-normal tracking-normal">
-                      <span className="text-muted-foreground">Weekly</span>
-                      <span className="text-muted-foreground flex items-center gap-0.5 tabular-nums">
+                    <div className="text-footnote flex justify-between font-normal">
+                      <span className="text-label-secondary">Weekly</span>
+                      <span className="text-label-secondary flex items-center gap-0.5 tabular-nums">
                         ~<IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
                         {Math.round(passiveIncomeData.weeklyDividend).toLocaleString()}
                       </span>
                     </div>
-                    <div className="flex justify-between text-xs font-normal tracking-normal">
-                      <span className="text-muted-foreground">Monthly</span>
-                      <span className="text-muted-foreground flex items-center gap-0.5 tabular-nums">
+                    <div className="text-footnote flex justify-between font-normal">
+                      <span className="text-label-secondary">Monthly</span>
+                      <span className="text-label-secondary flex items-center gap-0.5 tabular-nums">
                         ~<IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
                         {Math.round(passiveIncomeData.monthlyDividend).toLocaleString()}
                       </span>
@@ -219,17 +218,17 @@ export function VaultWidget() {
 
                   {/* Budget Multiplier Bonus */}
                   {budgetMultiplierData && (
-                    <div className="border-border mt-1.5 border-t pt-1.5">
-                      <div className="flex items-center justify-between text-xs tracking-tight">
-                        <span className="text-foreground font-medium">Budget bonus</span>
+                    <div className="border-separator mt-2 border-t pt-2">
+                      <div className="text-footnote flex items-center justify-between">
+                        <span className="text-label font-medium">Budget bonus</span>
                         <span
                           className={cn(
                             "font-semibold tabular-nums",
                             budgetMultiplierData.percentChange > 0
-                              ? "text-emerald-600"
+                              ? "text-green"
                               : budgetMultiplierData.percentChange < 0
                                 ? "text-destructive"
-                                : "text-muted-foreground"
+                                : "text-label-secondary"
                           )}
                         >
                           {budgetMultiplierData.percentChange > 0 ? "+" : ""}
@@ -238,7 +237,7 @@ export function VaultWidget() {
                       </div>
                     </div>
                   )}
-                </FacetContainer>
+                </FacetCard>
               )}
             </>
           )}
@@ -249,10 +248,7 @@ export function VaultWidget() {
           {/* Quick Actions / Integrated Navigation */}
           {isOnVault ? (
             <div
-              className={cn(
-                "mt-1.5 space-y-1 pt-3",
-                !isMainVaultPage && "border-border/60 border-t"
-              )}
+              className={cn("mt-2 space-y-1 pt-3", !isMainVaultPage && "border-separator border-t")}
             >
               {[
                 {
@@ -316,21 +312,21 @@ export function VaultWidget() {
                       variant="ghost"
                       size="sm"
                       className={cn(
-                        "h-8 w-full justify-start gap-2 rounded-xl px-2.5",
+                        "rounded-row h-8 w-full justify-start gap-2 px-3",
                         item.isActive
-                          ? "bg-accent text-foreground"
-                          : "text-muted-foreground hover:text-foreground"
+                          ? "bg-fill-3 text-label"
+                          : "text-label-secondary hover:text-label"
                       )}
                     >
                       <Link href={item.href} aria-current={item.isActive ? "page" : undefined}>
                         <Icon
                           aria-hidden="true"
-                          className={cn("size-3.5 shrink-0", item.isActive && "text-amber-600")}
+                          className={cn("size-3.5 shrink-0", item.isActive && "text-yellow")}
                         />
                         <PreText
                           font="12px Geist, -apple-system, sans-serif"
                           lineHeight={14}
-                          className="flex-1 truncate text-xs leading-tight font-medium tracking-tight select-none"
+                          className="text-caption flex-1 truncate leading-tight select-none"
                         >
                           {item.title}
                         </PreText>
@@ -340,7 +336,7 @@ export function VaultWidget() {
                 })}
             </div>
           ) : (
-            <div className="flex flex-col gap-1.5 pt-0.5">
+            <div className="flex flex-col gap-2 pt-0.5">
               <Button asChild variant="link" size="sm" className="h-auto justify-center p-0">
                 <Link href="/vault">View full vault</Link>
               </Button>

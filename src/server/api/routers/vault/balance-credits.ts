@@ -16,6 +16,7 @@ import { vaultService } from "~/lib/vault/vault-service";
 import { grantNewPlayerBonus, NEW_PLAYER_BONUS_ON_VAULT_OPEN } from "~/lib/vault/vault-bonus";
 import { budgetVaultCalculator } from "~/lib/economy/budget-vault-calculator";
 import { globalCache } from "~/lib/cache";
+import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
 export const vaultBalanceCreditsRouter = createTRPCRouter({
   /**
@@ -114,6 +115,8 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
+      // Derived from the nation's budget (the budget multiplier): owner/privileged only.
+      await assertCountryWriteAccess(ctx, input.countryId);
       try {
         const dailyDividend = await vaultService.calculatePassiveIncome(
           input.countryId,
@@ -201,6 +204,8 @@ export const vaultBalanceCreditsRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
+      // Read off the nation's budget allocations: owner/privileged only.
+      await assertCountryWriteAccess(ctx, input.countryId);
       try {
         const multiplier = await budgetVaultCalculator.calculateBudgetMultiplier(
           input.countryId,

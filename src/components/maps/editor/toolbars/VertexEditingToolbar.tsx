@@ -1,4 +1,4 @@
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetMaterial } from "~/components/ui/facet";
 import React from "react";
 
 interface VertexEditingToolbarProps {
@@ -20,11 +20,11 @@ export function VertexEditingToolbar({
 
   return (
     <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
-      <FacetContainer depth={2} className="flex items-center gap-1.5 rounded-full p-1.5">
-        <span className="text-muted-foreground hidden px-2.5 text-xs font-medium sm:inline">
+      <FacetMaterial material="regular" className="flex items-center gap-2 rounded-full p-2">
+        <span className="text-label-secondary text-caption hidden px-3 sm:inline">
           Drag vertices · Midpoints to add · Right-click to remove
         </span>
-        <div className="bg-border hidden h-4 w-px sm:block" />
+        <div className="bg-separator hidden h-4 w-px sm:block" />
         <Button
           variant="secondary"
           size="sm"
@@ -65,7 +65,7 @@ export function VertexEditingToolbar({
         >
           Cancel
         </Button>
-      </FacetContainer>
+      </FacetMaterial>
     </div>
   );
 }

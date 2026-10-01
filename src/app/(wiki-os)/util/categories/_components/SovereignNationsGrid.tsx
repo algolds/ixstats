@@ -23,11 +23,11 @@ export function SovereignNationsGrid({ countries, searchQuery }: SovereignNation
               `/util/categories/${encodeURIComponent((country.name ?? "").replace(/ /g, "_"))}`
             )}
             className={cn(
-              "group relative flex items-center gap-3 overflow-hidden rounded-xl p-3",
-              "border border-white/20 dark:border-white/10",
-              "bg-white/60 backdrop-blur-md dark:bg-zinc-900/60",
-              "shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.06),0_2px_8px_rgba(0,0,0,0.25)]",
-              "hover:border-emerald-500/40 hover:bg-white/90 hover:shadow-md dark:hover:bg-zinc-900/90",
+              "group rounded-row relative flex items-center gap-3 overflow-hidden p-3",
+              "border-separator border",
+              "bg-surface",
+              "",
+              "hover:border-green/40 hover:bg-surface hover:shadow-card",
               "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]"
             )}
           >
@@ -35,29 +35,29 @@ export function SovereignNationsGrid({ countries, searchQuery }: SovereignNation
               <img
                 src={country.flagUrl}
                 alt=""
-                className="border-border/60 h-7 w-11 shrink-0 rounded border object-cover"
+                className="border-separator rounded-control-sm h-7 w-11 shrink-0 border object-cover"
                 loading="lazy"
               />
             ) : (
-              <IconoirGlobe className="text-muted-foreground h-6 w-6 shrink-0" />
+              <IconoirGlobe className="text-label-secondary h-6 w-6 shrink-0" />
             )}
             <div className="min-w-0 flex-1">
-              <div className="text-foreground truncate text-xs font-semibold transition-colors group-hover:text-emerald-500">
+              <div className="text-label text-caption group-hover:text-green truncate font-semibold transition-colors">
                 {country.name}
               </div>
-              <div className="text-muted-foreground mt-0.5 flex items-center gap-1.5 truncate font-mono text-xs tabular-nums">
+              <div className="text-label-secondary text-footnote mt-0.5 flex items-center gap-2 truncate tabular-nums">
                 {country.population ? <span>Pop {formatNumber(country.population, 1)}</span> : null}
                 {country.population && country.gdp ? <span className="opacity-40">·</span> : null}
                 {country.gdp ? <span>{formatCurrency(country.gdp)}</span> : null}
               </div>
             </div>
-            <ArrowRight className="text-muted-foreground/50 group-hover:text-foreground h-3.5 w-3.5 shrink-0 transition-colors" />
+            <ArrowRight className="text-label-secondary group-hover:text-label h-3.5 w-3.5 shrink-0 transition-colors" />
           </Link>
         ))}
       </div>
 
       {countries.length === 0 && (
-        <div className="text-muted-foreground py-12 text-center text-sm">
+        <div className="text-label-secondary text-body py-12 text-center">
           No nations matching &quot;{searchQuery}&quot;.
         </div>
       )}

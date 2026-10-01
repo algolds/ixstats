@@ -19,11 +19,12 @@ import {
   Leaf as Sprout,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
 import { publicArticleUrl } from "~/lib/wiki-os/config";
 import { MarginShareModal } from "../modals/MarginShareModal";
+import { Button } from "~/components/ui/button";
 
 interface AnnotationItem {
   id: string;
@@ -77,7 +78,6 @@ export function MarginMarkupTab({
 
   const deleteAnnotationMutation = api.wikios.deleteAnnotation.useMutation({
     onSuccess: () => {
-      soundEffects.release();
       notify.success("Highlight removed");
       refetch();
     },
@@ -100,7 +100,6 @@ export function MarginMarkupTab({
 
   const handleJumpToText = (textSnippet: string) => {
     if (!contentRef.current) return;
-    soundEffects.press();
     const snippet = textSnippet.slice(0, 35);
     const walker = document.createTreeWalker(contentRef.current, NodeFilter.SHOW_TEXT, null);
     let node: Node | null;
@@ -122,7 +121,6 @@ export function MarginMarkupTab({
   const handleCopy = async (id: string, text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      soundEffects.press();
       setCopiedId(id);
       notify.success("Quote copied to clipboard");
       setTimeout(() => setCopiedId(null), 1200);
@@ -149,7 +147,7 @@ export function MarginMarkupTab({
 
     try {
       await navigator.clipboard.writeText(markdownLines.join("\n"));
-      soundEffects.success();
+      soundCues?.success?.();
       setCopiedAll(true);
       notify.success("Notes copied to clipboard");
       setTimeout(() => setCopiedAll(false), 1500);
@@ -159,22 +157,22 @@ export function MarginMarkupTab({
   };
 
   return (
-    <div className="space-y-3.5">
+    <div className="space-y-4">
       {/* Header Info & Export Action */}
-      <div className="flex items-center justify-between border-b border-[var(--wikios-border)] pb-2 text-xs text-[var(--wikios-text-muted)]">
-        <span className="text-xs font-semibold tracking-tight text-[var(--wikios-text)]">
+      <div className="border-separator text-footnote text-label-secondary flex items-center justify-between border-b pb-2">
+        <span className="text-caption text-label font-semibold">
           Highlights and notes ({annotations.length})
         </span>
 
         {annotations.length > 0 && (
-          <button
-            type="button"
+          <Button
+            size="sm"
             onClick={handleExportAllMarkdown}
-            className="bg-margin-accent hover:bg-margin-accent/90 flex cursor-pointer items-center gap-1 rounded-lg border border-yellow-400/50 px-2.5 py-0.5 text-xs font-bold text-stone-950 shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-95"
+            className="bg-margin-accent hover:bg-margin-accent-hover text-(--margin-badge-text)"
           >
             {copiedAll ? (
               <>
-                <Check className="h-3 w-3 text-emerald-900" />
+                <Check className="text-green h-3 w-3" />
                 <span>Exported</span>
               </>
             ) : (
@@ -183,28 +181,26 @@ export function MarginMarkupTab({
                 <span>Export notes</span>
               </>
             )}
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Loading */}
       {isLoading && (
-        <div className="flex flex-col items-center justify-center gap-2 py-12 text-[var(--wikios-text-muted)]">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-yellow-400 border-t-transparent" />
-          <span className="text-xs">Loading highlights...</span>
+        <div className="text-label-secondary flex flex-col items-center justify-center gap-2 py-12">
+          <div className="border-yellow/50 h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
+          <span className="text-footnote">Loading highlights...</span>
         </div>
       )}
 
       {/* Empty State */}
       {!isLoading && annotations.length === 0 && (
-        <div className="space-y-1.5 py-12 text-center text-[var(--wikios-text-muted)]">
-          <div className="bg-margin-accent/20 dark:text-margin-accent mx-auto mb-2.5 flex h-10 w-10 items-center justify-center rounded-2xl border border-yellow-400/50 text-yellow-600 shadow-xs">
+        <div className="text-label-secondary space-y-2 py-12 text-center">
+          <div className="bg-margin-accent/20 rounded-card border-yellow/50 text-yellow mx-auto mb-2 flex h-10 w-10 items-center justify-center border">
             <Highlighter className="h-5 w-5 opacity-90" />
           </div>
-          <p className="text-xs font-bold tracking-tight text-[var(--wikios-text)]">
-            No highlights yet
-          </p>
-          <p className="mx-auto max-w-xs text-xs leading-relaxed text-[var(--wikios-text-dim)]">
+          <p className="text-caption text-label font-semibold">No highlights yet</p>
+          <p className="text-footnote text-label-secondary mx-auto max-w-xs leading-relaxed">
             Select any paragraph or sentence in the article to highlight, note, or save a quote.
           </p>
         </div>
@@ -212,7 +208,7 @@ export function MarginMarkupTab({
 
       {/* Annotation List */}
       {!isLoading && annotations.length > 0 && (
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {annotations.map((ann) => {
             const isSelected = selectedAnnotationId === ann.id;
             const isStashedQuote = ann.comment === "Saved quote";
@@ -233,93 +229,97 @@ export function MarginMarkupTab({
                 }}
                 onClick={() => onSelectAnnotation?.(ann.id)}
                 className={cn(
-                  "group relative cursor-pointer space-y-2 overflow-hidden rounded-2xl border bg-[var(--wikios-card-bg)]/80 p-3 shadow-xs backdrop-blur-md transition-[border-color,box-shadow,background-color,transform] duration-150 active:scale-[0.985]",
+                  "group rounded-card bg-surface relative cursor-pointer space-y-2 overflow-hidden border p-3 transition-[border-color,box-shadow,background-color,transform] duration-150 active:scale-[0.985]",
                   isSelected
-                    ? "border-yellow-400/80 shadow-[0_0_20px_rgba(254,240,54,0.35)] ring-1 ring-yellow-400/50"
-                    : "border-[var(--wikios-border)] hover:border-yellow-400/50 hover:shadow-[0_4px_16px_rgba(0,0,0,0.15)]"
+                    ? "border-yellow/80 ring-yellow/50 ring-1"
+                    : "border-separator hover:border-yellow/50"
                 )}
               >
                 {/* Accent Color Left Edge Bar with Fluorescent Highlighter Aura */}
                 <div
-                  className="absolute top-0 bottom-0 left-0 w-1 rounded-l-2xl shadow-xs transition-colors"
+                  className="rounded-l-card absolute top-0 bottom-0 left-0 w-1 transition-colors"
                   style={{ backgroundColor: swatchColor, boxShadow: `0 0 8px ${swatchColor}60` }}
                 />
 
                 {/* Top Metadata Row: Swatch indicator, Type tag, Actions */}
-                <div className="flex items-center justify-between gap-1 pl-1 text-xs">
-                  <div className="flex items-center gap-1.5">
+                <div className="text-footnote flex items-center justify-between gap-1 pl-1">
+                  <div className="flex items-center gap-2">
                     <span
-                      className="h-2 w-2 shrink-0 rounded-full shadow-xs ring-1 ring-white/20"
+                      className="h-2 w-2 shrink-0 rounded-full ring-1 ring-white/20"
                       style={{ backgroundColor: swatchColor }}
                     />
                     {isStashedQuote ? (
-                      <span className="py-0.2 flex items-center gap-1 rounded-md border border-rose-500/25 bg-rose-500/15 px-1.5 text-xs font-bold tracking-wider text-rose-400 uppercase">
+                      <span className="py-0.2 rounded-control-sm border-red/25 bg-red/15 text-eyebrow text-red flex items-center gap-1 border px-2">
                         <Bookmark className="h-2.5 w-2.5" /> Quote
                       </span>
                     ) : (
-                      <span className="text-xs font-bold tracking-wider text-[var(--wikios-text-dim)] uppercase">
-                        Highlight
-                      </span>
+                      <span className="text-eyebrow text-label-secondary">Highlight</span>
                     )}
                   </div>
 
                   {/* Micro Actions (Visible on hover or mobile) */}
                   <div className="flex items-center gap-0.5 opacity-80 transition-opacity group-hover:opacity-100">
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         setShareTarget({ quote: ann.selectedText, note: ann.comment });
                       }}
-                      className="cursor-pointer rounded-lg p-1 text-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-90"
+                      className="text-label-secondary"
                       title="Share and export"
+                      aria-label="Share and export"
                     >
-                      <Share2 className="h-3 w-3" />
-                    </button>
+                      <Share2 className="size-3" />
+                    </Button>
 
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleCopy(ann.id, ann.selectedText);
                       }}
-                      className="cursor-pointer rounded-lg p-1 text-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-90"
+                      className="text-label-secondary"
                       title="Copy quote"
+                      aria-label="Copy quote"
                     >
                       {copiedId === ann.id ? (
-                        <Check className="h-3 w-3 text-emerald-400" />
+                        <Check className="text-green h-3 w-3" />
                       ) : (
                         <Copy className="h-3 w-3" />
                       )}
-                    </button>
+                    </Button>
 
                     {isAuthenticated && (
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           deleteAnnotationMutation.mutate({ id: ann.id });
                         }}
                         disabled={deleteAnnotationMutation.isPending}
-                        className="cursor-pointer rounded-lg p-1 text-[var(--wikios-text-dim)] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-rose-500/10 hover:text-rose-400 active:scale-90"
+                        className="text-label-secondary hover:bg-red/10 hover:text-red"
                         title="Delete highlight"
+                        aria-label="Delete highlight"
                       >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
+                        <Trash2 className="size-3" />
+                      </Button>
                     )}
                   </div>
                 </div>
 
                 {/* Excerpt Quote Text */}
-                <p className="pl-1 text-xs leading-relaxed text-[var(--wikios-text)] italic">
+                <p className="text-footnote text-label pl-1 leading-relaxed italic">
                   &ldquo;{ann.selectedText}&rdquo;
                 </p>
 
                 {/* User Note if present */}
                 {ann.comment && !isStashedQuote && (
-                  <div className="ml-1 space-y-0.5 rounded-xl border border-yellow-400/40 bg-[var(--wikios-surface)]/80 p-2 text-xs text-[var(--wikios-text-muted)] shadow-2xs">
-                    <div className="flex items-center gap-1 text-xs font-bold text-[var(--wikios-text)]">
-                      <MessageSquare className="dark:text-margin-accent h-2.5 w-2.5 text-yellow-600" />
+                  <div className="rounded-row border-yellow/40 bg-surface text-footnote text-label-secondary ml-1 space-y-0.5 border p-2">
+                    <div className="text-caption text-label flex items-center gap-1 font-semibold">
+                      <MessageSquare className="text-yellow h-2.5 w-2.5" />
                       <span>Lore Significance</span>
                     </div>
                     <p className="leading-snug italic">{ann.comment}</p>
@@ -327,23 +327,24 @@ export function MarginMarkupTab({
                 )}
 
                 {/* Bottom Action Strip */}
-                <div className="flex items-center justify-between border-t border-[var(--wikios-border)]/50 pt-1 text-xs">
-                  <button
-                    type="button"
+                <div className="border-separator text-footnote flex items-center justify-between border-t pt-1">
+                  <Button
+                    variant="link"
+                    size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleJumpToText(ann.selectedText);
                     }}
-                    className="dark:hover:text-margin-accent group/jump flex cursor-pointer items-center gap-1 font-bold text-[var(--wikios-text)] transition-transform duration-100 hover:text-yellow-600 active:scale-95"
+                    className="group/jump text-label h-auto gap-1 px-0"
                   >
                     <span>Jump to text</span>
-                    <ArrowUpRight className="dark:text-margin-accent h-3 w-3 text-yellow-600 transition-transform group-hover/jump:translate-x-0.5 group-hover/jump:-translate-y-0.5" />
-                  </button>
+                    <ArrowUpRight className="text-yellow size-3 transition-transform group-hover/jump:translate-x-0.5 group-hover/jump:-translate-y-0.5" />
+                  </Button>
 
                   <Link
                     href={`/wiki/edit/${sproutChildSlug}?parent=${encodeURIComponent(articleTitle)}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="flex cursor-pointer items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-semibold text-emerald-400 shadow-2xs transition-transform duration-100 hover:bg-emerald-500/20 active:scale-95"
+                    className="rounded-control border-green/30 bg-green/10 text-green hover:bg-green/20 flex cursor-pointer items-center gap-1 border px-2 py-0.5 font-semibold transition-transform duration-100 active:scale-[0.98]"
                     title="Create a new page from this quote"
                   >
                     <Sprout className="h-2.5 w-2.5" />

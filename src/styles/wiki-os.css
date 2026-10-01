@@ -1,14 +1,24 @@
 /* ===========================================================================
-   WikiOS Stylesheet Entry Point
-   Aggregates split stylesheets in exact cascade order.
+   WikiOS Stylesheet Entry Point (route-scoped: app/(wiki-os)/wiki/layout.tsx)
+   Aggregates split stylesheets in cascade order. Every file is layered, so
+   Tailwind utilities win; the layer-order statement keeps that true even if
+   this sheet is parsed before globals.css.
+
+   wiki-os/tokens.css is also imported globally (globals.css) because
+   --wikios-* / --margin-* are read outside /wiki; importing it here too is
+   harmless (same values, same layer) and keeps /wiki correct on its own.
 
    The reader's styles only. editors.css (the visual and source editors, writer mode) is imported
    by the editor components themselves, so it travels with the editor chunk and a reader never
    downloads it.
    =========================================================================== */
 
+@layer theme, base, components, utilities;
+
+@import "./wiki-os/tokens.css";
 @import "./wiki-os/foundations.css";
 @import "./wiki-os/layout.css";
 @import "./wiki-os/content.css";
 @import "./wiki-os/components.css";
+@import "./wiki-os/mediawiki.css";
 

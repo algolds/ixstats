@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Globe, FloppyDisk as Save, RssFeed as Rss, Send } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export function ThinkPagesSettingsContent() {
   usePageTitle({ title: "Admin - ThinkPages Panel" });
@@ -27,19 +28,19 @@ export function ThinkPagesSettingsContent() {
       />
 
       <Tabs defaultValue="platform" className="w-full">
-        <TabsList className="bg-card/40 border-border/40 mb-4 flex w-full max-w-md justify-start gap-1 rounded-xl border p-1 backdrop-blur-md">
+        <TabsList className="bg-fill-3 mb-4 flex w-full max-w-md justify-start gap-1 rounded-full p-1">
           <TabsTrigger
             value="platform"
-            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <Globe className="h-4 w-4 text-cyan-400" />
+            <Globe className="text-teal h-4 w-4" />
             Platform Settings
           </TabsTrigger>
           <TabsTrigger
             value="discord"
-            className="flex flex-1 items-center justify-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <Rss className="h-4 w-4 text-purple-400" />
+            <Rss className="text-purple h-4 w-4" />
             Discord Mirror Feed
           </TabsTrigger>
         </TabsList>
@@ -107,75 +108,62 @@ function PlatformSettingsTab() {
     <div className="space-y-6">
       {/* Real Stats Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Total Social Posts
-          </p>
+        <FacetCard className="p-4">
+          <p className="text-label-secondary text-eyebrow">Total Social Posts</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
-            <p className="text-foreground mt-1 font-mono text-xl font-bold tracking-tight">
+            <p className="text-label text-title-2 mt-1 tabular-nums">
               {stats?.totalPosts.toLocaleString() ?? 0}
             </p>
           )}
-        </div>
+        </FacetCard>
 
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Registered Accounts
-          </p>
+        <FacetCard className="p-4">
+          <p className="text-label-secondary text-eyebrow">Registered Accounts</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
-            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-purple-400">
+            <p className="text-title-2 text-purple mt-1 tabular-nums">
               {stats?.totalAccounts.toLocaleString() ?? 0}
             </p>
           )}
-        </div>
+        </FacetCard>
 
-        <div className="border-border/30 bg-card/25 rounded-2xl border p-3.5 shadow-xs backdrop-blur-md">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Weekly Growth
-          </p>
+        <FacetCard className="p-4">
+          <p className="text-label-secondary text-eyebrow">Weekly Growth</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
           ) : (
-            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-emerald-400">
+            <p className="text-title-2 text-green mt-1 tabular-nums">
               {(stats?.weeklyGrowth ?? 0) > 0 ? "+" : ""}
               {stats?.weeklyGrowth ?? 0}%
             </p>
           )}
-        </div>
+        </FacetCard>
       </div>
 
       {/* Settings Form */}
-      <div className="border-border/30 bg-card/25 space-y-5 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-        <div className="border-border/20 flex items-center justify-between border-b pb-4">
+      <FacetCard className="space-y-5 p-5">
+        <div className="border-separator flex items-center justify-between border-b pb-4">
           <div>
-            <h3 className="text-foreground text-xs font-bold">ThinkPages Platform Settings</h3>
-            <p className="text-muted-foreground mt-0.5 text-xs">
+            <h3 className="text-label text-caption">ThinkPages Platform Settings</h3>
+            <p className="text-label-secondary text-footnote mt-0.5">
               Limits, automated news publishing, and content moderation rules
             </p>
           </div>
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={saveMutation.isPending || configLoading}
-            className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
-          >
-            <Save className="mr-1.5 h-3.5 w-3.5" />
+          <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending || configLoading}>
+            <Save className="mr-2 h-3.5 w-3.5" />
             {saveMutation.isPending ? "Saving..." : "Save Settings"}
           </Button>
         </div>
 
         <div className="space-y-3">
           {/* Max Accounts */}
-          <div className="border-border/20 bg-background/30 flex flex-col justify-between gap-3 rounded-xl border p-3.5 sm:flex-row sm:items-center">
+          <div className="border-separator bg-fill-3 rounded-row flex flex-col justify-between gap-3 border p-4 sm:flex-row sm:items-center">
             <div>
-              <Label className="text-foreground text-xs font-bold">
-                Max Accounts Limit per User
-              </Label>
-              <p className="text-muted-foreground text-xs">
+              <Label className="text-label text-caption">Max Accounts Limit per User</Label>
+              <p className="text-label-secondary text-footnote">
                 Cap the maximum number of ThinkPages feed profiles a player can hold
               </p>
             </div>
@@ -183,17 +171,17 @@ function PlatformSettingsTab() {
               type="number"
               value={settings.maxAccountsPerUser}
               onChange={(e) => handleToggle("maxAccountsPerUser", parseInt(e.target.value) || 1)}
-              className="border-border/30 bg-background/50 h-8 w-28 rounded-xl font-mono text-xs font-bold"
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm) w-28 font-mono"
               min={1}
               max={100}
             />
           </div>
 
           {/* Character Cap */}
-          <div className="border-border/20 bg-background/30 flex flex-col justify-between gap-3 rounded-xl border p-3.5 sm:flex-row sm:items-center">
+          <div className="border-separator bg-fill-3 rounded-row flex flex-col justify-between gap-3 border p-4 sm:flex-row sm:items-center">
             <div>
-              <Label className="text-foreground text-xs font-bold">Post Character Length Cap</Label>
-              <p className="text-muted-foreground text-xs">
+              <Label className="text-label text-caption">Post Character Length Cap</Label>
+              <p className="text-label-secondary text-footnote">
                 Maximum allowed character length for post content (excluding blurb header tags)
               </p>
             </div>
@@ -201,19 +189,17 @@ function PlatformSettingsTab() {
               type="number"
               value={settings.maxCharLength}
               onChange={(e) => handleToggle("maxCharLength", parseInt(e.target.value) || 280)}
-              className="border-border/30 bg-background/50 h-8 w-28 rounded-xl font-mono text-xs font-bold"
+              className="rounded-control-sm md:text-footnote h-(--control-height-sm) w-28 font-mono"
               min={280}
               max={10000}
             />
           </div>
 
           {/* Auto News Elections */}
-          <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
+          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
-              <Label className="text-foreground text-xs font-bold">
-                Election Results Auto-News
-              </Label>
-              <p className="text-muted-foreground text-xs">
+              <Label className="text-label text-caption">Election Results Auto-News</Label>
+              <p className="text-label-secondary text-footnote">
                 Automatically publish detailed election outcomes to the ThinkPages feed
               </p>
             </div>
@@ -225,12 +211,10 @@ function PlatformSettingsTab() {
           </div>
 
           {/* Auto News Policies */}
-          <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
+          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
-              <Label className="text-foreground text-xs font-bold">
-                Passed Directives Auto-News
-              </Label>
-              <p className="text-muted-foreground text-xs">
+              <Label className="text-label text-caption">Passed Directives Auto-News</Label>
+              <p className="text-label-secondary text-footnote">
                 Broadcast newly declared national directives and policy milestones
               </p>
             </div>
@@ -242,10 +226,10 @@ function PlatformSettingsTab() {
           </div>
 
           {/* Comment Attachments */}
-          <div className="border-border/20 bg-background/30 flex items-center justify-between rounded-xl border p-3.5">
+          <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
-              <Label className="text-foreground text-xs font-bold">Media & Card Attachments</Label>
-              <p className="text-muted-foreground text-xs">
+              <Label className="text-label text-caption">Media & Card Attachments</Label>
+              <p className="text-label-secondary text-footnote">
                 Allow attaching vault cards, flags, and image links in replies
               </p>
             </div>
@@ -256,7 +240,7 @@ function PlatformSettingsTab() {
             />
           </div>
         </div>
-      </div>
+      </FacetCard>
     </div>
   );
 }
@@ -284,10 +268,10 @@ function DiscordMirrorTab() {
   };
 
   return (
-    <div className="border-border/30 bg-card/25 space-y-5 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
+    <FacetCard className="space-y-5 p-5">
       <div>
-        <h3 className="text-foreground text-xs font-bold">Discord ThinkPages Mirror</h3>
-        <p className="text-muted-foreground mt-0.5 text-xs">
+        <h3 className="text-label text-caption">Discord ThinkPages Mirror</h3>
+        <p className="text-label-secondary text-footnote mt-0.5">
           Mirror trending thinkpage posts and breaking news bulletins directly to a Discord webhook
           channel
         </p>
@@ -295,14 +279,12 @@ function DiscordMirrorTab() {
 
       <div className="space-y-4">
         <div>
-          <Label className="text-foreground mb-1.5 block text-xs font-medium">
-            Discord Webhook URL
-          </Label>
+          <Label className="text-label text-caption mb-2 block">Discord Webhook URL</Label>
           <Input
             value={webhookUrl}
             onChange={(e) => setWebhookUrl(e.target.value)}
             placeholder="https://discord.com/api/webhooks/..."
-            className="border-border/30 bg-background/50 h-8 rounded-xl font-mono text-xs"
+            className="rounded-control-sm md:text-footnote h-(--control-height-sm) font-mono"
           />
         </div>
 
@@ -311,13 +293,12 @@ function DiscordMirrorTab() {
           variant="outline"
           onClick={handleTestWebhook}
           disabled={isSending || !webhookUrl}
-          className="h-8 rounded-xl px-3.5 text-xs font-semibold transition-transform active:scale-[0.98]"
         >
-          <Send className="mr-1.5 h-3.5 w-3.5" />
+          <Send className="mr-2 h-3.5 w-3.5" />
           {isSending ? "Sending Test..." : "Send Test Broadcast"}
         </Button>
       </div>
-    </div>
+    </FacetCard>
   );
 }
 

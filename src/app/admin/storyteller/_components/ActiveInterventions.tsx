@@ -4,6 +4,7 @@
 
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
@@ -25,7 +26,7 @@ export function ActiveInterventions() {
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-16 w-full rounded-xl" />
+          <Skeleton key={i} className="rounded-row h-16 w-full" />
         ))}
       </div>
     );
@@ -34,9 +35,9 @@ export function ActiveInterventions() {
   if (countriesWithInterventions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <Zap className="text-muted-foreground mb-3 h-10 w-10" />
-        <h3 className="text-foreground text-lg font-semibold">No Active Interventions</h3>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <Zap className="text-label-secondary mb-3 h-10 w-10" />
+        <h3 className="text-label text-title-3">No Active Interventions</h3>
+        <p className="text-label-secondary text-body mt-1">
           All storyteller effects are currently inactive. Create a world event to generate
           interventions.
         </p>
@@ -48,9 +49,9 @@ export function ActiveInterventions() {
     <div>
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Zap className="h-5 w-5 text-amber-500" />
-          <h3 className="text-foreground text-lg font-semibold">Active Interventions</h3>
-          <Badge variant="outline" className="border-amber-500/20 text-amber-600">
+          <Zap className="text-yellow h-5 w-5" />
+          <h3 className="text-label text-title-3">Active Interventions</h3>
+          <Badge variant="yellow">
             {countriesWithInterventions.reduce((sum, c) => sum + c.activeInterventions, 0)} total
           </Badge>
         </div>
@@ -90,30 +91,29 @@ function CountryInterventionRow({
     detail?.country?.storytellerEffects?.filter((d: { isActive: boolean }) => d.isActive) ?? [];
 
   return (
-    <div className="facet-surface border-border/30 hover:border-border/60 rounded-xl border shadow-sm transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
-      <button
+    <div className="border-separator hover:border-separator rounded-row duration-fast border transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+      <Button
+        variant="ghost"
+        aria-expanded={expanded}
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between p-3 text-left"
+        className="rounded-row h-auto w-full justify-between p-3 text-left font-normal active:scale-100"
       >
         <div className="flex items-center gap-3">
           <UnifiedCountryFlag countryName={country.name} flagUrl={country.flag} size="sm" />
           <div>
-            <span className="text-foreground font-medium">{country.name}</span>
-            <span className="text-muted-foreground ml-2 text-xs">{country.economicTier}</span>
+            <span className="text-label font-medium">{country.name}</span>
+            <span className="text-label-secondary text-footnote ml-2">{country.economicTier}</span>
           </div>
         </div>
-        <Badge
-          variant="outline"
-          className="border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300"
-        >
+        <Badge variant="yellow">
           <AlertTriangle className="mr-1 h-3 w-3" />
           {country.activeInterventions} active
         </Badge>
-      </button>
+      </Button>
 
       {expanded && effects.length > 0 && (
-        <div className="border-border/30 border-t px-3 pb-3">
-          <div className="mt-2 space-y-1.5">
+        <div className="border-separator border-t px-3 pb-3">
+          <div className="mt-2 space-y-2">
             {effects.map(
               (dm: {
                 id: string;
@@ -126,32 +126,23 @@ function CountryInterventionRow({
               }) => (
                 <div
                   key={dm.id}
-                  className="facet-hierarchy-child border-border/20 flex items-center justify-between rounded-lg border px-3 py-2"
+                  className="bg-surface-secondary border-separator rounded-control flex items-center justify-between border px-3 py-2"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        {dm.inputType.replace(/_/g, " ")}
-                      </Badge>
-                      <span className="font-mono text-xs font-medium">
+                      <Badge variant="outline">{dm.inputType.replace(/_/g, " ")}</Badge>
+                      <span className="text-caption tabular-nums">
                         {dm.value >= 0 ? "+" : ""}
                         {(dm.value * 100).toFixed(1)}%
                       </span>
-                      {dm.worldEventId && (
-                        <Badge
-                          variant="outline"
-                          className="border-blue-500/20 text-xs text-blue-600"
-                        >
-                          World Event
-                        </Badge>
-                      )}
+                      {dm.worldEventId && <Badge variant="blue">World Event</Badge>}
                     </div>
                     {dm.description && (
-                      <p className="text-muted-foreground mt-0.5 truncate text-xs">
+                      <p className="text-label-secondary text-footnote mt-0.5 truncate">
                         {dm.description}
                       </p>
                     )}
-                    <div className="text-muted-foreground mt-0.5 flex items-center gap-2 text-xs">
+                    <div className="text-label-secondary text-footnote mt-0.5 flex items-center gap-2">
                       <Clock className="h-3 w-3" />
                       {formatDistanceToNow(new Date(dm.createdAt), { addSuffix: true })}
                       {dm.duration && <span>({dm.duration}yr)</span>}

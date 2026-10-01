@@ -26,12 +26,22 @@ import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
 import { useVisibleRefetch } from "~/hooks/useVisibleRefetch";
 import { LoreCategory } from "~/lib/cards/category-enums";
-import { FacetContainer, FacetCard, FacetNavigation } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Stat } from "~/components/ui/stat";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { AdminHeader } from "../_components/AdminHeader";
 import { AdminCardExplorer } from "./AdminCardExplorer";
 import { CardImportStudio, type ImportSubtab } from "./CardImportStudio";
 import { CardSettingsAdmin, type SettingsSubtab } from "./CardSettingsAdmin";
 import { CardDesignerStudio } from "~/components/cards/designer";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 type AdminTab = "overview" | "designer" | "explorer" | "imports" | "settings";
 
@@ -145,88 +155,77 @@ export default function CardAdminDashboardPage() {
 
       <div className="space-y-6">
         {/* ─── Facet Navigation Top Header ─────────────────────────── */}
-        <FacetNavigation className="border-border/30 bg-card/25 text-card-foreground space-y-6 rounded-2xl border p-6 shadow-sm backdrop-blur-md">
+        <FacetCard padding="lg" className="space-y-6">
           {/* Embedded Library Overview / NS Sync Health Metrics (Switches dynamically per active tab) */}
           {(() => {
             const isNSTab = activeTab === "imports" && importSubtab === "ns";
 
             if (isNSTab) {
               return (
-                <div className="border-border space-y-2.5 border-t pt-2">
+                <div className="border-separator space-y-2 border-t pt-2">
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                     {/* Total Sync Operations */}
-                    <FacetCard
-                      depth={1}
-                      interactive="hover"
-                      className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                    >
-                      <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
-                        <span>Total Sync Operations</span>
-                        <Database className="h-3.5 w-3.5 text-blue-500" />
-                      </div>
-                      <div className="mt-0.5 font-mono text-base font-bold tracking-tight text-blue-600 dark:text-blue-300">
-                        {(healthStats?.overall.totalSyncs ?? 0).toLocaleString()}
-                      </div>
-                      <div className="truncate font-mono text-xs font-medium text-blue-600/80 dark:text-blue-300/60">
-                        {healthStats?.overall.lastSyncAt
-                          ? `Last: ${new Date(healthStats.overall.lastSyncAt).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}`
-                          : "Never run"}
-                      </div>
+                    <FacetCard padding="sm">
+                      <Stat
+                        size="sm"
+                        label="Total Sync Operations"
+                        icon={<Database className="text-blue" />}
+                        iconPlacement="trailing"
+                        value={<>{(healthStats?.overall.totalSyncs ?? 0).toLocaleString()}</>}
+                        hint={
+                          <>
+                            {healthStats?.overall.lastSyncAt
+                              ? `Last: ${new Date(healthStats.overall.lastSyncAt).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}`
+                              : "Never run"}
+                          </>
+                        }
+                      />
                     </FacetCard>
 
                     {/* Success Rate */}
-                    <FacetCard
-                      depth={1}
-                      interactive="hover"
-                      className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                    >
-                      <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
-                        <span>Success Rate</span>
-                        <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-                      </div>
-                      <div className="mt-0.5 font-mono text-base font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
-                        {((healthStats?.overall.successRate ?? 0) * 100).toFixed(1)}%
-                      </div>
-                      <div className="text-xs font-medium text-emerald-600/80 dark:text-emerald-300/70">
-                        {(healthStats?.overall.successfulSyncs ?? 0).toLocaleString()} successful
-                        operations
-                      </div>
+                    <FacetCard padding="sm">
+                      <Stat
+                        size="sm"
+                        label="Success Rate"
+                        icon={<TrendingUp className="text-green" />}
+                        iconPlacement="trailing"
+                        value={<>{((healthStats?.overall.successRate ?? 0) * 100).toFixed(1)}%</>}
+                        hint={
+                          <>
+                            {(healthStats?.overall.successfulSyncs ?? 0).toLocaleString()}{" "}
+                            successful operations
+                          </>
+                        }
+                      />
                     </FacetCard>
 
                     {/* Failure / Error Rate */}
-                    <FacetCard
-                      depth={1}
-                      interactive="hover"
-                      className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                    >
-                      <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
-                        <span>Failure Rate</span>
-                        <AlertTriangle className="h-3.5 w-3.5 text-rose-500" />
-                      </div>
-                      <div className="mt-0.5 font-mono text-base font-bold tracking-tight text-rose-600 dark:text-rose-400">
-                        {((healthStats?.overall.errorRate ?? 0) * 100).toFixed(1)}%
-                      </div>
-                      <div className="text-xs font-medium text-rose-600/80 dark:text-rose-400/70">
-                        {(healthStats?.overall.failedSyncs ?? 0).toLocaleString()} failed operations
-                      </div>
+                    <FacetCard padding="sm">
+                      <Stat
+                        size="sm"
+                        label="Failure Rate"
+                        icon={<AlertTriangle className="text-red" />}
+                        iconPlacement="trailing"
+                        value={<>{((healthStats?.overall.errorRate ?? 0) * 100).toFixed(1)}%</>}
+                        hint={
+                          <>
+                            {(healthStats?.overall.failedSyncs ?? 0).toLocaleString()} failed
+                            operations
+                          </>
+                        }
+                      />
                     </FacetCard>
 
                     {/* Avg Cards / Sync */}
-                    <FacetCard
-                      depth={1}
-                      interactive="hover"
-                      className="rounded-xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                    >
-                      <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
-                        <span>Avg Cards / Sync</span>
-                        <CheckCircle className="h-3.5 w-3.5 text-purple-500" />
-                      </div>
-                      <div className="mt-0.5 font-mono text-base font-bold tracking-tight text-purple-600 dark:text-purple-300">
-                        {(healthStats?.overall.avgCardsProcessed ?? 0).toFixed(0)}
-                      </div>
-                      <div className="text-xs font-medium text-purple-600/80 dark:text-purple-300/70">
-                        Average throughput per batch
-                      </div>
+                    <FacetCard padding="sm">
+                      <Stat
+                        size="sm"
+                        label="Avg Cards / Sync"
+                        icon={<CheckCircle className="text-purple" />}
+                        iconPlacement="trailing"
+                        value={<>{(healthStats?.overall.avgCardsProcessed ?? 0).toFixed(0)}</>}
+                        hint={<>Average throughput per batch</>}
+                      />
                     </FacetCard>
                   </div>
                 </div>
@@ -234,119 +233,76 @@ export default function CardAdminDashboardPage() {
             }
 
             return (
-              <div className="border-border space-y-2.5 border-t pt-2">
+              <div className="border-separator space-y-2 border-t pt-2">
                 {/* 4 Hero Stat Cards */}
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                   {/* Active Cards */}
-                  <FacetCard
-                    depth={1}
-                    interactive="hover"
-                    className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                  >
-                    <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
-                      <span>Active Cards</span>
-                      <BookOpen className="h-3.5 w-3.5 text-amber-500" />
-                    </div>
-                    <div className="mt-0.5 text-base font-bold tracking-tight text-amber-600 dark:text-amber-300">
-                      {(loreStats?.totalLoreCards ?? 0).toLocaleString()}
-                    </div>
-                    <div className="text-xs font-medium text-amber-600/80 dark:text-amber-300/60">
-                      Cards in circulation
-                    </div>
+                  <FacetCard padding="sm">
+                    <Stat
+                      size="sm"
+                      label="Active Cards"
+                      icon={<BookOpen className="text-yellow" />}
+                      iconPlacement="trailing"
+                      value={<>{(loreStats?.totalLoreCards ?? 0).toLocaleString()}</>}
+                      hint={<>Cards in circulation</>}
+                    />
                   </FacetCard>
 
                   {/* Active Categories */}
-                  <FacetCard
-                    depth={1}
-                    interactive="hover"
-                    className="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                  >
-                    <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
-                      <span>Lore Categories</span>
-                      <Layers className="h-3.5 w-3.5 text-cyan-500" />
-                    </div>
-                    <div className="mt-0.5 text-base font-bold tracking-tight text-cyan-600 dark:text-cyan-300">
-                      {Object.keys(loreStats?.categoryBreakdown ?? {}).length} / 13
-                    </div>
-                    <div className="text-xs font-medium text-cyan-600/80 dark:text-cyan-300/70">
-                      Super-categories in active circulation
-                    </div>
+                  <FacetCard padding="sm">
+                    <Stat
+                      size="sm"
+                      label="Lore Categories"
+                      icon={<Layers className="text-teal" />}
+                      iconPlacement="trailing"
+                      value={<>{Object.keys(loreStats?.categoryBreakdown ?? {}).length} / 13</>}
+                      hint={<>Super-categories in active circulation</>}
+                    />
                   </FacetCard>
 
                   {/* Pending Requests */}
-                  <FacetCard
-                    depth={1}
-                    interactive="hover"
-                    className="rounded-xl border border-purple-500/30 bg-purple-500/10 px-3 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                  >
-                    <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
-                      <span>Pending Requests</span>
-                      <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-                    </div>
-                    <div className="mt-0.5 text-base font-bold tracking-tight text-purple-600 dark:text-purple-300">
-                      {(loreStats?.pendingRequests ?? 0).toLocaleString()}
-                    </div>
-                    <div className="text-xs font-medium text-purple-600/80 dark:text-purple-300/70">
-                      User requests awaiting approval
-                    </div>
+                  <FacetCard padding="sm">
+                    <Stat
+                      size="sm"
+                      label="Pending Requests"
+                      icon={<Sparkles className="text-purple" />}
+                      iconPlacement="trailing"
+                      value={<>{(loreStats?.pendingRequests ?? 0).toLocaleString()}</>}
+                      hint={<>User requests awaiting approval</>}
+                    />
                   </FacetCard>
 
                   {/* NS Cards */}
-                  <FacetCard
-                    depth={1}
-                    interactive="hover"
-                    className="rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                  >
-                    <div className="text-muted-foreground flex items-center justify-between text-xs font-medium">
-                      <span>NS Cards</span>
-                      <Globe className="h-3.5 w-3.5 text-blue-500" />
-                    </div>
-                    <div className="mt-0.5 text-base font-bold tracking-tight text-blue-600 dark:text-blue-300">
-                      {(loreStats?.totalNSCards ?? 0).toLocaleString()}
-                    </div>
-                    <div className="text-xs font-medium text-blue-600/80 dark:text-blue-300/70">
-                      NationStates imports
-                    </div>
+                  <FacetCard padding="sm">
+                    <Stat
+                      size="sm"
+                      label="NS Cards"
+                      icon={<Globe className="text-blue" />}
+                      iconPlacement="trailing"
+                      value={<>{(loreStats?.totalNSCards ?? 0).toLocaleString()}</>}
+                      hint={<>NationStates imports</>}
+                    />
                   </FacetCard>
                 </div>
               </div>
             );
           })()}
 
-          {/* Facet Segmented Tab Control Container */}
-          <FacetContainer
-            depth={2}
-            enableRefraction={true}
-            className="bg-card/60 border-border flex flex-wrap gap-1 rounded-2xl border p-1.5 backdrop-blur-xl"
-          >
-            {[
-              { id: "overview" as AdminTab, label: "Overview", icon: Layers },
-              { id: "designer" as AdminTab, label: "Card Designer", icon: Palette },
-              { id: "explorer" as AdminTab, label: "Card Explorer", icon: Search },
-              { id: "imports" as AdminTab, label: "Import Studio", icon: Globe },
-              { id: "settings" as AdminTab, label: "Settings", icon: Sliders },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-95 ${
-                    isActive
-                      ? "bg-primary/15 border-primary/40 text-foreground scale-[1.02] border shadow-sm"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
-                  }`}
-                >
-                  <Icon
-                    className={`h-3.5 w-3.5 ${isActive ? "text-primary" : "text-muted-foreground"}`}
-                  />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </FacetContainer>
-        </FacetNavigation>
+          {/* Section switcher */}
+          <SegmentedControl
+            asTabs
+            aria-label="Cards administration sections"
+            value={activeTab}
+            onValueChange={(tab) => setActiveTab(tab)}
+            options={[
+              { value: "overview", label: "Overview", icon: <Layers /> },
+              { value: "designer", label: "Card Designer", icon: <Palette /> },
+              { value: "explorer", label: "Card Explorer", icon: <Search /> },
+              { value: "imports", label: "Import Studio", icon: <Globe /> },
+              { value: "settings", label: "Settings", icon: <Sliders /> },
+            ]}
+          />
+        </FacetCard>
 
         {/* ─── TAB: 3D CARD DESIGNER STUDIO ─────────────────────── */}
         {activeTab === "designer" && <CardDesignerStudio />}
@@ -355,20 +311,15 @@ export default function CardAdminDashboardPage() {
         {activeTab === "overview" && (
           <div className="space-y-6">
             {/* Operations Log & Audit Trail Card inside Overview */}
-            <FacetCard
-              depth={2}
-              className="border-border bg-card text-card-foreground space-y-4 rounded-2xl border p-6 shadow-sm"
-            >
+            <FacetCard className="space-y-4 p-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="border-primary/20 bg-primary/10 text-primary rounded-xl border p-2">
-                    <FileText className="text-primary h-5 w-5" />
+                <div className="flex items-center gap-2">
+                  <div className="border-tint/20 bg-tint-fill text-tint rounded-row border p-2">
+                    <FileText className="text-tint h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="text-foreground text-lg font-bold tracking-tight">
-                      Operations Log & Audit Trail
-                    </h2>
-                    <p className="text-muted-foreground text-xs font-medium">
+                    <h2 className="text-label text-title-3">Operations Log & Audit Trail</h2>
+                    <p className="text-label-secondary text-caption">
                       All admin actions, designer mints, import syncs, batch generations, takedowns,
                       and system operations
                     </p>
@@ -376,116 +327,108 @@ export default function CardAdminDashboardPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <select
+                  <Select
                     value={logCategoryFilter}
-                    onChange={(e) => setLogCategoryFilter(e.target.value as any)}
-                    className="border-border/40 bg-background text-foreground hover:bg-muted/50 h-9 rounded-xl border px-3 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:outline-none"
+                    onValueChange={(v) => setLogCategoryFilter(v as any)}
                   >
-                    <option value="all" className="bg-background text-foreground">
-                      All Logs ({unifiedLogsData?.stats.all ?? 0})
-                    </option>
-                    <option value="imports" className="bg-background text-foreground">
-                      Imports & Syncs ({unifiedLogsData?.stats.imports ?? 0})
-                    </option>
-                    <option value="designer" className="bg-background text-foreground">
-                      Card Designer ({unifiedLogsData?.stats.designer ?? 0})
-                    </option>
-                    <option value="lore_batch" className="bg-background text-foreground">
-                      Lore Batch Studio ({unifiedLogsData?.stats.lore_batch ?? 0})
-                    </option>
-                    <option value="explorer" className="bg-background text-foreground">
-                      Card Explorer & Takedowns ({unifiedLogsData?.stats.explorer ?? 0})
-                    </option>
-                    <option value="settings" className="bg-background text-foreground">
-                      Settings & Valuations ({unifiedLogsData?.stats.settings ?? 0})
-                    </option>
-                    <option value="duplicates" className="bg-background text-foreground">
-                      Duplicate Purges ({unifiedLogsData?.stats.duplicates ?? 0})
-                    </option>
-                    <option value="admin" className="bg-background text-foreground">
-                      Admin Audit Trail ({unifiedLogsData?.stats.admin ?? 0})
-                    </option>
-                  </select>
+                    <SelectTrigger size="sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        All Logs ({unifiedLogsData?.stats.all ?? 0})
+                      </SelectItem>
+                      <SelectItem value="imports">
+                        Imports & Syncs ({unifiedLogsData?.stats.imports ?? 0})
+                      </SelectItem>
+                      <SelectItem value="designer">
+                        Card Designer ({unifiedLogsData?.stats.designer ?? 0})
+                      </SelectItem>
+                      <SelectItem value="lore_batch">
+                        Lore Batch Studio ({unifiedLogsData?.stats.lore_batch ?? 0})
+                      </SelectItem>
+                      <SelectItem value="explorer">
+                        Card Explorer & Takedowns ({unifiedLogsData?.stats.explorer ?? 0})
+                      </SelectItem>
+                      <SelectItem value="settings">
+                        Settings & Valuations ({unifiedLogsData?.stats.settings ?? 0})
+                      </SelectItem>
+                      <SelectItem value="duplicates">
+                        Duplicate Purges ({unifiedLogsData?.stats.duplicates ?? 0})
+                      </SelectItem>
+                      <SelectItem value="admin">
+                        Admin Audit Trail ({unifiedLogsData?.stats.admin ?? 0})
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => void refetchUnifiedLogs()}
-                    className="border-border/40 h-9 rounded-xl border text-xs shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
-                  >
-                    <RefreshCw className="mr-1.5 h-3 w-3" /> Refresh
+                  <Button size="sm" variant="outline" onClick={() => void refetchUnifiedLogs()}>
+                    <RefreshCw className="mr-2 h-3 w-3" /> Refresh
                   </Button>
                 </div>
               </div>
 
               {/* Quick Filter Pill Badges */}
               {unifiedLogsData?.stats && (
-                <div className="flex flex-wrap gap-1.5 pt-1 text-xs">
+                <ToggleGroup
+                  type="single"
+                  size="sm"
+                  disallowEmpty
+                  aria-label="Log category"
+                  value={logCategoryFilter}
+                  onValueChange={(value) => value && setLogCategoryFilter(value as any)}
+                  className="flex-wrap"
+                >
                   {[
                     {
                       id: "all",
                       label: "All",
                       count: unifiedLogsData.stats.all,
-                      color: "text-foreground bg-muted",
                     },
                     {
                       id: "imports",
                       label: "Imports & Syncs",
                       count: unifiedLogsData.stats.imports,
-                      color: "text-blue-500 bg-blue-500/10 border-blue-500/20",
                     },
                     {
                       id: "designer",
                       label: "Card Designer",
                       count: unifiedLogsData.stats.designer,
-                      color: "text-purple-500 bg-purple-500/10 border-purple-500/20",
                     },
                     {
                       id: "lore_batch",
                       label: "Lore Batch",
                       count: unifiedLogsData.stats.lore_batch,
-                      color: "text-amber-500 bg-amber-500/10 border-amber-500/20",
                     },
                     {
                       id: "explorer",
                       label: "Explorer & Actions",
                       count: unifiedLogsData.stats.explorer,
-                      color: "text-cyan-500 bg-cyan-500/10 border-cyan-500/20",
                     },
                     {
                       id: "settings",
                       label: "Settings",
                       count: unifiedLogsData.stats.settings,
-                      color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
                     },
                     {
                       id: "duplicates",
                       label: "Purges",
                       count: unifiedLogsData.stats.duplicates,
-                      color: "text-rose-500 bg-rose-500/10 border-rose-500/20",
                     },
                   ].map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => setLogCategoryFilter(item.id as any)}
-                      className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                        logCategoryFilter === item.id
-                          ? "border-primary bg-primary text-primary-foreground font-bold shadow-xs"
-                          : `${item.color} hover:opacity-80`
-                      }`}
-                    >
-                      <span>{item.label}</span>
-                      <span className="font-mono text-xs opacity-80">({item.count})</span>
-                    </button>
+                    <ToggleGroupItem key={item.id} value={item.id}>
+                      {item.label}
+                      <span className="tabular-nums opacity-80">({item.count})</span>
+                    </ToggleGroupItem>
                   ))}
-                </div>
+                </ToggleGroup>
               )}
 
               <LogViewerFilterable
                 entries={operationsLogEntries}
                 title="Unified Cards Audit Trail & Operations Stream"
                 maxHeight={460}
-                className="border-border bg-card/40 border"
+                className="border-separator bg-surface border"
               />
             </FacetCard>
           </div>

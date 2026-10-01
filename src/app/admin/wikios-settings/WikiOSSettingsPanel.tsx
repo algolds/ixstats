@@ -28,15 +28,14 @@ export function WikiOSSettingsPanel() {
     <div className="space-y-6">
       <AdminHeader
         icon={BookOpen}
-        title="WikiOS Utilities & Health Administration"
-        description="Unified health diagnostics, link integrity, and realm governance deck."
+        title="WikiOS Settings"
       />
 
       <WikiOSUtilitiesDeck embedded={true} defaultDomain="diagnostics" />
 
       <MirrorStatusSection />
 
-      <div className="border-border/40 space-y-6 border-t pt-6">
+      <div className="border-separator space-y-6 border-t pt-6">
         <WikiLinkStatusSection countriesData={countriesData} isLoading={countriesLoading} />
         <ManualLinkEditorSection countriesData={countriesData} />
         <SystemTuningSection />

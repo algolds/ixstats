@@ -29,21 +29,21 @@ export function getBudgetHealthStatus(
   if (deficitPercent > 5) {
     return {
       status: "surplus",
-      color: "border-emerald-500/30 text-emerald-600",
+      color: "border-green/30 text-green",
       label: "Surplus",
     };
   }
   if (deficitPercent > -3) {
     return {
       status: "balanced",
-      color: "text-muted-foreground",
+      color: "text-label-secondary",
       label: "Balanced",
     };
   }
   if (deficitPercent > -10) {
     return {
       status: "moderate",
-      color: "border-amber-500/30 text-amber-600",
+      color: "border-yellow/30 text-yellow",
       label: "Moderate Deficit",
     };
   }

@@ -9,6 +9,7 @@ import type { EnhancedInputProps } from "./types";
 import { FieldHelpTooltip } from "../../components/help/FieldHelpTooltip";
 import { ChangedFieldDot } from "../ChangedFieldDot";
 import { EditPencil as Edit3, ControlSlider as Sliders } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 
 interface SliderWithDirectInputProps extends EnhancedInputProps {
   orientation?: "horizontal" | "vertical";
@@ -111,7 +112,7 @@ export function SliderWithDirectInput({
   const config = {
     track: trackHeight || (size === "sm" ? 8 : size === "lg" ? 16 : 12),
     thumb: thumbSize || (size === "sm" ? 20 : size === "lg" ? 32 : 24),
-    input: size === "sm" ? "text-sm" : size === "lg" ? "text-lg" : "text-base",
+    input: size === "sm" ? "text-body" : size === "lg" ? "text-title-3" : "text-body",
   };
 
   // Calculate percentage position for slider based on localValue
@@ -191,24 +192,24 @@ export function SliderWithDirectInput({
             {label && (
               <label
                 className={cn(
-                  "text-foreground flex items-center gap-2 text-sm font-medium",
+                  "text-label text-body flex items-center gap-2 font-medium",
                   labelClassName
                 )}
               >
-                {Icon && <Icon className="h-4 w-4 text-muted-foreground shrink-0" />}
+                {Icon && <Icon className="text-label-secondary h-4 w-4 shrink-0" />}
                 <span>{label}</span>
                 <ChangedFieldDot name={label} value={numericValue} />
-                {required && <span className="text-red-400">*</span>}
+                {required && <span className="text-red">*</span>}
                 {helpContent && (
                   <FieldHelpTooltip content={helpContent} title={helpTitle || label} />
                 )}
               </label>
             )}
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex shrink-0 items-center gap-2">
               {showValue && (
                 <div
                   className={cn(
-                    "inline-flex items-center gap-1.5 rounded-lg border border-border/50 bg-background/80 px-2.5 py-1 text-sm font-semibold tabular-nums text-foreground shadow-2xs",
+                    "rounded-control border-separator bg-background text-headline text-label inline-flex items-center gap-2 border px-3 py-1 tabular-nums shadow-2xs",
                     valueClassName
                   )}
                 >
@@ -220,34 +221,35 @@ export function SliderWithDirectInput({
                     }}
                   />
                   {unit && (
-                    <span className="text-muted-foreground text-xs font-normal">
-                      {unit}
-                    </span>
+                    <span className="text-label-secondary text-footnote font-normal">{unit}</span>
                   )}
                 </div>
               )}
               {allowModeToggle && (
-                <button
+                <Button
                   type="button"
+                  variant="gray"
+                  size="icon-sm"
                   onClick={() => setInputMode(inputMode === "slider" ? "input" : "slider")}
-                  className={cn(
-                    "rounded-lg border border-border/40 bg-muted/30 p-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]",
-                    "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                  )}
+                  className="text-label-secondary hover:text-label"
                   title={inputMode === "slider" ? "Switch to direct input" : "Switch to slider"}
+                  aria-label={
+                    inputMode === "slider" ? "Switch to direct input" : "Switch to slider"
+                  }
                   disabled={disabled}
-                  data-cuelume-press
                 >
                   {inputMode === "slider" ? (
                     <Edit3 className="h-3.5 w-3.5" />
                   ) : (
                     <Sliders className="h-3.5 w-3.5" />
                   )}
-                </button>
+                </Button>
               )}
             </div>
           </div>
-          {description && <p className="text-muted-foreground text-xs leading-relaxed">{description}</p>}
+          {description && (
+            <p className="text-label-secondary text-footnote leading-relaxed">{description}</p>
+          )}
         </div>
       )}
 
@@ -268,12 +270,12 @@ export function SliderWithDirectInput({
             onBlur={handleInputBlur}
             disabled={disabled}
             className={cn(
-              "w-full rounded-lg border px-4 py-3 md:py-2.5",
-              "bg-card/50 backdrop-blur-sm",
-              "text-foreground placeholder-muted-foreground",
-              "border-border/40",
-              "focus:border-blue-400/60 focus:ring-2 focus:ring-blue-400/20 focus:outline-none",
-              "shadow-[0_1.5px_3px_rgba(0,0,0,0.04)] hover:shadow-xs dark:shadow-[0_1.5px_3px_rgba(0,0,0,0.2)]",
+              "rounded-control w-full border px-4 py-3 md:py-3",
+              "bg-surface",
+              "text-label placeholder-muted-foreground",
+              "border-separator",
+              "focus:border-blue/60 focus:ring-blue/20 focus:ring-2 focus:outline-none",
+              "hover:shadow-card",
               "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
               config.input,
               "font-mono", // Monospace for better number alignment
@@ -285,7 +287,7 @@ export function SliderWithDirectInput({
             }}
           />
           {unit && (
-            <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-sm">
+            <span className="text-label-secondary text-body pointer-events-none absolute top-1/2 right-4 -translate-y-1/2">
               {unit}
             </span>
           )}
@@ -299,8 +301,8 @@ export function SliderWithDirectInput({
           <div
             className={cn(
               "relative overflow-hidden rounded-full will-change-transform",
-              "bg-muted/80",
-              "border border-border/40",
+              "bg-fill-2",
+              "border-separator border",
               "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out",
               orientation === "horizontal" ? "w-full" : "mx-auto h-40 w-fit"
             )}
@@ -320,9 +322,10 @@ export function SliderWithDirectInput({
             <motion.div
               className={cn(
                 "absolute rounded-full",
-                !isDragging && "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
-                isDragging && "scale-[1.02] shadow-lg",
-                "bg-blue-500 dark:bg-blue-600"
+                !isDragging &&
+                  "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
+                isDragging && "shadow-floating scale-[1.02]",
+                "bg-blue"
               )}
               style={{
                 [orientation === "horizontal" ? "width" : "height"]: `${percentage}%`,
@@ -339,7 +342,7 @@ export function SliderWithDirectInput({
             {/* Reference Value Indicator */}
             {referencePercentage !== null && showComparison && (
               <div
-                className="absolute h-full w-0.5 bg-[var(--primitive-muted)] opacity-60"
+                className="bg-label-tertiary absolute h-full w-0.5 opacity-60"
                 style={{
                   [orientation === "horizontal" ? "left" : "bottom"]: `${referencePercentage}%`,
                 }}
@@ -350,7 +353,7 @@ export function SliderWithDirectInput({
             {ticks.map((tick, index) => (
               <div
                 key={index}
-                className="absolute h-2 w-px -translate-x-1/2 bg-[var(--primitive-muted)]/40"
+                className="bg-separator-opaque absolute h-2 w-px -translate-x-1/2"
                 style={{
                   [orientation === "horizontal" ? "left" : "bottom"]: `${tick.percentage}%`,
                   [orientation === "horizontal" ? "top" : "left"]: "100%",
@@ -384,7 +387,7 @@ export function SliderWithDirectInput({
 
           {/* Range Display */}
           {showRange && (
-            <div className="text-muted-foreground mt-2 flex justify-between text-xs">
+            <div className="text-label-secondary text-footnote mt-2 flex justify-between">
               <span>
                 {safeMin}
                 {unit}
@@ -401,7 +404,7 @@ export function SliderWithDirectInput({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-muted-foreground mt-2 text-xs"
+              className="text-label-secondary text-footnote mt-2"
             >
               Reference ({referenceLabel}): {referenceValue.toFixed(precision)}
               {unit}

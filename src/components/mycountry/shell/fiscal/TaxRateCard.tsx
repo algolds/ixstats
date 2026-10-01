@@ -51,10 +51,7 @@ function TaxRateCardComponent({
   };
 
   return (
-    <FacetCard
-      surface="solid"
-      className={cn("space-y-2.5 rounded-xl p-3", !isLocked && "ring-1 ring-amber-500/50")}
-    >
+    <FacetCard className={cn("rounded-row space-y-2 p-3", !isLocked && "ring-yellow/50 ring-1")}>
       {/* Header: lock toggle + label + rate */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
@@ -81,7 +78,7 @@ function TaxRateCardComponent({
             }
             className={cn(
               "h-11 w-11 shrink-0 sm:h-7 sm:w-7",
-              isLocked ? "text-muted-foreground" : "text-(--facet-mycountry)"
+              isLocked ? "text-label-secondary" : "text-tint"
             )}
           >
             {isLocked ? <Lock aria-hidden="true" /> : <Unlock aria-hidden="true" />}
@@ -90,20 +87,18 @@ function TaxRateCardComponent({
             aria-hidden="true"
             className={cn("h-2 w-2 shrink-0 rounded-full", ACCENT_BG[channel.accent])}
           />
-          <span className="text-foreground truncate text-xs font-medium">{channel.label}</span>
+          <span className="text-label text-caption truncate">{channel.label}</span>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1.5">
-          {!isLocked && <Eyebrow className="text-(--facet-mycountry)">Editing</Eyebrow>}
+        <div className="flex shrink-0 items-center gap-2">
+          {!isLocked && <Eyebrow className="text-tint">Editing</Eyebrow>}
           {rate != null ? (
-            <span className="text-foreground font-mono text-base font-semibold tabular-nums">
-              {bracketed && <span className="text-muted-foreground mr-1 text-xs">Top</span>}
+            <span className="text-label text-title-3 tabular-nums">
+              {bracketed && <span className="text-label-secondary text-footnote mr-1">Top</span>}
               <PercentageFlow value={rate} decimalPlaces={1} />
             </span>
           ) : (
-            <Badge variant="outline" className="text-orange-600">
-              Not set
-            </Badge>
+            <Badge variant="orange">Not set</Badge>
           )}
         </div>
       </div>
@@ -124,7 +119,7 @@ function TaxRateCardComponent({
       </div>
 
       {/* Share of total revenue (keyed to the revenue composition chart colour) */}
-      <div className="bg-muted h-1 w-full overflow-hidden rounded-full">
+      <div className="bg-fill-3 h-1 w-full overflow-hidden rounded-full">
         <div
           className={cn("h-full rounded-full", ACCENT_BG[channel.accent])}
           style={{ width: `${Math.min(contributionPct, 100)}%` }}
@@ -132,11 +127,11 @@ function TaxRateCardComponent({
       </div>
 
       {/* Yield preview */}
-      <div className="flex items-center justify-between gap-2 text-xs">
-        <span className="text-muted-foreground">
+      <div className="text-footnote flex items-center justify-between gap-2">
+        <span className="text-label-secondary">
           {bracketed ? "Set by brackets in the Country Editor" : "Yield contribution"}
         </span>
-        <span className="text-foreground font-mono font-semibold tabular-nums">
+        <span className="text-label font-semibold tabular-nums">
           {yieldValue != null ? <CurrencyFlow value={yieldValue} decimalPlaces={1} /> : "—"}
         </span>
       </div>

@@ -31,12 +31,11 @@ import { Popover, PopoverTrigger } from "~/components/ui/popover";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetContainer } from "~/components/ui/facet-container";
-import { FacetTabs } from "~/components/ui/facet";
+import { FacetMaterial } from "~/components/ui/facet";
 
-const LASSO_TABS = [
-  { id: "freehand", label: "Freehand" },
-  { id: "rect", label: "Rect" },
+const LASSO_OPTIONS = [
+  { value: "freehand", label: "Freehand" },
+  { value: "rect", label: "Rect" },
 ];
 import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/maps/map-config";
 
@@ -49,8 +48,10 @@ import {
   ToolLabel,
   ToolbarButton,
   dividerClass,
-  selectClass,
 } from "./toolbars/options/CoordinateSnappingControls";
+import { Checkbox } from "~/components/ui/checkbox";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface ToolOptionsBarProps {
   mode: EditorMode;
@@ -178,19 +179,19 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
 
   if (mode === "split-subdivision") {
     return (
-      <FacetContainer
-        depth={1}
+      <FacetMaterial
+        material="regular"
         role="toolbar"
         aria-label="Tool options"
         className="flex h-9 shrink-0 items-center gap-2 rounded-none px-3"
       >
         <ToolLabel icon={Scissors} label="Split Region" />
-        <span className="text-muted-foreground hidden truncate text-xs md:inline">
+        <span className="text-label-secondary text-footnote hidden truncate md:inline">
           {props.selectedFeature?.type === "subdivision"
             ? `Click points across "${props.selectedFeature.name}" from edge to edge, then Split (Enter).`
             : "Select a region first, then draw a line across it."}
         </span>
-        <span className="text-muted-foreground font-mono text-xs tabular-nums">
+        <span className="text-label-secondary text-footnote tabular-nums">
           {props.splitPointsCount ?? 0} pts
         </span>
         <div className={dividerClass} />
@@ -212,13 +213,13 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
         <ToolbarButton tone="danger" onClick={props.onCancelSplit} title="Cancel Split">
           Cancel
         </ToolbarButton>
-      </FacetContainer>
+      </FacetMaterial>
     );
   }
 
   return (
-    <FacetContainer
-      depth={1}
+    <FacetMaterial
+      material="regular"
       role="toolbar"
       aria-label="Tool options"
       className="flex h-9 shrink-0 items-center gap-2 rounded-none px-3"
@@ -246,9 +247,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
       {/* ── Select mode ── */}
       {mode === "view" && props.selectedCount! > 0 && (
         <>
-          <span className="text-foreground text-xs font-medium">
-            {props.selectedCount} selected
-          </span>
+          <span className="text-label text-caption">{props.selectedCount} selected</span>
           <div className={dividerClass} />
           {props.onDuplicate && (
             <ToolbarButton onClick={props.onDuplicate} title="Duplicate">
@@ -311,26 +310,21 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
         <>
           <ToolLabel icon={MapPin} label="City" />
           <Eyebrow>Type</Eyebrow>
-          <select
+          <OptionSelect
+            aria-label="City type"
             value={props.cityType ?? "city"}
-            onChange={(e) => props.onCityTypeChange?.(e.target.value)}
-            className={selectClass}
-          >
-            {CITY_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
+            onValueChange={(v) => props.onCityTypeChange?.(v)}
+            options={CITY_TYPES}
+            size="sm"
+            className="w-auto"
+          />
           <label className="flex cursor-pointer items-center gap-1">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={props.isNationalCapital ?? false}
-              onChange={(e) => props.onCapitalChange?.(e.target.checked)}
-              className="border-border h-3 w-3 rounded"
+              onCheckedChange={(c) => props.onCapitalChange?.(c === true)}
             />
-            <Crown className="h-3 w-3 text-amber-500" />
-            <span className="text-muted-foreground text-xs">Capital</span>
+            <Crown className="text-yellow h-3 w-3" />
+            <span className="text-label-secondary text-footnote">Capital</span>
           </label>
           {mode === "edit-city" && (
             <>
@@ -395,17 +389,14 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
         <>
           <ToolLabel icon={Landmark} label="Point of Interest" />
           <Eyebrow>Category</Eyebrow>
-          <select
+          <OptionSelect
+            aria-label="Point of interest category"
             value={props.poiCategory ?? "landmark"}
-            onChange={(e) => props.onPoiCategoryChange?.(e.target.value)}
-            className={selectClass}
-          >
-            {POI_CATEGORIES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
+            onValueChange={(v) => props.onPoiCategoryChange?.(v)}
+            options={POI_CATEGORIES}
+            size="sm"
+            className="w-auto"
+          />
           {mode === "edit-poi" && (
             <>
               <div className={dividerClass} />
@@ -429,17 +420,16 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
       {mode === "lasso-select" && (
         <>
           <ToolLabel icon={LassoSelect} label="Lasso Select" />
-          <span className="text-muted-foreground text-xs">
+          <span className="text-label-secondary text-footnote">
             Drag to select features. Freehand draws a loop; Rect draws a box. Shift = add, Alt =
             subtract.
           </span>
-          <FacetTabs
-            tabs={LASSO_TABS}
-            activeTab={props.lassoTool ?? "freehand"}
-            onChange={(tool) => props.onLassoToolChange?.(tool as "freehand" | "rect")}
+          <SegmentedControl
+            aria-label="Lasso shape"
+            options={LASSO_OPTIONS}
+            value={props.lassoTool ?? "freehand"}
+            onValueChange={(tool) => props.onLassoToolChange?.(tool as "freehand" | "rect")}
             size="sm"
-            tone="neutral"
-            showTexture={false}
           />
         </>
       )}
@@ -458,19 +448,16 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
         <>
           <ToolLabel icon={Route} label="Draw Route" />
           <Eyebrow>Type</Eyebrow>
-          <select
+          <OptionSelect
+            aria-label="Route type"
+            size="sm"
+            className="w-auto"
             value={props.routeType ?? "road"}
-            onChange={(e) => props.onRouteTypeChange?.(e.target.value)}
-            className={selectClass}
-          >
-            {ROUTE_TYPE_KEYS.map((k) => (
-              <option key={k} value={k}>
-                {ROUTE_STYLES[k]?.label ?? k}
-              </option>
-            ))}
-          </select>
+            onValueChange={(v) => props.onRouteTypeChange?.(v)}
+            options={ROUTE_TYPE_KEYS.map((k) => ({ value: k, label: ROUTE_STYLES[k]?.label ?? k }))}
+          />
           <div className={dividerClass} />
-          <span className="text-muted-foreground font-mono text-xs tabular-nums">
+          <span className="text-label-secondary text-footnote tabular-nums">
             {props.routeWaypointsCount ?? 0} waypoints
           </span>
           {props.onUndoRouteWaypoint && (props.routeWaypointsCount ?? 0) > 0 && (
@@ -495,7 +482,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
         <>
           <ToolLabel icon={Route} label="Edit Route" />
           {props.editingRouteName && <Badge variant="secondary">{props.editingRouteName}</Badge>}
-          <span className="text-muted-foreground font-mono text-xs tabular-nums">
+          <span className="text-label-secondary text-footnote tabular-nums">
             {props.editingRouteNodesCount ?? 0} nodes
           </span>
           <div className={dividerClass} />
@@ -511,6 +498,6 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
           )}
         </>
       )}
-    </FacetContainer>
+    </FacetMaterial>
   );
 });

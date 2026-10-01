@@ -82,7 +82,7 @@ export function PageHistoryView({ title, slug }: { title: string; slug: string }
         <div>
           <Link
             href={withBasePath(`/wiki/${slug}`)}
-            className="text-muted-foreground hover:text-wiki inline-flex items-center gap-1.5 text-xs font-medium transition-colors"
+            className="text-label-secondary hover:text-tint text-caption inline-flex items-center gap-2 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to {title}

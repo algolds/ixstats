@@ -38,7 +38,7 @@ export function NextMatchCountdown({
   const due = targetIxTime <= now;
 
   return (
-    <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
+    <span className="text-label-secondary text-footnote flex items-center gap-2">
       <Clock className="h-3 w-3 shrink-0" />
       <span className="truncate">
         {label}: {IxTime.formatIxTime(targetIxTime)}

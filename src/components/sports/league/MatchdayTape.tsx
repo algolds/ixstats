@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useRef } from "react";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { Airplane, Home } from "iconoir-react";
@@ -35,12 +34,7 @@ export interface MatchdayTapeProps {
   className?: string;
 }
 
-export function MatchdayTape({
-  matches,
-  matchDay,
-  onMatchClick,
-  className,
-}: MatchdayTapeProps) {
+export function MatchdayTape({ matches, matchDay, onMatchClick, className }: MatchdayTapeProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   if (matches.length === 0) {
@@ -48,24 +42,29 @@ export function MatchdayTape({
   }
 
   const handleCardClick = (matchId: string) => {
-    soundEffects.press();
     onMatchClick(matchId);
   };
 
   return (
-    <div className={cn("relative overflow-hidden rounded-2xl border border-border/30 bg-card/60 backdrop-blur-xl p-3 shadow-md", className)}>
+    <div
+      className={cn(
+        "rounded-card border-separator bg-surface shadow-card relative overflow-hidden border p-3",
+        className
+      )}
+    >
       <div className="mb-2 flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">
-            Round Matches
-          </span>
+          <span className="text-eyebrow text-label-secondary">Round Matches</span>
           {matchDay && (
-            <Badge variant="outline" className="border-border/50 text-xs font-bold px-1.5 py-0">
+            <Badge
+              variant="outline"
+              className="border-separator text-footnote px-2 py-0 font-semibold"
+            >
               Round {matchDay}
             </Badge>
           )}
         </div>
-        <span className="text-xs text-muted-foreground font-semibold">
+        <span className="text-footnote text-label-secondary font-semibold">
           {matches.length} Matches
         </span>
       </div>
@@ -73,7 +72,7 @@ export function MatchdayTape({
       {/* Horizontal Scroll Track */}
       <div
         ref={scrollRef}
-        className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none"
+        className="flex scrollbar-none items-center gap-3 overflow-x-auto pb-1"
         style={{ scrollSnapType: "x mandatory" }}
       >
         {matches.map((match) => {
@@ -84,43 +83,40 @@ export function MatchdayTape({
             <div
               key={match.id}
               onClick={() => handleCardClick(match.id)}
-              data-cuelume-press="subtle"
               className={cn(
-                "group flex min-w-[200px] shrink-0 items-center justify-between rounded-xl border border-border/40 bg-card/70 px-3 py-2 text-xs shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:border-primary/50 hover:bg-muted/30 cursor-pointer active:scale-[0.98]",
+                "group rounded-row border-separator bg-surface text-footnote shadow-card hover:border-tint/50 hover:bg-fill-4 flex min-w-[200px] shrink-0 cursor-pointer items-center justify-between border px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
                 "snap-start"
               )}
             >
               {/* Home Team */}
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                <div className="h-6 w-6 rounded-lg overflow-hidden border border-border/30 bg-muted/40 shrink-0 flex items-center justify-center">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <div className="rounded-control border-separator bg-fill-3 flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden border">
                   {match.homeTeam.logo ? (
                     <img src={match.homeTeam.logo} alt="" className="h-full w-full object-cover" />
                   ) : (
                     <Home className="h-3.5 w-3.5" aria-hidden="true" />
                   )}
                 </div>
-                <span className="font-bold text-foreground truncate text-xs">
+                <span className="text-label text-footnote truncate font-semibold">
                   {match.homeTeam.shortName ?? match.homeTeam.name}
                 </span>
               </div>
 
               {/* Score / Status */}
-              <div className="mx-2 flex flex-col items-center justify-center shrink-0">
+              <div className="mx-2 flex shrink-0 flex-col items-center justify-center">
                 {isCompleted ? (
-                  <div className="flex items-center gap-1 font-mono font-black text-xs text-foreground bg-muted/40 px-1.5 py-0.5 rounded-md">
+                  <div className="text-footnote text-label bg-fill-3 rounded-control-sm flex items-center gap-1 px-2 py-0.5 font-semibold tabular-nums">
                     <span>{match.homeScore ?? 0}</span>
-                    <span className="text-muted-foreground/50">:</span>
+                    <span className="text-label-tertiary">:</span>
                     <span>{match.awayScore ?? 0}</span>
                   </div>
                 ) : (
-                  <span className="text-xs font-black uppercase text-muted-foreground tracking-wider">
-                    VS
-                  </span>
+                  <span className="text-eyebrow text-label-secondary">VS</span>
                 )}
                 <span
                   className={cn(
-                    "text-xs font-extrabold uppercase tracking-tighter mt-0.5",
-                    isCompleted ? "text-emerald-400" : isScheduled ? "text-blue-400" : "text-amber-400"
+                    "text-eyebrow mt-0.5",
+                    isCompleted ? "text-green" : isScheduled ? "text-blue" : "text-yellow"
                   )}
                 >
                   {isCompleted ? "FT" : isScheduled ? "SCHED" : "LIVE"}
@@ -128,11 +124,11 @@ export function MatchdayTape({
               </div>
 
               {/* Away Team */}
-              <div className="flex items-center justify-end gap-2 min-w-0 flex-1 text-right">
-                <span className="font-bold text-foreground truncate text-xs">
+              <div className="flex min-w-0 flex-1 items-center justify-end gap-2 text-right">
+                <span className="text-label text-footnote truncate font-semibold">
                   {match.awayTeam.shortName ?? match.awayTeam.name}
                 </span>
-                <div className="h-6 w-6 rounded-lg overflow-hidden border border-border/30 bg-muted/40 shrink-0 flex items-center justify-center">
+                <div className="rounded-control border-separator bg-fill-3 flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden border">
                   {match.awayTeam.logo ? (
                     <img src={match.awayTeam.logo} alt="" className="h-full w-full object-cover" />
                   ) : (

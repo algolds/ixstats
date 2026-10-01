@@ -14,6 +14,7 @@ import { useState } from "react";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { JsonViewer } from "~/components/shared/json-viewer";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 type StatusFilter = "pending" | "approved" | "rejected";
 
@@ -84,48 +85,42 @@ export function EditQueuePanel() {
     <div className="space-y-4">
       {/* Status filter tabs */}
       <div className="flex items-center gap-3">
-        <div className="border-border flex rounded-lg border">
-          {(["pending", "approved", "rejected"] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
-                statusFilter === s
-                  ? s === "pending"
-                    ? "bg-amber-500 text-white"
-                    : s === "approved"
-                      ? "bg-emerald-500 text-white"
-                      : "bg-red-500 text-white"
-                  : "text-foreground/80 hover:bg-accent"
-              } ${s === "pending" ? "rounded-l-lg" : ""} ${s === "rejected" ? "rounded-r-lg" : ""}`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-        <span className="text-muted-foreground text-sm">
+        <SegmentedControl
+          aria-label="Edit status"
+          size="sm"
+          value={statusFilter}
+          onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+          options={[
+            { value: "pending", label: "Pending" },
+            { value: "approved", label: "Approved" },
+            { value: "rejected", label: "Rejected" },
+          ]}
+        />
+        <span className="text-label-secondary text-body">
           {data?.total ?? 0} {statusFilter} edits
         </span>
       </div>
 
       {/* Edit list */}
       {!data?.edits.length ? (
-        <div className="border-border text-muted-foreground rounded-xl border border-dashed p-8 text-center text-sm">
+        <div className="border-separator text-label-secondary rounded-row text-body border border-dashed p-8 text-center">
           No {statusFilter} edit requests
         </div>
       ) : (
         <div className="space-y-3">
           {data.edits.map((edit: MapEditItem) => (
-            <div key={edit.id} className="border-border bg-card rounded-xl border">
+            <div key={edit.id} className="border-separator bg-surface rounded-row border">
               {/* Header */}
               <button
+                type="button"
+                aria-expanded={expandedId === edit.id}
                 onClick={() => setExpandedId(expandedId === edit.id ? null : edit.id)}
                 className="flex w-full items-center justify-between px-4 py-3 text-left"
               >
                 <div className="flex items-center gap-3">
                   <EditTypeBadge type={edit.editType} />
                   <div>
-                    <div className="text-foreground text-sm font-medium">
+                    <div className="text-label text-body font-medium">
                       {edit.operation === "create"
                         ? "Create"
                         : edit.operation === "update"
@@ -133,7 +128,7 @@ export function EditQueuePanel() {
                           : "Delete"}{" "}
                       {edit.editType}
                     </div>
-                    <div className="text-muted-foreground text-xs">
+                    <div className="text-label-secondary text-footnote">
                       {edit.countryName} &middot; {new Date(edit.createdAt).toLocaleDateString()}
                     </div>
                   </div>
@@ -143,14 +138,14 @@ export function EditQueuePanel() {
 
               {/* Expanded details */}
               {expandedId === edit.id && (
-                <div className="border-border/50 border-t px-4 py-3">
+                <div className="border-separator border-t px-4 py-3">
                   {/* Proposed data */}
                   <div className="mb-3">
                     <Eyebrow className="mb-1 block">Proposed Changes</Eyebrow>
                     <JsonViewer
                       data={edit.proposedData ?? null}
                       defaultExpanded={2}
-                      className="border-border bg-card"
+                      className="border-separator bg-surface"
                     />
                   </div>
 
@@ -161,14 +156,14 @@ export function EditQueuePanel() {
                       <JsonViewer
                         data={edit.currentData}
                         defaultExpanded={2}
-                        className="border-border bg-card"
+                        className="border-separator bg-surface"
                       />
                     </div>
                   )}
 
                   {/* Review note (if already reviewed) */}
                   {edit.reviewNote && (
-                    <div className="border-border text-foreground mb-3 rounded-lg border p-3 text-xs">
+                    <div className="border-separator text-label rounded-control text-footnote mb-3 border p-3">
                       <strong>Review note:</strong> {edit.reviewNote}
                     </div>
                   )}
@@ -180,7 +175,7 @@ export function EditQueuePanel() {
                         placeholder="Review note (optional)..."
                         value={reviewNote}
                         onChange={(e) => setReviewNote(e.target.value)}
-                        className="border-border bg-background text-foreground w-full rounded-lg border px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                        className="border-separator bg-surface text-label rounded-control text-body focus:border-blue w-full border px-3 py-2 focus:outline-none"
                         rows={2}
                       />
                       <div className="flex gap-2">
@@ -227,8 +222,8 @@ function EditTypeBadge({ type }: { type: string }) {
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    pending: "border-amber-500/30 text-amber-500",
-    approved: "border-emerald-500/30 text-emerald-500",
+    pending: "border-yellow/30 text-yellow",
+    approved: "border-green/30 text-green",
     rejected: "border-destructive/30 text-destructive",
   };
 

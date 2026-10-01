@@ -4,6 +4,8 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Pin as Crosshair } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import { cn } from "~/lib/utils/cn";
 
 interface ScrubbableCoordinateInputProps {
   coordinates?: [number, number] | null;
@@ -117,25 +119,22 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
   };
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-xs">
+    <div className="space-y-2">
+      <div className="text-footnote flex items-center justify-between">
         <Eyebrow>Coordinates</Eyebrow>
-        <span className="text-muted-foreground text-xs italic">Drag label or type value</span>
+        <span className="text-label-secondary text-footnote italic">Drag label or type value</span>
       </div>
 
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         {/* Longitude */}
-        <FacetCard
-          surface="solid"
-          className="focus-within:border-primary focus-within:ring-primary flex flex-1 items-center rounded-lg px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-within:ring-1"
-        >
+        <FacetCard className="focus-within:border-tint focus-within:ring-tint flex flex-1 items-center px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-within:ring-1">
           <span
             onPointerDown={(e) => handlePointerDown("lng", e)}
             onPointerMove={(e) => handlePointerMove("lng", e)}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
-            className={`cursor-ew-resize font-mono text-xs font-semibold tracking-wider uppercase transition-colors select-none ${
-              activeScrub === "lng" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+            className={`text-eyebrow cursor-ew-resize font-mono transition-colors select-none ${
+              activeScrub === "lng" ? "text-tint" : "text-label-secondary hover:text-label"
             }`}
             title="Drag horizontally to scrub longitude (Shift for 10x, Alt for 0.1x)"
           >
@@ -148,23 +147,20 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
             onBlur={() => handleInputBlur("lng")}
             onKeyDown={(e) => handleKeyDown("lng", e)}
             disabled={disabled || !coordinates}
-            className="text-foreground w-full bg-transparent text-right font-mono text-xs tabular-nums focus:outline-none"
+            className="text-label text-footnote w-full bg-transparent text-right tabular-nums focus:outline-none"
           />
-          <span className="text-muted-foreground ml-0.5 text-xs">&deg;</span>
+          <span className="text-label-secondary text-footnote ml-0.5">&deg;</span>
         </FacetCard>
 
         {/* Latitude */}
-        <FacetCard
-          surface="solid"
-          className="focus-within:border-primary focus-within:ring-primary flex flex-1 items-center rounded-lg px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-within:ring-1"
-        >
+        <FacetCard className="focus-within:border-tint focus-within:ring-tint flex flex-1 items-center px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-within:ring-1">
           <span
             onPointerDown={(e) => handlePointerDown("lat", e)}
             onPointerMove={(e) => handlePointerMove("lat", e)}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
-            className={`cursor-ew-resize font-mono text-xs font-semibold tracking-wider uppercase transition-colors select-none ${
-              activeScrub === "lat" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+            className={`text-eyebrow cursor-ew-resize font-mono transition-colors select-none ${
+              activeScrub === "lat" ? "text-tint" : "text-label-secondary hover:text-label"
             }`}
             title="Drag horizontally to scrub latitude (Shift for 10x, Alt for 0.1x)"
           >
@@ -177,30 +173,40 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
             onBlur={() => handleInputBlur("lat")}
             onKeyDown={(e) => handleKeyDown("lat", e)}
             disabled={disabled || !coordinates}
-            className="text-foreground w-full bg-transparent text-right font-mono text-xs tabular-nums focus:outline-none"
+            className="text-label text-footnote w-full bg-transparent text-right tabular-nums focus:outline-none"
           />
-          <span className="text-muted-foreground ml-0.5 text-xs">&deg;</span>
+          <span className="text-label-secondary text-footnote ml-0.5">&deg;</span>
         </FacetCard>
 
         {/* Crosshair Picker */}
         {onTogglePickLocation && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={onTogglePickLocation}
             disabled={disabled}
-            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
-              isPickingLocation
-                ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                : "border-border/60 bg-muted/20 text-muted-foreground hover:bg-accent/40 hover:text-foreground"
-            }`}
             title={
               isPickingLocation
                 ? "Click anywhere on map to reposition (Active)"
                 : "Pick location on map"
             }
+            aria-label={
+              isPickingLocation
+                ? "Click anywhere on map to reposition (Active)"
+                : "Pick location on map"
+            }
+            className={cn(
+              "rounded-control-sm size-5",
+              `rounded-control flex h-8 w-8 shrink-0 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
+                isPickingLocation
+                  ? "bg-tint text-on-tint border-tint shadow-card"
+                  : "border-separator bg-fill-4 text-label-secondary hover:bg-fill-3 hover:text-label"
+              }`
+            )}
           >
             <Crosshair className="h-4 w-4" />
-          </button>
+          </Button>
         )}
       </div>
     </div>

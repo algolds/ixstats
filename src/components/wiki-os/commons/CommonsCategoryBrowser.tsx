@@ -9,6 +9,7 @@ import {
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
 
 // Curated worldbuilding-relevant categories organized by theme
 interface CategoryGroup {
@@ -386,20 +387,20 @@ export function CommonsCategoryBrowser({
   const searchCounts = isCommons ? commonsSearchCounts : localSearchCounts;
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto py-2">
+    <div className="flex h-full flex-col overflow-y-auto py-2">
       {/* Search */}
-      <div className="flex items-center gap-1.5 mx-2 mb-2 px-2.5 py-1.5 rounded-lg bg-muted/40 border border-border/40 focus-within:border-border transition-colors">
-        <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+      <div className="rounded-control bg-fill-3 border-separator focus-within:border-separator mx-2 mb-2 flex items-center gap-2 border px-3 py-2 transition-colors">
+        <Search className="text-label-secondary h-3.5 w-3.5 shrink-0" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => handleSearch(e.target.value)}
           placeholder="Search categories..."
-          className="flex-1 bg-transparent border-none outline-none text-xs text-foreground placeholder:text-muted-foreground"
+          className="text-footnote text-label placeholder:text-label-secondary flex-1 border-none bg-transparent outline-none"
         />
       </div>
 
-      <div className="px-1.5 overflow-y-auto space-y-0.5">
+      <div className="space-y-0.5 overflow-y-auto px-2">
         {isSearching ? (
           /* Autocomplete search results */
           <>
@@ -423,7 +424,9 @@ export function CommonsCategoryBrowser({
               />
             ))}
             {(!autocompleteResults || autocompleteResults.length === 0) && (
-              <p className="text-xs text-muted-foreground py-4 text-center">No categories found</p>
+              <p className="text-footnote text-label-secondary py-4 text-center">
+                No categories found
+              </p>
             )}
           </>
         ) : (
@@ -490,13 +493,16 @@ function CategoryGroupSection({
 
   return (
     <div className="mb-1">
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-expanded={isGroupOpen}
         onClick={onToggleGroup}
-        className="flex items-center gap-1.5 w-full px-2 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground cursor-pointer rounded-md transition-colors active:scale-[0.98]"
+        className="text-eyebrow text-label-secondary hover:text-label h-auto w-full justify-start px-2 py-1"
       >
         {isGroupOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         <span>{group.label}</span>
-      </button>
+      </Button>
       {isGroupOpen &&
         group.categories.map((cat) => (
           <CategoryRow
@@ -566,64 +572,77 @@ function CategoryRow({
     <div>
       <div
         className={cn(
-          "group/row flex items-center gap-1.5 px-2 py-1 rounded-md transition-colors text-xs hover:bg-muted/40 select-none",
-          isActive && "bg-primary/10 text-primary",
-          isBrowsingThisCat && "bg-muted/60 font-semibold text-foreground"
+          "group/row rounded-control-sm text-footnote hover:bg-fill-3 flex items-center gap-2 px-2 py-1 transition-colors select-none",
+          isActive && "bg-tint-fill text-tint",
+          isBrowsingThisCat && "bg-fill-3 text-label font-semibold"
         )}
       >
-        <button
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-expanded={isExpanded}
           onClick={onExpand}
-          className="h-5 w-5 flex items-center justify-center text-muted-foreground hover:text-foreground shrink-0 rounded cursor-pointer active:scale-90 transition-transform"
           aria-label={isExpanded ? "Collapse subcategories" : "Expand subcategories"}
+          className="text-label-secondary hover:text-label size-5"
         >
           {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-current={isBrowsingThisCat ? "true" : undefined}
           onClick={() => onBrowse(name)}
-          className="flex-1 text-left text-xs text-muted-foreground hover:text-foreground truncate cursor-pointer select-none transition-colors"
           title={`Browse ${name}`}
+          className="text-footnote text-label-secondary hover:text-label h-auto min-w-0 flex-1 justify-start truncate px-0 font-normal hover:bg-transparent"
         >
           {name}
-        </button>
+        </Button>
         {totalCount != null && totalCount > 0 && (
-          <span className="text-xs text-muted-foreground/70 shrink-0 mr-1 tabular-nums">
+          <span className="text-footnote text-label-secondary mr-1 shrink-0 tabular-nums">
             {totalCount.toLocaleString()}
           </span>
         )}
-        <button
+        <Button
+          variant="bordered"
+          size="icon-sm"
+          aria-pressed={isActive}
           onClick={onToggle}
           className={cn(
-            "h-5 w-5 flex items-center justify-center rounded border border-border/40 text-xs text-muted-foreground hover:border-primary hover:text-primary shrink-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer active:scale-95",
-            isActive && "bg-primary/15 border-primary/40 text-primary font-bold"
+            "text-footnote text-label-secondary hover:border-tint hover:text-tint size-5 shrink-0",
+            isActive && "bg-tint-fill border-tint/40 text-tint font-semibold"
           )}
           title={isActive ? "Remove filter" : "Add as filter"}
           aria-label={isActive ? `Remove ${name} filter` : `Add ${name} filter`}
         >
           {isActive ? "✓" : "+"}
-        </button>
+        </Button>
       </div>
 
       {isExpanded && subcats && subcats.length > 0 && (
-        <div className="pl-5 pr-1 py-0.5 space-y-0.5">
+        <div className="space-y-0.5 py-0.5 pr-1 pl-5">
           {subcats.map((sub) => {
             const isSubActive = browsingCategory === sub;
             return (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-current={isSubActive ? "true" : undefined}
                 key={sub}
                 onClick={() => onBrowse(sub)}
                 className={cn(
-                  "flex w-full items-center gap-1.5 py-1 px-1.5 text-left text-xs rounded transition-colors hover:bg-muted/30 active:scale-[0.98] cursor-pointer",
-                  isSubActive
-                    ? "font-semibold text-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                  "text-footnote h-auto w-full justify-start px-2 py-1 font-normal",
+                  isSubActive ? "text-tint font-semibold" : "text-label-secondary hover:text-label"
                 )}
                 title={`Browse ${sub}`}
               >
                 <Folder
-                  className={cn("h-2.5 w-2.5 shrink-0", isSubActive ? "text-primary opacity-100" : "opacity-40")}
+                  className={cn(
+                    "h-2.5 w-2.5 shrink-0",
+                    isSubActive ? "text-tint opacity-100" : "opacity-40"
+                  )}
                 />
                 <span className="truncate">{sub}</span>
-              </button>
+              </Button>
             );
           })}
         </div>

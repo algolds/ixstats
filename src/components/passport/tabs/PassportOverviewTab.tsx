@@ -12,7 +12,11 @@ import {
   Spark,
   Trophy,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
+import { FacetCard, FACET_INSET_SURFACE } from "~/components/ui/facet-container";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { Stat } from "~/components/ui/stat";
+import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { PassportShowcase } from "../showcase/PassportShowcase";
 import type { PassportPayload } from "../types";
@@ -23,17 +27,16 @@ interface PassportOverviewTabProps {
   onOpenVault?: () => void;
 }
 
-const SECTION_LABEL =
-  "text-muted-foreground font-mono text-xs font-bold tracking-wider uppercase";
+/** Section header (sentence-case `text-subhead`, Facet 3 §3). */
+const SECTION_LABEL = "text-subhead text-label-secondary";
 
-const PANEL =
-  "rounded-3xl border border-black/8 bg-black/[0.015] p-5 dark:border-white/10 dark:bg-white/[0.02]";
+/** An inset panel inside the passport card. */
 
 function FeaturedRealm({ data, cleanUsername }: PassportOverviewTabProps) {
   const realm = data.featuredRealm;
   if (!realm) {
     return (
-      <p className="text-muted-foreground text-xs">
+      <p className="text-label-secondary text-footnote">
         @{cleanUsername} has not claimed a country in any realm yet.
       </p>
     );
@@ -42,7 +45,7 @@ function FeaturedRealm({ data, cleanUsername }: PassportOverviewTabProps) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-center gap-4">
-        <div className="bg-muted/40 h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-black/15 dark:border-white/20">
+        <div className="bg-fill-3 border-separator rounded-row size-14 shrink-0 overflow-hidden border">
           <UnifiedCountryFlag
             countryName={realm.country.name}
             size="lg"
@@ -57,31 +60,27 @@ function FeaturedRealm({ data, cleanUsername }: PassportOverviewTabProps) {
           />
         </div>
         <div className="min-w-0">
-          <p className="text-foreground truncate text-lg font-bold tracking-tight">
+          <p className="text-label text-title-3 truncate">
             {realm.role} of {countryName}
           </p>
-          <p className="text-muted-foreground font-mono text-xs uppercase">
+          <p className="text-label-secondary text-footnote">
             {realm.name} · {data.realmCount} {data.realmCount === 1 ? "realm" : "realms"}
           </p>
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        <Link
-          href={`/r/${realm.slug}/${encodeURIComponent(cleanUsername)}`}
-          data-cuelume-press="soft"
-          className="text-foreground inline-flex items-center gap-1.5 rounded-xl border border-black/10 px-3.5 py-2 text-xs font-semibold transition-[background-color,transform] hover:bg-black/[0.04] active:scale-[0.97] dark:border-white/15 dark:hover:bg-white/[0.05]"
-        >
-          <Globe className="h-3.5 w-3.5" />
-          <span>In {realm.name}</span>
-        </Link>
-        <Link
-          href={`/countries/${realm.country.slug}`}
-          data-cuelume-press="soft"
-          className="bg-foreground text-background inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold transition-[opacity,transform] hover:opacity-90 active:scale-[0.97]"
-        >
-          <span>View Country</span>
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
+        <Button asChild variant="bordered" size="sm">
+          <Link href={`/r/${realm.slug}/${encodeURIComponent(cleanUsername)}`}>
+            <Globe aria-hidden />
+            <span>In {realm.name}</span>
+          </Link>
+        </Button>
+        <Button asChild variant="tinted" size="sm">
+          <Link href={`/countries/${realm.country.slug}`}>
+            <span>View Country</span>
+            <ArrowRight aria-hidden />
+          </Link>
+        </Button>
       </div>
     </div>
   );
@@ -97,28 +96,37 @@ interface AffiliationRowProps {
 
 function AffiliationRow({ icon: Icon, platform, linked, name, detail }: AffiliationRowProps) {
   return (
-    <div className="flex items-center justify-between gap-3 py-2.5">
-      <div className="flex min-w-0 items-center gap-2.5">
-        <Icon className="text-muted-foreground h-4 w-4 shrink-0" />
-        <span className="text-foreground text-sm font-semibold">{platform}</span>
-      </div>
-      <div className="min-w-0 text-right">
-        <p className="text-foreground truncate font-mono text-xs">
-          {linked && name ? `@${name}` : "Not linked"}
-        </p>
-        {linked && detail && <p className="text-muted-foreground font-mono text-xs">{detail}</p>}
-      </div>
-    </div>
+    <FacetRow
+      leading={<Icon className="size-4" />}
+      title={platform}
+      trailing={
+        <span className="min-w-0 text-right">
+          <span
+            className={cn(
+              "text-footnote block truncate",
+              linked && name ? "text-label" : "text-label-secondary"
+            )}
+          >
+            {linked && name ? `@${name}` : "Not linked"}
+          </span>
+          {linked && detail && (
+            <span className="text-label-secondary text-footnote block">{detail}</span>
+          )}
+        </span>
+      }
+    />
   );
 }
 
 function StatCell({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="space-y-0.5 rounded-2xl border border-black/6 bg-black/[0.02] p-3 dark:border-white/8 dark:bg-white/[0.02]">
-      <span className="text-muted-foreground block font-mono text-xs uppercase">{label}</span>
-      <p className="text-foreground text-sm font-bold">{value}</p>
-      <p className="text-muted-foreground truncate font-mono text-xs">{sub}</p>
-    </div>
+    <Stat
+      size="sm"
+      label={label}
+      value={value}
+      hint={sub}
+      className={cn(FACET_INSET_SURFACE, "p-3")}
+    />
   );
 }
 
@@ -188,11 +196,11 @@ export const PassportOverviewTab = React.memo(function PassportOverviewTab({
   return (
     <div className="space-y-6">
       <section className="space-y-3">
-        <h2 className={`flex items-center gap-1.5 ${SECTION_LABEL}`}>
-          <Crown className="h-3.5 w-3.5 text-amber-500" />
-          <span>Featured Realm</span>
+        <h2 className={`flex items-center gap-2 ${SECTION_LABEL}`}>
+          <Crown aria-hidden className="size-4" />
+          <span>Featured realm</span>
         </h2>
-        <FacetCard depth={1} className={PANEL}>
+        <FacetCard variant="inset">
           <FeaturedRealm data={data} cleanUsername={cleanUsername} />
         </FacetCard>
       </section>
@@ -200,46 +208,47 @@ export const PassportOverviewTab = React.memo(function PassportOverviewTab({
       <PassportShowcase data={data} cleanUsername={cleanUsername} onOpenVault={onOpenVault} />
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <section className="space-y-3">
-          <h2 className={SECTION_LABEL}>Platform Affiliations</h2>
-          <div className="divide-y divide-black/6 rounded-3xl border border-black/8 bg-black/[0.015] px-5 py-1 dark:divide-white/8 dark:border-white/10 dark:bg-white/[0.02]">
-            <AffiliationRow
-              icon={ChatBubble}
-              platform="Forum"
-              linked={forum.linked}
-              name={forum.username}
-              detail={[forum.isStaff ? "Staff" : null, forumJoined].filter(Boolean).join(" · ")}
-            />
-            <AffiliationRow
-              icon={OpenBook}
-              platform="WikiOS"
-              linked={wiki.linked}
-              name={wiki.username}
-              detail={wiki.groups.length > 0 ? wiki.groups.join(", ") : null}
-            />
-            <AffiliationRow
-              icon={Spark}
-              platform="ThinkPages"
-              linked={thinkpages.linked}
-              name={thinkpages.username}
-              detail={`${thinkpages.postCount} posts · ${thinkpages.followerCount} followers`}
-            />
-            <AffiliationRow
-              icon={Discord}
-              platform="Discord"
-              linked={discord.linked}
-              name={discord.username}
-              detail={null}
-            />
-          </div>
-        </section>
+        <FacetListSection
+          header="Platform affiliations"
+          headerAs="h2"
+          groupClassName="bg-surface-secondary border-transparent"
+        >
+          <AffiliationRow
+            icon={ChatBubble}
+            platform="Forum"
+            linked={forum.linked}
+            name={forum.username}
+            detail={[forum.isStaff ? "Staff" : null, forumJoined].filter(Boolean).join(" · ")}
+          />
+          <AffiliationRow
+            icon={OpenBook}
+            platform="WikiOS"
+            linked={wiki.linked}
+            name={wiki.username}
+            detail={wiki.groups.length > 0 ? wiki.groups.join(", ") : null}
+          />
+          <AffiliationRow
+            icon={Spark}
+            platform="ThinkPages"
+            linked={thinkpages.linked}
+            name={thinkpages.username}
+            detail={`${thinkpages.postCount} posts · ${thinkpages.followerCount} followers`}
+          />
+          <AffiliationRow
+            icon={Discord}
+            platform="Discord"
+            linked={discord.linked}
+            name={discord.username}
+            detail={null}
+          />
+        </FacetListSection>
 
         <section className="space-y-3">
-          <h2 className={`flex items-center gap-1.5 ${SECTION_LABEL}`}>
-            <Trophy className="h-3.5 w-3.5 text-amber-500" />
-            <span>Civic Stature</span>
+          <h2 className={`flex items-center gap-2 ${SECTION_LABEL}`}>
+            <Trophy aria-hidden className="size-4" />
+            <span>Civic stature</span>
           </h2>
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-2">
             {civicStats(data).map((stat) => (
               <StatCell key={stat.label} {...stat} />
             ))}

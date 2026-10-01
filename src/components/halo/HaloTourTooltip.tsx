@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { TOUR_STEPS } from "./HaloTourContext";
-import { FacetMaterial } from "~/components/ui/facet/shared/FacetMaterial";
+import { FacetMaterial } from "~/components/ui/facet";
 import { Button } from "~/components/ui/button";
 import {
   NavArrowRight as ChevronRight,
@@ -11,6 +11,8 @@ import {
   Xmark as X,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { overlayScrimClassName } from "~/components/ui/dialog";
+import { springSmooth, tweenExit, tweenFast } from "~/lib/design/motion";
 
 export function HaloTourTooltip() {
   const [tourState, setTourState] = useState<{
@@ -94,119 +96,99 @@ export function HaloTourTooltip() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="pointer-events-none fixed inset-0 z-[99] bg-black/35 backdrop-blur-[3px]"
+            transition={tweenFast}
+            // The shared dialog scrim, kept inside Halo's own stacking context (below the tooltip).
+            className={cn(overlayScrimClassName, "pointer-events-none z-10")}
           />
 
           <motion.div
             layout
-            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            initial={{ opacity: 0, y: 30, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 350, damping: 26 }}
+            exit={{ opacity: 0, y: 20, scale: 0.96, transition: tweenExit }}
+            transition={springSmooth}
             className={cn(
-              "pointer-events-auto fixed z-[10002]",
+              "pointer-events-auto fixed z-40",
               isExpandedStep
                 ? "top-[320px] left-1/2 w-[340px] -translate-x-1/2 lg:top-[220px] lg:left-[calc(50%+250px)] lg:w-[320px] lg:translate-x-0 lg:translate-y-0"
                 : "top-1/2 left-1/2 w-[350px] -translate-x-1/2 -translate-y-1/2"
             )}
           >
+            {/* v2: the island's acrylic with its four refraction edges, a tint ring and a soft
+                tint glow around the card. */}
             <FacetMaterial
-              material="satin"
-              className="ring-primary/25 text-foreground rounded-2xl border border-white/20 p-6 shadow-[0_0_40px_rgba(0,0,0,0.4),_0_0_20px_rgba(59,130,246,0.12)] ring-1 dark:border-white/10"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.03) 100%)",
-                backdropFilter: "blur(20px) saturate(145%)",
-                WebkitBackdropFilter: "blur(20px) saturate(145%)",
-              }}
-              lightInteraction={true}
+              material="acrylic"
+              role="dialog"
+              aria-label="Halo walkthrough"
+              className="text-label rounded-card ring-tint/25 facet-glow p-6 ring-1"
             >
-              {/* Refraction edge highlights identical to the Halo component */}
-              <div className="pointer-events-none absolute inset-0 z-0 rounded-[inherit] select-none">
-                <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-                <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/30 to-transparent" />
-                <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
-              </div>
-
               <div className="relative z-10 flex flex-col gap-3">
                 {/* Header & Close */}
                 <div className="flex items-center justify-between">
-                  <span className="text-primary text-xs font-bold tracking-wider uppercase">
-                    Halo Walkthrough • {currentStep} of 5
+                  <span className="text-facet-accent-ink text-eyebrow">
+                    Halo walkthrough • <span className="font-data">{currentStep}</span> of 5
                   </span>
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={skipTour}
-                    className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-full p-1 transition-colors"
-                    aria-label="Close Tour"
+                    className="text-label-secondary hover:text-label rounded-full"
+                    aria-label="Close tour"
                   >
-                    <X className="h-4 w-4" />
-                  </button>
+                    <X aria-hidden />
+                  </Button>
                 </div>
 
                 {/* Title & Description */}
                 <div className="flex flex-col gap-1">
-                  <h4 className="text-foreground text-sm font-semibold tracking-tight">
-                    {step.title}
-                  </h4>
-                  <p className="text-muted-foreground text-xs leading-relaxed">
-                    {step.description}
-                  </p>
+                  <h4 className="text-headline text-label">{step.title}</h4>
+                  <p className="text-callout text-label-secondary">{step.description}</p>
                 </div>
 
                 {/* Progress Dots */}
-                <div className="flex items-center gap-1.5 py-1">
+                <div className="flex items-center gap-2 py-1">
                   {TOUR_STEPS.map((s) => (
                     <div
                       key={s.id}
-                      className={`h-1.5 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
+                      aria-hidden="true"
+                      className={`h-1.5 rounded-full transition-[width,background-color] duration-150 ${
                         s.id === currentStep
-                          ? "bg-primary w-4"
+                          ? "bg-tint w-4"
                           : s.id < currentStep
-                            ? "bg-primary/40 w-1.5"
-                            : "bg-muted w-1.5"
+                            ? "bg-tint/40 w-1.5"
+                            : "bg-fill-3 w-1.5"
                       }`}
                     />
                   ))}
                 </div>
 
                 {/* Action buttons */}
-                <div className="border-border mt-1 flex items-center justify-between border-t pt-3">
+                <div className="border-separator mt-1 flex items-center justify-between border-t pt-3">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={skipTour}
-                    className="text-muted-foreground hover:bg-muted hover:text-foreground h-8 px-3 text-xs font-normal"
+                    className="text-label-secondary"
                   >
                     Skip
                   </Button>
 
                   <div className="flex gap-2">
                     {currentStep > 1 && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={prevStep}
-                        className="border-border text-foreground/80 hover:bg-muted hover:text-foreground h-8 bg-transparent px-2.5 text-xs"
-                      >
-                        <ChevronLeft className="mr-1 h-3.5 w-3.5" />
+                      <Button variant="bordered" size="sm" onClick={prevStep}>
+                        <ChevronLeft />
                         Back
                       </Button>
                     )}
 
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={nextStep}
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/20 flex h-8 items-center px-3 text-xs font-semibold shadow-lg"
-                    >
+                    <Button size="sm" onClick={nextStep}>
                       {currentStep === 5 ? (
                         "Finish"
                       ) : (
                         <>
                           Next
-                          <ChevronRight className="ml-1 h-3.5 w-3.5" />
+                          <ChevronRight />
                         </>
                       )}
                     </Button>

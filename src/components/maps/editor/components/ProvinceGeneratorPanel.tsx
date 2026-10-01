@@ -15,6 +15,7 @@ import {
 import { generateProvinces } from "~/lib/maps/province-generator";
 import { api } from "~/trpc/react";
 import type { Polygon, MultiPolygon } from "geojson";
+import { Slider } from "~/components/ui/slider";
 
 interface ProvinceGeneratorPanelProps {
   countryGeometry: Polygon | MultiPolygon | null;
@@ -85,8 +86,8 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
   if (!countryGeometry) {
     return (
       <div className="space-y-3 p-3">
-        <p className="text-muted-foreground text-xs">No country geometry loaded.</p>
-        <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={onClose}>
+        <p className="text-label-secondary text-footnote">No country geometry loaded.</p>
+        <Button variant="ghost" size="sm" className="text-label-secondary" onClick={onClose}>
           Close
         </Button>
       </div>
@@ -96,11 +97,11 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
   return (
     <div className="space-y-3 p-3">
       <div className="flex items-center justify-between">
-        <span className="text-foreground text-xs font-semibold">Generate Subdivisions</span>
+        <span className="text-label text-caption font-semibold">Generate Subdivisions</span>
         <Button
           variant="ghost"
           size="icon"
-          className="text-muted-foreground h-6 w-6"
+          className="text-label-secondary h-6 w-6"
           onClick={onClose}
         >
           <X className="h-3.5 w-3.5" />
@@ -111,13 +112,13 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
       <div className="space-y-2">
         <div>
           <Eyebrow className="block">Count ({count})</Eyebrow>
-          <input
-            type="range"
+          <Slider
+            aria-label="Generate subdivisions"
             min={2}
             max={50}
-            value={count}
-            onChange={(e) => setCount(parseInt(e.target.value))}
-            className="accent-primary h-1 w-full"
+            value={[count]}
+            onValueChange={([v]) => v !== undefined && setCount(v)}
+            className="w-full py-2"
           />
         </div>
 
@@ -127,7 +128,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
             type="number"
             value={seed}
             onChange={(e) => setSeed(parseInt(e.target.value) || 42)}
-            className="border-border bg-background focus:border-primary focus:ring-primary w-20 rounded border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
+            className="border-separator bg-surface focus:border-tint focus:ring-tint text-footnote rounded-control-sm w-20 border px-2 py-1 focus:ring-1 focus:outline-none"
           />
         </div>
 
@@ -138,7 +139,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
             onChange={(e) => setNames(e.target.value)}
             rows={3}
             placeholder="Province A&#10;Province B&#10;..."
-            className="border-border bg-background focus:border-primary focus:ring-primary w-full rounded border px-2 py-1 text-xs focus:ring-1 focus:outline-none"
+            className="border-separator bg-surface focus:border-tint focus:ring-tint text-footnote rounded-control-sm w-full border px-2 py-1 focus:ring-1 focus:outline-none"
           />
         </div>
       </div>
@@ -159,7 +160,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
       {/* Generated cells preview */}
       {cells && (
         <>
-          <FacetCard surface="solid" className="space-y-1 rounded-lg p-2">
+          <FacetCard className="space-y-1 p-2">
             <div className="flex items-center justify-between">
               <Eyebrow className="flex items-center gap-1">
                 <Grid3X3 className="h-3 w-3" />
@@ -168,14 +169,14 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
             </div>
             <div className="max-h-40 space-y-0.5 overflow-y-auto">
               {cells.map((cell, i) => (
-                <div key={i} className="text-muted-foreground flex justify-between text-xs">
+                <div key={i} className="text-label-secondary text-footnote flex justify-between">
                   <span>
                     {names
                       .split("\n")
                       .map((n) => n.trim())
                       .filter(Boolean)[i] || `Province ${i + 1}`}
                   </span>
-                  <span className="font-mono text-xs">
+                  <span className="text-footnote font-mono">
                     {cell.type === "Polygon"
                       ? `${cell.coordinates[0].length} pts`
                       : `${cell.coordinates.length} polys`}
@@ -214,7 +215,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
         </>
       )}
 
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="text-footnote text-red">{error}</p>}
     </div>
   );
 });

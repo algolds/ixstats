@@ -62,12 +62,12 @@ export function ThreadListItem({
           <img
             src={authorAvatar}
             alt={authorName}
-            className="h-9 w-9 rounded-full border border-[var(--forum-border)] object-cover"
+            className="border-separator h-9 w-9 rounded-full border object-cover"
             loading="lazy"
             referrerPolicy="no-referrer"
           />
         ) : (
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-500/10 text-xs font-medium text-orange-400">
+          <div className="bg-tint-fill text-tint text-footnote flex size-9 items-center justify-center rounded-full font-medium">
             {authorName.charAt(0).toUpperCase()}
           </div>
         )}
@@ -75,9 +75,9 @@ export function ThreadListItem({
 
       {/* Title + Author */}
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          {isSticky && <Pin className="h-3 w-3 shrink-0 text-[var(--forum-accent)]" />}
-          {!isOpen && <Lock className="h-3 w-3 shrink-0 text-[var(--forum-text-dim)]" />}
+        <div className="flex items-center gap-2">
+          {isSticky && <Pin className="text-tint h-3 w-3 shrink-0" />}
+          {!isOpen && <Lock className="text-label-secondary h-3 w-3 shrink-0" />}
           <Link
             href={withBasePath(`/forum/thread/${threadId}`)}
             className="forum-thread-title truncate"
@@ -96,7 +96,7 @@ export function ThreadListItem({
       </div>
 
       {/* Stats */}
-      <div className="hidden shrink-0 items-center gap-4 text-xs text-[var(--forum-text-dim)] sm:flex">
+      <div className="text-footnote text-label-secondary hidden shrink-0 items-center gap-4 tabular-nums sm:flex">
         <span className="flex items-center gap-1" title="Replies">
           <MessageSquare className="h-3.5 w-3.5" />
           {replyCount.toLocaleString()}
@@ -109,8 +109,8 @@ export function ThreadListItem({
 
       {/* Last post */}
       <div className="hidden shrink-0 text-right md:block" style={{ minWidth: "100px" }}>
-        <div className="text-xs text-[var(--forum-text-muted)]">{formatTimeAgo(lastPostDate)}</div>
-        <div className="text-xs text-[var(--forum-text-dim)]">by {lastPostUsername}</div>
+        <div className="text-footnote text-label-secondary">{formatTimeAgo(lastPostDate)}</div>
+        <div className="text-footnote text-label-secondary">by {lastPostUsername}</div>
       </div>
     </div>
   );

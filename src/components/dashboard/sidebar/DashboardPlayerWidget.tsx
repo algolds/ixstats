@@ -22,13 +22,23 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { createUrl } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
-import {
-  CutoutCard,
-  CutoutCardContent,
-  CutoutCorner,
-  cutoutCardSurfaceClassName,
-} from "~/components/ui/cutout-card";
+import { CutoutCard, CutoutCorner } from "~/components/ui/cutout-card";
+import { facetAccentStyle } from "~/lib/design/identity";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { formatCompactNumber, formatCompactCurrency } from "~/lib/utils";
+
+/**
+ * A quick-action tile in the 12rem sidebar card — v2 (c5c6b382) coloured tiles: a domain-tinted
+ * fill and rim (`style={facetAccentStyle(hue)}` on the tile; `facet-retint` re-tints its badge and
+ * focus ring), the glyph grows on hover and keyboard focus, the tile presses.
+ */
+const QUICK_ACTION =
+  "group/icon facet-retint text-body text-label bg-facet-accent-fill border-facet-accent/30 hover:border-facet-accent/50 focus-visible:border-facet-accent/50 hover:bg-fill-3 rounded-row facet-press focus-visible:outline-tint flex min-h-9 min-w-0 items-center gap-2 border px-2 py-2 focus-visible:outline-2 focus-visible:outline-offset-2";
+const QUICK_ACTION_ICON =
+  "text-facet-accent ease-out-facet duration-fast size-4 shrink-0 transition-[scale] group-hover/icon:scale-110 group-focus-visible/icon:scale-110 motion-reduce:transition-none motion-reduce:group-hover/icon:scale-100 motion-reduce:group-focus-visible/icon:scale-100";
+const QUICK_ACTION_DISABLED =
+  "text-body text-label-tertiary bg-fill-4 rounded-row flex min-h-9 min-w-0 cursor-not-allowed items-center gap-2 px-2 py-2";
 
 type FolderKey = "inbox" | "personal" | "diplomatic" | "discussions" | "groups" | "system";
 
@@ -93,23 +103,20 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
 
   if (profileLoading) {
     return (
-      <CutoutCard
-        className={cn(
-          cutoutCardSurfaceClassName,
-          "w-48 overflow-hidden rounded-2xl border border-white/10 shadow-lg backdrop-blur-xl"
-        )}
-        trackPointerHover={false}
-      >
-        <div className="relative flex min-h-[90px] flex-col items-center justify-center bg-indigo-500/10 px-3 pt-3 pb-6 backdrop-blur-md">
+      <CutoutCard variant="card" accent="indigo" retint className="w-48" trackPointerHover={false}>
+        <div className="bg-facet-accent-fill relative flex min-h-[90px] flex-col items-center justify-center px-3 pt-3 pb-6">
           <Skeleton className="h-4 w-24 rounded-full" />
-          <CutoutCorner className="text-card absolute -bottom-px left-0" size={16} />
-          <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={16} />
+          <CutoutCorner className="text-surface absolute -bottom-px left-0" size={16} />
+          <CutoutCorner
+            className="text-surface absolute right-0 -bottom-px -scale-x-100"
+            size={16}
+          />
         </div>
-        <CutoutCardContent className="space-y-2.5 p-3 pt-1">
-          <Skeleton className="h-4 w-24 rounded-md" />
-          <Skeleton className="h-4 w-20 rounded-md" />
-          <Skeleton className="h-4 w-28 rounded-md" />
-        </CutoutCardContent>
+        <div className="space-y-2 p-3 pt-1">
+          <Skeleton className="rounded-control-sm h-4 w-24" />
+          <Skeleton className="rounded-control-sm h-4 w-20" />
+          <Skeleton className="rounded-control-sm h-4 w-28" />
+        </div>
       </CutoutCard>
     );
   }
@@ -128,32 +135,32 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
     meetings?.flatMap((m) => m.actionItems).filter((a) => a.status === "pending").length ?? 0;
 
   return (
+    // v2 (c5c6b382): a CutoutCard whose cutout tab header is the nation's flag (zooming on hover)
+    // under a dark scrim, with the inverted-corner notches, dot texture and coloured action tiles.
     <CutoutCard
-      className={cn(
-        cutoutCardSurfaceClassName,
-        "group relative w-48 overflow-hidden rounded-2xl border border-slate-200/80 bg-white/80 shadow-xl shadow-slate-200/50 backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 dark:border-white/10 dark:bg-white/[0.02] dark:shadow-black/40"
-      )}
+      variant="card"
+      accent="indigo"
+      retint
+      className="group w-48"
       trackPointerHover={false}
       texture="dots"
-      textureOpacity={0.05}
     >
       {/* Neon Frame Overlay */}
-      <NeonFrameOverlay neonFrame={neonFrame} className="rounded-2xl" />
-      {/* Cutout tab header */}
-      <div className="relative flex min-h-[96px] flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-indigo-500/15 via-indigo-900/20 to-transparent px-3 pt-3.5 pb-6 backdrop-blur-md">
-        {/* Background flag filling the top */}
+      <NeonFrameOverlay neonFrame={neonFrame} className="rounded-cutout" />
+      {/* Identity header: the flag behind an image scrim, avatar and nation name */}
+      <div className="bg-facet-accent-fill relative flex min-h-[96px] flex-col items-center justify-center overflow-hidden px-3 pt-4 pb-6">
         {userProfile?.country?.name && (
-          <div className="absolute inset-0 z-0 h-full w-full overflow-hidden">
+          <div aria-hidden className="absolute inset-0 overflow-hidden">
             <UnifiedCountryFlag
               countryName={userProfile.country.name}
               flagUrl={normalizeFlagUrl(userProfile.country.flag)}
               fitContainer={true}
               showTooltip={false}
               rounded={false}
-              className="h-full w-full object-cover opacity-40 brightness-90 transition-transform duration-500 ease-out group-hover:scale-105"
+              className="ease-out-facet h-full w-full object-cover opacity-40 brightness-90 transition-[scale] duration-500 group-focus-within:scale-105 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-focus-within:scale-100 motion-reduce:group-hover:scale-100"
             />
-            {/* Soft overlay gradient to ensure text readability */}
-            <div className="absolute inset-0 z-10 bg-gradient-to-b from-black/20 via-black/40 to-black/75" />
+            {/* Image scrim so the name stays readable over any flag */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/55 to-black/75" />
           </div>
         )}
 
@@ -161,7 +168,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
         <AvatarGlow
           avatarGlow={avatarGlow}
           roundedClass="rounded-full"
-          className="relative z-20 mb-1.5 h-9 w-9 bg-indigo-950/70 shadow-lg ring-1 ring-white/20 backdrop-blur-md transition-transform duration-200 group-hover:scale-105"
+          className="bg-tint shadow-card ease-out-facet relative mb-2 h-9 w-9 ring-1 ring-white/20 transition-[scale] duration-200 group-focus-within:scale-105 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-focus-within:scale-100 motion-reduce:group-hover:scale-100"
         >
           <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full">
             {user?.imageUrl ? (
@@ -180,135 +187,129 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           </div>
         </AvatarGlow>
 
-        {/* Country Name Link */}
+        {/* Country Name Link (white on the image scrim) */}
         <Link
           href={createUrl(`/countries/${userProfile?.country?.slug ?? ""}`)}
-          className="relative z-20 flex items-center justify-center gap-1 text-center text-sm font-semibold tracking-tight text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] transition-colors hover:text-indigo-200"
+          className={cn(
+            "text-headline focus-visible:outline-tint rounded-control-sm relative flex items-center justify-center gap-1 text-center underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-2 focus-visible:outline-offset-2",
+            userProfile?.country?.name ? "text-white" : "text-label"
+          )}
         >
           <span>{userProfile?.country?.name ?? "My Country"}</span>
           {chatBadge.enabled && (
-            <CrownIcon className="h-3.5 w-3.5 shrink-0" style={{ color: chatBadge.color }} />
+            <CrownIcon
+              aria-hidden
+              className="size-3.5 shrink-0"
+              style={{ color: chatBadge.color }}
+            />
           )}
         </Link>
 
         {/* Unlocked Collector Title Badges */}
         {unlockedCollectorAchievements.length > 0 && (
-          <div className="relative z-20 mt-1.5 flex flex-wrap justify-center gap-1 px-1">
+          <div className="relative mt-2 flex flex-wrap justify-center gap-1 px-1">
             {unlockedCollectorAchievements.map((ach) => (
-              <span
+              <Badge
                 key={ach.key}
                 title={ach.description}
-                className="inline-flex cursor-help items-center gap-0.5 rounded-full border border-white/15 bg-white/10 px-1.5 py-0.5 text-xs font-medium tracking-wide text-white shadow-sm backdrop-blur-md transition-colors hover:bg-white/25 active:scale-[0.96]"
+                variant="neutral"
+                className="bg-surface/85 cursor-help"
               >
                 <span>{ach.iconUrl || "🏆"}</span>
                 <span>{ach.title}</span>
-              </span>
+              </Badge>
             ))}
           </div>
         )}
 
-        <CutoutCorner className="text-card absolute -bottom-px left-0 z-20" size={16} />
-        <CutoutCorner
-          className="text-card absolute right-0 -bottom-px z-20 -scale-x-100"
-          size={16}
-        />
+        <CutoutCorner className="text-surface absolute -bottom-px left-0" size={16} />
+        <CutoutCorner className="text-surface absolute right-0 -bottom-px -scale-x-100" size={16} />
       </div>
-      <CutoutCardContent className="space-y-2.5 p-3 pt-1">
+      <div className="relative space-y-2 p-3 pt-1">
         {/* Condensed hero stats — visible when hero is collapsed */}
         {heroCollapsed && (
           <>
-            <div className="space-y-1.5 pt-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground flex items-center gap-1.5 font-medium tracking-normal">
-                  <Users className="h-3 w-3 text-blue-600 dark:text-blue-400" /> Pop
-                </span>
-                <span className="text-foreground font-semibold tabular-nums">
+            <dl className="space-y-1">
+              <div className="text-footnote flex items-center justify-between">
+                <dt className="text-label-secondary flex items-center gap-2">
+                  <Users aria-hidden className="text-blue size-3.5" /> Pop
+                </dt>
+                <dd className="text-label font-data font-medium tabular-nums">
                   {formatCompactNumber((country as any)?.newStats?.currentPopulation ?? 0)}
-                </span>
+                </dd>
               </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground flex items-center gap-1.5 font-medium tracking-normal">
-                  <DollarSign className="h-3 w-3 text-emerald-600 dark:text-emerald-400" /> GDP
-                </span>
-                <span className="text-foreground font-semibold tabular-nums">
+              <div className="text-footnote flex items-center justify-between">
+                <dt className="text-label-secondary flex items-center gap-2">
+                  <DollarSign aria-hidden className="text-green size-3.5" /> GDP
+                </dt>
+                <dd className="text-label font-data font-medium tabular-nums">
                   {formatCompactCurrency((country as any)?.newStats?.currentTotalGdp ?? 0)}
-                </span>
+                </dd>
               </div>
               {(country as any)?.newStats?.landArea && (
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground flex items-center gap-1.5 font-medium tracking-normal">
-                    <MapIcon className="h-3 w-3 text-amber-600 dark:text-amber-400" /> Area
-                  </span>
-                  <span className="text-foreground font-semibold tabular-nums">
+                <div className="text-footnote flex items-center justify-between">
+                  <dt className="text-label-secondary flex items-center gap-2">
+                    <MapIcon aria-hidden className="text-yellow size-3.5" /> Area
+                  </dt>
+                  <dd className="text-label font-data font-medium tabular-nums">
                     {Math.round((country as any)?.newStats?.landArea).toLocaleString()} km²
-                  </span>
+                  </dd>
                 </div>
               )}
-            </div>
-            <button
-              onClick={onHeroExpand}
-              className="dark:text-muted-foreground flex w-full cursor-pointer items-center justify-center gap-1 rounded-xl border border-slate-200 bg-slate-100/80 py-1 text-xs font-medium tracking-normal text-slate-700 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-slate-200 active:scale-[0.97] dark:border-white/5 dark:bg-white/[0.04] dark:hover:bg-white/[0.08]"
-            >
-              <ChevronUp className="h-3 w-3 rotate-180" />
+            </dl>
+            <Button variant="gray" size="sm" onClick={onHeroExpand} className="w-full">
+              <ChevronUp className="rotate-180" />
               Expand
-            </button>
-            <div className="border-border/40 border-t" />
+            </Button>
+            <div className="border-separator border-t" />
           </>
         )}
 
         {/* Quick actions: full-width rows, since three columns in the 12rem sidebar are narrower
             than the labels at the 12px minimum text size. */}
-        <div className="grid grid-cols-1 gap-1.5 pt-1.5">
+        <div className="grid grid-cols-1 gap-1">
           {/* Messages */}
           <Link
             href="/messages"
-            className="group/icon relative flex min-w-0 items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/15 px-2.5 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-[1.03] hover:bg-indigo-500/25 active:scale-[0.94] dark:border-indigo-500/25 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20"
+            className={QUICK_ACTION}
+            style={facetAccentStyle("indigo")}
             title={
               totalUnreadMessages > 0
                 ? `${totalUnreadMessages} unread messages`
                 : "No unread messages"
             }
           >
-            <Mail className="h-4 w-4 shrink-0 text-indigo-600 transition-transform duration-150 group-hover/icon:scale-110 dark:text-indigo-400" />
+            <Mail aria-hidden className={QUICK_ACTION_ICON} />
+            <span className="min-w-0 flex-1 truncate">Mail</span>
             {totalUnreadMessages > 0 && (
-              <span className="animate-in fade-in zoom-in-75 absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-xs font-semibold text-white tabular-nums shadow-md dark:bg-blue-500">
+              <Badge variant="tinted" numeric>
                 {totalUnreadMessages}
-              </span>
+                <span className="sr-only"> unread</span>
+              </Badge>
             )}
-            <span className="min-w-0 truncate text-xs font-medium tracking-normal text-indigo-800 dark:text-indigo-300">
-              Mail
-            </span>
           </Link>
 
           {/* Directives */}
           {hasCountry ? (
             <Link
               href={createUrl("/mycountry/executive?focus=directives")}
-              data-cuelume-press="soft"
-              className="group/icon relative flex min-w-0 items-center gap-2 rounded-xl border border-amber-500/35 bg-amber-500/15 px-2.5 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-[1.03] hover:bg-amber-500/25 active:scale-[0.94] dark:border-amber-500/25 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
+              className={QUICK_ACTION}
+              style={facetAccentStyle("yellow")}
               title={`${issueCount} pending directives (${urgentCount} urgent)`}
             >
-              <ClipboardList className="h-4 w-4 shrink-0 text-amber-600 transition-transform duration-150 group-hover/icon:scale-110 dark:text-amber-400" />
+              <ClipboardList aria-hidden className={QUICK_ACTION_ICON} />
+              <span className="min-w-0 flex-1 truncate">Directives</span>
               {(issueCount > 0 || urgentCount > 0) && (
-                <span
-                  className={cn(
-                    "animate-in fade-in zoom-in-75 absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-xs font-semibold text-white tabular-nums shadow-md",
-                    urgentCount > 0 ? "bg-red-600" : "bg-amber-600 dark:bg-amber-500"
-                  )}
-                >
+                <Badge variant={urgentCount > 0 ? "destructive" : "caution"} numeric>
                   {urgentCount > 0 ? urgentCount : issueCount}
-                </span>
+                  <span className="sr-only">{urgentCount > 0 ? " urgent" : " pending"}</span>
+                </Badge>
               )}
-              <span className="min-w-0 truncate text-xs font-medium tracking-normal text-amber-800 dark:text-amber-300">
-                Directives
-              </span>
             </Link>
           ) : (
-            <div className="flex min-w-0 cursor-not-allowed items-center gap-2 rounded-xl border border-slate-200 bg-slate-100/60 px-2.5 py-2 opacity-40 dark:border-white/5 dark:bg-white/[0.03]">
-              <ClipboardList className="text-muted-foreground h-4 w-4 shrink-0" />
-              <span className="text-muted-foreground min-w-0 truncate text-xs font-medium tracking-normal">
-                Directives
-              </span>
+            <div aria-disabled className={cn(QUICK_ACTION_DISABLED)}>
+              <ClipboardList aria-hidden className="size-4 shrink-0" />
+              <span className="min-w-0 truncate">Directives</span>
             </div>
           )}
 
@@ -316,68 +317,47 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           {hasCountry ? (
             <Link
               href={createUrl("/mycountry/executive?focus=agenda")}
-              data-cuelume-press="soft"
-              className={cn(
-                "group/icon relative flex min-w-0 items-center gap-2 rounded-xl px-2.5 py-2 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-[1.03] active:scale-[0.94]",
-                pendingActions > 0
-                  ? "border border-orange-500/35 bg-orange-500/15 hover:bg-orange-500/25 dark:border-orange-500/25 dark:bg-orange-500/10 dark:hover:bg-orange-500/20"
-                  : "border border-emerald-500/35 bg-emerald-500/15 hover:bg-emerald-500/25 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20"
-              )}
+              className={QUICK_ACTION}
+              style={facetAccentStyle(pendingActions > 0 ? "orange" : "green")}
               title={
                 pendingActions > 0 ? `${pendingActions} pending agenda items` : "All agenda clear"
               }
             >
-              <CalendarCheck
+              <CalendarCheck aria-hidden className={QUICK_ACTION_ICON} />
+              <span className="min-w-0 flex-1 truncate">Agenda</span>
+              <span
+                aria-hidden
                 className={cn(
-                  "h-4 w-4 shrink-0 transition-transform duration-150 group-hover/icon:scale-110",
-                  pendingActions > 0
-                    ? "text-orange-600 dark:text-orange-400"
-                    : "text-emerald-600 dark:text-emerald-400"
+                  "size-2 shrink-0 rounded-full",
+                  pendingActions > 0 ? "bg-warning" : "bg-success"
                 )}
               />
-              <span
-                className={cn(
-                  "ring-background absolute -top-1 -right-1 flex h-2.5 w-2.5 rounded-full shadow-md ring-2",
-                  pendingActions > 0
-                    ? "bg-orange-600 dark:bg-orange-500"
-                    : "bg-emerald-600 dark:bg-emerald-500"
-                )}
-              />
-              <span
-                className={cn(
-                  "min-w-0 truncate text-xs font-medium tracking-normal",
-                  pendingActions > 0
-                    ? "text-orange-900 dark:text-orange-400"
-                    : "text-emerald-900 dark:text-emerald-400"
-                )}
-              >
-                Agenda
+              <span className="sr-only">
+                {pendingActions > 0 ? `${pendingActions} pending` : "All clear"}
               </span>
             </Link>
           ) : (
-            <div className="flex min-w-0 cursor-not-allowed items-center gap-2 rounded-xl border border-slate-200 bg-slate-100/60 px-2.5 py-2 opacity-40 dark:border-white/5 dark:bg-white/[0.03]">
-              <CalendarCheck className="text-muted-foreground h-4 w-4 shrink-0" />
-              <span className="text-muted-foreground min-w-0 truncate text-xs font-medium tracking-normal">
-                Agenda
-              </span>
+            <div aria-disabled className={cn(QUICK_ACTION_DISABLED)}>
+              <CalendarCheck aria-hidden className="size-4 shrink-0" />
+              <span className="min-w-0 truncate">Agenda</span>
             </div>
           )}
         </div>
 
         {/* Active Crises Warning Banner */}
         {crisesCount > 0 && (
-          <div className="mt-1 border-t border-red-500/20 pt-2">
-            <Link
-              href={createUrl("/mycountry/executive")}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/40 bg-red-500/15 py-1.5 text-xs font-semibold tracking-wider text-red-700 uppercase shadow-sm shadow-red-500/10 backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:bg-red-500/25 active:scale-[0.96] dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
-              title={`${crisesCount} active crises! Click to view.`}
-            >
-              <AlertTriangle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
-              <span>{crisesCount} Crises Active</span>
-            </Link>
-          </div>
+          <Link
+            href={createUrl("/mycountry/executive")}
+            className="bg-destructive/15 text-destructive hover:bg-destructive/25 rounded-row text-caption facet-press focus-visible:outline-tint flex items-center justify-center gap-2 py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
+            title={`${crisesCount} active crises! Click to view.`}
+          >
+            <AlertTriangle aria-hidden className="size-3.5" />
+            <span>
+              <span className="font-data tabular-nums">{crisesCount}</span> crises active
+            </span>
+          </Link>
         )}
-      </CutoutCardContent>
+      </div>
     </CutoutCard>
   );
 }

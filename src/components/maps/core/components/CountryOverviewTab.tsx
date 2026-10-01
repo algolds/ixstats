@@ -70,15 +70,18 @@ export function CountryOverviewTab({
         <div className="mb-3">
           <WikiHtmlContent
             as="p"
-            className="text-foreground/80 line-clamp-3 text-xs leading-relaxed"
+            className="text-label-secondary text-footnote line-clamp-3 leading-relaxed"
             html={sanitizeWikiContent(wikiRichIntro.paragraphs[0])}
           />
-          <button
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
             onClick={() => setActiveTab("info")}
-            className="mt-1 text-xs font-medium text-blue-500 hover:underline"
+            className="text-blue mt-1 h-auto px-0"
           >
             Read more →
-          </button>
+          </Button>
         </div>
       )}
 
@@ -116,7 +119,7 @@ export function CountryOverviewTab({
       {(summary.continent || summary.region) && (
         <div className="mt-4">
           <Eyebrow className="block">Geography</Eyebrow>
-          <div className="mt-1 flex flex-wrap gap-1.5">
+          <div className="mt-1 flex flex-wrap gap-2">
             {summary.continent && (
               <Button
                 variant="outline"
@@ -147,16 +150,16 @@ export function CountryOverviewTab({
       {(summary.leader || summary.governmentType) && (
         <div className="mt-3">
           <Eyebrow className="block">Government</Eyebrow>
-          <div className="text-foreground/80 mt-1 space-y-0.5 text-xs">
+          <div className="text-label-secondary text-footnote mt-1 space-y-0.5">
             {summary.leader && (
               <p>
-                Leader: <span className="text-foreground font-medium">{summary.leader}</span>
+                Leader: <span className="text-label font-medium">{summary.leader}</span>
               </p>
             )}
             {summary.governmentType && (
               <p>
                 Type:{" "}
-                <span className="text-foreground font-medium">
+                <span className="text-label font-medium">
                   {toTitleCase(summary.governmentType)}
                 </span>
               </p>
@@ -168,12 +171,12 @@ export function CountryOverviewTab({
       {/* Sovereignty - subject of another */}
       {sovereignty.sovereign && (
         <div className="mt-3">
-          <Eyebrow className="flex items-center gap-1.5">
+          <Eyebrow className="flex items-center gap-2">
             <Swords className="h-3 w-3" />
             Sovereignty
           </Eyebrow>
-          <FacetCard surface="solid" className="mt-1.5 rounded-lg p-2">
-            <div className="text-muted-foreground text-xs">
+          <FacetCard className="mt-2 p-2">
+            <div className="text-label-secondary text-footnote">
               {SOVEREIGNTY_TYPE_MAP[
                 sovereignty.sovereign.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP
               ]?.label ?? sovereignty.sovereign.relationshipType}{" "}
@@ -187,35 +190,35 @@ export function CountryOverviewTab({
                   displayName: sovereignty.sovereign!.name,
                 })
               }
-              className="text-foreground mt-0.5 flex items-center gap-1.5 text-sm font-medium transition-colors hover:text-blue-500"
+              className="text-label text-body hover:text-blue mt-0.5 flex items-center gap-2 font-medium transition-colors"
             >
               {sovereignty.sovereign.flag && (
                 <img
                   src={sovereignty.sovereign.flag}
                   alt=""
-                  className="border-border h-3.5 w-5 rounded-sm border object-cover"
+                  className="border-separator h-3.5 w-5 rounded-xs border object-cover"
                 />
               )}
               {sovereignty.sovereign.name}
             </button>
             {sovereignty.sovereign.autonomyLevel != null && (
-              <div className="mt-1.5 flex items-center gap-2">
-                <span className="text-muted-foreground text-xs">Autonomy</span>
-                <div className="bg-muted h-1.5 flex-1 rounded-full">
+              <div className="mt-2 flex items-center gap-2">
+                <span className="text-label-secondary text-footnote">Autonomy</span>
+                <div className="bg-fill-3 h-1.5 flex-1 rounded-full">
                   <div
-                    className="h-1.5 rounded-full bg-blue-500"
+                    className="bg-blue h-1.5 rounded-full"
                     style={{
                       width: `${Math.round(sovereignty.sovereign.autonomyLevel * 100)}%`,
                     }}
                   />
                 </div>
-                <span className="text-foreground text-xs font-medium tabular-nums">
+                <span className="text-label text-caption tabular-nums">
                   {Math.round(sovereignty.sovereign.autonomyLevel * 100)}%
                 </span>
               </div>
             )}
             {sovereignty.sovereign.establishedDate && (
-              <div className="text-muted-foreground mt-1 text-xs">
+              <div className="text-label-secondary text-footnote mt-1">
                 Est. {sovereignty.sovereign.establishedDate}
               </div>
             )}
@@ -226,7 +229,7 @@ export function CountryOverviewTab({
       {/* Sovereignty - sovereign over others */}
       {sovereignty.subjects.length > 0 && (
         <div className="mt-3">
-          <Eyebrow className="flex items-center gap-1.5">
+          <Eyebrow className="flex items-center gap-2">
             <Shield className="h-3 w-3" />
             Domains ({sovereignty.subjects.length})
           </Eyebrow>
@@ -252,10 +255,10 @@ export function CountryOverviewTab({
                   }
                 >
                   {s.flag && (
-                    <img src={s.flag} alt="" className="h-3 w-4 rounded-sm object-cover" />
+                    <img src={s.flag} alt="" className="h-3 w-4 rounded-xs object-cover" />
                   )}
                   {s.name}
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-label-secondary text-footnote">
                     (
                     {SOVEREIGNTY_TYPE_MAP[s.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP]
                       ?.short ?? s.relationshipType}
@@ -297,7 +300,7 @@ export function CountryOverviewTab({
           </Button>
         )}
         {summary.slug && (
-          <Button asChild size="sm" className="bg-blue-600 text-white hover:bg-blue-600/90">
+          <Button asChild size="sm" className="bg-blue text-on-blue hover:bg-blue/90">
             <Link href={`/countries/${summary.slug}`}>
               View full profile
               <ExternalLink aria-hidden />

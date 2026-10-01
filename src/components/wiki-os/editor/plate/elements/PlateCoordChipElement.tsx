@@ -22,7 +22,7 @@ export function PlateCoordChipElement({
         href={el.href}
         title={el.title}
         onClick={(e) => e.preventDefault()}
-        className="wikios-ve-custom-chip chip-coords inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-xs font-bold text-amber-300"
+        className="wikios-ve-custom-chip chip-coords border-yellow/30 bg-yellow/10 text-caption text-yellow inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold"
       >
         <span className="opacity-70">📍</span> {el.label}
       </a>
@@ -48,7 +48,7 @@ export function PlateMapEmbedChipElement({
         href={el.href}
         title={el.title}
         onClick={(e) => e.preventDefault()}
-        className="wikios-ve-custom-chip chip-mapembed inline-flex items-center gap-1 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-xs font-bold text-cyan-300"
+        className="wikios-ve-custom-chip chip-mapembed border-teal/30 bg-teal/10 text-caption text-teal inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold"
       >
         <span className="opacity-70">🗺️</span> Map Embed
       </a>

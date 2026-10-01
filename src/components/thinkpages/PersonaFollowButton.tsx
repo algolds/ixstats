@@ -58,7 +58,7 @@ export function PersonaFollowButton({
         if (isFollowing) unfollow.mutate({ accountId });
         else follow.mutate({ accountId });
       }}
-      className={cn("h-7 cursor-pointer px-3 text-xs", className)}
+      className={cn("text-footnote h-7 cursor-pointer px-3", className)}
     >
       {isFollowing ? "Following" : "Follow"}
     </Button>

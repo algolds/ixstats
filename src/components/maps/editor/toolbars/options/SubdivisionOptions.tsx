@@ -12,6 +12,7 @@ import {
 } from "~/lib/maps/editor-prefs";
 import { CityScatterPopover, TransformGeometryPopover } from "./ScatterToolOptions";
 import { ToolLabel, ToolbarButton, dividerClass, selectClass } from "./CoordinateSnappingControls";
+import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 
 const SUBDIVISION_TYPES = [
   { value: "province", label: "Province" },
@@ -94,17 +95,14 @@ export const SubdivisionOptions = memo(function SubdivisionOptions({
     <>
       <ToolLabel icon={Hexagon} label="Region" />
       <Eyebrow>Type</Eyebrow>
-      <select
+      <OptionSelect
+        aria-label="Type"
         value={subdivisionType ?? "province"}
-        onChange={(e) => onSubdivisionTypeChange?.(e.target.value)}
-        className={selectClass}
-      >
-        {SUBDIVISION_TYPES.map((t) => (
-          <option key={t.value} value={t.value}>
-            {t.label}
-          </option>
-        ))}
-      </select>
+        onValueChange={(v) => onSubdivisionTypeChange?.(v)}
+        options={SUBDIVISION_TYPES}
+        size="sm"
+        className="w-full"
+      />
       <Eyebrow>Level</Eyebrow>
       <input
         type="number"

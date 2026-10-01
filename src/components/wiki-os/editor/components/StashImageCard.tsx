@@ -4,6 +4,7 @@
 
 import React, { useState } from "react";
 import { Copy, Check } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 
 export interface StashImageCardProps {
   imgInfo: any;
@@ -25,33 +26,35 @@ export function StashImageCard({ imgInfo, cleanTitle, filename, onInsert }: Stas
   return (
     <div
       onClick={onInsert}
-      className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border border-white/5 bg-white/5 text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-white/10 hover:bg-white/10"
+      className="group rounded-control border-separator bg-fill-4 hover:border-separator hover:bg-fill-4 relative aspect-square cursor-pointer overflow-hidden border text-white transition-[color,background-color,border-color,box-shadow,opacity,transform]"
       title={`Click to insert [[File:${filename}]]`}
     >
       {imgInfo?.thumbUrl ? (
         <img
           src={imgInfo.thumbUrl}
           alt={cleanTitle}
-          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+          className="h-full w-full object-cover transition-transform duration-200"
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center">
-          <div className="h-3 w-3 animate-spin rounded-full border border-zinc-700 border-t-zinc-400" />
+          <div className="border-separator border-t-separator h-3 w-3 animate-spin rounded-full border" />
         </div>
       )}
 
-      <div className="absolute inset-0 flex items-center justify-center gap-1.5 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-        <button
-          type="button"
+      <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+        <Button
+          variant="gray"
+          size="icon-sm"
+          aria-label="Copy Wikitext Link"
           onClick={handleCopy}
-          className="rounded-md border border-white/10 bg-zinc-950/80 p-1 text-zinc-300 transition-colors hover:bg-zinc-900 hover:text-white"
           title="Copy Wikitext Link"
+          className="size-6 bg-black/60 text-white hover:bg-black/80"
         >
-          {copied ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
-        </button>
+          {copied ? <Check className="text-green h-3 w-3" /> : <Copy className="h-3 w-3" />}
+        </Button>
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/85 to-transparent p-1 text-xs text-zinc-300 group-hover:text-white">
+      <div className="text-footnote absolute inset-x-0 bottom-0 truncate bg-black/60 p-1 text-white">
         {cleanTitle}
       </div>
     </div>

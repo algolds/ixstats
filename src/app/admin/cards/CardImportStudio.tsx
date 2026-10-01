@@ -7,7 +7,8 @@ import { useSearchParams } from "next/navigation";
 import { OpenBook as BookOpen, Globe, WhiteFlag as Flag, Component as Layers } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
-import { FacetContainer, FacetCard } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { LoreCardBatchAdmin } from "./LoreCardBatchAdmin";
 import { NSImportSuiteAdmin } from "./NSImportSuiteAdmin";
 import { CommonsFlagImporterAdmin } from "./CommonsFlagImporterAdmin";
@@ -89,64 +90,51 @@ export function CardImportStudio({
   return (
     <div className="space-y-6">
       {/* ─── Import Studio Subnavigation Header ───────────────────── */}
-      <FacetCard
-        depth={1}
-        className="border-border bg-card/80 text-card-foreground rounded-2xl border p-4 shadow-md backdrop-blur-2xl"
-      >
+      <FacetCard className="p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-primary/10 border-primary/20 text-primary flex h-10 w-10 items-center justify-center rounded-xl border">
+            <div className="bg-tint-fill text-tint rounded-row flex size-10 items-center justify-center">
               <Layers className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-foreground text-base font-bold">Card Import Studio</h2>
-              <p className="text-muted-foreground text-xs">
+              <h2 className="text-label text-headline">Card Import Studio</h2>
+              <p className="text-label-secondary text-footnote">
                 Unified data ingestion pipeline: Wiki lore archives, NationStates collections, and
                 Commons flags
               </p>
             </div>
           </div>
 
-          {/* Subtab Pills */}
-          <FacetContainer
-            depth={1}
-            enableRefraction={true}
-            className="border-border bg-muted/40 flex flex-wrap items-center gap-1.5 rounded-xl border p-1 backdrop-blur-md"
-          >
-            {SUBTABS.map((tab) => {
+          {/* Subtab switcher */}
+          <SegmentedControl
+            asTabs
+            aria-label="Import sources"
+            value={activeSubtab}
+            onValueChange={setActiveSubtab}
+            options={SUBTABS.map((tab) => {
               const Icon = tab.icon;
-              const isActive = activeSubtab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveSubtab(tab.id)}
-                  className={`flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-95 ${
-                    isActive
-                      ? "bg-background border-border text-foreground border font-bold shadow-xs"
-                      : "text-muted-foreground hover:text-foreground hover:bg-card/60"
-                  }`}
-                >
-                  <Icon
-                    className={`h-3.5 w-3.5 ${isActive ? "text-primary" : "text-muted-foreground"}`}
-                  />
-                  <span>{tab.label}</span>
-                  {tab.badge && (
-                    <Badge
-                      variant={tab.badgeVariant || "secondary"}
-                      className="ml-0.5 px-1.5 py-0 font-mono text-xs font-medium"
-                    >
-                      {tab.badge}
-                    </Badge>
-                  )}
-                </button>
-              );
+              return {
+                value: tab.id,
+                icon: <Icon />,
+                label: (
+                  <>
+                    {tab.label}
+                    {tab.badge && (
+                      <Badge variant={tab.badgeVariant || "secondary"} className="tabular-nums">
+                        {tab.badge}
+                      </Badge>
+                    )}
+                  </>
+                ),
+                "aria-label": tab.label,
+              };
             })}
-          </FacetContainer>
+          />
         </div>
       </FacetCard>
 
       {/* ─── Active Subtab Content ───────────────────────────────── */}
-      <div className="transition-opacity duration-200">
+      <div className="duration-fast transition-opacity">
         {activeSubtab === "wiki" && <LoreCardBatchAdmin />}
         {activeSubtab === "ns" && <NSImportSuiteAdmin />}
         {activeSubtab === "flags" && <CommonsFlagImporterAdmin />}

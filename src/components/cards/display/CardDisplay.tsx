@@ -1,4 +1,6 @@
 "use client";
+
+import "~/styles/card-art.css";
 /**
  * CardDisplay Component - PREMIUM EDITION
  * Yu-Gi-Oh style digital trading card with holographic effects
@@ -40,29 +42,29 @@ import { getCardDesignMetadata } from "~/lib/cards/card-metadata-resolver";
 // Static lookup configurations hoisted outside render function
 const FONT_SIZES = {
   small: {
-    title: "text-xs",
-    type: "text-xs",
-    stats: "text-xs",
+    title: "text-footnote",
+    type: "text-footnote",
+    stats: "text-footnote",
   },
   sm: {
-    title: "text-xs",
-    type: "text-xs",
-    stats: "text-xs",
+    title: "text-footnote",
+    type: "text-footnote",
+    stats: "text-footnote",
   },
   medium: {
-    title: "text-sm",
-    type: "text-xs",
-    stats: "text-xs",
+    title: "text-body",
+    type: "text-footnote",
+    stats: "text-footnote",
   },
   md: {
-    title: "text-sm",
-    type: "text-xs",
-    stats: "text-xs",
+    title: "text-body",
+    type: "text-footnote",
+    stats: "text-footnote",
   },
   large: {
-    title: "text-base",
-    type: "text-sm",
-    stats: "text-sm",
+    title: "text-body",
+    type: "text-body",
+    stats: "text-body",
   },
 } as const;
 
@@ -255,7 +257,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
       >
         <motion.div
           className={cn(
-            "relative h-full w-full overflow-hidden rounded-2xl",
+            "rounded-card relative h-full w-full overflow-hidden",
             borderConfig.animated && !performanceMode
               ? `border-${borderConfig.width} ${borderConfig.glow}`
               : `border-${borderConfig.width}`,
@@ -288,25 +290,25 @@ export const CardDisplay = React.memo<CardDisplayProps>(
 
           <div
             className={cn(
-              "pointer-events-none absolute top-1.5 left-1.5 z-30 h-3 w-3 border-t-2 border-l-2 opacity-85",
+              "pointer-events-none absolute top-2 left-2 z-30 h-3 w-3 border-t-2 border-l-2 opacity-85",
               rarityTheme.cornerBracket
             )}
           />
           <div
             className={cn(
-              "pointer-events-none absolute top-1.5 right-1.5 z-30 h-3 w-3 border-t-2 border-r-2 opacity-85",
+              "pointer-events-none absolute top-2 right-2 z-30 h-3 w-3 border-t-2 border-r-2 opacity-85",
               rarityTheme.cornerBracket
             )}
           />
           <div
             className={cn(
-              "pointer-events-none absolute bottom-1.5 left-1.5 z-30 h-3 w-3 border-b-2 border-l-2 opacity-85",
+              "pointer-events-none absolute bottom-2 left-2 z-30 h-3 w-3 border-b-2 border-l-2 opacity-85",
               rarityTheme.cornerBracket
             )}
           />
           <div
             className={cn(
-              "pointer-events-none absolute right-1.5 bottom-1.5 z-30 h-3 w-3 border-r-2 border-b-2 opacity-85",
+              "pointer-events-none absolute right-2 bottom-2 z-30 h-3 w-3 border-r-2 border-b-2 opacity-85",
               rarityTheme.cornerBracket
             )}
           />
@@ -371,7 +373,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
 
             {/* Gradient overlay for text readability when using artwork */}
             {hasCustomArtwork && (
-              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
+              <div className="card-art-linear-t absolute inset-0 from-black/95 via-black/40 to-transparent" />
             )}
 
             {/* Holographic overlay layer */}
@@ -388,7 +390,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
 
             {/* Rarity glow effect */}
             <motion.div
-              className={cn("absolute inset-0 rounded-2xl", getRarityGlow(card.rarity))}
+              className={cn("rounded-card absolute inset-0", getRarityGlow(card.rarity))}
               initial={{ opacity: 0 }}
               animate={{ opacity: isHovered ? 0.5 : 0.2 }}
               transition={{ duration: 0.3 }}
@@ -414,7 +416,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
 
                 {effectiveCategory ? (
                   <span
-                    className="flex h-5 w-5 items-center justify-center rounded-md border border-white/20 bg-slate-950/80 p-0.5 text-white shadow-xs backdrop-blur-md"
+                    className="rounded-control-sm shadow-card flex h-5 w-5 items-center justify-center border border-white/20 bg-slate-950/80 p-0.5 text-white"
                     title={getCategoryLabel(effectiveCategory)}
                   >
                     <CategoryIcon
@@ -428,7 +430,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                   (isLoreCard || (card.cardType !== "NS_IMPORT" && !card.nsCardId)) ? (
                   <span
                     className={cn(
-                      "rounded-md border border-white/20 bg-slate-950/80 px-2 py-0.5 font-bold text-white shadow-xs backdrop-blur-md",
+                      "rounded-control-sm shadow-card border border-white/20 bg-slate-950/80 px-2 py-0.5 font-bold text-white",
                       fonts.type
                     )}
                   >
@@ -473,13 +475,13 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                 const hideLabel = isNsImportLabel && !categoryLabel;
                 if (hideLabel) {
                   return (
-                    <p className="mt-0.5 line-clamp-1 flex items-center gap-1.5 text-xs font-semibold tracking-wider text-amber-400 uppercase">
+                    <p className="text-footnote mt-0.5 line-clamp-1 flex items-center gap-2 font-semibold tracking-wider text-amber-400 uppercase">
                       <span>{designMeta.customSubtitle || card.rarity}</span>
                     </p>
                   );
                 }
                 return (
-                  <p className="mt-0.5 line-clamp-1 flex items-center gap-1.5 text-xs font-semibold tracking-wider text-white/80 uppercase">
+                  <p className="text-footnote mt-0.5 line-clamp-1 flex items-center gap-2 font-semibold tracking-wider text-white/80 uppercase">
                     {showLabel ? (
                       <>
                         <span>{categoryLabel}</span>
@@ -508,7 +510,7 @@ export const CardDisplay = React.memo<CardDisplayProps>(
               {/* Stat bars — ONLY for nation/NS_IMPORT cards (numeric stats are dropped for lore categories) */}
               {!hideStats && !isLoreCard && Object.keys(stats.base).length > 0 && (
                 <div className="space-y-2">
-                  <div className="flex gap-1 rounded-lg border border-white/10 bg-slate-950/80 px-2 py-1.5 backdrop-blur-md">
+                  <div className="rounded-control flex gap-1 border border-white/10 bg-slate-950/80 px-2 py-2">
                     {Object.entries(stats.base).map(([key, stat]) => (
                       <div key={key} className="flex-1 space-y-0.5">
                         <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
@@ -531,11 +533,11 @@ export const CardDisplay = React.memo<CardDisplayProps>(
 
               {/* Bottom Lore Excerpt Box */}
               {isLoreCard && !hideExcerpt && (excerptText || parsedExcerptHtml) && (
-                <div className="pointer-events-auto mt-1 rounded-xl border border-white/15 bg-slate-950/85 p-2 text-left shadow-inner backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
-                  <div className="line-clamp-2 text-xs leading-snug text-white/90">
+                <div className="rounded-row pointer-events-auto mt-1 border border-white/15 bg-slate-950/85 p-2 text-left shadow-inner transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
+                  <div className="text-footnote line-clamp-2 leading-snug text-white/90">
                     <WikiHtmlContent html={parsedExcerptHtml} />
                   </div>
-                  <div className="mt-1.5 flex items-center justify-between border-t border-white/10 pt-1.5 text-xs text-white/50">
+                  <div className="text-footnote mt-2 flex items-center justify-between border-t border-white/10 pt-2 text-white/50">
                     <span className="font-semibold tracking-wider text-amber-400 uppercase">
                       {(card.wikiSource || "IXWIKI").toUpperCase()} ARCHIVE
                     </span>
@@ -556,8 +558,8 @@ export const CardDisplay = React.memo<CardDisplayProps>(
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
                     className={cn(
-                      "xs:grid-cols-2 grid grid-cols-1 gap-1 rounded-lg p-2",
-                      "border border-white/20 bg-black/80 backdrop-blur-xl",
+                      "xs:grid-cols-2 rounded-control grid grid-cols-1 gap-1 p-2",
+                      "border border-white/20 bg-black/80",
                       fonts.stats
                     )}
                     style={{
@@ -589,10 +591,10 @@ export const CardDisplay = React.memo<CardDisplayProps>(
             <motion.div
               className={cn(
                 "absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full",
-                "bg-gradient-to-br from-amber-400 to-amber-600",
-                "text-sm font-bold text-black tabular-nums",
+                "card-art-linear-br from-amber-400 to-amber-600",
+                "text-body font-bold text-black tabular-nums",
                 "border-2 border-amber-300",
-                "shadow-lg shadow-amber-500/50"
+                "shadow-floating"
               )}
               style={{
                 textShadow: "0 1px 2px rgba(0,0,0,0.3)",

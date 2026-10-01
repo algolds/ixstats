@@ -51,11 +51,11 @@ export const StandingsInspectorNode = React.memo(function StandingsInspectorNode
   if (isSandbox) {
     return (
       <div className="space-y-4">
-        <p className="text-muted-foreground text-xs">
+        <p className="text-label-secondary text-footnote">
           Standings node displays cumulative stats (Wins, Losses, Draws, Points). In Sandbox,
           standings can be simulated locally from schedule runs.
         </p>
-        <div className="text-muted-foreground bg-muted/30 rounded border p-3 text-center text-xs">
+        <div className="text-label-secondary bg-fill-4 rounded-control-sm text-footnote border p-3 text-center">
           Click Match Resolver Node to run sandbox matches and view simulator outputs.
         </div>
       </div>
@@ -65,7 +65,7 @@ export const StandingsInspectorNode = React.memo(function StandingsInspectorNode
   // DB Mode
   return (
     <div className="space-y-4">
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label>Select League</Label>
         <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
           <SelectTrigger>
@@ -82,7 +82,7 @@ export const StandingsInspectorNode = React.memo(function StandingsInspectorNode
       </div>
 
       {dbLeague && dbLeague.seasons && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label>Select Season</Label>
           <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
             <SelectTrigger>
@@ -102,84 +102,72 @@ export const StandingsInspectorNode = React.memo(function StandingsInspectorNode
       {dbSeason && dbSeason.standings && (
         <div className="space-y-3">
           {dbLeague && (
-            <div className="bg-muted/20 space-y-1 rounded border p-2.5 text-xs">
-              <p className="text-muted-foreground flex items-center justify-between font-semibold">
+            <div className="bg-fill-4 rounded-control-sm text-footnote space-y-1 border p-3">
+              <p className="text-label-secondary flex items-center justify-between font-semibold">
                 <span>League Division Tier: {(dbLeague as any).tier ?? 1}</span>
-                <Badge variant="outline" className="border-primary/20 text-primary text-xs">
+                <Badge variant="outline" className="border-tint/20 text-tint">
                   Pyramid Level
                 </Badge>
               </p>
               {(dbLeague as any).parentLeague && (
-                <p className="font-medium text-emerald-400/90">
+                <p className="text-green font-medium">
                   ▲ Superior League: {(dbLeague as any).parentLeague.name}
                 </p>
               )}
               {(dbLeague as any).subLeagues && (dbLeague as any).subLeagues.length > 0 && (
-                <p className="font-medium text-red-400/90">
+                <p className="text-red font-medium">
                   ▼ Sub-Leagues: {(dbLeague as any).subLeagues.map((l: any) => l.name).join(", ")}
                 </p>
               )}
-              <p className="text-muted-foreground text-xs">
+              <p className="text-label-secondary text-footnote">
                 Zone rules: Top {(dbLeague as any).promotionCount ?? 3} Promoted / Bottom{" "}
                 {(dbLeague as any).relegationCount ?? 3} Relegated
               </p>
             </div>
           )}
 
-          <div className="thin-scrollbar max-h-[260px] space-y-2 overflow-y-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10 text-xs">#</TableHead>
-                  <TableHead className="text-xs">Team</TableHead>
-                  <TableHead className="text-center text-xs">W-L-D</TableHead>
-                  <TableHead className="text-center text-xs">Pts</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {dbSeason.standings.map((s, i) => {
-                  const promotionCount = (dbLeague as any)?.promotionCount ?? 3;
-                  const relegationCount = (dbLeague as any)?.relegationCount ?? 3;
-                  const totalTeams = dbSeason.standings.length;
+          <Table containerClassName="max-h-[260px]">
+            <TableHeader sticky>
+              <TableRow>
+                <TableHead className="text-footnote w-10">#</TableHead>
+                <TableHead className="text-footnote">Team</TableHead>
+                <TableHead className="text-footnote text-center">W-L-D</TableHead>
+                <TableHead className="text-footnote text-center">Pts</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {dbSeason.standings.map((s, i) => {
+                const promotionCount = (dbLeague as any)?.promotionCount ?? 3;
+                const relegationCount = (dbLeague as any)?.relegationCount ?? 3;
+                const totalTeams = dbSeason.standings.length;
 
-                  const isPromotionZone = i < promotionCount && (dbLeague as any)?.parentLeague;
-                  const isRelegationZone =
-                    i >= totalTeams - relegationCount && (dbLeague as any)?.subLeagues?.length > 0;
+                const isPromotionZone = i < promotionCount && (dbLeague as any)?.parentLeague;
+                const isRelegationZone =
+                  i >= totalTeams - relegationCount && (dbLeague as any)?.subLeagues?.length > 0;
 
-                  return (
-                    <TableRow
-                      key={s.id}
-                      className={cn(
-                        isPromotionZone &&
-                          "border-l-2 border-l-emerald-500 bg-emerald-500/5 hover:bg-emerald-500/10",
-                        isRelegationZone &&
-                          "border-l-2 border-l-red-500 bg-red-500/5 hover:bg-red-500/10"
-                      )}
-                    >
-                      <TableCell className="text-xs font-semibold">{s.rank ?? i + 1}</TableCell>
-                      <TableCell className="flex max-w-[120px] items-center gap-1 truncate text-xs font-medium">
-                        {s.team.name}
-                        {isPromotionZone && (
-                          <span className="rounded bg-emerald-500/15 px-1 text-xs font-semibold text-emerald-400">
-                            Prom
-                          </span>
-                        )}
-                        {isRelegationZone && (
-                          <span className="rounded bg-red-500/15 px-1 text-xs font-semibold text-red-400">
-                            Releg
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center font-mono text-xs">
-                        {s.wins}-{s.losses}-{s.draws}
-                      </TableCell>
-                      <TableCell className="text-center text-xs font-bold">{s.points}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+                return (
+                  <TableRow
+                    key={s.id}
+                    className={cn(
+                      isPromotionZone && "border-l-green bg-green/5 hover:bg-green/10 border-l-2",
+                      isRelegationZone && "border-l-red bg-red/5 hover:bg-red/10 border-l-2"
+                    )}
+                  >
+                    <TableCell className="text-caption">{s.rank ?? i + 1}</TableCell>
+                    <TableCell className="text-caption flex max-w-[120px] items-center gap-1 truncate">
+                      {s.team.name}
+                      {isPromotionZone && <Badge variant="green">Prom</Badge>}
+                      {isRelegationZone && <Badge variant="red">Releg</Badge>}
+                    </TableCell>
+                    <TableCell className="text-footnote text-center tabular-nums">
+                      {s.wins}-{s.losses}-{s.draws}
+                    </TableCell>
+                    <TableCell className="text-caption text-center">{s.points}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

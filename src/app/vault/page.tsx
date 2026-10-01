@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { VaultDashboardSection } from "~/components/vault/sections/VaultDashboardSection";
 import { withBasePath } from "~/lib/base-path";
 import type { VaultSection } from "~/components/vault/VaultSidebarNav";
+import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
 
 export default function VaultPage() {
   const router = useRouter();
@@ -13,5 +14,11 @@ export default function VaultPage() {
     router.push(withBasePath(href));
   };
 
-  return <VaultDashboardSection onNavigate={handleNavigate} />;
+  return (
+    <>
+      {/* Phone title under the new navigation shell (nothing with the flag off). */}
+      <ShellPageHeader title="Vault" className="px-0" />
+      <VaultDashboardSection onNavigate={handleNavigate} />
+    </>
+  );
 }

@@ -10,6 +10,7 @@ import {
 } from "iconoir-react";
 import type { Polygon, MultiPolygon } from "geojson";
 import { getVertices } from "~/lib/maps/border-editor";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 
 interface BorderEditorPanelProps {
   featureId: string | null;
@@ -51,36 +52,36 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
       {/* Feature Info */}
       {featureId ? (
         <div>
-          <h3 className="text-foreground text-sm font-semibold">{displayName || featureId}</h3>
-          <p className="text-muted-foreground text-xs">{featureId}</p>
+          <h3 className="text-label text-headline">{displayName || featureId}</h3>
+          <p className="text-label-secondary text-footnote">{featureId}</p>
           {isDirty && (
-            <span className="mt-1 inline-block rounded bg-amber-500/20 px-1.5 py-0.5 text-xs text-amber-500">
+            <span className="bg-yellow/20 text-footnote text-yellow-ink rounded-control-sm mt-1 inline-block px-2 py-0.5">
               Modified
             </span>
           )}
         </div>
       ) : (
-        <div className="text-muted-foreground flex items-center gap-2">
+        <div className="text-label-secondary flex items-center gap-2">
           <AlertTriangle className="h-4 w-4" />
-          <span className="text-sm">No feature selected</span>
+          <span className="text-body">No feature selected</span>
         </div>
       )}
 
       {/* Stats */}
       {geometry && (
-        <div className="border-border space-y-1 border-t pt-2">
-          <div className="text-muted-foreground flex items-center gap-2 text-xs">
+        <div className="border-separator space-y-1 border-t pt-2">
+          <div className="text-label-secondary text-footnote flex items-center gap-2">
             <MapPin className="h-3.5 w-3.5" />
             <span>{vertices.length} vertices</span>
           </div>
-          <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <div className="text-label-secondary text-footnote flex items-center gap-2">
             <Layers className="h-3.5 w-3.5" />
             <span>
               {ringCount} ring{ringCount !== 1 ? "s" : ""}
             </span>
           </div>
           {areaKm2 !== null && (
-            <div className="text-muted-foreground text-xs">
+            <div className="text-label-secondary text-footnote">
               Area:{" "}
               {areaKm2 > 1000000
                 ? `${(areaKm2 / 1000000).toFixed(2)}M km²`
@@ -92,43 +93,48 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
 
       {/* Neighbors (for merge mode) */}
       {mode === "merge" && neighbors.length > 0 && (
-        <div className="border-border border-t pt-2">
-          <div className="text-foreground mb-1.5 flex items-center gap-1.5 text-xs font-medium">
+        <div className="border-separator border-t pt-2">
+          <div className="text-label text-caption mb-2 flex items-center gap-2">
             <Users className="h-3.5 w-3.5" />
             Select neighbors to merge
           </div>
-          <div className="space-y-1">
+          <ToggleGroup
+            type="multiple"
+            orientation="vertical"
+            size="sm"
+            aria-label="Neighbors to merge"
+            className="w-full"
+            value={mergeTargets}
+            onValueChange={(next) => {
+              const toggled =
+                next.find((id) => !mergeTargets.includes(id)) ??
+                mergeTargets.find((id) => !next.includes(id));
+              if (toggled) onToggleMergeTarget(toggled);
+            }}
+          >
             {neighbors.map((n) => (
-              <button
-                key={n.featureId}
-                onClick={() => onToggleMergeTarget(n.featureId)}
-                className={`w-full rounded px-2 py-1 text-left text-xs transition-colors ${
-                  mergeTargets.includes(n.featureId)
-                    ? "bg-blue-500/30 text-blue-500 ring-1 ring-blue-500/40"
-                    : "text-muted-foreground hover:bg-muted"
-                }`}
-              >
+              <ToggleGroupItem key={n.featureId} value={n.featureId} className="justify-start">
                 {n.displayName || n.featureId}
-              </button>
+              </ToggleGroupItem>
             ))}
-          </div>
+          </ToggleGroup>
         </div>
       )}
 
       {/* Neighbor list (non-merge mode) */}
       {mode !== "merge" && mode !== "brush" && neighbors.length > 0 && (
-        <div className="border-border border-t pt-2">
-          <div className="text-muted-foreground mb-1 text-xs font-medium">
+        <div className="border-separator border-t pt-2">
+          <div className="text-label-secondary text-caption mb-1">
             Neighbors ({neighbors.length})
           </div>
           <div className="space-y-0.5">
             {neighbors.slice(0, 10).map((n) => (
-              <div key={n.featureId} className="text-muted-foreground text-xs">
+              <div key={n.featureId} className="text-label-secondary text-footnote">
                 {n.displayName || n.featureId}
               </div>
             ))}
             {neighbors.length > 10 && (
-              <div className="text-muted-foreground/50 text-xs">+{neighbors.length - 10} more</div>
+              <div className="text-label-tertiary text-footnote">+{neighbors.length - 10} more</div>
             )}
           </div>
         </div>
@@ -136,29 +142,27 @@ export const BorderEditorPanel = React.memo(function BorderEditorPanel({
 
       {/* Brush target selector */}
       {mode === "brush" && neighbors.length > 0 && (
-        <div className="border-border border-t pt-2">
-          <div className="text-foreground mb-1.5 flex items-center gap-1.5 text-xs font-medium">
+        <div className="border-separator border-t pt-2">
+          <div className="text-label text-caption mb-2 flex items-center gap-2">
             <Crosshair className="h-3.5 w-3.5" />
             Select target neighbor
           </div>
-          <div className="space-y-1">
+          <ToggleGroup
+            type="single"
+            orientation="vertical"
+            size="sm"
+            aria-label="Target neighbor"
+            className="w-full"
+            value={brushTargetId ?? ""}
+            onValueChange={(id) => onBrushTargetChange(id || null)}
+          >
             {neighbors.map((n) => (
-              <button
-                key={n.featureId}
-                onClick={() =>
-                  onBrushTargetChange(n.featureId === brushTargetId ? null : n.featureId)
-                }
-                className={`w-full rounded px-2 py-1 text-left text-xs transition-colors ${
-                  brushTargetId === n.featureId
-                    ? "bg-indigo-500/20 text-indigo-400 ring-1 ring-indigo-500/40"
-                    : "text-muted-foreground hover:bg-muted"
-                }`}
-              >
+              <ToggleGroupItem key={n.featureId} value={n.featureId} className="justify-start">
                 {n.displayName || n.featureId}
-              </button>
+              </ToggleGroupItem>
             ))}
-          </div>
-          <p className="text-muted-foreground/50 mt-1 text-xs">
+          </ToggleGroup>
+          <p className="text-label-tertiary text-footnote mt-1">
             Click and drag on the map to paint territory into the selected neighbor.
           </p>
         </div>

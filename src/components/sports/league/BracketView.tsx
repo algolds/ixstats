@@ -5,6 +5,7 @@ import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { Medal, Tournament as Swords, Trophy } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
 
 interface BracketViewProps {
   brackets: Array<{
@@ -88,22 +89,21 @@ function BracketRounds({
 }) {
   return (
     <FacetCard
-      depth={2}
       className={cn(
-        "relative overflow-hidden rounded-3xl border border-border/40 bg-card/75 p-6 shadow-xl backdrop-blur-2xl md:p-8 space-y-6",
+        "rounded-sheet border-separator bg-surface shadow-card relative space-y-6 overflow-hidden border p-6 md:p-8",
         className
       )}
     >
-      <div className="flex items-center justify-between border-b border-border/20 pb-4">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/50 bg-background/60 text-foreground shadow-xs">
+      <div className="border-separator flex items-center justify-between border-b pb-4">
+        <div className="flex items-center gap-2">
+          <div className="rounded-row border-separator bg-surface-secondary text-label shadow-card flex h-9 w-9 items-center justify-center border">
             <Swords className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-base font-black tracking-tight text-foreground">
+            <h3 className="text-headline text-label">
               {title ? `${title} Championship Bracket` : "Championship Tournament Bracket"}
             </h3>
-            <p className="text-xs font-semibold text-muted-foreground">
+            <p className="text-footnote text-label-secondary font-semibold">
               Single-elimination knockout ladder with verified victor advancements.
             </p>
           </div>
@@ -119,14 +119,14 @@ function BracketRounds({
             <div key={round} className="space-y-3">
               <div className="flex items-center gap-2">
                 {isFinalRound ? (
-                  <Badge className="border-amber-500/40 bg-amber-500/20 px-2.5 py-0.5 text-xs font-black uppercase text-amber-400">
+                  <Badge className="border-yellow/40 bg-yellow/20 text-eyebrow text-yellow px-3 py-0.5">
                     <Trophy className="mr-1 h-3.5 w-3.5" />
                     Championship Final
                   </Badge>
                 ) : (
                   <Badge
                     variant="outline"
-                    className="border-border/60 bg-muted/30 px-2.5 py-0.5 text-xs font-bold uppercase text-foreground"
+                    className="border-separator bg-fill-4 text-eyebrow text-label px-3 py-0.5"
                   >
                     {round === 1
                       ? "First Round"
@@ -152,38 +152,37 @@ function BracketRounds({
                     <div
                       key={b.id}
                       className={cn(
-                        "flex items-center justify-between gap-3 rounded-2xl border border-border/40 bg-background/50 px-4 py-3.5 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.99]",
-                        isCompleted && "border-border/60 bg-background/70"
+                        "rounded-card border-separator bg-surface-secondary shadow-card flex items-center justify-between gap-3 border px-4 py-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.99]",
+                        isCompleted && "border-separator bg-surface-secondary"
                       )}
                     >
                       {/* Fighter 1 */}
-                      <div className="flex-1 min-w-0">
-                        <button
-                          type="button"
+                      <div className="min-w-0 flex-1">
+                        <Button
+                          variant="ghost"
                           onClick={() => onTeamClick?.(b.fighter1Id)}
                           disabled={!onTeamClick}
-                          data-cuelume-press="subtle"
                           className={cn(
-                            "text-left group truncate block w-full transition",
-                            onTeamClick && "hover:underline cursor-pointer active:scale-[0.98]"
+                            "group block h-auto w-full truncate p-0 text-left font-normal hover:bg-transparent disabled:opacity-100",
+                            onTeamClick && "hover:underline"
                           )}
                         >
                           <span
                             className={cn(
-                              "text-xs font-bold truncate block",
+                              "text-footnote block truncate font-semibold",
                               fighter1IsWinner
-                                ? "text-amber-400 font-extrabold"
+                                ? "text-yellow font-semibold"
                                 : isCompleted
-                                  ? "text-muted-foreground line-through opacity-70"
-                                  : "text-foreground group-hover:text-primary"
+                                  ? "text-label-secondary line-through opacity-70"
+                                  : "text-label group-hover:text-tint"
                             )}
                           >
                             {b.fighter1Name ?? b.fighter1Id}
                             {fighter1IsWinner && (
-                              <Medal className="ml-1 inline h-3.5 w-3.5 text-amber-400" />
+                              <Medal className="text-yellow ml-1 inline h-3.5 w-3.5" />
                             )}
                           </span>
-                        </button>
+                        </Button>
                       </div>
 
                       {/* Result Pill */}
@@ -191,10 +190,10 @@ function BracketRounds({
                         <Badge
                           variant="outline"
                           className={cn(
-                            "px-2 py-0.5 text-xs font-black uppercase tracking-wider",
+                            "text-eyebrow px-2 py-0.5",
                             isCompleted
-                              ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                              : "border-border/50 text-muted-foreground"
+                              ? "border-yellow/30 bg-yellow/10 text-yellow"
+                              : "border-separator text-label-secondary"
                           )}
                         >
                           {isCompleted ? resultText || "Won" : "vs"}
@@ -202,33 +201,32 @@ function BracketRounds({
                       </div>
 
                       {/* Fighter 2 */}
-                      <div className="flex-1 min-w-0 text-right">
-                        <button
-                          type="button"
+                      <div className="min-w-0 flex-1 text-right">
+                        <Button
+                          variant="ghost"
                           onClick={() => onTeamClick?.(b.fighter2Id)}
                           disabled={!onTeamClick}
-                          data-cuelume-press="subtle"
                           className={cn(
-                            "text-right group truncate block w-full transition",
-                            onTeamClick && "hover:underline cursor-pointer active:scale-[0.98]"
+                            "group block h-auto w-full truncate p-0 text-right font-normal hover:bg-transparent disabled:opacity-100",
+                            onTeamClick && "hover:underline"
                           )}
                         >
                           <span
                             className={cn(
-                              "text-xs font-bold truncate block",
+                              "text-footnote block truncate font-semibold",
                               fighter2IsWinner
-                                ? "text-amber-400 font-extrabold"
+                                ? "text-yellow font-semibold"
                                 : isCompleted
-                                  ? "text-muted-foreground line-through opacity-70"
-                                  : "text-foreground group-hover:text-primary"
+                                  ? "text-label-secondary line-through opacity-70"
+                                  : "text-label group-hover:text-tint"
                             )}
                           >
                             {fighter2IsWinner && (
-                              <Medal className="mr-1 inline h-3.5 w-3.5 text-amber-400" />
+                              <Medal className="text-yellow mr-1 inline h-3.5 w-3.5" />
                             )}
                             {b.fighter2Name ?? b.fighter2Id}
                           </span>
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   );

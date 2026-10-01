@@ -4,6 +4,9 @@ import React from "react";
 import { api } from "~/trpc/react";
 import { EyeClosed } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
+import { FacetCard } from "~/components/ui/facet-container";
 import { NationSwitcher } from "~/components/navigation/NationSwitcher";
 import { PassportHistoryTab } from "./tabs/PassportHistoryTab";
 import { PassportOverviewTab } from "./tabs/PassportOverviewTab";
@@ -17,8 +20,8 @@ const HISTORY_PAGE_SIZE = 50;
 function TabSkeleton() {
   return (
     <div className="space-y-4">
-      <Skeleton className="h-28 w-full rounded-3xl" />
-      <Skeleton className="h-28 w-full rounded-3xl" />
+      <Skeleton className="rounded-row h-28 w-full" />
+      <Skeleton className="rounded-row h-28 w-full" />
     </div>
   );
 }
@@ -34,14 +37,18 @@ export function HiddenSection({
   isOwner: boolean;
 }) {
   return (
-    <div className="space-y-2 rounded-3xl border border-black/8 bg-black/[0.015] p-10 text-center dark:border-white/10 dark:bg-white/[0.02]">
-      <EyeClosed className="text-muted-foreground mx-auto h-6 w-6" />
-      <p className="text-muted-foreground mx-auto max-w-md text-xs">
-        {isOwner
-          ? `You hide your ${what} from your passport. Change it on the back of your passport.`
-          : `@${handle} keeps their ${what} private.`}
-      </p>
-    </div>
+    <FacetCard variant="inset" padding="none">
+      <EmptyState
+        compact
+        icon={<EyeClosed />}
+        title={isOwner ? `Your ${what} is hidden` : "Private"}
+        message={
+          isOwner
+            ? `You hide your ${what} from your passport. Change it on the back of your passport.`
+            : `@${handle} keeps their ${what} private.`
+        }
+      />
+    </FacetCard>
   );
 }
 
@@ -51,9 +58,7 @@ function RealmsPanel({ handle, isOwner }: { handle: string; isOwner: boolean }) 
   return (
     <>
       {/* The owner's own nations across realms, to switch which one they play as. */}
-      {isOwner && (
-        <NationSwitcher className="mb-6 rounded-2xl border border-black/8 py-2 dark:border-white/10" />
-      )}
+      {isOwner && <NationSwitcher className="border-separator rounded-row mb-6 border py-2" />}
       <PassportRealmsTab realms={data ?? []} cleanUsername={handle} />
     </>
   );
@@ -87,15 +92,14 @@ function HistoryPanel({ handle, enabled }: { handle: string; enabled: boolean })
       <PassportHistoryTab history={history} cleanUsername={handle} />
       {enabled && hasNextPage && (
         <div className="flex justify-center">
-          <button
+          <Button
             type="button"
+            variant="gray"
             onClick={() => void fetchNextPage()}
             disabled={isFetchingNextPage}
-            data-cuelume-press="soft"
-            className="text-foreground inline-flex cursor-pointer items-center rounded-xl border border-black/10 px-4 py-2 text-xs font-semibold transition-[background-color,opacity,transform] hover:bg-black/[0.04] active:scale-[0.97] disabled:opacity-50 dark:border-white/15 dark:hover:bg-white/[0.05]"
           >
             {isFetchingNextPage ? "Loading…" : "Load older activity"}
-          </button>
+          </Button>
         </div>
       )}
     </div>

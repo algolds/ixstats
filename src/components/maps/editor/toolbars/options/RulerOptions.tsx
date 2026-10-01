@@ -22,16 +22,16 @@ export const RulerOptions = memo(function RulerOptions({
   return (
     <>
       <ToolLabel icon={Ruler} label="Ruler / Distance" />
-      <span className="text-muted-foreground text-xs">
+      <span className="text-label-secondary text-footnote">
         {pointsCount < 2 ? "Click on the map to place measurement points." : "Total distance:"}
       </span>
       {pointsCount >= 2 && (
         <>
-          <span className="font-mono text-xs font-semibold text-cyan-500">{metrics.km} km</span>
-          <span className="text-muted-foreground text-xs">
+          <span className="text-caption text-cyan font-semibold tabular-nums">{metrics.km} km</span>
+          <span className="text-label-secondary text-footnote">
             ({metrics.mi} mi / {metrics.nm} nm)
           </span>
-          <span className="text-muted-foreground text-xs">• {pointsCount} points</span>
+          <span className="text-label-secondary text-footnote">• {pointsCount} points</span>
         </>
       )}
       {pointsCount > 0 && onClearRuler && (

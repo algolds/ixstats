@@ -1,61 +1,55 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import React, { useId, useMemo, useState } from "react";
 import {
-  Calendar,
   KeyCommand as Command,
-  NavArrowRight,
-  CalendarRotate as CalendarClock,
-  WarningCircle as AlertCircle,
+  Archive,
+  Calendar,
+  Clock,
+  DoubleCheck,
+  Mail,
+  MailOpen,
+  TriangleFlag,
 } from "iconoir-react";
-import {
-  FacetCard,
-  FacetCardContent,
-  FacetCardHeader,
-  FacetContainer,
-} from "~/components/ui/facet-container";
+import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import type { FacetRowSwipeActions } from "~/components/ui/facet-list";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetTabs } from "~/components/ui/facet";
+import { EmptyState } from "~/components/ui/empty-state";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useIxTimeStore } from "~/stores/ixtime-store";
-import { getUpcomingEvents, formatRelativeIxDays } from "~/lib/statecraft/calendar";
 import {
-  type AgendaEvent,
+  type AgendaItem,
+  type AgendaMailbox,
+  type AgendaSourceElection,
+  type AgendaSourceIntent,
+  type AgendaSourceIssue,
   type ExecutiveAgendaProps,
-  AGENDA_CATEGORY_LABEL,
-  seasonFor,
-  getSeverityRank,
-  AgendaHorizonStrip,
+  type InboxView,
+  AGENDA_MAILBOX_LABEL,
   AgendaEventActionDialog,
+  SNOOZE_DAY_MS,
+  deriveAgendaItems,
+  formatInboxTime,
+  inMailbox,
+  useAgendaInbox,
 } from "./agenda";
 import { STATUS_TEXT } from "./status-tone";
+import { HUE_BADGE, hueAccentStyle } from "./domain-hue";
 
-interface StatecraftIntentItem {
-  id: string;
-  goal: string;
-  status?: string;
-  category?: string;
-  tier?: string;
-}
-
-interface StatecraftIssueItem {
-  id: string;
-  title: string;
-  description?: string;
-  severity?: string;
-  urgency?: number;
-  deadlineIxTime?: number | null;
-}
-
-type CategoryFilter = "all" | AgendaEvent["category"];
+const MAILBOXES: AgendaMailbox[] = ["all", "action", "issues", "directives", "elections"];
 
 /**
- * Executive agenda: a 7-day horizon of real items only — open national issues, active
- * directives, upcoming elections and issue deadlines. Nothing is scheduled for show; an
- * empty day says so and offers the next step.
+ * The executive agenda as an inbox: open national issues, active directives and upcoming
+ * elections, newest and most pressing first. Rows show the source, title, a one-line preview and
+ * a relative time ("2h ago") or deadline pressure ("Due soon", "Overdue") — never calendar
+ * dates. Items can be marked read or unread, snoozed for a day or a week, or marked done; that
+ * state lives in this browser per country (`ixstats:agenda-inbox:<countryId>`), and an item
+ * comes back when its underlying state changes. Nothing is invented: an empty inbox says so.
  */
 function ExecutiveAgendaComponent({
   countryId,
@@ -63,14 +57,14 @@ function ExecutiveAgendaComponent({
   onIssueDirective,
   onOpenIntent,
 }: ExecutiveAgendaProps): React.JSX.Element {
-  const [selectedDayOffset, setSelectedDayOffset] = useState<number>(0);
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
-  const [selectedEvent, setSelectedEvent] = useState<AgendaEvent | null>(null);
+  const [mailbox, setMailbox] = useState<AgendaMailbox>("all");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
+  const archivedId = useId();
 
-  // Real-time IxTime Store Telemetry
-  const now = useIxTimeStore((s) => Math.floor(s.ixTimeTimestamp / 15000) * 15000);
+  // IxTime "now", quantised so derivation does not re-run every tick.
+  const nowIxTime = useIxTimeStore((s) => Math.floor(s.ixTimeTimestamp / 60_000) * 60_000);
 
-  // Queries for statecraft telemetry & agenda context
   const intentTree = api.intent.getTree.useQuery({ countryId }, { enabled: !!countryId });
   const elections = api.elections.getElections.useQuery(
     { countryId: countryId ?? "" },
@@ -81,335 +75,382 @@ function ExecutiveAgendaComponent({
     { enabled: !!countryId, staleTime: 60_000 }
   );
 
+  // Weekly directive slots for the v2 header pill.
+  const status = api.intent.getStatus.useQuery({ countryId }, { enabled: !!countryId });
+
   const isLoading = intentTree.isLoading || issuesData.isLoading;
+  // Stored flags are only pruned against a complete, successful load.
+  const ready = intentTree.isSuccess && issuesData.isSuccess && elections.isSuccess;
 
-  const currentDate = useMemo(() => new Date(now), [now]);
-  const currentSeason = useMemo(() => seasonFor(currentDate.getUTCMonth()), [currentDate]);
-
-  // Generate 7-day interactive horizon dates
-  const days = useMemo(() => {
-    const today = new Date();
-    const result = [];
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() + i);
-      const dayName = d.toLocaleDateString(undefined, { weekday: "short" });
-      const dayNum = d.getDate();
-      result.push({
-        offset: i,
-        dayName: i === 0 ? "Today" : dayName,
-        dayNum,
-        isToday: i === 0,
-      });
-    }
-    return result;
-  }, []);
-
-  // Statecraft calendar: elections and issue deadlines
-  const statecraftEvents = useMemo(() => {
-    return getUpcomingEvents({
-      nowIxTime: now,
-      elections: (elections.data ?? []).map((e) => ({
-        id: e.id,
-        name: e.name,
-        scheduledIxTime: e.scheduledIxTime,
-        status: e.status,
-      })),
-      issueDeadlines: (issuesData.data?.issues ?? []).map((i) => ({
-        id: i.id,
-        title: i.title,
-        deadlineIxTime: (i as { deadlineIxTime?: number | null }).deadlineIxTime,
-      })),
-    });
-  }, [elections.data, issuesData.data, now]);
-
-  const events = useMemo<AgendaEvent[]>(() => {
-    const list: AgendaEvent[] = [];
-
-    // Active national issues awaiting executive action
-    const rawActiveIssues = (issuesData.data?.issues ?? []) as StatecraftIssueItem[];
-    const activeIssues = [...rawActiveIssues].sort((a, b) => {
-      const aScore = getSeverityRank(a.severity ?? "") * 100 + (a.urgency ?? 0);
-      const bScore = getSeverityRank(b.severity ?? "") * 100 + (b.urgency ?? 0);
-      return bScore - aScore;
-    });
-    activeIssues.forEach((iss) => {
-      const sev = String(iss.severity ?? "").toLowerCase();
-      const urgent = sev === "critical" || sev === "high" || (iss.urgency ?? 0) > 70;
-      list.push({
-        id: `issue-ev-${iss.id}`,
-        dayOffset: 0,
-        timeLabel: urgent ? "Urgent" : "Awaiting decision",
-        title: iss.title,
-        category: "politics",
-        description:
-          iss.description ||
-          "This national issue is waiting for your decision. Open the brief to weigh the options.",
-        directiveGoal: `Resolve national policy issue: ${iss.title}`,
-        statusLabel: urgent ? "Priority issue" : "Open issue",
-        icon: AlertCircle,
-        tone: urgent ? "critical" : "neutral",
-        priority: urgent ? 4 : 3,
-        drillKind: { kind: "issue", issueId: iss.id },
-      });
-    });
-
-    // Active executive directive rollouts
+  const items = useMemo<AgendaItem[]>(() => {
     const rawIntents = Array.isArray(intentTree.data)
       ? intentTree.data
       : (intentTree.data?.allIntents ?? []);
-    const intentsList = rawIntents as StatecraftIntentItem[];
-    intentsList
-      .filter((i) => i.status?.toLowerCase() === "active")
-      .forEach((it) => {
-        const tier = it.tier
-          ? `${it.tier.charAt(0).toUpperCase()}${it.tier.slice(1)} directive`
-          : "Directive";
-        list.push({
-          id: `intent-ev-${it.id}`,
-          dayOffset: 0,
-          timeLabel: "In progress",
-          title: it.goal,
-          category: "directive",
-          description: `Your government is carrying out this directive${it.category ? ` in ${it.category}` : ""}.`,
-          directiveGoal: `Accelerate directive rollout: ${it.goal}`,
-          statusLabel: tier,
-          icon: Command,
-          tone: "accent",
-          priority: 2,
-          intentId: it.id,
-        });
-      });
-
-    // Upcoming statecraft calendar events (elections, issue deadlines)
-    statecraftEvents.forEach((ev, idx) => {
-      const daysAhead = Math.max(0, Math.floor((ev.ixTime - now) / 86_400_000));
-      list.push({
-        id: `sc-ev-${ev.id || idx}`,
-        dayOffset: Math.min(6, daysAhead),
-        timeLabel: formatRelativeIxDays(ev.ixTime, now),
-        title: ev.label,
-        category: ev.section === "politics" ? "politics" : "directive",
-        description: `Scheduled on your ${ev.section} calendar.`,
-        directiveGoal: `Address scheduled statecraft event: ${ev.label}`,
-        statusLabel: "Scheduled",
-        icon: CalendarClock,
-        tone: "neutral",
-        priority: 1,
-        rawIxTime: ev.ixTime,
-      });
+    return deriveAgendaItems({
+      issues: (issuesData.data?.issues ?? []) as AgendaSourceIssue[],
+      intents: rawIntents as AgendaSourceIntent[],
+      elections: (elections.data ?? []) as AgendaSourceElection[],
+      nowIxTime,
     });
+  }, [intentTree.data, issuesData.data, elections.data, nowIxTime]);
 
-    return list;
-  }, [intentTree.data, statecraftEvents, now, issuesData.data]);
+  const inbox = useAgendaInbox(countryId, items, ready);
+  const inboxViews = useMemo(
+    () => inbox.views.filter((v) => v.placement === "inbox"),
+    [inbox.views]
+  );
+  const archivedViews = useMemo(
+    () => inbox.views.filter((v) => v.placement !== "inbox"),
+    [inbox.views]
+  );
+  const unread = inboxViews.filter((v) => !v.read);
 
-  // Only offer filters for categories that actually have items.
-  const filterOptions = useMemo(() => {
-    const present = new Set(events.map((e) => e.category));
-    return [
-      { id: "all" as CategoryFilter, label: "All" },
-      ...(Object.keys(AGENDA_CATEGORY_LABEL) as AgendaEvent["category"][])
-        .filter((c) => present.has(c))
-        .map((c) => ({ id: c as CategoryFilter, label: AGENDA_CATEGORY_LABEL[c] })),
-    ];
-  }, [events]);
+  // Mailboxes with items (All always); the control shows only when there is a choice.
+  const mailboxOptions = useMemo(
+    () =>
+      MAILBOXES.map((id) => ({
+        id,
+        count: inboxViews.filter((v) => inMailbox(v.item, id)).length,
+      })).filter((m) => m.id === "all" || m.count > 0),
+    [inboxViews]
+  );
+  const activeMailbox = mailboxOptions.some((m) => m.id === mailbox) ? mailbox : "all";
+  const visible = inboxViews.filter((v) => inMailbox(v.item, activeMailbox));
 
-  const activeFilter = filterOptions.some((o) => o.id === categoryFilter) ? categoryFilter : "all";
+  const openView = inbox.views.find((v) => v.item.id === openId) ?? null;
 
-  // Filter events by selected day & category, most pressing first
-  const filteredEvents = useMemo(() => {
-    return events
-      .filter(
-        (e) =>
-          e.dayOffset === selectedDayOffset &&
-          (activeFilter === "all" || e.category === activeFilter)
-      )
-      .sort((a, b) => b.priority - a.priority);
-  }, [events, selectedDayOffset, activeFilter]);
+  const open = (view: InboxView) => {
+    if (!view.read) inbox.setRead([view.item], true);
+    setOpenId(view.item.id);
+  };
 
-  const selectedDay = days.find((d) => d.offset === selectedDayOffset);
-  const dayLabel = selectedDay?.isToday
-    ? "today"
-    : `${selectedDay?.dayName} ${selectedDay?.dayNum}`;
+  // Swipe on touch or trackpad; Shift+F10 / the ContextMenu key on a focused row opens the same
+  // actions as a menu (SwipeableRow), and every action is also in the opened item.
+  const swipeFor = (view: InboxView): FacetRowSwipeActions => ({
+    leading: [
+      {
+        id: "read",
+        icon: view.read ? Mail : MailOpen,
+        label: view.read ? "Unread" : "Read",
+        "aria-label": view.read ? "Mark as unread" : "Mark as read",
+        color: "blue",
+        onClick: () => inbox.setRead([view.item], !view.read),
+      },
+    ],
+    trailing: [
+      {
+        id: "snooze",
+        icon: Clock,
+        label: "Snooze",
+        "aria-label": "Snooze for a day",
+        color: "amber",
+        onClick: () => inbox.snooze(view.item, SNOOZE_DAY_MS),
+      },
+      {
+        id: "done",
+        icon: Archive,
+        label: "Done",
+        color: "green",
+        onClick: () => inbox.markDone(view.item),
+      },
+    ],
+    trailingCommit: {
+      label: "Done",
+      icon: Archive,
+      action: () => inbox.markDone(view.item),
+    },
+  });
 
   return (
     <>
       <FacetCard
         id="executive-agenda"
-        depth={2}
-        interactive="none"
         role="region"
         aria-labelledby="executive-agenda-title"
-        className="rounded-3xl"
+        className="rounded-card"
       >
-        <FacetCardHeader className="gap-0.5 p-4 pb-0 sm:p-5 sm:pb-0">
-          <h2
-            id="executive-agenda-title"
-            className="text-foreground text-base font-semibold tracking-tight"
-          >
-            Agenda
-          </h2>
-          <p className="text-muted-foreground text-xs">
-            {currentSeason.name} · the next seven days
-          </p>
+        <FacetCardHeader className="flex-row flex-wrap items-start justify-between gap-x-3 gap-y-2 p-4 pb-0 sm:p-5 sm:pb-0">
+          {/* v2 header (c5c6b382): the calendar badge in the agenda's cyan */}
+          <div className="flex min-w-0 items-center gap-3">
+            <span
+              aria-hidden="true"
+              style={hueAccentStyle("cyan")}
+              className={cn(
+                "flex size-9 shrink-0 items-center justify-center rounded-xl border",
+                HUE_BADGE
+              )}
+            >
+              <Calendar className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <h2
+                id="executive-agenda-title"
+                className="text-label text-title-3 flex items-center gap-2"
+              >
+                Agenda
+                {unread.length > 0 ? (
+                  <Badge
+                    variant="tinted"
+                    className="font-data tabular-nums"
+                    data-testid="agenda-unread-count"
+                  >
+                    {unread.length}
+                    <span className="sr-only"> unread</span>
+                  </Badge>
+                ) : null}
+              </h2>
+              <p className="text-label-secondary text-footnote">
+                Issues, directives and elections waiting on you
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {status.data ? (
+              /* v2 directives capacity pill: gold, mono figures */
+              <span className="border-tint/30 bg-tint/10 text-footnote inline-flex items-center gap-2 rounded-full border px-3 py-1">
+                <Command aria-hidden="true" className="text-tint size-3.5" />
+                <span className="text-label-secondary">Directives</span>
+                <span className="text-label font-data font-semibold tabular-nums">
+                  {status.data.usedThisWeek}/{status.data.cap}
+                </span>
+                <span className="sr-only"> used this week</span>
+              </span>
+            ) : null}
+            {unread.length > 0 ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  inbox.setRead(
+                    unread.map((v) => v.item),
+                    true
+                  )
+                }
+              >
+                <DoubleCheck aria-hidden="true" />
+                Mark all as read
+              </Button>
+            ) : null}
+          </div>
         </FacetCardHeader>
 
-        <FacetCardContent className="flex flex-col gap-4 p-4 sm:p-5">
-          <AgendaHorizonStrip
-            days={days}
-            selectedDayOffset={selectedDayOffset}
-            onSelectDayOffset={setSelectedDayOffset}
-            events={events}
-          />
-
-          {filterOptions.length > 2 && (
-            <div
-              role="group"
-              aria-label="Filter agenda"
-              className="max-w-full scrollbar-none self-start overflow-x-auto"
-            >
-              <FacetTabs
+        <FacetCardContent className="flex flex-col gap-3 p-4 sm:p-5">
+          {mailboxOptions.length > 1 ? (
+            <div className="-mx-1 max-w-full scrollbar-none overflow-x-auto px-1">
+              <SegmentedControl
                 size="sm"
-                tone="neutral"
-                className="w-max"
-                activeTab={activeFilter}
-                onChange={(id) => setCategoryFilter(id as CategoryFilter)}
-                tabs={filterOptions.map((opt) => ({
-                  id: opt.id,
-                  className: "shrink-0",
+                aria-label="Mailbox"
+                value={activeMailbox}
+                onValueChange={(v) => setMailbox(v)}
+                options={mailboxOptions.map(({ id, count }) => ({
+                  value: id,
+                  "aria-label": `${AGENDA_MAILBOX_LABEL[id]}, ${count} item${count === 1 ? "" : "s"}`,
                   label: (
                     <>
-                      {opt.label}
-                      {opt.id === activeFilter ? (
-                        <span className="sr-only"> (selected)</span>
-                      ) : null}
+                      {AGENDA_MAILBOX_LABEL[id]}
+                      <span aria-hidden="true" className="text-label-secondary tabular-nums">
+                        {count}
+                      </span>
                     </>
                   ),
                 }))}
               />
             </div>
-          )}
+          ) : null}
 
           {isLoading ? (
-            <FacetContainer
-              depth={3}
-              surface="solid"
-              className="divide-border divide-y overflow-hidden rounded-2xl"
-              aria-busy="true"
-              aria-label="Loading agenda"
-            >
+            <div className="flex flex-col" aria-busy="true" aria-label="Loading agenda">
               {[0, 1, 2].map((i) => (
-                <div key={i} className="flex min-h-16 items-center gap-3 px-3 py-2.5">
-                  <Skeleton className="size-4 shrink-0 rounded" />
-                  <div className="flex-1 space-y-1.5">
+                <div key={i} className="flex min-h-16 items-center gap-3 py-2">
+                  <Skeleton className="size-4 shrink-0 rounded-xs" />
+                  <div className="flex-1 space-y-2">
                     <Skeleton className="h-3.5 w-3/5" />
-                    <Skeleton className="h-3 w-2/5" />
+                    <Skeleton className="h-3 w-4/5" />
                   </div>
+                  <Skeleton className="h-3 w-10" />
                 </div>
               ))}
-            </FacetContainer>
-          ) : filteredEvents.length > 0 ? (
-            <FacetContainer
-              depth={3}
-              surface="solid"
-              className="max-h-[420px] overflow-y-auto rounded-2xl"
-            >
-              <ul aria-label={`Agenda for ${dayLabel}`} className="divide-border divide-y">
-                <AnimatePresence initial={false}>
-                  {filteredEvents.map((item) => (
-                    <motion.li
-                      key={item.id}
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, transition: { duration: 0.12 } }}
-                      transition={{ duration: 0.18, ease: "easeOut" }}
-                    >
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => setSelectedEvent(item)}
-                        className="group h-auto min-h-16 w-full justify-start gap-3 rounded-none px-3 py-2.5 text-left font-normal whitespace-normal focus-visible:ring-inset active:scale-100"
-                      >
-                        <item.icon
-                          aria-hidden="true"
-                          className={cn("size-4 shrink-0", STATUS_TEXT[item.tone])}
-                        />
-                        <span className="flex min-w-0 flex-1 flex-col">
-                          <span className="text-foreground line-clamp-1 text-sm font-medium">
-                            {item.title}
-                          </span>
-                          <span className="flex items-center gap-1.5 text-xs">
-                            <span className={cn("font-medium", STATUS_TEXT[item.tone])}>
-                              {item.statusLabel}
-                            </span>
-                            <span className="text-muted-foreground/60" aria-hidden="true">
-                              ·
-                            </span>
-                            <span className="text-muted-foreground tabular-nums">
-                              {item.timeLabel}
-                            </span>
-                          </span>
-                        </span>
-                        <NavArrowRight
-                          aria-hidden="true"
-                          className="text-muted-foreground/60 group-hover:text-muted-foreground shrink-0"
-                        />
-                      </Button>
-                    </motion.li>
-                  ))}
-                </AnimatePresence>
-              </ul>
-            </FacetContainer>
+            </div>
+          ) : visible.length > 0 ? (
+            <FacetList variant="plain" className="max-h-[420px] overflow-y-auto">
+              <FacetListSection aria-label={`${AGENDA_MAILBOX_LABEL[activeMailbox]} inbox`}>
+                {visible.map((view) => (
+                  <InboxRow
+                    key={view.item.id}
+                    view={view}
+                    nowMs={inbox.nowMs}
+                    onOpen={() => open(view)}
+                    swipeActions={swipeFor(view)}
+                  />
+                ))}
+              </FacetListSection>
+            </FacetList>
           ) : (
-            <FacetContainer
-              depth={3}
-              surface="solid"
-              className="flex flex-col items-center rounded-2xl px-6 py-8 text-center"
-            >
-              <Calendar aria-hidden="true" className="text-muted-foreground mb-3 size-8" />
-              <p className="text-foreground text-sm font-semibold">
-                {activeFilter === "all"
-                  ? `Nothing on the agenda ${selectedDay?.isToday ? "today" : `for ${dayLabel}`}`
-                  : `No ${AGENDA_CATEGORY_LABEL[activeFilter].toLowerCase()} ${selectedDay?.isToday ? "today" : `on ${dayLabel}`}`}
-              </p>
-              <p className="text-muted-foreground mt-1 max-w-sm text-xs leading-relaxed">
-                Open issues, active directives, elections and issue deadlines appear here. Set your
-                government&apos;s next priority with a directive.
-              </p>
-              <div className="mt-4 flex flex-wrap justify-center gap-2">
-                {activeFilter !== "all" ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => setCategoryFilter("all")}
-                  >
-                    Show everything
-                  </Button>
-                ) : null}
-                <Button
-                  type="button"
-                  variant="secondary"
-                  data-cuelume-press="bloom"
-                  onClick={() => onIssueDirective?.()}
-                >
+            <EmptyState
+              compact
+              icon={<MailOpen />}
+              title="Inbox zero"
+              message={
+                items.length === 0
+                  ? "Open issues, active directives and upcoming elections land here. Set your government's next priority with a directive."
+                  : "You're on top of everything. Snoozed items come back on their own, and anything that changes returns here."
+              }
+              action={
+                <Button type="button" variant="secondary" onClick={() => onIssueDirective?.()}>
                   <Command aria-hidden="true" />
                   Declare Directive
                 </Button>
-              </div>
-            </FacetContainer>
+              }
+            />
           )}
+
+          {archivedViews.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              <Button
+                type="button"
+                variant="plain"
+                size="sm"
+                aria-expanded={showArchived}
+                aria-controls={archivedId}
+                onClick={() => setShowArchived((v) => !v)}
+                className="self-start px-0 hover:bg-transparent"
+              >
+                {showArchived ? "Hide snoozed and done" : describeArchived(archivedViews)}
+              </Button>
+              {showArchived ? (
+                <FacetList variant="plain" id={archivedId}>
+                  <FacetListSection aria-label="Snoozed and done">
+                    {archivedViews.map((view) => (
+                      <InboxRow
+                        key={view.item.id}
+                        view={view}
+                        nowMs={inbox.nowMs}
+                        onOpen={() => setOpenId(view.item.id)}
+                      />
+                    ))}
+                  </FacetListSection>
+                </FacetList>
+              ) : null}
+            </div>
+          ) : null}
         </FacetCardContent>
       </FacetCard>
 
-      {/* Quick Action Resolution Dialog */}
       <AgendaEventActionDialog
-        selectedEvent={selectedEvent}
-        onClose={() => setSelectedEvent(null)}
+        selectedEvent={openView?.item ?? null}
+        placement={openView?.placement}
+        nowMs={inbox.nowMs}
+        onClose={() => setOpenId(null)}
         onIssueDirective={onIssueDirective}
         onOpenDrill={onOpenDrill}
         onOpenIntent={onOpenIntent}
+        onMarkUnread={(item) => inbox.setRead([item], false)}
+        onMarkDone={inbox.markDone}
+        onSnooze={inbox.snooze}
+        onMoveToInbox={inbox.moveToInbox}
       />
     </>
+  );
+}
+
+function describeArchived(views: InboxView[]): string {
+  const snoozed = views.filter((v) => v.placement === "snoozed").length;
+  const done = views.length - snoozed;
+  return `Show ${[snoozed ? `${snoozed} snoozed` : null, done ? `${done} done` : null]
+    .filter(Boolean)
+    .join(" and ")}`;
+}
+
+/** One inbox row: unread dot + source glyph, title (bold when unread), preview, relative time. */
+function InboxRow({
+  view,
+  nowMs,
+  onOpen,
+  swipeActions,
+}: {
+  view: InboxView;
+  nowMs: number;
+  onOpen: () => void;
+  swipeActions?: FacetRowSwipeActions;
+}) {
+  const { item, read, placement } = view;
+  const unread = !read && placement === "inbox";
+  const Icon = item.icon;
+  const time =
+    placement === "snoozed"
+      ? "Snoozed"
+      : placement === "done"
+        ? "Done"
+        : formatInboxTime(item, nowMs);
+  const pressing =
+    placement === "inbox" && (item.urgency === "overdue" || item.urgency === "due-soon");
+
+  return (
+    <FacetRow
+      onClick={onOpen}
+      className="pl-0"
+      swipeActions={swipeActions}
+      leading={
+        <span className="flex items-center gap-2">
+          <span
+            aria-hidden="true"
+            data-slot="unread-dot"
+            className={cn("size-2 shrink-0 rounded-full", unread ? "bg-tint" : "bg-transparent")}
+          />
+          <Icon aria-hidden="true" className={cn("size-4 shrink-0", STATUS_TEXT[item.tone])} />
+        </span>
+      }
+      title={
+        <span className="flex min-w-0 items-center gap-2">
+          {unread ? <span className="sr-only">Unread: </span> : null}
+          <span
+            className={cn(
+              "line-clamp-1 min-w-0",
+              unread ? "text-label font-semibold" : "text-label font-normal",
+              placement !== "inbox" && "text-label-secondary"
+            )}
+          >
+            {item.title}
+          </span>
+          {item.flagged && placement === "inbox" ? (
+            <TriangleFlag
+              role="img"
+              aria-label="Needs action"
+              className={cn(
+                "size-3.5 shrink-0",
+                item.tone === "warning" ? STATUS_TEXT.warning : "text-destructive"
+              )}
+            />
+          ) : null}
+        </span>
+      }
+      subtitle={
+        <span className="line-clamp-1">
+          <span className={cn("font-medium", STATUS_TEXT[item.tone])}>{item.statusLabel}</span>
+          <span aria-hidden="true"> · </span>
+          <span className="sr-only">. </span>
+          {item.preview}
+        </span>
+      }
+      trailing={
+        time ? (
+          <span
+            className={cn(
+              "text-footnote tabular-nums",
+              pressing
+                ? cn(
+                    "font-medium",
+                    item.urgency === "overdue" ? "text-destructive" : STATUS_TEXT.warning
+                  )
+                : "text-label-secondary"
+            )}
+          >
+            {time}
+          </span>
+        ) : undefined
+      }
+    />
   );
 }
 

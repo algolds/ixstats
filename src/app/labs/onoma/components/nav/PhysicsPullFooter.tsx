@@ -7,6 +7,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
+import { springSmooth } from "~/lib/design/motion";
 
 interface PhysicsPullFooterProps {
   children: React.ReactNode;
@@ -83,37 +84,23 @@ export function PhysicsPullFooter({ children }: PhysicsPullFooterProps) {
   }, [shouldReduceMotion]);
 
   if (shouldReduceMotion) {
-    return (
-      <div className="relative mx-auto mt-14 w-full max-w-[1720px] px-1 sm:px-3 lg:px-5">
-        {children}
-      </div>
-    );
+    return <div className="relative mx-auto mt-14 w-full max-w-7xl">{children}</div>;
   }
 
   return (
     /* Unified DOM Grid-Fraction Expansion: 0fr at rest -> 1fr on reveal */
     <div
       className={cn(
-        "relative mx-auto grid w-full max-w-[1720px] px-1 transition-[grid-template-rows,margin-top,opacity] duration-450 will-change-[grid-template-rows,margin-top,opacity] sm:px-3 lg:px-5",
+        "relative mx-auto grid w-full max-w-7xl transition-[grid-template-rows,margin-top,opacity] duration-300 will-change-[grid-template-rows,margin-top,opacity]",
         isRevealed
-          ? "pointer-events-auto mt-14 grid-rows-[1fr] opacity-100 ease-[cubic-bezier(0.16,1,0.3,1)]"
-          : "pointer-events-none mt-0 grid-rows-[0fr] opacity-0 ease-[cubic-bezier(0.23,1,0.32,1)]"
+          ? "ease-out-facet pointer-events-auto mt-14 grid-rows-[1fr] opacity-100"
+          : "ease-out-facet pointer-events-none mt-0 grid-rows-[0fr] opacity-0"
       )}
     >
       <div className="min-h-0 overflow-hidden">
-        {/* Subtle feathered gradient transition from canvas */}
-        <div className="via-background/40 to-background/90 pointer-events-none absolute inset-x-0 -top-12 h-16 bg-gradient-to-b from-transparent" />
-
         <motion.div
-          animate={
-            isRevealed
-              ? { y: 0, scale: 1, filter: "blur(0px)" }
-              : { y: 16, scale: 0.985, filter: "blur(4px)" }
-          }
-          transition={{
-            duration: 0.45,
-            ease: [0.16, 1, 0.3, 1], // Apple fluid interface curve
-          }}
+          animate={isRevealed ? { y: 0, opacity: 1 } : { y: 16, opacity: 0 }}
+          transition={springSmooth}
           className="will-change-transform"
         >
           {children}

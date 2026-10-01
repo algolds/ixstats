@@ -259,10 +259,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
   };
 
   return (
-    <FacetCard
-      depth={2}
-      className="border-border bg-card/70 text-card-foreground space-y-6 rounded-2xl border p-6 shadow-xl backdrop-blur-xl"
-    >
+    <FacetCard className="space-y-6 p-6">
       <CardExplorerBatchBar
         total={total}
         loadedCount={cards.length}

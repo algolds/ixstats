@@ -9,6 +9,9 @@ import type { CountryCardData } from "~/components/mycountry/dossier/CountryFocu
 import { useBulkFlagCache } from "~/hooks/useUnifiedFlags";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
+import { WarningTriangle } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 
 export default function CountriesPage() {
   usePageTitle({ title: "Countries" });
@@ -85,17 +88,13 @@ export default function CountriesPage() {
 
   if (error) {
     return (
-      <div className="bg-background text-foreground flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-destructive mb-4 text-2xl font-bold">Error Loading Countries</h1>
-          <p className="text-muted-foreground">{error.message}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground mt-4 rounded-lg px-6 py-3 font-medium transition-colors"
-          >
-            Reload Page
-          </button>
-        </div>
+      <div className="bg-background text-label flex min-h-screen items-center justify-center px-4">
+        <EmptyState
+          icon={<WarningTriangle className="text-destructive" />}
+          title="Error Loading Countries"
+          message={error.message}
+          action={<Button onClick={() => window.location.reload()}>Reload Page</Button>}
+        />
       </div>
     );
   }

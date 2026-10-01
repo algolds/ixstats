@@ -13,18 +13,27 @@ import {
   OpenNewWindow as ExternalLink,
   Refresh as RefreshCw,
   Search,
-  SoundHigh as Volume2,
   Star,
   Shop,
   Xmark as X,
 } from "iconoir-react";
-import { FacetMaterial } from "~/components/ui/facet";
 import { LanguagePackCard, type LanguagePack } from "../shared/LanguagePackCard";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
+import { FacetCard } from "~/components/ui/facet-container";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 const FAMILIES = [
   { value: "any", label: "All Language Families" },
@@ -120,10 +129,10 @@ export function LanguagePacksSection({
   return (
     <div className="space-y-6">
       {/* Header & Vault Bridge Banner */}
-      <div className="border-border/40 flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="border-separator flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <h2 className="text-foreground text-xl font-bold tracking-tight">Community Packs</h2>
-          <p className="text-muted-foreground mt-0.5 text-xs">
+          <h2 className="text-label text-title-2 font-bold">Community Packs</h2>
+          <p className="text-label-secondary text-footnote mt-0.5">
             Discover, inspect, and fork community conlang models, phonological rule sets, and seed
             dictionaries.
           </p>
@@ -132,47 +141,50 @@ export function LanguagePacksSection({
         {/* IxVault Platform Marketplace Bridge Link */}
         <Link
           href="/vault/marketplace?tab=store"
-          className="group border-border/50 bg-secondary/20 hover:bg-secondary/35 flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold backdrop-blur-md transition-all active:scale-95"
+          className="group border-separator bg-fill-4 hover:bg-fill-3 rounded-row text-footnote flex shrink-0 items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
         >
-          <Shop className="h-4 w-4 text-amber-500" />
-          <span className="text-foreground">Browse on IxVault</span>
-          <ExternalLink className="text-muted-foreground h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          <Shop className="text-yellow h-4 w-4" />
+          <span className="text-label">Browse on IxVault</span>
+          <ExternalLink className="text-label-secondary h-3 w-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </Link>
       </div>
 
       {/* Toolbar: Search, Filters & Refresh */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="text-muted-foreground absolute top-2.5 left-3 h-4 w-4" />
-          <input
+          <Search className="text-label-secondary absolute top-2 left-3 h-4 w-4" />
+          <Input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search language packs by name, culture, or tags..."
-            className="bg-background/80 border-border/60 text-foreground placeholder:text-muted-foreground/60 focus:border-onoma-primary/60 w-full rounded-xl border py-2 pr-4 pl-9 text-xs font-medium backdrop-blur-md focus:outline-none"
+            className="text-footnote w-full pr-4 pl-9 font-medium"
           />
         </div>
 
-        <select
-          value={familyFilter}
-          onChange={(e) => setFamilyFilter(e.target.value)}
-          className="bg-background/80 border-border/60 text-foreground focus:border-onoma-primary/60 cursor-pointer rounded-xl border px-3 py-2 text-xs font-medium backdrop-blur-md focus:outline-none"
-        >
-          {FAMILIES.map((fam) => (
-            <option key={fam.value} value={fam.value}>
-              {fam.label}
-            </option>
-          ))}
-        </select>
+        <Select value={familyFilter} onValueChange={(v) => setFamilyFilter(v)}>
+          <SelectTrigger size="sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {FAMILIES.map((fam) => (
+              <SelectItem key={fam.value} value={fam.value}>
+                {fam.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        <button
+        <Button
+          variant="bordered"
+          size="sm"
           type="button"
           onClick={() => refetch()}
-          className="border-border/60 bg-secondary/20 hover:bg-secondary/40 text-foreground flex cursor-pointer items-center justify-center rounded-xl border p-2 text-xs transition-all active:scale-95"
+          className="justify-center"
           title="Refresh Language Packs"
         >
           <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-        </button>
+        </Button>
       </div>
 
       {/* Main Grid: Card Gallery on Left + Detail Drawer on Right if Selected */}
@@ -181,23 +193,20 @@ export function LanguagePacksSection({
         <div className={activePack ? "space-y-4 lg:col-span-7" : "space-y-4 lg:col-span-12"}>
           {isLoading ? (
             <div className="flex h-64 items-center justify-center">
-              <RefreshCw className="text-muted-foreground text-onoma-primary h-6 w-6 animate-spin" />
+              <RefreshCw className="text-label-secondary text-tint h-6 w-6 animate-spin" />
             </div>
           ) : !marketplaceData?.packs || marketplaceData.packs.length === 0 ? (
-            <FacetMaterial
-              material="satin"
-              className="border-border/30 rounded-2xl border p-12 text-center"
-            >
-              <BookmarkBook className="text-muted-foreground text-onoma-primary mx-auto mb-3 h-12 w-12 opacity-30" />
-              <h4 className="text-foreground text-sm font-bold">No Language Packs Found</h4>
-              <p className="text-muted-foreground mt-1 text-xs">
+            <FacetCard variant="inset" padding="none" className="p-12 text-center">
+              <BookmarkBook className="text-label-secondary text-tint mx-auto mb-3 h-12 w-12 opacity-30" />
+              <h4 className="text-label text-body font-semibold">No Language Packs Found</h4>
+              <p className="text-label-secondary text-footnote mt-1">
                 Try adjusting your search terms or language family filters.
               </p>
-            </FacetMaterial>
+            </FacetCard>
           ) : (
             <div
               className={cn(
-                "grid gap-4.5",
+                "grid gap-5",
                 activePack
                   ? "grid-cols-1 sm:grid-cols-2"
                   : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
@@ -241,93 +250,68 @@ export function LanguagePacksSection({
 
         {/* Detailed Inspection Drawer */}
         {activePack && (
-          <div className="sticky top-20 space-y-4 lg:col-span-5">
-            <FacetMaterial
-              material="satin"
-              className="border-border/40 space-y-4 rounded-2xl border p-5 shadow-xl backdrop-blur-xl"
-            >
+          <div className="sticky top-(--shell-top-offset) space-y-4 lg:col-span-5">
+            <FacetCard variant="inset" padding="none" className="space-y-4 p-5">
               {/* Drawer Header */}
-              <div className="border-border/30 flex items-start justify-between border-b pb-3">
+              <div className="border-separator flex items-start justify-between border-b pb-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-foreground text-base font-extrabold">{activePack.name}</h3>
-                    <Badge variant="outline" className="font-mono text-[9px] uppercase">
+                    <h3 className="text-label text-body font-semibold">{activePack.name}</h3>
+                    <Badge variant="outline" className="text-eyebrow font-mono">
                       {activePack.culturalFamily || "General"}
                     </Badge>
                   </div>
-                  <p className="text-muted-foreground mt-0.5 text-xs">by @Community Creator</p>
+                  <p className="text-label-secondary text-footnote mt-0.5">by @Community Creator</p>
                 </div>
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   onClick={() => setSelectedPackId(null)}
-                  className="text-muted-foreground hover:text-foreground hover:bg-secondary/40 cursor-pointer rounded-lg p-1 transition-colors"
                   title="Close Inspector"
+                  aria-label="Close Inspector"
+                  className="text-label-secondary hover:text-label"
                 >
                   <X className="h-4 w-4" />
-                </button>
+                </Button>
               </div>
 
               {/* Sub-tabs Segmented Switcher */}
-              <div className="bg-secondary/20 border-border/40 grid grid-cols-3 gap-1 rounded-xl border p-1 text-center text-xs font-semibold">
-                <button
-                  type="button"
-                  onClick={() => setActiveSubTab("rules")}
-                  className={cn(
-                    "cursor-pointer rounded-lg py-1.5 transition-all",
-                    activeSubTab === "rules"
-                      ? "bg-background text-foreground border-border/40 border font-bold shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Rules
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveSubTab("lexicon")}
-                  className={cn(
-                    "cursor-pointer rounded-lg py-1.5 transition-all",
-                    activeSubTab === "lexicon"
-                      ? "bg-background text-foreground border-border/40 border font-bold shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Lexicon
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveSubTab("reviews")}
-                  className={cn(
-                    "cursor-pointer rounded-lg py-1.5 transition-all",
-                    activeSubTab === "reviews"
-                      ? "bg-background text-foreground border-border/40 border font-bold shadow-xs"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  Reviews ({activePack.ratingCount})
-                </button>
-              </div>
+              <SegmentedControl
+                size="sm"
+                fullWidth
+                asTabs
+                aria-label="Pack inspector section"
+                value={activeSubTab}
+                onValueChange={setActiveSubTab}
+                options={[
+                  { value: "rules", label: "Rules" },
+                  { value: "lexicon", label: "Lexicon" },
+                  {
+                    value: "reviews",
+                    label: "Reviews",
+                    badge: activePack.ratingCount,
+                    badgeLabel: `${activePack.ratingCount} reviews`,
+                  },
+                ]}
+              />
 
               {/* Tab 1: Rules & Phonology */}
               {activeSubTab === "rules" && (
-                <div className="space-y-3 text-xs">
-                  <p className="text-muted-foreground leading-relaxed">
+                <div className="text-footnote space-y-3">
+                  <p className="text-label-secondary leading-relaxed">
                     {activePack.description || "No extended documentation provided."}
                   </p>
 
-                  <div className="bg-background/60 border-border/40 space-y-2 rounded-xl border p-3 font-mono">
-                    <div className="text-foreground text-[10px] font-bold uppercase">
-                      Phonological Constraints
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="bg-surface border-separator rounded-row space-y-2 border p-3 font-mono">
+                    <div className="text-label text-eyebrow">Phonological Constraints</div>
+                    <div className="text-caption grid grid-cols-2 gap-2">
                       <div>
-                        <span className="text-muted-foreground">Family: </span>
-                        <span className="text-foreground capitalize">
-                          {activePack.culturalFamily}
-                        </span>
+                        <span className="text-label-secondary">Family: </span>
+                        <span className="text-label capitalize">{activePack.culturalFamily}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Forks: </span>
-                        <span className="text-foreground">{activePack.forkCount}</span>
+                        <span className="text-label-secondary">Forks: </span>
+                        <span className="text-label">{activePack.forkCount}</span>
                       </div>
                     </div>
                   </div>
@@ -336,9 +320,9 @@ export function LanguagePacksSection({
                     type="button"
                     onClick={() => handleFork(activePack as LanguagePack)}
                     disabled={forkMutation.isPending}
-                    className="bg-onoma-primary hover:bg-onoma-primary-light h-9 w-full cursor-pointer rounded-xl font-bold text-white shadow-md transition-all active:scale-[0.97]"
+                    className="bg-tint hover:bg-tint-hover rounded-row text-on-tint shadow-card h-9 w-full cursor-pointer font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
                   >
-                    <GitFork className="mr-1.5 h-4 w-4" />
+                    <GitFork className="mr-2 h-4 w-4" />
                     <span>Fork Pack to My Studio</span>
                   </Button>
                 </div>
@@ -346,11 +330,11 @@ export function LanguagePacksSection({
 
               {/* Tab 2: Sample Lexicon */}
               {activeSubTab === "lexicon" && (
-                <div className="space-y-3 text-xs">
-                  <p className="text-muted-foreground">
+                <div className="text-footnote space-y-3">
+                  <p className="text-label-secondary">
                     Seed dictionary vocabulary provided with this language pack:
                   </p>
-                  <div className="bg-background/60 border-border/40 text-foreground max-h-48 overflow-y-auto rounded-xl border p-3 font-mono text-[11px] leading-relaxed">
+                  <div className="bg-surface border-separator text-label rounded-row text-caption max-h-48 overflow-y-auto border p-3 font-mono leading-relaxed">
                     {(() => {
                       const packObj = activePack as { lexiconSeed?: unknown };
                       return Array.isArray(packObj.lexiconSeed) && packObj.lexiconSeed.length > 0
@@ -363,39 +347,44 @@ export function LanguagePacksSection({
 
               {/* Tab 3: Reviews */}
               {activeSubTab === "reviews" && (
-                <div className="space-y-3.5 text-xs">
+                <div className="text-footnote space-y-4">
                   {/* Rating input */}
-                  <div className="bg-background/60 border-border/40 space-y-2.5 rounded-xl border p-3">
-                    <label className="text-foreground block font-bold">
+                  <div className="bg-surface border-separator rounded-row space-y-2 border p-3">
+                    <label className="text-label block font-semibold">
                       Leave a Community Rating
                     </label>
-                    <div className="flex items-center gap-1.5">
+                    <div role="radiogroup" aria-label="Rating" className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
-                        <button
+                        <Button
                           key={star}
-                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          role="radio"
+                          aria-checked={reviewRating === star}
+                          aria-label={`${star} star${star === 1 ? "" : "s"}`}
                           onClick={() => setReviewRating(star)}
-                          className="cursor-pointer text-base transition-transform active:scale-110"
                         >
                           <Star
                             className={cn(
                               "h-4 w-4",
-                              star <= reviewRating ? "fill-amber-400 text-amber-400" : "text-border"
+                              star <= reviewRating
+                                ? "fill-yellow text-yellow"
+                                : "text-label-quaternary"
                             )}
                           />
-                        </button>
+                        </Button>
                       ))}
-                      <span className="ml-2 font-mono font-bold text-amber-500">
+                      <span className="text-yellow ml-2 font-mono font-semibold">
                         {reviewRating}.0 / 5.0
                       </span>
                     </div>
 
-                    <textarea
+                    <Textarea
                       value={reviewComment}
                       onChange={(e) => setReviewComment(e.target.value)}
                       placeholder="Optional feedback about this language pack..."
                       rows={2}
-                      className="border-border/60 bg-secondary/15 text-foreground placeholder:text-muted-foreground/60 focus:border-onoma-primary/60 w-full resize-none rounded-lg border p-2 text-xs focus:outline-none"
+                      className="text-footnote w-full resize-none"
                     />
 
                     <Button
@@ -403,14 +392,14 @@ export function LanguagePacksSection({
                       size="sm"
                       onClick={() => handleSubmitReview(activePack.id)}
                       disabled={rateMutation.isPending}
-                      className="bg-secondary text-foreground hover:bg-secondary/80 border-border/50 h-8 w-full rounded-lg border font-semibold"
+                      className="bg-fill-2 text-label hover:bg-fill-2 border-separator rounded-control h-8 w-full border font-semibold"
                     >
                       Submit Rating
                     </Button>
                   </div>
                 </div>
               )}
-            </FacetMaterial>
+            </FacetCard>
           </div>
         )}
       </div>

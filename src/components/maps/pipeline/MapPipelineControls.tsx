@@ -2,6 +2,11 @@
 
 import React, { useState } from "react";
 import { Play, Refresh as RefreshCw, Component as Layers, Compass } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Slider } from "~/components/ui/slider";
+import { Checkbox } from "~/components/ui/checkbox";
 
 export interface MapGenConfig {
   seed: number;
@@ -38,39 +43,30 @@ export function MapPipelineControls({
   };
 
   return (
-    <div className="bg-card/90 border-border text-card-foreground flex h-full flex-col border-r text-sm backdrop-blur-md">
+    <div className="bg-surface border-separator text-label text-body flex h-full flex-col border-r">
       {/* Header */}
-      <div className="border-border flex items-center justify-between border-b p-4">
+      <div className="border-separator flex items-center justify-between border-b p-4">
         <div>
-          <h2 className="text-primary flex items-center gap-2 text-base font-semibold">
+          <h2 className="text-tint text-title-3 flex items-center gap-2">
             <Compass className="h-4 w-4" /> Map Pipeline Lab
           </h2>
-          <p className="text-muted-foreground text-xs">Procedural Generation & Ingestion</p>
+          <p className="text-label-secondary text-footnote">Procedural Generation & Ingestion</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-border bg-muted/40 grid grid-cols-2 border-b text-xs font-medium">
-        <button
-          onClick={() => setActiveTab("generate")}
-          className={`flex items-center justify-center gap-1.5 border-b-2 px-3 py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-            activeTab === "generate"
-              ? "border-primary text-primary bg-primary/5 font-semibold"
-              : "text-muted-foreground hover:text-foreground border-transparent"
-          }`}
-        >
-          <Play className="h-3.5 w-3.5" /> Generator
-        </button>
-        <button
-          onClick={() => setActiveTab("layers")}
-          className={`flex items-center justify-center gap-1.5 border-b-2 px-3 py-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-            activeTab === "layers"
-              ? "border-primary text-primary bg-primary/5 font-semibold"
-              : "text-muted-foreground hover:text-foreground border-transparent"
-          }`}
-        >
-          <Layers className="h-3.5 w-3.5" /> Layers
-        </button>
+      <div className="border-separator border-b p-2">
+        <SegmentedControl
+          aria-label="Pipeline section"
+          asTabs
+          fullWidth
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as "generate" | "layers")}
+          options={[
+            { value: "generate", label: "Generator", icon: <Play aria-hidden /> },
+            { value: "layers", label: "Layers", icon: <Layers aria-hidden /> },
+          ]}
+        />
       </div>
 
       {/* Tab Content */}
@@ -78,118 +74,111 @@ export function MapPipelineControls({
         {activeTab === "generate" && (
           <div className="space-y-4">
             {/* Projection Mode Toggle */}
-            <div className="space-y-1.5">
-              <label className="text-foreground text-xs font-medium">Map Projection</label>
-              <div className="bg-background border-border grid grid-cols-3 gap-1 rounded-md border p-1 text-xs font-medium">
-                {[
-                  { id: "globe", label: "Globe" },
-                  { id: "dynamic", label: "Auto" },
-                  { id: "mercator", label: "Flat" },
-                ].map((mode) => (
-                  <button
-                    key={mode.id}
-                    type="button"
-                    onClick={() => onChangeProjection(mode.id as any)}
-                    className={`rounded py-1 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                      projectionMode === mode.id
-                        ? "bg-primary text-primary-foreground font-semibold shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {mode.label}
-                  </button>
-                ))}
-              </div>
+            <div className="space-y-2">
+              <span id="pipeline-projection" className="text-label text-caption">
+                Map projection
+              </span>
+              <SegmentedControl
+                aria-labelledby="pipeline-projection"
+                fullWidth
+                size="sm"
+                value={projectionMode}
+                onValueChange={(v) => onChangeProjection(v as "dynamic" | "globe" | "mercator")}
+                options={[
+                  { value: "globe", label: "Globe" },
+                  { value: "dynamic", label: "Auto" },
+                  { value: "mercator", label: "Flat" },
+                ]}
+              />
             </div>
 
             {/* Seed */}
-            <div className="space-y-1.5">
-              <label className="text-foreground flex items-center justify-between text-xs font-medium">
-                <span>World Seed</span>
-                <button
-                  type="button"
-                  onClick={handleRandomizeSeed}
-                  className="text-primary flex items-center gap-1 text-xs font-medium hover:underline"
-                >
-                  <RefreshCw className="h-3 w-3" /> Randomize
-                </button>
-              </label>
-              <input
+            <div className="space-y-2">
+              <div className="text-label text-caption flex items-center justify-between">
+                <label htmlFor="pipeline-seed">World seed</label>
+                <Button type="button" variant="plain" size="sm" onClick={handleRandomizeSeed}>
+                  <RefreshCw className="size-3.5" aria-hidden /> Randomize
+                </Button>
+              </div>
+              <Input
+                id="pipeline-seed"
                 type="number"
                 value={config.seed}
                 onChange={(e) => onChangeConfig({ ...config, seed: Number(e.target.value) || 0 })}
-                className="bg-background border-input text-foreground focus:ring-primary w-full rounded-md border px-3 py-1.5 font-mono text-xs focus:ring-1 focus:outline-none"
+                className="tabular-nums"
               />
             </div>
 
             {/* Mesh Engine Indicator */}
-            <div className="border-primary/20 bg-primary/5 text-foreground flex items-center justify-between rounded-md border p-2.5 text-xs font-medium">
-              <span className="flex items-center gap-1.5">
-                <Layers className="text-primary h-3.5 w-3.5" /> Mesh Engine
+            <div className="border-tint/20 bg-tint-fill text-label rounded-control-sm text-caption flex items-center justify-between border p-2">
+              <span className="flex items-center gap-2">
+                <Layers className="text-tint h-3.5 w-3.5" /> Mesh Engine
               </span>
-              <span className="text-primary font-mono text-xs font-semibold">
+              <span className="text-tint text-caption font-semibold tabular-nums">
                 100K RBF Splines
               </span>
             </div>
 
             {/* Country Count */}
-            <div className="space-y-1.5">
-              <label className="text-foreground flex justify-between text-xs font-medium">
+            <div className="space-y-2">
+              <label className="text-label text-caption flex justify-between">
                 <span>Nations Generated</span>
-                <span className="text-primary font-mono">{config.countryCount} nations</span>
+                <span className="text-tint tabular-nums">{config.countryCount} nations</span>
               </label>
-              <input
-                type="range"
+              <Slider
+                aria-label="Nations generated"
                 min={3}
                 max={30}
-                value={config.countryCount}
-                onChange={(e) =>
-                  onChangeConfig({ ...config, countryCount: Number(e.target.value) })
+                value={[config.countryCount]}
+                onValueChange={([v]) =>
+                  v !== undefined && onChangeConfig({ ...config, countryCount: v })
                 }
-                className="accent-primary w-full"
+                className="w-full py-2"
               />
             </div>
 
             {/* Land Coverage */}
-            <div className="space-y-1.5">
-              <label className="text-foreground flex justify-between text-xs font-medium">
+            <div className="space-y-2">
+              <label className="text-label text-caption flex justify-between">
                 <span>Land Ratio</span>
-                <span className="text-primary font-mono">{config.landCoverage}%</span>
+                <span className="text-tint tabular-nums">{config.landCoverage}%</span>
               </label>
-              <input
-                type="range"
+              <Slider
+                aria-label="Land ratio"
                 min={15}
                 max={65}
-                value={config.landCoverage}
-                onChange={(e) =>
-                  onChangeConfig({ ...config, landCoverage: Number(e.target.value) })
+                value={[config.landCoverage]}
+                onValueChange={([v]) =>
+                  v !== undefined && onChangeConfig({ ...config, landCoverage: v })
                 }
-                className="accent-primary w-full"
+                className="w-full py-2"
               />
             </div>
 
             {/* Generate Button */}
-            <button
+            <Button
+              type="button"
+              size="lg"
               onClick={onGenerate}
               disabled={isGenerating}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground mt-4 flex w-full items-center justify-center gap-2 rounded-md px-4 py-2.5 font-medium shadow transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+              className="mt-4 w-full"
             >
               {isGenerating ? (
                 <>
-                  <RefreshCw className="h-4 w-4 animate-spin" /> Generating Pipeline...
+                  <RefreshCw className="size-4 animate-spin" aria-hidden /> Generating Pipeline...
                 </>
               ) : (
                 <>
-                  <Play className="h-4 w-4 fill-current" /> Run Map Pipeline
+                  <Play className="size-4 fill-current" aria-hidden /> Run Map Pipeline
                 </>
               )}
-            </button>
+            </Button>
           </div>
         )}
 
         {activeTab === "layers" && (
           <div className="space-y-3">
-            <p className="text-muted-foreground text-xs">
+            <p className="text-label-secondary text-footnote">
               Toggle active map layers in the viewport:
             </p>
             {[
@@ -205,17 +194,16 @@ export function MapPipelineControls({
             ].map((layer) => (
               <label
                 key={layer.id}
-                className="border-border bg-background/50 hover:bg-accent/40 flex cursor-pointer items-start gap-3 rounded-md border p-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                className="border-separator bg-surface hover:bg-fill-3 rounded-control-sm flex cursor-pointer items-start gap-3 border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
               >
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={Boolean(activeLayers[layer.id])}
-                  onChange={() => onToggleLayer(layer.id)}
-                  className="accent-primary mt-0.5 rounded"
+                  onCheckedChange={() => onToggleLayer(layer.id)}
+                  className="mt-0.5"
                 />
                 <div>
-                  <div className="text-foreground text-xs font-medium">{layer.label}</div>
-                  <div className="text-muted-foreground text-xs">{layer.desc}</div>
+                  <div className="text-label text-caption">{layer.label}</div>
+                  <div className="text-label-secondary text-footnote">{layer.desc}</div>
                 </div>
               </label>
             ))}

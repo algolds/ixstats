@@ -13,6 +13,18 @@ import {
   uploadSizeProblem,
 } from "~/lib/wiki-os/upload-api";
 import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Textarea } from "~/components/ui/textarea";
 
 interface ImageSearchModalProps {
   isOpen: boolean;
@@ -24,6 +36,8 @@ type ModalTab = "search" | "upload";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "image/webp"];
 const MAX_SIZE_MB = MAX_UPLOAD_BYTES / 1_000_000;
+/** Select items cannot carry an empty value; "Full size" is the empty wikitext size. */
+const FULL_SIZE = "full";
 
 export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModalProps) {
   const [tab, setTab] = useState<ModalTab>("search");
@@ -134,36 +148,40 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
     [uploadFile, uploadFilename, uploadDescription, uploadLicense, onInsert, onClose]
   );
 
-  if (!isOpen) return null;
-
   return (
-    <div className="wikios-modal-backdrop" onClick={onClose}>
-      <div className="wikios-img-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="wikios-img-modal-header">
-          <div className="wikios-img-modal-title">
-            <ImageIcon className="h-4 w-4" />
-            <span>Insert Image</span>
-          </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        showCloseButton={false}
+        aria-describedby={undefined}
+        className="flex max-h-[85vh] max-w-[95vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[720px]"
+      >
+        <div className="border-separator flex items-center gap-3 border-b px-4 py-3">
+          <DialogTitle className="text-headline flex items-center gap-2">
+            <ImageIcon className="text-tint size-4" aria-hidden="true" />
+            Insert Image
+          </DialogTitle>
 
-          {/* Tabs */}
-          <div className="wikios-img-modal-tabs">
-            <button
-              className={cn("wikios-img-modal-tab-btn", tab === "search" && "tab-search-active")}
-              onClick={() => setTab("search")}
-            >
-              Search
-            </button>
-            <button
-              className={cn("wikios-img-modal-tab-btn", tab === "upload" && "tab-upload-active")}
-              onClick={() => setTab("upload")}
-            >
-              <Upload className="h-3 w-3" /> Upload
-            </button>
-          </div>
+          <SegmentedControl
+            aria-label="Image source"
+            size="sm"
+            className="ml-auto"
+            value={tab}
+            onValueChange={setTab}
+            options={[
+              { value: "search", label: "Search" },
+              { value: "upload", label: "Upload", icon: <Upload aria-hidden="true" /> },
+            ]}
+          />
 
-          <button onClick={onClose} className="wikios-quick-modal-close">
-            <X className="h-4 w-4" />
-          </button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onClose}
+            aria-label="Close"
+            className="text-label-secondary rounded-full"
+          >
+            <X aria-hidden="true" />
+          </Button>
         </div>
 
         <div className="wikios-img-modal-body">
@@ -188,12 +206,11 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                   <div className="wikios-img-insert-fields">
                     <label className="wikios-img-insert-label">
                       Caption
-                      <input
+                      <Input
                         type="text"
                         value={caption}
                         onChange={(e) => setCaption(e.target.value)}
                         placeholder="Image caption..."
-                        className="wikios-img-insert-input"
                         onKeyDown={(e) => {
                           if (e.key === "Enter") handleInsert();
                         }}
@@ -201,37 +218,46 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                     </label>
 
                     <div className="wikios-img-insert-row">
-                      <label className="wikios-img-insert-label">
-                        Size
-                        <select
-                          value={size}
-                          onChange={(e) => setSize(e.target.value)}
-                          className="wikios-img-insert-select"
+                      <div className="wikios-img-insert-label">
+                        <span id="wikios-img-insert-size">Size</span>
+                        <Select
+                          value={size || FULL_SIZE}
+                          onValueChange={(v) => setSize(v === FULL_SIZE ? "" : v)}
                         >
-                          <option value="thumb">Thumbnail</option>
-                          <option value="frame">Frame</option>
-                          <option value="frameless">Frameless</option>
-                          <option value="">Full size</option>
-                        </select>
-                      </label>
-                      <label className="wikios-img-insert-label">
-                        Align
-                        <select
-                          value={align}
-                          onChange={(e) => setAlign(e.target.value)}
-                          className="wikios-img-insert-select"
-                        >
-                          <option value="right">Right</option>
-                          <option value="left">Left</option>
-                          <option value="center">Center</option>
-                          <option value="none">None</option>
-                        </select>
-                      </label>
+                          <SelectTrigger
+                            aria-labelledby="wikios-img-insert-size"
+                            className="w-full"
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="thumb">Thumbnail</SelectItem>
+                            <SelectItem value="frame">Frame</SelectItem>
+                            <SelectItem value="frameless">Frameless</SelectItem>
+                            <SelectItem value={FULL_SIZE}>Full size</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="wikios-img-insert-label">
+                        <span id="wikios-img-insert-align">Align</span>
+                        <Select value={align} onValueChange={setAlign}>
+                          <SelectTrigger
+                            aria-labelledby="wikios-img-insert-align"
+                            className="w-full"
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="right">Right</SelectItem>
+                            <SelectItem value="left">Left</SelectItem>
+                            <SelectItem value="center">Center</SelectItem>
+                            <SelectItem value="none">None</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
-                    <button onClick={handleInsert} className="wikios-img-insert-btn">
-                      Insert Image
-                    </button>
+                    <Button onClick={handleInsert}>Insert Image</Button>
                   </div>
                 </div>
               )}
@@ -272,7 +298,7 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                 <div className="wikios-img-modal-upload-fields">
                   <label className="wikios-img-modal-field-label">
                     Filename
-                    <input
+                    <Input
                       type="text"
                       value={uploadFilename}
                       onChange={(e) => {
@@ -280,29 +306,26 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                         setUploadWarnings([]);
                       }}
                       maxLength={UPLOAD_FIELD_LIMITS.filename}
-                      className="wikios-img-modal-field-input"
                     />
                   </label>
                   <label className="wikios-img-modal-field-label">
                     Description / Caption
-                    <textarea
+                    <Textarea
                       value={uploadDescription}
                       onChange={(e) => setUploadDescription(e.target.value)}
                       placeholder="Describe this file..."
                       maxLength={UPLOAD_FIELD_LIMITS.description}
                       rows={3}
-                      className="wikios-img-modal-field-textarea"
                     />
                   </label>
                   <label className="wikios-img-modal-field-label">
                     License
-                    <input
+                    <Input
                       type="text"
                       value={uploadLicense}
                       onChange={(e) => setUploadLicense(e.target.value)}
                       placeholder="e.g. {{PD-self}}, or who made it and under which terms"
                       maxLength={UPLOAD_FIELD_LIMITS.license}
-                      className="wikios-img-modal-field-input"
                     />
                   </label>
 
@@ -314,8 +337,7 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                     </div>
                   )}
 
-                  <button
-                    className="wikios-img-insert-btn"
+                  <Button
                     disabled={!uploadFilename.trim() || uploading}
                     onClick={() => void handleUpload(uploadWarnings.length > 0)}
                   >
@@ -324,7 +346,7 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
                       : uploadWarnings.length > 0
                         ? "Upload anyway"
                         : "Upload & Insert"}
-                  </button>
+                  </Button>
 
                   {uploadError && (
                     <p role="alert" className="wikios-img-modal-error-text">
@@ -336,7 +358,7 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

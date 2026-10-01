@@ -99,11 +99,13 @@ describe("fonts", () => {
     const layout = read("src/app/(wiki-os)/layout.tsx");
     expect(layout).toMatch(/className=\{`\$\{hostGrotesk\.variable\} wikios-brand-scope`\}/);
 
-    const css = read("src/styles/wiki-os/foundations.css");
+    // The tokens live in wiki-os/tokens.css (Facet 3: always loaded, the one definition of --wikios-*).
+    const css = read("src/styles/wiki-os/tokens.css");
     expect(css).toMatch(
       /\.wikios-brand-scope\s*\{[^}]*--wikios-font-brand:\s*var\(--font-host-grotesk\)/
     );
-    const root = /:root\s*\{[\s\S]*?\n\}/.exec(css)![0];
+    const root = /:root\s*\{[^}]*\}/.exec(css)![0];
+    expect(root).toContain("--wikios-font-brand:");
     expect(root).not.toMatch(/--wikios-font-brand:[^;]*var\(--font-host-grotesk\)/);
   });
 

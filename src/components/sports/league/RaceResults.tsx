@@ -52,21 +52,21 @@ interface RaceResultsProps {
 function WeatherBadge({ weather }: { weather: string }) {
   const w = weather.toLowerCase();
   let Icon = Cloud;
-  let colorClass = "text-muted-foreground";
+  let colorClass = "text-label-secondary";
 
   if (w.includes("dry") || w.includes("sun")) {
     Icon = SunLight;
-    colorClass = "text-amber-400";
+    colorClass = "text-yellow";
   } else if (w.includes("wet") || w.includes("rain")) {
     Icon = Rain;
-    colorClass = "text-cyan-400";
+    colorClass = "text-teal";
   } else if (w.includes("hot")) {
     Icon = Flame;
-    colorClass = "text-red-400";
+    colorClass = "text-red";
   }
 
   return (
-    <span className={cn("inline-flex items-center gap-1 text-xs font-bold uppercase", colorClass)}>
+    <span className={cn("text-eyebrow inline-flex items-center gap-1", colorClass)}>
       <Icon className="h-3.5 w-3.5" />
       <span>{weather}</span>
     </span>
@@ -98,15 +98,13 @@ function DriverStandingsTable({ races }: { races: RaceResultsProps["races"] }) {
   if (sorted.length === 0) return null;
 
   return (
-    <FacetCard depth={2} className="relative overflow-hidden rounded-3xl border border-border/40 bg-card/75 p-6 shadow-xl backdrop-blur-2xl space-y-4">
-      <div className="flex items-center justify-between border-b border-border/20 pb-3">
+    <FacetCard padding="lg" className="space-y-4 overflow-hidden">
+      <div className="border-separator flex items-center justify-between border-b pb-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-border/50 bg-background/60 shadow-xs">
-            <Zap className="h-4 w-4 text-amber-400" />
+          <div className="rounded-row border-separator bg-surface-secondary shadow-card flex h-8 w-8 items-center justify-center border">
+            <Zap className="text-yellow h-4 w-4" />
           </div>
-          <h4 className="text-sm font-black uppercase tracking-wider text-foreground">
-            Driver World Championship Standings
-          </h4>
+          <h4 className="text-headline text-label">Driver World Championship Standings</h4>
         </div>
       </div>
       <Table>
@@ -126,7 +124,7 @@ function DriverStandingsTable({ races }: { races: RaceResultsProps["races"] }) {
             <TableHead className="text-center">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="decoration-border/60 cursor-help font-bold underline decoration-dotted">
+                  <span className="decoration-border/60 cursor-help font-semibold underline decoration-dotted">
                     Pts
                   </span>
                 </TooltipTrigger>
@@ -137,18 +135,18 @@ function DriverStandingsTable({ races }: { races: RaceResultsProps["races"] }) {
         </TableHeader>
         <TableBody>
           {sorted.map((d, i) => (
-            <TableRow key={d.driverId} className="active:scale-[0.99] transition-transform">
-              <TableCell className="font-bold">
+            <TableRow key={d.driverId} className="transition-transform active:scale-[0.99]">
+              <TableCell className="font-semibold">
                 {i === 0 ? (
-                  <Badge className="border-amber-500/40 bg-amber-500/20 px-1.5 py-0 text-xs font-black text-amber-400">
+                  <Badge className="border-yellow/40 bg-yellow/20 text-footnote text-yellow px-2 py-0 font-semibold">
                     P1
                   </Badge>
                 ) : (
                   `P${i + 1}`
                 )}
               </TableCell>
-              <TableCell className="font-medium text-foreground">{d.driverName}</TableCell>
-              <TableCell className="text-center font-bold text-foreground">{d.points}</TableCell>
+              <TableCell className="text-label font-medium">{d.driverName}</TableCell>
+              <TableCell className="text-label text-center font-semibold">{d.points}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -170,21 +168,17 @@ export function RaceResults({ races, className }: RaceResultsProps) {
 
       <div className="space-y-6">
         {sortedRaces.map((race) => (
-          <FacetCard
-            key={race.id}
-            depth={2}
-            className="relative overflow-hidden rounded-3xl border border-border/40 bg-card/75 p-6 shadow-xl backdrop-blur-2xl md:p-8 space-y-6"
-          >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/20 pb-4">
+          <FacetCard key={race.id} className="relative space-y-6 overflow-hidden p-6 md:p-8">
+            <div className="border-separator flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/50 bg-background/60 shadow-xs">
-                  <MapPin className="h-5 w-5 text-cyan-400" />
+                <div className="rounded-row border-separator bg-surface-secondary shadow-card flex h-9 w-9 items-center justify-center border">
+                  <MapPin className="text-teal h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black tracking-tight text-foreground">
+                  <h3 className="text-headline text-label">
                     Round {race.raceNumber}: {race.circuitName}
                   </h3>
-                  <p className="text-xs font-semibold text-muted-foreground">
+                  <p className="text-footnote text-label-secondary font-semibold">
                     Grand Prix venue layout and official session timing.
                   </p>
                 </div>
@@ -199,7 +193,7 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                         ? "outline"
                         : "default"
                   }
-                  className="text-xs font-bold uppercase"
+                  className="text-eyebrow"
                 >
                   {race.status === "qualifying_complete" ? "Qualifying Complete" : race.status}
                 </Badge>
@@ -210,9 +204,9 @@ export function RaceResults({ races, className }: RaceResultsProps) {
               <CircuitMap circuitName={race.circuitName} className="mb-4" />
 
               {race.grid && race.grid.length > 0 && (
-                <div className="rounded-2xl border border-border/30 bg-background/50 p-4">
-                  <h4 className="text-muted-foreground mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-wider">
-                    <Flag className="h-3.5 w-3.5 text-foreground" />
+                <div className="rounded-card border-separator bg-surface-secondary border p-4">
+                  <h4 className="text-label-secondary text-eyebrow mb-3 flex items-center gap-2">
+                    <Flag className="text-label h-3.5 w-3.5" />
                     Starting Grid Positions
                   </h4>
                   <Table>
@@ -227,8 +221,12 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                         .sort((a, b) => a.position - b.position)
                         .map((g) => (
                           <TableRow key={g.driverId}>
-                            <TableCell className="font-bold text-muted-foreground">P{g.position}</TableCell>
-                            <TableCell className="font-medium text-foreground">{g.driverName ?? g.driverId}</TableCell>
+                            <TableCell className="text-label-secondary font-semibold">
+                              P{g.position}
+                            </TableCell>
+                            <TableCell className="text-label font-medium">
+                              {g.driverName ?? g.driverId}
+                            </TableCell>
                           </TableRow>
                         ))}
                     </TableBody>
@@ -237,9 +235,9 @@ export function RaceResults({ races, className }: RaceResultsProps) {
               )}
 
               {race.results && race.results.length > 0 && (
-                <div className="rounded-2xl border border-border/30 bg-background/50 p-4">
-                  <h4 className="text-muted-foreground mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-wider">
-                    <Clock className="h-3.5 w-3.5 text-amber-400" />
+                <div className="rounded-card border-separator bg-surface-secondary border p-4">
+                  <h4 className="text-label-secondary text-eyebrow mb-3 flex items-center gap-2">
+                    <Clock className="text-yellow h-3.5 w-3.5" />
                     Official Grand Prix Classification
                   </h4>
                   <Table>
@@ -247,7 +245,7 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                       <TableRow>
                         <TableHead className="w-16">Pos</TableHead>
                         <TableHead>Driver</TableHead>
-                        <TableHead className="text-center w-24">Points</TableHead>
+                        <TableHead className="w-24 text-center">Points</TableHead>
                         <TableHead className="text-right">Honors</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -256,20 +254,27 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                         .sort((a, b) => a.finishPosition - b.finishPosition)
                         .map((r) => (
                           <TableRow key={r.driverId}>
-                            <TableCell className="font-bold">
+                            <TableCell className="font-semibold">
                               {r.finishPosition === 1 ? (
-                                <Badge className="border-amber-500/40 bg-amber-500/20 px-2 py-0 text-xs font-black text-amber-400">
+                                <Badge className="border-yellow/40 bg-yellow/20 text-footnote text-yellow px-2 py-0 font-semibold">
                                   P1
                                 </Badge>
                               ) : (
                                 `P${r.finishPosition}`
                               )}
                             </TableCell>
-                            <TableCell className="font-medium text-foreground">{r.driverName ?? r.driverId}</TableCell>
-                            <TableCell className="text-center font-bold text-foreground">{r.points}</TableCell>
+                            <TableCell className="text-label font-medium">
+                              {r.driverName ?? r.driverId}
+                            </TableCell>
+                            <TableCell className="text-label text-center font-semibold">
+                              {r.points}
+                            </TableCell>
                             <TableCell className="text-right">
                               {r.fastestLap && (
-                                <Badge variant="outline" className="border-indigo-500/30 bg-indigo-500/10 text-indigo-400 text-xs font-bold">
+                                <Badge
+                                  variant="outline"
+                                  className="border-indigo/30 bg-indigo/10 text-indigo text-footnote font-semibold"
+                                >
                                   Fastest Lap
                                 </Badge>
                               )}

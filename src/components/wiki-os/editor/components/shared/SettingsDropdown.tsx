@@ -8,6 +8,7 @@ import { Settings } from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { AppleSwitch } from "~/components/ui/apple-switch";
 import { useEditorModalContext } from "../../context/EditorModalContext";
+import { Button } from "~/components/ui/button";
 
 export interface SettingsDropdownProps {
   showLineNumbersOption?: boolean;
@@ -22,15 +23,20 @@ export const SettingsDropdown = memo(function SettingsDropdown({
 
   return (
     <Popover open={modal.settingsOpen} onOpenChange={modal.setSettingsOpen}>
-      <PopoverTrigger className="wikios-editor-format-btn" title="Editor Settings">
-        <Settings className="h-3.5 w-3.5" />
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="text-label-secondary"
+          title="Editor Settings"
+          aria-label="Editor Settings"
+        >
+          <Settings className="size-3.5" />
+        </Button>
       </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        className="glass-none z-[10001] w-56 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-2 text-[var(--wikios-text)] shadow-2xl"
-      >
-        <div className="flex flex-col gap-2.5 p-1 text-xs">
-          <div className="mb-1 border-b border-[var(--wikios-border)] pb-1.5 font-semibold text-[var(--wikios-text-dim)]">
+      <PopoverContent align="end" className="text-label w-56 p-2">
+        <div className="text-footnote flex flex-col gap-2 p-1">
+          <div className="border-separator text-label-secondary mb-1 border-b pb-2 font-semibold">
             Editor Settings
           </div>
 

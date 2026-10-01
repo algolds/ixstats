@@ -141,22 +141,22 @@ export function UploadTab({
           onDrop={handleDrop}
           onClick={() => document.getElementById("drag-upload-input")?.click()}
           className={cn(
-            "flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed bg-slate-100/50 p-10 text-center backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] dark:bg-white/5",
+            "rounded-row bg-fill-2 flex min-h-[200px] cursor-pointer flex-col items-center justify-center border-2 border-dashed p-10 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]",
             isDragging
-              ? "border-blue-500 bg-blue-500/5 shadow-[0_0_15px_rgba(59,130,246,0.2)]"
-              : "border-border/40 hover:border-blue-400/50 hover:bg-slate-200/50 dark:hover:bg-white/10"
+              ? "border-tint bg-tint/5"
+              : "border-separator hover:border-tint/50 hover:bg-fill-2"
           )}
         >
           <Upload
             className={cn(
               "mb-4 h-10 w-10 transition-colors",
-              isDragging ? "text-blue-400" : "text-muted-foreground"
+              isDragging ? "text-tint" : "text-label-secondary"
             )}
           />
-          <h3 className="text-foreground mb-1 text-sm font-semibold">
+          <h3 className="text-label text-headline mb-1">
             {isDragging ? "Drop your file here" : "Drag, drop or paste your image"}
           </h3>
-          <p className="text-muted-foreground mb-4 text-xs">or click to browse local files</p>
+          <p className="text-label-secondary text-footnote mb-4">or click to browse local files</p>
           <input
             type="file"
             id="drag-upload-input"
@@ -177,11 +177,11 @@ export function UploadTab({
             }}
             disabled={isUploading}
             size="sm"
-            className="h-8 text-xs font-semibold"
+            className="text-caption h-8 font-semibold"
           >
             {isUploading ? (
               <>
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Uploading...
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> Uploading...
               </>
             ) : (
               "Select File"
@@ -191,7 +191,7 @@ export function UploadTab({
       </div>
 
       {/* Requirements low-contrast subtle footer */}
-      <div className="border-border/5 text-muted-foreground mt-6 flex justify-between border-t pt-4 text-xs">
+      <div className="border-separator text-label-secondary text-footnote mt-6 flex justify-between border-t pt-4">
         <span>Maximum size: 5MB</span>
         <span>Formats: PNG, JPG, GIF, WEBP, SVG</span>
         <span>Directly embeds in your content</span>

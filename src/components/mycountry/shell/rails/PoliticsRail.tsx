@@ -195,19 +195,22 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
           </div>
         ) : (
           <div className="space-y-2">
-            <p className="text-muted-foreground py-1 text-center text-xs">
+            <p className="text-label-secondary text-footnote py-1 text-center">
               Chamber hemicycle ({legislature?.totalSeats ?? 100} total seats)
             </p>
             {parties && parties.length > 0 ? (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {parties.slice(0, 4).map((p) => {
                   const seats = seatsByParty.get(p.id) ?? 0;
                   const total = legislature?.totalSeats ?? 100;
                   const pct = total > 0 ? (seats / total) * 100 : 0;
                   return (
-                    <div key={p.id} className="flex items-center justify-between gap-2 text-xs">
-                      <span className="text-foreground truncate font-medium">{p.name}</span>
-                      <span className="text-muted-foreground shrink-0 tabular-nums">
+                    <div
+                      key={p.id}
+                      className="text-footnote flex items-center justify-between gap-2"
+                    >
+                      <span className="text-label truncate font-medium">{p.name}</span>
+                      <span className="text-label-secondary shrink-0 tabular-nums">
                         {seats} seats ({pct.toFixed(0)}%)
                       </span>
                     </div>
@@ -237,13 +240,13 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
             return (
               <RailRow key={party.id}>
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-baseline gap-1.5">
-                    <span className="text-foreground truncate font-medium">{party.name}</span>
-                    <span className="text-muted-foreground shrink-0 truncate capitalize">
+                  <div className="flex min-w-0 items-baseline gap-2">
+                    <span className="text-label truncate font-medium">{party.name}</span>
+                    <span className="text-label-secondary shrink-0 truncate capitalize">
                       {party.ideology?.replace(/_/g, " ") ?? "centrist"}
                     </span>
                   </div>
-                  <span className="text-foreground shrink-0 tabular-nums">
+                  <span className="text-label shrink-0 tabular-nums">
                     {support}% · {seats} seats
                   </span>
                 </div>

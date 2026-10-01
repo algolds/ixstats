@@ -10,7 +10,11 @@
 import React from "react";
 import { Badge } from "~/components/ui/badge";
 import { FacetCard } from "~/components/ui/facet-container";
-import { Flash as Zap, WarningTriangle as AlertTriangle, StatUp as TrendingUp } from "iconoir-react";
+import {
+  Flash as Zap,
+  WarningTriangle as AlertTriangle,
+  StatUp as TrendingUp,
+} from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export interface SynergyItem {
@@ -40,17 +44,14 @@ export const SynergyDisplay = React.memo(function SynergyDisplay({
   if (!hasSynergies && !hasConflicts) {
     return (
       <FacetCard
-        surface="solid"
         className={cn(
-          "flex flex-col items-center justify-center rounded-xl border-dashed px-4 py-8 text-center",
+          "rounded-row flex flex-col items-center justify-center border-dashed px-4 py-8 text-center",
           className
         )}
       >
-        <TrendingUp aria-hidden="true" className="text-muted-foreground mb-2 h-6 w-6" />
-        <p className="text-foreground text-sm font-semibold">
-          No synergies or conflicts detected yet
-        </p>
-        <p className="text-muted-foreground mt-0.5 max-w-xs text-xs">
+        <TrendingUp aria-hidden="true" className="text-label-secondary mb-2 h-6 w-6" />
+        <p className="text-label text-headline">No synergies or conflicts detected yet</p>
+        <p className="text-label-secondary text-footnote mt-0.5 max-w-xs">
           Select complementary components to unlock compounding synergies, and watch out for
           conflicting doctrines.
         </p>
@@ -79,7 +80,7 @@ export const SynergyDisplay = React.memo(function SynergyDisplay({
 });
 
 const SECTION_TONE = {
-  synergy: { icon: Zap, text: "text-emerald-600", joiner: "+" },
+  synergy: { icon: Zap, text: "text-green", joiner: "+" },
   conflict: { icon: AlertTriangle, text: "text-destructive", joiner: "↔" },
 } as const;
 
@@ -97,7 +98,7 @@ function InteractionSection({
 
   return (
     <section className="space-y-2">
-      <h3 className="text-foreground flex items-center gap-1.5 text-sm font-semibold">
+      <h3 className="text-label text-headline flex items-center gap-2">
         <Icon aria-hidden="true" className={cn("h-4 w-4", tone.text)} />
         {title}
       </h3>
@@ -114,9 +115,9 @@ function InteractionSection({
                 : null;
 
           return (
-            <FacetCard key={item.id || idx} surface="solid" className="rounded-xl p-3">
+            <FacetCard key={item.id || idx} className="p-3">
               <div className="flex items-center justify-between gap-2">
-                <h4 className="text-foreground truncate text-xs font-semibold">
+                <h4 className="text-label text-caption truncate font-semibold">
                   {item.comp1Name} {tone.joiner} {item.comp2Name}
                 </h4>
                 {delta && (
@@ -126,7 +127,7 @@ function InteractionSection({
                 )}
               </div>
               {item.description && (
-                <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed">
+                <p className="text-label-secondary text-footnote mt-0.5 leading-relaxed">
                   {item.description}
                 </p>
               )}

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { FacetContainer } from "~/components/ui/facet-container";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import {
@@ -29,7 +29,7 @@ export function ApproachPicker({ packages, selected, onSelect, isLoading }: Appr
     return (
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3" aria-busy="true">
         {[0, 1, 2].map((i) => (
-          <Skeleton key={i} className="h-36 rounded-xl" />
+          <Skeleton key={i} className="rounded-row h-36" />
         ))}
       </div>
     );
@@ -52,15 +52,11 @@ export function ApproachPicker({ packages, selected, onSelect, isLoading }: Appr
           const checked = selected === tier;
           return (
             <label key={tier} className="block cursor-pointer">
-              <FacetContainer
-                depth={3}
-                surface="solid"
+              <FacetCard
                 className={cn(
-                  "flex h-full flex-col gap-3 rounded-xl p-4 transition-[background-color,border-color,box-shadow,transform] duration-150 active:scale-[0.99]",
-                  "has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-2",
-                  checked
-                    ? "border-amber-500/60 bg-amber-500/5 ring-1 ring-amber-500/40"
-                    : "hover:bg-muted/40"
+                  "rounded-row flex h-full flex-col gap-3 p-4 transition-[background-color,border-color,box-shadow,transform] duration-150 active:scale-[0.99]",
+                  "has-[:focus-visible]:ring-tint has-[:focus-visible]:ring-2",
+                  checked ? "border-yellow/60 bg-yellow/5 ring-yellow/40 ring-1" : "hover:bg-fill-3"
                 )}
               >
                 <input
@@ -72,30 +68,30 @@ export function ApproachPicker({ packages, selected, onSelect, isLoading }: Appr
                   className="sr-only"
                 />
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-foreground flex items-center gap-2 text-sm font-semibold">
+                  <span className="text-label text-headline flex items-center gap-2">
                     <span className={cn("h-2 w-2 rounded-full", tone.dot)} aria-hidden />
                     {meta.label}
                   </span>
-                  <span className="text-muted-foreground text-xs font-medium tabular-nums">
+                  <span className="text-label-secondary text-caption tabular-nums">
                     {pkg.civCapCost} CivCap
                   </span>
                 </div>
-                <p className="text-muted-foreground text-sm leading-snug">{meta.summary}</p>
-                <dl className="mt-auto space-y-1 text-xs">
+                <p className="text-label-secondary text-body leading-snug">{meta.summary}</p>
+                <dl className="text-footnote mt-auto space-y-1">
                   <div className="flex items-center justify-between gap-2">
-                    <dt className="text-muted-foreground">Acceptance</dt>
+                    <dt className="text-label-secondary">Acceptance</dt>
                     <dd className={cn("font-medium", TONE_CLASSES[acceptance.tone].text)}>
                       {acceptance.label}
                     </dd>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <dt className="text-muted-foreground">Resistance</dt>
-                    <dd className="text-foreground font-medium">
+                    <dt className="text-label-secondary">Resistance</dt>
+                    <dd className="text-label font-medium">
                       {tierMaySpawnResistance(tier) ? "Possible" : "None"}
                     </dd>
                   </div>
                 </dl>
-              </FacetContainer>
+              </FacetCard>
             </label>
           );
         })}

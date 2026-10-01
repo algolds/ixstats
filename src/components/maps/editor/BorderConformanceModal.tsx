@@ -30,10 +30,10 @@ export const BorderConformanceModal = memo(function BorderConformanceModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="facet-modal max-w-md rounded-2xl">
+      <DialogContent className="rounded-card max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-500" aria-hidden />
+            <AlertTriangle className="text-yellow h-5 w-5" aria-hidden />
             Borders Adjusted to Country Shape
           </DialogTitle>
           <DialogDescription>
@@ -44,23 +44,23 @@ export const BorderConformanceModal = memo(function BorderConformanceModal({
         </DialogHeader>
 
         <div className="space-y-3">
-          <p className="text-muted-foreground text-xs">
+          <p className="text-label-secondary text-footnote">
             All borders must conform to the country shape. The following subdivisions were adjusted:
           </p>
 
-          <FacetCard surface="solid" className="max-h-[200px] overflow-y-auto rounded-lg">
+          <FacetCard variant="inset" padding="none" className="max-h-[200px] overflow-y-auto">
             {clippedNames.map((name) => (
               <div
                 key={name}
-                className="border-border flex items-center gap-2 border-b px-3 py-2 last:border-0"
+                className="border-separator flex items-center gap-2 border-b px-3 py-2 last:border-0"
               >
-                <MapPin className="text-muted-foreground h-3.5 w-3.5 shrink-0" aria-hidden />
-                <span className="text-foreground text-sm">{name}</span>
+                <MapPin className="text-label-secondary h-3.5 w-3.5 shrink-0" aria-hidden />
+                <span className="text-label text-body">{name}</span>
               </div>
             ))}
           </FacetCard>
 
-          <p className="text-muted-foreground text-xs">
+          <p className="text-label-secondary text-footnote">
             These borders may need manual adjustment for accuracy. You can edit individual
             subdivisions after import to refine their shapes.
           </p>

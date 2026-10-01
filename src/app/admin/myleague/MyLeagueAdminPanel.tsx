@@ -20,26 +20,26 @@ export default function MyLeagueAdminPanel() {
       />
 
       <Tabs defaultValue="oversight" className="w-full space-y-6">
-        <TabsList className="bg-card/40 border-border/40 flex w-full flex-wrap justify-start gap-1 rounded-xl border p-1 backdrop-blur-md md:w-auto">
+        <TabsList className="bg-fill-3 rounded-row flex w-full flex-wrap justify-start gap-1 p-1 md:w-auto">
           <TabsTrigger
             value="oversight"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <Trophy className="h-4 w-4 text-emerald-400" />
+            <Trophy className="text-green h-4 w-4" />
             Oversight Dashboard
           </TabsTrigger>
           <TabsTrigger
             value="sandbox"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <FlaskConical className="h-4 w-4 text-amber-400" />
+            <FlaskConical className="text-yellow h-4 w-4" />
             Simulation Sandbox
           </TabsTrigger>
           <TabsTrigger
             value="seeder"
-            className="flex items-center gap-2 text-xs font-semibold transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
           >
-            <Database className="h-4 w-4 text-cyan-400" />
+            <Database className="text-teal h-4 w-4" />
             Data Lab & Seeder
           </TabsTrigger>
         </TabsList>

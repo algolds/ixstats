@@ -15,7 +15,6 @@ import {
 } from "~/components/ui/sheet";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetContainer } from "~/components/ui/facet-container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
 interface BuilderGuideSheetProps {
@@ -78,31 +77,25 @@ export function BuilderGuideSheet({
           className="flex min-h-0 flex-1 flex-col"
         >
           {/* Header */}
-          <SheetHeader className="border-border border-b p-5 text-left">
+          <SheetHeader className="border-separator border-b p-5 text-left">
             <div className="flex items-start gap-3">
-              <BookOpen aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+              <BookOpen aria-hidden="true" className="text-tint mt-0.5 h-5 w-5 shrink-0" />
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <SheetTitle className="text-foreground text-base font-semibold">
-                    {sectionTitle}
-                  </SheetTitle>
+                  <SheetTitle className="text-title-3">{sectionTitle}</SheetTitle>
                   <Badge variant="outline">{sectionBadge}</Badge>
                 </div>
-                <SheetDescription className="text-muted-foreground mt-0.5 text-xs">
+                <SheetDescription className="text-label-secondary text-footnote mt-0.5">
                   Companion reference, roadmap & core mechanics
                 </SheetDescription>
               </div>
             </div>
 
-            <TabsList
-              role="tablist"
-              aria-label="Guide sections"
-              className="border-border bg-muted mt-4 rounded-full border p-1"
-            >
-              <TabsTrigger role="tab" value="milestones" className="flex-1 py-1.5 text-xs">
+            <TabsList role="tablist" aria-label="Guide sections" className="mt-4 w-full">
+              <TabsTrigger role="tab" value="milestones" className="flex-1">
                 Milestones
               </TabsTrigger>
-              <TabsTrigger role="tab" value="rules" className="flex-1 py-1.5 text-xs">
+              <TabsTrigger role="tab" value="rules" className="flex-1">
                 Rules & Mechanics
               </TabsTrigger>
             </TabsList>
@@ -113,7 +106,7 @@ export function BuilderGuideSheet({
             <TabsContent value="milestones" role="tabpanel" className="space-y-4">
               <div className="flex items-center justify-between">
                 <Eyebrow>Section Roadmap</Eyebrow>
-                <Badge variant="outline" className="font-mono">
+                <Badge variant="outline" className="tabular-nums">
                   {milestones.length} Steps
                 </Badge>
               </div>
@@ -121,24 +114,18 @@ export function BuilderGuideSheet({
               <ol className="space-y-3">
                 {milestones.map((step, index) => (
                   <li key={index}>
-                    <FacetContainer
-                      depth={3}
-                      surface="solid"
-                      className="flex items-start gap-3 rounded-xl p-3.5"
-                    >
+                    <div className="bg-surface-secondary rounded-row flex items-start gap-3 p-3">
                       <span
                         aria-hidden="true"
-                        className="text-muted-foreground w-5 shrink-0 pt-px text-xs font-semibold tabular-nums"
+                        className="text-caption text-label-secondary w-5 shrink-0 pt-px tabular-nums"
                       >
                         {index + 1}
                       </span>
                       <div className="min-w-0 flex-1 space-y-1">
-                        <h4 className="text-foreground text-sm font-semibold">{step.title}</h4>
-                        <p className="text-muted-foreground text-xs leading-relaxed">
-                          {step.description}
-                        </p>
+                        <h3 className="text-label text-headline">{step.title}</h3>
+                        <p className="text-footnote text-label-secondary">{step.description}</p>
                       </div>
-                    </FacetContainer>
+                    </div>
                   </li>
                 ))}
               </ol>
@@ -147,7 +134,7 @@ export function BuilderGuideSheet({
             <TabsContent value="rules" role="tabpanel" className="space-y-4">
               <div className="flex items-center justify-between">
                 <Eyebrow>Core Mechanics & Rules</Eyebrow>
-                <Badge variant="outline" className="font-mono">
+                <Badge variant="outline" className="tabular-nums">
                   {rules.length} Directives
                 </Badge>
               </div>
@@ -157,25 +144,19 @@ export function BuilderGuideSheet({
                   const Icon = rule.icon;
                   return (
                     <li key={idx}>
-                      <FacetContainer
-                        depth={3}
-                        surface="solid"
-                        className="flex items-start gap-3 rounded-xl p-3.5"
-                      >
+                      <div className="bg-surface-secondary rounded-row flex items-start gap-3 p-3">
                         <Icon
                           aria-hidden="true"
-                          className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0"
+                          className="text-label-secondary mt-0.5 h-4 w-4 shrink-0"
                         />
                         <div className="min-w-0 flex-1 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <h4 className="text-foreground text-sm font-semibold">{rule.title}</h4>
+                            <h3 className="text-label text-headline">{rule.title}</h3>
                             {rule.badge && <Badge variant="secondary">{rule.badge}</Badge>}
                           </div>
-                          <p className="text-muted-foreground text-xs leading-relaxed">
-                            {rule.description}
-                          </p>
+                          <p className="text-footnote text-label-secondary">{rule.description}</p>
                         </div>
-                      </FacetContainer>
+                      </div>
                     </li>
                   );
                 })}
@@ -183,29 +164,24 @@ export function BuilderGuideSheet({
             </TabsContent>
 
             {/* Quick tip */}
-            <FacetContainer
-              depth={3}
-              surface="solid"
-              role="note"
-              className="mt-6 flex items-start gap-2.5 rounded-xl border-amber-500/30 p-3.5"
-            >
-              <InfoCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-              <p className="text-muted-foreground text-xs leading-relaxed">
-                <span className="text-foreground font-semibold">Statecraft Tip:</span> Choices made
-                in this section dynamically calculate your starting power balance, CivCap yields,
-                and economic vitality rings across IxStates.
+            <div role="note" className="bg-tint-fill rounded-row mt-6 flex items-start gap-2 p-3">
+              <InfoCircle aria-hidden="true" className="text-tint mt-0.5 h-4 w-4 shrink-0" />
+              <p className="text-footnote text-label-secondary">
+                <span className="text-label font-semibold">Statecraft Tip:</span> Choices made in
+                this section dynamically calculate your starting power balance, CivCap yields, and
+                economic vitality rings across IxStates.
               </p>
-            </FacetContainer>
+            </div>
           </div>
         </Tabs>
 
         {/* Footer info bar */}
-        <div className="border-border text-muted-foreground flex items-center justify-between border-t px-5 py-3 text-xs">
-          <span className="flex items-center gap-1.5">
+        <div className="border-separator text-label-secondary text-footnote flex items-center justify-between border-t px-5 py-3">
+          <span className="flex items-center gap-2">
             <InfoCircle aria-hidden="true" className="h-3.5 w-3.5" />
             Changes auto-save in draft
           </span>
-          <span className="font-mono">IxStates Studio</span>
+          <span>IxStates Studio</span>
         </div>
       </SheetContent>
     </Sheet>

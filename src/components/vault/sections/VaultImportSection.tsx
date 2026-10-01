@@ -17,6 +17,7 @@ import {
   ImportCompleteStep,
   type ImportResult,
 } from "./import/ImportConfirmStep";
+import { Button } from "~/components/ui/button";
 
 interface VaultImportSectionProps {
   initialTab?: string | null;
@@ -94,7 +95,7 @@ function ImportDeckTab() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <Card className="facet-hierarchy-parent relative overflow-hidden border border-white/10">
+        <Card className="relative overflow-hidden">
           {/* NS Header Banner */}
           <div
             style={{
@@ -117,7 +118,7 @@ function ImportDeckTab() {
               backgroundRepeat: "no-repeat",
               paddingLeft: "15px",
             }}
-            className="border-b border-white/10"
+            className="border-separator border-b"
           >
             <img
               src={proxyNSImage("https://www.nationstates.net/images/bannertitle.png")}
@@ -138,15 +139,18 @@ function ImportDeckTab() {
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                 >
-                  <Alert variant="destructive" className="border-red-500/30 bg-red-500/5">
+                  <Alert variant="destructive" className="border-red/30 bg-red/5">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>{errorMessage}</AlertDescription>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label="Dismiss error"
                       onClick={() => setErrorMessage("")}
-                      className="text-muted-foreground hover:text-foreground absolute top-3 right-3"
+                      className="text-label-secondary absolute top-2 right-2"
                     >
                       <X className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   </Alert>
                 </motion.div>
               )}
@@ -209,7 +213,7 @@ function ImportDeckTab() {
                         {[0, 1, 2].map((i) => (
                           <motion.div
                             key={i}
-                            className="absolute h-14 w-10 rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm"
+                            className="rounded-control border-separator bg-fill-4 absolute h-14 w-10 border"
                             animate={{
                               rotate: [0 + i * 120, 360 + i * 120],
                               x: [0, 20, 0, -20, 0],
@@ -233,24 +237,22 @@ function ImportDeckTab() {
                             style={{ originX: 0.5, originY: 0.5 }}
                           />
                         ))}
-                        <Loader2 className="relative h-10 w-10 animate-spin text-amber-400" />
+                        <Loader2 className="text-tint relative size-10 animate-spin" />
                       </div>
                     </div>
 
                     <div className="space-y-2 text-center">
-                      <p className="text-foreground text-xl font-bold tracking-tight">
-                        Importing Cards...
-                      </p>
-                      <p className="text-muted-foreground max-w-xs text-sm">
+                      <p className="text-label text-title-2">Importing Cards...</p>
+                      <p className="text-label-secondary text-body max-w-xs">
                         Fetching your deck from NationStates and creating IxCards. This may take a
                         moment.
                       </p>
                     </div>
 
                     <div className="w-full max-w-xs">
-                      <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                      <div className="bg-fill-3 h-1.5 overflow-hidden rounded-full">
                         <motion.div
-                          className="h-full rounded-full bg-amber-500"
+                          className="bg-tint h-full rounded-full"
                           animate={{ x: ["-100%", "100%"] }}
                           transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                           style={{ width: "50%" }}

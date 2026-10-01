@@ -53,17 +53,17 @@ export function PersonaAuthorCard({ username, children }: PersonaAuthorCardProps
       <HoverCardContent side="bottom" align="start" sideOffset={4} className="w-72 p-3">
         {isLoading ? (
           <div className="space-y-2">
-            <Skeleton className="bg-muted h-4 w-32 rounded" />
-            <Skeleton className="bg-muted/60 h-3 w-40 rounded" />
+            <Skeleton className="bg-fill-3 rounded-control-sm h-4 w-32" />
+            <Skeleton className="bg-fill-4 rounded-control-sm h-3 w-40" />
           </div>
         ) : isError || !profile ? (
-          <p className="text-muted-foreground text-xs">This account is unavailable.</p>
+          <p className="text-label-secondary text-footnote">This account is unavailable.</p>
         ) : (
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             <div className="flex items-start justify-between gap-2">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={profile.profileImageUrl ?? ""} />
-                <AvatarFallback className="text-xs font-semibold">
+                <AvatarFallback className="text-caption font-semibold">
                   {initials(profile.displayName)}
                 </AvatarFallback>
               </Avatar>
@@ -75,38 +75,36 @@ export function PersonaAuthorCard({ username, children }: PersonaAuthorCardProps
               />
             </div>
             <div className="min-w-0">
-              <div className="flex items-center gap-1 text-sm font-semibold">
+              <div className="text-headline flex items-center gap-1">
                 <span className="truncate">{profile.displayName}</span>
                 {profile.verified && (
-                  <span className="text-xs" title="Verified">
+                  <span className="text-footnote" title="Verified">
                     ✅
                   </span>
                 )}
               </div>
-              <div className="text-muted-foreground truncate text-xs">
+              <div className="text-label-secondary text-footnote truncate">
                 @{profile.username} ·{" "}
                 {profile.country
                   ? `${profile.accountType} · ${profile.country.name}`
                   : "personal account"}
               </div>
             </div>
-            {profile.bio && (
-              <p className="text-foreground/80 line-clamp-3 text-xs">{profile.bio}</p>
-            )}
-            <div className="text-muted-foreground flex gap-3 text-xs">
+            {profile.bio && <p className="text-label text-footnote line-clamp-3">{profile.bio}</p>}
+            <div className="text-label-secondary text-footnote flex gap-3">
               <span>
-                <strong className="text-foreground">{profile.followerCount}</strong> followers
+                <strong className="text-label">{profile.followerCount}</strong> followers
               </span>
               <span>
-                <strong className="text-foreground">{profile.followingCount}</strong> following
+                <strong className="text-label">{profile.followingCount}</strong> following
               </span>
               <span>
-                <strong className="text-foreground">{profile.postCount}</strong> posts
+                <strong className="text-label">{profile.postCount}</strong> posts
               </span>
             </div>
             <Link
               href={withBasePath(`/thinkpages/profile/${profile.username}`)}
-              className="text-xs font-medium text-blue-500 hover:underline"
+              className="text-caption text-blue hover:underline"
             >
               View profile →
             </Link>

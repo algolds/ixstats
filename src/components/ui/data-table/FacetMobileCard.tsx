@@ -2,6 +2,7 @@
 
 import React from "react";
 import { cn } from "~/lib/utils/cn";
+import { FacetCard } from "~/components/ui/facet-container";
 import type { FacetColumn } from "./types";
 
 interface FacetMobileCardProps<T> {
@@ -31,7 +32,7 @@ export function FacetMobileCard<T extends Record<string, any>>({
     if (col.mobileRender) return col.mobileRender(val, row, index);
     if (col.render) return col.render(val, row, index);
     if (val === null || val === undefined || val === "")
-      return <span className="text-muted-foreground/50">—</span>;
+      return <span className="text-label-tertiary">—</span>;
     return val;
   };
 
@@ -51,27 +52,24 @@ export function FacetMobileCard<T extends Record<string, any>>({
     heroCols.length > 0 ? fieldCols : fieldCols.filter((c) => c !== effectiveHeroCols[0]);
 
   return (
-    <div
+    // The opaque content card (§7.1); a pressable FacetCard (keyboard, focus ring) when onClick.
+    <FacetCard
       data-slot="facet-mobile-card"
       data-cuelume-press
-      onClick={() => onClick?.(row)}
-      className={cn(
-        "facet-surface border-border/50 bg-card/70 relative flex flex-col gap-3 rounded-2xl border p-4 shadow-sm backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
-        onClick && "hover:border-border/80 hover:bg-card/90 cursor-pointer active:scale-[0.98]",
-        className
-      )}
+      onClick={onClick ? () => onClick(row) : undefined}
+      className={cn("flex flex-col gap-3 p-4", className)}
     >
       {/* ─── Header: Hero + Badges + Actions ─────────────────────── */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           {effectiveHeroCols.map((col) => (
-            <div key={col.key} className="text-foreground text-sm font-bold tracking-tight">
+            <div key={col.key} className="text-headline text-label">
               {renderCell(col)}
             </div>
           ))}
 
           {subtitleCols.map((col) => (
-            <div key={col.key} className="text-muted-foreground mt-0.5 text-xs font-normal">
+            <div key={col.key} className="text-footnote text-label-secondary mt-0.5">
               {renderCell(col)}
             </div>
           ))}
@@ -79,7 +77,7 @@ export function FacetMobileCard<T extends Record<string, any>>({
 
         {/* Badges & Actions aligned right */}
         {(badgeCols.length > 0 || actionCols.length > 0) && (
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
             {badgeCols.map((col) => (
               <div key={col.key}>{renderCell(col)}</div>
             ))}
@@ -94,33 +92,31 @@ export function FacetMobileCard<T extends Record<string, any>>({
 
       {/* ─── Body: Key-Value Field Matrix ────────────────────────── */}
       {effectiveFieldCols.length > 0 && (
-        <div className="border-border/30 grid grid-cols-2 gap-x-4 gap-y-2 border-t pt-3 text-xs">
+        <dl className="border-separator grid grid-cols-2 gap-x-4 gap-y-2 border-t pt-3">
           {effectiveFieldCols.map((col) => {
             const label =
               col.mobileLabel || (typeof col.header === "string" ? col.header : col.key);
             return (
               <div key={col.key} className="flex min-w-0 flex-col gap-0.5">
-                <span className="text-muted-foreground/80 truncate text-xs font-semibold tracking-wider uppercase">
-                  {label}
-                </span>
-                <div
+                <dt className="text-eyebrow text-label-secondary truncate">{label}</dt>
+                <dd
                   className={cn(
-                    "text-foreground truncate text-xs font-medium",
+                    "text-footnote text-label truncate font-medium tabular-nums",
                     col.align === "right" && "text-right",
                     col.align === "center" && "text-center"
                   )}
                 >
                   {renderCell(col)}
-                </div>
+                </dd>
               </div>
             );
           })}
-        </div>
+        </dl>
       )}
 
       {/* ─── Footer: Full-width details / actions ────────────────── */}
       {footerCols.length > 0 && (
-        <div className="border-border/30 flex items-center justify-between border-t pt-2.5 text-xs">
+        <div className="border-separator text-footnote flex items-center justify-between border-t pt-3">
           {footerCols.map((col) => (
             <div key={col.key} className="w-full">
               {renderCell(col)}
@@ -128,6 +124,6 @@ export function FacetMobileCard<T extends Record<string, any>>({
           ))}
         </div>
       )}
-    </div>
+    </FacetCard>
   );
 }

@@ -10,6 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
+import { Button } from "~/components/ui/button";
 
 interface LexiconDefinitionFormProps {
   lexEditPos: string;
@@ -35,101 +38,73 @@ export function LexiconDefinitionForm({
   onSubmit,
 }: LexiconDefinitionFormProps) {
   return (
-    <div className="border-border/20 border-t pt-5">
-      <h4 className="text-muted-foreground mb-3 text-xs font-bold tracking-wider uppercase">
-        Define Lexicon Meaning
-      </h4>
+    <div className="border-separator border-t pt-5">
+      <h4 className="text-label-secondary text-subhead mb-3">Define Lexicon Meaning</h4>
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label className="text-muted-foreground text-[10px] font-bold uppercase">
-              Part of Speech
-            </label>
+          <div className="space-y-2">
+            <label className="text-label-secondary text-subhead">Part of Speech</label>
             <Select value={lexEditPos} onValueChange={setLexEditPos}>
-              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground focus:border-onoma-primary/50 flex w-full items-center justify-between rounded-lg border px-3 py-2 text-xs transition-colors focus:outline-none">
+              <SelectTrigger className="text-footnote w-full">
                 <SelectValue placeholder="Select POS" />
               </SelectTrigger>
-              <SelectContent className="border-border/40 bg-background/95 max-h-[200px] backdrop-blur-md">
-                <SelectItem
-                  value="Noun"
-                  className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                >
+              <SelectContent className="max-h-[200px]">
+                <SelectItem value="Noun" className="text-footnote">
                   Noun
                 </SelectItem>
-                <SelectItem
-                  value="Adjective"
-                  className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                >
+                <SelectItem value="Adjective" className="text-footnote">
                   Adjective
                 </SelectItem>
-                <SelectItem
-                  value="Verb"
-                  className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                >
+                <SelectItem value="Verb" className="text-footnote">
                   Verb
                 </SelectItem>
-                <SelectItem
-                  value="Proper Noun"
-                  className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                >
+                <SelectItem value="Proper Noun" className="text-footnote">
                   Proper Noun
                 </SelectItem>
-                <SelectItem
-                  value="Adverb"
-                  className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                >
+                <SelectItem value="Adverb" className="text-footnote">
                   Adverb
                 </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-muted-foreground text-[10px] font-bold uppercase">
-              Etymological Root
-            </label>
-            <input
+          <div className="space-y-2">
+            <label className="text-label-secondary text-subhead">Etymological Root</label>
+            <Input
               type="text"
               value={lexEditRoot}
               onChange={(e) => setLexEditRoot(e.target.value)}
               placeholder="e.g. rom- (strength)"
-              className="border-border/60 bg-background text-foreground focus:border-onoma-primary/50 w-full rounded-lg border px-3 py-2 text-xs focus:outline-none"
+              className="text-footnote w-full"
             />
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-muted-foreground text-[10px] font-bold uppercase">
-            Meaning / Translation
-          </label>
-          <input
+        <div className="space-y-2">
+          <label className="text-label-secondary text-subhead">Meaning / Translation</label>
+          <Input
             type="text"
             value={lexEditMeaning}
             onChange={(e) => setLexEditMeaning(e.target.value)}
             placeholder="e.g. Place of strength, capital city"
             required
-            className="border-border/60 bg-background text-foreground focus:border-onoma-primary/50 w-full rounded-lg border px-3 py-2 text-xs focus:outline-none"
+            className="text-footnote w-full"
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-muted-foreground text-[10px] font-bold uppercase">
-            Historical Origin & Notes
-          </label>
-          <textarea
+        <div className="space-y-2">
+          <label className="text-label-secondary text-subhead">Historical Origin & Notes</label>
+          <Textarea
             value={lexEditOrigin}
             onChange={(e) => setLexEditOrigin(e.target.value)}
             placeholder="e.g. Named after legendary founder Romus, later expanded by Latin tribes..."
-            className="border-border/60 bg-background text-foreground focus:border-onoma-primary/50 h-20 w-full rounded-lg border px-3 py-2 text-xs focus:outline-none"
+            className="text-footnote h-20 w-full"
           />
         </div>
 
-        <button
-          type="submit"
-          className="bg-onoma-primary shadow-onoma-primary/10 hover:bg-onoma-primary-light w-full rounded-lg py-2 text-xs font-bold text-white shadow-md transition-all"
-        >
+        <Button size="sm" type="submit" className="w-full">
           Save Lexicon Definition
-        </button>
+        </Button>
       </form>
     </div>
   );

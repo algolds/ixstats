@@ -7,12 +7,12 @@ import {
   Bookmark,
   Folder,
   NavArrowLeft as ChevronLeft,
-  NavArrowRight as ChevronRight,
-  Search,
   SystemRestart as Loader2,
   ArrowRight,
 } from "iconoir-react";
-import { Input } from "~/components/ui/input";
+import { SearchField } from "~/components/ui/search-field";
+import { Button } from "~/components/ui/button";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 interface MessagesStashAttachmentModalProps {
   isOpen: boolean;
@@ -82,23 +82,28 @@ export function MessagesStashAttachmentModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="border-white/10 bg-slate-900 text-white backdrop-blur-xl sm:max-w-md">
-        <DialogHeader className="border-b border-white/5 pb-3">
-          <DialogTitle className="flex items-center gap-2 text-base font-bold text-slate-200">
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader className="border-separator border-b pb-3">
+          <DialogTitle className="text-title-3 flex items-center gap-2">
             {selectedStashId ? (
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
                 onClick={handleBack}
-                className="mr-1 flex items-center justify-center rounded-lg p-1 text-slate-400 transition-colors hover:bg-white/5 hover:text-white"
+                aria-label="Back to collections"
+                className="text-label-secondary hover:text-label mr-1"
               >
-                <ChevronLeft className="h-4.5 w-4.5" />
-              </button>
+                <ChevronLeft aria-hidden className="size-5" />
+              </Button>
             ) : (
-              <Bookmark className="h-5 w-5 text-indigo-400" />
+              <Bookmark className="text-tint size-5" aria-hidden="true" />
             )}
             {selectedStashId && activeStash ? (
               <span className="flex items-center gap-2">
                 <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
+                  aria-hidden="true"
+                  className="size-2.5 shrink-0 rounded-full"
                   style={{ backgroundColor: activeStash.color }}
                 />
                 {activeStash.name}
@@ -111,81 +116,82 @@ export function MessagesStashAttachmentModal({
 
         <div className="space-y-4 pt-2">
           {/* Search box */}
-          <div className="relative">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-500" />
-            <Input
-              placeholder={selectedStashId ? "Search stashed pages..." : "Search collections..."}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 text-xs"
-            />
-          </div>
+          <SearchField
+            placeholder={selectedStashId ? "Search stashed pages..." : "Search collections..."}
+            aria-label={selectedStashId ? "Search stashed pages" : "Search collections"}
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+          />
 
           {/* List display */}
           <div className="max-h-72 scrollbar-thin overflow-y-auto pr-1">
             {selectedStashId ? (
               isLoadingItems ? (
                 <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-indigo-400" />
+                  <Loader2
+                    className="text-label-secondary size-6 animate-spin"
+                    aria-label="Loading"
+                  />
                 </div>
               ) : filteredItems.length === 0 ? (
-                <p className="py-8 text-center text-xs text-slate-400">
+                <p className="text-footnote text-label-secondary py-8 text-center">
                   {searchQuery.trim() ? "No matching pages found." : "No pages in this collection."}
                 </p>
               ) : (
-                <div className="space-y-1">
-                  {filteredItems.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => handleSelectItem(item)}
-                      className="group flex w-full items-center justify-between rounded-lg p-2.5 text-left transition-colors hover:bg-white/5"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-semibold text-slate-200 group-hover:text-white">
-                          {item.pageTitle}
-                        </p>
-                        <p className="mt-0.5 truncate text-xs text-slate-400">
-                          /wiki/{item.pageSlug}
-                        </p>
-                      </div>
-                      <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-indigo-400 opacity-0 transition-opacity group-hover:opacity-100">
-                        Attach Link <ArrowRight className="h-3 w-3" />
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                <FacetList variant="plain">
+                  <FacetListSection aria-label="Stashed pages">
+                    {filteredItems.map((item) => (
+                      <FacetRow
+                        key={item.id}
+                        onClick={() => handleSelectItem(item)}
+                        title={item.pageTitle}
+                        subtitle={<span className="font-mono">/wiki/{item.pageSlug}</span>}
+                        trailing={
+                          <span className="text-caption text-tint flex items-center gap-1">
+                            Attach Link <ArrowRight className="size-3.5" aria-hidden="true" />
+                          </span>
+                        }
+                      />
+                    ))}
+                  </FacetListSection>
+                </FacetList>
               )
             ) : isLoadingStashes ? (
               <div className="flex justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-indigo-400" />
+                <Loader2
+                  className="text-label-secondary size-6 animate-spin"
+                  aria-label="Loading"
+                />
               </div>
             ) : filteredStashes.length === 0 ? (
-              <p className="py-8 text-center text-xs text-slate-400">
+              <p className="text-footnote text-label-secondary py-8 text-center">
                 No Lore Stash collections found.
               </p>
             ) : (
-              <div className="space-y-1">
-                {filteredStashes.map((stash) => (
-                  <button
-                    key={stash.id}
-                    onClick={() => handleSelectStash(stash.id)}
-                    className="group flex w-full items-center justify-between rounded-lg p-2.5 text-left transition-colors hover:bg-white/5"
-                  >
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <Folder className="h-4 w-4 shrink-0" style={{ color: stash.color }} />
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-semibold text-slate-200 group-hover:text-white">
-                          {stash.name}
-                        </p>
-                        <p className="mt-0.5 text-xs text-slate-400">
+              <FacetList variant="plain">
+                <FacetListSection aria-label="Lore Stash collections">
+                  {filteredStashes.map((stash) => (
+                    <FacetRow
+                      key={stash.id}
+                      onClick={() => handleSelectStash(stash.id)}
+                      leading={
+                        <Folder
+                          className="size-4 shrink-0"
+                          style={{ color: stash.color }}
+                          aria-hidden="true"
+                        />
+                      }
+                      title={stash.name}
+                      subtitle={
+                        <span className="tabular-nums">
                           {stash.itemCount} {stash.itemCount === 1 ? "item" : "items"}
-                        </p>
-                      </div>
-                    </div>
-                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-500 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-300" />
-                  </button>
-                ))}
-              </div>
+                        </span>
+                      }
+                      accessory="chevron"
+                    />
+                  ))}
+                </FacetListSection>
+              </FacetList>
             )}
           </div>
         </div>

@@ -2,6 +2,7 @@
 // src/components/wiki-os/history/ScrubbableRevisionTimeline.tsx
 // Interactive Scrubbable Revision Timeline & Diff Inspection Suite
 
+import { cn } from "~/lib/utils";
 import * as React from "react";
 import {
   Clock,
@@ -16,6 +17,15 @@ import { DiffViewer } from "~/components/diff-viewer";
 import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 import { useDebounce } from "~/hooks/useDebounce";
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 /** How long the two selected revisions stay unchanged before the diff between them is asked for. */
 const DIFF_SETTLE_MS = 250;
@@ -44,7 +54,7 @@ interface ScrubbableRevisionTimelineProps {
 function ByteDelta({ delta }: { delta?: number }) {
   if (!delta) return null;
   return (
-    <span className={`ml-1.5 ${delta > 0 ? "text-emerald-500" : "text-rose-500"}`}>
+    <span className={`ml-2 ${delta > 0 ? "text-green" : "text-red"}`}>
       ({delta > 0 ? "+" : ""}
       {delta.toLocaleString()})
     </span>
@@ -103,18 +113,18 @@ export function ScrubbableRevisionTimeline({
 
   if (isLoading) {
     return (
-      <div className="border-border/40 bg-card/50 flex h-64 items-center justify-center rounded-2xl border">
-        <div className="border-wiki h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
+      <div className="border-separator bg-surface rounded-card flex h-64 items-center justify-center border">
+        <div className="border-tint h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
       </div>
     );
   }
 
   if (revisions.length === 0) {
     return (
-      <div className="border-border/60 bg-card/30 rounded-2xl border border-dashed p-12 text-center">
-        <Clock className="text-muted-foreground/40 mx-auto mb-3 h-10 w-10" />
-        <h3 className="text-foreground text-sm font-semibold">No revision history found</h3>
-        <p className="text-muted-foreground mt-1 text-xs">
+      <div className="border-separator bg-surface rounded-card border border-dashed p-12 text-center">
+        <Clock className="text-label-secondary mx-auto mb-3 h-10 w-10" />
+        <h3 className="text-label text-headline">No revision history found</h3>
+        <p className="text-label-secondary text-footnote mt-1">
           This article does not have recorded historical revisions yet.
         </p>
       </div>
@@ -124,63 +134,46 @@ export function ScrubbableRevisionTimeline({
   return (
     <div className="space-y-6">
       {/* Timeline Controls & Scrubber Card */}
-      <div className="border-border/40 bg-card/75 space-y-5 rounded-2xl border p-6 backdrop-blur-xl">
+      <div className="border-separator bg-surface rounded-card space-y-5 border p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-wiki text-xs font-semibold tracking-wider uppercase">
-                Revision Timeline
-              </span>
-              <span className="bg-secondary/80 text-foreground rounded-full px-2 py-0.5 text-xs font-medium">
+              <span className="text-tint text-subhead">Revision Timeline</span>
+              <span className="bg-fill-2 text-label text-caption rounded-full px-2 py-0.5">
                 {revisions.length} revision{revisions.length > 1 ? "s" : ""}
               </span>
             </div>
-            <h2 className="text-foreground mt-1 text-lg font-bold">{title}</h2>
+            <h2 className="text-label text-title-3 mt-1">{title}</h2>
           </div>
 
           {/* Action Tools */}
           <div className="flex items-center gap-2">
             {/* Split / Unified Layout Toggle */}
-            <div className="border-border/40 bg-secondary/50 flex rounded-xl border p-0.5">
-              <button
-                type="button"
-                onClick={() => setLayout("unified")}
-                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                  layout === "unified"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <AlignLeft className="h-3.5 w-3.5" />
-                Unified
-              </button>
-              <button
-                type="button"
-                onClick={() => setLayout("split")}
-                className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                  layout === "split"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <Columns2 className="h-3.5 w-3.5" />
-                Split
-              </button>
-            </div>
+            <SegmentedControl
+              size="sm"
+              aria-label="Diff layout"
+              value={layout}
+              onValueChange={setLayout}
+              options={[
+                { value: "unified", label: "Unified", icon: <AlignLeft /> },
+                { value: "split", label: "Split", icon: <Columns2 /> },
+              ]}
+            />
 
             {/* Rollback Latest Author */}
             {canRollback && (
-              <button
-                type="button"
+              <Button
+                variant="tinted"
+                size="sm"
                 onClick={() => rollbackMutation.mutate({ title })}
                 disabled={rollbackMutation.isPending}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-red-500/20 active:scale-[0.98]"
+                className="bg-red/10 text-red hover:bg-red/20"
               >
                 <RotateLeft className="h-3.5 w-3.5" />
                 {rollbackMutation.isPending
                   ? "Rolling back…"
                   : `Rollback ${liveRevisions[0]?.author}`}
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -189,7 +182,7 @@ export function ScrubbableRevisionTimeline({
         {rollbackMutation.error && (
           <div
             role="alert"
-            className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400"
+            className="rounded-row border-red/30 bg-red/10 text-caption text-red flex items-center gap-2 border px-3 py-2"
           >
             <AlertTriangle className="h-4 w-4 shrink-0" />
             {rollbackMutation.error.message}
@@ -198,24 +191,25 @@ export function ScrubbableRevisionTimeline({
 
         {/* Visual Timeline Scrubber Bar */}
         <div className="space-y-2 pt-2">
-          <div className="text-muted-foreground flex justify-between text-xs">
+          <div className="text-label-secondary text-footnote flex justify-between">
             <span>Current (Latest)</span>
             <span>Origin (Oldest)</span>
           </div>
 
-          <div className="bg-secondary/30 border-border/30 relative flex h-8 items-center rounded-xl border px-2">
+          <div className="bg-fill-4 border-separator rounded-row relative flex h-8 items-center border px-2">
             {/* Timeline ticks */}
             <div className="pointer-events-none absolute inset-x-3 flex justify-between">
               {revisions.map((r, i) => (
                 <div
                   key={r.id}
-                  className={`h-3 w-1 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                  className={cn(
+                    "duration-fast w-1 rounded-full transition-[height,background-color]",
                     i === targetRevIndex
-                      ? "bg-wiki h-4"
+                      ? "bg-tint h-4"
                       : i === compareRevIndex
-                        ? "h-4 bg-amber-400"
-                        : "bg-muted-foreground/30"
-                  }`}
+                        ? "bg-yellow h-4"
+                        : "bg-fill h-3"
+                  )}
                 />
               ))}
             </div>
@@ -235,27 +229,25 @@ export function ScrubbableRevisionTimeline({
         {/* Selected Revisions Metadata Comparison */}
         <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2">
           {/* Target Revision (Current Selection) */}
-          <div className="border-wiki/30 bg-wiki/5 space-y-1 rounded-xl border p-3">
+          <div className="border-tint/30 bg-tint/5 rounded-row space-y-1 border p-3">
             <div className="flex items-center justify-between">
-              <span className="text-wiki text-xs font-semibold uppercase">
-                Revision A (Newer)
-              </span>
-              <span className="text-foreground font-mono text-xs font-semibold">
+              <span className="text-tint text-eyebrow">Revision A (Newer)</span>
+              <span className="text-label text-caption font-semibold tabular-nums">
                 {targetRev?.byteSize?.toLocaleString()} bytes
                 <ByteDelta delta={targetRev?.byteDelta} />
               </span>
             </div>
-            <div className="text-foreground flex items-center gap-2 text-xs">
-              <User className="text-muted-foreground h-3.5 w-3.5" />
+            <div className="text-label text-footnote flex items-center gap-2">
+              <User className="text-label-secondary h-3.5 w-3.5" />
               <span className="font-medium">{targetRev?.author || "Community Contributor"}</span>
               {targetRev?.minor && (
-                <span className="py-0.2 rounded bg-amber-500/15 px-1 text-xs font-semibold text-amber-400">
+                <span className="py-0.2 rounded-control-sm bg-yellow/15 text-caption text-yellow px-1 font-semibold">
                   m
                 </span>
               )}
               {targetRev?.parked && <ParkedBadge />}
             </div>
-            <div className="text-muted-foreground text-xs">
+            <div className="text-label-secondary text-footnote">
               {targetRev && new Date(targetRev.createdAt).toLocaleString()}
             </div>
             {targetRev &&
@@ -264,41 +256,43 @@ export function ScrubbableRevisionTimeline({
                 const isSync = !clean || /live sync/i.test(clean) || /mediawiki/i.test(clean);
                 return isSync ? (
                   <div className="pt-0.5">
-                    <span className="text-muted-foreground inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-medium">
+                    <span className="text-label-secondary border-separator bg-fill-4 text-caption inline-flex items-center rounded-full border px-2 py-0.5">
                       {targetRev.minor ? "Minor edit" : "Updated content"}
                     </span>
                   </div>
                 ) : (
-                  <p className="text-foreground/80 text-xs italic">&ldquo;{clean}&rdquo;</p>
+                  <p className="text-label-secondary text-footnote italic">&ldquo;{clean}&rdquo;</p>
                 );
               })()}
           </div>
 
           {/* Compare Revision (Base Selection) */}
-          <div className="space-y-1 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
+          <div className="rounded-row border-yellow/30 bg-yellow/5 space-y-1 border p-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-amber-400 uppercase">
-                Revision B (Older)
-              </span>
-              <select
-                value={compareRevIndex}
-                onChange={(e) => setCompareRevIndex(parseInt(e.target.value, 10))}
-                className="border-border/40 bg-background text-foreground h-6 rounded-lg border px-2 text-xs focus:outline-none"
+              <span className="text-eyebrow text-yellow">Revision B (Older)</span>
+              <Select
+                value={String(compareRevIndex)}
+                onValueChange={(v) => setCompareRevIndex(parseInt(v, 10))}
               >
-                {revisions.map((r, idx) => (
-                  <option key={r.id} value={idx}>
-                    {idx === 0 ? "Latest" : `r${r.id}`} • {r.author || "Community Contributor"}
-                    {r.parked ? " (conflict — not live)" : ""}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger size="sm" aria-label="Compare revision" className="max-w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {revisions.map((r, idx) => (
+                    <SelectItem key={r.id} value={String(idx)}>
+                      {idx === 0 ? "Latest" : `r${r.id}`} • {r.author || "Community Contributor"}
+                      {r.parked ? " (conflict — not live)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="text-foreground flex items-center gap-2 text-xs">
-              <User className="text-muted-foreground h-3.5 w-3.5" />
+            <div className="text-label text-footnote flex items-center gap-2">
+              <User className="text-label-secondary h-3.5 w-3.5" />
               <span className="font-medium">{compareRev?.author || "Community Contributor"}</span>
               {compareRev?.parked && <ParkedBadge />}
             </div>
-            <div className="text-muted-foreground text-xs">
+            <div className="text-label-secondary text-footnote">
               {compareRev && new Date(compareRev.createdAt).toLocaleString()}
             </div>
             {compareRev &&
@@ -307,12 +301,12 @@ export function ScrubbableRevisionTimeline({
                 const isSync = !clean || /live sync/i.test(clean) || /mediawiki/i.test(clean);
                 return isSync ? (
                   <div className="pt-0.5">
-                    <span className="text-muted-foreground inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-medium">
+                    <span className="text-label-secondary border-separator bg-fill-4 text-caption inline-flex items-center rounded-full border px-2 py-0.5">
                       {compareRev.minor ? "Minor edit" : "Updated content"}
                     </span>
                   </div>
                 ) : (
-                  <p className="text-foreground/80 text-xs italic">&ldquo;{clean}&rdquo;</p>
+                  <p className="text-label-secondary text-footnote italic">&ldquo;{clean}&rdquo;</p>
                 );
               })()}
           </div>
@@ -320,53 +314,54 @@ export function ScrubbableRevisionTimeline({
 
         {/* Undo Action Bar */}
         {compareRev && targetRev && compareRevIndex !== targetRevIndex && (
-          <div className="border-border/30 flex items-center justify-between border-t pt-2">
-            <span className="text-muted-foreground text-xs">
+          <div className="border-separator flex items-center justify-between border-t pt-2">
+            <span className="text-label-secondary text-footnote">
               Comparing <strong>r{targetRev.id}</strong> against <strong>r{compareRev.id}</strong>
             </span>
             {compareRev.parked ? (
               // a parked revision was never the page's text: there is nothing to go back to
-              <span className="text-muted-foreground text-xs">
+              <span className="text-label-secondary text-footnote">
                 r{compareRev.id} never went live, so it cannot be restored.
               </span>
             ) : (
-              <button
-                type="button"
+              <Button
+                variant="tinted"
+                size="sm"
                 onClick={() => {
                   revertMutation.reset();
                   setUndoTarget(compareRev);
                 }}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-[0.98]"
+                className="bg-yellow/10 text-yellow hover:bg-yellow/20"
               >
                 <Undo className="h-3.5 w-3.5" />
                 Revert to this version
-              </button>
+              </Button>
             )}
           </div>
         )}
 
         {/* Undo Confirmation Modal */}
         {undoTarget && (
-          <div className="space-y-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4">
-            <div className="flex items-center gap-2 text-amber-400">
+          <div className="rounded-row border-yellow/40 bg-yellow/10 space-y-3 border p-4">
+            <div className="text-yellow flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
-              <h4 className="text-xs font-bold">Confirm Revert Action</h4>
+              <h4 className="text-caption font-semibold">Confirm Revert Action</h4>
             </div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-label-secondary text-footnote">
               Are you sure you want to restore the article to revision{" "}
               <strong>{undoTarget.id}</strong> authored by{" "}
               <strong>{undoTarget.author || "Community Contributor"}</strong>? This will create a
               new revision restoring the exact text.
             </p>
             {revertMutation.error && (
-              <p role="alert" className="flex items-center gap-2 text-xs font-medium text-red-400">
+              <p role="alert" className="text-red text-caption flex items-center gap-2">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                 {revertMutation.error.message}
               </p>
             )}
             <div className="flex items-center gap-2">
-              <button
-                type="button"
+              <Button
+                size="sm"
                 disabled={revertMutation.isPending}
                 onClick={() => {
                   revertMutation.mutate({
@@ -375,33 +370,33 @@ export function ScrubbableRevisionTimeline({
                     summary: `Reverted to revision ${undoTarget.id}${undoTarget.author ? ` by ${undoTarget.author}` : ""}`,
                   });
                 }}
-                className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-black hover:bg-amber-400 active:scale-[0.98]"
+                className="bg-yellow hover:bg-yellow/80 text-black"
               >
                 {revertMutation.isPending ? "Reverting…" : "Confirm Revert"}
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="gray"
+                size="sm"
                 onClick={() => {
                   revertMutation.reset();
                   setUndoTarget(null);
                 }}
-                className="border-border/50 bg-secondary/60 text-foreground hover:bg-secondary rounded-lg border px-3 py-1.5 text-xs font-medium"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         )}
       </div>
 
       {/* Embedded DiffViewer */}
-      <div className="border-border/40 bg-card/60 overflow-hidden rounded-2xl border p-4">
+      <div className="border-separator bg-surface rounded-card overflow-hidden border p-4">
         {settling ? (
           <div className="flex h-24 items-center justify-center">
-            <div className="border-wiki h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
+            <div className="border-tint h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
         ) : diff.error ? (
-          <p className="text-xs font-medium text-red-400">
+          <p className="text-red text-caption">
             Failed to load the comparison: {diff.error.message}
           </p>
         ) : diff.data ? (
@@ -419,7 +414,7 @@ export function ScrubbableRevisionTimeline({
           />
         ) : (
           <div className="flex h-24 items-center justify-center">
-            <div className="border-wiki h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
+            <div className="border-tint h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
         )}
       </div>

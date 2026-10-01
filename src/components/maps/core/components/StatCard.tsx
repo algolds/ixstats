@@ -2,7 +2,7 @@
 
 import React from "react";
 import { NavArrowRight as ChevronRight } from "iconoir-react";
-import { Eyebrow } from "~/components/ui/eyebrow";
+import { Stat } from "~/components/ui/stat";
 import { FacetCard } from "~/components/ui/facet-container";
 
 interface StatCardProps {
@@ -12,31 +12,19 @@ interface StatCardProps {
   onClick?: () => void;
 }
 
-/** A labelled figure inside a map panel: an opaque Facet card (the panel itself is the glass). */
+/**
+ * A labelled figure inside a map panel: a `Stat` on an inset (the panel itself is the glass).
+ * With `onClick` the inset is pressable (hover wash, focus ring, Enter/Space) and shows a chevron.
+ */
 export function StatCard({ icon: Icon, label, value, onClick }: StatCardProps) {
-  const body = (
-    <>
-      <Eyebrow className="flex items-center gap-1.5">
-        <Icon className="h-3 w-3" />
-        {label}
-        {onClick && <ChevronRight className="ml-auto h-3 w-3 opacity-60" aria-hidden />}
-      </Eyebrow>
-      <div className="text-foreground mt-0.5 text-sm font-semibold">{value}</div>
-    </>
-  );
-
   return (
-    <FacetCard surface="solid" className="rounded-lg">
-      {onClick ? (
-        <button
-          type="button"
-          onClick={onClick}
-          className="hover:bg-accent focus-visible:ring-ring w-full rounded-lg px-3 py-2 text-left transition-[background-color,transform] duration-150 focus-visible:ring-2 focus-visible:outline-none active:scale-[0.98]"
-        >
-          {body}
-        </button>
-      ) : (
-        <div className="px-3 py-2">{body}</div>
+    <FacetCard variant="inset" padding="none" onClick={onClick} className="px-3 py-2">
+      <Stat size="sm" label={label} value={value} icon={<Icon className="size-3.5" />} />
+      {onClick && (
+        <ChevronRight
+          aria-hidden
+          className="text-label-secondary absolute top-2 right-2 size-3.5 opacity-60"
+        />
       )}
     </FacetCard>
   );

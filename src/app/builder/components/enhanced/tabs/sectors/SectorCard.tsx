@@ -38,14 +38,8 @@ interface SectorCardProps {
   effectiveGDP?: number;
   effectiveEmployment?: number;
   constraint?: SectorConstraint;
-  onChange?: <K extends keyof SectorConfiguration>(
-    field: K,
-    value: SectorConfiguration[K]
-  ) => void;
-  onCommit?: <K extends keyof SectorConfiguration>(
-    field: K,
-    value: SectorConfiguration[K]
-  ) => void;
+  onChange?: <K extends keyof SectorConfiguration>(field: K, value: SectorConfiguration[K]) => void;
+  onCommit?: <K extends keyof SectorConfiguration>(field: K, value: SectorConfiguration[K]) => void;
 }
 
 export function SectorCard({
@@ -74,32 +68,32 @@ export function SectorCard({
   // Class selection based on states
   const getCardClasses = () => {
     if (isActive) {
-      return "border-emerald-500/40 bg-emerald-500/[0.04] dark:bg-emerald-500/[0.05] shadow-[0_0_15px_rgba(16,185,129,0.05)] border-2";
+      return "border-tint bg-tint-fill border-2";
     }
     if (isLocked) {
-      return "border-red-500/20 bg-red-500/[0.02] dark:bg-red-500/[0.02] opacity-40 cursor-not-allowed border-2";
+      return "border-separator bg-surface opacity-40 cursor-not-allowed border-2";
     }
     if (isRecommended) {
-      return "border-emerald-500/20 hover:border-emerald-500/40 bg-white/[0.01] hover:bg-white/[0.03] border-2";
+      return "border-tint/30 hover:border-tint/60 bg-surface border-2";
     }
-    return "border-white/10 bg-white/[0.01] hover:border-white/20 hover:bg-white/[0.03] border-2";
+    return "border-separator bg-surface hover:border-label-tertiary border-2";
   };
 
   const getColorClasses = () => {
     switch (color) {
       case "green":
-        return { bg: "bg-green-500/10", text: "text-green-400" };
+        return { bg: "bg-green/10", text: "text-green" };
       case "blue":
-        return { bg: "bg-blue-500/10", text: "text-blue-400" };
+        return { bg: "bg-blue/10", text: "text-blue" };
       case "purple":
-        return { bg: "bg-purple-500/10", text: "text-purple-400" };
+        return { bg: "bg-purple/10", text: "text-purple" };
       case "cyan":
-        return { bg: "bg-cyan-500/10", text: "text-cyan-400" };
+        return { bg: "bg-teal/10", text: "text-teal" };
       case "yellow":
-        return { bg: "bg-yellow-500/10", text: "text-yellow-400" };
+        return { bg: "bg-yellow/10", text: "text-yellow" };
       case "gray":
       default:
-        return { bg: "bg-zinc-500/10", text: "text-zinc-400" };
+        return { bg: "bg-fill-4", text: "text-label-secondary" };
     }
   };
 
@@ -125,7 +119,7 @@ export function SectorCard({
     <motion.div
       whileHover={{ scale: isLocked ? 1 : isActive ? 1 : 1.01 }}
       className={cn(
-        "relative flex flex-col justify-between rounded-xl p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none",
+        "rounded-row relative flex flex-col justify-between p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none",
         getCardClasses()
       )}
       onClick={!isActive && !isLocked ? onToggle : undefined}
@@ -134,31 +128,22 @@ export function SectorCard({
         {/* Header */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3">
-            <div className={cn("shrink-0 rounded-lg p-2", colors.bg)}>
+            <div className={cn("rounded-control shrink-0 p-2", colors.bg)}>
               <Icon className={cn("h-5 w-5", colors.text)} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h4 className="text-foreground text-sm leading-tight font-semibold">
-                  {template.name}
-                </h4>
-                {constraint?.locked && (
-                  <Badge
-                    variant="secondary"
-                    className="border-red-500/20 bg-red-500/10 px-1.5 py-0 text-xs leading-none text-red-400"
-                  >
-                    Constrained
-                  </Badge>
-                )}
+                <h3 className="text-label text-headline leading-tight">{template.name}</h3>
+                {constraint?.locked && <Badge variant="destructive">Constrained</Badge>}
                 {isAffected && (
                   <Badge
                     variant={isBoosted ? "default" : "secondary"}
                     className={cn(
-                      "px-1.5 py-0 text-xs leading-none",
+                      "text-footnote px-2 py-0 leading-none",
                       isBoosted
-                        ? "border-emerald-500/30 bg-emerald-500/20 text-emerald-400"
+                        ? "border-green/30 bg-green/20 text-green"
                         : isPenalized
-                          ? "border-amber-500/30 bg-amber-500/20 text-amber-400"
+                          ? "border-yellow/30 bg-yellow/20 text-yellow"
                           : ""
                     )}
                   >
@@ -168,7 +153,7 @@ export function SectorCard({
                   </Badge>
                 )}
               </div>
-              <span className="text-muted-foreground text-xs">
+              <span className="text-label-secondary text-footnote">
                 {template.baseContribution}% template base
               </span>
             </div>
@@ -183,18 +168,15 @@ export function SectorCard({
                   e.stopPropagation();
                   onToggle();
                 }}
-                className="text-muted-foreground h-7 w-7 rounded-full p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-red-500/10 hover:text-red-400"
+                className="text-label-secondary hover:bg-red/10 hover:text-red h-7 w-7 rounded-full p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                 title="Deactivate Sector"
               >
-                <Minus className="h-4 w-4 text-red-400/80" />
+                <Minus className="text-red/80 h-4 w-4" />
               </Button>
             )}
-            {isLocked && <AlertCircle className="h-4 w-4 text-red-500" />}
+            {isLocked && <AlertCircle className="text-red h-4 w-4" />}
             {isRecommended && !isActive && !isLocked && (
-              <Badge
-                variant="default"
-                className="h-4 border border-emerald-500/20 bg-emerald-500/10 px-1.5 py-0 text-xs font-semibold tracking-wider text-emerald-400 uppercase"
-              >
+              <Badge variant="success" className="text-eyebrow h-4">
                 Recommended
               </Badge>
             )}
@@ -203,21 +185,21 @@ export function SectorCard({
 
         {/* Description */}
         {!isActive && (
-          <p className="text-muted-foreground line-clamp-2 text-xs leading-snug">
+          <p className="text-label-secondary text-footnote line-clamp-2 leading-snug">
             {template.description}
           </p>
         )}
 
         {/* Incompatible Component List */}
         {isLocked && lockedBy.length > 0 && (
-          <div className="rounded border border-red-500/10 bg-red-500/[0.03] px-2.5 py-1 text-xs leading-tight text-red-400">
+          <div className="border-red/10 bg-red/[0.03] text-footnote text-red rounded border px-3 py-1 leading-tight">
             <span className="font-semibold">Incompatible with:</span> {lockedBy.join(", ")}
           </div>
         )}
 
         {/* Recommendations list */}
         {isRecommended && !isActive && !isLocked && recommendedBy.length > 0 && (
-          <div className="flex items-start gap-1 rounded border border-emerald-500/10 bg-emerald-500/[0.03] px-2.5 py-1 text-xs leading-tight text-emerald-400">
+          <div className="border-green/10 bg-green/[0.03] text-footnote text-green flex items-start gap-1 rounded border px-3 py-1 leading-tight">
             <ArrowUpRight className="mt-0.5 h-3 w-3 shrink-0" />
             <div>
               <span className="font-semibold">Recommended by:</span> {recommendedBy.join(", ")}
@@ -228,15 +210,15 @@ export function SectorCard({
         {/* Active Sliders & Configuration (Option A: Inline) */}
         {isActive && activeConfig && (
           <div
-            className="mt-2 space-y-4 border-t border-emerald-500/10 pt-3"
+            className="border-separator mt-2 space-y-4 border-t pt-3"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Component Impact Indicator inside active card */}
             {isAffected && affectingComponents.length > 0 && (
               <div
                 className={cn(
-                  "space-y-1 rounded-lg border border-white/5 bg-black/10 p-2 text-xs",
-                  isBoosted ? "text-emerald-400" : "text-amber-400"
+                  "bg-surface-secondary rounded-control text-footnote space-y-1 p-2",
+                  isBoosted ? "text-green" : "text-caution"
                 )}
               >
                 <div className="flex items-center gap-1 font-medium">
@@ -248,18 +230,18 @@ export function SectorCard({
                   </span>
                 </div>
                 {effectiveGDP !== undefined && activeConfig.gdpContribution !== effectiveGDP && (
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-zinc-400">Effective GDP Contribution:</span>
-                    <span className="font-semibold text-emerald-400">
+                  <div className="text-footnote flex items-center justify-between">
+                    <span className="text-label-secondary">Effective GDP Contribution:</span>
+                    <span className="text-green font-semibold">
                       {activeConfig.gdpContribution.toFixed(1)}% → {effectiveGDP.toFixed(1)}%
                     </span>
                   </div>
                 )}
                 {effectiveEmployment !== undefined &&
                   activeConfig.employmentShare !== effectiveEmployment && (
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-zinc-400">Effective Employment Share:</span>
-                      <span className="font-semibold text-emerald-400">
+                    <div className="text-footnote flex items-center justify-between">
+                      <span className="text-label-secondary">Effective Employment Share:</span>
+                      <span className="text-green font-semibold">
                         {activeConfig.employmentShare.toFixed(1)}% →{" "}
                         {effectiveEmployment.toFixed(1)}%
                       </span>
@@ -308,7 +290,7 @@ export function SectorCard({
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
-                className="space-y-3 border-t border-white/5 pt-3"
+                className="border-separator space-y-3 border-t pt-3"
               >
                 <div className="grid grid-cols-2 gap-2">
                   <SliderWithDirectInput
@@ -421,12 +403,12 @@ export function SectorCard({
 
       {/* Characteristics Badges (only show if not active to save vertical space) */}
       {!isActive && (
-        <div className="mt-3 flex flex-wrap gap-1 border-t border-white/5 pt-2">
+        <div className="border-separator mt-3 flex flex-wrap gap-1 border-t pt-2">
           {template.characteristics.slice(0, 2).map((char, idx) => (
             <Badge
               key={idx}
               variant="secondary"
-              className="border-none bg-white/5 px-1.5 py-1 text-xs leading-none font-normal text-zinc-400 hover:bg-white/5"
+              className="bg-fill-4 text-footnote text-label-secondary hover:bg-fill-4 border-none px-2 py-1 leading-none font-normal"
             >
               {char}
             </Badge>
@@ -434,7 +416,7 @@ export function SectorCard({
           {template.characteristics.length > 2 && (
             <Badge
               variant="secondary"
-              className="flex items-center justify-center border-none bg-white/5 px-1 py-1 text-xs leading-none font-normal text-zinc-400 hover:bg-white/5"
+              className="bg-fill-4 text-footnote text-label-secondary hover:bg-fill-4 flex items-center justify-center border-none px-1 py-1 leading-none font-normal"
             >
               +{template.characteristics.length - 2}
             </Badge>

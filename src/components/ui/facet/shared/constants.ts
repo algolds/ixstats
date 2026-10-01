@@ -30,10 +30,15 @@ export type SpringPreset = keyof typeof SPRING_PRESETS;
 export const DRAG_ELASTICITY = 0.32;
 export const DRAG_DEAD_ZONE = 3;
 
-// ── Shared Glass Styling (Tailwind Composition) ────────────────────────────
+// ── Legacy glass styling (deprecated) ──────────────────────────────────────
+// Facet 3 has one glass: the `material-*` utilities (FacetMaterial), for floating chrome only.
+// These names are kept for imports and now resolve to roles.
 
-export const GLASS_BACKING =
-  "bg-black/[0.02] dark:bg-gradient-to-br dark:from-white/[0.04] dark:to-white/[0.005]";
-export const GLASS_BORDER = "border-black/[0.08] dark:border-white/10";
-export const GLASS_BLUR = "backdrop-blur-[20px] saturate-[190%]";
-export const GLASS_SHADOW = "shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,0.25)]";
+/** @deprecated Use `bg-fill-4` (a wash) or `FacetMaterial` (floating chrome). */
+export const GLASS_BACKING = "bg-fill-4";
+/** @deprecated Use `border-separator`. */
+export const GLASS_BORDER = "border-separator";
+/** @deprecated Use `material-regular` (FacetMaterial) on floating chrome only. */
+export const GLASS_BLUR = "material-regular";
+/** @deprecated Use `shadow-floating` (chrome) or `shadow-card` (content). */
+export const GLASS_SHADOW = "shadow-floating";

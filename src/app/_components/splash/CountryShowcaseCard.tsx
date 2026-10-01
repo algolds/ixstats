@@ -124,7 +124,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
       <div className="relative z-10 space-y-5">
         <div className="flex items-start gap-4">
           <div className="flex-1">
-            <h3 className="text-foreground mb-1.5 text-3xl font-bold md:text-4xl">
+            <h3 className="text-label text-large-title md:text-large-title mb-2">
               {identity?.officialName || displayName}
             </h3>
             <div className="flex flex-wrap items-center gap-2">
@@ -134,7 +134,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             </div>
           </div>
           {coatOfArmsUrl && (
-            <div className="facet-hierarchy-child flex h-20 w-20 shrink-0 items-center justify-center rounded-xl p-2">
+            <div className="bg-surface-secondary rounded-row flex h-20 w-20 shrink-0 items-center justify-center p-2">
               <img
                 src={coatOfArmsUrl}
                 alt={`${displayName} coat of arms`}
@@ -147,21 +147,17 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
         </div>
 
         {identity && (identity.capitalCity || identity.currency || identity.demonym) && (
-          <div className="facet-hierarchy-child grid grid-cols-3 gap-3 rounded-xl p-3">
+          <div className="bg-surface-secondary rounded-row grid grid-cols-3 gap-3 p-3">
             {identity.capitalCity && (
               <div className="text-center">
-                <div className="text-muted-foreground mb-0.5 text-xs tracking-wider uppercase">
-                  Capital
-                </div>
-                <div className="text-foreground text-xs font-medium">{identity.capitalCity}</div>
+                <div className="text-label-secondary text-eyebrow mb-0.5">Capital</div>
+                <div className="text-label text-caption">{identity.capitalCity}</div>
               </div>
             )}
             {identity.currency && (
               <div className="text-center">
-                <div className="text-muted-foreground mb-0.5 text-xs tracking-wider uppercase">
-                  Currency
-                </div>
-                <div className="text-foreground text-xs font-medium">
+                <div className="text-label-secondary text-eyebrow mb-0.5">Currency</div>
+                <div className="text-label text-caption">
                   {identity.currencySymbol
                     ? `${identity.currency} (${identity.currencySymbol})`
                     : identity.currency}
@@ -170,31 +166,27 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             )}
             {identity.demonym && (
               <div className="text-center">
-                <div className="text-muted-foreground mb-0.5 text-xs tracking-wider uppercase">
-                  Demonym
-                </div>
-                <div className="text-foreground text-xs font-medium">{identity.demonym}</div>
+                <div className="text-label-secondary text-eyebrow mb-0.5">Demonym</div>
+                <div className="text-label text-caption">{identity.demonym}</div>
               </div>
             )}
           </div>
         )}
 
         {wikiIntro && (
-          <div className="facet-hierarchy-child space-y-3 rounded-xl p-4">
-            <p className="text-foreground text-sm leading-relaxed whitespace-pre-line">
-              {wikiIntro}
-            </p>
+          <div className="bg-surface-secondary rounded-row space-y-3 p-4">
+            <p className="text-label text-body leading-relaxed whitespace-pre-line">{wikiIntro}</p>
             <div className="flex items-center gap-4">
               <Link
                 href={wikiUrl}
-                className={`inline-flex items-center gap-2 text-xs ${splashGold.link}`}
+                className={`text-footnote inline-flex items-center gap-2 ${splashGold.link}`}
               >
                 <ExternalLink className="h-3 w-3" />
                 Read more on IxWiki
               </Link>
               <Link
                 href={ixstatsUrl}
-                className={`inline-flex items-center gap-2 text-xs ${splashGold.link}`}
+                className={`text-footnote inline-flex items-center gap-2 ${splashGold.link}`}
               >
                 <BarChart3 className="h-3 w-3" />
                 View in IxStats
@@ -205,50 +197,42 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
 
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <div className="facet-hierarchy-child rounded-xl p-3">
-              <div className="mb-1 flex items-center gap-1.5">
+            <div className="bg-surface-secondary rounded-row p-3">
+              <div className="mb-1 flex items-center gap-2">
                 <TrendingUp className={`h-3 w-3 ${splashGold.text}`} />
-                <Eyebrow>
-                  Total GDP
-                </Eyebrow>
+                <Eyebrow>Total GDP</Eyebrow>
               </div>
-              <div className={`text-lg font-bold ${splashGold.text}`}>
+              <div className={`text-title-3 ${splashGold.text}`}>
                 {formatCurrency(currentTotalGdp)}
               </div>
             </div>
-            <div className="facet-hierarchy-child rounded-xl p-3">
-              <div className="mb-1 flex items-center gap-1.5">
+            <div className="bg-surface-secondary rounded-row p-3">
+              <div className="mb-1 flex items-center gap-2">
                 <Users className={`h-3 w-3 ${splashGold.text}`} />
-                <Eyebrow>
-                  Population
-                </Eyebrow>
+                <Eyebrow>Population</Eyebrow>
               </div>
-              <div className={`text-lg font-bold ${splashGold.text}`}>
+              <div className={`text-title-3 ${splashGold.text}`}>
                 {formatPopulation(currentPopulation)}
               </div>
             </div>
-            <div className="facet-hierarchy-child rounded-xl p-3">
-              <div className="mb-1 flex items-center gap-1.5">
+            <div className="bg-surface-secondary rounded-row p-3">
+              <div className="mb-1 flex items-center gap-2">
                 <BarChart3 className={`h-3 w-3 ${splashGold.text}`} />
-                <Eyebrow>
-                  Per Capita
-                </Eyebrow>
+                <Eyebrow>Per Capita</Eyebrow>
               </div>
-              <div className={`text-lg font-bold ${splashGold.text}`}>
+              <div className={`text-title-3 ${splashGold.text}`}>
                 {formatCurrency(currentGdpPerCapita)}
               </div>
             </div>
-            <div className="facet-hierarchy-child rounded-xl p-3">
-              <div className="mb-1 flex items-center gap-1.5">
+            <div className="bg-surface-secondary rounded-row p-3">
+              <div className="mb-1 flex items-center gap-2">
                 <Activity
                   className={`h-3 w-3 ${growthPositive ? splashGold.text : "text-destructive"}`}
                 />
-                <Eyebrow>
-                  Growth
-                </Eyebrow>
+                <Eyebrow>Growth</Eyebrow>
               </div>
               <div
-                className={`text-lg font-bold ${growthPositive ? splashGold.text : "text-destructive"}`}
+                className={`text-title-3 ${growthPositive ? splashGold.text : "text-destructive"}`}
               >
                 {growthPositive ? "+" : ""}
                 {(growthRate * 100).toFixed(2)}%
@@ -256,11 +240,11 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             </div>
           </div>
 
-          <div className="facet-hierarchy-child grid grid-cols-4 gap-2 rounded-xl p-3">
+          <div className="bg-surface-secondary rounded-row grid grid-cols-4 gap-2 p-3">
             {landArea != null && (
               <div className="text-center">
-                <div className="text-muted-foreground text-xs">Land Area</div>
-                <div className="text-foreground text-xs font-semibold">
+                <div className="text-label-secondary text-footnote">Land Area</div>
+                <div className="text-label text-caption font-semibold">
                   {landArea > 1000000
                     ? `${(landArea / 1000000).toFixed(2)}M km²`
                     : landArea > 1000
@@ -271,24 +255,24 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             )}
             {populationDensity != null && (
               <div className="text-center">
-                <div className="text-muted-foreground text-xs">Density</div>
-                <div className="text-foreground text-xs font-semibold">
+                <div className="text-label-secondary text-footnote">Density</div>
+                <div className="text-label text-caption font-semibold">
                   {populationDensity.toFixed(0)}/km²
                 </div>
               </div>
             )}
             {unemploymentRate != null && (
               <div className="text-center">
-                <div className="text-muted-foreground text-xs">Unemployment</div>
-                <div className="text-foreground text-xs font-semibold">
+                <div className="text-label-secondary text-footnote">Unemployment</div>
+                <div className="text-label text-caption font-semibold">
                   {(unemploymentRate * 100).toFixed(1)}%
                 </div>
               </div>
             )}
             {lifeExpectancy != null && (
               <div className="text-center">
-                <div className="text-muted-foreground text-xs">Life Exp.</div>
-                <div className="text-foreground text-xs font-semibold">
+                <div className="text-label-secondary text-footnote">Life Exp.</div>
+                <div className="text-label text-caption font-semibold">
                   {lifeExpectancy.toFixed(1)} yrs
                 </div>
               </div>
@@ -297,18 +281,18 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
         </div>
 
         {(leader || identity?.motto) && (
-          <div className="facet-hierarchy-child rounded-xl p-3">
+          <div className="bg-surface-secondary rounded-row p-3">
             {leader && (
               <div className="flex items-center gap-2">
-                <Crown className="text-muted-foreground h-3.5 w-3.5" />
-                <span className="text-muted-foreground text-xs">Leader:</span>
-                <span className="text-foreground text-xs font-medium">{leader}</span>
+                <Crown className="text-label-secondary h-3.5 w-3.5" />
+                <span className="text-label-secondary text-footnote">Leader:</span>
+                <span className="text-label text-caption">{leader}</span>
               </div>
             )}
             {identity?.motto && (
               <div className={`flex items-start gap-2 ${leader ? "mt-2" : ""}`}>
-                <Sparkles className="text-muted-foreground mt-0.5 h-3.5 w-3.5" />
-                <span className="text-muted-foreground text-xs italic">
+                <Sparkles className="text-label-secondary mt-0.5 h-3.5 w-3.5" />
+                <span className="text-label-secondary text-footnote italic">
                   &ldquo;{identity.motto}&rdquo;
                 </span>
               </div>
@@ -344,7 +328,7 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
             (economicHealth + developmentIndex + economicGrowth + globalRelevance) / 4
           );
           const healthColor = splashGold.text;
-          const healthBorder = `${splashGold.border} ${splashGold.darkBorder}`;
+          const healthBorder = `${splashGold.border} `;
           const healthGrade =
             overallHealth >= 85
               ? "A+"
@@ -368,19 +352,17 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
           ];
 
           return (
-            <div className={`facet-hierarchy-child rounded-xl border ${healthBorder} p-4`}>
+            <div className={`bg-surface-secondary rounded-row ${healthBorder} p-4`}>
               <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Activity className="text-muted-foreground h-4 w-4" />
-                  <Eyebrow>
-                    Country Health
-                  </Eyebrow>
+                  <Activity className="text-label-secondary h-4 w-4" />
+                  <Eyebrow>Country Health</Eyebrow>
                 </div>
-                <div className="flex items-baseline gap-1.5">
-                  <span className={`text-2xl font-bold ${healthColor}`}>{overallHealth}</span>
-                  <span className="text-muted-foreground text-xs">/100</span>
+                <div className="flex items-baseline gap-2">
+                  <span className={`text-title-1 ${healthColor}`}>{overallHealth}</span>
+                  <span className="text-label-secondary text-footnote">/100</span>
                   <span
-                    className={`ml-1.5 rounded-md border ${healthBorder} px-1.5 py-0.5 text-xs font-bold ${healthColor}`}
+                    className={`rounded-control-sm ml-2 border ${healthBorder} text-caption px-2 py-0.5 font-bold ${healthColor}`}
                   >
                     {healthGrade}
                   </span>
@@ -389,17 +371,17 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
               <div className="space-y-2">
                 {indicators.map((ind) => (
                   <div key={ind.label} className="flex items-center gap-3">
-                    <span className="text-muted-foreground w-20 text-xs">{ind.label}</span>
-                    <div className="bg-muted h-1.5 flex-1 overflow-hidden rounded-full">
+                    <span className="text-label-secondary text-footnote w-20">{ind.label}</span>
+                    <div className="bg-fill-3 h-1.5 flex-1 overflow-hidden rounded-full">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-amber-600 to-yellow-500 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 dark:from-amber-500 dark:to-yellow-400"
+                        className="bg-tint h-full rounded-full transition-[width] duration-500"
                         style={{
                           width: `${Math.min(100, ind.value)}%`,
                           opacity: ind.value >= 70 ? 1 : ind.value >= 45 ? 0.85 : 0.65,
                         }}
                       />
                     </div>
-                    <span className="text-foreground w-8 text-right text-xs font-medium">
+                    <span className="text-label text-caption w-8 text-right">
                       {Math.round(ind.value)}
                     </span>
                   </div>

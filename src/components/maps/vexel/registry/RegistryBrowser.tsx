@@ -1,6 +1,7 @@
 "use client";
 
 import { FacetCard } from "~/components/ui/facet-container";
+import { SearchField } from "~/components/ui/search-field";
 import { Button } from "~/components/ui/button";
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
@@ -45,10 +46,7 @@ export default function RegistryBrowser() {
   return (
     <div className="space-y-6">
       {/* Sub-navigation & search toolbar */}
-      <FacetCard
-        surface="solid"
-        className="border-border bg-muted/40 flex flex-col justify-between gap-4 rounded-xl p-4 md:flex-row md:items-center"
-      >
+      <FacetCard className="flex flex-col justify-between gap-4 p-4 md:flex-row md:items-center">
         {/* Filter Tabs */}
         <FacetTabs
           tabs={[...REGISTRY_TABS]}
@@ -63,25 +61,25 @@ export default function RegistryBrowser() {
         />
 
         {/* Search */}
-        <div className="w-full text-xs md:w-72">
-          <input
-            type="text"
+        <div className="text-footnote w-full md:w-72">
+          <SearchField
+            aria-label="Search the registry"
             placeholder="Search by title or blazon..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border-border bg-card text-muted-foreground w-full rounded-lg border p-2 focus:border-amber-500 focus:outline-none"
+            onClear={() => setSearch("")}
           />
         </div>
       </FacetCard>
 
       {/* Grid List */}
       {isLoading ? (
-        <div className="text-muted-foreground flex flex-col items-center justify-center gap-3 py-32 text-xs">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
+        <div className="text-label-secondary text-footnote flex flex-col items-center justify-center gap-3 py-32">
+          <div className="border-tint h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
           <span>Consulting the Heraldic rolls...</span>
         </div>
       ) : filteredAchievements.length === 0 ? (
-        <div className="border-border bg-muted/40 text-muted-foreground rounded-xl border p-20 text-center text-xs italic">
+        <div className="border-separator bg-fill-3 text-label-secondary rounded-row text-footnote border p-20 text-center italic">
           No achievements registered.
         </div>
       ) : (

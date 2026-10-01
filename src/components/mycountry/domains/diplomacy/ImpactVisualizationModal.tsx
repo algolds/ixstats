@@ -7,12 +7,13 @@ import { Eyebrow } from "~/components/ui/eyebrow";
 import { Progress } from "~/components/ui/progress";
 import { FacetCard } from "~/components/ui/facet-container";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "~/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "~/components/ui/sheet";
+import { Stat } from "~/components/ui/stat";
 
 interface LongTermEffects {
   culturalTiesStrength?: number;
@@ -46,40 +47,38 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
     const { impact } = impactData;
 
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <StatsReport className="text-muted-foreground h-5 w-5" />
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent size="wide" className="overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <StatsReport className="text-label-secondary h-5 w-5" />
               Exchange Impact Analysis
-            </DialogTitle>
-            <DialogDescription>
+            </SheetTitle>
+            <SheetDescription>
               Detailed breakdown of cultural and diplomatic impact
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
 
           <div className="space-y-4">
-            <FacetCard surface="solid" className="rounded-xl p-5">
-              <h4 className="text-foreground mb-4 text-sm font-semibold">
-                Relationship State Evolution
-              </h4>
+            <FacetCard variant="inset" className="p-5">
+              <h4 className="text-label text-headline mb-4">Relationship State Evolution</h4>
               <div className="flex items-center justify-center gap-4">
                 <div className="text-center">
-                  <div className="text-foreground mb-1 text-2xl font-semibold">
+                  <div className="text-label text-title-1 mb-1">
                     {impact.currentState || "Neutral"}
                   </div>
                   <Eyebrow>Before</Eyebrow>
                 </div>
-                <ArrowRight className="text-muted-foreground h-6 w-6" />
+                <ArrowRight className="text-label-secondary h-6 w-6" />
                 <div className="text-center">
-                  <div className="text-foreground mb-1 text-2xl font-semibold">
+                  <div className="text-label text-title-1 mb-1">
                     {impact.newState || "Friendly"}
                   </div>
                   <Eyebrow>After</Eyebrow>
                 </div>
               </div>
               {impact.stateChanged && (
-                <p className="mt-4 flex items-center justify-center gap-1.5 text-sm font-medium text-emerald-500">
+                <p className="text-body text-green mt-4 flex items-center justify-center gap-2 font-medium">
                   <Check className="h-4 w-4" />
                   Relationship state improved (
                   {Math.round((impact.transitionProbability || 0) * 100)}% probability)
@@ -92,21 +91,19 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
                 { label: "Cultural bonus", value: impact.culturalBonusDelta || 0 },
                 { label: "Diplomatic bonus", value: impact.diplomaticBonusDelta || 0 },
               ].map((m) => (
-                <FacetCard key={m.label} surface="solid" className="rounded-xl p-4">
-                  <Eyebrow className="flex items-center gap-1.5">
-                    <ArrowUp className="h-3.5 w-3.5" />
-                    {m.label}
-                  </Eyebrow>
-                  <div className="text-foreground mt-1 text-2xl font-semibold tabular-nums">
-                    +{m.value}
-                  </div>
+                <FacetCard variant="inset" key={m.label} className="p-4">
+                  <Stat
+                    label={m.label}
+                    value={<>+{m.value}</>}
+                    icon={<ArrowUp className="size-3.5" />}
+                  />
                 </FacetCard>
               ))}
             </div>
 
             {impact.longTermEffects && (
-              <FacetCard surface="solid" className="rounded-xl p-5">
-                <h4 className="text-foreground mb-4 text-sm font-semibold">Long-term Effects</h4>
+              <FacetCard variant="inset" className="p-5">
+                <h4 className="text-label text-headline mb-4">Long-term Effects</h4>
                 <div className="space-y-4">
                   {[
                     {
@@ -122,9 +119,9 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
                     .filter((e): e is { label: string; value: number } => e.value !== undefined)
                     .map((effect) => (
                       <div key={effect.label}>
-                        <div className="mb-2 flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">{effect.label}</span>
-                          <span className="text-foreground font-medium tabular-nums">
+                        <div className="text-body mb-2 flex items-center justify-between">
+                          <span className="text-label-secondary">{effect.label}</span>
+                          <span className="text-label font-medium tabular-nums">
                             {effect.value}%
                           </span>
                         </div>
@@ -136,12 +133,12 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
             )}
 
             {impact.reasoning && Array.isArray(impact.reasoning) && impact.reasoning.length > 0 && (
-              <FacetCard surface="solid" className="rounded-xl p-5">
-                <h4 className="text-foreground mb-4 text-sm font-semibold">Impact Analysis</h4>
+              <FacetCard variant="inset" className="p-5">
+                <h4 className="text-label text-headline mb-4">Impact Analysis</h4>
                 <ul className="space-y-2">
                   {impact.reasoning.map((reason, idx) => (
-                    <li key={idx} className="text-muted-foreground flex items-start gap-2 text-sm">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                    <li key={idx} className="text-label-secondary text-body flex items-start gap-2">
+                      <Check className="text-green mt-0.5 h-4 w-4 shrink-0" />
                       <span>{reason}</span>
                     </li>
                   ))}
@@ -149,8 +146,8 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
               </FacetCard>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     );
   }
 );

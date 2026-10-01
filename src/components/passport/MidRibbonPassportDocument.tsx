@@ -1,14 +1,24 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useId } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { Check, Copy, Spark as Sparkles } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetCard, MotionFacetCard } from "~/components/ui/facet-container";
+import { Stat } from "~/components/ui/stat";
+import { REDUCED_MOTION_FADE, springSmooth, tweenFast } from "~/lib/design/motion";
 import { GuillochePattern } from "./cards/GuillochePattern";
 import { PassportBackFace } from "./document/PassportBackFace";
 import { PassportMasthead } from "./document/PassportMasthead";
 import { PassportStatGrid } from "./document/PassportStatGrid";
-import { PassportTabRibbon } from "./document/PassportTabRibbon";
+import {
+  PassportTabRibbon,
+  passportTabId,
+  passportTabPanelId,
+} from "./document/PassportTabRibbon";
 import { PassportLorewardsModal } from "./modals/PassportLorewardsModal";
 import { PassportTabBody } from "./PassportTabPanels";
 import type { PassportPayload, PassportTabType } from "./types";
@@ -89,6 +99,7 @@ export function MidRibbonPassportDocument({
   const handleDone = useCallback(() => setIsFlipped(false), []);
   const handleOpenLorewards = useCallback(() => setIsLorewardsModalOpen(true), []);
   const handleOpenVault = useCallback(() => onSelectTab("vault"), [onSelectTab]);
+  const tabIdBase = `passport-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   const realmName = featuredRealm?.name ?? "—";
   const passportNumber = `IX-${cleanUsername.toUpperCase().substring(0, 4)}-${data.account.userId ? data.account.userId.substring(0, 4).toUpperCase() : "882"}`;
@@ -101,10 +112,8 @@ export function MidRibbonPassportDocument({
   const vault = data.vault;
   const ribbonCounts = { realms: data.realmCount, vault: vault?.totalCards };
 
-  // Apple §4 springs: flip is interruptible, from presentation value
-  const flipTransition = shouldReduceMotion
-    ? { duration: 0.2, ease: "easeOut" as const }
-    : { type: "spring" as const, bounce: 0, duration: 0.4 };
+  // Facet springs: the flip is interruptible (spring-smooth); Reduce Motion cross-fades.
+  const flipTransition = shouldReduceMotion ? REDUCED_MOTION_FADE : springSmooth;
 
   return (
     <div className="relative w-full" style={{ perspective: 1800 }}>
@@ -117,20 +126,22 @@ export function MidRibbonPassportDocument({
         {/* ========================================================================= */}
         {/* FRONT FACE OF THE PASSPORT                                               */}
         {/* ========================================================================= */}
-        <motion.div
+        <MotionFacetCard
+          // v2 document: the translucent glass page (Facet 3.1 glass hero + tinted shadow; no
+          // clipping blob); the panels inside stay opaque (glass never nests).
+          variant="glass"
+          glow="shadow"
           className={cn(
-            // Apple §12 Materials: translucent layer, not opaque bar — content scrolls under, weight encodes hierarchy
-            "bg-card/70 dark:bg-card/60 relative w-full rounded-3xl border border-black/10 shadow-2xl saturate-[180%] backdrop-blur-[20px] [backface-visibility:hidden] dark:border-white/15",
-            "supports-[backdrop-filter:blur(0)]:bg-card/85",
+            "relative w-full [backface-visibility:hidden]",
             isFlipped ? "pointer-events-none opacity-0" : "opacity-100"
           )}
           style={{ willChange: shouldReduceMotion ? undefined : "opacity" }}
           animate={{ opacity: isFlipped ? 0 : 1 }}
-          transition={shouldReduceMotion ? { duration: 0.2 } : { duration: 0.15 }}
+          transition={tweenFast}
         >
           <GuillochePattern opacity={0.06} />
 
-          <div className="relative z-10">
+          <div className="relative">
             {/* 1. TOP IDENTITY & OVERVIEW CARD SECTION */}
             <div className="space-y-6 p-5 sm:p-7">
               {/* Header: Clean Sovereign Masthead with Frosted IX Emblem */}
@@ -143,8 +154,8 @@ export function MidRibbonPassportDocument({
               {/* Identity & Overview Grid (Restrained Information Grammar) */}
               <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
                 {/* Left: Unobstructed High-Res Portrait & Signature */}
-                <div className="flex flex-col items-center gap-3.5 sm:items-start lg:col-span-4">
-                  <div className="bg-muted relative h-44 w-38 overflow-hidden rounded-2xl border-2 border-black/15 shadow-sm sm:h-52 sm:w-44 dark:border-white/20">
+                <div className="flex flex-col items-center gap-4 sm:items-start lg:col-span-4">
+                  <div className="bg-fill-3 border-separator rounded-card shadow-card relative h-44 w-38 overflow-hidden border-2 sm:h-52 sm:w-44">
                     {highResAvatarUrl ? (
                       <img
                         src={highResAvatarUrl}
@@ -155,17 +166,15 @@ export function MidRibbonPassportDocument({
                         referrerPolicy="no-referrer"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-stone-200 font-mono text-4xl font-bold text-stone-600 select-none dark:bg-stone-800">
+                      <div className="bg-fill-3 text-large-title text-label-secondary flex h-full w-full items-center justify-center select-none">
                         {displayName.charAt(0).toUpperCase()}
                       </div>
                     )}
                   </div>
 
-                  <div className="w-full max-w-[175px] space-y-0.5 border-t border-black/15 pt-1.5 text-center sm:text-left dark:border-white/20">
-                    <span className="text-muted-foreground block font-mono text-xs tracking-wider uppercase">
-                      SIGNATURE
-                    </span>
-                    <span className="text-foreground/90 block truncate font-serif text-sm font-medium tracking-wider italic select-none">
+                  <div className="border-separator w-full max-w-[175px] space-y-0.5 border-t pt-2 text-center sm:text-left">
+                    <Eyebrow className="block">Signature</Eyebrow>
+                    <span className="text-label text-body block truncate font-serif italic select-none">
                       {signature}
                     </span>
                   </div>
@@ -175,58 +184,41 @@ export function MidRibbonPassportDocument({
                 <div className="space-y-4 lg:col-span-8">
                   {/* Name, Handle & Role */}
                   <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <h2 className="text-foreground font-sans text-2xl font-bold tracking-tight">
-                        {displayName}
-                      </h2>
-                      <button
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-label text-title-1">{displayName}</h2>
+                      <Button
                         type="button"
+                        variant="gray"
+                        size="sm"
                         onClick={handleCopyHandle}
-                        className="hover:text-foreground inline-flex cursor-pointer items-center gap-1 rounded-lg bg-black/5 px-2.5 py-1 font-mono text-xs font-semibold text-stone-600 transition-colors hover:bg-black/10 dark:bg-white/5 dark:text-stone-300"
+                        aria-label={
+                          copiedHandle ? "Handle copied" : `Copy handle @${cleanUsername}`
+                        }
+                        className="text-label-secondary"
                       >
                         <span>@{cleanUsername}</span>
                         {copiedHandle ? (
-                          <Check className="h-2.5 w-2.5 text-emerald-500" />
+                          <Check aria-hidden className="text-success size-3.5" />
                         ) : (
-                          <Copy className="h-2.5 w-2.5" />
+                          <Copy aria-hidden className="size-3.5" />
                         )}
-                      </button>
+                      </Button>
 
-                      {/* Authoritative User Role Badge */}
-                      {roleName && (
-                        <span className="rounded-lg border border-blue-500/25 bg-blue-500/10 px-2.5 py-0.5 font-mono text-xs font-bold tracking-wider text-blue-600 uppercase dark:text-blue-400">
-                          {roleName}
-                        </span>
-                      )}
+                      {/* Authoritative user role */}
+                      {roleName && <Badge variant="info">{roleName}</Badge>}
                     </div>
                   </div>
 
                   {/* Information Grammar 4-Cell Matrix */}
-                  <div className="grid grid-cols-2 gap-3 border-y border-black/8 py-3.5 font-mono text-xs sm:grid-cols-4 dark:border-white/10">
-                    <div>
-                      <span className="text-muted-foreground block text-xs uppercase">
-                        IDENTITY NO.
-                      </span>
-                      <strong className="text-foreground font-bold">{passportNumber}</strong>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground block text-xs uppercase">
-                        DATE JOINED
-                      </span>
-                      <strong className="text-foreground font-bold">{entryDate}</strong>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground block text-xs uppercase">
-                        PRIMARY REALM
-                      </span>
-                      <strong className="text-foreground font-bold">{realmName}</strong>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground block text-xs uppercase">
-                        STATUS
-                      </span>
-                      <span className="font-bold text-emerald-500">ACTIVE</span>
-                    </div>
+                  <div className="border-separator grid grid-cols-2 gap-3 border-y py-3 sm:grid-cols-4">
+                    <Stat size="sm" label="Identity no." value={passportNumber} />
+                    <Stat size="sm" label="Date joined" value={entryDate} />
+                    <Stat size="sm" label="Primary realm" value={realmName} />
+                    <Stat
+                      size="sm"
+                      label="Status"
+                      value={<span className="text-success-ink">Active</span>}
+                    />
                   </div>
 
                   {/* Stat Overview Grid (Lorewards, Streak, Forum, Vault) */}
@@ -241,17 +233,15 @@ export function MidRibbonPassportDocument({
 
                   {/* ThinkPages Voice Bio (if available) */}
                   {data.thinkpages.bio && (
-                    <div className="space-y-1 rounded-xl border border-black/6 bg-black/[0.015] p-3 dark:border-white/8 dark:bg-white/[0.02]">
-                      <div className="flex items-center gap-1.5 text-blue-500">
-                        <Sparkles className="h-3 w-3" />
-                        <span className="font-mono text-xs font-bold tracking-wider uppercase">
-                          ThinkPages Bio
-                        </span>
+                    <FacetCard variant="inset" padding="sm" className="space-y-1">
+                      <div className="text-label-secondary text-subhead flex items-center gap-2">
+                        <Sparkles aria-hidden className="size-3.5" />
+                        <span>ThinkPages bio</span>
                       </div>
-                      <p className="text-muted-foreground text-xs leading-relaxed italic">
+                      <p className="text-label-secondary text-callout italic">
                         "{data.thinkpages.bio}"
                       </p>
-                    </div>
+                    </FacetCard>
                   )}
                 </div>
               </div>
@@ -262,11 +252,17 @@ export function MidRibbonPassportDocument({
               activeTab={activeTab}
               onSelectTab={onSelectTab}
               counts={ribbonCounts}
+              idBase={tabIdBase}
             />
 
-            {/* 3. LOWER TAB BODY CONTENT — Apple §4 spring, §9 rubber-band, §11 will-change */}
+            {/* 3. LOWER TAB BODY CONTENT — Apple §4 spring, §9 rubber-band, §11 will-change.
+                The ribbon's tab panel: labelled by the selected tab, focusable (tabs pattern). */}
             <div
-              className="space-y-6 overscroll-contain p-5 sm:p-7"
+              role="tabpanel"
+              id={passportTabPanelId(tabIdBase)}
+              aria-labelledby={passportTabId(tabIdBase, activeTab)}
+              tabIndex={0}
+              className="focus-visible:outline-tint space-y-6 overscroll-contain p-5 focus-visible:outline-2 focus-visible:-outline-offset-2 sm:p-7"
               style={{ overscrollBehavior: "contain" } as React.CSSProperties}
             >
               <AnimatePresence mode="wait">
@@ -275,11 +271,7 @@ export function MidRibbonPassportDocument({
                   initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
                   animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
                   exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
-                  transition={
-                    shouldReduceMotion
-                      ? { duration: 0.15, ease: "easeOut" }
-                      : { type: "spring", bounce: 0, duration: 0.35 }
-                  }
+                  transition={shouldReduceMotion ? REDUCED_MOTION_FADE : springSmooth}
                   style={{ willChange: shouldReduceMotion ? undefined : "transform, opacity" }}
                 >
                   <PassportTabBody
@@ -292,7 +284,7 @@ export function MidRibbonPassportDocument({
               </AnimatePresence>
             </div>
           </div>
-        </motion.div>
+        </MotionFacetCard>
 
         {/* ========================================================================= */}
         {/* BACK FACE OF THE PASSPORT (CONFIGURATION & PRIVACY CONTROLS)               */}

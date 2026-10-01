@@ -9,16 +9,18 @@ import {
   OpenBook as BookOpen,
   Globe,
 } from "iconoir-react";
+import type { BadgeVariant } from "~/components/ui/badge";
+import type { FacetAccent } from "~/lib/design/identity";
 
 export const QUEST_PATHS = [
   {
     name: "Merchant Path",
     description: "Build a massive national economy and GDP",
     icon: TrendingUp,
-    badgeColor: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
-    glowColor: "shadow-emerald-500/20 shadow-lg",
-    lineColor: "bg-emerald-500/30",
-    activeLineColor: "bg-emerald-500",
+    badgeColor: "bg-green/10 text-green border-green/20",
+    glowColor: "shadow-floating",
+    lineColor: "bg-green/30",
+    activeLineColor: "bg-green",
     nodeColor: "emerald",
     keys: [
       "econ-first-million",
@@ -32,10 +34,10 @@ export const QUEST_PATHS = [
     name: "Prosperity Path",
     description: "Improve citizen wealth and economic development",
     icon: Sparkles,
-    badgeColor: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20",
-    glowColor: "shadow-yellow-500/20 shadow-lg",
-    lineColor: "bg-yellow-500/30",
-    activeLineColor: "bg-yellow-500",
+    badgeColor: "bg-yellow/10 text-yellow border-yellow/20",
+    glowColor: "shadow-floating",
+    lineColor: "bg-yellow/30",
+    activeLineColor: "bg-yellow",
     nodeColor: "yellow",
     keys: [
       "econ-wealthy-citizens",
@@ -49,10 +51,10 @@ export const QUEST_PATHS = [
     name: "Warlord Path",
     description: "Expand and fund the armed forces",
     icon: Shield,
-    badgeColor: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
-    glowColor: "shadow-red-500/20 shadow-lg",
-    lineColor: "bg-red-500/30",
-    activeLineColor: "bg-red-500",
+    badgeColor: "bg-red/10 text-red border-red/20",
+    glowColor: "shadow-floating",
+    lineColor: "bg-red/30",
+    activeLineColor: "bg-red",
     nodeColor: "red",
     keys: [
       "mil-first-branch",
@@ -71,10 +73,10 @@ export const QUEST_PATHS = [
     name: "Diplomat Path",
     description: "Extend global influence through treaties and trade",
     icon: Globe,
-    badgeColor: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
-    glowColor: "shadow-blue-500/20 shadow-lg",
-    lineColor: "bg-blue-500/30",
-    activeLineColor: "bg-blue-500",
+    badgeColor: "bg-blue/10 text-blue border-blue/20",
+    glowColor: "shadow-floating",
+    lineColor: "bg-blue/30",
+    activeLineColor: "bg-blue",
     nodeColor: "blue",
     keys: [
       "dip-first-embassy",
@@ -93,10 +95,10 @@ export const QUEST_PATHS = [
     name: "Sovereign Path",
     description: "Develop atomic governance structures",
     icon: Landmark,
-    badgeColor: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20",
-    glowColor: "shadow-indigo-500/20 shadow-lg",
-    lineColor: "bg-indigo-500/30",
-    activeLineColor: "bg-indigo-500",
+    badgeColor: "bg-indigo/10 text-indigo border-indigo/20",
+    glowColor: "shadow-floating",
+    lineColor: "bg-indigo/30",
+    activeLineColor: "bg-indigo",
     nodeColor: "indigo",
     keys: ["gov-first-component", "gov-building-blocks", "gov-sophisticated", "gov-complex-system"],
   },
@@ -104,10 +106,10 @@ export const QUEST_PATHS = [
     name: "Thinker Path",
     description: "Influence public discourse on ThinkPages",
     icon: BookOpen,
-    badgeColor: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
-    glowColor: "shadow-blue-500/20 shadow-lg",
-    lineColor: "bg-blue-500/30",
-    activeLineColor: "bg-blue-500",
+    badgeColor: "bg-blue/10 text-blue border-blue/20",
+    glowColor: "shadow-floating",
+    lineColor: "bg-blue/30",
+    activeLineColor: "bg-blue",
     nodeColor: "blue",
     keys: [
       "social-first-thinkpage",
@@ -121,10 +123,10 @@ export const QUEST_PATHS = [
     name: "Vidmaster Path",
     description: "The ultimate trial of system mastery and dedication",
     icon: Crown,
-    badgeColor: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-    glowColor: "shadow-amber-500/20 shadow-lg",
-    lineColor: "bg-amber-500/30",
-    activeLineColor: "bg-amber-500",
+    badgeColor: "bg-yellow/10 text-yellow border-yellow/20",
+    glowColor: "shadow-floating",
+    lineColor: "bg-yellow/30",
+    activeLineColor: "bg-yellow",
     nodeColor: "yellow",
     keys: ["vid-lightswitch", "vid-annual", "vid-end-of-days"],
   },
@@ -132,10 +134,10 @@ export const QUEST_PATHS = [
     name: "Lore & Meme Path",
     description: "Nostalgic community jokes, stonks, and wiki archives",
     icon: Trophy,
-    badgeColor: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20",
-    glowColor: "shadow-indigo-500/20 shadow-lg",
-    lineColor: "bg-indigo-500/30",
-    activeLineColor: "bg-indigo-500",
+    badgeColor: "bg-indigo/10 text-indigo border-indigo/20",
+    glowColor: "shadow-floating",
+    lineColor: "bg-indigo/30",
+    activeLineColor: "bg-indigo",
     nodeColor: "indigo",
     keys: [
       "meme-stonks",
@@ -148,90 +150,117 @@ export const QUEST_PATHS = [
   },
 ];
 
+/**
+ * Per-category styling: a system colour carries the category on its badge, icon pedestal and icon
+ * fill. Facet 3.1 (spec §16.5) restores the v2 card decoration through the identity sheet's
+ * sanctioned classes, driven by `accent` / `accent2` (the card's `accent`, aurora, radiance) and the `jewel` stops
+ * (the metallic icon fill) — system colour roles, so they follow the theme.
+ */
 export interface CategoryTheme {
   name: string;
   icon: React.ComponentType<{ className?: string }>;
+  /** Category chip: a system-colour `Badge` variant (AA ink on a 15% fill). */
+  badgeVariant: BadgeVariant;
+  /** @deprecated Category chip classes; use `badgeVariant`. */
   badge: string;
+  /** Icon pedestal: a 15% wash of the category colour. */
   pedestal: string;
-  cardGlow: string;
   cardBorderHover: string;
   accentColor: string;
-  iconGradient: string;
-  auroraGradient: string;
+  /** Solid fill painted through the achievement icon's mask (locked/fallback). */
+  iconFill: string;
+  /**
+   * Category accent (Facet 3.1, spec §16.8): the card's `accent` prop (glass wash, tinted border,
+   * glow) and the aurora / radiance colour of `AchievementCardBackdrop`.
+   */
+  accent: FacetAccent;
+  /** The aurora's secondary hue (v2 `via-amber`/`via-cyan`…). */
+  accent2: FacetAccent;
+  /** Jewel icon gradient stops (`--jewel-from/-via/-to`; v2 `iconGradient`). */
+  jewel: readonly [from: string, via: string, to: string];
 }
+
+/** A pale highlight of a colour, for the jewel's middle stop (v2 `via-*-100`). */
+const pale = (color: string) => `color-mix(in srgb, ${color} 25%, white)`;
 
 export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
   Economic: {
     name: "Economic",
     icon: TrendingUp,
-    badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25",
-    pedestal:
-      "border-emerald-500/30 bg-gradient-to-b from-emerald-500/15 to-emerald-500/5 text-emerald-600 dark:text-emerald-400",
-    cardGlow: "from-emerald-500/10 via-emerald-500/5 to-transparent",
-    cardBorderHover: "hover:border-emerald-500/40",
+    badgeVariant: "green",
+    badge: "bg-green/15 text-green",
+    pedestal: "bg-green/15 text-green",
+    cardBorderHover: "hover:border-green/40",
     accentColor: "emerald",
-    iconGradient: "from-amber-300 via-yellow-100 to-amber-500",
-    auroraGradient: "from-emerald-500/15 via-amber-500/10 to-transparent",
+    iconFill: "bg-green",
+    accent: "green",
+    accent2: "yellow",
+    jewel: ["var(--gold-from)", pale("var(--color-yellow)"), "var(--gold-to)"],
   },
   Military: {
     name: "Military",
     icon: Shield,
-    badge: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/25",
-    pedestal:
-      "border-red-500/30 bg-gradient-to-b from-red-500/15 to-red-500/5 text-red-600 dark:text-red-400",
-    cardGlow: "from-red-500/10 via-red-500/5 to-transparent",
-    cardBorderHover: "hover:border-red-500/40",
+    badgeVariant: "red",
+    badge: "bg-red/15 text-red",
+    pedestal: "bg-red/15 text-red",
+    cardBorderHover: "hover:border-red/40",
     accentColor: "red",
-    iconGradient: "from-red-400 via-amber-200 to-red-600",
-    auroraGradient: "from-red-500/15 via-amber-500/10 to-transparent",
+    iconFill: "bg-red",
+    accent: "red",
+    accent2: "yellow",
+    jewel: ["var(--color-red)", pale("var(--color-yellow)"), "var(--color-red)"],
   },
   Diplomatic: {
     name: "Diplomatic",
     icon: Globe,
-    badge: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/25",
-    pedestal:
-      "border-cyan-500/30 bg-gradient-to-b from-cyan-500/15 to-cyan-500/5 text-cyan-600 dark:text-cyan-400",
-    cardGlow: "from-cyan-500/10 via-cyan-500/5 to-transparent",
-    cardBorderHover: "hover:border-cyan-500/40",
+    badgeVariant: "teal",
+    badge: "bg-teal/15 text-teal",
+    pedestal: "bg-teal/15 text-teal",
+    cardBorderHover: "hover:border-teal/40",
     accentColor: "cyan",
-    iconGradient: "from-cyan-300 via-cyan-100 to-blue-500",
-    auroraGradient: "from-cyan-500/15 via-blue-500/10 to-transparent",
+    iconFill: "bg-teal",
+    accent: "teal",
+    accent2: "blue",
+    jewel: ["var(--color-cyan)", pale("var(--color-cyan)"), "var(--color-blue)"],
   },
   Government: {
     name: "Government",
     icon: Landmark,
-    badge: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/25",
-    pedestal:
-      "border-indigo-500/30 bg-gradient-to-b from-indigo-500/15 to-indigo-500/5 text-indigo-600 dark:text-indigo-400",
-    cardGlow: "from-indigo-500/10 via-indigo-500/5 to-transparent",
-    cardBorderHover: "hover:border-indigo-500/40",
+    badgeVariant: "indigo",
+    badge: "bg-indigo/15 text-indigo",
+    pedestal: "bg-indigo/15 text-indigo",
+    cardBorderHover: "hover:border-indigo/40",
     accentColor: "indigo",
-    iconGradient: "from-indigo-300 via-cyan-100 to-indigo-600",
-    auroraGradient: "from-indigo-500/15 via-cyan-500/10 to-transparent",
+    iconFill: "bg-indigo",
+    accent: "indigo",
+    accent2: "cyan",
+    jewel: ["var(--color-indigo)", pale("var(--color-cyan)"), "var(--color-indigo)"],
   },
   Social: {
     name: "Social",
     icon: BookOpen,
-    badge: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/25",
-    pedestal:
-      "border-blue-500/30 bg-gradient-to-b from-blue-500/15 to-blue-500/5 text-blue-600 dark:text-blue-400",
-    cardGlow: "from-blue-500/10 via-blue-500/5 to-transparent",
-    cardBorderHover: "hover:border-blue-500/40",
+    badgeVariant: "blue",
+    badge: "bg-blue/15 text-blue",
+    pedestal: "bg-blue/15 text-blue",
+    cardBorderHover: "hover:border-blue/40",
     accentColor: "blue",
-    iconGradient: "from-blue-300 via-cyan-100 to-blue-600",
-    auroraGradient: "from-blue-500/15 via-cyan-500/10 to-transparent",
+    iconFill: "bg-blue",
+    accent: "blue",
+    accent2: "cyan",
+    jewel: ["var(--color-blue)", pale("var(--color-cyan)"), "var(--color-blue)"],
   },
   General: {
     name: "General",
     icon: Trophy,
-    badge: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25",
-    pedestal:
-      "border-amber-500/30 bg-gradient-to-b from-amber-500/15 to-amber-500/5 text-amber-600 dark:text-amber-400",
-    cardGlow: "from-amber-500/10 via-amber-500/5 to-transparent",
-    cardBorderHover: "hover:border-amber-500/40",
+    badgeVariant: "yellow",
+    badge: "bg-yellow/15 text-yellow",
+    pedestal: "bg-yellow/15 text-yellow",
+    cardBorderHover: "hover:border-yellow/40",
     accentColor: "amber",
-    iconGradient: "from-amber-300 via-yellow-100 to-amber-500",
-    auroraGradient: "from-amber-500/15 via-orange-500/10 to-transparent",
+    iconFill: "bg-yellow",
+    accent: "yellow",
+    accent2: "orange",
+    jewel: ["var(--gold-from)", pale("var(--color-yellow)"), "var(--gold-to)"],
   },
 };
 
@@ -258,37 +287,57 @@ export type RarityType = (typeof rarities)[number];
 export const getRarityColor = (rarity: string) => {
   switch (rarity) {
     case "Legendary":
-      return "text-amber-500 dark:text-amber-400 border-amber-500/30";
+      return "text-yellow border-yellow/30";
     case "Epic":
-      return "text-purple-600 dark:text-purple-400 border-purple-500/30";
+      return "text-purple border-purple/30";
     case "Ultra Rare":
     case "ULTRA_RARE":
-      return "text-cyan-600 dark:text-cyan-400 border-cyan-500/30";
+      return "text-teal border-teal/30";
     case "Rare":
-      return "text-blue-600 dark:text-blue-400 border-blue-500/30";
+      return "text-blue border-blue/30";
     case "Uncommon":
-      return "text-emerald-600 dark:text-emerald-400 border-emerald-500/30";
+      return "text-green border-green/30";
     default:
-      return "text-muted-foreground border-border/60";
+      return "text-label-secondary border-separator";
+  }
+};
+
+/** Rarity chip as a `Badge` variant; locked achievements are neutral. */
+export const getRarityBadgeVariant = (rarity: string, isUnlocked = true): BadgeVariant => {
+  if (!isUnlocked) return "neutral";
+  switch (rarity) {
+    case "Legendary":
+      return "yellow";
+    case "Epic":
+      return "purple";
+    case "Ultra Rare":
+    case "ULTRA_RARE":
+      return "teal";
+    case "Rare":
+      return "blue";
+    case "Uncommon":
+      return "green";
+    default:
+      return "neutral";
   }
 };
 
 export const getRarityBg = (rarity: string, isUnlocked = true) => {
-  if (!isUnlocked) return "bg-muted/30 border-border/40 text-muted-foreground/60";
+  if (!isUnlocked) return "bg-fill-4 border-separator text-label-tertiary";
   switch (rarity) {
     case "Legendary":
-      return "bg-amber-500/10 border-amber-500/30 dark:bg-amber-500/15";
+      return "bg-yellow/10 border-yellow/30";
     case "Epic":
-      return "bg-purple-500/10 border-purple-500/30 dark:bg-purple-500/15";
+      return "bg-purple/10 border-purple/30";
     case "Ultra Rare":
     case "ULTRA_RARE":
-      return "bg-cyan-500/10 border-cyan-500/30 dark:bg-cyan-500/15";
+      return "bg-teal/10 border-teal/30";
     case "Rare":
-      return "bg-blue-500/10 border-blue-500/30 dark:bg-blue-500/15";
+      return "bg-blue/10 border-blue/30";
     case "Uncommon":
-      return "bg-emerald-500/10 border-emerald-500/30 dark:bg-emerald-500/15";
+      return "bg-green/10 border-green/30";
     default:
-      return "bg-muted/50 border-border/50";
+      return "bg-fill-3 border-separator";
   }
 };
 
@@ -675,40 +724,40 @@ export const FORUM_RIBBONS: ForumRibbon[] = [
     id: "wiki-archivist",
     title: "WikiOS Grand Archivist Ribbon",
     category: "Community Wiki",
-    stripeGradient: "from-emerald-700 via-teal-400 to-emerald-700",
-    borderStyle: "border-emerald-300/60 shadow-emerald-500/30",
+    stripeGradient: "from-green via-teal to-green",
+    borderStyle: "border-green/60",
     badgeLabel: "WIKI",
   },
   {
     id: "forum-pioneer",
     title: "Community Forum Pioneer Ribbon",
     category: "Community Forum",
-    stripeGradient: "from-amber-600 via-yellow-400 to-amber-600",
-    borderStyle: "border-amber-300/60 shadow-amber-500/30",
+    stripeGradient: "from-yellow via-yellow to-yellow",
+    borderStyle: "border-yellow/60",
     badgeLabel: "FORUM",
   },
   {
     id: "map-cartographer",
     title: "Master Cartographer Ribbon",
     category: "Map & Atlas",
-    stripeGradient: "from-blue-700 via-sky-400 to-blue-700",
-    borderStyle: "border-sky-300/60 shadow-sky-500/30",
+    stripeGradient: "from-blue via-blue to-blue",
+    borderStyle: "border-blue/60",
     badgeLabel: "ATLAS",
   },
   {
     id: "community-veteran",
     title: "Community Veteran Commendation",
     category: "Platform Service",
-    stripeGradient: "from-purple-700 via-fuchsia-400 to-purple-700",
-    borderStyle: "border-purple-300/60 shadow-purple-500/30",
+    stripeGradient: "from-purple via-purple to-purple",
+    borderStyle: "border-purple/60",
     badgeLabel: "VETERAN",
   },
   {
     id: "lore-historian",
     title: "Grand Lore Historian Order",
     category: "Canon & Lore",
-    stripeGradient: "from-rose-700 via-pink-400 to-rose-700",
-    borderStyle: "border-rose-300/60 shadow-rose-500/30",
+    stripeGradient: "from-red via-pink to-red",
+    borderStyle: "border-red/60",
     badgeLabel: "CANON",
   },
 ];

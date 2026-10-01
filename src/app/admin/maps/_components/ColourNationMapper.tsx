@@ -59,12 +59,12 @@ export function ColourNationMapper({
 
   return (
     <div className="space-y-4">
-      <p className="text-muted-foreground text-sm">
+      <p className="text-label-secondary text-body">
         Name each colour after a nation of the target realm — its region is imported with that
         nation&apos;s name, and becomes the nation&apos;s when it is claimed. Mark the ocean and
         other background colours as ignored.
       </p>
-      <ul className="divide-border/40 border-border divide-y rounded-lg border">
+      <ul className="divide-separator border-separator rounded-control divide-y border">
         {colours.map((colour) => (
           <ColourRow
             key={colour.hex}
@@ -116,12 +116,12 @@ const ColourRow = memo(function ColourRow({
       className="flex flex-wrap items-center gap-3 px-3 py-2"
     >
       <span
-        className="border-border size-6 shrink-0 rounded border"
+        className="border-separator rounded-control-sm size-6 shrink-0 border"
         style={{ backgroundColor: colour.hex }}
         aria-hidden
       />
-      <span className="text-muted-foreground w-20 font-mono text-xs">{colour.hex}</span>
-      <span className="text-foreground w-14 text-right text-xs tabular-nums">
+      <span className="text-label-secondary text-footnote w-20 tabular-nums">{colour.hex}</span>
+      <span className="text-label text-footnote w-14 text-right tabular-nums">
         {(colour.share * 100).toFixed(1)}%
       </span>
       <div className="min-w-48 flex-1">
@@ -135,14 +135,14 @@ const ColourRow = memo(function ColourRow({
           placeholder="Nation…"
         />
       </div>
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         <Checkbox
           id={ignoreId}
           aria-label={`Ignore ${colour.hex}`}
           checked={isIgnored}
           onCheckedChange={(checked) => onIgnore(colour.hex, checked === true)}
         />
-        <Label htmlFor={ignoreId} className="text-muted-foreground text-xs">
+        <Label htmlFor={ignoreId} className="text-label-secondary text-footnote">
           Ignore
         </Label>
       </div>
@@ -152,18 +152,18 @@ const ColourRow = memo(function ColourRow({
 
 function MappingSummary({ plan }: { plan: ColourMappingPlan }) {
   return (
-    <div className="space-y-1 text-xs">
-      <p className="text-muted-foreground">
+    <div className="text-footnote space-y-1">
+      <p className="text-label-secondary">
         {plan.mapped} mapped · {plan.ignored} ignored · {plan.unmapped} unmapped
       </p>
       {plan.unmapped > 0 && (
-        <p className="text-amber-400">
+        <p className="text-yellow">
           {plan.unmapped} unmapped colour{plan.unmapped === 1 ? "" : "s"} will be dropped from the
           map.
         </p>
       )}
       {plan.duplicates.map((nation) => (
-        <p key={nation} className="flex items-center gap-1 text-red-400">
+        <p key={nation} className="text-red flex items-center gap-1">
           <WarningTriangle className="h-3.5 w-3.5" />
           {nation} has more than one colour — a nation holds one region; merge the colours or rename
           one.

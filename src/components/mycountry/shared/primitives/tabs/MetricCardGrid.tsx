@@ -24,38 +24,38 @@ import { cn } from "~/lib/utils";
 // Theme color configurations
 const themeColors = {
   economy: {
-    primary: "from-emerald-500 to-emerald-600",
-    secondary: "from-emerald-500/10 to-emerald-600/10",
+    primary: "from-green to-green",
+    secondary: "from-green/10 to-green/10",
     accent: "rgb(16, 185, 129)",
     bg: "rgba(16, 185, 129, 0.05)",
   },
   labor: {
-    primary: "from-red-500 to-red-600",
-    secondary: "from-red-500/10 to-red-600/10",
+    primary: "from-red to-red",
+    secondary: "from-red/10 to-red/10",
     accent: "rgb(239, 68, 68)",
     bg: "rgba(239, 68, 68, 0.05)",
   },
   government: {
-    primary: "from-indigo-500 to-indigo-600",
-    secondary: "from-indigo-500/10 to-indigo-600/10",
+    primary: "from-indigo to-indigo",
+    secondary: "from-indigo/10 to-indigo/10",
     accent: "rgb(99, 102, 241)",
     bg: "rgba(99, 102, 241, 0.05)",
   },
   demographics: {
-    primary: "from-cyan-500 to-cyan-600",
-    secondary: "from-cyan-500/10 to-cyan-600/10",
+    primary: "from-cyan to-cyan",
+    secondary: "from-cyan/10 to-cyan/10",
     accent: "rgb(6, 182, 212)",
     bg: "rgba(6, 182, 212, 0.05)",
   },
   analytics: {
-    primary: "from-blue-500 to-blue-600",
-    secondary: "from-blue-500/10 to-blue-600/10",
+    primary: "from-blue to-blue",
+    secondary: "from-blue/10 to-blue/10",
     accent: "rgb(59, 130, 246)",
     bg: "rgba(59, 130, 246, 0.05)",
   },
   overview: {
-    primary: "from-amber-500 to-amber-600",
-    secondary: "from-amber-500/10 to-amber-600/10",
+    primary: "from-yellow to-yellow",
+    secondary: "from-yellow/10 to-yellow/10",
     accent: "rgb(245, 158, 11)",
     bg: "rgba(245, 158, 11, 0.05)",
   },
@@ -241,7 +241,7 @@ export function MetricCardGrid({
       {/* Loading indicator */}
       {isLoadingImage && (
         <div className="absolute top-2 right-2 z-10">
-          <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+          <Loader2 className="text-label-secondary h-4 w-4 animate-spin" />
         </div>
       )}
 
@@ -254,7 +254,7 @@ export function MetricCardGrid({
               <Button
                 variant="ghost"
                 size="icon"
-                className="bg-foreground/30 hover:bg-foreground/50 text-background absolute top-2 right-2 z-10 h-8 w-8"
+                className="bg-fill-2 hover:bg-label-tertiary text-background absolute top-2 right-2 z-10 h-8 w-8"
                 onClick={(e) => {
                   e.stopPropagation();
                   backgroundImage.onEditClick?.();
@@ -270,8 +270,8 @@ export function MetricCardGrid({
       {/* Content */}
       <div className="relative z-[5]">
         <FacetCardHeader className="p-4 pb-2">
-          <h3 className="text-foreground text-sm font-semibold">{title}</h3>
-          {subtitle && <p className="text-muted-foreground text-xs">{subtitle}</p>}
+          <h3 className="text-label text-headline">{title}</h3>
+          {subtitle && <p className="text-label-secondary text-footnote">{subtitle}</p>}
         </FacetCardHeader>
         <FacetCardContent className="px-4 pb-4">
           {metricsGrid}
@@ -298,7 +298,7 @@ export function MetricCardGrid({
   }
 
   return (
-    <FacetCard depth={1} className={cn("relative overflow-hidden rounded-2xl", className)}>
+    <FacetCard className={cn("rounded-card relative overflow-hidden", className)}>
       {cardContent}
     </FacetCard>
   );

@@ -7,6 +7,7 @@ import {
   Xmark as IconX,
 } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
+import { Button } from "~/components/ui/button";
 import { AnimatePresence, motion } from "motion/react";
 import Image, { type ImageProps } from "next/image";
 import { useOutsideClick } from "~/hooks/use-outside-click";
@@ -97,12 +98,6 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
         >
           <div
             className={cn(
-              "absolute right-0 z-[1000] h-auto w-[5%] overflow-hidden bg-gradient-to-l"
-            )}
-          ></div>
-
-          <div
-            className={cn(
               "flex flex-row justify-start gap-4 pl-4",
               "mx-auto max-w-7xl" // remove max-w-4xl if you want the carousel to span the full width of its container
             )}
@@ -123,7 +118,7 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
                   },
                 }}
                 key={"card" + index}
-                className="rounded-3xl last:pr-[5%] md:last:pr-[33%]"
+                className="rounded-sheet last:pr-[5%] md:last:pr-[33%]"
               >
                 {item}
               </motion.div>
@@ -131,20 +126,28 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
           </div>
         </div>
         <div className="mr-10 flex justify-end gap-2">
-          <button
-            className="relative z-40 flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 disabled:opacity-50"
+          <Button
+            type="button"
+            variant="gray"
+            size="icon-lg"
+            className="relative rounded-full"
             onClick={scrollLeft}
             disabled={!canScrollLeft}
+            aria-label="Scroll left"
           >
-            <IconArrowNarrowLeft className="h-6 w-6 text-gray-500" />
-          </button>
-          <button
-            className="relative z-40 flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 disabled:opacity-50"
+            <IconArrowNarrowLeft aria-hidden="true" />
+          </Button>
+          <Button
+            type="button"
+            variant="gray"
+            size="icon-lg"
+            className="relative rounded-full"
             onClick={scrollRight}
             disabled={!canScrollRight}
+            aria-label="Scroll right"
           >
-            <IconArrowNarrowRight className="h-6 w-6 text-gray-500" />
-          </button>
+            <IconArrowNarrowRight aria-hidden="true" />
+          </Button>
         </div>
       </div>
     </CarouselContext.Provider>
@@ -202,12 +205,12 @@ export const Card = ({
   const modalContent = (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[var(--z-modal,100005)] h-screen overflow-auto">
+        <div className="z-sheet fixed inset-0 h-screen overflow-auto">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 h-full w-full bg-black/80 backdrop-blur-lg"
+            className="bg-scrim fixed inset-0 h-full w-full"
           />
           <motion.div
             initial={{ opacity: 0 }}
@@ -215,7 +218,7 @@ export const Card = ({
             exit={{ opacity: 0 }}
             ref={containerRef}
             layoutId={layout ? `card-${card.title}` : undefined}
-            className="relative z-[60] mx-auto my-10 h-fit max-w-5xl overflow-hidden rounded-3xl bg-white p-4 font-sans md:p-10 dark:bg-neutral-900"
+            className="rounded-sheet bg-surface-elevated text-label shadow-sheet z-raised relative mx-auto my-10 h-fit max-w-5xl overflow-hidden p-4 md:p-10"
           >
             {/* Modal Background Image with Fade Overlay */}
             {card.src && (
@@ -223,41 +226,43 @@ export const Card = ({
                 <img
                   src={withBasePath(card.src)}
                   alt=""
-                  className="h-full w-full object-cover opacity-15 blur-[2px] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 dark:opacity-25"
+                  className="h-full w-full object-cover opacity-15 blur-[2px]"
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-white/80 to-white dark:from-neutral-900/20 dark:via-neutral-900/85 dark:to-neutral-900" />
+                <div className="bg-surface-elevated/80 absolute inset-0" />
               </div>
             )}
-            <button
-              className="sticky top-4 right-0 ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-black dark:bg-white"
+            <Button
+              type="button"
+              variant="gray"
+              size="icon-sm"
+              className="sticky top-4 right-0 ml-auto flex rounded-full"
               onClick={handleClose}
+              aria-label="Close"
             >
-              <IconX className="h-6 w-6 text-neutral-100 dark:text-neutral-900" />
-            </button>
+              <IconX aria-hidden="true" />
+            </Button>
             <motion.div
               layoutId={layout ? `category-${card.title}` : undefined}
-              className="text-base font-medium text-black dark:text-white"
+              className="text-headline text-label-secondary"
             >
               {card.category}
             </motion.div>
             <motion.div
               layoutId={layout ? `title-${card.title}` : undefined}
-              className="mt-4 flex items-center gap-3 text-2xl font-semibold text-neutral-700 md:text-5xl dark:text-white"
+              className="text-title-1 md:text-large-title text-label mt-4 flex items-center gap-3"
             >
               {card.logo && (
                 <img
                   src={withBasePath(card.logo)}
                   alt=""
-                  className="h-10 w-10 shrink-0 rounded-xl border border-neutral-200 object-cover md:h-14 md:w-14 dark:border-neutral-700"
+                  className="rounded-row border-separator h-10 w-10 shrink-0 border object-cover md:h-14 md:w-14"
                 />
               )}
               <span>{card.title}</span>
             </motion.div>
             {card.description && <div className="mt-2 text-left">{card.description}</div>}
             {card.footer && (
-              <div className="mt-4 border-t border-neutral-100 pt-4 text-left dark:border-neutral-800">
-                {card.footer}
-              </div>
+              <div className="border-separator mt-4 border-t pt-4 text-left">{card.footer}</div>
             )}
             <div className="py-10">{card.content}</div>
           </motion.div>
@@ -281,26 +286,27 @@ export const Card = ({
             handleOpen();
           }
         }}
-        className="relative z-10 flex h-80 w-56 cursor-pointer flex-col items-stretch justify-start overflow-hidden rounded-3xl bg-gray-100 md:h-[40rem] md:w-96 dark:bg-neutral-900"
+        className="rounded-sheet bg-surface-secondary focus-visible:outline-tint relative z-10 flex h-80 w-56 cursor-pointer flex-col items-stretch justify-start overflow-hidden outline-none focus-visible:outline-2 focus-visible:outline-offset-2 md:h-[40rem] md:w-96"
       >
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-30 h-full bg-gradient-to-b from-black/50 via-transparent to-transparent" />
+        {/* Flat image scrim so the white title reads on any photo */}
+        <div className="pointer-events-none absolute inset-0 z-30 bg-black/35" />
         <div className="relative z-40 flex h-full w-full flex-col items-start justify-between p-8">
           <div className="flex flex-col items-start">
             <motion.div
               layoutId={layout ? `category-${card.title}` : undefined}
-              className="text-left font-sans text-sm font-medium text-white md:text-base"
+              className="text-subhead md:text-headline text-left font-medium text-white"
             >
               {card.category}
             </motion.div>
             <motion.div
               layoutId={layout ? `title-${card.title}` : undefined}
-              className="mt-2 flex max-w-xs items-center gap-2 text-left font-sans text-xl font-semibold [text-wrap:balance] text-white md:text-3xl"
+              className="text-title-3 md:text-title-1 mt-2 flex max-w-xs items-center gap-2 text-left [text-wrap:balance] text-white"
             >
               {card.logo && (
                 <img
                   src={withBasePath(card.logo)}
                   alt=""
-                  className="h-7 w-7 shrink-0 rounded-lg border border-white/20 object-cover md:h-9 md:w-9"
+                  className="rounded-control-sm h-7 w-7 shrink-0 border border-white/20 object-cover md:h-9 md:w-9"
                 />
               )}
               <span>{card.title}</span>

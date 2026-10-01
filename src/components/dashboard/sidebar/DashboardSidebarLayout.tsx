@@ -7,6 +7,7 @@ import { DashboardQuickLinks } from "./DashboardQuickLinks";
 import { VaultWidget } from "~/components/mycountry/shell/VaultWidget";
 import { NavArrowLeft as ChevronLeft, NavArrowRight as ChevronRight } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
 
 export interface SidebarContextProps {
   isCollapsed: boolean;
@@ -132,7 +133,7 @@ export function DashboardSidebarLayout({
         {heroSection && (
           <div
             className={cn(
-              "relative z-10 mx-auto px-4 pt-4 sm:pt-6",
+              "z-raised relative mx-auto px-4 pt-4 sm:pt-6",
               variant === "rail" ? "w-full max-w-[1800px] lg:px-8 xl:px-12" : "container"
             )}
           >
@@ -142,7 +143,7 @@ export function DashboardSidebarLayout({
 
         <div
           className={cn(
-            "relative z-10 mx-auto py-4 sm:py-6 md:py-8",
+            "z-raised relative mx-auto py-4 sm:py-6 md:py-8",
             variant === "rail"
               ? "w-full max-w-[1800px] px-4 sm:px-6 lg:px-8 xl:px-12"
               : "container px-4"
@@ -158,7 +159,7 @@ export function DashboardSidebarLayout({
               onMouseEnter={disableGlobalHover ? undefined : () => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
               className={cn(
-                "relative z-30 hidden shrink-0 transition-[width,opacity] duration-300 ease-out lg:block",
+                "z-sticky relative hidden shrink-0 transition-[width,opacity] duration-300 ease-out lg:block",
                 variant === "rail"
                   ? isCollapsedNow && !isHoverActive
                     ? "-left-6 w-14 opacity-100 xl:-left-12"
@@ -180,7 +181,7 @@ export function DashboardSidebarLayout({
             >
               <div
                 className={cn(
-                  "sticky top-20 space-y-3.5 transition-[transform,opacity] duration-300 ease-out",
+                  "sticky top-(--shell-top-offset) space-y-4 transition-[transform,opacity] duration-300 ease-out",
                   variant === "rail"
                     ? "translate-x-0 opacity-100"
                     : isCollapsedNow
@@ -202,14 +203,16 @@ export function DashboardSidebarLayout({
                 )}
 
                 {!disableCollapse && variant !== "rail" && (
-                  <button
+                  <Button
+                    variant="gray"
+                    size="sm"
                     onClick={handleToggleSidebar}
-                    className="text-muted-foreground hover:text-foreground border-border bg-muted/30 hover:bg-muted/60 flex w-full items-center justify-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-medium tracking-tight shadow-xs backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.97]"
+                    className="w-full"
                     title="Collapse sidebar"
                   >
-                    <ChevronLeft className="h-3.5 w-3.5" />
-                    Collapse Sidebar
-                  </button>
+                    <ChevronLeft />
+                    Collapse sidebar
+                  </Button>
                 )}
               </div>
             </div>
@@ -218,13 +221,16 @@ export function DashboardSidebarLayout({
             <div className="relative min-w-0 flex-1">
               {/* Floating Expand button shown only when collapsed in hide mode */}
               {isCollapsedNow && showFloatingExpand && variant !== "rail" && (
-                <button
+                <Button
+                  variant="bordered"
+                  size="icon"
                   onClick={handleToggleSidebar}
-                  className="text-muted-foreground hover:text-foreground border-border bg-card/90 hover:bg-card fixed top-24 left-4 z-40 flex h-9 w-9 items-center justify-center rounded-full border shadow-xl backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:scale-105 active:scale-[0.95]"
+                  className="material-thin z-chrome shadow-floating fixed top-[calc(var(--shell-top-offset)+1rem)] left-[calc(var(--shell-sidebar-width)+1rem)] rounded-full"
                   title="Expand sidebar"
+                  aria-label="Expand sidebar"
                 >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
+                  <ChevronRight />
+                </Button>
               )}
               {children}
             </div>
@@ -234,7 +240,7 @@ export function DashboardSidebarLayout({
               <div
                 aria-hidden="true"
                 className={cn(
-                  "pointer-events-none relative z-10 hidden shrink-0 transition-[width] duration-300 ease-out lg:block",
+                  "z-raised pointer-events-none relative hidden shrink-0 transition-[width] duration-300 ease-out lg:block",
                   isCollapsedNow && !isHoverActive
                     ? "-right-6 w-14 opacity-0 xl:-right-12"
                     : cn("-right-6 opacity-0 xl:-right-12", resolvedExpandedWidthClass)

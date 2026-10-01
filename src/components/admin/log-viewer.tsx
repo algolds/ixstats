@@ -34,6 +34,9 @@ import {
   Xmark as X,
 } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
+import { ActionPill, type ActionPillTone } from "~/components/ui/action-pill";
 
 // Types
 
@@ -50,11 +53,11 @@ export interface LogEntry {
 
 /** Per-level color classes. Each key is optional — omitted levels use defaults. */
 export type LevelColors = {
-  /** CSS class for the level label text (e.g. "text-rose-500 dark:text-rose-400"). */
+  /** CSS class for the level label text (e.g. "text-red"). */
   text: string;
-  /** CSS class for the colored dot (e.g. "bg-rose-500"). */
+  /** CSS class for the colored dot (e.g. "bg-red"). */
   dot: string;
-  /** CSS class for the filter badge when active (e.g. "bg-rose-500/15 text-rose-600"). */
+  /** CSS class for the filter badge when active (e.g. "bg-red/15 text-red"). */
   badge: string;
 };
 
@@ -65,30 +68,39 @@ export type LevelColorScale = Partial<Record<LogLevel, Partial<LevelColors>>>;
 
 const DEFAULT_LEVEL_COLORS: Record<LogLevel, LevelColors> = {
   error: {
-    text: "text-rose-500 dark:text-rose-400",
-    dot: "bg-rose-500",
-    badge: "bg-rose-500/15 text-rose-600 dark:text-rose-400",
+    text: "text-red",
+    dot: "bg-red",
+    badge: "bg-red/15 text-red",
   },
   warn: {
-    text: "text-amber-500 dark:text-amber-400",
-    dot: "bg-amber-500",
-    badge: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+    text: "text-yellow",
+    dot: "bg-yellow",
+    badge: "bg-yellow/15 text-yellow",
   },
   info: {
-    text: "text-sky-500 dark:text-sky-400",
-    dot: "bg-sky-500",
-    badge: "bg-sky-500/15 text-sky-600 dark:text-sky-400",
+    text: "text-blue",
+    dot: "bg-blue",
+    badge: "bg-blue/15 text-blue",
   },
   debug: {
-    text: "text-violet-500 dark:text-violet-400",
-    dot: "bg-violet-500",
-    badge: "bg-violet-500/15 text-violet-600 dark:text-violet-400",
+    text: "text-purple",
+    dot: "bg-purple",
+    badge: "bg-purple/15 text-purple",
   },
   verbose: {
-    text: "text-zinc-400 dark:text-zinc-500",
-    dot: "bg-zinc-400 dark:bg-zinc-500",
-    badge: "bg-muted text-muted-foreground",
+    text: "text-label-secondary",
+    dot: "bg-fill",
+    badge: "bg-fill-3 text-label-secondary",
   },
+};
+
+/** Pressed-filter tone per level (the system colour behind each default `badge`). */
+const LEVEL_TONES: Record<LogLevel, ActionPillTone> = {
+  error: "red",
+  warn: "yellow",
+  info: "blue",
+  debug: "purple",
+  verbose: "gray",
 };
 
 const LEVEL_LABELS: Record<LogLevel, string> = {
@@ -199,7 +211,7 @@ function highlightSearch(text: string, query: string): React.ReactNode {
   const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"));
   return parts.map((part, i) =>
     part.toLowerCase() === query.toLowerCase() ? (
-      <mark key={i} className="rounded-sm bg-amber-300/40 px-0.5 text-inherit dark:bg-amber-400/30">
+      <mark key={i} className="rounded-control-sm bg-yellow/40 px-0.5 text-inherit">
         {part}
       </mark>
     ) : (
@@ -224,20 +236,20 @@ function ToolbarButton({
   className?: string;
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="icon-sm"
       onClick={onClick}
       aria-label={label}
       className={cn(
-        "inline-flex size-7 items-center justify-center rounded-md transition-colors outline-none",
-        "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-        "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-1",
-        active && "bg-accent text-accent-foreground",
+        "text-label-secondary hover:text-label size-7",
+        active && "bg-fill-3 text-label",
         className
       )}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -300,17 +312,17 @@ function LogViewerTerminal({
     <div
       data-slot="log-viewer-terminal"
       className={cn(
-        "border-border/60 bg-card flex flex-col overflow-hidden rounded-xl border shadow-sm",
+        "border-separator bg-surface rounded-row flex flex-col overflow-hidden border",
         className
       )}
       {...props}
     >
       {/* Toolbar */}
-      <div className="border-border/40 bg-muted/30 flex items-center gap-2 border-b px-3 py-2">
-        <Terminal className="text-muted-foreground size-3.5 shrink-0" />
-        <span className="text-foreground flex-1 truncate text-sm font-medium">{title}</span>
+      <div className="border-separator bg-fill-4 flex items-center gap-2 border-b px-3 py-2">
+        <Terminal className="text-label-secondary size-3.5 shrink-0" />
+        <span className="text-label text-body flex-1 truncate font-medium">{title}</span>
 
-        <span className="text-muted-foreground mr-1 text-xs tabular-nums">
+        <span className="text-label-secondary text-footnote mr-1 tabular-nums">
           {filteredEntries.length}
           {searchQuery && ` / ${entries.length}`} lines
         </span>
@@ -336,11 +348,7 @@ function LogViewerTerminal({
           </ToolbarButton>
 
           <ToolbarButton onClick={handleCopyAll} label={copied ? "Copied" : "Copy all logs"}>
-            {copied ? (
-              <Check className="size-3.5 text-emerald-500" />
-            ) : (
-              <Copy className="size-3.5" />
-            )}
+            {copied ? <Check className="text-green size-3.5" /> : <Copy className="size-3.5" />}
           </ToolbarButton>
 
           <ToolbarButton onClick={() => exportLogs(entries)} label="Download logs">
@@ -357,25 +365,27 @@ function LogViewerTerminal({
 
       {/* Search bar */}
       {searchOpen && (
-        <div className="border-border/40 bg-muted/20 flex items-center gap-2 border-b px-3 py-1.5">
-          <Search className="text-muted-foreground size-3.5 shrink-0" />
-          <input
+        <div className="border-separator bg-fill-4 flex items-center gap-2 border-b px-3 py-2">
+          <Search className="text-label-secondary size-3.5 shrink-0" />
+          <Input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Filter logs…"
-            className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent text-sm outline-none"
+            className="flex-1"
             autoFocus
           />
           {searchQuery && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
               type="button"
               onClick={() => setSearchQuery("")}
-              className="text-muted-foreground hover:text-foreground inline-flex size-5 items-center justify-center rounded"
+
               aria-label="Clear search"
             >
               <X className="size-3" />
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -384,14 +394,14 @@ function LogViewerTerminal({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="bg-card [scrollbar-width:thin] overflow-auto font-mono text-xs leading-relaxed"
+        className="bg-surface text-footnote [scrollbar-width:thin] overflow-auto font-mono leading-relaxed"
         style={{ maxHeight }}
         role="log"
         aria-live="polite"
         aria-label={title}
       >
         {filteredEntries.length === 0 ? (
-          <div className="text-muted-foreground flex items-center justify-center py-10 text-sm">
+          <div className="text-label-secondary text-body flex items-center justify-center py-10">
             {searchQuery ? "No matching log entries." : "No log entries."}
           </div>
         ) : (
@@ -400,11 +410,11 @@ function LogViewerTerminal({
             return (
               <div
                 key={i}
-                className="border-border/20 hover:bg-muted/30 flex gap-3 border-b px-3 py-1 transition-colors"
+                className="border-separator hover:bg-fill-4 flex gap-3 border-b px-3 py-1 transition-colors"
               >
                 {lineNumbers && (
                   <span
-                    className="text-muted-foreground/50 shrink-0 text-right select-none"
+                    className="text-label-tertiary shrink-0 text-right select-none"
                     style={{ width: `${lineNumberWidth}ch` }}
                     aria-hidden="true"
                   >
@@ -412,14 +422,14 @@ function LogViewerTerminal({
                   </span>
                 )}
                 {timestamps && (
-                  <span className="text-muted-foreground/60 shrink-0">
+                  <span className="text-label-secondary shrink-0">
                     {formatTimestampFull(entry.timestamp)}
                   </span>
                 )}
                 <span className={cn("w-[3ch] shrink-0 text-right font-semibold", colors.text)}>
                   {LEVEL_LABELS[entry.level]}
                 </span>
-                <span className="text-foreground/90 min-w-0 flex-1 break-all whitespace-pre-wrap">
+                <span className="text-label min-w-0 flex-1 break-all whitespace-pre-wrap">
                   {highlightSearch(entry.message, searchQuery)}
                 </span>
               </div>
@@ -430,15 +440,15 @@ function LogViewerTerminal({
 
       {/* Scroll-to-bottom indicator */}
       {!isAtBottom && (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           onClick={scrollToBottom}
-          className="border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:text-foreground flex w-full items-center justify-center gap-1.5 border-t py-1.5 text-xs font-medium transition-colors"
+          className="border-separator bg-fill-4 text-label-secondary hover:text-label text-caption h-auto w-full gap-2 rounded-none border-t py-2 font-normal active:scale-100"
           aria-label="Scroll to latest"
         >
           <ArrowDown className="size-3" />
           New logs below
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -477,7 +487,7 @@ function LogViewerMinimal({
     <div
       data-slot="log-viewer-minimal"
       className={cn(
-        "border-border/60 bg-card flex flex-col overflow-hidden rounded-lg border shadow-sm",
+        "border-separator bg-surface rounded-control flex flex-col overflow-hidden border",
         className
       )}
       {...props}
@@ -485,31 +495,31 @@ function LogViewerMinimal({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="[scrollbar-width:thin] overflow-auto font-mono text-xs leading-relaxed"
+        className="text-footnote [scrollbar-width:thin] overflow-auto font-mono leading-relaxed"
         style={{ maxHeight }}
         role="log"
         aria-live="polite"
         aria-label="Log output"
       >
         {entries.length === 0 ? (
-          <div className="text-muted-foreground flex items-center justify-center py-8 text-sm">
+          <div className="text-label-secondary text-body flex items-center justify-center py-8">
             No log entries.
           </div>
         ) : (
           entries.map((entry, i) => {
             const colors = resolveLevelColors(entry.level, colorScale);
             return (
-              <div key={i} className="border-border/20 flex items-start gap-2 border-b px-3 py-1.5">
+              <div key={i} className="border-separator flex items-start gap-2 border-b px-3 py-2">
                 <Circle
                   className={cn("mt-[3px] size-2 shrink-0 fill-current", colors.text)}
                   aria-label={entry.level}
                 />
                 {timestamps && (
-                  <span className="text-muted-foreground/60 shrink-0">
+                  <span className="text-label-secondary shrink-0">
                     {formatTimestamp(entry.timestamp)}
                   </span>
                 )}
-                <span className="text-foreground/90 min-w-0 flex-1 break-all whitespace-pre-wrap">
+                <span className="text-label min-w-0 flex-1 break-all whitespace-pre-wrap">
                   {entry.message}
                 </span>
               </div>
@@ -519,14 +529,14 @@ function LogViewerMinimal({
       </div>
 
       {!isAtBottom && (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           onClick={scrollToBottom}
-          className="border-border/40 bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground flex w-full items-center justify-center gap-1.5 border-t py-1 text-xs font-medium transition-colors"
+          className="border-separator bg-fill-4 text-label-secondary hover:text-label text-caption h-auto w-full gap-2 rounded-none border-t py-1 font-normal active:scale-100"
           aria-label="Scroll to latest"
         >
           <ArrowDown className="size-3" />
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -610,17 +620,17 @@ function LogViewerFilterable({
     <div
       data-slot="log-viewer-filterable"
       className={cn(
-        "border-border/60 bg-card flex flex-col overflow-hidden rounded-xl border shadow-sm",
+        "border-separator bg-surface rounded-row flex flex-col overflow-hidden border",
         className
       )}
       {...props}
     >
       {/* Header */}
-      <div className="border-border/40 bg-muted/30 flex items-center gap-2 border-b px-3 py-2">
-        <Filter className="text-muted-foreground size-3.5 shrink-0" />
-        <span className="text-foreground flex-1 truncate text-sm font-medium">{title}</span>
+      <div className="border-separator bg-fill-4 flex items-center gap-2 border-b px-3 py-2">
+        <Filter className="text-label-secondary size-3.5 shrink-0" />
+        <span className="text-label text-body flex-1 truncate font-medium">{title}</span>
 
-        <span className="text-muted-foreground mr-1 text-xs tabular-nums">
+        <span className="text-label-secondary text-footnote mr-1 tabular-nums">
           {filteredEntries.length} / {entries.length}
         </span>
 
@@ -629,11 +639,7 @@ function LogViewerFilterable({
             onClick={handleCopyFiltered}
             label={copied ? "Copied" : "Copy filtered logs"}
           >
-            {copied ? (
-              <Check className="size-3.5 text-emerald-500" />
-            ) : (
-              <Copy className="size-3.5" />
-            )}
+            {copied ? <Check className="text-green size-3.5" /> : <Copy className="size-3.5" />}
           </ToolbarButton>
 
           <ToolbarButton onClick={() => exportLogs(filteredEntries)} label="Download logs">
@@ -649,59 +655,55 @@ function LogViewerFilterable({
       </div>
 
       {/* Filter bar */}
-      <div className="border-border/40 bg-muted/10 flex flex-wrap items-center gap-2 border-b px-3 py-2">
+      <div className="border-separator bg-fill-4 flex flex-wrap items-center gap-2 border-b px-3 py-2">
         {/* Level toggles */}
-        <div className="flex items-center gap-1">
+        <div role="group" aria-label="Log levels" className="flex items-center gap-1">
           {levels.map((level) => {
-            const colors = resolveLevelColors(level, colorScale);
+            const customBadge = colorScale?.[level]?.badge;
             const isActive = activeLevels.has(level);
             const count = levelCounts[level] ?? 0;
+            // Pressed pills take the level's system colour (or a caller's `colorScale` badge).
             return (
-              <button
+              <ActionPill
                 key={level}
-                type="button"
+                pressed={isActive}
+                tone={LEVEL_TONES[level]}
                 onClick={() => toggleLevel(level)}
-                role="checkbox"
-                aria-checked={isActive}
-                aria-label={`${isActive ? "Hide" : "Show"} ${level} logs`}
+                aria-label={`${level} logs`}
+                title={`${isActive ? "Hide" : "Show"} ${level} logs`}
+                icon={<Circle className="size-1.5 fill-current" />}
+                count={count > 0 ? count : null}
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors outline-none",
-                  "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-1",
-                  isActive ? colors.badge : "bg-muted/50 text-muted-foreground/50 line-through"
+                  isActive ? customBadge : "bg-fill-3 text-label-tertiary line-through"
                 )}
               >
-                <Circle
-                  className={cn(
-                    "size-1.5 fill-current",
-                    isActive ? colors.text : "text-muted-foreground/30"
-                  )}
-                />
                 {LEVEL_LABELS[level]}
-                {count > 0 && <span className="tabular-nums">{count}</span>}
-              </button>
+              </ActionPill>
             );
           })}
         </div>
 
         {/* Inline search */}
-        <div className="border-border/40 bg-background ml-auto flex items-center gap-1.5 rounded-md border px-2 py-1">
-          <Search className="text-muted-foreground size-3" />
-          <input
+        <div className="border-separator bg-background rounded-control-sm ml-auto flex items-center gap-2 border px-2 py-1">
+          <Search className="text-label-secondary size-3" />
+          <Input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Filter…"
-            className="text-foreground placeholder:text-muted-foreground w-24 bg-transparent text-xs outline-none sm:w-32"
+            className="w-24 sm:w-32"
           />
           {searchQuery && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon-sm"
               type="button"
               onClick={() => setSearchQuery("")}
-              className="text-muted-foreground hover:text-foreground inline-flex size-4 items-center justify-center rounded"
+
               aria-label="Clear search"
             >
               <X className="size-3" />
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -710,26 +712,28 @@ function LogViewerFilterable({
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="[scrollbar-width:thin] overflow-auto font-mono text-xs leading-relaxed"
+        className="text-footnote [scrollbar-width:thin] overflow-auto font-mono leading-relaxed"
         style={{ maxHeight }}
         role="log"
         aria-live="polite"
         aria-label={title}
       >
         {filteredEntries.length === 0 ? (
-          <div className="text-muted-foreground flex flex-col items-center justify-center gap-1 py-10 text-sm">
+          <div className="text-label-secondary text-body flex flex-col items-center justify-center gap-1 py-10">
             <span>No matching log entries.</span>
             {(searchQuery || activeLevels.size < levels.length) && (
-              <button
+              <Button
                 type="button"
+                variant="link"
+                size="sm"
                 onClick={() => {
                   setSearchQuery("");
                   setActiveLevels(new Set(levels));
                 }}
-                className="text-muted-foreground hover:text-foreground text-xs underline underline-offset-2"
+                className="text-label-secondary hover:text-label h-auto px-0"
               >
                 Reset filters
-              </button>
+              </Button>
             )}
           </div>
         ) : (
@@ -738,21 +742,21 @@ function LogViewerFilterable({
             return (
               <div
                 key={i}
-                className="border-border/20 hover:bg-muted/30 flex items-start gap-3 border-b px-3 py-1.5 transition-colors"
+                className="border-separator hover:bg-fill-4 flex items-start gap-3 border-b px-3 py-2 transition-colors"
               >
                 <Circle
                   className={cn("mt-[5px] size-2 shrink-0 fill-current", colors.text)}
                   aria-hidden="true"
                 />
                 {timestamps && (
-                  <span className="text-muted-foreground/60 shrink-0">
+                  <span className="text-label-secondary shrink-0">
                     {formatTimestamp(entry.timestamp)}
                   </span>
                 )}
                 <span className={cn("w-[3ch] shrink-0 text-right font-semibold", colors.text)}>
                   {LEVEL_LABELS[entry.level]}
                 </span>
-                <span className="text-foreground/90 min-w-0 flex-1 break-all whitespace-pre-wrap">
+                <span className="text-label min-w-0 flex-1 break-all whitespace-pre-wrap">
                   {highlightSearch(entry.message, searchQuery)}
                 </span>
               </div>
@@ -763,15 +767,15 @@ function LogViewerFilterable({
 
       {/* Scroll-to-bottom indicator */}
       {!isAtBottom && (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           onClick={scrollToBottom}
-          className="border-border/40 bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:text-foreground flex w-full items-center justify-center gap-1.5 border-t py-1.5 text-xs font-medium transition-colors"
+          className="border-separator bg-fill-4 text-label-secondary hover:text-label text-caption h-auto w-full gap-2 rounded-none border-t py-2 font-normal active:scale-100"
           aria-label="Scroll to latest"
         >
           <ArrowDown className="size-3" />
           New logs below
-        </button>
+        </Button>
       )}
     </div>
   );

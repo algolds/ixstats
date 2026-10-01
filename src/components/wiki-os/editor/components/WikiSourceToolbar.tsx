@@ -36,6 +36,7 @@ import { WikiEditorHeader } from "./WikiEditorHeader";
 import { StashDropdown } from "./shared/StashDropdown";
 import { TemplateDropdown } from "./shared/TemplateDropdown";
 import { SettingsDropdown } from "./shared/SettingsDropdown";
+import { Button } from "~/components/ui/button";
 
 export interface WikiSourceToolbarProps {
   title: string;
@@ -92,17 +93,17 @@ export function WikiSourceToolbar({
         summary={modal.summary}
         setSummary={modal.setSummary}
         extraActions={
-          <button
-            className={cn(
-              "wikios-editor-btn-preview active:scale-[0.97] transition-transform duration-100",
-              showPreview && "wikios-editor-btn-active"
-            )}
+          <Button
+            variant={showPreview ? "tinted" : "bordered"}
+            size="icon-sm"
+            aria-pressed={showPreview}
+            className="rounded-full"
             onClick={() => setShowPreview(!showPreview)}
-            type="button"
             title={showPreview ? "Hide preview" : "Show preview"}
+            aria-label="Preview"
           >
-            {showPreview ? <EyeClosed className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
+            {showPreview ? <EyeClosed className="size-4" /> : <Eye className="size-4" />}
+          </Button>
         }
       />
 
@@ -158,55 +159,59 @@ export function WikiSourceToolbar({
         {/* Headings */}
         <div className="wikios-editor-format-group">
           <Popover>
-            <PopoverTrigger className="wikios-editor-format-btn wikios-editor-format-select">
-              <span className="text-xs font-semibold tracking-tight">Heading</span>
-              <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-label-secondary gap-1 px-2">
+                <span className="text-caption font-semibold">Heading</span>
+                <ChevronDown className="size-3 shrink-0 opacity-60" />
+              </Button>
             </PopoverTrigger>
-            <PopoverContent
-              align="start"
-              className="glass-none z-[10001] w-44 rounded-xl border border-[var(--wikios-border)] bg-[var(--wikios-surface)] p-1 text-[var(--wikios-text)] shadow-2xl"
-            >
-              <div className="flex flex-col gap-0.5 text-xs">
-                <button
-                  type="button"
+            <PopoverContent align="start" className="text-label w-44 p-1">
+              <div className="text-footnote flex flex-col gap-0.5">
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => insertAtLine("= ", " =")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-base font-bold hover:bg-[var(--wikios-border)]"
+                  className="text-label text-title-3 w-full justify-start px-2"
                 >
-                  <Hash className="h-3.5 w-3.5 text-blue-400" />
+                  <Hash className="text-tint h-3.5 w-3.5" />
                   <span>Heading 1</span>
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => insertAtLine("== ", " ==")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm font-semibold hover:bg-[var(--wikios-border)]"
+                  className="text-label text-headline w-full justify-start px-2"
                 >
-                  <Hash className="h-3.5 w-3.5 text-indigo-400" />
+                  <Hash className="text-indigo h-3.5 w-3.5" />
                   <span>Heading 2</span>
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => insertAtLine("=== ", " ===")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-medium hover:bg-[var(--wikios-border)]"
+                  className="text-label text-caption w-full justify-start px-2"
                 >
-                  <Hash className="h-3.5 w-3.5 text-amber-400" />
+                  <Hash className="text-yellow h-3.5 w-3.5" />
                   <span>Heading 3</span>
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => insertAtLine("==== ", " ====")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs opacity-80 hover:bg-[var(--wikios-border)]"
+                  className="text-label text-footnote w-full justify-start px-2 opacity-80"
                 >
-                  <Hash className="h-3.5 w-3.5 text-emerald-400" />
+                  <Hash className="text-green h-3.5 w-3.5" />
                   <span>Heading 4</span>
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => insertAtLine("===== ", " =====")}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs opacity-60 hover:bg-[var(--wikios-border)]"
+                  className="text-label text-footnote w-full justify-start px-2 opacity-60"
                 >
-                  <Hash className="h-3.5 w-3.5 text-zinc-400" />
+                  <Hash className="text-label-secondary h-3.5 w-3.5" />
                   <span>Heading 5</span>
-                </button>
+                </Button>
               </div>
             </PopoverContent>
           </Popover>
@@ -261,12 +266,12 @@ export function WikiSourceToolbar({
         {/* Templates & Advanced */}
         <div className="wikios-editor-format-group">
           <TemplateDropdown
-            triggerClassName="wikios-editor-format-btn wikios-editor-format-select"
+            triggerClassName="gap-1 px-2"
             align="start"
             triggerContent={
               <>
-                <Puzzle className="h-3.5 w-3.5 shrink-0 text-blue-400" />
-                <span className="text-xs font-semibold tracking-tight">Templates</span>
+                <Puzzle className="text-tint h-3.5 w-3.5 shrink-0" />
+                <span className="text-caption font-semibold">Templates</span>
                 <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
               </>
             }
@@ -314,16 +319,16 @@ function FmtBtn({
   active?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      className={cn(
-        "wikios-editor-format-btn active:scale-[0.97] transition-transform duration-100",
-        active && "wikios-editor-format-btn-active"
-      )}
+    <Button
+      variant={active ? "tinted" : "ghost"}
+      size="icon-sm"
+      aria-pressed={active}
+      className={cn(!active && "text-label-secondary")}
       onClick={onClick}
       title={title}
+      aria-label={title}
     >
-      <Icon className="h-3.5 w-3.5 shrink-0" />
-    </button>
+      <Icon className="size-3.5 shrink-0" />
+    </Button>
   );
 }

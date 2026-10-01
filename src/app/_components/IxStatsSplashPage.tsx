@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { InteractiveGridPattern } from "~/components/ui/magicui/interactive-grid-pattern";
 import { createUrl } from "~/lib/utils";
+import { PortalTintSync } from "~/components/providers/PortalTintSync";
 import {
   SplashHero,
   SplashLiveFeed,
@@ -45,12 +46,12 @@ export function IxStatsSplashPage() {
           width={40}
           height={40}
           squares={[50, 40]}
-          className="fixed inset-0 z-0 opacity-30 dark:opacity-20"
-          squaresClassName="fill-slate-200/20 dark:fill-slate-700/20 stroke-slate-300/30 dark:stroke-slate-600/30"
+          className="fixed inset-0 z-0 opacity-20"
+          squaresClassName="fill-label-tertiary stroke-separator"
         />
         <div className="relative z-10 text-center">
-          <div className="border-muted border-t-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-2" />
-          <p className="text-muted-foreground">Redirecting to dashboard...</p>
+          <div className="border-fill border-t-tint mx-auto mb-4 size-12 animate-spin rounded-full border-2" />
+          <p className="text-body text-label-secondary">Redirecting to dashboard...</p>
         </div>
       </div>
     );
@@ -59,13 +60,15 @@ export function IxStatsSplashPage() {
   const topCountriesRecords = topCountries as unknown as Record<string, unknown>[];
 
   return (
-    <div className="bg-background relative min-h-screen overflow-hidden">
+    // The landing pitches MyCountry, so it wears the MyCountry gold tint (Facet 3 §2.2).
+    <div data-app="mycountry" className="bg-background relative min-h-screen overflow-hidden">
+      <PortalTintSync />
       <InteractiveGridPattern
         width={40}
         height={40}
         squares={[50, 40]}
-        className="fixed inset-0 z-0 opacity-30 dark:opacity-20"
-        squaresClassName="fill-muted/25 stroke-border transition-colors duration-200 hover:[&:nth-child(4n+1)]:fill-amber-500/15 hover:[&:nth-child(4n+2)]:fill-amber-500/12 hover:[&:nth-child(4n+3)]:fill-amber-500/15 hover:[&:nth-child(4n+4)]:fill-amber-500/12 dark:fill-muted/20 dark:hover:[&:nth-child(4n+1)]:fill-amber-400/10 dark:hover:[&:nth-child(4n+2)]:fill-amber-400/10 dark:hover:[&:nth-child(4n+3)]:fill-amber-400/10 dark:hover:[&:nth-child(4n+4)]:fill-amber-400/10"
+        className="fixed inset-0 z-0 opacity-20"
+        squaresClassName="fill-fill-4 stroke-separator transition-colors duration-200 hover:[&:nth-child(odd)]:fill-tint/15"
       />
 
       <div className="relative z-10 container mx-auto px-4 py-10 sm:px-6 lg:px-8 lg:py-12">
