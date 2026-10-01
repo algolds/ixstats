@@ -43,7 +43,7 @@ describe("WikiEditGate", () => {
     renderGate();
 
     expect(screen.queryByText("the live editor")).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "View source for Vesperia" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "View source for Vesperia" })).toBeInTheDocument();
     const source = screen.getByLabelText("Wikitext source of Vesperia") as HTMLTextAreaElement;
     expect(source.readOnly).toBe(true);
     expect(source.value).toBe("'''Vesperia''' is a nation.");
@@ -66,7 +66,7 @@ describe("WikiEditGate", () => {
     mockWikitext.mockReturnValue({ data: { wikitext: "", revisionRef: null }, isLoading: false, isError: false });
     renderGate();
 
-    expect(screen.getByRole("heading", { name: "Cannot create Vesperia" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Cannot create Vesperia" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Wikitext source of Vesperia")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Sign in to create this page" })).toBeInTheDocument();
   });

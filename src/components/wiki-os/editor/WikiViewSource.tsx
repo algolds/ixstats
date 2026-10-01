@@ -57,9 +57,10 @@ export function WikiViewSource({ title, signedIn, reason, onClose }: WikiViewSou
 
   return (
     <section aria-labelledby="wikios-view-source-heading" className="space-y-4">
-      <h2 id="wikios-view-source-heading" className="text-foreground text-lg font-semibold">
+      {/* The page's heading, as in MediaWiki ("View source for X" is its #firstHeading): nothing else on this screen is one. */}
+      <h1 id="wikios-view-source-heading" className="text-foreground text-lg font-semibold">
         {exists ? `View source for ${title}` : `Cannot create ${title}`}
-      </h2>
+      </h1>
       <p role="status" className="text-muted-foreground text-sm">
         {exists ? `${refusal} You can view and copy its source.` : refusal}
       </p>
