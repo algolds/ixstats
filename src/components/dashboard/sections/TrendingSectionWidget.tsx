@@ -90,7 +90,7 @@ const TRENDING_SOURCE: Record<
 export function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
   const { data: intro } = api.wikios.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
   const { data: pageImages } = api.wikios.getPageImages.useQuery(
-    { title },
+    { title, wiki },
     { enabled: !!title, staleTime: 30 * 60_000 }
   );
 
