@@ -67,6 +67,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockRateCheck.mockResolvedValue({ success: true });
   mockArchived.mockResolvedValue(new Set());
+  mockCount.mockResolvedValue(120_001); // three files
 });
 
 describe("sitemap index", () => {
@@ -133,6 +134,27 @@ describe("sitemap file", () => {
       }))
     );
     expect(textsOf(big, "loc")).toHaveLength(50_000);
+  });
+
+  it("a number past the last file is a 404; page 1 is always there, even for an empty wiki", async () => {
+    mockList.mockResolvedValue([]);
+    mockCount.mockResolvedValue(120_001); // ceil(120001 / 50000) = 3 files
+    expect((await sitemapPage(new Request("http://x"), page("3"))).status).toBe(200);
+    expect((await sitemapPage(new Request("http://x"), page("4"))).status).toBe(404);
+    expect(mockList).toHaveBeenCalledTimes(1);
+
+    mockCount.mockResolvedValue(50_000); // exactly one file
+    expect((await sitemapPage(new Request("http://x"), page("2"))).status).toBe(404);
+
+    mockCount.mockResolvedValue(0);
+    expect((await sitemapPage(new Request("http://x"), page("1"))).status).toBe(200);
+    expect((await sitemapPage(new Request("http://x"), page("2"))).status).toBe(404);
+  });
+
+  it("is cacheable by a shared cache for an hour", async () => {
+    mockList.mockResolvedValue([]);
+    const response = await sitemapPage(new Request("http://x"), page("1"));
+    expect(response.headers.get("cache-control")).toMatch(/^public\b.*\bs-maxage=3600\b/);
   });
 
   it("reads page 1 from '1' or '1.xml', and refuses anything else", async () => {

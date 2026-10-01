@@ -42,6 +42,7 @@ jest.mock("~/lib/wiki-os/core/article-repository", () => ({
   ArticleRepository: { findMissingTitles: (...a: unknown[]) => mockFindMissing(...a) },
 }));
 
+import { parseRedirect } from "~/lib/wiki-os/core/redirect";
 import { listPages } from "~/lib/wiki-os/core/page-list-service";
 import { getPageInfo } from "~/lib/wiki-os/core/page-info-service";
 import { getFileInfo } from "~/lib/wiki-os/core/file-page-service";
@@ -126,12 +127,18 @@ describe("listPages (Special:AllPages, Special:PrefixIndex)", () => {
 });
 
 describe("sitemap service", () => {
-  it("counts published main-namespace pages that are not redirects", async () => {
-    mockArticleCount.mockResolvedValue(120_001);
+  it("counts published main-namespace pages that are not redirects, told by their text", async () => {
+    mockQueryRaw.mockResolvedValue([{ total: BigInt(120_001) }]);
     await expect(countSitemapPages()).resolves.toBe(120_001);
-    expect(mockArticleCount).toHaveBeenCalledWith({
-      where: { source: "ixwiki", status: "PUBLISHED", namespace: 0, redirectTargetSlug: null },
-    });
+
+    const { sql } = call(0);
+    expect(sql).toContain(`a."status" = 'PUBLISHED' AND a."namespace" = 0`);
+    // A redirect starts with #REDIRECT after optional whitespace (parseRedirect's rule), in its first
+    // 64 characters; the stale redirectTargetSlug column is not consulted.
+    expect(sql).toContain(`NOT (left(a."wikitext", 64) ~* '^\\s*#redirect')`);
+    expect(sql).not.toContain("redirectTargetSlug");
+    mockQueryRaw.mockResolvedValue([]);
+    await expect(countSitemapPages()).resolves.toBe(0);
   });
 
   it("reads one file of at most 50,000 pages from the right offset", async () => {
@@ -139,12 +146,25 @@ describe("sitemap service", () => {
     const entries = await listSitemapPage(3);
 
     expect(entries).toEqual([{ title: "Aurelia", lastModified: new Date(0) }]);
-    const [strings, ...values] = mockQueryRaw.mock.calls[0] as [string[], ...number[]];
+    const { sql, values } = call(0);
     expect(values).toEqual([SITEMAP_PAGE_SIZE, 2 * SITEMAP_PAGE_SIZE]);
-    const sql = strings.join("?");
     expect(sql).toContain('max(r."createdAt")'); // lastmod = the newest revision
-    expect(sql).toContain("a.\"status\" = 'PUBLISHED'");
-    expect(sql).toContain('a."redirectTargetSlug" IS NULL');
+    expect(sql).toContain(`a."status" = 'PUBLISHED'`);
+    expect(sql).toContain(`NOT (left(a."wikitext", 64) ~* '^\\s*#redirect')`);
+    expect(sql).not.toContain("redirectTargetSlug");
+  });
+
+  it("the redirect predicate is the one parseRedirect applies to the start of a page", () => {
+    // Postgres's `^\s*#redirect` (case-insensitive) against the first 64 characters, in JS.
+    const isRedirect = (text: string) => /^\s*#redirect/i.test(text.slice(0, 64));
+    for (const text of ["#REDIRECT [[Foo]]", "\n  #redirect [[Foo]]", "#Redirect:[[Foo]]"]) {
+      expect(isRedirect(text)).toBe(true);
+      expect(parseRedirect(text)).not.toBeNull(); // and parseRedirect agrees that it is one
+    }
+    for (const text of ["Intro.\n#REDIRECT [[Foo]]", "The #REDIRECT magic word", ""]) {
+      expect(isRedirect(text)).toBe(false);
+      expect(parseRedirect(text)).toBeNull();
+    }
   });
 });
 
