@@ -6,7 +6,7 @@
  * HTML standard reads it: a URL is the next run of non-space characters, and a comma at its end ends the
  * candidate; otherwise the descriptor runs to the next comma. Rewriting the whole attribute with global
  * replacements (what this replaced) rewrote a URL that was already absolute a second time
- * (`https://ixwiki.com/imageshttps://ixwiki.com/images/...`) and broke the candidate.
+ * (`<origin>/images<origin>/images/...`) and broke the candidate.
  */
 
 const SPACE = /\s/;
