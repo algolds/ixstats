@@ -5,7 +5,7 @@
  * template registry, watchlist, advanced search, and category tree.
  */ import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import { getArticleWikitext, resolveRedirect, getInfobox, getImageMeta } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import {
@@ -416,8 +416,17 @@ export const wikiosPageContentRouter = createTRPCRouter({
 
   /**
    * Get forum thread preview by threadId.
+   *
+   * Public on purpose: forum-link tooltips render for anonymous wiki readers, so it cannot require
+   * sign-in. Three things keep it from becoming a window onto the private forum (plan 416 item 6):
+   * it is rate-limited like the other public reads; a thread whose `discussion_state` is not exactly
+   * "visible" (moderated, deleted, or missing from the answer) yields nothing; and XenForo itself
+   * decides which forums this key may see. OPERATOR CHECK: the XenForo API key must be a
+   * non-super-user key scoped to a guest-like user, or a super-user key used without `XF-Api-User`
+   * (as here), so XenForo enforces forum visibility. The response carries no per-forum "public" flag
+   * to check from this side.
    */
-  getForumThreadPreview: publicProcedure
+  getForumThreadPreview: rateLimitedPublicProcedure
     .input(z.object({ threadId: z.number().int().positive() }))
     .query(async ({ input }) => {
       const { getXfApiKey, getXfApiUrl } = await import("~/server/modules/forum");
@@ -442,13 +451,14 @@ export const wikiosPageContentRouter = createTRPCRouter({
             post_date: number;
             reply_count: number;
             view_count: number;
+            discussion_state?: string;
             Forum?: { title: string };
             first_post?: { message: string };
           };
         };
 
         const t = data.thread;
-        if (!t) return null;
+        if (t?.discussion_state !== "visible") return null;
 
         const rawMsg = t.first_post?.message ?? "";
         const excerpt = rawMsg
