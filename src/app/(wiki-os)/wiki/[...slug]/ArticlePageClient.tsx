@@ -15,6 +15,7 @@ import { ArticleBusy } from "~/components/wiki-os/reader/ArticleBusy";
 import { ArticleTabs } from "~/components/wiki-os/reader/ArticleTabs";
 import { RedirectNotice } from "~/components/wiki-os/reader/RedirectNotice";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
+import { WikiEditGate } from "~/components/wiki-os/editor/WikiEditGate";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import {
   articleHtmlInput,
@@ -218,18 +219,20 @@ export default function ArticlePageClient({
     <WikiOSLayout readOnly={!isIxWiki}>
       <div ref={articleRef} className="wikios-article-container min-h-[500px]">
         {mode !== "reading" ? (
-          <WikiEditBridge
-            title={title}
-            initialMode={mode === "visual" ? "visual" : "source"}
-            initialSection={
-              initialEdit?.section && initialEdit.section !== "new"
-                ? initialEdit.section
-                : undefined
-            }
-            newSection={initialEdit?.section === "new"}
-            onClose={handleExitEdit}
-            onSaveSuccess={handleSaveSuccess}
-          />
+          <WikiEditGate title={title} onClose={handleExitEdit}>
+            <WikiEditBridge
+              title={title}
+              initialMode={mode === "visual" ? "visual" : "source"}
+              initialSection={
+                initialEdit?.section && initialEdit.section !== "new"
+                  ? initialEdit.section
+                  : undefined
+              }
+              newSection={initialEdit?.section === "new"}
+              onClose={handleExitEdit}
+              onSaveSuccess={handleSaveSuccess}
+            />
+          </WikiEditGate>
         ) : (
           <>
             {isIxWiki && <ArticleTabs title={title} />}

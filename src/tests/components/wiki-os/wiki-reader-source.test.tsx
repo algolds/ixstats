@@ -8,6 +8,7 @@ const mockUseQuery = jest.fn();
 const mockPrefetch = jest.fn();
 const mockRenderer = jest.fn();
 const mockEditor = jest.fn();
+const mockGate = jest.fn();
 const mockLayout = jest.fn();
 const mockSetActiveModal = jest.fn();
 let mockSearch = "";
@@ -46,6 +47,13 @@ jest.mock("~/components/wiki-os/reader/WikiOSMainPage", () => ({
 }));
 jest.mock("~/components/wiki-os/reader/ArticleTabs", () => ({
   ArticleTabs: ({ title }: { title: string }) => <nav data-testid="tabs">{title}</nav>,
+}));
+// the gate that opens the editor only for someone who may edit has its own tests (wiki-edit-gate.test.tsx)
+jest.mock("~/components/wiki-os/editor/WikiEditGate", () => ({
+  WikiEditGate: ({ children, title }: { children: ReactNode; title: string }) => {
+    mockGate({ title });
+    return <>{children}</>;
+  },
 }));
 jest.mock("~/components/wiki-os/editor/WikiEditBridge", () => ({
   WikiEditBridge: (props: Record<string, unknown>) => {
@@ -386,6 +394,12 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
       expect(mockEditor).toHaveBeenCalledWith(
         expect.objectContaining({ initialSection: undefined, newSection: true })
       );
+    });
+
+    it("opens the editor through the edit gate, so a reader who cannot edit sees the source instead", () => {
+      found("Aurelia");
+      render(<Reader title="Aurelia" initialEdit={{ mode: "source", section: null }} />);
+      expect(mockGate).toHaveBeenCalledWith({ title: "Aurelia" });
     });
 
     it("?action=edit in the address bar opens it too, without a server hint", () => {
