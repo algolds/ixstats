@@ -194,6 +194,24 @@ describe("diffWikitext answer caps", () => {
     expect(JSON.stringify(diff).length).toBeLessThan(200);
   });
 
+  it("counts an empty side as no lines in a too-large diff, not as one empty line", () => {
+    const big = lines(DIFF_MAX_LINES_PER_SIDE + 1).join("\n");
+
+    const created = diffWikitext("", big);
+    expect(created).toMatchObject({
+      tooLarge: true,
+      added: DIFF_MAX_LINES_PER_SIDE + 1,
+      removed: 0,
+    });
+
+    const emptied = diffWikitext(big, "");
+    expect(emptied).toMatchObject({
+      tooLarge: true,
+      added: 0,
+      removed: DIFF_MAX_LINES_PER_SIDE + 1,
+    });
+  });
+
   it("refuses one line past the cap and accepts the cap itself", () => {
     expect(diffWikitext(lines(DIFF_MAX_LINES_PER_SIDE + 1).join("\n"), "x").tooLarge).toBe(true);
     expect(diffWikitext("x", lines(DIFF_MAX_LINES_PER_SIDE + 1).join("\n")).tooLarge).toBe(true);

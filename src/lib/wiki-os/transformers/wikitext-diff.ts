@@ -391,10 +391,12 @@ function lineCount(text: string): number {
  * nothing). Linear: the answer for texts too long to diff line by line.
  */
 function lineBalance(oldText: string, newText: string): { added: number; removed: number } {
+  // an empty text has no lines (not one empty line), as everywhere else in this file
+  const linesOf = (text: string): string[] => (text === "" ? [] : text.split("\n"));
   const unmatched = new Map<string, number>();
-  for (const line of oldText.split("\n")) unmatched.set(line, (unmatched.get(line) ?? 0) + 1);
+  for (const line of linesOf(oldText)) unmatched.set(line, (unmatched.get(line) ?? 0) + 1);
   let added = 0;
-  for (const line of newText.split("\n")) {
+  for (const line of linesOf(newText)) {
     const left = unmatched.get(line) ?? 0;
     if (left > 0) unmatched.set(line, left - 1);
     else added++;
