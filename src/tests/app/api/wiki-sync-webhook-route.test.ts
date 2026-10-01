@@ -196,6 +196,11 @@ describe("/api/wikios/inbound-sync", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setSecret(SECRET);
+    jest.mocked(rateLimiter.check).mockResolvedValue({
+      success: true,
+      remaining: 10,
+      resetAt: new Date(),
+    });
   });
 
   it("rejects a header-less POST", async () => {
@@ -235,5 +240,112 @@ describe("/api/wikios/inbound-sync", () => {
     const res = await inboundGet(request(url, { Authorization: `Bearer ${SECRET}` }));
     expect(res.status).toBe(200);
     expect(runAutoSyncCycle).toHaveBeenCalledWith(25);
+  });
+});
+
+describe("/api/wikios/inbound-sync rate limiting", () => {
+  const url = "http://localhost:3000/api/wikios/inbound-sync";
+  const ok = { success: true, remaining: 10, resetAt: new Date() };
+  const exhausted = { success: false, remaining: 0, resetAt: new Date() };
+  const STRICT = { maxRequests: 10, windowMs: 60_000 };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    setSecret(SECRET);
+    jest.mocked(rateLimiter.check).mockResolvedValue(ok);
+  });
+
+  it.each([
+    ["POST", () => inboundPost(request(url, { "x-wiki-webhook-secret": SECRET }, {}))],
+    ["GET", () => inboundGet(request(url, { "x-wiki-webhook-secret": SECRET }))],
+  ])(
+    "counts a valid-secret %s against a per-secret bucket with a high ceiling",
+    async (_method, call) => {
+      const res = await call();
+      expect(res.status).toBe(200);
+      expect(rateLimiter.check).toHaveBeenCalledTimes(1);
+      expect(rateLimiter.check).toHaveBeenCalledWith(
+        expect.stringMatching(/^secret:[0-9a-f]{16}$/),
+        "wikios-inbound-sync",
+        { maxRequests: 600, windowMs: 60_000 }
+      );
+    }
+  );
+
+  it("never puts the secret in the bucket key", async () => {
+    await inboundPost(request(url, { "x-wiki-webhook-secret": SECRET }, {}));
+    const [identifier] = jest.mocked(rateLimiter.check).mock.calls[0] ?? [];
+    expect(identifier).not.toContain(SECRET);
+  });
+
+  it("uses the same bucket wherever the request claims to come from", async () => {
+    await inboundPost(
+      request(url, { "x-wiki-webhook-secret": SECRET, "x-forwarded-for": "1.1.1.1" }, {})
+    );
+    await inboundGet(
+      request(url, {
+        Authorization: `Bearer ${SECRET}`,
+        "cf-connecting-ip": "2.2.2.2",
+        "x-forwarded-for": "3.3.3.3",
+      })
+    );
+    const [first, second] = jest.mocked(rateLimiter.check).mock.calls.map(([id]) => id);
+    expect(first).toBe(second);
+  });
+
+  it.each([
+    ["POST", () => inboundPost(request(url, { "x-wiki-webhook-secret": SECRET }, {}))],
+    ["GET", () => inboundGet(request(url, { "x-wiki-webhook-secret": SECRET }))],
+  ])(
+    "answers %s 429 and runs no cycle when the per-secret bucket is exhausted",
+    async (_m, call) => {
+      jest.mocked(rateLimiter.check).mockResolvedValue(exhausted);
+      const res = await call();
+      expect(res.status).toBe(429);
+      expect(runAutoSyncCycle).not.toHaveBeenCalled();
+    }
+  );
+
+  it("counts a request without the secret against a strict per-client bucket, then answers 401", async () => {
+    const res = await inboundGet(
+      request(url, { "cf-connecting-ip": "2.2.2.2", "x-forwarded-for": "9.9.9.9" })
+    );
+    expect(res.status).toBe(401);
+    expect(rateLimiter.check).toHaveBeenCalledWith("ip:2.2.2.2", "wikios-inbound-sync", STRICT);
+    expect(runAutoSyncCycle).not.toHaveBeenCalled();
+  });
+
+  it("counts a wrong secret against the strict bucket of the client, not a secret bucket", async () => {
+    const res = await inboundPost(
+      request(
+        url,
+        { "x-wiki-webhook-secret": "x".repeat(SECRET.length), "x-real-ip": "4.4.4.4" },
+        {}
+      )
+    );
+    expect(res.status).toBe(401);
+    expect(rateLimiter.check).toHaveBeenCalledWith("ip:4.4.4.4", "wikios-inbound-sync", STRICT);
+  });
+
+  it("answers 429 instead of 401 once the strict bucket is exhausted", async () => {
+    jest.mocked(rateLimiter.check).mockResolvedValue(exhausted);
+    const res = await inboundGet(request(url, { "cf-connecting-ip": "2.2.2.2" }));
+    expect(res.status).toBe(429);
+  });
+
+  it("uses the strict per-client bucket when no secret is configured", async () => {
+    setSecret(undefined);
+    const res = await inboundGet(
+      request(url, { "x-wiki-webhook-secret": SECRET, "cf-connecting-ip": "5.5.5.5" })
+    );
+    expect(res.status).toBe(503);
+    expect(rateLimiter.check).toHaveBeenCalledWith("ip:5.5.5.5", "wikios-inbound-sync", STRICT);
+  });
+
+  it("keeps its own namespace, apart from the page-sync webhook's", async () => {
+    await inboundPost(request(url, { "x-wiki-webhook-secret": SECRET }, {}));
+    await POST(webhook({ "x-wiki-webhook-secret": SECRET }));
+    const namespaces = jest.mocked(rateLimiter.check).mock.calls.map(([, ns]) => ns);
+    expect(namespaces).toEqual(["wikios-inbound-sync", "wiki-sync-webhook"]);
   });
 });
