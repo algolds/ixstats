@@ -32,8 +32,9 @@ const matches = (row: Row, where: Record<string, unknown>): boolean =>
   Object.entries(where).every(([key, condition]) => {
     const value = (row as unknown as Record<string, unknown>)[key];
     if (condition !== null && typeof condition === "object" && !(condition instanceof Date)) {
-      const cond = condition as { not?: unknown; lt?: Date; in?: unknown[] };
+      const cond = condition as { not?: unknown; lt?: Date; gt?: Date; in?: unknown[] };
       if ("not" in cond) return value !== cond.not;
+      if ("gt" in cond) return (value as Date) > (cond.gt as Date);
       if ("in" in cond) return (cond.in as unknown[]).includes(value);
       if ("lt" in cond) return (value as Date) < (cond.lt as Date);
     }
@@ -51,13 +52,36 @@ const apply = (row: Row, data: Record<string, unknown>) => {
   row.updatedAt = new Date();
 };
 
+/** `SystemConfig` rows by key (the time of the last dead-job warning is kept there). */
+const config = new Map<string, string>();
+
 jest.mock("~/server/db", () => ({
   db: {
+    systemConfig: {
+      findUnique: async ({ where }: { where: { key: string } }) =>
+        config.has(where.key) ? { value: config.get(where.key) } : null,
+      upsert: async ({ where, create }: { where: { key: string }; create: { value: string } }) =>
+        void config.set(where.key, create.value),
+    },
     wikiMirrorJob: {
-      findMany: async ({ where, take }: { where: Record<string, unknown>; take: number }) =>
+      count: async ({ where }: { where: Record<string, unknown> }) =>
+        rows.filter((row) => matches(row, where)).length,
+      findMany: async ({
+        where,
+        take,
+        orderBy,
+      }: {
+        where: Record<string, unknown>;
+        take: number;
+        orderBy?: { updatedAt?: "desc" };
+      }) =>
         rows
           .filter((row) => matches(row, where))
-          .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || a.id.localeCompare(b.id))
+          .sort((a, b) =>
+            orderBy?.updatedAt === "desc"
+              ? b.updatedAt.getTime() - a.updatedAt.getTime()
+              : a.createdAt.getTime() - b.createdAt.getTime() || a.id.localeCompare(b.id)
+          )
           .slice(0, take)
           .map((row) => ({ ...row })),
       findUnique: async ({ where }: { where: { id: string } }) => {
@@ -147,6 +171,7 @@ beforeEach(() => {
   rows = [];
   counter = 0;
   racedClaims.clear();
+  config.clear();
   delete process.env.SKIP_MEDIAWIKI_SYNC;
   revisionJob.mockReset().mockResolvedValue(555);
   // The planner takes every job it is given (a size cap is the real one's business, tested with it).
@@ -319,18 +344,44 @@ describe("runMirrorCycle", () => {
     expect(warn).toHaveBeenCalledTimes(1);
   });
 
-  it("warns about the first few dead jobs of a run and counts the rest", async () => {
+  it("warns once about all the jobs that went dead in a run: the first few named, the rest counted", async () => {
     for (let i = 0; i < 7; i++) addJob({ title: `Page ${i}`, attempts: 7 });
     revisionJob.mockRejectedValue(new Error("MediaWiki down"));
 
     const result = await runMirrorCycle();
 
     expect(result.dead).toBe(7);
-    expect(warn).toHaveBeenCalledTimes(6);
+    expect(warn).toHaveBeenCalledTimes(1);
+    const [title, message] = warn.mock.calls[0]!;
+    expect(title).toBe("WikiOS mirror jobs dead");
+    expect(message).toContain("7 mirror jobs went dead since the last warning");
+    expect(message.match(/revision Page \d: MediaWiki down/g)).toHaveLength(5);
+    expect(message).toContain("...and 2 more");
+  });
+
+  it("holds the next warning back for 30 minutes, and then names the jobs that died meanwhile, only those", async () => {
+    const first = addJob({ title: "First", attempts: 7 });
+    revisionJob.mockRejectedValue(new Error("MediaWiki down"));
+    await runMirrorCycle();
+    expect(warn).toHaveBeenCalledTimes(1);
+
+    addJob({ title: "Second", attempts: 7 });
+    await runMirrorCycle();
+    await runMirrorCycle();
+    expect(warn).toHaveBeenCalledTimes(1); // held back
+
+    // 31 minutes later: the first warning, and the death of the first job, are that far back
+    config.set("wikiMirror.deadAlertAt", new Date(Date.now() - 31 * 60_000).toISOString());
+    byId(first.id).updatedAt = new Date(Date.now() - 32 * 60_000);
+    await runMirrorCycle();
+
+    expect(warn).toHaveBeenCalledTimes(2);
     expect(warn).toHaveBeenLastCalledWith(
-      "WikiOS mirror jobs dead",
-      "2 more mirror jobs went dead in the same run."
+      "WikiOS mirror job dead",
+      "revision Second: MediaWiki down"
     );
+    await runMirrorCycle();
+    expect(warn).toHaveBeenCalledTimes(2); // nothing new
   });
 
   it("does nothing while SKIP_MEDIAWIKI_SYNC is true: the jobs stay in the outbox", async () => {
@@ -490,7 +541,7 @@ describe("batches of revision jobs", () => {
     ]);
   });
 
-  it("makes every job of a failed batch dead on the same attempt, with one warning each", async () => {
+  it("makes every job of a failed batch dead on the same attempt, with one warning for them all", async () => {
     addJob({ title: "Foo", attempts: 7 });
     addJob({ title: "Foo", attempts: 7 });
     revisionJob.mockRejectedValue(new Error("MediaWiki down"));
@@ -498,7 +549,8 @@ describe("batches of revision jobs", () => {
     const result = await runMirrorCycle();
 
     expect(result).toMatchObject({ failed: 2, dead: 2 });
-    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0]?.[1]).toContain("2 mirror jobs went dead");
   });
 
   it("leaves alone a job another runner claimed first, and never runs a later job of the batch before it", async () => {
