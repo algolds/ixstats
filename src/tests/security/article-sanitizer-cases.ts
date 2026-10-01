@@ -4,8 +4,9 @@
  * `article-sanitizer-parity-browser.test.ts`), which take different paths to a DOMPurify instance.
  */
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
+import { ARTICLE_STYLE_SCOPE } from "~/lib/utils/scope-template-styles";
 
-const S = ".wikios-article";
+const S = ARTICLE_STYLE_SCOPE;
 
 /** The attribute TemplateStyles puts on its `<style>`. */
 const STYLE_OPEN = '<style data-mw-deduplicate="TemplateStyles:r1">';

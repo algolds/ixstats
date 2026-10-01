@@ -45,6 +45,7 @@ import { ArticleFooter } from "./ArticleFooter";
 import { ArticleCompanionHUD } from "./ArticleCompanionHUD";
 import { SourceWikiNote } from "./SourceWikiNote";
 import { cn } from "~/lib/utils";
+import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
 import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft } from "iconoir-react";
@@ -717,7 +718,7 @@ export function ArticleRenderer({
         {noticesMarkup && (
           <div
             id={leanToken ? leanElementId(leanToken, "notices") : undefined}
-            className="wikios-notices"
+            className={`wikios-notices ${ARTICLE_STYLE_ROOT_CLASS}`}
             dangerouslySetInnerHTML={noticesMarkup}
           />
         )}
@@ -734,6 +735,7 @@ export function ArticleRenderer({
             )}
             <div
               id={leanToken ? leanElementId(leanToken, "body") : undefined}
+              className={ARTICLE_STYLE_ROOT_CLASS}
               dangerouslySetInnerHTML={bodyMarkup}
             />
             {/* Render portals into injected placeholder nodes */}

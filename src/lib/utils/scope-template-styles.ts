@@ -3,31 +3,35 @@
  * (plan 415, COMPAT-10).
  *
  * MediaWiki's TemplateStyles puts a template's CSS in the page as `<style data-mw-deduplicate>` with every
- * selector under `.mw-parser-output`. The article sanitizer used to delete every `<style>`, so templates
- * that lay themselves out with TemplateStyles broke. It now keeps those blocks, but only after this
- * filter, which is deliberately small and fails closed:
+ * selector under `.mw-parser-output`, the wrapper of the parsed page. The article sanitizer used to delete every
+ * `<style>`, so templates that lay themselves out with TemplateStyles broke. It now keeps those blocks, but only
+ * after this filter, which is deliberately small and fails closed:
  *
- *  - every selector is prefixed with `.wikios-article` (the reader's root), so a template's CSS can only
- *    reach the article, never the app around it. `.mw-parser-output`, the wrapper MediaWiki scopes to
- *    and WikiOS does not render, becomes `.wikios-article`; a selector already scoped is left alone, so
- *    sanitizing twice gives the same CSS;
+ *  - every selector is under `.mw-parser-output`, the one class the reader gives to each element whose
+ *    innerHTML is a part of the article (the body, the infobox, the page-top notices, the editors' previews):
+ *    exactly where MediaWiki puts it, so MediaWiki's own selectors (`.mw-parser-output > .infobox`) mean what they
+ *    meant, and a template's CSS can never reach the reader's header, toolbar, byline or margin around the
+ *    article. A selector that already starts with the root is left alone (sanitizing twice gives the same CSS); a
+ *    selector that starts with the root and then asks for its siblings (`~`, `+`), or starts with a combinator,
+ *    would reach outside it and is dropped;
  *  - `@media` blocks are kept (their rules scoped); every other at-rule (`@import`, `@font-face`,
  *    `@keyframes`, `@supports`, ...) is dropped with its block;
  *  - a declaration is dropped when it uses `expression(`, `behavior`, `-moz-binding`, `javascript:`, an
- *    image function that loads a URL without `url(` (`image-set(`, `src(`, ...) or a `url()` whose
- *    target is not `https:` or relative;
+ *    image function that loads a URL without `url(` (`image-set(`, `src(`, ...) or a `url()` whose target
+ *    is not `https:` or relative;
  *  - anything the splitter cannot read with certainty (an unterminated string, unbalanced brackets, a
- *    stray `}`, a nested rule inside a rule, a `<` that could end the `<style>` element) drops the whole
- *    sheet or the rule: the browser must never parse the output differently from this code.
+ *    stray `}`, a nested rule inside a rule, a bad-url token, a `<` that could end the `<style>` element, a
+ *    trailing backslash) drops the whole sheet or the rule: the browser must never parse the output differently
+ *    from this code.
  *
  * CSS escapes (`\75 rl(`) are resolved before the declarations are judged, comments are replaced by a
  * space (as a browser does), and only the original text is ever emitted.
  */
 
-export const ARTICLE_STYLE_SCOPE = ".wikios-article";
+/** The class of the elements the article's parts are rendered into: the root every selector is confined to. */
+export const ARTICLE_STYLE_ROOT_CLASS = "mw-parser-output";
+export const ARTICLE_STYLE_SCOPE = `.${ARTICLE_STYLE_ROOT_CLASS}`;
 
-/** MediaWiki's wrapper class: WikiOS renders no such element, so it stands for the article root. */
-const MEDIAWIKI_WRAPPER = ".mw-parser-output";
 /** A sheet longer than this is dropped (a DoS guard: the splitter is linear, the output is not). */
 const MAX_CSS_LENGTH = 200_000;
 const MAX_SELECTOR_LENGTH = 1_000;
@@ -264,18 +268,13 @@ function reachesSiblings(selector: string, from: number): boolean {
 }
 
 /**
- * `selector` confined to the article: under the scope, `.mw-parser-output` standing for the scope itself. Null for
- * a selector that would reach outside it: one that starts with a combinator, or that starts with the root and then
- * asks for its siblings (`.wikios-article ~ *`, `.mw-parser-output + p`).
+ * `selector` confined to the article: under the root. Null for a selector that would reach outside it: one that
+ * starts with a combinator, or that starts with the root and then asks for its siblings (`.mw-parser-output ~ *`).
  */
 function scopeSelector(selector: string): string | null {
   if (/^[>+~]/.test(selector)) return null;
-  const token = [ARTICLE_STYLE_SCOPE, MEDIAWIKI_WRAPPER].find((root) => startsWithToken(selector, root));
-  if (token === undefined) return `${ARTICLE_STYLE_SCOPE} ${selector}`;
-  if (reachesSiblings(selector, token.length)) return null;
-  return token === ARTICLE_STYLE_SCOPE
-    ? selector
-    : `${ARTICLE_STYLE_SCOPE}${selector.slice(MEDIAWIKI_WRAPPER.length)}`;
+  if (!startsWithToken(selector, ARTICLE_STYLE_SCOPE)) return `${ARTICLE_STYLE_SCOPE} ${selector}`;
+  return reachesSiblings(selector, ARTICLE_STYLE_SCOPE.length) ? null : selector;
 }
 
 /** The selector list of a rule, scoped; null when any selector is empty or unsafe (the browser drops such a rule too). */

@@ -6,6 +6,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
 import { ixstatesHref } from "~/lib/system/wikios-standalone";
+import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -54,7 +55,7 @@ export function InfoboxWithMap({ infoboxHtml, articleTitle, markupId }: InfoboxW
 
   return (
     <aside className="wikios-infobox facet-hierarchy-child">
-      <div id={markupId} dangerouslySetInnerHTML={infoboxMarkup} />
+      <div id={markupId} className={ARTICLE_STYLE_ROOT_CLASS} dangerouslySetInnerHTML={infoboxMarkup} />
       {matchedCountry && (
         <div className="wikios-infobox-map-embed">
           <CountryMapEmbed

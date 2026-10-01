@@ -1,8 +1,12 @@
 /** @jest-environment node */
 // Plan 415 (COMPAT-10): the filter every TemplateStyles `<style>` of an article goes through. It scopes
-// each selector under `.wikios-article`, keeps `@media`, and drops everything that could load, run or
+// each selector under the article's root (`.mw-parser-output`), keeps `@media`, and drops everything that could load, run or
 // reach outside the article. It fails closed: what it cannot read with certainty it does not emit.
-import { ARTICLE_STYLE_SCOPE, scopeTemplateStyles } from "~/lib/utils/scope-template-styles";
+import {
+  ARTICLE_STYLE_ROOT_CLASS,
+  ARTICLE_STYLE_SCOPE,
+  scopeTemplateStyles,
+} from "~/lib/utils/scope-template-styles";
 
 const S = ARTICLE_STYLE_SCOPE;
 
@@ -35,8 +39,19 @@ describe("scoping", () => {
     [".mw-parser-output.wide{color:red}", `${S}.wide{color:red}`],
     [".mw-parser-output{color:red}", `${S}{color:red}`],
     [".mw-parser-output-x .a{color:red}", `${S} .mw-parser-output-x .a{color:red}`],
-  ])("reads MediaWiki's wrapper class as the article root: %s", (css, expected) => {
+  ])("keeps MediaWiki's own root selector as it is, the root being that class: %s", (css, expected) => {
     expect(scopeTemplateStyles(css)).toBe(expected);
+  });
+
+  it("confines a sheet to the class the reader gives the article's parts, MediaWiki's own", () => {
+    expect(S).toBe(".mw-parser-output");
+    expect(ARTICLE_STYLE_ROOT_CLASS).toBe("mw-parser-output");
+    // a MediaWiki selector means what it meant: the root's children are the article's own elements
+    expect(scopeTemplateStyles(".mw-parser-output > .infobox{color:red}")).toBe(".mw-parser-output > .infobox{color:red}");
+    // a selector of anything else is a descendant of the root, never the root's ancestor or sibling
+    expect(scopeTemplateStyles("body, .wikios-article, .wikios-header{display:none}")).toBe(
+      ".mw-parser-output body,.mw-parser-output .wikios-article,.mw-parser-output .wikios-header{display:none}"
+    );
   });
 
   it("is idempotent: CSS already scoped is not scoped again", () => {

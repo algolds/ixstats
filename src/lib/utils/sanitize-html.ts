@@ -403,7 +403,7 @@ function hashString(text: string): string {
  * Bump when the hooks (`installSharedHooks`, the article's `<style>` filter) or the TemplateStyles scoper
  * (`scope-template-styles.ts`) change: they shape the output but are not part of the config.
  */
-const SANITIZER_HOOKS_VERSION = 2;
+const SANITIZER_HOOKS_VERSION = 3;
 
 let articleSanitizerFingerprint: string | null = null;
 
@@ -427,7 +427,7 @@ export function wikiArticleSanitizerFingerprint(): string {
  * WikiOS article sanitization (stored or compiled article HTML, served to every reader).
  * Wiki config plus the MediaWiki/Parsoid markup articles need, and the legacy tags and attributes
  * MediaWiki's own Sanitizer allows. A `<style>` stays only when it is TemplateStyles' (it carries
- * `data-mw-deduplicate`) and then only as CSS scoped under `.wikios-article` and cleared of imports,
+ * `data-mw-deduplicate`) and then only as CSS scoped under `.mw-parser-output` and cleared of imports,
  * outside URLs and script hooks (`scope-template-styles.ts`); the style attribute stays allowed.
  */
 export function sanitizeWikiArticleHtml(html: string): string {

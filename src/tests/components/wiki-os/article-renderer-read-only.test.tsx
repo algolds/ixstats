@@ -558,3 +558,26 @@ describe("lean first response (plan 413, item 8c)", () => {
     expect(container.querySelector(".wikios-article-body")?.textContent ?? "").toBe("");
   });
 });
+
+describe("ArticleRenderer's parts carry the class TemplateStyles are scoped to (plan 415 review, m4)", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("gives the notices and the body that class, and nothing around them", () => {
+    const { container } = renderArticle("ixwiki", { noticesHtml: '<table class="ambox"><tr><td>n</td></tr></table>' });
+
+    const roots = Array.from(container.querySelectorAll(".mw-parser-output"));
+    expect(roots).toHaveLength(2);
+    expect(container.querySelector(".wikios-notices")).toBe(roots[0]);
+    expect(roots[1]?.innerHTML).toContain("Eurth is a world.");
+    // the page's own chrome (the header, the article container) is outside every root
+    expect(container.querySelector("h1")?.closest(".mw-parser-output")).toBeNull();
+    expect(container.querySelector(".wikios-article")?.classList.contains("mw-parser-output")).toBe(false);
+  });
+
+  it("makes the body a root whose children are the article's own elements, so `.mw-parser-output > p` matches", () => {
+    const { container } = renderArticle("ixwiki");
+    const body = container.querySelector(".wikios-article-content > .mw-parser-output");
+
+    expect(body?.querySelector(":scope > p")?.textContent).toBe("Eurth is a world.");
+  });
+});

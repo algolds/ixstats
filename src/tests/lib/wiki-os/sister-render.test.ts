@@ -105,7 +105,7 @@ describe("renderSisterArticle: the answer", () => {
 
     const out = await renderSisterArticle("althistory", article());
 
-    expect(out.contentHtml).toContain(".wikios-article .box{color:red}");
+    expect(out.contentHtml).toContain(".mw-parser-output .box{color:red}");
   });
 
   it("fails by name when the wiki does not answer, says what the parser said, and never caches a failure", async () => {
