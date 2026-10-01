@@ -20,6 +20,7 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
 }));
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
+import { getRecentChanges } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosSearchRouter } from "~/server/api/routers/wikios/search";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -87,5 +88,17 @@ describe("wikios.advancedSearch (plan 413)", () => {
 
     expect(mockFulltext).toHaveBeenCalledTimes(1);
     expect(result).toMatchObject({ results: [], totalHits: 0, hasMore: false });
+  });
+});
+
+describe("wikios.getRecentChanges and parked edits (plan 406)", () => {
+  it("asks for the edits that went live, unless the page asks for the parked ones too", async () => {
+    jest.mocked(getRecentChanges).mockResolvedValue([]);
+
+    await caller().getRecentChanges({ limit: 20 });
+    await caller().getRecentChanges({ limit: 100, includeParked: true });
+
+    expect(getRecentChanges).toHaveBeenNthCalledWith(1, 20, { includeParked: false });
+    expect(getRecentChanges).toHaveBeenNthCalledWith(2, 100, { includeParked: true });
   });
 });

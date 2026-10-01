@@ -102,6 +102,22 @@ describe("ixwikiGetSiteStats", () => {
     expect(mockRevisionGroupBy.mock.calls[0]![0].where.createdAt.gte).toBeInstanceOf(Date);
   });
 
+  it("counts the edits and the editors of edits that went live: a parked revision is neither", async () => {
+    mockArticleCount.mockResolvedValue(1);
+    mockRevisionCount.mockResolvedValue(1);
+    mockAssetCount.mockResolvedValue(1);
+    mockUserCount.mockResolvedValue(1);
+    mockRevisionGroupBy.mockResolvedValue([]);
+
+    await ixwikiGetSiteStats();
+
+    expect(mockRevisionCount.mock.calls[0]![0].where).toEqual({ source: "ixwiki", parked: false });
+    expect(mockRevisionGroupBy.mock.calls[0]![0].where).toMatchObject({
+      source: "ixwiki",
+      parked: false,
+    });
+  });
+
   it("reports zero as zero and a failed count as null, with no stand-in numbers", async () => {
     mockArticleCount.mockResolvedValue(0);
     mockRevisionCount.mockRejectedValue(new Error("db down"));

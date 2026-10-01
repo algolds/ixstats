@@ -152,7 +152,8 @@ async function readAlmanac(now: Date): Promise<MainPageAlmanac | null> {
 }
 
 async function readRecentChanges(): Promise<MainPageChange[]> {
-  const changes = await getRecentChanges(RECENT_CHANGES_SHOWN);
+  // The edits that went live: a parked one (a conflicting MediaWiki edit) was never the page's text
+  const changes = await getRecentChanges(RECENT_CHANGES_SHOWN, { includeParked: false });
   return changes.map((c) => ({
     title: c.title,
     user: c.user,

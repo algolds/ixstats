@@ -191,7 +191,8 @@ describe("getMainPageData", () => {
 
     const page = await getMainPageData();
 
-    expect(mockRecentChanges).toHaveBeenCalledWith(6);
+    // the edits that went live: a parked (conflicting) one is not the page's latest change
+    expect(mockRecentChanges).toHaveBeenCalledWith(6, { includeParked: false });
     expect(page.recentChanges.map((c) => c.title)).toEqual(["Aurelia", "Urcea"]);
     expect(page.stats).toEqual({
       articles: 4800,

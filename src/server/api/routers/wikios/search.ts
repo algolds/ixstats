@@ -69,12 +69,18 @@ export const wikiosSearchRouter = createTRPCRouter({
     }),
 
   /**
-   * Get recent changes from the wiki feed.
+   * Get recent changes from the wiki feed: the edits that went live. `includeParked` adds the ones
+   * that did not (MediaWiki edits that conflicted with WikiOS's head), flagged `parked`.
    */
   getRecentChanges: publicProcedure
-    .input(z.object({ limit: z.number().min(1).max(100).default(50) }))
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(50),
+        includeParked: z.boolean().default(false),
+      })
+    )
     .query(async ({ input }) => {
-      return getRecentChanges(input.limit);
+      return getRecentChanges(input.limit, { includeParked: input.includeParked });
     }),
 
   /**

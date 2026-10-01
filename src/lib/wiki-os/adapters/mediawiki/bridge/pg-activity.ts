@@ -16,13 +16,13 @@ import type { WikiRecentChange } from "./types";
 // ---------------------------------------------------------------------------
 
 /**
- * The latest edits. A parked one (a MediaWiki edit that never went live) is listed, flagged `parked`,
- * unless `includeParked` is false: what presents "the latest change" as the page's (the Main Page)
- * asks for the live ones only.
+ * The latest edits that went live. A parked one (a MediaWiki edit that conflicted with WikiOS's head
+ * and never went live) is left out, unless `includeParked`: the recent-changes page lists it, flagged
+ * `parked`; everything that presents "the latest change" (the Main Page, the feeds) does not.
  */
 export async function ixwikiRecentChanges(
   limit: number = 20,
-  { includeParked = true }: { includeParked?: boolean } = {}
+  { includeParked = false }: { includeParked?: boolean } = {}
 ): Promise<WikiRecentChange[]> {
   try {
     // A revision's size is stored with it, and the article's summary is its excerpt: no wikitext is read.

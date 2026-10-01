@@ -776,6 +776,76 @@ describe("ArticleRepository.getHistory", () => {
     expect(history.map((r) => r.parked)).toEqual([true, false]);
   });
 
+  describe("a parked revision between two live ones (plan 406)", () => {
+    // newest first: live r3, PARKED r2, live r1. The fake honours `where.parked`, the cursor and `take`.
+    const history = [
+      { ...revision("Foo", "r3"), parked: false, createdAt: new Date("2026-06-03T00:00:00Z") },
+      { ...revision("Foo", "r2"), parked: true, createdAt: new Date("2026-06-02T00:00:00Z") },
+      { ...revision("Foo", "r1"), parked: false, createdAt: new Date("2026-06-01T00:00:00Z") },
+    ];
+    type Where = { id?: string; parked?: boolean };
+    const visible = (where: Where) => history.filter((r) => where.parked !== false || !r.parked);
+
+    beforeEach(() => {
+      mockFindUnique.mockResolvedValue(articleRow("Foo"));
+      mockRevisionFindFirst.mockImplementation(
+        async ({ where }: { where: Where }) => visible(where).find((r) => r.id === where.id) ?? null
+      );
+      mockRevisionFindMany.mockImplementation(
+        async ({
+          where,
+          take,
+          skip = 0,
+          cursor,
+        }: {
+          where: Where;
+          take: number;
+          skip?: number;
+          cursor?: { id: string };
+        }) => {
+          const rows = visible(where);
+          const start = cursor ? rows.findIndex((r) => r.id === cursor.id) + skip : 0;
+          return rows.slice(start, start + take);
+        }
+      );
+    });
+
+    const ids = (rows: { id: string }[]) => rows.map((r) => r.id);
+
+    it("is invisible to history paging: neither a page's entry, nor where the next page starts", async () => {
+      expect(ids(await ArticleRepository.getHistory("Foo", "ixwiki", 10))).toEqual(["r3", "r1"]);
+      // paging one at a time steps over it
+      expect(ids(await ArticleRepository.getHistory("Foo", "ixwiki", 1))).toEqual(["r3"]);
+      expect(ids(await ArticleRepository.getHistory("Foo", "ixwiki", 1, { before: "r3" }))).toEqual(
+        ["r1"]
+      );
+      // it cannot be the anchor of a page either: "after r2" names nothing the default list shows
+      expect(await ArticleRepository.getHistory("Foo", "ixwiki", 5, { before: "r2" })).toEqual([]);
+      expect(await ArticleRepository.getHistory("Foo", "ixwiki", 5, { from: "r2" })).toEqual([]);
+    });
+
+    it("is the diff base's blind spot: the revision before the live r3 is r1, never r2", async () => {
+      // what getDiff reads: the revision itself and the one after it, from r3
+      const [revision3, base] = await ArticleRepository.getHistory("Foo", "ixwiki", 2, {
+        from: "r3",
+      });
+
+      expect([revision3?.id, base?.id]).toEqual(["r3", "r1"]);
+    });
+
+    it("is there for a history list that asks for it, in order, and can anchor a page", async () => {
+      const all = { includeParked: true };
+      expect(ids(await ArticleRepository.getHistory("Foo", "ixwiki", 10, undefined, all))).toEqual([
+        "r3",
+        "r2",
+        "r1",
+      ]);
+      expect(
+        ids(await ArticleRepository.getHistory("Foo", "ixwiki", 5, { before: "r2" }, all))
+      ).toEqual(["r1"]);
+    });
+  });
+
   it("is empty, without reading revisions, when the article does not exist", async () => {
     await expect(ArticleRepository.getHistory("Nowhere")).resolves.toEqual([]);
     expect(mockRevisionFindMany).not.toHaveBeenCalled();

@@ -60,13 +60,19 @@ export async function ixwikiGetSiteStats(): Promise<SiteStats> {
       db.wikiArticle.count({ where: { source: "ixwiki", namespace: 0, status: "PUBLISHED" } })
     ),
     countOrNull(() => db.wikiArticle.count({ where: { source: "ixwiki", status: "PUBLISHED" } })),
-    countOrNull(() => db.wikiRevision.count({ where: { source: "ixwiki" } })),
+    // A parked edit (a MediaWiki edit that conflicted and never went live) is not an edit of the wiki
+    countOrNull(() => db.wikiRevision.count({ where: { source: "ixwiki", parked: false } })),
     countOrNull(() => db.wikiAsset.count()),
     countOrNull(() => db.user.count({ where: { wikiUsername: { not: null } } })),
     countOrNull(async () => {
       const editors = await db.wikiRevision.groupBy({
         by: ["author"],
-        where: { source: "ixwiki", author: { not: null }, createdAt: { gte: since } },
+        where: {
+          source: "ixwiki",
+          parked: false,
+          author: { not: null },
+          createdAt: { gte: since },
+        },
       });
       return editors.length;
     }),
