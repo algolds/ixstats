@@ -18,6 +18,9 @@ import {
   Eye,
   WarningTriangle as AlertTriangle,
   MoreHoriz as MoreHorizontal,
+  Coins,
+  Activity,
+  Crown,
 } from "iconoir-react";
 import type { DepartmentCategory, OrganizationalLevel } from "~/types/government";
 
@@ -52,6 +55,10 @@ const NAMED_DEPARTMENT_ICONS = new Map<string, React.ComponentType<{ className?:
     Eye,
     WarningTriangle: AlertTriangle,
     MoreHoriz: MoreHorizontal,
+    // names the builder's government step stores
+    Coins,
+    Activity,
+    Crown,
   })
 );
 
