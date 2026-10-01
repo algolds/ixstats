@@ -582,6 +582,60 @@ describe("getArticleHtml (IxWiki) redirects (plan 412)", () => {
     expect(result).toMatchObject({ resolvedFrom: null, redirectFragment: null });
   });
 
+  /** The real resolver's rule (ixwikiResolveRedirect): up to two hops, never revisiting a page. */
+  function redirectGraph(links: Record<string, string>) {
+    jest.mocked(resolveRedirect).mockImplementation(async (title: string) => {
+      const visited = new Set([title]);
+      let current = title;
+      for (let hop = 0; hop < 2; hop++) {
+        const target = links[current];
+        if (!target || visited.has(target)) break;
+        visited.add(target);
+        current = target;
+      }
+      return { title: current, fragment: null };
+    });
+  }
+
+  it.each([
+    ["A to B and back", { A: "B", B: "A" }, ["A", "B"]],
+    ["A to B to C to A", { A: "B", B: "C", C: "A" }, ["A", "B", "C"]],
+    ["a four-page cycle", { A: "B", B: "C", C: "D", D: "A" }, ["A", "B", "C", "D"]],
+    [
+      "a seven-page cycle",
+      { A: "B", B: "C", C: "D", D: "E", E: "F", F: "G", G: "A" },
+      ["A", "D", "G"],
+    ],
+    ["a page that redirects to itself", { A: "A" }, ["A"]],
+  ])(
+    "%s: every page of the cycle shows itself, so no reader is sent round it",
+    async (_name, links, starts) => {
+      redirectGraph(links);
+      findArticleForView.mockImplementation(async (title: string) => head({ title }));
+      setRow(freshBundleRow("<p>#REDIRECT</p>"));
+
+      for (const start of starts) {
+        const result = await caller().getArticleHtml({ title: start });
+        expect(result).toMatchObject({ title: start, resolvedFrom: null, redirectFragment: null });
+      }
+    }
+  );
+
+  it("still follows a chain that ends: A to B to C (two hops) and A to B", async () => {
+    redirectGraph({ A: "B", B: "C" });
+    findArticleForView.mockImplementation(async (title: string) => head({ title }));
+    setRow(freshBundleRow("<p>The page.</p>"));
+
+    await expect(caller().getArticleHtml({ title: "A" })).resolves.toMatchObject({
+      title: "C",
+      resolvedFrom: "A",
+    });
+    await expect(caller().getArticleHtml({ title: "B" })).resolves.toMatchObject({
+      title: "C",
+      resolvedFrom: "B",
+    });
+  });
+
   it("a redirect to a page that does not exist shows the redirect page itself, not 'no such page'", async () => {
     // "Old name" redirects to "New name", which has no article; "Old name" itself does.
     findArticleForView.mockImplementation(async (title: string) =>

@@ -8,7 +8,12 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
-import { getArticleWikitext, resolveRedirect, getInfobox, getImageMeta } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import {
+  getArticleWikitext,
+  resolveRedirect,
+  getInfobox,
+  getImageMeta,
+} from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import {
   transformArticleHtml,
   stripConflictingStyles,
@@ -53,6 +58,30 @@ async function readIxWikiView(ctx: WikiAuthContext, title: string) {
     }
     throw error;
   });
+}
+
+/** The most redirect resolutions (each up to two hops) followed before a chain is called a cycle. */
+const MAX_REDIRECT_ROUNDS = 3;
+
+/**
+ * Where `rawTitle` really leads: the page after its redirects, with the section the last redirect
+ * named. Null when the redirects lead back to a title already seen (A to B to A, A to B to C to A)
+ * or never end: a reader sent to either end of a cycle would be sent round it for ever, so the
+ * caller shows the page asked for.
+ */
+async function followRedirects(
+  rawTitle: string
+): Promise<{ title: string; fragment: string | null } | null> {
+  const seen = new Set([rawTitle]);
+  let current = { title: rawTitle, fragment: null as string | null };
+  for (let round = 0; round < MAX_REDIRECT_ROUNDS; round++) {
+    const next = await resolveRedirect(current.title);
+    if (next.title === current.title) return current; // not a redirect: this is the page
+    if (seen.has(next.title)) return null;
+    seen.add(next.title);
+    current = { title: next.title, fragment: next.fragment ?? current.fragment };
+  }
+  return null;
 }
 
 export const wikiosPageContentRouter = createTRPCRouter({
@@ -163,10 +192,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
 
       // A title is always a page here: a WikiOS tool slug ("search") is an article title like any
       // other, and the old slugs redirect to their tool in the route, not in this query.
-      const followed =
-        input.redirect === "no"
-          ? { title: rawTitle, fragment: null }
-          : await resolveRedirect(rawTitle);
+      const self = { title: rawTitle, fragment: null };
+      const followed = input.redirect === "no" ? self : ((await followRedirects(rawTitle)) ?? self);
 
       let shown = followed;
       let view = await readIxWikiView(ctx, followed.title);
