@@ -1,7 +1,8 @@
 /**
  * src/app/api/wiki/raw/route.ts — `/wiki/<title>?action=raw`: the page's wikitext as MediaWiki's
  * raw action serves it (`text/x-wiki`), for bots and editors. `src/proxy.ts` rewrites
- * `/wiki/<title>?action=raw[&oldid=<ref>]` here (the title arrives as `path`, as in the URL).
+ * `/wiki/<title>?action=raw[&oldid=<ref>]` here (the path after `/wiki/` arrives in the
+ * `x-wikios-raw-path` header; a direct request passes `?path=`).
  * Only Postgres is read: a missing page is a 404, MediaWiki is never asked.
  */
 
@@ -10,6 +11,7 @@ import { rateLimiter } from "~/lib/cache/rate-limiter";
 import { getRevisionWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { archivedTitlesAmong } from "~/lib/wiki-os/core/archived-titles";
 import { ArticleRepository } from "~/lib/wiki-os/core";
+import { RAW_PATH_HEADER } from "~/lib/wiki-os/raw-path";
 import { resolveWikiPath } from "~/lib/wiki-os/wiki-path";
 import { resolveRateLimitIdentifier } from "~/server/api/trpc/rate-limit-identity";
 
@@ -35,8 +37,19 @@ async function wikitextOf(title: string, ref: string | null): Promise<string | n
   return (await ArticleRepository.findBySlug(title))?.wikitext ?? null;
 }
 
+/**
+ * The page the request names, as the path after `/wiki/`: the proxy's header for a rewritten
+ * `/wiki/<title>?action=raw` (accepted only for a request that carries `action=raw`; the proxy sets
+ * it and strips a client's own), else `?path=` of a direct request.
+ */
+function pathOf(req: NextRequest): string {
+  const { searchParams } = req.nextUrl;
+  const proxied = searchParams.get("action") === "raw" ? req.headers.get(RAW_PATH_HEADER) : null;
+  return proxied ?? searchParams.get("path") ?? "";
+}
+
 export async function GET(req: NextRequest) {
-  const path = req.nextUrl.searchParams.get("path") ?? "";
+  const path = pathOf(req);
   const target = resolveWikiPath(path.split("/"), req.nextUrl.searchParams);
   if (target.kind !== "raw" || target.canon.namespaceId < 0) return plain("Bad request", 400);
 
