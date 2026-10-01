@@ -29,7 +29,7 @@ export interface WikiosConfigInput {
   writeApiUrl?: string | undefined;
   /** `WIKIOS_MEDIAWIKI_BOT_USER`: the mirror's bot login (`Name@BotName`). */
   botUser?: string | undefined;
-  /** `WIKIOS_TEMPLATESTYLES`: `0` (or `false`, `off`, `no`) turns TemplateStyles off; anything else, or unset, leaves it on. */
+  /** `WIKIOS_TEMPLATESTYLES`: unset, empty, `1`, `true`, `on` or `yes` leaves TemplateStyles on; any other value turns it off. */
   templateStyles?: string | undefined;
 }
 
@@ -46,9 +46,10 @@ export interface WikiosConfig {
   /** Sent to every wiki WikiOS reads; the sister wikis allow-list it. */
   readonly userAgent: string;
   /**
-   * Whether an article's TemplateStyles `<style>` blocks survive the sanitizer (scoped and filtered). On unless
-   * `WIKIOS_TEMPLATESTYLES=0`: the emergency lever if a CSS bypass is reported, which removes every `<style>` again
-   * (the behaviour before plan 415). Part of the sanitizer fingerprint, so toggling it re-renders stored bundles.
+   * Whether an article's TemplateStyles `<style>` blocks survive the sanitizer (scoped and filtered). On when
+   * `WIKIOS_TEMPLATESTYLES` is unset, empty, `1`, `true`, `on` or `yes`; any other value (`0`, `off`, a typo) is off,
+   * so the lever fails closed: it is the emergency switch if a CSS bypass is reported, and removes every `<style>`
+   * again (the behaviour before plan 415). Part of the sanitizer fingerprint, so toggling it re-renders stored bundles.
    */
   readonly templateStyles: boolean;
   readonly mediawiki: {
@@ -94,7 +95,7 @@ export function buildWikiosConfig(input: WikiosConfigInput): WikiosConfig {
     publicHost: hostOf(publicBaseUrl),
     articlePath: "/wiki/",
     userAgent: DEFAULT_USER_AGENT,
-    templateStyles: !/^(?:0|false|off|no)$/i.test(input.templateStyles?.trim() ?? ""),
+    templateStyles: /^(?:|1|true|on|yes)$/i.test(input.templateStyles?.trim() ?? ""),
     mediawiki: Object.freeze({
       publicApiUrl,
       internalApiUrl,

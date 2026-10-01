@@ -20,7 +20,8 @@ function loadWith(value: string | undefined): Sanitizer {
   try {
     let loaded: Sanitizer | null = null;
     jest.isolateModules(() => {
-      const sanitizer = require("~/lib/utils/sanitize-html") as typeof import("~/lib/utils/sanitize-html");
+      const sanitizer =
+        require("~/lib/utils/sanitize-html") as typeof import("~/lib/utils/sanitize-html");
       const config = require("~/lib/wiki-os/config") as typeof import("~/lib/wiki-os/config");
       loaded = {
         html: sanitizer.sanitizeWikiArticleHtml(PAGE),
@@ -41,19 +42,24 @@ describe("WIKIOS_TEMPLATESTYLES", () => {
 
   it("is on by default: TemplateStyles' <style> stays, scoped to the article root, and any other <style> goes", () => {
     expect(on.enabled).toBe(true);
-    expect(on.html).toContain('<style data-mw-deduplicate="TemplateStyles:r1">.mw-parser-output .box{color:red}</style>');
+    expect(on.html).toContain(
+      '<style data-mw-deduplicate="TemplateStyles:r1">.mw-parser-output .box{color:red}</style>'
+    );
     expect(on.html).not.toContain("plain");
     expect(on.html).toContain('<div class="box">Text</div>');
   });
 
-  it.each(["0", "false", "off", "no", " 0 ", "OFF"])("%j turns it off: no <style> survives, the markup does", (value) => {
-    const off = loadWith(value);
+  it.each(["0", "false", "off", "no", " 0 ", "OFF", "anything", "tru", "disabled"])(
+    "%j turns it off, a typo included: no <style> survives, the markup does",
+    (value) => {
+      const off = loadWith(value);
 
-    expect(off.enabled).toBe(false);
-    expect(off.html).toBe('<div class="box">Text</div>');
-  });
+      expect(off.enabled).toBe(false);
+      expect(off.html).toBe('<div class="box">Text</div>');
+    }
+  );
 
-  it.each(["1", "", "on", "true", "yes", "anything"])("%j leaves it on", (value) => {
+  it.each(["1", "", "on", "true", "yes", "TRUE", " Yes "])("%j leaves it on", (value) => {
     const same = loadWith(value);
 
     expect(same.enabled).toBe(true);

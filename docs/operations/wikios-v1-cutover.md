@@ -697,8 +697,8 @@ selector under `.mw-parser-output` and filtered each declaration (`src/lib/utils
 If a CSS bypass is ever reported (a template's sheet styling the reader's chrome, hiding the page, or loading a host
 other than the wiki's), do not debug it first: switch the feature off, then fix it. With `WIKIOS_TEMPLATESTYLES=0` the
 sanitizer removes **every** `<style>` from article HTML, the behaviour before plan 415 (templates that lay themselves out
-with TemplateStyles then render unstyled, which is ugly but safe). `0`, `false`, `off` and `no` all mean off; unset, empty
-or anything else means on.
+with TemplateStyles then render unstyled, which is ugly but safe). The lever **fails closed**: only unset, empty, `1`,
+`true`, `on` and `yes` (any case) leave TemplateStyles on; every other value, `0` and `off` and a typo alike, turns it off.
 
 ```bash
 bk "$IX/.env.production.local" env.production.local
@@ -719,7 +719,8 @@ curl -s "https://ixwiki.com/wiki/<Title>" | grep -c 'data-mw-deduplicate'     # 
 
 **Turning it back on** (after the scoper is fixed and `bun run audit:template-styles` reports 0 violations and 0
 non-idempotent outputs): restore the file (`sudo cp -a "$BK/env.production.local" "$IX/.env.production.local"`) or delete the
-`WIKIOS_TEMPLATESTYLES` line, and restart both processes as above; bundles re-render again.
+`WIKIOS_TEMPLATESTYLES` line (or set it to `1`), and restart both processes as above; bundles re-render again. A misspelt
+value (`ture`, `enabled`) keeps it **off**: check with the `curl` above that the styles are back.
 
 **Rollback:** the same lines, in reverse.
 

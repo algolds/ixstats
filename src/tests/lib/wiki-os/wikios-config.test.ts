@@ -33,11 +33,12 @@ describe("buildWikiosConfig", () => {
     });
   });
 
-  it("leaves TemplateStyles on unless WIKIOS_TEMPLATESTYLES says 0, false, off or no", () => {
+  it("leaves TemplateStyles on only for an unset, empty, 1, true, on or yes WIKIOS_TEMPLATESTYLES: any other value fails closed", () => {
     expect(buildWikiosConfig({}).templateStyles).toBe(true);
-    expect(buildWikiosConfig({ templateStyles: "" }).templateStyles).toBe(true);
-    expect(buildWikiosConfig({ templateStyles: "1" }).templateStyles).toBe(true);
-    for (const off of ["0", "false", "OFF", " no ", " 0"]) {
+    for (const on of ["", "  ", "1", "true", "TRUE", "On", " yes "]) {
+      expect(buildWikiosConfig({ templateStyles: on }).templateStyles).toBe(true);
+    }
+    for (const off of ["0", "false", "off", "no", " 0", "disabled", "of", "tru", "2", "enabled", "ture", "anything"]) {
       expect(buildWikiosConfig({ templateStyles: off }).templateStyles).toBe(false);
     }
   });
