@@ -2,9 +2,13 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { KeyCommand as Command, ClockRotateRight as FileClock, Clock } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { cn } from "~/lib/utils";
 import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
+import { focusRing } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { ExecutiveOpportunityHero } from "./ExecutiveOpportunityHero";
 import { ExecutiveAgenda } from "./ExecutiveAgenda";
 import { StandingBands } from "./StandingBands";
@@ -17,6 +21,7 @@ import {
   CATEGORY_STYLE,
 } from "./ExecutiveActionCards";
 import { ExecutiveRecordFeed } from "./ExecutiveRecordFeed";
+import { GOLD_RIM } from "./domain-hue";
 import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 
@@ -56,6 +61,81 @@ export const CooldownTimer = React.memo(function CooldownTimer({
   return <>{formatCooldownTime(cooldownUntil, now)}</>;
 });
 
+/**
+ * The v2 rail trigger (c5c6b382): "Declare a new Directive" as a full-width card button with the
+ * gold Command badge — or, once the week's directives are spent, a disabled card whose tooltip
+ * counts down to the next slot.
+ */
+function DeclareRailButton({ countryId, onDeclare }: { countryId: string; onDeclare: () => void }) {
+  const status = api.intent.getStatus.useQuery({ countryId }, { enabled: !!countryId });
+  const canCommit = status.data?.canCommit ?? true;
+
+  if (canCommit) {
+    return (
+      <button
+        type="button"
+        onClick={onDeclare}
+        className={cn(
+          "group bg-surface text-label rounded-card shadow-card text-body relative flex w-full cursor-pointer items-center justify-center gap-3 border p-3 font-semibold select-none",
+          "facet-press facet-lift",
+          GOLD_RIM,
+          focusRing
+        )}
+      >
+        <span
+          aria-hidden="true"
+          className="facet-gold rounded-control-sm flex size-8 items-center justify-center transition-[scale] duration-150 group-hover:scale-105 motion-reduce:group-hover:scale-100"
+        >
+          <Command className="size-4" />
+        </span>
+        <span className="group-hover:text-tint transition-colors">Declare a new Directive</span>
+      </button>
+    );
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {/* A disabled button does not fire pointer events; the wrapper carries the tooltip. */}
+        <div className="w-full">
+          <button
+            type="button"
+            disabled
+            className="border-separator bg-surface text-label-secondary rounded-card text-body flex w-full cursor-not-allowed items-center justify-center gap-3 border p-3 font-semibold opacity-75"
+          >
+            <span
+              aria-hidden="true"
+              className="border-separator bg-fill-3 rounded-control-sm flex size-8 items-center justify-center border"
+            >
+              <FileClock className="size-4" />
+            </span>
+            <span>Directive on cooldown</span>
+          </button>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="left" className="max-w-xs space-y-2 p-3">
+        <p className="text-tint text-footnote flex items-center gap-2 font-semibold">
+          <Clock aria-hidden="true" className="size-3.5" />
+          Executive cooldown active
+        </p>
+        <p className="text-footnote">
+          Your government has issued this week&apos;s directives (
+          <span className="font-data tabular-nums">
+            {status.data?.usedThisWeek ?? 0}/{status.data?.cap ?? 0}
+          </span>
+          ).
+        </p>
+        <p className="border-separator text-footnote flex items-center justify-between gap-3 border-t pt-2">
+          <span>Next slot</span>
+          <span className="text-tint font-data font-semibold tabular-nums">
+            <CooldownTimer cooldownUntil={status.data?.cooldownUntil} />
+          </span>
+        </p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 export function ExecutiveHomeComponent({
   countryId,
   onDeclare,
@@ -90,11 +170,10 @@ export function ExecutiveHomeComponent({
 
   const items = useMemo(() => feed.data ?? [], [feed.data]);
 
+  // v2 composition (c5c6b382): the priority hero first; then the agenda and the national log,
+  // with the rail of national standing, the World Census, the directive trigger and the map.
   return (
     <div className="space-y-6">
-      {/* Calm summary of the nation's vitals */}
-      <StandingBands countryId={countryId} />
-
       {/* The one thing that most needs the leader's attention */}
       <ExecutiveOpportunityHero
         countryId={countryId}
@@ -143,9 +222,11 @@ export function ExecutiveHomeComponent({
           </FacetCard>
         </div>
 
-        {/* Rail: where the nation stands among its peers, and its territory */}
-        <aside className="min-w-0 space-y-6" aria-label="Rankings and territory">
+        {/* Rail: national standing, rank among peers, the directive trigger and the territory */}
+        <aside className="min-w-0 space-y-6" aria-label="National standing, rankings and territory">
+          <StandingBands countryId={countryId} />
           <WorldCensusCard countryId={countryId} />
+          <DeclareRailButton countryId={countryId} onDeclare={() => onDeclare()} />
           <TerritoryMapWidget countryId={countryId} />
         </aside>
       </div>

@@ -12,6 +12,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { EmptyState } from "~/components/ui/empty-state";
+import { CutoutCard } from "~/components/ui/cutout-card";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Progress } from "~/components/ui/progress";
 import { SearchField } from "~/components/ui/search-field";
@@ -170,7 +171,8 @@ export function ArchetypeGrid({
           </div>
 
           <div>
-            <h2 className="text-title-1 text-label">Archetype</h2>
+            {/* v2: the step title in the builder gold */}
+            <h2 className="text-title-1 text-tint">Archetype</h2>
             <p className="text-footnote text-label-secondary mt-0.5">
               {selectedTemplate ? (
                 <>
@@ -202,7 +204,11 @@ export function ArchetypeGrid({
 
       {/* Active Benchmark Overview Card or Benchmark Skipped Banner */}
       {selectedTemplate ? (
-        <FacetCard className="flex flex-col items-start justify-between gap-4 p-4 sm:flex-row sm:items-center">
+        // v2: the benchmark banner sits on a gold wash (the glass hero in the builder tint).
+        <FacetCard
+          variant="glass"
+          className="flex flex-col items-start justify-between gap-4 p-4 sm:flex-row sm:items-center"
+        >
           <div className="flex items-center gap-3">
             {(selectedTemplate.flag || selectedTemplate.flagUrl) && (
               <img
@@ -244,7 +250,7 @@ export function ArchetypeGrid({
       ) : (
         <FacetCard className="flex flex-col items-start justify-between gap-4 p-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
-            <div className="bg-tint-fill text-tint rounded-control flex size-10 shrink-0 items-center justify-center">
+            <div className="border-tint/30 bg-tint/10 text-tint rounded-control flex size-10 shrink-0 items-center justify-center border">
               <Sparkles aria-hidden className="size-5" />
             </div>
             <div>
@@ -342,12 +348,19 @@ export function ArchetypeGrid({
 
             return (
               <motion.div key={arch.id} variants={itemVariants} className="h-full">
-                <FacetCard
+                {/* v2 (c5c6b382): a CutoutCard with the dot texture; the selected preset takes
+                    the gold border, ring and glow, and the title warms to gold on hover. */}
+                <CutoutCard
+                  variant="card"
                   onClick={() => setLocalSelectedArchetype(arch)}
                   aria-pressed={isSelected}
+                  aria-label={`${arch.name}${isSelected ? " (selected)" : ""}`}
+                  glow={isSelected}
+                  texture="dots"
+                  textureOpacity={isSelected ? 0.05 : 0.03}
                   className={cn(
                     "flex h-full flex-col justify-between gap-4 p-5",
-                    isSelected && "border-tint ring-tint ring-1"
+                    isSelected && "border-tint ring-tint/50 ring-1"
                   )}
                 >
                   {/* Header */}
@@ -371,14 +384,16 @@ export function ArchetypeGrid({
                           <span>Details</span>
                         </Button>
                         {isSelected && (
-                          <span className="bg-tint text-on-tint flex size-5 items-center justify-center rounded-full">
+                          <span className="facet-gold flex size-5 items-center justify-center rounded-full">
                             <Check aria-hidden className="size-3 stroke-[3]" />
                           </span>
                         )}
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-title-3 text-label">{arch.name}</h3>
+                      <h3 className="text-title-3 text-label group-hover/cutout:text-tint transition-colors duration-200">
+                        {arch.name}
+                      </h3>
                       <div className="mt-1 flex flex-wrap gap-2">
                         <Badge variant="neutral">{arch.region}</Badge>
                         <Badge variant={getComplexityBadgeVariant(arch.implementationComplexity)}>
@@ -485,7 +500,7 @@ export function ArchetypeGrid({
                       Details
                     </Button>
                   </div>
-                </FacetCard>
+                </CutoutCard>
               </motion.div>
             );
           })}

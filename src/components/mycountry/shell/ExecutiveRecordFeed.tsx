@@ -18,6 +18,7 @@ import { consequenceFieldLabel } from "~/lib/intent/consequence-labels";
 import type { V2Drill } from "~/components/mycountry/shell/DrillSheets";
 import { CATEGORY_STYLE } from "./ExecutiveActionCards";
 import { STATUS_TEXT } from "./status-tone";
+import { HUE_PAINT } from "./domain-hue";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 
 type FeedFilter = "all" | "diplomatic" | "military" | "economic" | "political";
@@ -282,10 +283,16 @@ export function ExecutiveRecordFeed({
                         isExpanded && "bg-fill-3"
                       )}
                     >
-                      <meta.icon
+                      {/* v2 category badge: the category glyph in its domain hue. */}
+                      <span
                         aria-hidden="true"
-                        className={cn("mt-0.5 size-4 shrink-0", STATUS_TEXT[meta.tone])}
-                      />
+                        className={cn(
+                          "flex size-7 shrink-0 items-center justify-center rounded-lg border",
+                          HUE_PAINT[meta.hue].badge
+                        )}
+                      >
+                        <meta.icon className="size-3.5" />
+                      </span>
                       <span className="min-w-0 flex-1">
                         <span className="text-label text-body block leading-snug font-medium">
                           {item.title}
@@ -325,7 +332,7 @@ export function ExecutiveRecordFeed({
                     {isExpanded && (
                       <div
                         id={panelId}
-                        className="animate-in fade-in slide-in-from-top-1 space-y-3 px-3 pb-4 pl-10 duration-150"
+                        className="animate-in fade-in slide-in-from-top-1 space-y-3 px-3 pb-4 pl-13 duration-150"
                       >
                         <div className="text-footnote flex flex-wrap items-center gap-2">
                           {diagnostic.badge && (

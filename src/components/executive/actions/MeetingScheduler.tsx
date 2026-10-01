@@ -639,7 +639,7 @@ export function MeetingScheduler({
                 <Button
                   type="submit"
                   size="sm"
-                  className="bg-yellow text-on-yellow hover:bg-yellow cursor-pointer font-semibold"
+                  className="cursor-pointer font-semibold"
                   disabled={
                     isSubmitting ||
                     agendaItems.length === 0 ||
@@ -910,7 +910,7 @@ export function MeetingScheduler({
                     type="button"
                     size="sm"
                     onClick={handleAddQuickAgendaTopic}
-                    className="bg-yellow text-caption text-on-yellow hover:bg-yellow h-8 cursor-pointer px-3 font-semibold"
+                    className="text-caption h-8 cursor-pointer px-3 font-semibold"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>

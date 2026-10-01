@@ -19,6 +19,7 @@ import {
   XmarkCircle as XCircle,
 } from "iconoir-react";
 import { cn, createUrl } from "~/lib/utils";
+import { GOLD_GLASS_RIM } from "~/components/mycountry/shell/domain-hue";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { FacetCard } from "~/components/ui/facet-container";
@@ -134,7 +135,14 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
     <TooltipProvider delayDuration={150}>
       <header className="relative w-full pb-3">
         <div className="mx-auto w-full max-w-6xl px-4">
-          <FacetCard className="rounded-card flex flex-wrap items-center justify-between gap-2 p-2 sm:flex-nowrap sm:p-3">
+          {/* v2 studio bar (c5c6b382): a gold-rimmed glass bar over the builder canvas */}
+          <FacetCard
+            variant="glass"
+            className={cn(
+              "flex flex-wrap items-center justify-between gap-2 p-2 sm:flex-nowrap sm:p-3",
+              GOLD_GLASS_RIM
+            )}
+          >
             {/* Left Group: Back Button & Step Context */}
             <div className="flex shrink-0 items-center gap-2">
               <Button
@@ -213,7 +221,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                         onClick={() => onNavigate(stepKey)}
                         aria-current="step"
                         data-cuelume-press="tick"
-                        className="text-label border-tint/50 bg-tint-fill text-caption flex shrink-0 cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold active:scale-[0.97]"
+                        className="border-tint/40 bg-tint/15 text-yellow-ink text-caption shadow-card flex shrink-0 cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold active:scale-[0.97]"
                       >
                         <Icon aria-hidden="true" className="text-tint h-3.5 w-3.5" />
                         <span className="whitespace-nowrap">{label}</span>
@@ -229,7 +237,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                             className={cn(
                               "text-caption flex h-7 shrink-0 items-center justify-center gap-1 rounded-full border px-2 transition-[color,background-color,border-color,opacity,transform] active:scale-[0.97]",
                               isCompleted
-                                ? "bg-surface hover:bg-fill-3 border-green/40 text-green cursor-pointer"
+                                ? "border-green/40 bg-green/15 text-green-ink hover:bg-green/25 cursor-pointer"
                                 : isAccessible
                                   ? "border-separator bg-surface text-label-secondary hover:bg-fill-3 hover:text-label cursor-pointer"
                                   : "border-separator bg-surface text-label-secondary cursor-not-allowed opacity-40"

@@ -4,6 +4,7 @@ import React, { useId, useMemo, useState } from "react";
 import {
   KeyCommand as Command,
   Archive,
+  Calendar,
   Clock,
   DoubleCheck,
   Mail,
@@ -38,6 +39,7 @@ import {
   useAgendaInbox,
 } from "./agenda";
 import { STATUS_TEXT } from "./status-tone";
+import { HUE_PAINT } from "./domain-hue";
 
 const MAILBOXES: AgendaMailbox[] = ["all", "action", "issues", "directives", "elections"];
 
@@ -72,6 +74,9 @@ function ExecutiveAgendaComponent({
     { countryId: countryId ?? "", status: "active" },
     { enabled: !!countryId, staleTime: 60_000 }
   );
+
+  // Weekly directive slots for the v2 header pill.
+  const status = api.intent.getStatus.useQuery({ countryId }, { enabled: !!countryId });
 
   const isLoading = intentTree.isLoading || issuesData.isLoading;
   // Stored flags are only pruned against a complete, successful load.
@@ -165,39 +170,68 @@ function ExecutiveAgendaComponent({
         className="rounded-card"
       >
         <FacetCardHeader className="flex-row flex-wrap items-start justify-between gap-x-3 gap-y-2 p-4 pb-0 sm:p-5 sm:pb-0">
-          <div className="min-w-0">
-            <h2
-              id="executive-agenda-title"
-              className="text-label text-title-3 flex items-center gap-2"
+          {/* v2 header (c5c6b382): the calendar badge in the agenda's cyan */}
+          <div className="flex min-w-0 items-center gap-3">
+            <span
+              aria-hidden="true"
+              className={cn(
+                "flex size-9 shrink-0 items-center justify-center rounded-xl border",
+                HUE_PAINT.cyan.badge
+              )}
             >
-              Agenda
-              {unread.length > 0 ? (
-                <Badge variant="tinted" className="tabular-nums" data-testid="agenda-unread-count">
-                  {unread.length}
-                  <span className="sr-only"> unread</span>
-                </Badge>
-              ) : null}
-            </h2>
-            <p className="text-label-secondary text-footnote">
-              Issues, directives and elections waiting on you
-            </p>
+              <Calendar className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <h2
+                id="executive-agenda-title"
+                className="text-label text-title-3 flex items-center gap-2"
+              >
+                Agenda
+                {unread.length > 0 ? (
+                  <Badge
+                    variant="tinted"
+                    className="tabular-nums"
+                    data-testid="agenda-unread-count"
+                  >
+                    {unread.length}
+                    <span className="sr-only"> unread</span>
+                  </Badge>
+                ) : null}
+              </h2>
+              <p className="text-label-secondary text-footnote">
+                Issues, directives and elections waiting on you
+              </p>
+            </div>
           </div>
-          {unread.length > 0 ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() =>
-                inbox.setRead(
-                  unread.map((v) => v.item),
-                  true
-                )
-              }
-            >
-              <DoubleCheck aria-hidden="true" />
-              Mark all as read
-            </Button>
-          ) : null}
+          <div className="flex flex-wrap items-center gap-2">
+            {status.data ? (
+              /* v2 directives capacity pill: gold, mono figures */
+              <span className="border-tint/30 bg-tint/10 text-footnote inline-flex items-center gap-2 rounded-full border px-3 py-1">
+                <Command aria-hidden="true" className="text-tint size-3.5" />
+                <span className="text-label-secondary">Directives</span>
+                <span className="text-label font-data font-semibold tabular-nums">
+                  {status.data.usedThisWeek}/{status.data.cap}
+                </span>
+                <span className="sr-only"> used this week</span>
+              </span>
+            ) : null}
+            {unread.length > 0 ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  inbox.setRead(
+                    unread.map((v) => v.item),
+                    true
+                  )
+                }
+              >
+                <DoubleCheck aria-hidden="true" />
+                Mark all as read
+              </Button>
+            ) : null}
+          </div>
         </FacetCardHeader>
 
         <FacetCardContent className="flex flex-col gap-3 p-4 sm:p-5">

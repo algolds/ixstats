@@ -345,7 +345,7 @@ export const BasicInfoForm = React.memo(
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-6 text-left lg:grid-cols-2">
           {/* Administrative Profile Card */}
-          <FacetCard className="z-10 overflow-visible">
+          <FacetCard texture="chevron" textureOpacity={0.04} className="z-10 overflow-visible">
             <div className="border-separator border-b px-6 py-4">
               <h3 className="text-label text-headline flex items-center gap-2">
                 <Crown className="text-tint h-5 w-5" />
@@ -566,7 +566,7 @@ export const BasicInfoForm = React.memo(
 
           {isEditMode ? (
             /* Edit Mode: Government Structure card replaces Core Indicators */
-            <FacetCard>
+            <FacetCard texture="chevron" textureOpacity={0.04}>
               <div className="border-separator border-b px-6 py-4">
                 <h3 className="text-label text-headline flex items-center gap-2">
                   <Crown className="text-indigo h-5 w-5" />

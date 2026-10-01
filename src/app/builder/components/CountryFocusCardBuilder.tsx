@@ -96,12 +96,12 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
           >
             {/* Selected Checkmark Badge */}
             {isSelected && (
-              <Badge
-                className="bg-tint text-on-tint absolute top-3 right-3 z-30"
+              <span
+                className="facet-gold shadow-card absolute top-3 right-3 z-30 flex size-6 items-center justify-center rounded-full"
                 aria-hidden="true"
               >
-                <Check className="stroke-[3]" />
-              </Badge>
+                <Check className="size-3.5 stroke-[3]" />
+              </span>
             )}
 
             {/* Contextual Confirmation Popup */}

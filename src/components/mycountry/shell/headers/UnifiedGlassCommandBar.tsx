@@ -12,17 +12,16 @@ import {
 } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { FacetTabs } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
-import { TintHairline } from "~/components/ui/facet/identity/FlagWatermark";
+import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
 import { assetUrl } from "~/lib/base-path";
 import { DOMAIN_TILES, DomainTileButton } from "../ExecutiveActionCards";
 import { CooldownTimer } from "../ExecutiveHome";
-import { MYCOUNTRY_PRIMARY_ACTION } from "../status-tone";
+import { GOLD_GLASS_RIM } from "../domain-hue";
 import type { CommandNavMode } from "../CommandNavToggle";
 import { useDiplomacyInboxCount } from "~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox";
 import { InboxCountPill } from "~/components/mycountry/domains/diplomacy/inbox/InboxCountPill";
@@ -75,10 +74,11 @@ function DirectiveStatusLine({ countryId }: { countryId?: string }) {
 }
 
 /**
- * The MyCountry header: the shell of the command surface (Facet depth 1). A large title
- * (flag + country name) with a quiet ghost toolbar and the one MyCountry-gold primary action,
- * then either the four domain destinations (overview) or a FacetTabs section switcher
- * (domain surfaces and the directive console).
+ * The MyCountry command bar, restored from c5c6b382 on the Facet 3.1 glass hero: the gold-rimmed
+ * glass shell (v2 translucent blurred card → `FacetCard variant="glass"` with the
+ * gold tint glow), the MyCountry logo and a quiet toolbar (Profile, Editor) with the one gold
+ * Declare Directive button, the country's large title, then either the four domain tiles in their
+ * v2 hues (overview) or a section switcher (domain surfaces and the directive console).
  */
 export function UnifiedGlassCommandBar({
   mode,
@@ -114,44 +114,15 @@ export function UnifiedGlassCommandBar({
 
   return (
     <FacetCard
-      texture="dots"
-      textureOpacity={0.035}
-      className="rounded-card relative flex w-full flex-col gap-4 overflow-hidden p-4 sm:gap-5 sm:p-5"
+      variant="glass"
+      glow
+      className={cn("flex w-full flex-col gap-4 p-4 sm:gap-5 sm:p-5", GOLD_GLASS_RIM)}
     >
-      <TintHairline />
-      <header className="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        {/* Large title: flag + country name, with a calm identity footnote */}
-        <div className="flex min-w-0 items-center gap-4">
-          {country?.name ? (
-            <span className="border-separator bg-fill-3 rounded-row flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden border sm:h-14 sm:w-20">
-              <UnifiedCountryFlag
-                countryName={country.name}
-                flagUrl={flagUrl}
-                fitContainer
-                objectFit="cover"
-                rounded={false}
-                showTooltip={false}
-              />
-            </span>
-          ) : null}
-          <div className="min-w-0">
-            <p className="flex min-w-0 items-center gap-2">
-              <Eyebrow className="text-tint">MyCountry</Eyebrow>
-              {realmName ? (
-                <span className="text-label-secondary text-footnote truncate">· {realmName}</span>
-              ) : null}
-            </p>
-            <h1 className="text-label text-title-1 sm:text-large-title mt-0.5 truncate">
-              {country?.name ?? "MyCountry"}
-            </h1>
-            {subtitle ? (
-              <p className="text-label-secondary text-body mt-0.5 truncate">{subtitle}</p>
-            ) : null}
-          </div>
-        </div>
+      {/* Top row (v2): the MyCountry logo, then the tools and the one gold primary action */}
+      <div className="relative flex flex-wrap items-center justify-between gap-3">
+        <MyCountryLogo size="md" variant="full" animated />
 
-        {/* Toolbar: two quiet tools and the one primary action */}
-        <div className="flex flex-col items-stretch gap-2 sm:items-end">
+        <div className="flex flex-1 flex-col items-stretch gap-2 sm:flex-none sm:items-end">
           <div className="flex items-center gap-1">
             <Button
               asChild
@@ -171,8 +142,9 @@ export function UnifiedGlassCommandBar({
               aria-label="Edit country"
               title="Edit country and territory"
             >
-              <Edit3 aria-hidden="true" />
-              <span className="hidden md:inline">Edit</span>
+              {/* v2: the editor tool carries the green "build" glyph. */}
+              <Edit3 aria-hidden="true" className="text-green" />
+              <span className="hidden md:inline">Editor</span>
             </Button>
             <Button
               type="button"
@@ -182,9 +154,8 @@ export function UnifiedGlassCommandBar({
                 else onChangeMode("executive");
               }}
               className={cn(
-                MYCOUNTRY_PRIMARY_ACTION,
-                "ml-1 h-11 flex-1 sm:h-9 sm:flex-none",
-                isExecutiveMode && "ring-offset-surface ring-yellow/40 ring-2 ring-offset-2"
+                "ml-1 h-11 flex-1 font-semibold sm:h-9 sm:flex-none",
+                isExecutiveMode && "ring-offset-surface ring-tint/40 ring-2 ring-offset-2"
               )}
             >
               <Command aria-hidden="true" />
@@ -195,13 +166,37 @@ export function UnifiedGlassCommandBar({
             <DirectiveStatusLine countryId={country?.id} />
           </div>
         </div>
-      </header>
+      </div>
+
+      {/* Large title: flag + country name, with a calm identity footnote */}
+      {country?.name ? (
+        <header className="relative flex min-w-0 items-center gap-4">
+          <span className="border-separator bg-fill-3 rounded-row shadow-card flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden border sm:h-14 sm:w-20">
+            <UnifiedCountryFlag
+              countryName={country.name}
+              flagUrl={flagUrl}
+              fitContainer
+              objectFit="cover"
+              rounded={false}
+              showTooltip={false}
+            />
+          </span>
+          <div className="min-w-0">
+            <h1 className="text-label text-title-1 sm:text-large-title truncate">{country.name}</h1>
+            {subtitle || realmName ? (
+              <p className="text-label-secondary text-body mt-0.5 truncate">
+                {[subtitle, realmName].filter(Boolean).join(" · ")}
+              </p>
+            ) : null}
+          </div>
+        </header>
+      ) : null}
 
       {isOverview ? (
-        /* Domain destinations */
+        /* Domain destinations: the v2 action tiles in their domain hues */
         <nav
           aria-label="MyCountry domains"
-          className="relative grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4"
+          className="relative grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
         >
           {DOMAIN_TILES.map((tile) => (
             <DomainTileButton

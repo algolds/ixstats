@@ -68,9 +68,11 @@ export const EDIT_MODE_FIELD_LOCKS: Record<string, FieldLockConfig> = {
   },
 };
 
-// The builder wears the MyCountry tint (gold) — see app/builder/layout.tsx `data-app`.
-export const BUILDER_GOLD = "bg-tint text-on-tint";
-export const BUILDER_GOLD_HOVER = "hover:bg-tint-hover";
+// v2 BUILDER_GOLD (the amber → yellow gradient) is the sanctioned `facet-gold` paint (Facet 3.1
+// §16.5); the builder wears the MyCountry scope (app/builder/layout.tsx `data-app`), so its plain
+// `<Button>` is gold too. The hover brightening lives in `facet-primary` / the Button.
+export const BUILDER_GOLD = "facet-gold";
+export const BUILDER_GOLD_HOVER = "";
 
 export interface StepConfig {
   title: string;

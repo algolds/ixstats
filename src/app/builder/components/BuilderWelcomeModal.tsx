@@ -236,7 +236,7 @@ export function BuilderWelcomeModal({
                 return (
                   <div key={step.title} className="bg-surface-secondary rounded-row p-3">
                     <div className="mb-2 flex items-center gap-2">
-                      <Icon aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
+                      <Icon aria-hidden="true" className="text-tint h-3.5 w-3.5" />
                       <h4 className="text-headline text-label">{step.title}</h4>
                     </div>
                     <p className="text-footnote text-label-secondary">{step.description}</p>
@@ -253,10 +253,7 @@ export function BuilderWelcomeModal({
                     key={item.title}
                     className="bg-surface-secondary rounded-row flex items-start gap-3 p-3"
                   >
-                    <Icon
-                      aria-hidden="true"
-                      className="text-label-secondary mt-0.5 h-3.5 w-3.5 shrink-0"
-                    />
+                    <Icon aria-hidden="true" className="text-tint mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <div className="space-y-0.5">
                       <h4 className="text-headline text-label">{item.title}</h4>
                       <p className="text-footnote text-label-secondary">{item.description}</p>

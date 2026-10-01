@@ -9,6 +9,7 @@ import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
+import { cn } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
 import type { Ranking, RankingCategory } from "~/types/mycountry";
 
@@ -142,13 +143,17 @@ export function WorldCensusList({
               title={<span className="text-body text-label font-normal">{r.category}</span>}
               trailing={
                 <span className="flex items-center gap-2" title={describeRank(r)}>
-                  <span className="text-footnote text-label-secondary tabular-nums">
+                  <span className="text-footnote text-label font-data tabular-nums">
                     {formatCensusValue(r)}
                   </span>
-                  {/* A top-three rank is the one meaningful status here: it takes the app tint. */}
+                  {/* A top-three rank is the one meaningful status here: it takes the v2 gold. */}
                   <Badge
-                    variant={r.global.position <= 3 ? "tinted" : "neutral"}
-                    className="min-w-14 font-semibold tabular-nums"
+                    numeric
+                    variant={r.global.position <= 3 ? "yellow" : "neutral"}
+                    className={cn(
+                      "min-w-14 font-semibold",
+                      r.global.position <= 3 && "border-yellow/30"
+                    )}
                   >
                     #{r.global.position}
                     <span className="font-normal opacity-70">/{r.global.total}</span>
@@ -193,11 +198,20 @@ export function WorldCensusCard({ countryId }: WorldCensusCardProps) {
 
   return (
     <FacetCard role="region" aria-labelledby="world-census-title" className="rounded-card">
-      <FacetCardHeader className="gap-0.5 px-4 pt-4 pb-0">
-        <h2 id="world-census-title" className="text-headline text-label">
-          World Census
-        </h2>
-        <p className="text-footnote text-label-secondary">Where you stand out in your realm</p>
+      <FacetCardHeader className="flex-row items-center gap-3 px-4 pt-4 pb-0">
+        {/* v2 rail card header, with the census glyph in the MyCountry gold */}
+        <span
+          aria-hidden="true"
+          className="border-tint/30 bg-tint/10 text-tint flex size-8 shrink-0 items-center justify-center rounded-lg border"
+        >
+          <StatsReport className="size-4" />
+        </span>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <h2 id="world-census-title" className="text-headline text-label">
+            World Census
+          </h2>
+          <p className="text-footnote text-label-secondary">Where you stand out in your realm</p>
+        </div>
       </FacetCardHeader>
       <FacetCardContent className="px-4 pt-1 pb-3">
         <WorldCensusList rankings={data} isLoading={isLoading} />

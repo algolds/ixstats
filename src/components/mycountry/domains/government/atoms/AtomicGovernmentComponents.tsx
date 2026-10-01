@@ -390,12 +390,7 @@ export function AtomicGovernmentComponents({
               <RotateCcw className="h-4 w-4" />
               Reset Selection
             </Button>
-            <Button
-              onClick={handleSave}
-              disabled={!builder.validation.isValid}
-              size="lg"
-              className="bg-yellow text-on-yellow hover:bg-yellow/70"
-            >
+            <Button onClick={handleSave} disabled={!builder.validation.isValid} size="lg">
               <Save className="h-4 w-4" />
               Save Government Configuration
             </Button>

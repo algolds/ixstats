@@ -2,7 +2,7 @@
 
 import React from "react";
 import dynamic from "next/dynamic";
-import { KeyCommand as Command } from "iconoir-react";
+import { KeyCommand as Command, ArrowUpRight } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -13,7 +13,8 @@ import { PoliticsDrillDown } from "./PoliticsDrillDown";
 import { EconomyDrillDown } from "./EconomyDrillDown";
 import { DomainContextRail } from "./DomainContextRail";
 import { DOMAIN_META, type V2Domain } from "./domain-meta";
-import { STATUS_TEXT } from "./status-tone";
+import { HUE_PAINT, DOMAIN_HUE } from "./domain-hue";
+import { TintGlow } from "~/components/ui/facet/identity/Glow";
 import { WatermarkGlyph } from "~/components/ui/facet/identity/FlagWatermark";
 
 const EmbassiesAndRelationsPanel = dynamic(
@@ -66,23 +67,43 @@ function DomainSurfaceComponent({
   const ability = useAbility();
   const domain = SECTION_TO_DOMAIN[section];
   const meta = DOMAIN_META[domain];
+  const paint = HUE_PAINT[DOMAIN_HUE[domain]];
 
   return (
     <div className="space-y-6">
-      {/* Domain header: domain glyph, title, one-line purpose and a domain-scoped directive */}
-      <FacetCard className="rounded-card relative overflow-hidden p-4 sm:p-5">
-        {/* Ambient glow (app tint, top-right) + the domain's glyph as a fine-stroke watermark
-            (bottom-right), restored from c5c6b382. Decorative only. */}
-        <div
+      {/* Domain hero (c5c6b382) on the Facet 3.1 glass hero: the domain's v2 hue on the top
+          accent, the glow blob, the icon badge and the fine-stroke glyph watermark; the gold
+          primary starts a directive with a suggested goal for this domain. */}
+      <FacetCard
+        variant="glass"
+        glow="shadow"
+        className="group overflow-hidden p-5"
+        style={{ "--tint": paint.color } as React.CSSProperties}
+      >
+        <TintGlow color={paint.color} className="-z-10" />
+        {/* v2 `border-t-2 border-t-<hue>/40` accent (drawn as a bar: the material owns the border) */}
+        <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit] print:hidden"
-        >
-          <div className="bg-tint absolute -top-10 -right-10 size-40 rounded-full opacity-15 blur-3xl" />
-        </div>
-        <WatermarkGlyph icon={meta.icon} className="-right-3 -bottom-4 size-24 opacity-[0.06]" />
+          className={cn(
+            "pointer-events-none absolute inset-x-0 top-0 h-0.5 opacity-40",
+            paint.fill
+          )}
+        />
+        <WatermarkGlyph
+          icon={meta.icon}
+          className={cn("-right-3 -bottom-4 size-24 opacity-[0.06]", paint.glyph)}
+        />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-start gap-3">
-            <meta.icon aria-hidden="true" className="text-label-secondary mt-1 h-6 w-6 shrink-0" />
+          <div className="flex min-w-0 items-center gap-4">
+            <span
+              aria-hidden="true"
+              className={cn(
+                "rounded-control flex size-11 shrink-0 items-center justify-center border",
+                paint.badge
+              )}
+            >
+              <meta.icon className="size-5" />
+            </span>
             <div className="min-w-0">
               <h2 className="text-label text-title-2 sm:text-title-1">{meta.title}</h2>
               <p className="text-label-secondary text-body mt-0.5 max-w-xl leading-relaxed">
@@ -93,13 +114,16 @@ function DomainSurfaceComponent({
 
           <Button
             type="button"
-            variant="outline"
             onClick={() => onDeclare?.(meta.prefilledGoal)}
-            className="h-11 shrink-0 sm:h-9"
+            className="group/cta h-11 shrink-0 font-semibold sm:h-9"
             title={`Start a directive with a suggested ${meta.title.toLowerCase()} goal`}
           >
-            <Command aria-hidden="true" className={STATUS_TEXT.accent} />
-            <span>{meta.title} directive</span>
+            <Command aria-hidden="true" />
+            <span>Declare a Directive</span>
+            <ArrowUpRight
+              aria-hidden="true"
+              className="opacity-60 transition-[opacity,translate] duration-150 group-hover/cta:translate-x-0.5 group-hover/cta:-translate-y-0.5 group-hover/cta:opacity-100 motion-reduce:group-hover/cta:translate-x-0 motion-reduce:group-hover/cta:translate-y-0"
+            />
           </Button>
         </div>
       </FacetCard>

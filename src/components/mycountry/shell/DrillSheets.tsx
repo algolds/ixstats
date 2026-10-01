@@ -38,7 +38,8 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { DOMAIN_META, type V2Domain } from "./domain-meta";
-import { MYCOUNTRY_PRIMARY_ACTION, STATUS_TEXT } from "./status-tone";
+import { STATUS_TEXT } from "./status-tone";
+import { HUE_PAINT, hueOf } from "./domain-hue";
 import { ThinkPagesShareModal } from "~/components/mycountry/shared/modals/ThinkPagesShareModal";
 import { IssueDetailBrief } from "~/components/mycountry/shared/headers/IssueDetailBrief";
 
@@ -133,7 +134,8 @@ function SheetSection({
     <FacetCard className={cn("rounded-card", className)}>
       <FacetCardHeader className="flex-row items-center justify-between gap-2 p-4 pb-3">
         <div className="flex min-w-0 items-center gap-2">
-          <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
+          {/* v2: section glyphs in the MyCountry gold */}
+          <Icon aria-hidden="true" className="text-tint h-4 w-4 shrink-0" />
           <h3 className="text-label text-headline">{title}</h3>
         </div>
         {accessory}
@@ -318,7 +320,7 @@ function IntentDetail({
             type="button"
             size="sm"
             onClick={handleChainDirective}
-            className={cn("h-11 sm:h-8", MYCOUNTRY_PRIMARY_ACTION)}
+            className="h-11 font-semibold sm:h-8"
           >
             <Command aria-hidden="true" />
             Build on this
@@ -492,7 +494,9 @@ function IntentDetail({
                 className="text-footnote flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0"
               >
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="text-label-secondary w-5 shrink-0 tabular-nums">{idx + 1}.</span>
+                  <span className="border-tint/20 bg-tint/10 text-tint font-data flex size-6 shrink-0 items-center justify-center rounded-lg border font-semibold tabular-nums">
+                    {idx + 1}
+                  </span>
                   <span className="text-label font-medium">{change.label}</span>
                 </div>
                 {change.deltaPercent !== undefined && (
@@ -602,8 +606,17 @@ function DrillSheetsComponent({
       >
         <SheetHeader className="mb-4">
           <div className="flex items-center justify-between gap-2">
-            <SheetTitle className="text-body flex items-center gap-2">
-              <Icon aria-hidden="true" className="text-label-secondary h-4 w-4" />
+            <SheetTitle className="text-headline flex items-center gap-3">
+              {/* v2: the sheet's glyph in its domain hue (gold for directives and issues) */}
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "flex size-8 shrink-0 items-center justify-center rounded-lg border",
+                  HUE_PAINT[hueOf(drill?.kind) ?? "yellow"].badge
+                )}
+              >
+                <Icon className="h-4 w-4" />
+              </span>
               {title}
             </SheetTitle>
             {drill && drill.kind !== "intent" && drill.kind !== "issue" && (

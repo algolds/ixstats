@@ -291,10 +291,7 @@ export function DirectivesWorkspace({
               body="Declare a directive to start moving your nation. It will appear here while it executes."
               action={
                 !readOnly && (
-                  <Button
-                    className="bg-yellow text-on-yellow hover:bg-yellow/90 max-sm:h-11"
-                    onClick={() => setView("new")}
-                  >
+                  <Button className="max-sm:h-11" onClick={() => setView("new")}>
                     <Plus /> Declare a directive
                   </Button>
                 )

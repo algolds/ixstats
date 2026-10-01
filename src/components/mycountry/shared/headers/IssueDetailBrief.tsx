@@ -293,7 +293,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                 onClose?.();
                 onDeclare(chosenDirective);
               }}
-              className="bg-yellow text-on-yellow hover:bg-yellow/90 mt-1"
+              className="mt-1"
             >
               <Command className="h-4 w-4" />
               Declare Follow-Up Directive

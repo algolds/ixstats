@@ -12,13 +12,15 @@ import {
   Heart,
   WarningTriangle as AlertTriangle,
   ScaleFrameEnlarge as Scale,
-  NavArrowRight,
+  ArrowUpRight,
 } from "iconoir-react";
-import { Button } from "~/components/ui/button";
+import { focusRing } from "~/components/ui/button";
+import { cn } from "~/lib/utils";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import type { V2Drill } from "~/components/mycountry/shell/DrillSheets";
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 import type { StatusTone } from "./status-tone";
+import { HUE_PAINT, type DomainHue } from "./domain-hue";
 import {
   DiplomacyGraphic,
   DefenseGraphic,
@@ -27,25 +29,31 @@ import {
 } from "./ActionCardGraphics";
 
 /**
- * Canon-feed category → label, glyph and status tone. Domains are neutral (glyph + label);
- * only a crisis (critical) and a directive (MyCountry accent) carry colour.
+ * Canon-feed category → label, glyph, v2 domain hue (c5c6b382 `CATEGORY_STYLE.cls`: Diplomacy
+ * cyan, Defense red, Politics indigo, Economy green, Social/Ledger blue, Directive gold, Crisis
+ * red) and status tone (only a crisis is critical; a directive is the MyCountry accent).
  */
 export const CATEGORY_STYLE: Record<
   string,
-  { label: string; icon: React.ComponentType<{ className?: string }>; tone: StatusTone }
+  {
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    tone: StatusTone;
+    hue: DomainHue;
+  }
 > = {
-  diplomatic: { label: "Diplomacy", icon: Globe2, tone: "neutral" },
-  diplomacy: { label: "Diplomacy", icon: Globe2, tone: "neutral" },
-  military: { label: "Defense", icon: Shield, tone: "neutral" },
-  defense: { label: "Defense", icon: Shield, tone: "neutral" },
-  security: { label: "Defense", icon: Shield, tone: "neutral" },
-  governance: { label: "Politics", icon: Landmark, tone: "neutral" },
-  economic: { label: "Economy", icon: TrendingUp, tone: "neutral" },
-  economy: { label: "Economy", icon: TrendingUp, tone: "neutral" },
-  social: { label: "Social", icon: Heart, tone: "neutral" },
-  intent: { label: "Directive", icon: Command, tone: "accent" },
-  crisis: { label: "Crisis", icon: AlertTriangle, tone: "critical" },
-  ledger: { label: "Ledger", icon: Scale, tone: "neutral" },
+  diplomatic: { label: "Diplomacy", icon: Globe2, tone: "neutral", hue: "cyan" },
+  diplomacy: { label: "Diplomacy", icon: Globe2, tone: "neutral", hue: "cyan" },
+  military: { label: "Defense", icon: Shield, tone: "neutral", hue: "red" },
+  defense: { label: "Defense", icon: Shield, tone: "neutral", hue: "red" },
+  security: { label: "Defense", icon: Shield, tone: "neutral", hue: "red" },
+  governance: { label: "Politics", icon: Landmark, tone: "neutral", hue: "indigo" },
+  economic: { label: "Economy", icon: TrendingUp, tone: "neutral", hue: "green" },
+  economy: { label: "Economy", icon: TrendingUp, tone: "neutral", hue: "green" },
+  social: { label: "Social", icon: Heart, tone: "neutral", hue: "blue" },
+  intent: { label: "Directive", icon: Command, tone: "accent", hue: "yellow" },
+  crisis: { label: "Crisis", icon: AlertTriangle, tone: "critical", hue: "red" },
+  ledger: { label: "Ledger", icon: Scale, tone: "neutral", hue: "blue" },
 };
 
 interface CountryPeekData {
@@ -73,6 +81,8 @@ export const DOMAIN_TILES: {
   icon: React.ComponentType<{ className?: string }>;
   /** Fine-stroke watermark behind the tile (`ActionCardGraphics.tsx`). */
   graphic: React.ComponentType<{ className?: string }>;
+  /** v2 domain hue (`badgeCls`): icon badge, watermark and hover accent. */
+  hue: DomainHue;
   getPeek: (country: CountryPeekData | null | undefined) => string;
 }[] = [
   {
@@ -81,6 +91,7 @@ export const DOMAIN_TILES: {
     drillKind: { kind: "relations" },
     icon: Globe,
     graphic: DiplomacyGraphic,
+    hue: "cyan",
     getPeek: () => "Relations, embassies and alliances",
   },
   {
@@ -89,6 +100,7 @@ export const DOMAIN_TILES: {
     drillKind: { kind: "defense" },
     icon: HistoricShieldAlt,
     graphic: DefenseGraphic,
+    hue: "red",
     getPeek: () => "Forces, readiness and threats",
   },
   {
@@ -97,6 +109,7 @@ export const DOMAIN_TILES: {
     drillKind: { kind: "politics" },
     icon: Scale,
     graphic: PoliticsGraphic,
+    hue: "indigo",
     getPeek: (c) => {
       const score = c?.stabilityMetrics?.stabilityScore;
       return typeof score === "number" && Number.isFinite(score)
@@ -110,6 +123,7 @@ export const DOMAIN_TILES: {
     drillKind: { kind: "economy" },
     icon: TrendingUp,
     graphic: EconomyGraphic,
+    hue: "green",
     getPeek: (c) => {
       const growth = formatGrowthPeek(c);
       return growth ? `GDP growth ${growth}` : "Budget, tax and trade";
@@ -118,9 +132,11 @@ export const DOMAIN_TILES: {
 ];
 
 /**
- * One domain destination: a plain glyph, title, a real-data peek and a disclosure chevron, over
- * a fine-stroke architectural watermark (restored from c5c6b382). An outline `<Button>` is the
- * interactive (depth-3) row: opaque, so it never stacks blur on the glass shell it sits in.
+ * One domain destination, restored from c5c6b382: the domain's glyph in its v2 hue badge, title,
+ * a real-data peek and the up-right arrow, over the domain's fine-stroke architectural watermark.
+ * Hover lifts the tile (`facet-lift`), brightens the watermark and drifts the arrow; press scales
+ * it (`facet-press`). The tile is opaque (`bg-surface`) so it never stacks blur on the glass
+ * command bar it sits in.
  */
 export function DomainTileButton({
   tile,
@@ -135,29 +151,44 @@ export function DomainTileButton({
 }) {
   const Icon = tile.icon;
   const Graphic = tile.graphic;
+  const paint = HUE_PAINT[tile.hue];
   return (
-    <Button
+    <button
       type="button"
-      variant="outline"
       onClick={onSelect}
-      className="group rounded-row h-auto min-h-14 w-full justify-start gap-3 overflow-hidden p-3 text-left whitespace-normal"
+      className={cn(
+        "group rounded-row border-separator bg-surface text-label shadow-card relative flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 overflow-hidden border p-3 text-left select-none",
+        "facet-press facet-press-subtle facet-lift",
+        focusRing,
+        paint.hoverBorder
+      )}
     >
       <Graphic />
-      <Icon aria-hidden="true" className="text-label-secondary relative size-5 shrink-0" />
-      <span className="relative flex min-w-0 flex-1 flex-col">
-        <span className="text-label text-headline flex items-center gap-2">
-          <span className="truncate">{tile.title}</span>
-          {badge}
+      <span className="relative flex min-w-0 items-center gap-3">
+        <span
+          aria-hidden="true"
+          className={cn(
+            "flex size-9 shrink-0 items-center justify-center rounded-lg border transition-[scale] duration-150 group-hover:scale-105 motion-reduce:group-hover:scale-100",
+            paint.badge
+          )}
+        >
+          <Icon className="size-4 shrink-0" />
         </span>
-        <span className="text-label-secondary text-footnote truncate font-normal tabular-nums">
-          {peek}
+        <span className="flex min-w-0 flex-col">
+          <span className="text-label text-headline flex items-center gap-2">
+            <span className="truncate">{tile.title}</span>
+            {badge}
+          </span>
+          <span className="text-label-secondary text-footnote truncate font-normal tabular-nums">
+            {peek}
+          </span>
         </span>
       </span>
-      <NavArrowRight
+      <ArrowUpRight
         aria-hidden="true"
-        className="text-label-tertiary group-hover:text-label-secondary relative size-4 shrink-0 transition-[color,transform] duration-150 group-hover:translate-x-0.5"
+        className="text-label-tertiary group-hover:text-label relative size-4 shrink-0 transition-[color,translate] duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
       />
-    </Button>
+    </button>
   );
 }
 

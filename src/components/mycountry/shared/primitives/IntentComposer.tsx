@@ -219,10 +219,7 @@ export const IntentComposer = React.memo(function IntentComposer({
         )}
         <div className="mt-6 flex flex-col gap-2 sm:flex-row">
           {onViewActive && (
-            <Button
-              className="bg-yellow text-on-yellow hover:bg-yellow/90 max-sm:h-11"
-              onClick={onViewActive}
-            >
+            <Button className="max-sm:h-11" onClick={onViewActive}>
               View active directives
             </Button>
           )}

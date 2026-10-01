@@ -88,11 +88,7 @@ export const ExchangeHeader = React.memo<ExchangeHeaderProps>(
             </Button>
           )}
 
-          <Button
-            size="sm"
-            onClick={onCreateExchange}
-            className="bg-yellow text-on-yellow hover:bg-yellow/90"
-          >
+          <Button size="sm" onClick={onCreateExchange}>
             <Plus className="h-3.5 w-3.5" />
             Create Exchange
           </Button>

@@ -8,36 +8,40 @@ import {
   StatUp as TrendingUp,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { HUE_PAINT, type DomainHue } from "./domain-hue";
 
 /**
  * Fine-stroke architectural watermarks behind the four domain tiles, restored from the pre-Facet
- * overview (c5c6b382, deleted in 9eaba11c) and rebuilt on tokens: `text-label` at one very low
- * opacity for both themes (no per-domain palette, no `dark:` pair), strokes ≤1px, and a gentle
- * opacity bloom on hover (the scale drift stops under Reduce Motion). Decorative only:
- * aria-hidden, not printed, no pointer events. The tile must be `relative overflow-hidden` and
- * `group`, with its content `relative`.
+ * overview (c5c6b382): each domain's arcs and glyph in its own hue (Diplomacy cyan, Defense red,
+ * Politics indigo, Economy green — system colours, no `dark:` pair), strokes ≤1px, arcs at .15 and
+ * the glyph at .10 → .20 with the v2 hover drift (scale 105%, dropped under Reduce Motion).
+ * Decorative only: aria-hidden, not printed, no pointer events. The tile must be
+ * `relative overflow-hidden` and `group`, with its content `relative`.
  */
 
 const LAYER =
   "pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit] select-none print:hidden";
 const ARCS =
-  "text-label absolute -right-6 -bottom-6 size-36 opacity-[0.08] transition-[opacity,transform] duration-300 ease-out group-hover:scale-105 group-hover:opacity-[0.14] motion-reduce:group-hover:scale-100";
+  "absolute -right-6 -bottom-6 size-36 opacity-[0.15] transition-[opacity,scale] duration-300 ease-out group-hover:scale-105 group-hover:opacity-[0.22] motion-reduce:group-hover:scale-100";
 const GLYPH =
-  "text-label absolute -right-1 -bottom-1 size-16 opacity-[0.05] transition-[opacity,transform] duration-300 ease-out group-hover:scale-105 group-hover:opacity-[0.1] motion-reduce:group-hover:scale-100";
+  "absolute -right-1 -bottom-1 size-16 opacity-[0.1] transition-[opacity,scale] duration-300 ease-out group-hover:scale-105 group-hover:opacity-[0.2] motion-reduce:group-hover:scale-100";
 
 function GraphicLayer({
   className,
+  hue,
   arcs,
   glyph: Glyph,
 }: {
   className?: string;
+  hue: DomainHue;
   arcs: React.ReactNode;
   glyph: React.ComponentType<{ className?: string; strokeWidth?: number | string }>;
 }) {
+  const paint = HUE_PAINT[hue].glyph;
   return (
     <span aria-hidden="true" data-slot="tile-graphic" className={cn(LAYER, className)}>
       <svg
-        className={ARCS}
+        className={cn(ARCS, paint)}
         viewBox="0 0 100 100"
         fill="none"
         stroke="currentColor"
@@ -45,7 +49,7 @@ function GraphicLayer({
       >
         {arcs}
       </svg>
-      <Glyph className={GLYPH} strokeWidth={1} />
+      <Glyph className={cn(GLYPH, paint)} strokeWidth={1} />
     </span>
   );
 }
@@ -54,6 +58,7 @@ function GraphicLayer({
 export function DiplomacyGraphic({ className }: { className?: string }) {
   return (
     <GraphicLayer
+      hue="cyan"
       className={className}
       glyph={Globe}
       arcs={
@@ -73,6 +78,7 @@ export function DiplomacyGraphic({ className }: { className?: string }) {
 export function DefenseGraphic({ className }: { className?: string }) {
   return (
     <GraphicLayer
+      hue="red"
       className={className}
       glyph={HistoricShield}
       arcs={
@@ -93,6 +99,7 @@ export function DefenseGraphic({ className }: { className?: string }) {
 export function PoliticsGraphic({ className }: { className?: string }) {
   return (
     <GraphicLayer
+      hue="indigo"
       className={className}
       glyph={Scale}
       arcs={
@@ -113,6 +120,7 @@ export function PoliticsGraphic({ className }: { className?: string }) {
 export function EconomyGraphic({ className }: { className?: string }) {
   return (
     <GraphicLayer
+      hue="green"
       className={className}
       glyph={TrendingUp}
       arcs={

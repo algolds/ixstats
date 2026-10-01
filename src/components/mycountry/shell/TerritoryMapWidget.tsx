@@ -54,7 +54,8 @@ export const TerritoryMapWidget = React.memo(function TerritoryMapWidget({
             className="text-label-secondary size-11 sm:size-9"
           >
             <Link href="/maps" aria-label="Open world maps" title="Open world maps">
-              <MapIcon aria-hidden="true" />
+              {/* v2: the map tools carry the emerald territory glyphs */}
+              <MapIcon aria-hidden="true" className="text-green" />
             </Link>
           </Button>
           <Button
@@ -66,7 +67,7 @@ export const TerritoryMapWidget = React.memo(function TerritoryMapWidget({
             aria-label="Edit territory"
             title="Edit territory"
           >
-            <Edit3 aria-hidden="true" />
+            <Edit3 aria-hidden="true" className="text-green" />
           </Button>
         </div>
       </FacetCardHeader>

@@ -70,12 +70,7 @@ export function PremiumPreviewFrame({
               <span className="text-label text-headline">{meta.label} preview</span>
               <p className="text-label-secondary text-footnote truncate">{meta.blurb}</p>
             </div>
-            <Button
-              variant="default"
-              size="sm"
-              className="bg-yellow text-on-yellow hover:bg-yellow/90 shrink-0"
-              onClick={handleUpgrade}
-            >
+            <Button variant="default" size="sm" className="shrink-0" onClick={handleUpgrade}>
               Upgrade
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>

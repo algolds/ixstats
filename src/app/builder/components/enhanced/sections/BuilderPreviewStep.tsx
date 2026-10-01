@@ -3,6 +3,8 @@
 import React, { useState, memo } from "react";
 import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
+import { cn } from "~/lib/utils";
+import { HUE_PAINT, type DomainHue } from "~/components/mycountry/shell/domain-hue";
 import {
   WhiteFlag as Flag,
   City as Building2,
@@ -60,6 +62,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
           id="identity"
           title="National Identity"
           icon={Flag}
+          hue="yellow"
           badge={nationalIdentity?.countryName || "Unspecified"}
           collapsed={Boolean(collapsedSections.identity)}
           onToggle={toggleSection}
@@ -71,6 +74,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
           id="government"
           title="Government"
           icon={Building2}
+          hue="cyan"
           badge={`${governmentComponents.length} Institutions`}
           collapsed={Boolean(collapsedSections.government)}
           onToggle={toggleSection}
@@ -88,6 +92,7 @@ export const BuilderPreviewStep = memo(function BuilderPreviewStep() {
         id="economy"
         title="Economy"
         icon={Factory}
+        hue="green"
         badge={coreIndicators ? "Configured" : "Default"}
         collapsed={Boolean(collapsedSections.economy)}
         onToggle={toggleSection}
@@ -139,17 +144,23 @@ interface PreviewSectionProps {
   id: string;
   title: string;
   icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" }>;
+  /** v2 section accent (gold identity, cyan government, emerald economy). */
+  hue: DomainHue;
   badge: string;
   collapsed: boolean;
   onToggle: (id: string) => void;
   children: React.ReactNode;
 }
 
-/** A collapsible preview card: FacetCard with a header button that shows/hides its content. */
+/**
+ * A collapsible preview card (v2, c5c6b382): the builder's chevron texture, the section glyph in
+ * its accent badge and an accent count badge, with a header button that shows/hides the content.
+ */
 function PreviewSection({
   id,
   title,
   icon: Icon,
+  hue,
   badge,
   collapsed,
   onToggle,
@@ -157,7 +168,7 @@ function PreviewSection({
 }: PreviewSectionProps) {
   const contentId = `builder-preview-${id}`;
   return (
-    <FacetCard className="rounded-card overflow-hidden">
+    <FacetCard texture="chevron" textureOpacity={0.03} className="rounded-card overflow-hidden">
       <FacetCardHeader className="p-0">
         <h3 className="m-0">
           <button
@@ -170,12 +181,20 @@ function PreviewSection({
             className="border-separator hover:bg-fill-3 focus-visible:ring-tint flex min-h-11 w-full items-center justify-between gap-3 border-b px-4 py-3 text-left transition-[background-color] duration-150 focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset"
           >
             <span className="flex min-w-0 items-center gap-2">
-              <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "flex size-7 shrink-0 items-center justify-center rounded-lg border",
+                  HUE_PAINT[hue].badge
+                )}
+              >
+                <Icon aria-hidden="true" className="h-4 w-4" />
+              </span>
               <span className="text-label text-headline">{title}</span>
             </span>
             <span className="flex min-w-0 items-center gap-2">
               <Badge
-                variant="secondary"
+                variant={hue}
                 className="max-w-[180px] truncate sm:max-w-[240px]"
                 title={badge}
               >

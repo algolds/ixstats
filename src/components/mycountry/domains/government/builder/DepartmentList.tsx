@@ -297,11 +297,7 @@ export const DepartmentList = React.memo(function DepartmentList({
               Your nation needs departments to administer services. Add a department to get started.
             </p>
             {!isReadOnly && (
-              <Button
-                onClick={handleAddDepartment}
-                size="sm"
-                className="bg-yellow text-on-yellow hover:bg-yellow/70 mt-4"
-              >
+              <Button onClick={handleAddDepartment} size="sm" className="mt-4">
                 <Plus className="h-3.5 w-3.5" />
                 Add First Department
               </Button>

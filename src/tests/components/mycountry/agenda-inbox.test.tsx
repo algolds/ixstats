@@ -11,7 +11,10 @@ const ok = (data: unknown) => ({ data, isLoading: false, isSuccess: true });
 
 jest.mock("~/trpc/react", () => ({
   api: {
-    intent: { getTree: { useQuery: () => ok({ roots: [], allIntents: mockIntents }) } },
+    intent: {
+      getTree: { useQuery: () => ok({ roots: [], allIntents: mockIntents }) },
+      getStatus: { useQuery: () => ok({ usedThisWeek: 1, cap: 3, canCommit: true }) },
+    },
     elections: { getElections: { useQuery: () => ok(mockElections) } },
     nationalIssues: { getMyIssues: { useQuery: () => ok({ issues: mockIssues }) } },
   },
@@ -65,7 +68,12 @@ describe("deriveAgendaItems", () => {
       ],
       elections: [
         { id: "e1", name: "General election", scheduledIxTime: NOW + 3 * DAY, status: "upcoming" },
-        { id: "e2", name: "Later vote", scheduledIxTime: NOW + 60 * DAY, electionType: "referendum" },
+        {
+          id: "e2",
+          name: "Later vote",
+          scheduledIxTime: NOW + 60 * DAY,
+          electionType: "referendum",
+        },
         { id: "e3", name: "Past vote", scheduledIxTime: NOW + DAY, status: "completed" },
       ],
     });
@@ -187,7 +195,9 @@ describe("ExecutiveAgenda inbox", () => {
     ]);
     // No day strip, weekdays or "today".
     expect(screen.queryByRole("group", { name: "Choose a day" })).toBeNull();
-    expect(document.body.textContent).not.toMatch(/\b(today|tomorrow|Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/i);
+    expect(document.body.textContent).not.toMatch(
+      /\b(today|tomorrow|Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/i
+    );
 
     fireEvent.click(within(mailbox).getByRole("radio", { name: "Directives, 1 item" }));
     expect(within(inboxList()).getAllByRole("listitem")).toHaveLength(1);
@@ -235,7 +245,9 @@ describe("ExecutiveAgenda inbox", () => {
   it("snoozes for a day and brings the item back afterwards", () => {
     const { unmount } = render(<ExecutiveAgenda countryId="c1" />);
     fireEvent.click(screen.getByRole("button", { name: /Issue b/ }));
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Snooze a day" }));
+    fireEvent.click(
+      within(screen.getByRole("dialog")).getByRole("button", { name: "Snooze a day" })
+    );
     expect(within(inboxList()).queryByText("Issue b")).toBeNull();
     expect(screen.getByRole("button", { name: "Show 1 snoozed" })).toBeTruthy();
     unmount();

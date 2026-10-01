@@ -284,7 +284,7 @@ export const CultureForm = React.memo(
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-6 text-left lg:grid-cols-2">
           {/* Aspirations & Expressions Card */}
-          <FacetCard>
+          <FacetCard texture="chevron" textureOpacity={0.04}>
             <div className="border-separator border-b px-6 py-4">
               <h3 className="text-label text-headline flex items-center gap-2">
                 <Sparkles className="text-tint h-5 w-5" />
@@ -383,7 +383,7 @@ export const CultureForm = React.memo(
           </FacetCard>
 
           {/* Languages & Currency Card */}
-          <FacetCard className="overflow-visible">
+          <FacetCard texture="chevron" textureOpacity={0.04} className="overflow-visible">
             <div className="border-separator border-b px-6 py-4">
               <h3 className="text-label text-headline flex items-center gap-2">
                 <Languages className="text-indigo h-5 w-5" />
@@ -463,7 +463,7 @@ export const CultureForm = React.memo(
         </div>
 
         {/* Heritage Symbols Progressive Disclosure Card */}
-        <FacetCard>
+        <FacetCard texture="chevron" textureOpacity={0.04}>
           <div className="border-separator border-b px-6 py-4">
             <div className="flex items-center justify-between">
               <div>

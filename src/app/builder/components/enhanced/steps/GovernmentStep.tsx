@@ -348,7 +348,12 @@ export function GovernmentStep({
       >
         {activeTab === "components" && (
           <div className="space-y-6">
-            <FacetCard className="border-tint/20" interactive="none">
+            <FacetCard
+              texture="chevron"
+              textureOpacity={0.04}
+              className="border-tint/20"
+              interactive="none"
+            >
               <FacetCardContent className="p-6">
                 <AtomicGovernmentComponents
                   initialComponents={governmentComponents}
@@ -366,7 +371,7 @@ export function GovernmentStep({
         {activeTab === "structure" && (
           <div className="space-y-6">
             {/* Departments list */}
-            <FacetCard>
+            <FacetCard texture="chevron" textureOpacity={0.04}>
               <div className="border-separator border-b px-6 py-4">
                 <h3 className="text-label text-headline flex items-center gap-2">
                   <Users className="text-tint h-5 w-5" />
@@ -425,7 +430,7 @@ export function GovernmentStep({
             </FacetCard>
 
             {/* Budget Allocations list */}
-            <FacetCard>
+            <FacetCard texture="chevron" textureOpacity={0.04}>
               <div className="border-separator border-b px-6 py-4">
                 <h3 className="text-label text-headline flex items-center gap-2">
                   <DollarSign className="text-tint h-5 w-5" />

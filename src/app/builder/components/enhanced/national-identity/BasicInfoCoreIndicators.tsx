@@ -64,7 +64,7 @@ export const BasicInfoCoreIndicators = React.memo(function BasicInfoCoreIndicato
   const estimatedBaseRevenue = computedGDP * (defaultTaxRate / 100);
 
   return (
-    <FacetCard>
+    <FacetCard texture="chevron" textureOpacity={0.04}>
       <div className="border-separator border-b px-6 py-4">
         <h3 className="text-label text-headline flex items-center gap-2">
           <BarChart3 className="text-green h-5 w-5" />

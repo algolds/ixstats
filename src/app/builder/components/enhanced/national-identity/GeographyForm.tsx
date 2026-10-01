@@ -141,7 +141,7 @@ export const GeographyForm = React.memo(
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-6 text-left lg:grid-cols-2">
           {/* Country Codes & Domain Card */}
-          <FacetCard className="overflow-hidden">
+          <FacetCard texture="chevron" textureOpacity={0.04} className="overflow-hidden">
             <div className="border-separator border-b px-6 py-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -219,7 +219,7 @@ export const GeographyForm = React.memo(
           </FacetCard>
 
           {/* Civic Standards Card */}
-          <FacetCard className="z-10 overflow-visible">
+          <FacetCard texture="chevron" textureOpacity={0.04} className="z-10 overflow-visible">
             <div className="border-separator border-b px-6 py-4">
               <h3 className="text-label text-headline flex items-center gap-2">
                 <Calendar className="text-teal h-5 w-5" />
@@ -326,7 +326,7 @@ export const GeographyForm = React.memo(
         </div>
 
         {/* Geographic Center Card */}
-        <FacetCard className="overflow-hidden">
+        <FacetCard texture="chevron" textureOpacity={0.04} className="overflow-hidden">
           <div className="border-separator border-b px-6 py-4">
             <div className="flex items-center justify-between">
               <div>

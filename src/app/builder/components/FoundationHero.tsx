@@ -5,9 +5,11 @@ import { motion, AnimatePresence } from "motion/react";
 import { Globe, EditPencil as Edit3, ArrowRight, ClockRotateRight, Trash } from "iconoir-react";
 import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
+import { Button, focusRing } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
+import { TintGlow } from "~/components/ui/facet/identity/Glow";
+import { HUE_PAINT, type DomainHue } from "~/components/mycountry/shell/domain-hue";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
@@ -28,6 +30,8 @@ interface PathCardProps {
   description: string;
   icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" }>;
   iconClassName?: string;
+  /** v2 path accent (amber/emerald/indigo): icon badge, hover rim and badge colour. */
+  hue: DomainHue;
   onClick: () => void;
   badge?: string;
 }
@@ -43,31 +47,58 @@ function IIWikiLogoIcon({ className }: { className?: string; "aria-hidden"?: boo
   );
 }
 
+/**
+ * One starting path, restored from c5c6b382: a card with the builder's chevron texture (at the
+ * Facet texture cap, .05), the path's glyph in its v2 accent badge, an accent badge and hover rim,
+ * the hover lift and press, and the "Continue" arrow drifting on hover.
+ */
 function PathCard({
   title,
   description,
   icon: Icon,
   iconClassName,
+  hue,
   onClick,
   badge,
 }: PathCardProps) {
+  const paint = HUE_PAINT[hue];
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group focus-visible:ring-tint rounded-card h-full w-full text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      className={cn("group rounded-card facet-press facet-lift h-full w-full text-left", focusRing)}
       data-cuelume-press
-      data-cuelume-hover="tick"
     >
-      <FacetCard className="rounded-card group-hover:border-tint/40 h-full p-6 transition-[border-color,transform] duration-150 group-active:scale-[0.98]">
-        <FacetCardContent className="flex h-full flex-col justify-between p-0">
+      <FacetCard
+        texture="chevron"
+        textureOpacity={0.05}
+        className={cn(
+          "rounded-card h-full overflow-hidden p-6 transition-[border-color] duration-150",
+          paint.groupHoverBorder
+        )}
+      >
+        <FacetCardContent className="relative flex h-full flex-col justify-between p-0">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Icon
+              <span
                 aria-hidden="true"
-                className={cn("text-label-secondary h-6 w-6", iconClassName)}
-              />
-              {badge && <Badge variant="tinted">{badge}</Badge>}
+                className={cn(
+                  "rounded-control-lg flex size-12 items-center justify-center border transition-[scale] duration-150 group-hover:scale-105 motion-reduce:group-hover:scale-100",
+                  paint.badge
+                )}
+              >
+                <Icon aria-hidden="true" className={cn("h-6 w-6", iconClassName)} />
+              </span>
+              {badge && (
+                <span
+                  className={cn(
+                    "text-caption rounded-full border px-3 py-0.5 font-semibold",
+                    paint.badge
+                  )}
+                >
+                  {badge}
+                </span>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -76,11 +107,11 @@ function PathCard({
             </div>
           </div>
 
-          <div className="text-label-secondary group-hover:text-label text-caption mt-6 flex items-center gap-2 font-semibold transition-colors">
+          <div className="text-label-secondary group-hover:text-label text-footnote mt-6 flex items-center gap-2 font-semibold transition-colors">
             <span>Continue</span>
             <ArrowRight
               aria-hidden="true"
-              className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-1"
+              className="h-3.5 w-3.5 transition-[translate] duration-200 group-hover:translate-x-1 motion-reduce:group-hover:translate-x-0"
             />
           </div>
         </FacetCardContent>
@@ -215,8 +246,10 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-          className="relative select-none"
+          className="group relative isolate select-none"
         >
+          {/* v2 ambient warm glow halo behind the logo (the gold tint glow) */}
+          <TintGlow position="center" size="lg" className="-z-10 opacity-60" />
           <MyCountryLogo
             size="xl"
             variant="full"
@@ -319,7 +352,11 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                   exit={{ opacity: 0, scale: 0.98 }}
                   transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
                 >
+                  {/* v2 resume banner: gold glass with warm glows, the draft's flag and the
+                      gold Resume action. */}
                   <FacetCard
+                    variant="glass"
+                    glow
                     onClick={handleResumeClick}
                     data-cuelume-press
                     onKeyDown={(e) => {
@@ -329,27 +366,43 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
                         handleResumeClick();
                       }
                     }}
-                    className="focus-visible:ring-tint rounded-card border-tint/30 hover:border-tint/50 flex flex-col gap-4 p-4 focus-visible:ring-2 focus-visible:outline-none sm:flex-row sm:items-center sm:justify-between sm:p-5"
+                    aria-label={`Resume ${inProgressData.name}`}
+                    className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
                   >
+                    <TintGlow position="bottom-left" className="-z-10 opacity-40" />
                     <div className="flex min-w-0 items-center gap-4">
-                      {inProgressData.flag ? (
-                        <div className="border-separator bg-fill-3 rounded-control h-12 w-16 shrink-0 overflow-hidden border">
-                          <img
-                            src={inProgressData.flag}
-                            alt={inProgressData.name}
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <ClockRotateRight
+                      <div className="relative shrink-0">
+                        {inProgressData.flag ? (
+                          <div className="border-separator bg-fill-3 rounded-control shadow-card h-12 w-16 overflow-hidden border">
+                            <img
+                              src={inProgressData.flag}
+                              alt={inProgressData.name}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <span
+                            aria-hidden="true"
+                            className={cn(
+                              "rounded-control-lg flex size-12 items-center justify-center border",
+                              HUE_PAINT.yellow.badge
+                            )}
+                          >
+                            <ClockRotateRight className="h-6 w-6" />
+                          </span>
+                        )}
+                        {/* v2 "live draft" dot */}
+                        <span
                           aria-hidden="true"
-                          className="text-tint h-6 w-6 shrink-0"
-                        />
-                      )}
+                          className="bg-surface ring-surface absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-full ring-2"
+                        >
+                          <span className="bg-green size-2 rounded-full" />
+                        </span>
+                      </div>
 
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex items-center gap-2">
-                          <Badge variant="tinted">Draft In Progress</Badge>
+                          <Badge variant="yellow">Draft in progress</Badge>
                           <span className="text-label-secondary text-caption">
                             {inProgressData.stepLabel}
                           </span>
@@ -404,6 +457,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
           title="Start with a Template"
           description="Select a real country or archetype to use as a template. We'll do the heavy lifting to get you started."
           icon={Globe}
+          hue="yellow"
           badge="Recommended"
           onClick={() => onSelectPath("template")}
         />
@@ -412,6 +466,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
           title="Start from Scratch"
           description="Customize every aspect of your country from the ground up. Only for the most dedicated worldbuilders."
           icon={Edit3}
+          hue="green"
           onClick={() => onSelectPath("scratch")}
         />
 
@@ -420,6 +475,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
           description="Use your existing country data from IIWiki to build your country. Core stats, flag, and relevant lore are automatically parsed."
           icon={IIWikiLogoIcon}
           iconClassName="h-7 w-7"
+          hue="indigo"
           onClick={() => onSelectPath("import")}
         />
       </div>

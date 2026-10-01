@@ -3,16 +3,15 @@
 import React, { useState, useMemo } from "react";
 import {
   Activity,
-  NavArrowRight,
   Group as Users,
   Dollar as DollarSign,
   Heart,
   ScaleFrameEnlarge as Scale,
   Flash as Zap,
 } from "iconoir-react";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
-import { Button } from "~/components/ui/button";
-import { Stat } from "~/components/ui/stat";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Button, focusRing } from "~/components/ui/button";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { HealthRing } from "~/components/ui/health-ring";
 import { VitalityBreakdownModal } from "~/components/mycountry/shared/modals/VitalityBreakdownModal";
 import {
@@ -25,6 +24,7 @@ import { formatCompact } from "~/lib/format/compact";
 import { cn } from "~/lib/utils";
 import { assetUrl } from "~/lib/base-path";
 import { FlagWatermark } from "~/components/ui/facet/identity/FlagWatermark";
+import { GOLD_GLASS_RIM } from "./domain-hue";
 
 type RatingLabel = "Optimal" | "Strong" | "Moderate" | "Strained";
 
@@ -91,7 +91,7 @@ function finiteScore(raw: unknown): number | null {
   return typeof raw === "number" && Number.isFinite(raw) ? Math.round(raw) : null;
 }
 
-/** National standing — the calm vitals summary under the title: five vitals + four vitality rings. */
+/** National Standing rail card — population/GDP telemetry + governance strip + 4 vitality rings. */
 function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.Element {
   const { country, activityRingsData } = useCountryData();
   const flagUrl = assetUrl(country?.flagUrl || country?.flag);
@@ -192,84 +192,109 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
 
   return (
     <>
+      {/* The v2 National Standing rail card (c5c6b382) on the Facet 3.1 glass hero: the flag
+          watermark at v2 strength, the country chip and the vitality pill, one opaque telemetry
+          panel (population/GDP, approval/stability/CivCap) and the 2×2 vitality rings. */}
       <FacetCard
-        className="rounded-card relative overflow-hidden"
+        variant="glass"
+        glow="shadow"
+        className={cn("group flex flex-col gap-3 p-4", GOLD_GLASS_RIM)}
         aria-labelledby="national-standing-title"
         role="region"
       >
-        {/* The country's flag as a circular watermark off the top-right corner (as in c5c6b382). */}
-        <FlagWatermark src={flagUrl} />
-        <FacetCardHeader className="relative flex-row flex-wrap items-start justify-between gap-x-4 gap-y-2 p-4 pb-0 sm:p-5 sm:pb-0">
-          <div className="min-w-0">
-            <h2 id="national-standing-title" className="text-label text-title-3">
+        <FlagWatermark src={flagUrl} className="-top-10 -right-10 size-56" />
+
+        {/* Header: title + country chip, and the vitality pill */}
+        <div className="relative flex flex-wrap items-start justify-between gap-2">
+          <div className="flex min-w-0 flex-col">
+            <h2
+              id="national-standing-title"
+              className="text-label-secondary text-footnote font-semibold"
+            >
               National standing
             </h2>
-            <p className="text-label-secondary text-footnote mt-0.5">
-              Your nation&apos;s vitals right now
-            </p>
+            {country?.name && (
+              <div className="mt-1 flex min-w-0 items-center gap-2">
+                <span className="border-separator bg-surface rounded-control-sm shadow-card flex shrink-0 items-center justify-center overflow-hidden border p-0.5 transition-[scale] duration-200 group-hover:scale-105 motion-reduce:group-hover:scale-100">
+                  <UnifiedCountryFlag
+                    countryName={country.name}
+                    flagUrl={flagUrl}
+                    size="sm"
+                    showTooltip={false}
+                  />
+                </span>
+                <p className="text-label text-headline truncate">{country.name}</p>
+              </div>
+            )}
           </div>
           <Button
             type="button"
-            variant="secondary"
+            variant="outline"
             size="sm"
             onClick={handleOpenBreakdown}
-            className="h-9 gap-2 sm:h-8"
+            className="bg-surface h-9 gap-2 rounded-full sm:h-8"
             title="Open the vitality breakdown"
           >
-            <Activity aria-hidden="true" className="text-label-secondary" />
+            <Activity aria-hidden="true" className="text-tint" />
             <span>{knownRings.length > 0 ? ratingLabelText : "Vitality"}</span>
             {knownRings.length > 0 && (
-              <span className="text-label-secondary tabular-nums">{compositeScore}</span>
+              <span className="text-label-secondary font-data tabular-nums">{compositeScore}</span>
             )}
-            <NavArrowRight aria-hidden="true" className="text-label-secondary size-3.5" />
           </Button>
-        </FacetCardHeader>
+        </div>
 
-        <FacetCardContent className="relative flex flex-col gap-4 p-4 sm:p-5">
-          {/* Vitals: opaque depth-3 tiles (no stacked blur) with tabular figures */}
-          {country && (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-              <FacetCard
-                variant="inset"
-                padding="sm"
+        {/* One opaque telemetry panel (v2 "unified telemetry"): glass never nests */}
+        {country && (
+          <FacetCard variant="inset" padding="none" className="relative flex flex-col gap-2 p-3">
+            <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
+              <button
+                type="button"
                 onClick={handleTogglePop}
                 aria-pressed={showExactPop}
                 title={showExactPop ? "Show compact population" : "Show exact population"}
-                className="text-left"
+                className={cn(
+                  "group/pop text-footnote rounded-control-sm facet-press facet-press-sm flex cursor-pointer items-center gap-2",
+                  focusRing
+                )}
               >
-                <Stat
-                  label="Population"
-                  value={formattedPop}
-                  icon={<Users className="size-3.5" />}
-                />
-              </FacetCard>
+                <Users aria-hidden="true" className="text-label-secondary size-3.5" />
+                <span className="text-label-secondary">Population</span>
+                <strong className="text-label font-data font-semibold tabular-nums group-hover/pop:underline">
+                  {formattedPop}
+                </strong>
+              </button>
+              <span className="text-footnote flex items-center gap-2">
+                <DollarSign aria-hidden="true" className="text-label-secondary size-3.5" />
+                <span className="text-label-secondary">GDP</span>
+                <strong className="text-label font-data font-semibold tabular-nums">
+                  ${formatCompact(totalGdp)}
+                </strong>
+              </span>
+            </div>
 
-              <VitalTile icon={DollarSign} label="GDP" value={`$${formatCompact(totalGdp)}`} />
-              <VitalTile
+            <div className="grid grid-cols-3 gap-1">
+              <VitalCell
                 icon={Heart}
                 label="Approval"
                 value={approvalPct === null ? "—" : `${approvalPct}%`}
               />
-              <VitalTile
+              <VitalCell
                 icon={Scale}
                 label="Stability"
                 value={stabilityPct === null ? "—" : `${stabilityPct}%`}
+                divided
               />
-
-              <FacetCard
-                variant="inset"
-                className="col-span-2 flex flex-col gap-1 p-3 sm:col-span-1"
+              <div
+                className="border-separator flex min-w-0 flex-col gap-1 border-l pl-2"
                 title={civCapBand.title}
                 data-testid="civcap-band"
               >
-                <Stat
+                <VitalCell
+                  icon={Zap}
                   label="CivCap"
-                  icon={<Zap className="size-3.5" />}
-                  value={
-                    <span className={civCapData?.overCapacity ? "text-destructive" : undefined}>
-                      {civCapBand.value}
-                    </span>
-                  }
+                  value={civCapBand.value}
+                  valueClassName={civCapData?.overCapacity ? "text-destructive" : undefined}
+                  bare
                 />
                 {civCapPct !== null && (
                   <div
@@ -283,58 +308,64 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                     <div
                       className={cn(
                         "h-full rounded-full",
-                        civCapData?.overCapacity ? "bg-destructive" : "bg-tint"
+                        civCapData?.overCapacity ? "bg-destructive" : "facet-gold"
                       )}
                       style={{ width: `${civCapPct}%` }}
                     />
                   </div>
                 )}
-              </FacetCard>
+              </div>
             </div>
-          )}
+          </FacetCard>
+        )}
 
-          {/* Vitality rings */}
-          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-            {rings.map((ring) => {
-              const known = ringScores[RING_KEYS[ring.id]!] !== null;
-              return (
-                // Native button: the Button primitive would force its icon size onto HealthRing's svg.
-                <button
-                  key={ring.id}
-                  type="button"
-                  onClick={handleOpenBreakdown}
-                  aria-label={`${ring.label}: ${known ? `${ring.value} of 100` : "no data yet"}. Open vitality breakdown`}
-                  className="group/ring hover:bg-fill-3 focus-visible:ring-tint rounded-row flex cursor-pointer items-center gap-3 p-2 text-left transition-[color,background-color,transform] duration-150 outline-none select-none focus-visible:ring-1 active:scale-[0.98]"
-                >
-                  <HealthRing
-                    value={known ? ring.value : 0}
-                    size={40}
-                    color={known ? ring.color : "var(--color-label-secondary)"}
-                    label={ring.label}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <span className="text-label-secondary group-hover/ring:text-label text-footnote block truncate transition-colors">
-                      {ring.label}
+        {/* The four vitality rings (2×2, v2) */}
+        <div className="relative grid grid-cols-2 gap-2">
+          {rings.map((ring) => {
+            const known = ringScores[RING_KEYS[ring.id]!] !== null;
+            return (
+              // Native button: the Button primitive would force its icon size onto HealthRing's svg.
+              <button
+                key={ring.id}
+                type="button"
+                onClick={handleOpenBreakdown}
+                aria-label={`${ring.label}: ${known ? `${ring.value} of 100` : "no data yet"}. Open vitality breakdown`}
+                className={cn(
+                  "group/ring border-separator bg-surface rounded-row facet-press facet-lift flex cursor-pointer items-center gap-2 border p-2 text-left select-none",
+                  focusRing
+                )}
+              >
+                <HealthRing
+                  value={known ? ring.value : 0}
+                  size={36}
+                  color={known ? ring.color : "var(--color-label-secondary)"}
+                  label={ring.label}
+                />
+                <div className="min-w-0 flex-1">
+                  <span className="text-label-secondary group-hover/ring:text-label text-footnote block truncate transition-colors">
+                    {ring.label}
+                  </span>
+                  {known ? (
+                    <span
+                      className="text-headline font-data font-semibold tabular-nums"
+                      style={{ color: ring.color }}
+                    >
+                      {ring.value}
+                      <span className="text-label-secondary text-footnote font-normal">/100</span>
                     </span>
-                    {known ? (
-                      <span className="text-label text-headline tabular-nums">
-                        {ring.value}
-                        <span className="text-label-secondary text-footnote font-normal">/100</span>
-                      </span>
-                    ) : (
-                      <span
-                        className="text-label-secondary text-headline tabular-nums"
-                        title="No data yet"
-                      >
-                        —
-                      </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </FacetCardContent>
+                  ) : (
+                    <span
+                      className="text-label-secondary text-headline tabular-nums"
+                      title="No data yet"
+                    >
+                      —
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </FacetCard>
 
       <VitalityBreakdownModal
@@ -347,24 +378,43 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
   );
 }
 
-/** One static vital: a `Stat` with its glyph on an inset tile. */
-function VitalTile({
+/** One governance figure in the telemetry panel: glyph, sentence-case label, mono value. */
+function VitalCell({
   icon: Icon,
   label,
   value,
+  divided,
+  bare,
+  valueClassName,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string;
+  divided?: boolean;
+  bare?: boolean;
+  valueClassName?: string;
 }) {
   return (
-    <FacetCard variant="inset" padding="sm">
-      <Stat
-        label={label}
-        value={<span className="block truncate">{value}</span>}
-        icon={<Icon className="size-3.5" />}
-      />
-    </FacetCard>
+    <div
+      className={cn(
+        "flex min-w-0 items-center gap-2",
+        !bare && "px-0.5",
+        divided && "border-separator border-l pl-2"
+      )}
+    >
+      <Icon aria-hidden="true" className="text-label-secondary size-3.5 shrink-0" />
+      <div className="flex min-w-0 flex-col">
+        <span className="text-label-secondary text-caption leading-tight">{label}</span>
+        <span
+          className={cn(
+            "text-label text-footnote font-data truncate leading-tight font-semibold tabular-nums",
+            valueClassName
+          )}
+        >
+          {value}
+        </span>
+      </div>
+    </div>
   );
 }
 

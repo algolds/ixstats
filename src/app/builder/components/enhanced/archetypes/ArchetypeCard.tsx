@@ -28,22 +28,26 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
   const colors = getArchetypeColors(archetype.id);
 
   return (
+    // v2 (c5c6b382): emerald selection — border, ring and glow — with a hover lift and accent rim.
     <FacetCard
+      lift
+      glow={isSelected ? "shadow" : false}
+      style={isSelected ? ({ "--tint": "var(--color-green)" } as React.CSSProperties) : undefined}
       className={cn(
         "flex h-full flex-col justify-between gap-4 p-5",
-        isSelected && "border-tint ring-tint ring-1"
+        isSelected ? "ring-green/60 ring-2" : "hover:border-green/30"
       )}
     >
       {/* Header */}
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <div className={cn("rounded-control shrink-0 p-2", colors.bg)}>
+          <div className={cn("rounded-control border-separator shrink-0 border p-3", colors.bg)}>
             <IconComponent aria-hidden className={cn("size-5", colors.text)} />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <h4 className="text-headline text-label truncate">{archetype.name}</h4>
-              {isSelected && <Badge variant="tinted">Active Preset</Badge>}
+              {isSelected && <Badge variant="green">Active preset</Badge>}
             </div>
             <div className="text-footnote text-label-secondary mt-0.5 flex items-center gap-1">
               <Globe aria-hidden className="size-3.5 shrink-0" />
@@ -59,8 +63,11 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
           >
             {archetype.implementationComplexity}
           </Badge>
-          <div className="text-caption text-label-secondary tabular-nums">
-            Innovation: {archetype.growthMetrics.innovationIndex}
+          <div className="text-caption text-green-ink font-semibold">
+            Innovation:{" "}
+            <span className="font-data tabular-nums">
+              {archetype.growthMetrics.innovationIndex}
+            </span>
           </div>
         </div>
       </div>
@@ -76,7 +83,7 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
             }}
             disabled={isSelected}
             variant={isSelected ? "tinted" : "filled"}
-            className="flex-1"
+            className={cn("flex-1", isSelected && "bg-green/15 text-green-ink")}
             size="sm"
           >
             <CheckCircle aria-hidden />

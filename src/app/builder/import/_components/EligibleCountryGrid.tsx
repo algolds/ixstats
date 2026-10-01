@@ -144,7 +144,7 @@ const EligibleCountryCard = React.memo<EligibleCountryCardProps>(function Eligib
 
           {/* Selected Checkmark Badge in Top-Right */}
           {isSelected && (
-            <div className="bg-tint text-on-tint shadow-card absolute top-3 right-3 z-30 flex size-6 items-center justify-center rounded-full">
+            <div className="facet-gold shadow-card absolute top-3 right-3 z-30 flex size-6 items-center justify-center rounded-full">
               <Check className="h-3.5 w-3.5 stroke-[3]" />
             </div>
           )}

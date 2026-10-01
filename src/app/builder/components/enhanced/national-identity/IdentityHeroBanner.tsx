@@ -16,7 +16,8 @@ import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FlagWatermark } from "~/components/ui/facet";
+import { FlagWatermark, Refraction, TintGlow } from "~/components/ui/facet";
+import { FACET_GLASS_SURFACE } from "~/components/ui/facet-container";
 import { springSmooth } from "~/lib/design/motion";
 import { getHighResFlagUrl } from "./identityUtils";
 import { useNotify } from "~/hooks/useNotify";
@@ -178,10 +179,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={springSmooth}
-      className={cn(
-        "group border-separator bg-surface rounded-card shadow-card relative overflow-hidden border p-5",
-        className
-      )}
+      className={cn("group relative isolate overflow-hidden p-5", FACET_GLASS_SURFACE, className)}
     >
       {/* Hidden file inputs */}
       <input
@@ -201,8 +199,17 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
         disabled={isUploadingCoA}
       />
 
-      {/* Corner flag watermark (Facet hero identity, reference §3) */}
-      <FlagWatermark src={displayFlag} />
+      {/* v2 hero (c5c6b382) on the Facet 3.1 glass hero: refraction hairline, the flag watermark
+          from National Standing, and the warm gold / teal glows. */}
+      <Refraction />
+      <FlagWatermark src={displayFlag} className="-top-10 -right-10 size-56" />
+      <TintGlow position="top-right" size="lg" className="-z-10" />
+      <TintGlow
+        position="bottom-left"
+        size="lg"
+        color="var(--color-teal)"
+        className="-z-10 opacity-10"
+      />
 
       <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         {/* Left Side: National Symbols & Insignia */}

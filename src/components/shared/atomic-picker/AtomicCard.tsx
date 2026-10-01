@@ -9,7 +9,7 @@
  */
 
 import React from "react";
-import { Badge, badgeVariants } from "~/components/ui/badge";
+import { Badge, badgeVariants, SYSTEM_TINTED, type SystemTintedColor } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Plus, Check, Flash as Zap, WarningTriangle as AlertTriangle } from "iconoir-react";
@@ -30,6 +30,43 @@ export interface AtomicCardProps<TType extends string = string> {
   currencyFormatter?: (amount: number) => string;
 }
 
+/**
+ * v2 (c5c6b382) colour identity: each component's own `color` paints its icon chip, its category
+ * badge and its selected border — the v2 Tailwind hues mapped onto the Facet system colours.
+ */
+const COMPONENT_HUE: Record<string, SystemTintedColor> = {
+  emerald: "green",
+  green: "green",
+  blue: "blue",
+  indigo: "indigo",
+  purple: "indigo",
+  amber: "yellow",
+  yellow: "yellow",
+  orange: "orange",
+  red: "red",
+  teal: "cyan",
+  cyan: "cyan",
+  zinc: "gray",
+  gray: "gray",
+};
+
+// A ring, not a border: the card's own `border-separator` wins Tailwind's utility order.
+const SELECTED_RING: Record<SystemTintedColor, string> = {
+  red: "ring-red/50",
+  orange: "ring-orange/50",
+  yellow: "ring-yellow/50",
+  green: "ring-green/50",
+  mint: "ring-mint/50",
+  teal: "ring-teal/50",
+  cyan: "ring-cyan/50",
+  blue: "ring-blue/50",
+  indigo: "ring-indigo/50",
+  purple: "ring-purple/50",
+  pink: "ring-pink/50",
+  brown: "ring-brown/50",
+  gray: "ring-gray/50",
+};
+
 /** Complexity reads as a semantic status: high is costly, medium a caution, low easy. */
 const COMPLEXITY_TEXT: Record<BaseAtomicComponent["metadata"]["complexity"], string> = {
   High: "text-destructive",
@@ -49,6 +86,7 @@ function AtomicCardComponent<TType extends string = string>({
   conflictingWith = [],
   currencyFormatter = formatCurrency,
 }: AtomicCardProps<TType>) {
+  const hue = COMPONENT_HUE[component.color?.toLowerCase() ?? "blue"] ?? "blue";
   const Icon = component.icon;
 
   const hasSynergies = synergisticWith.length > 0;
@@ -69,7 +107,7 @@ function AtomicCardComponent<TType extends string = string>({
       data-state={isSelected ? "selected" : undefined}
       className={cn(
         "group rounded-row flex flex-col justify-between p-4 text-left transition-[border-color,box-shadow,opacity] duration-150 select-none",
-        isSelected ? "border-tint/60 ring-tint/20 ring-1" : "hover:border-separator-opaque",
+        isSelected ? cn(SELECTED_RING[hue], "ring-2") : "hover:border-separator-opaque",
         disabled && "pointer-events-none opacity-50",
         !isSelected && !canSelectMore && "opacity-60"
       )}
@@ -78,13 +116,15 @@ function AtomicCardComponent<TType extends string = string>({
         {/* Title row */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-1 items-start gap-3">
-            <Icon
+            <span
               aria-hidden="true"
               className={cn(
-                "mt-0.5 h-5 w-5 shrink-0",
-                isSelected ? "text-label" : "text-label-secondary"
+                "rounded-control flex size-9 shrink-0 items-center justify-center",
+                SYSTEM_TINTED[hue]
               )}
-            />
+            >
+              <Icon className="h-5 w-5" />
+            </span>
             <div className="min-w-0 flex-1">
               <h4 className="text-label text-headline truncate">{component.name}</h4>
               <p className="text-label-secondary text-footnote mt-0.5 line-clamp-2 leading-relaxed">
@@ -107,7 +147,7 @@ function AtomicCardComponent<TType extends string = string>({
 
         {/* Badges */}
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Badge variant="secondary" className="capitalize">
+          <Badge variant={hue} className="capitalize">
             {component.category}
           </Badge>
 
@@ -115,7 +155,7 @@ function AtomicCardComponent<TType extends string = string>({
             {component.metadata.complexity}
           </Badge>
 
-          <Badge variant="outline" className="text-label-secondary tabular-nums">
+          <Badge variant="outline" numeric className="text-label-secondary">
             {component.effectiveness}% eff.
           </Badge>
 

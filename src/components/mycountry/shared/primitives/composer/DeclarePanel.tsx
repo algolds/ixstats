@@ -149,7 +149,7 @@ export function DeclarePanel({
         size="lg"
         onClick={onDeclare}
         disabled={isPending || !!blockedReason || disabled}
-        className="bg-yellow text-on-yellow hover:bg-yellow/90 w-full px-4 max-sm:h-11"
+        className="w-full px-4 max-sm:h-11"
       >
         {isPending ? "Declaring…" : "Declare directive"}
       </Button>

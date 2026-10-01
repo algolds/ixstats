@@ -13,9 +13,5 @@ export const STATUS_TEXT: Record<StatusTone, string> = {
   neutral: "text-label-secondary",
 };
 
-/**
- * The one MyCountry-gold filled action per surface (Declare Directive in the header). Applied as
- * a className on `<Button>`, never as a bespoke button.
- */
-export const MYCOUNTRY_PRIMARY_ACTION =
-  "bg-yellow font-semibold text-on-yellow shadow-card hover:bg-yellow/70";
+// The MyCountry gold primary is the plain `<Button>` inside `data-app="mycountry"` (Facet 3.1 §16.3):
+// no class needed.
