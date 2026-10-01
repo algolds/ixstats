@@ -415,19 +415,20 @@ describe("getArticleHtml (IxWiki) renders a stale or never-rendered article once
 });
 
 describe("getArticleHtml (IxWiki) for a page whose text is empty (F35a)", () => {
-  const blankRow = (title: string) => ({
+  const blankRow = (title: string, revisions: Array<{ byteSize: number; textDeleted: boolean }>) => ({
     renderedView: null,
     htmlSyncedAt: null,
     title,
     wikitext: "",
     contentHtml: null,
+    revisions,
   });
 
   it("serves an existing page with an empty current revision as an empty article, not a missing one", async () => {
     findArticleForView.mockResolvedValue(
       head({ htmlSyncedAt: null, title: "Talk:Paulastra", emptyText: true, categories: [] })
     );
-    setRow(blankRow("Talk:Paulastra"));
+    setRow(blankRow("Talk:Paulastra", [{ byteSize: 0, textDeleted: false }]));
 
     const result = await caller().getArticleHtml({ title: "Talk:Paulastra" });
 
@@ -448,7 +449,7 @@ describe("getArticleHtml (IxWiki) for a page whose text is empty (F35a)", () => 
     findArticleForView.mockResolvedValue(
       head({ htmlSyncedAt: null, title: "Talk:Stubbed", emptyText: false })
     );
-    setRow(blankRow("Talk:Stubbed"));
+    setRow(blankRow("Talk:Stubbed", [])); // no revision: a stub
 
     await expect(caller().getArticleHtml({ title: "Talk:Stubbed" })).rejects.toMatchObject({
       code: "NOT_FOUND",
