@@ -13,7 +13,7 @@
 
 import DOMPurify, { type Config } from "dompurify";
 import { mediaWikiOrigin, wikiosConfig } from "~/lib/wiki-os/config";
-import { nestsTooDeep } from "~/lib/wiki-os/transformers/inert-dom";
+import { tagsNestTooDeep } from "~/lib/wiki-os/transformers/inert-dom";
 import { scopeTemplateStyles } from "./scope-template-styles";
 
 type Purifier = typeof DOMPurify;
@@ -443,9 +443,18 @@ export function wikiArticleSanitizerFingerprint(): string {
  */
 export function sanitizeWikiArticleHtml(html: string): string {
   if (!html) return "";
-  // ponytail: DOMPurify's DOM is quadratic in nesting depth (6,000 `<s>` took 5 s, 12,000 take 20): HTML nested past
-  // DOM_DEPTH_CEILING (400; real pages nest a few dozen) is shown as its escaped source, which is safe and one pass.
-  if (nestsTooDeep(html)) {
+  // ponytail: jsdom's DOM, which DOMPurify runs on a server, is quadratic in nesting depth (6,000 `<s>` took 5 s, 12,000 take
+  // 20): HTML the parser nests past DOM_DEPTH_CEILING (400; real pages nest a few dozen) is shown as its escaped source,
+  // which is safe and one pass. A server asks the parser how deep (tags alone do not say: `<span><div></span>` and
+  // `<i><b></i>` nest thousands deep); a browser's DOM is native and gets the estimate from the tags.
+  // (`typeof window` is a compile-time constant: a browser bundle drops the branch that loads parse5.)
+  const tooDeep =
+    typeof window === "undefined"
+      ? (
+          require("../wiki-os/transformers/dom-depth") as typeof import("../wiki-os/transformers/dom-depth")
+        ).nestsTooDeep(html)
+      : tagsNestTooDeep(html);
+  if (tooDeep) {
     const escaped = html.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     return `<pre class="wikios-fallback-plain">${escaped}</pre>`;
   }

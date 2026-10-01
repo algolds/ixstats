@@ -10,7 +10,7 @@
 //   - whitespace between block elements, and in a table's or list's structure.
 
 import { cssIdentifiers } from "~/lib/utils/scope-template-styles";
-import { leavesAlone } from "./inert-dom";
+import { leavesAlone } from "./dom-depth";
 import { parseInertOnServer } from "./server-dom";
 
 /**

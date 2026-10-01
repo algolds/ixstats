@@ -52,7 +52,7 @@ const isNameCode = (code: number): boolean =>
  * ponytail: DOM_DEPTH_CEILING, 400 open tags: the deepest nesting that is parsed into a server-side DOM. Real
  * articles nest a few dozen deep; jsdom takes time quadratic in the depth (7 seconds at 6,000 `<s>` in a row) and
  * overflows its stack not far past that, so a page that nests deeper is left as it is by the passes that only
- * tidy it (`slimArticleHtml`, `markTemplateChips`).
+ * tidy it (`slimArticleHtml`, `markTemplateChips`); measured by the parser, in dom-depth.ts.
  */
 export const DOM_DEPTH_CEILING = 400;
 
@@ -74,13 +74,15 @@ function tagNameAt(html: string, from: number): string {
 }
 
 /**
- * Whether `html` holds more than DOM_DEPTH_CEILING tags open at once. An opening tag that is not a void element is
- * open until a closing tag of its name closes it, and everything opened after it with it (what the parser does:
- * a closing tag with no open element of its name is ignored, so `<s></i>` repeated nests as deep as it is long). An over-count
- * (the parser also closes `<p>` and `<li>` by itself), so a page can only be passed over, never parsed too deep.
- * One scan: a count of the open elements of each name says at once whether a closing tag closes anything.
+ * An estimate, from the tags alone, of whether `html` holds more than DOM_DEPTH_CEILING tags open at once, for a
+ * browser (whose DOM is native and not quadratic in depth: nothing there is worse than a long page of
+ * `<s>`). An opening tag that is not a void element is open until a closing tag of its name closes it, and
+ * everything opened after it with it; a closing tag with no open element of its name is ignored. It is NOT how the
+ * HTML parser nests a page: the parser ignores a closing tag that a special element stops (`<span><div></span>`),
+ * keeps formatting elements open (`<i><b></i>`), and a `<` in an attribute or a comment is no tag. A server uses
+ * `nestsTooDeep` of dom-depth.ts, which asks the parser jsdom uses. One scan.
  */
-export function nestsTooDeep(html: string): boolean {
+export function tagsNestTooDeep(html: string): boolean {
   const open: string[] = [];
   const openOfName = new Map<string, number>();
   for (let at = html.indexOf("<"); at !== -1; at = html.indexOf("<", at + 1)) {
@@ -102,7 +104,3 @@ export function nestsTooDeep(html: string): boolean {
   }
   return false;
 }
-
-/** Whether a pass that only tidies HTML in a server-side DOM leaves `html` as it is: it is too long or nests too deep. */
-export const leavesAlone = (html: string): boolean =>
-  html.length > DOM_SIZE_CEILING || nestsTooDeep(html);

@@ -35,7 +35,7 @@ import { LinkGraphService } from "../core/link-graph-service";
 import { canonicalizeTitle } from "../core/title";
 import { markTemplateChips } from "../templates/chip-markers";
 import { transformArticleHtml, stripConflictingStyles } from "../transformers/html-transformer";
-import { leavesAlone } from "../transformers/inert-dom";
+import { leavesAlone } from "../transformers/dom-depth";
 import { slimArticleHtml, templateStyleIdentifiers } from "../transformers/slim-html";
 import { parseWikitextToHtml } from "../transformers/wikitext-parser";
 

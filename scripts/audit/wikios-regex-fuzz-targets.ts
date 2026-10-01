@@ -1383,6 +1383,13 @@ const HTML_UNITS: ReadonlyArray<readonly [name: string, unit: string]> = [
   ["<p>{{CountryData:C:population}}</p>", "<p>{{CountryData:C:population}}</p>"],
   // an opener and a closing tag of another name, which closes nothing: nested as deep as it is long
   ["<s></i>", "<s></i>"],
+  // what the parser nests deep and a count of the tags does not: a closing tag a special element stops, one of
+  // another name, formatting elements it leaves open, a `<noscript>` (its content is elements with scripting off)
+  ["<span><div></span>", "<span><div></span>"],
+  ["<div><table><tr><td></div>", "<div><table><tr><td></div>"],
+  ["<s><div:x></s:y>", "<s><div:x></s:y>"],
+  ["<i><b></i>", "<i><b></i>"],
+  ["<noscript>", "<noscript>"],
   // a srcset: candidates, a URL that ends in commas
   ["/images/a.png␠1x,␠", "/images/a.png 1x, "],
   ["a,,,,,,,,,,x␠", "a,,,,,,,,,,x "],

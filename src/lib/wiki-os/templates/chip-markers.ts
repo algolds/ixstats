@@ -13,7 +13,7 @@
  * the key alphabet below holds no character the serializer escapes or that could end the marker.
  */
 
-import { leavesAlone } from "../transformers/inert-dom";
+import { leavesAlone } from "../transformers/dom-depth";
 import { extractTemplateKeys, rawChipsIn, type TemplateKey } from "./template-resolver";
 
 export const CHIP_ATTRIBUTE = "data-wikios-chip";

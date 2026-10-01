@@ -25,9 +25,9 @@ import {
 import {
   DOM_DEPTH_CEILING,
   DOM_SIZE_CEILING,
-  leavesAlone,
-  nestsTooDeep,
+  tagsNestTooDeep,
 } from "~/lib/wiki-os/transformers/inert-dom";
+import { leavesAlone, nestsTooDeep } from "~/lib/wiki-os/transformers/dom-depth";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { scopeTemplateStyles } from "~/lib/utils/scope-template-styles";
 import { scopeTemplateStyles as legacyScopeTemplateStyles } from "./legacy/scope-template-styles";
@@ -491,35 +491,98 @@ describe("rawChipsIn finds what the expression found", () => {
 describe("a page nested too deep is left to the passes that only tidy it", () => {
   const nested = (open: string, depth: number) => open.repeat(depth);
 
-  it("counts open tags, not closed ones, and no void element", () => {
-    expect(nestsTooDeep(nested("<div>", DOM_DEPTH_CEILING))).toBe(false);
-    expect(nestsTooDeep(nested("<div>", DOM_DEPTH_CEILING + 1))).toBe(true);
-    expect(nestsTooDeep(nested("<div>x</div>", 50_000))).toBe(false);
-    expect(nestsTooDeep(nested("<br><img src=a><hr>", 10_000))).toBe(false);
-    expect(nestsTooDeep(nested("<s>", 6_000))).toBe(true);
-    expect(nestsTooDeep("a < b <3 </ >")).toBe(false);
+  describe("tagsNestTooDeep, the estimate from the tags that a browser asks", () => {
+    it("counts open tags, not closed ones, and no void element", () => {
+      expect(tagsNestTooDeep(nested("<div>", DOM_DEPTH_CEILING))).toBe(false);
+      expect(tagsNestTooDeep(nested("<div>", DOM_DEPTH_CEILING + 1))).toBe(true);
+      expect(tagsNestTooDeep(nested("<div>x</div>", 50_000))).toBe(false);
+      expect(tagsNestTooDeep(nested("<br><img src=a><hr>", 10_000))).toBe(false);
+      expect(tagsNestTooDeep(nested("<s>", 6_000))).toBe(true);
+      expect(tagsNestTooDeep("a < b <3 </ >")).toBe(false);
+    });
+
+    it("ignores a closing tag with no open element of its name", () => {
+      expect(tagsNestTooDeep(nested("<s></i>", 12_000))).toBe(true);
+      expect(tagsNestTooDeep(nested("<s></i>", 100))).toBe(false);
+      expect(tagsNestTooDeep(`${nested("<a>", 399)}${nested("</b>", 200_000)}`)).toBe(false);
+      // a closing tag closes what was opened after its element, too
+      expect(
+        tagsNestTooDeep(`${nested("<u>", 200)}${"<b><i>".repeat(100)}</u>${nested("<u>", 200)}`)
+      ).toBe(false);
+    });
+
+    it("is quick on closing tags that close nothing", () => {
+      const started = performance.now();
+      tagsNestTooDeep(`${nested("<a>", 399)}${nested("</b>", 400_000)}`);
+      expect(performance.now() - started).toBeLessThan(500);
+    });
   });
 
-  it("ignores a closing tag with no open element of its name, as the parser does", () => {
-    expect(nestsTooDeep(nested("<s></i>", 12_000))).toBe(true);
-    expect(nestsTooDeep(nested("<s></i>", 100))).toBe(false);
-    expect(nestsTooDeep(`${nested("<a>", 399)}${nested("</b>", 200_000)}`)).toBe(false);
-    expect(nestsTooDeep(`${nested("<S>", 300)}${nested("</s>", 300)}${nested("<i>", 300)}`)).toBe(
-      false
-    );
-    // a closing tag closes what was opened after its element, too
-    expect(
-      nestsTooDeep(`${nested("<u>", 200)}${"<b><i>".repeat(100)}</u>${nested("<u>", 200)}`)
-    ).toBe(false);
-    expect(nestsTooDeep(`${nested("<u>", 300)}${nested("<b>", 100)}${nested("<i>", 2)}`)).toBe(
-      true
-    );
-  });
+  describe("nestsTooDeep asks the parser how deep it nests", () => {
+    it("counts the depth of the tree it builds", () => {
+      expect(nestsTooDeep(nested("<div>", DOM_DEPTH_CEILING))).toBe(false);
+      expect(nestsTooDeep(nested("<div>", DOM_DEPTH_CEILING + 1))).toBe(true);
+      expect(nestsTooDeep(nested("<div>x</div>", 50_000))).toBe(false);
+      expect(nestsTooDeep(nested("<br><img src=a><hr>", 10_000))).toBe(false);
+      expect(nestsTooDeep(nested("<s>", 6_000))).toBe(true);
+      expect(nestsTooDeep(nested("<table><tr><td>", 100))).toBe(false); // table, tbody, tr, td: 400 deep
+      expect(nestsTooDeep(nested("<table><tr><td>", 101))).toBe(true);
+      expect(nestsTooDeep(nested("<noscript>", 500))).toBe(true); // scripting is off in jsdom: its contents are elements
+      expect(nestsTooDeep("a < b <3 </ >")).toBe(false);
+      expect(nestsTooDeep(`${"<ul>".repeat(5)}${"<li>x".repeat(600)}${nested("<p>y", 600)}`)).toBe(
+        false
+      ); // the parser closes `<li>` and `<p>` itself
+    });
 
-  it("is quick on closing tags that close nothing", () => {
-    const started = performance.now();
-    nestsTooDeep(`${nested("<a>", 399)}${nested("</b>", 400_000)}`);
-    expect(performance.now() - started).toBeLessThan(500);
+    // Payloads that a count of the tags passes and that nest hundreds to thousands deep: the parser ignores the
+    // closing tag that a special element stops, and one of another name, and keeps formatting elements open.
+    it.each([
+      ["a closing tag a div stops", "<span><div></span>", 300],
+      ["a closing tag in a table", "<div><table><tr><td></div>", 150],
+      ["a closing tag of another name", "<s><div:x></s:y>", 300],
+      ["formatting elements the closing tag leaves open", "<i><b></i>", 6_000],
+    ])("sees %s", (_name, unit, times) => {
+      const html = nested(unit, times);
+      expect(tagsNestTooDeep(html)).toBe(false);
+      expect(nestsTooDeep(html)).toBe(true);
+    });
+
+    it("closes what a closing tag closes, and reopens the formatting elements it left open", () => {
+      // `</u>` closes the `<b>`s and `<i>`s opened after the last `<u>`, and the parser reopens the formatting
+      // elements the next `<u>` finds closed: the count of tags says 399 deep, the tree is deeper
+      const html = `${nested("<u>", 200)}${"<b><i>".repeat(100)}</u>${nested("<u>", 200)}`;
+      expect(tagsNestTooDeep(html)).toBe(false);
+      expect(nestsTooDeep(html)).toBe(true);
+      expect(nestsTooDeep(`${nested("<S>", 300)}${nested("</s>", 300)}${nested("<i>", 300)}`)).toBe(
+        false
+      );
+    });
+
+    it("reads a `<` in an attribute or a comment as text, not as a tag", () => {
+      expect(tagsNestTooDeep(nested("<!-- <s> -->", 5_000))).toBe(true);
+      expect(nestsTooDeep(nested("<!-- <s> -->", 5_000))).toBe(false);
+      expect(nestsTooDeep(nested('<p title="<s>">x</p>', 450))).toBe(false);
+    });
+
+    it("takes time linear in the page, and stops where the page gets too deep", () => {
+      const started = performance.now();
+      nestsTooDeep(`${nested("<a>", 399)}${nested("</b>", 100_000)}`);
+      nestsTooDeep(nested("<div>", 400_000)); // parsed whole, this takes 8 s
+      nestsTooDeep(nested("<a><div></a>", 100_000));
+      nestsTooDeep(nested("<i><b></i>", 100_000));
+      expect(performance.now() - started).toBeLessThan(1_500);
+    });
+
+    it("passes a page of 450 KB of the HTML articles have, in tens of milliseconds", () => {
+      const page = fixtures
+        .map((text) => parseWikitextToHtml(text))
+        .join("\n")
+        .repeat(30)
+        .slice(0, 450_000);
+      const started = performance.now();
+      expect(nestsTooDeep(page)).toBe(false);
+      expect(performance.now() - started).toBeLessThan(500);
+    });
   });
 
   it("slimArticleHtml and markTemplateChips return such a page unchanged, at once", () => {
@@ -684,6 +747,33 @@ describe("sanitizeWikiArticleHtml bounds the depth it sanitizes", () => {
     expect(performance.now() - started).toBeLessThan(500); // 12,000 levels took 20 s
     expect(shown.startsWith('<pre class="wikios-fallback-plain">&lt;s&gt;&lt;s&gt;')).toBe(true);
     expect(shown).not.toMatch(/<s>|<script/);
+  });
+
+  it.each([
+    ["<span><div></span>", 300],
+    ["<div><table><tr><td></div>", 150],
+    ["<s><div:x></s:y>", 300],
+    ["<i><b></i>", 6_000],
+  ])(
+    "shows %s repeated %d times as its source too: the tags are few, the tree is deep",
+    (unit, times) => {
+      const started = performance.now();
+      const shown = sanitizeWikiArticleHtml(unit.repeat(times));
+      expect(performance.now() - started).toBeLessThan(500); // the deep tree took 8 to 22 s in jsdom
+      expect(shown.startsWith('<pre class="wikios-fallback-plain">')).toBe(true);
+    }
+  );
+
+  it.each([
+    ["one attribute that holds 450 of them", `<p title="${"&lt;s&gt;".repeat(450)}">x</p>`],
+    ["450 attributes that hold one each", '<p title="&lt;s&gt;">x</p>'.repeat(450)],
+  ])("sanitizes a page with `<s>` in %s normally, and again", (_name, page) => {
+    // the serializer leaves `<` unescaped in an attribute value, so the second pass meets `<s>` in the attribute text
+    const once = sanitizeWikiArticleHtml(page);
+    expect(once).toContain('<p title="<s>');
+    expect(once.startsWith("<pre")).toBe(false);
+    const twice = sanitizeWikiArticleHtml(once);
+    expect(twice).toBe(once);
   });
 });
 
