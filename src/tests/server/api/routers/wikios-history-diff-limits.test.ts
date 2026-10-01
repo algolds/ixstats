@@ -16,6 +16,11 @@ jest.mock("~/lib/cache", () => ({
   ...jest.requireActual("~/lib/cache"),
   rateLimiter: { isEnabled: () => true, check: (...args: unknown[]) => mockCheck(...args) },
 }));
+const mockGetRevisionView = jest.fn();
+jest.mock("~/lib/wiki-os/services/revision-view-service", () => ({
+  __esModule: true,
+  getRevisionView: (...args: unknown[]) => mockGetRevisionView(...args),
+}));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
   __esModule: true,
   getRevisionWikitextShadow: jest.fn(),
@@ -69,26 +74,38 @@ beforeEach(() => {
   });
 });
 
-describe("getHistory and getDiff are rate limited", () => {
+describe("getHistory, getDiff, getRevisionContent and getRevisionHtml are rate limited", () => {
   it("counts each against the public bucket", async () => {
     jest.mocked(getRevisionWikitextShadow).mockResolvedValue(text("a"));
+    mockGetRevisionView.mockResolvedValue({ status: "ok", view: { title: "Foo" } });
 
     await caller().getHistory({ title: "Foo" });
     await caller().getDiff({ torev: "2" });
+    await caller().getRevisionContent({ revid: "2" });
+    await caller().getRevisionHtml({ ref: "2" });
 
-    expect(mockCheck).toHaveBeenCalledTimes(2);
-    expect(mockCheck).toHaveBeenNthCalledWith(1, expect.any(String), "public", expect.anything());
-    expect(mockCheck).toHaveBeenNthCalledWith(2, expect.any(String), "public", expect.anything());
+    expect(mockCheck).toHaveBeenCalledTimes(4);
+    for (let call = 1; call <= 4; call++) {
+      expect(mockCheck).toHaveBeenNthCalledWith(
+        call,
+        expect.any(String),
+        "public",
+        expect.anything()
+      );
+    }
   });
 
-  it("answers neither once the bucket is empty, and does no work", async () => {
+  it("answers none once the bucket is empty, and does no work", async () => {
     mockCheck.mockResolvedValue({ success: false, remaining: 0, resetAt: new Date() });
 
     await expect(caller().getHistory({ title: "Foo" })).rejects.toThrow(/Too many requests/);
     await expect(caller().getDiff({ torev: "2" })).rejects.toThrow(/Too many requests/);
+    await expect(caller().getRevisionContent({ revid: "2" })).rejects.toThrow(/Too many requests/);
+    await expect(caller().getRevisionHtml({ ref: "2" })).rejects.toThrow(/Too many requests/);
 
     expect(getArticleHistoryShadow).not.toHaveBeenCalled();
     expect(getRevisionWikitextShadow).not.toHaveBeenCalled();
+    expect(mockGetRevisionView).not.toHaveBeenCalled();
   });
 });
 

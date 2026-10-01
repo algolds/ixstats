@@ -7,7 +7,7 @@
 
 import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
 import { getRevisionView } from "~/lib/wiki-os/services/revision-view-service";
 import {
@@ -164,7 +164,7 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
   /**
    * Get the wikitext of a specific revision (for undo preview).
    */
-  getRevisionContent: publicProcedure
+  getRevisionContent: rateLimitedPublicProcedure
     .input(z.object({ revid: revisionRef }))
     .query(async ({ input, ctx }) => {
       const result = await getRevisionWikitextShadow(input.revid);
