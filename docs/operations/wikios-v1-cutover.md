@@ -149,8 +149,9 @@ sessions, login tokens and CSRF tokens are HMACs under one key, **`WIKIOS_API_SE
   `sessionsecretmissing`; it never signs or accepts a session with a fallback key, in development either. Anonymous
   reads (`meta=siteinfo`, `list=allpages`, `action=parse&page=`, ...) keep working, and one warning is logged the first
   time the missing key is needed. Set it before the cutover so bots can log in (step 9's login-token row fails until then).
-- **At least 32 characters when set.** A shorter value stops the process at start (the environment check), and the
-  code treats an empty or short value as missing.
+- **At least 32 characters to be used.** The environment check accepts any value, so a typo never stops a process
+  from starting; api.php treats an empty or shorter value as missing (the same `sessionsecretmissing` answers and
+  one warning in the log).
 - It is a key, not a password: generate it, never type it, and never print it.
 
 ```bash
