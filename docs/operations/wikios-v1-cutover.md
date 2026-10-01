@@ -449,7 +449,7 @@ a bigger one); if the wiki's `LocalSettings.php` raised `$wgMaxImageArea`, set `
 env file to the same number, or WikiOS refuses what MediaWiki would take. An SVG is refused above 5,000,000 bytes (the scan that proves it safe costs about a second at 10 MB; MediaWiki
 deployments commonly cap SVGs at a few megabytes): set `WIKIOS_MAX_SVG_BYTES` (bytes) in the same env file to change it. It cannot
 go above the 10,000,000-byte upload limit, which holds first. The upload directory is `WIKIOS_UPLOAD_DIR` (step 5); the admin panel's mirror section says how many uploaded
-files MediaWiki does not hold yet, and until it says none, that directory is the only copy of them.
+files MediaWiki does not hold yet, and until it says none, that directory is the only copy of them. Once an hour the mirror worker deletes files in it that are older than 24 hours and that no asset is served from and no unfinished upload job (a dead one included) names: the leftovers of a crash between staging and the database commit.
 
 **Rollback:** `pm2 delete wikios && pm2 save`; `sudo cp -a "$BK/next.config.js" "$IX/next.config.js"` if you want the
 file as it was (edits 1 and 2 do not affect the IxStates build). Edit 3 (dropping `/api/ixwiki-proxy`) is the change
