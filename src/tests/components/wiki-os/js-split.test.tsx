@@ -105,6 +105,9 @@ describe("Iconoir", () => {
   it("resolves a department's named icon, never an image source or an unknown name", () => {
     expect(resolveNamedDepartmentIcon("Shield")).toBeTruthy();
     expect(resolveNamedDepartmentIcon("DeliveryTruck")).toBeTruthy();
+    // the category table's own name for Iconoir's Suitcase resolves too
+    expect(resolveNamedDepartmentIcon("Briefcase")).toBeTruthy();
+    expect(resolveNamedDepartmentIcon("Briefcase")).toBe(resolveNamedDepartmentIcon("Suitcase"));
     // the names the builder's government step stores
     for (const stored of ["Coins", "Activity", "Crown", "Users", "BookOpen", "Building2"]) {
       expect(resolveNamedDepartmentIcon(stored)).toBeTruthy();

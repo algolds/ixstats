@@ -42,6 +42,7 @@ const NAMED_DEPARTMENT_ICONS = new Map<string, React.ComponentType<{ className?:
     GraduationCap,
     Heart,
     Suitcase: Briefcase,
+    Briefcase, // the stored name of the same icon
     DeliveryTruck: Truck,
     Leaf,
     Group: Users,
