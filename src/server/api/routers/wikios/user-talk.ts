@@ -76,7 +76,8 @@ export const wikiosUserTalkRouter = createTRPCRouter({
         existsInMediaWiki: mwInfo?.exists === true,
         editCount: mwInfo?.user_editcount ?? 0,
         registration: mwInfo?.user_registration ?? null,
-        groups: [] as string[],
+        // the rights engine's groups of the account (explicit rows, implicit groups, the IxStates role), as the bridge reports them
+        groups: mwInfo?.groups ?? [],
         loreScore: loreStatsRecord?.totalScore ?? 0,
         loreStreak: loreStatsRecord?.currentStreak ?? 0,
         longestStreak: loreStatsRecord?.longestStreak ?? 0,
