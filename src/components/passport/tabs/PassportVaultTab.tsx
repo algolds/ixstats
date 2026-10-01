@@ -6,6 +6,7 @@ import { useReducedMotion } from "motion/react";
 import { Crown, ArrowRight, Trophy, Dollar as Coins } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Progress } from "~/components/ui/progress";
 import { Stat } from "~/components/ui/stat";
 import { CardDisplay } from "~/components/cards/display/CardDisplay";
@@ -41,7 +42,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
 
   if (totalCards === 0) {
     return (
-      <div className="bg-surface-secondary border-separator rounded-row border">
+      <FacetCard variant="inset" padding="none" className="border-separator border">
         <EmptyState
           icon={<Crown />}
           title="No Vault Collection"
@@ -55,7 +56,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
             </Button>
           }
         />
-      </div>
+      </FacetCard>
     );
   }
 
@@ -78,23 +79,29 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
       </div>
 
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-        <div className="bg-surface-secondary rounded-row space-y-2 p-4">
-          <div className="flex items-start justify-between gap-2">
-            <Stat label="Collector level" value={`Lv. ${level}`} />
-            <Trophy aria-hidden className="text-label-secondary size-4" />
-          </div>
+        <FacetCard variant="inset" className="space-y-2">
+          <Stat
+            label="Collector level"
+            value={`Lv. ${level}`}
+            icon={<Trophy />}
+            iconPlacement="trailing"
+          />
           <div className="space-y-1">
             <Progress value={xpPct} aria-label="Progress to next collector level" className="h-1" />
             <p className="text-label-secondary text-footnote tabular-nums">
               {xp.toLocaleString()} / {nextLevelXp.toLocaleString()} XP
             </p>
           </div>
-        </div>
+        </FacetCard>
 
-        <div className="bg-surface-secondary rounded-row flex items-start justify-between gap-2 p-4">
-          <Stat label="Deck value" value={formatDeckValue(deckValue)} />
-          <Coins aria-hidden className="text-label-secondary size-4" />
-        </div>
+        <FacetCard variant="inset">
+          <Stat
+            label="Deck value"
+            value={formatDeckValue(deckValue)}
+            icon={<Coins />}
+            iconPlacement="trailing"
+          />
+        </FacetCard>
       </div>
 
       {topCards.length > 0 && (

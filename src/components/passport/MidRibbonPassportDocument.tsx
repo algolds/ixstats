@@ -7,7 +7,7 @@ import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FACET_CARD_SURFACE } from "~/components/ui/facet-container";
+import { FacetCard, MotionFacetCard } from "~/components/ui/facet-container";
 import { Stat } from "~/components/ui/stat";
 import { REDUCED_MOTION_FADE, springSmooth, tweenFast } from "~/lib/design/motion";
 import { GuillochePattern } from "./cards/GuillochePattern";
@@ -121,10 +121,9 @@ export function MidRibbonPassportDocument({
         {/* ========================================================================= */}
         {/* FRONT FACE OF THE PASSPORT                                               */}
         {/* ========================================================================= */}
-        <motion.div
+        <MotionFacetCard
           className={cn(
             // The passport document is an opaque content card (Facet 3: content is never glass).
-            FACET_CARD_SURFACE,
             "relative w-full [backface-visibility:hidden]",
             isFlipped ? "pointer-events-none opacity-0" : "opacity-100"
           )}
@@ -226,7 +225,7 @@ export function MidRibbonPassportDocument({
 
                   {/* ThinkPages Voice Bio (if available) */}
                   {data.thinkpages.bio && (
-                    <div className="bg-surface-secondary rounded-row space-y-1 p-3">
+                    <FacetCard variant="inset" padding="sm" className="space-y-1">
                       <div className="text-label-secondary text-subhead flex items-center gap-1.5">
                         <Sparkles aria-hidden className="size-3.5" />
                         <span>ThinkPages bio</span>
@@ -234,7 +233,7 @@ export function MidRibbonPassportDocument({
                       <p className="text-label-secondary text-callout italic">
                         "{data.thinkpages.bio}"
                       </p>
-                    </div>
+                    </FacetCard>
                   )}
                 </div>
               </div>
@@ -271,7 +270,7 @@ export function MidRibbonPassportDocument({
               </AnimatePresence>
             </div>
           </div>
-        </motion.div>
+        </MotionFacetCard>
 
         {/* ========================================================================= */}
         {/* BACK FACE OF THE PASSPORT (CONFIGURATION & PRIVACY CONTROLS)               */}

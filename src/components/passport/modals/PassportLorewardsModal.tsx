@@ -24,6 +24,7 @@ import {
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { FacetCard, FACET_INSET_SURFACE } from "~/components/ui/facet-container";
 import { Stat } from "~/components/ui/stat";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
@@ -175,7 +176,7 @@ export function PassportLorewardsModal({
           {/* Streak calendar */}
           <section
             aria-labelledby="lorewards-calendar-title"
-            className="bg-surface-secondary rounded-row space-y-3 p-4 md:col-span-5"
+            className={cn(FACET_INSET_SURFACE, "space-y-3 p-4 md:col-span-5")}
           >
             <div className="border-separator flex items-center justify-between border-b pb-2">
               <h4
@@ -239,7 +240,7 @@ export function PassportLorewardsModal({
                       key={day}
                       className={cn(
                         "rounded-control-sm text-footnote flex h-6 items-center justify-center tabular-nums select-none",
-                        status === "winner" && "bg-caution/15 text-caution font-semibold",
+                        status === "winner" && "bg-yellow/15 text-yellow-ink font-semibold",
                         status === "runner-up" && "bg-fill-3 text-label font-medium",
                         !status && "text-label-secondary",
                         isToday && "ring-tint ring-1"
@@ -282,7 +283,7 @@ export function PassportLorewardsModal({
           {/* Laurels ledger */}
           <section
             aria-labelledby="lorewards-history-title"
-            className="bg-surface-secondary rounded-row space-y-3 p-4 md:col-span-7"
+            className={cn(FACET_INSET_SURFACE, "space-y-3 p-4 md:col-span-7")}
           >
             <div className="border-separator flex items-center justify-between border-b pb-2">
               <h4
@@ -399,11 +400,8 @@ function MetricCard({
   subtext?: string;
 }) {
   return (
-    <div className="bg-surface-secondary rounded-row flex items-start justify-between gap-1 p-3">
-      <Stat label={label} value={value} hint={subtext} className="min-w-0" />
-      <span aria-hidden className="text-label-secondary shrink-0 [&_svg]:size-4">
-        {icon}
-      </span>
-    </div>
+    <FacetCard variant="inset" padding="sm">
+      <Stat label={label} value={value} hint={subtext} icon={icon} iconPlacement="trailing" />
+    </FacetCard>
   );
 }

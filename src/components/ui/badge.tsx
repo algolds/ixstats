@@ -7,11 +7,37 @@ const neutral = "bg-fill-3 text-label-secondary [a&]:hover:bg-fill-2";
 const tinted = "bg-tint-fill text-tint [a&]:hover:bg-tint/20";
 
 /**
+ * System-colour tinted fills: the colour's `-ink` (the hue pulled 20% toward the label) on a 15%
+ * fill of the colour — ≥ 4.5:1 on every background role in both themes (token-contrast.test.ts).
+ * Written out in full so Tailwind sees every class.
+ */
+export const SYSTEM_TINTED = {
+  red: "bg-red/15 text-red-ink [a&]:hover:bg-red/25",
+  orange: "bg-orange/15 text-orange-ink [a&]:hover:bg-orange/25",
+  yellow: "bg-yellow/15 text-yellow-ink [a&]:hover:bg-yellow/25",
+  green: "bg-green/15 text-green-ink [a&]:hover:bg-green/25",
+  mint: "bg-mint/15 text-mint-ink [a&]:hover:bg-mint/25",
+  teal: "bg-teal/15 text-teal-ink [a&]:hover:bg-teal/25",
+  cyan: "bg-cyan/15 text-cyan-ink [a&]:hover:bg-cyan/25",
+  blue: "bg-blue/15 text-blue-ink [a&]:hover:bg-blue/25",
+  indigo: "bg-indigo/15 text-indigo-ink [a&]:hover:bg-indigo/25",
+  purple: "bg-purple/15 text-purple-ink [a&]:hover:bg-purple/25",
+  pink: "bg-pink/15 text-pink-ink [a&]:hover:bg-pink/25",
+  brown: "bg-brown/15 text-brown-ink [a&]:hover:bg-brown/25",
+  gray: "bg-gray/15 text-gray-ink [a&]:hover:bg-gray/25",
+} as const;
+
+export type SystemTintedColor = keyof typeof SYSTEM_TINTED;
+
+/**
  * Facet 3 Badge (spec §7.1): status and count chips in `text-caption`, fully rounded.
  *
  * Variants: `neutral` (fill-3) · `tinted` (tint @ fill) · one per status role — `success`,
  * `warning`, `caution`, `destructive`, `info` — as the system colour on a 15% fill of itself ·
- * `outline` (hairline, no fill). Legacy aliases: `default`→tinted, `secondary`→neutral.
+ * `outline` (hairline, no fill) · one per system colour — `red`, `orange`, `yellow`, `green`,
+ * `mint`, `teal`, `cyan`, `blue`, `indigo`, `purple`, `pink`, `brown`, `gray` — as the colour's
+ * `-ink` on a 15% fill (AA for 12px text; use these for categories, rarities and tags).
+ * Legacy aliases: `default`→tinted, `secondary`→neutral.
  * Colour never carries meaning alone (§10): pair status badges with text or an icon.
  */
 const badgeVariants = cva(
@@ -32,6 +58,7 @@ const badgeVariants = cva(
         destructive: "bg-destructive/15 text-destructive [a&]:hover:bg-destructive/25",
         info: "bg-info/15 text-info [a&]:hover:bg-info/25",
         outline: "border-separator bg-transparent text-label-secondary [a&]:hover:bg-fill-4",
+        ...SYSTEM_TINTED,
         // Legacy aliases
         default: tinted,
         secondary: neutral,

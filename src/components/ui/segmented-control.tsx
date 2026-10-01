@@ -10,6 +10,11 @@ import { springSnappy } from "~/lib/design/motion";
  * filters. The selected segment is marked by a thumb that springs (`spring-snappy`) between
  * segments.
  *
+ * More than five options (HIG: keep segments few and equal) scroll horizontally instead of
+ * squeezing: the track becomes a scroller capped at its container's width, segments keep their
+ * natural width, and the selected segment is scrolled into view. `scrollable` forces this on or
+ * off; by default it is on above five options.
+ *
  * ARIA: a `radiogroup` of `radio`s by default; with `asTabs` a `tablist` of `tab`s (pass
  * `getTabPanelId` to wire `aria-controls`). One roving tab stop; the arrow keys, Home and End move
  * the selection. Name the control with `aria-label` (or `aria-labelledby`).
@@ -53,13 +58,22 @@ export interface SegmentedControlProps<T extends string = string> extends Omit<
   getTabPanelId?: (value: T) => string;
   /** Class for each segment button. */
   itemClassName?: string;
+  /**
+   * Scroll horizontally instead of squeezing segments. Default: on when there are more than
+   * `MAX_SEGMENTS` (5) options.
+   */
+  scrollable?: boolean;
 }
+
+/** HIG: a segmented control holds at most five segments; beyond that it scrolls. */
+export const MAX_SEGMENTS = 5;
 
 const sizes = {
   sm: {
     track: "h-(--control-height-sm) rounded-control-sm",
     item: "px-2.5 text-footnote font-medium gap-1 [:where(&)_svg]:size-3.5",
-    thumb: "rounded-md",
+    // Concentric with the track: control-sm (8) minus the 2px track padding.
+    thumb: "rounded-[calc(var(--radius-control-sm)-0.125rem)]",
   },
   md: {
     track: "h-(--control-height) rounded-control",
@@ -79,10 +93,12 @@ export function SegmentedControl<T extends string = string>({
   asTabs = false,
   getTabPanelId,
   itemClassName,
+  scrollable: scrollableProp,
   className,
   onKeyDown,
   ...props
 }: SegmentedControlProps<T>) {
+  const scrollable = scrollableProp ?? options.length > MAX_SEGMENTS;
   const [uncontrolledValue, setUncontrolledValue] = React.useState<T | undefined>(defaultValue);
   const isControlled = controlledValue !== undefined;
   const value = isControlled ? controlledValue : uncontrolledValue;
@@ -100,6 +116,19 @@ export function SegmentedControl<T extends string = string>({
     .map((option, index) => ({ option, index }))
     .filter(({ option }) => !disabled && !option.disabled);
   const selectedIndex = options.findIndex((o) => o.value === value);
+
+  // Keep the selected segment visible when the track scrolls. Only the track scrolls (never the
+  // page), and only when the segment is clipped.
+  const trackRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const track = trackRef.current;
+    const item = refs.current[selectedIndex];
+    if (!scrollable || !track || !item) return;
+    const start = item.offsetLeft;
+    const end = start + item.offsetWidth;
+    if (start < track.scrollLeft) track.scrollLeft = start;
+    else if (end > track.scrollLeft + track.clientWidth) track.scrollLeft = end - track.clientWidth;
+  }, [scrollable, selectedIndex]);
   // Roving tab stop: the selected segment, else the first enabled one.
   const tabStop =
     selectedIndex !== -1 && enabled.some(({ index }) => index === selectedIndex)
@@ -127,13 +156,17 @@ export function SegmentedControl<T extends string = string>({
 
   return (
     <div
+      ref={trackRef}
       role={asTabs ? "tablist" : "radiogroup"}
       aria-disabled={disabled || undefined}
       data-slot="segmented-control"
       data-size={size}
+      data-scrollable={scrollable || undefined}
       className={cn(
-        "relative items-stretch gap-0.5 bg-fill-3 p-0.5 select-none",
+        "bg-fill-3 relative items-stretch gap-0.5 p-0.5 select-none",
         fullWidth ? "flex w-full" : "inline-flex",
+        scrollable &&
+          "max-w-full [scrollbar-width:none] overflow-x-auto overscroll-x-contain [&::-webkit-scrollbar]:hidden",
         metrics.track,
         disabled && "opacity-50",
         className
@@ -164,13 +197,16 @@ export function SegmentedControl<T extends string = string>({
             onClick={() => select(option.value)}
             className={cn(
               "relative inline-flex min-w-0 cursor-pointer items-center justify-center whitespace-nowrap",
-              "transition-[color,opacity] duration-150 ease-out-facet",
-              "outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-tint",
+              "ease-out-facet transition-[color,opacity] duration-150",
+              "focus-visible:outline-tint outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid",
               "disabled:cursor-not-allowed disabled:opacity-50",
               "[&_svg]:pointer-events-none [&_svg]:shrink-0",
               // 44px tall hit area on touch without changing the visual height.
               "pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:top-1/2 pointer-coarse:after:h-11 pointer-coarse:after:-translate-y-1/2",
               fullWidth && "flex-1",
+              // In a scroller segments keep their natural width, and the focus ring is drawn
+              // inside so the track's overflow clip does not cut it off.
+              scrollable && "shrink-0 focus-visible:-outline-offset-2",
               metrics.thumb,
               metrics.item,
               selected ? "text-label" : "text-label-secondary hover:text-label",
@@ -183,7 +219,7 @@ export function SegmentedControl<T extends string = string>({
                 aria-hidden
                 transition={springSnappy}
                 className={cn(
-                  "absolute inset-0 bg-surface shadow-card dark:bg-fill",
+                  "bg-surface shadow-card dark:bg-fill absolute inset-0",
                   metrics.thumb
                 )}
               />

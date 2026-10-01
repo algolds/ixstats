@@ -23,7 +23,7 @@ import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/Drill
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 import { formatGrowthPeek } from "./ExecutiveActionCards";
 import { STATUS_TEXT, type StatusTone } from "./status-tone";
-import { WatermarkGlyph } from "./FlagWatermark";
+import { WatermarkGlyph } from "~/components/ui/facet/identity/FlagWatermark";
 
 interface Opportunity {
   id: string;

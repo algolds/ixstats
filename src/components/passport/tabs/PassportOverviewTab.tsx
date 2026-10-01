@@ -13,6 +13,7 @@ import {
   Trophy,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { FacetCard, FACET_INSET_SURFACE } from "~/components/ui/facet-container";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Stat } from "~/components/ui/stat";
 import { cn } from "~/lib/utils";
@@ -30,7 +31,6 @@ interface PassportOverviewTabProps {
 const SECTION_LABEL = "text-subhead text-label-secondary";
 
 /** An inset panel inside the passport card. */
-const PANEL = "bg-surface-secondary rounded-row p-4";
 
 function FeaturedRealm({ data, cleanUsername }: PassportOverviewTabProps) {
   const realm = data.featuredRealm;
@@ -125,7 +125,7 @@ function StatCell({ label, value, sub }: { label: string; value: string; sub: st
       label={label}
       value={value}
       hint={sub}
-      className="bg-surface-secondary rounded-row p-3"
+      className={cn(FACET_INSET_SURFACE, "p-3")}
     />
   );
 }
@@ -200,9 +200,9 @@ export const PassportOverviewTab = React.memo(function PassportOverviewTab({
           <Crown aria-hidden className="size-4" />
           <span>Featured realm</span>
         </h2>
-        <div className={PANEL}>
+        <FacetCard variant="inset">
           <FeaturedRealm data={data} cleanUsername={cleanUsername} />
-        </div>
+        </FacetCard>
       </section>
 
       <PassportShowcase data={data} cleanUsername={cleanUsername} onOpenVault={onOpenVault} />

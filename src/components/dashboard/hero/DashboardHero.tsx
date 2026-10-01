@@ -25,7 +25,7 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { FlagWatermark } from "~/components/mycountry/shell/FlagWatermark";
+import { FlagWatermark } from "~/components/ui/facet/identity/FlagWatermark";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { AvatarGlow } from "~/components/vault/AvatarGlow";

@@ -30,6 +30,14 @@ function PopoverTrigger({
   );
 }
 
+/**
+ * Positions the popover against an element other than its trigger (e.g. a button whose own click
+ * must not toggle the popover). The popover opens from `open`/`onOpenChange` state.
+ */
+function PopoverAnchor({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Anchor>) {
+  return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />;
+}
+
 function PopoverPortal({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Portal>) {
   return <PopoverPrimitive.Portal data-slot="popover-portal" {...props} />;
 }
@@ -106,6 +114,7 @@ const PopoverCLose = PopoverClose;
 export {
   Popover,
   PopoverTrigger,
+  PopoverAnchor,
   PopoverBackdrop,
   PopoverPortal,
   PopoverContent,

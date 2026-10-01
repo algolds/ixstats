@@ -12,10 +12,12 @@ import {
   Trophy,
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
+import { FACET_INSET_SURFACE } from "~/components/ui/facet-container";
+import { cn } from "~/lib/utils/cn";
 import type { WorkPayload } from "../../types";
 
 /** An inset work card inside the passport (the passport itself is the opaque card). */
-const CARD_CLASS = "bg-surface-secondary rounded-row flex flex-col justify-between space-y-3 p-4";
+const CARD_CLASS = cn(FACET_INSET_SURFACE, "flex flex-col justify-between space-y-3 p-4");
 
 const CARD_FOOTER = "border-separator flex items-center justify-between border-t pt-3";
 

@@ -1,20 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "motion/react";
 import { Trophy, Sparks as Sparkles } from "iconoir-react";
 import { cn, createUrl } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard, FACET_CARD_SURFACE } from "~/components/ui/facet-container";
+import { FacetCard, MotionFacetCard } from "~/components/ui/facet-container";
 import { springSmooth } from "~/lib/design/motion";
-import {
-  getRarityColor,
-  getRarityBg,
-  getAchievementGameIconPath,
-  getCategoryTheme,
-} from "../constants";
+import { getRarityBadgeVariant, getAchievementGameIconPath, getCategoryTheme } from "../constants";
 import { JewelAchievementIcon, AchievementCardBackdrop } from "../AchievementDecorations";
 
 interface ShowcaseTabProps {
@@ -83,14 +77,13 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
             }
 
             return (
-              <motion.div
+              <MotionFacetCard
                 key={achievement.key}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ ...springSmooth, delay: Math.min(idx * 0.02, 0.2) }}
                 className={cn(
-                  FACET_CARD_SURFACE,
-                  "relative flex flex-col justify-between overflow-hidden p-4 transition-colors",
+                  "flex flex-col justify-between overflow-hidden p-4 transition-colors",
                   categoryTheme.cardBorderHover
                 )}
               >
@@ -102,13 +95,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
 
                 <div className="relative">
                   <div className="mb-2 flex items-center justify-between gap-2">
-                    <Badge
-                      variant="neutral"
-                      className={cn(
-                        getRarityColor(achievement.rarity),
-                        getRarityBg(achievement.rarity, isUnlocked)
-                      )}
-                    >
+                    <Badge variant={getRarityBadgeVariant(achievement.rarity, isUnlocked)}>
                       {achievement.rarity}
                     </Badge>
                     <span className="text-label-secondary text-footnote tabular-nums">
@@ -143,7 +130,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
 
                     <div className="min-w-0 flex-1 space-y-1">
                       <h3 className="text-label text-headline truncate">{achievement.title}</h3>
-                      <Badge variant="neutral" className={categoryTheme.badge}>
+                      <Badge variant={categoryTheme.badgeVariant}>
                         <CategoryIcon aria-hidden />
                         <span>{achievement.category}</span>
                       </Badge>
@@ -165,7 +152,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                     </span>
                   )}
                 </div>
-              </motion.div>
+              </MotionFacetCard>
             );
           })}
         </div>

@@ -26,3 +26,6 @@ export type {
   FacetGlassMaterialType,
   FacetLegacyMaterialType,
 } from "./shared/FacetMaterial";
+
+// Hero identity marks (corner flag watermark, tint hairline, glyph watermark)
+export { FlagWatermark, TintHairline, WatermarkGlyph } from "./identity/FlagWatermark";

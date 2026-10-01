@@ -4,7 +4,8 @@ import React from "react";
 import Link from "next/link";
 import { ChatBubble as MessageSquare, Spark as Sparkles, Trophy } from "iconoir-react";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
-import { Eyebrow } from "~/components/ui/eyebrow";
+import { FACET_INSET_SURFACE } from "~/components/ui/facet-container";
+import { Stat } from "~/components/ui/stat";
 import { cn } from "~/lib/utils";
 import type { PassportPayload, PassportVault, PassportVisibility } from "../types";
 
@@ -17,21 +18,10 @@ interface PassportStatGridProps {
   onOpenVault: () => void;
 }
 
-const STAT_CELL = "bg-surface-secondary rounded-row w-full space-y-0.5 p-3";
+/** An inset panel (`FacetCard variant="inset"` styling on a button or link). */
+const STAT_CELL = cn(FACET_INSET_SURFACE, "w-full p-3");
 const STAT_CELL_INTERACTIVE =
   "hover:bg-fill-3 duration-fast ease-out-facet focus-visible:outline-tint cursor-pointer transition-colors focus-visible:outline-2 focus-visible:outline-offset-2";
-
-/** Eyebrow data label with a trailing decorative icon. */
-function StatCellHeader({ label, icon }: { label: string; icon: React.ReactNode }) {
-  return (
-    <span className="flex items-center justify-between gap-2">
-      <Eyebrow>{label}</Eyebrow>
-      <span aria-hidden className="text-label-secondary [&_svg]:size-3.5">
-        {icon}
-      </span>
-    </span>
-  );
-}
 
 /** Category breadth of the whole live collection (e.g. "3/12", "Military focus"). */
 function categorySummary(focus: PassportVault["focus"]): { label: string; sub: string } {
@@ -66,13 +56,18 @@ export const PassportStatGrid = React.memo(function PassportStatGrid({
           className={cn(STAT_CELL, STAT_CELL_INTERACTIVE, "text-left")}
           title="Click to view Lorewards Civic Accolades"
         >
-          <StatCellHeader label="Lorewards" icon={<Trophy />} />
-          <p className="text-label text-headline">
-            {lorewards?.rank ? `#${lorewards.rank}` : "Unranked"}
-          </p>
-          <p className="text-label-secondary text-footnote tabular-nums">
-            {lorewards?.totalScore ? `${lorewards.totalScore.toLocaleString()} pts` : "0 pts"}
-          </p>
+          <Stat
+            size="sm"
+            label="Lorewards"
+            icon={<Trophy />}
+            iconPlacement="trailing"
+            value={lorewards?.rank ? `#${lorewards.rank}` : "Unranked"}
+            hint={
+              <span className="tabular-nums">
+                {lorewards?.totalScore ? `${lorewards.totalScore.toLocaleString()} pts` : "0 pts"}
+              </span>
+            }
+          />
         </button>
       )}
 
@@ -82,34 +77,55 @@ export const PassportStatGrid = React.memo(function PassportStatGrid({
           onClick={onOpenVault}
           className={cn(STAT_CELL, STAT_CELL_INTERACTIVE, "text-left")}
         >
-          <StatCellHeader label="Focus" icon={<Sparkles />} />
-          <p className="text-label text-headline tabular-nums">{focus.label}</p>
-          <p className="text-label-secondary text-footnote truncate">{focus.sub}</p>
+          <Stat
+            size="sm"
+            label="Focus"
+            icon={<Sparkles />}
+            iconPlacement="trailing"
+            value={focus.label}
+            hint={<span className="block truncate">{focus.sub}</span>}
+          />
         </button>
       )}
 
       {visibility.forumStats && (
         <div className={STAT_CELL}>
-          <StatCellHeader label="Forum" icon={<MessageSquare />} />
-          <p className="text-label text-headline tabular-nums">
-            {forumStats ? `${forumStats.messageCount.toLocaleString()} Posts` : "—"}
-          </p>
-          <p className="text-label-secondary text-footnote tabular-nums">
-            {forumStats ? `${forumStats.reactionScore.toLocaleString()} reactions` : "Not linked"}
-          </p>
+          <Stat
+            size="sm"
+            label="Forum"
+            icon={<MessageSquare />}
+            iconPlacement="trailing"
+            value={forumStats ? `${forumStats.messageCount.toLocaleString()} Posts` : "—"}
+            hint={
+              <span className="tabular-nums">
+                {forumStats
+                  ? `${forumStats.reactionScore.toLocaleString()} reactions`
+                  : "Not linked"}
+              </span>
+            }
+          />
         </div>
       )}
 
       {vault && (
         <Link href="/vault" className={cn(STAT_CELL, STAT_CELL_INTERACTIVE, "block")}>
-          <StatCellHeader label="IxCredits" icon={<IxCreditsSymbol />} />
-          <p className="text-label text-headline flex items-center gap-1 tabular-nums">
-            <IxCreditsSymbol aria-hidden className="size-3.5 shrink-0" />
-            {vault.credits.toLocaleString()}
-          </p>
-          <p className="text-label-secondary text-footnote tabular-nums">
-            {vault.totalCards.toLocaleString()} cards · Lv {vault.collectorLevel}
-          </p>
+          <Stat
+            size="sm"
+            label="IxCredits"
+            icon={<IxCreditsSymbol />}
+            iconPlacement="trailing"
+            value={
+              <span className="inline-flex items-center gap-1">
+                <IxCreditsSymbol aria-hidden className="size-3.5 shrink-0" />
+                {vault.credits.toLocaleString()}
+              </span>
+            }
+            hint={
+              <span className="tabular-nums">
+                {vault.totalCards.toLocaleString()} cards · Lv {vault.collectorLevel}
+              </span>
+            }
+          />
         </Link>
       )}
     </div>

@@ -9,6 +9,7 @@ import {
   OpenBook as BookOpen,
   Globe,
 } from "iconoir-react";
+import type { BadgeVariant } from "~/components/ui/badge";
 
 export const QUEST_PATHS = [
   {
@@ -155,7 +156,9 @@ export const QUEST_PATHS = [
 export interface CategoryTheme {
   name: string;
   icon: React.ComponentType<{ className?: string }>;
-  /** Category chip colours (on a `Badge`). */
+  /** Category chip: a system-colour `Badge` variant (AA ink on a 15% fill). */
+  badgeVariant: BadgeVariant;
+  /** @deprecated Category chip classes; use `badgeVariant`. */
   badge: string;
   /** Icon pedestal: a 15% wash of the category colour. */
   pedestal: string;
@@ -169,6 +172,7 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
   Economic: {
     name: "Economic",
     icon: TrendingUp,
+    badgeVariant: "green",
     badge: "bg-green/15 text-green",
     pedestal: "bg-green/15 text-green",
     cardBorderHover: "hover:border-green/40",
@@ -178,6 +182,7 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
   Military: {
     name: "Military",
     icon: Shield,
+    badgeVariant: "red",
     badge: "bg-red/15 text-red",
     pedestal: "bg-red/15 text-red",
     cardBorderHover: "hover:border-red/40",
@@ -187,6 +192,7 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
   Diplomatic: {
     name: "Diplomatic",
     icon: Globe,
+    badgeVariant: "teal",
     badge: "bg-teal/15 text-teal",
     pedestal: "bg-teal/15 text-teal",
     cardBorderHover: "hover:border-teal/40",
@@ -196,6 +202,7 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
   Government: {
     name: "Government",
     icon: Landmark,
+    badgeVariant: "indigo",
     badge: "bg-indigo/15 text-indigo",
     pedestal: "bg-indigo/15 text-indigo",
     cardBorderHover: "hover:border-indigo/40",
@@ -205,6 +212,7 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
   Social: {
     name: "Social",
     icon: BookOpen,
+    badgeVariant: "blue",
     badge: "bg-blue/15 text-blue",
     pedestal: "bg-blue/15 text-blue",
     cardBorderHover: "hover:border-blue/40",
@@ -214,6 +222,7 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
   General: {
     name: "General",
     icon: Trophy,
+    badgeVariant: "yellow",
     badge: "bg-yellow/15 text-yellow",
     pedestal: "bg-yellow/15 text-yellow",
     cardBorderHover: "hover:border-yellow/40",
@@ -257,6 +266,26 @@ export const getRarityColor = (rarity: string) => {
       return "text-green border-green/30";
     default:
       return "text-label-secondary border-separator";
+  }
+};
+
+/** Rarity chip as a `Badge` variant; locked achievements are neutral. */
+export const getRarityBadgeVariant = (rarity: string, isUnlocked = true): BadgeVariant => {
+  if (!isUnlocked) return "neutral";
+  switch (rarity) {
+    case "Legendary":
+      return "yellow";
+    case "Epic":
+      return "purple";
+    case "Ultra Rare":
+    case "ULTRA_RARE":
+      return "teal";
+    case "Rare":
+      return "blue";
+    case "Uncommon":
+      return "green";
+    default:
+      return "neutral";
   }
 };
 

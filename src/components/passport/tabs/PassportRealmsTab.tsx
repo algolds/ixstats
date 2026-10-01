@@ -18,8 +18,9 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
+import { FacetCard, FACET_INSET_SURFACE } from "~/components/ui/facet-container";
 import { Stat } from "~/components/ui/stat";
-import { FlagWatermark } from "~/components/mycountry/shell/FlagWatermark";
+import { FlagWatermark } from "~/components/ui/facet/identity/FlagWatermark";
 import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { getScaledValue } from "~/lib/utils/format-utils";
@@ -117,13 +118,13 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
 }: PassportRealmsTabProps) {
   if (!realms || realms.length === 0) {
     return (
-      <div className="bg-surface-secondary border-separator rounded-row border">
+      <FacetCard variant="inset" padding="none" className="border-separator border">
         <EmptyState
           icon={<Globe />}
           title="No Realms Joined"
           message={`@${cleanUsername} is not currently a member of any realms.`}
         />
-      </div>
+      </FacetCard>
     );
   }
 
@@ -151,7 +152,10 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
           return (
             <article
               key={`${item.id}-${country?.id || "none"}`}
-              className="bg-surface-secondary border-separator rounded-row relative flex flex-col overflow-hidden border p-4 sm:p-5"
+              className={cn(
+                FACET_INSET_SURFACE,
+                "border-separator relative flex flex-col overflow-hidden border p-4 sm:p-5"
+              )}
             >
               {/* Corner flag watermark (decorative) */}
               <FlagWatermark src={flagUrl} />

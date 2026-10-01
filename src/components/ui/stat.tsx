@@ -8,6 +8,11 @@ import { Eyebrow } from "./eyebrow";
  *
  *   <Stat label="GDP" value="$1.2T" delta={{ value: "+2.4%", direction: "up" }} hint="vs. last year" />
  *
+ * `icon` adds a 14px glyph to the label row (§6: 14px with caption-sized text), leading the label by
+ * default like HIG summary tiles; `iconPlacement="trailing"` pins it to the row's end instead
+ * (metric grids whose icon is a corner mark). The icon is decorative (`aria-hidden`) and
+ * `label-secondary` unless the caller colours it, e.g. `icon={<Heart className="text-red" />}`.
+ *
  * The delta always pairs its colour with an arrow icon and screen-reader text (colour never
  * carries meaning alone, §10). `sentiment` decides the colour when "up" is bad (e.g. debt).
  */
@@ -30,6 +35,10 @@ export interface StatProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "t
   hint?: React.ReactNode;
   /** `md` (default): `text-title-3` value. `sm`: `text-headline` value for dense grids. */
   size?: "sm" | "md";
+  /** Decorative glyph in the label row (14px, `aria-hidden`). */
+  icon?: React.ReactNode;
+  /** `leading` (default): before the label. `trailing`: at the end of the label row. */
+  iconPlacement?: "leading" | "trailing";
 }
 
 const DIRECTION_ICON = { up: ArrowUp, down: ArrowDown, neutral: Minus } as const;
@@ -63,9 +72,47 @@ export function StatDeltaBadge({ delta, className }: { delta: StatDelta; classNa
 }
 
 export const Stat = React.forwardRef<HTMLDivElement, StatProps>(
-  ({ label, value, delta, hint, size = "md", className, ...props }, ref) => (
-    <div ref={ref} data-slot="stat" className={cn("flex min-w-0 flex-col gap-1", className)} {...props}>
-      <Eyebrow className="block truncate">{label}</Eyebrow>
+  (
+    {
+      label,
+      value,
+      delta,
+      hint,
+      size = "md",
+      icon,
+      iconPlacement = "leading",
+      className,
+      ...props
+    },
+    ref
+  ) => (
+    <div
+      ref={ref}
+      data-slot="stat"
+      className={cn("flex min-w-0 flex-col gap-1", className)}
+      {...props}
+    >
+      {icon != null && icon !== false ? (
+        <span
+          data-slot="stat-label-row"
+          data-icon-placement={iconPlacement}
+          className={cn(
+            "flex min-w-0 items-center gap-1.5",
+            iconPlacement === "trailing" && "flex-row-reverse justify-between gap-2"
+          )}
+        >
+          <span
+            aria-hidden
+            data-slot="stat-icon"
+            className="text-label-secondary inline-flex shrink-0 [:where(&)_svg]:size-3.5"
+          >
+            {icon}
+          </span>
+          <Eyebrow className="block min-w-0 truncate">{label}</Eyebrow>
+        </span>
+      ) : (
+        <Eyebrow className="block truncate">{label}</Eyebrow>
+      )}
       <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
         <span
           data-slot="stat-value"

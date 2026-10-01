@@ -4,7 +4,10 @@
  * Facet 3 surfaces (docs/specs/2026-09-30-facet-3-design-system.md §0 decision 1, §5, §7.1).
  *
  * - `FacetCard` is the opaque content card: `bg-surface`, a `separator` hairline, `rounded-card`,
- *   `shadow-card` (the token halves in dark mode). Content is never glass.
+ *   `shadow-card` (the token halves in dark mode). Content is never glass. `variant="inset"` is the
+ *   panel inside a card: `bg-surface-secondary`, `rounded-row`, no hairline or shadow, `p-4`.
+ * - `MotionFacetCard` is `FacetCard` as a motion component (`initial`/`animate`/`layout`…), for
+ *   animated cards that used to spread `FACET_CARD_SURFACE` onto a `motion.div`.
  * - `FacetContainer` is a deprecated wrapper kept for the migration. It renders a `FacetCard`
  *   unless it is asked for a glass material (`material="thin|regular|thick"`, or the legacy
  *   `depth={4}`), in which case it renders that `material-*` utility. New code uses `FacetCard`
@@ -13,6 +16,7 @@
  */
 
 import React, { forwardRef, useState } from "react";
+import { motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
 import { TextureOverlay, type TextureType } from "./texture-overlay";
 
@@ -91,6 +95,23 @@ const MATERIAL_CLASS: Record<FacetGlassMaterial, string> = {
 export const FACET_CARD_SURFACE =
   "bg-surface text-label border-separator rounded-card shadow-card border";
 
+/** An inset panel inside a card (§2.1 `surface-secondary`, §4 `rounded-row`): no hairline, no shadow. */
+export const FACET_INSET_SURFACE = "bg-surface-secondary text-label rounded-row";
+
+/**
+ * `FacetCard` surface variants. `"default"` is the card; `"inset"` is a panel inside one. The legacy
+ * `FacetVariant` names are still accepted and render the default card.
+ */
+export type FacetCardVariant = "default" | "inset";
+
+/** Inset padding: 16 by default (`md`); inset panels do not grow with the viewport. */
+const INSET_PADDING: Record<FacetCardPadding, string> = {
+  none: "",
+  sm: "p-3",
+  md: "p-4",
+  lg: "p-4 md:p-5",
+};
+
 /**
  * Hover wash for cards: a `fill-4` layer painted as a background image so the opaque surface
  * colour underneath stays put (a translucent `bg-fill-4` would replace it).
@@ -134,7 +155,10 @@ function surfaceBehaviour({ interactive = "none", onClick, onKeyDown }: SurfaceB
 // ─── FacetCard ──────────────────────────────────────────────────────────────
 
 export interface FacetCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Card padding (default `"none"` — pad with `FacetCardHeader/Content/Footer` or `className`). */
+  /**
+   * Card padding. Default card: `"none"` (pad with `FacetCardHeader/Content/Footer` or
+   * `className`). Inset: `"md"` (16px).
+   */
   padding?: FacetCardPadding;
   /** Hover feedback; pass `onClick` to make the card pressable. */
   interactive?: FacetInteractivity;
@@ -147,25 +171,28 @@ export interface FacetCardProps extends React.HTMLAttributes<HTMLDivElement> {
   surface?: "glass" | "solid";
   /** @deprecated Ignored — colour belongs on icons/text via roles, or the app tint. */
   theme?: string;
-  /** @deprecated Ignored. */
-  variant?: FacetVariant;
+  /**
+   * `"inset"`: a panel inside a card (`surface-secondary`, `rounded-row`, `p-4`). Legacy
+   * `FacetVariant` names are accepted and ignored (they render the default card).
+   */
+  variant?: FacetCardVariant | FacetVariant;
   /** @deprecated Ignored (it never had CSS). */
   enableRefraction?: boolean;
   children?: React.ReactNode;
 }
 
-/** The opaque content card (§7.1). */
+/** The opaque content card (§7.1), or with `variant="inset"` a panel inside one. */
 export const FacetCard = forwardRef<HTMLDivElement, FacetCardProps>(
   (
     {
-      padding = "none",
+      padding,
       interactive,
       texture,
       textureOpacity,
       depth: _depth,
       surface: _surface,
       theme: _theme,
-      variant: _variant,
+      variant,
       enableRefraction: _enableRefraction,
       className,
       children,
@@ -176,12 +203,20 @@ export const FacetCard = forwardRef<HTMLDivElement, FacetCardProps>(
     ref
   ) => {
     const behaviour = surfaceBehaviour({ interactive, onClick, onKeyDown });
+    const inset = variant === "inset";
     return (
       <div
         ref={ref}
         data-slot="facet-card"
+        data-variant={inset ? "inset" : undefined}
         {...behaviour.a11y}
-        className={cn("relative", FACET_CARD_SURFACE, PADDING[padding], behaviour.className, className)}
+        className={cn(
+          "relative",
+          inset ? FACET_INSET_SURFACE : FACET_CARD_SURFACE,
+          inset ? INSET_PADDING[padding ?? "md"] : PADDING[padding ?? "none"],
+          behaviour.className,
+          className
+        )}
         onClick={onClick}
         onKeyDown={behaviour.onKeyDown}
         {...props}
@@ -200,6 +235,13 @@ export const FacetCard = forwardRef<HTMLDivElement, FacetCardProps>(
 );
 FacetCard.displayName = "FacetCard";
 
+/**
+ * `FacetCard` as a motion component: every `FacetCard` prop plus motion's (`initial`, `animate`,
+ * `exit`, `transition`, `layout`, `whileHover`…). Use it instead of spreading `FACET_CARD_SURFACE`
+ * onto a `motion.div`; follow §8 (springs from `~/lib/design/motion`, transform/opacity only).
+ */
+export const MotionFacetCard = motion.create(FacetCard);
+
 export const FacetCardHeader = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div
@@ -214,7 +256,12 @@ FacetCardHeader.displayName = "FacetCardHeader";
 
 export const FacetCardContent = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} data-slot="facet-card-content" className={cn("relative z-10", className)} {...props} />
+    <div
+      ref={ref}
+      data-slot="facet-card-content"
+      className={cn("relative z-10", className)}
+      {...props}
+    />
   )
 );
 FacetCardContent.displayName = "FacetCardContent";

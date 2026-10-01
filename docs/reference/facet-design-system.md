@@ -44,7 +44,8 @@ Every token is also a Tailwind utility.
 | `fill` · `fill-2` · `fill-3` · `fill-4` | `bg-fill…` | Control backgrounds (strong → faint), tracks, hover washes |
 | `separator` · `separator-opaque` | `border-separator…` | Hairlines · separators over glass |
 | `tint` · `tint-hover` · `on-tint` · `tint-fill` | `bg-tint`, `text-tint`, `text-on-tint`, `bg-tint-fill` | Primary actions, links, selection, focus |
-| System colours `red orange yellow green teal blue indigo purple pink` (+ `on-*`) | `text-red`, `bg-green`… | Status and data |
+| System colours `red orange yellow green mint teal cyan blue indigo purple pink brown gray` (+ `on-*`) | `text-red`, `bg-green`… | Status and data |
+| Tinted-fill inks `<colour>-ink` | `text-red-ink`… on `bg-red/15` | Text on a 15% fill of its colour (colour `Badge`s, pressed `ActionPill`s): the hue pulled 20% toward `label`, ≥ 4.5:1 on every background |
 | Status aliases `destructive warning caution success info` | `text-destructive`… | Semantic status |
 | `chart-1 … chart-8` | `fill-chart-1`… | Categorical data series (order: blue, orange, green, purple, pink, teal, yellow, red) |
 
@@ -138,19 +139,21 @@ layout) makes motion/react honour both the OS and the in-app Reduce Motion setti
 
 | Component | Use |
 |---|---|
-| `FacetCard` (+ `FacetCardHeader/Content/Footer`) | The opaque content card. `padding="sm|md|lg"`; `onClick` or `interactive` makes it pressable (keyboard, focus ring). `depth`/`theme`/`variant` are accepted and ignored. |
+| `FacetCard` (+ `FacetCardHeader/Content/Footer`) | The opaque content card. `padding="sm|md|lg"`; `onClick` or `interactive` makes it pressable (keyboard, focus ring). `variant="inset"` is a panel inside a card: `surface-secondary`, `rounded-row`, no hairline or shadow, `p-4` by default (`padding` still applies). `depth`/`theme` and the legacy `variant` names are accepted and ignored. `FACET_CARD_SURFACE` / `FACET_INSET_SURFACE` hold the classes for a `<section>`, `<li>` or button that must keep its element. |
+| `MotionFacetCard` | `FacetCard` as a motion component (`initial`, `animate`, `exit`, `layout`…) for animated cards; replaces spreading `FACET_CARD_SURFACE` onto a `motion.div`. |
 | `FacetList` / `FacetListSection` / `FacetRow` | Inset grouped list — the default for settings, details, rails and most stat grids. Section `header` (sentence case) and `footer`; rows with `leading`, `title`, `subtitle`, `trailing`, `accessory` (`chevron`/`check`/node), `href` or `onClick`, `selected`, `disabled`, `destructive`, `swipeActions`. `variant="plain"` inside a card. |
-| `Stat` | Eyebrow label + tabular value + optional `delta` (icon and text, never colour alone) + `hint`. |
+| `Stat` | Eyebrow label + tabular value + optional `delta` (icon and text, never colour alone) + `hint`. `icon` adds a 14px decorative glyph to the label row, leading by default (HIG summary tiles) or `iconPlacement="trailing"` at the row's end (metric grids). |
 | `EmptyState` | Icon, title, message and one action; `compact` inside cards. |
 | `FacetMaterial` | Glass: `material="thin|regular|thick"`. Old `satin|paper|rubber|metal` still work (deprecated). |
 | `FacetContainer` | **Deprecated.** Content depths render as `FacetCard`; `material=…` renders glass. New code uses `FacetCard` or `FacetMaterial`. |
 | `Skeleton` | Loading placeholders shaped like the final layout (no blur; stops under reduced motion). Never inside `<p>`. |
-| `Badge` | `neutral`, `tinted`, `success`, `warning`, `caution`, `destructive`, `info` (old `default`/`secondary`/`outline` still work). |
+| `Badge` | `neutral`, `tinted`, `success`, `warning`, `caution`, `destructive`, `info` (old `default`/`secondary`/`outline` still work); one per system colour (`red` … `gray`) as the colour's `-ink` on a 15% fill — use these for categories, rarities and tags instead of `bg-x/15 text-x` classes. |
 | `Progress`, `HealthRing` | Meters; `tone` for status colours. |
 | `Eyebrow` | Uppercase data label (`text-eyebrow`). |
 | `TextureOverlay` | Decorative only; sanctioned textures are `dots`, `grid`, `paperGrain` (`SANCTIONED_TEXTURES`). |
 
-Hero identity (e.g. MyCountry's `FlagWatermark` corner flag and `TintHairline`) may add a small corner image watermark, a
+Hero identity (`FlagWatermark` corner flag, `TintHairline`, `WatermarkGlyph` from `~/components/ui/facet`; the old
+`mycountry/shell/FlagWatermark` path re-exports them) may add a small corner image watermark, a
 tint glow and a tint hairline behind a card's content — never a full-width image wash; it must be `aria-hidden`, not printed, and sit behind the content.
 
 **Swipe actions** (`FacetRow` `swipeActions`, `SwipeableRow` in `src/components/ui/facet/swipeable`) are a pointer
@@ -172,8 +175,9 @@ shortcut, never the only way to an action. Keyboard model:
 | Component | Notes |
 |---|---|
 | `Button` | Styles `filled` (tint), `tinted`, `gray`, `plain`, `bordered`, `destructive`, `link`; old `default`→filled, `secondary`→gray, `outline`→bordered, `ghost`→neutral plain. Sizes `sm` 28 · `md` 36 · `lg` 44 · `icon`/`icon-sm`/`icon-lg`; 44px hit area on touch; tint focus outline. One `filled` button per view. |
-| `SegmentedControl` | 2–5 peer choices (views, periods, filters). Radiogroup, or tablist with `asTabs`. |
-| `ToggleGroup` | Multi- or single-select filter chips. |
+| `SegmentedControl` | 2–5 peer choices (views, periods, filters). Radiogroup, or tablist with `asTabs`. Above five options (or with `scrollable`) the track scrolls horizontally at natural segment widths and keeps the selection in view. |
+| `ToggleGroup` | Multi- or single-select filter chips. `disallowEmpty` (alias `required`) keeps the last pressed item pressed, so a single-select group never clears. |
+| `ActionPill` | Pill-shaped social action (like, repost, save, comment, share): neutral until `pressed`, then a tinted fill in its `tone` (`tint` or a system colour); `icon`, label, `count` (tabular); `aria-pressed` only when `pressed` is set. Forwards its ref, so it can be a `PopoverTrigger asChild`. |
 | `Tabs` / `FacetTabs` | Page-level section switching only; full tablist ARIA and arrow keys. |
 | `Switch`, `Checkbox`, `Slider`, `Stepper` | Settings and numeric input; roles, tint when on, 44px touch targets. |
 | `Input`, `Textarea`, `Select`, `SearchField`, `MenuButton` | Shared field style (`fieldStyles`): fill background, `rounded-control`, red `aria-invalid`, 16px text on phones. `MenuButton` opens a `DropdownMenu`. |
@@ -184,9 +188,9 @@ Ordinary controls make no sound.
 
 | Need | Use |
 |---|---|
-| Task, detail view, multi-step flow | `Sheet` — `side="auto"` (default): right side sheet ≥768px, bottom sheet below with `detents` (`medium`/`large`), grabber and drag-to-dismiss. Explicit `side` values still work. |
+| Task, detail view, multi-step flow | `Sheet` — `side="auto"` (default): right side sheet ≥768px, bottom sheet below with `detents` (`medium`/`large`), grabber and drag-to-dismiss. Explicit `side` values still work. `size="wide"` (~48rem) for two-column detail views. |
 | Confirm a destructive or irreversible decision | `AlertDialog` (`AlertDialogAction variant="destructive"`) |
-| Small contextual edit or info | `Popover` |
+| Small contextual edit or info | `Popover` (`PopoverAnchor` positions it against another element when the trigger's own click must not toggle it) |
 | Short focused form | `Dialog` |
 | Keyboard-invoked palette | `CommandDialog` (instant presentation) |
 | Transient feedback | `useNotify()` → toast / Halo |
@@ -346,6 +350,13 @@ animating that would relayout the page every frame; a transform-based version ne
 `<main>`'s padding during the transition.
 
 ## Changelog
+
+- **3.0 + Phase 4 primitive gaps (2026-09-30)** — `FacetCard variant="inset"` and `FACET_INSET_SURFACE`;
+  `MotionFacetCard`; `Stat` `icon`/`iconPlacement`; system colours `mint`, `cyan`, `brown`, `gray` and the
+  `<colour>-ink` tinted-fill tokens (contrast-guarded); `Badge` variants for all thirteen system colours; `ActionPill`;
+  `SegmentedControl` scrolls above five options (`scrollable`) and its small thumb uses the radius tokens;
+  `ToggleGroup` `disallowEmpty`/`required`; `Sheet size="wide"`; `PopoverAnchor`; `FlagWatermark`/`TintHairline`/
+  `WatermarkGlyph` moved to `ui/facet`. The feed's wiki action toolbar is one shared `WikiArticleActions`.
 
 - **3.0 + Phase 3 gaps (2026-09-30)** — App sub-navigation hidden under the new shell (`data-app-subnav`) with every
   destination in the section map (grouped admin and settings sections, forum feeds, WikiOS stashes/repository);

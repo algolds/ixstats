@@ -21,6 +21,8 @@ import {
  * - `side` omitted (or `"auto"`): a right side sheet at ≥768px, a bottom sheet with detents below.
  * - `side="top" | "right" | "bottom" | "left"`: that edge at every width (the pre-Facet 3 API).
  *   `side="bottom"` gets detents only when `detents` is passed.
+ * - `size="wide"`: a ~48rem side sheet (full width below `sm`) for two-column detail views. It only
+ *   changes left/right sheets; top and bottom sheets are already full width.
  * - Bottom sheets with detents: `medium` ≈ 50% and `large` ≈ 92% of the viewport height, a grabber
  *   (drag it, or tap it to switch detent), drag down past the lowest detent to dismiss, safe-area
  *   bottom padding. Detent changes use `spring-smooth`; under Reduce Motion the sheet fades and
@@ -29,6 +31,14 @@ import {
 
 type SheetSide = "top" | "right" | "bottom" | "left";
 export type SheetDetent = "medium" | "large";
+/** Side-sheet width: `default` 3/4 up to 24rem · `wide` up to 48rem (two-column details). */
+export type SheetSize = "default" | "wide";
+
+/** Width classes for left/right sheets per size (applied after the side classes). */
+const sheetSideSizeClassNames: Record<SheetSize, string> = {
+  default: "",
+  wide: "w-full sm:w-11/12 sm:max-w-3xl",
+};
 
 /** Fraction of the viewport height each detent shows. */
 export const SHEET_DETENT_HEIGHT: Record<SheetDetent, number> = { medium: 0.5, large: 0.92 };
@@ -130,6 +140,8 @@ interface SheetContentProps extends React.ComponentPropsWithoutRef<typeof SheetP
   onDetentChange?: (detent: SheetDetent) => void;
   /** Render the dismiss (×) button. Default true. */
   showCloseButton?: boolean;
+  /** Side-sheet width: `"wide"` ≈ 48rem for two-column detail views. @default "default" */
+  size?: SheetSize;
 }
 
 const SheetContent = React.forwardRef<
@@ -143,6 +155,7 @@ const SheetContent = React.forwardRef<
       defaultDetent,
       onDetentChange,
       showCloseButton = true,
+      size = "default",
       className,
       children,
       onPointerDownOutside,
@@ -214,7 +227,13 @@ const SheetContent = React.forwardRef<
           <SheetPrimitive.Content
             {...sharedProps}
             data-presentation="side"
-            className={cn(sheetVariants({ side: resolvedSide }), className)}
+            data-size={size}
+            className={cn(
+              sheetVariants({ side: resolvedSide }),
+              (resolvedSide === "left" || resolvedSide === "right") &&
+                sheetSideSizeClassNames[size],
+              className
+            )}
           >
             {children}
             {closeButton}
@@ -341,7 +360,7 @@ const DetentSheetBody = React.forwardRef<HTMLDivElement, DetentSheetBodyProps>(
         data-detent={detent}
         className={cn(
           sheetSurface,
-          "inset-x-0 bottom-0 flex flex-col rounded-t-sheet border-t",
+          "rounded-t-sheet inset-x-0 bottom-0 flex flex-col border-t",
           "sheet-from-bottom data-[state=open]:animate-sheet-in data-[state=closed]:animate-sheet-out",
           className
         )}
@@ -366,7 +385,7 @@ const DetentSheetBody = React.forwardRef<HTMLDivElement, DetentSheetBodyProps>(
                 ? "Expand sheet"
                 : "Collapse sheet"
             }
-            className="flex h-6 w-full shrink-0 cursor-grab touch-none items-center justify-center rounded-t-sheet outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid focus-visible:outline-tint active:cursor-grabbing"
+            className="rounded-t-sheet focus-visible:outline-tint flex h-6 w-full shrink-0 cursor-grab touch-none items-center justify-center outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid active:cursor-grabbing"
             onPointerDown={(event) => {
               draggedRef.current = false;
               if (!reducedMotion) dragControls.start(event);
@@ -379,7 +398,7 @@ const DetentSheetBody = React.forwardRef<HTMLDivElement, DetentSheetBodyProps>(
               changeDetent(nextDetent);
             }}
           >
-            <span aria-hidden="true" className="h-1.5 w-9 rounded-full bg-fill" />
+            <span aria-hidden="true" className="bg-fill h-1.5 w-9 rounded-full" />
           </button>
         ) : (
           <div
@@ -390,7 +409,7 @@ const DetentSheetBody = React.forwardRef<HTMLDivElement, DetentSheetBodyProps>(
               if (!reducedMotion) dragControls.start(event);
             }}
           >
-            <span className="h-1.5 w-9 rounded-full bg-fill" />
+            <span className="bg-fill h-1.5 w-9 rounded-full" />
           </div>
         )}
         <div

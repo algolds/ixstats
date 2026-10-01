@@ -8,6 +8,7 @@ import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { Button } from "~/components/ui/button";
 import { Stat } from "~/components/ui/stat";
+import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import type {
   PassportAchievements,
@@ -20,7 +21,6 @@ import type {
 const SECTION_LABEL = "text-subhead text-label-secondary flex items-center gap-1.5";
 
 /** An inset panel inside the passport card. */
-const PANEL = "bg-surface-secondary rounded-row space-y-3 p-4";
 
 /** Section icon, decorative. */
 const SECTION_ICON = "size-4 shrink-0";
@@ -246,7 +246,7 @@ export const PassportShowcase = React.memo(function PassportShowcase({
         <span>Showcase</span>
       </h2>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div className={cn(PANEL, "lg:col-span-3")}>
+        <FacetCard variant="inset" className="space-y-3 lg:col-span-3">
           <h3 className={SECTION_LABEL}>
             <Trophy aria-hidden className={SECTION_ICON} />
             <span>Achievements and ribbons</span>
@@ -256,9 +256,9 @@ export const PassportShowcase = React.memo(function PassportShowcase({
             handle={cleanUsername}
             isOwner={isOwner}
           />
-        </div>
+        </FacetCard>
         <div className="space-y-4 lg:col-span-2">
-          <div className={PANEL}>
+          <FacetCard variant="inset" className="space-y-3">
             <h3 className={SECTION_LABEL}>
               <Crown aria-hidden className={SECTION_ICON} />
               <span>Collection highlight</span>
@@ -269,14 +269,14 @@ export const PassportShowcase = React.memo(function PassportShowcase({
               isOwner={isOwner}
               onOpenVault={onOpenVault}
             />
-          </div>
-          <div className={PANEL}>
+          </FacetCard>
+          <FacetCard variant="inset" className="space-y-3">
             <h3 className={SECTION_LABEL}>
               <Trophy aria-hidden className={SECTION_ICON} />
               <span>Lorewards standing</span>
             </h3>
             <LorewardsPanel data={data} handle={cleanUsername} isOwner={isOwner} />
-          </div>
+          </FacetCard>
         </div>
       </div>
     </section>

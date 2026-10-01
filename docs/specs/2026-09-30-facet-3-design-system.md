@@ -86,8 +86,11 @@ Existing names map onto roles: `foreground`→`label`, `muted-foreground`→`lab
 
 **System colours** (status and data; each has light/dark values and an `on-` pair): `red` #dc2626/#f87171 ·
 `orange` #c2410c/#fb923c · `yellow` #a16207/#facc15 · `green` #15803d/#4ade80 · `teal` #0f766e/#2dd4bf ·
-`blue` #1d4ed8/#60a5fa · `indigo` #4338ca/#818cf8 · `purple` #7e22ce/#c084fc · `pink` #be185d/#f472b6. Status roles alias
-them: `destructive`→red, `warning`→orange, `caution`→yellow, `success`→green, `info`→blue.
+`blue` #1d4ed8/#60a5fa · `indigo` #4338ca/#818cf8 · `purple` #7e22ce/#c084fc · `pink` #be185d/#f472b6 · `mint`
+#047857/#34d399 · `cyan` #0e7490/#22d3ee · `brown` #8a5a2b/#d6a77a · `gray` #6b7280/#9ca3af. Status roles alias
+them: `destructive`→red, `warning`→orange, `caution`→yellow, `success`→green, `info`→blue. Each colour also has a
+`<colour>-ink` (the colour mixed 80/20 with `label`) for text on a 15% fill of itself — colour `Badge`s and pressed
+`ActionPill`s — which holds ≥ 4.5:1 over every background role.
 
 ### 2.2 App tints
 
@@ -210,13 +213,13 @@ Icon-only buttons need an `aria-label` and a tooltip.
 
 | Component | Use | Replaces |
 |---|---|---|
-| `FacetCard` | Opaque content card (`surface`, `rounded-card`, card padding). Header/Content/Footer parts. | `FacetContainer depth={1–3}`, `Card`, `CutoutCard`, `PanelCard`, `GlassPanel`, hand-rolled `rounded-xl border bg-*` |
+| `FacetCard` | Opaque content card (`surface`, `rounded-card`, card padding). Header/Content/Footer parts. `variant="inset"`: a panel inside a card (`surface-secondary`, `rounded-row`, 16px). `MotionFacetCard` for animated cards. | `FacetContainer depth={1–3}`, `Card`, `CutoutCard`, `PanelCard`, `GlassPanel`, hand-rolled `rounded-xl border bg-*` |
 | `FacetList` / `FacetListSection` / `FacetRow` | Inset grouped list: section header (sentence-case `text-subhead`) and footer, rows with leading icon, title, subtitle, trailing value/badge/accessory/chevron, separators inset to the text, optional swipe actions (`SwipeableRow`), selectable/navigable rows. | KPI grids, divided lists, rails' `RailRow`, settings rows |
-| `Stat` | `Eyebrow` label + `text-title-3` tabular value + optional delta. | Hand-rolled metric tiles |
+| `Stat` | `Eyebrow` label + `text-title-3` tabular value + optional delta; optional 14px icon in the label row. | Hand-rolled metric tiles |
 | `FacetMaterial` | The only glass surface: `thin`/`regular`/`thick`. | `FacetContainer` glass depths, `.facet-hierarchy-*`, `glass-*` |
 | `EmptyState` | Icon, `text-title-3` title, `text-callout` message, one action. | Ad-hoc empty states |
 | `Skeleton` | All loading placeholders, shaped like the final layout. | `animate-pulse` blocks |
-| `Badge` | Status/count chips: `neutral`, `tinted`, and one per status role. | Hand-rolled chips |
+| `Badge` | Status/count chips: `neutral`, `tinted`, one per status role, and one per system colour (ink on a 15% fill). | Hand-rolled chips |
 | `Progress`, `Gauge`, `HealthRing` | Linear, radial and ring meters; colours from roles. | Hand-rolled bars |
 
 `FacetContainer` stays as a deprecated wrapper during migration: `surface="solid"` → `FacetCard`; glass depths →
@@ -228,8 +231,9 @@ Icon-only buttons need an `aria-label` and a tooltip.
 | Component | Rules |
 |---|---|
 | `Button` | Styles: `filled` (tint, one per view), `tinted` (tint @ fill), `gray` (fill-3), `plain` (text only), `bordered`, `destructive`, `link`. Sizes `sm` 28 · `md` 36 · `lg` 44; 44px minimum hit area on coarse pointers. |
-| `SegmentedControl` | Single choice among 2–5 peer options (view switchers, filters, periods). |
-| `ToggleGroup` | Multi-select filters. |
+| `SegmentedControl` | Single choice among 2–5 peer options (view switchers, filters, periods); more options scroll horizontally. |
+| `ToggleGroup` | Multi-select filters; single-select with `disallowEmpty` when a choice is required. |
+| `ActionPill` | Pressable pill for social actions (like, repost, save): neutral until pressed, then a tinted fill in its tone; `aria-pressed`, optional count. |
 | `Tabs` / `FacetTabs` | Page-level section switching only (with `role=tablist`, roving focus). |
 | `Switch`, `Checkbox`, `Radio` | Settings and forms; full ARIA. |
 | `Stepper`, `Slider` | Numeric adjustments. |
@@ -239,7 +243,7 @@ Icon-only buttons need an `aria-label` and a tooltip.
 
 | Need | Use |
 |---|---|
-| Task, detail view, multi-step flow | `Sheet` — side sheet on ≥768px, bottom sheet with `medium`/`large` detents below |
+| Task, detail view, multi-step flow | `Sheet` — side sheet on ≥768px (`size="wide"` ≈ 48rem for two-column details), bottom sheet with `medium`/`large` detents below |
 | Confirm, destructive or irreversible decision | `AlertDialog` (≤ 2 actions, destructive styled `destructive`) |
 | Small contextual edit or info | `Popover` |
 | Short focused form that blocks the page | `Dialog` |

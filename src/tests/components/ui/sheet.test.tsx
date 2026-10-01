@@ -101,4 +101,33 @@ describe("Sheet presentation", () => {
     fireEvent.click(screen.getByRole("button", { name: "Expand sheet" }));
     expect(dialog).toHaveAttribute("data-detent", "large");
   });
+
+  it("keeps the default side-sheet width (3/4 up to 24rem)", () => {
+    mockViewportWidth(1280);
+    renderSheet();
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveAttribute("data-size", "default");
+    expect(dialog.className).toContain("w-3/4");
+    expect(dialog.className).toContain("sm:max-w-sm");
+  });
+
+  it("offers a wide (~48rem) side sheet for two-column detail views", () => {
+    mockViewportWidth(1280);
+    renderSheet({ size: "wide" });
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveAttribute("data-presentation", "side");
+    expect(dialog).toHaveAttribute("data-size", "wide");
+    expect(dialog.className).toContain("sm:max-w-3xl");
+    expect(dialog.className).toContain("w-full");
+    expect(dialog.className).not.toContain("sm:max-w-sm");
+    expect(dialog.className).not.toContain("w-3/4");
+  });
+
+  it("leaves bottom sheets full width when size is wide", () => {
+    mockViewportWidth(390);
+    renderSheet({ size: "wide" });
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveAttribute("data-presentation", "bottom-detent");
+    expect(dialog.className).not.toContain("max-w-3xl");
+  });
 });

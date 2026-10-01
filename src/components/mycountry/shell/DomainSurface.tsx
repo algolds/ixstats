@@ -15,7 +15,7 @@ import { EconomyDrillDown } from "./EconomyDrillDown";
 import { DomainContextRail } from "./DomainContextRail";
 import { DOMAIN_META, type V2Domain } from "./domain-meta";
 import { STATUS_TEXT } from "./status-tone";
-import { WatermarkGlyph } from "./FlagWatermark";
+import { WatermarkGlyph } from "~/components/ui/facet/identity/FlagWatermark";
 
 const EmbassiesAndRelationsPanel = dynamic(
   () =>

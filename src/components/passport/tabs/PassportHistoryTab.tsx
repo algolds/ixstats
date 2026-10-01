@@ -14,6 +14,7 @@ import {
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { EmptyState } from "~/components/ui/empty-state";
+import { FacetCard } from "~/components/ui/facet-container";
 import type { HistoryItem } from "../types";
 
 interface PassportHistoryTabProps {
@@ -27,13 +28,13 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({
 }: PassportHistoryTabProps) {
   if (!history || history.length === 0) {
     return (
-      <div className="bg-surface-secondary border-separator rounded-row border">
+      <FacetCard variant="inset" padding="none" className="border-separator border">
         <EmptyState
           icon={<Clock />}
           title="No Activity Yet"
           message={`@${cleanUsername} does not have any recorded activity yet.`}
         />
-      </div>
+      </FacetCard>
     );
   }
 
@@ -80,7 +81,7 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({
                 className="bg-fill ring-surface absolute top-4 -left-[31px] size-3 rounded-full ring-4"
               />
 
-              <div className="bg-surface-secondary rounded-row space-y-2 p-4">
+              <FacetCard variant="inset" className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <Badge variant="neutral">
@@ -108,7 +109,7 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({
                 {event.description && (
                   <p className="text-label-secondary text-footnote">{event.description}</p>
                 )}
-              </div>
+              </FacetCard>
             </li>
           );
         })}

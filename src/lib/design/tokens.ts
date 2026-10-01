@@ -88,12 +88,23 @@ export const SYSTEM_COLORS = {
   indigo: { light: "#4338ca", dark: "#818cf8" },
   purple: { light: "#7e22ce", dark: "#c084fc" },
   pink: { light: "#be185d", dark: "#f472b6" },
+  mint: { light: "#047857", dark: "#34d399" },
+  cyan: { light: "#0e7490", dark: "#22d3ee" },
+  brown: { light: "#8a5a2b", dark: "#d6a77a" },
+  gray: { light: "#6b7280", dark: "#9ca3af" },
 } as const satisfies Record<string, Record<Appearance, string>>;
 
 export type SystemColor = keyof typeof SYSTEM_COLORS;
 
 /** `on-<system colour>` text colour, same for every hue. */
 export const ON_SYSTEM_COLOR = { light: "#ffffff", dark: "#0b0c0f" } as const;
+
+/**
+ * Tinted fills (Badge colour variants, ActionPill pressed tones): text in `--color-<name>-ink`
+ * (`color-mix(in srgb, <colour> INK_MIX, label)`) on the colour at `TINTED_FILL_ALPHA`. The contrast
+ * guard checks the ink on that fill over every background role.
+ */
+export const TINTED_FILL = { alpha: 0.15, inkMix: 0.8 } as const;
 
 /** Status roles alias system colours. */
 export const STATUS_ALIASES = {

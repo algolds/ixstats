@@ -30,7 +30,7 @@ import { soundEffects } from "~/lib/sound/cuelume";
 import { formatCompact } from "~/lib/format/compact";
 import { cn } from "~/lib/utils";
 import { assetUrl } from "~/lib/base-path";
-import { FlagWatermark } from "./FlagWatermark";
+import { FlagWatermark } from "~/components/ui/facet/identity/FlagWatermark";
 
 type RatingLabel = "Optimal" | "Strong" | "Moderate" | "Strained";
 

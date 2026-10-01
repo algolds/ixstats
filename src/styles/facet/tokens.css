@@ -91,6 +91,10 @@
   --color-indigo: #4338ca;
   --color-purple: #7e22ce;
   --color-pink: #be185d;
+  --color-mint: #047857;
+  --color-cyan: #0e7490;
+  --color-brown: #8a5a2b;
+  --color-gray: #6b7280;
   --color-on-system: #ffffff;
 }
 
@@ -115,6 +119,28 @@
   --color-on-indigo: var(--color-on-system);
   --color-on-purple: var(--color-on-system);
   --color-on-pink: var(--color-on-system);
+  --color-on-mint: var(--color-on-system);
+  --color-on-cyan: var(--color-on-system);
+  --color-on-brown: var(--color-on-system);
+  --color-on-gray: var(--color-on-system);
+
+  /* Tinted fills (Badge colour variants, ActionPill pressed tones): text in `<colour>-ink` on a
+     15% fill of the colour. The ink is the colour pulled 20% toward the label, which keeps
+     12px text ≥ 4.5:1 on the fill over every background role in both themes
+     (token-contrast.test.ts). Same formula for every hue. */
+  --color-red-ink: color-mix(in srgb, var(--color-red) 80%, var(--color-label));
+  --color-orange-ink: color-mix(in srgb, var(--color-orange) 80%, var(--color-label));
+  --color-yellow-ink: color-mix(in srgb, var(--color-yellow) 80%, var(--color-label));
+  --color-green-ink: color-mix(in srgb, var(--color-green) 80%, var(--color-label));
+  --color-mint-ink: color-mix(in srgb, var(--color-mint) 80%, var(--color-label));
+  --color-teal-ink: color-mix(in srgb, var(--color-teal) 80%, var(--color-label));
+  --color-cyan-ink: color-mix(in srgb, var(--color-cyan) 80%, var(--color-label));
+  --color-blue-ink: color-mix(in srgb, var(--color-blue) 80%, var(--color-label));
+  --color-indigo-ink: color-mix(in srgb, var(--color-indigo) 80%, var(--color-label));
+  --color-purple-ink: color-mix(in srgb, var(--color-purple) 80%, var(--color-label));
+  --color-pink-ink: color-mix(in srgb, var(--color-pink) 80%, var(--color-label));
+  --color-brown-ink: color-mix(in srgb, var(--color-brown) 80%, var(--color-label));
+  --color-gray-ink: color-mix(in srgb, var(--color-gray) 80%, var(--color-label));
 
   /* Status roles */
   --color-destructive: var(--color-red);
@@ -565,6 +591,10 @@
     --color-indigo: #818cf8;
     --color-purple: #c084fc;
     --color-pink: #f472b6;
+    --color-mint: #34d399;
+    --color-cyan: #22d3ee;
+    --color-brown: #d6a77a;
+    --color-gray: #9ca3af;
     --color-on-system: #0b0c0f;
   }
 

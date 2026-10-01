@@ -6,6 +6,7 @@ import { EyeClosed } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
+import { FacetCard } from "~/components/ui/facet-container";
 import { NationSwitcher } from "~/components/navigation/NationSwitcher";
 import { PassportHistoryTab } from "./tabs/PassportHistoryTab";
 import { PassportOverviewTab } from "./tabs/PassportOverviewTab";
@@ -36,7 +37,7 @@ export function HiddenSection({
   isOwner: boolean;
 }) {
   return (
-    <div className="bg-surface-secondary rounded-row">
+    <FacetCard variant="inset" padding="none">
       <EmptyState
         compact
         icon={<EyeClosed />}
@@ -47,7 +48,7 @@ export function HiddenSection({
             : `@${handle} keeps their ${what} private.`
         }
       />
-    </div>
+    </FacetCard>
   );
 }
 

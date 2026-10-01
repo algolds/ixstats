@@ -9,8 +9,10 @@ import { Toggle, toggleVariants } from "~/components/ui/toggle";
  * ToggleGroup (spec §7.2): a row of toggle buttons.
  *
  * - `type="multiple"` — multi-select filters; `value` is a `string[]`.
- * - `type="single"` — at most one pressed; pressing the pressed item clears it (`""`). For a
+ * - `type="single"` — at most one pressed; pressing the pressed item clears it (`""`) unless
+ *   `disallowEmpty` (alias `required`) is set, in which case the pressed item stays pressed. For a
  *   required single choice between peer views, prefer `SegmentedControl`.
+ * - `disallowEmpty` with `type="multiple"` keeps the last pressed item from being released.
  *
  * Renders `role="group"` (name it with `aria-label`); items are `aria-pressed` buttons. Arrow keys
  * (and Home/End) move focus between items; every item stays in the tab order.
@@ -40,6 +42,13 @@ interface ToggleGroupBaseProps
   disabled?: boolean;
   /** Arrow-key axis. @default "horizontal" */
   orientation?: "horizontal" | "vertical";
+  /**
+   * Never let the selection become empty: pressing the only pressed item does nothing (single:
+   * the active item stays pressed; multiple: the last pressed item stays pressed).
+   */
+  disallowEmpty?: boolean;
+  /** Alias of `disallowEmpty`. */
+  required?: boolean;
 }
 
 interface ToggleGroupSingleProps extends ToggleGroupBaseProps {
@@ -73,17 +82,21 @@ function ToggleGroup(props: ToggleGroupProps) {
     size,
     disabled,
     orientation = "horizontal",
+    disallowEmpty: disallowEmptyProp,
+    required,
     className,
     onKeyDown,
     children,
     ...rest
   } = props;
+  const disallowEmpty = Boolean(disallowEmptyProp || required);
 
   const [uncontrolled, setUncontrolled] = React.useState<string[]>(() => toArray(defaultValue));
   const isControlled = controlledValue !== undefined;
   const selected = isControlled ? toArray(controlledValue) : uncontrolled;
 
   const toggle = (itemValue: string) => {
+    if (disallowEmpty && selected.length === 1 && selected[0] === itemValue) return;
     let next: string[];
     if (type === "multiple") {
       next = selected.includes(itemValue)

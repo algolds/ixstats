@@ -18,10 +18,10 @@ import {
   Hexagon,
 } from "iconoir-react";
 import { cn, createUrl } from "~/lib/utils";
-import { Badge } from "~/components/ui/badge";
+import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard, FACET_CARD_SURFACE } from "~/components/ui/facet-container";
+import { FacetCard, MotionFacetCard } from "~/components/ui/facet-container";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
@@ -47,13 +47,13 @@ const ACHIEVEMENT_TIER_CONFIG: Record<
   {
     label: string;
     icon: React.ComponentType<{ className?: string }>;
-    badge: string;
+    badge: BadgeVariant;
   }
 > = {
-  platinum: { label: "Legendary", icon: Zap, badge: "bg-yellow/15 text-yellow" },
-  gold: { label: "Epic", icon: Gem, badge: "bg-purple/15 text-purple" },
-  silver: { label: "Rare", icon: Hexagon, badge: "bg-blue/15 text-blue" },
-  bronze: { label: "Core", icon: Target, badge: "bg-fill-3 text-label-secondary" },
+  platinum: { label: "Legendary", icon: Zap, badge: "yellow" },
+  gold: { label: "Epic", icon: Gem, badge: "purple" },
+  silver: { label: "Rare", icon: Hexagon, badge: "blue" },
+  bronze: { label: "Core", icon: Target, badge: "neutral" },
 };
 
 /** Rarity filter: label and icon per option. */
@@ -128,13 +128,12 @@ function GroupedSeriesCard({
   const iconPath = createUrl(rawIconPath);
 
   return (
-    <motion.div
+    <MotionFacetCard
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={springSmooth}
       className={cn(
-        FACET_CARD_SURFACE,
-        "relative flex flex-col justify-between overflow-hidden p-5 transition-colors",
+        "flex flex-col justify-between overflow-hidden p-5 transition-colors",
         isUnlocked
           ? categoryTheme.cardBorderHover
           : "bg-surface-secondary border-dashed shadow-none select-none"
@@ -150,20 +149,20 @@ function GroupedSeriesCard({
       <div className="relative space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="neutral" className={tierConfig.badge}>
+            <Badge variant={tierConfig.badge}>
               <TierIcon aria-hidden />
               <span>{tierConfig.label}</span>
             </Badge>
 
             {isUltraRare && (
-              <Badge variant="neutral" className="bg-teal/15 text-teal tabular-nums">
+              <Badge variant="teal" className="tabular-nums">
                 <Diamond aria-hidden />
                 <span>{activeLevel.globalUnlockPercent}% ultra-rare</span>
               </Badge>
             )}
           </div>
 
-          <Badge variant="neutral" className={categoryTheme.badge}>
+          <Badge variant={categoryTheme.badgeVariant}>
             <CategoryIcon aria-hidden />
             <span>{item.category}</span>
           </Badge>
@@ -323,7 +322,7 @@ function GroupedSeriesCard({
           </div>
         </div>
       </div>
-    </motion.div>
+    </MotionFacetCard>
   );
 }
 
