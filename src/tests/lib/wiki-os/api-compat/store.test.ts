@@ -294,6 +294,14 @@ describe("listings", () => {
     expect(await store.listBacklinks({ target: "Bad[title", filterRedirects: "all", limit: 1 })).toEqual([]);
   });
 
+  it("wikitextByArticle(maxChars) casts the bound length: Prisma binds a number as bigint and left(text, bigint) does not exist", async () => {
+    mdb.$queryRaw.mockResolvedValue([{ id: "a1", wikitext: "xx" }]);
+    expect(await store.wikitextByArticle(["a1"], 100)).toEqual(new Map([["a1", "xx"]]));
+    const sql = mdb.$queryRaw.mock.calls[0]![0] as { sql: string; values: unknown[] };
+    expect(sql.sql).toMatch(/left\("wikitext", [^)]+::int\)/);
+    expect(sql.values).toContain(100);
+  });
+
   it("allcategories: one row per name, counting members that are not deleted pages", async () => {
     mdb.$queryRaw.mockResolvedValue([{ name: "Cats", members: BigInt(3) }]);
     expect(await store.listCategories({ dir: "ascending", limit: 5, prefix: "C" })).toEqual([{ name: "Cats", members: 3 }]);

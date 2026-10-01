@@ -493,8 +493,9 @@ async function wikitextByArticle(
 ): Promise<Map<string, string>> {
   if (articleIds.length === 0) return new Map();
   if (maxChars !== undefined) {
+    // Prisma binds a JS number as bigint, and Postgres has no left(text, bigint): cast it.
     const rows = await db.$queryRaw<Array<{ id: string; wikitext: string }>>(Prisma.sql`
-      SELECT "id", left("wikitext", ${maxChars}) AS "wikitext"
+      SELECT "id", left("wikitext", ${maxChars}::int) AS "wikitext"
       FROM "wiki_articles"
       WHERE "id" IN (${Prisma.join(articleIds)})`);
     return new Map(rows.map((row) => [row.id, row.wikitext]));
