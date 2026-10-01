@@ -28,6 +28,9 @@ export function loreCardQueryRaw(strings: TemplateStringsArray, ...values: unkno
     (row) => !published || row.status === "PUBLISHED"
   );
 
+  // The earliest revisions and the categories of each article: none here.
+  if (sql.includes("row_number()")) return [];
+
   if (sql.includes("octet_length")) {
     const asked = joined(values);
     return pages

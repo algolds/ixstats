@@ -58,6 +58,7 @@ const asset = {
 
 /** `$queryRaw` by the shape of the SQL: the earliest revisions, the previews, a list of titles. */
 let early: Array<Record<string, unknown>>;
+let categoryRows: Array<Record<string, unknown>>;
 let heads: Array<Record<string, unknown>>;
 let titles: Array<Record<string, unknown>>;
 
@@ -66,6 +67,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   guard = installFetchGuard();
   early = [];
+  categoryRows = [];
   heads = [];
   titles = [];
   mocked.wikiArticle.findFirst.mockResolvedValue(null);
@@ -81,7 +83,7 @@ beforeEach(() => {
   mocked.systemConfig.findMany.mockResolvedValue([]);
   mocked.$queryRaw.mockImplementation(async (strings: TemplateStringsArray) => {
     const sql = strings.join("?");
-    if (sql.includes("row_number()")) return early;
+    if (sql.includes("row_number()")) return sql.includes("wiki_category_members") ? categoryRows : early;
     if (sql.includes("octet_length")) return heads;
     return titles;
   });
@@ -196,9 +198,7 @@ describe("previews and credits for IxWiki", () => {
         head: `{{Infobox country|image = Caphiria map.png}}\n'''Caphiria''' is a country.`,
       },
     ];
-    mocked.wikiCategoryMember.findMany.mockResolvedValue([
-      { articleId: "a1", category: { name: "Countries" } },
-    ]);
+    categoryRows = [{ articleId: "a1", name: "Countries" }];
     mocked.wikiAsset.findMany.mockResolvedValue([asset]);
     mocked.wikiArticle.findMany.mockResolvedValue([{ id: "a1", title: "Caphiria" }]);
     early = [{ articleId: "a1", author: "Kir", createdAt: day(2) }];
@@ -251,6 +251,63 @@ describe("previews and credits for IxWiki", () => {
       title: { in: ["Caphiria national"] },
     });
     expect(guard.calls()).toEqual([]);
+  });
+});
+
+describe("previews of many pages", () => {
+  /** The real client cuts a `findMany` with no `take` to 1000 rows (src/server/db.ts); so does this one. */
+  const CLIENT_CAP = 1000;
+
+  it("keep every page's categories when the members of all of them are more than 1000 rows", async () => {
+    const PAGES = 231;
+    const PER_PAGE = 8; // 1,848 category members, as many as the cap hides when it bites
+    const pageTitles = Array.from({ length: PAGES }, (_, n) => `Page ${n}`);
+    heads = pageTitles.map((title, n) => ({
+      id: `a${n}`,
+      title,
+      length: 3000,
+      head: `${title} is a page.`,
+    }));
+    const members = heads.flatMap((head) =>
+      Array.from({ length: PER_PAGE }, (_, k) => ({
+        articleId: head.id,
+        name: `Category ${k}`,
+        category: { name: `Category ${k}` },
+      }))
+    );
+    categoryRows = members.map(({ articleId, name }) => ({ articleId, name }));
+    mocked.wikiCategoryMember.findMany.mockImplementation(async (args: { take?: number }) =>
+      members.slice(0, args.take ?? CLIENT_CAP)
+    );
+    mocked.wikiArticle.findMany.mockResolvedValue(
+      heads.map((head) => ({ id: head.id, title: head.title }))
+    );
+
+    const previews = await wikiLoreCardGenerator.fetchArticleMetadataBatch(pageTitles, "ixwiki");
+
+    expect(previews).toHaveLength(PAGES);
+    expect(previews.map((preview) => preview.categoryCount)).toEqual(Array(PAGES).fill(PER_PAGE));
+    expect(guard.calls()).toEqual([]);
+  });
+
+  it("list at most 50 categories of a page, alphabetically, in the query that ranks them", async () => {
+    heads = [{ id: "a1", title: "Big", length: 3000, head: "Big." }];
+    categoryRows = Array.from({ length: 50 }, (_, k) => ({ articleId: "a1", name: `C${k}` }));
+
+    const [preview] = await wikiLoreCardGenerator.fetchArticleMetadataBatch(["Big"], "ixwiki");
+
+    expect(preview?.categoryCount).toBe(50);
+    const call = mocked.$queryRaw.mock.calls.find((c) => sqlOf(c).includes("wiki_category_members"))!;
+    expect(sqlOf(call)).toContain('PARTITION BY m."articleId" ORDER BY c."name"');
+    expect(call).toContain(50);
+  });
+
+  it("name the authors of the pages asked with an explicit take (a take-less findMany is cut to 1000)", async () => {
+    mocked.wikiArticle.findMany.mockResolvedValue([]);
+
+    await wikiLoreCardGenerator.fetchArticleAuthorInfoBatch(["A", "B", "C"], "ixwiki");
+
+    expect(mocked.wikiArticle.findMany.mock.calls[0]?.[0].take).toBe(3);
   });
 });
 

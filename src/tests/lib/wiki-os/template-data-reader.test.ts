@@ -123,6 +123,8 @@ describe("readTemplateData", () => {
       status: "PUBLISHED",
       title: { in: ["Template:Quote box", "Template:Quote box/doc"] },
     });
+    // Explicit, because a take-less findMany is cut to 1000 rows by the client.
+    expect(findMany.mock.calls[0]?.[0].take).toBe(2);
     expect(guard.calls()).toEqual([]);
   });
 

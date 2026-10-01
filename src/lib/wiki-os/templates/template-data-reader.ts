@@ -124,6 +124,7 @@ export async function readTemplateData(
       title: { in: wanted.flatMap((entry) => [entry.page, entry.doc]) },
     },
     select: { title: true, wikitext: true },
+    take: wanted.length * 2, // the page and its /doc, for each template
   });
   const wikitextOf = new Map(pages.map((page) => [page.title, page.wikitext]));
 

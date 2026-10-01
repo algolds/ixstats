@@ -150,6 +150,7 @@ async function linkedUserIds(username: string): Promise<string[]> {
       verifiedAt: { not: null },
     },
     select: { userId: true },
+    take: 1, // a wiki account links to one user
   });
   return links.map((link) => link.userId);
 }

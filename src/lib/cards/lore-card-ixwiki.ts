@@ -145,6 +145,7 @@ export async function ixwikiAuthorInfo(titles: readonly string[]): Promise<Map<s
   const articles = await db.wikiArticle.findMany({
     where: { source: "ixwiki", status: "PUBLISHED", title: { in: [...byCanonical.keys()] } },
     select: { id: true, title: true },
+    take: byCanonical.size,
   });
   const facts = await loadAuthorFacts(articles.map((article) => article.id));
   for (const article of articles) {
@@ -269,6 +270,27 @@ export interface IxwikiPreviewPage {
   imageUrl: string | null;
 }
 
+/**
+ * The names of the categories of each article, alphabetical, at most 50 per article. One query ranks each
+ * article's categories itself: a Prisma `findMany` over many articles is cut to 1000 rows by the client's
+ * guard, which drops the categories of every article past the first few hundred members.
+ */
+async function loadCategoryNames(articleIds: readonly string[]): Promise<Map<string, string[]>> {
+  const names = new Map<string, string[]>();
+  const rows = await db.$queryRaw<Array<{ articleId: string; name: string }>>`
+    SELECT "articleId", "name" FROM (
+      SELECT m."articleId" AS "articleId", c."name" AS "name",
+             row_number() OVER (PARTITION BY m."articleId" ORDER BY c."name") AS "rank"
+      FROM wiki_category_members m
+      JOIN wiki_categories c ON c."id" = m."categoryId"
+      WHERE m."articleId" IN (${Prisma.join([...articleIds])})
+    ) ranked
+    WHERE "rank" <= ${MAX_CATEGORIES}
+    ORDER BY "articleId", "rank"`;
+  for (const row of rows) names.set(row.articleId, [...(names.get(row.articleId) ?? []), row.name]);
+  return names;
+}
+
 interface HeadRow {
   id: string;
   title: string;
@@ -292,11 +314,7 @@ export async function loadIxwikiPreviews(titles: readonly string[]): Promise<Ixw
       AND a."title" IN (${Prisma.join(asked)})`;
   if (rows.length === 0) return [];
 
-  const members = await db.wikiCategoryMember.findMany({
-    where: { articleId: { in: rows.map((row) => row.id) } },
-    orderBy: { category: { name: "asc" } },
-    select: { articleId: true, category: { select: { name: true } } },
-  });
+  const members = await loadCategoryNames(rows.map((row) => row.id));
   const leadFiles = new Map(rows.map((row) => [row.id, extractLeadImageFileName(row.head)]));
   const urls = await ixwikiImageUrls([...new Set([...leadFiles.values()].flatMap((f) => f ?? []))]);
 
@@ -309,10 +327,7 @@ export async function loadIxwikiPreviews(titles: readonly string[]): Promise<Ixw
         title: row.title,
         length: Number(row.length),
         extract: cleanWikitextExcerpt(row.head, PREVIEW_EXTRACT_CHARS),
-        categories: members
-          .filter((member) => member.articleId === row.id)
-          .slice(0, MAX_CATEGORIES)
-          .map((member) => ({ title: `Category:${member.category.name}` })),
+        categories: (members.get(row.id) ?? []).map((name) => ({ title: `Category:${name}` })),
         imageUrl: lead ? (urls.get(lead) ?? null) : null,
       };
     });

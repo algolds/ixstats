@@ -127,6 +127,7 @@ describe("user contributions", () => {
 
     await ixwikiGetUserContribs("Kir", 50, 0, 3);
 
+    expect(mocked.wikiAccountLink.findMany.mock.calls[0]?.[0].take).toBe(1);
     expect(mocked.wikiAccountLink.findMany.mock.calls[0]?.[0].where).toMatchObject({
       source: "ixwiki",
       username: "Kir",
