@@ -18,6 +18,11 @@ jest.mock("~/server/db", () => ({
   },
   isDatabaseReadOnly: true,
 }));
+const mockCheck = jest.fn();
+jest.mock("~/lib/cache", () => ({
+  ...jest.requireActual("~/lib/cache"),
+  rateLimiter: { isEnabled: () => true, check: (...args: unknown[]) => mockCheck(...args) },
+}));
 jest.mock("~/lib/auth", () => ({
   __esModule: true,
   isSystemOwner: (id: string) => id === "system_owner_id",
@@ -77,6 +82,7 @@ describe("wikios.getEditAccess (F35c)", () => {
     jest.mocked(ArticleRepository.findBySlug).mockResolvedValue({ status: "PUBLISHED" } as never);
     jest.mocked(db.wikiRestriction.findMany).mockResolvedValue([] as never);
     jest.mocked(db.wikiBlock.findMany).mockResolvedValue([] as never);
+    mockCheck.mockResolvedValue({ success: true, remaining: 99, resetAt: new Date() });
   });
 
   it("allows a signed-in user on an ordinary page", async () => {
@@ -172,5 +178,22 @@ describe("wikios.getEditAccess (F35c)", () => {
     await expect(signedIn().getEditAccess({ title: "a[b" })).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
+  });
+});
+
+describe("wikios.getEditAccess rate limit (m6)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.mocked(ArticleRepository.findBySlug).mockResolvedValue({ status: "PUBLISHED" } as never);
+  });
+
+  it("counts against the shared public tier: a caller over it is turned away, not answered", async () => {
+    mockCheck.mockResolvedValue({ success: true, remaining: 99, resetAt: new Date() });
+    await signedOut().getEditAccess({ title: "Vesperia" });
+    expect(mockCheck).toHaveBeenCalledTimes(1);
+    expect(mockCheck.mock.calls[0]?.[1]).toBe("public");
+
+    mockCheck.mockResolvedValue({ success: false, remaining: 0, resetAt: new Date() });
+    await expect(signedOut().getEditAccess({ title: "Vesperia" })).rejects.toThrow(/Too many requests/);
   });
 });

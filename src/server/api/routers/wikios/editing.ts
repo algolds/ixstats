@@ -10,7 +10,7 @@ import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
   lightMutationProcedure,
-  publicProcedure,
+  rateLimitedPublicProcedure,
   readOnlyProcedure,
 } from "~/server/api/trpc";
 import { wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
@@ -47,7 +47,7 @@ export const wikiosEditingRouter = createTRPCRouter({
    * (`assertCanEditArticle`), asked beforehand, so a reader who cannot edit is shown the page's source
    * instead of an editor whose save would be refused. A refusal is an answer, not an error.
    */
-  getEditAccess: publicProcedure
+  getEditAccess: rateLimitedPublicProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
     .query(async ({ input, ctx }) => {
       try {
