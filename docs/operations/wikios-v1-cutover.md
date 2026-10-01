@@ -310,9 +310,11 @@ curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8081/index.php    # 40
 This server carries more than renders: every server-side call to IxWiki's MediaWiki goes through it (plan 415), among them
 the mirror's bot login and its `action=edit`, `action=import` (the page as an XML upload of up to about 10 MB) and
 `action=upload` POSTs (plans 407 and 411). That is why its `client_max_body_size` is `16m`, matching the PHP limits of
-step 3: at 8m a big import would die with a bare 413. Check the installed value, and prove a bot login works through the
-loopback, with the password read from the env file into a shell variable, never typed or echoed (it reaches `curl` on
-stdin, not on its command line):
+step 3: at 8m a big import would die with a bare 413. It is also why its `/api.php` `fastcgi_read_timeout` is `130s`, just
+over the mirror's 120 s import timeout (`IMPORT_TIMEOUT_MS`). PHP-FPM's `max_execution_time` for that pool (or its
+`request_terminate_timeout`, whichever the pool uses) must also allow at least about 130 s for imports, or PHP cuts a big import
+off first. Check the installed limit, and prove a bot login works through the loopback, with the password read from the env
+file into a shell variable, never typed or echoed (it reaches `curl` on stdin, not on its command line):
 
 ```bash
 sudo nginx -T 2>/dev/null | awk '/listen 127.0.0.1:8081/,/^}/' | grep client_max_body_size   # 16m
