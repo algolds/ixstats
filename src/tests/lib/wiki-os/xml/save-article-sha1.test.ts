@@ -66,6 +66,20 @@ describe("ArticleRepository.saveArticle revision hash", () => {
     });
   });
 
+  it("saves a text with a lone surrogate as U+FFFD, which PostgreSQL can store, and hashes what it stored", async () => {
+    mockRevisionCreate.mockResolvedValue({ id: "r1" });
+
+    await ArticleRepository.saveArticle({ slug: "foo", title: "Foo", wikitext: "bad \uD800 and \uDC00 end" });
+
+    const stored = "bad \uFFFD and \uFFFD end";
+    expect(mockRevisionCreate.mock.calls.at(-1)?.[0].data).toMatchObject({
+      wikitext: stored,
+      sha1: mwSha1Base36(stored),
+      byteSize: Buffer.byteLength(stored, "utf8"),
+    });
+    expect(mockUpsert.mock.calls.at(-1)?.[0]).toMatchObject({ create: { wikitext: stored }, update: { wikitext: stored } });
+  });
+
   it("saves, and hashes, the text without the control characters XML cannot carry (as MediaWiki stores it)", async () => {
     mockRevisionCreate.mockResolvedValue({ id: "r1" });
     const typed = "bo\u0001dy\u000B é\uFFFE\u0000\ttab\r\nend\u001F";
