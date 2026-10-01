@@ -181,9 +181,21 @@ configuration object, never from a literal:
   `src/server/modules/forum/services/xenforo-service.ts`, `src/proxy.ts` (frame ancestors). Accounts (`accounts.ixwiki.com`, Clerk):
   `src/components/navigation/UserProfileMenu.tsx`, `src/components/settings/IxnayIDCard.tsx`, `src/lib/security/csp.ts`. Maps
   (`maps.ixwiki.com`): `src/app/maps/page.tsx`, `src/lib/system/standalone-detection.ts`, `src/lib/utils/slug-utils.ts`,
-  `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`. IxStates itself (`ixwiki.com/projects/ixstates`):
+  `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`. IxStates itself (`<wiki origin>/projects/ixstates`, built from the config's origin):
   `src/app/_components/splash/SplashThinkPagesPeek.tsx`. An example document URL (`archives.ixwiki.com`) in template presets:
   `src/lib/wiki-os/templates/master-presets.ts`, `src/server/api/routers/wikios/templates.ts`.
+
+### The literals that remain (plan 415 count)
+
+`grep -rn "ixwiki.com" src` (tests excluded) still names the wiki's host as a functional address in four lines. Every other hit is
+a comment, a `User-Agent` contact string, or a subdomain that is not MediaWiki (above).
+
+- `src/lib/wiki-os/config.ts`: the one default of `NEXT_PUBLIC_MEDIAWIKI_URL`, spelled once.
+- `src/lib/wiki-os/adapters/mediawiki/csrf-cache.ts` and `src/lib/wiki-os/adapters/mediawiki/write-service.ts`
+  (`WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php"`) and `src/lib/wiki-os/services/inbound-mediawiki.ts`
+  (`NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com"`): the mirror and the inbound sync, which plan 407 is rewriting. They are the
+  last three places that build the origin by hand; after plan 407 they read `wikiosConfig.mediawiki.writeApiUrl`,
+  `wikiosConfig.mediawiki.botUser` and `mediaWikiApiUrl({ internal: true })` (the config already carries them).
 
 ## 3. Scripts (operator-run, outside `src/`)
 
