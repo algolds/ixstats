@@ -91,6 +91,8 @@ export async function getRevisionWikitextShadow(
   title: string;
   source: string;
   timestamp: string;
+  /** A MediaWiki edit that did not go live (conflict): never the text a revert or restore may put back. */
+  parked: boolean;
   fromShadow: boolean;
 } | null> {
   const revision = await getRevisionWikitext(revid);

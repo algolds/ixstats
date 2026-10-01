@@ -320,6 +320,9 @@ describe("wikiosHistoryDiffRouter.getDiff (plan 402, 413)", () => {
       const result = await caller().getDiff({ torev: "r3", fromrev: "9001" });
 
       expect(result.from.revid).toBe("9001");
+      // the answer says which end is parked, so the diff view offers no revert to it
+      expect(result.from.parked).toBe(true);
+      expect(result.to.parked).toBe(false);
     });
 
     it("?diff=cur resolves to the live head when the newest row is parked: the default history read leaves it out", async () => {

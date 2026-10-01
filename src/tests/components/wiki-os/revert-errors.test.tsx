@@ -16,6 +16,7 @@ let revertState: { error: { message: string } | null; isSuccess: boolean } = {
   isSuccess: false,
 };
 let rollbackState: { error: { message: string } | null } = { error: null };
+let mockFromParked = false;
 
 jest.mock("~/trpc/react", () => ({
   api: {
@@ -41,8 +42,8 @@ jest.mock("~/trpc/react", () => ({
             hunks: [],
             added: 0,
             removed: 0,
-            from: { revid: "r1", user: "amy", timestamp: "", comment: "" },
-            to: { revid: "r2", user: "bob", timestamp: "", comment: "" },
+            from: { revid: "r1", user: "amy", timestamp: "", comment: "", parked: mockFromParked },
+            to: { revid: "r2", user: "bob", timestamp: "", comment: "", parked: false },
           },
           isLoading: false,
           error: null,
@@ -76,6 +77,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   revertState = { error: null, isSuccess: false };
   rollbackState = { error: null };
+  mockFromParked = false;
 });
 
 describe("ScrubbableRevisionTimeline revert and rollback errors", () => {
@@ -114,5 +116,19 @@ describe("Revision diff page revert errors", () => {
     render(<DiffPage />);
 
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("offers no revert to a parked revision (it never went live), and says why", () => {
+    mockFromParked = true;
+    render(<DiffPage />);
+
+    expect(screen.queryByRole("button", { name: /Revert to rr1/ })).toBeNull();
+    expect(screen.getByText(/rr1 never went live, so it cannot be restored/)).toBeInTheDocument();
+  });
+
+  it("offers it for a live one", () => {
+    render(<DiffPage />);
+
+    expect(screen.getByRole("button", { name: "Revert to rr1" })).toBeInTheDocument();
   });
 });

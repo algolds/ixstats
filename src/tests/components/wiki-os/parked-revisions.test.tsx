@@ -85,4 +85,30 @@ describe("ScrubbableRevisionTimeline with a parked revision", () => {
 
     expect(screen.queryByRole("button", { name: /Rollback/ })).toBeNull();
   });
+
+  it("offers no revert to a parked revision: it never was the page's text", () => {
+    render(
+      <ScrubbableRevisionTimeline
+        title="Foo"
+        slug="foo"
+        // the revision compared with (index 1) is the parked one
+        revisions={[revision("r3", "bob"), revision("9001", "carol", true), revision("r1", "amy")]}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: /Revert to this version/ })).toBeNull();
+    expect(screen.getByText(/r9001 never went live, so it cannot be restored/)).toBeInTheDocument();
+  });
+
+  it("still offers the revert when the revision compared with is live", () => {
+    render(
+      <ScrubbableRevisionTimeline
+        title="Foo"
+        slug="foo"
+        revisions={[revision("r3", "bob"), revision("r2", "carol"), revision("r1", "amy")]}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: /Revert to this version/ })).toBeInTheDocument();
+  });
 });

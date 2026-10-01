@@ -153,12 +153,14 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
           user: from ? from.user : resolvedFromRevId ? "Previous Revision" : "Initial Document",
           timestamp: fromData?.timestamp ?? "",
           comment: from ? from.comment : "",
+          parked: !!from?.parked,
         },
         to: {
           revid: input.torev,
           user: to ? to.user : "",
           timestamp: toData.timestamp,
           comment: to ? to.comment : "",
+          parked: !!to?.parked,
         },
       };
     }),

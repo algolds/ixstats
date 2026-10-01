@@ -319,17 +319,24 @@ export function ScrubbableRevisionTimeline({
             <span className="text-muted-foreground text-xs">
               Comparing <strong>r{targetRev.id}</strong> against <strong>r{compareRev.id}</strong>
             </span>
-            <button
-              type="button"
-              onClick={() => {
-                revertMutation.reset();
-                setUndoTarget(compareRev);
-              }}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-[0.98]"
-            >
-              <Undo className="h-3.5 w-3.5" />
-              Revert to this version
-            </button>
+            {compareRev.parked ? (
+              // a parked revision was never the page's text: there is nothing to go back to
+              <span className="text-muted-foreground text-xs">
+                r{compareRev.id} never went live, so it cannot be restored.
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  revertMutation.reset();
+                  setUndoTarget(compareRev);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-amber-500/20 active:scale-[0.98]"
+              >
+                <Undo className="h-3.5 w-3.5" />
+                Revert to this version
+              </button>
+            )}
           </div>
         )}
 

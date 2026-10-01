@@ -117,8 +117,12 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
                     </button>
                   </div>
 
-                  {/* Undo Button */}
-                  {!undoConfirm ? (
+                  {/* Undo Button (a parked revision was never the page's text: nothing to go back to) */}
+                  {data.from.parked ? (
+                    <span className="text-muted-foreground text-xs">
+                      r{data.from.revid} never went live, so it cannot be restored.
+                    </span>
+                  ) : !undoConfirm ? (
                     <button
                       type="button"
                       onClick={() => {
