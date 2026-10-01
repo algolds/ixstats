@@ -9,6 +9,7 @@ import {
 } from "~/lib/utils/scope-template-styles";
 
 const S = ARTICLE_STYLE_SCOPE;
+const OWN_ORIGIN = "https://ixwiki.com";
 
 describe("scoping", () => {
   it("prefixes a selector with the article root", () => {
@@ -124,17 +125,18 @@ describe("scoping", () => {
 });
 
 describe("declarations that load or run something", () => {
-  const kept = (declaration: string) => scopeTemplateStyles(`.a{${declaration};color:red}`);
+  const kept = (declaration: string) => scopeTemplateStyles(`.a{${declaration};color:red}`, OWN_ORIGIN);
 
   it.each([
     "background:url(https://ixwiki.com/images/a.png)",
     'background:url("https://ixwiki.com/images/a.png") no-repeat',
-    "background-image:url('https://x.example/a.png')",
-    "background:url(  https://x.example/a.png  )",
+    "background-image:url('https://ixwiki.com/images/a.png')",
+    "background:url(  https://ixwiki.com/images/a.png  )",
+    "background:url(HTTPS://IXWIKI.COM/images/a.png)",
+    "background:url(https://ixwiki.com:443/images/a.png)",
     "background:url(/images/a.png)",
     "background:url(images/a.png)",
     "background:url(../a.png)",
-    "background:url(//x.example/a.png)",
     "background:url(#fragment)",
     "background:linear-gradient(red, blue)",
   ])("keeps %s", (declaration) => {
@@ -142,6 +144,22 @@ describe("declarations that load or run something", () => {
   });
 
   it.each([
+    "background:url(https://x.example/a.png)",
+    "background-image:url('https://x.example/a.png')",
+    "background:url(  https://x.example/a.png  )",
+    "background:url(//x.example/a.png)",
+    "background:url(///x.example/a.png)",
+    "background:url(\\\\\\\\x.example/a.png)", // CSS \\\\ is two backslashes, which the URL parser reads as "//"
+    "background:url(/\\\\x.example/a.png)",
+    "background:url(https:/x.example/a.png)",
+    "background:url(https://ixwiki.com.evil.example/a.png)",
+    "background:url(https://ixwiki.com@evil.example/a.png)",
+    "background:url(https://evil.example/ixwiki.com)",
+    "background:url(https://www.ixwiki.com/a.png)",
+    "background:url(http://ixwiki.com/a.png)",
+    "background:url(https://ixwiki.com:8443/a.png)",
+    'background:url("https://ixwiki.com\\@x.example/a.png")',
+    'background:url("https://\tx.example/a.png")',
     "background:url('javascript:alert(1)')",
     'background:url("javascript:alert(1)")',
     'background:url("data:image/svg+xml;base64,AAAA")',
@@ -186,6 +204,11 @@ describe("declarations that load or run something", () => {
     "background:url(https://ok.example/a.png), url(javascript:alert(1))",
   ])("a url holding a paren is a bad url, which the browser reads to the first `)`: the sheet goes (%s)", (declaration) => {
     expect(kept(declaration)).toBe("");
+  });
+
+  it("names no absolute origin when none is given: only relative urls stay", () => {
+    expect(scopeTemplateStyles(".a{background:url(https://ixwiki.com/a.png);color:red}")).toBe(`${S} .a{color:red}`);
+    expect(scopeTemplateStyles(".a{background:url(/a.png);color:red}")).toBe(`${S} .a{background:url(/a.png);color:red}`);
   });
 
   it("resolves escapes the way a browser does: \\72e is one character, not `r` and `e`", () => {

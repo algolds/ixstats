@@ -5,6 +5,7 @@
  */
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { ARTICLE_STYLE_SCOPE } from "~/lib/utils/scope-template-styles";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 
 const S = ARTICLE_STYLE_SCOPE;
 
@@ -142,14 +143,17 @@ export function describeArticleSanitizerParity(): void {
       expect(out).toBe(`${STYLE_OPEN}@media (max-width:600px){${S} .x{color:blue}}${S} .y{color:red}</style>`);
     });
 
-    it("strips url() that is not https or relative, expression(), behavior and -moz-binding", () => {
+    it("strips url() that names another host or is not https, expression(), behavior and -moz-binding", () => {
       const out = sanitizeWikiArticleHtml(
         `${STYLE_OPEN}.a{background:url('javascript:alert(1)');width:expression(alert(1));behavior:url(x.htc);` +
           "-moz-binding:url(x.xml#a);background-image:url(data:text/html,x);" +
-          "color:red;background:url(https://ixwiki.com/images/a.png)}</style>"
+          `color:red;background:url(${mediaWikiOrigin()}/images/a.png);background:url(https://x.example/a.png);` +
+          "background:url(//x.example/a.png);background:url(/images/b.png)}</style>"
       );
 
-      expect(out).toBe(`${STYLE_OPEN}${S} .a{color:red;background:url(https://ixwiki.com/images/a.png)}</style>`);
+      expect(out).toBe(
+        `${STYLE_OPEN}${S} .a{color:red;background:url(${mediaWikiOrigin()}/images/a.png);background:url(/images/b.png)}</style>`
+      );
     });
 
     it("removes a style whose url() is a bad-url token (it holds a paren): the browser would read it past the CSS", () => {

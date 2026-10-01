@@ -17,8 +17,10 @@
  *  - `@media` blocks are kept (their rules scoped); every other at-rule (`@import`, `@font-face`,
  *    `@keyframes`, `@supports`, ...) is dropped with its block;
  *  - a declaration is dropped when it uses `expression(`, `behavior`, `-moz-binding`, `javascript:`, an
- *    image function that loads a URL without `url(` (`image-set(`, `src(`, ...) or a `url()` whose target
- *    is not `https:` or relative;
+ *    image function that loads a URL without `url(` (`image-set(`, `src(`, ...) or a `url()` whose target,
+ *    resolved the way a browser does, is neither relative to the page (`/images/a.png`, `a.png`; not `//host/...`)
+ *    nor on the wiki's own origin (the `ownOrigin` argument, `https:` only): no other host is ever contacted by a
+ *    template's CSS, so a page cannot make a reader's browser call out to a host the wiki does not control;
  *  - anything the splitter cannot read with certainty (an unterminated string, unbalanced brackets, a
  *    stray `}`, a nested rule inside a rule, a bad-url token, a `<` that could end the `<style>` element, a
  *    trailing backslash) drops the whole sheet or the rule: the browser must never parse the output differently
@@ -52,6 +54,9 @@ const BLOCKED_FUNCTION =
   /(?:^|[^\w-])(?:-webkit-|-moz-)?(?:image-set|image|cross-fade|element|paint|src)\s*\(/;
 const URL_OPEN = /url\s*\(/g;
 const URL_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
+/** Relative URLs resolve against this; one that comes out on any other origin named a host. */
+const RELATIVE_BASE = "https://relative.invalid/";
+const RELATIVE_ORIGIN = new URL(RELATIVE_BASE).origin;
 const MEDIA_QUERY = /^[a-z0-9\s:,.()\-_/>=+*%]*$/i;
 const BLOCKED_MEDIA = /\b(?:url|expression)\s*\(/i;
 
@@ -315,35 +320,54 @@ function urlTargets(declaration: string): string[] | null {
   }
 }
 
-/** Whether every `url()` in `declaration` (escapes resolved) is `https:` or relative. */
-function urlsAreAllowed(declaration: string): boolean {
-  const targets = urlTargets(declaration);
-  if (targets === null) return false;
-  return targets.every((raw) => {
-    const target = raw
-      .trim()
-      .replace(/^["']|["']$/g, "")
-      // the URL parser drops tabs and newlines inside a scheme: "java\tscript:" is "javascript:"
-      .replace(/[\u0000- \u007f]/g, "");
-    return !URL_SCHEME.test(target) || /^https:/i.test(target);
-  });
+/**
+ * Whether `raw`, the inside of a `url()`, is relative to the page or `https://` on `ownOrigin`. Two readings must
+ * agree, the URL parser's and a plain syntactic one, so that a browser that parses an odd form (`https:/host`,
+ * `\\\\host`) differently cannot reach another host.
+ */
+function urlIsAllowed(raw: string, ownOrigin: string | undefined): boolean {
+  const target = raw
+    .trim()
+    .replace(/^["']|["']$/g, "")
+    // the URL parser drops tabs and newlines inside a scheme: "java\tscript:" is "javascript:"
+    .replace(/[\u0000- \u007f]/g, "");
+  const absolute = URL_SCHEME.test(target);
+  if (absolute ? !/^https:\/\/[^/\\]/i.test(target) : /^[/\\]{2}/.test(target)) return false;
+  try {
+    const resolved = new URL(target, RELATIVE_BASE);
+    return absolute
+      ? ownOrigin !== undefined && resolved.protocol === "https:" && resolved.origin === ownOrigin
+      : resolved.origin === RELATIVE_ORIGIN;
+  } catch {
+    return false;
+  }
 }
 
-function isAllowedDeclaration(property: string, declaration: string): boolean {
+/** Whether every `url()` in `declaration` (escapes resolved) stays on the page or the wiki's own origin. */
+function urlsAreAllowed(declaration: string, ownOrigin: string | undefined): boolean {
+  const targets = urlTargets(declaration);
+  return targets !== null && targets.every((raw) => urlIsAllowed(raw, ownOrigin));
+}
+
+function isAllowedDeclaration(property: string, declaration: string, ownOrigin: string | undefined): boolean {
   const judged = unescapeCss(declaration).toLowerCase();
   return (
     PROPERTY_NAME.test(property) &&
     !BLOCKED_PROPERTY.test(unescapeCss(property).toLowerCase()) &&
     !BLOCKED_VALUE.test(judged) &&
     !BLOCKED_FUNCTION.test(judged) &&
-    urlsAreAllowed(judged) &&
+    urlsAreAllowed(judged, ownOrigin) &&
     !declaration.includes("<") &&
     !endsInEscape(declaration) // trimmed, it would escape the ";" or "}" written after it
   );
 }
 
 /** The declarations of a rule body that may stay, or null when the body is not a plain declaration list. */
-function cleanDeclarations(body: string, strings: readonly string[]): string[] | null {
+function cleanDeclarations(
+  body: string,
+  strings: readonly string[],
+  ownOrigin: string | undefined
+): string[] | null {
   if (body.includes("{") || body.includes("}")) return null; // a nested rule: not read, so not kept
   const parts = splitTopLevel(body, ";");
   if (!parts) return null;
@@ -353,37 +377,51 @@ function cleanDeclarations(body: string, strings: readonly string[]): string[] |
     if (colon < 1) continue;
     const property = part.slice(0, colon).trim();
     const declaration = inflate(part, strings).trim();
-    if (isAllowedDeclaration(property, declaration)) kept.push(declaration);
+    if (isAllowedDeclaration(property, declaration, ownOrigin)) kept.push(declaration);
   }
   return kept;
 }
 
-function scopeQualifiedRule(rule: RawRule, strings: readonly string[]): string {
+function scopeQualifiedRule(
+  rule: RawRule,
+  strings: readonly string[],
+  ownOrigin: string | undefined
+): string {
   if (rule.body === null) return "";
   const selectors = scopeSelectors(rule.prelude, strings);
-  const declarations = selectors === null ? null : cleanDeclarations(rule.body, strings);
+  const declarations = selectors === null ? null : cleanDeclarations(rule.body, strings, ownOrigin);
   return selectors && declarations && declarations.length > 0
     ? `${selectors}{${declarations.join(";")}}`
     : "";
 }
 
-function scopeAtRule(rule: RawRule, strings: readonly string[], depth: number): string {
+function scopeAtRule(
+  rule: RawRule,
+  strings: readonly string[],
+  depth: number,
+  ownOrigin: string | undefined
+): string {
   // `@media` only, spelled plainly: an escaped at-keyword is not read
   const query = /^@media(?=[\s(])([\s\S]*)$/i.exec(rule.prelude.trim())?.[1]?.trim();
   const inner = rule.body !== null && depth < MAX_AT_RULE_DEPTH ? parseRules(rule.body) : null;
   if (query === undefined || !inner || !MEDIA_QUERY.test(query) || BLOCKED_MEDIA.test(query)) return "";
-  const scoped = scopeRules(inner, strings, depth + 1);
+  const scoped = scopeRules(inner, strings, depth + 1, ownOrigin);
   return scoped ? `@media ${query}{${scoped}}` : "";
 }
 
-function scopeRules(rules: readonly RawRule[], strings: readonly string[], depth: number): string {
+function scopeRules(
+  rules: readonly RawRule[],
+  strings: readonly string[],
+  depth: number,
+  ownOrigin: string | undefined
+): string {
   let out = "";
   for (const rule of rules) {
     const prelude = rule.prelude.trim();
     if (!prelude) continue;
     out += prelude.startsWith("@")
-      ? scopeAtRule(rule, strings, depth)
-      : scopeQualifiedRule(rule, strings);
+      ? scopeAtRule(rule, strings, depth, ownOrigin)
+      : scopeQualifiedRule(rule, strings, ownOrigin);
   }
   return out;
 }
@@ -399,10 +437,11 @@ export function cssIdentifiers(css: string): Set<string> {
 /**
  * The CSS of a TemplateStyles block as it may appear in an article: scoped under the article root and
  * stripped of everything that could load, run or reach outside it. An empty string when nothing is left.
+ * `ownOrigin` is the wiki's origin (`https://host`): the one absolute origin a `url()` may name.
  */
-export function scopeTemplateStyles(css: string): string {
+export function scopeTemplateStyles(css: string, ownOrigin?: string): string {
   if (css.length > MAX_CSS_LENGTH) return "";
   const lexed = lex(css.replace(CONTROL_MARKS, "�"));
   const rules = lexed ? parseRules(lexed.masked) : null;
-  return lexed && rules ? scopeRules(rules, lexed.strings, 0) : "";
+  return lexed && rules ? scopeRules(rules, lexed.strings, 0, ownOrigin) : "";
 }

@@ -12,6 +12,7 @@
  */
 
 import DOMPurify, { type Config } from "dompurify";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { scopeTemplateStyles } from "./scope-template-styles";
 
 type Purifier = typeof DOMPurify;
@@ -75,7 +76,7 @@ const sanitizeTemplateStyle: StyleSanitizer = (style) => {
     : "";
   const css =
     style.namespaceURI === HTML_NAMESPACE && style.hasAttribute(TEMPLATE_STYLES_ATTRIBUTE)
-      ? scopeTemplateStyles(text)
+      ? scopeTemplateStyles(text, new URL(mediaWikiOrigin()).origin)
       : "";
   if (!css) {
     style.remove();
@@ -403,19 +404,20 @@ function hashString(text: string): string {
  * Bump when the hooks (`installSharedHooks`, the article's `<style>` filter) or the TemplateStyles scoper
  * (`scope-template-styles.ts`) change: they shape the output but are not part of the config.
  */
-const SANITIZER_HOOKS_VERSION = 3;
+const SANITIZER_HOOKS_VERSION = 4;
 
 let articleSanitizerFingerprint: string | null = null;
 
 /**
  * Identifies everything that decides what `sanitizeWikiArticleHtml` outputs: its allow and forbid
- * lists (regular expressions included), the hooks version and DOMPurify's own version. Stored
+ * lists (regular expressions included), the hooks version, DOMPurify's own version and the wiki's origin (the
+ * one host a TemplateStyles `url()` may name). Stored
  * article bundles carry it, so changing the sanitizer invalidates them by itself.
  */
 export function wikiArticleSanitizerFingerprint(): string {
   articleSanitizerFingerprint ??= hashString(
     JSON.stringify(
-      [WIKI_ARTICLE_SANITIZE_CONFIG, SANITIZER_HOOKS_VERSION, DOMPurify.version],
+      [WIKI_ARTICLE_SANITIZE_CONFIG, SANITIZER_HOOKS_VERSION, DOMPurify.version, mediaWikiOrigin()],
       (_key: string, value: object | string | number | boolean | null) =>
         value instanceof RegExp ? value.toString() : value
     )
@@ -428,7 +430,7 @@ export function wikiArticleSanitizerFingerprint(): string {
  * Wiki config plus the MediaWiki/Parsoid markup articles need, and the legacy tags and attributes
  * MediaWiki's own Sanitizer allows. A `<style>` stays only when it is TemplateStyles' (it carries
  * `data-mw-deduplicate`) and then only as CSS scoped under `.mw-parser-output` and cleared of imports,
- * outside URLs and script hooks (`scope-template-styles.ts`); the style attribute stays allowed.
+ * URLs other than the page's own and the wiki's origin, and script hooks (`scope-template-styles.ts`); the style attribute stays allowed.
  */
 export function sanitizeWikiArticleHtml(html: string): string {
   if (!html) return "";
