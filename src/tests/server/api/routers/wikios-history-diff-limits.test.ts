@@ -1,0 +1,123 @@
+/** @jest-environment node */
+// Plan 413 review: the history and diff reads are anonymous, so they sit behind the public rate
+// limiter, and a diff's answer is bounded however large the two texts are.
+jest.mock("~/server/db", () => ({
+  __esModule: true,
+  db: {
+    wikiArticle: {
+      findUnique: jest.fn().mockResolvedValue(null),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+  },
+  isDatabaseReadOnly: true,
+}));
+const mockCheck = jest.fn();
+jest.mock("~/lib/cache", () => ({
+  ...jest.requireActual("~/lib/cache"),
+  rateLimiter: { isEnabled: () => true, check: (...args: unknown[]) => mockCheck(...args) },
+}));
+jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
+  __esModule: true,
+  getRevisionWikitextShadow: jest.fn(),
+  getArticleHistoryShadow: jest.fn(),
+}));
+
+import { describe, it, expect, beforeEach } from "@jest/globals";
+import { createCallerFactory } from "~/server/api/trpc";
+import { wikiosHistoryDiffRouter } from "~/server/api/routers/wikios/history-diff";
+import { createMockRouterContext } from "~/tests/helpers/router-context";
+import {
+  getRevisionWikitextShadow,
+  getArticleHistoryShadow,
+} from "~/lib/wiki-os/adapters/mediawiki/article-store";
+
+const caller = () =>
+  createCallerFactory(wikiosHistoryDiffRouter)(
+    createMockRouterContext({ auth: null, user: null }) as never
+  );
+
+const text = (wikitext: string) => ({
+  wikitext,
+  title: "Foo",
+  source: "ixwiki",
+  timestamp: "2026-06-01T00:00:00.000Z",
+  fromShadow: true as const,
+});
+
+const entry = (revid: string) => ({
+  revid,
+  user: "u",
+  timestamp: "",
+  comment: "",
+  size: 1,
+  byteDelta: 0,
+  minor: false,
+  sha1: null,
+  parked: false,
+});
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockCheck.mockResolvedValue({ success: true, remaining: 99, resetAt: new Date() });
+  jest.mocked(getArticleHistoryShadow).mockResolvedValue({
+    revisions: [entry("2"), entry("1")],
+    hasMore: false,
+    fromShadow: true,
+  });
+});
+
+describe("getHistory and getDiff are rate limited", () => {
+  it("counts each against the public bucket", async () => {
+    jest.mocked(getRevisionWikitextShadow).mockResolvedValue(text("a"));
+
+    await caller().getHistory({ title: "Foo" });
+    await caller().getDiff({ torev: "2" });
+
+    expect(mockCheck).toHaveBeenCalledTimes(2);
+    expect(mockCheck).toHaveBeenNthCalledWith(1, expect.any(String), "public", expect.anything());
+    expect(mockCheck).toHaveBeenNthCalledWith(2, expect.any(String), "public", expect.anything());
+  });
+
+  it("answers neither once the bucket is empty, and does no work", async () => {
+    mockCheck.mockResolvedValue({ success: false, remaining: 0, resetAt: new Date() });
+
+    await expect(caller().getHistory({ title: "Foo" })).rejects.toThrow(/Too many requests/);
+    await expect(caller().getDiff({ torev: "2" })).rejects.toThrow(/Too many requests/);
+
+    expect(getArticleHistoryShadow).not.toHaveBeenCalled();
+    expect(getRevisionWikitextShadow).not.toHaveBeenCalled();
+  });
+});
+
+describe("getDiff answers are bounded", () => {
+  it("answers two 2 MB texts of one-character lines in a few hundred bytes, not megabytes", async () => {
+    const oneCharLines = (char: string) => Array.from({ length: 1_000_000 }, () => char).join("\n"); // ~2 MB
+    jest
+      .mocked(getRevisionWikitextShadow)
+      .mockResolvedValueOnce(text(oneCharLines("b")))
+      .mockResolvedValueOnce(text(oneCharLines("a")));
+
+    const result = await caller().getDiff({ torev: "2" });
+
+    expect(result.tooLarge).toBe(true);
+    expect(result.hunks).toEqual([]);
+    expect(result.added).toBe(1_000_000);
+    expect(result.removed).toBe(1_000_000);
+    expect(JSON.stringify(result).length).toBeLessThan(1000);
+  });
+
+  it("cuts a diff of more than 5,000 rows to its first hunks and says so", async () => {
+    const base = Array.from({ length: 8_000 }, (_, i) => `line ${i}`);
+    const edited = base.map((line, i) => (i % 8 === 4 ? `${line} edited` : line));
+    jest
+      .mocked(getRevisionWikitextShadow)
+      .mockResolvedValueOnce(text(edited.join("\n")))
+      .mockResolvedValueOnce(text(base.join("\n")));
+
+    const result = await caller().getDiff({ torev: "2" });
+
+    expect(result.truncated).toBe(true);
+    expect(result.hunks.flatMap((h) => h.rows).length).toBeLessThanOrEqual(5_000);
+    expect(result.added).toBe(1_000);
+  });
+});

@@ -14,7 +14,11 @@ import {
 } from "iconoir-react";
 import { DiffViewer } from "~/components/diff-viewer";
 import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
+import { useDebounce } from "~/hooks/useDebounce";
 import { api } from "~/trpc/react";
+
+/** How long the two selected revisions stay unchanged before the diff between them is asked for. */
+const DIFF_SETTLE_MS = 250;
 
 interface RevisionItem {
   id: string;
@@ -82,10 +86,14 @@ export function ScrubbableRevisionTimeline({
   // Rollback works on the page's real revisions: a parked one never was the latest.
   const liveRevisions = revisions.filter((r) => !r.parked);
 
-  // The server diffs the two revisions once and sends only the hunks (never both texts)
+  // The server diffs the two revisions once and sends only the hunks (never both texts). Dragging a
+  // slider crosses many positions: one diff is asked for per settled position, not one per step.
+  const settledFrom = useDebounce(compareRev?.id, DIFF_SETTLE_MS);
+  const settledTo = useDebounce(targetRev?.id, DIFF_SETTLE_MS);
+  const settling = settledFrom !== compareRev?.id || settledTo !== targetRev?.id;
   const diff = api.wikios.getDiff.useQuery(
-    { fromrev: compareRev?.id, torev: targetRev?.id ?? "" },
-    { enabled: !!targetRev && !!compareRev, staleTime: 300_000 }
+    { fromrev: settledFrom, torev: settledTo ?? "" },
+    { enabled: !!settledTo && !!settledFrom, staleTime: 300_000 }
   );
 
   if (isLoading) {
@@ -375,13 +383,22 @@ export function ScrubbableRevisionTimeline({
 
       {/* Embedded DiffViewer */}
       <div className="border-border/40 bg-card/60 overflow-hidden rounded-2xl border p-4">
-        {diff.error ? (
+        {settling ? (
+          <div className="flex h-24 items-center justify-center">
+            <div className="border-wiki h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
+          </div>
+        ) : diff.error ? (
           <p className="text-xs font-medium text-red-400">
             Failed to load the comparison: {diff.error.message}
           </p>
         ) : diff.data ? (
           <DiffViewer
             hunks={diff.data.hunks}
+            trailingSkipped={diff.data.trailingSkipped}
+            tooLarge={diff.data.tooLarge}
+            truncated={diff.data.truncated}
+            added={diff.data.added}
+            removed={diff.data.removed}
             layout={layout}
             language="markdown"
             oldTitle={`Revision B (r${compareRev?.id || "origin"})`}

@@ -43,7 +43,7 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
    * revisions (MediaWiki edits that conflicted with WikiOS's head and never went live) are listed
    * too, flagged `parked`.
    */
-  getHistory: publicProcedure
+  getHistory: rateLimitedPublicProcedure
     .input(
       z.object({
         title: z.string().min(1).max(500),
@@ -68,7 +68,7 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
    * Revision ids are history `revid`s; without `fromrev` the diff is against the revision before
    * `torev`.
    */
-  getDiff: publicProcedure
+  getDiff: rateLimitedPublicProcedure
     .input(
       z.object({
         fromrev: z.string().max(64).optional(),

@@ -2,6 +2,8 @@
 import { describe, it, expect } from "@jest/globals";
 import {
   DIFF_MAX_BYTES_PER_SIDE,
+  DIFF_MAX_LINES_PER_SIDE,
+  DIFF_MAX_ROWS,
   DiffTooLargeError,
   diffWikitext,
   type DiffRow,
@@ -82,7 +84,12 @@ describe("diffWikitext hunks", () => {
   });
 
   it("has no hunks for identical texts and shows an inserted line with its number", () => {
-    expect(diffWikitext("a\nb", "a\nb")).toEqual({ hunks: [], added: 0, removed: 0 });
+    expect(diffWikitext("a\nb", "a\nb")).toEqual({
+      hunks: [],
+      trailingSkipped: 0,
+      added: 0,
+      removed: 0,
+    });
 
     const diff = diffWikitext("a\nc", "a\nb\nc");
     expect(rowsOf(diff)).toEqual([
@@ -97,7 +104,7 @@ describe("diffWikitext hunks", () => {
     expect(created.removed).toBe(0);
     expect(created.added).toBe(2);
     expect(diffWikitext("a\nb", "").removed).toBe(2);
-    expect(diffWikitext("", "")).toEqual({ hunks: [], added: 0, removed: 0 });
+    expect(diffWikitext("", "")).toEqual({ hunks: [], trailingSkipped: 0, added: 0, removed: 0 });
   });
 
   it("lists the removed lines of a changed block before the added ones", () => {
@@ -148,15 +155,78 @@ describe("diffWikitext correctness", () => {
   });
 
   it("keeps the common head and tail out of the search for a small edit in a large text", () => {
-    const a = lines(50_000);
+    const a = lines(DIFF_MAX_LINES_PER_SIDE);
     const b = [...a];
-    b[25_000] = "changed";
+    b[10_000] = "changed";
 
     const diff = diffWikitext(a.join("\n"), b.join("\n"));
 
     expect(diff.added).toBe(1);
     expect(diff.removed).toBe(1);
     expect(rowsOf(diff)).toHaveLength(8);
+    // 3 lines of context before and after: the rest is "unchanged lines left out" before and after
+    expect(diff.hunks[0]!.skipped).toBe(10_000 - 3);
+    expect(diff.trailingSkipped).toBe(DIFF_MAX_LINES_PER_SIDE - 10_000 - 1 - 3);
+  });
+});
+
+describe("diffWikitext answer caps", () => {
+  it("counts the unchanged lines after the last hunk", () => {
+    const diff = diffWikitext(lines(50).join("\n"), ["edited", ...lines(50).slice(1)].join("\n"));
+
+    expect(diff.hunks).toHaveLength(1);
+    expect(diff.trailingSkipped).toBe(50 - 1 - 3);
+  });
+
+  it("does not diff a side of more than 20,000 lines: tooLarge, no hunks, counts by line content", () => {
+    // two megabytes of one-character lines that share nothing but one line: 1M lines a side
+    const old = Array.from({ length: 1_000_000 }, () => "a").join("\n");
+    const next = Array.from({ length: 1_000_000 }, () => "b").join("\n");
+    const started = Date.now();
+
+    const diff = diffWikitext(old, next);
+
+    expect(Date.now() - started).toBeLessThan(5000);
+    expect(diff.tooLarge).toBe(true);
+    expect(diff.hunks).toEqual([]);
+    expect(diff.added).toBe(1_000_000);
+    expect(diff.removed).toBe(1_000_000);
+    expect(JSON.stringify(diff).length).toBeLessThan(200);
+  });
+
+  it("refuses one line past the cap and accepts the cap itself", () => {
+    expect(diffWikitext(lines(DIFF_MAX_LINES_PER_SIDE + 1).join("\n"), "x").tooLarge).toBe(true);
+    expect(diffWikitext("x", lines(DIFF_MAX_LINES_PER_SIDE + 1).join("\n")).tooLarge).toBe(true);
+    const atCap = lines(DIFF_MAX_LINES_PER_SIDE);
+    expect(
+      diffWikitext(atCap.join("\n"), [...atCap.slice(1), "x"].join("\n")).tooLarge
+    ).toBeUndefined();
+  });
+
+  it("cuts an answer of more than 5,000 rows after the last whole hunk that fits", () => {
+    // 1,000 edits 8 lines apart: 1,000 hunks of 8 context + 2 changed = 10 rows each → 10,000 rows
+    const old = lines(8_000);
+    const next = old.map((line, i) => (i % 8 === 4 ? `${line} edited` : line));
+
+    const diff = diffWikitext(old.join("\n"), next.join("\n"));
+
+    expect(diff.truncated).toBe(true);
+    expect(diff.tooLarge).toBeUndefined();
+    expect(rowsOf(diff).length).toBeLessThanOrEqual(DIFF_MAX_ROWS);
+    expect(rowsOf(diff).length).toBeGreaterThan(DIFF_MAX_ROWS - 20);
+    // the counts are of the whole diff, not of what is shown
+    expect(diff.added).toBe(1_000);
+    expect(diff.removed).toBe(1_000);
+    expect(diff.trailingSkipped).toBe(0);
+  });
+
+  it("says tooLarge when not even the first hunk fits in the rows", () => {
+    const diff = diffWikitext(lines(8_000, "old").join("\n"), lines(8_000, "new").join("\n"));
+
+    expect(diff.tooLarge).toBe(true);
+    expect(diff.hunks).toEqual([]);
+    expect(diff.added).toBe(8_000);
+    expect(diff.removed).toBe(8_000);
   });
 });
 

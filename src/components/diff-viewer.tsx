@@ -6,6 +6,7 @@ import {
   diffWikitext,
   type DiffHunk,
   type DiffRow as DiffLine,
+  type WikitextDiff,
 } from "~/lib/wiki-os/transformers/wikitext-diff";
 
 type DiffLayout = "unified" | "split";
@@ -27,8 +28,8 @@ interface WithPatch {
   hunks?: never;
 }
 
-/** A diff the server already computed: the viewer only draws it. */
-interface WithHunks {
+/** A diff the server already computed (an answer of `getDiff`): the viewer only draws it. */
+interface WithHunks extends Partial<Omit<WikitextDiff, "hunks">> {
   hunks: readonly DiffHunk[];
   oldCode?: never;
   newCode?: never;
@@ -76,22 +77,49 @@ function entriesFromPatch(patch: string): DiffLine[] {
 }
 
 /** The rows of `hunks` in order, with a gap entry wherever unchanged lines were left out. */
-function entriesFromHunks(hunks: readonly DiffHunk[]): DiffEntry[] {
-  return hunks.flatMap((hunk): DiffEntry[] =>
+function entriesFromHunks(hunks: readonly DiffHunk[], trailingSkipped = 0): DiffEntry[] {
+  const entries = hunks.flatMap((hunk): DiffEntry[] =>
     hunk.skipped > 0 ? [{ type: "gap", skipped: hunk.skipped }, ...hunk.rows] : hunk.rows
   );
+  return trailingSkipped > 0 ? [...entries, { type: "gap", skipped: trailingSkipped }] : entries;
 }
 
-/** The entries to draw. Two texts are diffed here by the same bounded diff the server runs. */
-function computeEntries(input: DiffInput): DiffEntry[] | "too-large" {
-  if (input.hunks) return entriesFromHunks(input.hunks);
-  if (input.patch) return entriesFromPatch(input.patch);
+interface Drawn {
+  entries: DiffEntry[];
+  /** Too many lines to show a diff at all. */
+  tooLarge: boolean;
+  /** Only the first changes are in `entries`. */
+  truncated: boolean;
+}
+
+/** What to draw. Two texts are diffed here by the same bounded diff the server runs. */
+function compute({
+  hunks,
+  patch,
+  oldCode,
+  newCode,
+  trailingSkipped,
+  tooLarge,
+  truncated,
+}: DiffInput & Pick<WikitextDiff, "trailingSkipped" | "tooLarge" | "truncated">): Drawn {
+  if (hunks) {
+    return {
+      entries: entriesFromHunks(hunks, trailingSkipped),
+      tooLarge: !!tooLarge,
+      truncated: !!truncated,
+    };
+  }
+  if (patch) return { entries: entriesFromPatch(patch), tooLarge: false, truncated: false };
   try {
-    return entriesFromHunks(
-      diffWikitext(input.oldCode ?? "", input.newCode ?? "", { context: Infinity }).hunks
-    );
+    const diff = diffWikitext(oldCode ?? "", newCode ?? "", { context: Infinity });
+    return {
+      entries: entriesFromHunks(diff.hunks),
+      tooLarge: !!diff.tooLarge,
+      truncated: !!diff.truncated,
+    };
   } catch (error) {
-    if (error instanceof DiffTooLargeError) return "too-large";
+    if (error instanceof DiffTooLargeError)
+      return { entries: [], tooLarge: true, truncated: false };
     throw error;
   }
 }
@@ -307,21 +335,32 @@ export function DiffViewer({
   newCode,
   patch,
   hunks,
+  trailingSkipped,
+  tooLarge,
+  truncated,
+  added,
+  removed,
   ...props
 }: DiffViewerProps) {
-  const input: DiffInput = hunks
-    ? { hunks }
-    : patch !== undefined
-      ? { patch }
-      : { oldCode: oldCode ?? "", newCode: newCode ?? "" };
-  const computed = computeEntries(input);
-  const entries = computed === "too-large" ? [] : computed;
+  const drawn = compute({
+    ...(hunks
+      ? { hunks }
+      : patch !== undefined
+        ? { patch }
+        : { oldCode: oldCode ?? "", newCode: newCode ?? "" }),
+    trailingSkipped,
+    tooLarge,
+    truncated,
+  });
+  const { entries } = drawn;
   const numWidth = lineNumberWidth(entries);
 
-  const stats = { added: 0, removed: 0 };
-  for (const entry of entries) {
-    if (entry.type === "added") stats.added++;
-    if (entry.type === "removed") stats.removed++;
+  const stats = { added: added ?? 0, removed: removed ?? 0 };
+  if (added === undefined && removed === undefined) {
+    for (const entry of entries) {
+      if (entry.type === "added") stats.added++;
+      if (entry.type === "removed") stats.removed++;
+    }
   }
 
   const fullCode = entries.flatMap((e) => (e.type === "gap" ? [] : [e.content])).join("\n");
@@ -364,9 +403,13 @@ export function DiffViewer({
       )}
 
       <div className="overflow-x-auto">
-        {computed === "too-large" ? (
-          <p className="text-muted-foreground px-4 py-6 text-center text-sm">
-            This text is too large to compare in the browser.
+        {drawn.tooLarge ? (
+          <p role="status" className="text-muted-foreground px-4 py-6 text-center text-sm">
+            This diff is too large to display
+            {added !== undefined && removed !== undefined
+              ? ` (${added.toLocaleString()} lines added, ${removed.toLocaleString()} removed)`
+              : ""}
+            .
           </p>
         ) : entries.length === 0 ? (
           <p className="text-muted-foreground px-4 py-6 text-center text-sm">
@@ -376,6 +419,14 @@ export function DiffViewer({
           <SplitView entries={entries} numWidth={numWidth} />
         ) : (
           <UnifiedView entries={entries} numWidth={numWidth} />
+        )}
+        {drawn.truncated && !drawn.tooLarge && (
+          <p
+            role="status"
+            className="border-border/40 text-muted-foreground border-t px-4 py-3 text-center text-xs"
+          >
+            This diff is too large to display in full; only the first changes are shown.
+          </p>
         )}
       </div>
     </div>

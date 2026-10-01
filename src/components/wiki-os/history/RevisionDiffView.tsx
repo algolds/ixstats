@@ -185,6 +185,11 @@ export function RevisionDiffView({ fromrev, torev, backHref, backLabel }: Revisi
             <div className="border-border/40 bg-card/60 overflow-hidden rounded-2xl border p-4">
               <DiffViewer
                 hunks={data.hunks}
+                trailingSkipped={data.trailingSkipped}
+                tooLarge={data.tooLarge}
+                truncated={data.truncated}
+                added={data.added}
+                removed={data.removed}
                 layout={layout}
                 language="markdown"
                 oldTitle={`Revision r${data.from.revid} (${data.from.user})`}

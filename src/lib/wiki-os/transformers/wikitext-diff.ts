@@ -5,12 +5,20 @@
  * that has a counterpart on the other side (the first removed line with the first added one, and so
  * on) also carries the character ranges that differ, so the UI marks words, never HTML.
  *
- * Bounded on every axis: 2 MB per side, an edit distance and a step budget. A diff past the last
- * two is not refused: the lines between the common head and tail are shown as removed and added.
+ * Bounded on every axis: 2 MB and 20,000 lines per side, an edit distance, a step budget, and 5,000
+ * rows in the answer. A diff past the edit distance or the step budget is not refused: the lines
+ * between the common head and tail are shown as removed and added. A text of more than 20,000 lines
+ * is not diffed at all (`tooLarge`, with line counts), and an answer of more than 5,000 rows is cut
+ * after its last whole hunk that fits (`truncated`), so one request can never cost a megabyte-scale
+ * JSON body.
  */
 
 /** Largest text compared, per side. */
 export const DIFF_MAX_BYTES_PER_SIDE = 2 * 1024 * 1024;
+/** Most lines either side may have before the diff is refused as too large to show. */
+export const DIFF_MAX_LINES_PER_SIDE = 20_000;
+/** Most rows (changed and context lines) one answer carries. */
+export const DIFF_MAX_ROWS = 5_000;
 /** Lines of unchanged text kept on each side of a change. */
 export const DIFF_CONTEXT_LINES = 3;
 /** Longest line compared word by word with its counterpart. */
@@ -46,8 +54,14 @@ export interface DiffHunk {
 
 export interface WikitextDiff {
   hunks: DiffHunk[];
+  /** Unchanged lines left out after the last hunk. */
+  trailingSkipped: number;
   added: number;
   removed: number;
+  /** Too many lines to compare: there are no hunks, and the counts are by line content, not position. */
+  tooLarge?: true;
+  /** More rows than one answer carries: the hunks are the first ones, the counts are of the whole diff. */
+  truncated?: true;
 }
 
 export class DiffTooLargeError extends Error {
@@ -338,7 +352,10 @@ function rowsOf(
 }
 
 /** Cuts `rows` into hunks: each change with `context` unchanged rows each side, close ones merged. */
-function toHunks(rows: readonly DiffRow[], context: number): DiffHunk[] {
+function toHunks(
+  rows: readonly DiffRow[],
+  context: number
+): { hunks: DiffHunk[]; trailing: number } {
   const hunks: DiffHunk[] = [];
   let hunkEnd = 0; // exclusive end of the previous hunk
   let i = 0;
@@ -358,12 +375,51 @@ function toHunks(rows: readonly DiffRow[], context: number): DiffHunk[] {
     hunkEnd = end;
     i = end;
   }
-  return hunks;
+  return { hunks, trailing: hunks.length > 0 ? rows.length - hunkEnd : 0 };
+}
+
+/** How many lines `text` has (an empty text has none). */
+function lineCount(text: string): number {
+  if (text === "") return 0;
+  let count = 1;
+  for (let at = text.indexOf("\n"); at !== -1; at = text.indexOf("\n", at + 1)) count++;
+  return count;
+}
+
+/**
+ * The lines each side has more of than the other, counted by content (a line moved counts for
+ * nothing). Linear: the answer for texts too long to diff line by line.
+ */
+function lineBalance(oldText: string, newText: string): { added: number; removed: number } {
+  const unmatched = new Map<string, number>();
+  for (const line of oldText.split("\n")) unmatched.set(line, (unmatched.get(line) ?? 0) + 1);
+  let added = 0;
+  for (const line of newText.split("\n")) {
+    const left = unmatched.get(line) ?? 0;
+    if (left > 0) unmatched.set(line, left - 1);
+    else added++;
+  }
+  let removed = 0;
+  for (const left of unmatched.values()) removed += left;
+  return { added, removed };
+}
+
+/** The hunks that fit `DIFF_MAX_ROWS` together, and whether any were left out. */
+function withinRowBudget(hunks: DiffHunk[]): { kept: DiffHunk[]; truncated: boolean } {
+  let rows = 0;
+  let keep = 0;
+  while (keep < hunks.length && rows + hunks[keep]!.rows.length <= DIFF_MAX_ROWS) {
+    rows += hunks[keep]!.rows.length;
+    keep++;
+  }
+  return { kept: hunks.slice(0, keep), truncated: keep < hunks.length };
 }
 
 /**
  * The difference between two texts as hunks of ±`context` lines (3 by default). Throws
- * `DiffTooLargeError` for a text over 2 MB. Identical texts have no hunks.
+ * `DiffTooLargeError` for a text over 2 MB. Identical texts have no hunks. A text of more than
+ * 20,000 lines gives `tooLarge` and no hunks; more than 5,000 rows are cut (`truncated`), and when
+ * not even the first hunk fits, that is `tooLarge` too.
  */
 export function diffWikitext(
   oldText: string,
@@ -371,18 +427,33 @@ export function diffWikitext(
   { context = DIFF_CONTEXT_LINES }: DiffOptions = {}
 ): WikitextDiff {
   if (exceedsLimit(oldText) || exceedsLimit(newText)) throw new DiffTooLargeError();
+  if (
+    lineCount(oldText) > DIFF_MAX_LINES_PER_SIDE ||
+    lineCount(newText) > DIFF_MAX_LINES_PER_SIDE
+  ) {
+    return { hunks: [], trailingSkipped: 0, tooLarge: true, ...lineBalance(oldText, newText) };
+  }
 
   const oldLines = oldText === "" ? [] : oldText.split("\n");
   const newLines = newText === "" ? [] : newText.split("\n");
   const [oldIds, newIds] = intern(oldLines, newLines);
   const ops = editScript(oldIds, newIds, MAX_LINE_EDIT_DISTANCE, { steps: MAX_STEPS });
-
-  const hunks = toHunks(rowsOf(ops, oldLines, newLines), context);
-  const pairBudget = { pairs: MAX_MARKED_PAIRS };
-  for (const hunk of hunks) markChangedPairs(hunk.rows, pairBudget);
-  return {
-    hunks,
+  const counts = {
     added: ops.filter((op) => op === INSERT).length,
     removed: ops.filter((op) => op === DELETE).length,
+  };
+
+  const { hunks, trailing } = toHunks(rowsOf(ops, oldLines, newLines), context);
+  const { kept, truncated } = withinRowBudget(hunks);
+  if (truncated && kept.length === 0)
+    return { hunks: [], trailingSkipped: 0, tooLarge: true, ...counts };
+
+  const pairBudget = { pairs: MAX_MARKED_PAIRS };
+  for (const hunk of kept) markChangedPairs(hunk.rows, pairBudget);
+  return {
+    hunks: kept,
+    trailingSkipped: truncated ? 0 : trailing,
+    ...(truncated ? { truncated: true as const } : {}),
+    ...counts,
   };
 }
