@@ -159,7 +159,7 @@ variable and a Tailwind utility — see the [Facet 3 specification](../specs/202
 - **Appearance & accessibility** — one selector, `html[data-theme="light"|"dark"]`, plus `data-density`,
   `data-contrast="more"`, `data-transparency="reduced"`, `data-motion="reduced"`, `data-sound="off"` and
   `--text-scale` on `<html>`. A blocking, nonce-carrying inline script (`AppearanceInitScript`, mounted in `src/app/layout.tsx`'s `<head>`
-  and written into the server HTML with `useServerInsertedHTML`) writes them before
+  and written once into the server HTML's `<head>` with `useServerInsertedHTML`) writes them before
   first paint (`src/lib/design/appearance.ts`, shared with `ThemeProvider`). The `motion-reduce:`, `contrast-more:`,
   `transparency-reduced:` and `compact:` variants honour both the media query and the attribute.
 - **Guard** — `src/tests/architecture/token-contrast.test.ts` checks the CSS against the TS values and computes WCAG

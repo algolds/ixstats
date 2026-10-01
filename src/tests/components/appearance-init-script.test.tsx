@@ -27,6 +27,20 @@ describe("AppearanceInitScript", () => {
     expect(markup).toContain(APPEARANCE_INIT_SCRIPT.slice(0, 60));
   });
 
+  it("writes the script once: Next calls the callback again for every chunk it flushes", () => {
+    const inserted: Array<() => React.ReactNode> = [];
+    renderToString(
+      <ServerInsertedHTMLContext.Provider value={(callback) => inserted.push(callback)}>
+        <AppearanceInitScript nonce="abc123" />
+      </ServerInsertedHTMLContext.Provider>
+    );
+
+    const calls = [inserted[0]!(), inserted[0]!(), inserted[0]!()];
+    expect(renderToStaticMarkup(<>{calls[0]}</>)).toContain("<script");
+    expect(renderToStaticMarkup(<>{calls[1]}</>)).toBe("");
+    expect(renderToStaticMarkup(<>{calls[2]}</>)).toBe("");
+  });
+
   it("creates no script when the client renders it (no hydrating), and does not warn", () => {
     const errors = jest.spyOn(console, "error").mockImplementation(() => undefined);
     const { container } = render(<AppearanceInitScript nonce="abc123" />);

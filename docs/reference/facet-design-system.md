@@ -289,8 +289,9 @@ reads them through `useTheme()` (`src/context/theme-context.tsx`). Variants: `mo
 `transparency-reduced:`, `compact:`.
 
 The script is written by `AppearanceInitScript` (`src/components/providers/AppearanceInitScript.tsx`, mounted in the root
-layout's `<head>` with the request's CSP nonce) through `useServerInsertedHTML`: into the server's HTML only, never as a
-React `<script>` element. Next renders a page's tree on the client instead of hydrating it in some cases (the error shell
+layout's `<head>` with the request's CSP nonce) through `useServerInsertedHTML`: into the server's HTML only, once, in
+the `<head>` (Next calls the callback again for every chunk it flushes, so it answers once and then returns null), never
+as a React `<script>` element. Next renders a page's tree on the client instead of hydrating it in some cases (the error shell
 of a 404), and React then warns that a script it creates never runs. No component renders a `<script>` (checked by
 `src/tests/components/appearance-init-script.test.tsx`).
 

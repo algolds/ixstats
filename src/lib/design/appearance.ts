@@ -2,9 +2,9 @@
  * Facet 3 appearance & accessibility preferences on <html> (spec §1, §10).
  *
  * One code path for both writers:
- *  - the blocking inline script (`APPEARANCE_INIT_SCRIPT`), which `AppearanceInitScript` writes into
- *    the server's HTML head (`useServerInsertedHTML`, with the CSP nonce) and which runs before first
- *    paint so there is no theme flash, and
+ *  - the blocking inline script (`APPEARANCE_INIT_SCRIPT`), which `AppearanceInitScript` writes once
+ *    into the server's HTML head (`useServerInsertedHTML`, with the CSP nonce) and which runs before
+ *    first paint so there is no theme flash, and
  *  - `ThemeProvider` (`src/context/theme-context.tsx`), which re-applies on every change.
  *
  * Attributes written: `data-theme` (+ legacy `.light`/`.dark` class), `data-density`
