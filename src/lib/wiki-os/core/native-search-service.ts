@@ -4,7 +4,9 @@
  * Typeahead (`spotlightSearch`): title prefix, then title contains, then trigram similarity, in one
  * indexed query that reads no wikitext (<2 ms).
  * Full text (`fulltextSearch`): the stored `searchVector` (title A, summary B, the start of the
- * wikitext C) read with websearch_to_tsquery, ranked with ts_rank_cd, snippets from ts_headline.
+ * wikitext C) read with websearch_to_tsquery, ranked with ts_rank_cd, snippets from ts_headline. A
+ * query typed plainly (no quotes, `or` or `-word`) also matches its last word as a prefix, so a
+ * reader who has typed "Pela" finds Pelaxia.
  *
  * Both need prisma/manual-migrations/2026-09-30-wikios-search-indexes.sql. Until the operator has
  * applied it a search meets "column/function does not exist", logs one warning and answers from the
@@ -105,11 +107,19 @@ export interface SearchResultItem {
 const INDEX_RETRY_MS = 5 * 60 * 1000;
 let indexMissingSince: number | null = null;
 
-/** Postgres says the column, function, operator or extension of the new queries is not there. */
+/** What the migration creates: the column, the pg_trgm extension and its functions, the indexes. */
+const MIGRATION_OBJECTS =
+  /searchVector|pg_trgm|gin_trgm_ops|similarity|operator does not exist:.*%|wiki_articles_(?:search_vector|title_lower_trgm|title_lower_prefix)_idx/i;
+
+/**
+ * Postgres says the column, function, operator or extension of the new queries is not there: one of
+ * the migration's own objects. A missing table, or anything else, is a real fault and is not hidden.
+ */
 function isMissingIndexError(error: unknown): boolean {
   return (
     error instanceof Error &&
-    (/does not exist/i.test(error.message) || /Code: `42(703|883|704)`/.test(error.message))
+    (/does not exist/i.test(error.message) || /Code: `42(703|883|704)`/.test(error.message)) &&
+    MIGRATION_OBJECTS.test(error.message)
   );
 }
 
@@ -268,13 +278,32 @@ interface FulltextRow {
 }
 
 /**
+ * The query: what the reader typed, read by websearch_to_tsquery; when it was typed plainly, its last
+ * word as a prefix too (`prefixParam` holds that word, bare letters and digits, or NULL).
+ */
+const tsquery = (prefixParam: number): string => `(
+    CASE WHEN $${prefixParam}::text IS NULL
+      THEN websearch_to_tsquery('english', $1::text)
+      ELSE websearch_to_tsquery('english', $1::text) && to_tsquery('english', $${prefixParam}::text || ':*')
+    END)`;
+
+/**
+ * Lines that are template or table structure, not prose: `| garrison = 5000` parameters, `{{Infobox`
+ * openers, `}}` closers, `|-` and `!` table rows. Postgres's regex engine is automaton-based: linear
+ * in the text, and it runs only for the rows of the returned page.
+ */
+const STRUCTURE_LINE = String.raw`^[ \t]*[|!{}][^\n]*(\n|$)`;
+
+/**
  * One page of hits, ranked, then the headline of just those rows (ts_headline is the expensive
  * part). The headline comes from the summary when the summary has the words, else from the first
- * 5,000 characters of the wikitext; « » already in the text are removed so every marker is ts_headline's.
- * $1 the query, $2 source, $3 namespace, $4 limit, $5 offset.
+ * 5,000 characters of the prose of the first 20,000 (the part the vector covers) of the wikitext,
+ * with its template-parameter and table lines taken out; « » already in the text are removed so
+ * every marker is ts_headline's.
+ * $1 the query text, $2 source, $3 namespace, $4 limit, $5 offset, $6 the prefix word or NULL.
  */
 const FULLTEXT_SQL = `
-  WITH q AS (SELECT websearch_to_tsquery('english', $1::text) AS query),
+  WITH q AS (SELECT ${tsquery(6)} AS query),
   hits AS (
     SELECT a.id, a."updatedAt", ts_rank_cd(a."searchVector", q.query, 32) AS rank
     FROM wiki_articles a CROSS JOIN q
@@ -291,7 +320,7 @@ const FULLTEXT_SQL = `
       translate(
         CASE
           WHEN to_tsvector('english', coalesce(a.summary, '')) @@ q.query THEN a.summary
-          ELSE left(a.wikitext, 5000)
+          ELSE left(regexp_replace(left(a.wikitext, 20000), '${STRUCTURE_LINE}', '', 'gn'), 5000)
         END,
         '«»', ''
       ),
@@ -303,14 +332,28 @@ const FULLTEXT_SQL = `
   CROSS JOIN q
   ORDER BY h.rank DESC, h."updatedAt" DESC`;
 
-/** How many articles match, for the result count. $1 the query, $2 source, $3 namespace. */
+/** How many articles match, for the result count. $1 the query text, $2 source, $3 namespace, $4 the prefix word or NULL. */
 const FULLTEXT_COUNT_SQL = `
   SELECT count(*)::int AS total
   FROM wiki_articles a
   WHERE a.source = $2
     AND a.status = 'PUBLISHED'
     AND a.namespace = $3::int
-    AND a."searchVector" @@ websearch_to_tsquery('english', $1::text)`;
+    AND a."searchVector" @@ ${tsquery(4)}`;
+
+/** Websearch syntax typed on purpose: a quoted phrase, `or`, `-word`. Such a query is read as it is. */
+const WEBSEARCH_SYNTAX = /"|(?:^|\s)-\S|\bor\b/i;
+
+/**
+ * Splits a query for Postgres: `text` for websearch_to_tsquery and, for a plainly typed one, `prefix`,
+ * its last word (letters and digits only, so it is safe inside to_tsquery), which `text` then lacks.
+ */
+function toSearchTerms(query: string): { text: string; prefix: string | null } {
+  if (WEBSEARCH_SYNTAX.test(query)) return { text: query, prefix: null };
+  const last = query.match(/[\p{L}\p{N}]+/gu)?.at(-1);
+  if (!last) return { text: query, prefix: null };
+  return { text: query.slice(0, query.lastIndexOf(last)), prefix: last };
+}
 
 function toFulltextItem(row: FulltextRow): SearchResultItem {
   const { text, ranges } = toMarkedSnippet(row.headline);
@@ -335,9 +378,16 @@ async function indexedFulltext(
   offset: number,
   namespace: number
 ): Promise<{ results: SearchResultItem[]; total: number }> {
+  const { text, prefix } = toSearchTerms(query);
   const [rows, counts] = await Promise.all([
-    db.$queryRawUnsafe<FulltextRow[]>(FULLTEXT_SQL, query, source, namespace, limit, offset),
-    db.$queryRawUnsafe<Array<{ total: number }>>(FULLTEXT_COUNT_SQL, query, source, namespace),
+    db.$queryRawUnsafe<FulltextRow[]>(FULLTEXT_SQL, text, source, namespace, limit, offset, prefix),
+    db.$queryRawUnsafe<Array<{ total: number }>>(
+      FULLTEXT_COUNT_SQL,
+      text,
+      source,
+      namespace,
+      prefix
+    ),
   ]);
   return { results: rows.map(toFulltextItem), total: Number(counts[0]?.total ?? 0) };
 }
@@ -423,9 +473,9 @@ export class NativeSearchService {
   }
 
   /**
-   * Full-text search over the stored search vector: websearch syntax (quotes, `or`, `-word`),
-   * ranked, with the matching part of the text as the snippet and the hits as character ranges.
-   * `total` counts every match, not the page.
+   * Full-text search over the stored search vector: websearch syntax (quotes, `or`, `-word`), the
+   * last word of a plainly typed query matching as a prefix, ranked, with the matching part of the
+   * text as the snippet and the hits as character ranges. `total` counts every match, not the page.
    */
   static async fulltextSearch(
     query: string,

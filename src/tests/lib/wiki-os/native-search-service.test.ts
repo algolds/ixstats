@@ -73,7 +73,8 @@ describe("fulltextSearch (indexed)", () => {
     expect(pageSql).not.toMatch(/to_tsvector\('english', coalesce\(title/);
     expect(pageSql).not.toContain("ILIKE");
     // the query text, source, namespace, limit and offset travel as parameters
-    expect(pageParams).toEqual(["kingdom -war", "ixwiki", 0, 20, 40]);
+    // `-war` is websearch syntax typed on purpose: read as it is, with no prefix word
+    expect(pageParams).toEqual(["kingdom -war", "ixwiki", 0, 20, 40, null]);
   });
 
   it("counts every match in a query of its own, so total is not the page size", async () => {
@@ -85,9 +86,78 @@ describe("fulltextSearch (indexed)", () => {
     const [countSql, ...countParams] = mockQueryRaw.mock.calls[1] as [string, ...unknown[]];
     expect(countSql).toContain("count(*)");
     expect(countSql).toContain('"searchVector" @@');
-    expect(countParams).toEqual(["kingdom", "ixwiki", 0]);
+    // a plainly typed query: the text before its last word, and the last word as a prefix
+    expect(countParams).toEqual(["", "ixwiki", 0, "kingdom"]);
     expect(results).toHaveLength(1);
     expect(total).toBe(42);
+  });
+
+  it.each<[string, string, string | null]>([
+    ["Pela", "", "Pela"],
+    ["  pelaxia garrison ", "pelaxia ", "garrison"],
+    ["Pela!", "", "Pela"],
+    ["Café Pel", "Café ", "Pel"],
+    ["x y z-", "x y ", "z"],
+  ])(
+    "matches the last word of a plainly typed query as a prefix: %j reads %j then %j:*",
+    async (typed, text, prefix) => {
+      mockQueryRaw.mockResolvedValue([]);
+      const { NativeSearchService } = loadService();
+
+      await NativeSearchService.fulltextSearch(typed);
+
+      const [pageSql, ...pageParams] = mockQueryRaw.mock.calls[0] as [string, ...unknown[]];
+      expect(pageSql).toContain("to_tsquery('english', $6::text || ':*')");
+      expect(pageParams[0]).toBe(text);
+      expect(pageParams[5]).toBe(prefix);
+      // the count asks the same question
+      const countParams = (mockQueryRaw.mock.calls[1] as unknown[]).slice(1);
+      expect(countParams).toEqual([text, "ixwiki", 0, prefix]);
+    }
+  );
+
+  it.each(['"famous garrison"', "garrison -town", "war or peace", "OR", "-x", "a-b -c"])(
+    "reads %j as websearch syntax, with no prefix word",
+    async (typed) => {
+      mockQueryRaw.mockResolvedValue([]);
+      const { NativeSearchService } = loadService();
+
+      await NativeSearchService.fulltextSearch(typed);
+
+      const params = (mockQueryRaw.mock.calls[0] as unknown[]).slice(1);
+      expect(params[0]).toBe(typed);
+      expect(params[5]).toBeNull();
+    }
+  );
+
+  it("sends only letters and digits as the prefix word, so nothing a reader types is tsquery syntax", async () => {
+    mockQueryRaw.mockResolvedValue([]);
+    const { NativeSearchService } = loadService();
+
+    await NativeSearchService.fulltextSearch("kingdom foo'&|:*()<>pela");
+    await NativeSearchService.fulltextSearch("&|!():*");
+
+    const prefixes = mockQueryRaw.mock.calls
+      .filter((call) => !String((call as unknown[])[0]).includes("count(*)"))
+      .map((call) => (call as unknown[])[6]);
+    expect(prefixes).toEqual(["pela", null]);
+    expect(String((mockQueryRaw.mock.calls[0] as unknown[])[1])).toBe("kingdom foo'&|:*()<>");
+  });
+
+  it("builds the snippet from the prose: template parameter, table and brace lines are taken out in SQL, for the page's rows only", async () => {
+    mockQueryRaw.mockResolvedValue([]);
+    const { NativeSearchService } = loadService();
+
+    await NativeSearchService.fulltextSearch("garrison");
+
+    const [pageSql] = mockQueryRaw.mock.calls[0] as [string];
+    const [, headlineSql] = pageSql.split("hits AS (");
+    // the strip sits after the LIMIT, in the select over `hits`, not in the ranking
+    expect(headlineSql).toContain("LIMIT $4::int OFFSET $5::int");
+    expect(headlineSql).toContain(
+      String.raw`regexp_replace(left(a.wikitext, 20000), '^[ \t]*[|!{}][^\n]*(\n|$)', '', 'gn')`
+    );
+    expect(headlineSql).toContain("left(regexp_replace(");
   });
 
   it("filters by namespace and published status in SQL", async () => {
@@ -194,6 +264,37 @@ describe("fulltextSearch before the migration is applied", () => {
 
     expect(results[0]!.snippetRanges.length).toBeGreaterThan(0);
     expect(mockQueryRaw).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    'column "searchVector" does not exist',
+    "function similarity(text, text) does not exist",
+    "operator does not exist: text % text",
+    'extension "pg_trgm" does not exist',
+    'index "wiki_articles_title_lower_trgm_idx" does not exist',
+  ])("treats %j as the missing migration", async (message) => {
+    mockQueryRaw.mockRejectedValue(new Error(`Raw query failed. Message: \`${message}\``));
+    mockFindMany.mockResolvedValue([]);
+    mockCount.mockResolvedValue(0);
+    const { NativeSearchService } = loadService();
+
+    await expect(NativeSearchService.fulltextSearch("kingdom")).resolves.toEqual({
+      results: [],
+      total: 0,
+    });
+  });
+
+  it.each([
+    'relation "wiki_articles" does not exist',
+    'column "title" does not exist',
+    "function websearch_to_tsquery(unknown, text) does not exist",
+    'Code: `42P01`. Message: `relation "wiki_articles" does not exist`',
+  ])("does not hide %j: that is a real fault, not the missing migration", async (message) => {
+    mockQueryRaw.mockRejectedValue(new Error(message));
+    const { NativeSearchService } = loadService();
+
+    await expect(NativeSearchService.fulltextSearch("kingdom")).rejects.toThrow(message);
+    expect(mockFindMany).not.toHaveBeenCalled();
   });
 
   it("does not hide any other database error behind the slow query", async () => {

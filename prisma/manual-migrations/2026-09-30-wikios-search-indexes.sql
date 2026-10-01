@@ -28,7 +28,8 @@ BEGIN
   IF EXISTS (
     SELECT 1
     FROM information_schema.columns
-    WHERE table_name = 'wiki_articles'
+    WHERE table_schema = current_schema()
+      AND table_name = 'wiki_articles'
       AND column_name = 'searchVector'
       AND is_generated <> 'ALWAYS'
   ) THEN
