@@ -86,7 +86,7 @@ describe("LinkGraphService.syncArticleLinks", () => {
 
     expect(count).toBe(2);
     expect(mockFindMany).toHaveBeenCalledWith({
-      where: { source: "ixwiki", title: { in: ["Nato", "Foo bar"] } },
+      where: { source: "ixwiki", status: "PUBLISHED", title: { in: ["Nato", "Foo bar"] } },
       select: { id: true, title: true },
     });
     const { data } = mockCreateMany.mock.calls[0]?.[0] ?? {};

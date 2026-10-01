@@ -51,6 +51,15 @@ const viewCache = new ByteBoundedCache<SharedView>({
 });
 
 /**
+ * Forget every view kept for the article `articleId`: its bundle view, a pending view and the views
+ * filled with a viewer's chips (all keys carry the id between colons). A deleted or moved page must not
+ * be served from here for the rest of the cache's lifetime.
+ */
+export function evictArticleView(articleId: string): number {
+  return viewCache.deleteWhere((key) => key.includes(`:${articleId}:`));
+}
+
+/**
  * Imports from MediaWiki: anyone can ask for a page that does not exist, and each import is an HTTP
  * call. A few in flight, and a steady rate per process; past either the request is refused as busy
  * (`ThrottledError`), never answered "not found".
@@ -191,23 +200,25 @@ function importFromMediaWiki(title: string): Promise<boolean> {
   return attempt;
 }
 
-/** The article and its viewer-independent view; null when there is no row or nothing to show (a stub). */
+/** The article and its viewer-independent view; null when there is nothing to show (a stub). */
 async function readArticle(
-  title: string
+  head: ArticleViewHead | null
 ): Promise<{ head: ArticleViewHead; shared: SharedView } | null> {
-  const head = await ArticleRepository.findArticleForView(title);
   const shared = head && (await readSharedView(head));
   return head && shared ? { head, shared } : null;
 }
 
 /**
- * The article for `title`. When Postgres has no row (or only a stub) it is imported from
- * MediaWiki first, then looked at once more.
+ * The article for `title`. A deleted (ARCHIVED) page is "not found" for a reader `canSeeDeleted`
+ * refuses, and is never imported again. When Postgres has no row (or only a stub) the page is
+ * imported from MediaWiki first, then looked at once more.
  */
-async function findArticle(title: string) {
-  const found = await readArticle(title);
+async function findArticle(title: string, canSeeDeleted: () => Promise<boolean>) {
+  const head = await ArticleRepository.findArticleForView(title);
+  if (head?.status === "ARCHIVED" && !(await canSeeDeleted())) return null;
+  const found = await readArticle(head);
   if (found || !(await importFromMediaWiki(title))) return found;
-  return readArticle(title);
+  return readArticle(await ArticleRepository.findArticleForView(title));
 }
 
 function statPlaceholder(key: string): string {
@@ -271,14 +282,15 @@ async function withViewerChips(
 /**
  * The reader's view of the IxWiki article `title` (already canonical, redirects already followed),
  * or null when there is no such article. `getViewerCountryId` is called only for an article that
- * carries per-viewer template chips. Rejects with `ThrottledError` when the article is missing and
- * MediaWiki could not be asked about it right now.
+ * carries per-viewer template chips, `canSeeDeleted` only for a deleted page. Rejects with
+ * `ThrottledError` when the article is missing and MediaWiki could not be asked about it right now.
  */
 export async function getArticleView(
   title: string,
-  getViewerCountryId: () => Promise<string | null>
+  getViewerCountryId: () => Promise<string | null>,
+  canSeeDeleted: () => Promise<boolean> = () => Promise.resolve(false)
 ): Promise<ArticleView | null> {
-  const found = await findArticle(title);
+  const found = await findArticle(title, canSeeDeleted);
   if (!found) return null;
 
   const view = await withViewerChips(found.shared, getViewerCountryId);

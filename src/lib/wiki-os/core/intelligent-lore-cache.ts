@@ -13,6 +13,7 @@
 import { Cache } from "~/lib/cache/cache";
 import { db } from "~/server/db";
 import { type WikiSource } from "~/lib/wiki-os/config";
+import { canonicalizeTitle, sameTitle } from "~/lib/wiki-os/core/title";
 import { type ExtractedBuilderData } from "~/lib/builder/wiki-data-extractor";
 
 export interface LoreScanCachedResult {
@@ -282,6 +283,55 @@ export class IntelligentLoreCache {
   invalidateCountry(wiki: WikiSource, countryName: string): void {
     const key = `${wiki}:${countryName.toLowerCase().trim()}`;
     scanMemoryCache.delete(key);
+  }
+
+  /**
+   * Forget everything held about the page `title`: the scans that read it (or are for the country it
+   * names), the category lists naming it, and the negative "no such page" marks. Memory and the
+   * `external_api_cache` rows both; a deleted page must not come back out of a cache.
+   */
+  async evictTitle(wiki: WikiSource, title: string): Promise<void> {
+    const same = (candidate: string) => sameTitle(candidate, title, wiki);
+    const dropWhere = <V>(cache: Cache<V>, matches: (value: V, key: string) => boolean) => {
+      const keys: string[] = [];
+      cache.forEach((value, key) => {
+        if (matches(value, key)) keys.push(key);
+      });
+      for (const key of keys) cache.delete(key);
+    };
+    const named = (key: string) => same(key.slice(wiki.length + 1));
+    dropWhere(
+      scanMemoryCache,
+      (scan, key) =>
+        key.startsWith(`${wiki}:`) &&
+        (named(key) || scan.pages.some((page) => same(page.title)) || scan.foundVariants.some(same))
+    );
+    dropWhere(
+      categoryMemoryCache,
+      (members, key) => key.startsWith(`${wiki}:`) && members.some((member) => same(member.title))
+    );
+    dropWhere(missingPagesCache, (_value, key) => key.startsWith(`${wiki}:`) && named(key));
+
+    // The persisted copies: the scan for the country this page is, and any scan or category list that
+    // names the page (its title is a quoted string in the stored JSON, with either spelling).
+    const canonical = canonicalizeTitle(title, { source: wiki })?.title ?? title;
+    const quoted = [canonical, canonical.replace(/ /g, "_")].map((name) => JSON.stringify(name));
+    const country = [canonical, canonical.replace(/ /g, "_")].map(
+      (name) => `lore:${wiki}:${name.toLowerCase()}`
+    );
+    await db.externalApiCache.deleteMany({
+      where: {
+        service: wiki,
+        OR: [
+          { key: { in: country } },
+          ...quoted.map((name) => ({
+            key: { startsWith: "lore:" },
+            data: { contains: name },
+          })),
+          ...quoted.map((name) => ({ key: { startsWith: "cat:" }, data: { contains: name } })),
+        ],
+      },
+    });
   }
 
   /**

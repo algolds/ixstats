@@ -320,6 +320,7 @@ describe("ArticleRepository.findArticleForView (plan 404)", () => {
   const viewRow = (title: string, overrides: Record<string, unknown> = {}) => ({
     id: `id-${title}`,
     title,
+    status: "PUBLISHED",
     htmlSyncedAt: new Date("2026-09-30T10:00:00Z"),
     revisions: [{ createdAt: new Date("2026-09-29T08:00:00Z") }],
     categories: [{ category: { name: "Countries" } }, { category: { name: "Eurth" } }],
@@ -340,6 +341,7 @@ describe("ArticleRepository.findArticleForView (plan 404)", () => {
       "htmlSyncedAt",
       "id",
       "revisions",
+      "status",
       "title",
     ]);
     expect(select.revisions).toMatchObject({ take: 1, orderBy: { createdAt: "desc" } });
@@ -347,6 +349,7 @@ describe("ArticleRepository.findArticleForView (plan 404)", () => {
     expect(head).toEqual({
       id: "id-Foo bar",
       title: "Foo bar",
+      status: "PUBLISHED",
       htmlSyncedAt: new Date("2026-09-30T10:00:00Z"),
       lastModified: new Date("2026-09-29T08:00:00Z"),
       categories: ["Countries", "Eurth"],

@@ -1086,6 +1086,151 @@ describe("options", () => {
   });
 });
 
+describe("legacy <restrictions> become wiki_restrictions rows (plan 409 review)", () => {
+  const rulesOf = (title: string) =>
+    store.restrictions
+      .filter((r) => r.title === title)
+      .map((r) => `${r.action}:${r.level}`)
+      .sort();
+  const dumpWith = (restrictions: string) =>
+    FIXTURE.replace(
+      "<restrictions>edit=sysop:move=sysop</restrictions>",
+      `<restrictions>${restrictions}</restrictions>`
+    );
+
+  it("creates the enforced rows (the table the rights engine reads), next to the legacy mirror", async () => {
+    await importFixture();
+
+    expect(rulesOf("Kingdom of Testia")).toEqual(["edit:sysop", "move:sysop"]);
+    expect(store.restrictions[0]).toMatchObject({
+      source: "ixwiki",
+      title: "Kingdom of Testia",
+      reason: "Imported from a MediaWiki dump",
+    });
+    expect(article("Kingdom of Testia").protectionLevel).toBe("SYSOP");
+    // pages the dump did not protect get none
+    expect(rulesOf("Testia")).toEqual([]);
+  });
+
+  it("reads edit, move and upload rules, autoconfirmed and sysop levels, and ignores the rest", async () => {
+    await importXml(
+      dumpWith("edit=autoconfirmed:move=sysop:upload=sysop:create=sysop:delete=sysop")
+    );
+
+    expect(rulesOf("Kingdom of Testia")).toEqual([
+      "edit:autoconfirmed",
+      "move:sysop",
+      "upload:sysop",
+    ]);
+    expect(article("Kingdom of Testia").protectionLevel).toBe("AUTOCONFIRMED");
+  });
+
+  it("tightens a level it has no counterpart for to sysop and warns", async () => {
+    const summary = await importXml(dumpWith("edit=templateeditor"));
+
+    expect(rulesOf("Kingdom of Testia")).toEqual(["edit:sysop"]);
+    expect(summary.warnings).toContainEqual({
+      title: "Kingdom of Testia",
+      message: "protection edit=templateeditor has no WikiOS counterpart; imported as sysop",
+    });
+  });
+
+  it("is idempotent and never changes a restriction WikiOS already has", async () => {
+    store.restrictions.push({
+      source: "ixwiki",
+      title: "Kingdom of Testia",
+      action: "edit",
+      level: "autoconfirmed",
+      reason: null,
+    });
+
+    await importFixture();
+    await importFixture();
+
+    expect(store.restrictions.filter((r) => r.title === "Kingdom of Testia")).toHaveLength(2);
+    expect(rulesOf("Kingdom of Testia")).toEqual(["edit:autoconfirmed", "move:sysop"]);
+  });
+
+  it("writes none in a dry run, and files another wiki's under its own source", async () => {
+    await importFixture({ dryRun: true });
+    expect(store.restrictions).toEqual([]);
+
+    await importFixture({ source: "iiwiki" });
+    expect(store.restrictions.every((r) => r.source === "iiwiki")).toBe(true);
+    expect(store.restrictions).toHaveLength(2);
+  });
+
+  it("a page that fails to import leaves no restriction behind", async () => {
+    const broken = dumpWith("edit=sysop").replace("2026-01-02T03:04:05Z", "not a timestamp");
+    const summary = await importXml(broken);
+    expect(summary.errors.length).toBeGreaterThan(0);
+    expect(rulesOf("Kingdom of Testia")).toEqual([]);
+  });
+});
+
+describe("per-page authorization (plan 409: canWritePage)", () => {
+  const deny = (reason: string) => ({ allowed: false as const, reason });
+
+  it("skips a page the callback refuses, lists it as a permission error, and imports the rest", async () => {
+    const summary = await importFixture({
+      canWritePage: (_title, namespaceId) =>
+        namespaceId === 10
+          ? deny("Only wiki administrators can edit pages in this namespace.")
+          : { allowed: true },
+    });
+
+    expect(summary.pages).toBe(5);
+    expect(summary.pagesCreated).toBe(4);
+    expect(summary.errors).toEqual([
+      {
+        title: "Template:Infobox testia",
+        message: "permission: Only wiki administrators can edit pages in this namespace.",
+      },
+    ]);
+    expect(store.articles.map((a) => a.title).sort()).toEqual([
+      "File:Testia flag.png",
+      "Kingdom of Testia",
+      "Talk:Kingdom of Testia",
+      "Testia",
+    ]);
+  });
+
+  it("asks with the canonical title and the stored namespace of every page", async () => {
+    const asked: Array<[string, number]> = [];
+    await importFixture({
+      canWritePage: (title, namespaceId) => {
+        asked.push([title, namespaceId]);
+        return { allowed: true };
+      },
+    });
+
+    expect(asked).toEqual([
+      ["Kingdom of Testia", 0],
+      ["Testia", 0],
+      ["Talk:Kingdom of Testia", 1],
+      ["Template:Infobox testia", 10],
+      ["File:Testia flag.png", 6],
+    ]);
+  });
+
+  it("writes nothing for a refused page in a dry run either, and does not count it as a write failure", async () => {
+    const summary = await importFixture({ dryRun: true, canWritePage: () => deny("no") });
+
+    expect(store.writes).toBe(0);
+    expect(summary.pagesCreated).toBe(0);
+    expect(summary.errors).toHaveLength(5);
+    expect(summary.errors.every((e) => e.message === "permission: no")).toBe(true);
+    // a refusal is a rejection, not a database failure: the import never gives up early
+    expect(summary.errors.some((e) => e.title === "(dump)")).toBe(false);
+  });
+
+  it("writes every page when there is no callback (the operator's command line tools)", async () => {
+    const summary = await importFixture();
+    expect(summary.errors).toEqual([]);
+    expect(store.articles).toHaveLength(5);
+  });
+});
+
 describe("events that are not pages", () => {
   it("ignores siteinfo and counts only pages", async () => {
     const events: ImportEvent[] = [

@@ -79,4 +79,18 @@ describe("ByteBoundedCache", () => {
     expect(c.get("default")).toBeUndefined();
     expect(c.totalBytes).toBe(0);
   });
+
+  it("deleteWhere drops the matching entries and gives their bytes back", () => {
+    const { cache: c } = cache(100);
+    c.set("view:a1:1", "x", 10);
+    c.set("chips:view:a1:1:fr", "y", 20);
+    c.set("view:a2:1", "z", 30);
+
+    expect(c.deleteWhere((key) => key.includes(":a1:"))).toBe(2);
+
+    expect(c.get("view:a1:1")).toBeUndefined();
+    expect(c.get("view:a2:1")).toBe("z");
+    expect(c.totalBytes).toBe(30);
+    expect(c.size).toBe(1);
+  });
 });

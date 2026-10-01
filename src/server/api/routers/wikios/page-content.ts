@@ -26,6 +26,12 @@ import { getArticleView } from "~/lib/wiki-os/services/article-view-service";
 import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import {
+  assertTitleVisible,
+  canSeeDeletedPages,
+  canSeeTitle,
+  visibleTitles,
+} from "~/lib/wiki-os/permissions";
 import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
 
 // Register host-app template data provider
@@ -164,15 +170,17 @@ export const wikiosPageContentRouter = createTRPCRouter({
 
       const { title: resolvedTitle } = await resolveRedirect(rawTitle);
 
-      const view = await getArticleView(resolvedTitle, () => resolveActiveCountryId(ctx)).catch(
-        (error: Error) => {
-          // Not asking MediaWiki about a missing page right now is "busy", not "no such page".
-          if (error instanceof ThrottledError) {
-            throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: error.message });
-          }
-          throw error;
+      const view = await getArticleView(
+        resolvedTitle,
+        () => resolveActiveCountryId(ctx),
+        () => canSeeDeletedPages(ctx)
+      ).catch((error: Error) => {
+        // Not asking MediaWiki about a missing page right now is "busy", not "no such page".
+        if (error instanceof ThrottledError) {
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: error.message });
         }
-      );
+        throw error;
+      });
       if (!view) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -201,8 +209,9 @@ export const wikiosPageContentRouter = createTRPCRouter({
         wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const { title: resolvedTitle } = await resolveRedirect(input.title);
+      await assertTitleVisible(ctx, resolvedTitle, input.wikiSource);
       return getArticleAuthors(resolvedTitle, input.wikiSource);
     }),
 
@@ -211,13 +220,16 @@ export const wikiosPageContentRouter = createTRPCRouter({
    */
   getWikitext: publicProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await assertTitleVisible(ctx, input.title);
       // The head revision is read BEFORE the text: a save in between can then only make the text newer
       // than its ref (a harmless extra conflict), never older (which would let a stale edit overwrite it).
       // Without the shadow store the editor still loads; it then saves without a base revision.
       const head = await getHeadRevisionRefs(input.title).catch(() => null);
       // Read-through the Postgres shadow store (resilient to MediaWiki downtime).
-      const result = await getArticleWikitextShadow(input.title, "ixwiki");
+      const result = await getArticleWikitextShadow(input.title, "ixwiki", {
+        includeArchived: true, // visibility was asserted above
+      });
       return {
         wikitext: result?.wikitext ?? "",
         revid: result?.revid ?? null,
@@ -234,9 +246,13 @@ export const wikiosPageContentRouter = createTRPCRouter({
    */
   checkPageExists: publicProcedure
     .input(z.object({ title: z.string().min(1).max(500) }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const { title: resolvedTitle } = await resolveRedirect(input.title);
-      const article = await getArticleWikitextShadow(resolvedTitle, "ixwiki");
+      // A deleted page does not exist for a reader who may not see it.
+      if (!(await canSeeTitle(ctx, resolvedTitle))) return { exists: false, resolvedTitle };
+      const article = await getArticleWikitextShadow(resolvedTitle, "ixwiki", {
+        includeArchived: true, // canSeeTitle above
+      });
       return { exists: !!article, resolvedTitle };
     }),
 
@@ -270,9 +286,10 @@ export const wikiosPageContentRouter = createTRPCRouter({
         wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const cleanTitle = input.title.replace(/_/g, " ").trim();
       const { title: resolvedTitle } = await resolveRedirect(cleanTitle);
+      await assertTitleVisible(ctx, resolvedTitle, input.wiki);
 
       const summary = await getArticleSummaryFromShadow(resolvedTitle, input.wiki);
       if (summary.intro) {
@@ -311,8 +328,9 @@ export const wikiosPageContentRouter = createTRPCRouter({
         wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const src = input.source ?? input.wiki ?? "ixwiki";
+      await assertTitleVisible(ctx, input.title, src);
       const article = await getArticleWikitextShadow(input.title, src);
       if (!article) return null;
 
@@ -371,7 +389,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
         wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await assertTitleVisible(ctx, input.title, input.wiki);
       const { getPageImages } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
       return getPageImages(input.title);
     }),
@@ -381,10 +400,10 @@ export const wikiosPageContentRouter = createTRPCRouter({
    */
   getArticleThumbnails: publicProcedure
     .input(z.object({ titles: z.array(z.string().min(1).max(512)).max(100) }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       if (input.titles.length === 0) return {};
       const { batchFetchThumbnails } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
-      const map = await batchFetchThumbnails(input.titles);
+      const map = await batchFetchThumbnails(await visibleTitles(ctx, input.titles));
       const result: Record<string, string> = {};
       for (const [title, url] of map.entries()) {
         result[title] = url;
@@ -464,7 +483,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
         wiki: z.enum(["ixwiki", "iiwiki", "althistory"]).default("ixwiki"),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await assertTitleVisible(ctx, input.title, input.wiki);
       return getInfobox(input.title, input.wiki);
     }),
 

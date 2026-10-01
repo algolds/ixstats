@@ -4,6 +4,11 @@ jest.mock("~/server/db", () => ({
   db: {
     $transaction: jest.fn().mockRejectedValue(new Error("write path reached")),
     wikiDiscussionThread: { findUnique: jest.fn().mockResolvedValue(null) },
+    // plan 409: a discussion write first checks the caller is not blocked
+    wikiAccountLink: { findFirst: jest.fn().mockResolvedValue(null) },
+    wikiUserGroup: { findMany: jest.fn().mockResolvedValue([]) },
+    wikiBlock: { findMany: jest.fn().mockResolvedValue([]) },
+    wikiRevision: { count: jest.fn().mockResolvedValue(0) },
   },
   isDatabaseReadOnly: false,
 }));

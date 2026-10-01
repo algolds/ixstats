@@ -1134,6 +1134,7 @@ export const wikiosTemplatesRouter = createTRPCRouter({
       if (!input.canonicalOnly && templateMap.size < input.limit) {
         const articleTemplates = await db.wikiArticle.findMany({
           where: {
+            status: "PUBLISHED",
             namespace: 10,
             ...(input.query ? { title: { contains: input.query, mode: "insensitive" } } : {}),
           },

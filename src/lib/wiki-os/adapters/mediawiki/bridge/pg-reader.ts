@@ -25,7 +25,11 @@ export * from "./pg-site";
 // ---------------------------------------------------------------------------
 
 export async function ixwikiGetWikitext(title: string): Promise<WikiArticle | null> {
-  const native = await ArticleRepository.getArticleBySlug(title, "ixwiki");
+  const native = await ArticleRepository.getArticleBySlug(title, "ixwiki", {
+    includeArchived: true,
+  });
+  // A deleted page is gone: the live MediaWiki copy below is not a substitute.
+  if (native?.status === "ARCHIVED") return null;
   if (native && native.wikitext) {
     return {
       title: native.title,
@@ -161,8 +165,10 @@ export async function ixwikiGetNamespacedWikitext(
           { slug: toArticleSlug(title) },
         ],
       },
-      select: { id: true, title: true, wikitext: true, namespace: true },
+      select: { id: true, title: true, wikitext: true, namespace: true, status: true },
     });
+    // A deleted page is gone: the live MediaWiki copy below is not a substitute.
+    if (art?.status === "ARCHIVED") return null;
     if (art && art.wikitext) {
       return {
         title: art.title,
@@ -233,8 +239,8 @@ interface WikitextHead {
 }
 
 /**
- * The start of the wikitext of the IxWiki row for a canonical title (the exact title, else the one
- * row whose slug matches), or null when there is no such row. A redirect must start the page, so
+ * The start of the wikitext of the published IxWiki row for a canonical title (the exact title, else
+ * the one row whose slug matches), or null when there is no such row (a deleted page redirects nowhere). A redirect must start the page, so
  * only its first 1024 characters are read, in the database: the rest of a page (up to 2 MB) never
  * crosses the wire on a view. (A redirect that begins after ~700 characters of leading whitespace
  * is not followed; MediaWiki would follow it, no real page has that.)
@@ -243,14 +249,14 @@ async function findRedirectHead(title: string): Promise<string | null> {
   const [exact] = await db.$queryRaw<WikitextHead[]>`
     SELECT left("wikitext", 1024) AS head
     FROM wiki_articles
-    WHERE "source" = 'ixwiki' AND "title" = ${title}
+    WHERE "source" = 'ixwiki' AND "status" = 'PUBLISHED' AND "title" = ${title}
     LIMIT 1`;
   if (exact) return exact.head;
 
   const variants = await db.$queryRaw<WikitextHead[]>`
     SELECT left("wikitext", 1024) AS head
     FROM wiki_articles
-    WHERE "source" = 'ixwiki' AND "slug" = ${toArticleSlug(title)}
+    WHERE "source" = 'ixwiki' AND "status" = 'PUBLISHED' AND "slug" = ${toArticleSlug(title)}
     LIMIT 2`;
   return variants.length === 1 ? (variants[0]?.head ?? null) : null;
 }

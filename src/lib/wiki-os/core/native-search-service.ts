@@ -75,6 +75,7 @@ export class NativeSearchService {
     const articles = await db.wikiArticle.findMany({
       where: {
         source,
+        status: "PUBLISHED",
         namespace: targetNamespace,
         OR: [
           { title: { startsWith: trimmed, mode: "insensitive" } },
@@ -155,6 +156,7 @@ export class NativeSearchService {
             ) as rank
           FROM wiki_articles
           WHERE source = $2
+            AND status = 'PUBLISHED'
             AND namespace = 0
             AND (
               to_tsvector('english', coalesce(title, '') || ' ' || coalesce(summary, '') || ' ' || substring(wikitext, 1, 3000)) @@ to_tsquery('english', $1)
@@ -192,6 +194,7 @@ export class NativeSearchService {
       db.wikiArticle.findMany({
         where: {
           source,
+          status: "PUBLISHED",
           OR: [
             { title: { contains: trimmed, mode: "insensitive" } },
             { wikitext: { contains: trimmed, mode: "insensitive" } },
@@ -212,6 +215,7 @@ export class NativeSearchService {
       db.wikiArticle.count({
         where: {
           source,
+          status: "PUBLISHED",
           OR: [
             { title: { contains: trimmed, mode: "insensitive" } },
             { wikitext: { contains: trimmed, mode: "insensitive" } },
@@ -255,6 +259,7 @@ export async function getArticleSummaryFromShadow(
     const article = await db.wikiArticle.findFirst({
       where: {
         source,
+        status: "PUBLISHED",
         OR: [
           { slug },
           { title: { equals: cleanTitle, mode: "insensitive" } },

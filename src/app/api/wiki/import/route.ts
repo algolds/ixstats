@@ -8,6 +8,10 @@
  * anything else, or no `dryRun`, only reads and reports what would happen. Responds with the import
  * summary as JSON. A larger dump is imported with `scripts/wikios-import-xml.ts`.
  *
+ * Each page is authorized on its own (`importVerdict`): a caller who may import but not edit a
+ * page's namespace (Template:/Module:/MediaWiki: need `editprotected`, site and user scripts their
+ * interface-admin right) gets it skipped and listed in `errors` as `permission: <reason>`.
+ *
  * GET answers whether the caller may import at all (and the size limit), for the import page.
  *
  * The limit sits below Next.js's own `experimental.proxyClientMaxBodySize` (10 MiB by default):
@@ -18,7 +22,8 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
-import { isWikiAdmin } from "~/lib/wiki-os/auth";
+import { importVerdict } from "~/lib/wiki-os/permissions";
+import { getWikiPermissionsForAuthId, type WikiPermissions } from "~/lib/wiki-os/rights";
 import { readExport } from "~/lib/wiki-os/xml/import-reader";
 import { DEFAULT_MAX_UPLOAD_BYTES, uploadKind } from "~/lib/wiki-os/xml/import-request";
 import { importExport, type ImportSummary } from "~/lib/wiki-os/xml/importer";
@@ -39,11 +44,14 @@ function maxUploadBytes(): number {
   return Number.isSafeInteger(configured) && configured > 0 ? configured : DEFAULT_MAX_UPLOAD_BYTES;
 }
 
-/** The failure response for a caller who may not import, or null for a wiki admin. */
-async function adminFailure(): Promise<NextResponse | null> {
+/** The caller's permissions when they may import (they need the `import` right), else the failure response. */
+async function authorize(): Promise<{ permissions: WikiPermissions } | { failure: NextResponse }> {
   const { userId } = await auth();
-  if (!userId) return fail("Authentication required", 401);
-  return isWikiAdmin({ auth: { userId } }) ? null : fail("Wiki admin access required", 403);
+  if (!userId) return { failure: fail("Authentication required", 401) };
+  const permissions = await getWikiPermissionsForAuthId(userId);
+  return permissions.rights.has("import")
+    ? { permissions }
+    : { failure: fail("Wiki admin access required", 403) };
 }
 
 /** The summary as the route reports it: long lists cut, with their full counts. */
@@ -60,12 +68,16 @@ function report(summary: ImportSummary, dryRun: boolean) {
 
 /** Whether the caller may import: 200 (with the size limit) for a wiki admin, 401 or 403 otherwise. */
 export async function GET() {
-  return (await adminFailure()) ?? NextResponse.json({ admin: true, maxBytes: maxUploadBytes() });
+  const access = await authorize();
+  return "failure" in access
+    ? access.failure
+    : NextResponse.json({ admin: true, maxBytes: maxUploadBytes() });
 }
 
 export async function POST(req: NextRequest) {
-  const denied = await adminFailure();
-  if (denied) return denied;
+  const access = await authorize();
+  if ("failure" in access) return access.failure;
+  const { permissions } = access;
 
   const kind = uploadKind(req.headers.get("content-type"));
   if (!kind) {
@@ -97,7 +109,10 @@ export async function POST(req: NextRequest) {
     }
   };
 
-  const summary = await importExport(readExport(chunks()), { dryRun });
+  // Each page is written only if this caller may write it: a sysop cannot import site scripts.
+  const canWritePage = (title: string, namespaceId: number) =>
+    importVerdict(permissions, title, namespaceId);
+  const summary = await importExport(readExport(chunks()), { dryRun, canWritePage });
   // A body with no Content-Length (chunked) is only found too large while it streams: the pages
   // before that point were imported (each page is atomic), and the summary says which.
   if (exceeded)
