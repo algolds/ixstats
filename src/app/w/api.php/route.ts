@@ -8,6 +8,7 @@
  * so nothing of the IxStates shell wraps it.
  */
 
+import { MIMEType } from "node:util";
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { resolveRateLimitIdentifier } from "~/server/api/trpc/rate-limit-identity";
@@ -76,16 +77,36 @@ async function readBodyBytes(req: NextRequest, maxBytes: number): Promise<Uint8A
   return Buffer.concat(chunks);
 }
 
-/** Thrown when a multipart body has more parts than api.php reads. */
-class TooManyParts extends Error {}
+/** Thrown for a multipart request api.php will not read: its message says why (the answer's `info`). */
+class BadMultipart extends Error {}
+
+/** The longest boundary RFC 2046 allows. */
+const MAX_BOUNDARY_LENGTH = 70;
+
+/**
+ * The multipart boundary, read the way the platform's parser reads it (a quoted parameter holding `;boundary=` is not
+ * one). Throws `BadMultipart` when there is none or it is longer than RFC 2046 allows: the part count below searches for
+ * it, and a boundary of 8 KB (what nginx lets through in a header) would make that search cost seconds.
+ */
+function multipartBoundary(contentType: string): string {
+  let boundary: string | undefined;
+  try {
+    boundary = new MIMEType(contentType).params.get("boundary");
+  } catch {
+    // not a MIME type: no boundary
+  }
+  if (!boundary || boundary.length > MAX_BOUNDARY_LENGTH) {
+    throw new BadMultipart(
+      `A multipart request needs a boundary of at most ${MAX_BOUNDARY_LENGTH} characters.`
+    );
+  }
+  return boundary;
+}
 
 /** Whether `bytes` has more than `MAX_MULTIPART_PARTS` parts: occurrences of its boundary line, counted without parsing the body. */
-function hasTooManyParts(bytes: Uint8Array, contentType: string): boolean {
-  const boundary = /boundary=(?:"([^"]+)"|([^;\s]+))/i.exec(contentType);
-  const name = boundary?.[1] ?? boundary?.[2];
-  if (!name) return false; // `formData()` refuses a body with no boundary
+function hasTooManyParts(bytes: Uint8Array, boundary: string): boolean {
   const body = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  const marker = Buffer.from(`--${name}`);
+  const marker = Buffer.from(`--${boundary}`);
   // one boundary line per part, and one more closes the body
   let lines = 0;
   for (let at = body.indexOf(marker); at !== -1; at = body.indexOf(marker, at + marker.length)) {
@@ -112,17 +133,21 @@ function hasSignedSession(cookie: string | undefined): boolean {
 async function readBody(req: NextRequest, hasSession: boolean): Promise<RequestBody> {
   const type = req.headers.get("content-type") ?? "";
   const multipart = type.includes("multipart/form-data");
+  // before the body is read, and before anything is searched for in it
+  const boundary = multipart ? multipartBoundary(type) : null;
   const bytes = await readBodyBytes(
     req,
     multipart && hasSession ? MAX_UPLOAD_BODY_BYTES : MAX_BODY_BYTES
   );
-  if (!multipart) {
+  if (boundary === null) {
     return {
       fields: [...new URLSearchParams(new TextDecoder().decode(bytes)).entries()],
       files: new Map(),
     };
   }
-  if (hasTooManyParts(bytes, type)) throw new TooManyParts();
+  if (hasTooManyParts(bytes, boundary)) {
+    throw new BadMultipart(`A multipart request may have at most ${MAX_MULTIPART_PARTS} parts.`);
+  }
   // The bytes are already bounded; the platform's multipart parser reads them from memory.
   const form = await new Response(bytes, { headers: { "content-type": type } }).formData();
   const body: RequestBody = { fields: [], files: new Map() };
@@ -171,16 +196,11 @@ async function handle(req: NextRequest): Promise<NextResponse> {
     body = method === "POST" ? await readBody(req, hasSignedSession(sessionCookie)) : null;
   } catch (error) {
     if (error instanceof BodyTooLarge) return tooBig();
-    if (error instanceof TooManyParts) {
-      const info = `A multipart request may have at most ${MAX_MULTIPART_PARTS} parts.`;
-      return NextResponse.json(
-        { error: { code: "badrequest", info, "*": API_DOCREF } },
-        { status: 400, headers: jsonHeaders("badrequest") }
-      );
-    }
-    // A multipart body the parser cannot read.
+    // A multipart request api.php refuses, or a body the parser cannot read.
+    const info =
+      error instanceof BadMultipart ? error.message : "The request body could not be read.";
     return NextResponse.json(
-      { error: { code: "badrequest", info: "The request body could not be read.", "*": API_DOCREF } },
+      { error: { code: "badrequest", info, "*": API_DOCREF } },
       { status: 400, headers: jsonHeaders("badrequest") }
     );
   }

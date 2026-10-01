@@ -268,6 +268,57 @@ describe("an upload: a multipart body with a file part (plan 411)", () => {
     expect(Date.now() - started).toBeLessThan(2_000);
   });
 
+  it("reads the boundary the way the parser does, and refuses a missing or over-long one before reading the body (review M4b)", async () => {
+    const { cookie } = await login();
+    const token = await csrfToken(cookie);
+    const form = uploadForm(new Uint8Array([1, 2, 3]), token);
+    const probe = new Response(form);
+    const real = /boundary=([^;]+)/.exec(probe.headers.get("content-type")!)![1]!;
+    const bytes = new Uint8Array(await probe.arrayBuffer());
+    const send = (type: string, body: BodyInit = bytes) =>
+      route.POST(new NextRequest(url(), { method: "POST", headers: { cookie, "content-type": type }, body }));
+
+    // a normal multipart request still works
+    const normal = await send(`multipart/form-data; boundary=${real}`);
+    expect((await json(normal)).upload.result).toBe("Success");
+
+    // a boundary a parameter's quoted text only mentions is not the boundary: the real one counts, so the part cap still holds
+    const many = new FormData();
+    many.set("action", "upload");
+    for (let i = 0; i < 200; i++) many.set(`pad${i}`, "x");
+    const manyProbe = new Response(many);
+    const manyBoundary = /boundary=([^;]+)/.exec(manyProbe.headers.get("content-type")!)![1]!;
+    const manyBytes = new Uint8Array(await manyProbe.arrayBuffer());
+    const bypass = await send(`multipart/form-data; x="a;boundary=zzz"; boundary=${manyBoundary}`, manyBytes);
+    expect(bypass.status).toBe(400);
+    expect((await json(bypass)).error.info).toContain("64 parts");
+
+    // no boundary, an empty one, or one over 70 characters: 400 at once, whatever the body
+    for (const type of ["multipart/form-data", "multipart/form-data; boundary=", `multipart/form-data; boundary=${"b".repeat(71)}`, "multipart/form-data; boundary=" + "b".repeat(8000)]) {
+      const refused = await send(type);
+      expect(refused.status).toBe(400);
+      expect((await json(refused)).error).toMatchObject({ code: "badrequest", info: expect.stringContaining("70 characters") });
+    }
+    // 70 characters is allowed
+    const edge = await send(`multipart/form-data; boundary=${"b".repeat(70)}`);
+    expect((await json(edge)).error.info).not.toContain("70 characters");
+  });
+
+  it("answers a long boundary over a 4 MiB body in milliseconds, not seconds, with no session (review M4b)", async () => {
+    // the vector: an 8 KB boundary and a body of near-matches made the part count cost 3.4 s of event loop for 4 MiB
+    const nearMatches = Buffer.from(`--${"a".repeat(7998)}b`.repeat(525)).subarray(0, 4 * 1024 * 1024 - 100);
+    const started = Date.now();
+    const response = await route.POST(
+      new NextRequest(url(), {
+        method: "POST",
+        headers: { "content-type": `multipart/form-data; boundary=${"a".repeat(8000)}` },
+        body: nearMatches,
+      })
+    );
+    expect(response.status).toBe(400);
+    expect(Date.now() - started).toBeLessThan(500);
+  });
+
   it("refuses a body past the upload limit even with a session, and stops reading it", async () => {
     const { cookie } = await login();
     const token = await csrfToken(cookie);
