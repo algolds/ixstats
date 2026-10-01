@@ -263,11 +263,29 @@ const MAGIC_PROPS: ReadonlyArray<readonly [string, string]> = [
   ["__STATICREDIRECT__", "staticredirect"],
 ];
 
-/** The page properties a page's own wikitext sets: DISPLAYTITLE, DEFAULTSORT and the behaviour switches. */
+/** Inline tags a display title may keep, written without attributes: `{{DISPLAYTITLE:<i>Foo</i>}}`. */
+const DISPLAY_TITLE_TAGS = /&lt;(\/?)(i|b|em|strong|sub|sup|u|s|small|big|span)&gt;/gi;
+/** A display title is a title: nothing like this many characters is one. */
+const MAX_DISPLAY_TITLE_CHARS = 1_000;
+
+/**
+ * A `{{DISPLAYTITLE}}` taken from raw wikitext, as HTML safe to hand to any client: everything is
+ * escaped except a few inline tags with no attributes (a rendered page's comes from MediaWiki, which
+ * restricts it the same way). `<img onerror=...>`, `<script>`, links and attributes stay text.
+ */
+export function displayTitleHtml(raw: string): string {
+  const escaped = escapeHtml(raw.slice(0, MAX_DISPLAY_TITLE_CHARS)).replace(/'/g, "&#39;");
+  return escaped.replace(DISPLAY_TITLE_TAGS, (_tag, slash: string, name: string) => `<${slash}${name.toLowerCase()}>`);
+}
+
+/**
+ * The page properties a page's own wikitext sets: DISPLAYTITLE (sanitized as HTML), DEFAULTSORT and the
+ * behaviour switches. Only for a page MediaWiki never rendered: a rendered page's are MediaWiki's.
+ */
 export function pagePropsOf(wikitext: string): JsonObject {
   const props: JsonObject = {};
   const display = /\{\{\s*DISPLAYTITLE\s*:([^{}|]*)\}\}/i.exec(wikitext)?.[1]?.trim();
-  if (display) props.displaytitle = display;
+  if (display) props.displaytitle = displayTitleHtml(display);
   const sort = /\{\{\s*DEFAULTSORT(?:KEY)?\s*:([^{}|]*)\}\}/i.exec(wikitext)?.[1]?.trim();
   if (sort) props.defaultsort = sort;
   for (const [word, name] of MAGIC_PROPS) if (wikitext.includes(word)) props[name] = "";

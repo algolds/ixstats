@@ -186,6 +186,34 @@ describe("page properties from the last render", () => {
     expect(spy).toHaveBeenCalledWith(["art:Delta"], expect.any(Number));
   });
 
+  it("sanitizes a DISPLAYTITLE read from the wikitext of a never-rendered page: no markup but a few bare inline tags", async () => {
+    const hostile = '{{DISPLAYTITLE:<img src=x onerror=alert(1)><script>alert(2)</script><b onmouseover="x">no</b><i>ok</I> <a href="javascript:1">l</a> \'q\' & more}}';
+    const wiki = data();
+    wiki.pages!.find((page) => page.title === "Delta")!.wikitext = hostile;
+    const expected = "&lt;img src=x onerror=alert(1)&gt;&lt;script&gt;alert(2)&lt;/script&gt;&lt;b onmouseover=&quot;x&quot;&gt;no</b><i>ok</i> &lt;a href=&quot;javascript:1&quot;&gt;l&lt;/a&gt; &#39;q&#39; &amp; more";
+    // prop=pageprops
+    const props = await run("titles=Delta&prop=pageprops", wiki);
+    expect(props.query.pages[0].pageprops.displaytitle).toBe(expected);
+    // parse: displaytitle and properties of the page, and of a text (a bot's text= has no stored render either)
+    const deps = await makeDeps({ store: fakeWiki(wiki) });
+    const parsed = ((await call(deps, "action=parse&page=Delta&prop=displaytitle|properties&formatversion=2")).body as Body).parse;
+    expect(parsed.displaytitle).toBe(expected);
+    expect(parsed.properties).toEqual([{ name: "displaytitle", value: expected }]);
+    const botWiki = await makeWikiDeps(wiki);
+    await loggedIn(botWiki.bot);
+    const fromText = (await botWiki.bot.post({ action: "parse", text: hostile, prop: "displaytitle|properties", formatversion: "2" })) as Body;
+    expect(fromText.parse.displaytitle).toBe(expected);
+    for (const output of [props.query.pages[0].pageprops.displaytitle, parsed.displaytitle, fromText.parse.displaytitle]) {
+      expect(output).not.toMatch(/<(img|script|a)\b/i);
+      expect(output).not.toContain(" onerror=alert(1)>");
+    }
+    // very long ones are cut, and plain titles are unchanged
+    wiki.pages!.find((page) => page.title === "Delta")!.wikitext = `{{DISPLAYTITLE:${"x".repeat(5000)}}}`;
+    expect((await run("titles=Delta&prop=pageprops", wiki)).query.pages[0].pageprops.displaytitle).toHaveLength(1000);
+    wiki.pages!.find((page) => page.title === "Delta")!.wikitext = "{{DISPLAYTITLE:plain title}}";
+    expect((await run("titles=Delta&prop=pageprops", wiki)).query.pages[0].pageprops.displaytitle).toBe("plain title");
+  });
+
   it("prop=info&inprop=displaytitle gives the HTML of the display title", async () => {
     const body = await run("titles=Alpha|Beta&prop=info&inprop=displaytitle");
     expect(body.query.pages[0].displaytitle).toBe("<i>alpha</i>");
