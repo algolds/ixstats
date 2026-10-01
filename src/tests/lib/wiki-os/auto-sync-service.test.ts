@@ -24,6 +24,7 @@ const mockArticleUpdate = jest.fn();
 const mockRevisionFindUnique = jest.fn();
 const mockRevisionFindFirst = jest.fn();
 const mockRevisionCreateMany = jest.fn();
+const mockRevisionCreate = jest.fn();
 const mockRevisionUpdateMany = jest.fn();
 const mockAccountLinkFindFirst = jest.fn();
 const mockQueryRaw = jest.fn();
@@ -45,6 +46,7 @@ jest.mock("~/server/db", () => ({
       findUnique: (...a: unknown[]) => mockRevisionFindUnique(...a),
       findFirst: (...a: unknown[]) => mockRevisionFindFirst(...a),
       createMany: (...a: unknown[]) => mockRevisionCreateMany(...a),
+      create: (...a: unknown[]) => mockRevisionCreate(...a),
       updateMany: (...a: unknown[]) => mockRevisionUpdateMany(...a),
     },
     wikiAccountLink: { findFirst: (...a: unknown[]) => mockAccountLinkFindFirst(...a) },
@@ -201,6 +203,8 @@ interface StoredArticle {
   namespace: number;
   namespacePrefix: string | null;
   mwPageId: number | null;
+  mwLatestRevId: number | null;
+  updatedAt: Date;
 }
 
 interface StoredHead {
@@ -224,6 +228,8 @@ const storedArticle = (over: Partial<StoredArticle> = {}): StoredArticle => ({
   namespace: 0,
   namespacePrefix: null,
   mwPageId: 1,
+  mwLatestRevId: null,
+  updatedAt: new Date("2026-09-27T08:00:00Z"),
   ...over,
 });
 
@@ -267,6 +273,13 @@ beforeEach(() => {
   );
   mockRevisionFindFirst.mockImplementation(async () => head);
   mockRevisionCreateMany.mockResolvedValue({ count: 1 });
+  mockRevisionCreate.mockImplementation(async ({ data }) => ({
+    id: "rev-base",
+    mwRevId: data.mwRevId ?? null,
+    sha1: data.sha1,
+    byteSize: data.byteSize,
+    createdAt: data.createdAt,
+  }));
   mockRevisionUpdateMany.mockResolvedValue({ count: 1 });
   mockAccountLinkFindFirst.mockResolvedValue(null);
   importPageRevisions.mockImplementation(async (input) => {
@@ -816,7 +829,7 @@ describe("echo", () => {
     });
   });
 
-  it("treats an edit by the mirror account as WikiOS's own whatever its text", async () => {
+  it("treats an edit by the mirror account as WikiOS's own whatever its text: recorded, never judged, nothing pushed", async () => {
     process.env.WIKIOS_MEDIAWIKI_BOT_USER = "Mirror@WikiOS";
     try {
       article = storedArticle();
@@ -829,12 +842,90 @@ describe("echo", () => {
       await runAutoSyncCycle();
 
       expect(importPageRevisions).not.toHaveBeenCalled();
-      expect(mockRevisionCreateMany).not.toHaveBeenCalled();
       expect(enqueueExport).not.toHaveBeenCalled();
       expect(mockRevisionUpdateMany).not.toHaveBeenCalled();
+      expect(mockArticleUpdate).not.toHaveBeenCalled();
+      const [{ data }] = mockRevisionCreateMany.mock.calls[0]!;
+      expect(data[0]).toMatchObject({ mwRevId: 91, wikitext: "PST changed this.", byteDelta: 0 });
+      expect(data[0]).not.toHaveProperty("parked");
     } finally {
       delete process.env.WIKIOS_MEDIAWIKI_BOT_USER;
     }
+  });
+
+  it("stores an echo of a head that already has its MediaWiki id as a non-parked revision stamped with its own, dated before the head (the head does not change)", async () => {
+    article = storedArticle();
+    head = storedHead(90, { createdAt: new Date("2026-09-27T09:00:00Z") });
+    rcResponses = [{ changes: [change("Foo", 91, 1)] }];
+    mwRevisions = new Map([
+      [
+        91,
+        {
+          title: "Foo",
+          revid: 91,
+          parentid: 90,
+          text: "WikiOS text.",
+          timestamp: "2026-09-27T10:00:01Z",
+        },
+      ],
+    ]);
+
+    await runAutoSyncCycle();
+
+    expect(importPageRevisions).not.toHaveBeenCalled();
+    expect(mockRevisionUpdateMany).not.toHaveBeenCalled();
+    const [{ data, skipDuplicates }] = mockRevisionCreateMany.mock.calls[0]!;
+    expect(skipDuplicates).toBe(true);
+    expect(data[0]).toMatchObject({
+      articleId: "art-1",
+      mwRevId: 91,
+      wikitext: "WikiOS text.",
+      sha1: mwSha1Base36("WikiOS text."),
+      createdAt: new Date("2026-09-27T08:59:59.999Z"),
+    });
+    expect(data[0]).not.toHaveProperty("parked");
+    expect(mockArticleUpdate).toHaveBeenCalledWith({
+      where: { id: "art-1" },
+      data: expect.objectContaining({ mwLatestRevId: 91 }),
+    });
+  });
+
+  it("keeps an echo's own time when it is older than the head", async () => {
+    article = storedArticle();
+    head = storedHead(90, { createdAt: new Date("2026-09-27T09:00:00Z") });
+    rcResponses = [{ changes: [change("Foo", 85, 1)] }];
+    mwRevisions = new Map([
+      [
+        85,
+        {
+          title: "Foo",
+          revid: 85,
+          parentid: 80,
+          text: "WikiOS text.",
+          timestamp: "2026-09-27T08:00:00Z",
+        },
+      ],
+    ]);
+
+    await runAutoSyncCycle();
+
+    expect(mockRevisionCreateMany.mock.calls[0]![0].data[0].createdAt).toEqual(
+      new Date("2026-09-27T08:00:00Z")
+    );
+  });
+
+  it("never judges a replayed echo again, even when the head has moved on since (it is known by its id)", async () => {
+    article = storedArticle({ wikitext: "A newer WikiOS text." });
+    head = storedHead(null, { sha1: mwSha1Base36("A newer WikiOS text.") });
+    knownRevids = new Set([91]); // the echo of the older text, recorded by an earlier cycle
+    rcResponses = [{ changes: [change("Foo", 91, 1)] }];
+    mwRevisions = new Map([[91, { title: "Foo", revid: 91, parentid: 50, text: "WikiOS text." }]]);
+
+    await runAutoSyncCycle();
+
+    expect(mockRevisionCreateMany).not.toHaveBeenCalled();
+    expect(enqueueExport).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
   });
 });
 
@@ -1579,5 +1670,213 @@ describe("a park never loops: no re-push without a mirror account (plan 406 foll
 
     expect(enqueueExport).not.toHaveBeenCalled();
     expect(highWaterWritten(SKIPPED_KEY)).toBeUndefined();
+  });
+});
+
+describe("a page with text but no revision row (the shape of Crown Jewels of Caphiria)", () => {
+  const CROWN = "The crown jewels of Caphiria are kept in the old treasury.";
+  const crown = (over: Partial<StoredArticle> = {}) =>
+    storedArticle({
+      title: "Crown Jewels of Caphiria",
+      slug: "crown_jewels_of_caphiria",
+      wikitext: CROWN,
+      mwLatestRevId: 70,
+      mwPageId: 5,
+      updatedAt: new Date("2026-09-20T12:00:00Z"),
+      ...over,
+    });
+
+  beforeEach(() => {
+    process.env.WIKIOS_MEDIAWIKI_BOT_USER = "Mirror@WikiOS";
+    head = null; // no revision row at all
+    rcResponses = [{ changes: [change("Crown Jewels of Caphiria", 95, 1)] }];
+  });
+
+  it("does not overwrite the text of such a page with an edit that is not based on it: it is parked, against a revision that holds that text", async () => {
+    article = crown();
+    mwRevisions = new Map([
+      [60, { title: "Crown Jewels of Caphiria", revid: 60, text: "An older text." }],
+      [
+        95,
+        {
+          title: "Crown Jewels of Caphiria",
+          revid: 95,
+          parentid: 60,
+          pageId: 5,
+          user: "carol",
+          text: "Somebody's different article.",
+          timestamp: "2026-09-27T10:00:01Z",
+        },
+      ],
+    ]);
+
+    await runAutoSyncCycle();
+
+    expect(importPageRevisions).not.toHaveBeenCalled();
+    // The existing text is captured first: nothing is lost.
+    expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
+    expect(mockRevisionCreate.mock.calls[0]![0].data).toMatchObject({
+      articleId: "art-1",
+      wikitext: CROWN,
+      sha1: mwSha1Base36(CROWN),
+      createdAt: new Date("2026-09-20T12:00:00Z"),
+    });
+    expect(mockRevisionCreateMany.mock.calls[0]![0].data[0]).toMatchObject({
+      mwRevId: 95,
+      parked: true,
+      parkReason: "conflict:rev-base",
+    });
+    expect(enqueueExport).toHaveBeenCalledWith(
+      expect.objectContaining({ wikitext: CROWN, revisionId: "rev-base" })
+    );
+    expect(mockArticleUpdate).not.toHaveBeenCalled();
+  });
+
+  it("imports an edit based on the MediaWiki revision the page was last synced from, after capturing its text", async () => {
+    article = crown();
+    mwRevisions = new Map([
+      [
+        95,
+        {
+          title: "Crown Jewels of Caphiria",
+          revid: 95,
+          parentid: 70,
+          pageId: 5,
+          text: "Updated in MediaWiki.",
+        },
+      ],
+    ]);
+    const order: string[] = [];
+    mockRevisionCreate.mockImplementationOnce(async ({ data }) => {
+      order.push("baseline");
+      return {
+        id: "rev-base",
+        mwRevId: null,
+        sha1: data.sha1,
+        byteSize: data.byteSize,
+        createdAt: data.createdAt,
+      };
+    });
+    importPageRevisions.mockImplementationOnce(async () => {
+      order.push("import");
+      return {
+        created: false,
+        inserted: 1,
+        filled: 0,
+        skipped: 0,
+        conflicts: 0,
+        headUpdated: true,
+      };
+    });
+
+    await runAutoSyncCycle();
+
+    expect(order).toEqual(["baseline", "import"]);
+    expect(importPageRevisions.mock.calls[0]![0]).toMatchObject({ previousRef: "rev-base" });
+    expect(mockRevisionCreateMany).not.toHaveBeenCalled();
+  });
+
+  it("parks, rather than imports, an edit based on some other revision than the one the page came from", async () => {
+    article = crown();
+    mwRevisions = new Map([
+      [71, { title: "Crown Jewels of Caphiria", revid: 71, text: "Another text." }],
+      [
+        95,
+        { title: "Crown Jewels of Caphiria", revid: 95, parentid: 71, pageId: 5, text: "Edited." },
+      ],
+    ]);
+
+    await runAutoSyncCycle();
+
+    expect(importPageRevisions).not.toHaveBeenCalled();
+    expect(mockRevisionCreateMany.mock.calls[0]![0].data[0]).toMatchObject({ parked: true });
+  });
+
+  it("recognises the page's own text coming back, and gives it a revision stamped with the MediaWiki id", async () => {
+    article = crown();
+    mwRevisions = new Map([
+      [95, { title: "Crown Jewels of Caphiria", revid: 95, parentid: 0, pageId: 5, text: CROWN }],
+    ]);
+
+    await runAutoSyncCycle();
+
+    expect(importPageRevisions).not.toHaveBeenCalled();
+    expect(mockRevisionCreate.mock.calls[0]![0].data).toMatchObject({
+      wikitext: CROWN,
+      mwRevId: 95,
+    });
+    expect(mockRevisionCreateMany).not.toHaveBeenCalled();
+    expect(mockArticleUpdate).toHaveBeenCalledWith({
+      where: { id: "art-1" },
+      data: expect.objectContaining({ mwLatestRevId: 95 }),
+    });
+  });
+
+  it("is free to import into only a page with no text at all (and no page at all)", async () => {
+    article = crown({ wikitext: "  \n" });
+    mwRevisions = new Map([
+      [
+        95,
+        {
+          title: "Crown Jewels of Caphiria",
+          revid: 95,
+          parentid: 0,
+          pageId: 5,
+          text: "First real text.",
+        },
+      ],
+    ]);
+
+    await runAutoSyncCycle();
+
+    expect(mockRevisionCreate).not.toHaveBeenCalled();
+    expect(importPageRevisions).toHaveBeenCalledTimes(1);
+  });
+
+  it("the webhook leaves such a conflict to the ordered cycle: it captures nothing and answers false", async () => {
+    article = crown();
+    mwRevisions = new Map([
+      [60, { title: "Crown Jewels of Caphiria", revid: 60, text: "An older text." }],
+      [
+        95,
+        {
+          title: "Crown Jewels of Caphiria",
+          revid: 95,
+          parentid: 60,
+          pageId: 5,
+          text: "Different.",
+        },
+      ],
+    ]);
+
+    await expect(syncSinglePage("Crown Jewels of Caphiria")).resolves.toBe(false);
+
+    expect(mockRevisionCreate).not.toHaveBeenCalled();
+    expect(importPageRevisions).not.toHaveBeenCalled();
+  });
+
+  it("a page WikiOS deleted that has text but no revision row is captured before MediaWiki's new page replaces it", async () => {
+    article = crown({ status: "ARCHIVED" });
+    mwRevisions = new Map([
+      [
+        95,
+        {
+          title: "Crown Jewels of Caphiria",
+          revid: 95,
+          parentid: 0,
+          pageId: 9,
+          text: "Born again.",
+        },
+      ],
+    ]);
+
+    await runAutoSyncCycle();
+
+    expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
+    expect(importPageRevisions).toHaveBeenCalledTimes(1);
+    expect(mockArticleUpdate).toHaveBeenCalledWith({
+      where: { id: "art-1" },
+      data: { status: "PUBLISHED" },
+    });
   });
 });

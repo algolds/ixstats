@@ -27,6 +27,7 @@ import { parseRedirect } from "../core/redirect";
 import { canonicalizeTitle, storedNamespace, type CanonicalTitle } from "../core/title";
 import { extractLeadImageFromWikitext } from "../transformers/image-url";
 import { cleanWikitextExcerpt } from "../transformers/wikitext-parser";
+import { mwSha1Base36 } from "../xml/sha1";
 import {
   decideInbound,
   matchesHead,
@@ -96,6 +97,8 @@ const ARTICLE_SELECT = {
   namespace: true,
   namespacePrefix: true,
   mwPageId: true,
+  mwLatestRevId: true,
+  updatedAt: true,
 } as const;
 
 type StoredArticle = NonNullable<Awaited<ReturnType<typeof findStoredArticle>>>;
@@ -124,20 +127,62 @@ interface HeadRevision {
   createdAt: Date;
 }
 
+const HEAD_SELECT = {
+  id: true,
+  mwRevId: true,
+  sha1: true,
+  byteSize: true,
+  createdAt: true,
+} as const;
+
 /** The page's current revision: the newest one that is not parked. */
 function loadHeadRevision(articleId: string): Promise<HeadRevision | null> {
   return db.wikiRevision.findFirst({
     where: { articleId, parked: false },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    select: { id: true, mwRevId: true, sha1: true, byteSize: true, createdAt: true },
+    select: HEAD_SELECT,
   });
 }
 
-/** What the page's head is, for the decision: its stamp, hash and the text the page has now. */
+/**
+ * What the page's head is, for the decision: its stamp, hash and the text the page has now. A page with
+ * text but no revision row (written before revisions were kept) is not free to overwrite: its text is its
+ * head, and the MediaWiki revision it was last synced from, if known, its stamp. Only a page with no text
+ * at all has nothing to protect.
+ */
 function toInboundHead(article: StoredArticle, headRev: HeadRevision | null): InboundHead | null {
-  return headRev
-    ? { mwRevId: headRev.mwRevId, sha1: headRev.sha1, wikitext: article.wikitext }
-    : null;
+  if (headRev) return { mwRevId: headRev.mwRevId, sha1: headRev.sha1, wikitext: article.wikitext };
+  if (article.wikitext.trim() === "") return null;
+  return { mwRevId: article.mwLatestRevId, sha1: null, wikitext: article.wikitext };
+}
+
+const BASELINE_SUMMARY = "The page's text before its first recorded revision";
+
+/**
+ * Give a page that has text but no revision row one, holding that text, so that overwriting or parking
+ * against it loses nothing: the page's history starts with what WikiOS had. `mwRevId` stamps it when the
+ * MediaWiki revision that came in IS that text.
+ */
+async function insertBaselineRevision(
+  article: StoredArticle,
+  mwRevId: number | null
+): Promise<HeadRevision> {
+  const byteSize = Buffer.byteLength(article.wikitext, "utf8");
+  return db.wikiRevision.create({
+    data: {
+      articleId: article.id,
+      source: SOURCE,
+      mwRevId,
+      summary: BASELINE_SUMMARY,
+      byteSize,
+      byteDelta: byteSize,
+      sha1: mwSha1Base36(article.wikitext),
+      createdAt: article.updatedAt,
+      wikitext: article.wikitext,
+      format: "WIKITEXT",
+    },
+    select: HEAD_SELECT,
+  });
 }
 
 async function isRevisionKnown(revid: number): Promise<boolean> {
@@ -153,22 +198,25 @@ async function isRevisionKnown(revid: number): Promise<boolean> {
 // ---------------------------------------------------------------------------
 
 /**
- * The head gets the MediaWiki id of the revision the mirror made of it (the mirror stamps it too, but the
- * webhook can arrive first), and the article remembers the revision that holds its text in MediaWiki.
+ * An echo is a MediaWiki revision WikiOS already has the text of: its own export coming back, or an
+ * edit that left the text as it was. It is recorded, so that a replay of the recent changes never judges
+ * it again against a head that has moved on, and never changes the page's head:
+ *   - the head, if the mirror has not stamped it yet (the webhook can arrive first), gets the revision's
+ *     MediaWiki id; a page with text but no revision row gets one holding that text, stamped;
+ *   - any other echo is stored as a non-parked revision stamped with its MediaWiki id, dated just before
+ *     the head so that it is never the newest one.
+ * The article remembers the MediaWiki revision that holds its text.
  */
 async function recordEcho(
   article: StoredArticle,
   head: InboundHead,
-  headRev: HeadRevision,
+  headRev: HeadRevision | null,
   rev: MediaWikiRevision
 ): Promise<void> {
-  if (!matchesHead(head, rev.sha1)) return; // the mirror's push of other text: nothing is learned from it
-  if (headRev.mwRevId === null) {
-    await db.wikiRevision.updateMany({
-      where: { id: headRev.id, mwRevId: null },
-      data: { mwRevId: rev.revid },
-    });
-  }
+  const sameText = matchesHead(head, rev.sha1);
+  const stamped = sameText && (await stampHead(article, headRev, rev));
+  if (!stamped) await insertEchoRevision(article, headRev, rev);
+  if (!sameText) return; // the mirror's push of other text: nothing is learned about the page
   await db.wikiArticle.update({
     where: { id: article.id },
     data: {
@@ -176,6 +224,57 @@ async function recordEcho(
       lastMwSyncAt: new Date(),
       ...(article.mwPageId === null ? { mwPageId: rev.pageId } : {}),
     },
+  });
+}
+
+/** Stamp the head with the revision it is the same text as; false when the head already has a MediaWiki id. */
+async function stampHead(
+  article: StoredArticle,
+  headRev: HeadRevision | null,
+  rev: MediaWikiRevision
+): Promise<boolean> {
+  if (!headRev) {
+    await insertBaselineRevision(article, rev.revid);
+    return true;
+  }
+  if (headRev.mwRevId !== null) return false;
+  await db.wikiRevision.updateMany({
+    where: { id: headRev.id, mwRevId: null },
+    data: { mwRevId: rev.revid },
+  });
+  return true;
+}
+
+async function insertEchoRevision(
+  article: StoredArticle,
+  headRev: HeadRevision | null,
+  rev: MediaWikiRevision
+): Promise<void> {
+  const byteSize = Buffer.byteLength(rev.wikitext, "utf8");
+  const createdAt = headRev
+    ? new Date(Math.min(rev.timestamp.getTime(), headRev.createdAt.getTime() - 1))
+    : rev.timestamp;
+  await db.wikiRevision.createMany({
+    data: [
+      {
+        articleId: article.id,
+        source: SOURCE,
+        mwRevId: rev.revid,
+        author: rev.user ?? DELETED_AUTHOR,
+        authorId: await verifiedWikiUserId(rev.user),
+        summary: rev.comment || null,
+        minor: rev.minor,
+        commentDeleted: rev.commentHidden,
+        userDeleted: rev.user === null,
+        byteSize,
+        byteDelta: 0,
+        sha1: rev.sha1,
+        createdAt,
+        wikitext: rev.wikitext,
+        format: "WIKITEXT",
+      },
+    ],
+    skipDuplicates: true,
   });
 }
 
@@ -233,6 +332,8 @@ async function fastForward(
 ): Promise<RevisionOutcome> {
   const createdAt = laterThan(rev.timestamp, headRev?.createdAt);
   const byteSize = Buffer.byteLength(rev.wikitext, "utf8");
+  // A page created anew has no earlier size to be measured against.
+  const previousSize = article?.status === "ARCHIVED" ? 0 : (headRev?.byteSize ?? 0);
   const input: ImportPageInput = {
     source: SOURCE,
     ...identityOf(article, canon, rev),
@@ -251,7 +352,7 @@ async function fastForward(
         userDeleted: rev.user === null,
         minor: rev.minor,
         byteSize,
-        byteDelta: byteSize - (headRev?.byteSize ?? 0),
+        byteDelta: byteSize - previousSize,
         sha1: rev.sha1,
         wikitext: rev.wikitext,
       },
@@ -508,7 +609,7 @@ async function applyRevision(
   }
 
   const article = await findStoredArticle(rev, canon);
-  const headRev = article ? await loadHeadRevision(article.id) : null;
+  let headRev = article ? await loadHeadRevision(article.id) : null;
   const head = article ? toInboundHead(article, headRev) : null;
 
   // A page WikiOS deleted comes back only when MediaWiki creates it anew; an edit of the old page is a conflict.
@@ -520,13 +621,19 @@ async function applyRevision(
     : await decideFor(rev, head);
 
   if (decision === "echo") {
-    if (article && head && headRev) await recordEcho(article, head, headRev, rev);
+    if (article && head) await recordEcho(article, head, headRev, rev);
     return "echo";
   }
+  // The page's text is about to be overwritten, or an edit parked against it: a page that has text but
+  // no revision row first gets one holding that text, so nothing is lost.
+  const needsBaseline = article !== null && head !== null && headRev === null;
   if (decision === "fast-forward") {
-    return fastForward(rev, canon, article, deletedHere ? null : headRev);
+    if (article && needsBaseline) headRev = await insertBaselineRevision(article, null);
+    return fastForward(rev, canon, article, headRev);
   }
   if (!parkConflicts || !article) return "deferred";
+  // A page WikiOS deleted has no head to hold anything against (and none is pushed back).
+  if (needsBaseline && !deletedHere) headRev = await insertBaselineRevision(article, null);
   return parkRevision(rev, canon, article, headRev);
 }
 
