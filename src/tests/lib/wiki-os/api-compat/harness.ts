@@ -169,3 +169,206 @@ export class Bot {
     });
   }
 }
+
+// ---------------------------------------------------------------------------
+// An in-memory wiki behind ApiStore
+// ---------------------------------------------------------------------------
+
+export interface FakePage {
+  pageId: number;
+  title: string;
+  namespace?: number;
+  /** Canonical title of the redirect target. */
+  redirect?: string;
+  redirectFragment?: string;
+  wikitext?: string;
+  touched?: string;
+  deleted?: boolean;
+}
+
+export interface FakeRevision {
+  revId: number;
+  page: string;
+  timestamp: string;
+  user?: string | null;
+  comment?: string;
+  minor?: boolean;
+  content?: string;
+  textHidden?: boolean;
+  commentHidden?: boolean;
+  userHidden?: boolean;
+  sha1?: string;
+}
+
+export interface FakeWikiData {
+  pages?: FakePage[];
+  revisions?: FakeRevision[];
+  /** page title -> target titles it links to */
+  links?: Record<string, string[]>;
+  /** page title -> category names */
+  categories?: Record<string, string[]>;
+  restrictions?: Record<string, Array<{ action: string; level: string; expiresAt?: string | null }>>;
+}
+
+const byteLength = (text: string) => Buffer.byteLength(text, "utf8");
+
+/** An `ApiStore` over plain arrays, with the same ordering and cursor rules as the Prisma store. */
+export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): ApiStore {
+  const pages = (data.pages ?? []).filter((page) => !page.deleted);
+  const revisions = data.revisions ?? [];
+  const articleId = (title: string) => `art:${title}`;
+  const titleOfArticle = (id: string) => id.slice("art:".length);
+
+  const revisionsOf = (title: string) =>
+    revisions
+      .filter((rev) => rev.page === title)
+      .sort((a, b) => a.timestamp.localeCompare(b.timestamp) || a.revId - b.revId);
+
+  const pageRow = (page: FakePage) => {
+    const head = revisionsOf(page.title).at(-1);
+    return {
+      articleId: articleId(page.title),
+      pageId: page.pageId,
+      title: page.title,
+      namespace: page.namespace ?? 0,
+      isRedirect: page.redirect !== undefined,
+      redirectTitle: page.redirect ?? null,
+      redirectFragment: page.redirectFragment ?? null,
+      touched: new Date(page.touched ?? head?.timestamp ?? "2026-01-01T00:00:00Z"),
+      wordCount: 10,
+      headRevId: head?.revId ?? null,
+      headTimestamp: head ? new Date(head.timestamp) : null,
+      length: head ? byteLength(head.content ?? "") : 0,
+    };
+  };
+
+  const revisionRow = (rev: FakeRevision, withContent: boolean) => {
+    const page = pages.find((p) => p.title === rev.page)!;
+    const history = revisionsOf(rev.page);
+    const index = history.findIndex((r) => r.revId === rev.revId);
+    return {
+      revId: rev.revId,
+      parentId: index > 0 ? history[index - 1]!.revId : 0,
+      pageId: page.pageId,
+      title: page.title,
+      namespace: page.namespace ?? 0,
+      timestamp: new Date(rev.timestamp),
+      user: rev.user === undefined ? "Heku" : rev.user,
+      userId: 7,
+      comment: rev.comment ?? "",
+      minor: rev.minor ?? false,
+      size: byteLength(rev.content ?? ""),
+      sha1: rev.sha1 ?? "sha1-" + rev.revId,
+      content: rev.textHidden || !withContent ? null : (rev.content ?? ""),
+      textHidden: rev.textHidden ?? false,
+      commentHidden: rev.commentHidden ?? false,
+      userHidden: rev.userHidden ?? false,
+      isHead: history.at(-1)?.revId === rev.revId,
+    };
+  };
+
+  const base: Partial<ApiStore> = {
+    pagesByTitle: async (titles) => pages.filter((p) => titles.includes(p.title)).map(pageRow),
+    pagesById: async (ids) => pages.filter((p) => ids.includes(p.pageId)).map(pageRow),
+    revisionsById: async (ids, withContent) =>
+      ids.flatMap((id) => {
+        const rev = revisions.find((r) => r.revId === id);
+        return rev && pages.some((p) => p.title === rev.page) ? [revisionRow(rev, withContent)] : [];
+      }),
+    findRevisions: async (query) => {
+      const target = query.articleId ? titleOfArticle(query.articleId) : undefined;
+      const newer = query.dir === "newer";
+      const sign = newer ? 1 : -1;
+      const key = (r: { timestamp: string; revId: number }) => [r.timestamp, r.revId] as const;
+      const cmp = (a: readonly [string, number], b: readonly [string, number]) =>
+        a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : a[1] - b[1];
+      const point = (bound: { timestamp: Date; revId?: number }) =>
+        [bound.timestamp.toISOString(), bound.revId ?? (newer ? -Infinity : Infinity)] as const;
+      const rows = revisions
+        .filter((rev) => pages.some((p) => p.title === rev.page))
+        .filter((rev) => (target ? rev.page === target : true))
+        .filter((rev) => (query.users ? query.users.includes(rev.user ?? "Heku") : true))
+        .filter((rev) => (query.excludeUser ? (rev.user ?? "Heku") !== query.excludeUser : true))
+        .filter((rev) => (query.minor === undefined ? true : (rev.minor ?? false) === query.minor))
+        .filter((rev) => {
+          const k = [new Date(rev.timestamp).toISOString(), rev.revId] as const;
+          const afterFrom = (b?: { timestamp: Date; revId?: number }) =>
+            !b || sign * cmp(k, point(b)) >= 0;
+          const beforeTo = (b?: { timestamp: Date; revId?: number }) =>
+            !b || sign * cmp(k, point(b)) <= 0;
+          return afterFrom(query.from) && afterFrom(query.cursor) && beforeTo(query.to);
+        })
+        .sort((a, b) => sign * cmp(key({ timestamp: new Date(a.timestamp).toISOString(), revId: a.revId }), key({ timestamp: new Date(b.timestamp).toISOString(), revId: b.revId })))
+        .slice(0, query.limit + 1);
+      return rows.map((rev) => revisionRow(rev, query.withContent));
+    },
+    restrictionsByTitle: async (titles) =>
+      new Map(
+        titles.flatMap((title) => {
+          const list = data.restrictions?.[title];
+          return list
+            ? [[title, list.map((r) => ({ action: r.action, level: r.level, expiresAt: r.expiresAt ? new Date(r.expiresAt) : null }))] as const]
+            : [];
+        })
+      ),
+    linksFrom: async (query) => {
+      const rows = query.articleIds
+        .map((id) => titleOfArticle(id))
+        .flatMap((source) => {
+          const page = pages.find((p) => p.title === source);
+          return page ? (data.links?.[source] ?? []).map((target) => ({ pageId: page.pageId, title: target, key: target.toLowerCase().replace(/ /g, "_") })) : [];
+        })
+        .filter((row) => !query.titles || query.titles.includes(row.title))
+        .sort((a, b) => (query.dir === "ascending" ? 1 : -1) * (a.pageId - b.pageId || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)))
+        .filter((row) => {
+          const c = query.cursor;
+          if (!c) return true;
+          const order = a2(row.pageId, row.key, c.pageId, c.key);
+          return query.dir === "ascending" ? order >= 0 : order <= 0;
+        });
+      const page = rows.slice(0, query.limit);
+      const next = rows[query.limit];
+      return {
+        rows: page
+          .map((row) => ({ pageId: row.pageId, title: row.title, namespace: row.title.includes(":") ? 10 : 0 }))
+          .filter((row) => !query.namespaces || query.namespaces.includes(row.namespace)),
+        next: next ? { pageId: next.pageId, key: next.key } : null,
+      };
+    },
+    categoriesOf: async (query) => {
+      if (query.hidden === true) return { rows: [], next: null };
+      const rows = query.articleIds
+        .map((id) => titleOfArticle(id))
+        .flatMap((source) => {
+          const page = pages.find((p) => p.title === source);
+          return page ? (data.categories?.[source] ?? []).map((name) => ({ pageId: page.pageId, name })) : [];
+        })
+        .filter((row) => !query.titles || query.titles.includes(`Category:${row.name}`))
+        .sort((a, b) => (query.dir === "ascending" ? 1 : -1) * (a.pageId - b.pageId || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)))
+        .filter((row) => {
+          const c = query.cursor;
+          if (!c) return true;
+          const order = a2(row.pageId, row.name, c.pageId, c.key);
+          return query.dir === "ascending" ? order >= 0 : order <= 0;
+        });
+      const next = rows[query.limit];
+      return {
+        rows: rows.slice(0, query.limit).map((row) => ({
+          pageId: row.pageId,
+          title: `Category:${row.name}`,
+          sortKey: null,
+          timestamp: new Date("2026-01-01T00:00:00Z"),
+          hidden: false,
+        })),
+        next: next ? { pageId: next.pageId, key: next.name } : null,
+      };
+    },
+    wikitextByArticle: async (ids) =>
+      new Map(ids.map((id) => [id, pages.find((p) => p.title === titleOfArticle(id))?.wikitext ?? ""])),
+  };
+  return fakeStore({ ...base, ...extra });
+}
+
+function a2(pageA: number, keyA: string, pageB: number, keyB: string): number {
+  return pageA - pageB || (keyA < keyB ? -1 : keyA > keyB ? 1 : 0);
+}

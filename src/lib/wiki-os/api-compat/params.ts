@@ -119,6 +119,14 @@ export class ApiParams {
     return this.has(name) ? this.integer(name, { fallback: 0, min }) : undefined;
   }
 
+  /** The integers of a multi-value parameter (at most `max` of them); a value that is not an integer is `badinteger`. */
+  integerList(name: string, max: number): number[] {
+    return this.list(name, max).map((value) => {
+      if (!/^-?\d+$/.test(value.trim())) throw badInteger(this.fullName(name), value);
+      return Number(value.trim());
+    });
+  }
+
   /** A page-size parameter: `max`, or a number capped at the caller's limit. */
   limit(name: string, { fallback, high }: LimitOptions): number {
     const cap = high ? HIGH_LIMIT : NORMAL_LIMIT;
