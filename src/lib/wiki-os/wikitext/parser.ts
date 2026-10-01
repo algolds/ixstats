@@ -190,7 +190,7 @@ function standaloneOpaqueTag(ctx: ScanContext, start: number, lineEnd: number): 
   const { input, scanner } = ctx;
   const tag = matchOpenTag(input, start, scanner);
   if (!tag || tag.name === "ref" || tag.selfClosing) return null;
-  const close = findTagClose(input, tag, scanner);
+  const close = findTagClose(tag, scanner);
   return close !== -1 && input.slice(close, lineEnd).trim() === "" ? tag : null;
 }
 
@@ -199,7 +199,7 @@ function scanOpaqueTag(ctx: ScanContext, start: number, lineEnd: number): Scanne
   if (tag) return rawBlock(ctx, start, lineEnd, "tag", tag.name);
 
   const open = matchOpenTag(ctx.input, start, ctx.scanner);
-  if (open && open.name !== "ref" && !open.selfClosing && findTagClose(ctx.input, open, ctx.scanner) === -1) {
+  if (open && open.name !== "ref" && !open.selfClosing && findTagClose(open, ctx.scanner) === -1) {
     // MediaWiki shows an unclosed tag as text, so the block is the paragraph that holds it.
     warn(ctx, "UNCLOSED_TAG", `Unclosed <${open.name}> tag`, start, lineEnd);
     return rawBlock(ctx, start, scanParagraph(ctx, start, lineEnd).lineEnd, "malformed", open.name);

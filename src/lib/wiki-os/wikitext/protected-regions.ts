@@ -63,7 +63,7 @@ interface CloseTags {
  * closing tag). It belongs to ONE scan: make it with `new ProtectedScanner(text)` where the scan
  * starts and pass it to every call about that text. Nothing is kept between scans, and nothing is
  * compared against a text (a cache keyed on the text's content costs a comparison per lookup).
- * Without one, the functions below search forward from the position they are asked about.
+ * The functions below require one, so a loop over a text cannot go quadratic by forgetting it.
  */
 export class ProtectedScanner {
   /** The first `>` at or after `gtFrom` is `gtAt` (-1: there is none); so it is for every later position up to it. */
@@ -110,7 +110,7 @@ function closeTagPattern(name: string): RegExp {
 }
 
 /** The opaque (or `<ref>`) opening tag that starts at `text[i]`, or null. */
-export function matchOpenTag(text: string, i: number, scanner?: ProtectedScanner): OpenTag | null {
+export function matchOpenTag(text: string, i: number, scanner: ProtectedScanner): OpenTag | null {
   if (text.charCodeAt(i) !== 60) return null;
   let nameEnd = i + 1;
   while (nameEnd - i <= MAX_TAG_NAME_LENGTH && isAsciiLetter(text.charCodeAt(nameEnd))) nameEnd++;
@@ -119,20 +119,14 @@ export function matchOpenTag(text: string, i: number, scanner?: ProtectedScanner
   // The name must end at whitespace, "/" or ">" (`<referencesfoo>` is no `<references>`).
   const next = text[nameEnd];
   if (next === undefined || !(next === "/" || next === ">" || WHITESPACE.test(next))) return null;
-  const close = scanner ? scanner.nextGreaterThan(nameEnd) : text.indexOf(">", nameEnd);
+  const close = scanner.nextGreaterThan(nameEnd);
   if (close === -1) return null;
   return { name, start: i, openEnd: close + 1, selfClosing: text[close - 1] === "/" };
 }
 
 /** Index just after the closing tag that matches `tag`, or -1 when it is never closed. */
-export function findTagClose(text: string, tag: OpenTag, scanner?: ProtectedScanner): number {
+export function findTagClose(tag: OpenTag, scanner: ProtectedScanner): number {
   if (tag.selfClosing) return tag.openEnd;
-  if (!scanner) {
-    const pattern = closeTagPattern(tag.name);
-    pattern.lastIndex = tag.openEnd;
-    const match = pattern.exec(text);
-    return match ? match.index + match[0].length : -1;
-  }
   const { starts, ends } = scanner.closingTags(tag.name);
   // the first closing tag that starts at or after the end of the opening tag
   let low = 0;
@@ -159,14 +153,14 @@ function findCommentEnd(text: string, i: number): number {
 export function skipProtectedAt(
   text: string,
   i: number,
-  includeRef = false,
-  scanner?: ProtectedScanner
+  includeRef: boolean,
+  scanner: ProtectedScanner
 ): number | null {
   if (text.charCodeAt(i) !== 60) return null;
   if (text.startsWith("<!--", i)) return findCommentEnd(text, i);
   const tag = matchOpenTag(text, i, scanner);
   if (!tag || (tag.name === "ref" && !includeRef)) return null;
-  const end = findTagClose(text, tag, scanner);
+  const end = findTagClose(tag, scanner);
   return end === -1 ? null : end;
 }
 

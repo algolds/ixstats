@@ -24,7 +24,7 @@ interface ScannedTemplate {
 }
 
 /** The `{{` of the next template that MediaWiki would expand at or after `from`, or -1. */
-function nextTemplateOpen(wikitext: string, from: number, scanner?: ProtectedScanner): number {
+function nextTemplateOpen(wikitext: string, from: number, scanner: ProtectedScanner): number {
   let i = from;
   let brace = wikitext.indexOf("{{", i);
   while (brace !== -1) {
@@ -38,7 +38,11 @@ function nextTemplateOpen(wikitext: string, from: number, scanner?: ProtectedSca
 }
 
 /** Scans the template whose `{{` is at `openIdx`: balanced braces, links, tables and comments. */
-export function scanTemplateAt(wikitext: string, openIdx: number, scanner?: ProtectedScanner): ScannedTemplate {
+export function scanTemplateAt(
+  wikitext: string,
+  openIdx: number,
+  scanner: ProtectedScanner = new ProtectedScanner(wikitext)
+): ScannedTemplate {
   let depth = 0;
   let inComment = false;
   let j = openIdx;

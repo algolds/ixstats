@@ -322,7 +322,7 @@ const REF_NAME = /name\s*=\s*["']?([^"'\s>/]+)/i;
 function tryRef({ text, scanner }: InlineContext, i: number): InlineSpan | null {
   const tag = matchOpenTag(text, i, scanner);
   if (tag?.name !== "ref") return null;
-  const end = findTagClose(text, tag, scanner);
+  const end = findTagClose(tag, scanner);
   if (end === -1) return null;
   const rawRef = text.slice(i, end);
   const nameMatch = REF_NAME.exec(text.slice(i, tag.openEnd));

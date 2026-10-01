@@ -20,7 +20,7 @@ export function logicalLineEnd(
   text: string,
   from: number,
   braces: MatchIndex = matchBraces(text),
-  scanner?: ProtectedScanner
+  scanner: ProtectedScanner = new ProtectedScanner(text)
 ): number {
   let i = from;
   while (i < text.length) {
