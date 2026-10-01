@@ -68,6 +68,14 @@ export function createTable(defaults: () => Record<string, unknown> = () => ({})
       rows = [];
       counter = 0;
     },
+    /** The rows as they are now, for `restore` (a transaction that fails puts them back). */
+    snapshot() {
+      return { rows: rows.map((row) => ({ ...row })), counter };
+    },
+    restore(saved: { rows: Row[]; counter: number }) {
+      rows = saved.rows;
+      counter = saved.counter;
+    },
     seed(...seed: Array<Record<string, unknown>>) {
       for (const data of seed) table.insert(data);
     },
@@ -202,7 +210,16 @@ export function createFakeWikiDb() {
   };
   const db: FakeWikiDb = {
     ...tables,
-    $transaction: async (work) => work(db),
+    // a transaction that throws changes nothing, as in PostgreSQL
+    $transaction: async (work) => {
+      const saved = Object.values(tables).map((table) => [table, table.snapshot()] as const);
+      try {
+        return await work(db);
+      } catch (error) {
+        for (const [table, snapshot] of saved) table.restore(snapshot);
+        throw error;
+      }
+    },
     $executeRaw: async (strings, ...values) => {
       executedSql.push({ sql: strings.join("?").replace(/\s+/g, " ").trim(), values });
       return 0;

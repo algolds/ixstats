@@ -436,6 +436,96 @@ describe("refusals", () => {
   });
 });
 
+describe("nothing is left staged when an upload fails (review M1)", () => {
+  /** What the database stands in for: the tables it writes, made to fail once. */
+  const failing = (table: { create?: unknown; upsert?: unknown }, method: "create" | "upsert") =>
+    jest
+      .spyOn(table as Record<string, () => Promise<unknown>>, method)
+      .mockRejectedValueOnce(new Error("db down"));
+
+  afterEach(() => jest.restoreAllMocks());
+
+  it.each([
+    [
+      "a NUL in the page text (api.php text), which PostgreSQL refuses",
+      { pageText: "a\u0000b" },
+      "invalidtext",
+    ],
+    ["a NUL in the description", { description: "a\u0000b" }, "invalidtext"],
+    ["a page text over MediaWiki's limit", { pageText: "x".repeat(2_000_001) }, "toobig"],
+    ["a description over MediaWiki's limit", { description: "x".repeat(2_000_001) }, "toobig"],
+  ] as Array<[string, Partial<UploadRequest>, string]>)(
+    "refuses %s before staging anything",
+    async (_name, over, code) => {
+      const failure = await uploadFile(request(over)).catch((error: unknown) => error);
+
+      expect(failure).toBeInstanceOf(UploadError);
+      expect((failure as UploadError).code).toBe(code);
+      expect(staged()).toEqual([]);
+      expect(tables.wikiAsset.rows).toHaveLength(0);
+      expect(tables.wikiArticle.rows).toHaveLength(0);
+      expect(jobs()).toHaveLength(0);
+    }
+  );
+
+  it("refuses a PNG whose header states a width no database column holds (0xFFFFFFFF), instead of failing after staging it", async () => {
+    const failure = await uploadFile(request({ bytes: png(0xffffffff, 5) })).catch(
+      (error: unknown) => error
+    );
+
+    expect(failure).toMatchObject({ code: "corrupt" });
+    expect(staged()).toEqual([]);
+    expect(tables.wikiAsset.rows).toHaveLength(0);
+  });
+
+  it("takes an SVG that states an absurd width as one with no stated size, not as a crash", async () => {
+    const bytes = new TextEncoder().encode(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="99999999999" height="20"/>`
+    );
+
+    const result = await uploadFile(request({ bytes, filename: "Huge.svg" }));
+
+    expect(result).toMatchObject({ result: "Success", width: null, height: 20 });
+    expect(tables.wikiAsset.rows[0]).toMatchObject({ width: null, height: 20 });
+  });
+
+  it("leaves nothing staged when the record fails after the file was staged", async () => {
+    failing(tables.wikiLog, "create");
+
+    await expect(uploadFile(request())).rejects.toThrow("db down");
+
+    expect(staged()).toEqual([]);
+  });
+
+  it("leaves nothing staged when the File: page cannot be saved (nothing was staged yet)", async () => {
+    failing(tables.wikiArticle, "upsert");
+
+    await expect(uploadFile(request())).rejects.toThrow("db down");
+
+    expect(staged()).toEqual([]);
+    expect(tables.wikiAsset.rows).toHaveLength(0);
+  });
+
+  it("keeps the file when the failed upload shares it with a name that still needs it", async () => {
+    const bytes = png(10, 10, 4);
+    await uploadFile(request({ bytes }));
+    expect(staged()).toHaveLength(1);
+    failing(tables.wikiLog, "create");
+
+    await expect(
+      uploadFile(request({ bytes, filename: "Copy of the flag.png", ignoreWarnings: true }))
+    ).rejects.toThrow("db down");
+
+    expect(staged()).toEqual([hashFile(bytes).base36]);
+  });
+
+  it("strips a NUL from the comment instead of failing on it", async () => {
+    await uploadFile(request({ comment: "a\u0000b" }));
+
+    expect(tables.wikiLog.rows[0]?.comment).toBe("ab");
+  });
+});
+
 describe("descriptionWikitext", () => {
   it("writes the two sections and a link for each valid category", () => {
     expect(

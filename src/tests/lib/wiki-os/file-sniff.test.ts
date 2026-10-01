@@ -177,6 +177,12 @@ describe("sniffFile: the bytes decide the type and the size", () => {
     });
   });
 
+  it("refuses a header that states a side no database Int holds (the review's 0xFFFFFFFF PNG)", () => {
+    expect(sniffFile(png(0xffffffff, 5))).toMatchObject({ ok: false, code: "corrupt" });
+    expect(sniffFile(png(5, 0x80000000))).toMatchObject({ ok: false, code: "corrupt" });
+    expect(accepted(sniffFile(png(2_147_483_647, 1)))).toMatchObject({ width: 2_147_483_647 });
+  });
+
   it("refuses a PNG with a zero-sized header", () => {
     expect(sniffFile(png(0, 10))).toMatchObject({ ok: false, code: "corrupt" });
   });
@@ -199,6 +205,24 @@ describe("sniffFile: SVG", () => {
       sniffFile(svg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100"/>`))
     );
     expect(file).toMatchObject({ width: 200, height: 100 });
+  });
+
+  it("gives no size for a length or a viewBox no database Int holds, instead of a number that would fail the insert", () => {
+    expect(accepted(sniffFile(svg(`<svg width="99999999999" height="12"/>`)))).toMatchObject({
+      width: null,
+      height: 12,
+    });
+    expect(accepted(sniffFile(svg(`<svg viewBox="0 0 1e999 5"/>`)))).toMatchObject({
+      width: null,
+      height: null,
+    });
+    expect(accepted(sniffFile(svg(`<svg viewBox="0 0 99999999999 5"/>`)))).toMatchObject({
+      width: null,
+      height: null,
+    });
+    expect(accepted(sniffFile(svg(`<svg width="2147483647" height="1"/>`)))).toMatchObject({
+      width: 2_147_483_647,
+    });
   });
 
   it("converts absolute units and gives no size for percentages", () => {

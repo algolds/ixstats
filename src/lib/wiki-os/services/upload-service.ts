@@ -31,6 +31,7 @@ import { CloudflareGuardian } from "../guardian/cloudflare-guardian";
 import { authorizeAction, requireRight, requireUploadTitle } from "../permissions";
 import { commitWikitextSave, deletedPage } from "./edit-service";
 import { enqueueUploadJob, scheduleMirrorKick } from "./mirror-outbox";
+import { releaseStagedFileUnlessNeeded } from "./staged-uploads";
 import { UploadError } from "./upload-error";
 import { stageBytes } from "./upload-staging";
 
@@ -93,6 +94,8 @@ const DEFAULT_COMMENT = "Uploaded via WikiOS";
 /** `wiki_logs.comment` holds 1000 characters and MediaWiki's summary limit is 500. */
 const COMMENT_LIMIT = 500;
 const MEGABYTE = 1_000_000;
+/** MediaWiki's page size limit, in characters: what `saveWikitext` and api.php's `action=edit` take too. */
+const MAX_PAGE_CHARS = 2_000_000;
 
 // ---------------------------------------------------------------------------
 // The file
@@ -148,6 +151,28 @@ export function descriptionWikitext(
     (request.license ?? "").trim(),
     ...categories,
   ].join("\n");
+}
+
+/**
+ * The text of the new `File:` page, checked while nothing is stored yet: a page too long for MediaWiki, or with a NUL
+ * (which a PostgreSQL text column refuses), would fail the save, or the page's revision job in MediaWiki, after the file
+ * had been staged and left the upload behind it blocked.
+ */
+function checkedPageText(request: UploadRequest): string {
+  const text = descriptionWikitext(request);
+  if (text.length > MAX_PAGE_CHARS) {
+    throw new UploadError("toobig", `The page text is longer than ${MAX_PAGE_CHARS} characters.`);
+  }
+  if (text.includes("\u0000")) {
+    throw new UploadError("invalidtext", "The page text contains a NUL character.");
+  }
+  return text;
+}
+
+/** The comment of the upload: its own words (NUL characters, which a text column refuses, gone), or the default, at most `COMMENT_LIMIT` characters. */
+function uploadComment(request: UploadRequest): string {
+  const own = request.comment?.replaceAll("\u0000", "").trim();
+  return (own || DEFAULT_COMMENT).slice(0, COMMENT_LIMIT);
 }
 
 // ---------------------------------------------------------------------------
@@ -262,16 +287,35 @@ async function descriptionPageId(
   request: UploadRequest,
   title: string,
   page: CurrentFile["page"],
-  comment: string
+  upload: { wikitext: string; comment: string }
 ): Promise<string> {
   if (page) return page.id;
   const saved = await commitWikitextSave(request.ctx, {
     title,
-    wikitext: descriptionWikitext(request),
-    summary: comment,
+    wikitext: upload.wikitext,
+    summary: upload.comment,
     minor: false,
   });
   return saved.article.id;
+}
+
+/**
+ * Keep the bytes and record the upload. A record that fails (the database refuses it) leaves no staged file behind
+ * unless something else needs it: an upload that fails over and over must not fill the disk.
+ */
+async function stageAndRecord(
+  request: UploadRequest,
+  upload: Parameters<typeof recordUpload>[1]
+): Promise<MediaAssetRecord> {
+  await stageBytes(upload.sha1, request.bytes);
+  try {
+    return await recordUpload(request, upload);
+  } catch (error) {
+    await releaseStagedFileUnlessNeeded(upload.sha1).catch((releaseError: unknown) =>
+      console.warn(`[WikiUpload] Releasing the staged file ${upload.sha1} failed:`, releaseError)
+    );
+    throw error;
+  }
 }
 
 /**
@@ -287,6 +331,9 @@ export async function uploadFile(request: UploadRequest): Promise<UploadResult> 
   await authorizeAction(ctx, "upload", title);
 
   const file = checkedFile(request.bytes, name);
+  // Everything that can be refused is refused before a byte is staged.
+  const wikitext = checkedPageText(request);
+  const comment = uploadComment(request);
   const { base36: sha1 } = hashFile(request.bytes);
   const current = await currentFile(title, name);
   if (current.page?.status === "ARCHIVED") throw deletedPage();
@@ -307,10 +354,8 @@ export async function uploadFile(request: UploadRequest): Promise<UploadResult> 
     };
   }
 
-  await stageBytes(sha1, request.bytes);
-  const comment = (request.comment?.trim() || DEFAULT_COMMENT).slice(0, COMMENT_LIMIT);
-  const articleId = await descriptionPageId(request, title, current.page, comment);
-  const asset = await recordUpload(request, {
+  const articleId = await descriptionPageId(request, title, current.page, { wikitext, comment });
+  const asset = await stageAndRecord(request, {
     title,
     name,
     file,

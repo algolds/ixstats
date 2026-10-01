@@ -83,7 +83,12 @@ const ascii = (bytes: Uint8Array, from: number, length: number): string =>
 
 const corrupt = (what: string): SniffResult => fail("corrupt", `The file is not a valid ${what}.`);
 
-const positive = (width: number, height: number): boolean => width > 0 && height > 0;
+/** The largest number a PostgreSQL `Int` column holds: `wiki_assets.width` and `height` are two of them. */
+const MAX_PIXEL_SIDE = 2_147_483_647;
+
+/** A size the header can state and the database can store: both sides at least a pixel, neither past an `Int`. */
+const positive = (width: number, height: number): boolean =>
+  width > 0 && height > 0 && width <= MAX_PIXEL_SIDE && height <= MAX_PIXEL_SIDE;
 
 // ---------------------------------------------------------------------------
 // Rasters
@@ -380,7 +385,8 @@ function lengthInPixels(value: string | undefined): number | null {
   const scale = PIXELS_PER_UNIT[(match?.[2] ?? "").toLowerCase()];
   if (!match || scale === undefined) return null;
   const pixels = Math.round(Number(match[1]) * scale);
-  return pixels > 0 ? pixels : null;
+  // An absurd length is a size the file does not usefully state (and would not fit the column): none.
+  return pixels > 0 && pixels <= MAX_PIXEL_SIDE ? pixels : null;
 }
 
 /** `viewBox="0 0 200 100"` as a width and height. */
@@ -391,7 +397,7 @@ function viewBoxSize(value: string | undefined): { width: number; height: number
     .split(/[\s,]+/)
     .map(Number);
   const [, , width, height] = parts;
-  return parts.length === 4 && width! > 0 && height! > 0
+  return parts.length === 4 && positive(Math.round(width!), Math.round(height!))
     ? { width: Math.round(width!), height: Math.round(height!) }
     : null;
 }

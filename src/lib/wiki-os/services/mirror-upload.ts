@@ -29,7 +29,8 @@ import {
 } from "../adapters/mediawiki/write-service";
 import { MIRROR_SOURCE, uploadPayloadSchema } from "./mirror-outbox";
 import type { MirrorJob } from "./mirror-queue";
-import { readStaged, releaseStaged } from "./upload-staging";
+import { releaseStagedFileUnlessNeeded } from "./staged-uploads";
+import { readStaged } from "./upload-staging";
 
 /** MediaWiki's comment limit; the uploader's name is appended to the comment inside it. */
 const COMMENT_LIMIT = 500;
@@ -133,21 +134,6 @@ async function markUsersStale(name: string): Promise<void> {
   }
 }
 
-/** Whether another upload job (one that is not finished) or an asset still waiting for its job needs the staged file `sha1`. */
-async function stillNeeded(sha1: string, jobId: string): Promise<boolean> {
-  if (await MediaAssetService.isStillStaged(sha1)) return true;
-  const waiting = await db.wikiMirrorJob.findMany({
-    where: {
-      source: MIRROR_SOURCE,
-      kind: "upload",
-      state: { notIn: ["done", "discarded"] },
-      id: { not: jobId },
-    },
-    select: { payload: true },
-  });
-  return waiting.some((other) => uploadPayloadSchema.safeParse(other.payload).data?.sha1 === sha1);
-}
-
 /**
  * Put the staged file the job names in MediaWiki; throws on failure, for the retry. When the job is done the asset is served from
  * MediaWiki's path, the pages that use the file are marked stale and the staged copy is released unless something else needs it.
@@ -175,5 +161,5 @@ export async function runUploadJob(job: MirrorJob): Promise<void> {
 
   await MediaAssetService.markMirrored(name, sha1);
   await markUsersStale(name);
-  if (!(await stillNeeded(sha1, job.id))) await releaseStaged(sha1);
+  await releaseStagedFileUnlessNeeded(sha1, job.id);
 }
