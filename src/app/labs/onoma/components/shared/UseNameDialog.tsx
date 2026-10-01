@@ -4,7 +4,6 @@
 // Onoma Lab — Dialog to handle "Use This Name" redirects
 
 import {
-  Xmark as X,
   ArrowRight,
   MapPin,
   Shield,
@@ -16,7 +15,15 @@ import {
 import { useRouter } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
 import type { NameCategory } from "~/lib/onoma/types";
-import { FacetModal } from "~/components/ui/facet-container";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 interface UseNameDialogProps {
   isOpen: boolean;
@@ -27,8 +34,6 @@ interface UseNameDialogProps {
 
 export function UseNameDialog({ isOpen, onClose, name, category }: UseNameDialogProps) {
   const router = useRouter();
-
-  if (!isOpen) return null;
 
   interface TargetOption {
     label: string;
@@ -42,7 +47,7 @@ export function UseNameDialog({ isOpen, onClose, name, category }: UseNameDialog
       case "city":
         return [
           {
-            label: "Found a New City",
+            label: "Found a new city",
             description: "Add this city to your country's geography in the Map Editor.",
             icon: MapPin,
             href: `/mycountry?section=map-editor&action=add-city&name=${encodeURIComponent(name)}`,
@@ -51,7 +56,7 @@ export function UseNameDialog({ isOpen, onClose, name, category }: UseNameDialog
       case "province":
         return [
           {
-            label: "Establish a Subdivision",
+            label: "Establish a subdivision",
             description: "Create a new province or federal state in the Map Editor.",
             icon: MapPin,
             href: `/mycountry?section=map-editor&action=add-subdivision&name=${encodeURIComponent(name)}`,
@@ -60,7 +65,7 @@ export function UseNameDialog({ isOpen, onClose, name, category }: UseNameDialog
       case "military":
         return [
           {
-            label: "Commission Military Unit",
+            label: "Commission military unit",
             description: "Form a new military brigade, battalion, or division.",
             icon: Shield,
             href: `/mycountry/defense?action=add-unit&name=${encodeURIComponent(name)}`,
@@ -69,7 +74,7 @@ export function UseNameDialog({ isOpen, onClose, name, category }: UseNameDialog
       case "organization":
         return [
           {
-            label: "Create Wiki Organization Page",
+            label: "Create wiki organization page",
             description: "Write a WikiOS page documenting this guild, order, or institute.",
             icon: BookOpen,
             href: `/wiki?action=create-page&type=company&title=${encodeURIComponent(name)}`,
@@ -78,7 +83,7 @@ export function UseNameDialog({ isOpen, onClose, name, category }: UseNameDialog
       case "person":
         return [
           {
-            label: "Create Wiki Character Page",
+            label: "Create wiki character page",
             description: "Document this historical figure or leader in WikiOS.",
             icon: BookOpen,
             href: `/wiki?action=create-page&type=person&title=${encodeURIComponent(name)}`,
@@ -87,7 +92,7 @@ export function UseNameDialog({ isOpen, onClose, name, category }: UseNameDialog
       case "country":
         return [
           {
-            label: "Found New Country",
+            label: "Found new country",
             description: "Start a new nation builder draft with this name.",
             icon: Crown,
             href: `/builder?name=${encodeURIComponent(name)}`,
@@ -96,7 +101,7 @@ export function UseNameDialog({ isOpen, onClose, name, category }: UseNameDialog
       case "geography":
         return [
           {
-            label: "Add Geographic Landmark",
+            label: "Add geographic landmark",
             description: "Place a Point of Interest (mountain, river, lake) on the map.",
             icon: Compass,
             href: `/mycountry?section=map-editor&action=add-poi&name=${encodeURIComponent(name)}`,
@@ -105,7 +110,7 @@ export function UseNameDialog({ isOpen, onClose, name, category }: UseNameDialog
       case "ship":
         return [
           {
-            label: "Commission Naval Ship",
+            label: "Commission naval ship",
             description: "Construct a new naval vessel or military asset.",
             icon: Anchor,
             href: `/mycountry/defense?action=add-asset&name=${encodeURIComponent(name)}`,
@@ -114,7 +119,7 @@ export function UseNameDialog({ isOpen, onClose, name, category }: UseNameDialog
       default:
         return [
           {
-            label: "Write Lore Page",
+            label: "Write lore page",
             description: "Create a generic WikiOS lore page for this name.",
             icon: BookOpen,
             href: `/wiki?action=create-page&type=blank&title=${encodeURIComponent(name)}`,
@@ -131,57 +136,40 @@ export function UseNameDialog({ isOpen, onClose, name, category }: UseNameDialog
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <FacetModal className="border-border/40 animate-in fade-in zoom-in-95 relative w-full max-w-md border p-6 shadow-2xl duration-200">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="text-muted-foreground hover:text-foreground absolute top-4 right-4 transition-colors"
-        >
-          <X className="h-5 w-5" />
-        </button>
-
-        {/* Dialog Header */}
-        <div className="mb-5">
-          <span className="text-[10px] font-bold tracking-widest text-cyan-600 uppercase dark:text-cyan-400">
-            Deploy Entity Name
-          </span>
-          <h3 className="text-foreground mt-1 text-lg font-black select-all">{name}</h3>
-          <p className="text-muted-foreground mt-1 text-xs">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <Eyebrow>Deploy entity name</Eyebrow>
+          <DialogTitle className="text-title-3 select-all">{name}</DialogTitle>
+          <DialogDescription>
             Deploy this generated name to one of the following creation forms:
-          </p>
-        </div>
+          </DialogDescription>
+        </DialogHeader>
 
-        {/* Action Options */}
-        <div className="max-h-96 space-y-2.5 overflow-y-auto pr-1">
-          {targets.map((target, idx) => {
-            const Icon = target.icon;
-            return (
-              <button
-                key={idx}
-                onClick={() => handleSelect(target.href)}
-                className="group border-border/40 bg-secondary/15 hover:bg-secondary/30 flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-all duration-300 hover:border-cyan-500/30 dark:bg-slate-900/30 dark:hover:bg-slate-900/50"
-              >
-                <div className="rounded-lg bg-cyan-500/10 p-2 text-cyan-600 transition-all group-hover:bg-cyan-500/20 dark:text-cyan-400">
-                  <Icon className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-foreground text-xs font-bold transition-colors group-hover:text-cyan-600 dark:group-hover:text-cyan-400">
-                      {target.label}
+        <FacetList className="max-h-96 overflow-y-auto">
+          <FacetListSection>
+            {targets.map((target) => {
+              const Icon = target.icon;
+              return (
+                <FacetRow
+                  key={target.href}
+                  leading={
+                    <span className="bg-tint-fill text-tint rounded-control-sm flex size-8 items-center justify-center">
+                      <Icon className="size-4" />
                     </span>
-                    <ArrowRight className="text-muted-foreground/60 h-4 w-4 transform transition-all group-hover:translate-x-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400" />
-                  </div>
-                  <p className="text-muted-foreground text-xs leading-normal">
-                    {target.description}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </FacetModal>
-    </div>
+                  }
+                  title={target.label}
+                  subtitle={target.description}
+                  trailing={<ArrowRight className="text-label-tertiary size-4" />}
+                  accessory="none"
+                  onClick={() => handleSelect(target.href)}
+                />
+              );
+            })}
+          </FacetListSection>
+        </FacetList>
+      </DialogContent>
+    </Dialog>
   );
 }
 

@@ -14,6 +14,8 @@ import {
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
 
 interface PronunciationEditorProps {
   name: string;
@@ -52,16 +54,14 @@ export function PronunciationEditor({
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      className="border-border/20 animate-in slide-in-from-top-1 bg-onoma-primary/[0.02] relative z-10 w-full space-y-2.5 rounded-xl border p-3 text-left duration-200"
+      className="border-separator animate-in slide-in-from-top-1 bg-tint/5 rounded-row relative z-10 w-full space-y-2.5 border p-3 text-left duration-200"
     >
       <div className="flex items-center justify-between">
-        <h4 className="text-foreground text-[10px] font-bold tracking-wider uppercase">
-          Customize Pronunciation
-        </h4>
+        <h4 className="text-label text-subhead">Customize Pronunciation</h4>
         <button
           onClick={onCancel}
           title="Close"
-          className="text-muted-foreground hover:text-onoma-primary cursor-pointer rounded p-0.5"
+          className="text-label-secondary hover:text-tint rounded-control-sm cursor-pointer p-0.5"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -69,7 +69,7 @@ export function PronunciationEditor({
 
       <div className="space-y-0.5">
         <div className="flex items-center justify-between">
-          <label className="text-muted-foreground text-[8px] font-bold uppercase">
+          <label className="text-label-secondary text-subhead">
             IPA (drives Read Naturally phonemes)
           </label>
           {speechConfig?.kokoro?.enabled && speechConfig?.kokoro?.engine === "kokoro-fastapi" && (
@@ -89,27 +89,27 @@ export function PronunciationEditor({
                 }
               }}
               disabled={suggestMutation.isPending}
-              className="text-onoma-primary flex cursor-pointer items-center gap-1 text-[8px] font-bold select-none hover:underline disabled:opacity-50"
+              className="text-tint text-caption flex cursor-pointer items-center gap-1 font-semibold select-none hover:underline disabled:opacity-50"
             >
               {suggestMutation.isPending ? "Suggesting..." : "Suggest IPA"}
             </button>
           )}
         </div>
-        <input
+        <Input
           type="text"
           value={ipaDraft}
           onChange={(e) => setIpaDraft(e.target.value)}
           placeholder="/ˈeksɑːmpl/"
-          className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-1 font-mono text-xs focus:outline-none"
+          className="text-footnote w-full font-mono"
         />
         {speechConfig?.kokoro?.enabled &&
           (() => {
             const result = ipaToKokoroPhonemes(ipaDraft);
             return (
-              <div className="text-muted-foreground mt-1 flex flex-wrap gap-1 font-mono text-[9px]">
+              <div className="text-label-secondary text-caption mt-1 flex flex-wrap gap-1 font-mono">
                 <span>Phonemes: {result.phonemes || "(empty)"}</span>
                 {result.dropped.length > 0 && (
-                  <span className="font-semibold text-amber-500">
+                  <span className="text-yellow font-semibold">
                     (dropped: {result.dropped.join(", ")})
                   </span>
                 )}
@@ -119,27 +119,20 @@ export function PronunciationEditor({
       </div>
 
       <div className="space-y-0.5">
-        <label className="text-muted-foreground text-[8px] font-bold uppercase">Voice</label>
+        <label className="text-label-secondary text-subhead">Voice</label>
         <Select
           value={voiceDraft || "default"}
           onValueChange={(val) => setVoiceDraft(val === "default" ? "" : val)}
         >
-          <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-2 py-1 text-xs transition-colors focus:outline-none">
+          <SelectTrigger className="text-footnote w-full">
             <SelectValue placeholder="Default / culture voice" />
           </SelectTrigger>
-          <SelectContent className="border-border/40 bg-background/95 max-h-[200px] backdrop-blur-md">
-            <SelectItem
-              value="default"
-              className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-            >
+          <SelectContent className="max-h-[200px]">
+            <SelectItem value="default" className="text-footnote">
               Default / culture voice
             </SelectItem>
             {(voicesData?.voices ?? []).map((v) => (
-              <SelectItem
-                key={v}
-                value={v}
-                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-              >
+              <SelectItem key={v} value={v} className="text-footnote">
                 {v}
               </SelectItem>
             ))}
@@ -148,26 +141,16 @@ export function PronunciationEditor({
       </div>
 
       <div className="flex items-center justify-between gap-1.5 pt-0.5">
-        <button
-          onClick={onReset}
-          title="Reset to defaults"
-          className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 flex items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-bold transition-colors"
-        >
+        <Button variant="bordered" size="sm" onClick={onReset} title="Reset to defaults">
           <RotateCcw className="h-3 w-3" /> Reset
-        </button>
+        </Button>
         <div className="flex gap-1.5">
-          <button
-            onClick={onPreview}
-            className="border-border/60 bg-background text-muted-foreground hover:bg-secondary/40 flex items-center gap-1 rounded border px-2 py-0.5 text-[9px] font-bold transition-colors"
-          >
+          <Button variant="bordered" size="sm" onClick={onPreview}>
             <Volume2 className="h-3 w-3" /> Preview
-          </button>
-          <button
-            onClick={onSave}
-            className="bg-onoma-primary hover:bg-onoma-primary-light rounded px-2.5 py-0.5 text-[9px] font-bold text-white transition-colors"
-          >
+          </Button>
+          <Button size="sm" onClick={onSave}>
             Save
-          </button>
+          </Button>
         </div>
       </div>
     </div>

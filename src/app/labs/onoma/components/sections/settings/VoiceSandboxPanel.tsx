@@ -23,6 +23,8 @@ import { speakName } from "~/lib/onoma/browser-speech";
 import { translateToIPA } from "~/lib/onoma/phonology";
 import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
 import { voiceLabel } from "./VoicePreferencesPanel";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
 
 interface VoiceSandboxPanelProps {
   voiceOptions: string[];
@@ -83,12 +85,10 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
   const sandboxNormalized = ipaToKokoroPhonemes(sandboxIpa);
 
   return (
-    <div className="border-border/40 bg-secondary/5 space-y-4 rounded-xl border p-4 text-left">
+    <div className="border-separator bg-fill-4 rounded-row space-y-4 border p-4 text-left">
       <div className="flex items-center justify-between">
-        <h4 className="text-foreground text-xs font-bold tracking-wider uppercase">
-          Voice Sandbox
-        </h4>
-        <span className="text-muted-foreground font-mono text-[10px]">
+        <h4 className="text-label text-subhead">Voice Sandbox</h4>
+        <span className="text-label-secondary text-caption font-mono">
           {speechConfig?.kokoro?.enabled ? "Kokoro Active" : "Browser TTS fallback"}
         </span>
       </div>
@@ -96,42 +96,31 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
-            <label className="text-muted-foreground text-[10px] font-bold uppercase">
-              Preview Text
-            </label>
-            <input
+            <label className="text-label-secondary text-subhead">Preview Text</label>
+            <Input
               type="text"
               value={sandboxText}
               onChange={(e) => setSandboxText(e.target.value)}
               placeholder="e.g. Imperia"
-              className="border-border/60 bg-background text-foreground w-full rounded-md border px-2 py-1 text-xs focus:outline-none"
+              className="text-footnote w-full"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-muted-foreground text-[10px] font-bold uppercase">
-              Select Voice
-            </label>
+            <label className="text-label-secondary text-subhead">Select Voice</label>
             <Select
               value={sandboxVoice || "default"}
               onValueChange={(val) => setSandboxVoice(val === "default" ? "" : val)}
             >
-              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-md border px-2 py-1 text-xs transition-colors focus:outline-none">
+              <SelectTrigger className="text-footnote w-full">
                 <SelectValue placeholder="Default voice" />
               </SelectTrigger>
-              <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
-                <SelectItem
-                  value="default"
-                  className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                >
+              <SelectContent className="max-h-[250px]">
+                <SelectItem value="default" className="text-footnote">
                   Default voice
                 </SelectItem>
                 {voiceOptions.map((id) => (
-                  <SelectItem
-                    key={id}
-                    value={id}
-                    className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                  >
+                  <SelectItem key={id} value={id} className="text-footnote">
                     {voiceLabel(id)}
                   </SelectItem>
                 ))}
@@ -142,15 +131,13 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
 
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <label className="text-muted-foreground text-[10px] font-bold uppercase">
-              IPA Sound Transcribe
-            </label>
+            <label className="text-label-secondary text-subhead">IPA Sound Transcribe</label>
             {speechConfig?.kokoro?.enabled && speechConfig?.kokoro?.engine === "kokoro-fastapi" && (
               <button
                 type="button"
                 onClick={handleSuggestSandboxIpa}
                 disabled={suggestMutation.isPending}
-                className="text-onoma-primary flex cursor-pointer items-center gap-1 text-[9px] font-bold select-none hover:underline disabled:opacity-50"
+                className="text-tint text-caption flex cursor-pointer items-center gap-1 font-semibold select-none hover:underline disabled:opacity-50"
               >
                 {suggestMutation.isPending ? (
                   <Loader2 className="h-2 w-2 animate-spin" />
@@ -160,21 +147,21 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
               </button>
             )}
           </div>
-          <input
+          <Input
             type="text"
             value={sandboxIpa}
             onChange={(e) => setSandboxIpa(e.target.value)}
             placeholder="/ˈimpeɾia/"
-            className="border-border/60 bg-background text-foreground w-full rounded-md border px-2 py-1 font-mono text-xs focus:outline-none"
+            className="text-footnote w-full font-mono"
           />
 
           {/* Normalizer Preview & Warning */}
           {speechConfig?.kokoro?.enabled && (
-            <div className="text-muted-foreground mt-1 space-y-0.5 font-mono text-[10px]">
+            <div className="text-label-secondary text-caption mt-1 space-y-0.5 font-mono">
               <div className="flex justify-between">
                 <span>Phonemes: {sandboxNormalized.phonemes || "(empty)"}</span>
                 {sandboxNormalized.dropped.length > 0 && (
-                  <span className="flex items-center gap-0.5 font-semibold text-amber-500">
+                  <span className="text-yellow flex items-center gap-0.5 font-semibold">
                     <AlertTriangle className="h-2.5 w-2.5" />
                     dropped: {sandboxNormalized.dropped.join(", ")}
                   </span>
@@ -184,10 +171,11 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
           )}
         </div>
 
-        <button
+        <Button
+          size="sm"
           onClick={handlePlaySandbox}
           disabled={isPlayingSandbox || !sandboxText}
-          className="bg-onoma-primary hover:bg-onoma-primary-light flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-white transition-colors select-none disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full justify-center"
         >
           {isPlayingSandbox ? (
             <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -195,7 +183,7 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
             <Volume2 className="h-3.5 w-3.5" />
           )}
           <span>{isPlayingSandbox ? "Speaking..." : "Preview Voice"}</span>
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -4,8 +4,17 @@
 // Onoma — Edit a saved dictionary: rename + re-tag role/gender/category/set.
 
 import { useState } from "react";
-import { Xmark as X, SystemRestart as Loader2, FloppyDisk as Save } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { SystemRestart as Loader2, FloppyDisk as Save } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { Switch } from "~/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -13,8 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { cn } from "~/lib/utils";
 import { NAME_ROLES, NAME_GENDERS, type NameRole, type NameGender } from "~/lib/onoma/name-sets";
+import { Input } from "~/components/ui/input";
 
 const CATEGORIES = [
   "city",
@@ -85,44 +94,34 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <FacetCard
-        className="border-border/40 bg-background w-full max-w-md space-y-4 border p-5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h3 className="text-foreground text-base font-bold">Edit Dictionary</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit dictionary</DialogTitle>
+          <DialogDescription className="sr-only">
+            Rename this dictionary and re-tag its role, gender, category and name set.
+          </DialogDescription>
+        </DialogHeader>
 
         <div className="space-y-1">
-          <label className="text-muted-foreground text-[10px] font-bold uppercase">Name</label>
-          <input
+          <label className="text-label-secondary text-subhead">Name</label>
+          <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="border-border/60 bg-background text-foreground focus:border-onoma-primary/50 w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none"
+            className="text-body w-full"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="text-muted-foreground text-[10px] font-bold uppercase">Role</label>
+            <label className="text-label-secondary text-subhead">Role</label>
             <Select value={role} onValueChange={(val) => setRole(val as NameRole)}>
-              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-2 py-1.5 text-xs transition-colors focus:outline-none">
+              <SelectTrigger className="text-footnote w-full">
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
-              <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
+              <SelectContent className="max-h-[250px]">
                 {NAME_ROLES.map((r) => (
-                  <SelectItem
-                    key={r.value}
-                    value={r.value}
-                    className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                  >
+                  <SelectItem key={r.value} value={r.value} className="text-footnote">
                     {r.label}
                   </SelectItem>
                 ))}
@@ -130,18 +129,14 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
             </Select>
           </div>
           <div className="space-y-1">
-            <label className="text-muted-foreground text-[10px] font-bold uppercase">Gender</label>
+            <label className="text-label-secondary text-subhead">Gender</label>
             <Select value={gender} onValueChange={(val) => setGender(val as NameGender)}>
-              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-2 py-1.5 text-xs transition-colors focus:outline-none">
+              <SelectTrigger className="text-footnote w-full">
                 <SelectValue placeholder="Select gender" />
               </SelectTrigger>
-              <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
+              <SelectContent className="max-h-[250px]">
                 {NAME_GENDERS.map((g) => (
-                  <SelectItem
-                    key={g.value}
-                    value={g.value}
-                    className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                  >
+                  <SelectItem key={g.value} value={g.value} className="text-footnote">
                     {g.label}
                   </SelectItem>
                 ))}
@@ -152,29 +147,20 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="text-muted-foreground text-[10px] font-bold uppercase">
-              Category
-            </label>
+            <label className="text-label-secondary text-subhead">Category</label>
             <Select
               value={category || "any"}
               onValueChange={(val) => setCategory(val === "any" ? "" : val)}
             >
-              <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-full items-center justify-between rounded-lg border px-2 py-1.5 text-xs transition-colors focus:outline-none">
+              <SelectTrigger className="text-footnote w-full">
                 <SelectValue placeholder="Any" />
               </SelectTrigger>
-              <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
-                <SelectItem
-                  value="any"
-                  className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                >
+              <SelectContent className="max-h-[250px]">
+                <SelectItem value="any" className="text-footnote">
                   Any
                 </SelectItem>
                 {CATEGORIES.map((c) => (
-                  <SelectItem
-                    key={c}
-                    value={c}
-                    className="focus:text-foreground focus:bg-onoma-primary/10 text-xs capitalize"
-                  >
+                  <SelectItem key={c} value={c} className="text-footnote capitalize">
                     {c}
                   </SelectItem>
                 ))}
@@ -182,69 +168,42 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
             </Select>
           </div>
           <div className="space-y-1">
-            <label className="text-muted-foreground text-[10px] font-bold uppercase">
-              Name Set
-            </label>
-            <input
+            <label className="text-label-secondary text-subhead">Name set</label>
+            <Input
               value={setName}
               onChange={(e) => setSetName(e.target.value)}
               placeholder="e.g. Roman"
               list="onoma-existing-sets"
-              className="border-border/60 bg-background text-foreground w-full rounded-lg border px-2 py-1.5 text-xs focus:outline-none"
+              className="text-footnote w-full"
             />
           </div>
         </div>
 
-        <p className="text-muted-foreground text-[10px]">
+        <p className="text-label-secondary text-caption">
           Tag dictionaries into a Name Set with roles to generate full names in Studio.
         </p>
 
-        <div className="border-border/20 flex items-center justify-between border-t pt-3 pb-1">
+        <div className="border-separator flex items-center justify-between border-t pt-3 pb-1">
           <div className="flex flex-col">
-            <span className="text-foreground text-xs font-semibold">Public Sharing</span>
-            <span className="text-muted-foreground text-[10px]">
+            <span className="text-label text-footnote font-semibold">Public sharing</span>
+            <span className="text-label-secondary text-caption">
               Allow other players to discover and clone this dictionary.
             </span>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsPublic(!isPublic)}
-            className={cn(
-              "relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-              isPublic ? "bg-onoma-primary" : "bg-secondary"
-            )}
-          >
-            <span
-              className={cn(
-                "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
-                isPublic ? "translate-x-4" : "translate-x-0"
-              )}
-            />
-          </button>
+          <Switch checked={isPublic} onCheckedChange={setIsPublic} aria-label="Public sharing" />
         </div>
 
-        <div className="flex justify-end gap-2 pt-1">
-          <button
-            onClick={onClose}
-            className="bg-secondary/40 text-foreground hover:bg-secondary/60 rounded-lg px-3 py-1.5 text-xs font-semibold"
-          >
+        <DialogFooter>
+          <Button variant="gray" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving || !title.trim()}
-            className="bg-onoma-primary hover:bg-onoma-primary-light flex items-center gap-1 rounded-lg px-3.5 py-1.5 text-xs font-bold text-white disabled:opacity-50"
-          >
-            {saving ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Save className="h-3.5 w-3.5" />
-            )}
+          </Button>
+          <Button onClick={handleSave} disabled={saving || !title.trim()}>
+            {saving ? <Loader2 className="animate-spin" /> : <Save />}
             Save
-          </button>
-        </div>
-      </FacetCard>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

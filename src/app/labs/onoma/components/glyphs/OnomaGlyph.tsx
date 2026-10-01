@@ -58,14 +58,14 @@ export function OnomaGlyph({
     return (
       <span
         className={cn(
-          "inline-flex items-center font-mono font-semibold tracking-tight transition-colors select-none",
-          size === "xs" && "gap-0.5 text-[10px]",
-          size === "sm" && "gap-0.5 text-[11px]",
-          size === "md" && "gap-1 text-xs",
-          size === "lg" && "gap-1 text-sm",
-          size === "xl" && "gap-1.5 text-base",
-          size === "display" && "gap-2 text-xl",
-          state === "active" ? "text-foreground font-bold" : "text-muted-foreground",
+          "inline-flex items-center font-mono font-semibold transition-colors select-none",
+          size === "xs" && "text-caption gap-0.5",
+          size === "sm" && "text-caption gap-0.5",
+          size === "md" && "text-footnote gap-1",
+          size === "lg" && "text-body gap-1",
+          size === "xl" && "text-body gap-1.5",
+          size === "display" && "text-title-2 gap-2",
+          state === "active" ? "text-label font-semibold" : "text-label-secondary",
           className
         )}
         style={state === "active" && accentColor ? { color: accentColor } : undefined}
@@ -83,20 +83,20 @@ export function OnomaGlyph({
     return (
       <span
         className={cn(
-          "inline-flex items-center font-mono transition-all select-none",
-          size === "xs" && "gap-1 text-[10px]",
-          size === "sm" && "gap-1 text-[11px]",
-          size === "md" && "gap-1.5 text-xs",
-          size === "lg" && "gap-2 text-sm",
-          size === "xl" && "gap-2.5 text-base",
-          size === "display" && "gap-3 text-lg",
-          state === "active" ? "text-foreground font-semibold" : "text-muted-foreground",
+          "inline-flex items-center font-mono transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
+          size === "xs" && "text-caption gap-1",
+          size === "sm" && "text-caption gap-1",
+          size === "md" && "text-footnote gap-1.5",
+          size === "lg" && "text-body gap-2",
+          size === "xl" && "text-body gap-2.5",
+          size === "display" && "text-title-3 gap-3",
+          state === "active" ? "text-label font-semibold" : "text-label-secondary",
           className
         )}
         style={state === "active" && accentColor ? { color: accentColor } : undefined}
         title={title || `${from} → ${to}`}
       >
-        <span className="text-foreground font-semibold">{from}</span>
+        <span className="text-label font-semibold">{from}</span>
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -108,7 +108,7 @@ export function OnomaGlyph({
         >
           <path d="M4 12h14m-5-5l5 5-5 5" />
         </svg>
-        <span className="text-foreground font-semibold">{to}</span>
+        <span className="text-label font-semibold">{to}</span>
       </span>
     );
   }
@@ -121,9 +121,9 @@ export function OnomaGlyph({
       className={cn(
         "inline-flex shrink-0 items-center justify-center transition-transform duration-150 select-none",
         sizeConfig.className,
-        state === "idle" && "text-foreground/75 hover:text-foreground",
-        state === "active" && "text-foreground font-bold drop-shadow-xs",
-        state === "disabled" && "text-muted-foreground/30 pointer-events-none",
+        state === "idle" && "text-label-secondary hover:text-label",
+        state === "active" && "text-label font-semibold drop-shadow-xs",
+        state === "disabled" && "text-label-tertiary pointer-events-none",
         className
       )}
       style={state === "active" && accentColor ? { color: accentColor } : undefined}

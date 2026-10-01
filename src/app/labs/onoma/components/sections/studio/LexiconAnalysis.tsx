@@ -40,26 +40,20 @@ export function LexiconAnalysis({ selectedTerm, stashedEntry, originLabel }: Lex
 
   return (
     <div className="space-y-2">
-      <h4 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-        Lexical & Phonotactic Analysis
-      </h4>
+      <h4 className="text-label-secondary text-subhead">Lexical & Phonotactic Analysis</h4>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {/* CV Pattern */}
-        <div className="border-border/40 bg-background rounded-xl border p-3 text-center">
-          <span className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
-            Phonotactic Pattern
-          </span>
-          <span className="text-onoma-primary font-mono text-sm font-bold">
+        <div className="border-separator bg-background rounded-row border p-3 text-center">
+          <span className="text-label-secondary text-eyebrow mb-1 block">Phonotactic Pattern</span>
+          <span className="text-tint text-body font-mono font-semibold">
             {getCvPattern(selectedTerm)}
           </span>
         </div>
 
         {/* Composition */}
-        <div className="border-border/40 bg-background rounded-xl border p-3 text-center">
-          <span className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
-            Composition
-          </span>
-          <span className="text-foreground font-mono text-xs font-bold">
+        <div className="border-separator bg-background rounded-row border p-3 text-center">
+          <span className="text-label-secondary text-eyebrow mb-1 block">Composition</span>
+          <span className="text-label text-footnote font-mono font-semibold">
             {getLetterComposition(selectedTerm)}
           </span>
         </div>
@@ -70,12 +64,10 @@ export function LexiconAnalysis({ selectedTerm, stashedEntry, originLabel }: Lex
           if (!entry?.stashName) return null;
           const color = entry.stashColor || "#3b82f6";
           return (
-            <div className="border-border/40 bg-background flex flex-col items-center justify-center rounded-xl border p-3 text-center">
-              <span className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
-                Stash Folder
-              </span>
+            <div className="border-separator bg-background rounded-row flex flex-col items-center justify-center border p-3 text-center">
+              <span className="text-label-secondary text-eyebrow mb-1 block">Stash Folder</span>
               <span
-                className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-bold select-none"
+                className="rounded-control-sm text-caption inline-flex items-center gap-1 px-2 py-0.5 font-semibold select-none"
                 style={{
                   backgroundColor: `${color}20`,
                   color: color,
@@ -89,11 +81,9 @@ export function LexiconAnalysis({ selectedTerm, stashedEntry, originLabel }: Lex
 
         {/* Origin / Name Set */}
         {originLabel && (
-          <div className="border-border/40 bg-background flex flex-col items-center justify-center rounded-xl border p-3 text-center">
-            <span className="text-muted-foreground mb-1 block text-[10px] font-bold tracking-wider uppercase">
-              Origin / Name Set
-            </span>
-            <span className="text-foreground block w-full truncate px-1 text-xs font-bold">
+          <div className="border-separator bg-background rounded-row flex flex-col items-center justify-center border p-3 text-center">
+            <span className="text-label-secondary text-eyebrow mb-1 block">Origin / Name Set</span>
+            <span className="text-label text-footnote block w-full truncate px-1 font-semibold">
               {originLabel}
             </span>
           </div>

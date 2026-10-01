@@ -3,6 +3,7 @@
 // Inline reply composer at the bottom of a thread view using unified GlassPlateEditor.
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { Skeleton } from "~/components/ui/skeleton";
 import { Send, SystemRestart as Loader2 } from "iconoir-react";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
@@ -11,12 +12,11 @@ import type { GlassPlateEditorRef } from "~/components/shared/editor";
 const GlassPlateEditor = dynamic(
   () => import("~/components/shared/editor/GlassPlateEditor").then((m) => m.GlassPlateEditor),
   {
-    loading: () => <div className="h-20 animate-pulse rounded-lg bg-white/5" />,
+    loading: () => <Skeleton className="rounded-control h-20" />,
     ssr: false,
   }
 );
 import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils/cn";
 
 interface ReplyComposerProps {
   threadId: number;
@@ -74,9 +74,12 @@ export function ReplyComposer({
     (plainText.trim().length > 0 || bbcode.trim().length > 0) && !createPost.isPending;
 
   return (
-    <div className="forum-composer rounded-2xl border border-white/10 bg-black/20 p-2 backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+    <div className="forum-composer material-thin rounded-card p-2">
       {createPost.error && (
-        <div className="mb-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+        <div
+          role="alert"
+          className="bg-destructive/10 text-destructive text-footnote rounded-control mb-2 px-3 py-2"
+        >
           {createPost.error.message}
         </div>
       )}
@@ -95,24 +98,16 @@ export function ReplyComposer({
           className="border-transparent bg-transparent shadow-none"
         />
 
-        <div className="flex items-center justify-between border-t border-white/5 pt-2">
-          <span className="text-xs text-[var(--forum-text-dim)]">
+        <div className="border-separator flex items-center justify-between border-t pt-2">
+          <span className="text-footnote text-label-secondary">
             Press{" "}
-            <kbd className="rounded bg-white/10 px-1 py-0.5 text-xs text-zinc-300">Enter</kbd>{" "}
+            <kbd className="bg-fill-3 text-label-secondary text-footnote rounded-control-sm px-1 py-0.5">
+              Enter
+            </kbd>{" "}
             to reply
           </span>
 
-          <Button
-            size="sm"
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className={cn(
-              "h-8 gap-1.5 rounded-xl px-4 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-95",
-              canSubmit
-                ? "bg-amber-600 text-white shadow-md hover:bg-amber-500"
-                : "border border-white/10 bg-white/5 text-zinc-500 opacity-50"
-            )}
-          >
+          <Button size="sm" onClick={handleSubmit} disabled={!canSubmit}>
             {createPost.isPending ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />

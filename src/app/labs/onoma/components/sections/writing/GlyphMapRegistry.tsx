@@ -5,10 +5,11 @@
 import React, { useState } from "react";
 import { Type, Trash as Trash2, Search, BookStack as Library, Copy, Check } from "iconoir-react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
-import { FacetMaterial } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
 import type { Glyph } from "./types";
 import { STARTER_SCRIPT_PACKS, type StarterScriptPack } from "./glyph-primitives";
+import { Input } from "~/components/ui/input";
+import { FacetCard } from "~/components/ui/facet-container";
 
 interface GlyphMapRegistryProps {
   glyphs: Glyph[];
@@ -52,23 +53,18 @@ export function GlyphMapRegistry({
   };
 
   return (
-    <FacetMaterial
-      material="satin"
-      className="border-border/30 flex h-full flex-col space-y-3 rounded-2xl border p-4 shadow-sm"
-    >
+    <FacetCard variant="inset" padding="none" className="flex h-full flex-col space-y-3 p-4">
       {/* Header Bar with Search & Starter Pack Button (Single line, aligned with Canvas header) */}
-      <div className="border-border/40 flex items-center justify-between gap-2 border-b pb-2.5">
+      <div className="border-separator flex items-center justify-between gap-2 border-b pb-2.5">
         <div className="flex items-center gap-2">
-          <div className="bg-secondary/40 text-foreground flex h-6 w-6 items-center justify-center rounded-lg">
+          <div className="bg-fill-3 text-label rounded-control flex h-6 w-6 items-center justify-center">
             <Type className="h-3.5 w-3.5" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h4 className="text-foreground text-xs font-semibold tracking-tight">
-                Glyph Registry
-              </h4>
+              <h4 className="text-label text-footnote font-semibold">Glyph Registry</h4>
               {glyphs.length > 0 && (
-                <span className="text-muted-foreground bg-secondary/50 py-0.2 rounded-full px-1.5 font-mono text-[9px]">
+                <span className="text-label-secondary bg-fill-3 py-0.2 text-caption rounded-full px-1.5 font-mono">
                   {glyphs.length}
                 </span>
               )}
@@ -81,10 +77,10 @@ export function GlyphMapRegistry({
           type="button"
           onClick={() => setShowPackDrawer(!showPackDrawer)}
           className={cn(
-            "flex h-6.5 shrink-0 cursor-pointer items-center gap-1 rounded-lg border px-2 text-[10px] font-medium transition-all active:scale-95",
+            "rounded-control text-caption flex h-6.5 shrink-0 cursor-pointer items-center gap-1 border px-2 font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
             showPackDrawer
-              ? "border-onoma-primary/40 bg-onoma-primary/10 text-onoma-primary"
-              : "border-border/40 bg-secondary/20 text-muted-foreground hover:text-foreground"
+              ? "border-tint/40 bg-tint/10 text-tint"
+              : "border-separator bg-fill-4 text-label-secondary hover:text-label"
           )}
         >
           <Library className="h-3 w-3" />
@@ -100,16 +96,14 @@ export function GlyphMapRegistry({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
-            className="border-border/30 bg-secondary/15 overflow-hidden rounded-xl border p-3"
+            className="border-separator bg-fill-4 rounded-row overflow-hidden border p-3"
           >
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-muted-foreground text-[9px] font-semibold tracking-wider uppercase">
-                Preset Script Packs
-              </span>
+              <span className="text-label-secondary text-eyebrow">Preset Script Packs</span>
               <button
                 type="button"
                 onClick={() => setShowPackDrawer(false)}
-                className="text-muted-foreground hover:text-foreground text-[9px]"
+                className="text-label-secondary hover:text-label text-caption"
               >
                 Close
               </button>
@@ -123,15 +117,15 @@ export function GlyphMapRegistry({
                     onLoadStarterPack(pack);
                     setShowPackDrawer(false);
                   }}
-                  className="border-border/30 bg-background/60 hover:border-onoma-primary/40 hover:bg-onoma-primary/5 flex cursor-pointer flex-col rounded-xl border p-2.5 text-left transition-all active:scale-[0.97]"
+                  className="border-separator bg-surface hover:border-tint/40 hover:bg-tint/5 rounded-row flex cursor-pointer flex-col border p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-foreground text-xs font-bold">{pack.name}</span>
-                    <span className="text-muted-foreground bg-secondary/40 rounded px-1.5 py-0.5 font-mono text-[9px]">
+                    <span className="text-label text-footnote font-semibold">{pack.name}</span>
+                    <span className="text-label-secondary bg-fill-3 rounded-control-sm text-caption px-1.5 py-0.5 font-mono">
                       {pack.glyphs.length} glyphs
                     </span>
                   </div>
-                  <p className="text-muted-foreground mt-1 line-clamp-2 text-[10px]">
+                  <p className="text-label-secondary text-caption mt-1 line-clamp-2">
                     {pack.description}
                   </p>
                 </button>
@@ -144,30 +138,30 @@ export function GlyphMapRegistry({
       {/* Search Filter */}
       {glyphs.length > 0 && (
         <div className="relative">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
-          <input
+          <Search className="text-label-secondary absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
+          <Input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search glyphs by phoneme..."
-            className="bg-background/80 border-border/40 text-foreground placeholder:text-muted-foreground/50 focus:border-onoma-primary/50 focus:ring-onoma-primary/15 h-8 w-full rounded-xl border pr-3 pl-8 text-xs transition-all outline-none focus:ring-2"
+            className="text-footnote h-8 w-full pr-3 pl-8"
           />
         </div>
       )}
 
       {/* Glyph Grid or Clean Empty State */}
       {glyphs.length === 0 ? (
-        <div className="border-border/20 bg-secondary/5 flex min-h-[220px] flex-1 flex-col items-center justify-center rounded-2xl border border-dashed p-8 text-center">
-          <div className="bg-secondary/30 text-muted-foreground mb-2 flex h-10 w-10 items-center justify-center rounded-2xl shadow-2xs">
+        <div className="border-separator bg-fill-4 rounded-card flex min-h-[220px] flex-1 flex-col items-center justify-center border border-dashed p-8 text-center">
+          <div className="bg-fill-3 text-label-secondary rounded-card shadow-card mb-2 flex h-10 w-10 items-center justify-center">
             <Type className="h-5 w-5 opacity-40" />
           </div>
-          <p className="text-foreground text-xs font-semibold">No glyphs mapped yet</p>
-          <p className="text-muted-foreground mt-1 max-w-[220px] text-[11px]">
+          <p className="text-label text-footnote font-semibold">No glyphs mapped yet</p>
+          <p className="text-label-secondary text-caption mt-1 max-w-[220px]">
             Draw vector strokes on the canvas or load a starter pack above.
           </p>
         </div>
       ) : filteredGlyphs.length === 0 ? (
-        <div className="text-muted-foreground flex min-h-[180px] flex-1 items-center justify-center text-xs italic">
+        <div className="text-label-secondary text-footnote flex min-h-[180px] flex-1 items-center justify-center italic">
           No glyphs match &quot;{searchTerm}&quot;
         </div>
       ) : (
@@ -186,20 +180,20 @@ export function GlyphMapRegistry({
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
                   className={cn(
-                    "border-border/30 bg-secondary/15 hover:bg-secondary/25 hover:border-onoma-primary/40 group relative flex flex-col items-center justify-between rounded-xl border p-2.5 transition-all select-none",
-                    isSelected && "border-onoma-primary/60 bg-onoma-primary/10 shadow-xs"
+                    "border-separator bg-fill-4 hover:bg-fill-3 hover:border-tint/40 group rounded-row relative flex flex-col items-center justify-between border p-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none",
+                    isSelected && "border-tint/60 bg-tint/10 shadow-card"
                   )}
                 >
                   {/* Action Bar (Top Right Hover) */}
-                  <div className="absolute top-1.5 right-1.5 flex items-center gap-1 opacity-0 transition-all duration-150 group-hover:opacity-100">
+                  <div className="absolute top-1.5 right-1.5 flex items-center gap-1 opacity-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 group-hover:opacity-100">
                     <button
                       type="button"
                       onClick={() => handleCopySvg(g)}
                       title="Copy SVG markup"
-                      className="hover:bg-secondary/60 text-muted-foreground hover:text-foreground cursor-pointer rounded p-1 transition-colors active:scale-90"
+                      className="hover:bg-fill-2 text-label-secondary hover:text-label rounded-control-sm cursor-pointer p-1 transition-colors active:scale-90"
                     >
                       {isCopied ? (
-                        <Check className="h-3 w-3 text-emerald-400" />
+                        <Check className="text-green h-3 w-3" />
                       ) : (
                         <Copy className="h-3 w-3" />
                       )}
@@ -208,7 +202,7 @@ export function GlyphMapRegistry({
                       type="button"
                       onClick={() => onRemoveGlyph(g.id)}
                       title="Delete glyph"
-                      className="text-muted-foreground cursor-pointer rounded p-1 transition-colors hover:bg-red-500/10 hover:text-red-400 active:scale-90"
+                      className="text-label-secondary rounded-control-sm hover:bg-red/10 hover:text-red cursor-pointer p-1 transition-colors active:scale-90"
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>
@@ -222,7 +216,7 @@ export function GlyphMapRegistry({
                   >
                     <svg
                       viewBox="0 0 128 128"
-                      className="stroke-foreground drop-shadow-2xs h-full w-full fill-none"
+                      className="stroke-separator drop-shadow-2xs h-full w-full fill-none"
                       style={{
                         strokeWidth: 6,
                         strokeLinecap: "round",
@@ -238,11 +232,11 @@ export function GlyphMapRegistry({
                     onClick={() => onEditGlyph(g)}
                     className="mt-1.5 flex w-full cursor-pointer items-center justify-between gap-1"
                   >
-                    <span className="text-foreground bg-secondary/40 flex-1 truncate rounded px-1.5 py-0.5 text-center font-mono text-[10px] font-bold">
+                    <span className="text-label bg-fill-3 rounded-control-sm text-caption flex-1 truncate px-1.5 py-0.5 text-center font-mono font-semibold">
                       {g.phoneme}
                     </span>
                     {g.unicode && (
-                      <span className="text-muted-foreground bg-background/60 rounded px-1 py-0.5 font-mono text-[9px]">
+                      <span className="text-label-secondary bg-surface rounded-control-sm text-caption px-1 py-0.5 font-mono">
                         {g.unicode}
                       </span>
                     )}
@@ -253,6 +247,6 @@ export function GlyphMapRegistry({
           </AnimatePresence>
         </div>
       )}
-    </FacetMaterial>
+    </FacetCard>
   );
 }

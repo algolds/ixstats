@@ -26,6 +26,8 @@ import { speakName } from "~/lib/onoma/browser-speech";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
 
 interface SynthesisResultsGridProps {
   generatedNames: string[];
@@ -214,17 +216,17 @@ export function SynthesisResultsGrid({
       {generatedNames.length > 0 ? (
         <div className="space-y-3.5">
           {/* Horizontal Line & Unified Toolbar (View Switcher + Batch Actions) */}
-          <div className="border-border/40 flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+          <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-t pt-3">
             {/* Left: [ Grid ⊞ | Table ☰ ] Segmented View Toggle */}
-            <div className="border-border/60 bg-secondary/20 flex items-center gap-1 rounded-lg border p-0.5 select-none">
+            <div className="border-separator bg-fill-4 rounded-control flex items-center gap-1 border p-0.5 select-none">
               <button
                 type="button"
                 onClick={() => setViewMode("grid")}
                 className={cn(
-                  "flex cursor-pointer items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-all active:scale-95",
+                  "rounded-control-sm text-footnote flex cursor-pointer items-center gap-1 px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
                   viewMode === "grid"
-                    ? "bg-background text-foreground font-bold shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-background text-label shadow-card font-semibold"
+                    : "text-label-secondary hover:text-label"
                 )}
                 title="Card Grid View"
               >
@@ -235,10 +237,10 @@ export function SynthesisResultsGrid({
                 type="button"
                 onClick={() => setViewMode("table")}
                 className={cn(
-                  "flex cursor-pointer items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold transition-all active:scale-95",
+                  "rounded-control-sm text-footnote flex cursor-pointer items-center gap-1 px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
                   viewMode === "table"
-                    ? "bg-background text-foreground font-bold shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-background text-label shadow-card font-semibold"
+                    : "text-label-secondary hover:text-label"
                 )}
                 title="Data Table View"
               >
@@ -249,27 +251,31 @@ export function SynthesisResultsGrid({
 
             {/* Right: Copy All and Save to Stash Actions */}
             <div className="flex items-center gap-1.5">
-              <button
+              <Button
+                variant="bordered"
+                size="sm"
                 onClick={handleCopyBatch}
-                className="border-border/60 bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all active:scale-95"
+
                 title="Copy entire batch to clipboard"
               >
                 {copiedBatch ? (
-                  <Check className="h-3.5 w-3.5 text-emerald-500" />
+                  <Check className="text-green h-3.5 w-3.5" />
                 ) : (
-                  <Copy className="text-onoma-primary h-3.5 w-3.5" />
+                  <Copy className="text-tint h-3.5 w-3.5" />
                 )}
                 <span>{copiedBatch ? "Copied" : "Copy All"}</span>
-              </button>
+              </Button>
 
-              <button
+              <Button
+                variant="bordered"
+                size="sm"
                 onClick={() => setShowSaveDictForm(!showSaveDictForm)}
-                className="border-border/60 bg-background/80 hover:bg-background text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all active:scale-95"
+
                 title="Save batch to your Stash"
               >
-                <Bookmark className="h-3.5 w-3.5 text-indigo-500" />
+                <Bookmark className="text-indigo h-3.5 w-3.5" />
                 <span>Save to Stash</span>
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -277,28 +283,24 @@ export function SynthesisResultsGrid({
           {showSaveDictForm && (
             <form
               onSubmit={handleSaveBatchAsDictionary}
-              className="animate-in slide-in-from-top-2 border-onoma-primary/30 bg-onoma-primary/5 flex items-center gap-2 rounded-xl border p-3 duration-200"
+              className="animate-in slide-in-from-top-2 border-tint/30 bg-tint/5 rounded-row flex items-center gap-2 border p-3 duration-200"
             >
-              <input
+              <Input
                 type="text"
                 placeholder="Dictionary Title (e.g. 'Nordic Settlement Names')"
                 required
                 value={dictionaryTitle}
                 onChange={(e) => setDictionaryTitle(e.target.value)}
-                className="border-border/60 bg-background text-foreground focus:border-onoma-primary/60 flex-1 rounded-lg border px-3 py-1.5 text-xs font-medium focus:outline-none"
+                className="text-footnote flex-1 font-medium"
               />
-              <button
-                type="submit"
-                disabled={isSavingDict}
-                className="bg-onoma-primary hover:bg-onoma-primary-light flex cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-bold text-white shadow-xs transition-colors active:scale-95 disabled:opacity-50"
-              >
+              <Button size="sm" type="submit" disabled={isSavingDict}>
                 {isSavingDict ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
                   <Plus className="h-3.5 w-3.5" />
                 )}
                 <span>Save Dictionary</span>
-              </button>
+              </Button>
             </form>
           )}
 
@@ -373,15 +375,19 @@ export function SynthesisResultsGrid({
           )}
         </div>
       ) : (
-        <FacetCard className="border-border/40 bg-secondary/5 flex min-h-[260px] flex-col items-center justify-center rounded-2xl p-8 text-center">
-          <div className="border-border/40 bg-secondary/20 text-onoma-primary mb-3 flex h-12 w-12 items-center justify-center rounded-2xl border">
-            <OnomaGlyph name="emerge-synthesis" size="sm" className="text-onoma-primary" />
+        <FacetCard
+          variant="inset"
+          padding="none"
+          className="flex min-h-[260px] flex-col items-center justify-center p-8 text-center"
+        >
+          <div className="border-separator bg-fill-4 text-tint rounded-card mb-3 flex h-12 w-12 items-center justify-center border">
+            <OnomaGlyph name="emerge-synthesis" size="sm" className="text-tint" />
           </div>
-          <h4 className="text-foreground text-sm font-bold tracking-tight">Ready to Generate</h4>
-          <p className="text-muted-foreground mt-1 max-w-sm text-xs leading-relaxed">
+          <h4 className="text-label text-body font-semibold">Ready to Generate</h4>
+          <p className="text-label-secondary text-footnote mt-1 max-w-sm leading-relaxed">
             Select a preset and culture above, then click{" "}
-            <span className="text-onoma-primary font-semibold">Generate Names</span> to produce
-            vocabulary for this category.
+            <span className="text-tint font-semibold">Generate Names</span> to produce vocabulary
+            for this category.
           </p>
         </FacetCard>
       )}

@@ -2,20 +2,19 @@
 
 // src/app/labs/onoma/components/OnomaRouter.tsx
 // Onoma Lab — Unified Workspace & Master Single-Page Router (Product Model: CREATE · STUDIO · EXPLORE)
-// Features: Spatial Workspace Transitions, Dynamic Facet Canvas Materials, and Fluid Apple Spring Physics
+// Facet 3: grouped page, opaque workspace card, thin-material header console (Labs sky tint).
 
 import React from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
-import { FacetMaterial } from "~/components/ui/facet";
+import { FacetCard } from "~/components/ui/facet-container";
+import { tweenFast } from "~/lib/design/motion";
 import { useOnomaRouter } from "../hooks/useOnomaRouter";
 
 import { OnomaHeader } from "./nav/OnomaHeader";
 import { OnomaFooter } from "./nav/OnomaFooter";
 import { PhysicsPullFooter } from "./nav/PhysicsPullFooter";
 import { OnomaSectionRenderer } from "./OnomaSectionRenderer";
-import { SECTION_COLORS } from "./nav/onoma-tabs";
 import OnomaHelpModal from "./shared/OnomaHelpModal";
-import type { OnomaProductPillar } from "~/lib/onoma/types";
 
 export function OnomaRouter() {
   const {
@@ -46,22 +45,10 @@ export function OnomaRouter() {
 
   const shouldReduceMotion = useReducedMotion();
 
-  const activePillar: OnomaProductPillar =
-    activeSection === "studio" ? "studio" : activeSection === "explore" ? "explore" : "create";
-
-  // Dynamic canvas styling per pillar
-  const pillarBorderColor =
-    activePillar === "create"
-      ? `${SECTION_COLORS[activeSection] || "#0091ff"}25`
-      : activePillar === "studio"
-        ? "rgba(0, 145, 255, 0.2)"
-        : "rgba(99, 102, 241, 0.2)";
-
   return (
-    <div className="bg-background text-foreground min-h-screen p-3.5 antialiased transition-colors duration-300 sm:p-6">
+    <div className="bg-grouped text-label min-h-screen px-4 py-4 antialiased sm:px-6 sm:py-6">
       {fontLink && <link rel="stylesheet" href={fontLink} />}
       <div className="mx-auto max-w-7xl space-y-5">
-        {/* Apple-Style Header & Sliding Navigation Tabs */}
         <OnomaHeader
           activeSection={activeSection}
           activeSubTab={activeSubTab}
@@ -78,24 +65,15 @@ export function OnomaRouter() {
           onNavigateExplore={handleNavigateExplore}
         />
 
-        {/* Workspace Canvas (Frosted glass with dynamic themed borders and clean elevation) */}
-        <FacetMaterial
-          material="satin"
-          className="relative overflow-hidden rounded-2xl border border-border/50 p-4.5 shadow-sm transition-all duration-300 sm:p-6"
-          style={{
-            borderColor: pillarBorderColor,
-          }}
-        >
+        {/* Workspace canvas: the opaque content card; sections use surface-secondary insets. */}
+        <FacetCard padding="lg" className="relative overflow-hidden">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={`${activeSection}-${activeSection === "studio" ? activeSubTab : activeSection === "explore" ? activeExploreSubTab : ""}`}
-              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6, scale: 0.995 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.995 }}
-              transition={{
-                duration: 0.2,
-                ease: [0.23, 1, 0.32, 1], // Emil Kowalski strong ease-out
-              }}
+              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+              transition={tweenFast}
             >
               <OnomaSectionRenderer
                 activeSection={activeSection}
@@ -112,7 +90,7 @@ export function OnomaRouter() {
               />
             </motion.div>
           </AnimatePresence>
-        </FacetMaterial>
+        </FacetCard>
       </div>
 
       {/* Physics-Based Elastic Pull Footer */}

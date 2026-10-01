@@ -19,14 +19,14 @@ export function GrammarRootsSection() {
   return (
     <div className="space-y-6">
       {/* Header & Mode Switcher */}
-      <div className="border-border/40 flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-center">
+      <div className="border-separator flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-center">
         <div>
-          <h2 className="text-foreground text-base font-bold tracking-tight">
+          <h2 className="text-label text-body font-semibold">
             {mode === "roots"
               ? "Etymological Web & Root Derivations"
               : "Syntactic Sandbox & Sentence Grammar"}
           </h2>
-          <p className="text-muted-foreground text-xs leading-normal">
+          <p className="text-label-secondary text-footnote leading-normal">
             {mode === "roots"
               ? "Track word roots, prefixes, suffixes, semantic shifts, and construct a morphological derivation tree."
               : "Define sentence structure (SOV, SVO, VSO), word order, adposition rules, and compile syntax sentences."}
@@ -34,18 +34,18 @@ export function GrammarRootsSection() {
         </div>
 
         {/* Apple Segmented Switcher */}
-        <div className="border-border/60 bg-secondary/20 flex shrink-0 items-center gap-1 self-start rounded-xl border p-1 shadow-2xs select-none sm:self-center">
+        <div className="border-separator bg-fill-4 rounded-row shadow-card flex shrink-0 items-center gap-1 self-start border p-1 select-none sm:self-center">
           <button
             type="button"
             onClick={() => setMode("roots")}
             className={cn(
-              "flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all active:scale-95",
+              "rounded-control text-footnote flex cursor-pointer items-center gap-1.5 px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
               mode === "roots"
-                ? "bg-background text-foreground font-bold shadow-2xs"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-background text-label shadow-card font-semibold"
+                : "text-label-secondary hover:text-label"
             )}
           >
-            <GitFork className="h-3.5 w-3.5 text-indigo-500" />
+            <GitFork className="text-indigo h-3.5 w-3.5" />
             <span>Root Derivations</span>
           </button>
 
@@ -53,13 +53,13 @@ export function GrammarRootsSection() {
             type="button"
             onClick={() => setMode("syntax")}
             className={cn(
-              "flex cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all active:scale-95",
+              "rounded-control text-footnote flex cursor-pointer items-center gap-1.5 px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
               mode === "syntax"
-                ? "bg-background text-foreground font-bold shadow-2xs"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-background text-label shadow-card font-semibold"
+                : "text-label-secondary hover:text-label"
             )}
           >
-            <SlidersHorizontal className="text-onoma-primary h-3.5 w-3.5" />
+            <SlidersHorizontal className="text-tint h-3.5 w-3.5" />
             <span>Sentence Grammar</span>
           </button>
         </div>

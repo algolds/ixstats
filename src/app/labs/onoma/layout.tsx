@@ -20,10 +20,10 @@ export default function OnomaLayout({ children }: { children: ReactNode }) {
   return (
     <Suspense
       fallback={
-        <div className="bg-background text-onoma-primary flex h-screen items-center justify-center">
+        <div className="bg-background text-tint flex h-screen items-center justify-center">
           <div className="flex flex-col items-center gap-3">
-            <div className="border-onoma-primary h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
-            <span className="text-sm font-medium tracking-wide">Loading Onoma Lab...</span>
+            <div className="border-tint h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" />
+            <span className="text-body font-medium">Loading Onoma Lab...</span>
           </div>
         </div>
       }

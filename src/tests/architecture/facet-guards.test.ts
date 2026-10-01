@@ -1,13 +1,13 @@
 /** @jest-environment node */
 /**
  * Plan 346: pins the Facet anti-slop gates (docs/reference/facet-design-system.md §8) so they
- * cannot regrow. `src/app/labs/onoma` keeps its own type scale and motion, so it is excluded.
+ * cannot regrow. (Onoma, `src/app/labs/onoma`, was excluded until its Facet 3 conversion.)
  */
 import fs from "fs";
 import path from "path";
 
 const srcDir = path.resolve(__dirname, "../..");
-const excludedDirs = [path.join(srcDir, "tests"), path.join(srcDir, "app/labs/onoma")];
+const excludedDirs = [path.join(srcDir, "tests")];
 
 function listSourceFiles(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -78,6 +78,11 @@ const FACET_CONVERTED = [
   "components/messages/",
   "app/messages/",
   "components/halo/",
+  // Phase 4 apps: Labs (Onoma, its brand logo, Vexel, map pipeline) and Forum.
+  "app/labs/",
+  "components/onoma/",
+  "app/(forum)/",
+  "components/forum/",
 ].map((dir) => dir.split("/").join(path.sep));
 
 const inConverted = (file: string) => FACET_CONVERTED.some((dir) => file.startsWith(dir));

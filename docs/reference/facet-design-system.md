@@ -66,7 +66,7 @@ Each app root sets `data-app`, which sets `--tint`, `--tint-hover`, `--on-tint` 
 | *(none)* / `admin` | Indigo | Shell, dashboard, settings, admin |
 | `mycountry` | Gold | `/mycountry/**` |
 | `intel` | Crimson | `/mycountry/intelligence`, `/mycountry/defense` |
-| `maps` | Sky | `/maps` |
+| `maps` | Sky | `/maps`, `/labs/**` (Labs, Onoma) |
 | `thinkpages` | Emerald | `/thinkpages`, `/thinktanks`, `/messages` |
 | `vault` | Copper | `/vault` |
 | `forum` | Orange | `/forum` |
@@ -228,7 +228,7 @@ labels; no exclamation marks in UI chrome.
 
 - `src/styles/globals.css` imports, in order: Tailwind, `facet/tokens.css`, then the layered sheets (typography,
   utilities, animations, themes aliases, theming, components, domains, `wiki-os/tokens.css`, facet, integrations,
-  layout, `facet/shell.css`, clerk). Route sheets: `wiki-os.css` (WikiOS), `forum.css` (Forum), `facet/lab.css` (materials lab only).
+  layout, `facet/shell.css`, clerk). Route sheets: `wiki-os.css` (WikiOS), `forum.css` (Forum: `--forum-*` aliases of the roles + Forum tint, layout and BBCode post styles), `facet/lab.css` (materials lab only).
 - Material and surface classes never set position, z-index, radius, margin or letter-spacing.
 - Third-party overrides (Clerk, sonner, MapLibre) live unlayered in `integrations.css`/`clerk.css` with a comment.
 
@@ -243,7 +243,7 @@ typography presets in the UI, blur on skeletons, hover/press sound ticks. See th
 
 | Test | Enforces |
 |---|---|
-| `facet-guards.test.ts` | ≥12px text, no `transition-all`, no `scale(0)` entrances, `animate-pulse` ceiling, one blur in `DrillSheets`, one `<FacetMotionConfig>`, no lucide or stray Radix imports, no hand-drawn dot grids, no legacy `glass-*`/`*-hsl`, no arbitrary z in `components/ui`, no block elements inside `<p>`, and for converted apps (MyCountry, maps, atomic picker, Help, Country Editor, dashboard, achievements, passport, ThinkPages/ThinkTanks, Messages, Halo): no `dark:`, no hex classes, no arbitrary z, capped gradients |
+| `facet-guards.test.ts` | ≥12px text, no `transition-all`, no `scale(0)` entrances, `animate-pulse` ceiling, one blur in `DrillSheets`, one `<FacetMotionConfig>`, no lucide or stray Radix imports, no hand-drawn dot grids, no legacy `glass-*`/`*-hsl`, no arbitrary z in `components/ui`, no block elements inside `<p>`, and for converted apps (MyCountry, maps, atomic picker, Help, Country Editor, dashboard, achievements, passport, ThinkPages/ThinkTanks, Messages, Halo, Labs/Onoma, Forum): no `dark:`, no hex classes, no arbitrary z, capped gradients |
 | `css-layering.test.ts` | Every sheet layered; no `!important` outside the two allowed files; no layout properties on material classes; no orphan comment closers |
 | `token-contrast.test.ts` | WCAG AA for every label/tint pair in both themes |
 | `lib/navigation/app-sections.test.ts` | Every app/section `href` in the section map resolves to a `src/app/**/page.tsx` that renders (no redirect stubs); settings tabs exist; one app and one section per URL |

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { Skeleton } from "~/components/ui/skeleton";
 import { InfoCircle as Info } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import dynamic from "next/dynamic";
@@ -10,11 +11,7 @@ const MarkovVisualizer = dynamic(
   () => import("../MarkovVisualizer").then((m) => m.MarkovVisualizer),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex h-64 w-full animate-pulse items-center justify-center rounded-2xl border border-blue-500/20 bg-blue-500/5">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
-      </div>
-    ),
+    loading: () => <Skeleton className="rounded-row h-64 w-full" />,
   }
 );
 
@@ -48,10 +45,8 @@ export function StudioVisualizer({ state }: StudioVisualizerProps) {
       <div className="space-y-4">
         <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
           <div className="space-y-1">
-            <h3 className="text-onoma-primary text-sm font-bold tracking-tight">
-              Interactive Path Workshop
-            </h3>
-            <p className="text-muted-foreground text-xs leading-normal">
+            <h3 className="text-tint text-body font-semibold">Interactive Path Workshop</h3>
+            <p className="text-label-secondary text-footnote leading-normal">
               Explore the Markov transition tree step-by-step. Click tokens to traverse paths.
             </p>
           </div>
@@ -78,10 +73,14 @@ export function StudioVisualizer({ state }: StudioVisualizerProps) {
             onCompleteName={handleCompleteName}
           />
         ) : (
-          <FacetCard className="border-border/40 bg-secondary/5 text-muted-foreground flex h-full min-h-[300px] flex-col items-center justify-center border border-dashed p-8 text-center text-sm">
-            <Info className="text-onoma-primary/40 mb-3 h-8 w-8" />
+          <FacetCard
+            variant="inset"
+            padding="none"
+            className="text-label-secondary text-body flex h-full min-h-[300px] flex-col items-center justify-center border-dashed p-8 text-center"
+          >
+            <Info className="text-tint/40 mb-3 h-8 w-8" />
             <p className="font-semibold">Interactive visualizer is inactive</p>
-            <p className="text-muted-foreground mt-1 text-xs">
+            <p className="text-label-secondary text-footnote mt-1">
               Select a corpus or provide training seeds to build the Markov transition trie.
             </p>
           </FacetCard>
@@ -91,10 +90,8 @@ export function StudioVisualizer({ state }: StudioVisualizerProps) {
       {/* Lexicon Explorer & Health Panel */}
       <div className="h-full space-y-4">
         <div className="space-y-1">
-          <h3 className="text-sm font-bold tracking-tight text-emerald-500">
-            Lexicon & Syllable Analysis
-          </h3>
-          <p className="text-muted-foreground text-xs leading-normal">
+          <h3 className="text-body text-green font-semibold">Lexicon & Syllable Analysis</h3>
+          <p className="text-label-secondary text-footnote leading-normal">
             Verify the distinct syllable structure, entropy, and phonotactic naturalness of your
             active conlang seed lists.
           </p>

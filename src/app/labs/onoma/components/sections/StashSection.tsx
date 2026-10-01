@@ -3,7 +3,7 @@
 // src/app/labs/onoma/components/sections/StashSection.tsx
 // Onoma Lab — Stash Section (Facet Rebuild — Side-by-Side)
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Trash as Trash2, Search, FolderPlus, SystemRestart as Loader2 } from "iconoir-react";
 import { useNameBank } from "~/hooks/useNameBank";
 import { NameResultCard } from "../shared/NameResultCard";
@@ -24,6 +24,10 @@ import { useStudioState } from "../../hooks/useStudioState";
 import HistorySection from "./HistorySection";
 import { cn } from "~/lib/utils";
 import type { NameCategory, ExploreSubTab, StudioSubTab } from "~/lib/onoma/types";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 
 interface StashSectionProps {
   onLoadToStudio?: (words: string[], title: string) => void;
@@ -61,22 +65,8 @@ export function StashSection({
   const [stashingFolderId, setStashingFolderId] = useState<string | null>(null);
   const [stashFeedback, setStashFeedback] = useState<string | null>(null);
 
-  const popoverRef = useRef<HTMLDivElement>(null);
-
   // Queries for stashing
   const stashesQuery = api.wikios.getStashes.useQuery();
-
-  // Close active stashing popovers on click outside
-  useEffect(() => {
-    if (stashNameId === null) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        setStashNameId(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [stashNameId]);
 
   // Filter entries based on search and folder filter
   const savedNames =
@@ -201,16 +191,16 @@ export function StashSection({
   return (
     <div className="space-y-5">
       {/* Tab Switcher & Filters/Import */}
-      <div className="border-border/40 flex flex-wrap items-center justify-between gap-3 border-b pb-3">
+      <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-3">
         {/* Sub-tab Toggle buttons */}
-        <div className="bg-secondary/15 border-border/20 flex gap-1 rounded-lg border p-1 select-none">
+        <div className="bg-fill-4 border-separator rounded-control flex gap-1 border p-1 select-none">
           <button
             onClick={() => setStashTab("saved")}
             className={cn(
-              "cursor-pointer rounded-md px-3 py-1 text-xs font-semibold transition-all",
+              "rounded-control-sm text-footnote cursor-pointer px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               stashTab === "saved"
-                ? "bg-onoma-primary/10 text-onoma-primary dark:text-onoma-primary-light font-bold shadow-[inset_0_1px_0_rgba(0,145,255,0.15)]"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-tint/10 text-tint font-semibold"
+                : "text-label-secondary hover:text-label"
             )}
           >
             Saved Items
@@ -218,10 +208,10 @@ export function StashSection({
           <button
             onClick={() => setStashTab("lexicon")}
             className={cn(
-              "cursor-pointer rounded-md px-3 py-1 text-xs font-semibold transition-all",
+              "rounded-control-sm text-footnote cursor-pointer px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               stashTab === "lexicon"
-                ? "bg-emerald-500/10 font-bold text-emerald-600 shadow-[inset_0_1px_0_rgba(16,185,129,0.15)] dark:text-emerald-400"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-green/10 text-green font-semibold"
+                : "text-label-secondary hover:text-label"
             )}
           >
             Lexicon Dictionary
@@ -229,10 +219,10 @@ export function StashSection({
           <button
             onClick={() => setStashTab("history")}
             className={cn(
-              "cursor-pointer rounded-md px-3 py-1 text-xs font-semibold transition-all",
+              "rounded-control-sm text-footnote cursor-pointer px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
               stashTab === "history"
-                ? "bg-onoma-primary/10 text-onoma-primary dark:text-onoma-primary-light font-bold shadow-[inset_0_1px_0_rgba(0,145,255,0.15)]"
-                : "text-muted-foreground hover:text-foreground"
+                ? "bg-tint/10 text-tint font-semibold"
+                : "text-label-secondary hover:text-label"
             )}
           >
             Generation History
@@ -247,22 +237,15 @@ export function StashSection({
             {/* Folder filter dropdown */}
             <div className="relative w-full sm:w-44">
               <Select value={selectedStashFilterId} onValueChange={setSelectedStashFilterId}>
-                <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground focus:border-onoma-primary/50 focus:ring-onoma-primary/50 flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-xs transition-colors focus:ring-1 focus:outline-none">
+                <SelectTrigger className="text-footnote w-full">
                   <SelectValue placeholder="All Folders" />
                 </SelectTrigger>
-                <SelectContent className="border-border/40 bg-background/95 max-h-[300px] backdrop-blur-md">
-                  <SelectItem
-                    value="all"
-                    className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                  >
+                <SelectContent className="max-h-[300px]">
+                  <SelectItem value="all" className="text-footnote">
                     📁 All Folders
                   </SelectItem>
                   {stashesQuery.data?.map((s) => (
-                    <SelectItem
-                      key={s.id}
-                      value={s.id}
-                      className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                    >
+                    <SelectItem key={s.id} value={s.id} className="text-footnote">
                       📁 {s.name}
                     </SelectItem>
                   ))}
@@ -272,13 +255,13 @@ export function StashSection({
 
             {/* Search Input */}
             <div className="relative w-full sm:w-56">
-              <Search className="text-muted-foreground absolute top-2.5 left-3 h-4 w-4" />
-              <input
+              <Search className="text-label-secondary absolute top-2.5 left-3 h-4 w-4" />
+              <Input
                 type="text"
                 placeholder="Search saved items..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="border-border/60 bg-background text-foreground placeholder-muted-foreground focus:border-onoma-primary/50 focus:ring-onoma-primary/50 w-full rounded-lg border py-2 pr-4 pl-9 text-xs focus:ring-1 focus:outline-none"
+                className="text-footnote w-full pr-4 pl-9"
               />
             </div>
           </div>
@@ -309,7 +292,7 @@ export function StashSection({
             {/* Left Column (7/12): Saved Names Badges */}
             <div className="space-y-3 lg:col-span-7">
               <div className="flex items-center justify-between pb-1">
-                <h3 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                <h3 className="text-label-secondary text-subhead">
                   Saved Names ({savedNames.length})
                 </h3>
               </div>
@@ -339,88 +322,90 @@ export function StashSection({
                         originLabel={originLabel}
                         headerExtras={
                           <>
-                            {/* Move to another Stash folder */}
-                            <div className="relative">
-                              <button
-                                onClick={(ev) => {
-                                  ev.stopPropagation();
-                                  setStashNameId(isStashingThis ? null : entry.id);
-                                }}
-                                title="Move to another Stash folder"
-                                className={`cursor-pointer rounded-md p-1.5 transition-all duration-200 active:scale-90 ${
-                                  isStashingThis
-                                    ? "bg-indigo-500/10 text-indigo-500"
-                                    : "text-muted-foreground hover:bg-indigo-500/10 hover:text-indigo-500"
-                                }`}
-                              >
-                                <FolderPlus className="h-4 w-4" />
-                              </button>
-
-                              {isStashingThis && (
-                                <div
-                                  ref={popoverRef}
-                                  className="bg-popover/95 animate-in fade-in border-border/60 absolute right-0 z-30 mt-1.5 w-52 rounded-xl border p-1.5 shadow-xl shadow-black/20 backdrop-blur-lg duration-100"
+                            {/* Move to another stash folder */}
+                            <Popover
+                              open={isStashingThis}
+                              onOpenChange={(open) => setStashNameId(open ? entry.id : null)}
+                            >
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant={isStashingThis ? "tinted" : "plain"}
+                                  size="icon-sm"
+                                  onClick={(ev) => ev.stopPropagation()}
+                                  title="Move to another stash folder"
+                                  aria-label="Move to another stash folder"
                                 >
-                                  <div className="text-muted-foreground border-border/40 mb-1 flex items-center justify-between border-b px-2 py-1.5 text-[10px] font-bold uppercase">
-                                    <span>Stash Folders</span>
-                                    <span className="rounded bg-indigo-500/10 px-1 text-[9px] font-bold text-indigo-600 dark:text-indigo-400">
-                                      Global
-                                    </span>
-                                  </div>
-                                  {stashesQuery.isLoading && (
-                                    <div className="text-muted-foreground flex items-center gap-1.5 px-2 py-1.5 text-xs">
-                                      <Loader2 className="h-3 w-3 animate-spin" />
-                                      <span>Loading stashes...</span>
-                                    </div>
-                                  )}
-                                  {stashesQuery.data && stashesQuery.data.length === 0 && (
-                                    <div className="text-muted-foreground px-2 py-1.5 text-xs italic">
-                                      No stash folders found.
-                                    </div>
-                                  )}
-                                  <div className="max-h-36 space-y-0.5 overflow-y-auto">
-                                    {stashesQuery.data?.map((s) => (
-                                      <button
-                                        key={s.id}
-                                        disabled={stashingFolderId !== null}
-                                        onClick={() =>
-                                          handleStashName(entry.id, nameValue, s.id, s.name)
-                                        }
-                                        className="text-foreground flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-indigo-500/10 hover:text-indigo-600 disabled:opacity-50 dark:hover:text-indigo-400"
-                                      >
-                                        <span className="flex items-center gap-1.5 truncate">
-                                          <span
-                                            className="h-2 w-2 shrink-0 rounded-full"
-                                            style={{ backgroundColor: s.color }}
-                                          />
-                                          <span className="truncate">{s.name}</span>
-                                        </span>
-                                        {stashingFolderId === s.id && (
-                                          <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
-                                        )}
-                                      </button>
-                                    ))}
-                                  </div>
-                                  {stashFeedback && (
-                                    <div className="mt-1.5 rounded bg-indigo-500/10 px-2 py-1 text-center text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
-                                      {stashFeedback}
-                                    </div>
-                                  )}
+                                  <FolderPlus />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                align="end"
+                                className="w-56 p-1.5"
+                                onClick={(ev) => ev.stopPropagation()}
+                              >
+                                <div className="border-separator mb-1 flex items-center justify-between border-b px-2 py-1.5">
+                                  <span className="text-subhead text-label-secondary">
+                                    Stash folders
+                                  </span>
+                                  <Badge variant="tinted">Global</Badge>
                                 </div>
-                              )}
-                            </div>
+                                {stashesQuery.isLoading && (
+                                  <div className="text-label-secondary text-footnote flex items-center gap-1.5 px-2 py-1.5">
+                                    <Loader2 className="size-3.5 animate-spin" />
+                                    <span>Loading stashes...</span>
+                                  </div>
+                                )}
+                                {stashesQuery.data && stashesQuery.data.length === 0 && (
+                                  <div className="text-label-secondary text-footnote px-2 py-1.5">
+                                    No stash folders found.
+                                  </div>
+                                )}
+                                <div className="max-h-36 space-y-0.5 overflow-y-auto">
+                                  {stashesQuery.data?.map((s) => (
+                                    <button
+                                      key={s.id}
+                                      type="button"
+                                      disabled={stashingFolderId !== null}
+                                      onClick={() =>
+                                        handleStashName(entry.id, nameValue, s.id, s.name)
+                                      }
+                                      className="text-label text-footnote hover:bg-fill-3 rounded-control-sm flex w-full cursor-pointer items-center justify-between px-2 py-1.5 text-left transition-colors disabled:opacity-50"
+                                    >
+                                      <span className="flex items-center gap-1.5 truncate">
+                                        <span
+                                          className="size-2 shrink-0 rounded-full"
+                                          style={{ backgroundColor: s.color }}
+                                        />
+                                        <span className="truncate">{s.name}</span>
+                                      </span>
+                                      {stashingFolderId === s.id && (
+                                        <Loader2 className="text-label-secondary size-3.5 animate-spin" />
+                                      )}
+                                    </button>
+                                  ))}
+                                </div>
+                                {stashFeedback && (
+                                  <div className="bg-tint-fill text-tint text-caption rounded-control-sm mt-1.5 px-2 py-1 text-center">
+                                    {stashFeedback}
+                                  </div>
+                                )}
+                              </PopoverContent>
+                            </Popover>
 
                             {/* Delete */}
-                            <button
+                            <Button
+                              variant="plain"
+                              size="icon-sm"
                               onClick={(ev) => {
                                 ev.stopPropagation();
                                 handleDelete(entry.id);
                               }}
                               title="Delete saved name"
-                              className="text-muted-foreground cursor-pointer rounded-md p-1.5 transition-colors hover:bg-red-500/10 hover:text-red-500 active:scale-90"
+                              aria-label="Delete saved name"
+                              className="text-label-secondary hover:text-destructive"
                             >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                              <Trash2 />
+                            </Button>
                           </>
                         }
                       />
@@ -428,7 +413,7 @@ export function StashSection({
                   })}
                 </div>
               ) : (
-                <div className="border-border/40 text-muted-foreground rounded-xl border border-dashed p-8 text-center text-xs">
+                <div className="border-separator text-label-secondary rounded-row text-footnote border border-dashed p-8 text-center">
                   No matching saved names.
                 </div>
               )}
@@ -437,7 +422,7 @@ export function StashSection({
             {/* Right Column (5/12): Saved Dictionaries */}
             <div className="space-y-3 lg:col-span-5">
               <div className="flex items-center justify-between pb-1">
-                <h3 className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
+                <h3 className="text-label-secondary text-subhead">
                   Saved Dictionaries ({dictionaries.length})
                 </h3>
               </div>
@@ -474,7 +459,7 @@ export function StashSection({
                   })}
                 </div>
               ) : (
-                <div className="border-border/40 text-muted-foreground rounded-xl border border-dashed p-8 text-center text-xs">
+                <div className="border-separator text-label-secondary rounded-row text-footnote border border-dashed p-8 text-center">
                   No matching custom dictionaries.
                 </div>
               )}

@@ -83,9 +83,9 @@ type scale (`text-display-hero` … `micro-badge`) with **0 uses**.
 | countries/explore | 4.5 | 80% semantic colour, 17% Facet |
 | sports | 4 | 70% bold-or-heavier type, 93 raw cards |
 | admin | 3.5 | 274 raw cards, 331 blurs, 237 hand labels |
-| forum | 3.5 | own `--forum-*` tokens + legacy glass |
+| forum | 3.5 | own `--forum-*` tokens + legacy glass — *converted in Phase 4 (spec §14)* |
 | messages, vault+cards | 3 | vault: 113 durations >250ms, 156 `text-white` |
-| halo/nav, labs/onoma, wiki-os | 2.5 | wiki-os: 306 raw buttons, 518 `dark:`; onoma: 418 `text-[Npx]` |
+| halo/nav, labs/onoma, wiki-os | 2.5 | wiki-os: 306 raw buttons, 518 `dark:`; onoma: 418 `text-[Npx]` — *labs/onoma converted in Phase 4 (spec §14)* |
 | thinkpages, passport/settings | 2 | 308 / 259 `dark:`, custom modals — *passport + its settings panel converted in Phase 4 (spec §14)* |
 | dashboard, achievements | 1–1.5 | no Facet surfaces at all — *converted in Phase 4 (spec §14)* |
 

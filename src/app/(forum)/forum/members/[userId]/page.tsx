@@ -16,6 +16,11 @@ import { ForumLayout } from "~/components/forum/shared/ForumLayout";
 import { ForumBreadcrumbs } from "~/components/forum/reader/Breadcrumbs";
 import { api } from "~/trpc/react";
 import { sanitizeHtml } from "~/lib/utils";
+import { Badge } from "~/components/ui/badge";
+import { EmptyState } from "~/components/ui/empty-state";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Skeleton } from "~/components/ui/skeleton";
+import { Stat } from "~/components/ui/stat";
 
 function formatDate(unixTimestamp: number): string {
   return new Date(unixTimestamp * 1000).toLocaleDateString("en-US", {
@@ -40,58 +45,60 @@ export default function MemberProfilePage() {
 
       {isLoading ? (
         <div className="space-y-4">
-          <div className="forum-skeleton h-24 w-full rounded-xl" />
-          <div className="forum-skeleton h-40 w-full rounded-xl" />
+          <Skeleton className="rounded-card h-24 w-full" />
+          <Skeleton className="rounded-card h-40 w-full" />
         </div>
       ) : member ? (
         <div>
           {/* Unified IxnayID Profile Banner */}
-          <div className="mb-4 flex items-center justify-between rounded-xl border border-orange-500/30 bg-orange-500/10 px-4 py-2.5 text-xs text-orange-200 backdrop-blur-md">
+          <div className="bg-tint-fill text-footnote rounded-row mb-4 flex flex-wrap items-center justify-between gap-2 px-4 py-2.5">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-white">IxnayID Account:</span>
-              <span>Unified account profile available for @{member.username}</span>
+              <span className="text-label font-semibold">IxnayID account:</span>
+              <span className="text-label-secondary">
+                Unified account profile available for @{member.username}
+              </span>
             </div>
             <Link
               href={`/@${encodeURIComponent(member.username)}`}
-              className="flex items-center gap-1 font-bold text-orange-400 hover:text-orange-300 hover:underline"
+              className="text-tint flex items-center gap-1 font-semibold hover:underline"
             >
-              <span>View Full Profile</span>
-              <ArrowUpRight className="h-3.5 w-3.5" />
+              <span>View full profile</span>
+              <ArrowUpRight className="size-3.5" />
             </Link>
           </div>
 
           {/* Profile header */}
-          <div className="glass-forum-parent mb-4">
+          <FacetCard padding="lg" className="mb-4">
             <div className="flex items-start gap-4">
               {member.avatarUrl ? (
                 <img
                   src={member.avatarUrl}
                   alt={member.username}
-                  className="h-20 w-20 rounded-full border-2 border-[var(--forum-border)] object-cover"
+                  className="border-separator h-20 w-20 rounded-full border-2 object-cover"
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-orange-500/10 text-2xl font-bold text-orange-400">
+                <div className="bg-tint-fill text-tint text-title-1 flex size-20 items-center justify-center rounded-full">
                   {member.username.charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <h1 className="text-xl font-bold text-[var(--forum-text)]">{member.username}</h1>
-                {member.userTitle && (
-                  <p className="text-sm text-[var(--forum-accent)]">{member.userTitle}</p>
-                )}
+                <h1 className="text-large-title text-label">{member.username}</h1>
+                {member.userTitle && <p className="text-body text-tint">{member.userTitle}</p>}
                 {member.isStaff && (
-                  <span className="forum-badge forum-badge-staff mt-1">Staff</span>
+                  <Badge variant="purple" className="mt-1">
+                    Staff
+                  </Badge>
                 )}
                 {member.location && (
-                  <div className="mt-1 flex items-center gap-1 text-xs text-[var(--forum-text-dim)]">
+                  <div className="text-footnote text-label-secondary mt-1 flex items-center gap-1">
                     <MapPin className="h-3 w-3" />
                     {member.location}
                   </div>
                 )}
               </div>
             </div>
-          </div>
+          </FacetCard>
 
           {/* Stats */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -111,36 +118,34 @@ export default function MemberProfilePage() {
 
           {/* About */}
           {member.about && (
-            <div className="glass-forum-child mt-4 p-4">
-              <h2 className="mb-2 text-sm font-semibold text-[var(--forum-text)]">About</h2>
+            <FacetCard padding="md" className="mt-4">
+              <h2 className="text-headline text-label mb-2">About</h2>
               <div
-                className="forum-post-content text-sm"
+                className="forum-post-content text-body"
                 dangerouslySetInnerHTML={{ __html: sanitizeHtml(member.about) }}
               />
-            </div>
+            </FacetCard>
           )}
 
           {/* Custom fields (IxStats data) */}
           {member.customFields && Object.keys(member.customFields).length > 0 && (
-            <div className="glass-forum-child mt-4 p-4">
-              <h2 className="mb-2 text-sm font-semibold text-[var(--forum-text)]">IxStats</h2>
+            <FacetCard padding="md" className="mt-4">
+              <h2 className="text-headline text-label mb-2">IxStats</h2>
               <div className="grid grid-cols-2 gap-2">
                 {Object.entries(member.customFields).map(([key, value]) => (
                   <div key={key}>
-                    <div className="text-xs text-[var(--forum-text-dim)]">
+                    <div className="text-footnote text-label-secondary">
                       {key.replace("ixstats_", "").replace(/_/g, " ")}
                     </div>
-                    <div className="text-sm text-[var(--forum-text)]">{value}</div>
+                    <div className="text-body text-label">{value}</div>
                   </div>
                 ))}
               </div>
-            </div>
+            </FacetCard>
           )}
         </div>
       ) : (
-        <div className="py-12 text-center">
-          <h2 className="text-lg font-medium text-[var(--forum-text)]">Member not found</h2>
-        </div>
+        <EmptyState title="Member not found" />
       )}
     </ForumLayout>
   );
@@ -156,10 +161,16 @@ function StatCard({
   value: string;
 }) {
   return (
-    <div className="glass-forum-child p-4 text-center">
-      <Icon className="mx-auto mb-1 h-4 w-4 text-[var(--forum-accent)]" />
-      <div className="text-sm font-semibold text-[var(--forum-text)]">{value}</div>
-      <div className="text-xs text-[var(--forum-text-dim)]">{label}</div>
-    </div>
+    <FacetCard padding="md">
+      <Stat
+        label={
+          <span className="flex items-center gap-1.5">
+            <Icon className="text-tint size-3.5" aria-hidden="true" />
+            {label}
+          </span>
+        }
+        value={value}
+      />
+    </FacetCard>
   );
 }

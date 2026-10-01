@@ -1,16 +1,16 @@
 "use client";
 // src/app/labs/onoma/components/nav/OnomaFooter.tsx
-// ⟨ONOMA⟩ Unified Minimalist Footer Component with Cinematic Watermark Wash
-// Philosophy: Apple SF Symbols × IxStates National Flag Wash × Linguistic Notation
+// ⟨ONOMA⟩ footer: an opaque FacetCard with a corner symbol watermark, sitemap and legal links.
 
 import React from "react";
 import Link from "next/link";
-import { useReducedMotion } from "motion/react";
 import { ArrowUp } from "iconoir-react";
 import { OnomaBrandLogo } from "../shared/OnomaBrandLogo";
 import { OnomaGlyph } from "../glyphs/OnomaGlyph";
 import type { OnomaSection, StudioSubTab, ExploreSubTab } from "~/lib/onoma/types";
-import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { FacetCard } from "~/components/ui/facet-container";
 
 interface OnomaFooterProps {
   onNavigate: (section: OnomaSection) => void;
@@ -25,9 +25,6 @@ export function OnomaFooter({
   onNavigateExplore,
   onOpenHelp: _onOpenHelp,
 }: OnomaFooterProps) {
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const shouldReduceMotion = useReducedMotion();
-
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -35,19 +32,15 @@ export function OnomaFooter({
   const SITEMAP_PAGES = [
     {
       id: "generator",
-      label: "Quick Generator",
+      label: "Quick generator",
       glyph: "emerge-synthesis" as const,
-      color: "hover:text-onoma-primary hover:border-onoma-primary/30 hover:bg-onoma-primary/10",
-      accent: "#0091ff",
       isPro: false,
       onClick: () => onNavigate("overview"),
     },
     {
       id: "packs",
-      label: "Language Packs",
+      label: "Language packs",
       glyph: "compose-morphology" as const,
-      color: "hover:text-cyan-500 hover:border-cyan-500/30 hover:bg-cyan-500/10",
-      accent: "#06b6d4",
       isPro: false,
       onClick: () => {
         if (onNavigateExplore) onNavigateExplore("packs");
@@ -58,8 +51,6 @@ export function OnomaFooter({
       id: "phonology",
       label: "Acoustics & IPA",
       glyph: "sound-acoustic" as const,
-      color: "hover:text-indigo-500 hover:border-indigo-500/30 hover:bg-indigo-500/10",
-      accent: "#6366f1",
       isPro: false,
       onClick: () => {
         if (onNavigateExplore) onNavigateExplore("phonology");
@@ -68,10 +59,8 @@ export function OnomaFooter({
     },
     {
       id: "studio",
-      label: "Language Studio",
+      label: "Language studio",
       glyph: "emerge-branch" as const,
-      color: "hover:text-onoma-primary hover:border-onoma-primary/30 hover:bg-onoma-primary/10",
-      accent: "#0091ff",
       isPro: true,
       onClick: () => {
         if (onNavigateStudio) onNavigateStudio("workshop");
@@ -81,131 +70,123 @@ export function OnomaFooter({
   ];
 
   return (
-    <footer className="group/footer border-border/35 from-secondary/10 via-secondary/20 to-secondary/35 relative space-y-5 overflow-hidden rounded-3xl border bg-gradient-to-b p-5 shadow-xs backdrop-blur-2xl transition-all duration-300 sm:p-7 lg:p-8">
-      {/* Top Ambient Subtle Hairline Glow */}
-      <div className="via-border/60 pointer-events-none absolute inset-x-16 -top-px h-px bg-gradient-to-r from-transparent to-transparent" />
-
-      {/* Cinematic Background Onoma Logo Watermark Scrim (IxStates Flag Wash Style) */}
-      <div className="pointer-events-none absolute -right-12 -bottom-14 h-72 w-72 overflow-hidden opacity-[0.10] transition-all duration-700 select-none group-hover/footer:scale-105 group-hover/footer:rotate-3 group-hover/footer:opacity-[0.22] dark:opacity-[0.12] dark:group-hover/footer:opacity-[0.25]">
-        <OnomaBrandLogo
-          variant="symbol"
-          size="xl"
-          tone="default"
-          className="text-onoma-primary h-full w-full object-contain"
-        />
-        <div className="via-background/50 to-background absolute inset-0 bg-gradient-to-l from-transparent" />
-      </div>
-
-      {/* Top Lockup & Brand Manifesto Row */}
-      <div className="border-border/35 relative z-10 flex flex-col justify-between gap-4 border-b pb-4.5 lg:flex-row lg:items-center">
-        <div className="max-w-2xl space-y-1.5">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => {
-                onNavigate("overview");
-                scrollToTop();
-              }}
-              className="group/brand inline-flex cursor-pointer items-center gap-2 transition-transform duration-150 select-none focus:outline-none active:scale-[0.98]"
-              title="⟨ONOMA⟩ — Overview"
-            >
-              <OnomaBrandLogo
-                variant="wordmark"
-                className="text-foreground group-hover/brand:text-onoma-primary h-6.5 w-auto transition-colors sm:h-7"
-              />
-            </button>
-            <span className="text-muted-foreground/60 font-mono text-xs">/ˈɒnəmə/</span>
-          </div>
-
-          <div className="space-y-0.5">
-            <p className="text-foreground text-sm font-semibold tracking-tight">
-              Linguistic Engine <span className="text-muted-foreground/50 font-normal">·</span>{" "}
-              <span className="text-muted-foreground font-normal">
-                Build the language behind your world.
-              </span>
-            </p>
-            <p className="text-muted-foreground/80 max-w-xl text-xs leading-relaxed">
-              A deterministic linguistic engine for worldbuilders, conlangers, and novelists. Model
-              phonology, diachronic sound shifts, syntax trees, and morphology.
-            </p>
-          </div>
+    <footer>
+      <FacetCard padding="lg" className="relative space-y-5 overflow-hidden">
+        {/* Identity watermark: a small corner Onoma symbol behind the content (no image wash). */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-10 -bottom-12 size-56 opacity-[0.06] select-none print:hidden"
+        >
+          <OnomaBrandLogo
+            variant="symbol"
+            size="xl"
+            tone="default"
+            className="text-tint h-full w-full object-contain"
+          />
         </div>
 
-        {/* Scroll To Top Button */}
-        <div className="flex items-center gap-2 self-start lg:self-auto">
-          <button
+        {/* Lockup and manifesto */}
+        <div className="border-separator relative flex flex-col justify-between gap-4 border-b pb-4 lg:flex-row lg:items-center">
+          <div className="max-w-2xl space-y-2">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  onNavigate("overview");
+                  scrollToTop();
+                }}
+                className="group/brand focus-visible:outline-tint rounded-control-sm inline-flex cursor-pointer items-center gap-2 outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-2"
+                title="Onoma — Overview"
+                aria-label="Onoma overview"
+              >
+                <OnomaBrandLogo
+                  variant="wordmark"
+                  className="text-label group-hover/brand:text-tint h-7 w-auto transition-colors"
+                />
+              </button>
+              <span className="text-label-secondary text-footnote font-mono">/ˈɒnəmə/</span>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-headline text-label">
+                Linguistic engine <span className="text-label-tertiary font-normal">·</span>{" "}
+                <span className="text-label-secondary font-normal">
+                  Build the language behind your world.
+                </span>
+              </p>
+              <p className="text-callout text-label-secondary max-w-xl">
+                A deterministic linguistic engine for worldbuilders, conlangers, and novelists.
+                Model phonology, diachronic sound shifts, syntax trees, and morphology.
+              </p>
+            </div>
+          </div>
+
+          <Button
+            variant="gray"
+            size="sm"
             onClick={scrollToTop}
-            className="border-border/50 bg-background/60 text-muted-foreground hover:text-foreground hover:bg-background inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold shadow-2xs transition-all active:scale-95"
             title="Scroll back to top"
+            className="self-start lg:self-auto"
           >
-            <ArrowUp className="h-3.5 w-3.5" />
+            <ArrowUp />
             <span>Top</span>
-          </button>
+          </Button>
         </div>
-      </div>
 
-      {/* Condensed 5-Page Navigation Sitemap */}
-      <div className="relative z-10 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Sitemap */}
+        <nav aria-label="Onoma" className="relative flex flex-wrap items-center gap-2">
           {SITEMAP_PAGES.map((page) => (
-            <button
+            <Button
               key={page.id}
+              variant="gray"
+              size="sm"
               onClick={() => {
                 page.onClick();
                 scrollToTop();
               }}
-              className={cn(
-                "border-border/40 bg-background/40 text-muted-foreground inline-flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-1.5 text-xs shadow-2xs transition-all duration-150 select-none active:scale-95",
-                page.color
-              )}
             >
-              <OnomaGlyph name={page.glyph} size="xs" accentColor={page.accent} />
-              <span className="font-medium">{page.label}</span>
-              {page.isPro && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/35 bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-amber-500/5 px-2 py-0.5 text-[10px] font-semibold text-amber-600 shadow-2xs dark:text-amber-300">
-                  <span className="tracking-tight whitespace-nowrap">Premium</span>
-                </span>
-              )}
-            </button>
+              <OnomaGlyph name={page.glyph} size="xs" />
+              <span>{page.label}</span>
+              {page.isPro && <Badge variant="caution">Premium</Badge>}
+            </Button>
           ))}
-        </div>
-      </div>
+        </nav>
 
-      {/* Bottom Bar: Copyright, Lineage/Attribution, Onoma Seal & Legal Policies */}
-      <div className="border-border/30 text-muted-foreground/70 relative z-10 flex flex-col justify-between gap-2.5 border-t pt-3.5 text-[11px] sm:flex-row sm:items-center">
-        <div className="flex flex-wrap items-center gap-2 font-mono">
-          <span className="text-foreground font-bold">⟨ONOMA⟩</span>
-          <span>·</span>
-          <span>© {new Date().getFullYear()} IxLabs Research</span>
-          <span className="text-border/60">·</span>
-          <span className="text-muted-foreground/60 font-sans text-[11px]">
-            Originally forked from and inspired by{" "}
-            <a
-              href="https://github.com/alxgiraud/fantasygen"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-foreground/80 hover:text-onoma-primary hover:decoration-onoma-primary decoration-muted-foreground/40 underline underline-offset-2 transition-colors"
-            >
-              fantasygen
-            </a>
-          </span>
-        </div>
+        {/* Copyright, attribution and legal */}
+        <div className="border-separator text-label-secondary text-footnote relative flex flex-col justify-between gap-2 border-t pt-4 sm:flex-row sm:items-center">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-label font-mono font-semibold">⟨ONOMA⟩</span>
+            <span aria-hidden="true">·</span>
+            <span>© {new Date().getFullYear()} IxLabs Research</span>
+            <span className="text-label-tertiary" aria-hidden="true">
+              ·
+            </span>
+            <span className="text-label-secondary">
+              Originally forked from and inspired by{" "}
+              <a
+                href="https://github.com/alxgiraud/fantasygen"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-tint underline-offset-2 hover:underline"
+              >
+                fantasygen
+              </a>
+            </span>
+          </div>
 
-        <div className="flex items-center gap-4 font-sans">
-          <Link
-            href="/privacy"
-            className="hover:text-foreground underline-offset-4 transition-colors hover:underline"
-          >
-            Privacy Policy
-          </Link>
-          <span className="text-border/60">·</span>
-          <Link
-            href="/terms"
-            className="hover:text-foreground underline-offset-4 transition-colors hover:underline"
-          >
-            Terms of Service
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="hover:text-label underline-offset-4 hover:underline">
+              Privacy policy
+            </Link>
+            <span className="text-label-tertiary" aria-hidden="true">
+              ·
+            </span>
+            <Link href="/terms" className="hover:text-label underline-offset-4 hover:underline">
+              Terms of service
+            </Link>
+          </div>
         </div>
-      </div>
+      </FacetCard>
     </footer>
   );
 }

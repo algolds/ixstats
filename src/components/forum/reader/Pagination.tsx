@@ -39,7 +39,7 @@ export function ForumPagination({ currentPage, lastPage, onPageChange }: Paginat
 
       {pages.map((page, idx) =>
         page === "ellipsis" ? (
-          <span key={`e-${idx}`} className="px-1 text-[var(--forum-text-dim)]">
+          <span key={`e-${idx}`} className="text-label-secondary px-1">
             ...
           </span>
         ) : (

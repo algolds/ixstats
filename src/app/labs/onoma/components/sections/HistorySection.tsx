@@ -15,10 +15,12 @@ import {
   Bookmark as BookmarkPlus,
   Search,
 } from "iconoir-react";
-import { FacetMaterial } from "~/components/ui/facet";
 import { useOnomaHistory } from "~/hooks/useOnomaHistory";
 import { useNameBank } from "~/hooks/useNameBank";
 import { useNotify } from "~/hooks/useNotify";
+import { Input } from "~/components/ui/input";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
 
 type HistoryEvent = {
   id: string;
@@ -111,7 +113,7 @@ export default function HistorySection({
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <RefreshCw className="text-muted-foreground h-6 w-6 animate-spin" />
+        <RefreshCw className="text-label-secondary h-6 w-6 animate-spin" />
       </div>
     );
   }
@@ -122,21 +124,18 @@ export default function HistorySection({
       <div className="flex items-center justify-between">
         {!hideHeader ? (
           <div>
-            <h2 className="text-foreground text-xl font-bold tracking-tight">Generation History</h2>
-            <p className="text-muted-foreground mt-1 text-sm">
+            <h2 className="text-label text-title-2 font-bold">Generation History</h2>
+            <p className="text-label-secondary text-body mt-1">
               Every name you&apos;ve generated, searchable and replayable.
             </p>
           </div>
         ) : (
           <div />
         )}
-        <button
-          onClick={() => setShowStats(!showStats)}
-          className="border-border/40 bg-secondary/20 text-muted-foreground flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all hover:border-amber-500/30 hover:bg-amber-500/10 hover:text-amber-600 active:scale-95 dark:hover:text-amber-400"
-        >
+        <Button variant="bordered" size="sm" onClick={() => setShowStats(!showStats)}>
           <BarChart3 className="h-3.5 w-3.5" />
           Stats
-        </button>
+        </Button>
       </div>
 
       {/* Stats Panel */}
@@ -148,46 +147,44 @@ export default function HistorySection({
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <FacetMaterial material="satin" className="border border-amber-500/20 p-4">
+            <FacetCard variant="inset" padding="none" className="p-4">
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-amber-500">
+                  <p className="text-title-1 text-yellow font-bold">
                     {stats.totalNames.toLocaleString()}
                   </p>
-                  <p className="text-muted-foreground text-xs">Names Generated</p>
+                  <p className="text-label-secondary text-footnote">Names Generated</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-amber-500">
+                  <p className="text-title-1 text-yellow font-bold">
                     {stats.totalEvents.toLocaleString()}
                   </p>
-                  <p className="text-muted-foreground text-xs">Sessions</p>
+                  <p className="text-label-secondary text-footnote">Sessions</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-amber-500">
+                  <p className="text-title-1 text-yellow font-bold">
                     {stats.totalFavorites.toLocaleString()}
                   </p>
-                  <p className="text-muted-foreground text-xs">Favorites</p>
+                  <p className="text-label-secondary text-footnote">Favorites</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-foreground text-2xl font-bold capitalize">
+                  <p className="text-label text-title-1 font-bold capitalize">
                     {stats.categoryBreakdown[0]?.category ?? "—"}
                   </p>
-                  <p className="text-muted-foreground text-xs">Top Category</p>
+                  <p className="text-label-secondary text-footnote">Top Category</p>
                 </div>
               </div>
               {/* Category Breakdown */}
               {stats.categoryBreakdown.length > 1 && (
-                <div className="border-border/20 mt-4 border-t pt-3">
+                <div className="border-separator mt-4 border-t pt-3">
                   <div className="flex flex-wrap gap-2">
                     {stats.categoryBreakdown.map((item) => (
                       <div
                         key={item.category}
-                        className="bg-secondary/30 rounded-md px-2 py-1 text-xs"
+                        className="bg-fill-3 rounded-control-sm text-footnote px-2 py-1"
                       >
-                        <span className="text-foreground font-medium capitalize">
-                          {item.category}
-                        </span>
-                        <span className="text-muted-foreground ml-1">
+                        <span className="text-label font-medium capitalize">{item.category}</span>
+                        <span className="text-label-secondary ml-1">
                           {item.count.toLocaleString()}
                         </span>
                       </div>
@@ -195,7 +192,7 @@ export default function HistorySection({
                   </div>
                 </div>
               )}
-            </FacetMaterial>
+            </FacetCard>
           </motion.div>
         )}
       </AnimatePresence>
@@ -203,13 +200,13 @@ export default function HistorySection({
       {/* Search & Filters */}
       <div className="flex flex-wrap items-center justify-between gap-2.5">
         <div className="relative w-full sm:w-64">
-          <Search className="text-muted-foreground absolute top-2.5 left-3 h-3.5 w-3.5" />
-          <input
+          <Search className="text-label-secondary absolute top-2.5 left-3 h-3.5 w-3.5" />
+          <Input
             type="text"
             placeholder="Search run hash or name..."
             value={hashFilter}
             onChange={(e) => setHashFilter(e.target.value)}
-            className="border-border/60 bg-background text-foreground placeholder-muted-foreground focus:border-onoma-primary/50 focus:ring-onoma-primary/50 w-full rounded-lg border py-1.5 pr-4 pl-8 text-xs focus:ring-1 focus:outline-none"
+            className="text-footnote w-full pr-4 pl-8"
           />
         </div>
 
@@ -217,7 +214,7 @@ export default function HistorySection({
           <select
             value={category ?? ""}
             onChange={(e) => setCategory(e.target.value || undefined)}
-            className="border-border/40 bg-secondary/20 text-foreground rounded-lg border px-3 py-1.5 text-xs"
+            className="border-separator bg-fill-3 text-label hover:bg-fill-2 focus-visible:outline-tint rounded-control-sm text-footnote h-(--control-height-sm) border px-2 outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
           >
             <option value="">All Categories</option>
             <option value="country">Country</option>
@@ -234,13 +231,13 @@ export default function HistorySection({
           </select>
           <button
             onClick={() => setFavoritesOnly(!favoritesOnly)}
-            className={`flex cursor-pointer items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all active:scale-95 ${
+            className={`rounded-control text-footnote flex cursor-pointer items-center gap-1 border px-3 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95 ${
               favoritesOnly
-                ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                : "border-border/40 bg-secondary/20 text-muted-foreground hover:border-amber-500/30 hover:text-amber-600"
+                ? "border-yellow/30 bg-yellow/10 text-yellow"
+                : "border-separator bg-fill-4 text-label-secondary hover:border-yellow/30 hover:text-yellow"
             }`}
           >
-            <Star className={`h-3 w-3 ${favoritesOnly ? "fill-amber-500" : ""}`} />
+            <Star className={`h-3 w-3 ${favoritesOnly ? "fill-yellow" : ""}`} />
             Favorites
           </button>
         </div>
@@ -248,10 +245,10 @@ export default function HistorySection({
 
       {/* Timeline */}
       {filteredEvents.length === 0 ? (
-        <FacetMaterial material="satin" className="border-border/20 border">
+        <FacetCard variant="inset" padding="none">
           <div className="flex flex-col items-center justify-center space-y-2 p-8 text-center">
-            <Clock className="text-muted-foreground mb-1 h-10 w-10 opacity-40" />
-            <p className="text-muted-foreground max-w-sm text-sm">
+            <Clock className="text-label-secondary mb-1 h-10 w-10 opacity-40" />
+            <p className="text-label-secondary text-body max-w-sm">
               {hashFilter
                 ? "No generation events match your search query."
                 : favoritesOnly
@@ -259,14 +256,12 @@ export default function HistorySection({
                   : "No generation history yet. Generate some names and they'll appear here."}
             </p>
           </div>
-        </FacetMaterial>
+        </FacetCard>
       ) : (
         <div className="space-y-6">
           {Array.from(grouped.entries()).map(([dateKey, dayEvents]) => (
             <div key={dateKey}>
-              <h3 className="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
-                {dateKey}
-              </h3>
+              <h3 className="text-label-secondary text-subhead mb-3">{dateKey}</h3>
               <div className="space-y-2">
                 {dayEvents.map((event) => {
                   const isExpanded = expandedEvents.has(event.id);
@@ -274,10 +269,11 @@ export default function HistorySection({
                   const favoriteNames = new Set((event.favorites ?? []).map((f) => f.name));
 
                   return (
-                    <FacetMaterial
+                    <FacetCard
+                      variant="inset"
+                      padding="none"
                       key={event.id}
-                      material="satin"
-                      className="border-border/20 border transition-all"
+                      className="transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                     >
                       {/* Event Header */}
                       <button
@@ -285,7 +281,7 @@ export default function HistorySection({
                         className="flex w-full cursor-pointer items-center justify-between p-3 text-left"
                       >
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                          <div className="bg-secondary/40 rounded-md px-2 py-0.5 text-xs font-semibold capitalize">
+                          <div className="bg-fill-3 rounded-control-sm text-footnote px-2 py-0.5 font-semibold capitalize">
                             {event.category}
                           </div>
                           {event.sessionId && (
@@ -296,42 +292,42 @@ export default function HistorySection({
                                 setCopiedHash(event.sessionId!);
                                 setTimeout(() => setCopiedHash(null), 1500);
                               }}
-                              className="bg-onoma-primary/10 text-onoma-primary hover:bg-onoma-primary/20 flex items-center gap-1 rounded px-2 py-0.5 font-mono text-[10px] transition-colors"
+                              className="bg-tint/10 text-tint hover:bg-tint/20 rounded-control-sm text-caption flex items-center gap-1 px-2 py-0.5 font-mono transition-colors"
                               title="Click to copy unique run hash"
                             >
                               <Hash className="h-2.5 w-2.5" />
                               <span>{event.sessionId}</span>
                               {copiedHash === event.sessionId ? (
-                                <Check className="h-2.5 w-2.5 text-emerald-500" />
+                                <Check className="text-green h-2.5 w-2.5" />
                               ) : (
                                 <Copy className="h-2.5 w-2.5 opacity-60" />
                               )}
                             </span>
                           )}
                           {event.culturalProfile && (
-                            <span className="text-muted-foreground text-xs capitalize">
+                            <span className="text-label-secondary text-footnote capitalize">
                               {event.culturalProfile}
                             </span>
                           )}
-                          <span className="text-muted-foreground text-xs">
+                          <span className="text-label-secondary text-footnote">
                             {event.count} name{event.count !== 1 ? "s" : ""}
                           </span>
                           {favoriteNames.size > 0 && (
-                            <span className="flex items-center gap-0.5 text-xs text-amber-500">
-                              <Star className="h-3 w-3 fill-amber-500" />
+                            <span className="text-footnote text-yellow flex items-center gap-0.5">
+                              <Star className="fill-yellow h-3 w-3" />
                               {favoriteNames.size}
                             </span>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-muted-foreground text-xs">
+                          <span className="text-label-secondary text-footnote">
                             {new Date(event.createdAt).toLocaleTimeString("en-US", {
                               hour: "numeric",
                               minute: "2-digit",
                             })}
                           </span>
                           <ChevronDown
-                            className={`text-muted-foreground h-4 w-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                            className={`text-label-secondary h-4 w-4 transition-transform ${isExpanded ? "rotate-180" : ""}`}
                           />
                         </div>
                       </button>
@@ -345,15 +341,17 @@ export default function HistorySection({
                             exit={{ opacity: 0, height: 0 }}
                             className="overflow-hidden"
                           >
-                            <div className="border-border/20 space-y-3 border-t px-3 pt-2.5 pb-3.5">
+                            <div className="border-separator space-y-3 border-t px-3 pt-2.5 pb-3.5">
                               {/* Batch Actions Bar */}
-                              <div className="border-border/10 flex flex-wrap items-center justify-between gap-2 border-b pb-2">
-                                <div className="text-muted-foreground text-[11px]">
+                              <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-b pb-2">
+                                <div className="text-label-secondary text-caption">
                                   Run payload ({names.length} names)
                                 </div>
                                 <div className="flex flex-wrap items-center gap-1.5">
                                   {onLoadToStudio && (
-                                    <button
+                                    <Button
+                                      variant="tinted"
+                                      size="sm"
                                       type="button"
                                       onClick={() =>
                                         onLoadToStudio(
@@ -363,12 +361,12 @@ export default function HistorySection({
                                             : `${event.category} batch`
                                         )
                                       }
-                                      className="bg-onoma-primary/10 text-onoma-primary hover:bg-onoma-primary/20 flex cursor-pointer items-center gap-1 rounded px-2 py-1 text-[11px] font-semibold transition-all active:scale-95"
+
                                       title="Load entire run into Studio Workshop"
                                     >
                                       <Wrench className="h-3 w-3" />
                                       <span>Load to Studio</span>
-                                    </button>
+                                    </Button>
                                   )}
                                   <button
                                     type="button"
@@ -384,24 +382,26 @@ export default function HistorySection({
                                       });
                                       notify.success(`Saved run as dictionary "${title}"!`);
                                     }}
-                                    className="flex cursor-pointer items-center gap-1 rounded bg-indigo-500/10 px-2 py-1 text-[11px] font-semibold text-indigo-600 transition-all hover:bg-indigo-500/20 active:scale-95 dark:text-indigo-400"
+                                    className="rounded-control-sm bg-indigo/10 text-caption text-indigo hover:bg-indigo/20 flex cursor-pointer items-center gap-1 px-2 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                                     title="Save entire run as custom Stash Dictionary"
                                   >
                                     <BookmarkPlus className="h-3 w-3" />
                                     <span>Save as Dictionary</span>
                                   </button>
-                                  <button
+                                  <Button
+                                    variant="gray"
+                                    size="sm"
                                     type="button"
                                     onClick={() => {
                                       void navigator.clipboard.writeText(names.join(", "));
                                       notify.success("Copied all names to clipboard.");
                                     }}
-                                    className="bg-secondary/30 text-foreground hover:bg-secondary/60 flex cursor-pointer items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-all active:scale-95"
+
                                     title="Copy all names comma-separated"
                                   >
                                     <Copy className="h-3 w-3" />
                                     <span>Copy All</span>
-                                  </button>
+                                  </Button>
                                 </div>
                               </div>
 
@@ -412,9 +412,9 @@ export default function HistorySection({
                                   return (
                                     <div
                                       key={`${name}-${idx}`}
-                                      className="bg-secondary/30 group flex items-center gap-1 rounded-md px-2.5 py-1 text-sm"
+                                      className="bg-fill-3 group rounded-control-sm text-body flex items-center gap-1 px-2.5 py-1"
                                     >
-                                      <span className="text-foreground">{name}</span>
+                                      <span className="text-label">{name}</span>
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
@@ -425,7 +425,7 @@ export default function HistorySection({
                                         title={isFav ? "Unfavorite" : "Favorite"}
                                       >
                                         <Star
-                                          className={`h-3 w-3 ${isFav ? "fill-amber-500 text-amber-500" : "text-muted-foreground hover:text-amber-500"}`}
+                                          className={`h-3 w-3 ${isFav ? "fill-yellow text-yellow" : "text-label-secondary hover:text-yellow"}`}
                                         />
                                       </button>
                                       <button
@@ -437,9 +437,9 @@ export default function HistorySection({
                                         title="Copy"
                                       >
                                         {copiedName === name ? (
-                                          <Check className="h-3 w-3 text-emerald-500" />
+                                          <Check className="text-green h-3 w-3" />
                                         ) : (
-                                          <Copy className="text-muted-foreground h-3 w-3 hover:text-emerald-500" />
+                                          <Copy className="text-label-secondary hover:text-green h-3 w-3" />
                                         )}
                                       </button>
                                     </div>
@@ -450,7 +450,7 @@ export default function HistorySection({
                           </motion.div>
                         )}
                       </AnimatePresence>
-                    </FacetMaterial>
+                    </FacetCard>
                   );
                 })}
               </div>
@@ -460,13 +460,14 @@ export default function HistorySection({
           {/* Load More */}
           {hasMore && (
             <div className="flex justify-center">
-              <button
+              <Button
+                variant="bordered"
+                size="md"
                 onClick={() => loadMore()}
                 disabled={isLoadingMore}
-                className="border-border/40 bg-secondary/20 text-muted-foreground hover:bg-secondary/40 cursor-pointer rounded-lg border px-4 py-2 text-sm transition-all active:scale-95"
               >
                 {isLoadingMore ? "Loading..." : "Load More"}
-              </button>
+              </Button>
             </div>
           )}
         </div>

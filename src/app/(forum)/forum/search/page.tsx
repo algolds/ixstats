@@ -4,13 +4,18 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { Search, ChatBubble as MessageSquare, Page as FileText } from "iconoir-react";
 import { ForumLayout } from "~/components/forum/shared/ForumLayout";
 import { ForumPagination } from "~/components/forum/reader/Pagination";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { timeAgo } from "~/lib/format/compact";
+import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { SearchField } from "~/components/ui/search-field";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Skeleton } from "~/components/ui/skeleton";
 
 const formatTimeAgo = (unixTimestamp: number) => timeAgo(unixTimestamp * 1000);
 
@@ -36,105 +41,94 @@ export default function ForumSearchPage() {
 
   return (
     <ForumLayout>
-      <h1 className="mb-4 text-xl font-semibold text-[var(--forum-text)]">Search Forums</h1>
+      <h1 className="text-large-title text-label mb-4">Search forums</h1>
 
       {/* Search input */}
       <div className="mb-4 flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[var(--forum-text-dim)]" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            placeholder="Search threads and posts..."
-            className="w-full rounded-lg border border-[var(--forum-border)] bg-[var(--forum-surface)] py-2 pr-3 pl-9 text-sm text-[var(--forum-text)] outline-none placeholder:text-[var(--forum-text-dim)] focus:border-[var(--forum-accent)]"
-          />
-        </div>
-        <button onClick={handleSearch} className="forum-composer-submit">
-          Search
-        </button>
+        <SearchField
+          containerClassName="flex-1"
+          value={query}
+          onValueChange={setQuery}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          placeholder="Search threads and posts..."
+          aria-label="Search forums"
+        />
+        <Button onClick={handleSearch}>Search</Button>
       </div>
 
       {/* Type filter */}
-      <div className="mb-4 flex gap-2">
-        {[
-          { key: undefined, label: "All" },
-          { key: "thread" as const, label: "Threads" },
-          { key: "post" as const, label: "Posts" },
-        ].map((opt) => (
-          <button
-            key={opt.label}
-            onClick={() => {
-              setType(opt.key);
-              setPage(1);
-            }}
-            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-              type === opt.key
-                ? "bg-orange-500/15 text-orange-400"
-                : "text-[var(--forum-text-dim)] hover:text-[var(--forum-text-muted)]"
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        size="sm"
+        aria-label="Result type"
+        className="mb-4"
+        value={type ?? "all"}
+        onValueChange={(next) => {
+          setType(next === "all" ? undefined : next);
+          setPage(1);
+        }}
+        options={[
+          { value: "all", label: "All" },
+          { value: "thread", label: "Threads" },
+          { value: "post", label: "Posts" },
+        ]}
+      />
 
       {/* Results */}
       {isLoading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="forum-skeleton h-16 w-full rounded-xl" />
+            <Skeleton key={i} className="rounded-row h-16 w-full" />
           ))}
         </div>
       ) : searchQuery.length >= 2 ? (
-        <div className="space-y-2">
-          {(data?.results ?? []).map((result, idx) => (
-            <Link
-              key={`${result.type}-${result.id}-${idx}`}
-              href={withBasePath(
-                result.type === "thread" && result.thread
-                  ? `/forum/thread/${result.thread.threadId}`
-                  : result.post
-                    ? `/forum/thread/${result.post.threadId}#post-${result.post.postId}`
-                    : "#"
-              )}
-              className="glass-forum-child group flex items-start gap-3 p-3"
-            >
-              <div className="mt-0.5 shrink-0">
-                {result.type === "thread" ? (
-                  <MessageSquare className="h-4 w-4 text-[var(--forum-accent)]" />
-                ) : (
-                  <FileText className="h-4 w-4 text-[var(--forum-text-dim)]" />
+        <FacetList>
+          <FacetListSection>
+            {(data?.results ?? []).map((result, idx) => (
+              <FacetRow
+                key={`${result.type}-${result.id}-${idx}`}
+                href={withBasePath(
+                  result.type === "thread" && result.thread
+                    ? `/forum/thread/${result.thread.threadId}`
+                    : result.post
+                      ? `/forum/thread/${result.post.threadId}#post-${result.post.postId}`
+                      : "#"
                 )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-[var(--forum-text)] group-hover:text-[var(--forum-accent)]">
-                  {result.thread?.title ?? "Post"}
-                </div>
-                <div className="mt-0.5 text-xs text-[var(--forum-text-dim)]">
-                  {result.thread && (
-                    <>
-                      by {result.thread.authorName} · {result.thread.replyCount} replies ·{" "}
-                      {formatTimeAgo(result.thread.postDate)}
-                    </>
-                  )}
-                  {result.post && (
-                    <>
-                      by {result.post.authorName} · {formatTimeAgo(result.post.postDate)}
-                    </>
-                  )}
-                </div>
-              </div>
-            </Link>
-          ))}
+                leading={
+                  result.type === "thread" ? (
+                    <MessageSquare className="text-tint size-4" />
+                  ) : (
+                    <FileText className="text-label-secondary size-4" />
+                  )
+                }
+                title={result.thread?.title ?? "Post"}
+                subtitle={
+                  <>
+                    {result.thread && (
+                      <>
+                        by {result.thread.authorName} · {result.thread.replyCount} replies ·{" "}
+                        {formatTimeAgo(result.thread.postDate)}
+                      </>
+                    )}
+                    {result.post && (
+                      <>
+                        by {result.post.authorName} · {formatTimeAgo(result.post.postDate)}
+                      </>
+                    )}
+                  </>
+                }
+              />
+            ))}
+          </FacetListSection>
 
           {(data?.results ?? []).length === 0 && (
-            <div className="py-8 text-center text-sm text-[var(--forum-text-dim)]">
-              No results found for &ldquo;{searchQuery}&rdquo;
-            </div>
+            <EmptyState
+              compact
+              icon={<Search />}
+              title="No results"
+              message={<>No results found for &ldquo;{searchQuery}&rdquo;</>}
+            />
           )}
-        </div>
+        </FacetList>
       ) : null}
 
       {data?.pagination && data.pagination.last_page > 1 && (

@@ -11,6 +11,9 @@ import { PostCard } from "~/components/forum/reader/PostCard";
 import { ForumBreadcrumbs } from "~/components/forum/reader/Breadcrumbs";
 import { ForumPagination } from "~/components/forum/reader/Pagination";
 import { ReplyComposer } from "~/components/forum/composer/ReplyComposer";
+import { Badge } from "~/components/ui/badge";
+import { EmptyState } from "~/components/ui/empty-state";
+import { Skeleton } from "~/components/ui/skeleton";
 
 interface ThreadRendererProps {
   threadId: number;
@@ -71,10 +74,10 @@ export function ThreadRenderer({ threadId, initialPage = 1 }: ThreadRendererProp
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="forum-skeleton h-6 w-48" />
-        <div className="forum-skeleton h-10 w-3/4" />
+        <Skeleton className="h-6 w-48" />
+        <Skeleton className="h-10 w-3/4" />
         {[1, 2, 3].map((i) => (
-          <div key={i} className="forum-skeleton h-40 w-full" />
+          <Skeleton key={i} className="rounded-card h-40 w-full" />
         ))}
       </div>
     );
@@ -82,12 +85,10 @@ export function ThreadRenderer({ threadId, initialPage = 1 }: ThreadRendererProp
 
   if (error || !data?.thread) {
     return (
-      <div className="py-12 text-center">
-        <h2 className="text-lg font-medium text-[var(--forum-text)]">Thread not found</h2>
-        <p className="mt-1 text-sm text-[var(--forum-text-dim)]">
-          This thread may have been deleted or you don&apos;t have permission to view it.
-        </p>
-      </div>
+      <EmptyState
+        title="Thread not found"
+        message="This thread may have been deleted or you don't have permission to view it."
+      />
     );
   }
 
@@ -107,10 +108,8 @@ export function ThreadRenderer({ threadId, initialPage = 1 }: ThreadRendererProp
 
       {/* Thread header */}
       <div className="mb-4">
-        <h1 className="text-xl font-semibold text-[var(--forum-text)] sm:text-2xl">
-          {thread.title}
-        </h1>
-        <div className="mt-2 flex items-center gap-3 text-xs text-[var(--forum-text-dim)]">
+        <h1 className="text-title-1 sm:text-large-title text-label">{thread.title}</h1>
+        <div className="text-footnote text-label-secondary mt-2 flex flex-wrap items-center gap-3 tabular-nums">
           <span>by {thread.authorName}</span>
           <span className="flex items-center gap-1">
             <MessageSquare className="h-3 w-3" />
@@ -121,10 +120,10 @@ export function ThreadRenderer({ threadId, initialPage = 1 }: ThreadRendererProp
             {thread.viewCount.toLocaleString()} views
           </span>
           {!thread.isOpen && (
-            <span className="forum-badge forum-badge-locked flex items-center gap-1">
-              <Lock className="h-3 w-3" />
+            <Badge variant="destructive">
+              <Lock />
               Closed
-            </span>
+            </Badge>
           )}
         </div>
       </div>

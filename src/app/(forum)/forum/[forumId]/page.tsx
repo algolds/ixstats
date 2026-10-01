@@ -13,6 +13,11 @@ import { ForumPagination } from "~/components/forum/reader/Pagination";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
+import { Button, buttonVariants } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
+import { FacetCard } from "~/components/ui/facet-container";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Skeleton } from "~/components/ui/skeleton";
 
 type SortOrder = "last_post_date" | "post_date" | "reply_count" | "view_count";
 
@@ -56,61 +61,51 @@ export default function ForumThreadListPage() {
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-[var(--forum-text)]">
-            {forum?.title ?? "Loading..."}
-          </h1>
+          <h1 className="text-large-title text-label">{forum?.title ?? "Loading..."}</h1>
           {forum?.description && (
-            <p className="mt-0.5 text-sm text-[var(--forum-text-dim)]">{forum.description}</p>
+            <p className="text-body text-label-secondary mt-0.5">{forum.description}</p>
           )}
         </div>
         <div className="flex items-center gap-2">
           <MarkReadButton forumId={forumId} />
           <Link
             href={withBasePath(`/forum/new-thread?forum=${forumId}`)}
-            className="forum-composer-submit flex items-center gap-1.5"
+            className={buttonVariants({ size: "sm" })}
           >
-            <PenSquare className="h-3.5 w-3.5" />
-            New Thread
+            <PenSquare />
+            New thread
           </Link>
         </div>
       </div>
 
       {/* Sort controls */}
-      <div className="mb-3 flex items-center gap-2">
-        <span className="text-xs text-[var(--forum-text-dim)]">Sort by:</span>
-        {(
-          [
-            { key: "last_post_date", label: "Latest" },
-            { key: "post_date", label: "Newest" },
-            { key: "reply_count", label: "Most Replies" },
-            { key: "view_count", label: "Most Viewed" },
-          ] as const
-        ).map((opt) => (
-          <button
-            key={opt.key}
-            onClick={() => {
-              setOrder(opt.key);
-              setPage(1);
-            }}
-            className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-              order === opt.key
-                ? "bg-orange-500/15 text-orange-400"
-                : "text-[var(--forum-text-dim)] hover:text-[var(--forum-text-muted)]"
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="text-footnote text-label-secondary">Sort by</span>
+        <SegmentedControl
+          size="sm"
+          aria-label="Sort threads"
+          value={order}
+          onValueChange={(next) => {
+            setOrder(next);
+            setPage(1);
+          }}
+          options={[
+            { value: "last_post_date", label: "Latest" },
+            { value: "post_date", label: "Newest" },
+            { value: "reply_count", label: "Most replies" },
+            { value: "view_count", label: "Most viewed" },
+          ]}
+        />
       </div>
 
       {isLoading ? (
         <div className="space-y-2">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="forum-skeleton h-16 w-full" />
+            <Skeleton key={i} className="rounded-row h-16 w-full" />
           ))}
         </div>
       ) : (
-        <div className="glass-forum-parent overflow-hidden p-1">
+        <FacetCard className="overflow-hidden">
           {/* Sticky threads */}
           {stickyThreads.map((thread: any) => (
             <ThreadListItem key={thread.threadId} {...thread} />
@@ -118,7 +113,7 @@ export default function ForumThreadListPage() {
 
           {/* Divider between sticky and regular */}
           {stickyThreads.length > 0 && regularThreads.length > 0 && (
-            <div className="mx-4 my-1 h-px bg-gradient-to-r from-transparent via-[var(--forum-accent)]/10 to-transparent" />
+            <div className="bg-separator mx-4 h-px" />
           )}
 
           {/* Regular threads */}
@@ -127,11 +122,13 @@ export default function ForumThreadListPage() {
           ))}
 
           {threads.length === 0 && (
-            <div className="py-12 text-center text-sm text-[var(--forum-text-dim)]">
-              No threads yet. Be the first to start a discussion!
-            </div>
+            <EmptyState
+              compact
+              title="No threads yet"
+              message="Be the first to start a discussion."
+            />
           )}
-        </div>
+        </FacetCard>
       )}
 
       {/* Pagination */}
@@ -150,14 +147,15 @@ function MarkReadButton({ forumId }: { forumId: number }) {
   const markRead = api.forum.markForumRead.useMutation();
 
   return (
-    <button
+    <Button
+      variant="gray"
+      size="sm"
       onClick={() => markRead.mutate({ forumId })}
       disabled={markRead.isPending}
-      className="flex items-center gap-1.5 rounded-lg border border-[var(--forum-border)] px-3 py-1.5 text-xs font-medium text-[var(--forum-text-dim)] transition-colors hover:border-[var(--forum-accent-border)] hover:text-[var(--forum-accent)]"
       title="Mark all threads as read"
     >
-      <CheckCheck className="h-3.5 w-3.5" />
-      {markRead.isPending ? "Marking..." : "Mark Read"}
-    </button>
+      <CheckCheck />
+      {markRead.isPending ? "Marking..." : "Mark read"}
+    </Button>
   );
 }

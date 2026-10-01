@@ -34,6 +34,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
 
 interface TaggedDict {
   values: string[];
@@ -241,45 +243,37 @@ export function StudioNameSets() {
     <div className="grid items-start gap-6 lg:grid-cols-12">
       {/* Left: set + template config */}
       <div className="space-y-4 lg:col-span-5">
-        <FacetCard className="border-border/40 bg-secondary/5 space-y-4 border p-4">
+        <FacetCard variant="inset" padding="none" className="space-y-4 p-4">
           <div className="space-y-1.5">
-            <label className="text-muted-foreground flex items-center gap-1 text-xs font-bold">
+            <label className="text-label-secondary text-footnote flex items-center gap-1 font-semibold">
               <Users className="h-3.5 w-3.5" /> Name Set
             </label>
             {setNameKeys.length > 0 ? (
               <>
                 <Select value={selectedSet} onValueChange={setSelectedSet}>
-                  <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground focus:border-onoma-primary/50 flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-sm transition-colors focus:outline-none">
+                  <SelectTrigger className="text-body w-full">
                     <SelectValue placeholder="Select name set" />
                   </SelectTrigger>
-                  <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
+                  <SelectContent className="max-h-[250px]">
                     {setNameKeys.map((s) => (
-                      <SelectItem
-                        key={s}
-                        value={s}
-                        className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                      >
+                      <SelectItem key={s} value={s} className="text-footnote">
                         {s} ({sets.get(s)?.length} dicts)
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
 
-                <div className="border-border/40 space-y-1.5 border-t pt-3">
-                  <label className="text-muted-foreground flex items-center gap-1 text-[11px] font-bold tracking-wider uppercase">
+                <div className="border-separator space-y-1.5 border-t pt-3">
+                  <label className="text-label-secondary text-subhead flex items-center gap-1">
                     Naming Convention Preset
                   </label>
                   <Select value={presetKey} onValueChange={handlePresetChange}>
-                    <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground focus:border-onoma-primary/50 flex w-full items-center justify-between rounded-lg border px-3 py-1.5 text-sm transition-colors focus:outline-none">
+                    <SelectTrigger className="text-body w-full">
                       <SelectValue placeholder="Select preset" />
                     </SelectTrigger>
-                    <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
+                    <SelectContent className="max-h-[250px]">
                       {CONVENTION_PRESETS.map((p) => (
-                        <SelectItem
-                          key={p.key}
-                          value={p.key}
-                          className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                        >
+                        <SelectItem key={p.key} value={p.key} className="text-footnote">
                           {p.name}
                         </SelectItem>
                       ))}
@@ -288,11 +282,11 @@ export function StudioNameSets() {
                 </div>
 
                 {presetKey !== "custom" && (
-                  <div className="animate-in fade-in flex items-start gap-2 rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3 text-xs duration-200">
-                    <HelpCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-indigo-500" />
+                  <div className="animate-in fade-in rounded-row border-indigo/20 bg-indigo/5 text-footnote flex items-start gap-2 border p-3 duration-200">
+                    <HelpCircle className="text-indigo mt-0.5 h-4 w-4 flex-shrink-0" />
                     <div className="space-y-1">
-                      <span className="text-foreground font-bold">Convention Lore & Rules:</span>
-                      <p className="text-muted-foreground text-[11px] leading-relaxed">
+                      <span className="text-label font-semibold">Convention Lore & Rules:</span>
+                      <p className="text-label-secondary text-caption leading-relaxed">
                         {presetKey === "hendalarsk" && (
                           <>
                             Most Hendalarskaren have four names: a first name (
@@ -350,7 +344,7 @@ export function StudioNameSets() {
                 )}
               </>
             ) : (
-              <div className="border-border/40 text-muted-foreground rounded-lg border border-dashed p-4 text-xs">
+              <div className="border-separator text-label-secondary rounded-control text-footnote border border-dashed p-4">
                 No Name Sets yet. In <strong>Stash</strong>, upload your name files and tag each
                 with a role (given/surname), gender, and a shared Set name.
               </div>
@@ -359,11 +353,11 @@ export function StudioNameSets() {
 
           {selectedSet && (
             <>
-              <div className="text-muted-foreground flex flex-wrap gap-1.5 text-[10px]">
+              <div className="text-label-secondary text-caption flex flex-wrap gap-1.5">
                 {activeDicts.map((d, i) => (
                   <span
                     key={i}
-                    className="bg-onoma-primary/10 text-onoma-primary rounded px-1.5 py-0.5 font-bold capitalize"
+                    className="bg-tint/10 text-tint rounded-control-sm px-1.5 py-0.5 font-semibold capitalize"
                   >
                     {d.role}
                     {d.gender !== "any" ? ` · ${d.gender}` : ""} ({d.values.length})
@@ -372,35 +366,29 @@ export function StudioNameSets() {
               </div>
 
               {/* Template slots */}
-              <div className="border-border/40 space-y-3 border-t pt-3">
-                <h3 className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-                  Full-Name Template Builder
-                </h3>
+              <div className="border-separator space-y-3 border-t pt-3">
+                <h3 className="text-label-secondary text-subhead">Full-Name Template Builder</h3>
                 {slots.map((slot, idx) => {
                   const showParentInput = slot.role === "matronymic" || slot.role === "patronymic";
                   return (
                     <div
                       key={idx}
-                      className="border-border/30 bg-background/40 space-y-2 rounded-xl border p-2.5"
+                      className="border-separator bg-surface rounded-row space-y-2 border p-2.5"
                     >
                       <div className="flex items-center gap-1.5">
-                        <span className="text-muted-foreground text-[10px] font-bold">
+                        <span className="text-label-secondary text-caption font-semibold">
                           #{idx + 1}
                         </span>
                         <Select
                           value={slot.role}
                           onValueChange={(val) => updateSlot(idx, { role: val as NameRole })}
                         >
-                          <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex flex-1 items-center justify-between rounded-lg border px-2 py-1 text-xs font-semibold transition-colors focus:outline-none">
+                          <SelectTrigger className="text-footnote flex-1">
                             <SelectValue placeholder="Select role" />
                           </SelectTrigger>
-                          <SelectContent className="border-border/40 bg-background/95 max-h-[250px] backdrop-blur-md">
+                          <SelectContent className="max-h-[250px]">
                             {NAME_ROLES.map((r) => (
-                              <SelectItem
-                                key={r.value}
-                                value={r.value}
-                                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                              >
+                              <SelectItem key={r.value} value={r.value} className="text-footnote">
                                 {r.label}
                               </SelectItem>
                             ))}
@@ -411,16 +399,12 @@ export function StudioNameSets() {
                           value={slot.gender}
                           onValueChange={(val) => updateSlot(idx, { gender: val as NameGender })}
                         >
-                          <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex w-24 items-center justify-between rounded-lg border px-2 py-1 text-xs transition-colors focus:outline-none">
+                          <SelectTrigger className="text-footnote w-24">
                             <SelectValue placeholder="Select gender" />
                           </SelectTrigger>
-                          <SelectContent className="border-border/40 bg-background/95 max-h-[200px] backdrop-blur-md">
+                          <SelectContent className="max-h-[200px]">
                             {NAME_GENDERS.map((g) => (
-                              <SelectItem
-                                key={g.value}
-                                value={g.value}
-                                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                              >
+                              <SelectItem key={g.value} value={g.value} className="text-footnote">
                                 {g.label}
                               </SelectItem>
                             ))}
@@ -429,7 +413,7 @@ export function StudioNameSets() {
 
                         <button
                           onClick={() => removeSlot(idx)}
-                          className="text-muted-foreground cursor-pointer rounded p-1 hover:text-red-500"
+                          className="text-label-secondary rounded-control-sm hover:text-red cursor-pointer p-1"
                           title="Remove slot"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -437,23 +421,23 @@ export function StudioNameSets() {
                       </div>
 
                       {/* Advanced Options Sub-Grid */}
-                      <div className="border-border/10 grid grid-cols-2 gap-2 border-t pt-2 text-[10px]">
+                      <div className="border-separator text-caption grid grid-cols-2 gap-2 border-t pt-2">
                         {/* Prefix */}
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-muted-foreground font-bold tracking-wider uppercase">
+                          <span className="text-label-secondary font-semibold uppercase">
                             Prefix
                           </span>
-                          <input
+                          <Input
                             value={slot.prefix || ""}
                             onChange={(e) => updateSlot(idx, { prefix: e.target.value })}
                             placeholder="e.g. von"
-                            className="border-border/60 bg-background text-foreground rounded-md border px-2 py-0.5 font-mono text-xs focus:outline-none"
+                            className="text-footnote font-mono"
                           />
                         </div>
 
                         {/* Suffix Rule */}
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-muted-foreground font-bold tracking-wider uppercase">
+                          <span className="text-label-secondary font-semibold uppercase">
                             Suffix Rule
                           </span>
                           <Select
@@ -466,32 +450,20 @@ export function StudioNameSets() {
                                 | "caphirian-lineage"
                             ) => updateSlot(idx, { suffixRule: val })}
                           >
-                            <SelectTrigger className="border-border/60 bg-background/50 hover:bg-background/80 text-foreground flex items-center justify-between rounded-md border px-2 py-0.5 text-xs transition-colors focus:outline-none">
+                            <SelectTrigger className="text-footnote">
                               <SelectValue placeholder="None / Static" />
                             </SelectTrigger>
-                            <SelectContent className="border-border/40 bg-background/95 max-h-[200px] backdrop-blur-md">
-                              <SelectItem
-                                value="none"
-                                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                              >
+                            <SelectContent className="max-h-[200px]">
+                              <SelectItem value="none" className="text-footnote">
                                 None / Static
                               </SelectItem>
-                              <SelectItem
-                                value="hendalarsk-matronymic"
-                                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                              >
+                              <SelectItem value="hendalarsk-matronymic" className="text-footnote">
                                 Hendalarsk matronymic
                               </SelectItem>
-                              <SelectItem
-                                value="yonderian-patronymic"
-                                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                              >
+                              <SelectItem value="yonderian-patronymic" className="text-footnote">
                                 Yonderian patronymic
                               </SelectItem>
-                              <SelectItem
-                                value="caphirian-lineage"
-                                className="focus:text-foreground focus:bg-onoma-primary/10 text-xs"
-                              >
+                              <SelectItem value="caphirian-lineage" className="text-footnote">
                                 Caphirian lineage
                               </SelectItem>
                             </SelectContent>
@@ -501,14 +473,14 @@ export function StudioNameSets() {
                         {/* Parent Name input (matronymic/patronymic only) */}
                         {showParentInput && (
                           <div className="col-span-2 flex flex-col gap-0.5">
-                            <span className="text-muted-foreground font-bold tracking-wider uppercase">
+                            <span className="text-label-secondary font-semibold uppercase">
                               Parent Name Lock (Optional)
                             </span>
-                            <input
+                            <Input
                               value={slot.parentName || ""}
                               onChange={(e) => updateSlot(idx, { parentName: e.target.value })}
                               placeholder="Leave blank for auto-generated parent"
-                              className="border-border/60 bg-background text-foreground rounded-md border px-2 py-0.5 text-xs focus:outline-none"
+                              className="text-footnote"
                             />
                           </div>
                         )}
@@ -524,9 +496,9 @@ export function StudioNameSets() {
                                   genderMode: e.target.checked ? "aligned" : "fixed",
                                 })
                               }
-                              className="border-border/60 rounded text-indigo-500 focus:ring-indigo-500"
+                              className="border-separator rounded-control-sm text-indigo focus:ring-indigo"
                             />
-                            <span className="text-muted-foreground font-bold tracking-wider uppercase">
+                            <span className="text-label-secondary font-semibold uppercase">
                               Align with unified full-name gender
                             </span>
                           </label>
@@ -535,56 +507,52 @@ export function StudioNameSets() {
                     </div>
                   );
                 })}
-                <button
-                  onClick={addSlot}
-                  className="border-onoma-primary/20 bg-onoma-primary/5 text-onoma-primary hover:bg-onoma-primary/10 flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-bold"
-                >
+                <Button variant="tinted" size="sm" onClick={addSlot}>
                   <Plus className="h-3 w-3" /> Add slot
-                </button>
+                </Button>
 
                 <div className="flex items-center gap-2 pt-1">
-                  <label className="text-muted-foreground text-[10px] font-bold uppercase">
-                    Separator
-                  </label>
-                  <input
+                  <label className="text-label-secondary text-subhead">Separator</label>
+                  <Input
                     value={separator}
                     onChange={(e) => setSeparator(e.target.value)}
-                    className="border-border/60 bg-background text-foreground w-20 rounded-lg border px-2 py-1 text-xs focus:outline-none"
+                    className="text-footnote w-20"
                   />
                 </div>
               </div>
 
               {/* Generate */}
-              <div className="border-border/40 flex items-center gap-2 border-t pt-3">
-                <div className="border-border/60 bg-background flex h-7 items-center gap-1 rounded-lg border p-0.5 select-none">
+              <div className="border-separator flex items-center gap-2 border-t pt-3">
+                <div className="border-separator bg-background rounded-control flex h-7 items-center gap-1 border p-0.5 select-none">
                   <button
                     type="button"
                     onClick={() => setBatchCount((c) => Math.max(5, c - 5))}
                     disabled={batchCount <= 5}
-                    className="text-muted-foreground hover:text-foreground cursor-pointer px-2 text-xs font-bold disabled:opacity-30"
+                    className="text-label-secondary hover:text-label text-footnote cursor-pointer px-2 font-semibold disabled:opacity-30"
                   >
                     -
                   </button>
                   <NumberFlowDisplay
                     value={batchCount}
-                    className="text-foreground min-w-[20px] px-1 text-center font-mono text-xs font-semibold"
+                    className="text-label text-footnote min-w-[20px] px-1 text-center font-mono font-semibold"
                   />
                   <button
                     type="button"
                     onClick={() => setBatchCount((c) => Math.min(50, c + 5))}
                     disabled={batchCount >= 50}
-                    className="text-muted-foreground hover:text-foreground cursor-pointer px-2 text-xs font-bold disabled:opacity-30"
+                    className="text-label-secondary hover:text-label text-footnote cursor-pointer px-2 font-semibold disabled:opacity-30"
                   >
                     +
                   </button>
                 </div>
-                <button
+                <Button
+                  size="md"
                   onClick={generate}
                   disabled={slots.length === 0}
-                  className="bg-onoma-primary hover:bg-onoma-primary-light flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-bold text-white transition-all active:scale-[0.98] disabled:opacity-50"
+                  className="flex-1 justify-center"
                 >
                   <span>Generate Full Names</span>
-                </button>
+                </Button>
               </div>
             </>
           )}
@@ -594,10 +562,14 @@ export function StudioNameSets() {
       {/* Right: results */}
       <div className="space-y-4 lg:col-span-7">
         {names.length > 0 ? (
-          <FacetCard className="border-border/40 bg-secondary/5 animate-in fade-in space-y-4 border p-4 duration-300">
-            <div className="border-border/40 border-b pb-3">
-              <h3 className="text-foreground text-sm font-bold tracking-tight">Full Names</h3>
-              <p className="text-muted-foreground mt-0.5 text-[11px]">
+          <FacetCard
+            variant="inset"
+            padding="none"
+            className="animate-in fade-in space-y-4 p-4 duration-300"
+          >
+            <div className="border-separator border-b pb-3">
+              <h3 className="text-label text-body font-semibold">Full Names</h3>
+              <p className="text-label-secondary text-caption mt-0.5">
                 Each slot generated from the {selectedSet} template.
               </p>
             </div>
@@ -620,10 +592,14 @@ export function StudioNameSets() {
             </div>
           </FacetCard>
         ) : (
-          <FacetCard className="border-border/40 bg-secondary/5 text-muted-foreground border border-dashed p-8 text-center text-sm">
-            <Info className="text-onoma-primary/40 mx-auto mb-3 h-8 w-8 animate-pulse" />
+          <FacetCard
+            variant="inset"
+            padding="none"
+            className="text-label-secondary text-body border-dashed p-8 text-center"
+          >
+            <Info className="text-tint/40 mx-auto mb-3 h-8 w-8" />
             <p className="font-semibold">Generate full names</p>
-            <p className="text-muted-foreground mt-1 text-xs">
+            <p className="text-label-secondary text-footnote mt-1">
               Pick a Name Set, arrange the template (e.g. Given + Surname), and generate.
             </p>
           </FacetCard>

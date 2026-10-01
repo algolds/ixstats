@@ -37,6 +37,9 @@ import { cn } from "~/lib/utils";
 import LoanwordsSection from "../LoanwordsSection";
 import { CorpusSelector } from "../../shared/CorpusSelector";
 import { resolveCorpusWords } from "~/lib/onoma/data-bridge";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 const QUICK_SYMBOLS = [
   { label: "#_ (Initial)", value: "#_" },
@@ -255,46 +258,26 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
   return (
     <div className="space-y-6 text-left">
       {/* Top Controls Bar with Segmented Mode Switch */}
-      <div className="border-border/40 flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-center">
+      <div className="border-separator flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-center">
         <div className="space-y-1">
-          <h3 className="text-foreground text-xl font-bold tracking-tight">
-            Sound Shifts & Phonetic Adaptation
-          </h3>
-          <p className="text-muted-foreground text-xs leading-relaxed">
+          <h3 className="text-label text-title-2 font-bold">Sound Shifts & Phonetic Adaptation</h3>
+          <p className="text-label-secondary text-footnote leading-relaxed">
             Model chronological diachronic sound change or configure interlinguistic borrowing and
             loanword adaptation.
           </p>
         </div>
 
-        {/* Apple-style Segmented Control */}
-        <div className="border-border/40 bg-secondary/15 flex items-center gap-1 self-start rounded-full border p-1 backdrop-blur-md sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setShiftMode("diachronic")}
-            className={cn(
-              "flex cursor-pointer items-center gap-2 rounded-full px-3.5 py-1 text-xs font-semibold transition-all duration-200 select-none",
-              shiftMode === "diachronic"
-                ? "bg-background text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <GitFork className="text-onoma-primary h-3.5 w-3.5" />
-            <span>Historical Sound Shifts</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setShiftMode("loanwords")}
-            className={cn(
-              "flex cursor-pointer items-center gap-2 rounded-full px-3.5 py-1 text-xs font-semibold transition-all duration-200 select-none",
-              shiftMode === "loanwords"
-                ? "bg-background text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Globe2 className="text-onoma-primary h-3.5 w-3.5" />
-            <span>Loanwords & Contact Adaptation</span>
-          </button>
-        </div>
+        <SegmentedControl
+          size="sm"
+          aria-label="Mode"
+          className="self-start sm:self-auto"
+          value={shiftMode}
+          onValueChange={setShiftMode}
+          options={[
+            { value: "diachronic", label: "Historical sound shifts", icon: <GitFork /> },
+            { value: "loanwords", label: "Loanwords & contact adaptation", icon: <Globe2 /> },
+          ]}
+        />
       </div>
 
       {shiftMode === "loanwords" ? (
@@ -302,13 +285,13 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
       ) : (
         <>
           {/* Header Banner */}
-          <div className="border-border/40 bg-secondary/5 relative overflow-hidden rounded-2xl border p-5 sm:p-6">
+          <div className="bg-surface-secondary rounded-row relative overflow-hidden p-5 sm:p-6">
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
               <div className="space-y-1">
-                <h4 className="text-foreground text-sm font-bold">
+                <h4 className="text-label text-body font-semibold">
                   Diachronic Phonetic Transformation
                 </h4>
-                <p className="text-muted-foreground text-xs leading-relaxed">
+                <p className="text-label-secondary text-footnote leading-relaxed">
                   Define chronological phonetic shift rules (<code>X → Y / ENV</code>) across
                   historical epochs to systematically derive daughter languages and regional
                   dialects from Proto-Lexicons.
@@ -317,19 +300,17 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
 
               {/* Preset Selector */}
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
-                  Presets:
-                </span>
+                <span className="text-label-secondary text-eyebrow">Presets:</span>
                 {SOUND_SHIFT_PRESETS.map((preset) => (
                   <button
                     key={preset.id}
                     type="button"
                     onClick={() => handleSelectPreset(preset.id)}
                     className={cn(
-                      "cursor-pointer rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all active:scale-95",
+                      "rounded-control text-footnote cursor-pointer border px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
                       selectedPresetId === preset.id
-                        ? "border-onoma-primary/40 bg-onoma-primary/10 text-onoma-primary shadow-sm dark:text-onoma-primary-light"
-                        : "border-border/40 bg-background/50 text-muted-foreground hover:text-foreground hover:border-onoma-primary/30 hover:bg-onoma-primary/5"
+                        ? "border-tint/40 bg-tint/10 text-tint shadow-card"
+                        : "border-separator bg-surface text-label-secondary hover:text-label hover:border-tint/30 hover:bg-tint/5"
                     )}
                   >
                     {preset.name.split(" ")[0]}
@@ -344,15 +325,15 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
             <div className="space-y-5 lg:col-span-7">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Layers className="text-onoma-primary h-4 w-4" />
-                  <h4 className="text-foreground text-sm font-bold">
+                  <Layers className="text-tint h-4 w-4" />
+                  <h4 className="text-label text-body font-semibold">
                     Chronological Epochs & Rules
                   </h4>
                 </div>
                 <button
                   type="button"
                   onClick={handleAddEpoch}
-                  className="border-border/40 bg-secondary/20 hover:border-onoma-primary/40 hover:bg-onoma-primary/10 hover:text-onoma-primary flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1 text-xs font-semibold transition-all active:scale-95"
+                  className="border-separator bg-fill-4 hover:border-tint/40 hover:bg-tint/10 hover:text-tint rounded-control text-footnote flex cursor-pointer items-center gap-1.5 border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   <span>Add Epoch</span>
@@ -360,16 +341,14 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
               </div>
 
               {/* Quick Insert Symbols Palette */}
-              <div className="border-border/30 bg-secondary/10 flex flex-wrap items-center gap-1.5 rounded-xl border p-2.5">
-                <span className="text-muted-foreground mr-1 text-[10px] font-bold uppercase">
-                  Insert:
-                </span>
+              <div className="border-separator bg-fill-4 rounded-row flex flex-wrap items-center gap-1.5 border p-2.5">
+                <span className="text-label-secondary text-eyebrow mr-1">Insert:</span>
                 {QUICK_SYMBOLS.map((sym) => (
                   <button
                     key={sym.label}
                     type="button"
                     onClick={() => handleInsertSymbol(sym.value)}
-                    className="border-border/40 bg-background/80 hover:border-onoma-primary/40 hover:bg-onoma-primary/10 hover:text-onoma-primary cursor-pointer rounded border px-2 py-0.5 font-mono text-[10px] transition-all active:scale-90"
+                    className="border-separator bg-surface hover:border-tint/40 hover:bg-tint/10 hover:text-tint rounded-control-sm text-caption cursor-pointer border px-2 py-0.5 font-mono transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-90"
                   >
                     {sym.label}
                   </button>
@@ -381,15 +360,15 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                 {epochs.map((epoch, epochIdx) => (
                   <div
                     key={epoch.id}
-                    className="border-border/40 bg-card/40 relative space-y-3 rounded-xl border p-4 shadow-sm backdrop-blur-sm"
+                    className="border-separator bg-surface rounded-row shadow-card relative space-y-3 border p-4"
                   >
                     {/* Epoch Header */}
-                    <div className="border-border/20 flex items-center justify-between gap-2 border-b pb-2.5">
+                    <div className="border-separator flex items-center justify-between gap-2 border-b pb-2.5">
                       <div className="flex flex-1 items-center gap-2">
-                        <span className="bg-onoma-primary/15 text-onoma-primary dark:text-onoma-primary-light flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold">
+                        <span className="bg-tint/15 text-tint text-caption flex h-5 w-5 items-center justify-center rounded-full font-semibold">
                           {epochIdx + 1}
                         </span>
-                        <input
+                        <Input
                           type="text"
                           value={epoch.name}
                           onChange={(e) => {
@@ -397,7 +376,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                             updated[epochIdx]!.name = e.target.value;
                             setEpochs(updated);
                           }}
-                          className="text-foreground w-full bg-transparent text-xs font-bold focus:outline-none"
+                          className="text-footnote w-full"
                           placeholder="Epoch Title (e.g. Phase 1: High Vowel Raising)"
                         />
                       </div>
@@ -406,7 +385,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                         onClick={() => handleRemoveEpoch(epochIdx)}
                         disabled={epochs.length <= 1}
                         title="Delete Epoch"
-                        className="text-muted-foreground cursor-pointer p-1 transition-colors hover:text-red-500 disabled:opacity-30"
+                        className="text-label-secondary hover:text-red cursor-pointer p-1 transition-colors disabled:opacity-30"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -418,7 +397,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                         <div
                           key={rule.id}
                           className={cn(
-                            "border-border/30 bg-background/50 flex flex-wrap items-center gap-2 rounded-lg border p-2 transition-all sm:flex-nowrap",
+                            "border-separator bg-surface rounded-control flex flex-wrap items-center gap-2 border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] sm:flex-nowrap",
                             !rule.enabled && "opacity-50"
                           )}
                         >
@@ -429,13 +408,13 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                             onChange={(e) =>
                               handleUpdateRule(epochIdx, ruleIdx, "enabled", e.target.checked)
                             }
-                            className="accent-onoma-primary h-3.5 w-3.5 cursor-pointer rounded"
+                            className="accent-tint rounded-control-sm h-3.5 w-3.5 cursor-pointer"
                             title="Toggle Rule"
                           />
 
                           {/* Source */}
                           <div className="flex w-20 flex-shrink-0 items-center">
-                            <input
+                            <Input
                               type="text"
                               value={rule.source}
                               onFocus={() =>
@@ -445,15 +424,15 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                                 handleUpdateRule(epochIdx, ruleIdx, "source", e.target.value)
                               }
                               placeholder="Source"
-                              className="border-border/40 bg-secondary/10 focus:border-onoma-primary w-full rounded border px-2 py-1 font-mono text-xs focus:outline-none"
+                              className="text-footnote w-full font-mono"
                             />
                           </div>
 
-                          <ArrowRight className="text-muted-foreground h-3.5 w-3.5 flex-shrink-0" />
+                          <ArrowRight className="text-label-secondary h-3.5 w-3.5 flex-shrink-0" />
 
                           {/* Target */}
                           <div className="flex w-20 flex-shrink-0 items-center">
-                            <input
+                            <Input
                               type="text"
                               value={rule.target}
                               onFocus={() =>
@@ -463,15 +442,17 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                                 handleUpdateRule(epochIdx, ruleIdx, "target", e.target.value)
                               }
                               placeholder="Target"
-                              className="border-border/40 bg-secondary/10 focus:border-onoma-primary w-full rounded border px-2 py-1 font-mono text-xs focus:outline-none"
+                              className="text-footnote w-full font-mono"
                             />
                           </div>
 
-                          <span className="text-muted-foreground text-xs font-semibold">/</span>
+                          <span className="text-label-secondary text-footnote font-semibold">
+                            /
+                          </span>
 
                           {/* Context / Environment */}
                           <div className="flex min-w-[90px] flex-1 items-center">
-                            <input
+                            <Input
                               type="text"
                               value={rule.context || ""}
                               onFocus={() =>
@@ -481,7 +462,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                                 handleUpdateRule(epochIdx, ruleIdx, "context", e.target.value)
                               }
                               placeholder="Env (e.g. V_V, _[ei], _#)"
-                              className="border-border/40 bg-secondary/10 focus:border-onoma-primary w-full rounded border px-2 py-1 font-mono text-xs focus:outline-none"
+                              className="text-footnote w-full font-mono"
                             />
                           </div>
 
@@ -491,7 +472,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                               type="button"
                               onClick={() => handleMoveRule(epochIdx, ruleIdx, "up")}
                               disabled={ruleIdx === 0}
-                              className="text-muted-foreground hover:text-foreground cursor-pointer p-1 transition-colors disabled:opacity-25"
+                              className="text-label-secondary hover:text-label cursor-pointer p-1 transition-colors disabled:opacity-25"
                             >
                               <ArrowUp className="h-3 w-3" />
                             </button>
@@ -499,14 +480,14 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                               type="button"
                               onClick={() => handleMoveRule(epochIdx, ruleIdx, "down")}
                               disabled={ruleIdx === epoch.rules.length - 1}
-                              className="text-muted-foreground hover:text-foreground cursor-pointer p-1 transition-colors disabled:opacity-25"
+                              className="text-label-secondary hover:text-label cursor-pointer p-1 transition-colors disabled:opacity-25"
                             >
                               <ArrowDown className="h-3 w-3" />
                             </button>
                             <button
                               type="button"
                               onClick={() => handleRemoveRule(epochIdx, ruleIdx)}
-                              className="text-muted-foreground cursor-pointer p-1 transition-colors hover:text-red-500"
+                              className="text-label-secondary hover:text-red cursor-pointer p-1 transition-colors"
                             >
                               <Trash2 className="h-3 w-3" />
                             </button>
@@ -517,7 +498,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                       <button
                         type="button"
                         onClick={() => handleAddRule(epochIdx)}
-                        className="text-muted-foreground hover:text-onoma-primary flex cursor-pointer items-center gap-1 pt-1 text-[11px] font-semibold transition-colors"
+                        className="text-label-secondary hover:text-tint text-caption flex cursor-pointer items-center gap-1 pt-1 font-semibold transition-colors"
                       >
                         <Plus className="h-3 w-3" />
                         <span>Add Shift Rule</span>
@@ -531,9 +512,9 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
             {/* Right Column: Interactive Lexicon Evolution & Diff (5 cols) */}
             <div className="space-y-5 lg:col-span-5">
               {/* Proto-Lexicon Input */}
-              <div className="border-border/40 bg-card/40 space-y-2.5 rounded-xl border p-4 shadow-sm">
+              <div className="border-separator bg-surface rounded-row shadow-card space-y-2.5 border p-4">
                 <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
-                  <label className="text-foreground text-xs font-bold">
+                  <label className="text-label text-footnote font-semibold">
                     Proto-Language Lexicon Input
                   </label>
                   <div className="w-full sm:w-48">
@@ -552,25 +533,27 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                     />
                   </div>
                 </div>
-                <textarea
+                <Textarea
                   rows={4}
                   value={inputWordsText}
                   onChange={(e) => setInputWordsText(e.target.value)}
                   placeholder="Enter proto-words separated by newlines or commas..."
-                  className="border-border/40 bg-background/50 text-foreground focus:border-onoma-primary w-full rounded-lg border p-2.5 font-mono text-xs focus:outline-none"
+                  className="text-footnote w-full font-mono"
                 />
-                <div className="text-muted-foreground flex items-center justify-between text-[10px]">
+                <div className="text-label-secondary text-caption flex items-center justify-between">
                   <span>{parsedWords.length} words loaded</span>
                   <span>Loaded from Stash or custom text</span>
                 </div>
               </div>
 
               {/* Evolved Daughter Lexicon Results */}
-              <div className="border-border/40 bg-card/40 space-y-3 rounded-xl border p-4 shadow-sm">
+              <div className="border-separator bg-surface rounded-row shadow-card space-y-3 border p-4">
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <h4 className="text-foreground text-xs font-bold">Evolved Daughter Lexicon</h4>
-                    <span className="text-muted-foreground text-[10px]">
+                    <h4 className="text-label text-footnote font-semibold">
+                      Evolved Daughter Lexicon
+                    </h4>
+                    <span className="text-label-secondary text-caption">
                       {evolutionResults.length} simulated
                     </span>
                   </div>
@@ -586,7 +569,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                       });
                       notify.success(`Saved ${words.length} evolved words to Stash!`);
                     }}
-                    className="border-onoma-primary/40 bg-onoma-primary/10 text-onoma-primary hover:bg-onoma-primary/20 dark:text-onoma-primary-light flex cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-semibold shadow-xs transition-all active:scale-95"
+                    className="border-tint/40 bg-tint/10 text-tint hover:bg-tint/20 rounded-control text-caption shadow-card flex cursor-pointer items-center gap-1.5 border px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
                   >
                     <FolderDown className="h-3.5 w-3.5" />
                     <span>Save to Stash</span>
@@ -602,39 +585,39 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                       <div
                         key={`${res.original}-${idx}`}
                         className={cn(
-                          "border-border/30 bg-background/60 rounded-lg border p-2.5 transition-all",
-                          hasChanged && "border-onoma-primary/30 bg-onoma-primary/[0.02]"
+                          "border-separator bg-surface rounded-control border p-2.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                          hasChanged && "border-tint/30 bg-tint/5"
                         )}
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex min-w-0 flex-1 items-center gap-2">
                             {/* Proto Word */}
                             <div className="flex items-center gap-1">
-                              <span className="text-muted-foreground font-mono text-xs">
+                              <span className="text-label-secondary text-footnote font-mono">
                                 *{res.original}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => handlePlay(res.original)}
                                 title="Pronounce Proto Word"
-                                className="text-muted-foreground hover:text-foreground cursor-pointer p-0.5"
+                                className="text-label-secondary hover:text-label cursor-pointer p-0.5"
                               >
                                 <Volume2 className="h-3 w-3" />
                               </button>
                             </div>
 
-                            <ArrowRight className="text-muted-foreground/60 h-3 w-3 flex-shrink-0" />
+                            <ArrowRight className="text-label-tertiary h-3 w-3 flex-shrink-0" />
 
                             {/* Daughter Word */}
                             <div className="flex items-center gap-1">
-                              <span className="text-foreground font-mono text-xs font-bold">
+                              <span className="text-label text-footnote font-mono font-semibold">
                                 {res.final}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => handlePlay(res.final)}
                                 title="Pronounce Evolved Word"
-                                className="text-onoma-primary hover:text-onoma-primary/80 cursor-pointer p-0.5"
+                                className="text-tint hover:text-tint/80 cursor-pointer p-0.5"
                               >
                                 <Volume2 className="h-3 w-3" />
                               </button>
@@ -648,7 +631,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                               type="button"
                               onClick={() => handleSaveToStash(res)}
                               title="Save to Stash"
-                              className="text-muted-foreground hover:text-onoma-primary cursor-pointer rounded p-1 transition-colors"
+                              className="text-label-secondary hover:text-tint rounded-control-sm cursor-pointer p-1 transition-colors"
                             >
                               <Bookmark className="h-3.5 w-3.5" />
                             </button>
@@ -658,10 +641,10 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                               type="button"
                               onClick={() => handleCopy(res.final, idx)}
                               title="Copy Evolved Word"
-                              className="text-muted-foreground hover:text-foreground cursor-pointer rounded p-1 transition-colors"
+                              className="text-label-secondary hover:text-label rounded-control-sm cursor-pointer p-1 transition-colors"
                             >
                               {copiedIdx === idx ? (
-                                <Check className="h-3.5 w-3.5 text-emerald-500" />
+                                <Check className="text-green h-3.5 w-3.5" />
                               ) : (
                                 <Copy className="h-3.5 w-3.5" />
                               )}
@@ -673,7 +656,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                                 type="button"
                                 onClick={() => setExpandedWordIdx(isExpanded ? null : idx)}
                                 title="Inspect derivation steps"
-                                className="text-muted-foreground hover:text-onoma-primary cursor-pointer rounded p-1 transition-colors"
+                                className="text-label-secondary hover:text-tint rounded-control-sm cursor-pointer p-1 transition-colors"
                               >
                                 {isExpanded ? (
                                   <ChevronDown className="h-3.5 w-3.5" />
@@ -687,22 +670,20 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
 
                         {/* Step-by-Step Derivation Inspector */}
                         {isExpanded && res.steps.length > 0 && (
-                          <div className="border-border/30 bg-secondary/10 mt-2 space-y-1.5 rounded border p-2 text-[10px]">
-                            <div className="text-muted-foreground font-bold tracking-wider uppercase">
+                          <div className="border-separator bg-fill-4 rounded-control-sm text-caption mt-2 space-y-1.5 border p-2">
+                            <div className="text-label-secondary font-semibold uppercase">
                               Derivation Trace:
                             </div>
                             {res.steps.map((step, sIdx) => (
                               <div
                                 key={sIdx}
-                                className="border-border/15 flex items-center justify-between gap-2 border-b pb-1 font-mono last:border-none last:pb-0"
+                                className="border-separator flex items-center justify-between gap-2 border-b pb-1 font-mono last:border-none last:pb-0"
                               >
-                                <span className="text-muted-foreground truncate">
+                                <span className="text-label-secondary truncate">
                                   {step.epochName}
                                 </span>
-                                <span className="text-onoma-primary dark:text-onoma-primary-light">
-                                  {step.ruleDescription}
-                                </span>
-                                <span className="text-foreground font-bold">
+                                <span className="text-tint">{step.ruleDescription}</span>
+                                <span className="text-label font-semibold">
                                   {step.before} → {step.after}
                                 </span>
                               </div>

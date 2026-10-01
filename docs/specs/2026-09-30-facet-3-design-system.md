@@ -379,8 +379,8 @@ values on hover or tap.
    progress); sports keep a league's/club's section bar inside `SportsShell` — entity-scoped, not in the map, so it
    stays (decide whether the sidebar should show contextual entity sections); the admin rail still shows
    `SystemStatusWidget` beside the sidebar; the WikiOS rail keeps search/create/page tools, so wiki pages still show
-   a slim rail; the sidebar collapse is instant (animating `--shell-sidebar-width` relayouts `<main>`); Onoma keeps
-   its own chrome; retire `navigation.tsx`, `useNavigationScroll` and `lib/navigation-config.ts` with the legacy
+   a slim rail; the sidebar collapse is instant (animating `--shell-sidebar-width` relayouts `<main>`); Onoma's
+   chrome is converted (Phase 4) but its in-page navigation stays (entity-scoped, like sports); retire `navigation.tsx`, `useNavigationScroll` and `lib/navigation-config.ts` with the legacy
    shell.
 4. **Apps, worst-first:** dashboard, achievements, passport/settings, ThinkPages, WikiOS, labs chrome, Halo views,
    vault, messages, forum, admin, sports, countries, builder; then re-check MyCountry and maps against Facet 3.
@@ -415,6 +415,28 @@ values on hover or tap.
    (data); `.dynamic-island-shell` CSS still used by `MapDynamicIsland` and the WikiOS editor header; the Discord
    brand button keeps `text-white`. Primitive gap: no `PopoverAnchor` export (the reaction picker anchors via an inert
    `PopoverTrigger` span because the like button's own click must not toggle it).
+   **Labs (Onoma, Vexel, map pipeline) and Forum — ✅ converted 2026-09-30** (`app/labs`, `components/onoma`,
+   `app/(forum)`, `components/forum`, `styles/forum.css`; now in `facet-guards`' converted areas, and Onoma is no
+   longer excluded from the global guards). A new `app/labs/layout.tsx` scopes Labs to the sky `data-app="maps"` tint
+   (as `app-sections.ts`) with `PortalTintSync`; the forum keeps its orange `data-app="forum"` root. **Onoma's own
+   chrome is Facet 3:** a grouped page, the header's pillar/section console as one `material-thin` toolbar
+   (`FacetTabs` with tint selection instead of per-tab hex colours), utility buttons as `Button` styles, the workspace
+   canvas an opaque `FacetCard` (was `FacetMaterial satin`) whose panels are `FacetCard variant="inset"`, the footer a
+   `FacetCard` with a corner symbol watermark instead of gradient washes; the help/walkthrough portal, the "use this
+   name" and dictionary-edit overlays → `Dialog` (with `FacetList`/`FacetRow`, `Switch`, `Input`); hand-rolled stash,
+   export and IPA-segment menus → `Popover`/`MenuButton`; mode pills → `SegmentedControl`; `--color-onoma-*`
+   utilities → the tint (the logo artwork keeps the Onoma blue so it reads outside `/labs`), hex inks/canvas colours →
+   role variables (canvas resolves them at draw time); 418 `text-[Npx]`, `dark:` pairs and palette colours → text
+   styles and roles; the 3D-tilt language-pack cards, glow gradients, `diamonds` texture and looping pulses removed.
+   **Forum:** `--forum-*` are now aliases of the roles + Forum tint on `[data-app="forum"]`; `glass-forum-*`,
+   `forum-skeleton`, `forum-badge*` and the composer button styles deleted; categories, thread lists, search results
+   and stashes → `FacetCard`/`FacetList`/`FacetRow`; sort/type pills → `SegmentedControl`; ⌘K search → an `instant`
+   `Dialog` with `SearchField`; delete post → `AlertDialog`; member stats → `Stat`; rail tooltips → `Tooltip`; the
+   fixed interactive grid background removed; the pill bar and reply composer are `material-thin` chrome (the rail and
+   pill bar keep `data-app-subnav`, the composer its `--shell-tabbar-height` offset). **Remaining:** `x.5` spacing
+   steps; ~200 Onoma raw `<button>`s that are role-styled toggles/chips rather than `Button` styles; native `<select>`s
+   in Onoma's sections (field-styled by roles, not the `Select` primitive); BBCode post HTML is styled by
+   `forum.css` (roles, not utilities).
 
 ## 15. Governance
 

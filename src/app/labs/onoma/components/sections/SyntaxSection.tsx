@@ -6,11 +6,13 @@
 import React, { useState, useEffect } from "react";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { Trash as Trash2, Page as FileText } from "iconoir-react";
-import { FacetMaterial } from "~/components/ui/facet";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { SyntaxSentenceBuilder } from "./syntax/SyntaxSentenceBuilder";
 import { SyntaxDictionaryEditor } from "./syntax/SyntaxDictionaryEditor";
+import { Input } from "~/components/ui/input";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Button } from "~/components/ui/button";
 
 const INITIAL_DICTIONARY = {
   dog: "koba",
@@ -170,24 +172,21 @@ export default function SyntaxSection() {
   return (
     <div className="space-y-6">
       {/* Grammar Rules Formulation Card */}
-      <FacetMaterial
-        material="satin"
-        className="border-border/40 space-y-4 rounded-xl border p-5 text-left shadow-sm"
-      >
-        <div className="border-border/20 flex flex-wrap items-center justify-between gap-3 border-b pb-3">
+      <FacetCard variant="inset" padding="none" className="space-y-4 p-5 text-left">
+        <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-3">
           <div className="flex items-center gap-2">
-            <input
+            <Input
               type="text"
               placeholder="Grammar Profile Name (e.g. Imperial High Latinate)"
               value={profileName}
               onChange={(e) => setProfileName(e.target.value)}
-              className="border-border/60 bg-background text-foreground w-64 rounded-md border px-3 py-1.5 text-xs focus:outline-none"
+              className="text-footnote w-64"
             />
             {profiles && profiles.length > 0 && (
               <select
                 value={selectedProfileId || ""}
                 onChange={(e) => setSelectedProfileId(e.target.value || null)}
-                className="border-border/60 bg-background text-foreground rounded-md border px-2 py-1.5 text-xs focus:outline-none"
+                className="border-separator bg-fill-3 text-label hover:bg-fill-2 focus-visible:outline-tint rounded-control-sm text-footnote h-(--control-height-sm) border px-2 outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 <option value="">Load Existing Profile...</option>
                 {profiles.map((p) => (
@@ -203,32 +202,26 @@ export default function SyntaxSection() {
             {selectedProfileId && (
               <button
                 onClick={() => deleteProfileMutation.mutate({ id: selectedProfileId })}
-                className="flex cursor-pointer items-center gap-1 rounded-md border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-600 transition-all hover:bg-red-500/20 active:scale-[0.97]"
+                className="rounded-control-sm border-red/30 bg-red/10 text-footnote text-red hover:bg-red/20 flex cursor-pointer items-center gap-1 border px-2.5 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
               >
                 <Trash2 className="h-3 w-3" /> Delete
               </button>
             )}
-            <button
-              onClick={handleSave}
-              disabled={saveProfileMutation.isPending}
-              className="bg-onoma-primary hover:bg-onoma-primary-active cursor-pointer rounded-md px-3.5 py-1 text-xs font-bold text-white shadow transition-all active:scale-[0.97] disabled:opacity-50"
-            >
+            <Button size="sm" onClick={handleSave} disabled={saveProfileMutation.isPending}>
               {saveProfileMutation.isPending ? "Saving..." : "Save Profile"}
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Word Order & Morphosyntax Grid */}
-        <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+        <div className="text-footnote grid grid-cols-2 gap-3 sm:grid-cols-4">
           {/* Word Order */}
           <div className="space-y-1">
-            <label className="text-muted-foreground text-[10px] font-bold uppercase">
-              Word Order
-            </label>
+            <label className="text-label-secondary text-subhead">Word Order</label>
             <select
               value={wordOrder}
               onChange={(e) => setWordOrder(e.target.value)}
-              className="border-border/60 bg-background w-full rounded border px-2 py-1.5 focus:outline-none"
+              className="border-separator bg-fill-3 text-label hover:bg-fill-2 focus-visible:outline-tint rounded-control-sm text-footnote h-(--control-height-sm) w-full border px-2 outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               <option value="SVO">SVO (English, Romance)</option>
               <option value="SOV">SOV (Japanese, Latin, Turkish)</option>
@@ -241,13 +234,11 @@ export default function SyntaxSection() {
 
           {/* Adjective Placement */}
           <div className="space-y-1">
-            <label className="text-muted-foreground text-[10px] font-bold uppercase">
-              Adjective Order
-            </label>
+            <label className="text-label-secondary text-subhead">Adjective Order</label>
             <select
               value={adjectiveOrder}
               onChange={(e) => setAdjectiveOrder(e.target.value)}
-              className="border-border/60 bg-background w-full rounded border px-2 py-1.5 focus:outline-none"
+              className="border-separator bg-fill-3 text-label hover:bg-fill-2 focus-visible:outline-tint rounded-control-sm text-footnote h-(--control-height-sm) w-full border px-2 outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               <option value="before">Before Noun (Red apple)</option>
               <option value="after">After Noun (Apple red)</option>
@@ -256,33 +247,29 @@ export default function SyntaxSection() {
 
           {/* Accusative Suffix */}
           <div className="space-y-1">
-            <label className="text-muted-foreground text-[10px] font-bold uppercase">
-              Accusative Suffix
-            </label>
-            <input
+            <label className="text-label-secondary text-subhead">Accusative Suffix</label>
+            <Input
               type="text"
               value={accSuffix}
               onChange={(e) => setAccSuffix(e.target.value)}
               placeholder="e.g. -m, -on"
-              className="border-border/60 bg-background w-full rounded border px-2 py-1.5 font-mono focus:outline-none"
+              className="w-full font-mono"
             />
           </div>
 
           {/* Plural Suffix */}
           <div className="space-y-1">
-            <label className="text-muted-foreground text-[10px] font-bold uppercase">
-              Plural Suffix
-            </label>
-            <input
+            <label className="text-label-secondary text-subhead">Plural Suffix</label>
+            <Input
               type="text"
               value={pluralSuffix}
               onChange={(e) => setPluralSuffix(e.target.value)}
               placeholder="e.g. -s, -n, -i"
-              className="border-border/60 bg-background w-full rounded border px-2 py-1.5 font-mono focus:outline-none"
+              className="w-full font-mono"
             />
           </div>
         </div>
-      </FacetMaterial>
+      </FacetCard>
 
       {/* Live Sentence Builder */}
       <SyntaxSentenceBuilder
