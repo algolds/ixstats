@@ -104,9 +104,9 @@ import { wikiosTemplatesRouter } from "~/server/api/routers/wikios/templates";
 import { wikiosWatchlistAnnotationsRouter } from "~/server/api/routers/wikios/watchlist-annotations";
 import { wikiosPageContentRouter } from "~/server/api/routers/wikios/page-content";
 import { wikiosSearchRouter } from "~/server/api/routers/wikios/search";
-import { getTemplatePreview } from "~/lib/wiki-os/templates/template-registry";
-import { canonicalPreviewInput } from "~/lib/wiki-os/templates/preview-service";
+import { getTemplatePreview } from "~/lib/wiki-os/templates/template-engine.server";
 import {
+  canonicalPreviewInput,
   previewCacheKey,
   renderTemplateWithRedisCache,
 } from "~/lib/wiki-os/templates/preview-service.server";

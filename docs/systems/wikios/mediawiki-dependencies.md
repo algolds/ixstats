@@ -38,7 +38,7 @@ names a MediaWiki endpoint (`getMediaWikiApiUrl`, `api.php`, `DEFAULT_MEDIAWIKI_
 | --- | --- | --- |
 | `src/lib/wiki-os/adapters/mediawiki/parsoid.ts` `renderArticleViaMediaWiki` | `action=parse&text=<Postgres wikitext>&title=` plus `prop=text\|links\|templates\|images\|categories\|properties\|displaytitle` | The render service's engine call (`services/render-service.ts`), once per revision, off the reader's path. Also the template preview's engine call (below). **Read path only for a page that was never rendered or is stale (plan 404).** Internal URL (`WIKIOS_MEDIAWIKI_INTERNAL_URL`) when configured. |
 | `src/lib/wiki-os/adapters/mediawiki/parsoid.ts` `wikitextToHtml` | `action=parse&text=&pst=1` | Editor "preview" (`wikios.previewWikitext`, signed-in). Falls back to the in-process compiler. |
-| `src/lib/wiki-os/templates/template-registry.ts` `getTemplatePreview` | `renderArticleViaMediaWiki({{name\|k=v}})` | The template inserter's preview. Server route `wikios.getTemplatePreview` (signed-in, rate-limited, Redis-cached). Falls back to the in-process compiler. See "Open items" for the browser-side caller. |
+| `src/lib/wiki-os/templates/template-engine.server.ts` `getTemplatePreview` | `renderArticleViaMediaWiki({{name\|k=v}})` | The template inserter's preview, server-only (`server-only`): the editor reaches it through the tRPC route `wikios.getTemplatePreview` (signed-in, rate-limited, sanitised, Redis-cached in `templates/preview-service.server.ts`). A browser never calls it. Falls back to the in-process compiler. |
 | `src/server/api/routers/wikios/page-content.ts` `getArticleHtml` (sister branch) | `action=parse&text=<sister wiki's wikitext>` to IxWiki's engine (`WIKIOS_MEDIAWIKI_API`) | A sister wiki's page (`?source=iiwiki`) is fetched from its wiki and rendered by IxWiki's engine. Never used for an IxWiki page. |
 
 ### sync (inbound)
@@ -67,7 +67,7 @@ names a MediaWiki endpoint (`getMediaWikiApiUrl`, `api.php`, `DEFAULT_MEDIAWIKI_
 
 | Call site | What it reads | Caller |
 | --- | --- | --- |
-| `src/lib/wiki-os/templates/template-registry.ts` `fetchTemplateData` | `action=templatedata` | `routers/admin/wiki.ts` `syncWikiTemplateByName` and `syncWikiTemplatesByCategory`, by an admin. A reader's TemplateData is read from Postgres (`templates/template-data-reader.ts`). |
+| `src/lib/wiki-os/templates/template-engine.server.ts` `fetchTemplateData` | `action=templatedata` | `routers/admin/wiki.ts` `syncWikiTemplateByName` and `syncWikiTemplatesByCategory`, by an admin. A reader's TemplateData is read from Postgres (`templates/template-data-reader.ts`). |
 
 ### media-bytes
 
@@ -91,6 +91,10 @@ names a MediaWiki endpoint (`getMediaWikiApiUrl`, `api.php`, `DEFAULT_MEDIAWIKI_
 URL of a lead picture with no asset row), `src/lib/system/wikios-standalone.ts` (the paths WikiOS's own host serves, among them
 `/api.php`), `src/lib/wiki-os/guardian/cloudflare-guardian.ts` (the origin of a Cloudflare cache purge; the request goes to
 Cloudflare), `src/components/maps/core/MapWelcomeModal.tsx` (a link).
+
+A browser calls none of this: `src/tests/architecture/browser-mediawiki.test.ts` fails if client code imports a module that
+calls MediaWiki or names a MediaWiki URL helper. `src/lib/wiki-os/templates/template-registry.ts` (types and pure helpers) is
+client-safe; the render-engine and refresh calls are in the server-only `template-engine.server.ts`.
 
 ## 2. Sister wikis (iiwiki, AltHistory, Commons)
 
@@ -144,10 +148,6 @@ Already gone before 418, checked: the `getArticleHtml` Main Page `action=parse&p
 
 ## 6. Open items found by the audit (not changed by plan 418)
 
-- **Browser-side template preview.** `src/lib/wiki-os/templates/preview-service.ts` `renderTemplateCached` is bundled for the
-  client (`useWikiVisualFormatting`: inserting a template in the visual editor) and calls `getTemplatePreview` in the browser,
-  which POSTs to the public `api.php` (no internal URL is available client-side). Fix: call `wikios.getTemplatePreview`
-  through tRPC from that hook and delete the memory tier.
 - **Public `api.php` proxy** (above): outside callers can still query IxWiki's MediaWiki through WikiOS.
 - **Admin wiki link of a wiki account with no edits.** `lookupWikiUser` (admin `linkUserWiki`, the passport lookup) now answers
   from Postgres: an account that has no revision, no verified link, no Lorewards row and no group reads as "not found". If

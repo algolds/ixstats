@@ -1,15 +1,14 @@
 /**
  * preview-service.server.ts — SERVER-ONLY Redis tier for template previews.
  *
- * Wraps the universal preview service with a Redis cache (primary) and
- * delegates to it on miss. Imported exclusively by the wikios templates
- * router; never import from client components (ioredis is Node-only).
+ * Caches `getTemplatePreview` (MediaWiki as a private render engine, `template-engine.server.ts`) in Redis
+ * and renders on a miss. Imported exclusively by the wikios templates router (`wikios.getTemplatePreview`,
+ * which the editor calls too: a browser never asks MediaWiki, and keeps no render tier of its own).
  */
 
 import { createHash } from "node:crypto";
 import { Redis } from "ioredis";
-import { getTemplatePreview } from "./template-registry";
-import { canonicalPreviewInput } from "./preview-service";
+import { getTemplatePreview } from "./template-engine.server";
 
 export type PreviewSource = "redis" | "network";
 export interface ServerTemplatePreview {
@@ -19,6 +18,22 @@ export interface ServerTemplatePreview {
 }
 
 const TTL_SECONDS = 60 * 60 * 24; // 24h
+
+/**
+ * Canonical, order-insensitive form of a template invocation (name + sorted params): the input of the
+ * SHA-256 Redis key (`previewCacheKey`).
+ */
+export function canonicalPreviewInput(templateName: string, params: Record<string, string>): string {
+  return JSON.stringify([
+    templateName
+      .replace(/^Template:/i, "")
+      .trim()
+      .toLowerCase(),
+    Object.keys(params)
+      .sort()
+      .map((k) => [k, params[k]]),
+  ]);
+}
 
 /**
  * Shared Redis key for a template invocation: SHA-256 over the canonical input, so two different

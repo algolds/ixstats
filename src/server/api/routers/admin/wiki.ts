@@ -6,7 +6,8 @@ import { generateSlug } from "~/lib/utils";
 import { invalidateCache } from "~/lib/cache";
 import { scoreDailyWikiOS } from "~/lib/lorewards";
 import type { ScoringWeights } from "~/lib/lorewards";
-import { fetchTemplateData, categorizeTemplate } from "~/lib/wiki-os/templates/template-registry";
+import { categorizeTemplate } from "~/lib/wiki-os/templates/template-registry";
+import { fetchTemplateData } from "~/lib/wiki-os/templates/template-engine.server";
 import { readConfigKeys, writeConfigKeys } from "./_config-kv";
 
 const LOREWARD_WEIGHT_DEFAULTS: Record<string, number> = {

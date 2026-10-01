@@ -3,7 +3,7 @@
 // service's own non-persisting call (`action=parse&text=`): never `&page=`, never `templatedata`, never anything
 // else. When the engine cannot answer, the in-process compiler does.
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
-import { getTemplatePreview } from "~/lib/wiki-os/templates/template-registry";
+import { getTemplatePreview } from "~/lib/wiki-os/templates/template-engine.server";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { transformImages } from "~/lib/wiki-os/transformers/html-transformer";
 import { transformWikiLinks } from "~/lib/wiki-os/transformers/url-compat";
