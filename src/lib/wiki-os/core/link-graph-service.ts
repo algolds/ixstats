@@ -107,7 +107,7 @@ export class LinkGraphService {
     const existingTargets: Array<{ id: string; title: string }> =
       targetTitles.length > 0
         ? await db.wikiArticle.findMany({
-            where: { source, title: { in: targetTitles } },
+            where: { source, status: "PUBLISHED", title: { in: targetTitles } },
             select: { id: true, title: true },
           })
         : [];
@@ -158,7 +158,7 @@ export class LinkGraphService {
       const links = await db.wikiLink.findMany({
         where: {
           targetSlug: normalized,
-          sourceArticle: { source },
+          sourceArticle: { source, status: "PUBLISHED" },
         },
         include: {
           sourceArticle: {

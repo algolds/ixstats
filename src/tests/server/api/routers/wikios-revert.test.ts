@@ -6,6 +6,10 @@ jest.mock("~/server/db", () => ({
   db: {
     user: { findUnique: jest.fn() },
     wikiAccountLink: { findFirst: jest.fn() },
+    wikiUserGroup: { findMany: jest.fn().mockResolvedValue([]) },
+    wikiBlock: { findMany: jest.fn().mockResolvedValue([]) },
+    wikiRestriction: { findMany: jest.fn().mockResolvedValue([]) },
+    wikiRevision: { count: jest.fn().mockResolvedValue(0) },
     auditLog: { create: jest.fn() },
   },
   isDatabaseReadOnly: true,
@@ -110,8 +114,15 @@ const historyEntry = (revid: string, user: string) => ({
   minor: false,
 });
 
+/** Explicit group memberships of the signed-in user (plan 409: a rollback needs the rollback right). */
+const mockGroups = (...groups: string[]) =>
+  (db as unknown as { wikiUserGroup: { findMany: jest.Mock } }).wikiUserGroup.findMany.mockResolvedValue(
+    groups.map((group) => ({ group, expiresAt: null }))
+  );
+
 beforeEach(() => {
   jest.clearAllMocks();
+  mockGroups();
   (db as unknown as { wikiAccountLink: { findFirst: jest.Mock } }).wikiAccountLink.findFirst.mockResolvedValue(
     { username: "Linked" }
   );
@@ -232,6 +243,10 @@ describe("wikiosEditingRouter.revertToRevision (plan 402)", () => {
 });
 
 describe("wikiosEditingRouter.rollback (plan 402)", () => {
+  beforeEach(() => {
+    mockGroups("rollbacker");
+  });
+
   it("refuses a placeholder target revision", async () => {
     jest.mocked(getRevisionWikitextShadow).mockResolvedValue(revision(null));
 
@@ -295,6 +310,10 @@ describe("wikiosEditingRouter.saveWikitext edit summary (plan 402)", () => {
 });
 
 describe("wikiosEditingRouter revert and rollback error codes (plan 402)", () => {
+  beforeEach(() => {
+    mockGroups("rollbacker");
+  });
+
   it("revertToRevision answers NOT_FOUND for an unknown revision", async () => {
     jest.mocked(getRevisionWikitextShadow).mockResolvedValue(null);
 

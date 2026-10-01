@@ -40,8 +40,8 @@ export async function ixwikiGetSiteStats(): Promise<{
 }> {
   try {
     const [articles, totalPages, revisions, assets, users] = await Promise.all([
-      (db as any).wikiArticle.count({ where: { source: "ixwiki", namespace: 0 } }),
-      (db as any).wikiArticle.count({ where: { source: "ixwiki" } }),
+      (db as any).wikiArticle.count({ where: { source: "ixwiki", namespace: 0, status: "PUBLISHED" } }),
+      (db as any).wikiArticle.count({ where: { source: "ixwiki", status: "PUBLISHED" } }),
       (db as any).wikiRevision.count({ where: { source: "ixwiki" } }),
       (db as any).wikiAsset.count(),
       (db as any).user.count({ where: { wikiUsername: { not: null } } }),

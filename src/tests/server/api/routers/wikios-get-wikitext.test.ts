@@ -1,6 +1,11 @@
 /** @jest-environment node */
 // `jest` is deliberately NOT imported from "@jest/globals": the hoisted jest.mock() factories rely on the ambient global.
-jest.mock("~/server/db", () => ({ __esModule: true, db: {}, isDatabaseReadOnly: true }));
+// No page is deleted: the visibility check finds no row.
+jest.mock("~/server/db", () => ({
+  __esModule: true,
+  db: { wikiArticle: { findUnique: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]) } },
+  isDatabaseReadOnly: true,
+}));
 jest.mock("~/lib/auth", () => ({ __esModule: true, isSystemOwner: () => false, UserManagementService: jest.fn() }));
 jest.mock("~/lib/auth/system-owner-constants", () => ({ __esModule: true, isSystemOwner: () => false }));
 jest.mock("~/lib/wiki-os/storage", () => ({ __esModule: true, resolveActiveCountryId: jest.fn() }));

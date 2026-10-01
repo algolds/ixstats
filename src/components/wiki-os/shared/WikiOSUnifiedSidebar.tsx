@@ -43,6 +43,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { soundEffects } from "~/lib/sound/cuelume";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
+import { PageAdminMenuItems } from "~/components/wiki-os/admin/PageAdminMenuItems";
 
 const NAV_GROUP_1 = [
   { id: "main", href: "/wiki/Main_Page", icon: Home, title: "Main Page" },
@@ -574,6 +575,10 @@ export function WikiOSUnifiedSidebar({
                           </div>
                         </div>
                       </DropdownMenuItem>
+                      <PageAdminMenuItems
+                        title={title}
+                        enabled={isSignedIn && isArticlePage && !!title}
+                      />
                       <DropdownMenuItem asChild>
                         <Link
                           href={withBasePath("/util")}

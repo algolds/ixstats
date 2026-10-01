@@ -75,6 +75,7 @@ const ARTICLE_SELECT = {
 const VIEW_SELECT = {
   id: true,
   title: true,
+  status: true,
   htmlSyncedAt: true,
   revisions: { orderBy: { createdAt: "desc" }, take: 1, select: { createdAt: true } },
   categories: {
@@ -91,6 +92,8 @@ export interface ArticleViewHead {
   id: string;
   /** The canonical title as stored. */
   title: string;
+  /** PUBLISHED, or ARCHIVED for a deleted page (which only a reader with `deletedhistory` may see). */
+  status: string;
   /** When the view bundle was last built from the current wikitext; null = stale or never rendered. */
   htmlSyncedAt: Date | null;
   /** The newest revision's time; null when the article has no revision rows. */
@@ -301,6 +304,11 @@ export interface ImportedHead {
   redirectTargetFragment: string | null;
 }
 
+export interface ImportedRestriction {
+  action: "edit" | "move" | "upload";
+  level: "sysop" | "autoconfirmed";
+}
+
 export interface ImportPageInput {
   source: string;
   /** Canonical title (`canonicalizeTitle`). */
@@ -311,6 +319,8 @@ export interface ImportPageInput {
   mwPageId: number | null;
   /** Protection from a dump's legacy `<restrictions>`; only ever applied to an unprotected page. */
   protectionLevel: "SYSOP" | "AUTOCONFIRMED" | null;
+  /** The same rules as `wiki_restrictions` rows (the table that is enforced); an existing row is never changed. */
+  restrictions: ImportedRestriction[];
   /** The dump's revisions, oldest first. */
   revisions: ImportedRevision[];
   /** The newest dump revision that has text, or null when none does. */
@@ -512,6 +522,19 @@ async function writeImport(
   hashed: Map<string, string>
 ): Promise<string> {
   const articleId = await writeArticle(client, input, article, head);
+  for (const { action, level } of input.restrictions) {
+    await client.wikiRestriction.upsert({
+      where: { source_title_action: { source: input.source, title: input.title, action } },
+      create: {
+        source: input.source,
+        title: input.title,
+        action,
+        level,
+        reason: "Imported from a MediaWiki dump",
+      },
+      update: {},
+    });
+  }
   await insertRevisions(client, articleId, input.source, plan.inserts);
   for (const [rowId, sha1] of hashed) {
     await client.wikiRevision.update({ where: { id: rowId }, data: { sha1 } });
@@ -567,9 +590,18 @@ async function importInto(
   };
 }
 
+export interface FindArticleOptions {
+  /** Return a deleted (archived) page too. Default false: to a reader it does not exist. */
+  includeArchived?: boolean;
+}
+
 export class ArticleRepository {
-  static async getArticleBySlug(slug: string, source = "ixwiki"): Promise<ArticleRecord | null> {
-    return this.findBySlug(slug, source);
+  static async getArticleBySlug(
+    slug: string,
+    source = "ixwiki",
+    options: FindArticleOptions = {}
+  ): Promise<ArticleRecord | null> {
+    return this.findBySlug(slug, source, options);
   }
 
   /**
@@ -577,9 +609,14 @@ export class ArticleRepository {
    * so `foo_bar` reads the row a save of "Foo bar" wrote. A row with no wikitext is a stub, not an
    * article, and reads as missing.
    */
-  static async findBySlug(slug: string, source = "ixwiki"): Promise<ArticleRecord | null> {
+  static async findBySlug(
+    slug: string,
+    source = "ixwiki",
+    { includeArchived = false }: FindArticleOptions = {}
+  ): Promise<ArticleRecord | null> {
     try {
       const article = await this.lookupArticle(slug, source);
+      if (article?.status === "ARCHIVED" && !includeArchived) return null;
       return article?.wikitext ? toArticleRecord(article) : null;
     } catch {
       return null;
@@ -608,6 +645,7 @@ export class ArticleRepository {
     return {
       id: row.id,
       title: row.title,
+      status: row.status,
       htmlSyncedAt: row.htmlSyncedAt,
       lastModified: row.revisions[0]?.createdAt ?? null,
       categories: row.categories.map((member) => member.category.name),
@@ -808,7 +846,11 @@ export class ArticleRepository {
       title: canonicalizeTitle(raw, { source })?.title,
     }));
     const found = await db.wikiArticle.findMany({
-      where: { source, title: { in: candidates.flatMap((c) => c.title ?? []) } },
+      where: {
+        source,
+        status: { not: "ARCHIVED" }, // a deleted page is a red link
+        title: { in: candidates.flatMap((c) => c.title ?? []) },
+      },
       select: { title: true },
     });
     const existing = new Set(found.map((a) => a.title));

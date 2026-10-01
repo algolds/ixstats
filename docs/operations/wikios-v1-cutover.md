@@ -99,6 +99,45 @@ done
 **Rollback:** the files are additive and idempotent, so the running app is unaffected if you stop here. To undo,
 restore the dump taken above (`pg_restore` into a scratch database first; never `docker system prune`).
 
+## 1b. Import the MediaWiki rights (plan 409), after checking who vouched for each wiki link
+
+`scripts/wikios-import-rights.ts` copies MediaWiki group memberships, protections and blocks into WikiOS. A group or
+block that names a wiki account passes to the IxStates user linked to that account **only if the link is trusted**:
+`wiki_account_links."verifiedById"` is NULL (the account proved it owns the wiki account itself, with the token on its
+wiki user page) or the id of a system owner. The column is new in step 1, so **every link that existed before it reads
+as NULL, including the ones an administrator confirmed by hand**, and would inherit that wiki account's sysop or
+bureaucrat rights. Fix that first:
+
+```bash
+# read-only: every verified ixwiki link (the ones an admin confirmed and the ones a player proved look alike here)
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -c \
+  "select l.id, l.\"userId\", l.username, l.\"verifiedAt\", l.\"verifiedById\", l.\"mwRegisteredAt\"
+     from wiki_account_links l
+    where l.source = 'ixwiki' and l.\"verifiedAt\" is not null and l.token is null
+    order by l.\"verifiedAt\""
+```
+
+For each link an administrator confirmed (ask the admins; the admin user screen lists who linked whom), record the
+admin who did it, so the link is no longer taken for self-proven:
+
+```bash
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 -c \
+  "update wiki_account_links set \"verifiedById\" = '<the confirming admin user id>' where id = '<link id>'"
+```
+
+An administrator who is not a system owner keeps the link untrusted (it inherits no imported rights by name, which is
+the safe default); a system owner's id makes it trusted. Leave NULL only for links the player proved themselves. Then
+dry-run the import, read its plan, and write:
+
+```bash
+( cd "$IX" && bun scripts/wikios-import-rights.ts --api https://ixwiki.com/api.php )          # dry run: no database
+( cd "$IX" && bun scripts/wikios-import-rights.ts --api https://ixwiki.com/api.php --yes )    # prints the DB host, then writes
+```
+
+**Rollback:** the import only adds rows, and a re-run adds what is missing without overwriting a decision made in
+WikiOS. Its group and block rows carry `source = 'mw-import'` (`delete from wiki_user_groups where source = 'mw-import'`,
+the same for `wiki_blocks`); the restriction rows it adds are not marked, so undo those from the dump taken in step 1.
+
 ## 2. Deploy IxStates as usual
 
 ```bash

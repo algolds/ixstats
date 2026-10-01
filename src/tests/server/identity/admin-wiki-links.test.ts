@@ -2,7 +2,7 @@
  * Ruling F-2: admins revoke verified wiki links through the wiki-links service (any wiki), and an admin link
  * that loses to another player's verified row (TAKEN) writes nothing at all.
  */
-jest.mock("~/lib/auth", () => ({ isSystemOwner: () => false }));
+jest.mock("~/lib/auth", () => ({ isSystemOwner: jest.fn(() => false) }));
 jest.mock("~/lib/cache", () => ({
   ...jest.requireActual("~/lib/cache"), // the tRPC context needs the real Cache class
   globalCache: {
@@ -27,6 +27,7 @@ jest.mock("~/server/db", () => ({
 }));
 
 import { adminUsersRouter } from "~/server/api/routers/admin/users";
+import { isSystemOwner } from "~/lib/auth";
 import { db as serverDb } from "~/server/db";
 import { createIdorContext } from "~/tests/helpers/country-idor-context";
 
@@ -43,6 +44,7 @@ function adminCaller(holder: object | null = null) {
         deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
         upsert: jest.fn().mockResolvedValue({}),
       },
+      wikiUserGroup: { count: jest.fn().mockResolvedValue(0) },
     },
     "admin"
   );
@@ -53,7 +55,10 @@ function adminCaller(holder: object | null = null) {
 
 const legacyWrite = jest.mocked(serverDb.user.update);
 
-beforeEach(() => legacyWrite.mockClear());
+beforeEach(() => {
+  legacyWrite.mockClear();
+  jest.mocked(isSystemOwner).mockReturnValue(false);
+});
 
 describe("admin.unlinkUserWiki", () => {
   it("revokes the verified ixwiki link and clears the legacy columns (ixwiki is the default source)", async () => {
@@ -103,6 +108,47 @@ describe("admin.linkUserWiki", () => {
       data: expect.objectContaining({ wikiUsername: "Kir", wikiUserId: 7 }),
     });
     expect(legacyWrite).not.toHaveBeenCalled();
+  });
+
+  it("records the confirming admin on the link", async () => {
+    const { caller, d } = adminCaller();
+    await caller.linkUserWiki({ userId: "u1", wikiUsername: "kir" });
+    expect(d.wikiAccountLink.upsert.mock.calls[0]?.[0].create).toMatchObject({
+      verifiedById: "db_user_caller",
+    });
+  });
+
+  // The security review's exploit: a staff member links themselves to an unclaimed MediaWiki
+  // bureaucrat's name, expecting to inherit the groups imported for that name.
+  it("refuses staff linking their own account, FORBIDDEN, writing nothing", async () => {
+    const { caller, d } = adminCaller();
+    await expect(
+      caller.linkUserWiki({ userId: "db_user_caller", wikiUsername: "Mwbureaucrat" })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(d.wikiAccountLink.upsert).not.toHaveBeenCalled();
+    expect(d.user.update).not.toHaveBeenCalled();
+  });
+
+  it("refuses staff linking anyone to a name that holds imported groups, FORBIDDEN, writing nothing", async () => {
+    const { caller, d } = adminCaller();
+    d.wikiUserGroup.count.mockResolvedValue(1);
+    await expect(
+      caller.linkUserWiki({ userId: "u1", wikiUsername: "Mwbureaucrat" })
+    ).rejects.toMatchObject({ code: "FORBIDDEN", message: expect.stringContaining("system owner") });
+    expect(d.wikiAccountLink.upsert).not.toHaveBeenCalled();
+    expect(d.user.update).not.toHaveBeenCalled();
+  });
+
+  it("lets a system owner do both", async () => {
+    jest.mocked(isSystemOwner).mockReturnValue(true);
+    const { caller, d } = adminCaller();
+    d.wikiUserGroup.count.mockResolvedValue(1);
+    await expect(
+      caller.linkUserWiki({ userId: "db_user_caller", wikiUsername: "Mwbureaucrat" })
+    ).resolves.toMatchObject({ success: true });
+    expect(d.wikiAccountLink.upsert.mock.calls[0]?.[0].create).toMatchObject({
+      verifiedById: "db_user_caller",
+    });
   });
 
   it("an unknown wiki user is BAD_REQUEST and writes nothing", async () => {

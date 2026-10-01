@@ -126,11 +126,12 @@ export class CategoryService {
             id: true,
             slug: true,
             name: true,
-            _count: { select: { members: true } },
+            _count: { select: { members: { where: { article: { status: "PUBLISHED" } } } } },
           },
           orderBy: { name: "asc" },
         },
         members: {
+          where: { article: { status: "PUBLISHED" } },
           include: {
             article: {
               select: { id: true, title: true, slug: true, summary: true, leadImageUrl: true },
@@ -183,6 +184,7 @@ export class CategoryService {
       const childMembers = await db.wikiCategoryMember.findMany({
         where: {
           categoryId: { in: childIds },
+          article: { status: "PUBLISHED" },
         },
         include: {
           article: {
@@ -215,6 +217,7 @@ export class CategoryService {
             { category: { slug } },
             { category: { name: { equals: cleanName, mode: "insensitive" } } },
           ],
+          article: { status: "PUBLISHED" },
         },
         include: {
           article: {

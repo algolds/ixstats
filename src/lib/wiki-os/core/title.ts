@@ -33,6 +33,8 @@ export const NAMESPACE_CANONICAL_NAMES: Readonly<Record<number, string>> = Objec
   14: "Category",
   15: "Category talk",
   274: "Widget",
+  460: "Campaign",
+  461: "Campaign talk",
   275: "Widget talk",
   828: "Module",
   829: "Module talk",
@@ -158,6 +160,16 @@ export function canonicalizeTitle(
     fragment,
     urlPath: toUrlPath(title),
   };
+}
+
+/**
+ * Whether two spellings name the same page, ignoring case: a cache keyed by a raw or lower-cased title
+ * is evicted for every spelling it may hold ("foo_bar", "Foo bar", "foo bar").
+ */
+export function sameTitle(a: string, b: string, source = "ixwiki"): boolean {
+  const key = (raw: string) =>
+    (canonicalizeTitle(raw, { source })?.title ?? raw.replace(/_/g, " ").trim()).toLowerCase();
+  return key(a) === key(b);
 }
 
 /**

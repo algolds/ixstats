@@ -90,6 +90,7 @@ import { syncSinglePage } from "~/lib/wiki-os/services/auto-sync-service";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import { registerTemplateProvider } from "~/lib/wiki-os/templates/template-resolver";
 import { buildViewBundle } from "~/lib/wiki-os/services/render-service";
+import { evictArticleView } from "~/lib/wiki-os/services/article-view-service";
 
 const caller = () =>
   createCallerFactory(wikiosPageContentRouter)(
@@ -206,6 +207,20 @@ describe("getArticleHtml (IxWiki) reads the stored view bundle", () => {
     expect(again.contentHtml).toBe("<p>Cached.</p>");
     expect(findArticleForView).toHaveBeenCalledTimes(2);
     expect(mockFindUnique).not.toHaveBeenCalled();
+  });
+
+  it("reads the bundle again after the article's views were evicted (plan 409: delete, move)", async () => {
+    const found = head();
+    findArticleForView.mockResolvedValue(found);
+    setRow(freshBundleRow("<p>Cached.</p>"));
+    await caller().getArticleHtml({ title: "Aurelia" });
+    mockFindUnique.mockClear();
+
+    expect(evictArticleView(found.id)).toBe(1);
+    await caller().getArticleHtml({ title: "Aurelia" });
+
+    expect(mockFindUnique).toHaveBeenCalledTimes(1);
+    expect(evictArticleView(found.id)).toBe(1); // and it was cached again
   });
 
   it("misses the cache when the article was rendered again (a new htmlSyncedAt)", async () => {

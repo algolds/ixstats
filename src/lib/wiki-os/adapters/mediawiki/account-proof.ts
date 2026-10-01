@@ -66,15 +66,41 @@ export async function wikiQuery<T>(source: ProofSource, params: Record<string, s
 
 const UsersSchema = z.object({
   query: z.object({
-    users: z.array(z.object({ userid: z.number().optional(), name: z.string(), missing: z.boolean().optional() })),
+    users: z.array(
+      z.object({
+        userid: z.number().optional(),
+        name: z.string(),
+        missing: z.boolean().optional(),
+        editcount: z.number().optional(),
+        registration: z.string().nullable().optional(),
+      })
+    ),
   }),
 });
 
-export async function fetchWikiUser(source: ProofSource, username: string): Promise<{ username: string; userId: number } | null> {
-  const data = await wikiQuery(source, { list: "users", ususers: normalizeWikiUsername(username) }, UsersSchema);
+export interface WikiUser {
+  username: string;
+  userId: number;
+  /** When the account registered; null when the wiki does not say (accounts from before registration dates were kept). */
+  registration: Date | null;
+  editCount: number | null;
+}
+
+export async function fetchWikiUser(source: ProofSource, username: string): Promise<WikiUser | null> {
+  const data = await wikiQuery(
+    source,
+    { list: "users", ususers: normalizeWikiUsername(username), usprop: "editcount|registration" },
+    UsersSchema
+  );
   const user = data.query.users[0];
   if (!user || user.missing || user.userid === undefined) return null;
-  return { username: user.name, userId: user.userid };
+  const registration = user.registration ? new Date(user.registration) : null;
+  return {
+    username: user.name,
+    userId: user.userid,
+    registration: registration && !Number.isNaN(registration.getTime()) ? registration : null,
+    editCount: user.editcount ?? null,
+  };
 }
 
 const RevisionsSchema = z.object({

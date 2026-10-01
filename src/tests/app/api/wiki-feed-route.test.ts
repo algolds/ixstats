@@ -82,12 +82,12 @@ describe("GET /api/wiki/feed/[type]", () => {
   it("filters by realm and clamps the limit", async () => {
     await get("recent-changes.atom", "?limit=500&realm=iiwiki");
     expect(findMany).toHaveBeenLastCalledWith(
-      expect.objectContaining({ where: { source: "iiwiki" }, take: 100 })
+      expect.objectContaining({ where: { source: "iiwiki", article: { status: "PUBLISHED" } }, take: 100 })
     );
 
     await get("recent-changes.atom", "?limit=abc");
     expect(findMany).toHaveBeenLastCalledWith(
-      expect.objectContaining({ where: { source: "ixwiki" }, take: 50 })
+      expect.objectContaining({ where: { source: "ixwiki", article: { status: "PUBLISHED" } }, take: 50 })
     );
   });
 });

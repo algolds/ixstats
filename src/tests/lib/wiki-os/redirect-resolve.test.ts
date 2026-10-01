@@ -82,7 +82,9 @@ describe("ixwikiResolveRedirect", () => {
       fragment: "Sec one",
     });
     const [strings, ...values] = mockQueryRaw.mock.calls[0]!;
-    expect(strings.join("$")).toContain(`"source" = 'ixwiki' AND "title" = $`);
+    expect(strings.join("$")).toContain(
+      `"source" = 'ixwiki' AND "status" = 'PUBLISHED' AND "title" = $`
+    );
     expect(values).toEqual(["Old"]);
   });
 

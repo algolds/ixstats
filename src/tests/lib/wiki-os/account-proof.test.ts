@@ -28,10 +28,41 @@ describe("account-proof", () => {
   it("returns the canonical user or null when missing", async () => {
     global.fetch = jest
       .fn()
-      .mockReturnValueOnce(json({ query: { users: [{ userid: 7, name: "Kir" }] } }))
+      .mockReturnValueOnce(
+        json({
+          query: {
+            users: [
+              { userid: 7, name: "Kir", editcount: 42, registration: "2026-01-01T00:00:00Z" },
+            ],
+          },
+        })
+      )
       .mockReturnValueOnce(json({ query: { users: [{ name: "Nobody", missing: true }] } })) as any;
-    await expect(fetchWikiUser("iiwiki", "kir")).resolves.toEqual({ username: "Kir", userId: 7 });
+    await expect(fetchWikiUser("iiwiki", "kir")).resolves.toEqual({
+      username: "Kir",
+      userId: 7,
+      registration: new Date("2026-01-01T00:00:00Z"),
+      editCount: 42,
+    });
     await expect(fetchWikiUser("iiwiki", "nobody")).resolves.toBeNull();
+  });
+
+  it("asks for the account's edit count and registration, and tolerates a wiki that does not say them", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockReturnValueOnce(
+        json({ query: { users: [{ userid: 3, name: "Old", registration: null }] } })
+      );
+    global.fetch = fetchMock as any;
+
+    await expect(fetchWikiUser("iiwiki", "old")).resolves.toEqual({
+      username: "Old",
+      userId: 3,
+      registration: null,
+      editCount: null,
+    });
+    const url = new URL(String(fetchMock.mock.calls[0]?.[0]));
+    expect(url.searchParams.get("usprop")).toBe("editcount|registration");
   });
 
   it("reads the user page revisions saved since a time, oldest first (content + author), and the page creator", async () => {
@@ -53,7 +84,9 @@ describe("account-proof", () => {
       )
       .mockReturnValueOnce(json({ query: { pages: [{ revisions: [{ user: "Founder_Name" }] }] } }));
     global.fetch = fetchMock as any;
-    await expect(fetchUserPageHistory("ixwiki", "kir", new Date("2026-09-27T12:00:00.123Z"))).resolves.toEqual({
+    await expect(
+      fetchUserPageHistory("ixwiki", "kir", new Date("2026-09-27T12:00:00.123Z"))
+    ).resolves.toEqual({
       revisions: [
         { content: "hi", author: "Some editor" },
         { content: "hi ixstates-verify-abc", author: "Kir" },
@@ -96,7 +129,9 @@ describe("account-proof", () => {
   });
 
   it("a user page that does not exist has an empty, complete history", async () => {
-    global.fetch = jest.fn().mockReturnValueOnce(json({ query: { pages: [{ missing: true }] } })) as any;
+    global.fetch = jest
+      .fn()
+      .mockReturnValueOnce(json({ query: { pages: [{ missing: true }] } })) as any;
     await expect(fetchUserPageHistory("ixwiki", "Kir", new Date())).resolves.toEqual({
       revisions: [],
       complete: true,

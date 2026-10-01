@@ -6,6 +6,10 @@ jest.mock("~/server/db", () => ({
   db: {
     user: { findUnique: jest.fn() },
     wikiAccountLink: { findFirst: jest.fn().mockResolvedValue(null) },
+    wikiUserGroup: { findMany: jest.fn().mockResolvedValue([]) },
+    wikiBlock: { findMany: jest.fn().mockResolvedValue([]) },
+    wikiRestriction: { findMany: jest.fn().mockResolvedValue([]) },
+    wikiRevision: { count: jest.fn().mockResolvedValue(0) },
     auditLog: { create: jest.fn() },
   },
   isDatabaseReadOnly: true,

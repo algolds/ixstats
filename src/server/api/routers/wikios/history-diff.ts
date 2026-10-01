@@ -11,6 +11,7 @@ import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~
 import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
 import { getRevisionView } from "~/lib/wiki-os/services/revision-view-service";
 import { computeWikitextDiff } from "~/lib/wiki-os/transformers/wikitext-diff";
+import { assertTitleVisible } from "~/lib/wiki-os/permissions";
 import {
   getArticleHistoryShadow,
   getRevisionWikitextShadow,
@@ -28,7 +29,8 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
         offset: z.string().optional(),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await assertTitleVisible(ctx, input.title);
       const result = await getArticleHistoryShadow(
         input.title,
         input.limit,
@@ -55,9 +57,10 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
         torev: z.string().min(1).max(64),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const toData = await getRevisionWikitextShadow(input.torev);
       if (!toData) throw new Error(`Revision r${input.torev} not found`);
+      await assertTitleVisible(ctx, toData.title);
 
       const history = await getArticleHistoryShadow(toData.title, 100, undefined, "ixwiki");
       const toIndex = history.revisions.findIndex((r) => r.revid === input.torev);
@@ -72,6 +75,8 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
         : null;
 
       const fromRev = history.revisions.find((r) => r.revid === resolvedFromRevId);
+      // The "from" revision may belong to another page: a deleted one stays hidden too.
+      if (fromData) await assertTitleVisible(ctx, fromData.title);
 
       // A null text is an import placeholder, not an empty page: diffing it would show a lie.
       if (toData.wikitext === null || fromData?.wikitext === null) {
@@ -110,9 +115,10 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
    */
   getRevisionContent: publicProcedure
     .input(z.object({ revid: z.string().min(1).max(64) }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const result = await getRevisionWikitextShadow(input.revid);
       if (!result) throw new Error("Revision not found");
+      await assertTitleVisible(ctx, result.title);
       return result;
     }),
 

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { invalidateCache, globalCache } from "~/lib/cache";
+import { isSystemOwner } from "~/lib/auth";
 import { readConfigKeys, writeConfigKeys } from "./_config-kv";
 import {
   adminAssignNation,
@@ -291,11 +292,15 @@ export const adminUsersRouter = createTRPCRouter({
           input.userId,
           "ixwiki",
           res.wikiUsername ?? input.wikiUsername,
-          wikiUserId
+          wikiUserId,
+          { adminUserId: ctx.user.id, isSystemOwner: isSystemOwner(ctx.auth.userId) }
         );
       } catch (err) {
         if (err instanceof WikiLinkError) {
-          throw new TRPCError({ code: "CONFLICT", message: err.message });
+          throw new TRPCError({
+            code: err.code === "NOT_ALLOWED" ? "FORBIDDEN" : "CONFLICT",
+            message: err.message,
+          });
         }
         throw err;
       }
