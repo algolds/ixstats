@@ -13,7 +13,7 @@
 import { findMatchingClosingBraces, findMatchingClosingBrackets } from "./link-parser";
 import { matchBraces, matchBrackets } from "./match-index";
 import { parseParameterList, splitBalancedPipes } from "./parameter-parser";
-import { skipProtectedAt } from "./protected-regions";
+import { ProtectedScanner, skipProtectedAt } from "./protected-regions";
 import type { WikiParameter } from "./types";
 
 /** The parameters `raw` (a complete `{{…}}`) holds, by key. Null when `raw` is not a complete template. */
@@ -35,10 +35,11 @@ interface TopLevelHandlers {
 function scanTopLevel(value: string, handlers: TopLevelHandlers): string {
   const braces = matchBraces(value);
   const brackets = matchBrackets(value);
+  const scanner = new ProtectedScanner(value);
   let out = "";
   let i = 0;
   while (i < value.length) {
-    const protectedEnd = value[i] === "<" ? skipProtectedAt(value, i, true) : null;
+    const protectedEnd = value[i] === "<" ? skipProtectedAt(value, i, true, scanner) : null;
     const braceEnd = value.startsWith("{{", i) ? findMatchingClosingBraces(value, i, braces) : -2;
     const bracketEnd = value.startsWith("[[", i) ? findMatchingClosingBrackets(value, i, brackets) : -2;
     if (protectedEnd !== null) {

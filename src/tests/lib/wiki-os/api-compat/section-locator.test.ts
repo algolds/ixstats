@@ -89,3 +89,60 @@ describe("replaceSection", () => {
     expect(replaceSection(PAGE, 9, "x")).toBeNull();
   });
 });
+
+describe("offsets stay true around characters outside the BMP", () => {
+  const PAGE_WITH_EMOJI = "Lead <!-- note \u{1F600}\u{1F600} -->\n\n== One ==\nbody one\n\n== Two ==\nbody two";
+
+  it("masks a comment with astral characters one space per UTF-16 unit, so headings keep their offsets", () => {
+    const headings = sectionHeadings(PAGE_WITH_EMOJI);
+    expect(headings.map((h) => PAGE_WITH_EMOJI.slice(h.start, h.start + 3 + h.text.length))).toEqual(["== One", "== Two"]);
+  });
+
+  it("replaces section 1 without touching the lead or section 2", () => {
+    expect(replaceSection(PAGE_WITH_EMOJI, 1, "== One ==\nREPLACED")).toBe(
+      "Lead <!-- note \u{1F600}\u{1F600} -->\n\n== One ==\nREPLACED\n\n== Two ==\nbody two"
+    );
+    expect(sectionText(PAGE_WITH_EMOJI, 2)).toBe("== Two ==\nbody two");
+    expect(replaceSection(PAGE_WITH_EMOJI, 0, "New lead")).toBe("New lead\n\n== One ==\nbody one\n\n== Two ==\nbody two");
+  });
+
+  it("holds for astral characters inside <nowiki> and <pre> too", () => {
+    const page = "<nowiki>\u{1F600}\n== not a heading ==\n\u{1F600}</nowiki>\n== Real ==\ntext";
+    expect(sectionHeadings(page).map((h) => h.text)).toEqual(["Real"]);
+    expect(sectionText(page, 1)).toBe("== Real ==\ntext");
+  });
+});
+
+describe("lines made only of equals signs", () => {
+  it("are headings as in MediaWiki: === is level 1 titled =, ===== level 2 titled =", () => {
+    const level = (line: string) => sectionHeadings(line).map((h) => [h.level, h.text]);
+    expect(level("===")).toEqual([[1, "="]]);
+    expect(level("====")).toEqual([[1, "=="]]);
+    expect(level("=====")).toEqual([[2, "="]]);
+    expect(level("=======")).toEqual([[3, "="]]);
+    expect(level("=".repeat(13))).toEqual([[6, "="]]);
+    expect(level("=".repeat(20))).toEqual([[6, "=".repeat(8)]]);
+  });
+
+  it("are not headings below three signs, and ignore trailing blanks and a masked comment", () => {
+    expect(sectionHeadings("=\n==\n").length).toBe(0);
+    expect(sectionHeadings("===  \t").map((h) => [h.level, h.text])).toEqual([[1, "="]]);
+    expect(sectionHeadings("=== <!-- x -->").map((h) => [h.level, h.text])).toEqual([[1, "="]]);
+    expect(sectionHeadings("<!-- a\n=== -->\n").length).toBe(0);
+  });
+
+  it("agree with MediaWiki's heading regex on every combination of equals signs and one other character", () => {
+    const old = /^(={1,6})(.+?)\1[ \t]*$/u;
+    const alphabet = ["=", "=", "=", "a", " "];
+    let seed = 7;
+    const next = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff);
+    for (let round = 0; round < 20_000; round++) {
+      const line = Array.from({ length: 1 + (next() % 16) }, () => alphabet[(next() >> 8) % alphabet.length]).join("");
+      const match = old.exec(line);
+      const text = match?.[2]?.trim();
+      const expected = match && text ? [match[1]!.length, text] : null;
+      const found = sectionHeadings(line)[0];
+      expect([line, found ? [found.level, found.text] : null]).toEqual([line, expected]);
+    }
+  });
+});

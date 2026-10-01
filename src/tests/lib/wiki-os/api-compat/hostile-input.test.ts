@@ -10,7 +10,7 @@ import { call, loggedIn, makeWikiDeps, type FakeWikiData } from "./harness";
 import { categoryLinks, externalUrls, linkTargets, visibleText } from "~/lib/wiki-os/api-compat/scan";
 import { LinkGraphService, wikitextLinks } from "~/lib/wiki-os/core/link-graph-service";
 import { computeWikitextDiff, DiffTooLarge } from "~/lib/wiki-os/transformers/wikitext-diff";
-import { skipProtectedAt } from "~/lib/wiki-os/wikitext/protected-regions";
+import { ProtectedScanner, skipProtectedAt } from "~/lib/wiki-os/wikitext/protected-regions";
 import { locateSection, replaceSection, sectionHeadings, sectionText } from "~/lib/wiki-os/wikitext/section-locator";
 
 const N = 200_000;
@@ -58,8 +58,9 @@ describe("the wikitext scanners are linear", () => {
         sectionText(text, 0);
         replaceSection(text, 0, "x");
         LinkGraphService.extractLinks(text);
+        const scanner = new ProtectedScanner(text);
         for (let i = 0; i < text.length; i += 1) {
-          if (text.charCodeAt(i) === 60 /* < */) skipProtectedAt(text, i, true);
+          if (text.charCodeAt(i) === 60 /* < */) skipProtectedAt(text, i, true, scanner);
         }
       });
       expect(ms).toBeLessThan(BUDGET_MS * 4); // nine scans of one text
@@ -74,6 +75,61 @@ describe("the wikitext scanners are linear", () => {
       LinkGraphService.extractLinks(text);
     });
     expect(ms).toBeLessThan(1000);
+  });
+});
+
+/** The same characters in a new string object (a text read from the database again is one). */
+const freshCopy = (text: string) => text.split("").join("");
+
+describe("no scan keeps state keyed on a text's content", () => {
+  const hostile = "<nowiki ".repeat(125_000);
+
+  it("scans an equal copy of a hostile text as fast as the first (a content comparison per `<` was quadratic)", () => {
+    const first = timed(() => sectionHeadings(hostile));
+    const copy = freshCopy(hostile);
+    expect(copy).toBe(hostile);
+    const second = timed(() => sectionHeadings(copy));
+    const third = timed(() => sectionHeadings(freshCopy(hostile)));
+    expect(first.ms).toBeLessThan(200);
+    expect(second.ms).toBeLessThan(200);
+    expect(third.ms).toBeLessThan(200);
+  });
+
+  it("does the same for section locating and replacing, and for the tag lookups themselves", () => {
+    for (let round = 0; round < 3; round++) {
+      const text = freshCopy(hostile);
+      const { ms } = timed(() => {
+        locateSection(text, 1);
+        replaceSection(text, 0, "x");
+        const scanner = new ProtectedScanner(text);
+        for (let i = text.indexOf("<"); i !== -1; i = text.indexOf("<", i + 1)) skipProtectedAt(text, i, true, scanner);
+      });
+      expect(ms).toBeLessThan(400);
+    }
+  });
+
+  it("answers an anonymous parse&page= of a stored hostile page quickly, request after request", async () => {
+    const wiki = await makeWikiDeps({ pages: [{ pageId: 1, title: "Hostile", wikitext: hostile }], revisions: [{ revId: 1, page: "Hostile", timestamp: "2026-01-01T00:00:00Z", content: hostile }], html: { Hostile: "<p>stored</p>" } });
+    for (let round = 0; round < 3; round++) {
+      // each request reads the page's text again: a new string with the same content
+      wiki.data.pages![0]!.wikitext = freshCopy(hostile);
+      const start = performance.now();
+      const body = (await call(wiki.deps, "action=parse&page=Hostile&prop=text|sections|categories|links|displaytitle|properties&formatversion=2")).body as Record<string, any>;
+      expect(performance.now() - start).toBeLessThan(400);
+      expect(body.parse.title).toBe("Hostile");
+    }
+  });
+
+  it("does the same for edit&section=N of the stored hostile text", async () => {
+    const wiki = await makeWikiDeps({ pages: [{ pageId: 1, title: "Hostile", wikitext: hostile }], revisions: [{ revId: 1, page: "Hostile", timestamp: "2026-01-01T00:00:00Z", user: "Heku", content: hostile }] });
+    const token = await loggedIn(wiki.bot);
+    for (let round = 0; round < 3; round++) {
+      wiki.data.pages![0]!.wikitext = freshCopy(hostile);
+      const start = performance.now();
+      const body = (await wiki.bot.post({ action: "edit", title: "Hostile", section: "1", text: "== One ==\nx", token, formatversion: "2" })) as Record<string, any>;
+      expect(performance.now() - start).toBeLessThan(400);
+      expect(body.error.code).toBe("nosuchsection");
+    }
   });
 });
 

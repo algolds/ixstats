@@ -7,7 +7,7 @@
 
 import { splitBalancedPipes, parseParameterList } from "./parameter-parser";
 import { classifyTemplate } from "./resolver";
-import { skipProtectedAt } from "./protected-regions";
+import { ProtectedScanner, skipProtectedAt } from "./protected-regions";
 import type { ParsedTemplate, Diagnostic } from "./types";
 
 export interface ScanTemplatesResult {
@@ -24,13 +24,13 @@ interface ScannedTemplate {
 }
 
 /** The `{{` of the next template that MediaWiki would expand at or after `from`, or -1. */
-function nextTemplateOpen(wikitext: string, from: number): number {
+function nextTemplateOpen(wikitext: string, from: number, scanner?: ProtectedScanner): number {
   let i = from;
   let brace = wikitext.indexOf("{{", i);
   while (brace !== -1) {
     const tag = wikitext.indexOf("<", i);
     if (tag === -1 || tag > brace) return brace;
-    const end = skipProtectedAt(wikitext, tag);
+    const end = skipProtectedAt(wikitext, tag, false, scanner);
     i = end ?? tag + 1;
     if (brace < i) brace = wikitext.indexOf("{{", i);
   }
@@ -38,7 +38,7 @@ function nextTemplateOpen(wikitext: string, from: number): number {
 }
 
 /** Scans the template whose `{{` is at `openIdx`: balanced braces, links, tables and comments. */
-export function scanTemplateAt(wikitext: string, openIdx: number): ScannedTemplate {
+export function scanTemplateAt(wikitext: string, openIdx: number, scanner?: ProtectedScanner): ScannedTemplate {
   let depth = 0;
   let inComment = false;
   let j = openIdx;
@@ -63,7 +63,7 @@ export function scanTemplateAt(wikitext: string, openIdx: number): ScannedTempla
 
     // 2. Literal tags (`<nowiki>}}</nowiki>`)
     if (wikitext.charCodeAt(j) === 60) {
-      const skipped = skipProtectedAt(wikitext, j);
+      const skipped = skipProtectedAt(wikitext, j, false, scanner);
       if (skipped !== null) {
         j = skipped;
         continue;
@@ -131,12 +131,13 @@ export function scanTemplates(wikitext: string): ScanTemplatesResult {
   const diags: Diagnostic[] = [];
 
   let i = 0;
+  const scanner = new ProtectedScanner(wikitext);
 
   while (i < wikitext.length) {
-    const openIdx = nextTemplateOpen(wikitext, i);
+    const openIdx = nextTemplateOpen(wikitext, i, scanner);
     if (openIdx === -1) break;
 
-    const { parsed, end, closed } = scanTemplateAt(wikitext, openIdx);
+    const { parsed, end, closed } = scanTemplateAt(wikitext, openIdx, scanner);
     if (parsed) templates.push(parsed);
     if (!closed) {
       if (parsed) diags.push(unclosedTemplateDiagnostic(parsed, openIdx, wikitext.length));

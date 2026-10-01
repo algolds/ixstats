@@ -2,7 +2,7 @@
 // Finds the wikitext heading for a section title as the reader shows it (section edit links), and
 // locates and replaces numbered sections the way MediaWiki does (`action=edit&section=N`).
 
-import { skipProtectedAt } from "./protected-regions";
+import { ProtectedScanner, skipProtectedAt } from "./protected-regions";
 
 const HEADING_LINE_REGEX = /^(={2,6})\s*(.+?)\s*\1\s*$/u;
 
@@ -37,19 +37,23 @@ export function findSectionLine(wikitext: string, section: string): number | nul
 /**
  * `wikitext` with every comment and opaque element (`<nowiki>`, `<pre>`, ...) blanked out to spaces,
  * keeping every newline, so a heading-looking line inside one is not found and offsets still match.
- * One pass: it jumps from `<` to `<`, and the protected-region scanners it asks are linear.
+ * The blanking is per UTF-16 unit (no `u` flag): a character outside the BMP becomes two spaces, as
+ * it is two units long, or every offset after it would shift.
+ * One pass: it jumps from `<` to `<`, and the scanner (made for this text alone) keeps what it
+ * learns about the tags, so a text of `<nowiki ` that never closes is linear too.
  */
 function maskProtected(wikitext: string): string {
   let open = wikitext.indexOf("<");
   if (open === -1) return wikitext;
+  const scanner = new ProtectedScanner(wikitext);
   const parts: string[] = [];
   let copied = 0;
   while (open !== -1) {
-    const end = skipProtectedAt(wikitext, open);
+    const end = skipProtectedAt(wikitext, open, false, scanner);
     if (end === null) {
       open = wikitext.indexOf("<", open + 1);
     } else {
-      parts.push(wikitext.slice(copied, open), wikitext.slice(open, end).replace(/[^\n]/gu, " "));
+      parts.push(wikitext.slice(copied, open), wikitext.slice(open, end).replace(/[^\n]/g, " "));
       copied = end;
       open = wikitext.indexOf("<", end);
     }
@@ -63,7 +67,7 @@ const isBlank = (char: string | undefined) => char === " " || char === "\t" || c
 /**
  * The level and text of a heading line ("= Title =" is a level-1 section as in MediaWiki), or null.
  * One to six `=` count on both sides and the smaller side wins ("=== Odd ==" is level 2 titled
- * "= Odd"). Linear: it counts the `=` at both ends and never backtracks.
+ * "= Odd"); a line of only `=` (three or more) is level (n-1)/2 titled with the rest. Linear: it counts the `=` at both ends and never backtracks.
  */
 function headingOfLine(line: string): { level: number; text: string } | null {
   let end = line.length;
@@ -72,6 +76,12 @@ function headingOfLine(line: string): { level: number; text: string } | null {
   while (left < end && line[left] === "=") left++;
   let right = 0;
   while (right < end - left && line[end - 1 - right] === "=") right++;
+  // A line of `=` alone: MediaWiki reads `===` as a level-1 heading titled `=`, `=====` as level 2 titled `=`.
+  if (left === end) {
+    if (left < 3) return null;
+    const bars = Math.min(Math.floor((left - 1) / 2), 6);
+    return { level: bars, text: "=".repeat(left - 2 * bars) };
+  }
   const level = Math.min(left, right, 6);
   if (level === 0) return null;
   const text = line.slice(level, end - level).trim();

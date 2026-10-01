@@ -8,14 +8,20 @@
 
 import { findMatchingClosingBraces } from "./link-parser";
 import { matchBraces, type MatchIndex } from "./match-index";
-import { skipProtectedAt } from "./protected-regions";
+import { ProtectedScanner, skipProtectedAt } from "./protected-regions";
 
 /**
  * Index of the line break that ends the logical line starting at `from` (`text.length` for the
  * last line). A `{{` that is never closed is plain text, like in MediaWiki. `braces` is
- * `matchBraces(text)`; a caller that scans every line passes it once so the scan stays linear.
+ * `matchBraces(text)`, and `scanner` a `ProtectedScanner` of `text`; a caller that scans every line passes
+ * both once so the scan stays linear.
  */
-export function logicalLineEnd(text: string, from: number, braces: MatchIndex = matchBraces(text)): number {
+export function logicalLineEnd(
+  text: string,
+  from: number,
+  braces: MatchIndex = matchBraces(text),
+  scanner?: ProtectedScanner
+): number {
   let i = from;
   while (i < text.length) {
     const code = text.charCodeAt(i);
@@ -26,7 +32,7 @@ export function logicalLineEnd(text: string, from: number, braces: MatchIndex = 
       continue;
     }
     if (code === 60) {
-      const end = skipProtectedAt(text, i, true);
+      const end = skipProtectedAt(text, i, true, scanner);
       if (end !== null) {
         i = end;
         continue;
@@ -56,10 +62,11 @@ export interface LogicalLine {
 /** `text` as logical lines with their offsets: `lines.map((l) => l.text).join("\n")` is `text`. */
 export function splitLogicalLines(text: string): LogicalLine[] {
   const braces = matchBraces(text);
+  const scanner = new ProtectedScanner(text);
   const lines: LogicalLine[] = [];
   let start = 0;
   while (start <= text.length) {
-    const end = logicalLineEnd(text, start, braces);
+    const end = logicalLineEnd(text, start, braces, scanner);
     lines.push({ text: text.slice(start, end), start, end });
     start = end + 1;
   }

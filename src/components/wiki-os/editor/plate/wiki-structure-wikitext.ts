@@ -9,7 +9,7 @@
 
 import type { PlateNode } from "~/lib/wiki-os/transformers/plate-node";
 import { plateFingerprint } from "~/lib/wiki-os/transformers/plate-fingerprint";
-import { skipProtectedAt } from "~/lib/wiki-os/wikitext/protected-regions";
+import { ProtectedScanner, skipProtectedAt } from "~/lib/wiki-os/wikitext/protected-regions";
 import { serializeTemplateToWikitext } from "~/lib/wiki-os/wikitext/serializer";
 import { readTemplateParams, rewriteTemplateParams } from "~/lib/wiki-os/wikitext/template-edit";
 import { isUnmodified, serializeInline } from "./wiki-inline-wikitext";
@@ -58,10 +58,11 @@ const HEADING_PADS = /^(={1,6})(\s*)(.+?)(\s*)\1$/;
 
 /** `text` with each line break (and the space around it) made one space, except inside comments and literal tags. */
 function joinLines(text: string): string {
+  const scanner = new ProtectedScanner(text);
   let out = "";
   let i = 0;
   while (i < text.length) {
-    const end = text[i] === "<" ? skipProtectedAt(text, i, true) : null;
+    const end = text[i] === "<" ? skipProtectedAt(text, i, true, scanner) : null;
     if (end !== null) {
       out += text.slice(i, end);
       i = end;
