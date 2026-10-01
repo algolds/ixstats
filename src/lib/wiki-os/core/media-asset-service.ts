@@ -283,10 +283,14 @@ export class MediaAssetService {
    * changes when the asset has moved on to a newer version (that one is still waiting for its own job); resolves to
    * whether the row was switched.
    */
-  static async markMirrored(name: string, sha1: string): Promise<boolean> {
+  static async markMirrored(
+    name: string,
+    sha1: string,
+    client: Pick<Prisma.TransactionClient, "wikiAsset"> = db
+  ): Promise<boolean> {
     const { shard, cleanName } = this.getMd5ShardPath(name);
     const base = DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, "");
-    const { count } = await db.wikiAsset.updateMany({
+    const { count } = await client.wikiAsset.updateMany({
       where: { filename: cleanName, sha1 },
       data: { url: `${base}/images/${shard}/${encodeURIComponent(cleanName)}`, thumbnailUrl: null },
     });
@@ -299,8 +303,11 @@ export class MediaAssetService {
   }
 
   /** Whether an asset still waits to be mirrored with the content `sha1`: its staged copy must be kept. */
-  static async isStillStaged(sha1: string): Promise<boolean> {
-    const count = await db.wikiAsset.count({
+  static async isStillStaged(
+    sha1: string,
+    client: Pick<Prisma.TransactionClient, "wikiAsset"> = db
+  ): Promise<boolean> {
+    const count = await client.wikiAsset.count({
       where: { sha1, url: { startsWith: STAGED_FILE_PATH } },
     });
     return count > 0;

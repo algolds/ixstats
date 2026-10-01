@@ -31,7 +31,7 @@ import { CloudflareGuardian } from "../guardian/cloudflare-guardian";
 import { authorizeAction, requireRight, requireUploadTitle } from "../permissions";
 import { commitWikitextSave, deletedPage } from "./edit-service";
 import { enqueueUploadJob, scheduleMirrorKick } from "./mirror-outbox";
-import { releaseStagedFileUnlessNeeded } from "./staged-uploads";
+import { releaseStagedFileUnlessNeeded, withStagedFileLock } from "./staged-uploads";
 import { UploadError } from "./upload-error";
 import { stageBytes } from "./upload-staging";
 
@@ -232,7 +232,12 @@ function factsOf(title: string, name: string, asset: MediaAssetRecord, sha1: str
 // The upload
 // ---------------------------------------------------------------------------
 
-/** The asset row, the log entry and the mirror job, in one transaction. */
+/**
+ * The asset row, the log entry and the mirror job, in one transaction, and the staged file: all under the file's lock
+ * (staged-uploads.ts). The bytes are written (or found already there) before the rows commit, so a mirror job
+ * that finishes with the same bytes at the same moment either sees these rows and keeps the file, or has already
+ * released it and the bytes are written again here: the job this upload queues never finds its file gone.
+ */
 function recordUpload(
   request: UploadRequest,
   upload: {
@@ -247,7 +252,7 @@ function recordUpload(
 ): Promise<MediaAssetRecord> {
   const { ctx, bytes } = request;
   const { title, name, file, sha1, articleId, replaced, comment } = upload;
-  return db.$transaction(async (tx) => {
+  return withStagedFileLock(sha1, async (tx) => {
     const asset = await MediaAssetService.recordUpload(tx, {
       name,
       mimeType: file.mime,
@@ -278,6 +283,7 @@ function recordUpload(
       select: { id: true },
     });
     await enqueueUploadJob(tx, { title, articleId, logId: log.id, sha1, comment });
+    await stageBytes(sha1, bytes);
     return asset;
   });
 }
@@ -300,18 +306,19 @@ async function descriptionPageId(
 }
 
 /**
- * Keep the bytes and record the upload. A record that fails (the database refuses it) leaves no staged file behind
- * unless something else needs it: an upload that fails over and over must not fill the disk.
+ * Record the upload and keep its bytes. A failure (the database refuses a row, the disk is full) leaves nothing
+ * staged unless something else needs it: an upload that fails over and over must not fill the disk.
  */
 async function stageAndRecord(
   request: UploadRequest,
   upload: Parameters<typeof recordUpload>[1]
 ): Promise<MediaAssetRecord> {
-  await stageBytes(upload.sha1, request.bytes);
   try {
     return await recordUpload(request, upload);
   } catch (error) {
-    await releaseStagedFileUnlessNeeded(upload.sha1).catch((releaseError: unknown) =>
+    await withStagedFileLock(upload.sha1, (tx) =>
+      releaseStagedFileUnlessNeeded(tx, upload.sha1)
+    ).catch((releaseError: unknown) =>
       console.warn(`[WikiUpload] Releasing the staged file ${upload.sha1} failed:`, releaseError)
     );
     throw error;
@@ -346,6 +353,11 @@ export async function uploadFile(request: UploadRequest): Promise<UploadResult> 
   }
   // The same bytes under the same name change nothing: whatever the uploader says, nothing is stored, logged or queued.
   if (warnings.nochange && current.asset) {
+    // The version is still waiting for its mirror job: its staged file must be there (a failed upload of the same
+    // bytes may have released it), or the job would find nothing to send.
+    if (MediaAssetService.isStagedUrl(current.asset.url)) {
+      await withStagedFileLock(sha1, () => stageBytes(sha1, request.bytes));
+    }
     return {
       result: "Success",
       replaced,

@@ -6,6 +6,8 @@
  * real client does: a row fetched before an update still shows the old values afterwards.
  */
 
+import { AsyncLocalStorage } from "node:async_hooks";
+
 export type Row = Record<string, unknown> & { id: string };
 type Where = Record<string, unknown>;
 
@@ -168,10 +170,34 @@ export interface FakeWikiDb {
   $transaction<T>(work: (tx: FakeWikiDb) => Promise<T>): Promise<T>;
   /** Records the statement (its `?` placeholders) and its values; changes no table. */
   $executeRaw(strings: TemplateStringsArray, ...values: unknown[]): Promise<number>;
+  /** Only `pg_advisory_xact_lock(hashtext(key))` is understood: it waits for the transaction that holds the key, and holds it until its own ends. */
+  $queryRaw(strings: TemplateStringsArray, ...values: unknown[]): Promise<unknown[]>;
 }
 
 /** The raw statements run on the fake database since the last `reset`. */
 export const executedSql: Array<{ sql: string; values: unknown[] }> = [];
+/** The keys of the advisory locks taken since the last `reset`, in order. */
+export const advisoryLocks: string[] = [];
+
+/** The locks the running transaction holds (transaction-scoped advisory locks are released when it ends). */
+const transactions = new AsyncLocalStorage<{ releases: Array<() => void> }>();
+/** For each key, the end of the queue of transactions waiting for it. */
+const lockQueues = new Map<string, Promise<void>>();
+
+async function acquireAdvisoryLock(key: string): Promise<void> {
+  advisoryLocks.push(key);
+  const transaction = transactions.getStore();
+  if (!transaction) return;
+  const before = lockQueues.get(key) ?? Promise.resolve();
+  let release!: () => void;
+  const mine = new Promise<void>((resolve) => (release = resolve));
+  lockQueues.set(
+    key,
+    before.then(() => mine)
+  );
+  transaction.releases.push(release);
+  await before;
+}
 
 /** The WikiOS tables plus `$transaction` (which just runs the callback against the same tables). */
 export function createFakeWikiDb() {
@@ -213,12 +239,20 @@ export function createFakeWikiDb() {
     // a transaction that throws changes nothing, as in PostgreSQL
     $transaction: async (work) => {
       const saved = Object.values(tables).map((table) => [table, table.snapshot()] as const);
+      const transaction = { releases: [] as Array<() => void> };
       try {
-        return await work(db);
+        return await transactions.run(transaction, () => work(db));
       } catch (error) {
         for (const [table, snapshot] of saved) table.restore(snapshot);
         throw error;
+      } finally {
+        for (const release of transaction.releases) release();
       }
+    },
+    $queryRaw: async (strings, ...values) => {
+      if (strings.join("?").includes("pg_advisory_xact_lock"))
+        await acquireAdvisoryLock(String(values[0]));
+      return [];
     },
     $executeRaw: async (strings, ...values) => {
       executedSql.push({ sql: strings.join("?").replace(/\s+/g, " ").trim(), values });
@@ -231,6 +265,7 @@ export function createFakeWikiDb() {
     reset() {
       for (const table of Object.values(tables)) table.reset();
       executedSql.length = 0;
+      advisoryLocks.length = 0;
     },
   };
 }

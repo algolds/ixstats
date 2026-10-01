@@ -29,7 +29,7 @@ import {
 } from "../adapters/mediawiki/write-service";
 import { MIRROR_SOURCE, uploadPayloadSchema } from "./mirror-outbox";
 import type { MirrorJob } from "./mirror-queue";
-import { releaseStagedFileUnlessNeeded } from "./staged-uploads";
+import { releaseStagedFileUnlessNeeded, withStagedFileLock } from "./staged-uploads";
 import { readStaged } from "./upload-staging";
 
 /** MediaWiki's comment limit; the uploader's name is appended to the comment inside it. */
@@ -159,7 +159,10 @@ export async function runUploadJob(job: MirrorJob): Promise<void> {
     }
   }
 
-  await MediaAssetService.markMirrored(name, sha1);
-  await markUsersStale(name);
-  await releaseStagedFileUnlessNeeded(sha1, job.id);
+  // Under the file's lock, so an upload of the same bytes that is recording its rows now cannot lose the file to the release below.
+  await withStagedFileLock(sha1, async (tx) => {
+    await MediaAssetService.markMirrored(name, sha1, tx);
+    await markUsersStale(name);
+    await releaseStagedFileUnlessNeeded(tx, sha1, job.id);
+  });
 }
