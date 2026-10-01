@@ -112,3 +112,32 @@ describe("ScrubbableRevisionTimeline with a parked revision", () => {
     expect(screen.getByRole("button", { name: /Revert to this version/ })).toBeInTheDocument();
   });
 });
+
+describe("ScrubbableRevisionTimeline with a hidden author (MediaWiki revision deletion)", () => {
+  const hidden = (id: string) => ({ ...revision(id, "x"), author: null });
+
+  it("offers no rollback of an author whose name is hidden, and says who it is in the list", () => {
+    render(
+      <ScrubbableRevisionTimeline
+        title="Foo"
+        slug="foo"
+        revisions={[hidden("r3"), hidden("r2"), revision("r1", "amy")]}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: /Rollback/ })).toBeNull();
+    expect(screen.getAllByText("Community Contributor").length).toBeGreaterThan(0);
+  });
+
+  it("still offers it for a named author", () => {
+    render(
+      <ScrubbableRevisionTimeline
+        title="Foo"
+        slug="foo"
+        revisions={[revision("r3", "bob"), revision("r2", "bob"), revision("r1", "amy")]}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: "Rollback bob" })).toBeInTheDocument();
+  });
+});

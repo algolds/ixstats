@@ -85,6 +85,11 @@ export function ScrubbableRevisionTimeline({
   const compareRev = revisions[compareRevIndex];
   // Rollback works on the page's real revisions: a parked one never was the latest.
   const liveRevisions = revisions.filter((r) => !r.parked);
+  // ...and of an author with a name: one that MediaWiki revision deletion hid (a null) is not offered
+  const canRollback =
+    liveRevisions.length >= 2 &&
+    !!liveRevisions[0]?.author &&
+    liveRevisions[0].author === liveRevisions[1]?.author;
 
   // The server diffs the two revisions once and sends only the hunks (never both texts). Dragging a
   // slider crosses many positions: one diff is asked for per settled position, not one per step.
@@ -164,7 +169,7 @@ export function ScrubbableRevisionTimeline({
             </div>
 
             {/* Rollback Latest Author */}
-            {liveRevisions.length >= 2 && liveRevisions[0]?.author === liveRevisions[1]?.author && (
+            {canRollback && (
               <button
                 type="button"
                 onClick={() => rollbackMutation.mutate({ title })}
@@ -282,7 +287,7 @@ export function ScrubbableRevisionTimeline({
               >
                 {revisions.map((r, idx) => (
                   <option key={r.id} value={idx}>
-                    {idx === 0 ? "Latest" : `r${r.id}`} • {r.author}
+                    {idx === 0 ? "Latest" : `r${r.id}`} • {r.author || "Community Contributor"}
                     {r.parked ? " (conflict — not live)" : ""}
                   </option>
                 ))}
@@ -349,8 +354,9 @@ export function ScrubbableRevisionTimeline({
             </div>
             <p className="text-muted-foreground text-xs">
               Are you sure you want to restore the article to revision{" "}
-              <strong>{undoTarget.id}</strong> authored by <strong>{undoTarget.author}</strong>?
-              This will create a new revision restoring the exact text.
+              <strong>{undoTarget.id}</strong> authored by{" "}
+              <strong>{undoTarget.author || "Community Contributor"}</strong>? This will create a
+              new revision restoring the exact text.
             </p>
             {revertMutation.error && (
               <p role="alert" className="flex items-center gap-2 text-xs font-medium text-red-400">
@@ -366,7 +372,7 @@ export function ScrubbableRevisionTimeline({
                   revertMutation.mutate({
                     title,
                     revid: undoTarget.id,
-                    summary: `Reverted to revision ${undoTarget.id} by ${undoTarget.author}`,
+                    summary: `Reverted to revision ${undoTarget.id}${undoTarget.author ? ` by ${undoTarget.author}` : ""}`,
                   });
                 }}
                 className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-black hover:bg-amber-400 active:scale-[0.98]"

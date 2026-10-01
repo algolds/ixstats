@@ -65,7 +65,7 @@ export function PageHistoryView({ title, slug }: { title: string; slug: string }
   const mappedRevisions = rawRevisions.map((r) => ({
     id: r.revid,
     articleId: title,
-    author: r.user || "Community Contributor",
+    author: r.user || null, // null: a name revision deletion hid (the timeline says so, and offers no rollback of it)
     summary: r.comment || null,
     minor: r.minor || false,
     byteSize: r.size || 0,
