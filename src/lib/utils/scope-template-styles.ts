@@ -76,6 +76,57 @@ function endOfString(css: string, start: number): number {
   return -1;
 }
 
+const CSS_SPACE = /[ \t\n\r\f]/;
+const HEX_DIGIT = /[0-9a-f]/i;
+/** U+0000-0008, U+000B, U+000E-001F and U+007F: a url token must not hold them (CSS Syntax 4.3.6). */
+const NON_PRINTABLE = /[\u0000-\u0008\u000b\u000e-\u001f\u007f]/;
+
+/** The index just past the escape that starts at `css[i]` (a backslash), or -1 when it is not a valid escape (CSS Syntax 4.3.7). */
+function escapeEnd(css: string, i: number): number {
+  const next = css.charAt(i + 1);
+  if (next === "" || next === "\n" || next === "\r" || next === "\f") return -1;
+  let end = i + 1;
+  if (!HEX_DIGIT.test(next)) return end + 1;
+  while (end < i + 7 && HEX_DIGIT.test(css.charAt(end))) end++;
+  if (css.charAt(end) === "\r" && css.charAt(end + 1) === "\n") return end + 2;
+  return CSS_SPACE.test(css.charAt(end)) ? end + 1 : end;
+}
+
+/** Whether `masked` ends in the function name `url` (escapes resolved: `\75 rl` is `url`, `xurl` and `-url` are not). */
+function endsWithUrlName(masked: string): boolean {
+  return /(?:^|[^a-z0-9_\-\u0080-\uffff])url$/i.test(unescapeCss(masked.slice(-256)));
+}
+
+/**
+ * Whether the unquoted `url(` whose contents begin at `start` is a <bad-url-token> (CSS Syntax 4.3.6): a quote, a
+ * `(`, a character a url must not hold, a bad escape, or whitespace followed by more than the closing `)`. A browser
+ * reads a bad url as running to the first unescaped `)`, with its quotes and braces inert; a lexer that read the
+ * quote as a string would see the sheet's structure somewhere else, and the text it keeps would not be what it
+ * judged. `url("...")` and `url( '...' )` (a function holding a string) are not this case.
+ */
+function isBadUrl(css: string, start: number): boolean {
+  let i = start;
+  while (CSS_SPACE.test(css.charAt(i))) i++;
+  const first = css.charAt(i);
+  if (first === '"' || first === "'") return false;
+  for (; i < css.length; i++) {
+    const ch = css.charAt(i);
+    if (ch === ")") return false;
+    if (ch === '"' || ch === "'" || ch === "(" || NON_PRINTABLE.test(ch)) return true;
+    if (CSS_SPACE.test(ch)) {
+      let after = i + 1;
+      while (CSS_SPACE.test(css.charAt(after))) after++;
+      return after < css.length && css.charAt(after) !== ")";
+    }
+    if (ch === "\\") {
+      const end = escapeEnd(css, i);
+      if (end === -1) return true;
+      i = end - 1;
+    }
+  }
+  return false; // the sheet ends inside the url: nothing follows to misread
+}
+
 function lex(css: string): Lexed | null {
   const strings: string[] = [];
   let masked = "";
@@ -90,6 +141,10 @@ function lex(css: string): Lexed | null {
       if (end === -1) break; // an unterminated comment runs to the end of the sheet
       masked += " ";
       i = end + 2;
+    } else if (ch === "(") {
+      if (endsWithUrlName(masked) && isBadUrl(css, i + 1)) return null;
+      masked += ch;
+      i++;
     } else if (ch === '"' || ch === "'") {
       const end = endOfString(css, i);
       if (end === -1) return null;

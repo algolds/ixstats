@@ -143,12 +143,18 @@ export function describeArticleSanitizerParity(): void {
 
     it("strips url() that is not https or relative, expression(), behavior and -moz-binding", () => {
       const out = sanitizeWikiArticleHtml(
-        `${STYLE_OPEN}.a{background:url(javascript:alert(1));width:expression(alert(1));behavior:url(x.htc);` +
+        `${STYLE_OPEN}.a{background:url('javascript:alert(1)');width:expression(alert(1));behavior:url(x.htc);` +
           "-moz-binding:url(x.xml#a);background-image:url(data:text/html,x);" +
           "color:red;background:url(https://ixwiki.com/images/a.png)}</style>"
       );
 
       expect(out).toBe(`${STYLE_OPEN}${S} .a{color:red;background:url(https://ixwiki.com/images/a.png)}</style>`);
+    });
+
+    it("removes a style whose url() is a bad-url token (it holds a paren): the browser would read it past the CSS", () => {
+      const out = sanitizeWikiArticleHtml(`${STYLE_OPEN}.a{background:url(javascript:alert(1));color:red}</style><p>ok</p>`);
+
+      expect(out).toBe("<p>ok</p>");
     });
 
     it("removes a <style> that is not TemplateStyles' (no data-mw-deduplicate)", () => {

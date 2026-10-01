@@ -127,18 +127,18 @@ describe("declarations that load or run something", () => {
   });
 
   it.each([
-    "background:url(javascript:alert(1))",
     "background:url('javascript:alert(1)')",
+    'background:url("javascript:alert(1)")',
     'background:url("data:image/svg+xml;base64,AAAA")',
     "background:url(data:text/html,x)",
     "background:url(http://x.example/a.png)",
     "background:url(ftp://x.example/a.png)",
     "background:url(file:///etc/passwd)",
     'background:url("java\tscript:alert(1)")',
-    "background:URL(JAVASCRIPT:alert(1))",
-    "background:url(https://ok.example/a.png), url(javascript:alert(1))",
-    "background:u\\72l(javascript:alert(1))",
-    "background:\\75 rl(javascript:alert(1))",
+    "background:URL('JAVASCRIPT:alert(1)')",
+    "background:url(https://ok.example/a.png), url('javascript:alert(1)')",
+    "background:u\\72l('javascript:alert(1)')",
+    "background:\\75 rl('javascript:alert(1)')",
     "background:\\75rl(data:text/html,x)",
     "width:expression(alert(1))",
     "width:EXPRESSION (alert(1))",
@@ -161,6 +161,16 @@ describe("declarations that load or run something", () => {
     const out = kept(declaration);
 
     expect(out).toBe(`${S} .a{color:red}`);
+  });
+
+  it.each([
+    "background:url(javascript:alert(1))",
+    "background:URL(JAVASCRIPT:alert(1))",
+    "background:u\\72l(javascript:alert(1))",
+    "background:\\75 rl(javascript:alert(1))",
+    "background:url(https://ok.example/a.png), url(javascript:alert(1))",
+  ])("a url holding a paren is a bad url, which the browser reads to the first `)`: the sheet goes (%s)", (declaration) => {
+    expect(kept(declaration)).toBe("");
   });
 
   it("resolves escapes the way a browser does: \\72e is one character, not `r` and `e`", () => {
