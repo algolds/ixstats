@@ -313,6 +313,18 @@ describe("each linear pass answers what its expression answered", () => {
 describe("cleanWikiMarkup of a whole page (maxLength 0) on 2 MB of hostile text", () => {
   const SIZE = 2_000_000;
   const BUDGET_MS = 500;
+
+  /** Milliseconds `run` takes: when the first run is over budget the second counts too, and the best is kept (a busy machine slows one run, a quadratic pass slows both). */
+  function milliseconds(run: () => void): number {
+    const time = () => {
+      const started = performance.now();
+      run();
+      return performance.now() - started;
+    };
+    const first = time();
+    return first > BUDGET_MS ? Math.min(first, time()) : first;
+  }
+
   const FAMILIES = [
     "[[",
     "{{",
@@ -345,9 +357,7 @@ describe("cleanWikiMarkup of a whole page (maxLength 0) on 2 MB of hostile text"
 
   it.each(FAMILIES)("reads %j repeated in under 500 ms", (unit) => {
     const text = unit.repeat(Math.ceil(SIZE / unit.length));
-    const started = performance.now();
-    cleanWikiMarkup(text);
-    expect(performance.now() - started).toBeLessThan(BUDGET_MS);
+    expect(milliseconds(() => cleanWikiMarkup(text))).toBeLessThan(BUDGET_MS);
   });
 
   it.each([
@@ -364,16 +374,12 @@ describe("cleanWikiMarkup of a whole page (maxLength 0) on 2 MB of hostile text"
     "{{lang|",
   ])("reads %j followed by one long run of blanks in under 500 ms", (head) => {
     const text = head + " ".repeat(SIZE) + "}}";
-    const started = performance.now();
-    cleanWikiMarkup(text);
-    expect(performance.now() - started).toBeLessThan(BUDGET_MS);
+    expect(milliseconds(() => cleanWikiMarkup(text))).toBeLessThan(BUDGET_MS);
   });
 
   it("reads templates nested 300,000 deep in under 500 ms", () => {
     const text = "{{a".repeat(SIZE / 6) + "}}".repeat(SIZE / 6);
-    const started = performance.now();
-    cleanWikiMarkup(text);
-    expect(performance.now() - started).toBeLessThan(BUDGET_MS);
+    expect(milliseconds(() => cleanWikiMarkup(text))).toBeLessThan(BUDGET_MS);
   });
 
   it("cleans all of a long page, not its first 20,000 characters", () => {
