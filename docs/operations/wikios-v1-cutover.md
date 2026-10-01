@@ -85,18 +85,27 @@ The baseline is for step 11. **Rollback:** nothing changed.
 ## 1. Apply the WikiOS SQL migrations
 
 The WikiOS plans add hand-written, idempotent SQL under `prisma/manual-migrations/`. Take a dump first, then apply
-the files in filename order:
+the files in filename order, **except `2026-09-30-wikios-lead-image-canonical-path.sql`**: its header says to run it after
+the code is deployed, so it is its own step after step 5 (5b below) and the loop leaves it out:
 
 ```bash
 ( cd "$IX" && bun run db:backup )                                   # aborts non-zero on failure; dump lands in backups/
-ls "$IX"/prisma/manual-migrations/*wikios*.sql | sort               # review the list; read each file before applying
-for f in $(ls "$IX"/prisma/manual-migrations/*wikios*.sql | sort); do
+ls "$IX"/prisma/manual-migrations/*wikios*.sql | grep -v lead-image-canonical-path | sort    # review the list; read each file before applying
+for f in $(ls "$IX"/prisma/manual-migrations/*wikios*.sql | grep -v lead-image-canonical-path | sort); do
   echo "== $f"
   docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 < "$f" || break
 done
 ```
 
-Among them is `2026-09-30-wikios-uploads.sql` (plan 411): the `sha1` column and index of `wiki_assets` (the content hash of an
+**Canonical titles (plan 403) come first, before that loop.** `2026-09-30-wikios-canonical-titles.md` is a procedure, not a
+`.sql` file, so the loop does not run it, and the redirect backfill in the loop (`2026-09-30-wikios-redirects-backfill.sql`) and
+any XML import should see canonical titles. Follow that file's steps: back up `wiki_articles`
+(`pg_dump -t wiki_articles`), preview with `bun scripts/audit/wikios-title-duplicates.ts` (read-only), generate `fix.sql` with
+`--emit-sql` (the script reads `DATABASE_URL` and refuses anything but `localhost:5433`), review and apply it, and handle by
+hand the collision and invalid-title lists it prints as comments at the end, repeating the generate and apply steps until
+both lists are empty.
+
+Among the files in the loop is `2026-09-30-wikios-uploads.sql` (plan 411): the `sha1` column and index of `wiki_assets` (the content hash of an
 uploaded file; the new `upload` mirror job kind needs no DDL).
 
 **Rollback:** the files are additive and idempotent, so the running app is unaffected if you stop here. To undo,
@@ -506,6 +515,22 @@ files MediaWiki does not hold yet, and until it says none, that directory is the
 **Rollback:** `pm2 delete wikios && pm2 save`; `sudo cp -a "$BK/next.config.js" "$IX/next.config.js"` if you want the
 file as it was (edits 1 and 2 do not affect the IxStates build). Edit 3 (dropping `/api/ixwiki-proxy`) is the change
 the plan asks for; nothing in `src/` uses that path.
+
+## 5b. Lead-image paths (plan 418, optional, after step 5)
+
+`2026-09-30-wikios-lead-image-canonical-path.sql` rewrites the stored `wiki_articles."leadImageUrl"` values to the canonical
+`/images/<shard>/<File>` path. Its header says to run it once **after the code is deployed**, which is why step 1 leaves it
+out; it is optional (the code reads both forms, so nothing breaks if it is never run). Preview what it would change (changes
+nothing), then apply it:
+
+```bash
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -c \
+  "SELECT \"title\", \"leadImageUrl\" FROM wiki_articles WHERE \"leadImageUrl\" ~ '/images/[0-9a-f]/[0-9a-f]{2}/' AND \"leadImageUrl\" NOT LIKE '/images/%' LIMIT 50"
+docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 < "$IX/prisma/manual-migrations/2026-09-30-wikios-lead-image-canonical-path.sql"
+```
+
+**Rollback:** restore the dump taken in step 1 (`pg_restore` into a scratch database first); the rewrite is idempotent, so a
+second run changes nothing.
 
 ## 6. Give MediaWiki the webhook secret
 
