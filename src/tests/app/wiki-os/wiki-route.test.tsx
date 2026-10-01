@@ -32,9 +32,11 @@ const mockCategoryPage = jest.fn();
 const mockListPages = jest.fn();
 const mockPageInfo = jest.fn();
 const mockHistory = jest.fn();
+const mockResolveAuthor = jest.fn();
 jest.mock("~/trpc/server", () => ({
   __esModule: true,
   api: {
+    users: { resolveWikiAuthor: (...args: unknown[]) => mockResolveAuthor(...args) },
     wikios: {
       getArticleHtml: { prefetch: (...args: unknown[]) => mockArticlePrefetch(...args) },
       getRevisionHtml: { prefetch: (...args: unknown[]) => mockRevisionPrefetch(...args) },
@@ -142,6 +144,7 @@ beforeEach(() => {
   mockMissingPages.mockResolvedValue([]);
   mockCategoryPage.mockResolvedValue({ members: [], total: 0, next: null });
   mockFileInfo.mockResolvedValue(null);
+  mockResolveAuthor.mockResolvedValue({ wikiUsername: "Jane" });
 });
 
 describe("an article is read on the server (plan 412 step 2)", () => {
@@ -509,10 +512,54 @@ describe("namespaced pages (plan 412 step 4)", () => {
     const { tree, signal } = await outcome(["User:Jane"]);
 
     expect(signal).toBeNull();
+    expect(mockResolveAuthor).toHaveBeenCalledWith({ wikiUsername: "Jane" });
     expect(propsOf(tree, "UserProfileCard")).toMatchObject({ username: "Jane", pageExists: false });
     expect(named(tree, "ArticlePageClient")).toBeUndefined();
 
     expect((await outcome(["User:Jane", "Nothing"])).signal).toBe("not-found");
+  });
+
+  it("a user page for someone who does not exist is a 404, in the page and in the metadata (like MediaWiki)", async () => {
+    fails("NOT_FOUND");
+    mockResolveAuthor.mockResolvedValue(null);
+
+    expect((await outcome(["User:Nobody_at_all"])).signal).toBe("not-found");
+    expect(mockResolveAuthor).toHaveBeenCalledWith({ wikiUsername: "Nobody at all" });
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({ slug: ["User:Nobody_at_all"] }),
+        searchParams: Promise.resolve({}),
+      })
+    ).rejects.toThrow("not-found");
+    // A user name too long to be one is not a user.
+    mockResolveAuthor.mockRejectedValue(new TRPCError({ code: "BAD_REQUEST" }));
+    expect((await outcome(["User:X" + "x".repeat(150)])).signal).toBe("not-found");
+  });
+
+  it("a user who exists but has no page gets the card with noindex metadata; a busy lookup shows the card too", async () => {
+    fails("NOT_FOUND");
+    await expect(
+      generateMetadata({
+        params: Promise.resolve({ slug: ["User:Jane"] }),
+        searchParams: Promise.resolve({}),
+      })
+    ).resolves.toEqual({
+      title: "User:Jane",
+      alternates: { canonical: "https://ixwiki.com/wiki/User:Jane" },
+      robots: { index: false, follow: false },
+    });
+
+    // The lookup is rate limited: "busy" is not "no such user".
+    mockResolveAuthor.mockRejectedValue(new TRPCError({ code: "TOO_MANY_REQUESTS" }));
+    expect(propsOf((await outcome(["User:Jane"])).tree, "UserProfileCard")).toMatchObject({
+      pageExists: false,
+    });
+  });
+
+  it("a user page with text is shown without asking whether the user exists", async () => {
+    succeeds(article({ title: "User:Jane" }));
+    await outcome(["User:Jane"]);
+    expect(mockResolveAuthor).not.toHaveBeenCalled();
   });
 
   it("a category page shows its prose, then its members from ?from=", async () => {
@@ -742,7 +789,7 @@ describe("generateMetadata (plan 412 step 2)", () => {
     await expect(metadata(["Special:NoSuchThing"])).rejects.toThrow("not-found");
   });
 
-  it("indexes a category, user or file page even with no text of its own", async () => {
+  it("indexes a category page even with no text of its own", async () => {
     fails("NOT_FOUND");
     await expect(metadata(["Category:Countries"])).resolves.toMatchObject({
       title: "Category:Countries",

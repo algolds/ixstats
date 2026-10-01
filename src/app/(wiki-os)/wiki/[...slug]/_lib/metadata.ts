@@ -4,17 +4,19 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getWikiBaseUrl } from "~/lib/wiki-os/config";
 import { articleSeo } from "~/lib/wiki-os/article-seo";
-import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { canonicalizeTitle, type CanonicalTitle } from "~/lib/wiki-os/core/title";
 import {
   canonicalPathRedirect,
   type ArticleTarget,
   type SearchParamsLike,
 } from "~/lib/wiki-os/wiki-path";
 import { loadArticle, type ArticleHtml } from "./load-article";
+import { userExists } from "./load-user";
 
 const NO_INDEX = { index: false, follow: false } as const;
-/** Namespaces whose page may have no text and still be worth indexing: User, File and Category pages. */
-const NAMESPACES_WITHOUT_TEXT = new Set([2, 6, 14]);
+const USER_NAMESPACE = 2;
+/** Namespaces whose page may have no text and still be worth showing: File and Category pages. */
+const NAMESPACES_WITHOUT_TEXT = new Set([6, 14]);
 
 function publicOrigin(): string {
   return getWikiBaseUrl("ixwiki").replace(/\/+$/, "");
@@ -78,9 +80,20 @@ export async function articleTargetMetadata(
   if (loaded.status === "found")
     return loaded.data.resolvedFrom ? {} : articleMetadata(loaded.data);
   if (loaded.status === "unavailable") return { alternates: { canonical } };
-  // A category, user or file page can be worth showing with no text of its own: the page decides.
+  if (canon.namespaceId === USER_NAMESPACE) return missingUserMetadata(canon, canonical);
+  // A category or file page can be worth showing with no text of its own: the page decides.
   if (NAMESPACES_WITHOUT_TEXT.has(canon.namespaceId)) {
     return { title: canon.title, alternates: { canonical } };
   }
   return notFound();
+}
+
+/**
+ * A user page with no text: a 404 for a user that does not exist (and for any subpage), and the bare
+ * profile card, which is not worth indexing, for one that does.
+ */
+async function missingUserMetadata(canon: CanonicalTitle, canonical: string): Promise<Metadata> {
+  const username = canon.base.split("/")[0] ?? canon.base;
+  if (canon.base.includes("/") || (await userExists(username)) === false) notFound();
+  return { title: canon.title, alternates: { canonical }, robots: NO_INDEX };
 }

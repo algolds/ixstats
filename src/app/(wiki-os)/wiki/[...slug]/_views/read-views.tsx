@@ -16,6 +16,7 @@ import {
 import { HydrateClient, api } from "~/trpc/server";
 import ArticlePageClient from "../ArticlePageClient";
 import { loadArticle, type ArticleHtml } from "../_lib/load-article";
+import { userExists } from "../_lib/load-user";
 import { orNotFound } from "../_lib/or-not-found";
 
 const MAIN_PAGE = "Main Page";
@@ -82,12 +83,15 @@ async function standardView(canon: CanonicalTitle, view: ReadView, query: Search
   return articleReader(canon, view, query, loaded.status === "found" ? loaded : null);
 }
 
-/** `User:<name>`: the page's own text, with the profile card; a user with no page still gets the card. */
+/**
+ * `User:<name>`: the page's own text, with the profile card. A user with no page still gets the card,
+ * as long as the user exists: like MediaWiki, a page for someone who does not exist is a 404.
+ */
 async function userView(canon: CanonicalTitle, view: ReadView, query: SearchParamsLike) {
   const username = canon.base.split("/")[0] ?? canon.base;
   const loaded = await loadArticle(canon.title, view.followRedirect);
   if (loaded.status === "missing") {
-    if (canon.base.includes("/")) notFound();
+    if (canon.base.includes("/") || (await userExists(username)) === false) notFound();
     return (
       <WikiOSLayout title={canon.title}>
         <UserProfileCard username={username} pageExists={false} />
