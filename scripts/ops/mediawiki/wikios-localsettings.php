@@ -115,7 +115,10 @@ foreach ( [ 'png', 'gif', 'jpg', 'jpeg', 'webp', 'svg', 'pdf' ] as $extension ) 
 }
 
 // Deliberately NOT granted: editinterface, editsitecss, editsitejs (and editsitejson/edituserjs/...),
-// upload_by_url, and reupload-shared (overwrites files of a shared repository, which this wiki does not use).
+// upload_by_url, reupload-shared (overwrites files of a shared repository, which this wiki does not use) and
+// movefile (WikiOS refuses to move File: pages in v1, so no mirror job ever moves one: files are moved on classic
+// MediaWiki by an administrator. The bot password's `uploadeditmovefile` grant would carry the right only if the
+// group had it).
 // WikiOS keeps the Template:, Module: and MediaWiki: namespaces admin-only, so the mirror account
 // must not be able to rewrite the wiki's interface messages, site CSS or site JS even if its bot
 // password leaks. Those pages are edited on classic MediaWiki by a real administrator.

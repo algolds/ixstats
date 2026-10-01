@@ -14,7 +14,9 @@ import { withoutArchivedFiles } from "./archived-titles";
 
 /** Files of a category looked at when a search is limited to it: more than any category page lists at once. */
 const MAX_CATEGORY_FILES = 1_000;
-/** Assets looked at, at most, to fill a page of results while skipping files whose page was deleted. */
+/** Assets read per query while a search skips files whose page was deleted (one archived-title lookup per batch). */
+const SEARCH_BATCH = 50;
+/** Assets looked at, at most, to fill a page of results while skipping files whose page was deleted: 10 batches. */
 const MAX_SEARCH_SCAN = 500;
 
 export interface MediaAssetRecord {
@@ -189,17 +191,20 @@ export class MediaAssetService {
       ];
     }
 
+    // Fixed batches of SEARCH_BATCH, so the work is bounded whatever `limit` is (at most MAX_SEARCH_SCAN /
+    // SEARCH_BATCH batches). `id` breaks ties between assets that share a title, so `skip` never repeats or
+    // drops a row between one batch and the next.
     const found: MediaAssetRecord[] = [];
-    for (let skip = 0; found.length < limit && skip < MAX_SEARCH_SCAN; skip += limit) {
+    for (let skip = 0; found.length < limit && skip < MAX_SEARCH_SCAN; skip += SEARCH_BATCH) {
       const batch = await db.wikiAsset.findMany({
         where,
-        take: limit,
+        take: SEARCH_BATCH,
         skip,
-        orderBy: { title: "asc" },
+        orderBy: [{ title: "asc" }, { id: "asc" }],
       });
       const visible = new Set(await withoutArchivedFiles(batch.map((asset) => asset.title)));
       found.push(...(batch.filter((asset) => visible.has(asset.title)) as MediaAssetRecord[]));
-      if (batch.length < limit) break;
+      if (batch.length < SEARCH_BATCH) break;
     }
     return found.slice(0, limit);
   }

@@ -94,6 +94,11 @@ export interface RevisionJobInput {
  * Whether a write to `titles` of `source` is mirrored at all: only the ixwiki realm is, and never the `MediaWiki:`
  * namespace. MediaWiki refuses the mirror account every write there (an import silently skips it, an edit is
  * `protectednamespace-interface`), so such a job could only burn its attempts, go dead and block its title.
+ *
+ * A move is judged by BOTH of its titles: a move into or out of the `MediaWiki:` namespace enqueues nothing, not even
+ * for its other side, so classic MediaWiki keeps the page under its OLD title while WikiOS has it under the new one
+ * (revisions saved later under a mirrored new title are mirrored as usual, as revisions of that title). An
+ * administrator who wants the two wikis to agree moves the page in MediaWiki as well.
  */
 function isMirrored(source: string | undefined, titles: readonly string[]): boolean {
   return (

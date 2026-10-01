@@ -232,7 +232,8 @@ export async function refusals<T>(work: Promise<T>): Promise<T> {
     return await work;
   } catch (error) {
     if (error instanceof PageOperationError) {
-      throw new TRPCError({ code: error.code, message: error.message });
+      // a namespace WikiOS does not move pages in is a request that cannot be granted: BAD_REQUEST for tRPC
+      throw new TRPCError({ code: error.code === "IMMOBILE" ? "BAD_REQUEST" : error.code, message: error.message });
     }
     throw error;
   }

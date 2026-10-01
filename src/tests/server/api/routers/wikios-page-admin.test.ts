@@ -173,6 +173,54 @@ describe("movePage", () => {
     expect(tables.wikiArticle.rows.map((row) => row.title)).toContain("New name");
   });
 
+  describe("a File: page (F37: files cannot be moved in WikiOS yet)", () => {
+    beforeEach(() => {
+      tables.wikiArticle.seed({
+        id: "a-file",
+        source: "ixwiki",
+        title: "File:Flag.png",
+        slug: "file:flag.png",
+        namespace: 6,
+        wikitext: "A flag.",
+      });
+    });
+    const FILE_MESSAGE = "Files cannot be moved in WikiOS yet; move them on classic MediaWiki.";
+
+    it.each([
+      ["a File: page to another File: title", { from: "File:Flag.png", to: "File:Banner.png" }],
+      ["a File: page out of the namespace", { from: "File:Flag.png", to: "Banner" }],
+      ["a page into the File: namespace", { from: "Old name", to: "File:Banner.png" }],
+    ])("refuses to move %s, even for a sysop, and changes nothing", async (_name, input) => {
+      await expect(as(sysopCtx()).movePage(input)).rejects.toMatchObject({
+        code: "BAD_REQUEST",
+        message: FILE_MESSAGE,
+      });
+
+      expect(tables.wikiArticle.rows.map((row) => row.title).sort()).toEqual([
+        "File:Flag.png",
+        "Old name",
+        "Talk:Old name",
+      ]);
+      expect(tables.wikiLog.rows).toHaveLength(0);
+      expect(tables.wikiMirrorJob.rows).toHaveLength(0);
+    });
+
+    it("still moves the File talk page's namespace neighbours: a File talk: page is not a file", async () => {
+      tables.wikiArticle.seed({
+        id: "a-file-talk",
+        source: "ixwiki",
+        title: "File talk:Flag.png",
+        slug: "file_talk:flag.png",
+        namespace: 7,
+        wikitext: "chat",
+      });
+
+      await expect(
+        as(sysopCtx()).movePage({ from: "File talk:Flag.png", to: "File talk:Banner.png", moveTalk: false })
+      ).resolves.toMatchObject({ success: true });
+    });
+  });
+
   it("needs suppressredirect to move without leaving a redirect", async () => {
     await expect(
       as(memberCtx()).movePage({ from: "Old name", to: "New name", leaveRedirect: false })

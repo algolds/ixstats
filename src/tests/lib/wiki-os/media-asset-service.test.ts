@@ -156,3 +156,79 @@ describe("registerAsset", () => {
     expect(asset.blurhash).toBeNull();
   });
 });
+
+describe("search", () => {
+  const seedAsset = (title: string, extra: Record<string, unknown> = {}) =>
+    tables.wikiAsset.insert({
+      title,
+      slug: title.toLowerCase().replace(/ /g, "_"),
+      filename: title.replace(/ /g, "_"),
+      url: `/images/${title}`,
+      mimeType: "image/png",
+      sizeBytes: 1,
+      md5Hash: `md5-${title}`,
+      ...extra,
+    });
+  /** The `File:` page of `title` that WikiOS deleted. */
+  const archiveFilePage = (title: string) =>
+    tables.wikiArticle.insert({ source: "ixwiki", title: `File:${title}`, status: "ARCHIVED" });
+  const names = (assets: Array<{ title: string }>) => assets.map((asset) => asset.title);
+
+  it("skips files whose page was deleted and still returns a full page, in title order", async () => {
+    for (let i = 0; i < 120; i++) {
+      const title = `Flag ${String(i).padStart(3, "0")}.png`;
+      seedAsset(title);
+      if (i < 70) archiveFilePage(title);
+    }
+
+    const found = await MediaAssetService.search({ limit: 20 });
+
+    expect(names(found)).toEqual(
+      Array.from({ length: 20 }, (_, i) => `Flag ${String(70 + i).padStart(3, "0")}.png`)
+    );
+  });
+
+  it("reads fixed batches of 50 whatever the limit is, in an order that ends in the id", async () => {
+    for (let i = 0; i < 130; i++) seedAsset(`Map ${String(i).padStart(3, "0")}.png`);
+    const findMany = jest.spyOn(tables.wikiAsset, "findMany");
+
+    const one = await MediaAssetService.search({ limit: 1 });
+    const fifty = await MediaAssetService.search({ limit: 50 });
+
+    expect(one).toHaveLength(1);
+    expect(fifty).toHaveLength(50);
+    // nothing was deleted: each search needed one batch
+    expect(findMany).toHaveBeenCalledTimes(2);
+    for (const [args] of findMany.mock.calls) {
+      expect(args).toMatchObject({ take: 50, skip: 0, orderBy: [{ title: "asc" }, { id: "asc" }] });
+    }
+    findMany.mockRestore();
+  });
+
+  it("gives files that share a title a stable order across batches (no repeat, no loss)", async () => {
+    // 60 assets with one title: the second batch starts inside the tie
+    const rows = Array.from({ length: 60 }, (_, i) =>
+      seedAsset("Same title.png", { slug: `same_${i}`, md5Hash: `h${i}` })
+    );
+
+    const found = await MediaAssetService.search({ limit: 55 });
+
+    const byId = rows.map((row) => row.id).sort();
+    expect(found.map((asset) => asset.id)).toEqual(byId.slice(0, 55));
+  });
+
+  it("stops after 500 assets however many of them are hidden, instead of reading on", async () => {
+    for (let i = 0; i < 700; i++) {
+      const title = `Hidden ${String(i).padStart(3, "0")}.png`;
+      seedAsset(title);
+      archiveFilePage(title);
+    }
+    const findMany = jest.spyOn(tables.wikiAsset, "findMany");
+
+    const found = await MediaAssetService.search({ limit: 5 });
+
+    expect(found).toEqual([]);
+    expect(findMany).toHaveBeenCalledTimes(10);
+    findMany.mockRestore();
+  });
+});

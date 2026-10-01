@@ -22,7 +22,11 @@ import {
   type WikiArticleEntity,
   type WikiRevisionSummary,
 } from "./domain-types";
+import { EditConflictError, headMatchesBase } from "./edit-conflict-error";
+import { lockPageForSave } from "./page-lock";
+import { isTransactionBusy, PageBusyError } from "./page-busy-error";
 import { parseRedirect } from "./redirect";
+import { fillRevisionParents } from "./revision-parents";
 import { canonicalizeTitle } from "./title";
 import {
   planRevisionImport,
@@ -30,11 +34,23 @@ import {
   type ImportedRevision,
   type RevisionPlan,
 } from "../xml/revision-plan";
+import { stripXmlForbiddenControlChars } from "../xml/control-chars";
 import { mwSha1Base36 } from "../xml/sha1";
 import { cleanWikitextExcerpt } from "../transformers/wikitext-parser";
 import { enqueueRevisionJob, scheduleMirrorKick } from "../services/mirror-outbox";
 import { enqueueRender, invalidateDependents } from "../services/render-service";
 import { notifyWatchers } from "../services/watchlist-notify";
+
+/**
+ * The save's transaction: it may wait for the page's lock behind another save (or a long import of the page), so it
+ * gets more than Prisma's 5 s, like the staged-file and render-metadata transactions.
+ */
+export const SAVE_TRANSACTION = { maxWait: 10_000, timeout: 30_000 };
+
+/** A save that waited too long for the page's lock is busy, and retryable: not a failure of the save. */
+function retryableWhenBusy(error: unknown): never {
+  throw isTransactionBusy(error) ? new PageBusyError() : error;
+}
 
 /** `WikiArticle.summary` is a VarChar(500); the excerpt stays under it. */
 const MAX_EXCERPT_LENGTH = 480;
@@ -570,6 +586,8 @@ async function writeImport(
     });
   }
   await insertRevisions(client, articleId, input.source, plan.inserts);
+  // Each new live revision records the one before it (the dump gives no parents; the order is the history's own).
+  if (plan.inserts.length > 0) await fillRevisionParents(client, articleId);
   for (const [rowId, sha1] of hashed) {
     await client.wikiRevision.update({ where: { id: rowId }, data: { sha1 } });
   }
@@ -590,6 +608,10 @@ async function importInto(
   client: ImportClient,
   input: ImportPageInput
 ): Promise<{ result: ImportPageResult; articleId: string | null; head: ImportedHead | null }> {
+  // A real import queues behind any save of the page (and holds the page against the next one), and reads the page
+  // only once it has the lock: a save that committed meanwhile is then part of what the dump's head is compared with,
+  // so an older head can never overwrite it. A dry run writes nothing and takes no lock.
+  if (!input.dryRun) await lockPageForSave(client, input.source, input.title);
   const article = await client.wikiArticle.findUnique({
     where: { source_title: { source: input.source, title: input.title } },
     select: { id: true, mwPageId: true, protectionLevel: true },
@@ -628,6 +650,44 @@ async function importInto(
 export interface FindArticleOptions {
   /** Return a deleted (archived) page too. Default false: to a reader it does not exist. */
   includeArchived?: boolean;
+}
+
+type SaveTransaction = Prisma.TransactionClient;
+
+/**
+ * The page's latest live revision (a parked one is not the page), as a save under the page's lock reads it. With the
+ * locked row's id it reads by `articleId` (the (articleId, parked, createdAt) index: one row, whatever the history's
+ * length). Without one (the page had no row when the lock was asked for) the page may have been created by the save
+ * that held the advisory lock, so it is found by title.
+ */
+function loadHeadForSave(
+  tx: SaveTransaction,
+  source: string,
+  title: string,
+  articleId: string | null
+) {
+  return tx.wikiRevision.findFirst({
+    where: { ...(articleId ? { articleId } : { article: { source, title } }), parked: false },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    select: { id: true, mwRevId: true, byteSize: true },
+  });
+}
+
+/** The conflict a save that is not based on the page's head hands back: the page as it is, and its head's reference. */
+async function conflictOf(
+  tx: SaveTransaction,
+  source: string,
+  title: string,
+  head: { id: string; mwRevId: number | null } | null
+): Promise<EditConflictError> {
+  const current = await tx.wikiArticle.findUnique({
+    where: { source_title: { source, title } },
+    select: { wikitext: true },
+  });
+  return new EditConflictError({
+    currentWikitext: current?.wikitext ?? "",
+    currentRevisionRef: head ? toRevisionRef(head) : null,
+  });
 }
 
 export class ArticleRepository {
@@ -693,7 +753,10 @@ export class ArticleRepository {
   }
 
   /**
-   * Save an article and create an append-only revision ledger entry (<10ms)
+   * Save an article and create an append-only revision ledger entry (<10ms). The saves of one page run one at a time
+   * (the page is locked first, see `lockPageForSave`), the new revision records the live revision it was made on top
+   * of (`parentRevisionId`), and with `input.expectedHeadRef` the save throws `EditConflictError` unless that is
+   * still the page's latest live revision: the check and the write are one atomic step.
    */
   static async saveArticle(
     input: SaveArticleInput,
@@ -707,7 +770,9 @@ export class ArticleRepository {
     const canon = canonicalizeTitle(input.title || input.slug, { source });
     if (!canon) throw new Error("Invalid title");
     const { title, slug } = canon;
-    const wikitext = input.wikitext || "";
+    // The text MediaWiki would store: it never holds the control characters XML cannot carry, so the
+    // hash of what is saved matches the dump's and MediaWiki's (F25).
+    const wikitext = stripXmlForbiddenControlChars(input.wikitext || "");
     // Rendered HTML is the render service's to write; a save only stores HTML a caller hands it.
     const providedHtml = input.contentHtml || undefined;
     const fields = deriveSaveFields(input, wikitext, providedHtml);
@@ -715,6 +780,14 @@ export class ArticleRepository {
 
     // Save article and create revision in a single atomic transaction
     const result = await db.$transaction(async (tx) => {
+      // 0. Queue behind any other save of this page, then read the head it left: the edit-conflict check, the byte
+      // delta and the new revision's parent all come from this one read.
+      const lockedId = await lockPageForSave(tx, source, title);
+      const previous = await loadHeadForSave(tx, source, title, lockedId);
+      if (input.expectedHeadRef !== undefined && !headMatchesBase(previous, input.expectedHeadRef)) {
+        throw await conflictOf(tx, source, title, previous);
+      }
+
       // Resolve DB user id if Clerk ID or username was provided
       let resolvedDbUserId: string | null = null;
       if (authorId) {
@@ -784,13 +857,8 @@ export class ArticleRepository {
         },
       });
 
-      // 2. Create append-only revision, sized against the previous one
+      // 2. Create append-only revision, sized against the previous one and made on top of it
       const byteSize = Buffer.byteLength(wikitext, "utf8");
-      const previous = await tx.wikiRevision.findFirst({
-        where: { articleId: article.id, parked: false },
-        orderBy: { createdAt: "desc" },
-        select: { id: true, mwRevId: true, byteSize: true },
-      });
       const revision = await tx.wikiRevision.create({
         data: {
           articleId: article.id,
@@ -801,6 +869,7 @@ export class ArticleRepository {
           source,
           author: authorName,
           authorId: resolvedDbUserId,
+          parentRevisionId: previous?.id ?? null,
           byteSize,
           byteDelta: byteSize - (previous?.byteSize ?? 0),
           sha1: mwSha1Base36(wikitext),
@@ -825,7 +894,7 @@ export class ArticleRepository {
       });
 
       return { article, revision, textUnchanged, previous };
-    });
+    }, SAVE_TRANSACTION).catch(retryableWhenBusy);
     // The job is committed: let the mirror worker send it to MediaWiki in a moment, not at the next cron minute.
     scheduleMirrorKick();
 

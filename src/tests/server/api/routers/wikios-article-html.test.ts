@@ -404,6 +404,7 @@ describe("getArticleHtml (IxWiki) renders a stale or never-rendered article once
       title: "Stubbed stub",
       wikitext: "",
       contentHtml: null,
+      revisions: [], // no revision: a stub, not a blanked page
     });
 
     await expect(caller().getArticleHtml({ title: "Stubbed stub" })).rejects.toMatchObject({

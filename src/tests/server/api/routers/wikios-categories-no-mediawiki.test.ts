@@ -194,27 +194,29 @@ describe("searchFiles for IxWiki", () => {
     }
   });
 
-  it("leaves out an asset whose File: page was deleted, reading on to fill the page", async () => {
-    const make = (title: string) => ({ ...asset, title, filename: title.replace(/ /g, "_") });
-    const first = ["A one.png", "A two.png"].map(make);
-    const second = ["B three.png", "B four.png"].map(make);
-    mocked.wikiAsset.findMany
-      .mockResolvedValueOnce(first)
-      .mockResolvedValueOnce(second)
-      .mockResolvedValue([]);
-    // "A one.png" has a deleted File: page (the query for archived titles answers it).
+  it("leaves out an asset whose File: page was deleted, reading on in batches of 50 to fill the page", async () => {
+    const all = Array.from({ length: 120 }, (_, i) => {
+      const title = `File ${String(i).padStart(3, "0")}.png`;
+      return { ...asset, title, filename: title.replace(/ /g, "_") };
+    });
+    mocked.wikiAsset.findMany.mockImplementation(async ({ skip = 0, take }: { skip?: number; take: number }) =>
+      all.slice(skip, skip + take)
+    );
+    // the first 70 have a deleted File: page (the query for archived titles answers it).
+    const deleted = new Set(all.slice(0, 70).map((file) => `File:${file.title}`));
     mocked.wikiArticle.findMany.mockImplementation(
       async ({ where }: { where: { status: string; title: { in: string[] } } }) =>
-        where.status === "ARCHIVED"
-          ? where.title.in.filter((title) => title === "File:A one.png").map((title) => ({ title }))
-          : []
+        where.status === "ARCHIVED" ? where.title.in.filter((title) => deleted.has(title)).map((title) => ({ title })) : []
     );
 
     const result = await search().searchFiles({ query: "png", limit: 2, wiki: "ixwiki" });
 
-    expect(result.map((file) => file.title)).toEqual(["File:A two.png", "File:B three.png"]);
-    // The second batch started after the first: skip, not a repeat of the first page.
-    expect(mocked.wikiAsset.findMany.mock.calls.map(([args]) => args.skip)).toEqual([0, 2]);
+    expect(result.map((file) => file.title)).toEqual(["File:File 070.png", "File:File 071.png"]);
+    // Batches of 50 whatever the limit; the second started after the first: skip, not a repeat of the first page.
+    expect(mocked.wikiAsset.findMany.mock.calls.map(([args]) => [args.skip, args.take])).toEqual([
+      [0, 50],
+      [50, 50],
+    ]);
     expect(guard.calls()).toEqual([]);
   });
 
@@ -232,7 +234,7 @@ describe("searchFiles for IxWiki", () => {
 
     expect(JSON.stringify(mocked.$queryRaw.mock.calls[0])).toContain(`a.\\"namespace\\" = 6`);
     expect(mocked.wikiAsset.findMany.mock.calls[0]?.[0]).toMatchObject({
-      take: 10,
+      take: 50,
       where: {
         AND: [
           {

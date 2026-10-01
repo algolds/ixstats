@@ -8,6 +8,7 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { toArticleSlug } from "./domain-types";
+import { lockTitleForCreation } from "./page-lock";
 import { canonicalizeTitle, NAMESPACE_CANONICAL_NAMES, type CanonicalTitle } from "./title";
 import { enqueueDeleteJob, enqueueMoveJob, scheduleMirrorKick } from "../services/mirror-outbox";
 import { enqueueRender, invalidateTemplateDependents } from "../services/render-service";
@@ -27,7 +28,8 @@ export interface PageActor {
   name: string;
 }
 
-export type PageOperationErrorCode = "NOT_FOUND" | "CONFLICT" | "BAD_REQUEST";
+/** IMMOBILE: the page is in a namespace WikiOS does not move pages in (the bot API's `immobilenamespace`). */
+export type PageOperationErrorCode = "NOT_FOUND" | "CONFLICT" | "BAD_REQUEST" | "IMMOBILE";
 
 /** A refusal the caller can act on (no such page, the destination exists); routers map it to a TRPCError. */
 export class PageOperationError extends Error {
@@ -39,6 +41,15 @@ export class PageOperationError extends Error {
     this.name = "PageOperationError";
   }
 }
+
+/** The `File:` namespace. */
+const FILE_NAMESPACE = 6;
+
+/**
+ * A file cannot be moved in WikiOS in v1: its asset row (name, hash key, slug, URL) and the bytes behind it would have
+ * to move with the page, and the bytes are classic MediaWiki's to move. The refusal is the same for tRPC and the bot API.
+ */
+export const FILE_MOVE_REFUSED = "Files cannot be moved in WikiOS yet; move them on classic MediaWiki.";
 
 export interface MoveOneResult {
   oldTitle: string;
@@ -126,6 +137,11 @@ export class PageManagementService {
     if (!target) throw new PageOperationError("BAD_REQUEST", "Invalid title");
     if (toArticleSlug(oldSlugOrTitle) === target.slug) {
       throw new PageOperationError("BAD_REQUEST", "Old and new page names are identical.");
+    }
+    // Neither the page nor its destination may be in the File: namespace (checked again against the stored page in moveOne).
+    const from = canonicalizeTitle(oldSlugOrTitle, { source: realm });
+    if (from?.namespaceId === FILE_NAMESPACE || target.namespaceId === FILE_NAMESPACE) {
+      throw new PageOperationError("IMMOBILE", FILE_MOVE_REFUSED);
     }
 
     const result = await db.$transaction(async (tx) => {
@@ -215,6 +231,8 @@ export class PageManagementService {
       );
     }
 
+    if (original.namespace === FILE_NAMESPACE) throw new PageOperationError("IMMOBILE", FILE_MOVE_REFUSED);
+
     // A deleted page does not exist for a mover who may not see deleted pages.
     if (original.status === "ARCHIVED" && !includeArchived) {
       throw new PageOperationError(
@@ -223,7 +241,9 @@ export class PageManagementService {
       );
     }
 
-    // 2. Check if target title already exists
+    // 2. Check if target title already exists. A save that is creating a page at the destination holds its creation
+    // lock until it commits: queue behind it, so that the check sees the page it made (and refuses) instead of racing it.
+    await lockTitleForCreation(tx, realm, newCanonicalTitle);
     const existingTarget = await tx.wikiArticle.findFirst({
       where: { source: realm, OR: [{ slug: newSlug }, { title: newCanonicalTitle }] },
       select: { id: true },
@@ -464,7 +484,14 @@ export class PageManagementService {
 
       await tx.wikiArticle.update({
         where: { id: article.id },
-        data: { status: "PUBLISHED", lastEditorId: actor.userId, updatedAt: new Date() },
+        data: {
+          status: "PUBLISHED",
+          // Its view was built for a page that was out of the link graph, the category lists and the caches:
+          // stale until the render queued below replaces it (readers see the old bundle meanwhile).
+          htmlSyncedAt: null,
+          lastEditorId: actor.userId,
+          updatedAt: new Date(),
+        },
         select: { id: true },
       });
       const log = await tx.wikiLog.create({
@@ -490,7 +517,8 @@ export class PageManagementService {
       return { title: article.title, articleId: article.id };
     });
     scheduleMirrorKick();
-    // The page was "missing" while deleted: forget that, and anything cached from before.
+    // The page was "missing" while deleted: forget that, and anything cached from before, and render it again off the read path.
+    enqueueRender(articleId);
     await evictWikiTitleCaches(title, realm, articleId);
     // A restored template or module: the pages that use it render with it again.
     void invalidateTemplateDependents(title, realm);

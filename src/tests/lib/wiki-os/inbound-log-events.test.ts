@@ -181,13 +181,24 @@ describe("delete and restore", () => {
       applyLogEvent(event({ type: "delete", action: "restore", title: "Foo" }))
     ).resolves.toBe("applied");
 
+    // the view is stale, and its render is queued (behind any save) once the restore is committed
     expect(tx.wikiArticle.update).toHaveBeenCalledWith({
       where: { id: "art-1" },
-      data: { status: "PUBLISHED" },
+      data: { status: "PUBLISHED", htmlSyncedAt: null },
     });
+    expect(enqueueRender).toHaveBeenCalledWith("art-1", { background: true });
     expect(syncLatestRevision).toHaveBeenCalledWith("Foo");
     expect(evictCaches).toHaveBeenCalledWith("Foo", "art-1");
     expect(loggedRow()).toMatchObject({ action: "restore", articleId: "art-1" });
+  });
+
+  it("renders nothing for a restore of a page that is not deleted in WikiOS", async () => {
+    tx.wikiArticle.findUnique.mockResolvedValue({ id: "art-1", status: "PUBLISHED" });
+
+    await applyLogEvent(event({ type: "delete", action: "restore", title: "Foo" }));
+
+    expect(tx.wikiArticle.update).not.toHaveBeenCalled();
+    expect(enqueueRender).not.toHaveBeenCalled();
   });
 
   it("writes no log row, so the event is retried, when bringing the page over fails", async () => {

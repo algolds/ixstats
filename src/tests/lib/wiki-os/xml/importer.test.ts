@@ -19,6 +19,7 @@ import {
 import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
 import type { XmlRevision } from "~/lib/wiki-os/xml/types";
 import {
+  rawStatements,
   resetStore,
   snapshotStore,
   store,
@@ -265,6 +266,135 @@ describe("fresh import of the export-0.11 fixture", () => {
     expect(store.revisions.map((r) => r.author).sort()).toEqual(
       ["(deleted)", "192.0.2.7", "Bob the Builder", "Jane", "Jane", "Jane", "Jane"].sort()
     );
+  });
+});
+
+describe("parent revisions (F5)", () => {
+  const parentOf = (row: RevisionRow) => row.parentRevisionId ?? null;
+
+  it("sets every imported revision's parent to the live revision before it; the first of a page has none", async () => {
+    await importFixture();
+
+    const kingdom = revisionsOf("Kingdom of Testia");
+    expect(kingdom).toHaveLength(3);
+    expect(kingdom.map(parentOf)).toEqual([null, kingdom[0]!.id, kingdom[1]!.id]);
+    // every page of the dump: only its first revision is a creation
+    for (const page of store.articles) {
+      const rows = store.revisions
+        .filter((row) => row.articleId === page.id)
+        .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      expect(rows.filter((row) => parentOf(row) === null)).toHaveLength(1);
+      expect(parentOf(rows[0]!)).toBeNull();
+    }
+  });
+
+  it("chains the dump's revisions onto the page's existing live revisions, never onto a parked one", async () => {
+    const seeded = seedArticle({ wikitext: "NEWER LOCAL EDIT", mwLatestRevId: 9999 });
+    const early = seedRevision(seeded.id, { createdAt: new Date("2025-06-01T00:00:00Z") });
+    const parked = seedRevision(seeded.id, {
+      createdAt: new Date("2026-01-02T03:00:00Z"),
+      parked: true,
+      parkReason: "conflict:x",
+    });
+
+    await importFixture();
+
+    const rows = revisionsOf("Kingdom of Testia");
+    // early (2025), parked (2026-01-02 03:00), then the dump's three (03:04:05 ...)
+    const dump = rows.filter((row) => row.mwRevId !== null && [1001, 1002, 1003].includes(row.mwRevId));
+    expect(dump).toHaveLength(3);
+    expect(parentOf(dump[0]!)).toBe(early.id);
+    expect(parentOf(dump[1]!)).toBe(dump[0]!.id);
+    expect(parentOf(dump[2]!)).toBe(dump[1]!.id);
+    expect(parentOf(early)).toBeNull();
+    expect(parentOf(parked)).toBeNull(); // a parked revision is left as it is
+    expect(rows.map(parentOf)).not.toContain(parked.id);
+  });
+
+  it("changes nothing on a second import of the same dump", async () => {
+    await importFixture();
+    const before = snapshotStore();
+
+    await importFixture();
+
+    expect(snapshotStore()).toEqual(before);
+  });
+});
+
+describe("a dump whose newest revision blanks the page (the inbound sync's write is this one)", () => {
+  it("leaves the page stale with an empty text and an empty, live, unhidden newest revision, and keeps the HTML its old text rendered (the render replaces it)", async () => {
+    const seeded = seedArticle({ wikitext: "Old text.", contentHtml: "<p>Old text.</p>", mwLatestRevId: 5 });
+    seedRevision(seeded.id, { wikitext: "Old text.", createdAt: new Date("2025-12-01T00:00:00Z") });
+    const xml = (() => {
+      const chunks: string[] = [];
+      const writer = createExportWriter((chunk) => void chunks.push(chunk));
+      const blank: XmlRevision = {
+        id: 7001,
+        parentId: null,
+        timestamp: "2026-02-03T04:05:06Z",
+        contributor: { username: "Blanker", id: null },
+        minor: false,
+        comment: "blank",
+        commentDeleted: false,
+        model: "wikitext",
+        format: "text/x-wiki",
+        text: "",
+        textDeleted: false,
+      };
+      return writer
+        .start()
+        .then(() =>
+          writer.page({ title: "Kingdom of Testia", ns: 0, pageId: 101, revisions: [blank] })
+        )
+        .then(() => writer.end())
+        .then(() => chunks.join(""));
+    })();
+
+    const summary = await importXml(await xml);
+
+    expect(summary.revisionsImported).toBe(1);
+    expect(article("Kingdom of Testia")).toMatchObject({
+      wikitext: "",
+      htmlSyncedAt: null,
+      contentHtml: "<p>Old text.</p>",
+    });
+    const newest = revisionsOf("Kingdom of Testia").at(-1)!;
+    expect(newest).toMatchObject({ mwRevId: 7001, wikitext: "", byteSize: 0, textDeleted: false });
+    expect(newest.parked ?? false).toBe(false);
+    expect(enqueueRender).toHaveBeenCalledWith(seeded.id, { background: true });
+  });
+});
+
+describe("a real import locks the page before it reads it (m6)", () => {
+  it("takes the page's row lock first, once per page; a dry run takes none", async () => {
+    seedArticle();
+
+    await importFixture({ dryRun: true });
+    expect(rawStatements).not.toContain("row lock");
+
+    await importFixture();
+    // five pages in the dump: each locked once (the pages the dump creates take the creation lock instead)
+    expect(rawStatements.filter((statement) => statement === "row lock")).toHaveLength(5);
+    expect(rawStatements.filter((statement) => statement.includes("pg_advisory_xact_lock"))).toHaveLength(4);
+    expect(rawStatements.filter((statement) => statement.includes("set_config"))).toHaveLength(5);
+  });
+
+  it("does not let an older dump head overwrite a save that landed while the import waited for the lock", async () => {
+    const seeded = seedArticle({ wikitext: "OLD", mwLatestRevId: 5 });
+    seedRevision(seeded.id, { wikitext: "OLD", createdAt: new Date("2025-12-01T00:00:00Z") });
+    // a save commits just before the import gets the page's lock: newer than the dump's head (2026-01-02)
+    store.onRowLock = (title) => {
+      if (title !== "Kingdom of Testia") return;
+      seeded.wikitext = "SAVED WHILE WAITING";
+      seedRevision(seeded.id, { wikitext: "SAVED WHILE WAITING", createdAt: new Date("2026-06-01T00:00:00Z") });
+    };
+
+    await importFixture();
+
+    // the dump's history is filled in, but its older head did not replace the newer save
+    expect(article("Kingdom of Testia").wikitext).toBe("SAVED WHILE WAITING");
+    expect(revisionsOf("Kingdom of Testia").map((row) => row.wikitext)).toContain("SAVED WHILE WAITING");
+    expect(revisionsOf("Kingdom of Testia")).toHaveLength(5);
   });
 });
 

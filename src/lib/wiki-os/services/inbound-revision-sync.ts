@@ -23,6 +23,7 @@ import {
   type ImportPageInput,
 } from "../core/article-repository";
 import { toRevisionRef } from "../core/domain-types";
+import { fillRevisionParents } from "../core/revision-parents";
 import { parseRedirect } from "../core/redirect";
 import { canonicalizeTitle, storedNamespace, type CanonicalTitle } from "../core/title";
 import { extractLeadImagePath } from "../transformers/image-url";
@@ -270,6 +271,8 @@ async function insertEchoRevision(
     ],
     skipDuplicates: true,
   });
+  // The echo is a live revision dated before the head: it records the live revision before it.
+  await fillRevisionParents(db, article.id);
 }
 
 // ---------------------------------------------------------------------------
@@ -407,6 +410,8 @@ async function insertParked(
           createdAt: rev.timestamp,
           wikitext: rev.wikitext,
           format: "WIKITEXT",
+          // A parked revision is never a live one's parent; it records the head it did not fit on.
+          parentRevisionId: headRev?.id ?? null,
           parked: true,
           parkReason: reason,
         },

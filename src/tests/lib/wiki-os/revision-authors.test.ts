@@ -192,6 +192,56 @@ describe("getArticleAuthors for IxWiki", () => {
     expect(info.totalContributors).toBe(0);
   });
 
+  it("does not credit a hidden last editor to the creator", async () => {
+    ledger(
+      { author: "Kir", createdAt: day(1) },
+      { author: "(deleted)", createdAt: day(9), userDeleted: true },
+      [
+        { author: "Kir", edits: 1, last: day(1) },
+        { author: "(deleted)", edits: 1, last: day(9), userDeleted: true },
+      ]
+    );
+
+    const info = await getArticleAuthors("Caphiria");
+
+    expect(info.creator).toMatchObject({ username: "Kir" });
+    expect(info.lastEditor).toMatchObject({ username: "MediaWiki Contributor", timestamp: day(9).toISOString() });
+    expect(info.contributors?.map((c) => c.username)).toEqual(["Kir"]);
+  });
+
+  it("does not reveal a hidden creator through the article's owner (the owner of a page a hidden user made is that user)", async () => {
+    mocked.wikiArticle.findUnique.mockResolvedValue(article({ authorId: "u1" }));
+    mocked.user.findUnique.mockResolvedValue({ wikiUsername: "OwnerName" });
+    // revision 1, by the owner, has its user hidden; revision 2 is a visible edit by Bea
+    ledger(
+      { author: "OwnerName", createdAt: day(1), userDeleted: true },
+      { author: "Bea", createdAt: day(5) },
+      [
+        { author: "OwnerName", edits: 1, last: day(1), userDeleted: true },
+        { author: "Bea", edits: 1, last: day(5) },
+      ]
+    );
+
+    const info = await getArticleAuthors("Caphiria");
+
+    expect(info.creator).toMatchObject({ username: "MediaWiki Contributor" });
+    expect(JSON.stringify(info)).not.toContain("OwnerName");
+    expect(info.lastEditor).toMatchObject({ username: "Bea" });
+    expect(info.contributors?.map((c) => c.username)).toEqual(["Bea"]);
+    expect(mocked.user.findUnique).not.toHaveBeenCalled(); // the owner is not even looked up
+  });
+
+  it("still credits an unnamed (not hidden) last revision to the creator", async () => {
+    ledger({ author: "Kir", createdAt: day(1) }, { author: null, createdAt: day(9) }, [
+      { author: "Kir", edits: 1, last: day(1) },
+      { author: null, edits: 1, last: day(9) },
+    ]);
+
+    const info = await getArticleAuthors("Caphiria");
+
+    expect(info.lastEditor).toMatchObject({ username: "Kir" });
+  });
+
   it("credits an unnamed first revision to the article's owner", async () => {
     mocked.wikiArticle.findUnique.mockResolvedValue(article({ authorId: "u1" }));
     mocked.user.findUnique.mockResolvedValue({ wikiUsername: "OwnerName" });

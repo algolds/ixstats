@@ -30,7 +30,7 @@ import {
   requireCanonicalTitle,
   requireRight,
 } from "~/lib/wiki-os/permissions";
-import { detectEditConflict } from "~/lib/wiki-os/core/edit-conflict";
+import { EditConflictError } from "~/lib/wiki-os/core/edit-conflict-error";
 import {
   assertCanEditArticle,
   commitWikitextSave,
@@ -112,21 +112,27 @@ export const wikiosEditingRouter = createTRPCRouter({
       const title = requireCanonicalTitle(input.title);
       await assertCanEditArticle(ctx, title);
 
-      const conflict = await detectEditConflict(title, input.baseRevisionRef);
-      if (conflict) return { success: false as const, editConflict: true as const, ...conflict };
-
-      const saveResult = await commitWikitextSave(ctx, {
-        title,
-        wikitext: input.wikitext,
-        summary: input.summary,
-        minor: input.minor,
-      });
-
-      return {
-        success: true as const,
-        title,
-        revisionId: saveResult.revisionId,
-      };
+      // The edit-conflict check is the save's own (atomic, under the page's lock): no base means the editor
+      // believes the page does not exist yet.
+      try {
+        const saveResult = await commitWikitextSave(ctx, {
+          title,
+          wikitext: input.wikitext,
+          summary: input.summary,
+          minor: input.minor,
+          expectedHeadRef: input.baseRevisionRef ?? null,
+        });
+        return {
+          success: true as const,
+          title,
+          revisionId: saveResult.revisionId,
+        };
+      } catch (error) {
+        if (error instanceof EditConflictError) {
+          return { success: false as const, editConflict: true as const, ...error.conflict };
+        }
+        throw error;
+      }
     }),
 
   /**

@@ -5,7 +5,7 @@
  * `assertCanEditArticle` is the permission gate (blocked? namespace? protection? the right?),
  * `commitWikitextSave` the write: PostgreSQL first (`ArticleRepository.saveArticle`: article, an
  * append-only revision, its MediaWiki mirror job in the same transaction, render queued), then the
- * edge-cache purge. Callers do their own conflict detection between the two (`detectEditConflict`).
+ * edge-cache purge. The edit-conflict check is part of the write (`WikitextSave.expectedHeadRef`).
  */
 
 import { TRPCError } from "@trpc/server";
@@ -94,20 +94,27 @@ export interface WikitextSave {
   wikitext: string;
   summary: string;
   minor: boolean;
+  /**
+   * The revision the author based the text on (`toRevisionRef`), or null for a page the author believes does not
+   * exist yet. The save throws `EditConflictError` unless it is still the page's latest live revision: checked inside
+   * the save's transaction, so two saves with the same base cannot both succeed. Omitted: no check.
+   */
+  expectedHeadRef?: string | null;
 }
 
 /**
  * Save `save.wikitext` as a new revision of `save.title`, authored as the caller (the caller has
- * been authorized and conflict-checked): PostgreSQL first (the revision and its mirror job in one
- * transaction, `ArticleRepository.saveArticle`), then the edge-cache purge.
+ * been authorized): PostgreSQL first (the revision and its mirror job in one transaction,
+ * `ArticleRepository.saveArticle`, which also makes the edit-conflict check of `save.expectedHeadRef`),
+ * then the edge-cache purge. Throws `EditConflictError` for a save based on a revision that is no longer the head.
  */
 export async function commitWikitextSave(ctx: WikiAuthContext, save: WikitextSave) {
-  const { title, wikitext, summary, minor } = save;
+  const { title, wikitext, summary, minor, expectedHeadRef } = save;
   const authorName = resolveWikiUsername(ctx) ?? "Community Contributor";
 
   // 1. Primary Save: Direct to PostgreSQL
   const saveResult = await ArticleRepository.saveArticle(
-    { slug: title, title, wikitext, editSummary: summary, minor },
+    { slug: title, title, wikitext, editSummary: summary, minor, expectedHeadRef },
     ctx.auth?.userId ?? undefined,
     authorName
   );

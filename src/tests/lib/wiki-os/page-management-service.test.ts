@@ -27,6 +27,7 @@ const mockJobCreate = jest.fn();
 const mockRestrictionDeleteMany = jest.fn();
 const mockRestrictionUpdateMany = jest.fn();
 const mockRestrictionFindUnique = jest.fn();
+const mockExecuteRaw = jest.fn();
 
 const mockInvalidateTemplates = jest.fn();
 jest.mock("~/lib/wiki-os/services/mirror-outbox", () => ({
@@ -60,6 +61,8 @@ jest.mock("~/server/db", () => {
       updateMany: (...a: unknown[]) => mockRestrictionUpdateMany(...a),
       findUnique: (...a: unknown[]) => mockRestrictionFindUnique(...a),
     },
+    // the destination's creation lock (set_config for the wait limit, then pg_advisory_xact_lock)
+    $executeRaw: (...a: unknown[]) => mockExecuteRaw(...a),
   };
   return {
     db: {
@@ -101,6 +104,7 @@ beforeEach(() => {
   mockRestrictionDeleteMany.mockResolvedValue({ count: 0 });
   mockRestrictionUpdateMany.mockResolvedValue({ count: 0 });
   mockRestrictionFindUnique.mockResolvedValue(null);
+  mockExecuteRaw.mockResolvedValue(0);
 });
 
 describe("PageManagementService.movePage", () => {
@@ -494,6 +498,76 @@ function expectLeanSelect(call: unknown[] | undefined) {
   for (const column of HEAVY) expect(select).not.toHaveProperty(column);
 }
 
+describe("PageManagementService.movePage refuses files (F37)", () => {
+  const MESSAGE = "Files cannot be moved in WikiOS yet; move them on classic MediaWiki.";
+
+  it.each([
+    ["a File: page", "File:Flag.png", "File:Banner.png"],
+    ["a File: page typed as a slug", "file:flag.png", "Banner"],
+    ["a page into the File: namespace", "Old name", "File:Banner.png"],
+    ["an Image: alias", "Image:Flag.png", "Banner"],
+  ])("refuses %s with IMMOBILE, before it reads or writes anything", async (_name, from, to) => {
+    const failure = await PageManagementService.movePage(from, to, "x", actor).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(PageOperationError);
+    expect(failure).toMatchObject({ code: "IMMOBILE", message: MESSAGE });
+    expect(mockFindFirst).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
+    expect(mockExecuteRaw).not.toHaveBeenCalled();
+  });
+
+  it("refuses a page whose stored namespace is File: whatever the move was asked with (the stored page decides too)", async () => {
+    pages({ old_name: { ...original, namespace: 6 } });
+
+    await expect(PageManagementService.movePage("old_name", "new_name", "x", actor)).rejects.toMatchObject({
+      code: "IMMOBILE",
+    });
+    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
+  });
+
+  it("does not refuse a File talk: page, a Category: page or an ordinary one", async () => {
+    pages({ "file_talk:old": { id: "ft", title: "File talk:Old", namespace: 7, status: "PUBLISHED" } });
+
+    await expect(
+      PageManagementService.movePage("File talk:Old", "File talk:New", "x", actor, "ixwiki", { moveTalk: false })
+    ).resolves.toMatchObject({ success: true });
+  });
+});
+
+describe("PageManagementService.movePage and the destination's creation lock (m6)", () => {
+  it("queues behind a save that is creating the destination, then checks that the destination is free", async () => {
+    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
+
+    const statements = mockExecuteRaw.mock.calls.map(([strings, ...values]) => [
+      (strings as TemplateStringsArray).join("?"),
+      ...values,
+    ]);
+    // the wait limit, then the advisory lock keyed by the same source:title a creating save takes (article-repository.ts)
+    expect(statements[0]).toEqual(["SELECT set_config('lock_timeout', ?, true)", "10s"]);
+    expect(statements[1]).toEqual(["SELECT pg_advisory_xact_lock(?::int, hashtext(?))", 41102, "ixwiki:New name"]);
+    // taken before the destination is looked up
+    const lockedAt = mockExecuteRaw.mock.invocationCallOrder[1]!;
+    const destinationLookup = mockFindFirst.mock.calls.findIndex(([args]) =>
+      JSON.stringify(args.where).includes("new_name")
+    );
+    expect(lockedAt).toBeLessThan(mockFindFirst.mock.invocationCallOrder[destinationLookup]!);
+  });
+
+  it("takes the creation lock of the talk page's destination too", async () => {
+    pages({ old_name: original, "talk:old_name": talkOriginal });
+    mockUpdate.mockImplementation(async ({ where }: { where: { id: string } }) => ({ id: where.id }));
+
+    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
+
+    const keys = mockExecuteRaw.mock.calls
+      .filter(([strings]) => (strings as TemplateStringsArray).join("?").includes("pg_advisory_xact_lock"))
+      .map(([, , key]) => key);
+    expect(keys).toEqual(["ixwiki:New name", "ixwiki:Talk:New name"]);
+  });
+});
+
 describe("PageManagementService.movePage and the rendered view (plan 404)", () => {
   it("marks the moved page stale under its new name and queues its render after the commit", async () => {
     await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
@@ -521,6 +595,30 @@ describe("PageManagementService.movePage and the rendered view (plan 404)", () =
         .mock.calls.map((call) => call[0])
         .sort()
     ).toEqual(["orig", "talk-orig"]);
+  });
+
+  it("marks a restored page stale and queues its render after the commit (a deleted page's view is rebuilt)", async () => {
+    pages({ old_name: { ...original, status: "ARCHIVED" } });
+
+    await PageManagementService.restoreArticle("Old name", actor);
+
+    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({
+      status: "PUBLISHED",
+      htmlSyncedAt: null,
+    });
+    expect(mockUpdate.mock.calls[0]?.[0].data).not.toHaveProperty("contentHtml");
+    expect(enqueueRender).toHaveBeenCalledTimes(1);
+    expect(enqueueRender).toHaveBeenCalledWith("orig");
+  });
+
+  it("queues no render for a restore that was refused, or for a delete", async () => {
+    pages({ old_name: original });
+    await expect(PageManagementService.restoreArticle("Old name", actor)).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
+    await PageManagementService.archiveArticle("Old name", "spam", actor);
+
+    expect(enqueueRender).not.toHaveBeenCalled();
   });
 
   it("queues nothing for a move that failed", async () => {

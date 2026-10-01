@@ -6,6 +6,9 @@
  *
  * Client code (everything under src/components and src/hooks, and any file that starts with "use client")
  * must not import the modules that call MediaWiki, and must not name the helpers that build its URLs.
+ * It must not import the `~/lib/wiki-os` root barrel either: that one re-exports the MediaWiki adapter, the
+ * repositories and the guardian, so a single `import { x } from "~/lib/wiki-os"` bundles the server into
+ * the browser. A client imports the leaf module it needs (`~/lib/wiki-os/wiki-path`, `~/lib/wiki-os/core/title`, ...).
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -30,6 +33,33 @@ function sourceFiles(dir: string, found: string[] = []): string[] {
   return found;
 }
 
+const WIKI_OS_ROOT = path.join(SRC, "lib", "wiki-os");
+
+/** A module `file` imports (or re-exports, or loads with `import()`), and whether only its types are used. */
+interface ImportedModule {
+  specifier: string;
+  typeOnly: boolean;
+}
+
+function importedModules(text: string): ImportedModule[] {
+  const statements =
+    /\b(?:import|export)\s+(type\s+)?(?:[^"';]*?\sfrom\s*)?["']([^"']+)["']|\bimport\s*\(\s*["']([^"']+)["']\s*\)/g;
+  return [...text.matchAll(statements)].map((m) => ({
+    specifier: (m[2] ?? m[3])!,
+    typeOnly: m[1] !== undefined,
+  }));
+}
+
+/** Whether `specifier`, imported by `file`, is the `~/lib/wiki-os` root barrel (`index.ts`) however it is spelled. */
+function isWikiOsRootBarrel(file: string, specifier: string): boolean {
+  const target = /^(?:~|@)\//.test(specifier)
+    ? path.join(SRC, specifier.slice(2))
+    : specifier.startsWith(".")
+      ? path.resolve(path.dirname(file), specifier)
+      : null;
+  return target !== null && [WIKI_OS_ROOT, path.join(WIKI_OS_ROOT, "index")].includes(target);
+}
+
 const isClient = (file: string, text: string): boolean =>
   /^(?:\s*(?:\/\/[^\n]*\n|\/\*[\s\S]*?\*\/))*\s*["']use client["']/.test(text) ||
   file.startsWith(path.join(SRC, "components") + path.sep) ||
@@ -51,6 +81,16 @@ describe("client code and MediaWiki", () => {
       if (MEDIAWIKI_HELPERS.test(text)) bad.push("(a MediaWiki URL helper)");
       return bad.map((what) => `${path.relative(ROOT, file)}: ${what}`);
     });
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("imports no value from the `~/lib/wiki-os` root barrel, which re-exports the server's modules", () => {
+    const offenders = clientFiles.flatMap(({ file, text }) =>
+      importedModules(text)
+        .filter(({ specifier, typeOnly }) => !typeOnly && isWikiOsRootBarrel(file, specifier))
+        .map(({ specifier }) => `${path.relative(ROOT, file)}: ${specifier}`)
+    );
 
     expect(offenders).toEqual([]);
   });
@@ -79,5 +119,35 @@ describe("the template modules", () => {
 
   it("has no client-side preview service left", () => {
     expect(fs.existsSync(path.join(SRC, "lib/wiki-os/templates/preview-service.ts"))).toBe(false);
+  });
+});
+
+describe("the root-barrel check", () => {
+  const client = path.join(SRC, "components", "wiki-os", "reader", "Thing.tsx");
+  const flagged = (code: string, file = client) =>
+    importedModules(code).filter((m) => !m.typeOnly && isWikiOsRootBarrel(file, m.specifier));
+
+  it.each([
+    'import { WikiOsThing } from "~/lib/wiki-os";',
+    "import { a,\n  b,\n} from '~/lib/wiki-os/index';",
+    'export * from "~/lib/wiki-os";',
+    'const lazy = await import("~/lib/wiki-os");',
+    'import "~/lib/wiki-os";',
+    'import { x } from "@/lib/wiki-os";',
+    'import { x } from "../../../lib/wiki-os";',
+    'import { x } from "../../../lib/wiki-os/index";',
+  ])("flags %s", (code) => {
+    expect(flagged(code)).toHaveLength(1);
+  });
+
+  it.each([
+    'import type { WikiOsThing } from "~/lib/wiki-os";',
+    'import { wikiPath } from "~/lib/wiki-os/wiki-path";',
+    'import { canonicalizeTitle } from "~/lib/wiki-os/core/title";',
+    'import { x } from "~/lib/wiki-os-other";',
+    'import { x } from "../wiki-os";',
+    'import { x } from "wiki-os";',
+  ])("lets %s through", (code) => {
+    expect(flagged(code)).toHaveLength(0);
   });
 });

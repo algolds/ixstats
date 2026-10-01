@@ -46,13 +46,18 @@ const metadata = (over: Record<string, unknown> = {}) => ({
 });
 
 let ids = 0;
-function stubArticle(wikitext = "[[Eurth]] text") {
+function stubArticle(
+  wikitext = "[[Eurth]] text",
+  extra: { contentHtml?: string | null; revisions?: Array<{ byteSize: number; textDeleted: boolean }> } = {}
+) {
   const id = `art-${++ids}`;
   mockFindUnique.mockResolvedValue({
     title: "Aurelia",
     source: "ixwiki",
     wikitext,
     contentHtml: null,
+    revisions: [],
+    ...extra,
   });
   return id;
 }
@@ -67,6 +72,26 @@ beforeEach(() => {
     table.deleteMany.mockResolvedValue({ count: 0 });
     table.createMany.mockResolvedValue({ count: 0 });
   }
+});
+
+describe("a page its last edit blanked", () => {
+  it("has no links, templates, images or categories any more: the derived data of its old text is replaced by nothing", async () => {
+    const id = stubArticle("", { contentHtml: "<p>Old [[Eurth]]</p>", revisions: [{ byteSize: 0, textDeleted: false }] });
+
+    await expect(renderArticle(id)).resolves.toEqual({ ok: true });
+
+    expect(mockRender).not.toHaveBeenCalled();
+    expect(mockTransaction).toHaveBeenCalledTimes(1);
+    // each set is replaced: the old rows deleted, none created
+    expect(tx.wikiLink.deleteMany).toHaveBeenCalledTimes(1);
+    expect(tx.wikiTemplateLink.deleteMany).toHaveBeenCalledTimes(1);
+    expect(tx.wikiImageLink.deleteMany).toHaveBeenCalledTimes(1);
+    expect(tx.wikiCategoryMember.deleteMany).toHaveBeenCalledTimes(1);
+    for (const table of [tx.wikiLink, tx.wikiTemplateLink, tx.wikiImageLink, tx.wikiCategoryMember]) {
+      expect(table.createMany).not.toHaveBeenCalled();
+    }
+    expect(tx.wikiArticle.update.mock.calls[0]?.[0].data).toEqual({ displayTitle: null, pageProps: Prisma.DbNull });
+  });
 });
 
 describe("renderArticle stores what MediaWiki reported", () => {
@@ -287,6 +312,7 @@ describe("renderArticle stores what MediaWiki reported", () => {
       source: "ixwiki",
       wikitext: "",
       contentHtml: HTML,
+      revisions: [], // no revision: the HTML is all it has
     });
 
     await expect(renderArticle(id)).resolves.toEqual({ ok: true });

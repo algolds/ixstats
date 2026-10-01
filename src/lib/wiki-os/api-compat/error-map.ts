@@ -7,6 +7,7 @@
  */
 
 import { TRPCError } from "@trpc/server";
+import { PageBusyError } from "~/lib/wiki-os/core/page-busy-error";
 import { PageOperationError } from "~/lib/wiki-os/core/page-management-service";
 import { UploadError } from "~/lib/wiki-os/services/upload-error";
 import { ApiError } from "./errors";
@@ -42,6 +43,8 @@ function fromForbidden(message: string): ApiError {
  */
 export function toApiError(error: Error): ApiError | null {
   if (error instanceof ApiError) return error;
+  // a save that waited too long for the page: the bot's cue to wait and try again, as for a rate limit
+  if (error instanceof PageBusyError) return new ApiError("ratelimited", error.message);
   if (error instanceof PageOperationError) return fromPageCode(error.code, error.message);
   if (error instanceof UploadError)
     return new ApiError(UPLOAD_CODES[error.code] ?? error.code, error.message);
@@ -55,6 +58,8 @@ function fromPageCode(code: string, message: string): ApiError {
       return new ApiError("missingtitle", message);
     case "CONFLICT":
       return new ApiError("articleexists", message);
+    case "IMMOBILE":
+      return new ApiError("immobilenamespace", message);
     default:
       return new ApiError("invalidparam", message);
   }

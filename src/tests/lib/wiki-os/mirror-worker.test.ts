@@ -139,7 +139,10 @@ jest.mock("~/lib/wiki-os/services/render-service", () => ({
   invalidateTemplateDependents: jest.fn().mockResolvedValue(0),
 }));
 jest.mock("~/lib/discord/webhook", () => ({
-  discordWebhook: { sendWarning: jest.fn().mockResolvedValue(undefined) },
+  discordWebhook: {
+    isEnabled: jest.fn().mockReturnValue(true),
+    sendWarning: jest.fn().mockResolvedValue(true),
+  },
 }));
 jest.mock("~/lib/system/job-lock", () => ({ withJobLock: jest.fn() }));
 jest.mock("~/lib/wiki-os/services/staged-uploads", () => ({

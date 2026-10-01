@@ -53,7 +53,11 @@ import { runUploadJob } from "~/lib/wiki-os/services/mirror-upload";
 import { isStaged, releaseStaged } from "~/lib/wiki-os/services/upload-staging";
 import { uploadFile } from "~/lib/wiki-os/services/upload-service";
 import { API_URL, createFakeMediaWiki } from "~/tests/helpers/fake-mediawiki";
-import { advisoryLocks, fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
+import { advisoryLocks as allAdvisoryLocks, fakeWikiDb } from "~/tests/helpers/fake-wiki-db";
+
+/** The staged-file locks taken so far (a new File: page's creation takes a lock of its own, for the title: not these). */
+const stagedLocks = () =>
+  allAdvisoryLocks.filter((key) => key.startsWith(`${STAGED_FILE_LOCK_NAMESPACE}:`));
 
 const { tables } = fakeWikiDb;
 const realFetch = globalThis.fetch;
@@ -139,11 +143,11 @@ describe("an upload and the mirror job of the same bytes, at the same moment (re
   it("takes the file's advisory lock to record the rows and again to finish the job", async () => {
     await upload("Flag.png");
     const [first] = jobsOf("File:Flag.png");
-    expect(advisoryLocks).toEqual([`${STAGED_FILE_LOCK_NAMESPACE}:${SHA1}`]);
+    expect(stagedLocks()).toEqual([`${STAGED_FILE_LOCK_NAMESPACE}:${SHA1}`]);
 
     await runUploadJob(first!);
 
-    expect(advisoryLocks).toEqual([
+    expect(stagedLocks()).toEqual([
       `${STAGED_FILE_LOCK_NAMESPACE}:${SHA1}`,
       `${STAGED_FILE_LOCK_NAMESPACE}:${SHA1}`,
     ]);

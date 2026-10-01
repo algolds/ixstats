@@ -15,6 +15,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { mediaWikiImageUrl } from "~/lib/wiki-os/config";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
+import { withoutArchivedFiles } from "~/lib/wiki-os/core/archived-titles";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { CategoryService, type MemberKind } from "~/lib/wiki-os/core/category-service";
 import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
@@ -244,8 +245,12 @@ export async function loadIxwikiArticle(title: string): Promise<IxwikiArticle | 
     loadAuthorFacts([article.id]),
   ]);
 
-  const files = imageLinks.map((link) => link.fileName);
-  const leadFile = extractLeadImageFileName(article.wikitext) ?? firstIllustration(files);
+  // A file whose `File:` page WikiOS deleted is not artwork: not the lead picture the text names, not an illustration.
+  const linked = imageLinks.map((link) => link.fileName);
+  const named = extractLeadImageFileName(article.wikitext);
+  const visible = new Set(await withoutArchivedFiles(named ? [...linked, named] : linked));
+  const files = linked.filter((name) => visible.has(name));
+  const leadFile = (named && visible.has(named) ? named : undefined) ?? firstIllustration(files);
   const urls = await ixwikiImageUrls(leadFile ? [leadFile] : []);
   const entry = facts.get(article.id) ?? { earliest: [], contributors: [] };
 
@@ -322,8 +327,13 @@ export async function loadIxwikiPreviews(titles: readonly string[]): Promise<Ixw
   if (rows.length === 0) return [];
 
   const members = await loadCategoryNames(rows.map((row) => row.id));
-  const leadFiles = new Map(rows.map((row) => [row.id, extractLeadImageFileName(row.head)]));
-  const urls = await ixwikiImageUrls([...new Set([...leadFiles.values()].flatMap((f) => f ?? []))]);
+  const named = new Map(rows.map((row) => [row.id, extractLeadImageFileName(row.head)]));
+  // A lead picture whose `File:` page WikiOS deleted is not shown.
+  const visible = new Set(await withoutArchivedFiles([...new Set([...named.values()].flatMap((f) => f ?? []))]));
+  const leadFiles = new Map(
+    [...named].map(([id, file]) => [id, file && visible.has(file) ? file : undefined])
+  );
+  const urls = await ixwikiImageUrls([...visible]);
 
   const order = new Map(asked.map((title, index) => [title, index]));
   return rows

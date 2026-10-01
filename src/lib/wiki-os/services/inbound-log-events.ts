@@ -149,13 +149,19 @@ async function applyDelete(tx: Tx, { event, canon }: EventContext): Promise<Appl
     select: { id: true, status: true },
   });
   if (restoring) {
-    if (article?.status === "ARCHIVED") {
-      await tx.wikiArticle.update({ where: { id: article.id }, data: { status: "PUBLISHED" } });
+    const brought = article?.status === "ARCHIVED";
+    if (article && brought) {
+      // Its view was built for a page that was out of the link graph and the category lists: stale.
+      await tx.wikiArticle.update({
+        where: { id: article.id },
+        data: { status: "PUBLISHED", htmlSyncedAt: null },
+      });
     }
     return {
       outcome: "applied",
       articleId: article?.id ?? null,
       afterCommit: async () => {
+        if (article && brought) enqueueRender(article.id, { background: true });
         // The page that came back has its latest revision from MediaWiki (a new page id, maybe new text).
         await bringOver(canon.title);
         await evictCaches(canon.title, article?.id);
@@ -216,6 +222,9 @@ async function archiveOutOfTheWay(
 
 async function applyMove(tx: Tx, { event, canon }: EventContext): Promise<Applied> {
   if (event.action !== "move" && event.action !== "move_redir") return IGNORED;
+  // A `File:` page that moves in MediaWiki is renamed here like any page, but its `wiki_assets` row (name, hash key,
+  // slug, URL) is NOT re-keyed in v1: the asset keeps its old name until it is registered again under the new one.
+  // (WikiOS refuses to move files itself; both are post-v1, see the follow-ups, F37.)
   const target = moveTarget(event);
   if (!canon || !target) return SKIPPED;
 

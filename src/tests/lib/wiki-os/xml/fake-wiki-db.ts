@@ -49,6 +49,8 @@ export interface RevisionRow {
   /** Plan 406: a MediaWiki edit kept in history without going live. A row that predates the column is not parked. */
   parked?: boolean;
   parkReason?: string | null;
+  /** The live revision this one was made on top of (`fillRevisionParents`); unset until something sets it. */
+  parentRevisionId?: string | null;
 }
 
 export interface RestrictionRow {
@@ -76,7 +78,12 @@ export const store = {
   restrictions: [] as RestrictionRow[],
   writes: 0,
   nextId: 1,
+  /** Called when a transaction asks for a page's row lock, before it gets it (the moment another writer can slip in). */
+  onRowLock: undefined as ((title: string) => void) | undefined,
 };
+
+/** The lock-related raw statements the fake saw, in order (`row lock` for the row lock), cleared by `resetStore`. */
+export const rawStatements: string[] = [];
 
 export function resetStore(): void {
   store.articles = [];
@@ -85,6 +92,8 @@ export function resetStore(): void {
   store.restrictions = [];
   store.writes = 0;
   store.nextId = 1;
+  store.onRowLock = undefined;
+  rawStatements.length = 0;
 }
 
 const newId = (prefix: string): string => `${prefix}${store.nextId++}`;
@@ -304,6 +313,47 @@ export function createFakeDbModule() {
     wikiRevision: revisionDelegate,
     wikiAccountLink: accountLinkDelegate,
     wikiRestriction: restrictionDelegate,
+    /**
+     * Understands the one raw statement the importer makes, `fillRevisionParents` (core/revision-parents.ts): the live
+     * revisions of the article (value 1), in (createdAt, id) order, that have no parent get the one before them.
+     */
+    $executeRaw: async (strings: TemplateStringsArray, articleId: string): Promise<number> => {
+      const sql = strings.join("?");
+      if (sql.includes("set_config('lock_timeout'") || sql.includes("pg_advisory_xact_lock")) {
+        rawStatements.push(sql);
+        return 0; // the lock waits: no other transaction runs in this fake
+      }
+      if (!sql.includes('"parentRevisionId"')) {
+        throw new Error("the fake database does not understand this raw statement");
+      }
+      const live = store.revisions
+        .filter((row) => row.articleId === articleId && row.parked !== true)
+        .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || (a.id < b.id ? -1 : 1));
+      let set = 0;
+      live.forEach((row, at) => {
+        const previous = live[at - 1];
+        if (previous && !row.parentRevisionId) {
+          row.parentRevisionId = previous.id;
+          set += 1;
+        }
+      });
+      if (set > 0) store.writes += 1;
+      return set;
+    },
+    /**
+     * `lockPageForSave`'s row lock: answers the article's id (none: no row), and calls `store.onRowLock` first, which a
+     * test uses to land a save "while the import waited for the lock".
+     */
+    $queryRaw: async (strings: TemplateStringsArray, source: string, title: string): Promise<Array<{ id: string }>> => {
+      const sql = strings.join("?").replace(/\s+/g, " ");
+      if (!/FROM wiki_articles WHERE "source" = \? AND "title" = \? FOR NO KEY UPDATE/.test(sql)) {
+        throw new Error("the fake database does not understand this query");
+      }
+      rawStatements.push("row lock");
+      store.onRowLock?.(title);
+      const row = store.articles.find((a) => a.source === source && a.title === title);
+      return row ? [{ id: row.id }] : [];
+    },
     $transaction: async <T>(
       callback: (tx: typeof db) => Promise<T>,
       options?: { maxWait?: number; timeout?: number }

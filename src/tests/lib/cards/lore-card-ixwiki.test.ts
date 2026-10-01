@@ -170,6 +170,45 @@ describe("generateCard for IxWiki", () => {
     expect(card?.artwork).toBe(asset.url);
   });
 
+  /** WikiOS deleted these `File:` pages (names as `wiki_image_links` holds them, no prefix). */
+  const archiveFilePages = (...names: string[]) =>
+    mocked.wikiArticle.findMany.mockImplementation(async (args: { where: { status?: string } }) =>
+      args.where.status === "ARCHIVED" ? names.map((name) => ({ title: `File:${name}` })) : []
+    );
+
+  it("does not pick as artwork a file whose page WikiOS deleted: not the lead picture, not an illustration", async () => {
+    mocked.wikiImageLink.findMany.mockResolvedValue([
+      { fileName: "Caphiria flag.png" },
+      { fileName: "Caphiria coast.jpg" },
+      { fileName: "Caphiria map.png" },
+      { fileName: "Caphiria skyline.jpg" },
+    ]);
+    archiveFilePages("Caphiria map.png", "Caphiria coast.jpg");
+    mocked.wikiAsset.findMany.mockResolvedValue([
+      {
+        ...asset,
+        filename: "Caphiria_skyline.jpg",
+        slug: "caphiria_skyline.jpg",
+        md5Hash: "def",
+        url: "https://ixwiki.com/images/s/s1/Caphiria_skyline.jpg",
+      },
+    ]);
+
+    const card = await wikiLoreCardGenerator.generateCard("Caphiria", "ixwiki");
+
+    // the text names "Caphiria map.png" (deleted): the first illustration left is the skyline
+    expect(card?.artwork).toBe("https://ixwiki.com/images/s/s1/Caphiria_skyline.jpg");
+    expect(mocked.wikiArticle.findMany.mock.calls.some(([args]) => args.where.status === "ARCHIVED")).toBe(true);
+  });
+
+  it("uses the placeholder when every picture of the page was deleted", async () => {
+    archiveFilePages("Caphiria map.png");
+
+    const card = await wikiLoreCardGenerator.generateCard("Caphiria", "ixwiki");
+
+    expect(card?.artwork).toBe("/images/cards/lore-placeholder.svg");
+  });
+
   it("names the file's own URL when WikiOS holds no asset for it", async () => {
     mocked.wikiAsset.findMany.mockResolvedValue([]);
 
@@ -223,6 +262,26 @@ describe("previews and credits for IxWiki", () => {
     const sql = sqlOf(mocked.$queryRaw.mock.calls.find((call) => sqlOf(call).includes("octet_length"))!);
     expect(sql).toContain("left(a.\"wikitext\"");
     expect(sql).toContain(`a."status" = 'PUBLISHED'`);
+  });
+
+  it("shows no lead picture whose file page WikiOS deleted", async () => {
+    heads = [
+      {
+        id: "a1",
+        title: "Caphiria",
+        length: 5000,
+        head: "{{Infobox country|image = Caphiria map.png}}\nCaphiria is a country.",
+      },
+    ];
+    mocked.wikiAsset.findMany.mockResolvedValue([asset]);
+    mocked.wikiArticle.findMany.mockImplementation(async (args: { where: { status?: string } }) =>
+      args.where.status === "ARCHIVED" ? [{ title: "File:Caphiria map.png" }] : []
+    );
+
+    const [preview] = await wikiLoreCardGenerator.fetchArticleMetadataBatch(["Caphiria"], "ixwiki");
+
+    expect(preview).toMatchObject({ title: "Caphiria", hasImage: false });
+    expect(preview?.imageUrl).toBeFalsy();
   });
 
   it("credits the creator and the top other contributor of each page, under every spelling asked", async () => {

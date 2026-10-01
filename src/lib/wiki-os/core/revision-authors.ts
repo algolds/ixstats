@@ -32,8 +32,11 @@ export interface AuthorGroup {
 }
 
 export interface EdgeRevision {
+  /** The author as a reader may see it: null when the revision recorded none or its user was hidden. */
   author: string | null;
   createdAt: Date;
+  /** The revision's user was hidden (revision deletion): its author is somebody nobody may be told of. */
+  userDeleted?: boolean;
 }
 
 interface Contributor {
@@ -91,7 +94,8 @@ export function buildAuthorInfo(
 ): ArticleAuthorInfo {
   const creator = oldest.author ?? fallbackName ?? UNKNOWN_AUTHOR;
   const createdAt = oldest.createdAt.toISOString();
-  const lastEditor = newest.author ?? creator;
+  // An unnamed last revision is the creator's; a hidden one is nobody's to name, and must not be taken for the creator.
+  const lastEditor = newest.author ?? (newest.userDeleted ? UNKNOWN_AUTHOR : creator);
   const lastEditedAt = newest.createdAt.toISOString();
   const { contributors, total } = summarizeContributors(groups);
   const listed = contributors.slice(0, MAX_LISTED_CONTRIBUTORS);
@@ -178,16 +182,17 @@ export async function loadRevisionAuthors(
     }),
   ]);
 
-  // The article's owner is asked only when the ledger leaves the creator unnamed.
+  // The article's owner is asked only when the ledger leaves the creator unnamed, never when the creator's user was
+  // hidden (revision deletion): the owner of a page a hidden user made is that very user.
   const oldestAuthor = oldest && visibleAuthor(oldest);
-  const ownerName = oldestAuthor ? null : await ownerWikiUsername(article.authorId);
+  const ownerName = oldest?.userDeleted || oldestAuthor ? null : await ownerWikiUsername(article.authorId);
   if (!oldest || !newest) {
     return authorInfoWithoutRevisions(ownerName, article.createdAt, article.updatedAt);
   }
 
   return buildAuthorInfo(
     { author: oldestAuthor, createdAt: oldest.createdAt },
-    { author: visibleAuthor(newest), createdAt: newest.createdAt },
+    { author: visibleAuthor(newest), createdAt: newest.createdAt, userDeleted: newest.userDeleted },
     groups.map((group) => ({
       author: group.author,
       edits: group._count._all,

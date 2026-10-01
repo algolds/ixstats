@@ -7,6 +7,10 @@ import { enqueueRender, invalidateDependents } from "~/lib/wiki-os/services/rend
 import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
 import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
 import { scheduleMirrorKick } from "~/lib/wiki-os/services/mirror-outbox";
+import { Prisma } from "@prisma/client";
+import { InternalError } from "~/lib/app-error";
+import { EditConflictError } from "~/lib/wiki-os/core/edit-conflict-error";
+import { PageBusyError } from "~/lib/wiki-os/core/page-busy-error";
 
 const mockUpsert = jest.fn();
 const mockCount = jest.fn();
@@ -17,6 +21,10 @@ const mockFindMany = jest.fn();
 const mockFindFirst = jest.fn();
 const mockRevisionFindMany = jest.fn();
 const mockJobCreate = jest.fn();
+const mockQueryRaw = jest.fn();
+const mockTransactionOptions = jest.fn();
+const mockTxArticleFindUnique = jest.fn();
+const mockExecuteRaw = jest.fn();
 
 jest.mock("~/lib/wiki-os/services/mirror-outbox", () => ({
   __esModule: true,
@@ -29,16 +37,22 @@ jest.mock("~/server/db", () => {
     wikiArticle: {
       upsert: (...a: unknown[]) => mockUpsert(...a),
       count: (...a: unknown[]) => mockCount(...a),
+      findUnique: (...a: unknown[]) => mockTxArticleFindUnique(...a),
     },
     wikiRevision: {
       findFirst: (...a: unknown[]) => mockRevisionFindFirst(...a),
       create: (...a: unknown[]) => mockRevisionCreate(...a),
     },
     wikiMirrorJob: { create: (...a: unknown[]) => mockJobCreate(...a) },
+    $queryRaw: (...a: unknown[]) => mockQueryRaw(...a),
+    $executeRaw: (...a: unknown[]) => mockExecuteRaw(...a),
   };
   return {
     db: {
-      $transaction: (cb: (t: typeof tx) => unknown) => cb(tx),
+      $transaction: (cb: (t: typeof tx) => unknown, options?: unknown) => {
+        mockTransactionOptions(options);
+        return cb(tx);
+      },
       wikiRevision: {
         findMany: (...a: unknown[]) => mockRevisionFindMany(...a),
         findFirst: (...a: unknown[]) => mockRevisionFindFirst(...a),
@@ -109,6 +123,9 @@ beforeEach(() => {
   mockRevisionFindFirst.mockResolvedValue(null);
   mockRevisionCreate.mockResolvedValue({ id: "r1" });
   mockJobCreate.mockResolvedValue({});
+  mockQueryRaw.mockResolvedValue([{ id: "a1" }]); // the page's row, locked
+  mockTxArticleFindUnique.mockResolvedValue(null);
+  mockExecuteRaw.mockResolvedValue(0);
   mockFindUnique.mockResolvedValue(null);
   mockFindMany.mockResolvedValue([]);
   mockFindFirst.mockResolvedValue(null);
@@ -265,6 +282,18 @@ describe("ArticleRepository.saveArticle and the rendered view (plan 404)", () =>
     expect(mockRevisionCreate.mock.calls[0]?.[0].data).not.toHaveProperty("contentHtml", "");
   });
 
+  it("a save that blanks the page leaves the stored HTML alone (the render replaces it: renderArticle shows nothing for a page whose current revision is empty), marks it stale and queues the render", async () => {
+    await save("");
+
+    const args = mockUpsert.mock.calls[0]?.[0];
+    expect(args.update).toMatchObject({ wikitext: "", htmlSyncedAt: null });
+    expect(args.update).not.toHaveProperty("contentHtml");
+    // the new current revision IS the blank text: 0 bytes, not hidden, not parked
+    expect(mockRevisionCreate.mock.calls[0]?.[0].data).toMatchObject({ wikitext: "", byteSize: 0 });
+    expect(mockRevisionCreate.mock.calls[0]?.[0].data).not.toHaveProperty("textDeleted", true);
+    expect(enqueueRender).toHaveBeenCalledTimes(1);
+  });
+
   it("compares the text in the database: a count on the title and the new wikitext, nothing read back", async () => {
     await save("new text");
 
@@ -366,9 +395,220 @@ describe("ArticleRepository.saveArticle after plan 406", () => {
 
     expect(mockRevisionFindFirst.mock.calls[0]?.[0]).toMatchObject({
       where: { articleId: "a1", parked: false },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     });
     expect(mockRevisionCreate.mock.calls[0]?.[0].data).toMatchObject({ byteSize: 4, byteDelta: 1 });
+  });
+});
+
+describe("ArticleRepository.saveArticle: a save that cannot get its turn is busy, not broken (m2)", () => {
+  const save = () => {
+    mockUpsert.mockImplementation(async (args: { create: { title: string } }) => savedRow(args.create.title));
+    return ArticleRepository.saveArticle({ slug: "foo", title: "Foo", wikitext: "new text" });
+  };
+  const prismaError = (code: string) =>
+    new Prisma.PrismaClientKnownRequestError("Transaction API error: Transaction already closed", {
+      code,
+      clientVersion: "test",
+    });
+
+  it("limits how long it waits for the page's lock to 10 s (lock_timeout, for the transaction only), before it asks for the lock", async () => {
+    await save();
+
+    const [strings, ...values] = mockExecuteRaw.mock.calls[0]!;
+    expect((strings as TemplateStringsArray).join("?")).toBe("SELECT set_config('lock_timeout', ?, true)");
+    expect(values).toEqual(["10s"]);
+    expect(mockExecuteRaw.mock.invocationCallOrder[0]).toBeLessThan(mockQueryRaw.mock.invocationCallOrder[0]!);
+  });
+
+  it("gives its transaction time to wait for the page's lock: 10 s to start, 30 s to run", async () => {
+    await save();
+
+    expect(mockTransactionOptions).toHaveBeenCalledWith({ maxWait: 10_000, timeout: 30_000 });
+  });
+
+  it.each([
+    ["Prisma's P2028 (the transaction timed out or could not start)", () => prismaError("P2028")],
+    ["P2034 (a deadlock or write conflict)", () => prismaError("P2034")],
+    [
+      "PostgreSQL's lock timeout (55P03), which Prisma reports for a raw query as P2010",
+      () =>
+        new Prisma.PrismaClientKnownRequestError(
+          "Raw query failed. Code: `55P03`. Message: `ERROR: canceling statement due to lock timeout`",
+          { code: "P2010", clientVersion: "test" }
+        ),
+    ],
+    [
+      "the InternalError the database client makes of a timed-out query inside the transaction",
+      () => new InternalError("Transaction API error: Transaction already closed: A query cannot be executed on an expired transaction."),
+    ],
+  ])("answers PageBusyError, retryable and a 409 for tRPC, for %s", async (_name, error) => {
+    mockQueryRaw.mockRejectedValue(error());
+
+    const failure = await save().catch((caught: unknown) => caught);
+
+    expect(failure).toBeInstanceOf(PageBusyError);
+    expect(failure).toMatchObject({ statusCode: 409, trpcCode: "CONFLICT", message: expect.stringContaining("busy") });
+    expect(mockRevisionCreate).not.toHaveBeenCalled();
+  });
+
+  it("lets every other failure of the save through as it is", async () => {
+    const other = new Error("connection refused");
+    mockQueryRaw.mockRejectedValue(other);
+    await expect(save()).rejects.toBe(other);
+
+    mockQueryRaw.mockRejectedValue(prismaError("P2002")); // a unique violation is not a busy page
+    await expect(save()).rejects.not.toBeInstanceOf(PageBusyError);
+  });
+});
+
+describe("ArticleRepository.saveArticle: the page is locked, and the edit-conflict check is part of the save (F1)", () => {
+  const HEAD = { id: "rev-head", mwRevId: null, byteSize: 10 };
+  const save = (extra: { expectedHeadRef?: string | null } = {}, wikitext = "new text") => {
+    mockUpsert.mockImplementation(async (args: { create: { title: string } }) =>
+      savedRow(args.create.title)
+    );
+    return ArticleRepository.saveArticle({ slug: "foo", title: "Foo", wikitext, ...extra });
+  };
+  const nothingWritten = () => {
+    expect(mockUpsert).not.toHaveBeenCalled();
+    expect(mockRevisionCreate).not.toHaveBeenCalled();
+    expect(mockJobCreate).not.toHaveBeenCalled();
+    expect(scheduleMirrorKick).not.toHaveBeenCalled();
+    expect(enqueueRender).not.toHaveBeenCalled();
+    expect(notifyWatchers).not.toHaveBeenCalled();
+  };
+
+  it("locks the article row (FOR NO KEY UPDATE, by source and title) before it reads the head, and reads the head before it writes", async () => {
+    mockRevisionFindFirst.mockResolvedValue(HEAD);
+
+    await save();
+
+    const sql = (mockQueryRaw.mock.calls[0]?.[0] as TemplateStringsArray).join("?");
+    expect(sql).toMatch(/FROM wiki_articles WHERE "source" = \? AND "title" = \? FOR NO KEY UPDATE/);
+    expect(mockQueryRaw.mock.calls[0]?.slice(1)).toEqual(["ixwiki", "Foo"]);
+    // the row exists: the only raw statement besides the lock is the wait limit, no advisory lock
+    expect(mockExecuteRaw.mock.calls.map(([strings]) => (strings as TemplateStringsArray).join("?"))).toEqual([
+      "SELECT set_config('lock_timeout', ?, true)",
+    ]);
+    const order = (fn: jest.Mock) => fn.mock.invocationCallOrder[0]!;
+    expect(order(mockQueryRaw)).toBeLessThan(order(mockRevisionFindFirst));
+    expect(order(mockRevisionFindFirst)).toBeLessThan(order(mockUpsert));
+    expect(order(mockUpsert)).toBeLessThan(order(mockRevisionCreate));
+  });
+
+  it("queues the creators of a page that has no row yet on an advisory lock (taken with $executeRaw: it returns void), keyed by source and title", async () => {
+    mockQueryRaw.mockResolvedValue([]);
+
+    await save({ expectedHeadRef: null });
+
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(2); // the wait limit, then the advisory lock
+    const [strings, ...values] = mockExecuteRaw.mock.calls[1]!;
+    expect((strings as TemplateStringsArray).join("?")).toMatch(
+      /SELECT pg_advisory_xact_lock\(\?::int, hashtext\(\?\)\)/
+    );
+    expect(values).toEqual([41102, "ixwiki:Foo"]);
+    // and only then looks for a head
+    expect(mockExecuteRaw.mock.invocationCallOrder[1]).toBeLessThan(
+      mockRevisionFindFirst.mock.invocationCallOrder[0]!
+    );
+    expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws an edit conflict, writes nothing and tells nobody when the base is not the head", async () => {
+    mockRevisionFindFirst.mockResolvedValue({ id: "rev-head", mwRevId: 4321, byteSize: 10 });
+    mockTxArticleFindUnique.mockResolvedValue({ wikitext: "Somebody else's text" });
+
+    const failure = await save({ expectedHeadRef: "rev-older" }).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(EditConflictError);
+    expect((failure as EditConflictError).conflict).toEqual({
+      currentWikitext: "Somebody else's text",
+      currentRevisionRef: "4321",
+    });
+    expect(mockTxArticleFindUnique.mock.calls[0]?.[0]).toMatchObject({
+      where: { source_title: { source: "ixwiki", title: "Foo" } },
+    });
+    nothingWritten();
+  });
+
+  it("saves when the base names the head by its row id or, once stamped, by its MediaWiki rev_id", async () => {
+    mockRevisionFindFirst.mockResolvedValue({ id: "rev-head", mwRevId: 4321, byteSize: 10 });
+
+    await save({ expectedHeadRef: "rev-head" });
+    await save({ expectedHeadRef: "4321" });
+
+    expect(mockRevisionCreate).toHaveBeenCalledTimes(2);
+  });
+
+  it("takes a null base as 'the editor believes the page is new': fine for a page with no live revision, a conflict for one that has", async () => {
+    await save({ expectedHeadRef: null });
+    expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
+
+    jest.clearAllMocks();
+    mockQueryRaw.mockResolvedValue([{ id: "a1" }]);
+    mockRevisionFindFirst.mockResolvedValue(HEAD);
+    mockTxArticleFindUnique.mockResolvedValue({ wikitext: "A page made meanwhile" });
+    const failure = await save({ expectedHeadRef: null }).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(EditConflictError);
+    expect((failure as EditConflictError).conflict).toEqual({
+      currentWikitext: "A page made meanwhile",
+      currentRevisionRef: "rev-head",
+    });
+    nothingWritten();
+  });
+
+  it("conflicts when the editor had a base but the page has no live revision any more", async () => {
+    mockRevisionFindFirst.mockResolvedValue(null);
+    mockTxArticleFindUnique.mockResolvedValue(null);
+
+    const failure = await save({ expectedHeadRef: "rev-gone" }).catch((error: unknown) => error);
+
+    expect((failure as EditConflictError).conflict).toEqual({ currentWikitext: "", currentRevisionRef: null });
+    nothingWritten();
+  });
+
+  it("makes no check without an expected head (a revert, a rollback, an upload's page), but still locks the page", async () => {
+    mockRevisionFindFirst.mockResolvedValue(HEAD);
+
+    await save();
+
+    expect(mockQueryRaw).toHaveBeenCalledTimes(1);
+    expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("makes the check against the latest LIVE revision, read by the locked row's id: a parked one is not the head", async () => {
+    await save({ expectedHeadRef: "rev-head" }).catch(() => undefined);
+
+    // O(1) in the length of the history: the (articleId, parked, createdAt) index, no join
+    expect(mockRevisionFindFirst.mock.calls[0]?.[0].where).toEqual({ articleId: "a1", parked: false });
+    expect(mockRevisionFindFirst.mock.calls[0]?.[0].orderBy).toEqual([{ createdAt: "desc" }, { id: "desc" }]);
+  });
+
+  it("finds the head by title (a join) only when the page had no row to lock: the creator before it may have made it", async () => {
+    mockQueryRaw.mockResolvedValue([]);
+
+    await save({ expectedHeadRef: null });
+
+    expect(mockRevisionFindFirst.mock.calls[0]?.[0].where).toEqual({
+      article: { source: "ixwiki", title: "Foo" },
+      parked: false,
+    });
+  });
+
+  it("records the head it was made on top of as the new revision's parent (F5), none for the first revision", async () => {
+    mockRevisionFindFirst.mockResolvedValue(HEAD);
+    await save();
+    expect(mockRevisionCreate.mock.calls[0]?.[0].data).toMatchObject({
+      parentRevisionId: "rev-head",
+      byteDelta: Buffer.byteLength("new text") - 10,
+    });
+
+    mockRevisionCreate.mockClear();
+    mockRevisionFindFirst.mockResolvedValue(null);
+    await save();
+    expect(mockRevisionCreate.mock.calls[0]?.[0].data.parentRevisionId).toBeNull();
   });
 });
 
