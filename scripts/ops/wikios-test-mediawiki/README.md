@@ -27,6 +27,8 @@ If the `1.45` tag is ever unavailable, change `image:` in `docker-compose.yml` t
 | Uploads / raw HTML | `$wgEnableUploads = true`, `$wgRawHtml = false` |
 | Bot passwords | `$wgEnableBotPasswords = true` |
 | Group `wikios-mirror` and the webhook hook | the production snippet `scripts/ops/mediawiki/wikios-localsettings.php`, mounted into the container and `require`d by `LocalSettings.php`, so the test wiki runs the same code the production `LocalSettings.php` will |
+| Bot password | `WikiOSMirror@wikios` with the grants the production runbook gives it (`basic,highvolume,editpage,editprotected,createeditmovepage,uploadfile,uploadeditmovefile,import,delete,protect`), so the mirror's edit, import, move, delete, undelete and protect jobs all work with nothing granted by hand |
+| PHP limits | `php-wikios-import.ini`: `upload_max_filesize` and `post_max_size` of 16M, so a page near 2 MB imports even when escaping makes its XML five times the text (the runbook asks the same of production) |
 | Caches | off (parser, main, message), so every `action=parse` renders fresh |
 
 `$wgArticlePath` stays at MediaWiki's default here (`WIKIOS_KEEP_WIKI_ARTICLE_PATH` is defined); the canonical

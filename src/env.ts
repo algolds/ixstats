@@ -84,8 +84,11 @@ export const env = createEnv({
     WS_ALLOWED_ORIGINS: z.string().optional(),
     // System owner Clerk IDs (comma-separated) - loaded from env for security
     SYSTEM_OWNER_IDS: z.string().optional(),
-    // WikiOS MediaWiki Bot Username
-    WIKIOS_MEDIAWIKI_BOT_USER: z.string().optional().default("Heku@WikiOS"),
+    // The mirror's MediaWiki bot login, "<Account>@<bot name>" (Special:BotPasswords). No default: without it the
+    // mirror has no account to write as, so its jobs fail (it never writes anonymously, csrf-cache.ts). It must be
+    // the dedicated `WikiOSMirror` account, in the `wikios-mirror` group (plan 417's LocalSettings snippet), with
+    // the `import`, `importupload`, `edit`, `bot`, `move`, `delete`, `undelete` and `protect` grants.
+    WIKIOS_MEDIAWIKI_BOT_USER: z.string().optional(),
     // Declared for visibility; call sites still read process.env directly (plan 339).
     // MediaWiki bot password (lgpassword) for the WikiOS bot login (csrf-cache.ts)
     WIKIOS_MEDIAWIKI_BOT_TOKEN: z.string().optional(),
@@ -95,7 +98,7 @@ export const env = createEnv({
     WIKIOS_MEDIAWIKI_INTERNAL_URL: z.string().optional(),
     // iiwiki api.php proxy URL that overrides the default iiwiki endpoint
     IIWIKI_DEV_PROXY_URL: z.string().optional(),
-    // "true" stops WikiOS from queueing background MediaWiki sync jobs (sync-worker.ts)
+    // "true" stops the mirror worker (services/mirror-worker.ts): outbox jobs accumulate and nothing is lost
     SKIP_MEDIAWIKI_SYNC: z.string().optional(),
     // Cloudflare API token + zone for purging article edge cache on save (both needed)
     CLOUDFLARE_API_TOKEN: z.string().optional(),

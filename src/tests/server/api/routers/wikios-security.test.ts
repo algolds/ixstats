@@ -14,6 +14,7 @@ jest.mock("~/server/db", () => ({
     wikiRestriction: { findMany: jest.fn().mockResolvedValue([]) },
     wikiArticle: { upsert: jest.fn(), count: jest.fn().mockResolvedValue(0) },
     wikiRevision: { findFirst: jest.fn(), create: jest.fn(), count: jest.fn().mockResolvedValue(0) },
+    wikiMirrorJob: { create: jest.fn() },
     stash: { findFirst: jest.fn(), create: jest.fn() },
     stashItem: { upsert: jest.fn(), deleteMany: jest.fn() },
     lorewardUserStats: { findUnique: jest.fn(), count: jest.fn() },
@@ -36,6 +37,11 @@ jest.mock("~/lib/wiki-os/core", () => ({
   ArticleRepository: { findBySlug: jest.fn(), saveArticle: jest.fn() },
   MediaAssetService: { registerAsset: jest.fn() },
 }));
+jest.mock("~/lib/wiki-os/services/mirror-outbox", () => ({
+  __esModule: true,
+  ...jest.requireActual("~/lib/wiki-os/services/mirror-outbox"),
+  scheduleMirrorKick: jest.fn(),
+}));
 jest.mock("~/lib/wiki-os/services/render-service", () => ({
   enqueueRender: jest.fn(),
   invalidateDependents: jest.fn(),
@@ -53,10 +59,6 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
   // The engine call stays real: the template preview sends its wikitext through it (the S7 tests below).
   ...jest.requireActual("~/lib/wiki-os/adapters/mediawiki/parsoid"),
   wikitextToHtml: jest.fn(),
-}));
-jest.mock("~/lib/wiki-os/adapters/mediawiki/sync-worker", () => ({
-  __esModule: true,
-  MediaWikiExportWorker: { enqueue: jest.fn() },
 }));
 jest.mock("~/lib/wiki-os/guardian/cloudflare-guardian", () => ({
   __esModule: true,
@@ -236,6 +238,7 @@ describe("S4: wiki identity for authorization is the verified WikiAccountLink", 
     expect(mockDb.wikiRevision.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ authorId: "db1" }) })
     );
+    expect(mockDb.wikiMirrorJob.create).toHaveBeenCalledTimes(1);
   });
 });
 

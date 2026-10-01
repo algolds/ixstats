@@ -4,14 +4,13 @@
  *
  * `assertCanEditArticle` is the permission gate (blocked? namespace? protection? the right?),
  * `commitWikitextSave` the write: PostgreSQL first (`ArticleRepository.saveArticle`: article, an
- * append-only revision, link graph, render queued), then the background MediaWiki export and the
+ * append-only revision, its MediaWiki mirror job in the same transaction, render queued), then the
  * edge-cache purge. Callers do their own conflict detection between the two (`detectEditConflict`).
  */
 
 import { TRPCError } from "@trpc/server";
 import { ArticleRepository } from "../core";
 import { canonicalizeTitle } from "../core/title";
-import { MediaWikiExportWorker } from "../adapters/mediawiki/sync-worker";
 import { CloudflareGuardian } from "../guardian/cloudflare-guardian";
 import { isWikiAdmin, resolveWikiUsername, type WikiAuthContext } from "../auth";
 import { authorizeAction } from "../permissions";
@@ -99,8 +98,8 @@ export interface WikitextSave {
 
 /**
  * Save `save.wikitext` as a new revision of `save.title`, authored as the caller (the caller has
- * been authorized and conflict-checked): PostgreSQL first, then the background MediaWiki export
- * and the edge-cache purge.
+ * been authorized and conflict-checked): PostgreSQL first (the revision and its mirror job in one
+ * transaction, `ArticleRepository.saveArticle`), then the edge-cache purge.
  */
 export async function commitWikitextSave(ctx: WikiAuthContext, save: WikitextSave) {
   const { title, wikitext, summary, minor } = save;
@@ -113,16 +112,7 @@ export async function commitWikitextSave(ctx: WikiAuthContext, save: WikitextSav
     authorName
   );
 
-  // 2. Background MediaWiki sync & cache purge
-  MediaWikiExportWorker.enqueue({
-    slug: title,
-    title,
-    wikitext,
-    summary,
-    minor,
-    authorWikiUsername: authorName,
-    revisionId: saveResult.revisionId,
-  });
+  // 2. Edge cache purge (the save queued its own MediaWiki mirror job in its transaction)
   void CloudflareGuardian.purgeArticleEdgeCache(title);
 
   return saveResult;

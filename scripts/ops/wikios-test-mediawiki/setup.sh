@@ -24,7 +24,7 @@ BOT_USER="WikiOSMirror"
 BOT_APP="wikios"
 # Bot password grants: the rights the `wikios-mirror` group has that a bot password can express.
 # No editinterface / editsiteconfig: WikiOS keeps those namespaces admin-only.
-BOT_GRANTS="basic,highvolume,editpage,editprotected,createeditmovepage,uploadfile,uploadeditmovefile,import"
+BOT_GRANTS="basic,highvolume,editpage,editprotected,createeditmovepage,uploadfile,uploadeditmovefile,import,delete,protect"
 
 log() { echo "[wikios-test-mediawiki] $*"; }
 

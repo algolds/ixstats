@@ -14,6 +14,7 @@ import {
 import { enqueueRender } from "~/lib/wiki-os/services/render-service";
 import { evictWikiTitleCaches } from "~/lib/wiki-os/services/title-cache-eviction";
 import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
+import { scheduleMirrorKick } from "~/lib/wiki-os/services/mirror-outbox";
 
 const mockFindFirst = jest.fn();
 const mockFindMany = jest.fn();
@@ -22,11 +23,17 @@ const mockCreate = jest.fn();
 const mockRevisionCreate = jest.fn();
 const mockLinkUpdateMany = jest.fn();
 const mockLogCreate = jest.fn();
+const mockJobCreate = jest.fn();
 const mockRestrictionDeleteMany = jest.fn();
 const mockRestrictionUpdateMany = jest.fn();
 const mockRestrictionFindUnique = jest.fn();
 
 const mockInvalidateTemplates = jest.fn();
+jest.mock("~/lib/wiki-os/services/mirror-outbox", () => ({
+  __esModule: true,
+  ...jest.requireActual("~/lib/wiki-os/services/mirror-outbox"),
+  scheduleMirrorKick: jest.fn(),
+}));
 jest.mock("~/lib/wiki-os/services/render-service", () => ({
   enqueueRender: jest.fn(),
   invalidateTemplateDependents: (...a: unknown[]) => mockInvalidateTemplates(...a),
@@ -47,6 +54,7 @@ jest.mock("~/server/db", () => {
     wikiRevision: { create: (...a: unknown[]) => mockRevisionCreate(...a) },
     wikiLink: { updateMany: (...a: unknown[]) => mockLinkUpdateMany(...a) },
     wikiLog: { create: (...a: unknown[]) => mockLogCreate(...a) },
+    wikiMirrorJob: { create: (...a: unknown[]) => mockJobCreate(...a) },
     wikiRestriction: {
       deleteMany: (...a: unknown[]) => mockRestrictionDeleteMany(...a),
       updateMany: (...a: unknown[]) => mockRestrictionUpdateMany(...a),
@@ -88,7 +96,8 @@ beforeEach(() => {
   mockCreate.mockResolvedValue({ id: "redirect" });
   mockRevisionCreate.mockResolvedValue({});
   mockLinkUpdateMany.mockResolvedValue({ count: 2 });
-  mockLogCreate.mockResolvedValue({});
+  mockLogCreate.mockResolvedValue({ id: "log-1" });
+  mockJobCreate.mockResolvedValue({});
   mockRestrictionDeleteMany.mockResolvedValue({ count: 0 });
   mockRestrictionUpdateMany.mockResolvedValue({ count: 0 });
   mockRestrictionFindUnique.mockResolvedValue(null);
@@ -649,6 +658,7 @@ describe("PageManagementService forgets what the caches hold about a page it cha
     mockUpdate.mockResolvedValue({ id: "a1" });
     mockLogCreate.mockImplementation(async () => {
       expect(evictWikiTitleCaches).not.toHaveBeenCalled(); // still inside the transaction
+      return { id: "log-1" };
     });
 
     await PageManagementService.archiveArticle("Old name", "spam", actor);
@@ -811,5 +821,112 @@ describe("PageManagementService tells the watchers (plan 416, WK-19)", () => {
       expect.any(Error)
     );
     warn.mockRestore();
+  });
+});
+
+describe("PageManagementService and the mirror outbox (plan 407)", () => {
+  const jobs = () => mockJobCreate.mock.calls.map(([args]) => args.data);
+
+  beforeEach(() => {
+    mockLogCreate.mockImplementation(async ({ data }: { data: { title: string } }) => ({
+      id: `log:${data.title}`,
+    }));
+  });
+
+  it("writes one move job in the move's transaction, from the old title, tied to its log row", async () => {
+    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
+
+    expect(jobs()).toEqual([
+      {
+        source: "ixwiki",
+        kind: "move",
+        title: "Old name",
+        articleId: "orig",
+        logId: "log:New name",
+        payload: { to: "New name", reason: "tidy", leaveRedirect: true },
+      },
+    ]);
+    expect(scheduleMirrorKick).toHaveBeenCalledTimes(1);
+  });
+
+  it("gives the talk page that moves along its own job, so each job mirrors what WikiOS did", async () => {
+    pages({ old_name: original, "talk:old_name": talkOriginal });
+
+    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
+
+    expect(jobs().map(({ kind, title, payload }) => ({ kind, title, to: payload.to }))).toEqual([
+      { kind: "move", title: "Old name", to: "New name" },
+      { kind: "move", title: "Talk:Old name", to: "Talk:New name" },
+    ]);
+  });
+
+  it("records that no redirect was left when the mover asked for none", async () => {
+    await PageManagementService.movePage("old_name", "new_name", "tidy", actor, "ixwiki", {
+      leaveRedirect: false,
+    });
+
+    expect(jobs()[0]?.payload).toMatchObject({ leaveRedirect: false });
+  });
+
+  it("writes no job for a deleted page that is moved: MediaWiki has nothing at that title", async () => {
+    pages({ old_name: { ...original, status: "ARCHIVED" } });
+
+    await PageManagementService.movePage("old_name", "new_name", "tidy", actor, "ixwiki", {
+      includeArchived: true,
+    });
+
+    expect(mockJobCreate).not.toHaveBeenCalled();
+  });
+
+  it("writes no job, and does not kick, when the move was refused", async () => {
+    pages({});
+
+    await expect(
+      PageManagementService.movePage("old_name", "new_name", "tidy", actor)
+    ).rejects.toThrow();
+
+    expect(mockJobCreate).not.toHaveBeenCalled();
+    expect(scheduleMirrorKick).not.toHaveBeenCalled();
+  });
+
+  it("writes a delete job and an undelete job with the reasons", async () => {
+    await PageManagementService.archiveArticle("Old name", "spam", actor);
+    pages({ old_name: { ...original, status: "ARCHIVED" } });
+    await PageManagementService.restoreArticle("Old name", actor, "ixwiki", "Wrongly deleted");
+
+    expect(jobs()).toEqual([
+      {
+        source: "ixwiki",
+        kind: "delete",
+        title: "Old name",
+        articleId: "orig",
+        logId: "log:Old name",
+        payload: { reason: "spam" },
+      },
+      {
+        source: "ixwiki",
+        kind: "undelete",
+        title: "Old name",
+        articleId: "orig",
+        logId: "log:Old name",
+        payload: { reason: "Wrongly deleted" },
+      },
+    ]);
+    expect(scheduleMirrorKick).toHaveBeenCalledTimes(2);
+  });
+
+  it("writes no job when a delete or an undelete was refused", async () => {
+    await expect(PageManagementService.restoreArticle("Old name", actor)).rejects.toThrow();
+
+    expect(mockJobCreate).not.toHaveBeenCalled();
+    expect(scheduleMirrorKick).not.toHaveBeenCalled();
+  });
+
+  it("writes no job for a realm that has no MediaWiki to mirror to", async () => {
+    mockFindFirst.mockResolvedValue({ id: "a1", title: "Old name", status: "PUBLISHED" });
+
+    await PageManagementService.archiveArticle("Old name", "spam", actor, "iiwiki");
+
+    expect(mockJobCreate).not.toHaveBeenCalled();
   });
 });

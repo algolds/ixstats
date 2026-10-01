@@ -81,9 +81,9 @@ src/lib/wiki-os/
 ├── adapters/                  # External Service Adapters & Background Workers
 │   └── mediawiki/             # Legacy MediaWiki compatibility & federation suite
 │       ├── parsoid.ts         # Parsoid & Action API HTML <-> wikitext converter
-│       ├── write-service.ts   # Action API write gateway & CSRF token caching
+│       ├── write-service.ts   # The mirror bot's Action API calls (typed errors, XML import upload)
+│       ├── csrf-cache.ts      # The mirror bot's login + CSRF token (no anonymous fallback)
 │       ├── timestamp.ts       # 14-digit timestamp conversion
-│       ├── sync-worker.ts     # Non-blocking MediaWiki export mirror queue
 │       └── bridge/            # PostgreSQL readers (pg-*.ts) & external wiki HTTP federators
 │
 ├── transformers/              # Content Transformers, Parsers & Formatters

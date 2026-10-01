@@ -1,7 +1,7 @@
 // src/lib/wiki-os/namespace-policy.ts
 // Which MediaWiki namespaces a WikiOS user may write to.
 //
-// Every WikiOS edit is exported to MediaWiki through one shared bot account (see sync-worker.ts),
+// Every WikiOS write is mirrored to MediaWiki by one dedicated bot account (see services/mirror-worker.ts),
 // so MediaWiki's own per-user rights never apply to it. This server-side policy, which `permissions.ts`
 // runs before every action, is what stops a signed-in user from saving `MediaWiki:Common.js`,
 // `Module:*` or `Template:*` through that account. It asks for MediaWiki rights (see `rights.ts`):

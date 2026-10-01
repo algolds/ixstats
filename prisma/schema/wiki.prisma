@@ -187,6 +187,30 @@ model WikiLog {
   @@map("wiki_logs")
 }
 
+/// Durable outbox of WikiOS -> classic MediaWiki writes (plan 407). A WikiOS write inserts its job in the same
+/// transaction as the change itself; the mirror worker (services/mirror-worker.ts) applies jobs in order per title.
+model WikiMirrorJob {
+  id            String   @id @default(cuid())
+  source        String   @default("ixwiki")
+  kind          String   // revision | move | delete | undelete | protect
+  title         String   // canonical title at enqueue time (target of the operation)
+  articleId     String?
+  revisionId    String?  // WikiRevision.id for kind=revision
+  logId         String?  // WikiLog.id for move/delete/undelete/protect
+  payload       Json?    // extra params (move target, reason, restrictions, ...)
+  state         String   @default("pending") // pending | running | done | dead | discarded (a dead job an administrator gave up on)
+  attempts      Int      @default(0)
+  nextAttemptAt DateTime @default(now())
+  lastError     String?  @db.VarChar(2000)
+  mwRevId       Int?     // resulting MediaWiki revision (kind=revision)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([state, nextAttemptAt])
+  @@index([source, title, createdAt])
+  @@map("wiki_mirror_jobs")
+}
+
 /// Explicit MediaWiki-style group membership (sysop, bureaucrat, interface-admin, bot, ...). A row is keyed by
 /// the WikiOS user, or by the MediaWiki username alone while that user has not yet verified a wiki link.
 model WikiUserGroup {

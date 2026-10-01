@@ -16,7 +16,7 @@ WikiOS is the knowledge engine and structured worldbuilding platform for IxState
 - **Native Media & Asset Engine (`MediaAssetService`).** Manages 7,555+ media records in `wiki_assets` (pointers to images on ixwiki.com; `md5Hash` hashes the filename, not the content) with MD5 shard paths, automated dimensions extraction, JIT auto-registration, and immutable caching (`Cache-Control: public, max-age=31536000, immutable`).
 - **No direct MariaDB connection.** The MariaDB pool (`mysql-pool.ts` / `mysql-reader.ts`) was removed on 2026-08-25 (`80eee985d`). Bridge reads are PostgreSQL (`bridge/pg-*.ts`) plus the MediaWiki HTTP Action API.
 - **Inbound recent-changes sync.** `services/auto-sync-service.ts` (`runAutoSyncCycle`) pulls edits made directly on classic MediaWiki into PostgreSQL, from the `wiki-recentchanges` cron job and the `/api/wikios/inbound-sync` webhook.
-- **Outbound export (`MediaWikiExportWorker`).** Queues upstream `action=edit` calls asynchronously over the shared bot session. Authorship lives in `WikiRevision.author`; per-user `rev_actor` patching is not implemented (`updateRevisionActor` is a no-op).
+- **Outbound mirror (`services/mirror-worker.ts`, plan 407).** A durable outbox (`wiki_mirror_jobs`, written in the same transaction as the edit, move, delete, undelete or protection) applied per title in order by the dedicated `WikiOSMirror` bot: revisions go through `action=import` with `assignknownusers=1`, so MediaWiki credits the real author; failures back off and end `dead` after 8 attempts for an administrator to requeue.
 - **Multi-wiki reader.** `?source=iiwiki|althistory` opens another wiki's page read-only (Sept 2026).
 - **Article sanitizer (`src/lib/utils/sanitize-html.ts`, plan 415).** `sanitizeWikiArticleHtml` keeps the tags and attributes MediaWiki's own Sanitizer allows (legacy `{| border=1 bgcolor=… |}` tables, `<font>`, `<center>`, `<del>`/`<ins>`, ruby, `<bdo>`, `<data>`, list `type`/`start`/`reversed`) and blocks scripts, frames, forms, event handlers and `javascript:`/`data:` URLs. A `<style>` stays only when it is TemplateStyles' own (`data-mw-deduplicate`), and then as CSS scoped under `.wikios-article` by `scope-template-styles.ts`: `.mw-parser-output` is rewritten to the article root, only `@media` at-rules survive, and `@import`, non-`https:`/relative `url()`, `expression()`, `behavior` and `-moz-binding` are stripped; anything the splitter cannot read with certainty is dropped.
 - **Cloudflare edge defense (`src/lib/wiki-os/guardian/`).** Turnstile verification and non-blocking Cloudflare Zone edge cache purges on save.
@@ -91,8 +91,8 @@ src/lib/wiki-os/
 │
 ├── adapters/                  # External service adapters
 │   ├── mediawiki/             # MediaWiki compatibility layer
-│   │   ├── write-service.ts   # Action API write gateway and actor attribution
-│   │   ├── sync-worker.ts     # Asynchronous background mirror queue
+│   │   ├── write-service.ts   # The mirror bot's Action API calls (typed errors, XML import upload)
+│   │   ├── csrf-cache.ts      # The mirror bot's login and CSRF token (no anonymous fallback)
 │   │   ├── parsoid.ts         # action=parse / Parsoid render and conversions
 │   │   └── bridge/            # PostgreSQL readers and federated HTTP readers
 │   │       ├── pg-reader.ts   # Articles/wikitext (+ pg-search, pg-activity, pg-taxonomy, pg-site)
