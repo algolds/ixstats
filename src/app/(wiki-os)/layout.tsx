@@ -7,6 +7,7 @@ import { WikiHalo } from "~/components/halo/plugins/wiki/WikiHalo";
 import { MediaContextProvider } from "~/components/media/MediaContext";
 import { MiniPlayer } from "~/components/media/MiniPlayer";
 import { MediaThemeProvider } from "~/components/wiki-os/shared/MediaThemeContext";
+import { FontPreloads } from "~/components/wiki-os/shared/FontPreloads";
 import { PortalTintSync } from "~/components/providers/PortalTintSync";
 import { WikiChromePrefsProvider } from "~/components/wiki-os/shared/WikiChromePrefs";
 import { parseChromePrefs } from "~/lib/wiki-os/chrome-prefs";
@@ -49,6 +50,7 @@ export default async function WikiosLayout({ children }: { children: React.React
   return (
     <div data-app="wiki" className="contents">
       <PortalTintSync />
+      <FontPreloads />
       <MediaContextProvider>
         <MediaThemeProvider>
           <WikiChromePrefsProvider prefs={chromePrefs}>

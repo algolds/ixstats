@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
 import { NavArrowRight as ChevronRight } from "iconoir-react";
+import { heroCardInputs } from "~/lib/wiki-os/hero-card";
 import { api } from "~/trpc/react";
 
 interface CategoryBreadcrumbProps {
@@ -13,7 +14,7 @@ interface CategoryBreadcrumbProps {
 
 export function CategoryBreadcrumb({ title }: CategoryBreadcrumbProps) {
   const { data } = api.wikios.getParentCategories.useQuery(
-    { title },
+    heroCardInputs(title).parentCategories,
     { staleTime: 300000 } // 5 min
   );
 
