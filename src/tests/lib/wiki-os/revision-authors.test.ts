@@ -192,6 +192,34 @@ describe("getArticleAuthors for IxWiki", () => {
     expect(info.totalContributors).toBe(0);
   });
 
+  it("does not credit a hidden last editor to the creator", async () => {
+    ledger(
+      { author: "Kir", createdAt: day(1) },
+      { author: "(deleted)", createdAt: day(9), userDeleted: true },
+      [
+        { author: "Kir", edits: 1, last: day(1) },
+        { author: "(deleted)", edits: 1, last: day(9), userDeleted: true },
+      ]
+    );
+
+    const info = await getArticleAuthors("Caphiria");
+
+    expect(info.creator).toMatchObject({ username: "Kir" });
+    expect(info.lastEditor).toMatchObject({ username: "MediaWiki Contributor", timestamp: day(9).toISOString() });
+    expect(info.contributors?.map((c) => c.username)).toEqual(["Kir"]);
+  });
+
+  it("still credits an unnamed (not hidden) last revision to the creator", async () => {
+    ledger({ author: "Kir", createdAt: day(1) }, { author: null, createdAt: day(9) }, [
+      { author: "Kir", edits: 1, last: day(1) },
+      { author: null, edits: 1, last: day(9) },
+    ]);
+
+    const info = await getArticleAuthors("Caphiria");
+
+    expect(info.lastEditor).toMatchObject({ username: "Kir" });
+  });
+
   it("credits an unnamed first revision to the article's owner", async () => {
     mocked.wikiArticle.findUnique.mockResolvedValue(article({ authorId: "u1" }));
     mocked.user.findUnique.mockResolvedValue({ wikiUsername: "OwnerName" });

@@ -113,6 +113,7 @@ export function createTable(defaults: () => Record<string, unknown> = () => ({})
         }
       }
       if (cursor) found = found.slice(found.findIndex((row) => row.id === cursor.id) + skip);
+      else found = found.slice(skip);
       return (take === undefined ? found : found.slice(0, take)).map((row) => ({ ...row }));
     },
     async findFirst(args: FindManyArgs = {}) {
