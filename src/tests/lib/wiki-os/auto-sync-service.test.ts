@@ -34,12 +34,14 @@ const mockRevisionCreate = jest.fn();
 const mockRevisionUpdateMany = jest.fn();
 const mockAccountLinkFindFirst = jest.fn();
 const mockQueryRaw = jest.fn();
+const mockExecuteRaw = jest.fn();
 const mockTransaction = jest.fn();
 const mockJobCreate = jest.fn();
 
 jest.mock("~/server/db", () => ({
   db: {
     $transaction: (...a: unknown[]) => mockTransaction(...a),
+    $executeRaw: (...a: unknown[]) => mockExecuteRaw(...a),
     systemConfig: {
       findUnique: (...a: unknown[]) => mockSystemConfigFindUnique(...a),
       upsert: (...a: unknown[]) => mockSystemConfigUpsert(...a),
@@ -266,6 +268,7 @@ beforeEach(() => {
   applyEvent.mockResolvedValue("applied");
   // withJobLock: an interactive transaction whose first statement tries the advisory lock.
   mockQueryRaw.mockResolvedValue([{ locked: true }]);
+  mockExecuteRaw.mockResolvedValue(0);
   mockJobCreate.mockResolvedValue({});
   mockTransaction.mockImplementation(async (callback: (tx: object) => unknown) =>
     callback({
@@ -900,6 +903,11 @@ describe("echo", () => {
       where: { id: "art-1" },
       data: expect.objectContaining({ mwLatestRevId: 91 }),
     });
+    // the echo is a live revision: it is given the live revision before it as its parent (F5)
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
+    const [strings, articleId] = mockExecuteRaw.mock.calls[0]!;
+    expect((strings as TemplateStringsArray).join("?")).toContain('SET "parentRevisionId"');
+    expect(articleId).toBe("art-1");
   });
 
   it("keeps an echo's own time when it is older than the head", async () => {
@@ -987,8 +995,11 @@ describe("park", () => {
       wikitext: "A conflicting edit.",
       parked: true,
       parkReason: "conflict:90",
+      // it records the head it did not fit on as its parent (F5), and sets no other row's
+      parentRevisionId: "rev-9",
       createdAt: new Date("2026-09-27T10:00:01Z"),
     });
+    expect(mockExecuteRaw).not.toHaveBeenCalled();
     expect(mockJobCreate).toHaveBeenCalledTimes(1);
     expect(mockJobCreate).toHaveBeenCalledWith({
       data: {

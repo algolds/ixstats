@@ -503,6 +503,20 @@ describe("ArticleRepository.saveArticle: the page is locked, and the edit-confli
       parked: false,
     });
   });
+
+  it("records the head it was made on top of as the new revision's parent (F5), none for the first revision", async () => {
+    mockRevisionFindFirst.mockResolvedValue(HEAD);
+    await save();
+    expect(mockRevisionCreate.mock.calls[0]?.[0].data).toMatchObject({
+      parentRevisionId: "rev-head",
+      byteDelta: Buffer.byteLength("new text") - 10,
+    });
+
+    mockRevisionCreate.mockClear();
+    mockRevisionFindFirst.mockResolvedValue(null);
+    await save();
+    expect(mockRevisionCreate.mock.calls[0]?.[0].data.parentRevisionId).toBeNull();
+  });
 });
 
 describe("ArticleRepository.saveArticle tells the watchers (plan 416, WK-19)", () => {

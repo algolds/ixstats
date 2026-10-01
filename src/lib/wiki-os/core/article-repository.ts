@@ -24,6 +24,7 @@ import {
 } from "./domain-types";
 import { EditConflictError, headMatchesBase } from "./edit-conflict-error";
 import { parseRedirect } from "./redirect";
+import { fillRevisionParents } from "./revision-parents";
 import { canonicalizeTitle } from "./title";
 import {
   planRevisionImport,
@@ -573,6 +574,8 @@ async function writeImport(
     });
   }
   await insertRevisions(client, articleId, input.source, plan.inserts);
+  // Each new live revision records the one before it (the dump gives no parents; the order is the history's own).
+  if (plan.inserts.length > 0) await fillRevisionParents(client, articleId);
   for (const [rowId, sha1] of hashed) {
     await client.wikiRevision.update({ where: { id: rowId }, data: { sha1 } });
   }
@@ -738,7 +741,8 @@ export class ArticleRepository {
 
   /**
    * Save an article and create an append-only revision ledger entry (<10ms). The saves of one page run one at a time
-   * (the page is locked first, see `lockPageForSave`), and with `input.expectedHeadRef` the save throws `EditConflictError` unless that is
+   * (the page is locked first, see `lockPageForSave`), the new revision records the live revision it was made on top
+   * of (`parentRevisionId`), and with `input.expectedHeadRef` the save throws `EditConflictError` unless that is
    * still the page's latest live revision: the check and the write are one atomic step.
    */
   static async saveArticle(
@@ -840,7 +844,7 @@ export class ArticleRepository {
         },
       });
 
-      // 2. Create append-only revision, sized against the previous one
+      // 2. Create append-only revision, sized against the previous one and made on top of it
       const byteSize = Buffer.byteLength(wikitext, "utf8");
       const revision = await tx.wikiRevision.create({
         data: {
@@ -852,6 +856,7 @@ export class ArticleRepository {
           source,
           author: authorName,
           authorId: resolvedDbUserId,
+          parentRevisionId: previous?.id ?? null,
           byteSize,
           byteDelta: byteSize - (previous?.byteSize ?? 0),
           sha1: mwSha1Base36(wikitext),

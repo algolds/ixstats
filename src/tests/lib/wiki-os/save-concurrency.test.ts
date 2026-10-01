@@ -68,7 +68,10 @@ describe("two saves of one page at the same time on the same base", () => {
     });
     // the ledger holds the base and the winner's revision, nothing from the loser, and the article has the winner's text
     expect(revisionRows()).toHaveLength(2);
-    expect(revisionRows().find((row) => row.id === winner.revisionId)).toMatchObject({ wikitext: winningText });
+    expect(revisionRows().find((row) => row.id === winner.revisionId)).toMatchObject({
+      wikitext: winningText,
+      parentRevisionId: base,
+    });
     expect(model.committed.articles[0]).toMatchObject({ wikitext: winningText });
     // one mirror job per committed revision: the loser's rolled back with it
     expect(model.committed.jobs).toHaveLength(2);
@@ -94,7 +97,9 @@ describe("two saves of one page at the same time on the same base", () => {
 
     const again = await save("merged edit", currentRevisionRef);
 
-    expect(revisionRows().find((row) => row.id === again.revisionId)).toMatchObject({ wikitext: "merged edit" });
+    expect(revisionRows().find((row) => row.id === again.revisionId)).toMatchObject({
+      parentRevisionId: currentRevisionRef,
+    });
     expect(revisionRows()).toHaveLength(3);
   });
 });
@@ -109,25 +114,22 @@ describe("two creations of one title at the same time", () => {
     expect((failures[0] as EditConflictError).conflict.currentRevisionRef).toBe(wins[0]!.revisionId);
     expect(model.committed.articles).toHaveLength(1);
     expect(revisionRows()).toHaveLength(1);
+    expect(revisionRows()[0]).toMatchObject({ parentRevisionId: null });
   });
 });
 
 describe("saves that make no check (a revert, a rollback)", () => {
-  it("still run one at a time: each revision is sized against the one before it", async () => {
-    await save("base text", null);
+  it("still run one at a time: each is made on top of the one before, none on the same parent", async () => {
+    const { revisionId: base } = await save("base text", null);
 
-    const { wins, failures } = await raced([
-      save("x".repeat(10)),
-      save("y".repeat(25)),
-      save("z".repeat(40)),
-    ]);
+    const { wins, failures } = await raced([save("revert one"), save("revert two"), save("revert three")]);
 
     expect(failures).toEqual([]);
     expect(wins).toHaveLength(3);
-    // every delta is against the true predecessor: together they add up to the size of the last revision
-    const rows = revisionRows();
-    const total = rows.reduce((sum, row) => sum + (row.byteDelta as number), 0);
-    expect(total).toBe(rows[rows.length - 1]!.byteSize);
+    const parents = revisionRows().map((row) => row.parentRevisionId);
+    expect(new Set(parents).size).toBe(parents.length); // a chain: no two revisions share a parent
+    expect(parents.filter((parent) => parent === null)).toHaveLength(1);
+    expect(parents).toContain(base);
   });
 });
 
@@ -143,5 +145,7 @@ describe("the model itself: without the locks the same scenarios go wrong (the t
 
     expect(wins).toHaveLength(2);
     expect(failures).toEqual([]);
+    const parents = revisionRows().filter((row) => row.parentRevisionId === base);
+    expect(parents).toHaveLength(2); // a fork: both claim the base as their parent
   });
 });

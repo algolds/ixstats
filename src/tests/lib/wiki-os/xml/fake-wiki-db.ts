@@ -49,6 +49,8 @@ export interface RevisionRow {
   /** Plan 406: a MediaWiki edit kept in history without going live. A row that predates the column is not parked. */
   parked?: boolean;
   parkReason?: string | null;
+  /** The live revision this one was made on top of (`fillRevisionParents`); unset until something sets it. */
+  parentRevisionId?: string | null;
 }
 
 export interface RestrictionRow {
@@ -304,6 +306,28 @@ export function createFakeDbModule() {
     wikiRevision: revisionDelegate,
     wikiAccountLink: accountLinkDelegate,
     wikiRestriction: restrictionDelegate,
+    /**
+     * Understands the one raw statement the importer makes, `fillRevisionParents` (core/revision-parents.ts): the live
+     * revisions of the article (value 1), in (createdAt, id) order, that have no parent get the one before them.
+     */
+    $executeRaw: async (strings: TemplateStringsArray, articleId: string): Promise<number> => {
+      if (!strings.join("?").includes('"parentRevisionId"')) {
+        throw new Error("the fake database does not understand this raw statement");
+      }
+      const live = store.revisions
+        .filter((row) => row.articleId === articleId && row.parked !== true)
+        .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime() || (a.id < b.id ? -1 : 1));
+      let set = 0;
+      live.forEach((row, at) => {
+        const previous = live[at - 1];
+        if (previous && !row.parentRevisionId) {
+          row.parentRevisionId = previous.id;
+          set += 1;
+        }
+      });
+      if (set > 0) store.writes += 1;
+      return set;
+    },
     $transaction: async <T>(
       callback: (tx: typeof db) => Promise<T>,
       options?: { maxWait?: number; timeout?: number }

@@ -268,6 +268,58 @@ describe("fresh import of the export-0.11 fixture", () => {
   });
 });
 
+describe("parent revisions (F5)", () => {
+  const parentOf = (row: RevisionRow) => row.parentRevisionId ?? null;
+
+  it("sets every imported revision's parent to the live revision before it; the first of a page has none", async () => {
+    await importFixture();
+
+    const kingdom = revisionsOf("Kingdom of Testia");
+    expect(kingdom).toHaveLength(3);
+    expect(kingdom.map(parentOf)).toEqual([null, kingdom[0]!.id, kingdom[1]!.id]);
+    // every page of the dump: only its first revision is a creation
+    for (const page of store.articles) {
+      const rows = store.revisions
+        .filter((row) => row.articleId === page.id)
+        .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      expect(rows.filter((row) => parentOf(row) === null)).toHaveLength(1);
+      expect(parentOf(rows[0]!)).toBeNull();
+    }
+  });
+
+  it("chains the dump's revisions onto the page's existing live revisions, never onto a parked one", async () => {
+    const seeded = seedArticle({ wikitext: "NEWER LOCAL EDIT", mwLatestRevId: 9999 });
+    const early = seedRevision(seeded.id, { createdAt: new Date("2025-06-01T00:00:00Z") });
+    const parked = seedRevision(seeded.id, {
+      createdAt: new Date("2026-01-02T03:00:00Z"),
+      parked: true,
+      parkReason: "conflict:x",
+    });
+
+    await importFixture();
+
+    const rows = revisionsOf("Kingdom of Testia");
+    // early (2025), parked (2026-01-02 03:00), then the dump's three (03:04:05 ...)
+    const dump = rows.filter((row) => row.mwRevId !== null && [1001, 1002, 1003].includes(row.mwRevId));
+    expect(dump).toHaveLength(3);
+    expect(parentOf(dump[0]!)).toBe(early.id);
+    expect(parentOf(dump[1]!)).toBe(dump[0]!.id);
+    expect(parentOf(dump[2]!)).toBe(dump[1]!.id);
+    expect(parentOf(early)).toBeNull();
+    expect(parentOf(parked)).toBeNull(); // a parked revision is left as it is
+    expect(rows.map(parentOf)).not.toContain(parked.id);
+  });
+
+  it("changes nothing on a second import of the same dump", async () => {
+    await importFixture();
+    const before = snapshotStore();
+
+    await importFixture();
+
+    expect(snapshotStore()).toEqual(before);
+  });
+});
+
 describe("re-import", () => {
   it("is a no-op: everything is skipped and nothing changes", async () => {
     await importFixture();
