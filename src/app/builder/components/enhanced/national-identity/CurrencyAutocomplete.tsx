@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useId } from "react";
 import { Coins, EditPencil as Edit2, List, Check } from "iconoir-react";
 import { CurrencySelector, CurrencyInput, UNIFIED_CURRENCIES } from "./CurrencySelector";
 import { CurrencyIcon } from "./CurrencyIcon";
@@ -56,14 +56,15 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
     [onChange, onSave, fieldName]
   );
 
+  const labelId = useId();
   const currencyInfo = getCurrencyInfo(value);
   const isValid = !value || isValidCurrency(value);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" role="group" aria-labelledby={labelId}>
       <div className="flex items-center justify-between">
-        <label className="text-label text-body flex items-center gap-2 font-medium">
-          <Coins className="text-label-secondary h-4 w-4" />
+        <label id={labelId} className="text-label text-body flex items-center gap-2 font-medium">
+          <Coins aria-hidden className="text-label-secondary h-4 w-4" />
           <span>National Currency</span>
         </label>
         <Button

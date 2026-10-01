@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useId, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   Translate as Languages,
@@ -148,6 +148,7 @@ const ADDITIONAL_HERITAGE_SYMBOLS: HeritageItem[] = [
 
 export const CultureForm = React.memo(
   function CultureForm({ identity, onIdentityChange, onFieldSave }: CultureFormProps) {
+    const fieldId = useId();
     const [imagePickerField, setImagePickerField] = useState<string | null>(null);
     const [showAllMotifs, setShowAllMotifs] = useState(false);
     const [revealedKeys, setRevealedKeys] = useState<Set<string>>(new Set());
@@ -270,11 +271,15 @@ export const CultureForm = React.memo(
 
             {/* Text Input */}
             <div className="min-w-0 flex-1 space-y-1">
-              <label className="text-label text-caption flex items-center gap-1">
-                <Icon className="text-teal h-3.5 w-3.5" />
+              <label
+                htmlFor={`${fieldId}-${key}`}
+                className="text-label text-caption flex items-center gap-1"
+              >
+                <Icon aria-hidden className="text-teal h-3.5 w-3.5" />
                 <span>{label}</span>
               </label>
               <Input
+                id={`${fieldId}-${key}`}
                 value={typeof textVal === "string" ? textVal : ""}
                 onChange={(e) =>
                   onIdentityChange(key as keyof NationalIdentityData, e.target.value)
@@ -286,7 +291,7 @@ export const CultureForm = React.memo(
           </div>
         );
       },
-      [identity, onIdentityChange]
+      [identity, onIdentityChange, fieldId]
     );
 
     return (
@@ -303,7 +308,10 @@ export const CultureForm = React.memo(
             <FacetCardContent className="space-y-4 p-6">
               {/* National Motto (Primary) */}
               <div className="space-y-2">
-                <label className="text-label text-body flex items-center gap-2 font-medium">
+                <label
+                  htmlFor={`${fieldId}-motto`}
+                  className="text-label text-body flex items-center gap-2 font-medium"
+                >
                   <Sparkles className="text-label-secondary h-4 w-4" />
                   National Motto
                 </label>
@@ -311,6 +319,7 @@ export const CultureForm = React.memo(
                   The primary rallying cry or constitutional motto of your people
                 </p>
                 <Input
+                  id={`${fieldId}-motto`}
                   value={identity.motto || ""}
                   onChange={(e) => onIdentityChange("motto", e.target.value)}
                   placeholder="e.g. Liberty, Equality, Fraternity • E pluribus unum"
@@ -319,11 +328,15 @@ export const CultureForm = React.memo(
 
               {/* Native Language Motto (Streamlined Inline Sub-field) */}
               <div className="bg-surface-secondary rounded-row space-y-2 p-3">
-                <label className="text-caption text-label flex items-center gap-2">
+                <label
+                  htmlFor={`${fieldId}-mottoNative`}
+                  className="text-caption text-label flex items-center gap-2"
+                >
                   <Globe className="h-3.5 w-3.5" />
                   <span>Native / Historical Language Motto (Optional)</span>
                 </label>
                 <Input
+                  id={`${fieldId}-mottoNative`}
                   value={identity.mottoNative || ""}
                   onChange={(e) => onIdentityChange("mottoNative", e.target.value)}
                   placeholder="e.g. Liberté, égalité, fraternité"
@@ -333,7 +346,10 @@ export const CultureForm = React.memo(
 
               {/* National Anthem */}
               <div className="space-y-2">
-                <label className="text-label text-body flex items-center gap-2 font-medium">
+                <label
+                  htmlFor={`${fieldId}-nationalAnthem`}
+                  className="text-label text-body flex items-center gap-2 font-medium"
+                >
                   <Music className="text-label-secondary h-4 w-4" />
                   National Anthem
                 </label>
@@ -341,6 +357,7 @@ export const CultureForm = React.memo(
                   Title of the solemn or celebratory state anthem
                 </p>
                 <Input
+                  id={`${fieldId}-nationalAnthem`}
                   value={identity.nationalAnthem || ""}
                   onChange={(e) => onIdentityChange("nationalAnthem", e.target.value)}
                   placeholder="e.g. The Star-Spangled Banner, La Marseillaise..."
@@ -349,7 +366,10 @@ export const CultureForm = React.memo(
 
               {/* Primary Religion */}
               <div className="space-y-2">
-                <label className="text-label text-body flex items-center gap-2 font-medium">
+                <label
+                  htmlFor={`${fieldId}-nationalReligion`}
+                  className="text-label text-body flex items-center gap-2 font-medium"
+                >
                   <Heart className="text-label-secondary h-4 w-4" />
                   Primary / State Religion
                 </label>
@@ -357,6 +377,7 @@ export const CultureForm = React.memo(
                   Major religious tradition or secular constitutional designation
                 </p>
                 <Input
+                  id={`${fieldId}-nationalReligion`}
                   value={identity.nationalReligion || ""}
                   onChange={(e) => onIdentityChange("nationalReligion", e.target.value)}
                   placeholder="e.g. Secular, Christianity, Islam, Buddhism, Pluralist..."
@@ -366,10 +387,14 @@ export const CultureForm = React.memo(
               {/* National Day & Sport Grid */}
               <div className="border-separator grid grid-cols-1 gap-4 border-t pt-2 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-label text-body flex items-center gap-2 font-medium">
+                  <label
+                    htmlFor={`${fieldId}-nationalDay`}
+                    className="text-label text-body flex items-center gap-2 font-medium"
+                  >
                     <span>National Day</span>
                   </label>
                   <Input
+                    id={`${fieldId}-nationalDay`}
                     value={identity.nationalDay || ""}
                     onChange={(e) => onIdentityChange("nationalDay", e.target.value)}
                     placeholder="e.g. July 4th, Dec 1"
@@ -377,11 +402,15 @@ export const CultureForm = React.memo(
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-label text-body flex items-center gap-2 font-medium">
+                  <label
+                    htmlFor={`${fieldId}-nationalSport`}
+                    className="text-label text-body flex items-center gap-2 font-medium"
+                  >
                     <Trophy className="text-label-secondary h-3.5 w-3.5" />
                     <span>National Sport</span>
                   </label>
                   <Input
+                    id={`${fieldId}-nationalSport`}
                     value={identity.nationalSport || ""}
                     onChange={(e) => onIdentityChange("nationalSport", e.target.value)}
                     placeholder="e.g. Football, Cricket"
@@ -450,7 +479,10 @@ export const CultureForm = React.memo(
                           symbol={identity.currencySymbol || "$"}
                           className="text-indigo h-4 w-4"
                         />
-                        <label className="text-caption text-label font-semibold">
+                        <label
+                          htmlFor={`${fieldId}-currencySymbol`}
+                          className="text-caption text-label font-semibold"
+                        >
                           Custom Currency Symbol
                         </label>
                       </div>
@@ -459,6 +491,7 @@ export const CultureForm = React.memo(
                       </p>
                     </div>
                     <Input
+                      id={`${fieldId}-currencySymbol`}
                       value={identity.currencySymbol || "$"}
                       onChange={handleCurrencySymbolChange}
                       placeholder="$"

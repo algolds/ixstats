@@ -31,6 +31,8 @@ export interface AutocompleteProps {
   disabled?: boolean;
   className?: string;
   allowCustom?: boolean;
+  /** Id for the text input, so a `<label htmlFor>` can name it. */
+  id?: string;
 }
 
 export const Autocomplete = React.memo(function Autocomplete({
@@ -41,6 +43,7 @@ export const Autocomplete = React.memo(function Autocomplete({
   onBlur,
   onOpenChange,
   placeholder = "Select or type...",
+  id,
   globalSuggestions = [],
   userSuggestions = [],
   defaultSuggestions = [],
@@ -149,6 +152,7 @@ export const Autocomplete = React.memo(function Autocomplete({
       <div className="relative flex items-center">
         <input
           ref={inputRef}
+          id={id}
           type="text"
           value={value}
           onChange={handleInputChange}

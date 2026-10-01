@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useId } from "react";
 import { Autocomplete } from "~/components/ui/autocomplete";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils/cn";
@@ -61,6 +61,8 @@ export const IdentityAutocomplete = React.memo(function IdentityAutocomplete({
     { enabled: isOpen && !disabled }
   );
 
+  const inputId = useId();
+
   const handleBlur = useCallback(() => {
     if (value.trim() && onSave && !disabled) {
       onSave(fieldName, value.trim());
@@ -69,7 +71,10 @@ export const IdentityAutocomplete = React.memo(function IdentityAutocomplete({
 
   return (
     <div className="space-y-2">
-      <label className="text-label text-caption flex items-center justify-between font-semibold">
+      <label
+        htmlFor={inputId}
+        className="text-label text-caption flex items-center justify-between font-semibold"
+      >
         <span className="flex items-center gap-2">
           {Icon && <Icon className={cn("h-3.5 w-3.5", iconClassName || "text-label-secondary")} />}
           <span>{label || formatFieldLabel(fieldName)}</span>
@@ -78,6 +83,7 @@ export const IdentityAutocomplete = React.memo(function IdentityAutocomplete({
         {extraLabelElement}
       </label>
       <Autocomplete
+        id={inputId}
         fieldName={fieldName}
         value={value}
         onChange={onChange}
