@@ -11,9 +11,12 @@ import {
   failJob,
   loadWindow,
   MAX_ATTEMPTS,
+  MAX_BATCH_JOBS,
+  pickBatch,
   pickRunnable,
   purgeDoneJobs,
   reclaimInterruptedJobs,
+  releaseJobs,
 } from "~/lib/wiki-os/services/mirror-queue";
 
 const mockFindMany = jest.fn();
@@ -169,6 +172,106 @@ describe("pickRunnable", () => {
   });
 });
 
+describe("pickBatch", () => {
+  const ids = (jobs: readonly WikiMirrorJob[]) => jobs.map((candidate) => candidate.id);
+
+  it("is the job alone when it is not a plain revision job", () => {
+    const moving = move("Old", "New");
+    const restore = job({ payload: { restore: true } });
+    const deleting = job({ kind: "delete", payload: { reason: "" } });
+
+    expect(pickBatch([moving, job({ title: "Old" })], moving, NOW)).toEqual([moving]);
+    expect(pickBatch([restore, job()], restore, NOW)).toEqual([restore]);
+    expect(pickBatch([deleting, job()], deleting, NOW)).toEqual([deleting]);
+  });
+
+  it("takes the plain revision jobs of the title that wait next, oldest first, and no other title's", () => {
+    const first = job({ title: "Foo" });
+    const other = job({ title: "Bar" });
+    const second = job({ title: "Foo" });
+    const third = job({ title: "Foo" });
+
+    expect(ids(pickBatch([first, other, second, third], first, NOW))).toEqual([
+      first.id,
+      second.id,
+      third.id,
+    ]);
+  });
+
+  it("starts at the job it was given, never at an older one", () => {
+    const older = job({ title: "Foo", state: "running" });
+    const first = job({ title: "Foo" });
+    const second = job({ title: "Foo" });
+
+    expect(ids(pickBatch([older, first, second], first, NOW))).toEqual([first.id, second.id]);
+  });
+
+  it("stops at the first job of the title that is anything else", () => {
+    const first = job({ title: "Foo" });
+    const second = job({ title: "Foo" });
+    const deleting = job({
+      kind: "delete",
+      title: "Foo",
+      payload: { reason: "" },
+      revisionId: null,
+    });
+    const after = job({ title: "Foo" });
+
+    expect(ids(pickBatch([first, second, deleting, after], first, NOW))).toEqual([
+      first.id,
+      second.id,
+    ]);
+  });
+
+  it("stops at a restore, a move away from the title and a move to it", () => {
+    for (const blocker of [
+      job({ title: "Foo", payload: { restore: true, summary: "Restoring" } }),
+      move("Foo", "Bar"),
+      move("Other", "Foo"),
+    ]) {
+      const first = job({ title: "Foo" });
+      const after = job({ title: "Foo" });
+
+      expect(ids(pickBatch([first, blocker, after], first, NOW))).toEqual([first.id]);
+    }
+  });
+
+  it("stops at a job that is running, dead or waiting out a backoff", () => {
+    for (const blocker of [
+      job({ title: "Foo", state: "running" }),
+      job({ title: "Foo", state: "dead" }),
+      job({ title: "Foo", attempts: 1, nextAttemptAt: new Date(NOW.getTime() + 1) }),
+    ]) {
+      const first = job({ title: "Foo" });
+      const after = job({ title: "Foo" });
+
+      expect(ids(pickBatch([first, blocker, after], first, NOW))).toEqual([first.id]);
+    }
+  });
+
+  it("lets jobs of other titles, moves between other titles included, sit between the revisions", () => {
+    const first = job({ title: "Foo" });
+    const between = [
+      job({ title: "Bar" }),
+      move("A", "B"),
+      job({ kind: "delete", title: "Baz", payload: { reason: "" } }),
+    ];
+    const second = job({ title: "Foo" });
+
+    expect(ids(pickBatch([first, ...between, second], first, NOW))).toEqual([first.id, second.id]);
+  });
+
+  it("takes at most 50 jobs, or the cap it is given", () => {
+    const jobs = Array.from({ length: 60 }, () => job({ title: "Foo" }));
+
+    expect(MAX_BATCH_JOBS).toBe(50);
+    expect(pickBatch(jobs, jobs[0]!, NOW)).toHaveLength(50);
+    expect(ids(pickBatch(jobs, jobs[0]!, NOW))).toEqual(ids(jobs.slice(0, 50)));
+    expect(pickBatch(jobs, jobs[0]!, NOW, 3)).toHaveLength(3);
+    expect(pickBatch(jobs, jobs[0]!, NOW, 1)).toEqual([jobs[0]]);
+  });
+});
+
 describe("the queue's writes", () => {
   it("reads the oldest not-done jobs of the realm, oldest first", async () => {
     mockFindMany.mockResolvedValue([]);
@@ -192,14 +295,44 @@ describe("the queue's writes", () => {
   });
 
   it("completes a job with the MediaWiki revision it made, and clears the last error", async () => {
-    await completeJob("job1", 555);
-    await completeJob("job2", null);
+    await completeJob(job({ id: "job1" }), 555);
+    await completeJob(job({ id: "job2" }), null);
 
     expect(mockUpdate.mock.calls[0]?.[0]).toEqual({
       where: { id: "job1" },
       data: { state: "done", lastError: null, mwRevId: 555 },
     });
     expect(mockUpdate.mock.calls[1]?.[0].data).toEqual({ state: "done", lastError: null });
+  });
+
+  it("keeps a note about how a job was finished in its payload, beside what the payload already says", async () => {
+    await completeJob(job({ id: "job1" }), 7, "pushed as an edit");
+    await completeJob(
+      job({ id: "job2", payload: { restore: true, summary: "Restoring" } }),
+      7,
+      "pushed as an edit"
+    );
+
+    expect(mockUpdate.mock.calls[0]?.[0].data.payload).toEqual({
+      restore: false,
+      note: "pushed as an edit",
+    });
+    expect(mockUpdate.mock.calls[1]?.[0].data.payload).toEqual({
+      restore: true,
+      summary: "Restoring",
+      note: "pushed as an edit",
+    });
+  });
+
+  it("gives claimed jobs back: pending again, the attempt not counted", async () => {
+    await releaseJobs(["job1", "job2"]);
+    await releaseJobs([]);
+
+    expect(mockUpdateMany).toHaveBeenCalledTimes(1);
+    expect(mockUpdateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["job1", "job2"] }, state: "running" },
+      data: { state: "pending", attempts: { decrement: 1 } },
+    });
   });
 
   it("sends a failed job back to pending after its backoff, keeping the error", async () => {

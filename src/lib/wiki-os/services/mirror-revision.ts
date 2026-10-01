@@ -1,20 +1,28 @@
 /**
- * mirror-revision.ts — a `revision` mirror job: one WikiOS revision becomes a MediaWiki revision.
+ * mirror-revision.ts — `revision` mirror jobs: WikiOS revisions become MediaWiki revisions, a batch at a time.
  *
- * The revision goes out as a one-page, one-revision XML export through `action=import` with
- * `assignknownusers=1`, so MediaWiki credits it to the account that made it (the verified link of the
- * author, else the author's name; an unknown name becomes `wikios>Name`) at the time it was made.
+ * Revisions go out as a one-page XML export through `action=import` with `assignknownusers=1`, so MediaWiki
+ * credits each to the account that made it (the verified link of the author, else the author's name; an unknown
+ * name becomes `wikios>Name`) at the time it was made. The worker takes every revision job of a title that waits
+ * next in line (see `pickBatch`, at most 50 revisions and about 6 MB of XML) and imports them in ONE request, oldest
+ * first, so a backlog costs MediaWiki one null revision, not one per edit (below).
  *
- * What MediaWiki does with an import (seen against a real MediaWiki 1.45): the imported revision becomes the
- * page's current one only when it is newer than the current revision; either way MediaWiki then adds a null
- * revision by the importing account ("1 revision imported: <summary>") that copies the page's CURRENT text.
- * The import answers with no revision id, so the result is checked: when MediaWiki's current revision (that null
- * revision, normally) has this revision's text, it is stamped on the WikiOS revision and the article (a MediaWiki
- * edit on top of it has it as its parent, and the inbound sync knows it as the bot's own); when it does not
- * (someone edited in MediaWiki since, or the import is older than the bot's last null revision), the text is
- * pushed once more as an ordinary `action=edit` by the mirror account, and that edit is stamped.
+ * What MediaWiki does with an import (seen against a real MediaWiki 1.45): an imported revision becomes the page's
+ * current one only when it is newer than the current revision; either way MediaWiki then adds ONE null revision by
+ * the importing account ("N revisions imported: <summary>") that copies the page's CURRENT text. Imported one by
+ * one, the second revision of a quick pair is older than the first one's null revision and never becomes current
+ * (it needs an edit to push its text); imported together, the newest revision does.
  *
- * Import errors (no import right, a bad prefix) are failures: the job is retried and ends up dead for an
+ * The import answers with no revision ids, so the result is checked and read back:
+ *   - the newest revision's text must be MediaWiki's current text. It is stamped on that WikiOS revision and on the
+ *     article (a MediaWiki edit on top of it has it as its parent, and the inbound sync knows it as the bot's own).
+ *     If it is not (someone edited in MediaWiki since), that text, and only that text, is pushed once more as an
+ *     ordinary `action=edit` by the mirror account, and the edit is stamped; the earlier revisions of the batch
+ *     still count as imported, with a note saying so;
+ *   - every earlier revision of the batch is found in the page's history by its hash and timestamp, and stamped
+ *     with that revision's id (one that cannot be found stays unstamped, with a note).
+ *
+ * Import errors (no import right, a bad prefix) are failures: the jobs are retried and end up dead for an
  * operator; there is no fallback for them.
  */
 
@@ -31,6 +39,7 @@ import { mirrorBotName } from "../adapters/mediawiki/csrf-cache";
 import { contentModelFor } from "../xml/content-model";
 import { createExportWriter, toXmlTimestamp } from "../xml/export-writer";
 import { mwSha1Base36, sha1HexToBase36 } from "../xml/sha1";
+import type { XmlRevision } from "../xml/types";
 import { MIRROR_SOURCE, revisionPayloadSchema, type RevisionPayload } from "./mirror-outbox";
 import type { MirrorJob } from "./mirror-queue";
 
@@ -40,24 +49,41 @@ const UNKNOWN_AUTHOR = "Community Contributor";
 const DEFAULT_SUMMARY = "WikiOS native edit";
 const RESTORE_SUMMARY = "Restoring the current WikiOS revision";
 const SUMMARY_LIMIT = 480;
+/** A batch stops taking revisions once its XML has reached this size (the revision that crosses it still goes in). */
+export const MAX_BATCH_BYTES = 6 * 1024 * 1024;
+/** Pages of the page's history read to find the revisions of a batch. */
+const MAX_HISTORY_PAGES = 4;
+
+const EDIT_NOTE = "MediaWiki had a newer revision: this text was pushed as an edit instead";
+const SUPERSEDED_NOTE =
+  "Imported, but MediaWiki had a newer revision: only the batch's newest text was pushed, as an edit";
+const UNMATCHED_NOTE =
+  "Imported, but its revision was not found in MediaWiki's history, so it is unstamped";
 
 const importResultSchema = z.looseObject({
   import: z.array(z.looseObject({ title: z.string(), revisions: z.number() })),
 });
 
-const currentRevisionSchema = z.object({
+const revisionsPageSchema = z.object({
   query: z.object({
     pages: z.array(
       z.looseObject({
         revisions: z
-          .array(z.looseObject({ revid: z.number(), sha1: z.string().optional() }))
+          .array(
+            z.looseObject({
+              revid: z.number(),
+              sha1: z.string().optional(),
+              timestamp: z.string().optional(),
+            })
+          )
           .optional(),
       })
     ),
   }),
+  continue: z.looseObject({ rvcontinue: z.string().optional() }).optional(),
 });
 
-interface MirroredRevision {
+export interface MirroredRevision {
   id: string;
   wikitext: string;
   author: string | null;
@@ -75,60 +101,164 @@ interface CurrentRevision {
   sha1: string | null;
 }
 
-/** The account the revision is credited to: the mirror itself for a restore, else its author. */
-async function contributorOf(revision: MirroredRevision, restore: boolean): Promise<string> {
-  if (restore) {
-    const bot = mirrorBotName();
-    if (!bot) throw new Error("WIKIOS_MEDIAWIKI_BOT_USER is not set: there is no mirror account");
-    return bot;
-  }
-  const link = revision.authorId
-    ? await db.wikiAccountLink.findFirst({
-        where: { userId: revision.authorId, source: MIRROR_SOURCE, verifiedAt: { not: null } },
-        select: { username: true },
-      })
-    : null;
-  return link?.username ?? revision.author ?? UNKNOWN_AUTHOR;
+/** One job of a batch: its revision goes into the import, or there is nothing to send for it. */
+export type BatchMember =
+  | { job: MirrorJob; send: true; revision: MirroredRevision }
+  | {
+      job: MirrorJob;
+      send: false;
+      /** The MediaWiki revision that already holds it (the inbound sync stamped it); null: nothing to mirror. */
+      mwRevId: number | null;
+    };
+
+/** What `planRevisionBatch` decided, before anything is sent. */
+export interface RevisionBatchPlan {
+  title: string;
+  /** A park's re-push of the head, which goes alone (see `RevisionPayload.restore`). */
+  restore: boolean;
+  /** The jobs this batch settles, oldest first: a prefix of the jobs it was given. */
+  members: BatchMember[];
+  /** The export-0.11 document of the revisions to send; null when there are none. */
+  xml: string | null;
+  /** The summary of the import log (and of the null revision). */
+  importSummary: string;
 }
 
-/** The export-0.11 document holding `text` as the one revision of `title`. */
-async function buildImportXml(params: {
-  title: string;
-  namespace: number;
-  text: string;
-  contributor: string;
-  timestamp: Date;
-  summary: string | null;
-  minor: boolean;
-}): Promise<string> {
+/** What became of one job of a batch. */
+export interface BatchOutcome {
+  job: MirrorJob;
+  /** The MediaWiki revision that holds its text; null when there is none to name. */
+  mwRevId: number | null;
+  /** Why the job is done in a way worth knowing about. */
+  note?: string;
+}
+
+/** The summary the import log and an edit fallback carry. */
+function summaryOf(revision: MirroredRevision, payload: RevisionPayload): string {
+  const own = payload.restore ? payload.summary || RESTORE_SUMMARY : revision.summary;
+  return (own?.trim() || DEFAULT_SUMMARY).slice(0, SUMMARY_LIMIT);
+}
+
+async function loadRevisions(jobs: readonly MirrorJob[]): Promise<Map<string, MirroredRevision>> {
+  const ids = jobs.flatMap((job) => job.revisionId ?? []);
+  if (ids.length === 0) return new Map();
+  const rows = await db.wikiRevision.findMany({
+    where: { id: { in: ids } },
+    select: {
+      id: true,
+      wikitext: true,
+      author: true,
+      authorId: true,
+      summary: true,
+      minor: true,
+      createdAt: true,
+      mwRevId: true,
+      sha1: true,
+    },
+  });
+  return new Map(rows.map((row) => [row.id, row]));
+}
+
+/** The wiki account each revision's author verified, by WikiOS user id. */
+async function verifiedUsernames(
+  revisions: Iterable<MirroredRevision>
+): Promise<Map<string, string>> {
+  const ids = [...new Set([...revisions].flatMap((revision) => revision.authorId ?? []))];
+  if (ids.length === 0) return new Map();
+  const links = await db.wikiAccountLink.findMany({
+    where: { userId: { in: ids }, source: MIRROR_SOURCE, verifiedAt: { not: null } },
+    select: { userId: true, username: true },
+  });
+  return new Map(links.map((link) => [link.userId, link.username]));
+}
+
+function requireMirrorBot(): string {
+  const bot = mirrorBotName();
+  if (!bot) throw new Error("WIKIOS_MEDIAWIKI_BOT_USER is not set: there is no mirror account");
+  return bot;
+}
+
+/**
+ * Decide the batch the `jobs` (revision jobs of one title, oldest first, as `pickBatch` hands them over) make, and
+ * build its XML. A restore goes alone. A revision the inbound sync already stamped, or one that went with its page,
+ * is settled without being sent; the batch stops taking revisions when its XML reaches `MAX_BATCH_BYTES`. Only
+ * reads: nothing is claimed or sent yet.
+ */
+export async function planRevisionBatch(jobs: readonly MirrorJob[]): Promise<RevisionBatchPlan> {
+  const first = jobs[0];
+  if (!first) throw new Error("A revision batch needs a job");
+  const restore = revisionPayloadSchema.parse(first.payload ?? {}).restore;
+  const candidates = restore ? [first] : jobs;
+  const revisions = await loadRevisions(candidates);
+  const usernames = restore
+    ? new Map<string, string>()
+    : await verifiedUsernames(revisions.values());
+  const bot = restore ? requireMirrorBot() : null;
+  const { model, format } = contentModelFor(first.title);
+
+  const members: BatchMember[] = [];
+  const summaries: string[] = [];
   const chunks: string[] = [];
+  let bytes = 0;
+
+  function* revisionsToSend(): Generator<XmlRevision> {
+    for (const job of candidates) {
+      const revision = job.revisionId ? revisions.get(job.revisionId) : undefined;
+      if (!revision) {
+        members.push({ job, send: false, mwRevId: null });
+      } else if (!restore && revision.mwRevId !== null) {
+        members.push({ job, send: false, mwRevId: revision.mwRevId });
+      } else if (summaries.length > 0 && bytes >= MAX_BATCH_BYTES) {
+        return;
+      } else {
+        const payload = revisionPayloadSchema.parse(job.payload ?? {});
+        const summary = summaryOf(revision, payload);
+        members.push({ job, send: true, revision });
+        summaries.push(summary);
+        yield {
+          id: null,
+          parentId: null,
+          timestamp: toXmlTimestamp(restore ? new Date() : revision.createdAt),
+          contributor: {
+            username:
+              bot ??
+              (revision.authorId ? usernames.get(revision.authorId) : undefined) ??
+              revision.author ??
+              UNKNOWN_AUTHOR,
+            id: null,
+          },
+          minor: restore ? false : revision.minor,
+          comment: restore ? summary : revision.summary,
+          commentDeleted: false,
+          model,
+          format,
+          text: revision.wikitext,
+          textDeleted: false,
+        };
+      }
+    }
+  }
+
   const writer = createExportWriter((chunk) => {
     chunks.push(chunk);
+    bytes += Buffer.byteLength(chunk, "utf8");
   });
-  const { model, format } = contentModelFor(params.title);
   await writer.start();
   await writer.page({
-    title: params.title,
-    ns: params.namespace,
+    title: first.title,
+    ns: canonicalizeTitle(first.title, { source: first.source })?.namespaceId ?? 0,
     pageId: null,
-    revisions: [
-      {
-        id: null,
-        parentId: null,
-        timestamp: toXmlTimestamp(params.timestamp),
-        contributor: { username: params.contributor, id: null },
-        minor: params.minor,
-        comment: params.summary,
-        commentDeleted: false,
-        model,
-        format,
-        text: params.text,
-        textDeleted: false,
-      },
-    ],
+    revisions: revisionsToSend(),
   });
   await writer.end();
-  return chunks.join("");
+
+  return {
+    title: first.title,
+    restore,
+    members,
+    xml: summaries.length > 0 ? chunks.join("") : null,
+    importSummary: summaries.at(-1) ?? DEFAULT_SUMMARY,
+  };
 }
 
 /** MediaWiki's current revision of `title`; null when the page does not exist there. */
@@ -141,11 +271,62 @@ async function currentRevision(title: string): Promise<CurrentRevision | null> {
       rvprop: "ids|sha1|timestamp",
       rvlimit: "1",
     },
-    currentRevisionSchema
+    revisionsPageSchema
   );
   const revision = data.query.pages[0]?.revisions?.[0];
   if (!revision) return null;
   return { revid: revision.revid, sha1: revision.sha1 ? sha1HexToBase36(revision.sha1) : null };
+}
+
+/**
+ * The page's history, oldest revision first (a few pages of it: the batch's revisions are among the newest).
+ */
+async function recentHistory(
+  title: string
+): Promise<Array<{ revid: number; sha1: string; timestamp: string }>> {
+  const history: Array<{ revid: number; sha1: string; timestamp: string }> = [];
+  let cursor: string | undefined;
+  for (let page = 0; page < MAX_HISTORY_PAGES; page++) {
+    const data = await getMediaWikiAction(
+      {
+        action: "query",
+        prop: "revisions",
+        titles: title,
+        rvprop: "ids|sha1|timestamp",
+        rvlimit: "max",
+        ...(cursor ? { rvcontinue: cursor } : {}),
+      },
+      revisionsPageSchema
+    );
+    for (const { revid, sha1, timestamp } of data.query.pages[0]?.revisions ?? []) {
+      if (sha1 && timestamp) history.push({ revid, sha1: sha1HexToBase36(sha1), timestamp });
+    }
+    cursor = data.continue?.rvcontinue;
+    if (!cursor) break;
+  }
+  return history.sort((a, b) => a.revid - b.revid);
+}
+
+/**
+ * The MediaWiki revision of each of `revisions` (oldest first), found by hash and timestamp in the page's history
+ * (the first, in import order, that nobody claimed yet, so identical revisions of one second are told apart);
+ * `except` is the current revision, which the import's null revision may share a hash and a second with.
+ */
+async function findImported(
+  title: string,
+  revisions: readonly MirroredRevision[],
+  except: number | null
+): Promise<Map<string, number>> {
+  const pool = (await recentHistory(title)).filter((entry) => entry.revid !== except);
+  const found = new Map<string, number>();
+  for (const revision of revisions) {
+    const sha1 = mwSha1Base36(revision.wikitext);
+    const timestamp = toXmlTimestamp(revision.createdAt);
+    const at = pool.findIndex((entry) => entry.sha1 === sha1 && entry.timestamp === timestamp);
+    const [entry] = at === -1 ? [] : pool.splice(at, 1);
+    if (entry) found.set(revision.id, entry.revid);
+  }
+  return found;
 }
 
 /** Push `text` as an ordinary edit on top of MediaWiki's current revision; resolves to the revision it made. */
@@ -172,8 +353,8 @@ async function pushAsEdit(
   return revid;
 }
 
-/** Give the WikiOS revision its MediaWiki id, and the article the id of the MediaWiki revision that holds its text. */
-async function stamp(job: MirrorJob, revision: MirroredRevision, mwRevId: number): Promise<void> {
+/** Give the WikiOS revision the id of the MediaWiki revision it is. */
+async function stampRevision(revision: MirroredRevision, mwRevId: number): Promise<void> {
   try {
     await db.wikiRevision.updateMany({
       where: { id: revision.id, mwRevId: null },
@@ -184,90 +365,129 @@ async function stamp(job: MirrorJob, revision: MirroredRevision, mwRevId: number
     // (`db` turns the database's unique-constraint error into a ConflictError, see ~/lib/prisma-error.)
     if (!(error instanceof ConflictError)) throw error;
   }
-  if (job.articleId) {
-    await db.wikiArticle.updateMany({
-      where: { id: job.articleId },
-      data: { mwLatestRevId: mwRevId, lastMwSyncAt: new Date() },
-    });
-  }
 }
 
-/** The summary the import log and an edit fallback carry. */
-function summaryOf(revision: MirroredRevision, payload: RevisionPayload): string {
-  const own = payload.restore ? payload.summary || RESTORE_SUMMARY : revision.summary;
-  return (own?.trim() || DEFAULT_SUMMARY).slice(0, SUMMARY_LIMIT);
-}
-
-/** The revision a job mirrors; null when it is gone with its page. */
-function loadRevision(revisionId: string | null): Promise<MirroredRevision | null> {
-  if (!revisionId) return Promise.resolve(null);
-  return db.wikiRevision.findUnique({
-    where: { id: revisionId },
-    select: {
-      id: true,
-      wikitext: true,
-      author: true,
-      authorId: true,
-      summary: true,
-      minor: true,
-      createdAt: true,
-      mwRevId: true,
-      sha1: true,
-    },
+/** The article remembers the MediaWiki revision that holds its current text. */
+async function stampArticle(job: MirrorJob, mwRevId: number): Promise<void> {
+  if (!job.articleId) return;
+  await db.wikiArticle.updateMany({
+    where: { id: job.articleId },
+    data: { mwLatestRevId: mwRevId, lastMwSyncAt: new Date() },
   });
 }
 
-/** Send the revision to MediaWiki as a one-page, one-revision XML import. */
-async function importRevision(
-  job: MirrorJob,
-  revision: MirroredRevision,
-  payload: RevisionPayload,
-  summary: string
-): Promise<void> {
-  const xml = await buildImportXml({
-    title: job.title,
-    namespace: canonicalizeTitle(job.title, { source: job.source })?.namespaceId ?? 0,
-    text: revision.wikitext,
-    contributor: await contributorOf(revision, payload.restore),
-    timestamp: payload.restore ? new Date() : revision.createdAt,
-    summary: payload.restore ? summary : revision.summary,
-    minor: payload.restore ? false : revision.minor,
-  });
+async function postImport(plan: RevisionBatchPlan & { xml: string }): Promise<void> {
   await postMediaWikiAction(
-    { action: "import", interwikiprefix: INTERWIKI_PREFIX, assignknownusers: "1", summary },
+    {
+      action: "import",
+      interwikiprefix: INTERWIKI_PREFIX,
+      assignknownusers: "1",
+      summary: plan.importSummary,
+    },
     importResultSchema,
-    { field: "xml", filename: "wikios.xml", contentType: "application/xml", content: xml }
+    { field: "xml", filename: "wikios.xml", contentType: "application/xml", content: plan.xml }
   );
 }
 
 /**
- * Mirror the job's revision. Resolves to the MediaWiki revision id that now holds its text, or null when
- * there is nothing to mirror (the revision went with its page). Throws on any failure, for the retry.
+ * Import the batch, then make sure MediaWiki's current text is the text of `head` (the batch's newest revision): the
+ * import is the current revision only when nothing newer is in MediaWiki's history, and otherwise `head`'s text is
+ * pushed as an edit. Resolves to the revision that holds it.
  */
-export async function runRevisionJob(job: MirrorJob): Promise<number | null> {
-  const payload = revisionPayloadSchema.parse(job.payload ?? {});
-  const revision = await loadRevision(job.revisionId);
-  if (!revision) return null;
-  // An echo of this very text is already in MediaWiki's history (the inbound sync stamped the revision).
-  if (!payload.restore && revision.mwRevId !== null) return revision.mwRevId;
+async function importAndVerify(
+  plan: RevisionBatchPlan & { xml: string },
+  head: Extract<BatchMember, { send: true }>
+): Promise<{ revid: number; viaEdit: boolean }> {
+  await postImport(plan);
+  const current = await currentRevision(head.job.title);
+  if (current !== null && current.sha1 === mwSha1Base36(head.revision.wikitext)) {
+    return { revid: current.revid, viaEdit: false };
+  }
+  const summary = summaryOf(head.revision, revisionPayloadSchema.parse(head.job.payload ?? {}));
+  return {
+    revid: await pushAsEdit(head.job.title, head.revision, summary, current),
+    viaEdit: true,
+  };
+}
 
-  const wanted = mwSha1Base36(revision.wikitext);
-  if (payload.restore) {
-    // MediaWiki already holds the head's text (the edit that conflicted was superseded since): nothing to restore.
-    // An edit (the fallback below) saves the text without its trailing whitespace, so that counts as the same text.
-    const holder = await currentRevision(job.title);
-    if (holder?.sha1 === wanted || holder?.sha1 === mwSha1Base36(revision.wikitext.trimEnd())) {
-      await stamp(job, revision, holder.revid);
-      return holder.revid;
-    }
+/** A restore: nothing to do when MediaWiki already holds the head's text, else import it (dated now, by the bot). */
+async function executeRestore(
+  plan: RevisionBatchPlan & { xml: string },
+  member: Extract<BatchMember, { send: true }>
+): Promise<BatchOutcome[]> {
+  const { job, revision } = member;
+  // The conflicting edit may have been superseded since; an edit (the fallback) saves the text without its trailing
+  // whitespace, which counts as the same text.
+  const holder = await currentRevision(job.title);
+  const sameText = (sha1: string | null) =>
+    sha1 === mwSha1Base36(revision.wikitext) || sha1 === mwSha1Base36(revision.wikitext.trimEnd());
+  const revid =
+    holder && sameText(holder.sha1) ? holder.revid : (await importAndVerify(plan, member)).revid;
+  await stampRevision(revision, revid);
+  await stampArticle(job, revid);
+  return [{ job, mwRevId: revid }];
+}
+
+/** An ordinary batch: import, verify the newest text, find and stamp the earlier revisions. */
+async function executeBatch(
+  plan: RevisionBatchPlan & { xml: string },
+  sent: Array<Extract<BatchMember, { send: true }>>
+): Promise<BatchOutcome[]> {
+  // A batch whose last job had nothing to send (its text is already in MediaWiki) has no newest text to verify.
+  const last = plan.members.at(-1);
+  const head = last?.send ? last : null;
+  let revid: number | null = null;
+  let viaEdit = false;
+  if (head) {
+    ({ revid, viaEdit } = await importAndVerify(plan, head));
+  } else {
+    await postImport(plan);
   }
 
-  const summary = summaryOf(revision, payload);
-  await importRevision(job, revision, payload, summary);
-  // The import is the current revision only when nothing newer is in MediaWiki's history.
-  const current = await currentRevision(job.title);
-  const holdsText = current !== null && current.sha1 === wanted;
-  const revid = holdsText ? current.revid : await pushAsEdit(job.title, revision, summary, current);
-  await stamp(job, revision, revid);
-  return revid;
+  const earlier = head ? sent.slice(0, -1) : sent;
+  const imported =
+    earlier.length > 0
+      ? await findImported(
+          plan.title,
+          earlier.map((member) => member.revision),
+          revid
+        )
+      : new Map<string, number>();
+  for (const { revision } of earlier) {
+    const id = imported.get(revision.id);
+    if (id !== undefined) await stampRevision(revision, id);
+  }
+  if (head && revid !== null) {
+    await stampRevision(head.revision, revid);
+    await stampArticle(head.job, revid);
+  }
+
+  return plan.members.map((member): BatchOutcome => {
+    if (!member.send) return { job: member.job, mwRevId: member.mwRevId };
+    if (member === head) {
+      return { job: member.job, mwRevId: revid, ...(viaEdit ? { note: EDIT_NOTE } : {}) };
+    }
+    const mwRevId = imported.get(member.revision.id) ?? null;
+    const note = viaEdit ? SUPERSEDED_NOTE : mwRevId === null ? UNMATCHED_NOTE : undefined;
+    return { job: member.job, mwRevId, ...(note ? { note } : {}) };
+  });
+}
+
+/**
+ * Send a planned batch to MediaWiki and settle its jobs. Resolves to one outcome per member, oldest first. Throws on
+ * any failure (the caller fails every job of the batch, for the retry).
+ */
+export async function executeRevisionBatch(plan: RevisionBatchPlan): Promise<BatchOutcome[]> {
+  const sent = plan.members.filter(
+    (member): member is Extract<BatchMember, { send: true }> => member.send
+  );
+  const [firstSent] = sent;
+  if (plan.xml === null || !firstSent) {
+    return plan.members.map((member) => ({
+      job: member.job,
+      mwRevId: member.send ? null : member.mwRevId,
+    }));
+  }
+  const sendable = { ...plan, xml: plan.xml };
+  return plan.restore ? executeRestore(sendable, firstSent) : executeBatch(sendable, sent);
 }

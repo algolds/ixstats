@@ -12,9 +12,11 @@
 
 import type { WikiMirrorJob } from "@prisma/client";
 import { db } from "~/server/db";
-import { MIRROR_SOURCE, movePayloadSchema } from "./mirror-outbox";
+import { MIRROR_SOURCE, movePayloadSchema, revisionPayloadSchema } from "./mirror-outbox";
 
 export const MAX_ATTEMPTS = 8;
+/** Most revision jobs of one title imported together. */
+export const MAX_BATCH_JOBS = 50;
 const BACKOFF_BASE_MS = 30_000;
 const BACKOFF_MAX_MS = 60 * 60_000;
 /** The oldest not-done jobs a pick looks at: enough to see every blocker of the jobs it could run. */
@@ -54,6 +56,37 @@ export function pickRunnable(jobs: readonly MirrorJob[], now: Date): MirrorJob |
   return null;
 }
 
+/** Whether `job` writes a revision as it is (not a restore, which is dated now and goes alone). */
+function isPlainRevision(job: MirrorJob): boolean {
+  return (
+    job.kind === "revision" && !revisionPayloadSchema.safeParse(job.payload ?? {}).data?.restore
+  );
+}
+
+/**
+ * The jobs to run together with `first` (the job `pickRunnable` chose): when it is a plain revision job, every plain
+ * revision job of its title that waits next in line, up to `maxJobs`, oldest first. The batch stops at the first
+ * job of the title (or of a move to it) that is anything else: another kind, a restore, one that is running, dead
+ * or waiting out a backoff. Jobs of other titles in between do not matter. Pure.
+ */
+export function pickBatch(
+  window: readonly MirrorJob[],
+  first: MirrorJob,
+  now: Date,
+  maxJobs = MAX_BATCH_JOBS
+): MirrorJob[] {
+  const batch = [first];
+  if (!isPlainRevision(first)) return batch;
+  for (const job of window.slice(window.findIndex((candidate) => candidate.id === first.id) + 1)) {
+    if (batch.length >= maxJobs) break;
+    if (!titlesOf(job).includes(first.title)) continue;
+    const joins = isPlainRevision(job) && job.state === "pending" && job.nextAttemptAt <= now;
+    if (!joins) break;
+    batch.push(job);
+  }
+  return batch;
+}
+
 /** The oldest not-done jobs, oldest first. */
 export function loadWindow(): Promise<MirrorJob[]> {
   return db.wikiMirrorJob.findMany({
@@ -87,10 +120,33 @@ export async function reclaimInterruptedJobs(now = new Date()): Promise<number> 
   return count;
 }
 
-export function completeJob(id: string, mwRevId: number | null): Promise<MirrorJob> {
+/**
+ * Finish `job`, with the MediaWiki revision that holds its text (when there is one) and, when the way it was
+ * finished is worth knowing, a `note` kept in its payload.
+ */
+export function completeJob(
+  job: MirrorJob,
+  mwRevId: number | null,
+  note?: string
+): Promise<MirrorJob> {
+  const payload = revisionPayloadSchema.safeParse(job.payload ?? {});
   return db.wikiMirrorJob.update({
-    where: { id },
-    data: { state: "done", lastError: null, ...(mwRevId === null ? {} : { mwRevId }) },
+    where: { id: job.id },
+    data: {
+      state: "done",
+      lastError: null,
+      ...(mwRevId === null ? {} : { mwRevId }),
+      ...(note ? { payload: { ...payload.data, note } } : {}),
+    },
+  });
+}
+
+/** Give back claimed jobs that were not tried after all: pending again, the attempt not counted. */
+export async function releaseJobs(ids: readonly string[]): Promise<void> {
+  if (ids.length === 0) return;
+  await db.wikiMirrorJob.updateMany({
+    where: { id: { in: [...ids] }, state: "running" },
+    data: { state: "pending", attempts: { decrement: 1 } },
   });
 }
 

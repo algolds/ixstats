@@ -25,6 +25,8 @@ export const revisionPayloadSchema = z.object({
   restore: z.boolean().default(false),
   /** The edit summary a restore carries (the revision's own summary is not the reason for this push). */
   summary: z.string().optional(),
+  /** Written when the job is done in a way worth knowing about (see mirror-revision.ts); never by the enqueuer. */
+  note: z.string().optional(),
 });
 export type RevisionPayload = z.infer<typeof revisionPayloadSchema>;
 

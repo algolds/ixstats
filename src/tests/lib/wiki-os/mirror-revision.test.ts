@@ -1,32 +1,37 @@
 /** @jest-environment node */
 /**
- * Plan 407: a `revision` mirror job. The revision is imported through `action=import` (one page, one revision,
- * credited to its author, dated as it was made), the result is verified against MediaWiki's current revision,
- * and an edit is the fallback when the import is not the current one. MediaWiki is a scripted fake: nothing
+ * Plan 407: `revision` mirror jobs. The revisions of a title are imported through `action=import` as one batch
+ * (one page, every revision oldest first, each credited to its author and dated as it was made), the newest
+ * text is verified against MediaWiki's current revision, an edit is the fallback when the import is not the
+ * current one, and every revision is stamped with its MediaWiki revision. MediaWiki is a scripted fake: nothing
  * here touches a real wiki.
  */
 import type { WikiMirrorJob } from "@prisma/client";
 import { ConflictError } from "~/lib/app-error";
 import { invalidateCsrfToken } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
 import { MediaWikiApiError } from "~/lib/wiki-os/adapters/mediawiki/write-service";
-import { runRevisionJob } from "~/lib/wiki-os/services/mirror-revision";
+import {
+  executeRevisionBatch,
+  MAX_BATCH_BYTES,
+  planRevisionBatch,
+} from "~/lib/wiki-os/services/mirror-revision";
 import { mwSha1Base36, sha1HexToBase36 } from "~/lib/wiki-os/xml/sha1";
 import { API_URL, createFakeMediaWiki, type RecordedRequest } from "~/tests/helpers/fake-mediawiki";
 import { createHash } from "node:crypto";
 
-const mockRevisionFindUnique = jest.fn();
+const mockRevisionFindMany = jest.fn();
 const mockRevisionUpdateMany = jest.fn();
 const mockArticleUpdateMany = jest.fn();
-const mockLinkFindFirst = jest.fn();
+const mockLinkFindMany = jest.fn();
 
 jest.mock("~/server/db", () => ({
   db: {
     wikiRevision: {
-      findUnique: (...a: unknown[]) => mockRevisionFindUnique(...a),
+      findMany: (...a: unknown[]) => mockRevisionFindMany(...a),
       updateMany: (...a: unknown[]) => mockRevisionUpdateMany(...a),
     },
     wikiArticle: { updateMany: (...a: unknown[]) => mockArticleUpdateMany(...a) },
-    wikiAccountLink: { findFirst: (...a: unknown[]) => mockLinkFindFirst(...a) },
+    wikiAccountLink: { findMany: (...a: unknown[]) => mockLinkFindMany(...a) },
   },
 }));
 
@@ -48,6 +53,24 @@ const revisionRow = (over: Record<string, unknown> = {}) => ({
   sha1: mwSha1Base36(TEXT),
   ...over,
 });
+
+/** The revisions the database holds (what the planner reads by id). */
+let stored: Array<ReturnType<typeof revisionRow>> = [];
+const revisionsAre = (...rows: Array<ReturnType<typeof revisionRow>>) => void (stored = rows);
+/** The verified wiki accounts of WikiOS users: id -> username. */
+const linksAre = (accounts: Record<string, string>) =>
+  mockLinkFindMany.mockImplementation(async ({ where }: { where: { userId: { in: string[] } } }) =>
+    where.userId.in.flatMap((userId) =>
+      accounts[userId] ? [{ userId, username: accounts[userId] }] : []
+    )
+  );
+
+/** Plan and send a batch of jobs, as the worker does. */
+const runBatch = async (jobs: WikiMirrorJob[]) =>
+  executeRevisionBatch(await planRevisionBatch(jobs));
+/** The MediaWiki revision the one job's text ended up in. */
+const runRevisionJob = async (single: WikiMirrorJob) =>
+  (await runBatch([single]))[0]?.mwRevId ?? null;
 
 const job = (over: Partial<WikiMirrorJob> = {}): WikiMirrorJob => ({
   id: "job-1",
@@ -109,10 +132,13 @@ beforeEach(() => {
   wiki = createFakeMediaWiki();
   globalThis.fetch = wiki.fetch as unknown as typeof fetch;
 
-  mockRevisionFindUnique.mockResolvedValue(revisionRow());
+  revisionsAre(revisionRow());
+  mockRevisionFindMany.mockImplementation(async ({ where }: { where: { id: { in: string[] } } }) =>
+    stored.filter((row) => where.id.in.includes(row.id))
+  );
   mockRevisionUpdateMany.mockResolvedValue({ count: 1 });
   mockArticleUpdateMany.mockResolvedValue({ count: 1 });
-  mockLinkFindFirst.mockResolvedValue({ username: "Alice" });
+  linksAre({ "user-1": "Alice" });
 });
 
 afterEach(() => {
@@ -167,25 +193,25 @@ describe("importing a revision", () => {
 
   it("looks the author up by the verified wiki account of the revision's user, else uses the name it carries", async () => {
     await runRevisionJob(job());
-    expect(mockLinkFindFirst).toHaveBeenCalledWith({
-      where: { userId: "user-1", source: "ixwiki", verifiedAt: { not: null } },
-      select: { username: true },
+    expect(mockLinkFindMany).toHaveBeenCalledWith({
+      where: { userId: { in: ["user-1"] }, source: "ixwiki", verifiedAt: { not: null } },
+      select: { userId: true, username: true },
     });
 
-    mockLinkFindFirst.mockResolvedValue(null);
+    linksAre({});
     await runRevisionJob(job());
     expect(requestsTo("import")[1]?.file?.content).toContain("<username>Some Country</username>");
 
-    mockRevisionFindUnique.mockResolvedValue(revisionRow({ author: null, authorId: null }));
+    revisionsAre(revisionRow({ author: null, authorId: null }));
     await runRevisionJob(job());
     expect(requestsTo("import")[2]?.file?.content).toContain(
       "<username>Community Contributor</username>"
     );
-    expect(mockLinkFindFirst).toHaveBeenCalledTimes(2); // none for a revision with no user
+    expect(mockLinkFindMany).toHaveBeenCalledTimes(2); // none for a revision with no user
   });
 
   it("marks a minor edit minor", async () => {
-    mockRevisionFindUnique.mockResolvedValue(revisionRow({ minor: true }));
+    revisionsAre(revisionRow({ minor: true }));
 
     await runRevisionJob(job());
 
@@ -235,7 +261,7 @@ describe("importing a revision", () => {
   });
 
   it("stamps the hash too on a revision that predates the column", async () => {
-    mockRevisionFindUnique.mockResolvedValue(revisionRow({ sha1: null }));
+    revisionsAre(revisionRow({ sha1: null }));
 
     await runRevisionJob(job());
 
@@ -258,7 +284,7 @@ describe("importing a revision", () => {
   });
 
   it("is already done for a revision the inbound sync stamped: MediaWiki has that text", async () => {
-    mockRevisionFindUnique.mockResolvedValue(revisionRow({ mwRevId: 42 }));
+    revisionsAre(revisionRow({ mwRevId: 42 }));
 
     await expect(runRevisionJob(job())).resolves.toBe(42);
 
@@ -267,7 +293,7 @@ describe("importing a revision", () => {
   });
 
   it("has nothing to mirror when the revision is gone with its page", async () => {
-    mockRevisionFindUnique.mockResolvedValue(null);
+    revisionsAre();
 
     await expect(runRevisionJob(job())).resolves.toBeNull();
     await expect(runRevisionJob(job({ revisionId: null }))).resolves.toBeNull();
@@ -335,7 +361,7 @@ describe("when MediaWiki has a newer revision", () => {
 
   it("keeps a minor edit minor", async () => {
     currentRevisionIs(900, "Someone else's text.");
-    mockRevisionFindUnique.mockResolvedValue(revisionRow({ minor: true }));
+    revisionsAre(revisionRow({ minor: true }));
 
     await runRevisionJob(job());
 
@@ -344,9 +370,9 @@ describe("when MediaWiki has a newer revision", () => {
 
   it("gives an edit with no summary a default one, and cuts a long one so the suffix still fits", async () => {
     currentRevisionIs(900, "Someone else's text.");
-    mockRevisionFindUnique.mockResolvedValue(revisionRow({ summary: null }));
+    revisionsAre(revisionRow({ summary: null }));
     await runRevisionJob(job());
-    mockRevisionFindUnique.mockResolvedValue(revisionRow({ summary: "s".repeat(600) }));
+    revisionsAre(revisionRow({ summary: "s".repeat(600) }));
     await runRevisionJob(job());
 
     const [plain, long] = requestsTo("edit").map((call) => call.params.summary ?? "");
@@ -465,11 +491,11 @@ describe("a restore job (a park's re-push of WikiOS's head)", () => {
     expect(xml).toContain("<username>WikiOSMirror</username>");
     expect(xml).toContain("<comment>Restoring WikiOS revision 90</comment>");
     expect(requestsTo("import")[0]?.params.summary).toBe("Restoring WikiOS revision 90");
-    expect(mockLinkFindFirst).not.toHaveBeenCalled();
+    expect(mockLinkFindMany).not.toHaveBeenCalled();
   });
 
   it("is not minor, whatever the head revision was", async () => {
-    mockRevisionFindUnique.mockResolvedValue(revisionRow({ minor: true }));
+    revisionsAre(revisionRow({ minor: true }));
 
     await runRevisionJob(restore());
 
@@ -477,7 +503,7 @@ describe("a restore job (a park's re-push of WikiOS's head)", () => {
   });
 
   it("is imported even though the head already has a MediaWiki id: that revision is the one MediaWiki lost", async () => {
-    mockRevisionFindUnique.mockResolvedValue(revisionRow({ mwRevId: 42 }));
+    revisionsAre(revisionRow({ mwRevId: 42 }));
 
     await expect(runRevisionJob(restore())).resolves.toBe(777);
 
@@ -528,5 +554,343 @@ describe("a restore job (a park's re-push of WikiOS's head)", () => {
     expect(second).toBeDefined();
     expect(requestsTo("import")).toHaveLength(1);
     expect(requestsTo("edit")).toHaveLength(0);
+  });
+});
+
+describe("a batch of revisions of one title", () => {
+  const T1 = "First text.\n";
+  const T2 = "Second text.\n";
+  const T3 = "Third text.\n";
+  const AT1 = new Date("2026-09-27T10:00:00.250Z");
+  const AT2 = new Date("2026-09-27T10:00:05.500Z");
+  const AT3 = new Date("2026-09-27T10:00:09.100Z");
+  const row = (n: number, text: string, createdAt: Date, over: Record<string, unknown> = {}) =>
+    revisionRow({
+      id: `rev-${n}`,
+      wikitext: text,
+      sha1: mwSha1Base36(text),
+      createdAt,
+      summary: `edit ${n}`,
+      ...over,
+    });
+  const jobFor = (n: number, over: Partial<WikiMirrorJob> = {}) =>
+    job({ id: `job-${n}`, revisionId: `rev-${n}`, ...over });
+  /** MediaWiki's history of the page, oldest first: the newest is the current revision. */
+  function historyIs(entries: Array<{ revid: number; text: string; timestamp: string }>) {
+    wiki.on("query", ({ params }) => {
+      const newestFirst = [...entries].reverse();
+      const shown = params.rvlimit === "1" ? newestFirst.slice(0, 1) : newestFirst;
+      return {
+        query: {
+          pages: [
+            {
+              title: "Foo bar",
+              revisions: shown.map(({ revid, text, timestamp }) => ({
+                revid,
+                sha1: hexSha1(text),
+                timestamp,
+              })),
+            },
+          ],
+        },
+      };
+    });
+  }
+  /** What an import of rev-1 and rev-2 leaves behind: both, then the null revision (a copy of the newest). */
+  const afterImportOfTwo = () =>
+    historyIs([
+      { revid: 10, text: T1, timestamp: "2026-09-27T10:00:00Z" },
+      { revid: 11, text: T2, timestamp: "2026-09-27T10:00:05Z" },
+      { revid: 12, text: T2, timestamp: "2026-09-27T10:05:00Z" },
+    ]);
+  const imports = () => requestsTo("import");
+
+  beforeEach(() => {
+    importOk();
+    revisionsAre(row(1, T1, AT1), row(2, T2, AT2));
+    afterImportOfTwo();
+  });
+
+  it("imports every revision in ONE request, oldest first, each credited to its own author at its own time", async () => {
+    revisionsAre(row(1, T1, AT1), row(2, T2, AT2, { authorId: null, author: "Nobody Known" }));
+
+    await runBatch([jobFor(1), jobFor(2)]);
+
+    expect(imports()).toHaveLength(1);
+    const xml = imports()[0]?.file?.content ?? "";
+    expect(xml.match(/<page>/g)).toHaveLength(1);
+    expect(xml.match(/<revision>/g)).toHaveLength(2);
+    expect([...xml.matchAll(/<timestamp>([^<]+)<\/timestamp>/g)].map((m) => m[1])).toEqual([
+      "2026-09-27T10:00:00Z",
+      "2026-09-27T10:00:05Z",
+    ]);
+    expect([...xml.matchAll(/<username>([^<]+)<\/username>/g)].map((m) => m[1])).toEqual([
+      "Alice",
+      "Nobody Known",
+    ]);
+    expect([...xml.matchAll(/<comment>([^<]+)<\/comment>/g)].map((m) => m[1])).toEqual([
+      "edit 1",
+      "edit 2",
+    ]);
+    expect(xml.indexOf(T1)).toBeLessThan(xml.indexOf(T2));
+  });
+
+  it("names the newest revision's summary in the import log, and looks every author up in one query", async () => {
+    await runBatch([jobFor(1), jobFor(2)]);
+
+    expect(imports()[0]?.params.summary).toBe("edit 2");
+    expect(mockLinkFindMany).toHaveBeenCalledTimes(1);
+    expect(mockRevisionFindMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("stamps the newest revision with the current revision (the null one) and each earlier one with its own import", async () => {
+    const outcomes = await runBatch([jobFor(1), jobFor(2)]);
+
+    expect(outcomes.map(({ job: done, mwRevId, note }) => [done.id, mwRevId, note])).toEqual([
+      ["job-1", 10, undefined],
+      ["job-2", 12, undefined],
+    ]);
+    expect(
+      mockRevisionUpdateMany.mock.calls.map(([args]) => [args.where.id, args.data.mwRevId])
+    ).toEqual([
+      ["rev-1", 10],
+      ["rev-2", 12],
+    ]);
+    expect(requestsTo("edit")).toHaveLength(0);
+  });
+
+  it("stamps the article once, with the current revision", async () => {
+    await runBatch([jobFor(1), jobFor(2)]);
+
+    expect(mockArticleUpdateMany).toHaveBeenCalledTimes(1);
+    expect(mockArticleUpdateMany.mock.calls[0]?.[0]).toEqual({
+      where: { id: "art-1" },
+      data: { mwLatestRevId: 12, lastMwSyncAt: expect.any(Date) },
+    });
+  });
+
+  it("reads the page's current revision once, and its history to find the earlier revisions", async () => {
+    await runBatch([jobFor(1), jobFor(2)]);
+
+    const reads = wiki.calls().filter((call) => call.params.prop === "revisions");
+    expect(reads.map((call) => call.params.rvlimit)).toEqual(["1", "max"]);
+  });
+
+  it("reads nothing from MediaWiki while it plans, and claims nothing", async () => {
+    const plan = await planRevisionBatch([jobFor(1), jobFor(2)]);
+
+    expect(wiki.fetch).not.toHaveBeenCalled();
+    expect(plan.members.map((member) => member.job.id)).toEqual(["job-1", "job-2"]);
+    expect(plan.restore).toBe(false);
+    expect(plan.importSummary).toBe("edit 2");
+  });
+
+  it("finds an earlier revision of one second that shares its text with another, in import order", async () => {
+    revisionsAre(row(1, T1, AT1), row(2, T1, AT1), row(3, T3, AT3));
+    historyIs([
+      { revid: 10, text: T1, timestamp: "2026-09-27T10:00:00Z" },
+      { revid: 11, text: T1, timestamp: "2026-09-27T10:00:00Z" },
+      { revid: 12, text: T3, timestamp: "2026-09-27T10:00:09Z" },
+      { revid: 13, text: T3, timestamp: "2026-09-27T10:05:00Z" },
+    ]);
+
+    const outcomes = await runBatch([jobFor(1), jobFor(2), jobFor(3)]);
+
+    expect(outcomes.map((outcome) => outcome.mwRevId)).toEqual([10, 11, 13]);
+  });
+
+  it("never mistakes the null revision for an earlier revision that shares its text and second", async () => {
+    revisionsAre(row(1, T1, AT1), row(2, T1, new Date("2026-09-27T10:05:00.100Z")));
+    historyIs([
+      { revid: 10, text: T1, timestamp: "2026-09-27T10:00:00Z" },
+      { revid: 11, text: T1, timestamp: "2026-09-27T10:05:00Z" },
+      { revid: 12, text: T1, timestamp: "2026-09-27T10:05:00Z" },
+    ]);
+
+    const outcomes = await runBatch([jobFor(1), jobFor(2)]);
+
+    // 12 is the current revision (the newest's stamp); the earlier one is 10, not the look-alike 11/12
+    expect(outcomes.map((outcome) => outcome.mwRevId)).toEqual([10, 12]);
+  });
+
+  it("stamps what it can find and says so for an earlier revision MediaWiki's history does not show", async () => {
+    historyIs([{ revid: 12, text: T2, timestamp: "2026-09-27T10:05:00Z" }]);
+
+    const outcomes = await runBatch([jobFor(1), jobFor(2)]);
+
+    expect(outcomes[0]).toMatchObject({
+      mwRevId: null,
+      note: expect.stringContaining("not found"),
+    });
+    expect(outcomes[1]).toMatchObject({ mwRevId: 12 });
+    expect(mockRevisionUpdateMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("follows the history over its pages to find an earlier revision", async () => {
+    const pages: Array<{ revisions: object[]; next?: string }> = [
+      {
+        revisions: [
+          { revid: 12, sha1: hexSha1(T2), timestamp: "2026-09-27T10:05:00Z" },
+          { revid: 11, sha1: hexSha1(T2), timestamp: "2026-09-27T10:00:05Z" },
+        ],
+        next: "10|abc",
+      },
+      { revisions: [{ revid: 10, sha1: hexSha1(T1), timestamp: "2026-09-27T10:00:00Z" }] },
+    ];
+    wiki.on("query", ({ params }) => {
+      if (params.rvlimit === "1") {
+        return {
+          query: {
+            pages: [{ title: "Foo bar", revisions: [{ revid: 12, sha1: hexSha1(T2) }] }],
+          },
+        };
+      }
+      const page = pages[params.rvcontinue ? 1 : 0]!;
+      return {
+        query: { pages: [{ title: "Foo bar", revisions: page.revisions }] },
+        ...(page.next ? { continue: { rvcontinue: page.next, continue: "||" } } : {}),
+      };
+    });
+
+    const outcomes = await runBatch([jobFor(1), jobFor(2)]);
+
+    expect(outcomes.map((outcome) => outcome.mwRevId)).toEqual([10, 12]);
+  });
+
+  describe("when MediaWiki has a newer revision", () => {
+    beforeEach(() => {
+      // someone edited since: the current revision holds neither text
+      historyIs([
+        { revid: 10, text: T1, timestamp: "2026-09-27T10:00:00Z" },
+        { revid: 11, text: T2, timestamp: "2026-09-27T10:00:05Z" },
+        { revid: 12, text: "A human's text.\n", timestamp: "2026-09-27T10:05:00Z" },
+      ]);
+      wiki.on("edit", () => ({ edit: { result: "Success", newrevid: 20 } }));
+    });
+
+    it("pushes the newest text, and only that, as one edit on top of the current revision", async () => {
+      await runBatch([jobFor(1), jobFor(2)]);
+
+      expect(requestsTo("edit")).toHaveLength(1);
+      expect(requestsTo("edit")[0]?.params).toMatchObject({
+        title: "Foo bar",
+        text: T2,
+        summary: "edit 2 (WikiOS)",
+        bot: "1",
+        baserevid: "12",
+      });
+    });
+
+    it("stamps the edit on the newest revision and the article, the imports on the earlier ones, with notes", async () => {
+      const outcomes = await runBatch([jobFor(1), jobFor(2)]);
+
+      expect(outcomes.map(({ mwRevId }) => mwRevId)).toEqual([10, 20]);
+      expect(outcomes[0]?.note).toContain("only the batch's newest text was pushed");
+      expect(outcomes[1]?.note).toContain("pushed as an edit instead");
+      expect(mockArticleUpdateMany.mock.calls[0]?.[0].data).toMatchObject({ mwLatestRevId: 20 });
+    });
+  });
+
+  describe("revisions with nothing to send", () => {
+    it("leaves out a revision the inbound sync already stamped, and settles its job with that id", async () => {
+      revisionsAre(row(1, T1, AT1, { mwRevId: 5 }), row(2, T2, AT2));
+      afterImportOfTwo();
+
+      const outcomes = await runBatch([jobFor(1), jobFor(2)]);
+
+      expect(imports()[0]?.file?.content.match(/<revision>/g)).toHaveLength(1);
+      expect(outcomes.map(({ mwRevId }) => mwRevId)).toEqual([5, 12]);
+    });
+
+    it("settles a revision that went with its page without sending it", async () => {
+      revisionsAre(row(2, T2, AT2));
+      afterImportOfTwo();
+
+      const outcomes = await runBatch([jobFor(1), jobFor(2)]);
+
+      expect(imports()[0]?.file?.content.match(/<revision>/g)).toHaveLength(1);
+      expect(outcomes.map(({ mwRevId }) => mwRevId)).toEqual([null, 12]);
+    });
+
+    it("makes no request at all when every revision is settled", async () => {
+      revisionsAre(row(1, T1, AT1, { mwRevId: 5 }), row(2, T2, AT2, { mwRevId: 6 }));
+
+      const outcomes = await runBatch([jobFor(1), jobFor(2)]);
+
+      expect(wiki.fetch).not.toHaveBeenCalled();
+      expect(outcomes.map(({ mwRevId }) => mwRevId)).toEqual([5, 6]);
+    });
+
+    it("imports the earlier revisions without checking or rewriting the page when the newest is already in MediaWiki", async () => {
+      revisionsAre(row(1, T1, AT1), row(2, T2, AT2, { mwRevId: 6 }));
+      historyIs(
+        [
+          { revid: 6, text: T2, timestamp: "2026-09-27T10:00:05Z" },
+          { revid: 10, text: T1, timestamp: "2026-09-27T10:00:00Z" },
+        ].sort((a, b) => a.revid - b.revid)
+      );
+
+      const outcomes = await runBatch([jobFor(1), jobFor(2)]);
+
+      expect(imports()).toHaveLength(1);
+      expect(requestsTo("edit")).toHaveLength(0);
+      expect(wiki.calls().some((call) => call.params.rvlimit === "1")).toBe(false);
+      expect(outcomes.map(({ mwRevId }) => mwRevId)).toEqual([10, 6]);
+      expect(mockArticleUpdateMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("the size of a batch", () => {
+    const big = (n: number, createdAt: Date) =>
+      row(n, `${String(n).repeat(1)}x`.repeat(1_600_000), createdAt);
+
+    it("stops taking revisions once the XML has reached 6 MB, and hands the rest back", async () => {
+      expect(MAX_BATCH_BYTES).toBe(6 * 1024 * 1024);
+      revisionsAre(big(1, AT1), big(2, AT2), big(3, AT3));
+
+      const plan = await planRevisionBatch([jobFor(1), jobFor(2), jobFor(3)]);
+
+      // 3.2 MB for the first, 6.4 MB after the second: the third waits for the next batch
+      expect(plan.members.map((member) => member.job.id)).toEqual(["job-1", "job-2"]);
+      expect(Buffer.byteLength(plan.xml ?? "")).toBeGreaterThan(MAX_BATCH_BYTES);
+      expect(plan.xml?.match(/<revision>/g)).toHaveLength(2);
+    });
+
+    it("always takes the first revision, however big", async () => {
+      revisionsAre(row(1, "y".repeat(7 * 1024 * 1024), AT1), row(2, T2, AT2));
+
+      const plan = await planRevisionBatch([jobFor(1), jobFor(2)]);
+
+      expect(plan.members.map((member) => member.job.id)).toEqual(["job-1"]);
+    });
+
+    it("takes every revision of a small batch", async () => {
+      const plan = await planRevisionBatch([jobFor(1), jobFor(2)]);
+
+      expect(plan.members).toHaveLength(2);
+    });
+  });
+
+  it("sends a restore alone, even when revision jobs follow it", async () => {
+    const restore = jobFor(1, { payload: { restore: true, summary: "Restoring" } });
+
+    const plan = await planRevisionBatch([restore, jobFor(2)]);
+
+    expect(plan.restore).toBe(true);
+    expect(plan.members.map((member) => member.job.id)).toEqual(["job-1"]);
+    expect(plan.importSummary).toBe("Restoring");
+  });
+
+  it("fails the batch, for every job to retry, when the import is refused", async () => {
+    wiki.on("import", () => ({ error: { code: "cantimport", info: "You may not import." } }));
+
+    await expect(runBatch([jobFor(1), jobFor(2)])).rejects.toBeInstanceOf(MediaWikiApiError);
+
+    expect(mockRevisionUpdateMany).not.toHaveBeenCalled();
+    expect(requestsTo("edit")).toHaveLength(0);
+  });
+
+  it("refuses an empty batch", async () => {
+    await expect(planRevisionBatch([])).rejects.toThrow("needs a job");
   });
 });
