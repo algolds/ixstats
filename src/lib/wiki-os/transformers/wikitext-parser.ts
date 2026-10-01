@@ -1,8 +1,9 @@
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
-import { resolveImageUrl, getImageUrl } from "./image-url";
+import { forwardFinder, resolveImageUrl, getImageUrl } from "./image-url";
 import { parseInfoboxToHtml } from "./infobox-parser";
 import { splitBalancedPipes } from "../wikitext/parameter-parser";
 import { findMatchingClosingBrackets } from "../wikitext/link-parser";
+import { matchBrackets } from "../wikitext/match-index";
 import { extractTableCellContent, splitBalancedDoubleTokens } from "../wikitext/table-parser";
 
 /**
@@ -236,6 +237,9 @@ function convertWikitextImages(text: string, wikiSource: string): string {
 export function stripWikitextFiles(text: string): string {
   let result = "";
   let i = 0;
+  // Where every `[[` closes, from one pass: scanning forward from each opener would be quadratic on a page
+  // with thousands of openers that never close.
+  const index = matchBrackets(text);
 
   while (i < text.length) {
     const prefix = text.slice(i, i + 8).toLowerCase();
@@ -244,7 +248,7 @@ export function stripWikitextFiles(text: string): string {
       prefix.startsWith("[[image:") ||
       prefix.startsWith("[[media:")
     ) {
-      const closeIdx = findMatchingClosingBrackets(text, i);
+      const closeIdx = findMatchingClosingBrackets(text, i, index);
       if (closeIdx !== -1) {
         i = closeIdx + 2;
         continue;
@@ -499,13 +503,59 @@ export function parseWikitextToHtml(
 }
 
 /**
+ * `[[Target|Label]]` becomes `Label` and `[[Target]]` becomes `Target`, in one pass. It answers what
+ * `text.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1")` answers, which rescans the rest of the text from every
+ * `[[` that never closes (quadratic on 100,000 of them).
+ */
+export function unpackInternalLinks(text: string): string {
+  const nextClose = forwardFinder(text, "]");
+  const pieces: string[] = [];
+  let copied = 0;
+  let from = 0;
+  for (;;) {
+    const open = text.indexOf("[[", from);
+    if (open === -1) break;
+    const start = open + 2;
+    const close = nextClose(start);
+    if (close === -1) break; // nothing closes any later link either
+    if (close === start) {
+      from = open + 1; // nothing between the brackets
+    } else if (text.charAt(close + 1) !== "]") {
+      from = close; // every opener before this `]` is closed by the same one
+    } else {
+      let bar = start;
+      while (bar < close && text.charAt(bar) !== "|") bar++;
+      // The label follows the first bar, unless the bar is the last character before the closing brackets.
+      const labelStart = bar < close && bar + 1 < close ? bar + 1 : start;
+      pieces.push(text.slice(copied, open), text.slice(labelStart, close));
+      copied = close + 2;
+      from = copied;
+    }
+  }
+  pieces.push(text.slice(copied));
+  return pieces.join("");
+}
+
+/**
+ * ponytail: the most `cleanWikiMarkup` reads of a text, 20,000 characters. Several of its passes are
+ * regular expressions that a text of openers that never close (`[[` repeated) makes quadratic, so a
+ * hostile 200 kB page would hold the event loop for seconds; past this ceiling the text is cut before any
+ * pass runs, which bounds the worst case at about 0.2 s. An excerpt (`maxLength > 0`) only ever shows
+ * the lead of the page, and `saveArticle` and the inbound sync already cut to this length; a caller that
+ * cleans a whole section (`maxLength` 0) gets the first 20,000 characters of it.
+ */
+export const CLEAN_MARKUP_CEILING = 20_000;
+
+/**
  * ponytail: Single authoritative plaintext wikitext cleaner.
  * Strips all wikitext markup, templates, tags, references, and formatting into clean plain text.
+ * Reads at most CLEAN_MARKUP_CEILING characters of `rawText`.
  */
 export function cleanWikiMarkup(rawText: string | null | undefined, maxLength: number = 0): string {
   if (!rawText || !rawText.trim()) return "";
 
-  let text = rawText;
+  let text =
+    rawText.length > CLEAN_MARKUP_CEILING ? rawText.slice(0, CLEAN_MARKUP_CEILING) : rawText;
 
   // 1. Strip blurb tags: [blurb:slug|Title]
   text = text.replace(/^\[blurb:[^\]]+\]\s*/gi, "");
@@ -538,7 +588,7 @@ export function cleanWikiMarkup(rawText: string | null | undefined, maxLength: n
   text = stripWikitextTemplates(text);
 
   // 10. Unpack internal links: [[Target|Label]] -> Label, [[Target]] -> Target
-  text = text.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");
+  text = unpackInternalLinks(text);
 
   // 11. Convert external links [url text] -> text or [url] -> ""
   text = text.replace(/\[https?:\/\/[^\s\]]+\s+([^\]]+)\]/g, "$1");
