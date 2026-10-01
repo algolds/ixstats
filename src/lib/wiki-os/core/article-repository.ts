@@ -85,7 +85,7 @@ const VIEW_SELECT = {
     where: { parked: false },
     orderBy: { createdAt: "desc" },
     take: 1,
-    select: { createdAt: true },
+    select: { createdAt: true, byteSize: true, textDeleted: true },
   },
   // A category MediaWiki hides (__HIDDENCAT__, the maintenance and tracking ones) is not shown on the page.
   categories: {
@@ -109,6 +109,11 @@ export interface ArticleViewHead {
   htmlSyncedAt: Date | null;
   /** The newest revision's time; null when the article has no revision rows. */
   lastModified: Date | null;
+  /**
+   * The current revision's text really is empty (0 bytes, not hidden): an empty page, which exists and
+   * shows nothing. A row whose text was never imported (no revision, or one with a size but no text) is not.
+   */
+  emptyText: boolean;
   /** Category names, alphabetical, at most `MAX_VIEW_CATEGORIES`. */
   categories: string[];
 }
@@ -675,12 +680,14 @@ export class ArticleRepository {
   ): Promise<ArticleViewHead | null> {
     const row = await resolveRow(viewFinders, slug, source);
     if (!row) return null;
+    const current = row.revisions[0];
     return {
       id: row.id,
       title: row.title,
       status: row.status,
       htmlSyncedAt: row.htmlSyncedAt,
-      lastModified: row.revisions[0]?.createdAt ?? null,
+      lastModified: current?.createdAt ?? null,
+      emptyText: current !== undefined && current.byteSize === 0 && !current.textDeleted,
       categories: row.categories.map((member) => member.category.name),
     };
   }

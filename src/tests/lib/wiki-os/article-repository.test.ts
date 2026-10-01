@@ -541,7 +541,7 @@ describe("ArticleRepository.findArticleForView (plan 404)", () => {
     title,
     status: "PUBLISHED",
     htmlSyncedAt: new Date("2026-09-30T10:00:00Z"),
-    revisions: [{ createdAt: new Date("2026-09-29T08:00:00Z") }],
+    revisions: [{ createdAt: new Date("2026-09-29T08:00:00Z"), byteSize: 1200, textDeleted: false }],
     categories: [{ category: { name: "Countries" } }, { category: { name: "Eurth" } }],
     ...overrides,
   });
@@ -575,8 +575,25 @@ describe("ArticleRepository.findArticleForView (plan 404)", () => {
       status: "PUBLISHED",
       htmlSyncedAt: new Date("2026-09-30T10:00:00Z"),
       lastModified: new Date("2026-09-29T08:00:00Z"),
+      emptyText: false,
       categories: ["Countries", "Eurth"],
     });
+  });
+
+  it("says a page's text is empty only for a current revision that really is 0 bytes (F35a)", async () => {
+    const emptyOf = async (revisions: Array<Record<string, unknown>>) => {
+      mockFindUnique.mockResolvedValue(viewRow("Talk:Paulastra", { revisions }));
+      return (await ArticleRepository.findArticleForView("Talk:Paulastra"))?.emptyText;
+    };
+    const at = new Date("2026-09-29T08:00:00Z");
+
+    await expect(emptyOf([{ createdAt: at, byteSize: 0, textDeleted: false }])).resolves.toBe(true);
+    // a placeholder: the text was never imported, its size is known
+    await expect(emptyOf([{ createdAt: at, byteSize: 300, textDeleted: false }])).resolves.toBe(false);
+    // hidden by revision deletion: not an empty page
+    await expect(emptyOf([{ createdAt: at, byteSize: 0, textDeleted: true }])).resolves.toBe(false);
+    // no revision rows at all: a stub
+    await expect(emptyOf([])).resolves.toBe(false);
   });
 
   it("resolves a case variant by slug like findBySlug does", async () => {
