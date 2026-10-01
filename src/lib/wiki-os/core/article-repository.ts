@@ -12,9 +12,11 @@ import {
   toArticleSlug,
   toArticleId,
   toRevisionId,
+  parseRevisionRef,
   toRevisionRef,
   // oxlint-disable-next-line typescript/no-unused-vars
   type ArticleId,
+  type HistoryPosition,
   type RevisionId,
   type SaveArticleInput,
   type WikiArticleEntity,
@@ -216,7 +218,8 @@ function deriveSaveFields(input: SaveArticleInput, wikitext: string, providedHtm
     (cleanWikitextExcerpt(wikitext.slice(0, EXCERPT_SOURCE_LENGTH), 300).slice(
       0,
       MAX_EXCERPT_LENGTH
-    ) || null);
+    ) ||
+      null);
   const redirect = parseRedirect(wikitext);
   const words = (wikitext || providedHtml || "").split(/\s+/).filter(Boolean).length;
   return {
@@ -667,7 +670,10 @@ export class ArticleRepository {
    * a missing article and a failed lookup are not the same answer. Unlike `findBySlug` a row
    * with no wikitext is returned: it may hold only rendered HTML, and the reader decides.
    */
-  static async findArticleForView(slug: string, source = "ixwiki"): Promise<ArticleViewHead | null> {
+  static async findArticleForView(
+    slug: string,
+    source = "ixwiki"
+  ): Promise<ArticleViewHead | null> {
     const row = await resolveRow(viewFinders, slug, source);
     if (!row) return null;
     return {
@@ -716,7 +722,8 @@ export class ArticleRepository {
       }
 
       // Is the text any different? Compared in the database: the stored text never crosses the wire.
-      const textUnchanged = (await tx.wikiArticle.count({ where: { source, title, wikitext } })) > 0;
+      const textUnchanged =
+        (await tx.wikiArticle.count({ where: { source, title, wikitext } })) > 0;
 
       // 1. Upsert WikiArticle
       const article = await tx.wikiArticle.upsert({
@@ -909,54 +916,77 @@ export class ArticleRepository {
   }
 
   /**
-   * Get full chronological revision history for an article. The article is resolved exactly as
-   * `findBySlug` resolves it, so the history of one page never merges in a case-variant row's.
-   * Parked revisions (MediaWiki edits that did not go live) are left out, so the first entry is the
-   * page's current revision; a history list asks for them with `includeParked` and gets them flagged.
+   * The revision history of an article, newest first, without any revision's text. The article is
+   * resolved exactly as `findBySlug` resolves it, so the history of one page never merges in a
+   * case-variant row's. `position` pages through it: `{ before }` starts right after that revision
+   * (the "older" page), `{ from }` at that revision itself; a reference to no revision of this
+   * article is an empty page. Parked revisions (MediaWiki edits that did not go live) are left out
+   * of the rows and of the position's lookup, so the first entry is the page's current revision; a
+   * history list asks for them with `includeParked` and gets them flagged.
    */
   static async getHistory(
     slug: string,
     source = "ixwiki",
     limit = 50,
+    position?: HistoryPosition,
     { includeParked = false }: { includeParked?: boolean } = {}
   ): Promise<WikiRevisionSummary[]> {
     const article = await this.lookupArticle(slug, source);
     if (!article) return [];
 
+    let page: { cursor: { id: string }; skip?: number } | undefined;
+    if (position) {
+      const ref = "before" in position ? position.before : position.from;
+      const key = parseRevisionRef(ref);
+      const anchor = await db.wikiRevision.findFirst({
+        where: {
+          articleId: article.id,
+          ...("mwRevId" in key ? { mwRevId: key.mwRevId } : { id: key.id }),
+          ...(includeParked ? {} : { parked: false }),
+        },
+        select: { id: true },
+      });
+      if (!anchor) return [];
+      page = "before" in position ? { cursor: anchor, skip: 1 } : { cursor: anchor };
+    }
+
     const revisions = await db.wikiRevision.findMany({
       where: { articleId: article.id, ...(includeParked ? {} : { parked: false }) },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: limit,
+      ...page,
       select: {
         id: true,
         mwRevId: true,
-        articleId: true,
         summary: true,
         minor: true,
         author: true,
-        authorId: true,
         createdAt: true,
-        wikitext: true,
         byteSize: true,
         byteDelta: true,
-        format: true,
+        sha1: true,
         parked: true,
+        textDeleted: true,
+        commentDeleted: true,
+        userDeleted: true,
       },
     });
 
     return revisions.map((r) => ({
       id: toRevisionId(r.id),
       mwRevId: r.mwRevId,
-      articleId: toArticleId(r.articleId),
-      format: (r.format || "STRUCTURED_JSON") as WikiRevisionSummary["format"],
+      articleId: toArticleId(article.id),
       summary: r.summary ?? null,
       minor: r.minor ?? false,
       author: r.author ?? null,
-      authorId: r.authorId ?? null,
       createdAt: r.createdAt,
-      byteSize: r.byteSize || Buffer.byteLength(r.wikitext || "", "utf8"),
+      byteSize: r.byteSize,
       byteDelta: r.byteDelta ?? 0,
+      sha1: r.sha1 ?? null,
       parked: r.parked,
+      textDeleted: r.textDeleted,
+      commentDeleted: r.commentDeleted,
+      userDeleted: r.userDeleted,
     }));
   }
 }

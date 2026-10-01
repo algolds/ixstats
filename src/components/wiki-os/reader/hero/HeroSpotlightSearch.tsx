@@ -25,6 +25,9 @@ interface HeroSpotlightSearchProps {
   placeholderHints?: string[];
 }
 
+/** Characters before the typeahead looks anything up. */
+const MIN_QUERY_LENGTH = 2;
+
 const DEFAULT_PLACEHOLDERS = [
   "Search all articles, categories, lore...",
   "Search 'Urcea'...",
@@ -58,21 +61,21 @@ export function HeroSpotlightSearch({
     return () => clearInterval(interval);
   }, [query, isOpen, placeholderHints.length]);
 
-  // Debounce search query (120ms for instant native database spotlight feel)
+  // Debounce search query (150ms: one title lookup per pause, not per keystroke)
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(query.trim());
-    }, 120);
+    }, 150);
     return () => clearTimeout(timer);
   }, [query]);
 
   const deferredQuery = useDeferredValue(debouncedQuery);
 
-  // Direct native database query with featured image thumbnails
-  const { data: searchData, isFetching: isLoading } = api.wikios.advancedSearch.useQuery(
+  // Title typeahead (prefix + trigram) with featured image thumbnails, from 2 characters
+  const { data: searchData, isFetching: isLoading } = api.wikios.typeahead.useQuery(
     { query: deferredQuery, limit: 8 },
     {
-      enabled: isOpen && deferredQuery.length >= 1,
+      enabled: isOpen && deferredQuery.length >= MIN_QUERY_LENGTH,
       staleTime: 60_000,
     }
   );
@@ -290,7 +293,9 @@ export function HeroSpotlightSearch({
               </div>
             ) : results.length === 0 && query.trim().length > 0 ? (
               <div className="text-muted-foreground py-5 text-center text-xs">
-                No matching articles found. Press Enter or click above to create it!
+                {query.trim().length < MIN_QUERY_LENGTH
+                  ? "Keep typing to search articles…"
+                  : "No matching articles found. Press Enter or click above to create it!"}
               </div>
             ) : (
               <div className="max-h-[340px] space-y-0.5 overflow-y-auto">

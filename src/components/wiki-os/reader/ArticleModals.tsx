@@ -22,7 +22,7 @@ export function QuickHistoryModal({
   onClose: () => void;
 }) {
   const { data, isLoading } = api.wikios.getHistory.useQuery(
-    { title, limit: 10 },
+    { title, limit: 10, includeParked: true }, // it badges a parked revision
     { staleTime: 30_000 }
   );
 

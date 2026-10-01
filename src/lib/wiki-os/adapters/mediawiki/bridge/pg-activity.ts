@@ -7,7 +7,7 @@
 import { db } from "~/server/db";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
-import { cleanExcerpt, calculateRawTextBytes } from "~/lib/wiki-os/transformers/wikitext-parser";
+import { cleanExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { fetchMediaWikiPageAuthorsAndRevisions } from "./http-reader";
 import type { WikiRecentChange } from "./types";
 
@@ -15,51 +15,53 @@ import type { WikiRecentChange } from "./types";
 // Activity, Contributions & History
 // ---------------------------------------------------------------------------
 
-export async function ixwikiRecentChanges(limit: number = 20): Promise<WikiRecentChange[]> {
+/**
+ * The latest edits that went live. A parked one (a MediaWiki edit that conflicted with WikiOS's head
+ * and never went live) is left out, unless `includeParked`: the recent-changes page lists it, flagged
+ * `parked`; everything that presents "the latest change" (the Main Page, the feeds) does not.
+ */
+export async function ixwikiRecentChanges(
+  limit: number = 20,
+  { includeParked = false }: { includeParked?: boolean } = {}
+): Promise<WikiRecentChange[]> {
   try {
-    const revs: any[] = await (db as any).wikiRevision.findMany({
+    // A revision's size is stored with it, and the article's summary is its excerpt: no wikitext is read.
+    const revs = await db.wikiRevision.findMany({
       where: {
         source: "ixwiki",
         article: { namespace: 0, status: "PUBLISHED" },
         author: { notIn: ["LorewardsBot", "Maintenance script", "Robot"] },
+        ...(includeParked ? {} : { parked: false }),
       },
       orderBy: { createdAt: "desc" },
       take: limit,
-      include: {
-        article: {
-          select: {
-            title: true,
-            summary: true,
-            leadImageUrl: true,
-            wikitext: true,
-          },
-        },
+      select: {
+        author: true,
+        summary: true,
+        byteSize: true,
+        byteDelta: true,
+        parked: true,
+        createdAt: true,
+        article: { select: { title: true, summary: true, leadImageUrl: true } },
       },
     });
 
     if (revs.length > 0) {
-      return revs
-        .filter((r) => r.article?.title)
-        .map((r) => {
-          const blurb = cleanExcerpt(r.wikitext || r.article.wikitext || r.article.summary, 180);
-          const rawSize = calculateRawTextBytes(r.wikitext || r.article.wikitext);
-          const delta = r.byteDelta !== 0 ? r.byteDelta : rawSize;
-          const oldLen = Math.max(0, rawSize - delta);
-          const newLen = rawSize;
-
-          return {
-            title: r.article.title,
-            user: r.author || "MediaWiki Editor",
-            timestamp: new Date(r.createdAt).toISOString(),
-            comment: r.summary || "",
-            type: r.minor ? "edit" : "edit",
-            oldLen,
-            newLen,
-            blurb: blurb || null,
-            thumbnail: r.article.leadImageUrl || null,
-            parked: r.parked === true,
-          };
-        });
+      return revs.map((r) => {
+        const delta = r.byteDelta !== 0 ? r.byteDelta : r.byteSize;
+        return {
+          title: r.article.title,
+          user: r.author || "MediaWiki Editor",
+          timestamp: r.createdAt.toISOString(),
+          comment: r.summary || "",
+          type: "edit" as const,
+          oldLen: Math.max(0, r.byteSize - delta),
+          newLen: r.byteSize,
+          blurb: cleanExcerpt(r.article.summary, 180) || null,
+          thumbnail: r.article.leadImageUrl || null,
+          parked: r.parked,
+        };
+      });
     }
   } catch (err) {
     if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);

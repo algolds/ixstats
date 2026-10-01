@@ -29,15 +29,15 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(query), 300);
+    const timer = setTimeout(() => setDebouncedQuery(query), 150);
     return () => clearTimeout(timer);
   }, [query]);
 
   const deferredQuery = useDeferredValue(debouncedQuery);
 
-  const { data: searchData } = api.wikios.advancedSearch.useQuery(
+  const { data: searchData } = api.wikios.typeahead.useQuery(
     { query: deferredQuery, limit: 8 },
-    { enabled: open && deferredQuery.length >= 2, staleTime: 30_000 }
+    { enabled: open && deferredQuery.length >= 2, staleTime: 60_000 }
   );
 
   const items = searchData?.results ?? [];

@@ -3,7 +3,6 @@
 // Extracts infobox, TOC, and transforms links for /wiki/ routing.
 
 import { withBasePath } from "~/lib/base-path";
-import { parseInert } from "./inert-dom";
 import { DEFAULT_MEDIAWIKI_URL, getWikiBaseUrl, type WikiSource } from "~/lib/wiki-os/config";
 
 // ---------------------------------------------------------------------------
@@ -67,6 +66,8 @@ const MISSING_PAGE_TOOLTIP_REGEX = / \(page does not exist\)"/gu;
 const PAGE_NAME_REGEX = /^[^#]*/u;
 
 const IMG_LAZY_REGEX = /<img(?![^>]*loading=)/gu;
+/** A tag whose width or height is 1-24px is an icon (a notice's, a link marker's), never the lead image. */
+const TINY_IMG_REGEX = /\b(?:width|height)=["'](?:1[0-9]|2[0-4]|[1-9])["']/iu;
 const IMG_ASYNC_REGEX = /<img(?![^>]*decoding=)/gu;
 const IMG_REFERRER_REGEX = /<img(?![^>]*referrerpolicy=)/gu;
 
@@ -111,12 +112,12 @@ export function transformArticleHtml(
   // 6. Transform wiki links from /wiki/ to /wiki/ (another wiki's links stay with that wiki)
   processed = transformLinks(processed, basePath, wikiSource);
 
-  // 7. Transform image URLs to be absolute
-  processed = transformImages(processed, wikiSource);
+  // 7. Transform image URLs to be absolute. The page's first picture is likely its LCP image: the
+  // infobox's when there is one, else the body's first. It loads eagerly; every other one lazily.
+  processed = transformImages(processed, wikiSource, { eagerFirst: infoboxHtml === null });
 
-  // 8. Add section edit links styling class & performance optimization
+  // 8. Add section edit links styling class
   processed = styleEditSectionLinks(processed);
-  processed = applySectionOptimization(processed);
 
   // 9. Extract image URLs
   const images = extractImageUrls(processed);
@@ -124,7 +125,11 @@ export function transformArticleHtml(
   return {
     contentHtml: processed,
     infoboxHtml: infoboxHtml
-      ? transformLinks(transformImages(infoboxHtml, wikiSource), basePath, wikiSource)
+      ? transformLinks(
+          transformImages(infoboxHtml, wikiSource, { eagerFirst: true }),
+          basePath,
+          wikiSource
+        )
       : null,
     noticesHtml: noticesHtml
       ? transformLinks(transformImages(noticesHtml, wikiSource), basePath, wikiSource)
@@ -132,13 +137,6 @@ export function transformArticleHtml(
     toc,
     images,
   };
-}
-
-function applySectionOptimization(html: string): string {
-  return html.replace(
-    /class="mw-heading mw-heading2"/gu,
-    'class="mw-heading mw-heading2 wikios-article-section"'
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -341,7 +339,8 @@ function transformSourceWikiLinks(html: string, basePath: string, wikiSource: Wi
 
 export function transformImages(
   html: string,
-  wikiSource: "ixwiki" | "iiwiki" | "althistory" = "ixwiki"
+  wikiSource: "ixwiki" | "iiwiki" | "althistory" = "ixwiki",
+  { eagerFirst = false }: { eagerFirst?: boolean } = {}
 ): string {
   let origin = DEFAULT_MEDIAWIKI_URL;
   let proxyBase = withBasePath("/api/mediawiki/ixwiki");
@@ -420,8 +419,16 @@ export function transformImages(
   // 3. Transform href for stylesheets (/load.php)
   result = result.replace(/href="\/load\.php/gu, `href="${origin}/load.php`);
 
-  // 4. Add lazy loading, async decoding, and no-referrer
-  result = result.replace(IMG_LAZY_REGEX, '<img loading="lazy"');
+  // 4. Add lazy loading (the first real picture of `html` loads eagerly when asked), async decoding,
+  // and no-referrer
+  let eagerLeft = eagerFirst;
+  result = result.replace(IMG_LAZY_REGEX, (_match, offset: number, whole: string) => {
+    if (eagerLeft && !TINY_IMG_REGEX.test(whole.slice(offset, whole.indexOf(">", offset) + 1))) {
+      eagerLeft = false;
+      return '<img loading="eager"';
+    }
+    return '<img loading="lazy"';
+  });
   result = result.replace(IMG_ASYNC_REGEX, '<img decoding="async"');
   result = result.replace(IMG_REFERRER_REGEX, '<img referrerpolicy="no-referrer"');
 
@@ -429,20 +436,20 @@ export function transformImages(
 }
 
 /**
- * Append an "Edit" link to every h2/h3 heading, opening the source editor at that section
- * (`/wiki/{slug}?action=edit&section={heading text}`). `slug` must already be URI-encoded. The DOM does the
- * work: the HTML is sanitized already, and string surgery on sanitized HTML is not safe (a heading
- * whose attribute holds `</h2>` would have the link written into that attribute). Outside a browser
- * the HTML comes back untouched.
+ * Append an "Edit" link to every h2/h3 heading under `root` that has none yet, opening the source
+ * editor at that section (`/wiki/{slug}?action=edit&section={heading text}`). `slug` must already be
+ * URI-encoded. It works on the DOM, in place: the reader's article is a live tree React rendered
+ * from the server's HTML, and the links are added to it, never by writing the whole article HTML
+ * again (and the HTML is sanitized already: string surgery on it is not safe, a heading whose
+ * attribute holds `</h2>` would have the link written into that attribute).
  */
-export function addSectionEditLinks(html: string, slug: string): string {
-  const parsed = parseInert(html);
-  if (!parsed) return html;
+export function appendSectionEditLinks(root: Element | DocumentFragment, slug: string): void {
+  const document = root.ownerDocument;
+  if (!document) return;
 
-  const { template, document, content } = parsed;
-  for (const heading of Array.from(content.querySelectorAll("h2, h3"))) {
+  for (const heading of Array.from(root.querySelectorAll("h2, h3"))) {
     const text = (heading.textContent ?? "").trim();
-    if (!text) continue;
+    if (!text || heading.querySelector(".wikios-section-edit-link")) continue;
 
     const link = document.createElement("a");
     link.className = "wikios-section-edit-link";
@@ -454,7 +461,11 @@ export function addSectionEditLinks(html: string, slug: string): string {
     link.textContent = "Edit";
     heading.append(link);
   }
-  return template.innerHTML;
+}
+
+/** Takes the links `appendSectionEditLinks` added back out of the live tree (the viewer can no longer edit). */
+export function removeSectionEditLinks(root: Element | DocumentFragment): void {
+  for (const link of Array.from(root.querySelectorAll(".wikios-section-edit-link"))) link.remove();
 }
 
 function styleEditSectionLinks(html: string): string {

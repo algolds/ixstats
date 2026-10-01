@@ -39,7 +39,10 @@ jest.mock("~/server/db", () => {
   return {
     db: {
       $transaction: (cb: (t: typeof tx) => unknown) => cb(tx),
-      wikiRevision: { findMany: (...a: unknown[]) => mockRevisionFindMany(...a) },
+      wikiRevision: {
+        findMany: (...a: unknown[]) => mockRevisionFindMany(...a),
+        findFirst: (...a: unknown[]) => mockRevisionFindFirst(...a),
+      },
       wikiArticle: {
         findUnique: (...a: unknown[]) => mockFindUnique(...a),
         findMany: (...a: unknown[]) => mockFindMany(...a),
@@ -700,19 +703,21 @@ describe("ArticleRepository.findBySlug", () => {
 });
 
 describe("ArticleRepository.getHistory", () => {
-  const revision = (articleId: string) => ({
-    id: `rev-${articleId}`,
+  // what the select returns: no wikitext, no format, no author id
+  const revision = (articleId: string, id = `rev-${articleId}`) => ({
+    id,
     mwRevId: null,
-    articleId,
     summary: null,
     minor: false,
     author: "alice",
-    authorId: null,
     createdAt: new Date("2026-06-01T00:00:00Z"),
-    wikitext: "body",
     byteSize: 4,
     byteDelta: 4,
-    format: "WIKITEXT",
+    sha1: null,
+    parked: false,
+    textDeleted: false,
+    commentDeleted: false,
+    userDeleted: false,
   });
 
   it("reads the revisions of the one canonical article, never a case variant's", async () => {
@@ -731,12 +736,92 @@ describe("ArticleRepository.getHistory", () => {
     expect(mockRevisionFindMany).toHaveBeenCalledTimes(1);
     expect(mockRevisionFindMany.mock.calls[0]?.[0]).toMatchObject({
       where: { articleId: "id-Foo bar", parked: false },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: 10,
     });
     expect(history).toEqual([
       expect.objectContaining({ articleId: "id-Foo bar", author: "alice" }),
     ]);
+  });
+
+  it("never reads a revision's text: the select is the history columns only", async () => {
+    mockFindUnique.mockResolvedValue(articleRow("Foo"));
+    mockRevisionFindMany.mockResolvedValue([]);
+
+    await ArticleRepository.getHistory("Foo");
+
+    expect(mockRevisionFindMany.mock.calls[0]?.[0].select).toEqual({
+      id: true,
+      mwRevId: true,
+      summary: true,
+      minor: true,
+      author: true,
+      createdAt: true,
+      byteSize: true,
+      byteDelta: true,
+      sha1: true,
+      parked: true,
+      textDeleted: true,
+      commentDeleted: true,
+      userDeleted: true,
+    });
+  });
+
+  it("carries MediaWiki's revision-deletion flags to the caller, which decides who sees what", async () => {
+    mockFindUnique.mockResolvedValue(articleRow("Foo"));
+    mockRevisionFindMany.mockResolvedValue([
+      { ...revision("Foo"), sha1: "abc", textDeleted: true, userDeleted: true },
+    ]);
+
+    const [row] = await ArticleRepository.getHistory("Foo");
+
+    expect(row).toMatchObject({
+      author: "alice",
+      sha1: "abc",
+      textDeleted: true,
+      commentDeleted: false,
+      userDeleted: true,
+    });
+  });
+
+  it("pages after a revision: the cursor skips the revision itself, by rev_id or row id", async () => {
+    mockFindUnique.mockResolvedValue(articleRow("Foo"));
+    mockRevisionFindMany.mockResolvedValue([revision("Foo", "rev-older")]);
+
+    mockRevisionFindFirst.mockResolvedValueOnce({ id: "rev-9001" });
+    await ArticleRepository.getHistory("Foo", "ixwiki", 50, { before: "9001" });
+    expect(mockRevisionFindFirst.mock.calls.at(-1)?.[0]).toMatchObject({
+      where: { articleId: "id-Foo", mwRevId: 9001 },
+    });
+    expect(mockRevisionFindMany.mock.calls.at(-1)?.[0]).toMatchObject({
+      cursor: { id: "rev-9001" },
+      skip: 1,
+      take: 50,
+    });
+
+    mockRevisionFindFirst.mockResolvedValueOnce({ id: "cuid-7" });
+    await ArticleRepository.getHistory("Foo", "ixwiki", 2, { before: "cuid-7" });
+    expect(mockRevisionFindFirst.mock.calls.at(-1)?.[0]).toMatchObject({
+      where: { articleId: "id-Foo", id: "cuid-7" },
+    });
+  });
+
+  it("starts at the revision itself for `from`, and is empty for a revision of another page", async () => {
+    mockFindUnique.mockResolvedValue(articleRow("Foo"));
+    mockRevisionFindMany.mockResolvedValue([revision("Foo")]);
+    mockRevisionFindFirst.mockResolvedValueOnce({ id: "cuid-7" });
+
+    await ArticleRepository.getHistory("Foo", "ixwiki", 2, { from: "cuid-7" });
+    const args = mockRevisionFindMany.mock.calls.at(-1)?.[0];
+    expect(args).toMatchObject({ cursor: { id: "cuid-7" }, take: 2 });
+    expect(args).not.toHaveProperty("skip");
+
+    mockRevisionFindMany.mockClear();
+    mockRevisionFindFirst.mockResolvedValueOnce(null);
+    await expect(
+      ArticleRepository.getHistory("Foo", "ixwiki", 2, { before: "elsewhere" })
+    ).resolves.toEqual([]);
+    expect(mockRevisionFindMany).not.toHaveBeenCalled();
   });
 
   it("follows a unique case-variant slug match, and the newest row when it is ambiguous", async () => {
@@ -770,11 +855,81 @@ describe("ArticleRepository.getHistory", () => {
       parked: false,
     });
 
-    const history = await ArticleRepository.getHistory("nato", "ixwiki", 50, {
+    const history = await ArticleRepository.getHistory("nato", "ixwiki", 50, undefined, {
       includeParked: true,
     });
     expect(mockRevisionFindMany.mock.calls[1]?.[0].where).toEqual({ articleId: "id-NATO" });
     expect(history.map((r) => r.parked)).toEqual([true, false]);
+  });
+
+  describe("a parked revision between two live ones (plan 406)", () => {
+    // newest first: live r3, PARKED r2, live r1. The fake honours `where.parked`, the cursor and `take`.
+    const history = [
+      { ...revision("Foo", "r3"), parked: false, createdAt: new Date("2026-06-03T00:00:00Z") },
+      { ...revision("Foo", "r2"), parked: true, createdAt: new Date("2026-06-02T00:00:00Z") },
+      { ...revision("Foo", "r1"), parked: false, createdAt: new Date("2026-06-01T00:00:00Z") },
+    ];
+    type Where = { id?: string; parked?: boolean };
+    const visible = (where: Where) => history.filter((r) => where.parked !== false || !r.parked);
+
+    beforeEach(() => {
+      mockFindUnique.mockResolvedValue(articleRow("Foo"));
+      mockRevisionFindFirst.mockImplementation(
+        async ({ where }: { where: Where }) => visible(where).find((r) => r.id === where.id) ?? null
+      );
+      mockRevisionFindMany.mockImplementation(
+        async ({
+          where,
+          take,
+          skip = 0,
+          cursor,
+        }: {
+          where: Where;
+          take: number;
+          skip?: number;
+          cursor?: { id: string };
+        }) => {
+          const rows = visible(where);
+          const start = cursor ? rows.findIndex((r) => r.id === cursor.id) + skip : 0;
+          return rows.slice(start, start + take);
+        }
+      );
+    });
+
+    const ids = (rows: { id: string }[]) => rows.map((r) => r.id);
+
+    it("is invisible to history paging: neither a page's entry, nor where the next page starts", async () => {
+      expect(ids(await ArticleRepository.getHistory("Foo", "ixwiki", 10))).toEqual(["r3", "r1"]);
+      // paging one at a time steps over it
+      expect(ids(await ArticleRepository.getHistory("Foo", "ixwiki", 1))).toEqual(["r3"]);
+      expect(ids(await ArticleRepository.getHistory("Foo", "ixwiki", 1, { before: "r3" }))).toEqual(
+        ["r1"]
+      );
+      // it cannot be the anchor of a page either: "after r2" names nothing the default list shows
+      expect(await ArticleRepository.getHistory("Foo", "ixwiki", 5, { before: "r2" })).toEqual([]);
+      expect(await ArticleRepository.getHistory("Foo", "ixwiki", 5, { from: "r2" })).toEqual([]);
+    });
+
+    it("is the diff base's blind spot: the revision before the live r3 is r1, never r2", async () => {
+      // what getDiff reads: the revision itself and the one after it, from r3
+      const [revision3, base] = await ArticleRepository.getHistory("Foo", "ixwiki", 2, {
+        from: "r3",
+      });
+
+      expect([revision3?.id, base?.id]).toEqual(["r3", "r1"]);
+    });
+
+    it("is there for a history list that asks for it, in order, and can anchor a page", async () => {
+      const all = { includeParked: true };
+      expect(ids(await ArticleRepository.getHistory("Foo", "ixwiki", 10, undefined, all))).toEqual([
+        "r3",
+        "r2",
+        "r1",
+      ]);
+      expect(
+        ids(await ArticleRepository.getHistory("Foo", "ixwiki", 5, { before: "r2" }, all))
+      ).toEqual(["r1"]);
+    });
   });
 
   it("is empty, without reading revisions, when the article does not exist", async () => {

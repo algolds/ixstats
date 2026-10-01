@@ -4,8 +4,9 @@
 // spelling, 404) on the server and primes the query cache, so the article is in the first HTML;
 // this component keeps what is per viewer: edit mode, margin, stash, narrator.
 
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, useCallback, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback, type ReactNode } from "react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { ArticleRenderer } from "~/components/wiki-os/reader/ArticleRenderer";
@@ -13,7 +14,6 @@ import { ArticleNotFound } from "~/components/wiki-os/reader/ArticleNotFound";
 import { ArticleBusy } from "~/components/wiki-os/reader/ArticleBusy";
 import { ArticleTabs } from "~/components/wiki-os/reader/ArticleTabs";
 import { RedirectNotice } from "~/components/wiki-os/reader/RedirectNotice";
-import { WikiOSMainPage } from "~/components/wiki-os/reader/WikiOSMainPage";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import {
@@ -24,6 +24,13 @@ import {
 } from "~/lib/wiki-os/config";
 import type { ArticleMode } from "~/lib/wiki-os/types";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
+import { isLeanResolvable, parseLeanMarker } from "~/lib/wiki-os/lean-article";
+
+// The Main Page is its own chunk: an article never downloads it. It stays server-rendered (its data
+// is in the first HTML), so the chunk is preloaded for that page, not fetched after hydration.
+const WikiOSMainPage = dynamic(() =>
+  import("~/components/wiki-os/reader/WikiOSMainPage").then((m) => m.WikiOSMainPage)
+);
 
 const ARTICLE_STALE_TIME_MS = 10 * 60 * 1000;
 /** How soon a stale article (its render pending) is asked for again. */
@@ -36,11 +43,17 @@ const BUSY_RETRY_DELAY_MS = 3_000;
  */
 const VIEWER_CHIP = 'data-key="MyCountry:';
 
+/**
+ * Whether the server's copy of the page may hold the anonymous reader's chips. A lean copy (its HTML
+ * is markers; see lib/wiki-os/lean-article.ts) is always the anonymous one, whatever the chips are.
+ */
 function hasViewerChips(
   article:
     { contentHtml: string; infoboxHtml: string | null; noticesHtml: string | null } | undefined
 ): boolean {
-  return [article?.contentHtml, article?.infoboxHtml, article?.noticesHtml].some((html) =>
+  if (!article) return false;
+  if (parseLeanMarker(article.contentHtml) !== null) return true;
+  return [article.contentHtml, article.infoboxHtml, article.noticesHtml].some((html) =>
     html?.includes(VIEWER_CHIP)
   );
 }
@@ -118,6 +131,20 @@ export default function ArticlePageClient({
       retryDelay: BUSY_RETRY_DELAY_MS,
     }
   );
+
+  // A lean page (lib/wiki-os/lean-article.ts) hydrates with markers for the article's HTML, which the
+  // reader reads back from the DOM the server rendered. A marker with no such DOM (kept from an
+  // earlier page load) is replaced by asking for the article.
+  const leanMarker = data?.contentHtml;
+  const leanUnresolved = useMemo(
+    () => parseLeanMarker(leanMarker) !== null && !isLeanResolvable(leanMarker),
+    [leanMarker]
+  );
+  useEffect(() => {
+    if (leanUnresolved) void refetch();
+  }, [leanUnresolved, refetch]);
+  // Until then the cached marker is no data: the page shows its loading state, not an empty article.
+  const article = leanUnresolved ? undefined : data;
 
   // The server's copy of a page with viewer-specific chips is the anonymous one: a signed-in
   // reader asks once more, with their session, for their own chips.
@@ -208,7 +235,7 @@ export default function ArticlePageClient({
             {isIxWiki && <ArticleTabs title={title} />}
             {redirectedFrom && <RedirectNotice from={redirectedFrom} />}
             {aside}
-            {isLoading && !data && (
+            {(isLoading || leanUnresolved) && !article && (
               <div className="wikios-loading flex min-h-[300px] flex-col items-center justify-center">
                 <div className="wikios-loading-spinner" />
                 <p className="mt-4 text-sm text-zinc-400">
@@ -216,10 +243,10 @@ export default function ArticlePageClient({
                 </p>
               </div>
             )}
-            {error && !data && isBusyError(error) && (
+            {error && !article && isBusyError(error) && (
               <ArticleBusy title={title} onRetry={() => void refetch()} />
             )}
-            {error && !data && !isBusyError(error) && (
+            {error && !article && !isBusyError(error) && (
               <ArticleNotFound
                 title={title}
                 wikiSource={wikiSource}
@@ -227,17 +254,17 @@ export default function ArticlePageClient({
                 onCreate={() => handleEnterEdit("source")}
               />
             )}
-            {data && (
+            {article && (
               <ArticleRenderer
-                title={data.title}
-                contentHtml={data.contentHtml}
-                infoboxHtml={data.infoboxHtml}
-                noticesHtml={data.noticesHtml}
-                toc={data.toc}
-                categories={data.categories}
-                lastModified={data.lastModified ?? null}
+                title={article.title}
+                contentHtml={article.contentHtml}
+                infoboxHtml={article.infoboxHtml}
+                noticesHtml={article.noticesHtml}
+                toc={article.toc}
+                categories={article.categories}
+                lastModified={article.lastModified ?? null}
                 wikiSource={wikiSource}
-                authorInfo={data.authorInfo}
+                authorInfo={article.authorInfo}
               />
             )}
             {children}

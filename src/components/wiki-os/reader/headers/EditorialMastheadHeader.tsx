@@ -59,7 +59,7 @@ export function EditorialMastheadHeader({
 
       {/* Main Title Display */}
       <div className="mb-4 flex flex-wrap items-baseline gap-3">
-        <h1 className="text-foreground font-['Host_Grotesk'] text-3xl leading-[1.15] font-bold tracking-tight sm:text-4xl lg:text-[42px]">
+        <h1 className="text-foreground font-(family-name:--wikios-font-brand) text-3xl leading-[1.15] font-bold tracking-tight sm:text-4xl lg:text-[42px]">
           {title.replace(/_/g, " ")}
         </h1>
         <WatchButton title={title} wikiSource={wikiSource} />
