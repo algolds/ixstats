@@ -184,7 +184,8 @@ describe("robots.txt", () => {
 });
 
 describe("/api/wiki/raw", () => {
-  const request = (query: string) => new NextRequest(`http://localhost:3000/api/wiki/raw?${query}`);
+  const request = (query: string, headers: Record<string, string> = {}) =>
+    new NextRequest(`http://localhost:3000/api/wiki/raw?${query}`, { headers });
 
   it("serves a page's wikitext as text/x-wiki", async () => {
     mockFindBySlug.mockResolvedValue({ title: "Foo bar", wikitext: "'''Foo''' <b>bar</b> & more" });
@@ -195,6 +196,38 @@ describe("/api/wiki/raw", () => {
     expect(response.headers.get("content-type")).toBe("text/x-wiki; charset=utf-8");
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
     expect(await response.text()).toBe("'''Foo''' <b>bar</b> & more");
+  });
+
+  it("reads the page from the proxy's x-wikios-raw-path header first (Next keeps the original query for a rewrite)", async () => {
+    mockFindBySlug.mockResolvedValue({ wikitext: "pelaxia text" });
+    // What a rewritten /wiki/Pelaxia?action=raw looks like to the route: the original query only.
+    const response = await raw(request("action=raw", { "x-wikios-raw-path": "Pelaxia" }));
+
+    expect(response.status).toBe(200);
+    expect(mockFindBySlug).toHaveBeenCalledWith("Pelaxia");
+    expect(await response.text()).toBe("pelaxia text");
+
+    // Header first, then ?path=; the oldid of the original query still applies.
+    mockRevision.mockResolvedValue({ wikitext: "r7", title: "Pelaxia", timestamp: "t" });
+    const revision = await raw(
+      request("action=raw&oldid=7&path=Other", { "x-wikios-raw-path": "Pelaxia" })
+    );
+    expect(mockRevision).toHaveBeenCalledWith("7");
+    expect(await revision.text()).toBe("r7");
+  });
+
+  it("accepts the header only for a request that carries action=raw", async () => {
+    mockFindBySlug.mockResolvedValue({ wikitext: "text" });
+
+    expect((await raw(request("", { "x-wikios-raw-path": "Pelaxia" }))).status).toBe(400);
+    expect(
+      (await raw(request("oldid=7&path=Foo", { "x-wikios-raw-path": "Pelaxia" }))).status
+    ).toBe(400);
+    expect(mockFindBySlug).not.toHaveBeenCalled();
+
+    // Without the header, ?path= of a direct request is the page (the redirect fallback of the route).
+    expect((await raw(request("path=Foo&action=raw"))).status).toBe(200);
+    expect(mockFindBySlug).toHaveBeenCalledWith("Foo");
   });
 
   it("serves a subpage by its whole path, decoded once", async () => {
