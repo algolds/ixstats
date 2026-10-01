@@ -891,4 +891,34 @@ describe("unified-parser: infobox values are cleaned by scanning", () => {
       )
     ).toEqual([]);
   });
+
+  it("strips templates nested up to 64 deep as before, and takes time linear in the depth", () => {
+    const nested = (depth: number) => "{{a|".repeat(depth) + "x" + "}}".repeat(depth);
+    const deepValues = [1, 2, 5, 20, 63, 64].map((depth) =>
+      infobox(`before ${nested(depth)} after`)
+    );
+    expect(
+      disagreements(
+        deepValues,
+        (t) => parseInfoboxWithTemplates(t, "Urcea"),
+        (t) => legacyParseInfoboxWithTemplates(t, "Urcea")
+      )
+    ).toEqual([]);
+
+    // 20,000 levels is 120 KB: the stripping took a pass over the value per level (2.2 s)
+    const started = performance.now();
+    parseInfoboxWithTemplates(
+      `{{Infobox country\n| conventional_long_name = ${nested(20_000)}\n}}`,
+      "Urcea"
+    );
+    expect(performance.now() - started).toBeLessThan(500);
+  });
+
+  it("leaves what is nested past the 64th level as text", () => {
+    const parsed = parseInfoboxWithTemplates(
+      `{{Infobox country\n| conventional_long_name = ${"{{a|".repeat(100)}x${"}}".repeat(100)}\n}}`,
+      "Urcea"
+    );
+    expect(parsed?.conventional_long_name).toContain("{{a|");
+  });
 });

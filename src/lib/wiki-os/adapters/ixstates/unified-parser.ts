@@ -342,6 +342,14 @@ function processCompose(value: string): string {
   });
 }
 
+/**
+ * ponytail: MAX_TEMPLATE_ROUNDS, 64: the deepest nesting of templates in an infobox value that is stripped. A
+ * round takes the innermost level of the whole value, so a value nested thousands deep (a text of `{{a|` and
+ * `}}`) was a pass over all of it per level: 240 KB took 8.8 s. Real values nest a handful deep (the clone's
+ * deepest is 5); a level past the 64th is left as text.
+ */
+const MAX_TEMPLATE_ROUNDS = 64;
+
 function processTemplates(value: string): string {
   let result = value;
   result = processComments(result);
@@ -364,12 +372,12 @@ function processTemplates(value: string): string {
   result = processNobold(result);
   result = processList(result);
   result = processCompose(result);
-  // Iterate to strip nested templates from innermost out
-  let prevTemplate;
-  do {
-    prevTemplate = result;
-    result = result.replace(/\{\{[^{}]*\}\}/g, "");
-  } while (result !== prevTemplate);
+  // Strip nested templates from innermost out, a level a round
+  for (let round = 0; round < MAX_TEMPLATE_ROUNDS; round++) {
+    const stripped = result.replace(/\{\{[^{}]*\}\}/g, "");
+    if (stripped === result) break;
+    result = stripped;
+  }
   result = processRefs(result);
   result = processSmall(result);
   result = processBr(result);

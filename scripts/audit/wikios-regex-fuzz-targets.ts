@@ -1133,6 +1133,15 @@ const CATEGORY_THEN_SPACES: Family = {
   build: (size) => `[[Category:${" ".repeat(Math.max(0, size - 11))}`,
 };
 
+/** `open` as many times as the size allows and then `close` as many: nested, and balanced, to the depth the size gives. */
+const nested = (name: string, open: string, close: string): Family => ({
+  name,
+  build: (size) => {
+    const depth = Math.floor(size / (open.length + close.length));
+    return open.repeat(depth) + close.repeat(depth);
+  },
+});
+
 /** The HTML units, for the functions that read rendered HTML. */
 const HTML_UNITS: ReadonlyArray<readonly [name: string, unit: string]> = [
   ['<a href="', '<a href="'],
@@ -1261,6 +1270,8 @@ export const FAMILIES: readonly Family[] = [
     build: (size: number) => repeatTo(unit, size),
   })),
   CATEGORY_THEN_SPACES,
+  nested("{{a|…}}", "{{a|", "}}"),
+  nested("[[…]]", "[[", "]]"),
   { name: "soup:openers#1", build: soup(WIKITEXT_UNIT_TEXTS, 1) },
   { name: "soup:openers#2", build: soup(WIKITEXT_UNIT_TEXTS, 2) },
   { name: "soup:openers#3", build: soup(WIKITEXT_UNIT_TEXTS, 3) },
