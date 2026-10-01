@@ -68,6 +68,8 @@ export interface WikiActivityItem {
   byteDiff: number | null;
   timestamp: string;
   url: string;
+  /** A MediaWiki edit that did not go live (conflict): listed, never the page's live text. */
+  parked?: boolean;
 }
 
 export interface AuthoredArticle {

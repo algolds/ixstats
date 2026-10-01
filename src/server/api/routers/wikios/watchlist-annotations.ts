@@ -319,6 +319,8 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
           author: rev.author || "Community Contributor",
           summary: rev.summary,
           minor: rev.minor,
+          // A MediaWiki edit that did not go live (conflict): listed, never the page's live text.
+          parked: rev.parked,
           byteSize: rev.byteSize,
           byteDelta: rev.byteDelta,
           createdAt: rev.createdAt,

@@ -46,6 +46,9 @@ export interface RevisionRow {
   createdAt: Date;
   wikitext: string;
   format: string;
+  /** Plan 406: a MediaWiki edit kept in history without going live. A row that predates the column is not parked. */
+  parked?: boolean;
+  parkReason?: string | null;
 }
 
 export interface RestrictionRow {
@@ -87,6 +90,8 @@ export function resetStore(): void {
 const newId = (prefix: string): string => `${prefix}${store.nextId++}`;
 
 function matchesValue(actual: unknown, expected: unknown): boolean {
+  // A boolean column with a false default: a row written before it existed reads as false.
+  if (expected === false && actual === undefined) return true;
   if (expected !== null && typeof expected === "object" && !(expected instanceof Date)) {
     const condition = expected as { in?: unknown[]; not?: unknown };
     if (condition.in) return condition.in.includes(actual);
@@ -243,6 +248,8 @@ const revisionDelegate = {
         createdAt: new Date(),
         wikitext: "",
         format: "STRUCTURED_JSON",
+        parked: false,
+        parkReason: null,
         ...item,
       };
       checkRevisionUnique(row);

@@ -19,7 +19,8 @@ import {
 
 export const wikiosHistoryDiffRouter = createTRPCRouter({
   /**
-   * Get revision history for a page.
+   * Get revision history for a page. Parked revisions (MediaWiki edits that conflicted with WikiOS's
+   * head and never went live) are listed too, flagged `parked`.
    */
   getHistory: publicProcedure
     .input(
@@ -35,7 +36,8 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
         input.title,
         input.limit,
         input.offset ? parseInt(input.offset, 10) : undefined,
-        "ixwiki"
+        "ixwiki",
+        { includeParked: true }
       );
       return {
         revisions: result.revisions,
@@ -62,12 +64,17 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
       if (!toData) throw new Error(`Revision r${input.torev} not found`);
       await assertTitleVisible(ctx, toData.title);
 
-      const history = await getArticleHistoryShadow(toData.title, 100, undefined, "ixwiki");
+      const history = await getArticleHistoryShadow(toData.title, 100, undefined, "ixwiki", {
+        includeParked: true,
+      });
       const toIndex = history.revisions.findIndex((r) => r.revid === input.torev);
       const toRev = toIndex >= 0 ? history.revisions[toIndex] : null;
 
-      // History is newest-first, so the previous revision sits at toIndex + 1.
-      const previousRevId = toIndex >= 0 ? history.revisions[toIndex + 1]?.revid : undefined;
+      // History is newest-first, so the previous revision sits at toIndex + 1. A live revision follows the
+      // live ones: a conflicting edit that was parked in between was never the page's text, so the change
+      // this revision made is not measured from it. (A parked revision is compared with its neighbour.)
+      const older = toIndex >= 0 ? history.revisions.slice(toIndex + 1) : [];
+      const previousRevId = (toRev?.parked ? older[0] : older.find((r) => !r.parked))?.revid;
       const resolvedFromRevId = input.fromrev || previousRevId || "";
 
       const fromData = resolvedFromRevId

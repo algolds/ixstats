@@ -187,6 +187,23 @@ describe("writeExport", () => {
     expect(historySelect).toHaveProperty("sha1", true);
   });
 
+  it("never takes a parked revision (a MediaWiki edit that did not go live) for the head, and leaves it out of the history (plan 406)", async () => {
+    seedPage({ title: "Alpha", wikitext: "WikiOS text" }, [
+      { mwRevId: 1, wikitext: "WikiOS text", author: "Jane" },
+      { mwRevId: 2, wikitext: "A conflicting edit", author: "Bob", parked: true },
+    ]);
+
+    const [current] = await readXml(
+      await exportXml({ source: "ixwiki", titles: ["Alpha"], history: false })
+    );
+    const [full] = await readXml(
+      await exportXml({ source: "ixwiki", titles: ["Alpha"], history: true })
+    );
+
+    expect(current?.revisions[0]).toMatchObject({ id: 1, text: "WikiOS text" });
+    expect(full?.revisions.map((r) => r.id)).toEqual([1]);
+  });
+
   it("skips a newer unfilled placeholder when choosing the head's revision", async () => {
     seedPage({ title: "Alpha", wikitext: "real text" }, [
       { mwRevId: 1, wikitext: "real text", author: "Jane" },

@@ -11,7 +11,23 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
 const mockRender = jest.fn();
 jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
   __esModule: true,
-  renderArticleViaMediaWiki: (...a: unknown[]) => mockRender(...a),
+  // `mockRender` answers with the HTML (or null): a render of an old revision reports nothing about the page.
+  renderArticleViaMediaWiki: async (...a: unknown[]) => {
+    const html = (await mockRender(...a)) as string | null;
+    return html === null
+      ? null
+      : {
+          html,
+          metadata: {
+            links: null,
+            templates: null,
+            images: null,
+            categories: null,
+            displayTitle: null,
+            properties: {},
+          },
+        };
+  },
 }));
 jest.mock("~/lib/utils/sanitize-html", () => ({
   __esModule: true,

@@ -33,7 +33,10 @@ jest.mock("~/server/db", () => {
   };
   return { db: { $transaction: (cb: (t: typeof tx) => unknown) => cb(tx) } };
 });
-jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
+jest.mock("~/lib/wiki-os/services/render-service", () => ({
+  enqueueRender: jest.fn(),
+  invalidateDependents: jest.fn(),
+}));
 jest.mock("~/lib/wiki-os/core/link-graph-service", () => ({
   LinkGraphService: { syncArticleLinks: jest.fn().mockResolvedValue(0) },
 }));

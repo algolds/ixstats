@@ -209,3 +209,59 @@ describe("paginateEvents", () => {
     expect(paginateEvents(events, 2, "gone").items.map((e) => e.id)).toEqual(["e1", "e2"]);
   });
 });
+
+describe("buildWikiActivityFeed keeps parked revisions and says so (plan 406)", () => {
+  it("flags a parked native revision and a parked MediaWiki contribution; ordinary ones are not flagged", () => {
+    const feed = buildWikiActivityFeed(
+      [
+        {
+          id: "r1",
+          summary: "conflicting edit",
+          minor: false,
+          parked: true,
+          createdAt: new Date("2026-03-03T00:00:00Z"),
+          article: { title: "Foo", slug: "foo" },
+        },
+        {
+          id: "r2",
+          summary: "an edit",
+          minor: false,
+          parked: false,
+          createdAt: new Date("2026-03-02T00:00:00Z"),
+          article: { title: "Bar", slug: "bar" },
+        },
+      ],
+      [
+        {
+          rev_id: 7,
+          page_title: "Baz",
+          rev_timestamp: "2026-03-01T00:00:00Z",
+          rev_len: 10,
+          rev_comment: "x",
+          rev_minor_edit: 0,
+          is_new: false,
+          parked: true,
+        },
+        {
+          rev_id: 8,
+          page_title: "Qux",
+          rev_timestamp: "2026-02-01T00:00:00Z",
+          rev_len: 10,
+          rev_comment: "y",
+          rev_minor_edit: 0,
+          is_new: false,
+        },
+      ],
+      [],
+      [],
+      null
+    );
+
+    expect(feed.map((item) => [item.title, item.parked ?? false])).toEqual([
+      ["Foo", true],
+      ["Bar", false],
+      ["Baz", true],
+      ["Qux", false],
+    ]);
+  });
+});

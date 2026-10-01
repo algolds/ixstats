@@ -13,6 +13,7 @@ import {
   WarningTriangle as AlertTriangle,
 } from "iconoir-react";
 import { DiffViewer } from "~/components/diff-viewer";
+import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 import { api } from "~/trpc/react";
 
 interface RevisionItem {
@@ -23,6 +24,8 @@ interface RevisionItem {
   minor: boolean;
   byteSize: number;
   byteDelta?: number;
+  /** A MediaWiki edit that conflicted with WikiOS's head: in the history, never the live text. */
+  parked?: boolean;
   createdAt: Date | string;
   wikitext?: string;
 }
@@ -77,6 +80,8 @@ export function ScrubbableRevisionTimeline({
 
   const targetRev = revisions[targetRevIndex];
   const compareRev = revisions[compareRevIndex];
+  // Rollback works on the page's real revisions: a parked one never was the latest.
+  const liveRevisions = revisions.filter((r) => !r.parked);
 
   // Fetch full wikitext for both revisions if needed
   const { data: targetContent } = api.wikios.getRevisionContent.useQuery(
@@ -160,7 +165,7 @@ export function ScrubbableRevisionTimeline({
             </div>
 
             {/* Rollback Latest Author */}
-            {revisions.length >= 2 && revisions[0]?.author === revisions[1]?.author && (
+            {liveRevisions.length >= 2 && liveRevisions[0]?.author === liveRevisions[1]?.author && (
               <button
                 type="button"
                 onClick={() => rollbackMutation.mutate({ title })}
@@ -168,7 +173,9 @@ export function ScrubbableRevisionTimeline({
                 className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-red-500/20 active:scale-[0.98]"
               >
                 <RotateLeft className="h-3.5 w-3.5" />
-                {rollbackMutation.isPending ? "Rolling back…" : `Rollback ${revisions[0]?.author}`}
+                {rollbackMutation.isPending
+                  ? "Rolling back…"
+                  : `Rollback ${liveRevisions[0]?.author}`}
               </button>
             )}
           </div>
@@ -242,6 +249,7 @@ export function ScrubbableRevisionTimeline({
                   m
                 </span>
               )}
+              {targetRev?.parked && <ParkedBadge />}
             </div>
             <div className="text-muted-foreground text-xs">
               {targetRev && new Date(targetRev.createdAt).toLocaleString()}
@@ -276,6 +284,7 @@ export function ScrubbableRevisionTimeline({
                 {revisions.map((r, idx) => (
                   <option key={r.id} value={idx}>
                     {idx === 0 ? "Latest" : `r${r.id}`} • {r.author}
+                    {r.parked ? " (conflict — not live)" : ""}
                   </option>
                 ))}
               </select>
@@ -283,6 +292,7 @@ export function ScrubbableRevisionTimeline({
             <div className="text-foreground flex items-center gap-2 text-xs">
               <User className="text-muted-foreground h-3.5 w-3.5" />
               <span className="font-medium">{compareRev?.author || "Community Contributor"}</span>
+              {compareRev?.parked && <ParkedBadge />}
             </div>
             <div className="text-muted-foreground text-xs">
               {compareRev && new Date(compareRev.createdAt).toLocaleString()}

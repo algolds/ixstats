@@ -26,6 +26,7 @@ export function PageHistoryView({ title, slug }: { title: string; slug: string }
     minor: r.minor || false,
     byteSize: r.size || 0,
     byteDelta: r.byteDelta,
+    parked: r.parked,
     createdAt: r.timestamp || new Date().toISOString(),
   }));
 

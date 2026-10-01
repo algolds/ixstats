@@ -11,6 +11,7 @@ import { db } from "~/server/db";
 import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
 import { getWikiPermissions } from "~/lib/wiki-os/rights";
 import { getSiteStats } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { getInboundSyncStatus } from "~/lib/wiki-os/services/auto-sync-service";
 
 export const wikiosUtilitiesRouter = createTRPCRouter({
   /**
@@ -31,6 +32,7 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
         orphans,
         deadEnds,
         brokenRedirects,
+        inboundSync,
       ] = await Promise.all([
         db.wikiArticle
           .count({
@@ -56,6 +58,13 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
         PageManagementService.getOrphanPages(10, realm),
         PageManagementService.getDeadEndPages(10, realm),
         PageManagementService.getBrokenRedirects(10, realm),
+        getInboundSyncStatus().catch(() => ({
+          status: "UNKNOWN" as const,
+          lastRunAt: null,
+          failures: 0,
+          lastError: null,
+          repushSkipped: [],
+        })),
       ]);
 
       const totalArticles = Math.max(siteStats.articles || 0, pgArticles || 0);
@@ -73,7 +82,8 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
         orphanCount: orphans.length,
         deadEndCount: deadEnds.length,
         brokenRedirectCount: brokenRedirects.length,
-        inboundSyncStatus: "ACTIVE",
+        inboundSyncStatus: inboundSync.status,
+        inboundSync,
         integrityScore:
           brokenRedirects.length === 0 ? 100 : Math.max(90, 100 - brokenRedirects.length),
       };
