@@ -7,9 +7,16 @@
  * the rule); deletes, moves, protections, blocks and rights changes are applied from the log
  * (inbound-log-events.ts). runAutoSyncCycle runs from the `wiki-recentchanges` cron job
  * (src/server/cron/jobs.ts) and from the /api/wikios/inbound-sync webhook; there is no in-process daemon.
+ *
+ * One sync runs at a time across processes (a Postgres advisory lock): revisions of a page must be
+ * applied in order, and the cron job, the webhook and the reader's import must not interleave. A failure
+ * is logged and counted, never swallowed; each cycle leaves its outcome in SystemConfig for the health
+ * telemetry (`getInboundSyncStatus`).
  */
 
+import { z } from "zod";
 import { db } from "~/server/db";
+import { withJobLock } from "~/lib/system/job-lock";
 import {
   fetchLogEventsPage,
   fetchRecentChangesPage,
@@ -28,6 +35,10 @@ export interface AutoSyncStats {
   revisionsCreated: number;
   /** Log events applied (a delete, move, protection, block or rights change). */
   eventsApplied: number;
+  /** Reads and steps that failed in the last cycle (each is retried by the next one). */
+  failures: number;
+  /** The last failure of the last cycle that had one; null after a clean cycle. */
+  lastError: string | null;
   lastRunAt: Date | null;
 }
 
@@ -36,10 +47,26 @@ const lastStats: AutoSyncStats = {
   pagesUpdated: 0,
   revisionsCreated: 0,
   eventsApplied: 0,
+  failures: 0,
+  lastError: null,
   lastRunAt: null,
 };
 
-let isSyncing = false;
+/** The advisory lock every sync takes (see `withJobLock`: held by an open transaction, released with it). */
+const INBOUND_LOCK = "wikios-inbound-sync";
+/** A cycle's lock is held at most this long (its cron job is cut off at 10 minutes). */
+const CYCLE_LOCK_TIMEOUT_MS = 12 * 60_000;
+const SINGLE_PAGE_LOCK_TIMEOUT_MS = 60_000;
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+/** Count a failure: it is logged where it happened, and the cycle's stats and status keep the last one. */
+function recordFailure(what: string, err: unknown): void {
+  lastStats.failures++;
+  lastStats.lastError = `${what}: ${errorMessage(err)}`;
+}
 
 /** Outcomes that left WikiOS with a new revision. */
 const CREATED: ReadonlySet<RevisionOutcome> = new Set(["fast-forward", "parked"]);
@@ -47,16 +74,19 @@ const CREATED: ReadonlySet<RevisionOutcome> = new Set(["fast-forward", "parked"]
 const SYNCED: ReadonlySet<RevisionOutcome> = new Set(["known", "echo", "fast-forward", "parked"]);
 
 /**
- * Sync one page's newest revision (the webhook, the reader's import of a page Postgres lacks).
- * Never throws: false on any failure, when MediaWiki has no such page, and when the revision is a
- * conflict, which the ordered cycle parks.
+ * Sync one page's newest revision (the webhook, the reader's import of a page Postgres lacks). Takes
+ * the same lock as the cycle, without waiting: false when a sync is running (the cycle will pick the
+ * page up). Never throws: false on any failure, when MediaWiki has no such page, and when the revision
+ * is a conflict, which the ordered cycle parks.
  */
 export async function syncSinglePage(title: string): Promise<boolean> {
   try {
-    return SYNCED.has(await syncLatestRevision(title));
+    const outcome = await withJobLock(db, INBOUND_LOCK, () => syncLatestRevision(title), {
+      timeoutMs: SINGLE_PAGE_LOCK_TIMEOUT_MS,
+    });
+    return outcome.ran && SYNCED.has(outcome.result);
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error(`[WikiAutoSync] Error syncing page "${title}":`, message);
+    console.error(`[WikiAutoSync] Error syncing page "${title}":`, errorMessage(err));
     return false;
   }
 }
@@ -190,8 +220,8 @@ async function runSteps(steps: SyncStep[]): Promise<StepsResult> {
         result.updated += done.updated;
         result.applied += done.applied;
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        console.error(`[WikiAutoSync] Error syncing ${step.label}:`, message);
+        console.error(`[WikiAutoSync] Error syncing ${step.label}:`, errorMessage(err));
+        recordFailure(step.label, err);
         blocked.add(step.subject);
         failedStreams.add(step.stream);
       }
@@ -203,17 +233,38 @@ async function runSteps(steps: SyncStep[]): Promise<StepsResult> {
   return result;
 }
 
-export async function runAutoSyncCycle(limit = 30): Promise<AutoSyncStats> {
-  if (isSyncing) return lastStats;
-  isSyncing = true;
+/**
+ * `collectList` that never throws: a list that cannot be read is a failure of this cycle, and the stream
+ * simply has nothing to do (its high-water mark stays), so the other stream still runs.
+ */
+async function collectOrNothing<T>(
+  what: string,
+  collect: () => Promise<T[]>
+): Promise<T[]> {
+  try {
+    return await collect();
+  } catch (err) {
+    console.error(`[WikiAutoSync] Could not read ${what}:`, errorMessage(err));
+    recordFailure(`reading ${what}`, err);
+    return [];
+  }
+}
 
+/** One cycle; the lock is held by the caller. Never throws: whatever fails is counted. */
+async function runCycle(limit: number): Promise<void> {
+  lastStats.failures = 0;
+  lastStats.lastError = null;
   try {
     const [rcMark, logMark] = await Promise.all([
       readHighWater(RC_HWM_KEY),
       readHighWater(LOG_HWM_KEY),
     ]);
-    const changes = await collectList(rcMark, limit, "rc", fetchRecentChangesPage);
-    const events = await collectList(logMark, limit, "le", fetchLogEventsPage);
+    const changes = await collectOrNothing("recent changes", () =>
+      collectList(rcMark, limit, "rc", fetchRecentChangesPage)
+    );
+    const events = await collectOrNothing("log events", () =>
+      collectList(logMark, limit, "le", fetchLogEventsPage)
+    );
     lastStats.pagesChecked = changes.length + events.length;
 
     const done = await runSteps([...changes.map(editStep), ...events.map(logStep)]);
@@ -227,18 +278,90 @@ export async function runAutoSyncCycle(limit = 30): Promise<AutoSyncStats> {
     lastStats.pagesUpdated = done.updated;
     lastStats.revisionsCreated = done.created;
     lastStats.eventsApplied = done.applied;
-    lastStats.lastRunAt = new Date();
     if (done.created + done.applied > 0) {
       console.log(
         `[WikiAutoSync] Synced ${done.created} revisions and ${done.applied} log events from MediaWiki into PostgreSQL.`
       );
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[WikiAutoSync] Cycle failed:", message);
-  } finally {
-    isSyncing = false;
+    console.error("[WikiAutoSync] Cycle failed:", errorMessage(err));
+    recordFailure("cycle", err);
   }
+  lastStats.lastRunAt = new Date();
+  await writeStatus();
+}
 
+/**
+ * One sync cycle, unless another is running (in this or any other process): then the last stats are
+ * returned and nothing is read. Never throws.
+ */
+export async function runAutoSyncCycle(limit = 30): Promise<AutoSyncStats> {
+  try {
+    await withJobLock(db, INBOUND_LOCK, () => runCycle(limit), { timeoutMs: CYCLE_LOCK_TIMEOUT_MS });
+  } catch (err) {
+    // The lock itself could not be taken (the database is down): nothing ran.
+    console.error("[WikiAutoSync] Could not start a cycle:", errorMessage(err));
+    recordFailure("starting the cycle", err);
+  }
   return lastStats;
+}
+
+// ---------------------------------------------------------------------------
+// Status for the health telemetry
+// ---------------------------------------------------------------------------
+
+const STATUS_KEY = "wikiAutoSync.status";
+/** A cycle that has not run for this long means the cron job is not running. */
+const STALE_AFTER_MS = 60 * 60_000;
+
+const storedStatusSchema = z.object({
+  lastRunAt: z.string(),
+  failures: z.number(),
+  lastError: z.string().nullable(),
+});
+
+export interface InboundSyncStatus {
+  /** UNKNOWN: no cycle has run; STALE: none for an hour; DEGRADED: the last one had failures. */
+  status: "ACTIVE" | "DEGRADED" | "STALE" | "UNKNOWN";
+  lastRunAt: string | null;
+  failures: number;
+  lastError: string | null;
+}
+
+/** What the last cycle left behind. Best effort: the sync does not depend on its own telemetry. */
+async function writeStatus(): Promise<void> {
+  const value = JSON.stringify({
+    lastRunAt: lastStats.lastRunAt?.toISOString(),
+    failures: lastStats.failures,
+    lastError: lastStats.lastError,
+  });
+  try {
+    await db.systemConfig.upsert({
+      where: { key: STATUS_KEY },
+      create: { key: STATUS_KEY, value },
+      update: { value },
+    });
+  } catch (err) {
+    console.error("[WikiAutoSync] Could not store the sync status:", errorMessage(err));
+  }
+}
+
+/** Whether the inbound sync is running and how its last cycle went (read from the database, so any process can ask). */
+export async function getInboundSyncStatus(now = new Date()): Promise<InboundSyncStatus> {
+  const row = await db.systemConfig.findUnique({
+    where: { key: STATUS_KEY },
+    select: { value: true },
+  });
+  const unknown: InboundSyncStatus = { status: "UNKNOWN", lastRunAt: null, failures: 0, lastError: null };
+  if (!row) return unknown;
+
+  let stored: z.infer<typeof storedStatusSchema>;
+  try {
+    stored = storedStatusSchema.parse(JSON.parse(row.value));
+  } catch {
+    return unknown;
+  }
+  const age = now.getTime() - new Date(stored.lastRunAt).getTime();
+  const status = age > STALE_AFTER_MS ? "STALE" : stored.failures > 0 ? "DEGRADED" : "ACTIVE";
+  return { status, lastRunAt: stored.lastRunAt, failures: stored.failures, lastError: stored.lastError };
 }

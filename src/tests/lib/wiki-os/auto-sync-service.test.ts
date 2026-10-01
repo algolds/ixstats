@@ -5,7 +5,11 @@
  * revisions one at a time, oldest first, by the inbound rule (fast-forward, echo or park).
  */
 import { createHash } from "node:crypto";
-import { runAutoSyncCycle, syncSinglePage } from "~/lib/wiki-os/services/auto-sync-service";
+import {
+  getInboundSyncStatus,
+  runAutoSyncCycle,
+  syncSinglePage,
+} from "~/lib/wiki-os/services/auto-sync-service";
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { MediaWikiExportWorker } from "~/lib/wiki-os/adapters/mediawiki/sync-worker";
 import { notificationAPI } from "~/lib/notifications/api";
@@ -22,9 +26,12 @@ const mockRevisionFindFirst = jest.fn();
 const mockRevisionCreateMany = jest.fn();
 const mockRevisionUpdateMany = jest.fn();
 const mockAccountLinkFindFirst = jest.fn();
+const mockQueryRaw = jest.fn();
+const mockTransaction = jest.fn();
 
 jest.mock("~/server/db", () => ({
   db: {
+    $transaction: (...a: unknown[]) => mockTransaction(...a),
     systemConfig: {
       findUnique: (...a: unknown[]) => mockSystemConfigFindUnique(...a),
       upsert: (...a: unknown[]) => mockSystemConfigUpsert(...a),
@@ -175,12 +182,11 @@ const logCalls = (): URLSearchParams[] =>
     .map(([input]) => new URL(String(input)).searchParams)
     .filter((params) => params.get("list") === "logevents");
 
-const storedHighWater = (): string | undefined =>
-  mockSystemConfigUpsert.mock.calls.at(-1)?.[0]?.update?.value;
-
-/** The high-water mark written under `key`, if any. */
+/** What was upserted under SystemConfig `key` (a high-water mark, the sync status), if anything. */
 const highWaterWritten = (key: string): string | undefined =>
   mockSystemConfigUpsert.mock.calls.find(([args]) => args.where.key === key)?.[0].update.value;
+
+const storedHighWater = (): string | undefined => highWaterWritten(HWM_KEY);
 
 // ---------------------------------------------------------------------------
 // A tiny Postgres: the article row and the head revision the sync reads
@@ -245,6 +251,11 @@ beforeEach(() => {
   mockSystemConfigFindUnique.mockResolvedValue(null);
   mockSystemConfigUpsert.mockResolvedValue({});
   applyEvent.mockResolvedValue("applied");
+  // withJobLock: an interactive transaction whose first statement tries the advisory lock.
+  mockQueryRaw.mockResolvedValue([{ locked: true }]);
+  mockTransaction.mockImplementation(async (callback: (tx: object) => unknown) =>
+    callback({ $queryRaw: (...a: unknown[]) => mockQueryRaw(...a) })
+  );
   mockArticleFindUnique.mockImplementation(async ({ where }) =>
     article && article.title === where.source_title.title ? article : null
   );
@@ -308,7 +319,7 @@ describe("the cycle", () => {
     expect(params?.get("rcdir")).toBe("newer");
     expect(params?.get("rcstart")).toBe("2026-09-27T09:00:00Z");
     expect(params?.get("rclimit")).toBe("50");
-    expect(mockSystemConfigUpsert).not.toHaveBeenCalled();
+    expect(highWaterWritten(HWM_KEY)).toBeUndefined();
   });
 
   it("follows rccontinue across two pages", async () => {
@@ -984,5 +995,207 @@ describe("syncSinglePage", () => {
     await expect(syncSinglePage("Foo")).resolves.toBe(false);
 
     consoleError.mockRestore();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// One sync at a time, failures counted, status for the telemetry (plan 406 F)
+// ---------------------------------------------------------------------------
+
+describe("the advisory lock", () => {
+  it("a cycle takes the transaction-scoped lock named wikios-inbound-sync, and every request of the cycle runs while it is held", async () => {
+    rcResponses = [{ changes: [change("A", 1, 1)] }];
+    mwRevisions = new Map([[1, { title: "A", revid: 1 }]]);
+
+    await runAutoSyncCycle();
+
+    expect(mockTransaction).toHaveBeenCalledTimes(1);
+    const [strings, ...values] = mockQueryRaw.mock.calls[0]!;
+    expect((strings as string[]).join("?")).toContain("pg_try_advisory_xact_lock(hashtext(?))");
+    expect(values).toEqual(["ixstats:job:wikios-inbound-sync"]);
+    expect(mockTransaction.mock.calls[0]?.[1]).toMatchObject({ timeout: 12 * 60_000 });
+    expect(importPageRevisions).toHaveBeenCalledTimes(1);
+  });
+
+  it("a cycle that finds the lock taken reads nothing and returns the stats it has", async () => {
+    mockQueryRaw.mockResolvedValue([{ locked: false }]);
+    rcResponses = [{ changes: [change("A", 1, 1)] }];
+
+    const stats = await runAutoSyncCycle();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(mockSystemConfigFindUnique).not.toHaveBeenCalled();
+    expect(stats).toHaveProperty("pagesChecked");
+  });
+
+  it("the webhook's single-page sync takes the same lock without waiting and answers false when it is busy", async () => {
+    mockQueryRaw.mockResolvedValue([{ locked: false }]);
+    mwRevisions = new Map([[100, { title: "Foo", revid: 100 }]]);
+
+    await expect(syncSinglePage("Foo")).resolves.toBe(false);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(importPageRevisions).not.toHaveBeenCalled();
+  });
+
+  it("the single-page sync runs under the lock when it is free", async () => {
+    mwRevisions = new Map([[100, { title: "Foo", revid: 100 }]]);
+
+    await expect(syncSinglePage("Foo")).resolves.toBe(true);
+
+    expect(mockQueryRaw.mock.calls[0]?.slice(1)).toEqual(["ixstats:job:wikios-inbound-sync"]);
+  });
+
+  it("never throws when the lock cannot even be taken (database down), and says so", async () => {
+    mockTransaction.mockRejectedValue(new Error("connection refused"));
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    const stats = await runAutoSyncCycle();
+
+    expect(stats.failures).toBe(1);
+    expect(stats.lastError).toContain("connection refused");
+    await expect(syncSinglePage("Foo")).resolves.toBe(false);
+    consoleError.mockRestore();
+  });
+});
+
+describe("failures are counted, not swallowed", () => {
+  it("counts a failed step and keeps its message, and a clean cycle after it resets both", async () => {
+    mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
+    rcResponses = [{ changes: [change("A", 1, 1), change("B", 2, 2)] }];
+    mwRevisions = new Map([[2, { title: "B", revid: 2 }]]);
+    failingRevisions = new Set([1]);
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    const failed = await runAutoSyncCycle();
+
+    expect(failed.failures).toBe(1);
+    expect(failed.lastError).toBe("A: MediaWiki returned HTTP 500");
+    expect(consoleError).toHaveBeenCalledWith(
+      expect.stringContaining('Error syncing A'),
+      "MediaWiki returned HTTP 500"
+    );
+
+    failingRevisions = new Set();
+    rcResponses = [{ changes: [] }];
+    const clean = await runAutoSyncCycle();
+
+    expect(clean.failures).toBe(0);
+    expect(clean.lastError).toBeNull();
+    consoleError.mockRestore();
+  });
+
+  it("a list that cannot be read is a counted failure, and the other list is still synced", async () => {
+    mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
+    logResponses = [{ events: [{ logid: 1, type: "delete", action: "delete", title: "A", timestamp: "2026-09-27T10:00:01Z" }] }];
+    fetchMock.mockImplementationOnce(async () => jsonResponse({}, 503));
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    const stats = await runAutoSyncCycle();
+
+    expect(stats.failures).toBe(1);
+    expect(stats.lastError).toContain("reading recent changes");
+    expect(applyEvent).toHaveBeenCalledTimes(1);
+    expect(highWaterWritten(LOG_HWM_KEY)).toBe("2026-09-27T10:00:01Z");
+    expect(highWaterWritten(HWM_KEY)).toBeUndefined();
+    consoleError.mockRestore();
+  });
+
+  it("an unexpected shape from MediaWiki is an error, not a field read off an any", async () => {
+    mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
+    fetchMock.mockImplementationOnce(async () => jsonResponse({ query: { recentchanges: "no" } }));
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    const stats = await runAutoSyncCycle();
+
+    expect(stats.failures).toBe(1);
+    consoleError.mockRestore();
+  });
+
+  it("an API error body is an error too", async () => {
+    mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
+    fetchMock.mockImplementationOnce(async () =>
+      jsonResponse({ error: { code: "readapidenied", info: "You need read permission" } })
+    );
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    const stats = await runAutoSyncCycle();
+
+    expect(stats.lastError).toContain("readapidenied");
+    consoleError.mockRestore();
+  });
+});
+
+describe("the sync status the telemetry reads", () => {
+  const statusRow = (over: Record<string, unknown> = {}) => ({
+    value: JSON.stringify({
+      lastRunAt: "2026-09-27T10:00:00Z",
+      failures: 0,
+      lastError: null,
+      ...over,
+    }),
+  });
+  const now = new Date("2026-09-27T10:05:00Z");
+
+  it("each cycle leaves its outcome in SystemConfig", async () => {
+    rcResponses = [{ changes: [change("A", 1, 1)] }];
+    failingRevisions = new Set([1]);
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    await runAutoSyncCycle();
+
+    const stored = JSON.parse(highWaterWritten("wikiAutoSync.status")!);
+    expect(stored).toMatchObject({ failures: 1, lastError: "A: MediaWiki returned HTTP 500" });
+    expect(new Date(stored.lastRunAt).getTime()).toBeGreaterThan(0);
+    consoleError.mockRestore();
+  });
+
+  it("does not fail the cycle when the status cannot be stored", async () => {
+    mockSystemConfigUpsert.mockRejectedValue(new Error("read only"));
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(runAutoSyncCycle()).resolves.toHaveProperty("lastRunAt");
+
+    consoleError.mockRestore();
+  });
+
+  it("is UNKNOWN before any cycle has run, and for a row it cannot read", async () => {
+    mockSystemConfigFindUnique.mockResolvedValue(null);
+    await expect(getInboundSyncStatus(now)).resolves.toMatchObject({ status: "UNKNOWN", lastRunAt: null });
+
+    mockSystemConfigFindUnique.mockResolvedValue({ value: "{not json" });
+    await expect(getInboundSyncStatus(now)).resolves.toMatchObject({ status: "UNKNOWN" });
+
+    mockSystemConfigFindUnique.mockResolvedValue({ value: JSON.stringify({ lastRunAt: 5 }) });
+    await expect(getInboundSyncStatus(now)).resolves.toMatchObject({ status: "UNKNOWN" });
+  });
+
+  it("is ACTIVE after a clean recent cycle", async () => {
+    mockSystemConfigFindUnique.mockResolvedValue(statusRow());
+
+    await expect(getInboundSyncStatus(now)).resolves.toEqual({
+      status: "ACTIVE",
+      lastRunAt: "2026-09-27T10:00:00Z",
+      failures: 0,
+      lastError: null,
+    });
+  });
+
+  it("is DEGRADED when the last cycle had failures, and says what failed", async () => {
+    mockSystemConfigFindUnique.mockResolvedValue(statusRow({ failures: 2, lastError: "A: boom" }));
+
+    await expect(getInboundSyncStatus(now)).resolves.toMatchObject({
+      status: "DEGRADED",
+      failures: 2,
+      lastError: "A: boom",
+    });
+  });
+
+  it("is STALE when no cycle has run for an hour (the cron job is not running)", async () => {
+    mockSystemConfigFindUnique.mockResolvedValue(statusRow());
+
+    await expect(getInboundSyncStatus(new Date("2026-09-27T11:00:01Z"))).resolves.toMatchObject({
+      status: "STALE",
+    });
   });
 });
