@@ -9,9 +9,24 @@ describe("pageEditHref (plan 412: the Edit tool is ?action=edit)", () => {
     expect(pageEditHref("foo_bar", null)).toBe("/wiki/Foo_bar?action=edit");
   });
 
+  it("carries extra parameters (mode, prefill) after action=edit, and drops empty ones", () => {
+    expect(pageEditHref("Foo bar", null, { mode: "visual" })).toBe(
+      "/wiki/Foo_bar?action=edit&mode=visual"
+    );
+    expect(pageEditHref("Foo", null, { mode: "source", prefill: "{{Infobox}}\n" })).toBe(
+      "/wiki/Foo?action=edit&mode=source&prefill=%7B%7BInfobox%7D%7D%0A"
+    );
+    expect(pageEditHref("Foo", null, { mode: "source", prefill: null })).toBe(
+      "/wiki/Foo?action=edit&mode=source"
+    );
+    expect(pageEditHref("a[b c", null, { mode: "visual" })).toBe(
+      "/wiki/a%5Bb_c?action=edit&mode=visual"
+    );
+  });
+
   it("keeps the page's own slug for a text that is not a title", () => {
     expect(pageEditHref("a[b", "a%5Bb")).toBe("/wiki/a%5Bb?action=edit");
-    expect(pageEditHref("a[b", null)).toBe("/wiki/?action=edit");
+    expect(pageEditHref("a[b", null)).toBe("/wiki/a%5Bb?action=edit");
   });
 });
 

@@ -7,10 +7,20 @@ import { talkPageOf, subjectPageOf } from "./core/talk";
 import { canonicalizeTitle, type CanonicalTitle } from "./core/title";
 import { articleHref } from "./wiki-path";
 
-/** `/wiki/<title>?action=edit`; for a text that is not a title, the page's URL-encoded `slug` as it was. */
-export function pageEditHref(title: string, slug: string | null): string {
+/**
+ * `/wiki/<title>?action=edit` (`articleHref` of the canonical title), with `extra` query parameters
+ * (`mode`, `prefill`); for a text that is not a title, the page's URL-encoded `slug` as it was.
+ */
+export function pageEditHref(
+  title: string,
+  slug: string | null = null,
+  extra: Record<string, string | null> = {}
+): string {
   const canon = canonicalizeTitle(title);
-  return canon ? articleHref(canon, { action: "edit" }) : `/wiki/${slug ?? ""}?action=edit`;
+  if (canon) return articleHref(canon, { action: "edit", ...extra });
+  const search = new URLSearchParams({ action: "edit" });
+  for (const [key, value] of Object.entries(extra)) if (value) search.set(key, value);
+  return `/wiki/${slug ?? encodeURIComponent(title.trim().replace(/ /g, "_"))}?${search.toString()}`;
 }
 
 /**

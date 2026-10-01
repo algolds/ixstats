@@ -2,6 +2,7 @@
 // src/components/wiki-os/reader/hero/HeroSpotlightSearch.tsx
 // Inline Apple Spotlight Search Bar for WikiOS Hero with featured thumbnail images, direct DB queries, page creation, and keyboard navigation.
 
+import { pageEditHref } from "~/lib/wiki-os/page-tools";
 import React, { useState, useEffect, useRef, useDeferredValue, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -109,8 +110,7 @@ export function HeroSpotlightSearch({
     (rawTitle: string) => {
       soundEffects.press();
       setIsOpen(false);
-      const encodedTitle = encodeURIComponent(rawTitle.trim().replace(/ /g, "_"));
-      router.push(withBasePath(`/wiki/${encodedTitle}/edit?mode=visual`));
+      router.push(withBasePath(pageEditHref(rawTitle.trim(), null, { mode: "visual" })));
     },
     [router]
   );
