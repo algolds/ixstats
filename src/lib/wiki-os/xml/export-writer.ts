@@ -11,6 +11,7 @@
  * surrogates): those are dropped, and `bytes` and `sha1` describe what was written.
  */
 
+import { publicArticleUrl, wikiosConfig } from "../config";
 import { NAMESPACE_CANONICAL_NAMES } from "../core/title";
 import { mwSha1Base36 } from "./sha1";
 import type { Contributor, SiteInfo, XmlRevision } from "./types";
@@ -87,9 +88,9 @@ function ixwikiNamespaces(): SiteInfo["namespaces"] {
 }
 
 export const DEFAULT_SITEINFO: SiteInfo = {
-  sitename: "IxWiki",
+  sitename: wikiosConfig.siteName,
   dbname: "ixwiki",
-  base: "https://ixwiki.com/wiki/Main_Page",
+  base: publicArticleUrl("Main Page"),
   generator: "WikiOS 1",
   case: "first-letter",
   namespaces: ixwikiNamespaces(),

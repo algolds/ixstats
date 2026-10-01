@@ -1,11 +1,12 @@
 /**
  * Wiki account proof — the three MediaWiki reads needed to verify that a user controls a wiki account
- * and to find who created a page. All three wikis are read through their public api.php with the
- * allowlisted IxStats-Builder user agent (iiwiki through the Cloudflare-safe URL). The underlying
+ * and to find who created a page. IxWiki is read through its internal api.php (the private engine's URL),
+ * the sister wikis through their public ones, all with the allowlisted IxStats-Builder user agent
+ * (iiwiki through the Cloudflare-safe URL). The underlying
  * `wikiQuery` is exported for other read-only wiki queries (the realm lore import).
  */
 import { z } from "zod";
-import { DEFAULT_MEDIAWIKI_URL, DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT, getMediaWikiApiUrl, mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { getFullIiwikiApiUrl } from "~/lib/wiki-os/adapters/mediawiki/bridge/http-reader";
 
 export const PROOF_SOURCES = ["ixwiki", "iiwiki", "althistory"] as const;
@@ -22,15 +23,15 @@ export class WikiApiError extends Error {
   }
 }
 
-const IXWIKI_BASE = DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, "");
 const SITE_URLS: Record<ProofSource, string> = {
-  ixwiki: IXWIKI_BASE,
+  ixwiki: mediaWikiOrigin(),
   iiwiki: "https://iiwiki.com",
   althistory: "https://althistory.fandom.com",
 };
 
 function apiUrl(source: ProofSource): string {
   if (source === "iiwiki") return getFullIiwikiApiUrl();
+  if (source === "ixwiki") return getMediaWikiApiUrl("ixwiki");
   return `${SITE_URLS[source]}/api.php`;
 }
 

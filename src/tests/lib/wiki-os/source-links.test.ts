@@ -1,6 +1,6 @@
 /** @jest-environment node */
 import { transformArticleHtml } from "~/lib/wiki-os/transformers/html-transformer";
-import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 
 /** What ixwiki's action=parse makes of another wiki's wikitext: links are resolved against ixwiki. */
 const parsed = [
@@ -73,11 +73,11 @@ describe("transformArticleHtml links for an IxWiki page are unchanged", () => {
   it("routes articles in-app, and files, special pages and red links to ixwiki", () => {
     expect(html).toContain('href="/wiki/Gallambria"');
     expect(html).toContain('href="/wiki/Gallambria#History"');
-    expect(html).toContain(`href="${DEFAULT_MEDIAWIKI_URL}/wiki/File:Map.png" rel="noreferrer"`);
-    expect(html).toContain(`href="${DEFAULT_MEDIAWIKI_URL}/wiki/Special:Random" rel="noreferrer"`);
+    expect(html).toContain(`href="${mediaWikiOrigin()}/wiki/File:Map.png" rel="noreferrer"`);
+    expect(html).toContain(`href="${mediaWikiOrigin()}/wiki/Special:Random" rel="noreferrer"`);
     expect(html).toContain('href="/wiki/User:Kir"');
     expect(html).toContain(
-      `href="${DEFAULT_MEDIAWIKI_URL}/index.php?title=Aurelian_Empire&amp;action=edit&amp;redlink=1" rel="noreferrer"`
+      `href="${mediaWikiOrigin()}/index.php?title=Aurelian_Empire&amp;action=edit&amp;redlink=1" rel="noreferrer"`
     );
     expect(html).toContain('class="new wikios-redlink"');
     expect(html).not.toContain("source=");

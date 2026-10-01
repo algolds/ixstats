@@ -8,7 +8,7 @@
 import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import crypto from "crypto";
-import { DEFAULT_MEDIAWIKI_URL } from "../config";
+import { mediaWikiOrigin } from "../config";
 import { BlurHashService } from "./blurhash-service";
 import { CategoryService } from "./category-service";
 import { withoutArchivedFiles } from "./archived-titles";
@@ -201,7 +201,7 @@ export class MediaAssetService {
     const title = data.title || cleanName.replace(/_/g, " ");
     let slug = cleanName.toLowerCase();
 
-    const baseUrl = (data.originBaseUrl || DEFAULT_MEDIAWIKI_URL).replace(/\/+$/, "");
+    const baseUrl = (data.originBaseUrl || mediaWikiOrigin()).replace(/\/+$/, "");
     const canonicalUrl = data.url || `${baseUrl}/images/${fullPath}`;
     const canonicalThumb =
       data.thumbnailUrl ||

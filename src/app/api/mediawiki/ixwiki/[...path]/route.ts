@@ -13,7 +13,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
-import { DEFAULT_USER_AGENT, DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT, mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { MEDIA_CORS_HEADERS } from "../../_config";
 import {
   encodePath,
@@ -158,7 +158,7 @@ export async function GET(
     const target = resolveMediaTarget(path, request.nextUrl.searchParams);
     if (!target) return notFound();
 
-    const baseUrl = DEFAULT_MEDIAWIKI_URL.replace(/\/+$/, "");
+    const baseUrl = mediaWikiOrigin();
     const targetUrl = `${baseUrl}/${encodePath(target.path)}${target.query}`;
 
     // Thumbnail names (`300px-Foo.png`) map back to the original file name.

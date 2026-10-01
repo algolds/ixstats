@@ -36,10 +36,13 @@ describe("getTemplatePreview", () => {
     expect(String(fetchSpy.mock.calls[0]![0])).toMatch(/\/api\.php$/);
   });
 
-  it("uses the internal engine URL when one is configured", async () => {
+  it("uses the internal engine URL when one is configured (the configuration is read when it loads)", async () => {
     process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL = "http://127.0.0.1:8080/api.php";
     try {
-      await getTemplatePreview("Quote box", { text: "hi" });
+      await jest.isolateModulesAsync(async () => {
+        const engine = await import("~/lib/wiki-os/templates/template-engine.server");
+        await engine.getTemplatePreview("Quote box", { text: "hi" });
+      });
       expect(String(fetchSpy.mock.calls[0]![0])).toBe("http://127.0.0.1:8080/api.php");
     } finally {
       delete process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL;

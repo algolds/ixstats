@@ -3,7 +3,12 @@
 // Extracts infobox, TOC, and transforms links for /wiki/ routing.
 
 import { withBasePath } from "~/lib/base-path";
-import { DEFAULT_MEDIAWIKI_URL, getWikiBaseUrl, type WikiSource } from "~/lib/wiki-os/config";
+import {
+  getWikiBaseUrl,
+  mediaWikiHostPattern,
+  mediaWikiOrigin,
+  type WikiSource,
+} from "~/lib/wiki-os/config";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -72,8 +77,15 @@ const IMG_ASYNC_REGEX = /<img(?![^>]*decoding=)/gu;
 const IMG_REFERRER_REGEX = /<img(?![^>]*referrerpolicy=)/gu;
 
 const STYLE_EDIT_SECTION_REGEX = /class="mw-editsection"/gu;
-const IMG_SRC_COMMON_REGEX =
-  /<img[^>]*src="(https:\/\/(?:ixwiki\.com\/images|upload\.wikimedia\.org\/wikipedia\/commons)[^"]+)"/gu;
+/** The wiki's host (or its `www.` alias) as a regular-expression source: built from the configuration. */
+const MEDIAWIKI_HOST = mediaWikiHostPattern();
+const IMG_SRC_COMMON_REGEX = new RegExp(
+  `<img[^>]*src="(https?:\\/\\/(?:${MEDIAWIKI_HOST}\\/images|upload\\.wikimedia\\.org\\/wikipedia\\/commons)[^"]+)"`,
+  "gu"
+);
+/** An `http:` or protocol-relative spelling of the wiki's own host, which becomes its configured origin. */
+const LEGACY_ORIGIN_REGEX = new RegExp(`(?:http:)?\\/\\/${MEDIAWIKI_HOST}\\/`, "gu");
+const LEGACY_SRC_ORIGIN_REGEX = new RegExp(`src="${LEGACY_ORIGIN_REGEX.source}`, "gu");
 
 const STYLE_DEDUPLICATE_REGEX = /<style[^>]*data-mw-deduplicate[^>]*>([\s\S]*?)<\/style>/giu;
 
@@ -283,7 +295,7 @@ function transformLinks(html: string, basePath: string, wikiSource: WikiSource):
 }
 
 function transformIxWikiLinks(html: string, basePath: string): string {
-  const origin = DEFAULT_MEDIAWIKI_URL;
+  const origin = mediaWikiOrigin();
 
   // 1. Transform /wiki/Title links to /wiki/Title (with basePath)
   let result = html.replace(WIKI_LINK_HREF_REGEX, (_match, path: string) => {
@@ -342,7 +354,7 @@ export function transformImages(
   wikiSource: "ixwiki" | "iiwiki" | "althistory" = "ixwiki",
   { eagerFirst = false }: { eagerFirst?: boolean } = {}
 ): string {
-  let origin = DEFAULT_MEDIAWIKI_URL;
+  let origin = mediaWikiOrigin();
   let proxyBase = withBasePath("/api/mediawiki/ixwiki");
 
   if (wikiSource === "iiwiki") {
@@ -357,16 +369,14 @@ export function transformImages(
 
   if (wikiSource === "ixwiki") {
     result = result
-      .replace(/src="\/\/(?:www\.)?ixwiki\.com\//gu, `src="https://ixwiki.com/`)
-      .replace(/src="http:\/\/ixwiki\.com\//gu, `src="https://ixwiki.com/`)
+      .replace(LEGACY_SRC_ORIGIN_REGEX, `src="${origin}/`)
       .replace(/src="\/images\//gu, `src="${origin}/images/`)
       .replace(/src="\/thumb\//gu, `src="${origin}/images/thumb/`)
       .replace(/src="\/data\//gu, `src="${origin}/data/`)
       .replace(/src="\/load\.php/gu, `src="${origin}/load.php`)
       .replace(/srcset="([^"]*)"/gu, (_match, srcset: string) => {
         const transformed = srcset
-          .replace(/http:\/\/ixwiki\.com\//gu, `https://ixwiki.com/`)
-          .replace(/\/\/(?:www\.)?ixwiki\.com\//gu, `https://ixwiki.com/`)
+          .replace(LEGACY_ORIGIN_REGEX, `${origin}/`)
           .replace(/\/images\//gu, `${origin}/images/`)
           .replace(/\/thumb\//gu, `${origin}/images/thumb/`)
           .replace(/\/data\//gu, `${origin}/data/`);
