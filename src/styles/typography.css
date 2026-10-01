@@ -298,6 +298,29 @@
   descent-override: 24%;
   line-gap-override: 0%;
 }
+/* 800/900 back the Facet 3.1 heavy headings (OFL, Google Fonts); until the files are in public/fonts the browser falls back to 700. */
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/Schibsted Grotesk-800.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  ascent-override: 96%;
+  descent-override: 24%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/Schibsted Grotesk-900.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  ascent-override: 96%;
+  descent-override: 24%;
+  line-gap-override: 0%;
+}
 
 /* --- 6. Azeret Mono --- */
 @font-face {
