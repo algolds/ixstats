@@ -30,6 +30,7 @@ import {
   type ImportedRevision,
   type RevisionPlan,
 } from "../xml/revision-plan";
+import { stripXmlForbiddenControlChars } from "../xml/control-chars";
 import { mwSha1Base36 } from "../xml/sha1";
 import { cleanWikitextExcerpt } from "../transformers/wikitext-parser";
 import { enqueueRevisionJob, scheduleMirrorKick } from "../services/mirror-outbox";
@@ -700,7 +701,9 @@ export class ArticleRepository {
     const canon = canonicalizeTitle(input.title || input.slug, { source });
     if (!canon) throw new Error("Invalid title");
     const { title, slug } = canon;
-    const wikitext = input.wikitext || "";
+    // The text MediaWiki would store: it never holds the control characters XML cannot carry, so the
+    // hash of what is saved matches the dump's and MediaWiki's (F25).
+    const wikitext = stripXmlForbiddenControlChars(input.wikitext || "");
     // Rendered HTML is the render service's to write; a save only stores HTML a caller hands it.
     const providedHtml = input.contentHtml || undefined;
     const fields = deriveSaveFields(input, wikitext, providedHtml);

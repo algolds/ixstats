@@ -139,6 +139,17 @@ describe("saving", () => {
     expect((saves()[0]!.args[1] as Body).wikitext).toBe("line one\nline two");
   });
 
+  it("drops the control characters XML cannot carry (MediaWiki never stores them), but still refuses a NUL", async () => {
+    const { edit, saves } = await setup();
+    // a page that already has the text without them: nothing to save
+    const same = await edit({ title: "Existing", text: "Hello\u0002 brave\u001F world" });
+    expect(same.edit).toMatchObject({ result: "Success", nochange: true });
+    expect(saves()).toHaveLength(0);
+    await edit({ title: "Existing", text: "tab\there\u0001 and\u000B gone\uFFFE" });
+    expect((saves()[0]!.args[1] as Body).wikitext).toBe("tab\there and gone");
+    expect((await edit({ title: "Existing", text: "nul\u0000here" })).error.code).toBe("invalidtext");
+  });
+
   it("passes minor unless notminor is also given, and the summary through", async () => {
     const { edit, saves } = await setup();
     await edit({ title: "Existing", text: "a", minor: "" });

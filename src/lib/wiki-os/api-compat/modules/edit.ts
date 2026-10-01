@@ -26,6 +26,7 @@ import {
   type PageRef,
 } from "./write-common";
 import { contentModelFor } from "~/lib/wiki-os/xml/content-model";
+import { stripXmlForbiddenControlChars } from "~/lib/wiki-os/xml/control-chars";
 import { locateSection, replaceSection, sectionHeadings } from "~/lib/wiki-os/wikitext/section-locator";
 
 /** MediaWiki's page size limit (what `saveWikitext` takes too). */
@@ -38,8 +39,12 @@ const NO_SUCH_REVISION = "no-such-revision";
 
 const md5 = (text: string) => createHash("md5").update(text, "utf8").digest("hex");
 
-/** MediaWiki's save transform that WikiOS applies: line endings are `\n` and trailing whitespace goes. */
-const normalized = (text: string) => text.replace(/\r\n?/g, "\n").trimEnd();
+/**
+ * MediaWiki's save transform that WikiOS applies: line endings are `\n`, trailing whitespace goes, and the
+ * control characters XML cannot carry (which MediaWiki never stores, and `saveArticle` strips) are gone,
+ * so a page that already has this text is recognised as unchanged.
+ */
+const normalized = (text: string) => stripXmlForbiddenControlChars(text.replace(/\r\n?/g, "\n")).trimEnd();
 
 /** Everything `action=edit` takes, as the request gave it. */
 interface EditRequest {
