@@ -13,6 +13,8 @@
  * first, or `{ error, code }` with 400 (a file that may not be uploaded, MediaWiki's code), 401, 403 (the rights engine's
  * reason code first), 409 (a deleted file name), 413, 415 or 429.
  *
+ * The caller's `upload` right is checked before the body is read.
+ *
  * A form post cannot be forged across sites: the body must not be of a type a form can send (a cross-site fetch with
  * another type needs a CORS preflight, which this route never allows).
  *
@@ -108,6 +110,10 @@ export async function POST(req: NextRequest) {
     windowMs: 60_000,
   });
   if (!limit.success) return fail(429, "Too many uploads: try again in a minute.", "ratelimited");
+  // Before the body is read: a caller who may not upload does not get ten megabytes of it buffered.
+  if (!(await getWikiPermissions(ctx)).rights.has("upload")) {
+    return fail(403, 'You do not have the "upload" right.', "permissiondenied");
+  }
 
   const params = req.nextUrl.searchParams;
   const query = querySchema.safeParse({

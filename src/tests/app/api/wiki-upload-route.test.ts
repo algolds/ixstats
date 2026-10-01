@@ -64,6 +64,7 @@ beforeEach(() => {
   mockContext.mockResolvedValue(SIGNED_IN);
   mockRateCheck.mockResolvedValue({ success: true, remaining: 19, resetAt: new Date() });
   mockUpload.mockResolvedValue(success);
+  mockPermissions.mockResolvedValue({ rights: new Set(["upload"]) });
 });
 
 describe("POST /api/wiki/upload", () => {
@@ -121,6 +122,25 @@ describe("POST /api/wiki/upload", () => {
     const response = await post("filename=Flag.png", FILE, { "Content-Type": type });
 
     expect(response.status).toBe(415);
+    expect(mockUpload).not.toHaveBeenCalled();
+  });
+
+  it("refuses a caller without the upload right before reading the body", async () => {
+    mockPermissions.mockResolvedValue({ rights: new Set(["read", "edit"]) });
+    const pulled = jest.fn();
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled();
+        controller.enqueue(new Uint8Array(1_000_000));
+      },
+    });
+
+    const response = await post("filename=Flag.png", body);
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({ code: "permissiondenied" });
+    // the runtime pre-fills a stream's queue once; reading the body to its limit would pull it eleven times
+    expect(pulled.mock.calls.length).toBeLessThan(MAX_UPLOAD_BYTES / 1_000_000);
     expect(mockUpload).not.toHaveBeenCalled();
   });
 
