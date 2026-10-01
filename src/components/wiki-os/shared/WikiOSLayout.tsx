@@ -4,7 +4,6 @@
 
 import { type ReactNode, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useWikiOSShortcuts } from "~/components/wiki-os/shared/useWikiOSShortcuts";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -12,6 +11,7 @@ import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { WIKIOS_VERSION } from "~/lib/buildVersion";
 import { stripBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
 import { useWikiPrefetch } from "~/hooks/useWikiPrefetch";
 import {
@@ -229,13 +229,13 @@ export function WikiOSLayout({
         </Popover>
 
         <div className="text-muted-foreground/60 flex items-center justify-center gap-4 text-xs font-[var(--wikios-font-ui)]">
-          <Link href="/terms" className="transition-colors hover:text-amber-400">
+          <a href={ixstatesHref("/terms")} className="transition-colors hover:text-amber-400">
             Terms of Service
-          </Link>
+          </a>
           <span>•</span>
-          <Link href="/privacy" className="transition-colors hover:text-amber-400">
+          <a href={ixstatesHref("/privacy")} className="transition-colors hover:text-amber-400">
             Privacy Policy
-          </Link>
+          </a>
         </div>
       </footer>
 

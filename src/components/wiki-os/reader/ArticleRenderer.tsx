@@ -45,7 +45,7 @@ import { ArticleFooter } from "./ArticleFooter";
 import { ArticleCompanionHUD } from "./ArticleCompanionHUD";
 import { SourceWikiNote } from "./SourceWikiNote";
 import { cn } from "~/lib/utils";
-import { withBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { NavArrowRight as ChevronRight, NavArrowLeft as ChevronLeft } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
@@ -421,7 +421,7 @@ export function ArticleRenderer({
       // The embed iframes load /maps, which lives under the app's base path.
       script.textContent = EMBED_JS.replace(
         `'${EMBED_PREFETCH}'`,
-        JSON.stringify(withBasePath(EMBED_PREFETCH))
+        JSON.stringify(ixstatesHref(EMBED_PREFETCH))
       );
       // The CSP carries a per-request nonce, so an inline script only runs if it carries it too.
       const nonce = document.querySelector<HTMLScriptElement>("script[nonce]")?.nonce;
@@ -432,7 +432,7 @@ export function ArticleRenderer({
       const link = document.createElement("link");
       link.id = "ixstats-embed-prefetch";
       link.rel = "prefetch";
-      link.href = withBasePath(EMBED_PREFETCH);
+      link.href = ixstatesHref(EMBED_PREFETCH);
       link.setAttribute("as", "document");
       document.head.appendChild(link);
     }

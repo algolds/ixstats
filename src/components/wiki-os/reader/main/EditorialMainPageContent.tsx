@@ -22,6 +22,7 @@ import {
 import { motion, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
 import type { MainPageContentProps } from "./types";
@@ -274,7 +275,7 @@ export function EditorialMainPageContent({
               Explore Countries
             </h2>
             <Link
-              href={withBasePath("/countries")}
+              href={ixstatesHref("/countries")}
               data-cuelume-press="press"
               data-cuelume-hover="tick"
               className="text-muted-foreground hover:text-foreground group/all flex items-center gap-1 text-xs font-medium transition-colors"

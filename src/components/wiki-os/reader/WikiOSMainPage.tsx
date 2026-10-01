@@ -7,7 +7,7 @@ import Link from "next/link";
 import { OpenBook as BookOpen, OpenNewWindow as ExternalLink } from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -131,14 +131,14 @@ function BlurbPromptModal({
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-white/10 px-5 py-3">
           <Link
-            href={withBasePath(`/blurbs/${prompt.slug}`)}
+            href={ixstatesHref(`/blurbs/${prompt.slug}`)}
             className="text-wiki hover:text-wiki-hover inline-flex items-center gap-1.5 text-xs transition-colors"
           >
             <ExternalLink className="h-3 w-3" />
             Open full prompt
           </Link>
           <Link
-            href={withBasePath("/blurbs")}
+            href={ixstatesHref("/blurbs")}
             className="text-muted-foreground hover:text-foreground text-xs transition-colors"
           >
             All prompts →

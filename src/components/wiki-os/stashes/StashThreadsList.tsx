@@ -4,7 +4,7 @@
 // Apple Design & Facet compliance.
 
 import Link from "next/link";
-import { withBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { ChatBubble as MessageSquare, Clock, Xmark as X, ArrowUpRight } from "iconoir-react";
 import { soundEffects } from "~/lib/sound/cuelume";
 import type { StashedThreadItem } from "./types";
@@ -30,7 +30,7 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
           >
             <div className="flex items-start justify-between gap-3">
               <Link
-                href={withBasePath(forumUrl)}
+                href={ixstatesHref(forumUrl)}
                 onClick={() => soundEffects.press()}
                 className="group/title flex min-w-0 flex-1 items-center gap-2.5"
               >
@@ -59,7 +59,7 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
 
               <div className="flex shrink-0 items-center gap-1">
                 <Link
-                  href={withBasePath(forumUrl)}
+                  href={ixstatesHref(forumUrl)}
                   onClick={() => soundEffects.press()}
                   className="flex items-center gap-1 rounded-xl border border-[var(--wikios-border)] bg-white/5 px-2.5 py-1 text-xs font-semibold text-[var(--wikios-text-muted)] shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-white/10 hover:text-[var(--wikios-text)] active:scale-95"
                   title="Open forum thread"

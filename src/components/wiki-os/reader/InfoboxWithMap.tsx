@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -72,14 +72,14 @@ export function InfoboxWithMap({ infoboxHtml, articleTitle, markupId }: InfoboxW
           {blurbs.map((r) => (
             <Link
               key={r.id}
-              href={withBasePath(`/blurbs/${r.prompt.slug}`)}
+              href={ixstatesHref(`/blurbs/${r.prompt.slug}`)}
               className="wikios-infobox-blurb-item"
             >
               <span className="wikios-infobox-blurb-prompt">{r.prompt.title}</span>
               <span className="wikios-infobox-blurb-content">{r.content}</span>
             </Link>
           ))}
-          <Link href={withBasePath("/blurbs")} className="wikios-infobox-blurbs-more">
+          <Link href={ixstatesHref("/blurbs")} className="wikios-infobox-blurbs-more">
             View all blurbs →
           </Link>
         </div>
