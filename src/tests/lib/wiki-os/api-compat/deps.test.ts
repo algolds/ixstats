@@ -67,7 +67,7 @@ describe("createApiDeps", () => {
   });
 
   it("renders text through the private renderer only: null when it fails, never the in-process compiler", async () => {
-    jest.mocked(renderArticleViaMediaWiki).mockResolvedValueOnce("<p>x</p>").mockResolvedValueOnce(null);
+    jest.mocked(renderArticleViaMediaWiki).mockResolvedValueOnce({ html: "<p>x</p>", metadata: {} } as never).mockResolvedValueOnce(null);
     expect(await deps.services.renderWikitext("x", "Alpha")).toBe("<p>x</p>");
     expect(await deps.services.renderWikitext("[[".repeat(10), "Alpha")).toBeNull();
     expect(renderArticleViaMediaWiki).toHaveBeenCalledWith("x", "Alpha");

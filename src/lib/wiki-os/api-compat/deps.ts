@@ -45,7 +45,7 @@ const search: SearchFn = async (query, what, limit, offset) => {
 const RENDER_WAIT_MS = 6_000;
 
 const services: ApiServices = {
-  renderWikitext: renderArticleViaMediaWiki,
+  renderWikitext: async (wikitext, title) => (await renderArticleViaMediaWiki(wikitext, title))?.html ?? null,
   purgePage: purgeArticle,
   ensureRendered: async (articleId) => {
     await ensureRendered(articleId, { waitMs: RENDER_WAIT_MS });

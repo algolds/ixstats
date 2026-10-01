@@ -138,7 +138,7 @@ export interface ApiServices {
   /** Make sure the page's stored rendering is fresh: the render service's single-flight, capped render (waits a few seconds at most). */
   ensureRendered(articleId: string): Promise<void>;
   /** The server diff: the `<tr>` rows of MediaWiki's diff table; throws `DiffTooLarge` past `maxOutputChars`. */
-  diff(oldText: string, newText: string, options?: { maxOutputChars?: number }): string;
+  diff(oldText: string, newText: string, options?: { maxOutputChars?: number; contextLines?: number }): string;
   /** May the caller edit (or create) `title`? Throws the permission refusals. */
   assertCanEdit(ctx: WikiAuthContext, title: string): Promise<void>;
   authorize(ctx: WikiAuthContext, action: WikiAction, title: string): Promise<void>;
