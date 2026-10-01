@@ -107,6 +107,17 @@ describe("POST bodies", () => {
     expect(response.headers.get("mediawiki-api-error")).toBe("toobig");
     expect((await json(response)).error.code).toBe("toobig");
   });
+
+  it("also refuses an oversized body that sent no Content-Length", async () => {
+    const response = await route.POST(
+      new NextRequest(url(), {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body: `action=edit&text=${"x".repeat(4 * 1024 * 1024 + 10)}`,
+      })
+    );
+    expect((await json(response)).error.code).toBe("toobig");
+  });
 });
 
 describe("the session cookie", () => {

@@ -35,8 +35,11 @@ const jsonHeaders = (errorCode: string | null): Record<string, string> => ({
   ...(errorCode ? { "MediaWiki-API-Error": errorCode } : {}),
 });
 
+/** Thrown when a body is larger than api.php reads (a chunked upload has no Content-Length to check first). */
+class BodyTooLarge extends Error {}
+
 /** Text fields of a POST body; a file part is ignored (uploads are plan 411's). */
-async function readBody(req: NextRequest): Promise<Array<readonly [string, string]> | null> {
+async function readBody(req: NextRequest): Promise<Array<readonly [string, string]>> {
   const type = req.headers.get("content-type") ?? "";
   if (type.includes("multipart/form-data")) {
     const form = await req.formData();
@@ -44,8 +47,16 @@ async function readBody(req: NextRequest): Promise<Array<readonly [string, strin
       typeof value === "string" ? [[key, value] as const] : []
     );
   }
-  return [...new URLSearchParams(await req.text()).entries()];
+  const text = await req.text();
+  if (Buffer.byteLength(text, "utf8") > MAX_BODY_BYTES) throw new BodyTooLarge();
+  return [...new URLSearchParams(text).entries()];
 }
+
+const tooBig = () =>
+  NextResponse.json(
+    { error: { code: "toobig", info: "The request body is too large.", "*": API_DOCREF } },
+    { headers: jsonHeaders("toobig") }
+  );
 
 /** The path api.php's cookies are scoped to: the directory the script lives in (`/w/`). */
 function cookiePathOf(req: NextRequest): string {
@@ -64,18 +75,22 @@ async function webAuthId(): Promise<string | null> {
 async function handle(req: NextRequest): Promise<NextResponse> {
   const method = req.method === "POST" ? "POST" : "GET";
   if (method === "POST" && Number(req.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) {
-    return NextResponse.json(
-      { error: { code: "toobig", info: "The request body is too large.", "*": API_DOCREF } },
-      { headers: jsonHeaders("toobig") }
-    );
+    return tooBig();
   }
 
   const clientKey = resolveRateLimitIdentifier(req.headers, null);
   const cookieHeader = req.headers.get("cookie");
+  let body: Array<readonly [string, string]> | null = null;
+  try {
+    body = method === "POST" ? await readBody(req) : null;
+  } catch (error) {
+    if (error instanceof BodyTooLarge) return tooBig();
+    throw error;
+  }
   const input: ApiRequestInput = {
     method,
     query: req.nextUrl.searchParams,
-    body: method === "POST" ? await readBody(req) : null,
+    body,
     sessionCookie: readCookie(cookieHeader, SESSION_COOKIE),
     loginNonceCookie: readCookie(cookieHeader, LOGIN_NONCE_COOKIE),
     // A signed-in browser user may read through api.php; only a bot-password session writes.
