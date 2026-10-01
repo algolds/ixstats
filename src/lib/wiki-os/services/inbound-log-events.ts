@@ -11,7 +11,8 @@
  */
 
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+import { ConflictError } from "~/lib/app-error";
 import { db } from "~/server/db";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { toArticleSlug } from "../core/domain-types";
@@ -126,8 +127,9 @@ async function writeLog(
       },
     });
   } catch (error) {
-    const raced = error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
-    if (!raced) throw error;
+    // `db` turns the database's unique-constraint error into a ConflictError (see ~/lib/prisma-error), so that
+    // is what a lost race for `mwLogId` looks like here, never a PrismaClientKnownRequestError.
+    if (!(error instanceof ConflictError)) throw error;
   }
 }
 
