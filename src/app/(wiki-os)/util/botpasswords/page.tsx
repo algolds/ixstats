@@ -68,7 +68,7 @@ export default function BotPasswordsPage() {
   return (
     <AdminPage
       title="Bot passwords"
-      description="Let a bot (Pywikibot, AWB, your own script) use your wiki account through api.php, with only the rights you grant it."
+      description="Let a bot (Pywikibot, AWB, your own script) use your wiki account through this site's api.php (/w/api.php), with only the rights you grant it."
     >
       {list.isLoading && <Skeleton className="h-40 w-full rounded-xl" />}
       {list.error && (
