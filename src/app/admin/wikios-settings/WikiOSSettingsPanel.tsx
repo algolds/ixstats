@@ -26,10 +26,7 @@ export function WikiOSSettingsPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={BookOpen}
-        title="WikiOS Settings"
-      />
+      <AdminHeader icon={BookOpen} title="WikiOS Settings" />
 
       <WikiOSUtilitiesDeck embedded={true} defaultDomain="diagnostics" />
 

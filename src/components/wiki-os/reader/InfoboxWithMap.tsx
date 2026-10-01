@@ -55,7 +55,11 @@ export function InfoboxWithMap({ infoboxHtml, articleTitle, markupId }: InfoboxW
 
   return (
     <aside className="wikios-infobox rounded-row border-separator bg-surface border">
-      <div id={markupId} className={ARTICLE_STYLE_ROOT_CLASS} dangerouslySetInnerHTML={infoboxMarkup} />
+      <div
+        id={markupId}
+        className={ARTICLE_STYLE_ROOT_CLASS}
+        dangerouslySetInnerHTML={infoboxMarkup}
+      />
       {matchedCountry && (
         <div className="wikios-infobox-map-embed">
           <CountryMapEmbed

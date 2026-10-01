@@ -57,7 +57,10 @@ interface LoadedPage {
 }
 
 /** The revision a server answer names, as the editor keeps it. */
-const revisionOf = (ref: string | null, refs?: string[]): Pick<LoadedPage, "revisionRef" | "revisionRefs"> => ({
+const revisionOf = (
+  ref: string | null,
+  refs?: string[]
+): Pick<LoadedPage, "revisionRef" | "revisionRefs"> => ({
   revisionRef: ref,
   revisionRefs: refs ?? (ref === null ? [] : [ref]),
 });
@@ -260,7 +263,12 @@ export function WikiEditBridge({
     (content: string, summary: string, minor: boolean, keepEditing?: boolean) =>
       performSave(
         // The serialized wikitext is the content, empty or not; `content` is only the editor's own report.
-        { wikitext: lastSerializedRef.current ? lastSerializedRef.current.wikitext : content, summary, minor, keepEditing },
+        {
+          wikitext: lastSerializedRef.current ? lastSerializedRef.current.wikitext : content,
+          summary,
+          minor,
+          keepEditing,
+        },
         loaded?.revisionRef ?? null
       ),
     [performSave, loaded]
@@ -300,7 +308,11 @@ export function WikiEditBridge({
     if (setAsideText === null) return;
     navigator.clipboard.writeText(setAsideText).then(
       () => notify.success("Copied", "Your version is on the clipboard."),
-      () => notify.error("Copy Failed", "Could not copy your version; restore it into the editor instead.")
+      () =>
+        notify.error(
+          "Copy Failed",
+          "Could not copy your version; restore it into the editor instead."
+        )
     );
   }, [setAsideText, notify]);
 
@@ -311,12 +323,18 @@ export function WikiEditBridge({
     if (!conflict || !pending) return;
     const current = readContentRef.current ? readContentRef.current() : pending.wikitext;
     if (current === null) {
-      notify.error("Save Blocked", "Some content could not be converted to wikitext; switch to source mode to fix it.");
+      notify.error(
+        "Save Blocked",
+        "Some content could not be converted to wikitext; switch to source mode to fix it."
+      );
       return;
     }
     try {
       await performSave({ ...pending, wikitext: current }, conflict.currentRevisionRef);
-      notify.success("Article Published", "Your changes have been published over the newer version.");
+      notify.success(
+        "Article Published",
+        "Your changes have been published over the newer version."
+      );
     } catch {
       notify.error("Save Failed", "Could not save article changes.");
     }
@@ -382,7 +400,8 @@ export function WikiEditBridge({
           role="status"
           className="rounded-row border-separator bg-surface text-body text-label mb-4 border px-4 py-2"
         >
-          <strong>This is your text, not the current version:</strong> saving will replace the current version with it.
+          <strong>This is your text, not the current version:</strong> saving will replace the
+          current version with it.
         </p>
       )}
 

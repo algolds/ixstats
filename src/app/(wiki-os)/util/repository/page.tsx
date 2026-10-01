@@ -250,9 +250,7 @@ export default function RepositoryPage() {
                   rawUrl.replace(/^https?:\/\/(www\.)?iiwiki\.com\//, "/api/mediawiki/iiwiki/")
                 )
               : isMediaWikiUrl(rawUrl)
-                ? withBasePath(
-                    rawUrl.replace(/^https?:\/\/[^/]+\//, "/api/mediawiki/ixwiki/")
-                  )
+                ? withBasePath(rawUrl.replace(/^https?:\/\/[^/]+\//, "/api/mediawiki/ixwiki/"))
                 : rawUrl;
 
             return {

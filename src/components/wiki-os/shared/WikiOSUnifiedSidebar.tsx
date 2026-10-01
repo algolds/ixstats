@@ -95,9 +95,7 @@ export function WikiOSUnifiedSidebar({
   const utils = api.useUtils();
 
   const isArticlePage =
-    !isSpecialPage &&
-    pathname.startsWith("/wiki/") &&
-    pathname !== "/wiki/Main_Page";
+    !isSpecialPage && pathname.startsWith("/wiki/") && pathname !== "/wiki/Main_Page";
 
   // The page on the other side of the subject/talk pairing: its Discussion, or from a talk page its subject.
   const pairPage = isArticlePage ? pageTalkPair(title) : null;

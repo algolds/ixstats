@@ -573,9 +573,7 @@ export function ImageLightboxModal({
               <Button asChild variant="gray" size="icon-sm" className={LIGHTBOX_ACTION}>
                 <a
                   href={
-                    image.fileUrl.startsWith("/")
-                      ? mediaWikiImageUrl(image.fileUrl)
-                      : image.fileUrl
+                    image.fileUrl.startsWith("/") ? mediaWikiImageUrl(image.fileUrl) : image.fileUrl
                   }
                   target="_blank"
                   rel="noreferrer"

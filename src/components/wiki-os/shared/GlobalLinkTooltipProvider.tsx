@@ -37,7 +37,9 @@ type DetectedLink =
   { kind: "wiki"; title: string; wiki: "ixwiki" | "iiwiki" } | { kind: "forum"; threadId: number };
 
 /** An absolute link to an article of the wiki, by the configured public host. */
-const ABSOLUTE_WIKI_LINK = new RegExp(`(?:https?:\\/\\/)?${mediaWikiHostPattern()}\\/wiki\\/([^#?]+)`);
+const ABSOLUTE_WIKI_LINK = new RegExp(
+  `(?:https?:\\/\\/)?${mediaWikiHostPattern()}\\/wiki\\/([^#?]+)`
+);
 
 /** Parse a link href and return detection info, or null if not a recognized link */
 function detectLink(href: string): DetectedLink | null {
