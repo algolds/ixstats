@@ -10,6 +10,11 @@
  * wikitext", NULL means "stale, render me". A writer of wikitext sets it to NULL and calls
  * `enqueueRender`; the previous bundle stays in place so readers keep seeing it meanwhile.
  *
+ * The same parse tells WikiOS what the page links, transcludes and uses and which categories it is
+ * in; the render stores that too (`wiki_links`, `wiki_template_links`, `wiki_image_links`, the category
+ * memberships, `displayTitle`, `pageProps`), each replaced as a set, and `invalidateDependents` marks the
+ * pages that transclude a changed page stale. `renderStaleBatch` renders the stale ones in the background.
+ *
  * Template chips (`{{MyCountry:...}}`) are stored as inert markers (see templates/chip-markers.ts)
  * and filled in per viewer, per request, by article-view-service.
  *
@@ -18,12 +23,16 @@
  */
 
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import {
   sanitizeWikiArticleHtml,
   wikiArticleSanitizerFingerprint,
 } from "~/lib/utils/sanitize-html";
-import { renderArticleViaMediaWiki } from "../adapters/mediawiki/parsoid";
+import { renderArticleViaMediaWiki, type RenderMetadata } from "../adapters/mediawiki/parsoid";
+import { CategoryService } from "../core/category-service";
+import { LinkGraphService } from "../core/link-graph-service";
+import { canonicalizeTitle } from "../core/title";
 import { markTemplateChips } from "../templates/chip-markers";
 import { transformArticleHtml, stripConflictingStyles } from "../transformers/html-transformer";
 import { slimArticleHtml } from "../transformers/slim-html";
@@ -142,6 +151,12 @@ export async function renderFallbackView(articleId: string): Promise<ViewBundle 
 // Rendering one article
 // ---------------------------------------------------------------------------
 
+/** What a render produced: the HTML, and what MediaWiki reported about the page (null for stored HTML). */
+interface Rendered {
+  html: string;
+  metadata: RenderMetadata | null;
+}
+
 /**
  * The HTML to build the bundle from: MediaWiki's parse of the article's own wikitext, or, for an
  * HTML-only row with no wikitext, the stored HTML. Null when there is nothing or MediaWiki failed.
@@ -150,10 +165,71 @@ async function renderSource(article: {
   title: string;
   wikitext: string;
   contentHtml: string | null;
-}): Promise<string | null> {
-  if (article.wikitext.trim() === "")
-    return article.contentHtml?.trim() ? article.contentHtml : null;
+}): Promise<Rendered | null> {
+  if (article.wikitext.trim() === "") {
+    return article.contentHtml?.trim() ? { html: article.contentHtml, metadata: null } : null;
+  }
   return renderArticleViaMediaWiki(article.wikitext, article.title);
+}
+
+/** The page properties worth keeping; the rest of what MediaWiki reports is its own bookkeeping. */
+const KEPT_PAGE_PROPS = [
+  "defaultsort",
+  "disambiguation",
+  "page_image_free",
+  "notoc",
+  "noeditsection",
+];
+
+/** Whether the response told WikiOS anything it can store (a response without any of it is left alone). */
+function reportsAnything(metadata: RenderMetadata): boolean {
+  return (
+    metadata.links !== null ||
+    metadata.templates !== null ||
+    metadata.images !== null ||
+    metadata.categories !== null
+  );
+}
+
+/**
+ * Replace the article's derived data with what the render reported, as one transaction: a reader never
+ * sees a page with the new links and the old categories. A field the response did not carry is left as
+ * it is.
+ */
+async function persistRenderMetadata(
+  articleId: string,
+  source: string,
+  metadata: RenderMetadata
+): Promise<void> {
+  const props = Object.fromEntries(
+    KEPT_PAGE_PROPS.flatMap((name) => {
+      const value = metadata.properties[name];
+      return value === undefined ? [] : [[name, value]];
+    })
+  );
+  const displayTitle = metadata.displayTitle ? sanitizeWikiArticleHtml(metadata.displayTitle) : "";
+
+  await db.$transaction(
+    async (tx) => {
+      if (metadata.links)
+        await LinkGraphService.replaceLinks(tx, articleId, source, metadata.links);
+      if (metadata.templates) {
+        await LinkGraphService.replaceTemplateLinks(tx, articleId, metadata.templates);
+      }
+      if (metadata.images) await LinkGraphService.replaceImageLinks(tx, articleId, metadata.images);
+      if (metadata.categories) {
+        await CategoryService.replaceArticleCategories(tx, articleId, metadata.categories);
+      }
+      await tx.wikiArticle.update({
+        where: { id: articleId },
+        data: {
+          displayTitle: displayTitle || null,
+          pageProps: Object.keys(props).length > 0 ? props : Prisma.DbNull,
+        },
+      });
+    },
+    { maxWait: 10_000, timeout: 30_000 }
+  );
 }
 
 /**
@@ -161,31 +237,43 @@ async function renderSource(article: {
  * `htmlSyncedAt = now`. The write is guarded by the wikitext it rendered, so a save that lands
  * meanwhile is never overwritten; the render then restarts on the new text. On a MediaWiki failure
  * nothing is stored: the previous bundle stays and the article stays stale. When every attempt was
- * overtaken by a save the result says `superseded`, which is not a failure.
+ * overtaken by a save the result says `superseded`, which is not a failure. What MediaWiki reported
+ * about the page (links, templates, images, categories, properties) is stored after the bundle; a
+ * failure to store it is logged and does not cost the page its render.
  */
 export async function renderArticle(articleId: string): Promise<RenderResult> {
   for (let attempt = 0; attempt < MAX_RENDER_ATTEMPTS; attempt++) {
     const article = await db.wikiArticle.findUnique({
       where: { id: articleId },
-      select: { title: true, wikitext: true, contentHtml: true },
+      select: { title: true, source: true, wikitext: true, contentHtml: true },
     });
     if (!article) return FAILED;
 
-    const rawHtml = await renderSource(article);
-    if (!rawHtml) return FAILED;
+    const rendered = await renderSource(article);
+    if (!rendered) return FAILED;
 
-    const problem = describeRenderProblem(rawHtml, article.wikitext);
+    const problem = describeRenderProblem(rendered.html, article.wikitext);
     if (problem) console.warn(`[WikiOS:render] "${article.title}": ${problem}; stored anyway.`);
 
     const stored = await db.wikiArticle.updateMany({
       where: { id: articleId, wikitext: article.wikitext },
       data: {
-        contentHtml: rawHtml,
-        renderedView: buildViewBundle(rawHtml),
+        contentHtml: rendered.html,
+        renderedView: buildViewBundle(rendered.html),
         htmlSyncedAt: new Date(),
       },
     });
-    if (stored.count > 0) return { ok: true };
+    if (stored.count > 0) {
+      if (rendered.metadata && reportsAnything(rendered.metadata)) {
+        await persistRenderMetadata(articleId, article.source, rendered.metadata).catch((error) =>
+          console.warn(
+            `[WikiOS:render] Storing what MediaWiki reported about "${article.title}" failed:`,
+            error
+          )
+        );
+      }
+      return { ok: true };
+    }
   }
   return SUPERSEDED;
 }
@@ -354,4 +442,118 @@ export async function ensureRendered(
 export function enqueueRender(articleId: string, options: { background?: boolean } = {}): void {
   failedUntil.delete(articleId);
   void startRender(articleId, options.background ? BACKGROUND : SAVE);
+}
+
+/** Template (10) and Module (828): the namespaces whose pages other pages transclude. */
+const TRANSCLUDED_NAMESPACES: ReadonlySet<number> = new Set([10, 828]);
+
+/**
+ * `invalidateDependents` for a page that may be a template or a Lua module: when `title` is one, every
+ * article that uses it is stale (a Template or Module that was deleted, restored, moved, or whose text
+ * has only now reached MediaWiki, renders its users differently); any other page has no users to mark.
+ */
+export async function invalidateTemplateDependents(
+  title: string,
+  source = "ixwiki"
+): Promise<number> {
+  const canon = canonicalizeTitle(title, { source });
+  if (!canon || !TRANSCLUDED_NAMESPACES.has(canon.namespaceId)) return 0;
+  return invalidateDependents(canon.title, source);
+}
+
+/**
+ * A page's text changed: every article that transcludes it (a template, a Lua module, another page)
+ * no longer matches what MediaWiki would render, so each is marked stale (`htmlSyncedAt = NULL`).
+ * Readers keep seeing the previous bundle until `renderStaleBatch` or a reader's own render replaces
+ * it. Best effort (a failure is logged, the save that called it already happened); resolves to the
+ * number of articles marked.
+ */
+export async function invalidateDependents(title: string, source = "ixwiki"): Promise<number> {
+  try {
+    return await db.$executeRaw`
+      UPDATE wiki_articles SET "htmlSyncedAt" = NULL
+      WHERE source = ${source}
+        AND "htmlSyncedAt" IS NOT NULL
+        AND id IN (SELECT "articleId" FROM wiki_template_links WHERE "templateTitle" = ${title})`;
+  } catch (error) {
+    console.warn(`[WikiOS:render] Marking the dependents of "${title}" stale failed:`, error);
+    return 0;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// The stale batch: the backlog a changed template or an import leaves behind
+// ---------------------------------------------------------------------------
+
+/** Renders the batch runs at once: the private MediaWiki is small, and readers share its slots. */
+const STALE_BATCH_CONCURRENCY = 2;
+/** The batch starts no new render this long after it began (its cron job is cut off at 55 s). */
+const STALE_BATCH_BUDGET_MS = 45_000;
+/** An article whose batch render failed is left out for this long, doubling per failure up to the cap. */
+const STALE_RETRY_BASE_MS = 60_000;
+const STALE_RETRY_MAX_MS = 60 * 60_000;
+const MAX_REMEMBERED_STALE_FAILURES = 5_000;
+
+const staleFailures = new Map<string, { strikes: number; retryAt: number }>();
+
+function rememberStaleFailure(articleId: string): void {
+  const strikes = (staleFailures.get(articleId)?.strikes ?? 0) + 1;
+  staleFailures.delete(articleId);
+  if (staleFailures.size >= MAX_REMEMBERED_STALE_FAILURES) {
+    const oldest = staleFailures.keys().next().value;
+    if (oldest !== undefined) staleFailures.delete(oldest);
+  }
+  const wait = Math.min(STALE_RETRY_BASE_MS * 2 ** (strikes - 1), STALE_RETRY_MAX_MS);
+  staleFailures.set(articleId, { strikes, retryAt: Date.now() + wait });
+}
+
+export interface StaleBatchResult {
+  rendered: number;
+  /** MediaWiki failed, or saves kept overtaking the render (see `runJob`). */
+  failed: number;
+}
+
+/**
+ * Render up to `limit` stale articles, oldest first, two at a time, as background work (a reader's or an
+ * editor's render goes before them). Run every minute by the `wiki-render-stale` cron job: a changed
+ * template marks every page that uses it stale (`invalidateDependents`), and this brings their views up
+ * to date without a reader having to wait. An article that failed is left out for a while (doubling,
+ * up to an hour) so a page MediaWiki cannot render never keeps the rest of the queue waiting.
+ */
+export async function renderStaleBatch(limit = 20): Promise<StaleBatchResult> {
+  const now = Date.now();
+  const backingOff = [...staleFailures].flatMap(([id, failure]) =>
+    failure.retryAt > now ? [id] : []
+  );
+  const stale = await db.wikiArticle.findMany({
+    where: {
+      status: "PUBLISHED",
+      htmlSyncedAt: null,
+      wikitext: { not: "" },
+      ...(backingOff.length > 0 ? { id: { notIn: backingOff } } : {}),
+    },
+    orderBy: { updatedAt: "asc" },
+    take: limit,
+    select: { id: true },
+  });
+
+  const result: StaleBatchResult = { rendered: 0, failed: 0 };
+  const deadline = now + STALE_BATCH_BUDGET_MS;
+  let next = 0;
+  const worker = async (): Promise<void> => {
+    for (let item = stale[next++]; item && Date.now() < deadline; item = stale[next++]) {
+      const outcome = await startRender(item.id, BACKGROUND);
+      if (outcome.ok) {
+        staleFailures.delete(item.id);
+        result.rendered++;
+      } else {
+        rememberStaleFailure(item.id);
+        result.failed++;
+      }
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(STALE_BATCH_CONCURRENCY, stale.length) }, worker)
+  );
+  return result;
 }

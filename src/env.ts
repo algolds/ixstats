@@ -101,8 +101,6 @@ export const env = createEnv({
     IIWIKI_DEV_PROXY_URL: z.string().optional(),
     // "true" stops WikiOS from queueing background MediaWiki sync jobs (sync-worker.ts)
     SKIP_MEDIAWIKI_SYNC: z.string().optional(),
-    // Cloudflare Turnstile secret for verifying WikiOS challenge tokens
-    CLOUDFLARE_TURNSTILE_SECRET_KEY: z.string().optional(),
     // Cloudflare API token + zone for purging article edge cache on save (both needed)
     CLOUDFLARE_API_TOKEN: z.string().optional(),
     CLOUDFLARE_ZONE_ID: z.string().optional(),
@@ -256,7 +254,6 @@ export const env = createEnv({
     WIKIOS_MEDIAWIKI_INTERNAL_URL: process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL,
     IIWIKI_DEV_PROXY_URL: process.env.IIWIKI_DEV_PROXY_URL,
     SKIP_MEDIAWIKI_SYNC: process.env.SKIP_MEDIAWIKI_SYNC,
-    CLOUDFLARE_TURNSTILE_SECRET_KEY: process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY,
     CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN,
     CLOUDFLARE_ZONE_ID: process.env.CLOUDFLARE_ZONE_ID,
     BOT_API_KEY: process.env.BOT_API_KEY,

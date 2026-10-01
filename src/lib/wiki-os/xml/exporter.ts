@@ -138,7 +138,9 @@ async function* historyOf(page: PageRow): AsyncGenerator<XmlRevision> {
   let exported = false;
   for (;;) {
     const batch: RevisionRow[] = await db.wikiRevision.findMany({
-      where: { articleId: page.id },
+      // A parked revision never went live: a dump of the page's history leaves it out (re-imported, it
+      // would be taken for the page's newest revision).
+      where: { articleId: page.id, parked: false },
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       take: REVISION_BATCH,
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
@@ -161,7 +163,12 @@ async function* historyOf(page: PageRow): AsyncGenerator<XmlRevision> {
  */
 async function newestRevision(articleId: string): Promise<RevisionRow | undefined> {
   const row: RevisionRow | null = await db.wikiRevision.findFirst({
-    where: { articleId, textDeleted: false, OR: [{ wikitext: { not: "" } }, { byteSize: 0 }] },
+    where: {
+      articleId,
+      parked: false,
+      textDeleted: false,
+      OR: [{ wikitext: { not: "" } }, { byteSize: 0 }],
+    },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     select: CURRENT_REVISION_SELECT,
   });

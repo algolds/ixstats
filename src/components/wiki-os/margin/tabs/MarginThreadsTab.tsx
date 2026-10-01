@@ -16,7 +16,6 @@ import {
   DesignPencil as Edit3,
   Quote,
   Search,
-  Crown,
   Copy,
   Leaf as Sprout,
   HelpCircle,
@@ -89,7 +88,7 @@ interface ThreadItem {
   selectedText: string | null;
   anchorOffset: number | null;
   resolvedAt: Date | null;
-  resolvedBy: { id: string; username: string } | null;
+  resolvedBy: { username: string } | null;
   createdBy: CommentAuthor;
   teamId: string | null;
   createdAt: Date;
@@ -103,7 +102,12 @@ interface ThreadItem {
     createdAt: Date;
     author: CommentAuthor;
   }>;
+  /** All the thread's comments; `comments` holds the first page of them. */
+  commentCount: number;
+  hasMoreComments: boolean;
 }
+
+type ThreadComment = ThreadItem["comments"][number];
 
 interface ThemeColors {
   primary: string;
@@ -123,6 +127,11 @@ interface MarginThreadsTabProps {
   isAuthenticated: boolean;
   onRefetch: () => void;
   themeColors?: ThemeColors | null;
+  /** The reader may resolve, reopen and delete any thread and delete any comment (a sysop). */
+  canModerate: boolean;
+  hasMoreThreads: boolean;
+  isLoadingMoreThreads: boolean;
+  onLoadMoreThreads: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -212,8 +221,7 @@ function ThreadCard({
   onRefetch,
   themeColors,
   currentUserAvatar,
-  currentUsername,
-  currentUserId,
+  canModerate,
 }: {
   thread: ThreadItem;
   isExpanded: boolean;
@@ -222,8 +230,7 @@ function ThreadCard({
   onRefetch: () => void;
   themeColors?: ThemeColors | null;
   currentUserAvatar?: string | null;
-  currentUsername?: string | null;
-  currentUserId?: string | null;
+  canModerate: boolean;
 }) {
   const [replyText, setReplyText] = useState("");
   const [showSuggestEdit, setShowSuggestEdit] = useState(false);
@@ -234,11 +241,9 @@ function ThreadCard({
   const notify = useNotify();
   const primaryColor = themeColors?.primary || "#fef036";
 
-  const isCreatorMatch =
-    (currentUserId && thread.createdBy.id === currentUserId) ||
-    (currentUsername && thread.createdBy.username.toLowerCase() === currentUsername.toLowerCase());
-
-  const creatorLiveAvatar = isCreatorMatch ? currentUserAvatar : undefined;
+  const creatorLiveAvatar = thread.createdBy.isAuthor ? currentUserAvatar : undefined;
+  // The server enforces this too: the thread's creator or a sysop.
+  const canManageThread = isAuthenticated && (thread.createdBy.isAuthor || canModerate);
   const isResolved = thread.status === "RESOLVED";
 
   // Parse Lore Dimension tag if present in title (e.g. "[WHY] Topic")
@@ -279,6 +284,46 @@ function ThreadCard({
     },
     onError: (err) => {
       notify.error(err.message || "Failed to delete thread");
+    },
+  });
+
+  const utils = api.useUtils();
+  const [moreComments, setMoreComments] = useState<ThreadComment[]>([]);
+  const [moreCursor, setMoreCursor] = useState<string | null | undefined>(undefined);
+  const [isLoadingMoreComments, setIsLoadingMoreComments] = useState(false);
+
+  const comments = useMemo(() => {
+    const seen = new Set(thread.comments.map((c) => c.id));
+    return [...thread.comments, ...moreComments.filter((c) => !seen.has(c.id))];
+  }, [thread.comments, moreComments]);
+  // Until the reader pages once, the first page's flag says whether more exist; then the cursor does.
+  const hasMoreComments = moreCursor === undefined ? thread.hasMoreComments : moreCursor !== null;
+
+  const loadMoreComments = async () => {
+    setIsLoadingMoreComments(true);
+    try {
+      const page = await utils.wikios.getThreadComments.fetch({
+        threadId: thread.id,
+        cursor: comments.at(-1)?.id,
+      });
+      setMoreComments((prev) => [...prev, ...page.comments]);
+      setMoreCursor(page.nextCursor);
+    } catch (err) {
+      notify.error(err instanceof Error ? err.message : "Failed to load replies");
+    } finally {
+      setIsLoadingMoreComments(false);
+    }
+  };
+
+  const deleteCommentMutation = api.wikios.deleteComment.useMutation({
+    onSuccess: (result, variables) => {
+      soundEffects.release();
+      setMoreComments((prev) => prev.filter((c) => c.id !== variables.commentId));
+      notify.success(result.threadDeleted ? "Thread deleted" : "Comment deleted");
+      onRefetch();
+    },
+    onError: (err) => {
+      notify.error(err.message || "Failed to delete comment");
     },
   });
 
@@ -365,13 +410,6 @@ function ThreadCard({
               {thread.createdBy.username}
             </span>
 
-            {thread.createdBy.country && (
-              <span className="py-0.2 inline-flex items-center gap-1 rounded border border-[var(--margin-accent-border)] bg-[var(--margin-accent-bg)] px-1 text-xs font-semibold text-[var(--margin-accent-text)]">
-                <Crown className="h-2.5 w-2.5" />
-                <span className="max-w-[75px] truncate">{thread.createdBy.country.name}</span>
-              </span>
-            )}
-
             {thread.sectionAnchor && (
               <span className="py-0.2 max-w-28 truncate rounded border border-[var(--wikios-border)] bg-[var(--wikios-bg)]/60 px-1 text-xs font-semibold text-[var(--wikios-text-dim)]">
                 #{thread.sectionAnchor}
@@ -402,7 +440,7 @@ function ThreadCard({
                 : "border border-[var(--wikios-border)] bg-[var(--wikios-bg)]/60 text-[var(--wikios-text-muted)]"
             )}
           >
-            {isResolved ? "Done" : `${thread.comments.length}`}
+            {isResolved ? "Done" : `${thread.commentCount}`}
           </span>
           {isExpanded ? (
             <ChevronDown className="h-3.5 w-3.5 text-[var(--wikios-text-dim)]" />
@@ -417,12 +455,10 @@ function ThreadCard({
         <div className="animate-in fade-in-50 space-y-3 border-t border-[var(--wikios-border)]/60 px-3 pt-1 pb-3 duration-150">
           {/* Discussion Comments List */}
           <div className="space-y-2 border-t border-[var(--wikios-border)]/40 pt-1">
-            {thread.comments.map((comment) => {
-              const isCommentAuthorMatch =
-                (currentUserId && comment.author.id === currentUserId) ||
-                (currentUsername &&
-                  comment.author.username.toLowerCase() === currentUsername.toLowerCase());
-              const commentLiveAvatar = isCommentAuthorMatch ? currentUserAvatar : undefined;
+            {comments.map((comment) => {
+              const commentLiveAvatar = comment.author.isAuthor ? currentUserAvatar : undefined;
+              const canDeleteComment =
+                isAuthenticated && (comment.author.isAuthor || canModerate);
 
               return (
                 <div
@@ -438,11 +474,6 @@ function ThreadCard({
                         liveAvatar={commentLiveAvatar}
                       />
                       <span className="text-xs">{comment.author.username}</span>
-                      {comment.author.country?.name && (
-                        <span className="text-xs font-medium text-[var(--margin-accent-text)]">
-                          ({comment.author.country.name})
-                        </span>
-                      )}
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -457,6 +488,21 @@ function ThreadCard({
                           title="Quote in reply"
                         >
                           <Quote className="h-3 w-3" />
+                        </button>
+                      )}
+                      {canDeleteComment && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm("Delete this comment?")) {
+                              deleteCommentMutation.mutate({ commentId: comment.id });
+                            }
+                          }}
+                          disabled={deleteCommentMutation.isPending}
+                          className="cursor-pointer rounded p-0.5 text-[var(--wikios-text-dim)] opacity-0 transition-[opacity,color] duration-100 group-hover:opacity-100 hover:text-rose-400"
+                          title="Delete comment"
+                        >
+                          <Trash2 className="h-3 w-3" />
                         </button>
                       )}
                     </div>
@@ -509,12 +555,22 @@ function ThreadCard({
                 </div>
               );
             })}
+            {hasMoreComments && (
+              <button
+                type="button"
+                onClick={() => void loadMoreComments()}
+                disabled={isLoadingMoreComments}
+                className="w-full cursor-pointer rounded-lg border border-[var(--wikios-border)] py-1 text-xs font-semibold text-[var(--wikios-text-muted)] transition-colors hover:text-[var(--wikios-text)] disabled:opacity-50"
+              >
+                {isLoadingMoreComments ? "Loading replies..." : "Show more replies"}
+              </button>
+            )}
           </div>
 
           {/* Action Bar: Hold-to-Resolve, Create Child Page & Delete */}
           <div className="flex items-center justify-between border-t border-[var(--wikios-border)] pt-1">
             <div className="flex items-center gap-2">
-              {isAuthenticated && (
+              {canManageThread && (
                 <HoldToResolveButton
                   isResolved={isResolved}
                   onResolveToggle={(resolved) =>
@@ -535,7 +591,7 @@ function ThreadCard({
               </Link>
             </div>
 
-            {isAuthenticated && (
+            {canManageThread && (
               <button
                 type="button"
                 onClick={() => {
@@ -638,6 +694,10 @@ export function MarginThreadsTab({
   isAuthenticated,
   onRefetch,
   themeColors,
+  canModerate,
+  hasMoreThreads,
+  isLoadingMoreThreads,
+  onLoadMoreThreads,
 }: MarginThreadsTabProps) {
   const { user: currentWikiUser } = useWikiAuth();
   const ixnayStatus = api.ixnayid.getStatus.useQuery(undefined, {
@@ -646,7 +706,6 @@ export function MarginThreadsTab({
   });
   const currentUsername = ixnayStatus.data?.wiki.username || currentWikiUser?.username;
   const currentUserAvatar = currentWikiUser?.imageUrl;
-  const currentUserId = currentWikiUser?.id;
   const primaryColor = themeColors?.primary || "#fef036";
 
   const [filter, setFilter] = useState<"OPEN" | "ALL">("OPEN");
@@ -790,11 +849,9 @@ export function MarginThreadsTab({
           <div className="flex items-center gap-1.5 border-b border-[var(--wikios-border)]/60 pb-1.5 text-xs font-semibold text-[var(--wikios-text)]">
             <MarginUserAvatar
               author={{
-                id: currentUserId || "you",
                 username: currentUsername || "You",
                 avatar: currentUserAvatar || null,
-                role: null,
-                country: null,
+                isAuthor: true,
               }}
               size="xs"
               primaryColor={primaryColor}
@@ -974,10 +1031,19 @@ export function MarginThreadsTab({
               onRefetch={onRefetch}
               themeColors={themeColors}
               currentUserAvatar={currentUserAvatar}
-              currentUsername={currentUsername}
-              currentUserId={currentUserId}
+              canModerate={canModerate}
             />
           ))}
+          {hasMoreThreads && (
+            <button
+              type="button"
+              onClick={onLoadMoreThreads}
+              disabled={isLoadingMoreThreads}
+              className="w-full cursor-pointer rounded-xl border border-[var(--wikios-border)] py-1.5 text-xs font-semibold text-[var(--wikios-text-muted)] transition-colors hover:text-[var(--wikios-text)] disabled:opacity-50"
+            >
+              {isLoadingMoreThreads ? "Loading discussions..." : "Show more discussions"}
+            </button>
+          )}
         </div>
       )}
 

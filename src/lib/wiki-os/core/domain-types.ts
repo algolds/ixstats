@@ -207,6 +207,8 @@ export interface WikiRevisionSummary {
   byteDelta: number;
   /** MediaWiki's rev_sha1 of the text; null on rows that predate it. */
   sha1: string | null;
+  /** A MediaWiki edit that was not made on top of the page's head: in the history, never the current text. */
+  parked: boolean;
 }
 
 /**

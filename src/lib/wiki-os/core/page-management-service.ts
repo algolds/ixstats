@@ -9,8 +9,16 @@ import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { toArticleSlug } from "./domain-types";
 import { canonicalizeTitle, NAMESPACE_CANONICAL_NAMES, type CanonicalTitle } from "./title";
-import { enqueueRender } from "../services/render-service";
+import { enqueueRender, invalidateTemplateDependents } from "../services/render-service";
 import { evictWikiTitleCaches } from "../services/title-cache-eviction";
+import { notifyWatchers, type HeadChange } from "../services/watchlist-notify";
+
+/** Tell the page's watchers without making the operation wait for them (or fail on them). */
+function notifyWatchersInBackground(change: HeadChange): void {
+  void notifyWatchers(change).catch((error) => {
+    console.warn("[PageManagement] Could not notify watchers:", error);
+  });
+}
 
 /** Who performed an operation: the WikiOS user row (for the foreign keys) and the name the log shows. */
 export interface PageActor {
@@ -141,6 +149,19 @@ export class PageManagementService {
       enqueueRender(moved.movedArticleId);
       await evictWikiTitleCaches(moved.oldTitle, realm, moved.movedArticleId);
       await evictWikiTitleCaches(moved.newTitle, realm, moved.movedArticleId);
+      // A moved template or module: its users render with the new name, or find the old one a redirect.
+      void invalidateTemplateDependents(moved.oldTitle, realm);
+      void invalidateTemplateDependents(moved.newTitle, realm);
+      // watchlist: the page's watchers stay with its row: tell them it moved (the mover is left out).
+      notifyWatchersInBackground({
+        kind: "moved",
+        articleId: moved.movedArticleId,
+        title: moved.newTitle,
+        fromTitle: moved.oldTitle,
+        editor: actor.name,
+        editorUserId: actor.userId,
+        summary: reason,
+      });
     }
     return result;
   }
@@ -282,7 +303,7 @@ export class PageManagementService {
    * with the title). Rows already at the destination are stale and replaced. Returns the moved edit
    * restriction, if any.
    */
-  private static async moveRestrictions(
+  static async moveRestrictions(
     tx: Prisma.TransactionClient,
     realm: string,
     oldTitle: string,
@@ -383,6 +404,17 @@ export class PageManagementService {
     });
     // A deleted page must not be read out of a cache.
     await evictWikiTitleCaches(title, realm, articleId);
+    // A deleted template or module: the pages that use it render without it.
+    void invalidateTemplateDependents(title, realm);
+    // watchlist: tell the page's watchers it is gone (the deleter is left out).
+    notifyWatchersInBackground({
+      kind: "deleted",
+      articleId,
+      title,
+      editor: actor.name,
+      editorUserId: actor.userId,
+      summary: reason,
+    });
     return { success: true, articleId };
   }
 
@@ -425,6 +457,17 @@ export class PageManagementService {
     });
     // The page was "missing" while deleted: forget that, and anything cached from before.
     await evictWikiTitleCaches(title, realm, articleId);
+    // A restored template or module: the pages that use it render with it again.
+    void invalidateTemplateDependents(title, realm);
+    // watchlist: the page's watchers stayed with its row: tell them it is back (the restorer is left out).
+    notifyWatchersInBackground({
+      kind: "restored",
+      articleId,
+      title,
+      editor: actor.name,
+      editorUserId: actor.userId,
+      summary: reason,
+    });
     return { success: true, articleId };
   }
 

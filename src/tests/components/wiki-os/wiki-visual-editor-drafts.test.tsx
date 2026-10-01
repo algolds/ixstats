@@ -7,6 +7,15 @@ import { getDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
 let mockNodes: unknown[] = [];
 const mockNotifyError = jest.fn();
 const mockNotifyWarning = jest.fn();
+let mockUserId: string | null = "user_alice";
+
+jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({
+  useWikiAuth: () => ({
+    isLoaded: true,
+    isSignedIn: mockUserId !== null,
+    user: mockUserId ? { id: mockUserId, username: null, imageUrl: null } : null,
+  }),
+}));
 
 // the editor imports its stylesheet (plan 413); Jest has no CSS transform
 jest.mock("~/styles/wiki-os/editors.css", () => ({}));
@@ -65,6 +74,7 @@ describe("WikiVisualEditor drafts and what a save writes (review fixes 7-8)", ()
     jest.clearAllMocks();
     jest.spyOn(console, "error").mockImplementation(() => undefined);
     window.localStorage.clear();
+    mockUserId = "user_alice";
     mockNodes = [paragraph("Edited text.")];
   });
 
@@ -74,7 +84,7 @@ describe("WikiVisualEditor drafts and what a save writes (review fixes 7-8)", ()
     await waitFor(() => expect(onSave).toHaveBeenCalled());
     await act(async () => undefined);
     expect(onSave).toHaveBeenCalledWith("Edited text.", "", false, false);
-    expect(getDraft("Vesperia")).toBeNull();
+    expect(getDraft("user_alice", "Vesperia")).toBeNull();
     expect(window.localStorage.length).toBe(0);
   });
 
@@ -82,7 +92,7 @@ describe("WikiVisualEditor drafts and what a save writes (review fixes 7-8)", ()
     const { onSave } = setup();
     onSave.mockRejectedValueOnce(new Error("offline"));
     fireEvent.click(screen.getByText("publish"));
-    await waitFor(() => expect(getDraft("Vesperia")?.wikitext).toBe("Edited text."));
+    await waitFor(() => expect(getDraft("user_alice", "Vesperia")?.wikitext).toBe("Edited text."));
   });
 
   it("saves empty wikitext for an emptied document, never the HTML of the editor", async () => {
@@ -96,21 +106,35 @@ describe("WikiVisualEditor drafts and what a save writes (review fixes 7-8)", ()
   it("'Save draft' stores the wikitext in the wikitext field", async () => {
     setup();
     fireEvent.click(screen.getByText("save-draft"));
-    await waitFor(() => expect(getDraft("Vesperia")).not.toBeNull());
-    const draft = getDraft("Vesperia")!;
+    await waitFor(() => expect(getDraft("user_alice", "Vesperia")).not.toBeNull());
+    const draft = getDraft("user_alice", "Vesperia")!;
     expect(draft.wikitext).toBe("Edited text.");
     expect(draft.html).toBeUndefined();
     expect(draft.mode).toBe("visual");
   });
 
+  it("keeps no draft for a signed-out editor and says why (plan 416)", async () => {
+    mockUserId = null;
+    setup();
+    fireEvent.click(screen.getByText("save-draft"));
+    await waitFor(() => expect(mockNotifyError).toHaveBeenCalledWith("Sign in to save a draft", expect.any(String)));
+    expect(window.localStorage.length).toBe(0);
+  });
+
+  it("does not start from another user's draft (plan 416)", () => {
+    saveDraft("user_bob", { title: "Vesperia", source: "ixwiki", mode: "visual", wikitext: "Bob's draft" });
+    setup();
+    expect(screen.getByTestId("canvas").textContent).toBe("Start");
+  });
+
   it("starts from a local draft by default and ignores it when the host settles drafts itself", () => {
-    saveDraft({ title: "Vesperia", source: "ixwiki", mode: "visual", wikitext: "From the draft" });
+    saveDraft("user_alice", { title: "Vesperia", source: "ixwiki", mode: "visual", wikitext: "From the draft" });
     setup();
     expect(screen.getByTestId("canvas").textContent).toBe("From the draft");
   });
 
   it("does not start from a draft when restoreLocalDraft is false", () => {
-    saveDraft({ title: "Vesperia", source: "ixwiki", mode: "visual", wikitext: "From the draft" });
+    saveDraft("user_alice", { title: "Vesperia", source: "ixwiki", mode: "visual", wikitext: "From the draft" });
     setup({ restoreLocalDraft: false });
     expect(screen.getByTestId("canvas").textContent).toBe("Start");
   });

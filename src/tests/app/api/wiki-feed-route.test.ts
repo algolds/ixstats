@@ -15,6 +15,7 @@ const revision = (id: string, overrides: Record<string, string | number | boolea
   author: "Aurelian",
   summary: "Expanded history section",
   minor: false,
+  parked: false,
   byteDelta: 120,
   createdAt: new Date("2026-09-20T12:00:00.000Z"),
   article: { title: "Urcea", slug: "Urcea" },
@@ -89,5 +90,24 @@ describe("GET /api/wiki/feed/[type]", () => {
     expect(findMany).toHaveBeenLastCalledWith(
       expect.objectContaining({ where: { source: "ixwiki", article: { status: "PUBLISHED" } }, take: 50 })
     );
+  });
+
+  it("keeps a parked revision (a MediaWiki edit that did not go live) in the feed, flagged", async () => {
+    findMany.mockResolvedValue([revision("rev-1", { parked: true }), revision("rev-2")]);
+
+    const atom = await (await get("recent-changes.atom")).text();
+    const json = (await (await get("recent-changes.json")).json()) as {
+      items: Array<{ title: string; _parked: boolean }>;
+    };
+
+    expect(atom.match(/<entry>/g)).toHaveLength(2);
+    expect(atom).toContain("<title>Urcea (+120) — conflict — not live</title>");
+    expect(atom.match(/<category term="parked"/g)).toHaveLength(1);
+    expect(json.items.map((item) => item._parked)).toEqual([true, false]);
+    expect(json.items[0]?.title).toBe("Urcea (+120) — conflict — not live");
+    expect(json.items[1]?.title).toBe("Urcea (+120)");
+    // The query keeps parked rows: it must not filter them out.
+    expect(findMany.mock.calls[0]?.[0].where).not.toHaveProperty("parked");
+    expect(findMany.mock.calls[0]?.[0].select).toHaveProperty("parked", true);
   });
 });

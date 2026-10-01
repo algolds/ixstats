@@ -39,7 +39,9 @@ const MAX_HISTORY_PAGE = 500;
 export const wikiosHistoryDiffRouter = createTRPCRouter({
   /**
    * Revision history of a page, newest first, without any revision's text. `before` is the
-   * reference of the last revision already seen: the answer starts right after it.
+   * reference of the last revision already seen: the answer starts right after it. Parked
+   * revisions (MediaWiki edits that conflicted with WikiOS's head and never went live) are listed
+   * too, flagged `parked`.
    */
   getHistory: publicProcedure
     .input(
@@ -55,7 +57,8 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
         input.title,
         input.limit,
         input.before ? { before: input.before } : undefined,
-        "ixwiki"
+        "ixwiki",
+        { includeParked: true }
       );
       return { revisions, hasMore };
     }),
@@ -77,18 +80,32 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
       if (!toData) throw new Error(`Revision r${input.torev} not found`);
       await assertTitleVisible(ctx, toData.title);
 
-      // One history read finds both ends: `torev` itself and, right after it, the revision before.
-      const [toRev, previous] = (
-        await getArticleHistoryShadow(toData.title, 2, { from: input.torev }, "ixwiki")
+      // One history read finds both ends: `torev` itself and, right after it, its neighbour.
+      const [toRev, neighbour] = (
+        await getArticleHistoryShadow(toData.title, 2, { from: input.torev }, "ixwiki", {
+          includeParked: true,
+        })
       ).revisions;
+      // A live revision follows the live ones: a conflicting edit that was parked in between was never
+      // the page's text, so the change this revision made is not measured from it. (A parked revision
+      // is compared with its neighbour.)
+      const previous = input.fromrev
+        ? undefined
+        : toRev?.parked
+          ? neighbour
+          : (await getArticleHistoryShadow(toData.title, 2, { from: input.torev }, "ixwiki"))
+              .revisions[1];
       const resolvedFromRevId = input.fromrev || previous?.revid || "";
 
       const fromData = resolvedFromRevId
         ? await getRevisionWikitextShadow(resolvedFromRevId)
         : null;
       const fromRev = input.fromrev
-        ? (await getArticleHistoryShadow(toData.title, 1, { from: input.fromrev }, "ixwiki"))
-            .revisions[0]
+        ? (
+            await getArticleHistoryShadow(toData.title, 1, { from: input.fromrev }, "ixwiki", {
+              includeParked: true,
+            })
+          ).revisions[0]
         : previous;
       // The "from" revision may belong to another page: a deleted one stays hidden too.
       if (fromData) await assertTitleVisible(ctx, fromData.title);

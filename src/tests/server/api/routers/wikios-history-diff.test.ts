@@ -56,6 +56,7 @@ const entry = (revid: string, user: string, comment = "") => ({
   byteDelta: 0,
   minor: false,
   sha1: null,
+  parked: false,
 });
 
 beforeEach(() => {
@@ -77,13 +78,17 @@ describe("wikiosHistoryDiffRouter.getHistory (plan 413)", () => {
 
     const result = await caller().getHistory({ title: "Foo", limit: 1, before: "r3" });
 
-    expect(getArticleHistoryShadow).toHaveBeenCalledWith("Foo", 1, { before: "r3" }, "ixwiki");
+    expect(getArticleHistoryShadow).toHaveBeenCalledWith("Foo", 1, { before: "r3" }, "ixwiki", {
+      includeParked: true,
+    });
     expect(result).toEqual({ revisions: [entry("r2", "bob")], hasMore: true });
   });
 
   it("starts at the newest revision without a cursor, 50 at a time", async () => {
     await caller().getHistory({ title: "Foo" });
-    expect(getArticleHistoryShadow).toHaveBeenCalledWith("Foo", 50, undefined, "ixwiki");
+    expect(getArticleHistoryShadow).toHaveBeenCalledWith("Foo", 50, undefined, "ixwiki", {
+      includeParked: true,
+    });
   });
 
   it("allows up to 500 per request and no more", async () => {
@@ -106,7 +111,11 @@ describe("wikiosHistoryDiffRouter.getDiff (plan 402, 413)", () => {
 
     const result = await caller().getDiff({ torev: "r2" });
 
-    expect(getArticleHistoryShadow).toHaveBeenCalledWith("Foo", 2, { from: "r2" }, "ixwiki");
+    // `torev` and its neighbour (parked rows too, to know whether it is one), then the live one before it
+    expect(getArticleHistoryShadow).toHaveBeenNthCalledWith(1, "Foo", 2, { from: "r2" }, "ixwiki", {
+      includeParked: true,
+    });
+    expect(getArticleHistoryShadow).toHaveBeenNthCalledWith(2, "Foo", 2, { from: "r2" }, "ixwiki");
     expect(result).not.toHaveProperty("oldWikitext");
     expect(result).not.toHaveProperty("newWikitext");
     expect(result).not.toHaveProperty("diffHtml");
@@ -143,7 +152,9 @@ describe("wikiosHistoryDiffRouter.getDiff (plan 402, 413)", () => {
 
     const result = await caller().getDiff({ torev: "r5", fromrev: "r1" });
 
-    expect(getArticleHistoryShadow).toHaveBeenLastCalledWith("Foo", 1, { from: "r1" }, "ixwiki");
+    expect(getArticleHistoryShadow).toHaveBeenLastCalledWith("Foo", 1, { from: "r1" }, "ixwiki", {
+      includeParked: true,
+    });
     expect(getRevisionWikitextShadow).toHaveBeenLastCalledWith("r1");
     expect(result.from).toMatchObject({ revid: "r1", user: "amy" });
     expect(result.to).toMatchObject({ revid: "r5", user: "eve" });
@@ -191,6 +202,81 @@ describe("wikiosHistoryDiffRouter.getDiff (plan 402, 413)", () => {
     });
   });
 
+  describe("which revision a diff starts from (plan 406)", () => {
+    const entry = (revid: string, parked: boolean) => ({
+      revid,
+      user: "u",
+      timestamp: "",
+      comment: "",
+      size: 1,
+      byteDelta: 0,
+      minor: false,
+      parked,
+    });
+    const history = [
+      entry("r3", false),
+      entry("9001", true),
+      entry("9000", true),
+      entry("r1", false),
+    ];
+
+    /** The store as it answers: parked rows only to a caller that asks, a position anchored in what it sees. */
+    const fakeStore = (rows: typeof history) =>
+      (async (
+        _title: string,
+        limit?: number,
+        position?: { before: string } | { from: string },
+        _source?: string,
+        options?: { includeParked?: boolean }
+      ) => {
+        const visible = options?.includeParked ? rows : rows.filter((r) => !r.parked);
+        let start = 0;
+        if (position) {
+          const ref = "before" in position ? position.before : position.from;
+          const at = visible.findIndex((r) => r.revid === ref);
+          if (at < 0) return { revisions: [], hasMore: false, fromShadow: true as const };
+          start = "before" in position ? at + 1 : at;
+        }
+        return {
+          revisions: visible.slice(start, start + (limit ?? 50)),
+          hasMore: false,
+          fromShadow: true as const,
+        };
+      }) as never;
+
+    beforeEach(() => {
+      jest.mocked(getArticleHistoryShadow).mockImplementation(fakeStore(history));
+      jest.mocked(getRevisionWikitextShadow).mockImplementation(async (ref: string) => ({
+        ...revision(`text of ${ref}`),
+      }));
+    });
+
+    it("a live revision is compared with the live one before it, not with a parked edit between them", async () => {
+      const result = await caller().getDiff({ torev: "r3" });
+
+      expect(result.from.revid).toBe("r1");
+      expect(getRevisionWikitextShadow).toHaveBeenLastCalledWith("r1");
+    });
+
+    it("a parked revision is compared with the revision next to it in the history", async () => {
+      const result = await caller().getDiff({ torev: "9001" });
+
+      expect(result.from.revid).toBe("9000");
+    });
+
+    it("an explicit fromrev is honoured, parked or not", async () => {
+      const result = await caller().getDiff({ torev: "r3", fromrev: "9001" });
+
+      expect(result.from.revid).toBe("9001");
+    });
+
+    it("the first live revision has nothing before it, however many parked edits follow it in the list", async () => {
+      const result = await caller().getDiff({ torev: "r1" });
+
+      expect(result.from.revid).toBe("");
+    });
+  });
+
   it.each<[string, string | null, string | null]>([
     ["the revision being viewed", null, "old"],
     ["the revision it is compared with", "new", null],
@@ -203,6 +289,57 @@ describe("wikiosHistoryDiffRouter.getDiff (plan 402, 413)", () => {
     await expect(caller().getDiff({ torev: "r2" })).rejects.toMatchObject({
       code: "PRECONDITION_FAILED",
       message: "Revision text has not been imported yet.",
+    });
+  });
+});
+
+describe("wikiosHistoryDiffRouter.getHistory (plan 406)", () => {
+  it("asks the store for parked revisions and passes them on flagged", async () => {
+    jest.mocked(getArticleHistoryShadow).mockResolvedValue({
+      revisions: [
+        {
+          revid: "9001",
+          user: "carol",
+          timestamp: "",
+          comment: "x",
+          size: 1,
+          byteDelta: 0,
+          minor: false,
+          parked: true,
+        },
+        {
+          revid: "r1",
+          user: "amy",
+          timestamp: "",
+          comment: "",
+          size: 1,
+          byteDelta: 0,
+          minor: false,
+          parked: false,
+        },
+      ],
+      hasMore: false,
+      fromShadow: true,
+    });
+
+    const result = await caller().getHistory({ title: "Foo" });
+
+    expect(getArticleHistoryShadow).toHaveBeenCalledWith("Foo", 50, undefined, "ixwiki", {
+      includeParked: true,
+    });
+    expect(result.revisions.map((r) => r.parked)).toEqual([true, false]);
+  });
+
+  it("a diff finds a parked revision in the history it reads, and names its predecessor", async () => {
+    jest
+      .mocked(getRevisionWikitextShadow)
+      .mockResolvedValueOnce(revision("new"))
+      .mockResolvedValueOnce(revision("old"));
+
+    await caller().getDiff({ torev: "r2" });
+
+    expect(getArticleHistoryShadow).toHaveBeenCalledWith("Foo", 2, { from: "r2" }, "ixwiki", {
+      includeParked: true,
     });
   });
 });

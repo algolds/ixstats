@@ -152,7 +152,12 @@ describe("activity and links", () => {
       published
     );
 
-    await LinkGraphService.syncArticleLinks("a1", "See [[Caphiria]].", "", "ixwiki");
+    // The render replaces an article's links; a target is resolved among published pages only.
+    const tx = {
+      ...mockDb,
+      wikiLink: { ...mockDb.wikiLink, deleteMany: jest.fn(), createMany: jest.fn() },
+    };
+    await LinkGraphService.replaceLinks(tx as never, "a1", "ixwiki", [{ title: "Caphiria" }]);
     expect(mockDb.wikiArticle.findMany.mock.calls[0]?.[0].where).toMatchObject(published);
   });
 

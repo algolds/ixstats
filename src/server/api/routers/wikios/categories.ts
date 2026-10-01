@@ -207,13 +207,15 @@ export const wikiosCategoriesRouter = createTRPCRouter({
         const queryTerm = input.query ? input.query.trim() : "";
         const fromTerm = input.from ? input.from.trim() : "";
 
+        // A category MediaWiki hides (the maintenance and tracking ones) is not listed.
         const whereCat: {
+          hidden: boolean;
           OR?: Array<{
             name?: { contains: string; mode: "insensitive" };
             slug?: { contains: string; mode: "insensitive" };
           }>;
           name?: { gte: string; mode: "insensitive" };
-        } = {};
+        } = { hidden: false };
         if (queryTerm) {
           whereCat.OR = [
             { name: { contains: queryTerm, mode: "insensitive" } },
@@ -304,6 +306,7 @@ export const wikiosCategoriesRouter = createTRPCRouter({
       if (input.wiki === "ixwiki") {
         try {
           const categories = await db.wikiCategory.findMany({
+            where: { hidden: false },
             take: input.limit,
             include: {
               _count: { select: { members: { where: { article: { status: "PUBLISHED" } } } } },

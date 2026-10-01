@@ -35,6 +35,8 @@ export interface HistoryRevision {
   minor: boolean;
   /** MediaWiki's rev_sha1 of the text; null when the revision predates it (or came from MediaWiki). */
   sha1: string | null;
+  /** A MediaWiki edit that did not go live (conflict): in the history, never the page's current text. */
+  parked: boolean;
 }
 
 /**
@@ -93,16 +95,21 @@ export async function getRevisionWikitextShadow(
 
 /**
  * Fetch revision history from PostgreSQL, falling back to MediaWiki. `position` pages through it
- * (see `HistoryPosition`): only PostgreSQL can answer a page that is not the first.
+ * (see `HistoryPosition`): only PostgreSQL can answer a page that is not the first. Parked revisions
+ * are left out unless the caller is a history list (`includeParked`): everything that reads "the
+ * latest revision" off this list (the edit-conflict check, rollback) must not see them.
  */
 export async function getPageHistoryShadow(
   title: string,
   limit = 50,
   position?: HistoryPosition,
-  source: WikiSource = "ixwiki"
+  source: WikiSource = "ixwiki",
+  { includeParked = false }: { includeParked?: boolean } = {}
 ): Promise<{ revisions: HistoryRevision[]; hasMore: boolean; fromShadow: boolean }> {
   // 1. Check PostgreSQL revision records; one more than asked tells whether there is a next page
-  const pgRevs = await ArticleRepository.getHistory(title, source, limit + 1, position);
+  const pgRevs = await ArticleRepository.getHistory(title, source, limit + 1, position, {
+    includeParked,
+  });
   if (pgRevs.length > 0) {
     return {
       revisions: pgRevs.slice(0, limit).map((r) => ({
@@ -114,6 +121,7 @@ export async function getPageHistoryShadow(
         byteDelta: r.byteDelta,
         minor: r.minor,
         sha1: r.sha1,
+        parked: r.parked,
       })),
       hasMore: pgRevs.length > limit,
       fromShadow: true,
@@ -133,6 +141,7 @@ export async function getPageHistoryShadow(
       byteDelta: r.diff || 0,
       minor: r.rev_minor_edit === 1,
       sha1: null,
+      parked: r.parked,
     })),
     hasMore: false,
     fromShadow: false,
@@ -223,6 +232,7 @@ export async function getArticleAuthors(
         const slug = toArticleSlug(cleanTitle);
         const latestPgRev = await db.wikiRevision.findFirst({
           where: {
+            parked: false,
             article: {
               source,
               OR: [
@@ -304,7 +314,7 @@ export async function getArticleAuthors(
 
     if (article) {
       const revisions = await db.wikiRevision.findMany({
-        where: { articleId: article.id },
+        where: { articleId: article.id, parked: false },
         orderBy: { createdAt: "asc" },
         select: {
           author: true,

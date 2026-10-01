@@ -139,7 +139,6 @@ export const wikiosEditingRouter = createTRPCRouter({
         wikitext: z.string().max(2_000_000),
         summary: z.string().max(500).default(""),
         minor: z.boolean().default(false),
-        turnstileToken: z.string().optional(),
         /** `revisionRef` of the page when the editor loaded it; absent for a page that did not exist. */
         baseRevisionRef: z.string().max(64).optional(),
       })
@@ -150,10 +149,6 @@ export const wikiosEditingRouter = createTRPCRouter({
 
       const conflict = await detectEditConflict(title, input.baseRevisionRef);
       if (conflict) return { success: false as const, editConflict: true as const, ...conflict };
-
-      if (input.turnstileToken) {
-        await CloudflareGuardian.verifyTurnstile(input.turnstileToken);
-      }
 
       const authorName = resolveWikiUsername(ctx) ?? "Community Contributor";
 
@@ -187,7 +182,6 @@ export const wikiosEditingRouter = createTRPCRouter({
         success: true as const,
         title,
         revisionId: saveResult.revisionId,
-        extractedLinksCount: saveResult.extractedLinksCount,
       };
     }),
 

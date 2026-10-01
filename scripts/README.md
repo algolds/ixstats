@@ -124,7 +124,7 @@ scripts/
 | :--- | :--- |
 | [`scripts/sync-ixwiki-full.ts`](sync-ixwiki-full.ts) / [`sync-ixwiki-live.ts`](sync-ixwiki-live.ts) / [`sync-ixwiki-media.ts`](sync-ixwiki-media.ts) | `bun run wiki:sync:full` / `wiki:sync:live` / `wiki:sync:media` — IxWiki → WikiOS PostgreSQL sync. |
 | [`scripts/sync-wikios-categories.ts`](sync-wikios-categories.ts) | `bun run wiki:seed:categories` |
-| [`scripts/cleanup-wikios-categories.ts`](cleanup-wikios-categories.ts) / [`cleanup-wikios-sync-summaries.ts`](cleanup-wikios-sync-summaries.ts) | `bun run wiki:clean:categories` / `wiki:clean:summaries` |
+| [`scripts/cleanup-wikios-sync-summaries.ts`](cleanup-wikios-sync-summaries.ts) | `bun run wiki:clean:summaries` |
 
 ---
 

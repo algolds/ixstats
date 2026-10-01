@@ -40,6 +40,8 @@ model WikiArticle {
   
   // Structured Metadata & Infobox
   infoboxData         Json?                // Structured key-value infobox properties
+  displayTitle        String?              @db.Text // {{DISPLAYTITLE}} as sanitized HTML, from the last render; null = the title itself
+  pageProps           Json?                // Page properties MediaWiki reports for the last render (defaultsort, disambiguation, ...)
   readingTime         Int                  @default(1)
   wordCount           Int                  @default(0)
   viewCount           Int                  @default(0)
@@ -80,6 +82,8 @@ model WikiArticle {
   awards              WikiArticleAward[]   @relation("ArticleAwards")
   watchers            WikiWatchlist[]      @relation("WatchedArticles")
   logs                WikiLog[]            @relation("ArticleLogs")
+  templateLinks       WikiTemplateLink[]   @relation("ArticleTemplateLinks")
+  imageLinks          WikiImageLink[]      @relation("ArticleImageLinks")
 
   @@unique([source, title])
   @@index([source, slug])
@@ -116,9 +120,14 @@ model WikiRevision {
   textDeleted      Boolean      @default(false)
   commentDeleted   Boolean      @default(false)
   userDeleted      Boolean      @default(false)
+  // Inbound sync (fast-forward or park): a MediaWiki edit that was not made on top of WikiOS's head is kept
+  // here, in the history, but is never the page's current text. Every "latest revision" query filters it out.
+  parked           Boolean      @default(false)
+  parkReason       String?      // "conflict:<head revision ref>"
   createdAt        DateTime     @default(now())
 
   @@index([articleId, createdAt])
+  @@index([articleId, parked, createdAt])
   @@index([articleId, sha1])
   @@unique([source, mwRevId])
   @@index([author])
@@ -158,6 +167,8 @@ model WikiLog {
   actorName           String
   comment             String?      @db.VarChar(1000)
   params              Json?
+  /// The MediaWiki log id of an event the inbound sync applied (unique: an event is applied once); null for WikiOS's own.
+  mwLogId             Int?         @unique
   createdAt           DateTime     @default(now())
 
   @@index([logType, createdAt(sort: Desc)])
@@ -247,6 +258,7 @@ model WikiCategory {
   slug        String               @unique
   name        String
   description String?              @db.Text
+  hidden      Boolean              @default(false) // __HIDDENCAT__: MediaWiki's own flag, from the render
   parentId    String?
   parent      WikiCategory?        @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children    WikiCategory[]       @relation("CategoryHierarchy")
@@ -272,6 +284,31 @@ model WikiCategoryMember {
   @@index([articleId])
   @@index([categoryId])
   @@map("wiki_category_members")
+}
+
+/// What an article transcludes (templates, and Lua modules through #invoke), from the last render.
+/// A change to `templateTitle` makes every row's article stale (`invalidateDependents`).
+model WikiTemplateLink {
+  id            String      @id @default(cuid())
+  articleId     String
+  article       WikiArticle @relation("ArticleTemplateLinks", fields: [articleId], references: [id], onDelete: Cascade)
+  templateTitle String      // canonical title, "Module:" titles included
+
+  @@unique([articleId, templateTitle])
+  @@index([templateTitle])
+  @@map("wiki_template_links")
+}
+
+/// The files an article uses, from the last render.
+model WikiImageLink {
+  id        String      @id @default(cuid())
+  articleId String
+  article   WikiArticle @relation("ArticleImageLinks", fields: [articleId], references: [id], onDelete: Cascade)
+  fileName  String      // file name without the "File:" prefix, spaces not underscores
+
+  @@unique([articleId, fileName])
+  @@index([fileName])
+  @@map("wiki_image_links")
 }
 
 /// Native Media Commons Asset
@@ -359,7 +396,7 @@ model StashItem {
   stash       Stash             @relation(fields: [stashId], references: [id], onDelete: Cascade)
   annotations StashAnnotation[]
 
-  @@unique([stashId, pageTitle])
+  @@unique([stashId, contentType, pageTitle])
   @@index([stashId])
   @@index([pageTitle])
   @@index([articleId])

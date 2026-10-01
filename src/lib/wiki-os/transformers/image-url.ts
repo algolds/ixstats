@@ -413,47 +413,245 @@ export function heroImage(
   };
 }
 
+// ---------------------------------------------------------------------------
+// The lead image of raw wikitext
+//
+// This runs on MediaWiki text in the inbound sync, so every pass below is linear: a scan with
+// `indexOf`, never a lazy or nested quantifier that could be made to rescan the rest of the text from
+// each of 100,000 unclosed `[[File:` openers.
+// ---------------------------------------------------------------------------
+
+/** The infobox parameters that name the page's picture. */
+const INFOBOX_IMAGE_PARAMS: ReadonlySet<string> = new Set([
+  "image",
+  "logo",
+  "company_logo",
+  "flag",
+  "image_flag",
+  "coat_of_arms",
+  "image_coat",
+  "seal",
+  "image_seal",
+  "map",
+  "image_map",
+  "photo",
+  "image_photo",
+  "portrait",
+  "image_portrait",
+  "album_cover",
+  "cover",
+  "poster",
+  "emblem",
+  "badge",
+  "insignia",
+  "picture",
+  "header_image",
+  "leader_image",
+  "flag_image",
+  "symbol",
+]);
+
+/** The longest parameter name in INFOBOX_IMAGE_PARAMS, plus one: a longer run of letters is no parameter. */
+const MAX_PARAM_NAME_LENGTH = 16;
+/** MediaWiki's file names are at most 255 bytes: a longer "file name" is text that is not one. */
+const MAX_FILE_NAME_LENGTH = 300;
+/** Notice templates that sit at the top of a page and carry icons, not the page's picture. */
+const NOTICE_TEMPLATES = [
+  "underconstruction",
+  "under_construction",
+  "wip",
+  "work_in_progress",
+  "stub",
+  "cleanup",
+  "ambox",
+  "notice",
+  "disambig",
+  "about",
+  "short description",
+];
+
+const WHITESPACE = /\s/;
+const WORD_CHAR = /\w/;
+
+/** `text` lower-cased in ASCII only: the case-insensitivity of a regular expression without the `u` flag. */
+function asciiLower(text: string): string {
+  return text.replace(/[A-Z]/g, (letter) => letter.toLowerCase());
+}
+
+function skipWhitespace(text: string, from: number): number {
+  let i = from;
+  while (i < text.length && WHITESPACE.test(text.charAt(i))) i++;
+  return i;
+}
+
+/** The index of the first of `stops` at or after `from`, or the end of the text. */
+function runEnd(text: string, from: number, stops: string): number {
+  let i = from;
+  while (i < text.length && !stops.includes(text.charAt(i))) i++;
+  return i;
+}
+
+/**
+ * The first index at or after `from` where `needle` occurs, for calls whose `from` only grows. A search
+ * that found `at` also answers every later `from` up to `at`, and one that found nothing answers all of
+ * them: scanning for the same closing bracket from each of many openers costs one scan, not one each.
+ */
+export function forwardFinder(text: string, needle: string): (from: number) => number {
+  let searchedFrom = -1;
+  let foundAt = -2;
+  return (from) => {
+    if (foundAt === -1 && from >= searchedFrom) return -1;
+    if (from >= searchedFrom && from <= foundAt) return foundAt;
+    searchedFrom = from;
+    foundAt = text.indexOf(needle, from);
+    return foundAt;
+  };
+}
+
+/**
+ * What the parameter introduced by the `|` at `bar` says, when it is one of INFOBOX_IMAGE_PARAMS
+ * (`| image = Flag.svg`): null when it is not one, "" when it is one with a blank value.
+ */
+function infoboxImageValue(text: string, bar: number): string | null {
+  const nameStart = skipWhitespace(text, bar + 1);
+  let nameEnd = nameStart;
+  while (
+    nameEnd < text.length &&
+    nameEnd - nameStart < MAX_PARAM_NAME_LENGTH &&
+    /[A-Za-z_]/.test(text.charAt(nameEnd))
+  ) {
+    nameEnd++;
+  }
+  if (!INFOBOX_IMAGE_PARAMS.has(asciiLower(text.slice(nameStart, nameEnd)))) return null;
+
+  const equals = skipWhitespace(text, nameEnd);
+  if (text.charAt(equals) !== "=") return null;
+  const afterEquals = equals + 1;
+  const valueStart = skipWhitespace(text, afterEquals);
+  const first = text.charAt(valueStart);
+  if (first !== "" && first !== "|" && first !== "}") {
+    return text.slice(valueStart, runEnd(text, valueStart, "|\n}"));
+  }
+  // Nothing but blanks up to a `|`, a `}` or the end: a value is the last blank that is not a line break.
+  for (let blank = valueStart - 1; blank >= afterEquals; blank--) {
+    if (text.charAt(blank) !== "\n") return "";
+  }
+  return null;
+}
+
+/** The first image parameter's value (blank or not), or null when the text has none. */
+function firstInfoboxImageValue(text: string): string | null {
+  for (let bar = text.indexOf("|"); bar !== -1; bar = text.indexOf("|", bar + 1)) {
+    const value = infoboxImageValue(text, bar);
+    if (value !== null) return value;
+  }
+  return null;
+}
+
+/** `value` of an infobox image parameter as a bare file name: no `[[File:`, no `]]`, nothing after a delimiter. */
+function bareFileName(value: string): string {
+  return value
+    .replace(/\[\[(?:File|Image):/gi, "")
+    .replace(/\]\]/g, "")
+    .split(/[|\]}\n]/)[0]!
+    .replace(/^(?:File|Image|file|image):/i, "")
+    .trim();
+}
+
+function isLineStart(text: string, at: number): boolean {
+  return at === 0 || "\n\r\u2028\u2029".includes(text.charAt(at - 1));
+}
+
+/** The index just past the name of the notice template (NOTICE_TEMPLATES, as a whole word) that starts at `at`, or -1. */
+function noticeTemplateEnd(text: string, at: number): number {
+  const window = asciiLower(text.slice(at + 2, at + 2 + 24));
+  for (const name of NOTICE_TEMPLATES) {
+    if (window.startsWith(name) && !WORD_CHAR.test(window.charAt(name.length))) {
+      return at + 2 + name.length;
+    }
+  }
+  return -1;
+}
+
+/** The text without its notice templates: one that starts a line and runs to the first `}}` after its name. */
+function withoutNoticeTemplates(text: string): string {
+  const pieces: string[] = [];
+  let copied = 0;
+  for (let open = text.indexOf("{{"); open !== -1; open = text.indexOf("{{", open + 1)) {
+    const nameEnd = isLineStart(text, open) ? noticeTemplateEnd(text, open) : -1;
+    if (nameEnd === -1) continue;
+    const close = text.indexOf("}}", nameEnd);
+    if (close === -1) break; // no template can close after this one either
+    pieces.push(text.slice(copied, open));
+    copied = close + 2;
+    open = close + 1; // the next search starts after the removed template
+  }
+  pieces.push(text.slice(copied));
+  return pieces.join("");
+}
+
+/** The length of the "File:" or "Image:" prefix at `at` (any case), or 0. */
+function filePrefixLength(text: string, at: number): number {
+  const window = asciiLower(text.slice(at, at + 6));
+  if (window.startsWith("file:")) return 5;
+  return window.startsWith("image:") ? 6 : 0;
+}
+
+/**
+ * The first `[[File:name|...]]` or `[[Image:name|...]]` of the text whose name is a real file (not a
+ * notice icon): a link is closed by the first `]` after its name, which must be followed by another.
+ */
+function firstContentFileName(text: string): string | null {
+  const nextClose = forwardFinder(text, "]");
+  let from = 0;
+  for (;;) {
+    const open = text.indexOf("[[", from);
+    if (open === -1) return null;
+    const prefix = filePrefixLength(text, open + 2);
+    if (prefix === 0) {
+      from = open + 1;
+      continue;
+    }
+
+    const nameStart = open + 2 + prefix;
+    const close = nextClose(nameStart);
+    if (close === -1) return null; // nothing closes any later link either
+    const first = text.charAt(nameStart);
+    if (nameStart === close || first === "|" || first === "\n") {
+      from = open + 1; // no name
+      continue;
+    }
+    if (text.charAt(close + 1) !== "]") {
+      from = close; // every opener before this `]` is closed by the same one
+      continue;
+    }
+
+    const name = text.slice(nameStart, runEnd(text, nameStart, "|\n]")).trim();
+    if (name && name.length <= MAX_FILE_NAME_LENGTH && !isNoticeOrUtilityIcon(name)) return name;
+    from = close + 2;
+  }
+}
+
 /**
  * Extracts the genuine lead image from raw wikitext (checking infobox parameters first,
- * skipping notice templates, and grabbing the first body [[File:...]]).
+ * skipping notice templates, and grabbing the first body [[File:...]]). Linear in the text.
  */
 export function extractLeadImageFromWikitext(wikitext: string | null | undefined): string | null {
   if (!wikitext || typeof wikitext !== "string") return null;
 
-  // 1. Check all standard Infobox fields (Priority 1)
-  const infoboxFieldMatch = wikitext.match(
-    /\|\s*(?:image|logo|company_logo|flag|image_flag|coat_of_arms|image_coat|seal|image_seal|map|image_map|photo|image_photo|portrait|image_portrait|album_cover|cover|poster|emblem|badge|insignia|picture|header_image|leader_image|flag_image|symbol)\s*=\s*([^|\n}]+)/i
-  );
-  if (infoboxFieldMatch && infoboxFieldMatch[1]) {
-    const rawFile = infoboxFieldMatch[1]
-      .replace(/\[\[(?:File|Image):/gi, "")
-      .replace(/\]\]/g, "")
-      .split(/[|\]}\n]/)[0]!
-      .replace(/^(?:File|Image|file|image):/i, "")
-      .trim();
-
-    if (rawFile && !isNoticeOrUtilityIcon(rawFile)) {
+  // 1. The first infobox parameter that names a picture (Priority 1). A blank or unusable value
+  // is an answer too: the search goes on to the page body, not to the next parameter.
+  const value = firstInfoboxImageValue(wikitext);
+  if (value !== null) {
+    const rawFile = bareFileName(value);
+    if (rawFile && rawFile.length <= MAX_FILE_NAME_LENGTH && !isNoticeOrUtilityIcon(rawFile)) {
       return getImageUrl(rawFile);
     }
   }
 
-  // 2. Strip top-level notice / maintenance templates
-  const cleanWikitext = wikitext.replace(
-    /^\{\{(?:Underconstruction|under_construction|WIP|work_in_progress|Stub|Cleanup|Ambox|Notice|Disambig|About|Short description)\b[\s\S]*?\}\}/gim,
-    ""
-  );
-
-  // 3. Match first content [[File:...]] or [[Image:...]]
-  const fileRegex = /\[\[(?:File|Image):([^|\]\n]+)[^\]]*\]\]/gi;
-  let match: RegExpExecArray | null;
-  while ((match = fileRegex.exec(cleanWikitext)) !== null) {
-    const rawFile = match[1]?.trim();
-    if (rawFile && !isNoticeOrUtilityIcon(rawFile)) {
-      return getImageUrl(rawFile);
-    }
-  }
-
-  return null;
+  // 2. Strip top-level notice / maintenance templates, then 3. take the first content [[File:...]].
+  const name = firstContentFileName(withoutNoticeTemplates(wikitext));
+  return name ? getImageUrl(name) : null;
 }
 
 /**

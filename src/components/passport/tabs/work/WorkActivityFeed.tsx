@@ -14,6 +14,7 @@ import {
 } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
+import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 import type { WorkPayload } from "../../types";
 
 type FeedItem = WorkPayload["wikiActivityFeed"][number];
@@ -139,6 +140,7 @@ export const WorkActivityFeed = React.memo(function WorkActivityFeed({
                       })}
                     </span>
                     {item.byteDiff !== null && <ByteDiff bytes={item.byteDiff} />}
+                    {item.parked && <ParkedBadge />}
                   </div>
 
                   <h4 className="text-foreground truncate text-sm font-bold tracking-tight">
