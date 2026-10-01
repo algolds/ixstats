@@ -32,6 +32,7 @@ import {
 import { renderArticleViaMediaWiki, type RenderMetadata } from "../adapters/mediawiki/parsoid";
 import { CategoryService } from "../core/category-service";
 import { LinkGraphService } from "../core/link-graph-service";
+import { canonicalizeTitle } from "../core/title";
 import { markTemplateChips } from "../templates/chip-markers";
 import { transformArticleHtml, stripConflictingStyles } from "../transformers/html-transformer";
 import { parseWikitextToHtml } from "../transformers/wikitext-parser";
@@ -438,6 +439,23 @@ export async function ensureRendered(
 export function enqueueRender(articleId: string, options: { background?: boolean } = {}): void {
   failedUntil.delete(articleId);
   void startRender(articleId, options.background ? BACKGROUND : SAVE);
+}
+
+/** Template (10) and Module (828): the namespaces whose pages other pages transclude. */
+const TRANSCLUDED_NAMESPACES: ReadonlySet<number> = new Set([10, 828]);
+
+/**
+ * `invalidateDependents` for a page that may be a template or a Lua module: when `title` is one, every
+ * article that uses it is stale (a Template or Module that was deleted, restored, moved, or whose text
+ * has only now reached MediaWiki, renders its users differently); any other page has no users to mark.
+ */
+export async function invalidateTemplateDependents(
+  title: string,
+  source = "ixwiki"
+): Promise<number> {
+  const canon = canonicalizeTitle(title, { source });
+  if (!canon || !TRANSCLUDED_NAMESPACES.has(canon.namespaceId)) return 0;
+  return invalidateDependents(canon.title, source);
 }
 
 /**

@@ -4,7 +4,11 @@
  * `wiki-render-stale` job renders them in the background (renderStaleBatch): oldest first, two at a time,
  * and a page MediaWiki cannot render never keeps the rest of the queue waiting.
  */
-import { invalidateDependents, renderStaleBatch } from "~/lib/wiki-os/services/render-service";
+import {
+  invalidateDependents,
+  invalidateTemplateDependents,
+  renderStaleBatch,
+} from "~/lib/wiki-os/services/render-service";
 
 const mockFindUnique = jest.fn();
 const mockFindMany = jest.fn();
@@ -89,6 +93,22 @@ describe("invalidateDependents", () => {
 
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("Module:Foo"), expect.any(Error));
     warn.mockRestore();
+  });
+});
+
+describe("invalidateTemplateDependents", () => {
+  it("invalidates for Template and Module titles, however they are spelled", async () => {
+    mockExecuteRaw.mockResolvedValue(4);
+    await expect(invalidateTemplateDependents("template:infobox_country")).resolves.toBe(4);
+    await expect(invalidateTemplateDependents("Module:Foo")).resolves.toBe(4);
+    expect(mockExecuteRaw.mock.calls[0]!.slice(1)).toEqual(["ixwiki", "Template:Infobox country"]);
+    expect(mockExecuteRaw.mock.calls[1]!.slice(1)).toEqual(["ixwiki", "Module:Foo"]);
+  });
+
+  it("leaves ordinary pages alone", async () => {
+    await expect(invalidateTemplateDependents("Aurora")).resolves.toBe(0);
+    await expect(invalidateTemplateDependents("Talk:Template:Box")).resolves.toBe(0);
+    expect(mockExecuteRaw).not.toHaveBeenCalled();
   });
 });
 

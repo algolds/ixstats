@@ -11,9 +11,10 @@
  */
 
 import { z } from "zod";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { toArticleSlug } from "../core/domain-types";
 import { canonicalizeTitle, type CanonicalTitle } from "../core/title";
 import type { JsonValue, LogEvent } from "./inbound-mediawiki";
 import {
@@ -22,7 +23,7 @@ import {
   syncLatestRevision,
   verifiedWikiUserId,
 } from "./inbound-revision-sync";
-import { enqueueRender } from "./render-service";
+import { enqueueRender, invalidateTemplateDependents } from "./render-service";
 
 const SOURCE = "ixwiki";
 /** `wiki_logs.comment` and `wiki_restrictions.reason` are VarChar columns. */
@@ -91,10 +92,7 @@ function usernameOf(canon: CanonicalTitle | null): string | null {
 }
 
 async function alreadyApplied(logid: number): Promise<boolean> {
-  const row = await db.wikiLog.findFirst({
-    where: { params: { path: ["mwLogId"], equals: logid } },
-    select: { id: true },
-  });
+  const row = await db.wikiLog.findUnique({ where: { mwLogId: logid }, select: { id: true } });
   return row !== null;
 }
 
@@ -103,25 +101,34 @@ async function bringOver(title: string): Promise<void> {
   await syncLatestRevision(title);
 }
 
-/** The public log row of an applied event; its `mwLogId` is what stops the event from being applied twice. */
+/**
+ * The public log row of an applied event. Its `mwLogId` column (unique) is what stops the event from being
+ * applied twice; a second writer that loses the race has found it already applied.
+ */
 async function writeLog(
   { event, canon, actorUserId }: EventContext,
   articleId: string | null
 ): Promise<void> {
   const at = new Date(event.timestamp);
-  await db.wikiLog.create({
-    data: {
-      logType: event.type,
-      action: event.action,
-      title: canon?.title ?? event.title,
-      actorName: event.user ?? "(hidden)",
-      userId: actorUserId,
-      comment: event.comment.slice(0, LOG_COMMENT_LIMIT) || null,
-      params: { ...event.params, mwLogId: event.logid },
-      articleId,
-      ...(Number.isNaN(at.getTime()) ? {} : { createdAt: at }),
-    },
-  });
+  try {
+    await db.wikiLog.create({
+      data: {
+        logType: event.type,
+        action: event.action,
+        title: canon?.title ?? event.title,
+        actorName: event.user ?? "(hidden)",
+        userId: actorUserId,
+        comment: event.comment.slice(0, LOG_COMMENT_LIMIT) || null,
+        params: event.params,
+        mwLogId: event.logid,
+        articleId,
+        ...(Number.isNaN(at.getTime()) ? {} : { createdAt: at }),
+      },
+    });
+  } catch (error) {
+    const raced = error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
+    if (!raced) throw error;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -150,6 +157,8 @@ async function applyDelete(tx: Tx, { event, canon }: EventContext): Promise<Appl
         // The page that came back has its latest revision from MediaWiki (a new page id, maybe new text).
         await bringOver(canon.title);
         await evictCaches(canon.title, article?.id);
+        // A restored template or module: the pages that use it render with it again.
+        void invalidateTemplateDependents(canon.title);
       },
     };
   }
@@ -159,7 +168,11 @@ async function applyDelete(tx: Tx, { event, canon }: EventContext): Promise<Appl
   return {
     outcome: "applied",
     articleId: article?.id ?? null,
-    afterCommit: () => evictCaches(canon.title, article?.id),
+    afterCommit: async () => {
+      await evictCaches(canon.title, article?.id);
+      // A deleted template or module: the pages that use it render without it.
+      void invalidateTemplateDependents(canon.title);
+    },
   };
 }
 
@@ -179,15 +192,23 @@ function leftRedirect(event: LogEvent): boolean {
 }
 
 /**
- * Free `target` for the moved page when MediaWiki moved it over a redirect (the page that sat there
- * was deleted by the move). Anything else at the title is a real clash.
+ * Free `target` for the moved page: the page that sits there is deleted in MediaWiki (a title swap, the
+ * move over a redirect), so WikiOS archives it and renames it out of the way, keeping its revisions and
+ * watchers (nothing is deleted); it stays ARCHIVED under an internal title naming the log event. A page
+ * that is neither deleted nor a redirect is a real clash, and false.
  */
-async function clearRedirectAt(
+async function archiveOutOfTheWay(
   tx: Tx,
-  clash: { id: string; redirectTargetSlug: string | null }
+  clash: { id: string; status: string; redirectTargetSlug: string | null },
+  target: CanonicalTitle,
+  logid: number
 ): Promise<boolean> {
-  if (clash.redirectTargetSlug === null) return false;
-  await tx.wikiArticle.delete({ where: { id: clash.id } });
+  if (clash.status !== "ARCHIVED" && clash.redirectTargetSlug === null) return false;
+  const title = `${target.title} (deleted ${logid})`;
+  await tx.wikiArticle.update({
+    where: { id: clash.id },
+    data: { title, slug: toArticleSlug(title), status: "ARCHIVED", htmlSyncedAt: null },
+  });
   return true;
 }
 
@@ -216,9 +237,9 @@ async function applyMove(tx: Tx, { event, canon }: EventContext): Promise<Applie
 
   const clash = await tx.wikiArticle.findUnique({
     where: { source_title: { source: SOURCE, title: target.title } },
-    select: { id: true, redirectTargetSlug: true },
+    select: { id: true, status: true, redirectTargetSlug: true },
   });
-  if (clash && !(await clearRedirectAt(tx, clash))) {
+  if (clash && !(await archiveOutOfTheWay(tx, clash, target, event.logid))) {
     console.warn(
       `[WikiAutoSync] Not renaming "${canon.title}": "${target.title}" exists in WikiOS.`
     );
@@ -249,6 +270,10 @@ async function applyMove(tx: Tx, { event, canon }: EventContext): Promise<Applie
       if (leftRedirect(event)) await bringOver(canon.title);
       await evictCaches(canon.title, moved.id);
       await evictCaches(target.title, moved.id);
+      if (clash) await evictCaches(target.title, clash.id);
+      // A moved template or module: its users render with the new name, or find the old one a redirect.
+      void invalidateTemplateDependents(canon.title);
+      void invalidateTemplateDependents(target.title);
     },
   };
 }

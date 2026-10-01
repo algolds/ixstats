@@ -11,7 +11,7 @@ import {
   isMirrorUser,
   syncLatestRevision,
 } from "~/lib/wiki-os/services/inbound-revision-sync";
-import { enqueueRender } from "~/lib/wiki-os/services/render-service";
+import { enqueueRender, invalidateTemplateDependents } from "~/lib/wiki-os/services/render-service";
 
 const tx = {
   wikiArticle: { findUnique: jest.fn(), update: jest.fn(), delete: jest.fn() },
@@ -29,14 +29,14 @@ const tx = {
     deleteMany: jest.fn(),
   },
 };
-const mockLogFindFirst = jest.fn();
+const mockLogFindUnique = jest.fn();
 const mockLogCreate = jest.fn();
 
 jest.mock("~/server/db", () => ({
   db: {
     $transaction: (cb: (t: typeof tx) => unknown) => cb(tx),
     wikiLog: {
-      findFirst: (...a: unknown[]) => mockLogFindFirst(...a),
+      findUnique: (...a: unknown[]) => mockLogFindUnique(...a),
       create: (...a: unknown[]) => mockLogCreate(...a),
     },
   },
@@ -47,7 +47,10 @@ jest.mock("~/lib/wiki-os/services/inbound-revision-sync", () => ({
   verifiedWikiUserId: jest.fn().mockResolvedValue(null),
   syncLatestRevision: jest.fn().mockResolvedValue("known"),
 }));
-jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
+jest.mock("~/lib/wiki-os/services/render-service", () => ({
+  enqueueRender: jest.fn(),
+  invalidateTemplateDependents: jest.fn(),
+}));
 
 const event = (
   over: Partial<LogEvent> & Pick<LogEvent, "type" | "action" | "title">
@@ -65,7 +68,7 @@ const loggedRow = () => mockLogCreate.mock.calls[0]?.[0].data;
 beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(isMirrorUser).mockReturnValue(false);
-  mockLogFindFirst.mockResolvedValue(null);
+  mockLogFindUnique.mockResolvedValue(null);
   mockLogCreate.mockResolvedValue({});
   tx.wikiArticle.findUnique.mockResolvedValue(null);
   tx.wikiArticle.update.mockResolvedValue({});
@@ -99,14 +102,14 @@ describe("which events are applied", () => {
   });
 
   it("applies an event once: its MediaWiki log id is looked up in wiki_logs first", async () => {
-    mockLogFindFirst.mockResolvedValue({ id: "log-1" });
+    mockLogFindUnique.mockResolvedValue({ id: "log-1" });
 
     await expect(
       applyLogEvent(event({ type: "delete", action: "delete", title: "Foo" }))
     ).resolves.toBe("ignored");
 
-    expect(mockLogFindFirst).toHaveBeenCalledWith({
-      where: { params: { path: ["mwLogId"], equals: 501 } },
+    expect(mockLogFindUnique).toHaveBeenCalledWith({
+      where: { mwLogId: 501 },
       select: { id: true },
     });
     expect(tx.wikiArticle.update).not.toHaveBeenCalled();
@@ -134,7 +137,8 @@ describe("delete and restore", () => {
       actorName: "Admin",
       comment: "because",
       articleId: "art-1",
-      params: { mwLogId: 501 },
+      mwLogId: 501,
+      params: {},
       createdAt: new Date("2026-09-27T10:00:00Z"),
     });
   });
@@ -271,7 +275,7 @@ describe("move", () => {
     tx.wikiArticle.findUnique.mockImplementation(async ({ where }) =>
       where.source_title.title === "Old name"
         ? { id: "art-1" }
-        : { id: "art-2", redirectTargetSlug: null }
+        : { id: "art-2", status: "PUBLISHED", redirectTargetSlug: null }
     );
     const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
 
@@ -282,19 +286,56 @@ describe("move", () => {
     warn.mockRestore();
   });
 
-  it("moves a page over a redirect: the redirect at the new title is gone", async () => {
+  it("moves a page over a redirect: the redirect is archived and renamed out of the way, never deleted, so its revisions and watchers survive", async () => {
     tx.wikiArticle.findUnique.mockImplementation(async ({ where }) =>
       where.source_title.title === "Old name"
         ? { id: "art-1" }
-        : { id: "art-2", redirectTargetSlug: "Old name" }
+        : { id: "art-2", status: "PUBLISHED", redirectTargetSlug: "Old name" }
     );
 
     await expect(applyLogEvent(moveEvent(undefined, "move_redir"))).resolves.toBe("applied");
 
-    expect(tx.wikiArticle.delete).toHaveBeenCalledWith({ where: { id: "art-2" } });
-    expect(tx.wikiArticle.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: "art-1" } })
+    expect(tx.wikiArticle.delete).not.toHaveBeenCalled();
+    expect(tx.wikiArticle.update.mock.calls.map(([args]) => args.where.id)).toEqual([
+      "art-2",
+      "art-1",
+    ]);
+    expect(tx.wikiArticle.update.mock.calls[0]?.[0].data).toMatchObject({
+      title: "New name (deleted 501)",
+      slug: "new_name_(deleted_501)",
+      status: "ARCHIVED",
+    });
+    expect(tx.wikiArticle.update.mock.calls[1]?.[0].data).toMatchObject({ title: "New name" });
+  });
+
+  it("swaps two titles: B is deleted in MediaWiki (archived here), then A is moved onto B's title", async () => {
+    // WikiOS archived B when it read the delete event; the move of A to B now finds that archived row.
+    tx.wikiArticle.findUnique.mockImplementation(async ({ where }) =>
+      where.source_title.title === "Old name"
+        ? { id: "art-A" }
+        : { id: "art-B", status: "ARCHIVED", redirectTargetSlug: null }
     );
+
+    await expect(applyLogEvent(moveEvent())).resolves.toBe("applied");
+
+    expect(tx.wikiArticle.delete).not.toHaveBeenCalled();
+    // B keeps its row (and so its revisions and watchers) as an archived page under an internal title; A takes B's title.
+    expect(tx.wikiArticle.update.mock.calls[0]?.[0]).toEqual({
+      where: { id: "art-B" },
+      data: {
+        title: "New name (deleted 501)",
+        slug: "new_name_(deleted_501)",
+        status: "ARCHIVED",
+        htmlSyncedAt: null,
+      },
+    });
+    expect(tx.wikiArticle.update.mock.calls[1]?.[0]).toMatchObject({
+      where: { id: "art-A" },
+      data: { title: "New name", slug: "new_name" },
+    });
+    expect(loggedRow()).toMatchObject({ logType: "move", articleId: "art-A" });
+    // The archived page's caches go too.
+    expect(evictCaches).toHaveBeenCalledWith("New name", "art-B");
   });
 
   it("is applied again harmlessly: the page is already at its new name, only the redirect is still to come", async () => {
@@ -601,5 +642,69 @@ describe("rights", () => {
     await expect(applyLogEvent(rightsEvent({ newgroups: ["sysop"] }, "Foo"))).resolves.toBe(
       "ignored"
     );
+  });
+});
+
+describe("a template or module that is deleted, restored or moved makes the pages that use it stale (plan 406)", () => {
+  it("on a deletion", async () => {
+    tx.wikiArticle.findUnique.mockResolvedValue({ id: "art-1", status: "PUBLISHED" });
+
+    await applyLogEvent(
+      event({ type: "delete", action: "delete", title: "Template:Infobox country" })
+    );
+
+    expect(invalidateTemplateDependents).toHaveBeenCalledWith("Template:Infobox country");
+  });
+
+  it("on a restore", async () => {
+    tx.wikiArticle.findUnique.mockResolvedValue({ id: "art-1", status: "ARCHIVED" });
+
+    await applyLogEvent(event({ type: "delete", action: "restore", title: "Module:Infobox" }));
+
+    expect(invalidateTemplateDependents).toHaveBeenCalledWith("Module:Infobox");
+  });
+
+  it("on a move, under both names", async () => {
+    tx.wikiArticle.findUnique.mockImplementation(async ({ where }) =>
+      where.source_title.title === "Template:Old" ? { id: "art-1" } : null
+    );
+
+    await applyLogEvent(
+      event({
+        type: "move",
+        action: "move",
+        title: "Template:Old",
+        params: { target_title: "Template:New", target_ns: 10 },
+      })
+    );
+
+    expect(invalidateTemplateDependents).toHaveBeenCalledWith("Template:Old");
+    expect(invalidateTemplateDependents).toHaveBeenCalledWith("Template:New");
+  });
+});
+
+describe("the log row and the unique MediaWiki log id", () => {
+  it("a writer that loses the race for the unique mwLogId has found the event already applied", async () => {
+    tx.wikiArticle.findUnique.mockResolvedValue({ id: "art-1", status: "PUBLISHED" });
+    const { Prisma } = jest.requireActual("@prisma/client");
+    mockLogCreate.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
+        code: "P2002",
+        clientVersion: "test",
+      })
+    );
+
+    await expect(
+      applyLogEvent(event({ type: "delete", action: "delete", title: "Foo" }))
+    ).resolves.toBe("applied");
+  });
+
+  it("any other failure of the log write is the event's failure (it is retried)", async () => {
+    tx.wikiArticle.findUnique.mockResolvedValue({ id: "art-1", status: "PUBLISHED" });
+    mockLogCreate.mockRejectedValue(new Error("db down"));
+
+    await expect(
+      applyLogEvent(event({ type: "delete", action: "delete", title: "Foo" }))
+    ).rejects.toThrow("db down");
   });
 });

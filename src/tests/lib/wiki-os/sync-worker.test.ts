@@ -12,6 +12,10 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/write-service", () => ({
   executeMediaWikiWrite: (...a: unknown[]) => mockExecuteWrite(...a),
   updateRevisionActor: jest.fn().mockResolvedValue(true),
 }));
+const mockInvalidateTemplates = jest.fn();
+jest.mock("~/lib/wiki-os/services/render-service", () => ({
+  invalidateTemplateDependents: (...a: unknown[]) => mockInvalidateTemplates(...a),
+}));
 jest.mock("~/server/db", () => ({
   db: {
     wikiArticle: { updateMany: (...a: unknown[]) => mockArticleUpdateMany(...a) },
@@ -72,4 +76,13 @@ test("does not touch revisions when MediaWiki reports no new revision", async ()
   await flush();
 
   expect(mockRevisionUpdateMany).not.toHaveBeenCalled();
+});
+
+test("re-renders the pages that use a template or module once its new text is exported", async () => {
+  mockExecuteWrite.mockResolvedValue({ success: true, revisionId: 557 });
+
+  MediaWikiExportWorker.enqueue({ ...job, slug: "Template:Box", title: "Template:Box" });
+  await flush();
+
+  expect(mockInvalidateTemplates).toHaveBeenCalledWith("Template:Box");
 });

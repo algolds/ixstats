@@ -164,6 +164,8 @@ model WikiLog {
   actorName           String
   comment             String?      @db.VarChar(1000)
   params              Json?
+  /// The MediaWiki log id of an event the inbound sync applied (unique: an event is applied once); null for WikiOS's own.
+  mwLogId             Int?         @unique
   createdAt           DateTime     @default(now())
 
   @@index([logType, createdAt(sort: Desc)])

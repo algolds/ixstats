@@ -10,6 +10,9 @@
 --   wiki_articles."displayTitle", "pageProps"  {{DISPLAYTITLE}} (sanitized HTML) and the page properties MediaWiki
 --                                          reports for the last render. NULL until the article is rendered again.
 --   wiki_categories."hidden"               MediaWiki's __HIDDENCAT__ flag, set from renders. Existing rows: false.
+--   wiki_logs."mwLogId" (unique)           the MediaWiki log id of an event the inbound sync applied, so an event is
+--                                          applied once (looked up by index, not by a scan of the JSON params).
+--                                          Rows WikiOS wrote itself: NULL.
 --   wiki_template_links, wiki_image_links  what an article transcludes / uses, replaced as a set after each render.
 --                                          Empty until articles are rendered again (the render queue and the
 --                                          wiki-render-stale job fill them; mark articles stale to speed that up:
@@ -32,6 +35,9 @@ ALTER TABLE "wiki_articles"
 
 ALTER TABLE "wiki_categories"
   ADD COLUMN IF NOT EXISTS "hidden" BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE "wiki_logs" ADD COLUMN IF NOT EXISTS "mwLogId" INTEGER;
+CREATE UNIQUE INDEX IF NOT EXISTS "wiki_logs_mwLogId_key" ON "wiki_logs" ("mwLogId");
 
 CREATE TABLE IF NOT EXISTS "wiki_template_links" (
   "id"            TEXT NOT NULL,
