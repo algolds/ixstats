@@ -70,7 +70,7 @@ export function QuickHistoryModal({
         </div>
 
         <Link
-          href={withBasePath(`/wiki/history/${slug}`)}
+          href={withBasePath(`/util/history/${slug}`)}
           className="wikios-quick-modal-fullpage"
           onClick={onClose}
         >
@@ -129,7 +129,7 @@ export function QuickBacklinksModal({
         </div>
 
         <Link
-          href={withBasePath(`/wiki/whatlinkshere/${slug}`)}
+          href={withBasePath(`/util/whatlinkshere/${slug}`)}
           className="wikios-quick-modal-fullpage"
           onClick={onClose}
         >

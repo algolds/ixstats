@@ -1,0 +1,274 @@
+/** Plan 412: the page furniture of the /wiki/<path> route: tabs, notices, lists and the 404. */
+import type { ReactNode } from "react";
+import { fireEvent, render, screen } from "@testing-library/react";
+
+const mockPush = jest.fn();
+let mockPathname = "/wiki/Foo";
+let mockSignedIn = true;
+jest.mock("next/navigation", () => ({
+  usePathname: () => mockPathname,
+  useRouter: () => ({ push: mockPush }),
+}));
+jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({
+  useWikiAuth: () => ({ isSignedIn: mockSignedIn, isLoaded: true }),
+}));
+jest.mock("~/components/wiki-os/shared/WikiOSLayout", () => ({
+  WikiOSLayout: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+}));
+const mockResolveAuthor = jest.fn();
+jest.mock("~/trpc/react", () => ({
+  api: {
+    users: { resolveWikiAuthor: { useQuery: (...a: unknown[]) => mockResolveAuthor(...a) } },
+    wikios: {
+      getRevisionHtml: {
+        useQuery: () => ({ data: undefined, error: null, refetch: jest.fn() }),
+      },
+    },
+  },
+}));
+jest.mock("~/components/shared/flags/UnifiedCountryFlag", () => ({
+  UnifiedCountryFlag: ({ countryName }: { countryName: string }) => <i>{countryName} flag</i>,
+}));
+
+import { ArticleTabs } from "~/components/wiki-os/reader/ArticleTabs";
+import { CategoryMembers } from "~/components/wiki-os/reader/CategoryMembers";
+import { PageInfoTable } from "~/components/wiki-os/reader/PageInfoTable";
+import { PageList } from "~/components/wiki-os/reader/PageList";
+import { FileImage } from "~/components/wiki-os/reader/FileImage";
+import { UserProfileCard } from "~/components/wiki-os/reader/UserProfileCard";
+import WikiNotFound from "~/app/(wiki-os)/wiki/[...slug]/not-found";
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockPathname = "/wiki/Foo";
+  mockSignedIn = true;
+  mockResolveAuthor.mockReturnValue({ data: null });
+});
+
+describe("ArticleTabs (Page / Discussion)", () => {
+  it("links a page to its talk page, with the page tab current", () => {
+    render(<ArticleTabs title="Foo bar" />);
+
+    expect(screen.getByRole("link", { name: "Page" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Discussion" })).toHaveAttribute(
+      "href",
+      "/wiki/Talk:Foo_bar"
+    );
+    expect(screen.queryByRole("link", { name: "Add topic" })).not.toBeInTheDocument();
+  });
+
+  it("on a talk page the Discussion tab is current and Add topic opens the editor on a new section", () => {
+    render(<ArticleTabs title="User talk:Jane" />);
+
+    expect(screen.getByRole("link", { name: "Discussion" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+    expect(screen.getByRole("link", { name: "Page" })).toHaveAttribute("href", "/wiki/User:Jane");
+    expect(screen.getByRole("link", { name: "Add topic" })).toHaveAttribute(
+      "href",
+      "/wiki/User_talk:Jane?action=edit&section=new"
+    );
+  });
+
+  it("shows nothing for a page with no talk namespace", () => {
+    const { container } = render(<ArticleTabs title="Special:Random" />);
+    expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe("the 404 page", () => {
+  it("names the page the URL asked for, and offers to create it to a signed-in reader", () => {
+    mockPathname = "/wiki/foo_bar/baz";
+    render(<WikiNotFound />);
+
+    expect(screen.getByText(/Foo bar\/baz/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /create this page/i }));
+    expect(mockPush).toHaveBeenCalledWith("/wiki/Foo_bar/baz?action=edit");
+  });
+
+  it("offers no creation to a signed-out reader, nor for a Special: page or a title MediaWiki refuses", () => {
+    mockSignedIn = false;
+    const { unmount } = render(<WikiNotFound />);
+    expect(screen.queryByRole("button", { name: /create this page/i })).not.toBeInTheDocument();
+    unmount();
+
+    mockSignedIn = true;
+    mockPathname = "/wiki/Special:NoSuchThing";
+    const special = render(<WikiNotFound />);
+    expect(screen.queryByRole("button", { name: /create this page/i })).not.toBeInTheDocument();
+    special.unmount();
+
+    mockPathname = "/wiki/a%5Bb";
+    render(<WikiNotFound />);
+    expect(screen.queryByRole("button", { name: /create this page/i })).not.toBeInTheDocument();
+  });
+});
+
+describe("CategoryMembers", () => {
+  const members = [
+    { title: "Category:Islands", namespace: 14 },
+    { title: "Aurelia", namespace: 0 },
+    { title: "Template:Flag", namespace: 10 },
+    { title: "File:Flag.svg", namespace: 6 },
+  ];
+
+  it("splits the members into subcategories, pages and files, each linking to its page", () => {
+    render(
+      <CategoryMembers title="Category:Countries" members={members} total={4} from="" next={null} />
+    );
+
+    expect(screen.getByRole("heading", { name: "Subcategories" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Islands" })).toHaveAttribute(
+      "href",
+      "/wiki/Category:Islands"
+    );
+    expect(screen.getByRole("heading", { name: /Pages in category/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Aurelia" })).toHaveAttribute("href", "/wiki/Aurelia");
+    expect(screen.getByRole("link", { name: "Template:Flag" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Media in this category" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "File:Flag.svg" })).toHaveAttribute(
+      "href",
+      "/wiki/File:Flag.svg"
+    );
+    expect(screen.getByText("4 members.")).toBeInTheDocument();
+  });
+
+  it("links to the next page (?from=) and back to the first", () => {
+    render(
+      <CategoryMembers
+        title="Category:Countries"
+        members={members}
+        total={450}
+        from="Au"
+        next="Borea Sea"
+      />
+    );
+
+    expect(screen.getByText(/Showing 4 of 450 members, starting at “Au”/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Next page" })).toHaveAttribute(
+      "href",
+      "/wiki/Category:Countries?from=Borea%20Sea"
+    );
+    expect(screen.getByRole("link", { name: "First page" })).toHaveAttribute(
+      "href",
+      "/wiki/Category:Countries"
+    );
+  });
+
+  it("says so when the category has no members", () => {
+    render(<CategoryMembers title="Category:Empty" members={[]} total={0} from="" next={null} />);
+    expect(screen.getByText(/no members/)).toBeInTheDocument();
+  });
+});
+
+describe("PageList (Special:AllPages, Special:PrefixIndex)", () => {
+  it("lists pages, marks redirects, and links to the next page with the query it was asked with", () => {
+    render(
+      <PageList
+        pages={[
+          { title: "Aurelia", isRedirect: false },
+          { title: "Aurelian Sea", isRedirect: true },
+        ]}
+        next="Aurora"
+        from=""
+        specialPath="Special:PrefixIndex"
+        query={{ namespace: "0", prefix: "Aur" }}
+      />
+    );
+
+    expect(screen.getByRole("link", { name: "Aurelian Sea" })).toHaveClass("italic");
+    expect(screen.getByRole("link", { name: "Aurelia" })).not.toHaveClass("italic");
+    expect(screen.getByRole("link", { name: "Next page" })).toHaveAttribute(
+      "href",
+      "/wiki/Special:PrefixIndex?namespace=0&prefix=Aur&from=Aurora"
+    );
+    expect(screen.queryByRole("link", { name: "First page" })).not.toBeInTheDocument();
+  });
+
+  it("says so when nothing matches", () => {
+    render(<PageList pages={[]} next={null} from="" specialPath="Special:AllPages" query={{}} />);
+    expect(screen.getByText("No pages match.")).toBeInTheDocument();
+  });
+});
+
+describe("PageInfoTable (?action=info)", () => {
+  it("shows the facts about a page", () => {
+    render(
+      <PageInfoTable
+        info={{
+          title: "Foo bar",
+          namespace: 0,
+          pageId: 42,
+          length: 1234,
+          wordCount: 200,
+          created: { at: new Date("2020-01-02T03:04:00Z"), by: "Old Hand" },
+          lastEdited: { at: new Date("2026-09-01T10:00:00Z"), by: null },
+          revisionCount: 57,
+          redirectCount: 3,
+          categoryCount: 6,
+          protectionLevel: "SYSOP",
+          protectionExpiry: null,
+          redirectsTo: null,
+        }}
+      />
+    );
+
+    expect(screen.getByText("1,234")).toBeInTheDocument();
+    expect(screen.getByText("42")).toBeInTheDocument();
+    expect(screen.getByText(/2 January 2020.*03:04 UTC by Old Hand/)).toBeInTheDocument();
+    expect(screen.getByText("sysop")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Back to Foo bar/ })).toHaveAttribute(
+      "href",
+      "/wiki/Foo_bar"
+    );
+  });
+});
+
+describe("FileImage", () => {
+  it("shows the file with its facts, large and eager", () => {
+    render(
+      <FileImage
+        file={{
+          name: "Flag of Eurth.svg",
+          url: "https://ixwiki.com/images/a/ab/Flag.svg",
+          thumbUrl: null,
+          width: 300,
+          height: 200,
+          mimeType: "image/svg+xml",
+          sizeBytes: 2048,
+        }}
+      />
+    );
+
+    const image = screen.getByRole("img", { name: "Flag of Eurth.svg" });
+    expect(image).toHaveAttribute("src", "https://ixwiki.com/images/a/ab/Flag.svg");
+    expect(image).toHaveAttribute("fetchpriority", "high");
+    expect(screen.getByText(/300 × 200 pixels, 2 KB, image\/svg\+xml/)).toBeInTheDocument();
+  });
+});
+
+describe("UserProfileCard", () => {
+  it("shows the user's country and links to the passport and contributions", () => {
+    mockResolveAuthor.mockReturnValue({
+      data: { country: { name: "Aurelia", flag: "x", continent: "Eurth" } },
+    });
+    render(<UserProfileCard username="Jane Doe" pageExists />);
+
+    expect(screen.getByText("Aurelia · Eurth")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Contributions/ })).toHaveAttribute(
+      "href",
+      "/util/contributions/Jane%20Doe"
+    );
+    expect(screen.getByRole("link", { name: /IxnayID profile/ })).toHaveAttribute(
+      "href",
+      "/@Jane%20Doe?tab=work"
+    );
+    expect(screen.queryByText(/no user page yet/)).not.toBeInTheDocument();
+  });
+
+  it("says when the user has no user page yet", () => {
+    render(<UserProfileCard username="Jane" pageExists={false} />);
+    expect(screen.getByText("This user has no user page yet.")).toBeInTheDocument();
+  });
+});

@@ -1,5 +1,5 @@
 "use client";
-// src/app/(wiki-os)/wiki/recent-changes/page.tsx
+// src/app/(wiki-os)/util/recent-changes/page.tsx
 // WikiOS Recent Changes — grouped by page, with byte diffs, filters, and collapsible edits.
 
 import { useState, useMemo } from "react";

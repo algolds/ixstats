@@ -80,7 +80,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
         navigate(items[selectedIndex].title);
       } else if (query.trim()) {
         onClose();
-        navigateWithBasePath(`/wiki/search?q=${encodeURIComponent(query)}`, router);
+        navigateWithBasePath(`/util/search?q=${encodeURIComponent(query)}`, router);
       }
     } else if (e.key === "Escape") {
       onClose();
@@ -163,7 +163,7 @@ export function SearchModal({ open, onClose }: SearchModalProps) {
               className="text-xs text-[var(--wikios-text-dim)] transition-colors hover:text-[var(--wikios-text-muted)]"
               onClick={() => {
                 onClose();
-                navigateWithBasePath(`/wiki/search?q=${encodeURIComponent(query)}`, router);
+                navigateWithBasePath(`/util/search?q=${encodeURIComponent(query)}`, router);
               }}
               type="button"
             >

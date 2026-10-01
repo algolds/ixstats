@@ -119,7 +119,7 @@ export function HeroSpotlightSearch({
     (searchTerms: string) => {
       soundEffects.press();
       setIsOpen(false);
-      router.push(withBasePath(`/wiki/search?q=${encodeURIComponent(searchTerms)}`));
+      router.push(withBasePath(`/util/search?q=${encodeURIComponent(searchTerms)}`));
     },
     [router]
   );

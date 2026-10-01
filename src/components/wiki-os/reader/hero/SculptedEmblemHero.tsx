@@ -279,7 +279,7 @@ export function SculptedEmblemHero({
 
         {/* Action 3: Resources */}
         <Link
-          href={withBasePath("/wiki/repository")}
+          href={withBasePath("/util/repository")}
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
