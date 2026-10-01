@@ -95,3 +95,38 @@ describe("the article sanitizer's fingerprint (plan 404 review)", () => {
     expect(fingerprintWithVersion("99.0.0")).toBe(fingerprintWithVersion("99.0.0"));
   });
 });
+
+describe("the article sanitizer's fingerprint and the depth guard (plan F15)", () => {
+  /** The fingerprint before HTML nested too deep became an escaped source: hooks version 7, no depth ceiling in it. */
+  const FINGERPRINT_BEFORE_THE_DEPTH_GUARD = "f0176dfa84301";
+
+  it("is not the one stored bundles carry from before the guard changed the output, so they re-render", () => {
+    expect(wikiArticleSanitizerFingerprint()).not.toBe(FINGERPRINT_BEFORE_THE_DEPTH_GUARD);
+  });
+
+  it("changes with the depth ceiling: a bundle sanitized under another ceiling re-renders", () => {
+    const fingerprintWithCeiling = (ceiling?: number): string => {
+      let result = "";
+      jest.isolateModules(() => {
+        if (ceiling !== undefined) {
+          const real = jest.requireActual<typeof import("~/lib/wiki-os/transformers/inert-dom")>(
+            "~/lib/wiki-os/transformers/inert-dom"
+          );
+          jest.doMock("~/lib/wiki-os/transformers/inert-dom", () => ({
+            ...real,
+            DOM_DEPTH_CEILING: ceiling,
+          }));
+        }
+        result = (
+          require("~/lib/utils/sanitize-html") as typeof import("~/lib/utils/sanitize-html")
+        ).wikiArticleSanitizerFingerprint();
+      });
+      jest.dontMock("~/lib/wiki-os/transformers/inert-dom");
+      return result;
+    };
+
+    expect(fingerprintWithCeiling()).toBe(wikiArticleSanitizerFingerprint());
+    expect(fingerprintWithCeiling(500)).not.toBe(wikiArticleSanitizerFingerprint());
+    expect(fingerprintWithCeiling(500)).toBe(fingerprintWithCeiling(500));
+  });
+});

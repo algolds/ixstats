@@ -35,6 +35,7 @@ import { LinkGraphService } from "../core/link-graph-service";
 import { canonicalizeTitle } from "../core/title";
 import { markTemplateChips } from "../templates/chip-markers";
 import { transformArticleHtml, stripConflictingStyles } from "../transformers/html-transformer";
+import { leavesAlone } from "../transformers/dom-depth";
 import { slimArticleHtml, templateStyleIdentifiers } from "../transformers/slim-html";
 import { parseWikitextToHtml } from "../transformers/wikitext-parser";
 
@@ -137,8 +138,15 @@ export interface LoadedViewBundle {
   outdated: boolean;
 }
 
-/** `bundle` with every HTML part (body, infobox, notices; the TOC is plain text) sanitized by the current rules. */
-function resanitizeViewBundle(bundle: ViewBundle): ViewBundle {
+/**
+ * `bundle` with every HTML part (body, infobox, notices; the TOC is plain text) sanitized by the current rules.
+ * Null for a bundle with a part over the DOM ceilings of inert-dom.ts (too long, or nested too deep): sanitizing is a
+ * DOM pass, and an anonymous reader's request would pay for it; the page is rendered again instead, as one with no
+ * bundle is.
+ */
+function resanitizeViewBundle(bundle: ViewBundle): ViewBundle | null {
+  const parts = [bundle.bodyHtml, bundle.infoboxHtml, bundle.noticesHtml];
+  if (parts.some((html) => html !== null && leavesAlone(html))) return null;
   return {
     ...bundle,
     bodyHtml: sanitizeWikiArticleHtml(bundle.bodyHtml),
@@ -152,7 +160,7 @@ function resanitizeViewBundle(bundle: ViewBundle): ViewBundle {
  * that only differs in its renderer version (an older transform or sanitizer built it) is returned
  * `outdated`, re-sanitized by the current sanitizer so an older bundle never gets past a tightened rule.
  * Null when the article has no bundle, or one whose shape is not a bundle's at all, or one the sanitizer
- * throws on.
+ * throws on, or one too big or too deep to sanitize on a read (resanitizeViewBundle).
  */
 export async function loadViewBundle(articleId: string): Promise<LoadedViewBundle | null> {
   const row = await db.wikiArticle.findUnique({
@@ -168,11 +176,8 @@ export async function loadViewBundle(articleId: string): Promise<LoadedViewBundl
   const outdated = outdatedViewBundleSchema.safeParse(row.renderedView);
   if (!outdated.success) return null;
   try {
-    return {
-      bundle: resanitizeViewBundle(outdated.data),
-      htmlSyncedAt: row.htmlSyncedAt,
-      outdated: true,
-    };
+    const bundle = resanitizeViewBundle(outdated.data);
+    return bundle ? { bundle, htmlSyncedAt: row.htmlSyncedAt, outdated: true } : null;
   } catch (error) {
     // a page the sanitizer cannot take must not fail every read: it is as good as having no bundle
     console.warn(

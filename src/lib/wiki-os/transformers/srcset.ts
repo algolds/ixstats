@@ -10,6 +10,7 @@
  */
 
 const SPACE = /\s/;
+const COMMA = 44;
 
 /** `srcset` with every candidate URL passed through `map`; the descriptors and the separators are untouched. */
 export function mapSrcsetUrls(srcset: string, map: (url: string) => string): string {
@@ -25,10 +26,10 @@ export function mapSrcsetUrls(srcset: string, map: (url: string) => string): str
     // the URL: the next run of non-space characters, less the commas that end it
     const urlStart = i;
     while (i < srcset.length && !SPACE.test(srcset.charAt(i))) i++;
-    const token = srcset.slice(urlStart, i);
-    const url = token.replace(/,+$/, "");
-    out += map(url) + token.slice(url.length);
-    if (url.length !== token.length) continue; // a comma ended the candidate: it has no descriptor
+    let urlEnd = i;
+    while (urlEnd > urlStart && srcset.charCodeAt(urlEnd - 1) === COMMA) urlEnd--; // the commas that end the URL
+    out += map(srcset.slice(urlStart, urlEnd)) + srcset.slice(urlEnd, i);
+    if (urlEnd !== i) continue; // a comma ended the candidate: it has no descriptor
 
     // the descriptor: up to the next comma
     const descriptorStart = i;

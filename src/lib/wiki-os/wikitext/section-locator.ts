@@ -2,16 +2,62 @@
 // Finds the wikitext heading for a section title as the reader shows it (section edit links), and
 // locates and replaces numbered sections the way MediaWiki does (`action=edit&section=N`).
 
+import { forwardFinder } from "./forward-finder";
+import { matchHeading } from "./line-patterns";
 import { ProtectedScanner, skipProtectedAt } from "./protected-regions";
 
-const HEADING_LINE_REGEX = /^(={2,6})\s*(.+?)\s*\1\s*$/u;
+/**
+ * `text` with each `[[Target|Label]]` as its label and each `[[Target]]` as its target (what
+ * `/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/gu` replaced by `$1`): from a `[[` to the first `]` after it, when another `]`
+ * follows at once. A search for that `]` that found none answers every later opener, so a text of `[[` is one scan.
+ */
+function unpackLinks(text: string): string {
+  const nextClose = forwardFinder(text, "]");
+  const nextPipe = forwardFinder(text, "|");
+  const pieces: string[] = [];
+  let copied = 0;
+  for (let open = text.indexOf("[["); open !== -1;) {
+    const close = nextClose(open + 2);
+    if (close === -1) break;
+    if (text.charCodeAt(close + 1) !== 93) {
+      open = text.indexOf("[[", open + 1);
+      continue;
+    }
+    const pipe = nextPipe(open + 2);
+    pieces.push(
+      text.slice(copied, open),
+      text.slice(pipe !== -1 && pipe < close ? pipe + 1 : open + 2, close)
+    );
+    copied = close + 2;
+    open = text.indexOf("[[", copied);
+  }
+  pieces.push(text.slice(copied));
+  return pieces.join("");
+}
+
+/** `text` without its tags (what `/<[^>]+>/gu` removed): `<` to the first `>` after it, with a character between. */
+function stripTags(text: string): string {
+  const nextGreater = forwardFinder(text, ">");
+  const pieces: string[] = [];
+  let copied = 0;
+  for (let open = text.indexOf("<"); open !== -1;) {
+    const close = nextGreater(open + 1);
+    if (close === -1) break;
+    if (close === open + 1) {
+      open = text.indexOf("<", open + 1); // `<>` holds no character
+      continue;
+    }
+    pieces.push(text.slice(copied, open));
+    copied = close + 1;
+    open = text.indexOf("<", copied);
+  }
+  pieces.push(text.slice(copied));
+  return pieces.join("");
+}
 
 /** Reduce heading markup to its visible text: [[Target|Label]] → Label, '''bold''' → bold. */
 function visibleHeadingText(text: string): string {
-  return text
-    .replace(/\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/gu, "$1")
-    .replace(/'{2,}/gu, "")
-    .replace(/<[^>]+>/gu, "")
+  return stripTags(unpackLinks(text).replace(/'{2,}/gu, ""))
     .replace(/\s+/gu, " ")
     .trim()
     .toLowerCase();
@@ -24,7 +70,7 @@ export function findSectionLine(wikitext: string, section: string): number | nul
   const target = visibleHeadingText(section);
   if (!target) return null;
   const index = wikitext.split("\n").findIndex((line) => {
-    const heading = HEADING_LINE_REGEX.exec(line)?.[2];
+    const heading = matchHeading(line, 2, true)?.title;
     return heading !== undefined && visibleHeadingText(heading) === target;
   });
   return index >= 0 ? index + 1 : null;

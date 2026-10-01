@@ -31,11 +31,13 @@ function quoteTransition(bold0: boolean, italic0: boolean, bold1: boolean, itali
 
 /** Joins the segments, writing one quote mark where the bold/italic state changes. */
 export function joinMarkedSegments(segments: readonly MarkedSegment[]): string {
-  let out = "";
+  // Pieces joined at the end: a text of a million lines is millions of appends, which a rope of strings flattens slowly.
+  const pieces: string[] = [];
   let bold = false;
   let italic = false;
   const moveTo = (nextBold: boolean, nextItalic: boolean): void => {
-    out += quoteTransition(bold, italic, nextBold, nextItalic);
+    if (nextBold === bold && nextItalic === italic) return;
+    pieces.push(quoteTransition(bold, italic, nextBold, nextItalic));
     bold = nextBold;
     italic = nextItalic;
   };
@@ -43,22 +45,25 @@ export function joinMarkedSegments(segments: readonly MarkedSegment[]): string {
   for (const segment of segments) {
     if (!segment.isText) {
       moveTo(segment.bold, segment.italic);
-      out += segment.text;
+      pieces.push(segment.text);
       continue;
     }
-    segment.text.split("\n").forEach((line, index) => {
-      if (index > 0) {
-        moveTo(false, false);
-        out += "\n";
+    // Each line of the text (a scan, not a `split`: a text of nothing but line breaks has millions of lines).
+    for (let from = 0, end = -1; end < segment.text.length; from = end + 1) {
+      end = segment.text.indexOf("\n", from);
+      if (end === -1) end = segment.text.length;
+      if (from > 0) {
+        if (bold || italic) moveTo(false, false);
+        pieces.push("\n");
       }
-      if (line !== "") {
+      if (end > from) {
         moveTo(segment.bold, segment.italic);
-        out += line;
+        pieces.push(segment.text.slice(from, end));
       }
-    });
+    }
   }
   moveTo(false, false);
-  return out;
+  return pieces.join("");
 }
 
 /** `text` wrapped in the quote marks for its own bold/italic state (a label written on its own). */

@@ -10,6 +10,7 @@
 //   - whitespace between block elements, and in a table's or list's structure.
 
 import { cssIdentifiers } from "~/lib/utils/scope-template-styles";
+import { leavesAlone } from "./dom-depth";
 import { parseInertOnServer } from "./server-dom";
 
 /**
@@ -203,7 +204,7 @@ function isLayoutWhitespace(text: Text): boolean {
  * page style (the body's sheet styles the infobox too).
  */
 export function slimArticleHtml(html: string, styled: ReadonlySet<string> = NO_CLASSES): string {
-  if (!html) return html;
+  if (!html || leavesAlone(html)) return html;
   const { template, content, document } = parseInertOnServer(html);
   const kept = html.includes("data-mw-deduplicate")
     ? new Set([...styled, ...templateStyleIdentifiers(html)])
@@ -220,7 +221,9 @@ export function slimArticleHtml(html: string, styled: ReadonlySet<string> = NO_C
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     if (isLayoutWhitespace(node as Text)) removable.push(node as Text);
   }
-  for (const text of removable) text.remove();
+  // `data = ""`, not `remove()`: jsdom's remove is linear in the parent's children, and a page of a hundred
+  // thousand `<p>…</p>` lines is one parent. An empty text node serializes to nothing.
+  for (const text of removable) text.data = "";
 
   return template.innerHTML;
 }

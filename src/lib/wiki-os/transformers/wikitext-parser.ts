@@ -1,12 +1,16 @@
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
-import { forwardFinder, resolveImageUrl, getImageUrl } from "./image-url";
+import { resolveImageUrl, getImageUrl } from "./image-url";
 import { parseInfoboxToHtml } from "./infobox-parser";
 import { splitBalancedPipes } from "../wikitext/parameter-parser";
 import { findMatchingClosingBrackets } from "../wikitext/link-parser";
 import { matchBrackets } from "../wikitext/match-index";
 import {
   nextFileOpener,
+  replaceBareExternalLinks,
   replaceInlineTemplates,
+  replaceLabelledExternalLinks,
+  replacePipedLinks,
+  replaceSimpleLinks,
   stripBareExternalLinks,
   stripComments,
   stripHtmlTags,
@@ -15,8 +19,22 @@ import {
   stripTagBlocks,
   stripUnclosedTemplateTail,
   unpackExternalLinks,
+  unpackInternalLinks,
 } from "./clean-markup-passes";
+import {
+  hasReferencesTag,
+  hasReflist,
+  replaceDelimited,
+  replaceHeadings,
+  replaceReferencesTags,
+  replaceReflists,
+  replaceRefs,
+  replaceWikitables,
+  stripNamespacedBrackets,
+} from "./compile-passes";
 import { extractTableCellContent, splitBalancedDoubleTokens } from "../wikitext/table-parser";
+
+export { unpackInternalLinks };
 
 /**
  * Strips recursively nested templates (e.g. {{Infobox ... {{flag|...}} ... }})
@@ -136,7 +154,7 @@ function stripWikitextTemplates(input: string): string {
 function parseWikitables(input: string): string {
   if (!input.includes("{|")) return input;
 
-  return input.replace(/\{\|([\s\S]*?)\|\}/g, (_match, content: string) => {
+  return replaceWikitables(input, (content) => {
     const lines = content.split("\n");
     let html =
       '\n\n<div class="my-3 overflow-x-auto rounded-xl border border-border/40 bg-card/60 backdrop-blur-md shadow-xs"><table class="w-full text-xs text-left border-collapse">';
@@ -204,11 +222,19 @@ export function imageDimensionAttributes(params: readonly string[]): string {
 function convertWikitextImages(text: string, wikiSource: string): string {
   let result = "";
   let i = 0;
+  // Where every `[[` closes, from one pass: scanning forward from each opener would be quadratic on a page
+  // with thousands of openers that never close.
+  const index = matchBrackets(text);
 
   while (i < text.length) {
+    // Text between links is copied whole, not a character at a time.
+    const open = text.indexOf("[[", i);
+    if (open === -1) break;
+    result += text.slice(i, open);
+    i = open;
     const prefix = text.slice(i, i + 8).toLowerCase();
     if (prefix.startsWith("[[file:") || prefix.startsWith("[[image:")) {
-      const closeIdx = findMatchingClosingBrackets(text, i);
+      const closeIdx = findMatchingClosingBrackets(text, i, index);
       if (closeIdx !== -1) {
         const raw = text.slice(i, closeIdx + 2);
         const inner = raw.slice(2, -2);
@@ -264,7 +290,7 @@ function convertWikitextImages(text: string, wikiSource: string): string {
     i++;
   }
 
-  return result;
+  return result + text.slice(i);
 }
 
 /**
@@ -294,6 +320,121 @@ export function stripWikitextFiles(text: string): string {
 }
 
 /**
+ * ponytail: COMPILE_CEILING, 300,000 characters: the most wikitext `parseWikitextToHtml` compiles. It is
+ * the in-process fallback for a page MediaWiki could not render (a reader's page or an old revision, an
+ * editor preview) and compiles lore cards and feed excerpts in the browser. Page text is user-controlled
+ * and up to 2,000,000 characters and the compiler is a chain of regular-expression passes, so above this
+ * a text is shown as its escaped source (`plainFallbackHtml`): a hostile page costs one copy, not a compile.
+ */
+export const COMPILE_CEILING = 300_000;
+
+/** The source of a page too large to compile: HTML-escaped in a `<pre>`, under a short notice. */
+export function plainFallbackHtml(wikitext: string): string {
+  const escaped = wikitext.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return (
+    '<p class="wikios-fallback-notice">This page is too large to format right now, so its source text is shown as it is.</p>' +
+    `<pre class="wikios-fallback-plain">${escaped}</pre>`
+  );
+}
+
+/** `text` with each `<ref>` replaced by its numbered mark; the contents go to `references` in the order of their numbers. */
+function numberRefs(text: string, references: string[]): string {
+  const refMap = new Map<string, number>();
+  const mark = (idx: number) =>
+    `<sup class="reference" id="cite_ref-${idx}"><a href="#cite_note-${idx}">[${idx}]</a></sup>`;
+  return replaceRefs(text, ({ name, content }) => {
+    const cleanName = name ? name.trim() : "";
+    if (cleanName && refMap.has(cleanName)) return mark(refMap.get(cleanName)!);
+    const idx = references.length + 1;
+    if (cleanName) refMap.set(cleanName, idx);
+    references.push((content || "").trim() || cleanName);
+    return mark(idx);
+  });
+}
+
+/** The runs of lines that start with a list marker, as `wrap(items)` where each line is `renderItem(its text)`. */
+function listBlocks(
+  text: string,
+  lines: RegExp,
+  marker: RegExp,
+  renderItem: (item: string) => string,
+  wrap: (items: string) => string
+): string {
+  return text.replace(lines, (match) => {
+    const items = match
+      .split(/\n/)
+      .map((line) => line.replace(marker, "").trim())
+      .filter(Boolean)
+      .map(renderItem)
+      .join("");
+    return items ? wrap(items) : "";
+  });
+}
+
+/** Bullet lists (`* item`), numbered lists (`# item`) and definitions or indents (`: item`) as HTML. */
+function convertLists(text: string): string {
+  const bullets = listBlocks(
+    text,
+    /(?:^\*\s*.*(?:\n|$))+/gm,
+    /^\*+\s*/,
+    (item) =>
+      `<li class="ml-4 list-disc text-muted-foreground my-0.5 leading-relaxed">${item}</li>`,
+    (items) => `\n\n<ul class="my-2 space-y-1">${items}</ul>\n\n`
+  );
+  const numbered = listBlocks(
+    bullets,
+    /(?:^#\s*.*(?:\n|$))+/gm,
+    /^#+\s*/,
+    (item) =>
+      `<li class="ml-4 list-decimal text-muted-foreground my-0.5 leading-relaxed">${item}</li>`,
+    (items) => `\n\n<ol class="my-2 space-y-1">${items}</ol>\n\n`
+  );
+  return listBlocks(
+    numbered,
+    /(?:^[:;]\s*.*(?:\n|$))+/gm,
+    /^[:;]+\s*/,
+    (item) => `<p class="ml-4 text-muted-foreground my-1 leading-relaxed">${item}</p>`,
+    (items) => `\n\n${items}\n\n`
+  );
+}
+
+/** The references as a list, in the place of a `<references />` or a `{{reflist}}`, or after the text when it has neither. */
+function expandReferenceList(text: string, references: string[]): string {
+  if (references.length === 0) return replaceReflists(replaceReferencesTags(text, ""), "");
+  const reflistHtml = `\n\n<ol class="references text-xs space-y-1 my-3 pl-5 list-decimal text-muted-foreground">${references
+    .map(
+      (ref, i) =>
+        `<li id="cite_note-${i + 1}" class="leading-relaxed"><span class="mw-cite-backlink"><a href="#cite_ref-${i + 1}" class="text-wiki mr-1">↑</a></span>${ref}</li>`
+    )
+    .join("")}</ol>\n\n`;
+  if (hasReferencesTag(text)) return replaceReferencesTags(text, reflistHtml);
+  if (hasReflist(text)) return replaceReflists(text, reflistHtml);
+  return `${text}\n\n<h4 class="text-base font-bold text-foreground mt-4 mb-2 pb-1 border-b border-border/40">References</h4>${reflistHtml}`;
+}
+
+/** What a paragraph that starts with one of these is already: a block of HTML, to be left as it is. */
+const BLOCK_HTML_START = /^<(?:h[456]|ul|ol|figure|blockquote|table|div|hr|pre)/;
+
+/** The blocks of `text` (separated by blank lines) as paragraphs, a block that is HTML already left as it is. */
+function formatParagraphs(text: string): string {
+  const paragraphs: string[] = [];
+  for (const block of text.split(/\n\s*\n+/)) {
+    const trimmedBlock = block.trim();
+    if (!trimmedBlock) continue;
+    if (BLOCK_HTML_START.test(trimmedBlock)) {
+      paragraphs.push(trimmedBlock);
+      continue;
+    }
+    // Standard paragraph: replace single line breaks with space
+    const withBreaks = trimmedBlock.replace(/\n(?!\n)/g, " ");
+    paragraphs.push(
+      `<p class="text-xs sm:text-sm leading-relaxed text-muted-foreground mb-3">${withBreaks}</p>`
+    );
+  }
+  return paragraphs.join("\n\n").trim();
+}
+
+/**
  * Robust wikitext parser that converts raw MediaWiki markup into clean HTML
  * for display in card modals, wiki previews, and lore excerpts.
  */
@@ -302,6 +443,7 @@ export function parseWikitextToHtml(
   wikiSource: string = "ixwiki"
 ): string {
   if (!wikitext || !wikitext.trim()) return "";
+  if (wikitext.length > COMPILE_CEILING) return plainFallbackHtml(wikitext);
 
   let text = wikitext;
 
@@ -309,34 +451,18 @@ export function parseWikitextToHtml(
   text = text.replace(/^\[blurb:[^\]]+\]\s*/gi, "");
 
   // 2. Strip HTML comments: <!-- ... -->
-  text = text.replace(/<!--[\s\S]*?-->/g, "");
+  text = stripComments(text);
 
   // 3. Strip MediaWiki magic words & behavior switches
   text = text.replace(/__(?:NOTOC|TOC|NOEDITSECTION|FORCETOC|SHOWFACTBOX|DISAMBIG)__/gi, "");
 
   // 4. Parse references / footnotes (<ref>...</ref>)
   const references: string[] = [];
-  const refMap = new Map<string, number>();
-
-  text = text.replace(
-    /<ref(?:\s+name=["']?([^"'>\s]+)["']?)?(?:\s*\/>|>(.*?)<\/ref>)/gis,
-    (_match, name, content) => {
-      const cleanName = name ? name.trim() : "";
-      if (cleanName && refMap.has(cleanName)) {
-        const idx = refMap.get(cleanName)!;
-        return `<sup class="reference" id="cite_ref-${idx}"><a href="#cite_note-${idx}">[${idx}]</a></sup>`;
-      }
-      const idx = references.length + 1;
-      if (cleanName) refMap.set(cleanName, idx);
-      const refContent = (content || "").trim();
-      references.push(refContent || cleanName);
-      return `<sup class="reference" id="cite_ref-${idx}"><a href="#cite_note-${idx}">[${idx}]</a></sup>`;
-    }
-  );
+  text = numberRefs(text, references);
 
   // 5. Strip galleries & math tags
-  text = text.replace(/<gallery\b[^>]*>[\s\S]*?<\/gallery>/gi, "");
-  text = text.replace(/<math\b[^>]*>[\s\S]*?<\/math>/gi, "");
+  text = stripTagBlocks(text, "gallery");
+  text = stripTagBlocks(text, "math");
 
   // 6. Convert wikitables to responsive HTML tables
   text = parseWikitables(text);
@@ -348,69 +474,38 @@ export function parseWikitextToHtml(
   text = stripWikitextTemplates(text);
 
   // 8. Strip category tags: [[Category:...]], [Category:...]
-  text = text.replace(/\[\[(?:category|Category):[^\]]+\]\]/gi, "");
-  text = text.replace(/\[(?:category|Category):[^\]]+\]/gi, "");
+  text = stripNamespacedLinks(text, "category:");
+  text = stripNamespacedBrackets(text, "category:");
 
   // 8b. Strip Template:Name references from MediaWiki extracts
-  text = text.replace(/\[\[(?:Template|template):[^\]]+\]\]/gi, "");
-  text = text.replace(/\[(?:Template|template):[^\]]+\]/gi, "");
+  text = stripNamespacedLinks(text, "template:");
+  text = stripNamespacedBrackets(text, "template:");
   text = text.replace(/(?:Template|template)\s*:[^\n.<|\]}]*/gi, "");
 
   // 9. Convert wikitext images: [[File:name.jpg|thumb|200px|Caption]] or [[Image:name.png|...]]
   text = convertWikitextImages(text, wikiSource);
 
   // 10. Convert wikitext headings
-  text = text.replace(
-    /^====\s*(.*?)\s*====/gm,
-    '\n\n<h6 class="text-xs font-bold uppercase tracking-wider text-foreground mt-3 mb-1">$1</h6>\n\n'
+  text = replaceHeadings(
+    text,
+    4,
+    (title) =>
+      `\n\n<h6 class="text-xs font-bold uppercase tracking-wider text-foreground mt-3 mb-1">${title}</h6>\n\n`
   );
-  text = text.replace(
-    /^===\s*(.*?)\s*===/gm,
-    '\n\n<h5 class="text-sm font-bold text-foreground mt-3.5 mb-1.5">$1</h5>\n\n'
+  text = replaceHeadings(
+    text,
+    3,
+    (title) => `\n\n<h5 class="text-sm font-bold text-foreground mt-3.5 mb-1.5">${title}</h5>\n\n`
   );
-  text = text.replace(
-    /^==\s*(.*?)\s*==/gm,
-    '\n\n<h4 class="text-base font-bold text-foreground mt-4 mb-2 pb-1 border-b border-border/40">$1</h4>\n\n'
+  text = replaceHeadings(
+    text,
+    2,
+    (title) =>
+      `\n\n<h4 class="text-base font-bold text-foreground mt-4 mb-2 pb-1 border-b border-border/40">${title}</h4>\n\n`
   );
 
-  // 11. Convert bullet lists (* item)
-  text = text.replace(/(?:^\*\s*.*(?:\n|$))+/gm, (match) => {
-    const items = match
-      .split(/\n/)
-      .map((line) => line.replace(/^\*+\s*/, "").trim())
-      .filter(Boolean)
-      .map(
-        (item) =>
-          `<li class="ml-4 list-disc text-muted-foreground my-0.5 leading-relaxed">${item}</li>`
-      )
-      .join("");
-    return items ? `\n\n<ul class="my-2 space-y-1">${items}</ul>\n\n` : "";
-  });
-
-  // 12. Convert numbered lists (# item)
-  text = text.replace(/(?:^#\s*.*(?:\n|$))+/gm, (match) => {
-    const items = match
-      .split(/\n/)
-      .map((line) => line.replace(/^#+\s*/, "").trim())
-      .filter(Boolean)
-      .map(
-        (item) =>
-          `<li class="ml-4 list-decimal text-muted-foreground my-0.5 leading-relaxed">${item}</li>`
-      )
-      .join("");
-    return items ? `\n\n<ol class="my-2 space-y-1">${items}</ol>\n\n` : "";
-  });
-
-  // 13. Convert definition/indents (: item)
-  text = text.replace(/(?:^[:;]\s*.*(?:\n|$))+/gm, (match) => {
-    const items = match
-      .split(/\n/)
-      .map((line) => line.replace(/^[:;]+\s*/, "").trim())
-      .filter(Boolean)
-      .map((item) => `<p class="ml-4 text-muted-foreground my-1 leading-relaxed">${item}</p>`)
-      .join("");
-    return items ? `\n\n${items}\n\n` : "";
-  });
+  // 11-13. Convert bullet lists (* item), numbered lists (# item) and definitions/indents (: item)
+  text = convertLists(text);
 
   // 14. Convert horizontal rules: ----
   text = text.replace(/^----+/gm, '\n\n<hr class="my-4 border-border/40" />\n\n');
@@ -428,143 +523,73 @@ export function parseWikitextToHtml(
   text = text.replace(/''((?:(?!'')[\s\S])+)''/g, '<em class="italic text-foreground/90">$1</em>');
 
   // 18. Convert strikethrough: <s>text</s>, <del>text</del>, ~~text~~
-  text = text.replace(
-    /<s>([\s\S]*?)<\/s>|<del>([\s\S]*?)<\/del>|~~([\s\S]*?)~~/gi,
-    (_m, g1, g2, g3) => {
-      const inner = g1 || g2 || g3 || "";
-      return `<del class="line-through opacity-75">${inner}</del>`;
-    }
-  );
+  const strike = (inner: string) => `<del class="line-through opacity-75">${inner}</del>`;
+  text = replaceDelimited(text, [
+    { open: "<s>", close: "</s>", render: strike },
+    { open: "<del>", close: "</del>", render: strike },
+    { open: "~~", close: "~~", render: strike },
+  ]);
 
   // 19. Convert underline: <u>text</u>
-  text = text.replace(/<u>([\s\S]*?)<\/u>/gi, '<u class="underline decoration-primary/60">$1</u>');
+  text = replaceDelimited(text, [
+    {
+      open: "<u>",
+      close: "</u>",
+      render: (inner) => `<u class="underline decoration-primary/60">${inner}</u>`,
+    },
+  ]);
 
   // 20. Convert code/tt: <code>text</code>, <tt>text</tt>
-  text = text.replace(/<code>([\s\S]*?)<\/code>|<tt>([\s\S]*?)<\/tt>/gi, (_m, g1, g2) => {
-    const inner = g1 || g2 || "";
-    return `<code class="rounded bg-muted/40 px-1 py-0.5 font-mono text-xs text-primary">${inner}</code>`;
-  });
+  const code = (inner: string) =>
+    `<code class="rounded bg-muted/40 px-1 py-0.5 font-mono text-xs text-primary">${inner}</code>`;
+  text = replaceDelimited(text, [
+    { open: "<code>", close: "</code>", render: code },
+    { open: "<tt>", close: "</tt>", render: code },
+  ]);
 
   // 21. Convert pre blocks: <pre>text</pre>
-  text = text.replace(/<pre>([\s\S]*?)<\/pre>/gi, (_m, content) => {
-    return `\n\n<pre class="my-2 overflow-x-auto rounded-lg bg-muted/40 p-3 font-mono text-xs text-foreground">${content}</pre>\n\n`;
-  });
+  text = replaceDelimited(text, [
+    {
+      open: "<pre>",
+      close: "</pre>",
+      render: (content) =>
+        `\n\n<pre class="my-2 overflow-x-auto rounded-lg bg-muted/40 p-3 font-mono text-xs text-foreground">${content}</pre>\n\n`,
+    },
+  ]);
 
   // 22. Convert piped internal links: [[Target Page|Display Label]]
-  text = text.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, (_match, page: string, label: string) => {
+  text = replacePipedLinks(text, (page, label) => {
     const route = titleToWikiOSRoute(page.trim());
     return `<a href="${route}" class="text-primary font-semibold hover:underline">${label.trim()}</a>`;
   });
 
   // 23. Convert simple internal links: [[Target Page]]
-  text = text.replace(/\[\[([^\]]+)\]\]/g, (_match, page: string) => {
+  text = replaceSimpleLinks(text, (page) => {
     const p = page.trim();
     const route = titleToWikiOSRoute(p);
     return `<a href="${route}" class="text-primary font-semibold hover:underline">${p}</a>`;
   });
 
   // 24. Convert external links with label: [http://example.com Display Label]
-  text = text.replace(
-    /\[(https?:\/\/[^\s\]]+)\s+([^\]]+)\]/g,
-    '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary font-semibold hover:underline inline-flex items-center gap-1">$2</a>'
+  text = replaceLabelledExternalLinks(
+    text,
+    (url, label) =>
+      `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-primary font-semibold hover:underline inline-flex items-center gap-1">${label}</a>`
   );
 
   // 25. Convert external links without label: [http://example.com]
-  text = text.replace(
-    /\[(https?:\/\/[^\s\]]+)\]/g,
-    '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">[link]</a>'
+  text = replaceBareExternalLinks(
+    text,
+    (url) =>
+      `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">[link]</a>`
   );
 
   // 25b. Expand references list
-  if (references.length > 0) {
-    const reflistHtml = `\n\n<ol class="references text-xs space-y-1 my-3 pl-5 list-decimal text-muted-foreground">${references
-      .map(
-        (ref, i) =>
-          `<li id="cite_note-${i + 1}" class="leading-relaxed"><span class="mw-cite-backlink"><a href="#cite_ref-${i + 1}" class="text-wiki mr-1">↑</a></span>${ref}</li>`
-      )
-      .join("")}</ol>\n\n`;
-
-    if (/<references\b[^>]*\/?>/i.test(text)) {
-      text = text.replace(/<references\b[^>]*\/?>/gi, reflistHtml);
-    } else if (/\{\{[Rr]eflist[^}]*\}\}/i.test(text)) {
-      text = text.replace(/\{\{[Rr]eflist[^}]*\}\}/gi, reflistHtml);
-    } else {
-      text += `\n\n<h4 class="text-base font-bold text-foreground mt-4 mb-2 pb-1 border-b border-border/40">References</h4>${reflistHtml}`;
-    }
-  } else {
-    text = text.replace(/<references\b[^>]*\/?>/gi, "");
-    text = text.replace(/\{\{[Rr]eflist[^}]*\}\}/gi, "");
-  }
+  text = expandReferenceList(text, references);
 
   // 26. Format Paragraphs
-  const rawParagraphs = text.split(/\n\s*\n+/);
-  const formattedParagraphs: string[] = [];
-
-  for (const block of rawParagraphs) {
-    const trimmedBlock = block.trim();
-    if (!trimmedBlock) continue;
-
-    // Check if block is already a block-level HTML element
-    if (
-      trimmedBlock.startsWith("<h4") ||
-      trimmedBlock.startsWith("<h5") ||
-      trimmedBlock.startsWith("<h6") ||
-      trimmedBlock.startsWith("<ul") ||
-      trimmedBlock.startsWith("<ol") ||
-      trimmedBlock.startsWith("<figure") ||
-      trimmedBlock.startsWith("<blockquote") ||
-      trimmedBlock.startsWith("<table") ||
-      trimmedBlock.startsWith("<div") ||
-      trimmedBlock.startsWith("<hr") ||
-      trimmedBlock.startsWith("<pre")
-    ) {
-      formattedParagraphs.push(trimmedBlock);
-      continue;
-    }
-
-    // Standard paragraph: replace single line breaks with space
-    const withBreaks = trimmedBlock.replace(/\n(?!\n)/g, " ");
-    formattedParagraphs.push(
-      `<p class="text-xs sm:text-sm leading-relaxed text-muted-foreground mb-3">${withBreaks}</p>`
-    );
-  }
-
-  const htmlOutput = formattedParagraphs.join("\n\n").trim();
+  const htmlOutput = formatParagraphs(text);
   return infoboxHtml ? `${infoboxHtml}\n\n${htmlOutput}` : htmlOutput;
-}
-
-/**
- * `[[Target|Label]]` becomes `Label` and `[[Target]]` becomes `Target`, in one pass. It answers what
- * `text.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1")` answers, which rescans the rest of the text from every
- * `[[` that never closes (quadratic on 100,000 of them).
- */
-export function unpackInternalLinks(text: string): string {
-  const nextClose = forwardFinder(text, "]");
-  const pieces: string[] = [];
-  let copied = 0;
-  let from = 0;
-  for (;;) {
-    const open = text.indexOf("[[", from);
-    if (open === -1) break;
-    const start = open + 2;
-    const close = nextClose(start);
-    if (close === -1) break; // nothing closes any later link either
-    if (close === start) {
-      from = open + 1; // nothing between the brackets
-    } else if (text.charAt(close + 1) !== "]") {
-      from = close; // every opener before this `]` is closed by the same one
-    } else {
-      let bar = start;
-      while (bar < close && text.charAt(bar) !== "|") bar++;
-      // The label follows the first bar, unless the bar is the last character before the closing brackets.
-      const labelStart = bar < close && bar + 1 < close ? bar + 1 : start;
-      pieces.push(text.slice(copied, open), text.slice(labelStart, close));
-      copied = close + 2;
-      from = copied;
-    }
-  }
-  pieces.push(text.slice(copied));
-  return pieces.join("");
 }
 
 /**

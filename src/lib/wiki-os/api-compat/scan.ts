@@ -7,7 +7,8 @@
  * of spaces, a million `[[` that never close) costs time proportional to its length.
  */
 
-import { matchBrackets, UNINDEXED } from "~/lib/wiki-os/wikitext/match-index";
+import { forwardFinder } from "~/lib/wiki-os/wikitext/forward-finder";
+import { matchBrackets, unclosedCommentFrom, UNINDEXED } from "~/lib/wiki-os/wikitext/match-index";
 
 /** A link target or category name is a page title: at most 255 bytes, so a longer run is not one. */
 const MAX_TITLE_CHARS = 300;
@@ -32,8 +33,9 @@ function skipSpaces(text: string, from: number, limit: number): number {
 /** Where each `[[...]]` link starts and where its `]]` is: one pass, nested links included. */
 function* links(text: string): Generator<{ open: number; close: number }> {
   const closes = matchBrackets(text);
+  const commentFrom = unclosedCommentFrom(closes); // a comment that never closes holds the rest of the text
   let open = text.indexOf("[[");
-  while (open !== -1) {
+  while (open !== -1 && open < commentFrom) {
     const close = closes[open];
     if (close !== undefined && close > 0 && close !== UNINDEXED) yield { open, close };
     open = text.indexOf("[[", open + 2);
@@ -47,11 +49,14 @@ function* links(text: string): Generator<{ open: number; close: number }> {
  */
 export function linkTargets(wikitext: string, max: number): string[] {
   const found = new Set<string>();
+  // The first `|`, `#` or line break after each opener, from one search: a window of 300 characters read from each
+  // of a million nested `[[` is 300 million steps.
+  const nextStop = forwardFinder(wikitext, /[|#\n]/g);
   for (const { open, close } of links(wikitext)) {
     if (found.size >= max) break;
     const limit = Math.min(close, open + 2 + MAX_TITLE_CHARS);
-    let end = open + 2;
-    while (end < limit && !"|#\n".includes(wikitext[end]!)) end++;
+    const stop = nextStop(open + 2);
+    const end = stop === -1 || stop > limit ? limit : stop;
     if (end === limit && limit < close) continue; // longer than a title
     if (wikitext[end] === "\n") continue;
     const target = wikitext.slice(open + 2, end).trim();

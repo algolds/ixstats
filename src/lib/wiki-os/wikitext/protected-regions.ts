@@ -4,8 +4,10 @@
  * HTML comments and the tags whose content is literal (`<pre>`, `<nowiki>`) or belongs to an
  * extension (`<gallery>`, `<math>`, `<syntaxhighlight>`, …). `{{` inside one of them is not a
  * template, `''` is not italic, and a blank line inside one does not end a paragraph. Pure string
- * helpers with no imports, shared by the block parser, the template scanner and the inline parser.
+ * helpers, shared by the block parser, the template scanner and the inline parser.
  */
+
+import { forwardFinder } from "./forward-finder";
 
 /** Tags whose content is literal text or extension input: never wikitext, never a block boundary. */
 const OPAQUE_TAG_NAMES = [
@@ -66,18 +68,21 @@ interface CloseTags {
  * The functions below require one, so a loop over a text cannot go quadratic by forgetting it.
  */
 export class ProtectedScanner {
-  /** The first `>` at or after `gtFrom` is `gtAt` (-1: there is none); so it is for every later position up to it. */
-  private gtFrom = 0;
-  private gtAt = -2;
+  /** The first `>` at or after a position (the scan only moves forward): one search answers every opener before it. */
+  readonly nextGreaterThan: (from: number) => number;
+  /** The first `-->` at or after a position, likewise: a text of `<!--` that never closes is one search. */
+  private readonly nextCommentClose: (from: number) => number;
   private readonly closeTags = new Map<string, CloseTags>();
 
-  constructor(readonly text: string) {}
+  constructor(readonly text: string) {
+    this.nextGreaterThan = forwardFinder(text, ">");
+    this.nextCommentClose = forwardFinder(text, "-->");
+  }
 
-  nextGreaterThan(from: number): number {
-    if (this.gtAt !== -2 && from >= this.gtFrom && (this.gtAt === -1 || from <= this.gtAt)) return this.gtAt;
-    this.gtFrom = from;
-    this.gtAt = this.text.indexOf(">", from);
-    return this.gtAt;
+  /** Index just after the `-->` of the comment that starts at `text[open]`; the end of text when unclosed. */
+  commentEnd(open: number): number {
+    const close = this.nextCommentClose(open + 4);
+    return close === -1 ? this.text.length : close + 3;
   }
 
   /** Where every `</name>` of the text starts and ends, found in one scan. */
@@ -139,12 +144,6 @@ export function findTagClose(tag: OpenTag, scanner: ProtectedScanner): number {
   return low < ends.length ? ends[low]! : -1;
 }
 
-/** Index just after the `-->` of the comment that starts at `text[i]`; the end of text when unclosed. */
-function findCommentEnd(text: string, i: number): number {
-  const close = text.indexOf("-->", i + 4);
-  return close === -1 ? text.length : close + 3;
-}
-
 /**
  * If a comment or an opaque element (a closed `<nowiki>…</nowiki>`, `<pre>…</pre>`, `<gallery>…`,
  * a `<ref>…</ref>` when `includeRef`, or a self-closing tag) starts at `text[i]`, the index just after
@@ -157,7 +156,7 @@ export function skipProtectedAt(
   scanner: ProtectedScanner
 ): number | null {
   if (text.charCodeAt(i) !== 60) return null;
-  if (text.startsWith("<!--", i)) return findCommentEnd(text, i);
+  if (text.startsWith("<!--", i)) return scanner.commentEnd(i);
   const tag = matchOpenTag(text, i, scanner);
   if (!tag || (tag.name === "ref" && !includeRef)) return null;
   const end = findTagClose(tag, scanner);
@@ -168,10 +167,11 @@ export function skipProtectedAt(
 export function isCommentOnly(line: string): boolean {
   const trimmed = line.trim();
   if (!trimmed.startsWith("<!--")) return false;
+  const scanner = new ProtectedScanner(trimmed);
   let i = 0;
   while (i < trimmed.length) {
     if (trimmed.startsWith("<!--", i)) {
-      i = findCommentEnd(trimmed, i);
+      i = scanner.commentEnd(i);
     } else if (/\s/.test(trimmed[i]!)) {
       i++;
     } else {

@@ -17,7 +17,17 @@ import {
   extractCoordsFromFields,
   cleanWikiValue,
 } from "~/lib/wiki-os/transformers/infobox-parser";
+import {
+  lowerAscii,
+  replaceInlineTemplates,
+  replaceTagBlocks,
+  rewriteSpans,
+  stripComments,
+  stripHtmlTags,
+  unpackInternalLinks,
+} from "~/lib/wiki-os/transformers/clean-markup-passes";
 import { resolveImageUrl } from "~/lib/wiki-os/transformers/image-url";
+import { forwardFinder } from "~/lib/wiki-os/wikitext/forward-finder";
 export { resolveImageUrl };
 import type { WikiSource } from "~/lib/wiki-os/config";
 
@@ -233,14 +243,34 @@ function processHdi(value: string): string {
 }
 
 function processWikilinks(value: string): string {
-  return value.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1");
+  return unpackInternalLinks(value);
+}
+
+/** `<ref .../>` (what `/<ref[^/>]*\/>/gi` cuts): the first `/` or `>` after `<ref` is a `/` that `>` follows. */
+function stripLooseSelfClosingRefs(value: string): string {
+  const lower = lowerAscii(value);
+  const nextStop = forwardFinder(value, /[/>]/g);
+  return rewriteSpans(value, (from) => {
+    for (
+      let open = lower.indexOf("<ref", from);
+      open !== -1;
+      open = lower.indexOf("<ref", open + 1)
+    ) {
+      const stop = nextStop(open + 4);
+      if (stop === -1) return null;
+      if (value.startsWith("/>", stop)) return [open, stop + 2];
+    }
+    return null;
+  });
 }
 
 function processRefs(value: string): string {
-  return value
-    .replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, "")
-    .replace(/<ref[^/>]*\/>/gi, "")
-    .replace(/<ref[^>]*>[\s\S]*/gi, "");
+  const withoutBlocks = stripLooseSelfClosingRefs(replaceTagBlocks(value, "ref", () => "", false));
+  // What follows a `<ref ...>` that nothing closes is cut with it.
+  const open = lowerAscii(withoutBlocks).indexOf("<ref");
+  return open !== -1 && withoutBlocks.indexOf(">", open + 4) !== -1
+    ? withoutBlocks.slice(0, open)
+    : withoutBlocks;
 }
 
 function processBr(value: string): string {
@@ -248,11 +278,11 @@ function processBr(value: string): string {
 }
 
 function processSmall(value: string): string {
-  return value.replace(/<small[^>]*>[\s\S]*?<\/small>/gi, "");
+  return replaceTagBlocks(value, "small", () => "", false);
 }
 
 function processComments(value: string): string {
-  return value.replace(/<!--[\s\S]*?-->/g, "");
+  return stripComments(value);
 }
 
 function processSort(value: string): string {
@@ -268,7 +298,7 @@ function processDts(value: string): string {
 }
 
 function processNowiki(value: string): string {
-  return value.replace(/<nowiki[^>]*>([\s\S]*?)<\/nowiki>/gi, "$1");
+  return replaceTagBlocks(value, "nowiki", (inside) => inside, false);
 }
 
 function processColor(value: string): string {
@@ -312,6 +342,14 @@ function processCompose(value: string): string {
   });
 }
 
+/**
+ * ponytail: MAX_TEMPLATE_ROUNDS, 64: the deepest nesting of templates in an infobox value that is stripped. A
+ * round takes the innermost level of the whole value, so a value nested thousands deep (a text of `{{a|` and
+ * `}}`) was a pass over all of it per level: 240 KB took 8.8 s. Real values nest a handful deep (the clone's
+ * deepest is 5); a level past the 64th is left as text.
+ */
+const MAX_TEMPLATE_ROUNDS = 64;
+
 function processTemplates(value: string): string {
   let result = value;
   result = processComments(result);
@@ -334,12 +372,12 @@ function processTemplates(value: string): string {
   result = processNobold(result);
   result = processList(result);
   result = processCompose(result);
-  // Iterate to strip nested templates from innermost out
-  let prevTemplate;
-  do {
-    prevTemplate = result;
-    result = result.replace(/\{\{[^{}]*\}\}/g, "");
-  } while (result !== prevTemplate);
+  // Strip nested templates from innermost out, a level a round
+  for (let round = 0; round < MAX_TEMPLATE_ROUNDS; round++) {
+    const stripped = result.replace(/\{\{[^{}]*\}\}/g, "");
+    if (stripped === result) break;
+    result = stripped;
+  }
   result = processRefs(result);
   result = processSmall(result);
   result = processBr(result);
@@ -515,7 +553,7 @@ function extractFilename(value: string): string {
   if (!value) return "";
   // Trim comments first
   // eslint-disable-next-line prefer-const
-  let clean = value.replace(/<!--[\s\S]*?-->/g, "").trim();
+  let clean = stripComments(value).trim();
 
   // If it's an external URL, return as is
   if (/^https?:\/\//i.test(clean) || clean.startsWith("//")) {
@@ -541,11 +579,9 @@ function extractFilename(value: string): string {
   }
 
   // Strip general templates and formatting
-  let plain = clean
-    .replace(/\{\{[^}]*\}\}/g, "")
-    .replace(/<[^>]+>/g, "")
-    .replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1")
-    .trim();
+  let plain = unpackInternalLinks(
+    stripHtmlTags(replaceInlineTemplates(clean, /\{\{[^}]*\}\}/, () => ""))
+  ).trim();
 
   if (plain.includes("|")) {
     plain = plain.split("|")[0]!.trim();

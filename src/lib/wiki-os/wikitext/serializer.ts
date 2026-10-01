@@ -54,43 +54,39 @@ export function serializeTemplateToWikitext(template: {
     Object.values(params).some((v) => v.includes("\n"));
 
   if (isMultiline) {
-    let out = `{{${name}\n`;
+    const lines: string[] = [`{{${name}\n`];
 
     if (paramList && paramList.length > 0) {
       for (const p of paramList) {
-        if (p.isPositional) {
-          out += `| ${p.value}\n`;
-        } else {
-          out += `| ${p.key} = ${p.value}\n`;
-        }
+        lines.push(p.isPositional ? `| ${p.value}\n` : `| ${p.key} = ${p.value}\n`);
       }
     } else {
       // Positional first
       for (const val of positional) {
-        out += `| ${val}\n`;
+        lines.push(`| ${val}\n`);
       }
       // Named params
       for (const [k, v] of Object.entries(params)) {
         if (/^\d+$/.test(k)) continue; // skip positional mirror
-        out += `| ${k} = ${v}\n`;
+        lines.push(`| ${k} = ${v}\n`);
       }
     }
 
-    out += `}}`;
-    return out;
+    lines.push("}}");
+    return lines.join("");
   }
 
   // Single-line compact
-  let out = `{{${name}`;
+  const pieces: string[] = [`{{${name}`];
   for (const val of positional) {
-    out += `|${val}`;
+    pieces.push(`|${val}`);
   }
   for (const [k, v] of Object.entries(params)) {
     if (/^\d+$/.test(k)) continue;
-    out += `|${k}=${v}`;
+    pieces.push(`|${k}=${v}`);
   }
-  out += `}}`;
-  return out;
+  pieces.push("}}");
+  return pieces.join("");
 }
 
 function isInlineNode(node: WikiBlockNode | WikiInlineNode): boolean {

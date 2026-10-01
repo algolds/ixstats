@@ -11,7 +11,7 @@
  */
 
 import { titleUrlPath, wikiosConfig } from "../config";
-import { parseWikiTitle } from "../namespace-policy";
+import { TITLE_HEAD_CEILING, parseWikiTitle } from "../namespace-policy";
 import { toArticleSlug, type ArticleSlug } from "./domain-types";
 
 /** Canonical namespace names keyed by namespace id (the main namespace has no prefix). */
@@ -137,6 +137,8 @@ export function canonicalizeTitle(
   { source = "ixwiki" }: CanonicalizeOptions = {}
 ): CanonicalTitle | null {
   if (CONTROL_CHARS.test(raw)) return null;
+  const hash = raw.indexOf("#");
+  if ((hash === -1 ? raw.length : hash) > TITLE_HEAD_CEILING) return null;
   const { rest, fragment } = splitFragment(raw.normalize("NFC"));
   const parsed = parseWikiTitle(rest, { namespaces: source === "ixwiki" });
   if (!parsed) return null;

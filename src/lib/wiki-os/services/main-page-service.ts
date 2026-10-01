@@ -14,6 +14,7 @@ import { db } from "~/server/db";
 import { getRecentChanges, getSiteStats } from "../adapters/mediawiki/bridge";
 import { CategoryService } from "../core/category-service";
 import { extractFeaturedArticle, featuredArticleDetails } from "../main-page/featured-article";
+import { leadParagraph } from "../main-page/lead-paragraph";
 import { extractLeadImageFromHtml } from "../transformers/image-url";
 import { parseInertOnServer } from "../transformers/server-dom";
 import { getArticleView } from "./article-view-service";
@@ -115,18 +116,6 @@ function dailyIndex(now: Date, size: number): number {
   let hash = 0;
   for (let i = 0; i < key.length; i++) hash = (Math.imul(31, hash) + key.charCodeAt(i)) | 0;
   return Math.abs(hash) % size;
-}
-
-/** The lead paragraph of article HTML as plain text, skipping empty and infobox paragraphs. */
-function leadParagraph(html: string): string {
-  const lead = (html.match(/<p[^>]*>([\s\S]*?)<\/p>/gi) ?? []).find(
-    (p) => p.length > 25 && !/infobox|mw-empty-elt/i.test(p)
-  );
-  return (lead ?? "")
-    .replace(/<[^>]+>/g, "")
-    .replace(/\[\d+\]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 async function readAlmanac(now: Date): Promise<MainPageAlmanac | null> {

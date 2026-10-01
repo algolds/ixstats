@@ -4,6 +4,16 @@
 import { createHash } from "crypto";
 import { withBasePath } from "~/lib/base-path";
 import { isMediaWikiUrl, mediaWikiImageUrl, type WikiSource } from "../config";
+import { forwardFinder } from "../wikitext/forward-finder";
+import {
+  blocks,
+  hasClass,
+  imageTags,
+  removeBlocks,
+  scanHtml,
+  type BlockSpec,
+  type HtmlScan,
+} from "./html-scan";
 
 export type ExtendedWikiSource = WikiSource | "commons";
 
@@ -267,6 +277,59 @@ export function normalizeWikiImageUrl(rawUrl: string | null | undefined): string
   return url;
 }
 
+const noticeBlock = (
+  names: readonly string[],
+  closers: readonly string[],
+  words: RegExp
+): BlockSpec => ({
+  names,
+  closers,
+  opens: (scan, tag) => hasClass(scan, tag, `"'`, words),
+});
+
+/** The maintenance, notice and ambox blocks a lead image is never in. */
+const NOTICE_TABLE = noticeBlock(
+  ["table"],
+  ["</table>"],
+  /\b(?:ambox|tmbox|ombox|cmbox|fmbox|metadata|hatnote|dablink|stub|maint|wip)\b/
+);
+const NOTICE_DIV = noticeBlock(
+  ["div"],
+  ["</div>"],
+  /\b(?:ambox|metadata|hatnote|dablink|stub|wip|notice)\b/
+);
+const NOTICE_ASIDE = noticeBlock(["aside"], ["</aside>"], /\b(?:notice|ambox)\b/);
+
+/** The infobox: a table or aside of class `infobox` or `portable-infobox`. */
+const INFOBOX = noticeBlock(
+  ["table", "aside"],
+  ["</table>", "</aside>"],
+  /\b(?:infobox|portable-infobox)\b/
+);
+
+/** A figure or thumb: a `<figure>` or `<div>` of a class a picture sits in. */
+const FIGURE = noticeBlock(
+  ["figure", "div"],
+  ["</figure>", "</div>"],
+  /\b(?:thumb|mw-halign|mw-default-size|thumbinner)\b/
+);
+
+/** The first picture of `scan`'s page between `from` and `to` that is a real one: its tag and normalized URL. */
+function firstRealImage(
+  scan: HtmlScan,
+  from = 0,
+  to = scan.html.length
+): { tag: string; url: string } | null {
+  for (const image of imageTags(scan, from, to)) {
+    if (!image.src || /\b(?:width|height)=["'](?:1[0-9]|2[0-4]|[1-9])["']/i.test(image.tag))
+      continue;
+    if (isNoticeOrUtilityIcon(image.src)) continue;
+    const normalized = normalizeWikiImageUrl(image.src);
+    if (normalized) return { tag: image.tag, url: normalized };
+  }
+  return null;
+}
+
 /**
  * The genuine lead image of MediaWiki / Parsoid article HTML: its `<img>` tag and normalized URL.
  * Strictly ignores maintenance notices, WIP badges, template icons, and grabs
@@ -276,74 +339,27 @@ function findLeadImage(html: string | null | undefined): { tag: string; url: str
   if (!html || typeof html !== "string") return null;
 
   // 1. Strip out all known maintenance / notice / ambox blocks
-  const cleanHtml = html
-    .replace(
-      /<table[^>]*class=["'][^"']*\b(?:ambox|tmbox|ombox|cmbox|fmbox|metadata|hatnote|dablink|stub|maint|wip)\b[^"']*["'][\s\S]*?<\/table>/gi,
-      ""
-    )
-    .replace(
-      /<div[^>]*class=["'][^"']*\b(?:ambox|metadata|hatnote|dablink|stub|wip|notice)\b[^"']*["'][\s\S]*?<\/div>/gi,
-      ""
-    )
-    .replace(/<aside[^>]*class=["'][^"']*\b(?:notice|ambox)\b[^"']*["'][\s\S]*?<\/aside>/gi, "");
+  const cleanHtml = removeBlocks(
+    removeBlocks(removeBlocks(html, NOTICE_TABLE), NOTICE_DIV),
+    NOTICE_ASIDE
+  );
+  const scan = scanHtml(cleanHtml);
 
   // 2. First priority: Infobox image (<table class="infobox">, <aside class="portable-infobox">, .infobox-image)
-  const infoboxMatch = cleanHtml.match(
-    /<(?:table|aside)[^>]*class=["'][^"']*\b(?:infobox|portable-infobox)\b[^"']*["'][\s\S]*?<\/(?:table|aside)>/i
-  );
-  if (infoboxMatch) {
-    const infoboxHtml = infoboxMatch[0];
-    const infoboxImgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
-    let imgMatch: RegExpExecArray | null;
-    while ((imgMatch = infoboxImgRegex.exec(infoboxHtml)) !== null) {
-      const fullTag = imgMatch[0] || "";
-      const src = imgMatch[1] || "";
-      if (src && !isNoticeOrUtilityIcon(src)) {
-        if (!/\b(?:width|height)=["'](?:1[0-9]|2[0-4]|[1-9])["']/i.test(fullTag)) {
-          const normalized = normalizeWikiImageUrl(src);
-          if (normalized) return { tag: fullTag, url: normalized };
-        }
-      }
-    }
+  const [infobox] = blocks(scan, INFOBOX);
+  if (infobox) {
+    const found = firstRealImage(scan, infobox[0], infobox[1]);
+    if (found) return found;
   }
 
   // 3. Second priority: Figure or Thumbimage (<figure>, <div class="thumb">, <img class="thumbimage">)
-  const figureRegex =
-    /<(?:figure|div)[^>]*class=["'][^"']*\b(?:thumb|mw-halign|mw-default-size|thumbinner)\b[^"']*["'][\s\S]*?<\/(?:figure|div)>/gi;
-  let figMatch: RegExpExecArray | null;
-  while ((figMatch = figureRegex.exec(cleanHtml)) !== null) {
-    const figHtml = figMatch[0];
-    const figImgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
-    let imgMatch: RegExpExecArray | null;
-    while ((imgMatch = figImgRegex.exec(figHtml)) !== null) {
-      const fullTag = imgMatch[0] || "";
-      const src = imgMatch[1] || "";
-      if (src && !isNoticeOrUtilityIcon(src)) {
-        if (!/\b(?:width|height)=["'](?:1[0-9]|2[0-4]|[1-9])["']/i.test(fullTag)) {
-          const normalized = normalizeWikiImageUrl(src);
-          if (normalized) return { tag: fullTag, url: normalized };
-        }
-      }
-    }
+  for (const [start, end] of blocks(scan, FIGURE)) {
+    const found = firstRealImage(scan, start, end);
+    if (found) return found;
   }
 
   // 4. Third priority: Scan all remaining <img> tags in document order
-  const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
-  let match: RegExpExecArray | null;
-  while ((match = imgRegex.exec(cleanHtml)) !== null) {
-    const fullTag = match[0] || "";
-    const rawSrc = match[1] || "";
-    if (!rawSrc) continue;
-
-    if (isNoticeOrUtilityIcon(rawSrc)) continue;
-
-    if (!/\b(?:width|height)=["'](?:1[0-9]|2[0-4]|[1-9])["']/i.test(fullTag)) {
-      const normalized = normalizeWikiImageUrl(rawSrc);
-      if (normalized) return { tag: fullTag, url: normalized };
-    }
-  }
-
-  return null;
+  return firstRealImage(scan);
 }
 
 /** The URL of the genuine lead image of article HTML (see `findLeadImage`), or null. */
@@ -497,23 +513,6 @@ function runEnd(text: string, from: number, stops: string): number {
   let i = from;
   while (i < text.length && !stops.includes(text.charAt(i))) i++;
   return i;
-}
-
-/**
- * The first index at or after `from` where `needle` occurs, for calls whose `from` only grows. A search
- * that found `at` also answers every later `from` up to `at`, and one that found nothing answers all of
- * them: scanning for the same closing bracket from each of many openers costs one scan, not one each.
- */
-export function forwardFinder(text: string, needle: string): (from: number) => number {
-  let searchedFrom = -1;
-  let foundAt = -2;
-  return (from) => {
-    if (foundAt === -1 && from >= searchedFrom) return -1;
-    if (from >= searchedFrom && from <= foundAt) return foundAt;
-    searchedFrom = from;
-    foundAt = text.indexOf(needle, from);
-    return foundAt;
-  };
 }
 
 /**
