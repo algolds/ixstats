@@ -157,13 +157,15 @@ export default function ArticlePageClient({
     }
   }, [isAuthLoaded, isSignedIn, data, refetch]);
 
-  // Background idle wikitext warmup so clicking Edit is 0ms. Only a signed-in reader can edit:
-  // an anonymous reader never pays for the wikitext (up to 2 MB) of every page they open.
+  // Background idle warmup so clicking Edit is 0ms: the wikitext the editor opens on, and the answer the edit
+  // gate (WikiEditGate) waits for. Only a signed-in reader can edit: an anonymous reader never pays for the
+  // wikitext (up to 2 MB) of every page they open, and the gate does not ask the server for them.
   useEffect(() => {
     if (data && !isMainPage && isIxWiki && isSignedIn) {
       if ("requestIdleCallback" in window) {
         window.requestIdleCallback(() => {
           void utils.wikios.getWikitext.prefetch({ title }, { staleTime: 10 * 60 * 1000 });
+          void utils.wikios.getEditAccess.prefetch({ title }, { staleTime: 60 * 1000 });
         });
       }
     }

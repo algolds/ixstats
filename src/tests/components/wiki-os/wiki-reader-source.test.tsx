@@ -6,6 +6,7 @@ import ArticlePageClient, {
 
 const mockUseQuery = jest.fn();
 const mockPrefetch = jest.fn();
+const mockEditAccessPrefetch = jest.fn();
 const mockRenderer = jest.fn();
 const mockEditor = jest.fn();
 const mockGate = jest.fn();
@@ -20,7 +21,12 @@ jest.mock("next/navigation", () => ({
 }));
 jest.mock("~/trpc/react", () => ({
   api: {
-    useUtils: () => ({ wikios: { getWikitext: { prefetch: mockPrefetch } } }),
+    useUtils: () => ({
+      wikios: {
+        getWikitext: { prefetch: mockPrefetch },
+        getEditAccess: { prefetch: mockEditAccessPrefetch },
+      },
+    }),
     wikios: { getArticleHtml: { useQuery: (...args: unknown[]) => mockUseQuery(...args) } },
   },
 }));
@@ -156,10 +162,19 @@ describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
     mockSignedIn = false;
     render(<Reader title="Aurelia" />);
     expect(mockPrefetch).not.toHaveBeenCalled();
+    expect(mockEditAccessPrefetch).not.toHaveBeenCalled();
 
     mockSignedIn = true;
     render(<Reader title="Aurelia" />);
     expect(mockPrefetch).toHaveBeenCalledWith({ title: "Aurelia" }, expect.anything());
+    // and the answer the edit gate waits for, so Edit opens the editor at once
+    expect(mockEditAccessPrefetch).toHaveBeenCalledWith({ title: "Aurelia" }, expect.anything());
+  });
+
+  it("warms nothing for another wiki's page, whoever is signed in", () => {
+    found();
+    render(<Reader wikiSource="iiwiki" />);
+    expect(mockEditAccessPrefetch).not.toHaveBeenCalled();
   });
 
   it("passes the page's own authorship through untouched: an IxWiki page gets none and loads it itself (plan 404)", () => {
