@@ -287,9 +287,10 @@ async function main(): Promise<number> {
       const families = familiesFor(target.kind).filter(
         (family) => !options.family || family.name.includes(options.family)
       );
-      const own = await measure(target, families, options);
+      const own = families.length > 0 ? await measure(target, families, options) : []; // `--family=` may name no family of this kind
       rows.push(...own);
       completed++;
+      if (own.length === 0) continue;
       const worst = own.reduce((a, b) => (b.ms > a.ms ? b : a), own[0]!);
       const breaches = own.filter((entry) => entry.ms > entry.budget).length;
       process.stderr.write(
