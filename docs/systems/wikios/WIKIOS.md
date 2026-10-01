@@ -69,7 +69,7 @@ flowchart TD
 ```
 src/lib/wiki-os/
 ├── index.ts                   # Root barrel export
-├── config.ts                  # Configuration and DEFAULT_MEDIAWIKI_URL
+├── config.ts                  # The one config object (`wikiosConfig`) and the URL helpers (plan 415)
 ├── types.ts                   # Nominal contracts
 ├── auth.ts                    # User identity and role resolution
 ├── use-wiki-auth.ts           # React client hook for authentication
@@ -83,7 +83,6 @@ src/lib/wiki-os/
 │   ├── native-search-service.ts # Two-tier search service
 │   ├── media-asset-service.ts # wiki_assets registry (+ blurhash-service.ts)
 │   ├── wiki-ast.ts            # IxWiki AST block model (+ wiki-ast-guards.ts)
-│   ├── parser-functions.ts    # ParserFunctions evaluator (#if, #switch, #expr); exercised only by tests
 │   └── category-service.ts    # Recursive category tree queries
 │
 ├── guardian/                  # Security and CDN management

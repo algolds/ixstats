@@ -169,7 +169,7 @@ export const wikiosEditingRouter = createTRPCRouter({
       const current = await ArticleRepository.findBySlug(title, "ixwiki", { includeArchived: true });
       if (current?.status === "ARCHIVED") throw deletedPage();
 
-      // Read-through: serve from shadow history with MySQL fallback
+      // Read-through: serve from the PostgreSQL revision history
       const history = await getArticleHistoryShadow(title, 50);
       const revisions = history.revisions;
       if (revisions.length < 2) {

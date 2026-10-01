@@ -1,7 +1,7 @@
 /**
  * IxnayID — Wiki Account Linking Service
  *
- * Links IxStats users to their MediaWiki accounts via direct MySQL lookup.
+ * Links IxStats users to their MediaWiki accounts (read from PostgreSQL, else through the MediaWiki API).
  * Follows the same pattern as xenforo-user-sync.ts:
  *   - lookupWikiUser: find wiki user by username
  *   - findLinkableWikiAccount: validate an admin link (the write is the wiki-links service's adminVerify)

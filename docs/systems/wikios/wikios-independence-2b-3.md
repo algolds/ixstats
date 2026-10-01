@@ -28,7 +28,7 @@ With the completion of Plan 170 and Plan 191 (Stage 2b):
 2. **PostgreSQL Primary Save Pipeline**:
    - `ArticleRepository.saveArticle()` writes directly to PostgreSQL in <10ms, registers newly referenced images via `MediaAssetService`, updates `wiki_links`, and purges Cloudflare edge caches.
 3. **High-Performance Native Reader**:
-   - `contentHtml` is served when present, but saves currently store it empty, so the next read renders through MediaWiki `action=parse` (PHP). The native ParserFunctions evaluator (`core/parser-functions.ts`) is exercised only by tests.
+   - `contentHtml` is served when present, but saves currently store it empty, so the next read renders through MediaWiki `action=parse` (PHP). The native ParserFunctions evaluator (`core/parser-functions.ts`, exercised only by tests, with inaccurate `#expr` and `#time`) was deleted in plan 415: MediaWiki's own ParserFunctions run in the private render engine.
 4. **Sister-Wiki Federation**:
    - Direct HTTP adapters (`http-reader.ts`) connect to external wikis (`iiwiki`, `althistory`) with a circuit breaker and parallel search dispatch. Their pages open read-only via `/wiki/[slug]?source=…` (Sept 2026).
 5. **Direct-edit capture**:

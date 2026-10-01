@@ -42,8 +42,6 @@ export const env = createEnv({
     ENABLE_COMPRESSION: z.string().optional().default("true"),
     ENABLE_CACHING: z.string().optional().default("true"),
     CACHE_TTL_SECONDS: z.string().optional().default("3600"),
-    // IxWiki Local Path (for same-server optimization)
-    IXWIKI_LOCAL_PATH: z.string().optional(),
     // Admin contact email (used in API User-Agents for external services)
     ADMIN_EMAIL: z.string().email().optional(),
     // NationStates verification secret (required for NS nation verification)
@@ -53,14 +51,6 @@ export const env = createEnv({
     XENFORO_API_URL: z.string().url().optional().default("https://forum.ixwiki.com/api"),
     // HMAC key for forum account verification codes (falls back to CRON_SECRET when unset)
     FORUM_VERIFICATION_SECRET: z.string().optional(),
-    // IxWiki MySQL direct access (for wiki-bridge.ts read queries)
-    IXWIKI_DB_HOST: z.string().optional().default("localhost"),
-    IXWIKI_DB_PORT: z.coerce.number().optional().default(3306),
-    IXWIKI_DB_USER: z.string().optional().default("ixwiki"),
-    IXWIKI_DB_PASSWORD: z.string().optional(),
-    IXWIKI_DB_NAME: z.string().optional().default("ixwiki"),
-    // IxWiki image base URL (for file/image serving)
-    IXWIKI_IMAGE_BASE_URL: z.string().optional().default("https://ixwiki.com/images"),
     // Server port
     PORT: z.string().optional().default("3550"),
     // Vercel URL (auto-set by Vercel)
@@ -161,8 +151,8 @@ export const env = createEnv({
     NEXT_PUBLIC_BASE_PATH: z.string().optional().default(""),
     // If you need the bot URL on the client side for direct API calls:
     NEXT_PUBLIC_IXTIME_BOT_URL: z.string().url().optional().default("http://localhost:3001"),
-    // MediaWiki API URL for country data and flags
-    NEXT_PUBLIC_MEDIAWIKI_URL: z.string().url().optional().default("https://ixwiki.com/"),
+    // Public origin of the wiki; `src/lib/wiki-os/config.ts` owns the default and every reader of it
+    NEXT_PUBLIC_MEDIAWIKI_URL: z.string().url().optional(),
     // Clerk Authentication Configuration (Client-side) - Required in production
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NODE_ENV === "production"
@@ -227,8 +217,6 @@ export const env = createEnv({
     ENABLE_COMPRESSION: process.env.ENABLE_COMPRESSION,
     ENABLE_CACHING: process.env.ENABLE_CACHING,
     CACHE_TTL_SECONDS: process.env.CACHE_TTL_SECONDS,
-    // IxWiki Local Path
-    IXWIKI_LOCAL_PATH: process.env.IXWIKI_LOCAL_PATH,
     // Admin Email
     ADMIN_EMAIL: process.env.ADMIN_EMAIL,
     // NationStates
@@ -237,13 +225,6 @@ export const env = createEnv({
     XENFORO_API_KEY: process.env.XENFORO_API_KEY,
     XENFORO_API_URL: process.env.XENFORO_API_URL,
     FORUM_VERIFICATION_SECRET: process.env.FORUM_VERIFICATION_SECRET,
-    // IxWiki MySQL
-    IXWIKI_DB_HOST: process.env.IXWIKI_DB_HOST,
-    IXWIKI_DB_PORT: process.env.IXWIKI_DB_PORT,
-    IXWIKI_DB_USER: process.env.IXWIKI_DB_USER,
-    IXWIKI_DB_PASSWORD: process.env.IXWIKI_DB_PASSWORD,
-    IXWIKI_DB_NAME: process.env.IXWIKI_DB_NAME,
-    IXWIKI_IMAGE_BASE_URL: process.env.IXWIKI_IMAGE_BASE_URL,
     NEXT_PUBLIC_GIPHY_API_KEY: process.env.NEXT_PUBLIC_GIPHY_API_KEY,
     // Server
     PORT: process.env.PORT,

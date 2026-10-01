@@ -124,7 +124,7 @@ RATE_LIMIT_ENABLED=false
 | `IXTIME_BOT_URL` | Internal IxTime bot endpoint |
 | `IXTIME_BOT_SECRET` | Secret the Discord bot sends to `/api/ixtime/sync-from-bot` (**required in production**) |
 | `BOT_API_KEY` | Key the Discord bot sends to `/api/bot/lorewards/sync` |
-| `IXWIKI_LOCAL_PATH`, `IXWIKI_DB_*`, `WIKIOS_MEDIAWIKI_*` | MediaWiki integration targets |
+| `WIKIOS_MEDIAWIKI_*` | MediaWiki integration targets (`INTERNAL_URL`: the loopback render engine; `API`, `BOT_USER`, `BOT_TOKEN`: the mirror), all read through `src/lib/wiki-os/config.ts` |
 | `PORT` | HTTP server port (3550 production default, 3000 dev) |
 | `WS_BACKEND_PORT` | Port for `ws-backend.mjs` (default 3551; read directly, not in `src/env.ts`) |
 | `RATE_LIMIT_ENABLED`, `RATE_LIMIT_MAX_REQUESTS`, `RATE_LIMIT_WINDOW_MS` | Rate limiter toggle (default `"true"`) and default window; see [`rate-limiting.md`](rate-limiting.md) |
@@ -146,7 +146,7 @@ RATE_LIMIT_ENABLED=false
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk public key for authentication widgets (**required in production**) |
 | `NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS` | UI toggle for experimental intelligence tips |
 | `NEXT_PUBLIC_IXTIME_BOT_URL` | Browser-accessible IxTime endpoint |
-| `NEXT_PUBLIC_MEDIAWIKI_URL` | Public wiki URL for builder imports |
+| `NEXT_PUBLIC_MEDIAWIKI_URL` | The wiki's public origin (default `https://ixwiki.com`); every link, image URL and sitemap entry WikiOS builds for it comes from `src/lib/wiki-os/config.ts` |
 | `NEXT_PUBLIC_ENABLE_WEBSOCKET`, `NEXT_PUBLIC_WS_PORT` | ThinkPages WebSocket client configuration |
 | `NEXT_PUBLIC_IXWORLD_STANDALONE` | `"true"` for the IxWorld standalone build (empty base path) |
 

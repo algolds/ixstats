@@ -189,7 +189,7 @@ configuration object, never from a literal:
 
 Never on a request path: `scripts/sync-ixwiki-live.ts`, `scripts/sync-ixwiki-media.ts`, `scripts/wikios-fetch-export.ts` (with
 `src/lib/wiki-os/xml/fetch-dump.ts`: an export-0.11 dump through the Action API), `scripts/wikios-import-rights.ts`,
-`scripts/audit/*` and `scripts/audit-wikios-parity.ts` (parity audits against live MediaWiki), `scripts/bench/wikios-bench.ts`,
+`scripts/audit/*` (parity audits against live MediaWiki), `scripts/bench/wikios-bench.ts`,
 `scripts/ops/verify-wikios-takeover.ts`, `scripts/deployment/*`, and the archived migrations under `scripts/archive/`.
 
 ## 4. What plan 418 moved to Postgres
