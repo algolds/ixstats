@@ -102,7 +102,11 @@ async function runJob(job: Job): Promise<void> {
     } catch {
       threw = true; // a refusal (too large, malformed) is an answer; how fast it came is what counts
     }
-    return { ms: performance.now() - began, threw };
+    const ms = performance.now() - began;
+    // jsdom keeps every DOM it built alive until the end of the macrotask: yield, so that the next call does not
+    // run in the heap of this one
+    await new Promise((resolve) => setImmediate(resolve));
+    return { ms, threw };
   };
 
   await timed("<p>{{a}} [[b]] 'c'</p>"); // what a function sets up on its first call (a DOM, a table) is not what is measured

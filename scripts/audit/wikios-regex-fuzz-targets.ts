@@ -552,7 +552,7 @@ export const TARGETS: readonly Target[] = [
       maxChars: 500_000,
       scale: 0.5, // the depth guard parses the page once more than the DOM does, and at 200 KB the gate's heap (garbage of a hundred families) made that parse ten times slower and sometimes ran out of memory: half the size
       slowFactor: 20,
-      why: "jsdom builds a DOM at a few microseconds an element in Bun and about 20 in Node: 200,000 characters of one-character elements (`<br>`) take a second in the Jest gate on a quiet machine and two under contention, so it is allowed 20 times the budget: the DOM is the work",
+      why: "jsdom builds a DOM at a few microseconds an element in Bun and about 20 in Node: 200,000 characters of one-character elements (`<br>`) take a second in the Jest gate on a quiet machine and two under contention, and the depth guard parses the same page once more (parse5, as jsdom does): at the gate's 100 KB the worst families (`<a>`, `<p>`, `<li>`) take 1.8 to 2.3 s, which fails the 12 times allowance (1.8 s) in the gate, so it is allowed 20 times the budget: the DOM and its parse are the work",
     }
   ),
   wikitext("transformers/url-compat#titleToWikiOSPath", async () => {
@@ -792,7 +792,7 @@ export const TARGETS: readonly Target[] = [
       maxChars: 200_000,
       scale: 0.5, // as for slimArticleHtml above: the guard's parse, and the heap of the gate
       slowFactor: 20,
-      why: "DOMPurify builds a DOM, about 2.6 microseconds a character in Bun and about 5 in Node on a page of one-character elements (a second at the run's 200,000, two under contention): the DOM is the work. Elements that share an id are quadratic (jsdom's named properties: 29,000 `<h2 id=\"a\">` took 4.3 s), which is why the run stops at 200,000 characters; its depth is bounded (past 400 the source is shown escaped)",
+      why: "DOMPurify builds a DOM, about 2.6 microseconds a character in Bun and about 5 in Node on a page of one-character elements (and the depth guard parses the page once more: `<a>` takes 2.3 s at the gate's 100 KB, which fails a 12 times allowance): the DOM and its parse are the work. Elements that share an id are quadratic (jsdom's named properties: 29,000 `<h2 id=\"a\">` took 4.3 s), which is why the run stops at 200,000 characters; its depth is bounded (past 400 the source is shown escaped)",
     }
   ),
 
@@ -818,7 +818,7 @@ export const TARGETS: readonly Target[] = [
       maxChars: 499_900,
       scale: 0.5, // as for slimArticleHtml above
       slowFactor: 20,
-      why: "jsdom builds a DOM at a few microseconds an element in Bun and about 20 in Node: 200,000 characters of one-character elements (`<br>`) take a second in the Jest gate on a quiet machine and two under contention, so it is allowed 20 times the budget: the DOM is the work",
+      why: "jsdom builds a DOM at a few microseconds an element in Bun and about 20 in Node: 200,000 characters of one-character elements (`<br>`) take a second in the Jest gate on a quiet machine and two under contention, and the depth guard parses the same page once more (parse5, as jsdom does): at the gate's 100 KB the worst families (`<a>`, `<p>`, `<li>`) take 1.8 to 2.3 s, which fails the 12 times allowance (1.8 s) in the gate, so it is allowed 20 times the budget: the DOM and its parse are the work",
     }
   ),
   html("templates/chip-markers#chipKeysIn", async () => {

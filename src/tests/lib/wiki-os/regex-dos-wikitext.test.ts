@@ -889,7 +889,7 @@ describe("line-patterns: scanned, they answer what the expressions answered", ()
 });
 
 describe("match-index: an opener the pass did not reach is scanned for, within a budget", () => {
-  it("answers what a scan answers, inside a comment and after one that never closes", () => {
+  it("answers what a scan answers within the budget, inside a comment and after one that never closes", () => {
     const TOKENS = ["[[", "]]", "{{", "}}", "<!--", "-->", "a", " ", "[", "]"];
     for (const text of randomTexts(TOKENS, 20_000, 9, 14)) {
       for (const [open, build, scan] of [

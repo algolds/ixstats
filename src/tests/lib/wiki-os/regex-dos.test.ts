@@ -29,7 +29,11 @@ async function time(call: Call, input: string): Promise<number> {
   } catch {
     // too large, malformed: how fast it said so is what counts
   }
-  return performance.now() - began;
+  const ms = performance.now() - began;
+  // jsdom keeps every DOM it built alive until the end of the macrotask (about 1.6 GB across the sanitizer's
+  // families): yield, so that the next call does not run in the heap of this one
+  await new Promise((resolve) => setImmediate(resolve));
+  return ms;
 }
 
 /** The best of two runs when the first is over the budget (a busy machine), else the first. */
