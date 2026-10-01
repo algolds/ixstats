@@ -29,6 +29,8 @@ import {
   nestsTooDeep,
 } from "~/lib/wiki-os/transformers/inert-dom";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
+import { scopeTemplateStyles } from "~/lib/utils/scope-template-styles";
+import { scopeTemplateStyles as legacyScopeTemplateStyles } from "./legacy/scope-template-styles";
 import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
 import { mapSrcsetUrls } from "~/lib/wiki-os/transformers/srcset";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
@@ -743,5 +745,70 @@ describe("mapSrcsetUrls answers what it answered", () => {
       `<a${",".repeat(200_000)}x> 1x`
     );
     expect(performance.now() - started).toBeLessThan(500); // the expression took 3 s on this
+  });
+});
+
+// ---- scope-template-styles: the masked sheet is built from pieces ----------------------------------------------
+
+describe("scopeTemplateStyles answers what it answered", () => {
+  const TOKENS = [
+    ".a",
+    ".b,.c",
+    "{",
+    "}",
+    ";",
+    ":",
+    "color:red",
+    "background:url(a.png)",
+    "background:url( 'b.png' )",
+    "background:url(//evil/x)",
+    "u\\72l(x)",
+    "\\75rl(y)",
+    "url(",
+    "url(a b)",
+    'url(a"b)',
+    "xurl(c)",
+    "-url(d)",
+    "@import ",
+    "@media screen{",
+    "@media (min-width:1px){",
+    "@font-face{",
+    "/* c */",
+    "/*",
+    "*/",
+    '"s"',
+    "'t'",
+    '"',
+    "'",
+    "\\",
+    "(",
+    ")",
+    "[",
+    "]",
+    "calc(",
+    ".x:is(.y)",
+    "expression(z)",
+    "behavior:x",
+    "\u0000",
+    " ",
+    "\n",
+  ];
+  it("on random sheets of rules, urls and escapes", () => {
+    const sheets = [...randomTexts(TOKENS, 40_000, 111, 16)];
+    expect(
+      disagreements(
+        sheets,
+        (css) => scopeTemplateStyles(css, "https://ixwiki.com"),
+        (css) => legacyScopeTemplateStyles(css, "https://ixwiki.com")
+      )
+    ).toEqual([]);
+  });
+
+  it("takes time linear in the parentheses of a sheet", () => {
+    const started = performance.now();
+    for (const css of ["(".repeat(190_000), "calc(".repeat(38_000), ".a:is(".repeat(31_000)]) {
+      scopeTemplateStyles(css, "https://ixwiki.com");
+    }
+    expect(performance.now() - started).toBeLessThan(1_000); // the first took 5.9 s
   });
 });

@@ -1,3 +1,6 @@
+// The TemplateStyles scoper as the integration branch has it (515ca3c72), before the regex-DoS sweep (plan F15), verbatim:
+// regex-dos-html.test.ts holds the sheet built from pieces against it. Not used by any code.
+
 /**
  * scope-template-styles.ts: what survives of a TemplateStyles `<style>` block inside a WikiOS article
  * (plan 415, COMPAT-10).
@@ -107,9 +110,9 @@ function escapeEnd(css: string, i: number): number {
   return CSS_SPACE.test(css.charAt(end)) ? end + 1 : end;
 }
 
-/** Whether `tail` (the last 256 characters of the masked sheet) ends in the function name `url` (escapes resolved: `\75 rl` is `url`, `xurl` and `-url` are not). */
-function endsWithUrlName(tail: string): boolean {
-  return /(?:^|[^a-z0-9_\-\u0080-\uffff])url$/i.test(unescapeCss(tail));
+/** Whether `masked` ends in the function name `url` (escapes resolved: `\75 rl` is `url`, `xurl` and `-url` are not). */
+function endsWithUrlName(masked: string): boolean {
+  return /(?:^|[^a-z0-9_\-\u0080-\uffff])url$/i.test(unescapeCss(masked.slice(-256)));
 }
 
 /**
@@ -147,41 +150,34 @@ function isBadUrl(css: string, start: number): boolean {
 
 function lex(css: string): Lexed | null {
   const strings: string[] = [];
-  const masked: string[] = [];
-  // The end of the masked sheet, kept as it grows (the end of a string built by `+=` cannot be sliced without flattening all of it).
-  let tail = "";
-  const keep = (piece: string) => {
-    masked.push(piece);
-    tail += piece;
-    if (tail.length > 512) tail = tail.slice(-256);
-  };
+  let masked = "";
   let i = 0;
   while (i < css.length) {
     const ch = css.charAt(i);
     if (ch === "\\") {
-      keep(css.slice(i, i + 2));
+      masked += css.slice(i, i + 2);
       i += 2;
     } else if (ch === "/" && css.charAt(i + 1) === "*") {
       const end = css.indexOf("*/", i + 2);
       if (end === -1) break; // an unterminated comment runs to the end of the sheet
-      keep(" ");
+      masked += " ";
       i = end + 2;
     } else if (ch === "(") {
-      if (endsWithUrlName(tail.slice(-256)) && isBadUrl(css, i + 1)) return null;
-      keep(ch);
+      if (endsWithUrlName(masked) && isBadUrl(css, i + 1)) return null;
+      masked += ch;
       i++;
     } else if (ch === '"' || ch === "'") {
       const end = endOfString(css, i);
       if (end === -1) return null;
       strings.push(css.slice(i, end + 1));
-      keep(`${STRING_OPEN}${strings.length - 1}${STRING_CLOSE}`);
+      masked += `${STRING_OPEN}${strings.length - 1}${STRING_CLOSE}`;
       i = end + 1;
     } else {
-      keep(ch);
+      masked += ch;
       i++;
     }
   }
-  return { masked: masked.join(""), strings };
+  return { masked, strings };
 }
 
 function inflate(text: string, strings: readonly string[]): string {

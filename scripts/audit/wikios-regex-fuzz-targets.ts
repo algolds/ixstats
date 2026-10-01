@@ -797,7 +797,13 @@ export const TARGETS: readonly Target[] = [
   // ---- templates/ ------------------------------------------------------------------------------
   html("templates/chip-markers#markTemplateChips", async () => {
     const m = await import("~/lib/wiki-os/templates/chip-markers");
-    return (s) => m.markTemplateChips(s);
+    const { DOM_SIZE_CEILING } = await import("~/lib/wiki-os/transformers/inert-dom");
+    // A page over the size ceiling is left alone, without a DOM: the text is padded to be one (the ceiling run below
+    // builds the DOM, as slimArticleHtml's does).
+    return (s) =>
+      m.markTemplateChips(
+        s.length > DOM_SIZE_CEILING ? s : s + " ".repeat(DOM_SIZE_CEILING + 1 - s.length)
+      );
   }),
   html(
     "templates/chip-markers#markTemplateChips@ceiling",
@@ -893,10 +899,18 @@ export const TARGETS: readonly Target[] = [
     const m = await import("~/lib/wiki-os/core/file-hash");
     return (s) => [m.isFileHash(s), m.sha1Base36ToHex(s.slice(0, 30))];
   }),
-  css("utils/scope-template-styles#scopeTemplateStyles", async () => {
-    const m = await import("~/lib/utils/scope-template-styles");
-    return (s) => m.scopeTemplateStyles(s, "https://ixwiki.com");
-  }),
+  css(
+    "utils/scope-template-styles#scopeTemplateStyles",
+    async () => {
+      const m = await import("~/lib/utils/scope-template-styles");
+      return (s) => m.scopeTemplateStyles(s, "https://ixwiki.com");
+    },
+    {
+      // A sheet over MAX_CSS_LENGTH (200,000) is dropped at once: this is the most it reads.
+      maxChars: 200_000,
+      why: "its own MAX_CSS_LENGTH guard",
+    }
+  ),
   css("utils/scope-template-styles#cssIdentifiers", async () => {
     const m = await import("~/lib/utils/scope-template-styles");
     return (s) => m.cssIdentifiers(s);
