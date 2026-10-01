@@ -106,6 +106,25 @@ describe("action=parse", () => {
     expect(((await call(wiki.deps, "action=parse&page=Alpha&prop=text&formatversion=2")).body as Body).parse.text).toBe("<p>stored html of Alpha</p>");
   });
 
+  it("answers renderunavailable, never the compiler's output, when the private renderer fails", async () => {
+    const down = { renderWikitext: async () => null, ensureRendered: async () => undefined };
+    const wiki = await makeWikiDeps(data(), { services: down });
+    await loggedIn(wiki.bot);
+    // bot text=
+    const text = (await wiki.bot.get({ action: "parse", text: "[[".repeat(1000), prop: "text", formatversion: "2" })) as Body;
+    expect(text.error.code).toBe("renderunavailable");
+    // anonymous oldid=
+    const old = (await call(wiki.deps, "action=parse&oldid=11&prop=text&formatversion=2")).body as Body;
+    expect(old.error.code).toBe("renderunavailable");
+    // a stale page whose render failed and that has no stored rendering
+    const stale = (await call(wiki.deps, "action=parse&page=Stale&prop=text&formatversion=2")).body as Body;
+    expect(stale.error.code).toBe("renderunavailable");
+    // props that need no rendering still work
+    expect(((await call(wiki.deps, "action=parse&oldid=11&prop=wikitext|revid&formatversion=2")).body as Body).parse.revid).toBe(11);
+    // an empty text is empty html, with no renderer call
+    expect((await runBot("action=parse&text=%20&prop=text")).body.parse.text).toBe("");
+  });
+
   it("renders an old revision", async () => {
     const { body, calls } = await run("action=parse&oldid=11&prop=text|revid|wikitext");
     expect(body.parse).toMatchObject({ title: "Alpha", pageid: 1, revid: 11, wikitext: "old text" });

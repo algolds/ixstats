@@ -5,7 +5,7 @@
 
 import { rateLimiter } from "~/lib/cache/rate-limiter";
 import { getWikiBaseUrl } from "~/lib/wiki-os/config";
-import { wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
+import { renderArticleViaMediaWiki } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { detectEditConflict } from "~/lib/wiki-os/core/edit-conflict";
 import { NativeSearchService } from "~/lib/wiki-os/core/native-search-service";
 import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
@@ -45,7 +45,7 @@ const search: SearchFn = async (query, what, limit, offset) => {
 const RENDER_WAIT_MS = 6_000;
 
 const services: ApiServices = {
-  renderWikitext: wikitextToHtml,
+  renderWikitext: renderArticleViaMediaWiki,
   purgePage: purgeArticle,
   ensureRendered: async (articleId) => {
     await ensureRendered(articleId, { waitMs: RENDER_WAIT_MS });

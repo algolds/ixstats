@@ -210,6 +210,10 @@ function sectionEntries(source: Source, p: ApiParams): JsonObject[] {
   });
 }
 
+/** The private renderer (MediaWiki) did not answer; the in-process compiler is never used in its place. */
+const renderUnavailable = () =>
+  new ApiError("renderunavailable", "The renderer is not available just now; try again shortly.");
+
 /** The stored rendering, else one made now: by the render service for a page, by MediaWiki for text and old revisions. */
 async function html(rc: ApiContext, source: Source): Promise<string> {
   if (source.storedHtml) return source.storedHtml;
@@ -218,7 +222,7 @@ async function html(rc: ApiContext, source: Source): Promise<string> {
     await services.ensureRendered(source.articleId);
     const stored = await store.pageHtml(source.articleId);
     if (stored?.html) return stored.html;
-    throw new ApiError("renderfailed", "The page could not be rendered just now; try again shortly.");
+    throw renderUnavailable();
   }
   if (rc.session.kind !== "bot") {
     const limit = await rc.deps.rateLimit(rc.clientKey, "wiki_api_render", {
@@ -227,7 +231,10 @@ async function html(rc: ApiContext, source: Source): Promise<string> {
     });
     if (!limit.success) throw new ApiError("ratelimited", "You've exceeded your rate limit. Please wait some time and try again.");
   }
-  return services.renderWikitext(source.wikitext, source.title);
+  if (source.wikitext.trim() === "") return "";
+  const rendered = await services.renderWikitext(source.wikitext, source.title);
+  if (rendered === null) throw renderUnavailable();
+  return rendered;
 }
 
 async function propValue(rc: ApiContext, p: ApiParams, source: Source, prop: ParseProp): Promise<JsonValue> {

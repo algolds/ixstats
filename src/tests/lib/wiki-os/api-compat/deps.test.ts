@@ -2,7 +2,8 @@
 /** Plan 410: createApiDeps binds each api.php service to the function the tRPC routers call. */
 jest.mock("~/server/db", () => ({ __esModule: true, db: { wikiArticle: { findMany: jest.fn() } } }));
 jest.mock("~/lib/cache/rate-limiter", () => ({ rateLimiter: { check: jest.fn().mockResolvedValue({ success: true, resetAt: new Date(0) }) } }));
-jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({ __esModule: true, wikitextToHtml: jest.fn() }));
+jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({ __esModule: true, renderArticleViaMediaWiki: jest.fn(), wikitextToHtml: jest.fn() }));
+jest.mock("~/lib/wiki-os/transformers/wikitext-parser", () => ({ __esModule: true, parseWikitextToHtml: jest.fn(() => "COMPILED") }));
 jest.mock("~/lib/wiki-os/core/edit-conflict", () => ({ __esModule: true, detectEditConflict: jest.fn() }));
 jest.mock("~/lib/wiki-os/core/native-search-service", () => ({
   __esModule: true,
@@ -35,7 +36,9 @@ jest.mock("~/lib/wiki-os/services/edit-service", () => ({
 
 import { db } from "~/server/db";
 import { createApiDeps } from "~/lib/wiki-os/api-compat/deps";
+import { renderArticleViaMediaWiki, wikitextToHtml } from "~/lib/wiki-os/adapters/mediawiki/parsoid";
 import { detectEditConflict } from "~/lib/wiki-os/core/edit-conflict";
+import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { NativeSearchService } from "~/lib/wiki-os/core/native-search-service";
 import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
 import { RightsAdminService } from "~/lib/wiki-os/core/rights-admin-service";
@@ -61,6 +64,15 @@ describe("createApiDeps", () => {
     expect(commitWikitextSave).toHaveBeenCalledWith(ctx, save);
     await deps.services.assertCanEdit(ctx, "Alpha");
     expect(assertCanEditArticle).toHaveBeenCalledWith(ctx, "Alpha");
+  });
+
+  it("renders text through the private renderer only: null when it fails, never the in-process compiler", async () => {
+    jest.mocked(renderArticleViaMediaWiki).mockResolvedValueOnce("<p>x</p>").mockResolvedValueOnce(null);
+    expect(await deps.services.renderWikitext("x", "Alpha")).toBe("<p>x</p>");
+    expect(await deps.services.renderWikitext("[[".repeat(10), "Alpha")).toBeNull();
+    expect(renderArticleViaMediaWiki).toHaveBeenCalledWith("x", "Alpha");
+    expect(wikitextToHtml).not.toHaveBeenCalled();
+    expect(parseWikitextToHtml).not.toHaveBeenCalled();
   });
 
   it("authorizes through the permission functions", async () => {
