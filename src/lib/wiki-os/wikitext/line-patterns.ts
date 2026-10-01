@@ -65,8 +65,8 @@ export function matchHeading(
 
 const isSpaceOrTab = (code: number): boolean => code === 32 || code === 9;
 
-/** A letter, a digit or an underscore. */
-const isWordCode = (code: number): boolean =>
+/** A letter, a digit or an underscore: what `\w` matches. */
+export const isWordCode = (code: number): boolean =>
   code === 95 ||
   (code >= 48 && code <= 57) ||
   (code >= 65 && code <= 90) ||

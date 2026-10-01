@@ -30,6 +30,7 @@ import {
 } from "~/lib/wiki-os/transformers/inert-dom";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
+import { mapSrcsetUrls } from "~/lib/wiki-os/transformers/srcset";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { slimArticleHtml } from "~/lib/wiki-os/transformers/slim-html";
 import { slimArticleHtml as legacySlimArticleHtml } from "./legacy/slim-html";
@@ -243,6 +244,13 @@ const ARTICLE_TOKENS = [
   '<a href="/index.php?title=Special:Upload&wpDestFile=A.png">',
   "</a>",
   '<a class="new" href="/load.php">',
+  '<a href="/index.php?title=Foo&action=edit&redlink=1" title="Foo (page does not exist)">',
+  '<abbr href="/index.php?title=Foo&amp;action=edit&amp;redlink=1">',
+  '<a_ href="/index.php?title=Bar&action=edit&redlink=1">',
+  '<A href="/index.php?title=Baz&action=edit&redlink=1">',
+  "<a",
+  "<a>",
+  ">",
   "<p>",
   "</p>",
   "text ",
@@ -674,5 +682,66 @@ describe("sanitizeWikiArticleHtml bounds the depth it sanitizes", () => {
     expect(performance.now() - started).toBeLessThan(500); // 12,000 levels took 20 s
     expect(shown.startsWith('<pre class="wikios-fallback-plain">&lt;s&gt;&lt;s&gt;')).toBe(true);
     expect(shown).not.toMatch(/<s>|<script/);
+  });
+});
+
+// ---- srcset: the commas that end a URL are trimmed by a loop ---------------------------------------------------
+
+describe("mapSrcsetUrls answers what it answered", () => {
+  /** `mapSrcsetUrls` as the integration branch had it: the commas that end a token cut by `/,+$/`. */
+  function legacyMapSrcsetUrls(srcset: string, map: (url: string) => string): string {
+    const SPACE = /\s/;
+    let out = "";
+    let i = 0;
+    while (i < srcset.length) {
+      const gapStart = i;
+      while (i < srcset.length && (SPACE.test(srcset.charAt(i)) || srcset.charAt(i) === ",")) i++;
+      out += srcset.slice(gapStart, i);
+      if (i >= srcset.length) break;
+      const urlStart = i;
+      while (i < srcset.length && !SPACE.test(srcset.charAt(i))) i++;
+      const token = srcset.slice(urlStart, i);
+      const url = token.replace(/,+$/, "");
+      out += map(url) + token.slice(url.length);
+      if (url.length !== token.length) continue;
+      const descriptorStart = i;
+      while (i < srcset.length && srcset.charAt(i) !== ",") i++;
+      out += srcset.slice(descriptorStart, i);
+    }
+    return out;
+  }
+  const TOKENS = [
+    "/images/a.png",
+    "a,b.png",
+    " ",
+    "\n",
+    "\t",
+    ",",
+    ",,",
+    "1x",
+    "2.5x",
+    "100w",
+    "http://a/b",
+    "x",
+  ];
+  const mapped = (url: string) => `<${url}>`;
+
+  it("on random srcsets", () => {
+    const texts = [...randomTexts(TOKENS, 30_000, 91, 12)];
+    expect(
+      disagreements(
+        texts,
+        (text) => mapSrcsetUrls(text, mapped),
+        (text) => legacyMapSrcsetUrls(text, mapped)
+      )
+    ).toEqual([]);
+  });
+
+  it("takes time linear in a run of commas that does not end its token", () => {
+    const started = performance.now();
+    expect(mapSrcsetUrls(`a${",".repeat(200_000)}x 1x`, mapped)).toBe(
+      `<a${",".repeat(200_000)}x> 1x`
+    );
+    expect(performance.now() - started).toBeLessThan(500); // the expression took 3 s on this
   });
 });

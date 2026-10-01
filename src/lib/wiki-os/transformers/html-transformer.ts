@@ -13,6 +13,7 @@ import {
 } from "~/lib/wiki-os/config";
 import { skipBlanks } from "../wikitext/blank";
 import { forwardFinder, forwardSearch } from "../wikitext/forward-finder";
+import { isWordCode } from "../wikitext/line-patterns";
 import { stripHtmlTags } from "./clean-markup-passes";
 import {
   TAG_BODY,
@@ -100,7 +101,6 @@ const DEDUPLICATED_STYLE: BlockSpec = {
 const WIKI_LINK_HREF_REGEX = /href="\/wiki\/([^"]*?)"/gu;
 const INDEX_PHP_HREF_REGEX = /href="\/index\.php\?([^"]*)"/gu;
 const INDEX_PHP_HREF_ONCE_REGEX = /href="\/index\.php\?([^"]*)"/u;
-const ANCHOR_TAG_REGEX = /<a\b[^>]*>/gu;
 /** MediaWiki's tooltip of a red link: redundant, since the link is red and WikiOS opens the editor. */
 const MISSING_PAGE_TITLE_REGEX = /\s+title="[^"]*\(page does not exist\)"/u;
 const CLASS_NEW_REGEX = /class="new"/gu;
@@ -417,6 +417,31 @@ function transformLinks(html: string, basePath: string, wikiSource: WikiSource):
     : transformSourceWikiLinks(html, basePath, wikiSource);
 }
 
+/**
+ * `html` with each opening anchor tag (`<a`, then not a letter, digit or underscore, and up to the first `>`) replaced by
+ * `change(tag)`: what `html.replace(/<a\b[^>]*>/gu, change)` does, with the first `>` after each opener found by one
+ * memoized search (a page of `<a href="` that never close is one scan, not one per opener). A `<a` with no `>` after it
+ * is no tag, and nor is any later one.
+ */
+function replaceAnchorTags(html: string, change: (tag: string) => string): string {
+  const nextGreater = forwardFinder(html, ">");
+  const pieces: string[] = [];
+  let copied = 0;
+  for (let at = html.indexOf("<a"); at !== -1;) {
+    if (isWordCode(html.charCodeAt(at + 2))) {
+      at = html.indexOf("<a", at + 2); // `<abbr`
+      continue;
+    }
+    const end = nextGreater(at + 2);
+    if (end === -1) break;
+    pieces.push(html.slice(copied, at), change(html.slice(at, end + 1)));
+    copied = end + 1;
+    at = html.indexOf("<a", copied);
+  }
+  pieces.push(html.slice(copied));
+  return pieces.join("");
+}
+
 function transformIxWikiLinks(html: string, basePath: string): string {
   const origin = mediaWikiOrigin();
 
@@ -435,7 +460,7 @@ function transformIxWikiLinks(html: string, basePath: string): string {
 
   // 2. A red link opens WikiOS's own editor, as a relative link: not MediaWiki's index.php (about 190 bytes
   // a link, and a trip to the classic wiki). Its tooltip repeats what the red already says.
-  result = result.replace(ANCHOR_TAG_REGEX, (tag) => redLinkToWikiOS(tag, basePath));
+  result = replaceAnchorTags(result, (tag) => redLinkToWikiOS(tag, basePath));
 
   // 3. Transform the other index.php links with noreferrer
   result = result.replace(
@@ -504,7 +529,8 @@ function transformSourceWikiLinks(html: string, basePath: string, wikiSource: Wi
  * left exactly as it is: it is never prefixed a second time.
  */
 function absoluteIxWikiSrcsetUrl(url: string, origin: string): string {
-  if (LEGACY_ORIGIN_START_REGEX.test(url)) return url.replace(LEGACY_ORIGIN_START_REGEX, `${origin}/`);
+  if (LEGACY_ORIGIN_START_REGEX.test(url))
+    return url.replace(LEGACY_ORIGIN_START_REGEX, `${origin}/`);
   if (url.startsWith("/images/") || url.startsWith("/data/")) return `${origin}${url}`;
   if (url.startsWith("/thumb/")) return `${origin}/images${url}`;
   return url;
@@ -512,7 +538,8 @@ function absoluteIxWikiSrcsetUrl(url: string, origin: string): string {
 
 /** One `srcset` candidate URL of another wiki's page: its files go through that wiki's media proxy; the rest is untouched. */
 function proxiedSourceSrcsetUrl(url: string, proxyBase: string): string {
-  if (SISTER_FILE_URL_REGEX.test(url)) return url.replace(SISTER_FILE_URL_REGEX, `${proxyBase}/images/`);
+  if (SISTER_FILE_URL_REGEX.test(url))
+    return url.replace(SISTER_FILE_URL_REGEX, `${proxyBase}/images/`);
   if (url.startsWith("/images/") || url.startsWith("/data/")) return `${proxyBase}${url}`;
   if (url.startsWith("/thumb/")) return `${proxyBase}/images${url}`;
   return url;
