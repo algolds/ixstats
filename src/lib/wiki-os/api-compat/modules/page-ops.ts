@@ -9,9 +9,16 @@
 
 import { ApiError, badValue, invalidTitle, missingParam } from "../errors";
 import { mwTimestamp, type JsonObject } from "../format";
-import type { ApiParams } from "../params";
 import type { ApiContext } from "../types";
-import { actorOf, beginWrite, namedPage, withPageCodes } from "./write-common";
+import {
+  actorOf,
+  checkToken,
+  requireBotSession,
+  cleanComment,
+  readPageRef,
+  resolvePage,
+  withPageCodes,
+} from "./write-common";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { parseMWDateObject } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
@@ -21,27 +28,37 @@ import type { RestrictionChange } from "~/lib/wiki-os/core/rights-admin-service"
 // delete, undelete
 // ---------------------------------------------------------------------------
 
+/** The id of the newest log entry of `type` about `title` by `actor`: the one the operation just wrote. */
+async function loggedId(rc: ApiContext, type: string, title: string, actor: string): Promise<number | undefined> {
+  const [entry] = await rc.deps.store.findLogs({ type, title, user: actor, dir: "older", limit: 1 });
+  return entry?.logId;
+}
+
 export async function runDelete(rc: ApiContext): Promise<JsonObject> {
-  beginWrite(rc);
+  requireBotSession(rc);
   const p = rc.params.scope("", "delete");
-  const { title } = await namedPage(rc, p, { title: "title", id: "pageid" });
-  const reason = p.string("reason", "");
+  const ref = readPageRef(p, { title: "title", id: "pageid" });
+  const reason = cleanComment(p.string("reason", ""));
+  checkToken(rc);
+  const { title } = await resolvePage(rc, ref);
   await rc.deps.services.authorize(rc.session.ctx, "delete", title);
   // A page that is already deleted does not exist as far as MediaWiki's callers are concerned.
   await withPageCodes(rc.deps.services.archivePage(title, reason, actorOf(rc)), {
     NOT_FOUND: "missingtitle",
     CONFLICT: "missingtitle",
   });
-  return { delete: { title, reason } };
+  const logid = await loggedId(rc, "delete", title, actorOf(rc).name);
+  return { delete: { title, reason, ...(logid === undefined ? {} : { logid }) } };
 }
 
 export async function runUndelete(rc: ApiContext): Promise<JsonObject> {
-  beginWrite(rc);
+  requireBotSession(rc);
   const p = rc.params.scope("", "undelete");
   const raw = p.required("title");
+  const reason = cleanComment(p.string("reason", ""));
+  checkToken(rc);
   const canon = canonicalizeTitle(raw);
   if (!canon) throw invalidTitle(raw);
-  const reason = p.string("reason", "");
   await rc.deps.services.authorize(rc.session.ctx, "undelete", canon.title);
   const revisions = await rc.deps.store.revisionCountOf(canon.title);
   await withPageCodes(rc.deps.services.restorePage(canon.title, reason, actorOf(rc)), {
@@ -56,16 +73,20 @@ export async function runUndelete(rc: ApiContext): Promise<JsonObject> {
 // ---------------------------------------------------------------------------
 
 export async function runMove(rc: ApiContext): Promise<JsonObject> {
-  beginWrite(rc);
+  requireBotSession(rc);
   const p = rc.params.scope("", "move");
-  const from = await namedPage(rc, p, { title: "from", id: "fromid" });
+  const fromRef = readPageRef(p, { title: "from", id: "fromid" });
   const rawTo = p.required("to");
-  const to = canonicalizeTitle(rawTo);
-  if (!to) throw invalidTitle(rawTo);
-  const reason = p.string("reason", "");
+  const reason = cleanComment(p.string("reason", ""));
   const leaveRedirect = !p.flag("noredirect");
   const moveTalk = p.flag("movetalk");
-  if (p.flag("movesubpages")) p.addWarning("WikiOS does not move subpages; only the page itself moves.");
+  const moveSubpages = p.flag("movesubpages");
+  p.flag("ignorewarnings");
+  checkToken(rc);
+  const from = await resolvePage(rc, fromRef);
+  const to = canonicalizeTitle(rawTo);
+  if (!to) throw invalidTitle(rawTo);
+  if (moveSubpages) p.addWarning("WikiOS does not move subpages; only the page itself moves.");
 
   const { services } = rc.deps;
   // Moving without a redirect is a right of its own (MediaWiki's suppressredirect).
@@ -80,11 +101,13 @@ export async function runMove(rc: ApiContext): Promise<JsonObject> {
     }),
     { NOT_FOUND: "missingtitle", CONFLICT: "articleexists", BAD_REQUEST: "selfmove" }
   );
+  const logid = await loggedId(rc, "move", to.title, actorOf(rc).name);
   return {
     move: {
       from: from.title,
       to: to.title,
       reason,
+      ...(logid === undefined ? {} : { logid }),
       redirectcreated: moved.redirectArticleId !== null,
       ...(moved.talk ? { talkfrom: moved.talk.oldTitle, talkto: moved.talk.newTitle } : {}),
     },
@@ -123,10 +146,12 @@ function expiryOf(raw: string, now: Date): Date | null {
 }
 
 /** `edit=sysop|move=autoconfirmed`, with one expiry for all or one each. */
-function protectionChanges(p: ApiParams, now: Date): RestrictionChange[] {
-  const protections = p.list("protections");
+function protectionChanges(
+  protections: readonly string[],
+  expiries: readonly string[],
+  now: Date
+): RestrictionChange[] {
   if (protections.length === 0) throw missingParam("protections");
-  const expiries = p.has("expiry") ? p.list("expiry") : ["infinite"];
   if (expiries.length !== 1 && expiries.length !== protections.length) {
     throw new ApiError("toofewexpiries", `${expiries.length} expiry timestamps were provided where ${protections.length} were needed.`);
   }
@@ -147,14 +172,17 @@ function protectionChanges(p: ApiParams, now: Date): RestrictionChange[] {
 }
 
 export async function runProtect(rc: ApiContext): Promise<JsonObject> {
-  beginWrite(rc);
+  requireBotSession(rc);
   const p = rc.params.scope("", "protect");
-  const { title } = await namedPage(rc, p, { title: "title", id: "pageid" });
-  if (p.flag("cascade")) {
-    throw new ApiError("cantcascade", "Cascading protection is not supported yet.");
-  }
-  const reason = p.string("reason", "");
-  const changes = protectionChanges(p, rc.now);
+  const ref = readPageRef(p, { title: "title", id: "pageid" });
+  const protections = p.list("protections");
+  const expiries = p.has("expiry") ? p.list("expiry") : ["infinite"];
+  const cascade = p.flag("cascade");
+  const reason = cleanComment(p.string("reason", ""));
+  checkToken(rc);
+  const { title } = await resolvePage(rc, ref);
+  if (cascade) throw new ApiError("cantcascade", "Cascading protection is not supported yet.");
+  const changes = protectionChanges(protections, expiries, rc.now);
   await rc.deps.services.authorizeProtection(
     rc.session.ctx,
     title,
@@ -181,10 +209,15 @@ export async function runProtect(rc: ApiContext): Promise<JsonObject> {
 const ROLLBACK_WINDOW = 50;
 
 export async function runRollback(rc: ApiContext): Promise<JsonObject> {
-  beginWrite(rc, "rollback");
+  requireBotSession(rc);
   const p = rc.params.scope("", "rollback");
-  const { title, row } = await namedPage(rc, p, { title: "title", id: "pageid" });
-  const user = normalizeWikiUsername(p.required("user"));
+  const ref = readPageRef(p, { title: "title", id: "pageid" });
+  const rawUser = p.required("user");
+  const givenSummary = p.string("summary");
+  p.flag("markbot");
+  checkToken(rc, "rollback");
+  const { title, row } = await resolvePage(rc, ref);
+  const user = normalizeWikiUsername(rawUser);
   if (!row) throw new ApiError("missingtitle", "The page you specified doesn't exist.");
   const { services, store } = rc.deps;
   await services.authorize(rc.session.ctx, "rollback", title);
@@ -206,7 +239,7 @@ export async function runRollback(rc: ApiContext): Promise<JsonObject> {
     title: source.title,
   });
   const summary =
-    p.string("summary") ?? `Reverted edits by ${user} to last revision by ${target.user ?? "an unknown user"}`;
+    cleanComment(givenSummary ?? `Reverted edits by ${user} to last revision by ${target.user ?? "an unknown user"}`);
   const { revisionRowId } = await services.saveWikitext(rc.session.ctx, { title, wikitext, summary, minor: false });
   const saved = await store.revisionByRowId(revisionRowId);
   return {

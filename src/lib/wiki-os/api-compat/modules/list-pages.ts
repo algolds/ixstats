@@ -6,7 +6,7 @@
  */
 
 import { encodeCursor, optionalCursor, takePage } from "../continuation";
-import { ApiError, missingOneOf } from "../errors";
+import { ApiError, badContinue, badValue, missingOneOf } from "../errors";
 import type { JsonObject } from "../format";
 import { mwTimestamp } from "../format";
 import type { ApiParams } from "../params";
@@ -33,17 +33,27 @@ const underscored = (name: string) => name.replace(/ /g, "_");
 // allpages
 // ---------------------------------------------------------------------------
 
+/** A `apcontinue` value is a page name this module made; one that is no title was not. */
+function continueTitle(namespace: number, base: string): string {
+  try {
+    return titleIn(namespace, base);
+  } catch {
+    throw badContinue();
+  }
+}
+
 async function runAllPages(rc: ApiContext, p: ApiParams): Promise<ListResult> {
   const namespace = namespaceParam(p);
   const limit = p.limit("limit", { fallback: 10, high: rc.highLimits });
   const dir = directionParam(p, ["ascending", "descending"], "ascending");
-  const fromBase = p.string("continue") ?? p.string("from");
+  const continueBase = p.string("continue");
+  const fromBase = p.string("from");
   const toBase = p.string("to");
   const prefix = p.string("prefix");
 
   const rows = await rc.deps.store.listPages({
     namespace,
-    start: fromBase ? titleIn(namespace, fromBase) : undefined,
+    start: continueBase ? continueTitle(namespace, continueBase) : fromBase ? titleIn(namespace, fromBase) : undefined,
     end: toBase ? titleIn(namespace, toBase) : undefined,
     prefix: prefix ? titleIn(namespace, prefix) : undefined,
     filterRedirects: p.oneOf("filterredir", REDIRECT_FILTERS, "all"),
@@ -65,9 +75,12 @@ const MEMBER_PROPS = ["ids", "title", "sortkey", "sortkeyprefix", "type", "times
 
 const memberType = (namespace: number) => (namespace === 14 ? "subcat" : namespace === 6 ? "file" : "page");
 
-async function categoryTitle(rc: ApiContext, p: ApiParams): Promise<string> {
-  const title = p.string("title");
-  const pageId = p.optionalInteger("pageid", 1);
+async function categoryTitle(
+  rc: ApiContext,
+  p: ApiParams,
+  title: string | undefined,
+  pageId: number | undefined
+): Promise<string> {
   if (title === undefined && pageId === undefined) throw missingOneOf([p.fullName("title"), p.fullName("pageid")]);
   const resolved =
     pageId !== undefined
@@ -84,23 +97,32 @@ async function categoryTitle(rc: ApiContext, p: ApiParams): Promise<string> {
 }
 
 async function runCategoryMembers(rc: ApiContext, p: ApiParams): Promise<ListResult> {
-  const category = await categoryTitle(rc, p);
+  const title = p.string("title");
+  const pageId = p.optionalInteger("pageid", 1);
   const props = new Set(p.listOf("prop", MEMBER_PROPS, ["ids", "title"]));
   const types = p.listOf("type", ["page", "subcat", "file"] as const, ["page", "subcat", "file"]);
   const limit = p.limit("limit", { fallback: 10, high: rc.highLimits });
   const sort = p.oneOf("sort", ["sortkey", "timestamp"], "sortkey");
   const cursor = optionalCursor(p.raw("continue"), ["s", "n"] as const);
+  // A timestamp-sorted listing continues from a time; anything else would reach the database as one.
+  if (cursor && sort === "timestamp" && Number.isNaN(new Date(cursor[0]).getTime())) throw badContinue();
 
+  const namespaces = namespacesParam(p);
+  const dir = directionParam(p, DIRECTION_WORDS, "ascending");
+  const start = p.timestamp("start", rc.now);
+  const end = p.timestamp("end", rc.now);
+
+  const category = await categoryTitle(rc, p, title, pageId);
   const rows = await rc.deps.store.listCategoryMembers({
     category,
-    namespaces: namespacesParam(p),
+    namespaces,
     types,
     sort,
-    dir: directionParam(p, DIRECTION_WORDS, "ascending"),
+    dir,
     limit,
     cursor: cursor ? { sortValue: cursor[0], pageId: cursor[1] } : undefined,
-    start: sort === "timestamp" ? p.timestamp("start", rc.now) : undefined,
-    end: sort === "timestamp" ? p.timestamp("end", rc.now) : undefined,
+    start: sort === "timestamp" ? start : undefined,
+    end: sort === "timestamp" ? end : undefined,
   });
   const { page, more } = takePage(rows, limit);
   const next = more ? rows[limit] : undefined;
@@ -130,14 +152,16 @@ export const categoryMembers: ListModule = {
 // ---------------------------------------------------------------------------
 
 async function runBacklinks(rc: ApiContext, p: ApiParams): Promise<ListResult> {
-  const target = p.has("title") ? canonicalTitle(p.required("title")) : null;
-  if (!target) throw missingOneOf([p.fullName("title"), p.fullName("pageid")]);
+  const rawTarget = p.string("title");
   const limit = p.limit("limit", { fallback: 10, high: rc.highLimits });
   const cursor = optionalCursor(p.raw("continue"), ["n"] as const);
+  const namespaces = namespacesParam(p);
+  const filterRedirects = p.oneOf("filterredir", REDIRECT_FILTERS, "all");
+  if (rawTarget === undefined) throw missingOneOf([p.fullName("title"), p.fullName("pageid")]);
   const rows = await rc.deps.store.listBacklinks({
-    target,
-    namespaces: namespacesParam(p),
-    filterRedirects: p.oneOf("filterredir", REDIRECT_FILTERS, "all"),
+    target: canonicalTitle(rawTarget),
+    namespaces,
+    filterRedirects,
     limit,
     cursor: cursor?.[0],
   });
@@ -175,12 +199,29 @@ export const random: ListModule = { prefix: "rn", resultKey: "random", generator
 const SEARCH_PROPS = ["size", "wordcount", "timestamp", "snippet", "titlesnippet", "redirecttitle", "sectiontitle", "isfilematch", "categorysnippet", "score", "hasrelated", "extensiondata"] as const;
 const DEFAULT_SEARCH_PROPS = ["size", "wordcount", "timestamp", "snippet"] as const;
 
-async function runSearch(rc: ApiContext, p: ApiParams): Promise<ListResult> {
+/** Limits on what a search may ask: a long query or a deep offset is a way to make the database scan for nothing. */
+const MAX_SEARCH_CHARS = 300;
+const MAX_SEARCH_WORDS = 32;
+const MAX_SEARCH_OFFSET = 10_000;
+
+function searchQuery(p: ApiParams): string {
   const query = p.required("search");
+  if (query.length > MAX_SEARCH_CHARS) {
+    throw new ApiError("toobig", `${p.fullName("search")} may be at most ${MAX_SEARCH_CHARS} characters.`);
+  }
+  if (query.split(/\s+/).filter(Boolean).length > MAX_SEARCH_WORDS) {
+    throw new ApiError("toobig", `${p.fullName("search")} may have at most ${MAX_SEARCH_WORDS} words.`);
+  }
+  return query;
+}
+
+async function runSearch(rc: ApiContext, p: ApiParams): Promise<ListResult> {
+  const query = searchQuery(p);
   const props = new Set(p.listOf("prop", SEARCH_PROPS, DEFAULT_SEARCH_PROPS));
   const what = p.oneOf("what", ["text", "title", "nearmatch"], "text") === "text" ? "text" : "title";
   const limit = p.limit("limit", { fallback: 10, high: rc.highLimits });
   const offset = p.integer("offset", { fallback: 0, min: 0 });
+  if (offset > MAX_SEARCH_OFFSET) throw badValue(p.fullName("offset"), String(offset));
   const namespaces = namespacesParam(p) ?? [0];
   if (namespaces.some((namespace) => namespace !== 0)) {
     p.addWarning("WikiOS searches the main namespace only; other namespaces are ignored.");

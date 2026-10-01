@@ -1,50 +1,19 @@
 /**
- * query-prop.ts — `action=query&prop=info|revisions|categories|links|pageprops` (plan 410).
+ * query-prop.ts — `action=query&prop=info|categories|links|pageprops` (plan 410); `revisions` is
+ * in prop-revisions.ts.
  *
- * A prop module decorates the pages of the page set (`query.pages`). `revisions` is the one bots
- * read most: with a single page it lists history (`rvlimit`, `rvstart`, `rvdir`, ...), with several it
- * answers each page's newest revision, and `rvslots` picks MediaWiki's slot shape for the content.
+ * A prop module decorates the pages of the page set (`query.pages`).
  */
 
-import { Continuation, encodeCursor, optionalCursor, takePage } from "../continuation";
-import { ApiError, badContinue, badValues } from "../errors";
+import { encodeCursor, optionalCursor } from "../continuation";
 import { mwTimestamp, type JsonObject, type JsonValue } from "../format";
-import type { PageEntry, PageSet } from "../pages";
-import type {
-  PageRestrictionRow,
-  PerPageQuery,
-  PerPageResult,
-  RevisionBound,
-  RevisionCursor,
-  RevisionRow,
-} from "../store-types";
-import type { ApiContext } from "../types";
+import type { PageEntry } from "../pages";
+import type { PageRestrictionRow, PerPageQuery, PerPageResult } from "../store-types";
+import { escapeHtml, existingEntries, fieldsOf, type PropContext } from "./prop-common";
 import { contentModelFor } from "~/lib/wiki-os/xml/content-model";
 import { canonicalizeTitle, NAMESPACE_CANONICAL_NAMES } from "~/lib/wiki-os/core/title";
 import { talkTitleOf } from "~/lib/wiki-os/core/page-management-service";
 import { SCRIPT_PATH } from "./query-meta";
-
-export interface PropContext {
-  rc: ApiContext;
-  pageSet: PageSet;
-  /** `query.pages` objects by page key; a prop module adds its fields. */
-  out: Map<number, JsonObject>;
-  continuation: Continuation;
-}
-
-export type PropModule = (pc: PropContext) => Promise<void>;
-
-const escapeHtml = (text: string) =>
-  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-
-const existingEntries = (pageSet: PageSet): PageEntry[] =>
-  pageSet.entries.filter((entry) => entry.state === "exists" && entry.row);
-
-const fieldsOf = (pc: PropContext, entry: PageEntry): JsonObject => {
-  const fields = pc.out.get(entry.key);
-  if (!fields) throw new Error(`no output slot for page ${entry.key}`);
-  return fields;
-};
 
 // ---------------------------------------------------------------------------
 // info
@@ -157,232 +126,6 @@ export async function propInfo(pc: PropContext): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// revisions
-// ---------------------------------------------------------------------------
-
-const REV_PROPS = [
-  "ids",
-  "flags",
-  "timestamp",
-  "user",
-  "userid",
-  "size",
-  "slotsize",
-  "sha1",
-  "slotsha1",
-  "contentmodel",
-  "comment",
-  "parsedcomment",
-  "content",
-  "tags",
-  "roles",
-] as const;
-type RevProp = (typeof REV_PROPS)[number];
-const DEFAULT_REV_PROPS: readonly RevProp[] = ["ids", "flags", "timestamp", "comment", "user"];
-
-/** Params that only make sense for one page's history. */
-const SINGLE_PAGE_PARAMS = ["limit", "startid", "endid", "start", "end", "user", "excludeuser", "continue"] as const;
-
-const IP_NAME = /^(?:\d{1,3}(?:\.\d{1,3}){3}|[0-9a-f:]+:[0-9a-f:]*)$/i;
-const isAnonymousName = (name: string) => IP_NAME.test(name);
-
-const LEGACY_SLOTS_WARNING =
-  'Because "rvslots" was not specified, a legacy format has been used for the output. This has been deprecated, and in the future, the default will change so the "rvslots" parameter will always be used.';
-
-interface RevisionOptions {
-  props: ReadonlySet<RevProp>;
-  slots: boolean;
-  version: ApiContext["version"];
-}
-
-function slotJson(rev: RevisionRow, { props, version }: RevisionOptions): JsonObject | undefined {
-  const wantsModel = props.has("contentmodel") || props.has("content");
-  if (!wantsModel && !props.has("slotsize") && !props.has("slotsha1")) return undefined;
-  const { model, format } = contentModelFor(rev.title);
-  const slot: JsonObject = {};
-  if (wantsModel) {
-    slot.contentmodel = model;
-    slot.contentformat = format;
-  }
-  if (props.has("slotsize")) slot.size = rev.size;
-  if (props.has("slotsha1") && !rev.textHidden) slot.sha1 = rev.sha1;
-  if (props.has("content")) {
-    if (rev.textHidden) slot.texthidden = true;
-    else Object.assign(slot, version === 1 ? { "*": rev.content ?? "" } : { content: rev.content ?? "" });
-  }
-  return slot;
-}
-
-function revisionIds(rev: RevisionRow, props: ReadonlySet<RevProp>): JsonObject {
-  const out: JsonObject = {};
-  if (props.has("ids")) {
-    out.revid = rev.revId;
-    out.parentid = rev.parentId;
-  }
-  if (props.has("flags")) out.minor = rev.minor;
-  if (props.has("timestamp")) out.timestamp = mwTimestamp(rev.timestamp);
-  if (props.has("size")) out.size = rev.size;
-  if (props.has("tags")) out.tags = [];
-  return out;
-}
-
-/** The revision's author, honouring a revision deletion of the user name. */
-function revisionAuthor(rev: RevisionRow, props: ReadonlySet<RevProp>): JsonObject {
-  const out: JsonObject = {};
-  if (props.has("user")) {
-    if (rev.userHidden) out.userhidden = true;
-    else {
-      out.user = rev.user ?? "";
-      if (rev.user && isAnonymousName(rev.user)) out.anon = true;
-    }
-  }
-  if (props.has("userid") && !rev.userHidden) out.userid = rev.userId;
-  return out;
-}
-
-/** The comment and the hash, honouring revision deletion of the comment and of the text. */
-function revisionDescribed(rev: RevisionRow, props: ReadonlySet<RevProp>): JsonObject {
-  const out: JsonObject = {};
-  if (props.has("sha1")) {
-    if (rev.textHidden) out.sha1hidden = true;
-    else out.sha1 = rev.sha1;
-  }
-  if (props.has("comment") || props.has("parsedcomment")) {
-    if (rev.commentHidden) out.commenthidden = true;
-    else {
-      if (props.has("comment")) out.comment = rev.comment ?? "";
-      if (props.has("parsedcomment")) out.parsedcomment = escapeHtml(rev.comment ?? "");
-    }
-  }
-  return out;
-}
-
-/** The text as the revision itself carries it (no `rvslots`): MediaWiki's legacy shape. */
-function legacyContent(rev: RevisionRow, { props, version }: RevisionOptions): JsonObject {
-  const out: JsonObject = {};
-  const { model, format } = contentModelFor(rev.title);
-  if (props.has("contentmodel") || props.has("content")) out.contentmodel = model;
-  if (props.has("content")) {
-    out.contentformat = format;
-    if (rev.textHidden) out.texthidden = true;
-    else if (version === 1) out["*"] = rev.content ?? "";
-    else out.content = rev.content ?? "";
-  }
-  return out;
-}
-
-export function revisionJson(rev: RevisionRow, options: RevisionOptions): JsonObject {
-  const { props, slots } = options;
-  const slot = slots ? slotJson(rev, options) : undefined;
-  return {
-    ...revisionIds(rev, props),
-    ...revisionAuthor(rev, props),
-    ...revisionDescribed(rev, props),
-    ...(slots ? (slot ? { slots: { main: slot } } : {}) : legacyContent(rev, options)),
-  };
-}
-
-function decodeRevisionCursor(raw: string | undefined): RevisionCursor | undefined {
-  const parts = optionalCursor(raw, ["s", "n"] as const);
-  if (!parts) return undefined;
-  const timestamp = new Date(parts[0]);
-  if (Number.isNaN(timestamp.getTime())) throw badContinue();
-  return { timestamp, revId: parts[1] };
-}
-
-/** A start/end bound given as a timestamp or as a revision id (the id wins). */
-async function revisionBound(
-  rc: ApiContext,
-  p: ApiContext["params"],
-  which: "start" | "end"
-): Promise<RevisionBound | undefined> {
-  const id = p.optionalInteger(`${which}id`, 1);
-  if (id !== undefined) {
-    const [rev] = await rc.deps.store.revisionsById([id], false);
-    if (!rev) throw new ApiError("nosuchrevid", `There is no revision with ID ${id}.`);
-    return { timestamp: rev.timestamp, revId: rev.revId };
-  }
-  const timestamp = p.timestamp(which, rc.now);
-  return timestamp ? { timestamp } : undefined;
-}
-
-export async function propRevisions(pc: PropContext): Promise<void> {
-  const { rc, pageSet } = pc;
-  const p = rc.params.scope("rv", "revisions");
-  const props = new Set<RevProp>(p.listOf("prop", REV_PROPS, DEFAULT_REV_PROPS));
-  const slotValues = p.has("slots") ? p.list("slots") : null;
-  if (slotValues?.some((slot) => slot !== "main" && slot !== "*")) {
-    throw badValues(p.fullName("slots"), slotValues.filter((slot) => slot !== "main" && slot !== "*"));
-  }
-  const slots = slotValues !== null;
-  const withContent = props.has("content");
-  if (withContent && !slots) p.addWarning(LEGACY_SLOTS_WARNING);
-  const options: RevisionOptions = { props, slots, version: rc.version };
-
-  const pages = existingEntries(pageSet);
-  const byRevisionId = pages.some((entry) => entry.revisionIds.length > 0);
-  const singlePage = pages.length === 1 && !byRevisionId;
-  const usedSingle: string[] = SINGLE_PAGE_PARAMS.filter((name) => p.has(name));
-  if (p.raw("dir") === "newer") usedSingle.push("dir");
-  if (usedSingle.length > 0 && !singlePage) {
-    throw new ApiError(
-      "multpages",
-      `titles, pageids or a generator was used to supply multiple pages, but the parameters ${usedSingle.map((n) => p.fullName(n)).join(", ")} can only be used on a single page.`
-    );
-  }
-
-  if (singlePage) {
-    await singlePageRevisions(pc, pages[0]!, p, options);
-    return;
-  }
-
-  // Several pages (or revids): the newest revision of each page, or exactly the revisions asked for.
-  const wanted = pages.flatMap((entry) =>
-    byRevisionId ? entry.revisionIds : entry.row?.headRevId ? [entry.row.headRevId] : []
-  );
-  const revisions = wanted.length > 0 ? await rc.deps.store.revisionsById(wanted, withContent) : [];
-  for (const entry of pages) {
-    const mine = revisions.filter((rev) => rev.pageId === entry.key);
-    fieldsOf(pc, entry).revisions = mine.map((rev) => revisionJson(rev, options));
-  }
-}
-
-async function singlePageRevisions(
-  pc: PropContext,
-  entry: PageEntry,
-  p: ApiContext["params"],
-  options: RevisionOptions
-): Promise<void> {
-  const { rc, continuation } = pc;
-  const { store } = rc.deps;
-  const withContent = options.props.has("content");
-  // Revisions with their text are limited to 50 per request (500 with apihighlimits).
-  const contentCap = rc.highLimits ? 500 : 50;
-  const limit = withContent
-    ? Math.min(contentCap, p.limit("limit", { fallback: 1, high: rc.highLimits }))
-    : p.limit("limit", { fallback: 1, high: rc.highLimits });
-  const dir = p.oneOf("dir", ["older", "newer"], "older");
-
-  const fetched = await store.findRevisions({
-    articleId: entry.row!.articleId,
-    dir,
-    from: await revisionBound(rc, p, "start"),
-    to: await revisionBound(rc, p, "end"),
-    users: p.has("user") ? [p.required("user")] : undefined,
-    excludeUser: p.string("excludeuser"),
-    cursor: decodeRevisionCursor(p.raw("continue")),
-    limit,
-    withContent,
-  });
-  const { page, more } = takePage(fetched, limit);
-  fieldsOf(pc, entry).revisions = page.map((rev) => revisionJson(rev, options));
-  const next = more ? fetched[limit] : undefined;
-  if (next) {
-    continuation.addProp(p.fullName("continue"), encodeCursor([next.timestamp.toISOString(), next.revId]));
-  }
-}
-
-// ---------------------------------------------------------------------------
 // categories and links: listings across pages with one limit
 // ---------------------------------------------------------------------------
 
@@ -491,11 +234,17 @@ export function pagePropsOf(wikitext: string): JsonObject {
   return props;
 }
 
+/** How much of each page's text `prop=pageprops` reads: the switches and DISPLAYTITLE are at the top of a page. */
+const PAGEPROPS_TEXT_CHARS = 100_000;
+
 export async function propPageprops(pc: PropContext): Promise<void> {
   const p = pc.rc.params.scope("pp", "pageprops");
   const wanted = p.has("prop") ? new Set(p.list("prop")) : null;
   const pages = existingEntries(pc.pageSet);
-  const texts = await pc.rc.deps.store.wikitextByArticle(pages.map((entry) => entry.row!.articleId));
+  const texts = await pc.rc.deps.store.wikitextByArticle(
+    pages.map((entry) => entry.row!.articleId),
+    PAGEPROPS_TEXT_CHARS
+  );
   for (const entry of pages) {
     const all = pagePropsOf(texts.get(entry.row!.articleId) ?? "");
     const props = Object.fromEntries(Object.entries(all).filter(([name]) => !wanted || wanted.has(name)));

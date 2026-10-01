@@ -107,6 +107,20 @@ export const prismaAuthStore: AuthStore = {
     await db.wikiApiSession.updateMany({ where: { id }, data: { expiresAt } });
   },
 
+  async pruneSessions(botPasswordId, now, keep) {
+    await db.wikiApiSession.deleteMany({ where: { expiresAt: { lt: now } } });
+    const surplus = await db.wikiApiSession.findMany({
+      where: { botPasswordId },
+      orderBy: { createdAt: "desc" },
+      skip: keep,
+      take: 1000,
+      select: { id: true },
+    });
+    if (surplus.length > 0) {
+      await db.wikiApiSession.deleteMany({ where: { id: { in: surplus.map((row) => row.id) } } });
+    }
+  },
+
   async deleteSession(id) {
     await db.wikiApiSession.deleteMany({ where: { id } });
   },

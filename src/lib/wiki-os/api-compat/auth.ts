@@ -28,7 +28,12 @@ export const TOKEN_SUFFIX = "+\\";
 export const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 /** A session is extended (24 h sliding) once less than this much of its life is left, to spare writes. */
 const SESSION_REFRESH_BELOW_MS = 23 * 60 * 60 * 1000;
-const LOGIN_NONCE_TTL_SECONDS = 15 * 60;
+/** A login token is good for ten minutes after the nonce cookie that backs it was issued. */
+const LOGIN_NONCE_TTL_MS = 10 * 60 * 1000;
+/** A nonce stamped later than this beyond now is not one this server made. */
+const LOGIN_NONCE_SKEW_MS = 60 * 1000;
+/** Sessions one bot password keeps: logging in again beyond this ends the oldest. */
+export const MAX_SESSIONS_PER_BOT_PASSWORD = 20;
 
 export const APP_ID_PATTERN = /^[a-zA-Z0-9_ -]{1,32}$/;
 export type TokenType = "csrf" | "login" | "watch" | "rollback" | "patrol";
@@ -53,7 +58,7 @@ function hmac(label: string, value: string): Buffer {
   return createHmac("sha256", signingSecret()).update(`${label}:${value}`).digest();
 }
 
-function safeEqual(a: string, b: string): boolean {
+export function safeEqual(a: string, b: string): boolean {
   const left = Buffer.from(a);
   const right = Buffer.from(b);
   return left.length === right.length && timingSafeEqual(left, right);
@@ -143,16 +148,28 @@ export function loginToken(nonce: string): string {
   return sessionToken(nonce, "login");
 }
 
-export function newLoginNonce(): string {
-  return randomBytes(16).toString("hex");
+/**
+ * A login nonce: when it was issued, a random part and a signature over both, so the server can tell
+ * its own nonces apart and expire them without storing anything.
+ */
+export function newLoginNonce(now: Date): string {
+  const body = `${Math.floor(now.getTime() / 1000).toString(36)}.${randomBytes(16).toString("hex")}`;
+  return `${body}.${hmac("login-nonce", body).toString("base64url")}`;
 }
 
-const NONCE_PATTERN = /^[0-9a-f]{32}$/;
-export const isLoginNonce = (value: string | undefined): value is string =>
-  value !== undefined && NONCE_PATTERN.test(value);
+/** The nonce in a cookie value when this server signed it and it is under ten minutes old; otherwise null. */
+export function readLoginNonce(value: string | undefined, now: Date): string | null {
+  if (!value) return null;
+  const parts = value.split(".");
+  if (parts.length !== 3) return null;
+  const [issued, random, signature] = parts as [string, string, string];
+  if (!safeEqual(signature, hmac("login-nonce", `${issued}.${random}`).toString("base64url"))) return null;
+  const age = now.getTime() - Number.parseInt(issued, 36) * 1000;
+  return age <= LOGIN_NONCE_TTL_MS && age >= -LOGIN_NONCE_SKEW_MS ? value : null;
+}
 
 export function loginNonceCookie(nonce: string, path: string): CookieSpec {
-  return { name: LOGIN_NONCE_COOKIE, value: nonce, path, maxAgeSeconds: LOGIN_NONCE_TTL_SECONDS };
+  return { name: LOGIN_NONCE_COOKIE, value: nonce, path, maxAgeSeconds: LOGIN_NONCE_TTL_MS / 1000 };
 }
 
 export function sessionCookie(sessionId: string, path: string): CookieSpec {
@@ -266,6 +283,7 @@ export async function loginWithBotPassword(
     expiresAt: new Date(attempt.now.getTime() + SESSION_TTL_MS),
   });
   await store.touchBotPassword(found.botPassword.id, attempt.now);
+  await store.pruneSessions(found.botPassword.id, attempt.now, MAX_SESSIONS_PER_BOT_PASSWORD);
   return {
     result: "Success",
     userId: found.user.mwUserId,

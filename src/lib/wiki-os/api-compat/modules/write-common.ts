@@ -13,6 +13,21 @@ import type { PageActor } from "~/lib/wiki-os/core/page-management-service";
 import { PageOperationError } from "~/lib/wiki-os/core/page-management-service";
 import type { PageRow } from "../store-types";
 
+/** Characters of an edit summary or log reason MediaWiki keeps (a comment is at most 500). */
+export const MAX_COMMENT_CHARS = 500;
+
+/**
+ * An edit summary or log reason as it is stored: NUL characters (which PostgreSQL text columns
+ * refuse) gone, at most `MAX_COMMENT_CHARS` characters (a surrogate pair is never cut in half).
+ */
+export function cleanComment(raw: string): string {
+  const text = raw.replaceAll("\u0000", "");
+  if (text.length <= MAX_COMMENT_CHARS) return text;
+  const cut = text.slice(0, MAX_COMMENT_CHARS);
+  const last = cut.charCodeAt(cut.length - 1);
+  return last >= 0xd800 && last <= 0xdbff ? cut.slice(0, -1) : cut;
+}
+
 /** A write needs a bot-password session: a signed-in browser or an anonymous caller may only read. */
 export function requireBotSession(rc: ApiContext): void {
   if (rc.session.kind !== "bot") {
@@ -32,11 +47,6 @@ export function checkToken(rc: ApiContext, type: TokenType = "csrf"): void {
   }
 }
 
-/** Every write starts here: a bot session, then its token. */
-export function beginWrite(rc: ApiContext, type: TokenType = "csrf"): void {
-  requireBotSession(rc);
-  checkToken(rc, type);
-}
 
 /** Who a log entry names as the actor. */
 export function actorOf(rc: ApiContext): PageActor {
@@ -50,26 +60,32 @@ export interface NamedPage {
   row: PageRow | null;
 }
 
+/** A page as a request names it: by title or by page id, under these parameter names. */
+export interface PageRef {
+  rawTitle: string | undefined;
+  pageId: number | undefined;
+  /** The parameter names, for error messages. */
+  names: { title: string; id: string };
+}
+
+/** Read the parameters that name a page (reading only: `resolvePage` judges them). */
+export function readPageRef(p: ApiParams, names: { title: string; id: string }): PageRef {
+  return { rawTitle: p.string(names.title), pageId: p.optionalInteger(names.id, 1), names };
+}
+
 /**
- * The page a write names by `<title param>` or `<pageid param>` (exactly one). A page id must exist
+ * The page a write names by title or by page id (exactly one). A page id must exist
  * (`nosuchpageid`); a title only has to be valid.
  */
-export async function namedPage(
-  rc: ApiContext,
-  p: ApiParams,
-  names: { title: string; id: string }
-): Promise<NamedPage> {
-  const rawTitle = p.string(names.title);
-  const pageId = p.optionalInteger(names.id, 1);
-  if (rawTitle !== undefined && pageId !== undefined) {
-    throw mixedParams([p.fullName(names.title), p.fullName(names.id)]);
-  }
+export async function resolvePage(rc: ApiContext, ref: PageRef): Promise<NamedPage> {
+  const { rawTitle, pageId, names } = ref;
+  if (rawTitle !== undefined && pageId !== undefined) throw mixedParams([names.title, names.id]);
   if (pageId !== undefined) {
     const [row] = await rc.deps.store.pagesById([pageId]);
     if (!row) throw new ApiError("nosuchpageid", `There is no page with ID ${pageId}.`);
     return { title: row.title, row };
   }
-  if (rawTitle === undefined) throw missingOneOf([p.fullName(names.title), p.fullName(names.id)]);
+  if (rawTitle === undefined) throw missingOneOf([names.title, names.id]);
   const canon = canonicalizeTitle(rawTitle);
   if (!canon) throw invalidTitle(rawTitle);
   if (canon.namespaceId < 0) throw new ApiError("invalidtitle", `Special pages cannot be changed: ${canon.title}.`);

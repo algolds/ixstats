@@ -326,8 +326,8 @@ export interface ApiStore {
   revisionCountOf(title: string): Promise<number>;
   /** The page's stored rendering: `fresh` when it matches the current wikitext. */
   pageHtml(articleId: string): Promise<{ html: string | null; fresh: boolean } | null>;
-  /** The wikitext of pages, by WikiOS article id (for `prop=pageprops`). */
-  wikitextByArticle(articleIds: readonly string[]): Promise<Map<string, string>>;
+  /** The wikitext of pages, by WikiOS article id; with `maxChars`, only each page's first characters (a listing of 500 pages never loads 500 whole texts). */
+  wikitextByArticle(articleIds: readonly string[], maxChars?: number): Promise<Map<string, string>>;
 
   /** Up to `limit + 1` pages of a namespace, in title order. */
   listPages(query: ListPagesQuery): Promise<PageListRow[]>;

@@ -12,6 +12,7 @@ import type { MovePageOptions, MovePageResult, PageActor } from "~/lib/wiki-os/c
 import type { RestrictionChange } from "~/lib/wiki-os/core/rights-admin-service";
 import type { WikiAction } from "~/lib/wiki-os/permissions";
 import type { WikitextSave } from "~/lib/wiki-os/services/edit-service";
+import type { SizeBudget } from "./budget";
 import type { FormatVersion, JsonValue } from "./format";
 import type { ApiParams } from "./params";
 import type { ApiStore } from "./store-types";
@@ -57,6 +58,8 @@ export interface AuthStore {
   }): Promise<void>;
   findSession(id: string): Promise<{ session: ApiSessionRecord; user: SessionUser } | null>;
   extendSession(id: string, expiresAt: Date): Promise<void>;
+  /** After a login: delete every expired session, and all but the `keep` newest of this bot password's. */
+  pruneSessions(botPasswordId: string, now: Date, keep: number): Promise<void>;
   deleteSession(id: string): Promise<void>;
   /** The signed-in browser user (Clerk id) with a verified wiki link, or null. */
   findWebUser(authId: string): Promise<SessionUser | null>;
@@ -125,8 +128,12 @@ export type SearchFn = (
 export interface ApiServices {
   /** MediaWiki's render of wikitext, without storing anything (`action=parse&text=`). */
   renderWikitext(wikitext: string, title: string): Promise<string>;
-  /** The server diff: the `<tr>` rows of MediaWiki's diff table. */
-  diff(oldText: string, newText: string): string;
+  /** `action=purge`: mark the page's rendering stale, forget its caches and queue a render. */
+  purgePage(article: { id: string; title: string }): Promise<void>;
+  /** Make sure the page's stored rendering is fresh: the render service's single-flight, capped render (waits a few seconds at most). */
+  ensureRendered(articleId: string): Promise<void>;
+  /** The server diff: the `<tr>` rows of MediaWiki's diff table; throws `DiffTooLarge` past `maxOutputChars`. */
+  diff(oldText: string, newText: string, options?: { maxOutputChars?: number }): string;
   /** May the caller edit (or create) `title`? Throws the permission refusals. */
   assertCanEdit(ctx: WikiAuthContext, title: string): Promise<void>;
   authorize(ctx: WikiAuthContext, action: WikiAction, title: string): Promise<void>;
@@ -203,4 +210,6 @@ export interface ApiContext {
   setCookies: CookieSpec[];
   /** Whether the caller holds `apihighlimits`. */
   highLimits: boolean;
+  /** How much page content this response may still hold. */
+  budget: SizeBudget;
 }

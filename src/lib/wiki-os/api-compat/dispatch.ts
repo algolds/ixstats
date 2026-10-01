@@ -7,31 +7,14 @@
  */
 
 import { resolveSession } from "./auth";
+import { SizeBudget } from "./budget";
 import { toApiError } from "./error-map";
-import {
-  ApiError,
-  badValue,
-  badValues,
-  missingParam,
-  mustBePosted,
-} from "./errors";
-import {
-  ERROR_FORMATS,
-  ResponseBuilder,
-  errorBody,
-  type ErrorFormat,
-  type FormatVersion,
-  type JsonValue,
-} from "./format";
-import { parseRequestParams, type ApiParams } from "./params";
-import { runCompare } from "./modules/compare";
-import { runEdit } from "./modules/edit";
-import { runLogin, runLogout } from "./modules/login";
-import { runOpenSearch } from "./modules/opensearch";
-import { runDelete, runMove, runProtect, runRollback, runUndelete } from "./modules/page-ops";
-import { runParse } from "./modules/parse";
-import { runQuery } from "./modules/query";
-import type { ApiContext, ApiDeps, ApiResult, ApiSession, CookieSpec } from "./types";
+import { ApiError, badValue, missingParam, mustBePosted } from "./errors";
+import { ResponseBuilder, errorBody, type JsonValue } from "./format";
+import { ACTIONS, ACTION_NAMES, type ActionSpec } from "./actions";
+import { readMainParams, type MainRequest, type OutputSettings } from "./main-params";
+import { parseRequestParams } from "./params";
+import type { ApiContext, ApiDeps, ApiSession, CookieSpec } from "./types";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 
 export interface ApiRequestInput {
@@ -57,45 +40,13 @@ export interface ApiResponseOutput {
   errorCode: string | null;
 }
 
-type ActionHandler = (rc: ApiContext) => Promise<ApiResult>;
-
-interface ActionSpec {
-  run: ActionHandler;
-  /** The module changes state, so it needs POST. */
-  post: boolean;
-}
-
-const ACTIONS: Readonly<Record<string, ActionSpec>> = {
-  query: { run: runQuery, post: false },
-  parse: { run: runParse, post: false },
-  opensearch: { run: runOpenSearch, post: false },
-  compare: { run: runCompare, post: false },
-  login: { run: runLogin, post: true },
-  logout: { run: runLogout, post: true },
-  edit: { run: runEdit, post: true },
-  move: { run: runMove, post: true },
-  delete: { run: runDelete, post: true },
-  undelete: { run: runUndelete, post: true },
-  protect: { run: runProtect, post: true },
-  rollback: { run: runRollback, post: true },
-};
-
 /** Requests per minute: anonymous, signed in, and for writes (a bot with `noratelimit` is not counted). */
 const READ_LIMIT = { anonymous: 120, signedIn: 600 } as const;
 const WRITE_LIMIT = 120;
 const WINDOW_MS = 60_000;
 
-const FORMATS = ["json", "jsonfm"] as const;
-
-function formatVersionOf(params: ApiParams): FormatVersion {
-  const raw = params.string("formatversion", "1");
-  if (raw === "1") return 1;
-  if (raw === "2" || raw === "latest") return 2;
-  throw badValue("formatversion", raw);
-}
-
-function assertSession(params: ApiParams, session: ApiSession): void {
-  const kind = params.oneOf("assert", ["anon", "user", "bot"]);
+function assertSession(request: MainRequest, session: ApiSession): void {
+  const { assertKind: kind, assertUser: named } = request;
   if (kind === "anon" && session.kind !== "anonymous") {
     throw new ApiError("assertanonfailed", "Assertion that the user is logged out failed.");
   }
@@ -105,7 +56,6 @@ function assertSession(params: ApiParams, session: ApiSession): void {
   if (kind === "bot" && !session.permissions.rights.has("bot")) {
     throw new ApiError("assertbotfailed", 'Assertion that the user has the "bot" right failed.');
   }
-  const named = params.string("assertuser");
   if (named !== undefined && normalizeWikiUsername(named) !== session.name) {
     throw new ApiError("assertnameduserfailed", `Assertion that the user is "${named}" failed.`);
   }
@@ -132,12 +82,11 @@ async function enforceRateLimit(rc: ApiContext, spec: ActionSpec): Promise<void>
   }
 }
 
-function actionOf(params: ApiParams): [string, ActionSpec] {
-  const name = params.string("action");
-  if (name === undefined) throw missingParam("action");
-  const spec = Object.hasOwn(ACTIONS, name) ? ACTIONS[name] : undefined;
-  if (!spec) throw badValue("action", name);
-  return [name, spec];
+function specOf(action: string | undefined): [string, ActionSpec] {
+  if (action === undefined) throw missingParam("action");
+  const spec = ACTIONS[action];
+  if (!spec) throw badValue("action", action);
+  return [action, spec];
 }
 
 /** Run one request. Never throws: every failure is an error body. */
@@ -148,15 +97,11 @@ export async function handleApiRequest(
   const response = new ResponseBuilder();
   const params = parseRequestParams(input.query, input.body, response.addWarning);
   const setCookies: CookieSpec[] = [];
-  let version: FormatVersion = 1;
-  let errorFormat: ErrorFormat = "bc";
+  const output: OutputSettings = { version: 1, errorFormat: "bc" };
 
   try {
-    version = formatVersionOf(params);
-    errorFormat = params.oneOf("errorformat", ERROR_FORMATS, "bc");
-    params.oneOf("format", FORMATS, "json");
-    if (params.has("callback")) throw badValues("callback", ["JSONP is not supported"]);
-    const [actionName, spec] = actionOf(params);
+    const main = readMainParams(params, ACTION_NAMES, output);
+    const [actionName, spec] = specOf(main.action);
     if (spec.post && input.method !== "POST") throw mustBePosted(actionName);
 
     const now = deps.now();
@@ -172,7 +117,7 @@ export async function handleApiRequest(
     );
     const rc: ApiContext = {
       params,
-      version,
+      version: output.version,
       method: input.method,
       session,
       deps,
@@ -183,16 +128,17 @@ export async function handleApiRequest(
       clientKey: session.ctx.user?.id ? `user:${session.ctx.user.id}` : input.clientKey,
       setCookies,
       highLimits: session.permissions.rights.has("apihighlimits"),
+      budget: new SizeBudget(),
     };
-    assertSession(params, session);
+    assertSession(main, session);
     await enforceRateLimit(rc, spec);
     const result = await spec.run(rc);
-    return { body: response.finish(result, version), setCookies, errorCode: null };
+    return { body: response.finish(result, output.version), setCookies, errorCode: null };
   } catch (caught) {
     const error = caught instanceof Error ? caught : new Error(String(caught));
     const apiError = toApiError(error) ?? internalError(error);
     return {
-      body: response.finish(errorBody(apiError, version, errorFormat), version),
+      body: response.finish(errorBody(apiError, output.version, output.errorFormat), output.version),
       setCookies,
       errorCode: apiError.code,
     };

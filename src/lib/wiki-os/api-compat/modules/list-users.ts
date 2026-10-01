@@ -76,7 +76,9 @@ async function runBlocks(rc: ApiContext, p: ApiParams): Promise<ListResult> {
   const limit = p.limit("limit", { fallback: 10, high: rc.highLimits });
   // The log of blocks lists the newest first; WikiOS keeps no other order.
   p.oneOf("dir", ["older"], "older");
-  const { blocks, nextCursor } = await rc.deps.store.listBlocks(limit, p.string("continue"));
+  const cursor = p.string("continue");
+  if (cursor !== undefined && cursor !== "" && !/^[\w-]{8,64}$/.test(cursor)) throw badContinue();
+  const { blocks, nextCursor } = await rc.deps.store.listBlocks(limit, cursor || undefined);
   return {
     items: blocks.map((block) => ({
       ...(props.has("user") ? { user: block.target } : {}),

@@ -53,6 +53,17 @@ export function toWire(value: JsonValue, version: FormatVersion): JsonValue {
   return version === 1 && value === true ? "" : value;
 }
 
+/**
+ * A revision hash as MediaWiki's API shows it: 40 hexadecimal digits. WikiOS stores `rev_sha1`
+ * (base 36, 31 digits, as MediaWiki's database does); null for a missing or malformed value.
+ */
+export function sha1Hex(base36: string | null): string | null {
+  if (!base36 || !/^[0-9a-z]+$/.test(base36)) return null;
+  let value = 0n;
+  for (const digit of base36) value = value * 36n + BigInt(Number.parseInt(digit, 36));
+  return value.toString(16).padStart(40, "0");
+}
+
 export type ErrorFormat = "bc" | "plaintext" | "wikitext" | "html" | "raw" | "none";
 export const ERROR_FORMATS: readonly ErrorFormat[] = [
   "bc",

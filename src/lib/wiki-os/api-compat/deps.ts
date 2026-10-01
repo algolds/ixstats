@@ -16,27 +16,40 @@ import {
   commitWikitextSave,
   requireRestorableWikitext,
 } from "~/lib/wiki-os/services/edit-service";
+import { purgeArticle } from "~/lib/wiki-os/services/purge-service";
+import { ensureRendered } from "~/lib/wiki-os/services/render-service";
 import { computeWikitextDiff } from "~/lib/wiki-os/transformers/wikitext-diff";
 import { capWikiPermissions, getWikiPermissions } from "~/lib/wiki-os/rights";
 import { prismaAuthStore } from "./auth-store";
 import { prismaApiStore } from "./store";
+import { searchTitles } from "./store-lists";
 import type { ApiDeps, ApiServices, SearchFn } from "./types";
 
-/** `list=search` over WikiOS's own search: titles by prefix and similarity, text by weighted full-text. */
+/**
+ * `list=search` and `opensearch`: titles by a title-only query (never reading page text), text by
+ * WikiOS's weighted full-text search.
+ */
 const search: SearchFn = async (query, what, limit, offset) => {
   if (what === "title") {
-    const results = await NativeSearchService.spotlightSearch(query, "ixwiki", offset + limit);
+    const titles = await searchTitles(query, limit, offset);
     return {
-      hits: results.slice(offset, offset + limit).map((r) => ({ title: r.title, snippet: r.snippet })),
-      total: results.length,
+      hits: titles.map((title) => ({ title, snippet: "" })),
+      total: offset + titles.length,
     };
   }
   const { results, total } = await NativeSearchService.fulltextSearch(query, "ixwiki", limit, offset);
   return { hits: results.map((r) => ({ title: r.title, snippet: r.snippet })), total };
 };
 
+/** How long a parse of a stale page waits for its render before answering with what is stored. */
+const RENDER_WAIT_MS = 6_000;
+
 const services: ApiServices = {
   renderWikitext: wikitextToHtml,
+  purgePage: purgeArticle,
+  ensureRendered: async (articleId) => {
+    await ensureRendered(articleId, { waitMs: RENDER_WAIT_MS });
+  },
   diff: computeWikitextDiff,
   assertCanEdit: (ctx, title) => assertCanEditArticle(ctx, title),
   authorize: (ctx, action, title) => authorizeAction(ctx, action, title),

@@ -16,19 +16,13 @@ import { DEFERRED_REASON } from "./deferred";
 import { generatorFor, generatorNames, type GeneratorResult } from "./generator";
 import { LIST_MODULES } from "./query-list";
 import { metaSiteinfo, metaTokens, metaUserinfo } from "./query-meta";
-import {
-  propCategories,
-  propInfo,
-  propLinks,
-  propPageprops,
-  propRevisions,
-  type PropContext,
-  type PropModule,
-} from "./query-prop";
+import type { PropContext, PropModule } from "./prop-common";
+import { propRevisions } from "./prop-revisions";
+import { propCategories, propInfo, propLinks, propPageprops } from "./query-prop";
 
 type MetaModule = (rc: ApiContext) => JsonObject | Promise<JsonObject>;
 
-const META_MODULES: Readonly<Record<string, MetaModule>> = {
+export const META_MODULES: Readonly<Record<string, MetaModule>> = {
   siteinfo: metaSiteinfo,
   userinfo: metaUserinfo,
   tokens: metaTokens,
@@ -40,7 +34,7 @@ const deferredProp =
     throw unavailable("prop", name, DEFERRED_REASON);
   };
 
-const PROP_MODULES: Readonly<Record<string, PropModule>> = {
+export const PROP_MODULES: Readonly<Record<string, PropModule>> = {
   info: propInfo,
   revisions: propRevisions,
   categories: propCategories,

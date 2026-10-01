@@ -30,7 +30,7 @@ import type {
 } from "./store-types";
 
 const SOURCE = "ixwiki";
-const LIVE_PAGE = { source: SOURCE, status: { not: "ARCHIVED" }, wikitext: { not: "" } } as const;
+const LIVE_PAGE = { source: SOURCE, status: { not: "ARCHIVED" } } as const;
 const FILE_NAMESPACE = 6;
 const CATEGORY_NAMESPACE = 14;
 
@@ -114,12 +114,31 @@ export async function randomPages(query: RandomPagesQuery): Promise<PageListRow[
   const rows = await db.$queryRaw<ListedArticle[]>(Prisma.sql`
     SELECT a."pageId", a."title", a."namespace", a."redirectTargetSlug"
     FROM "wiki_articles" a
-    WHERE a."source" = ${SOURCE} AND a."status" <> 'ARCHIVED' AND a."wikitext" <> ''
+    WHERE a."source" = ${SOURCE} AND a."status" <> 'ARCHIVED'
       AND a."namespace" IN (${Prisma.join(query.namespaces)})
       ${redirectSql(query.filterRedirects)}
     ORDER BY random()
     LIMIT ${query.limit}`);
   return rows.map(toListRow);
+}
+
+/**
+ * Page titles that start with or hold `query` (case-insensitive), main namespace, in title order.
+ * Selects the title only: a title search never reads a page's text.
+ */
+export async function searchTitles(query: string, limit: number, offset: number): Promise<string[]> {
+  const rows = await db.wikiArticle.findMany({
+    where: {
+      ...LIVE_PAGE,
+      namespace: 0,
+      title: { contains: query, mode: "insensitive" },
+    },
+    orderBy: { title: "asc" },
+    skip: offset,
+    take: limit,
+    select: { title: true },
+  });
+  return rows.map((row) => row.title);
 }
 
 // ---------------------------------------------------------------------------
@@ -164,7 +183,7 @@ export async function listCategoryMembers(query: CategoryMemberQuery): Promise<C
     FROM "wiki_category_members" m
     JOIN "wiki_articles" a ON a."id" = m."articleId"
     JOIN "wiki_categories" c ON c."id" = m."categoryId"
-    WHERE c."slug" = ${toArticleSlug(category.base)} AND a."source" = ${SOURCE} AND a."status" <> 'ARCHIVED' AND a."wikitext" <> ''
+    WHERE c."slug" = ${toArticleSlug(category.base)} AND a."source" = ${SOURCE} AND a."status" <> 'ARCHIVED'
       ${query.namespaces ? Prisma.sql`AND a."namespace" IN (${Prisma.join(query.namespaces)})` : Prisma.empty}
       ${memberTypeSql(query.types)}
       ${byTime && lower ? Prisma.sql`AND m."createdAt" >= ${lower}` : Prisma.empty}
@@ -193,20 +212,21 @@ export async function listCategoryMembers(query: CategoryMemberQuery): Promise<C
 export async function listCategories(query: CategoryListQuery): Promise<CategorySummaryRow[]> {
   const ascending = query.dir === "ascending";
   const [lower, upper] = ascending ? [query.start, query.end] : [query.end, query.start];
-  const rows = await db.wikiCategory.findMany({
-    where: {
-      members: { some: {} },
-      name: {
-        ...(query.prefix ? { startsWith: query.prefix } : {}),
-        ...(lower ? { gte: lower } : {}),
-        ...(upper ? { lte: upper } : {}),
-      },
-    },
-    orderBy: { name: ascending ? "asc" : "desc" },
-    take: query.limit + 1,
-    select: { name: true, _count: { select: { members: true } } },
-  });
-  return rows.map((row) => ({ name: row.name, members: row._count.members }));
+  // One row per category name (two categories may differ only in their slug), counting the members
+  // that are not deleted pages; a name is never split across two pages of the listing.
+  const rows = await db.$queryRaw<Array<{ name: string; members: bigint }>>(Prisma.sql`
+    SELECT c."name" AS "name", COUNT(m."id") AS "members"
+    FROM "wiki_categories" c
+    JOIN "wiki_category_members" m ON m."categoryId" = c."id"
+    JOIN "wiki_articles" a ON a."id" = m."articleId"
+    WHERE a."source" = ${SOURCE} AND a."status" <> 'ARCHIVED'
+      ${query.prefix ? Prisma.sql`AND starts_with(c."name", ${query.prefix})` : Prisma.empty}
+      ${lower ? Prisma.sql`AND c."name" >= ${lower}` : Prisma.empty}
+      ${upper ? Prisma.sql`AND c."name" <= ${upper}` : Prisma.empty}
+    GROUP BY c."name"
+    ORDER BY c."name" ${Prisma.raw(ascending ? "ASC" : "DESC")}
+    LIMIT ${query.limit + 1}`);
+  return rows.map((row) => ({ name: row.name, members: Number(row.members) }));
 }
 
 // ---------------------------------------------------------------------------

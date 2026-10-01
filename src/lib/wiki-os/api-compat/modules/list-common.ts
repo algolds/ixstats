@@ -5,7 +5,7 @@
 
 import { ApiError, badInteger, invalidTitle } from "../errors";
 import type { JsonObject } from "../format";
-import type { ApiParams } from "../params";
+import { MAX_MODULE_VALUES, type ApiParams } from "../params";
 import type { PageListRow } from "../store-types";
 import { canonicalizeTitle, NAMESPACE_CANONICAL_NAMES } from "~/lib/wiki-os/core/title";
 
@@ -20,8 +20,9 @@ export const pageItem = (row: PageListRow): JsonObject => ({
 
 /** The namespaces a request names (`*` = all, so undefined); a value that is not a namespace is `badvalue`. */
 export function namespacesParam(p: ApiParams, name = "namespace"): number[] | undefined {
+  p.declare({ name, type: "namespace", multi: true });
   if (!p.has(name)) return undefined;
-  const values = p.list(name);
+  const values = [...new Set(p.list(name, MAX_MODULE_VALUES))];
   if (values.includes("*")) return undefined;
   return values.map((value) => {
     if (!/^-?\d+$/.test(value)) throw badInteger(p.fullName(name), value);
@@ -35,6 +36,7 @@ export function namespacesParam(p: ApiParams, name = "namespace"): number[] | un
 
 /** One namespace (default `fallback`). */
 export function namespaceParam(p: ApiParams, fallback = 0, name = "namespace"): number {
+  p.declare({ name, type: "namespace", default: fallback });
   const [first] = namespacesParam(p, name) ?? [fallback];
   return first ?? fallback;
 }

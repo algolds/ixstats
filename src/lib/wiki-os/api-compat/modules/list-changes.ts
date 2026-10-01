@@ -8,7 +8,7 @@
 
 import { encodeCursor, optionalCursor } from "../continuation";
 import { ApiError, badContinue } from "../errors";
-import { mwTimestamp, type JsonObject } from "../format";
+import { mwTimestamp, sha1Hex, type JsonObject } from "../format";
 import type { ApiParams } from "../params";
 import type { LogRow, RevisionRow } from "../store-types";
 import type { ApiContext } from "../types";
@@ -89,7 +89,7 @@ function editItem(rev: RevisionRow, { props }: RcFilter): JsonObject {
     ...(props.has("sizes") ? { oldlen: rev.size - rev.sizeDiff, newlen: rev.size } : {}),
     ...(props.has("timestamp") ? { timestamp: mwTimestamp(rev.timestamp) } : {}),
     ...editComment(rev, props),
-    ...(props.has("sha1") ? { sha1: rev.sha1 } : {}),
+    ...(props.has("sha1") ? { sha1: sha1Hex(rev.sha1) } : {}),
     ...(props.has("tags") ? { tags: [] } : {}),
   };
 }
@@ -286,9 +286,6 @@ const UC_SHOW = ["minor", "!minor", "new", "!new", "top", "!top"] as const;
 
 async function runUserContribs(rc: ApiContext, p: ApiParams): Promise<ListResult> {
   const names = p.list("user").map(normalizeWikiUsername);
-  if (names.length === 0) {
-    throw new ApiError("missingparam", "One of the parameters ucuser, ucuserids, ucuserprefix, uciprange is required.");
-  }
   const props = new Set(p.listOf("prop", UC_PROPS, ["ids", "title", "timestamp", "comment", "size", "flags"]));
   const show = new Set(p.listOf("show", UC_SHOW));
   const limit = p.limit("limit", { fallback: 10, high: rc.highLimits });
@@ -299,9 +296,13 @@ async function runUserContribs(rc: ApiContext, p: ApiParams): Promise<ListResult
 
   const start = p.timestamp("start", rc.now);
   const end = p.timestamp("end", rc.now);
+  const namespaces = namespacesParam(p);
+  if (names.length === 0) {
+    throw new ApiError("missingparam", "One of the parameters ucuser, ucuserids, ucuserprefix, uciprange is required.");
+  }
   const rows = await rc.deps.store.findRevisions({
     dir: dir === "ascending" ? "newer" : "older",
-    namespaces: namespacesParam(p),
+    namespaces,
     users: names,
     minor: show.has("minor") ? true : show.has("!minor") ? false : undefined,
     from: start ? { timestamp: start } : undefined,

@@ -3,7 +3,7 @@
  * tables, shaped as the plain rows the api.php modules work with (`store-types.ts`).
  *
  * Nothing here writes: edits, moves, deletions and protections go through the existing services.
- * A deleted (ARCHIVED) page, or a row without text, does not exist to api.php.
+ * A deleted (ARCHIVED) page does not exist to api.php.
  *
  * Every page has a `pageId` and every revision a `revId` (prisma/manual-migrations/2026-09-30-wikios-api.sql);
  * a row without one means that SQL has not been applied, which is an error, never a quiet gap.
@@ -42,8 +42,8 @@ import type {
 
 const SOURCE = "ixwiki";
 const ACTIVE_USER_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
-/** Pages a bot can see: not deleted, and with text (a row without text is a stub). */
-const LIVE_PAGE = { source: SOURCE, status: { not: "ARCHIVED" }, wikitext: { not: "" } } as const;
+/** Pages a bot can see: the ones that are not deleted. A blanked page is still a page (MediaWiki lists it). */
+const LIVE_PAGE = { source: SOURCE, status: { not: "ARCHIVED" } } as const;
 
 function missingIds(column: string): Error {
   return new Error(
@@ -487,8 +487,18 @@ async function categoriesOf(
   };
 }
 
-async function wikitextByArticle(articleIds: readonly string[]): Promise<Map<string, string>> {
+async function wikitextByArticle(
+  articleIds: readonly string[],
+  maxChars?: number
+): Promise<Map<string, string>> {
   if (articleIds.length === 0) return new Map();
+  if (maxChars !== undefined) {
+    const rows = await db.$queryRaw<Array<{ id: string; wikitext: string }>>(Prisma.sql`
+      SELECT "id", left("wikitext", ${maxChars}) AS "wikitext"
+      FROM "wiki_articles"
+      WHERE "id" IN (${Prisma.join(articleIds)})`);
+    return new Map(rows.map((row) => [row.id, row.wikitext]));
+  }
   const rows = await db.wikiArticle.findMany({
     where: { id: { in: [...articleIds] } },
     select: { id: true, wikitext: true },
