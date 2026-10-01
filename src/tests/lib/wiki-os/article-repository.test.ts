@@ -7,7 +7,10 @@ import { enqueueRender, invalidateDependents } from "~/lib/wiki-os/services/rend
 import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
 import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
 import { scheduleMirrorKick } from "~/lib/wiki-os/services/mirror-outbox";
+import { Prisma } from "@prisma/client";
+import { InternalError } from "~/lib/app-error";
 import { EditConflictError } from "~/lib/wiki-os/core/edit-conflict-error";
+import { PageBusyError } from "~/lib/wiki-os/core/page-busy-error";
 
 const mockUpsert = jest.fn();
 const mockCount = jest.fn();
@@ -19,6 +22,7 @@ const mockFindFirst = jest.fn();
 const mockRevisionFindMany = jest.fn();
 const mockJobCreate = jest.fn();
 const mockQueryRaw = jest.fn();
+const mockTransactionOptions = jest.fn();
 const mockTxArticleFindUnique = jest.fn();
 const mockExecuteRaw = jest.fn();
 
@@ -45,7 +49,10 @@ jest.mock("~/server/db", () => {
   };
   return {
     db: {
-      $transaction: (cb: (t: typeof tx) => unknown) => cb(tx),
+      $transaction: (cb: (t: typeof tx) => unknown, options?: unknown) => {
+        mockTransactionOptions(options);
+        return cb(tx);
+      },
       wikiRevision: {
         findMany: (...a: unknown[]) => mockRevisionFindMany(...a),
         findFirst: (...a: unknown[]) => mockRevisionFindFirst(...a),
@@ -394,6 +401,67 @@ describe("ArticleRepository.saveArticle after plan 406", () => {
   });
 });
 
+describe("ArticleRepository.saveArticle: a save that cannot get its turn is busy, not broken (m2)", () => {
+  const save = () => {
+    mockUpsert.mockImplementation(async (args: { create: { title: string } }) => savedRow(args.create.title));
+    return ArticleRepository.saveArticle({ slug: "foo", title: "Foo", wikitext: "new text" });
+  };
+  const prismaError = (code: string) =>
+    new Prisma.PrismaClientKnownRequestError("Transaction API error: Transaction already closed", {
+      code,
+      clientVersion: "test",
+    });
+
+  it("limits how long it waits for the page's lock to 10 s (lock_timeout, for the transaction only), before it asks for the lock", async () => {
+    await save();
+
+    const [strings, ...values] = mockExecuteRaw.mock.calls[0]!;
+    expect((strings as TemplateStringsArray).join("?")).toBe("SELECT set_config('lock_timeout', ?, true)");
+    expect(values).toEqual(["10s"]);
+    expect(mockExecuteRaw.mock.invocationCallOrder[0]).toBeLessThan(mockQueryRaw.mock.invocationCallOrder[0]!);
+  });
+
+  it("gives its transaction time to wait for the page's lock: 10 s to start, 30 s to run", async () => {
+    await save();
+
+    expect(mockTransactionOptions).toHaveBeenCalledWith({ maxWait: 10_000, timeout: 30_000 });
+  });
+
+  it.each([
+    ["Prisma's P2028 (the transaction timed out or could not start)", () => prismaError("P2028")],
+    ["P2034 (a deadlock or write conflict)", () => prismaError("P2034")],
+    [
+      "PostgreSQL's lock timeout (55P03), which Prisma reports for a raw query as P2010",
+      () =>
+        new Prisma.PrismaClientKnownRequestError(
+          "Raw query failed. Code: `55P03`. Message: `ERROR: canceling statement due to lock timeout`",
+          { code: "P2010", clientVersion: "test" }
+        ),
+    ],
+    [
+      "the InternalError the database client makes of a timed-out query inside the transaction",
+      () => new InternalError("Transaction API error: Transaction already closed: A query cannot be executed on an expired transaction."),
+    ],
+  ])("answers PageBusyError, retryable and a 409 for tRPC, for %s", async (_name, error) => {
+    mockQueryRaw.mockRejectedValue(error());
+
+    const failure = await save().catch((caught: unknown) => caught);
+
+    expect(failure).toBeInstanceOf(PageBusyError);
+    expect(failure).toMatchObject({ statusCode: 409, trpcCode: "CONFLICT", message: expect.stringContaining("busy") });
+    expect(mockRevisionCreate).not.toHaveBeenCalled();
+  });
+
+  it("lets every other failure of the save through as it is", async () => {
+    const other = new Error("connection refused");
+    mockQueryRaw.mockRejectedValue(other);
+    await expect(save()).rejects.toBe(other);
+
+    mockQueryRaw.mockRejectedValue(prismaError("P2002")); // a unique violation is not a busy page
+    await expect(save()).rejects.not.toBeInstanceOf(PageBusyError);
+  });
+});
+
 describe("ArticleRepository.saveArticle: the page is locked, and the edit-conflict check is part of the save (F1)", () => {
   const HEAD = { id: "rev-head", mwRevId: null, byteSize: 10 };
   const save = (extra: { expectedHeadRef?: string | null } = {}, wikitext = "new text") => {
@@ -419,7 +487,10 @@ describe("ArticleRepository.saveArticle: the page is locked, and the edit-confli
     const sql = (mockQueryRaw.mock.calls[0]?.[0] as TemplateStringsArray).join("?");
     expect(sql).toMatch(/FROM wiki_articles WHERE "source" = \? AND "title" = \? FOR NO KEY UPDATE/);
     expect(mockQueryRaw.mock.calls[0]?.slice(1)).toEqual(["ixwiki", "Foo"]);
-    expect(mockExecuteRaw).not.toHaveBeenCalled(); // the row exists: no advisory lock
+    // the row exists: the only raw statement besides the lock is the wait limit, no advisory lock
+    expect(mockExecuteRaw.mock.calls.map(([strings]) => (strings as TemplateStringsArray).join("?"))).toEqual([
+      "SELECT set_config('lock_timeout', ?, true)",
+    ]);
     const order = (fn: jest.Mock) => fn.mock.invocationCallOrder[0]!;
     expect(order(mockQueryRaw)).toBeLessThan(order(mockRevisionFindFirst));
     expect(order(mockRevisionFindFirst)).toBeLessThan(order(mockUpsert));
@@ -431,14 +502,14 @@ describe("ArticleRepository.saveArticle: the page is locked, and the edit-confli
 
     await save({ expectedHeadRef: null });
 
-    expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
-    const [strings, ...values] = mockExecuteRaw.mock.calls[0]!;
+    expect(mockExecuteRaw).toHaveBeenCalledTimes(2); // the wait limit, then the advisory lock
+    const [strings, ...values] = mockExecuteRaw.mock.calls[1]!;
     expect((strings as TemplateStringsArray).join("?")).toMatch(
       /SELECT pg_advisory_xact_lock\(\?::int, hashtext\(\?\)\)/
     );
     expect(values).toEqual([41102, "ixwiki:Foo"]);
     // and only then looks for a head
-    expect(mockExecuteRaw.mock.invocationCallOrder[0]).toBeLessThan(
+    expect(mockExecuteRaw.mock.invocationCallOrder[1]).toBeLessThan(
       mockRevisionFindFirst.mock.invocationCallOrder[0]!
     );
     expect(mockRevisionCreate).toHaveBeenCalledTimes(1);

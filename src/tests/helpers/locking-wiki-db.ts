@@ -68,6 +68,8 @@ export function createLockingWikiDb({ locks = true }: { locks?: boolean } = {}) 
       },
       async $executeRaw(strings: TemplateStringsArray, ...values: unknown[]) {
         await tick();
+        // `SELECT set_config('lock_timeout', '10s', true)`: the model's locks wait as long as it takes
+        if (strings.join("?").includes("set_config('lock_timeout'")) return 0;
         if (!strings.join("?").includes("pg_advisory_xact_lock") || values.length !== 2) {
           throw new Error("the locking model understands only a two-int advisory lock");
         }

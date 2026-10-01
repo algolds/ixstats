@@ -23,6 +23,7 @@ import {
   type WikiRevisionSummary,
 } from "./domain-types";
 import { EditConflictError, headMatchesBase } from "./edit-conflict-error";
+import { isTransactionBusy, PageBusyError } from "./page-busy-error";
 import { parseRedirect } from "./redirect";
 import { fillRevisionParents } from "./revision-parents";
 import { canonicalizeTitle } from "./title";
@@ -44,6 +45,23 @@ import { notifyWatchers } from "../services/watchlist-notify";
  * its own: the single-int locks are `withJobLock`'s, staged-uploads.ts uses 41101, cards 7331). Arbitrary.
  */
 const ARTICLE_SAVE_LOCK_NAMESPACE = 41102;
+
+/**
+ * The save's transaction: it may wait for the page's lock behind another save (or a long import of the page), so it
+ * gets more than Prisma's 5 s, like the staged-file and render-metadata transactions.
+ */
+export const SAVE_TRANSACTION = { maxWait: 10_000, timeout: 30_000 };
+/**
+ * How long a save waits for the page's lock before it gives up as busy (PostgreSQL's `lock_timeout`, set for the
+ * transaction only). Prisma's transaction timeout alone does not bound the wait: it cannot cancel a statement that is
+ * blocked on a lock, so the connection would stay occupied until the holder (a long import of the page) finished.
+ */
+const SAVE_LOCK_TIMEOUT = "10s";
+
+/** A save that waited too long for the page's lock is busy, and retryable: not a failure of the save. */
+function retryableWhenBusy(error: unknown): never {
+  throw isTransactionBusy(error) ? new PageBusyError() : error;
+}
 
 /** `WikiArticle.summary` is a VarChar(500); the excerpt stays under it. */
 const MAX_EXCERPT_LENGTH = 480;
@@ -648,6 +666,8 @@ type SaveTransaction = Prisma.TransactionClient;
  * one that gets it second reads the page the first created.
  */
 async function lockPageForSave(tx: SaveTransaction, source: string, title: string): Promise<void> {
+  // for this transaction only (`is_local`); the statement that waits too long fails with 55P03, which reads as busy
+  await tx.$executeRaw`SELECT set_config('lock_timeout', ${SAVE_LOCK_TIMEOUT}, true)`;
   const locked = await tx.$queryRaw<Array<{ id: string }>>`
     SELECT "id" FROM wiki_articles WHERE "source" = ${source} AND "title" = ${title} FOR NO KEY UPDATE`;
   if (locked.length > 0) return;
@@ -883,7 +903,7 @@ export class ArticleRepository {
       });
 
       return { article, revision, textUnchanged, previous };
-    });
+    }, SAVE_TRANSACTION).catch(retryableWhenBusy);
     // The job is committed: let the mirror worker send it to MediaWiki in a moment, not at the next cron minute.
     scheduleMirrorKick();
 

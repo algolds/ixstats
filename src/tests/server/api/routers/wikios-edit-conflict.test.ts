@@ -57,6 +57,7 @@ import { wikiosEditingRouter } from "~/server/api/routers/wikios/editing";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { EditConflictError, headMatchesBase } from "~/lib/wiki-os/core/edit-conflict-error";
+import { PageBusyError } from "~/lib/wiki-os/core/page-busy-error";
 import { CloudflareGuardian } from "~/lib/wiki-os/guardian/cloudflare-guardian";
 
 const createCaller = createCallerFactory(wikiosEditingRouter);
@@ -201,6 +202,18 @@ describe("wikiosEditingRouter.saveWikitext edit conflicts (WK-2, F1)", () => {
     await caller().saveWikitext({ title: "vesperia_city", wikitext: "x", baseRevisionRef: "rev-2" });
 
     expect(jest.mocked(ArticleRepository.saveArticle).mock.calls[0]?.[0]).toMatchObject({ title: "Vesperia city" });
+  });
+
+  it("lets a save that could not get its turn through as a retryable PageBusyError (a 409 CONFLICT for tRPC), not an edit conflict and not a 500", async () => {
+    jest.mocked(ArticleRepository.saveArticle).mockRejectedValue(new PageBusyError());
+
+    const failure = await caller()
+      .saveWikitext({ title: "Vesperia", wikitext: "x", baseRevisionRef: "rev-2" })
+      .catch((error: unknown) => error);
+
+    // tRPC wraps what a procedure throws; the error formatter reads the AppError cause (init.ts)
+    expect((failure as { cause?: unknown }).cause).toBeInstanceOf(PageBusyError);
+    expect((failure as { cause: PageBusyError }).cause).toMatchObject({ statusCode: 409, trpcCode: "CONFLICT" });
   });
 
   it("lets any other failure of the save through", async () => {
