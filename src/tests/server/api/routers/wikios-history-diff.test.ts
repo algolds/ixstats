@@ -89,6 +89,61 @@ describe("wikiosHistoryDiffRouter.getDiff (plan 402)", () => {
     expect(result).toMatchObject({ oldWikitext: "old", newWikitext: "new" });
   });
 
+  describe("which revision a diff starts from (plan 406)", () => {
+    const entry = (revid: string, parked: boolean) => ({
+      revid,
+      user: "u",
+      timestamp: "",
+      comment: "",
+      size: 1,
+      byteDelta: 0,
+      minor: false,
+      parked,
+    });
+    const history = [
+      entry("r3", false),
+      entry("9001", true),
+      entry("9000", true),
+      entry("r1", false),
+    ];
+
+    beforeEach(() => {
+      jest.mocked(getArticleHistoryShadow).mockResolvedValue({
+        revisions: history,
+        hasMore: false,
+        fromShadow: true,
+      });
+      jest.mocked(getRevisionWikitextShadow).mockImplementation(async (ref: string) => ({
+        ...revision(`text of ${ref}`),
+      }));
+    });
+
+    it("a live revision is compared with the live one before it, not with a parked edit between them", async () => {
+      const result = await caller().getDiff({ torev: "r3" });
+
+      expect(result.from.revid).toBe("r1");
+      expect(result.oldWikitext).toBe("text of r1");
+    });
+
+    it("a parked revision is compared with the revision next to it in the history", async () => {
+      const result = await caller().getDiff({ torev: "9001" });
+
+      expect(result.from.revid).toBe("9000");
+    });
+
+    it("an explicit fromrev is honoured, parked or not", async () => {
+      const result = await caller().getDiff({ torev: "r3", fromrev: "9001" });
+
+      expect(result.from.revid).toBe("9001");
+    });
+
+    it("the first live revision has nothing before it, however many parked edits follow it in the list", async () => {
+      const result = await caller().getDiff({ torev: "r1" });
+
+      expect(result.from.revid).toBe("");
+    });
+  });
+
   it.each<[string, string | null, string | null]>([
     ["the revision being viewed", null, "old"],
     ["the revision it is compared with", "new", null],

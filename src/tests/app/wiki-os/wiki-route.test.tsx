@@ -763,6 +763,23 @@ describe("views of a page (plan 412 step 5)", () => {
     expect(mockHistory).not.toHaveBeenCalled();
   });
 
+  it("the link of a parked-edit notification (plan 406) opens that edit against the head it conflicted with", async () => {
+    // `/wiki/<urlPath>?diff=<the parked edit>&oldid=<the head>`, exactly as inbound-revision-sync writes it.
+    for (const href of [
+      "/wiki/Foo_bar?diff=95&oldid=90",
+      "/wiki/Foo_bar?diff=95&oldid=cm9abc123xyz",
+    ]) {
+      const url = new URL(href, "https://ixstats.test");
+      const slug = url.pathname.replace(/^\/wiki\//, "").split("/");
+      const { tree, signal } = await outcome(slug, Object.fromEntries(url.searchParams));
+      expect(signal).toBeNull();
+      expect(propsOf(tree, "RevisionDiffView")).toMatchObject({
+        fromrev: url.searchParams.get("oldid"),
+        torev: "95",
+      });
+    }
+  });
+
   it("?diff=next and ?diff=cur are worked out from the page's history", async () => {
     mockHistory.mockResolvedValue({
       revisions: [{ revid: "9" }, { revid: "7" }, { revid: "5" }],

@@ -70,8 +70,11 @@ export const wikiosHistoryDiffRouter = createTRPCRouter({
       const toIndex = history.revisions.findIndex((r) => r.revid === input.torev);
       const toRev = toIndex >= 0 ? history.revisions[toIndex] : null;
 
-      // History is newest-first, so the previous revision sits at toIndex + 1.
-      const previousRevId = toIndex >= 0 ? history.revisions[toIndex + 1]?.revid : undefined;
+      // History is newest-first, so the previous revision sits at toIndex + 1. A live revision follows the
+      // live ones: a conflicting edit that was parked in between was never the page's text, so the change
+      // this revision made is not measured from it. (A parked revision is compared with its neighbour.)
+      const older = toIndex >= 0 ? history.revisions.slice(toIndex + 1) : [];
+      const previousRevId = (toRev?.parked ? older[0] : older.find((r) => !r.parked))?.revid;
       const resolvedFromRevId = input.fromrev || previousRevId || "";
 
       const fromData = resolvedFromRevId

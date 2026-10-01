@@ -429,6 +429,7 @@ async function notifyParkedEditor(
     message:
       `Your edit to "${canon.title}" (revision ${rev.revid}) was not made on the current WikiOS revision. ` +
       "It was kept in the page history as a conflict, and WikiOS's current text was restored in MediaWiki.",
+    // The reader's own diff view (plan 412): this edit against the head it conflicted with.
     href: `/wiki/${canon.urlPath}?diff=${rev.revid}&oldid=${headRef}`,
     category: "wiki",
     type: "warning",
