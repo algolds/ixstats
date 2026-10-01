@@ -175,8 +175,8 @@ async function loadHeads(jobs: readonly MirrorJob[]): Promise<Map<string, Revisi
 }
 
 /** Whether a job's revision goes into the import: it exists, and (but for a restore) MediaWiki does not have it yet. */
-function isSent(head: RevisionHead | undefined, restore: boolean): head is RevisionHead {
-  return head !== undefined && (restore || head.mwRevId === null);
+function isSent(head: RevisionHead, restore: boolean): boolean {
+  return restore || head.mwRevId === null;
 }
 
 /**
@@ -193,7 +193,7 @@ function withinBudget(
   let bytes = 0;
   for (const job of jobs) {
     const head = job.revisionId ? heads.get(job.revisionId) : undefined;
-    if (isSent(head, restore)) {
+    if (head && isSent(head, restore)) {
       const size = head.byteSize + REVISION_XML_OVERHEAD;
       if (sending > 0 && bytes + size > MAX_BATCH_BYTES) break;
       bytes += size;
@@ -212,7 +212,7 @@ async function loadRevisions(
 ): Promise<Map<string, MirroredRevision>> {
   const ids = jobs.flatMap((job) => {
     const head = job.revisionId ? heads.get(job.revisionId) : undefined;
-    return isSent(head, restore) ? head.id : [];
+    return head && isSent(head, restore) ? head.id : [];
   });
   if (ids.length === 0) return new Map();
   const rows = await db.wikiRevision.findMany({
