@@ -282,11 +282,17 @@ new code uses `soundCues` or the primitives (dialogs and sheets already play pre
 
 ## 7. Appearance & accessibility
 
-A blocking, nonce'd script in `src/app/layout.tsx` (`src/lib/design/appearance.ts`) applies the stored preferences to
+A blocking, nonce'd script (`APPEARANCE_INIT_SCRIPT`, `src/lib/design/appearance.ts`) applies the stored preferences to
 `<html>` before first paint: `data-theme` (System default), `data-density`, `data-contrast`, `data-transparency`,
 `data-motion`, `data-sound` and `--text-scale`, plus the navigation shell's `data-nav` and `data-sidebar` (§12). Users change them in **Settings → Appearance & accessibility**; code
 reads them through `useTheme()` (`src/context/theme-context.tsx`). Variants: `motion-reduce:`, `contrast-more:`,
 `transparency-reduced:`, `compact:`.
+
+The script is written by `AppearanceInitScript` (`src/components/providers/AppearanceInitScript.tsx`, mounted in the root
+layout's `<head>` with the request's CSP nonce) through `useServerInsertedHTML`: into the server's HTML only, never as a
+React `<script>` element. Next renders a page's tree on the client instead of hydrating it in some cases (the error shell
+of a 404), and React then warns that a script it creates never runs. No component renders a `<script>` (checked by
+`src/tests/components/appearance-init-script.test.tsx`).
 
 Requirements: WCAG 2.2 AA contrast; visible focus (2px tint, 2px offset); 44px targets on coarse pointers; full ARIA
 patterns for custom controls; colour never carries meaning alone; layouts reflow at 130% text size.
