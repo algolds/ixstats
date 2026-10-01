@@ -523,6 +523,30 @@ describe("PageManagementService.movePage and the rendered view (plan 404)", () =
     ).toEqual(["orig", "talk-orig"]);
   });
 
+  it("marks a restored page stale and queues its render after the commit (a deleted page's view is rebuilt)", async () => {
+    pages({ old_name: { ...original, status: "ARCHIVED" } });
+
+    await PageManagementService.restoreArticle("Old name", actor);
+
+    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({
+      status: "PUBLISHED",
+      htmlSyncedAt: null,
+    });
+    expect(mockUpdate.mock.calls[0]?.[0].data).not.toHaveProperty("contentHtml");
+    expect(enqueueRender).toHaveBeenCalledTimes(1);
+    expect(enqueueRender).toHaveBeenCalledWith("orig");
+  });
+
+  it("queues no render for a restore that was refused, or for a delete", async () => {
+    pages({ old_name: original });
+    await expect(PageManagementService.restoreArticle("Old name", actor)).rejects.toMatchObject({
+      code: "CONFLICT",
+    });
+    await PageManagementService.archiveArticle("Old name", "spam", actor);
+
+    expect(enqueueRender).not.toHaveBeenCalled();
+  });
+
   it("queues nothing for a move that failed", async () => {
     mockFindFirst.mockReset().mockResolvedValue(null);
 

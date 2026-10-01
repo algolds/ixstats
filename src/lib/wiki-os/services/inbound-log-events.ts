@@ -149,13 +149,19 @@ async function applyDelete(tx: Tx, { event, canon }: EventContext): Promise<Appl
     select: { id: true, status: true },
   });
   if (restoring) {
-    if (article?.status === "ARCHIVED") {
-      await tx.wikiArticle.update({ where: { id: article.id }, data: { status: "PUBLISHED" } });
+    const brought = article?.status === "ARCHIVED";
+    if (article && brought) {
+      // Its view was built for a page that was out of the link graph and the category lists: stale.
+      await tx.wikiArticle.update({
+        where: { id: article.id },
+        data: { status: "PUBLISHED", htmlSyncedAt: null },
+      });
     }
     return {
       outcome: "applied",
       articleId: article?.id ?? null,
       afterCommit: async () => {
+        if (article && brought) enqueueRender(article.id, { background: true });
         // The page that came back has its latest revision from MediaWiki (a new page id, maybe new text).
         await bringOver(canon.title);
         await evictCaches(canon.title, article?.id);

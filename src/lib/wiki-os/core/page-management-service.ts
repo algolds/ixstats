@@ -464,7 +464,14 @@ export class PageManagementService {
 
       await tx.wikiArticle.update({
         where: { id: article.id },
-        data: { status: "PUBLISHED", lastEditorId: actor.userId, updatedAt: new Date() },
+        data: {
+          status: "PUBLISHED",
+          // Its view was built for a page that was out of the link graph, the category lists and the caches:
+          // stale until the render queued below replaces it (readers see the old bundle meanwhile).
+          htmlSyncedAt: null,
+          lastEditorId: actor.userId,
+          updatedAt: new Date(),
+        },
         select: { id: true },
       });
       const log = await tx.wikiLog.create({
@@ -490,7 +497,8 @@ export class PageManagementService {
       return { title: article.title, articleId: article.id };
     });
     scheduleMirrorKick();
-    // The page was "missing" while deleted: forget that, and anything cached from before.
+    // The page was "missing" while deleted: forget that, and anything cached from before, and render it again off the read path.
+    enqueueRender(articleId);
     await evictWikiTitleCaches(title, realm, articleId);
     // A restored template or module: the pages that use it render with it again.
     void invalidateTemplateDependents(title, realm);
