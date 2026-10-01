@@ -95,7 +95,7 @@ export const forumStashRouter = createTRPCRouter({
         });
         if (!owned) throw new TRPCError({ code: "NOT_FOUND", message: "Stash not found" });
         await db.stashItem.deleteMany({
-          where: { stashId: owned.id, pageTitle },
+          where: { stashId: owned.id, pageTitle, contentType: "forum_thread" },
         });
       } else {
         // Remove from all user's stashes
@@ -107,6 +107,7 @@ export const forumStashRouter = createTRPCRouter({
           where: {
             stashId: { in: userStashes.map((s) => s.id) },
             pageTitle,
+            contentType: "forum_thread",
           },
         });
       }
@@ -131,6 +132,7 @@ export const forumStashRouter = createTRPCRouter({
         where: {
           stashId: { in: userStashes.map((s) => s.id) },
           pageTitle,
+          contentType: "forum_thread",
         },
         select: { stashId: true },
       });

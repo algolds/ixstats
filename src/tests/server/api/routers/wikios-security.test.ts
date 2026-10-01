@@ -626,7 +626,7 @@ describe("S5: forum stashThread / unstashThread only touch the caller's own stas
     await forumCaller().unstashThread({ threadId: 7, stashId: "mine" });
 
     expect(mockDb.stashItem.deleteMany).toHaveBeenCalledWith({
-      where: { stashId: "mine", pageTitle: "forum:thread:7" },
+      where: { stashId: "mine", pageTitle: "forum:thread:7", contentType: "forum_thread" },
     });
   });
 
