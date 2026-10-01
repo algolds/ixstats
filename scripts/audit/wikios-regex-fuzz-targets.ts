@@ -1048,6 +1048,8 @@ const WIKITEXT_UNITS: ReadonlyArray<readonly [name: string, unit: string]> = [
   ["<ref>", "<ref>"],
   ["<!--", "<!--"],
   ["<pre>", "<pre>"],
+  ["<blockquote>␤", "<blockquote>\n"],
+  ["<blockquote>␤…</blockquote> x", "<blockquote>\n</blockquote> x"],
   ["<gallery", "<gallery"],
   ["'''", "'''"],
   ["''", "''"],

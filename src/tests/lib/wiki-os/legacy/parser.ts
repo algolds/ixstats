@@ -1,3 +1,6 @@
+// The block parser as the integration branch has it (515ca3c72), before the regex-DoS sweep (plan F15), verbatim apart from its
+// import paths: regex-dos-wikitext.test.ts holds the memoized blockquote walk against it. Not used by any code.
+
 /**
  * src/lib/wiki-os/wikitext/parser.ts — Universal Tolerant MediaWiki Parser.
  *
@@ -12,22 +15,13 @@
  * parse diagnostic) become atomic `raw` blocks.
  */
 
-import { isBlank } from "./blank";
-import { isTemplateOnlyLine, logicalLineEnd } from "./block-lines";
-import { forwardFinder } from "./forward-finder";
-import { isMagicWordLine, matchHeading, startsRedirect } from "./line-patterns";
-import { parseInlineLinksAndFormatting } from "./link-parser";
-import { parseWikiList } from "./list-parser";
-import { matchBraces, type MatchIndex } from "./match-index";
-import {
-  findTagClose,
-  isCommentOnly,
-  matchOpenTag,
-  ProtectedScanner,
-  type OpenTag,
-} from "./protected-regions";
-import { parseWikitable } from "./table-parser";
-import { scanTemplateAt, unclosedTemplateDiagnostic } from "./template-parser";
+import { isTemplateOnlyLine, logicalLineEnd } from "~/lib/wiki-os/wikitext/block-lines";
+import { parseInlineLinksAndFormatting } from "~/lib/wiki-os/wikitext/link-parser";
+import { parseWikiList } from "~/lib/wiki-os/wikitext/list-parser";
+import { matchBraces, type MatchIndex } from "~/lib/wiki-os/wikitext/match-index";
+import { findTagClose, isCommentOnly, matchOpenTag, ProtectedScanner, type OpenTag } from "~/lib/wiki-os/wikitext/protected-regions";
+import { parseWikitable } from "~/lib/wiki-os/wikitext/table-parser";
+import { scanTemplateAt, unclosedTemplateDiagnostic } from "~/lib/wiki-os/wikitext/template-parser";
 import type {
   WikiBlockNode,
   ParseResult,
@@ -38,7 +32,7 @@ import type {
   WikiTemplateNode,
   WikiParserFunctionBlock,
   ParsedTemplate,
-} from "./types";
+} from "~/lib/wiki-os/wikitext/types";
 
 interface ScanContext {
   input: string;
@@ -47,22 +41,6 @@ interface ScanContext {
   braces: MatchIndex;
   /** What the scan of the input keeps about its tags, built once so the scan stays linear. */
   scanner: ProtectedScanner;
-  /** The first `</blockquote>` at or after a position: blocks only ever start further on. */
-  nextBlockquoteClose: (from: number) => number;
-  /** The last walk to the line with a `</blockquote>`, which a block that starts after it finds the same. */
-  blockquoteEnd?: BlockquoteEnd;
-  /** Whether what follows the last `</blockquote>` looked at is blank on its line. */
-  blockquoteTail?: { from: number; to: number; blank: boolean };
-}
-
-/** Where the first `</blockquote>` at or after a block's start is, and where its logical line (and the text of it) ends. */
-interface BlockquoteEnd {
-  /** The block the walk began at: any block from here to `at` finds the same closer. */
-  from: number;
-  /** The closer's index (-1: there is none in the rest of the input). */
-  at: number;
-  lineEnd: number;
-  contentEnd: number;
 }
 
 /** A block found at a line start: its node and the index of the line break that ends its last line. */
@@ -73,12 +51,15 @@ interface Scanned {
   resumeAt?: number;
 }
 
+const HEADING = /^(={1,6})\s*(.+?)\s*\1$/;
 const DIVIDER = /^----+$/;
 const LIST_LINE = /^[*#:;]/;
 const BLOCKQUOTE_OPEN = /^<blockquote[\s>]/i;
 const BLOCKQUOTE_CLOSE = /<\/blockquote>/i;
 /** A line that opens a table: `{|`, or a cell whose content starts one (`| {|`). */
 const OPENS_TABLE = /^(?:[|!]\s*)?\{\|/;
+const MAGIC_WORD_LINE = /^(?:__[A-Za-z0-9_]+__[ \t]*)+$/;
+const REDIRECT_LINE = /^#redirect\s*:?\s*\[\[/i;
 
 export function parse(input: string, options?: { title?: string; slug?: string }): ParseResult {
   const title = options?.title || "";
@@ -93,13 +74,7 @@ export function parse(input: string, options?: { title?: string; slug?: string }
     };
   }
 
-  const ctx: ScanContext = {
-    input,
-    diagnostics,
-    braces: matchBraces(input),
-    scanner: new ProtectedScanner(input),
-    nextBlockquoteClose: forwardFinder(input, /<\/blockquote>/gi),
-  };
+  const ctx: ScanContext = { input, diagnostics, braces: matchBraces(input), scanner: new ProtectedScanner(input) };
   let cursor = 0; // end of the previous block
   let pos = 0; // start of the line being scanned
 
@@ -190,7 +165,7 @@ function scanRedirect(
   lineEnd: number,
   isFirst: boolean
 ): Scanned | null {
-  return isFirst && startsRedirect(line) ? rawBlock(ctx, start, lineEnd, "redirect") : null;
+  return isFirst && REDIRECT_LINE.test(line) ? rawBlock(ctx, start, lineEnd, "redirect") : null;
 }
 
 /** A line of comments only, or of `__NOTOC__`-style magic words. */
@@ -207,7 +182,7 @@ function scanCommentOrMagicWord(
     }
     if (isCommentOnly(line)) return rawBlock(ctx, start, lineEnd, "comment");
   }
-  return isMagicWordLine(line) ? rawBlock(ctx, start, lineEnd, "magic-word") : null;
+  return MAGIC_WORD_LINE.test(line) ? rawBlock(ctx, start, lineEnd, "magic-word") : null;
 }
 
 /**
@@ -366,11 +341,11 @@ function scanTable(
 /** `== Heading ==` and `----`, each a single line. */
 function scanHeadingOrDivider(line: string, lineEnd: number): Scanned | null {
   if (DIVIDER.test(line)) return { node: { type: "divider", children: [{ text: "" }] }, lineEnd };
-  const heading = matchHeading(line);
-  if (!heading) return null;
-  const level = heading.level as 1 | 2 | 3 | 4 | 5 | 6;
+  const match = HEADING.exec(line);
+  if (!match) return null;
+  const level = Math.min(6, Math.max(1, match[1]!.length)) as 1 | 2 | 3 | 4 | 5 | 6;
   return {
-    node: { type: "heading", level, children: parseInlineLinksAndFormatting(heading.title) },
+    node: { type: "heading", level, children: parseInlineLinksAndFormatting(match[2]!) },
     lineEnd,
   };
 }
@@ -403,57 +378,6 @@ function scanList(
 }
 
 /** `<blockquote>…</blockquote>` that ends its line; anything else stays an ordinary paragraph. */
-/**
- * The walk, line by line, from the block at `start` to the logical line that holds the first `</blockquote>` (null
- * when none follows). Once a walk has found it, every block from there to that closer finds the same line without
- * walking: a page of `<blockquote>` lines that never close, or that close once with text after, is one walk.
- */
-function blockquoteEnd(
-  ctx: ScanContext,
-  start: number,
-  firstLineEnd: number
-): BlockquoteEnd | null {
-  const known = ctx.blockquoteEnd;
-  if (known && start >= known.from && (known.at === -1 || start <= known.at)) {
-    return known.at === -1 ? null : known;
-  }
-  const { input } = ctx;
-  let segmentStart = start;
-  let lineEnd = firstLineEnd;
-  for (;;) {
-    const closer = BLOCKQUOTE_CLOSE.exec(input.slice(segmentStart, lineEnd));
-    if (closer) {
-      const found = {
-        from: start,
-        at: segmentStart + closer.index,
-        lineEnd,
-        contentEnd: contentEnd(input, start, lineEnd),
-      };
-      ctx.blockquoteEnd = found;
-      return found;
-    }
-    if (lineEnd >= input.length) {
-      ctx.blockquoteEnd = { from: start, at: -1, lineEnd, contentEnd: lineEnd };
-      return null;
-    }
-    segmentStart = lineEnd + 1;
-    lineEnd = logicalLineEnd(input, segmentStart, ctx.braces, ctx.scanner);
-  }
-}
-
-/** Whether `[from, to)` is blank: asked of the same text by every block that ends at one closer, so remembered. */
-function isBlankRange(ctx: ScanContext, from: number, to: number): boolean {
-  const known = ctx.blockquoteTail;
-  if (known?.from === from && known.to === to) return known.blank;
-  let at = from;
-  while (at < to && isBlank(ctx.input.charCodeAt(at))) at++;
-  ctx.blockquoteTail = { from, to, blank: at === to };
-  return at === to;
-}
-
-const BLOCKQUOTE_CLOSE_LENGTH = "</blockquote>".length;
-const BLOCKQUOTE_OPEN_LENGTH = "<blockquote".length;
-
 function scanBlockquote(
   ctx: ScanContext,
   line: string,
@@ -461,21 +385,20 @@ function scanBlockquote(
   firstLineEnd: number
 ): Scanned | null {
   if (!BLOCKQUOTE_OPEN.test(line)) return null;
-  const end = blockquoteEnd(ctx, start, firstLineEnd);
-  if (!end) return null;
-  // What `/^<blockquote[^>]*>([\s\S]*?)<\/blockquote>([\s\S]*)$/i` read from the block's text: the opening tag to its
-  // first `>`, the text up to the first `</blockquote>` after it, and nothing but blanks after that.
-  const tagEnd = ctx.scanner.nextGreaterThan(start + BLOCKQUOTE_OPEN_LENGTH);
-  if (tagEnd === -1 || tagEnd >= end.contentEnd) return null;
-  const closeAt = ctx.nextBlockquoteClose(tagEnd + 1);
-  const closeEnd = closeAt + BLOCKQUOTE_CLOSE_LENGTH;
-  if (closeAt === -1 || closeEnd > end.contentEnd || !isBlankRange(ctx, closeEnd, end.contentEnd)) {
-    return null;
+  const { input } = ctx;
+  let lineEnd = firstLineEnd;
+  let segmentStart = start;
+  while (!BLOCKQUOTE_CLOSE.test(input.slice(segmentStart, lineEnd))) {
+    if (lineEnd >= input.length) return null;
+    segmentStart = lineEnd + 1;
+    lineEnd = logicalLineEnd(input, segmentStart, ctx.braces, ctx.scanner);
   }
-  const inner = ctx.input.slice(tagEnd + 1, closeAt).trim();
+  const raw = input.slice(start, contentEnd(input, start, lineEnd));
+  const match = /^<blockquote[^>]*>([\s\S]*?)<\/blockquote>([\s\S]*)$/i.exec(raw);
+  if (!match || match[2]!.trim() !== "") return null;
   return {
-    node: { type: "blockquote", children: parseInlineLinksAndFormatting(inner) },
-    lineEnd: end.lineEnd,
+    node: { type: "blockquote", children: parseInlineLinksAndFormatting(match[1]!.trim()) },
+    lineEnd,
   };
 }
 
@@ -485,12 +408,12 @@ function startsNewBlock(ctx: ScanContext, start: number, lineEnd: number): boole
   const text = line.trim();
   return (
     text === "" ||
-    matchHeading(text) !== null ||
+    HEADING.test(text) ||
     DIVIDER.test(text) ||
     LIST_LINE.test(text) ||
     text.startsWith("{|") ||
     BLOCKQUOTE_OPEN.test(text) ||
-    isMagicWordLine(text) ||
+    MAGIC_WORD_LINE.test(text) ||
     isCommentOnly(text) ||
     isTemplateOnlyLine(text) ||
     standaloneOpaqueTag(ctx, start + line.length - line.trimStart().length, lineEnd) !== null

@@ -28,6 +28,8 @@ import {
 import * as legacyProtected from "./legacy/protected-regions";
 import { findSectionLine, sectionHeadings } from "~/lib/wiki-os/wikitext/section-locator";
 import { linkTargets } from "~/lib/wiki-os/api-compat/scan";
+import { parse } from "~/lib/wiki-os/wikitext/parser";
+import { parse as legacyParse } from "./legacy/parser";
 import {
   scanTemplateAt,
   scanTemplates,
@@ -1254,5 +1256,60 @@ describe("api-compat/scan: linkTargets answers what it answered", () => {
     const started = performance.now();
     linkTargets("[[".repeat(100_000) + "]]".repeat(100_000), 5001);
     expect(performance.now() - started).toBeLessThan(500);
+  });
+});
+
+// ---- parser: a block's closing </blockquote> is looked for once -----------------------------------------------
+
+describe("parser: scanBlockquote answers what it answered", () => {
+  const TOKENS = [
+    "<blockquote>",
+    "<blockquote class=a>",
+    "<BLOCKQUOTE>",
+    "<blockquote",
+    "<blockquote\n",
+    "</blockquote>",
+    "</BlockQuote>",
+    " ",
+    "\n",
+    "\n\n",
+    "text",
+    "{{a|",
+    "}}",
+    "{{a}}",
+    "<!--",
+    "-->",
+    "<pre>",
+    "</pre>",
+    "<ref>",
+    "</ref>",
+    "[[x]]",
+    "* item\n",
+    "== h ==\n",
+    ">",
+    "{|\n|}\n",
+  ];
+  it("parses what it parsed, on random block soups and every real page", () => {
+    const texts = [...randomTexts(TOKENS, 25_000, 81, 16), ...fixtures];
+    expect(
+      disagreements(
+        texts,
+        (text) => parse(text),
+        (text) => legacyParse(text)
+      )
+    ).toEqual([]);
+  });
+
+  it("takes time linear in the openers of a text: lines that never close, and lines that close once with text after", () => {
+    const started = performance.now();
+    for (const text of [
+      "<blockquote>\n".repeat(11_000),
+      `${"<blockquote>\n".repeat(11_000)}</blockquote> tail`,
+      `${"<blockquote\n".repeat(11_000)}</blockquote>`,
+      `${"<blockquote>\n".repeat(11_000)}</blockquote>${" ".repeat(100_000)}x`,
+    ]) {
+      expect(parse(text).ast.nodes.length).toBeGreaterThan(0);
+    }
+    expect(performance.now() - started).toBeLessThan(2_000); // each of these takes 5 to 9 s unmemoized
   });
 });
