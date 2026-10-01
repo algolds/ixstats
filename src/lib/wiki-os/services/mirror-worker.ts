@@ -3,13 +3,15 @@
  *
  * `runMirrorCycle` works through the due jobs (per-title FIFO, mirror-queue.ts), each as the dedicated mirror
  * account: the `revision` jobs of a title that wait next in line together, through one `action=import`
- * (mirror-revision.ts), the page operations one by one through their own API calls (mirror-page-ops.ts). A failed
+ * (mirror-revision.ts), the page operations one by one through their own API calls (mirror-page-ops.ts), and an
+ * uploaded file through `action=upload` (mirror-upload.ts). A failed
  * job is retried with backoff and ends up `dead` after 8 attempts (the operators are warned on Discord, at most once
  * in 30 minutes: mirror-alerts.ts); a login that fails is a failure of the job, never an anonymous write.
  *
  * It runs from the `wiki-mirror` cron job (src/server/cron/jobs.ts, which holds the job lock) and in-process
  * shortly after a write (`scheduleMirrorKick`, which takes the same lock through `runMirrorCycleLocked`), so only
- * one runner works at a time across processes. `SKIP_MEDIAWIKI_SYNC=true` stops the worker; jobs accumulate.
+ * one runner works at a time across processes. `SKIP_MEDIAWIKI_SYNC=true` stops the worker; jobs accumulate. Once an hour a cycle
+ * also deletes the orphaned staged upload files (staged-uploads.ts).
  */
 
 import { db } from "~/server/db";
@@ -17,6 +19,7 @@ import { withJobLock } from "~/lib/system/job-lock";
 import { alertDeadJobs } from "./mirror-alerts";
 import { MIRROR_LOCK_NAME } from "./mirror-outbox";
 import { runPageJob } from "./mirror-page-ops";
+import { runUploadJob } from "./mirror-upload";
 import { withinAttempt } from "../adapters/mediawiki/attempt-scope";
 import {
   ATTEMPT_TIMEOUT_MS,
@@ -39,6 +42,7 @@ import {
   type RevisionBatchPlan,
 } from "./mirror-revision";
 import { invalidateTemplateDependents } from "./render-service";
+import { sweepStagedOrphansIfDue } from "./staged-uploads";
 
 const DEFAULT_MAX_JOBS = 50;
 /** No new batch starts after this long (the cron job's lock allows a cycle `MAX_CYCLE_MS`). */
@@ -128,7 +132,9 @@ async function runJobs(candidates: readonly MirrorJob[]): Promise<MirrorJob[]> {
   if (!job) return [];
   if (job.kind === "revision") return runRevisionBatch(claimed);
   try {
-    await withinAttempt(ATTEMPT_TIMEOUT_MS, () => runPageJob(job));
+    await withinAttempt(ATTEMPT_TIMEOUT_MS, () =>
+      job.kind === "upload" ? runUploadJob(job) : runPageJob(job)
+    );
     return [await completeJob(job, null)];
   } catch (error) {
     return failAll(claimed, error);
@@ -175,6 +181,10 @@ export async function runMirrorCycle({
   result.dead = dead;
   await purgeDoneJobs();
   await alertDeadJobs();
+  // a leftover file is not worth failing a cycle over
+  await sweepStagedOrphansIfDue().catch((error: unknown) =>
+    console.warn("[WikiMirror] Sweeping orphaned staged files failed:", error)
+  );
   return result;
 }
 

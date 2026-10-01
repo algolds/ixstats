@@ -1,13 +1,14 @@
 /**
  * error-map.ts — the existing services' refusals as api.php errors (plan 410).
  *
- * The permission and page services throw `TRPCError` / `PageOperationError`; a bot expects
+ * The permission, page and upload services throw `TRPCError` / `PageOperationError` / `UploadError`; a bot expects
  * MediaWiki's error codes. `authorizeAction` puts its reason code first in a FORBIDDEN message
  * (`blocked: You are blocked ...`), which maps here to MediaWiki's own codes.
  */
 
 import { TRPCError } from "@trpc/server";
 import { PageOperationError } from "~/lib/wiki-os/core/page-management-service";
+import { UploadError } from "~/lib/wiki-os/services/upload-error";
 import { ApiError } from "./errors";
 
 /** WikiOS's denial codes (`permissions.ts`) as MediaWiki's error codes. */
@@ -17,6 +18,12 @@ const DENIAL_CODES: Readonly<Record<string, string>> = {
   protectedpage: "protectedpage",
   titleprotected: "protectedtitle",
   permissiondenied: "permissiondenied",
+};
+
+/** The upload service's refusal codes that MediaWiki spells differently (the others, `empty-file` and the like, are its own). */
+const UPLOAD_CODES: Readonly<Record<string, string>> = {
+  "unsafe-svg": "uploaded-script-svg",
+  corrupt: "verification-error",
 };
 
 const DENIAL_MESSAGE = /^(\w+): ([\s\S]*)$/;
@@ -36,6 +43,8 @@ function fromForbidden(message: string): ApiError {
 export function toApiError(error: Error): ApiError | null {
   if (error instanceof ApiError) return error;
   if (error instanceof PageOperationError) return fromPageCode(error.code, error.message);
+  if (error instanceof UploadError)
+    return new ApiError(UPLOAD_CODES[error.code] ?? error.code, error.message);
   if (error instanceof TRPCError) return fromTrpc(error);
   return null;
 }

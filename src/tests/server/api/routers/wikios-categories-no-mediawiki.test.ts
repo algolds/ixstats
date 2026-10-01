@@ -173,6 +173,27 @@ describe("searchFiles for IxWiki", () => {
     expect(guard.calls()).toEqual([]);
   });
 
+  it("gives an upload that only WikiOS holds the base path it is served under, and leaves MediaWiki's URLs as they are", async () => {
+    const previous = process.env.NEXT_PUBLIC_BASE_PATH;
+    process.env.NEXT_PUBLIC_BASE_PATH = "/projects/ixstates";
+    mocked.wikiAsset.findMany.mockResolvedValue([
+      { ...asset, title: "New.png", filename: "New.png", url: "/api/wiki/file/New.png" },
+      asset,
+    ]);
+
+    try {
+      const result = await search().searchFiles({ query: "png", wiki: "ixwiki" });
+
+      expect(result.map((file) => file.url)).toEqual([
+        "/projects/ixstates/api/wiki/file/New.png",
+        asset.url,
+      ]);
+    } finally {
+      if (previous === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
+      else process.env.NEXT_PUBLIC_BASE_PATH = previous;
+    }
+  });
+
   it("leaves out an asset whose File: page was deleted, reading on to fill the page", async () => {
     const make = (title: string) => ({ ...asset, title, filename: title.replace(/ /g, "_") });
     const first = ["A one.png", "A two.png"].map(make);

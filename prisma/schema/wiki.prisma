@@ -192,7 +192,7 @@ model WikiLog {
 model WikiMirrorJob {
   id            String   @id @default(cuid())
   source        String   @default("ixwiki")
-  kind          String   // revision | move | delete | undelete | protect
+  kind          String   // revision | move | delete | undelete | protect | upload
   title         String   // canonical title at enqueue time (target of the operation)
   articleId     String?
   revisionId    String?  // WikiRevision.id for kind=revision
@@ -380,7 +380,9 @@ model WikiImageLink {
   @@map("wiki_image_links")
 }
 
-/// Native Media Commons Asset
+/// Native Media Commons Asset: one row per file NAME (a re-upload replaces the row's bytes, the old versions live in
+/// `wiki_logs` with logType "upload"). `url` is `/api/wiki/file/<name>` while WikiOS alone holds the bytes (the staging
+/// directory, WIKIOS_UPLOAD_DIR) and the file's `/images/...` path once the mirror's `upload` job has put it in MediaWiki.
 model WikiAsset {
   id           String   @id @default(cuid())
   title        String
@@ -392,11 +394,17 @@ model WikiAsset {
   sizeBytes    Int
   width        Int?
   height       Int?
+  /// Always null for a native upload: no pixel was ever read to make one. Readers use a neutral placeholder.
   blurhash     String?
   
   uploaderId   String?
   uploader     User?    @relation("WikiAssetUploader", fields: [uploaderId], references: [id])
+  /// MD5 of the file NAME (MediaWiki's shard path hash, `images/<a>/<ab>/`), NOT of the content: the lookup key by name.
   md5Hash      String   @unique
+  /// SHA-1 of the CONTENT in MediaWiki's base 36 (`img_sha1`): the staging file's name and the key of duplicate checks.
+  /// Not unique: the same bytes may be uploaded under two names when the uploader accepts the duplicate warning.
+  /// Null for an asset that was registered from MediaWiki's files (the media proxy, the sync script) and never uploaded here.
+  sha1         String?
   
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -404,6 +412,7 @@ model WikiAsset {
   @@index([slug])
   @@index([mimeType])
   @@index([uploaderId])
+  @@index([sha1])
   @@map("wiki_assets")
 }
 

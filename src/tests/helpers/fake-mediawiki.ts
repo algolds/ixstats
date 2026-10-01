@@ -11,7 +11,10 @@ export interface RecordedFile {
   field: string;
   filename: string;
   type: string;
+  /** The bytes read as UTF-8 text (an XML file, say). */
   content: string;
+  /** The bytes themselves, for a file that is not text. */
+  bytes: Uint8Array;
 }
 
 export interface RecordedRequest {
@@ -65,6 +68,7 @@ export function createFakeMediaWiki(options: FakeMediaWikiOptions = {}) {
             filename: value.name,
             type: value.type,
             content: await value.text(),
+            bytes: new Uint8Array(await value.arrayBuffer()),
           };
           order.push(key);
         }

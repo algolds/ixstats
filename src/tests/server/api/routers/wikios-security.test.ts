@@ -35,7 +35,6 @@ jest.mock("~/lib/auth/system-owner-constants", () => ({
 jest.mock("~/lib/wiki-os/core", () => ({
   __esModule: true,
   ArticleRepository: { findBySlug: jest.fn(), saveArticle: jest.fn() },
-  MediaAssetService: { registerAsset: jest.fn() },
 }));
 jest.mock("~/lib/wiki-os/services/mirror-outbox", () => ({
   __esModule: true,
@@ -68,10 +67,6 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
   __esModule: true,
   getRevisionWikitextShadow: jest.fn(),
   getArticleHistoryShadow: jest.fn(),
-}));
-jest.mock("~/lib/wiki-os/adapters/mediawiki/write-service", () => ({
-  __esModule: true,
-  executeMediaWikiWrite: jest.fn(),
 }));
 // Edit conflicts have their own suite (wikios-edit-conflict.test.ts); here no save ever conflicts.
 jest.mock("~/lib/wiki-os/core/edit-conflict", () => ({
@@ -519,21 +514,12 @@ describe("S7: WikiOS write procedures carry limits", () => {
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 
-  it("rejects an upload over ~10 MB decoded before decoding it", async () => {
-    const fromSpy = jest.spyOn(Buffer, "from");
-    await expect(
-      editCaller().uploadFile({ filename: "a.png", fileBase64: "A".repeat(15_000_001) })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(fromSpy).not.toHaveBeenCalledWith(expect.any(String), "base64");
-    fromSpy.mockRestore();
-  });
-
   it("uses the rate-limited procedure builders for every editing mutation", () => {
     const source = readFileSync(
       join(process.cwd(), "src/server/api/routers/wikios/editing.ts"),
       "utf8"
     );
-    for (const name of ["saveWikitext", "revertToRevision", "rollback", "uploadFile", "restoreArticle"]) {
+    for (const name of ["saveWikitext", "revertToRevision", "rollback", "restoreArticle"]) {
       expect(source).toMatch(new RegExp(`${name}: lightMutationProcedure`));
     }
     expect(source).toMatch(/previewWikitext: readOnlyProcedure/);

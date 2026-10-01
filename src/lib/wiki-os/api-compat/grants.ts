@@ -20,6 +20,8 @@ export const BOT_GRANTS = [
   "rollback",
   "blockusers",
   "import",
+  "uploadfile",
+  "uploadeditmovefile",
 ] as const;
 export type BotGrant = (typeof BOT_GRANTS)[number];
 
@@ -43,6 +45,9 @@ export const GRANT_RIGHTS: Readonly<Record<BotGrant, readonly Right[]>> = {
   rollback: ["rollback"],
   blockusers: ["block"],
   import: ["import", "importupload"],
+  // MediaWiki's two upload grants: a new file, and (with `editpage`) a new version of a file or its page moved
+  uploadfile: ["upload"],
+  uploadeditmovefile: ["upload", "reupload", "movefile"],
 };
 
 /** What each grant means, for the Special:BotPasswords form. */
@@ -57,6 +62,8 @@ export const GRANT_DESCRIPTIONS: Readonly<Record<BotGrant, string>> = {
   rollback: "Roll back edits (also needs the edit grant)",
   blockusers: "Block and unblock users",
   import: "Import pages",
+  uploadfile: "Upload new files (also needs the edit and create grants: a new file gets its page)",
+  uploadeditmovefile: "Upload, replace and move files",
 };
 
 export function isBotGrant(value: string): value is BotGrant {

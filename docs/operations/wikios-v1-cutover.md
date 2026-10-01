@@ -96,6 +96,9 @@ for f in $(ls "$IX"/prisma/manual-migrations/*wikios*.sql | sort); do
 done
 ```
 
+Among them is `2026-09-30-wikios-uploads.sql` (plan 411): the `sha1` column and index of `wiki_assets` (the content hash of an
+uploaded file; the new `upload` mirror job kind needs no DDL).
+
 **Rollback:** the files are additive and idempotent, so the running app is unaffected if you stop here. To undo,
 restore the dump taken above (`pg_restore` into a scratch database first; never `docker system prune`).
 
@@ -218,11 +221,22 @@ curl -s 'https://ixwiki.com/api.php?action=query&meta=siteinfo&siprop=usergroups
   | jq -r '.query.usergroups[] | select(.name=="wikios-mirror") | .rights | join(" ")'
 ```
 
-The group's rights must include `import importupload move move-subpages suppressredirect delete undelete protect`
+The group's rights must include `import importupload move move-subpages suppressredirect delete undelete protect upload reupload`
 (plan 407: the mirror repeats WikiOS's moves, deletions, undeletions and protections as this account; without
-`delete`, `undelete` and `protect` those jobs end up dead with `permissiondenied`).
+`delete`, `undelete` and `protect` those jobs end up dead with `permissiondenied`. Plan 411: the mirror's `upload` job
+puts the files WikiOS holds in MediaWiki with `action=upload`, which needs `upload`, and `reupload` for a new version of a
+file that exists; `upload_by_url` is not needed, the file travels in the request).
 
-**PHP and nginx must accept an uploaded XML file of at least 16 MB.** WikiOS mirrors a revision with `action=import`,
+**MediaWiki must accept the same file types as WikiOS** (png, jpg, jpeg, gif, webp, svg, pdf; plan 411): the snippet adds
+`svg` and `pdf` to `$wgFileExtensions` when they are missing, and a file the wiki cannot take ends the job dead with
+`filetype-banned`. Check what the wiki accepts and what a bot password may do:
+
+```bash
+curl -s 'https://ixwiki.com/api.php?action=query&meta=siteinfo&siprop=fileextensions&format=json' | jq -r '[.query.fileextensions[].ext] | join(" ")'
+```
+
+**PHP and nginx must accept an uploaded XML file of at least 16 MB** (the same limits carry the uploads of plan 411: a
+file is at most 10,000,000 bytes, sent to MediaWiki as one `action=upload` request). WikiOS mirrors a revision with `action=import`,
 which uploads the page as an XML file, and XML escaping makes it bigger than the text: a 2,000,000-character page of
 `&` (MediaWiki's page limit is 2 MB) is about 10 MB of XML, and a batch of revisions is capped at about 6 MB. PHP's
 default `upload_max_filesize` is 2M. Set both `upload_max_filesize` and `post_max_size` to at least 16M, and check the
@@ -359,6 +373,12 @@ ln -sfn "$IX/.env.production.local" "$WK/.env.production.local"           # runt
 ( umask 077; printf 'NEXT_PUBLIC_IXSTATES_URL=%s\n' "$IXSTATES_URL" > "$WK/.env.wikios-build" )   # build-time, WikiOS only
 ls -l "$WK"
 
+# Uploads (plan 411): WikiOS keeps an uploaded file here until the mirror's `upload` job has put it in MediaWiki, and serves it
+# from here meanwhile. IxStates (the cron job that runs the mirror) and WikiOS (the process that takes uploads) must use the
+# SAME directory, so it goes into the env file both read. It is part of the backups until no upload is waiting.
+sudo mkdir -p /ixwiki/shared/wikios-uploads && sudo chown "$USER": /ixwiki/shared/wikios-uploads && chmod 750 /ixwiki/shared/wikios-uploads
+grep -q '^WIKIOS_UPLOAD_DIR=' "$IX/.env.production.local" || ( umask 077; printf '\nWIKIOS_UPLOAD_DIR=/ixwiki/shared/wikios-uploads\n' >> "$IX/.env.production.local" )
+
 "$IX/scripts/deploy-wikios.sh"      # builds (several GB of RAM), rsyncs, pm2 startOrReload --update-env, health probe
 pm2 status wikios
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3560/wiki/Main_Page
@@ -413,6 +433,23 @@ Raising it is an **optional operator step** (skip it unless admins really need b
 
 Both numbers must move together: a route limit at or above the Next.js cap reintroduces silent truncation. A gzipped
 dump is bounded twice, by the bytes sent (this limit) and by what it expands to (256 MiB, fixed in the route).
+
+### The upload limit (plan 411): 10,000,000 bytes, and what must move with it
+
+The web upload (`POST /api/wiki/upload`, the Insert Image dialog, `/util/upload`) and api.php's `action=upload` take a file
+of **at most 10,000,000 bytes** (`MAX_UPLOAD_BYTES` in `src/lib/wiki-os/config.ts`; the limit is a decimal 10 MB, below the
+10 MiB cap). The file is the raw request body (api.php: a multipart body of the file plus up to 64 KiB of fields), counted as it
+streams. **Raising the limit means raising these, in this order, before the code constant:** (1) the Next.js
+`experimental.proxyClientMaxBodySize` in the server-local `next.config.js` (above: Next clones the body for its proxy and
+truncates the clone at that size, which no route can tell from a cut-off file); (2) nginx `client_max_body_size` for
+`/api/wiki/upload` and `/w/` (`wikios-takeover.conf`: 11m now) and for MediaWiki's own `api.php` (the mirror sends the same
+bytes); (3) PHP `upload_max_filesize` and `post_max_size` (16M now) and MediaWiki's `$wgMaxUploadSize`; only then the
+constant. A raster of more than 12.5 megapixels is refused as too large (MediaWiki's `$wgMaxImageArea` default: it cannot thumbnail
+a bigger one); if the wiki's `LocalSettings.php` raised `$wgMaxImageArea`, set `WIKIOS_MAX_IMAGE_AREA` (pixels) in the same
+env file to the same number, or WikiOS refuses what MediaWiki would take. An SVG is refused above 5,000,000 bytes (the scan that proves it safe costs about a second at 10 MB; MediaWiki
+deployments commonly cap SVGs at a few megabytes): set `WIKIOS_MAX_SVG_BYTES` (bytes) in the same env file to change it. It cannot
+go above the 10,000,000-byte upload limit, which holds first. The upload directory is `WIKIOS_UPLOAD_DIR` (step 5); the admin panel's mirror section says how many uploaded
+files MediaWiki does not hold yet, and until it says none, that directory is the only copy of them. Once an hour the mirror worker deletes files in it that are older than 24 hours and that no asset is served from and no unfinished upload job (a dead one included) names: the leftovers of a crash between staging and the database commit.
 
 **Rollback:** `pm2 delete wikios && pm2 save`; `sudo cp -a "$BK/next.config.js" "$IX/next.config.js"` if you want the
 file as it was (edits 1 and 2 do not affect the IxStates build). Edit 3 (dropping `/api/ixwiki-proxy`) is the change
@@ -471,6 +508,46 @@ Special:Search) fail until those plans are deployed into the WikiOS build. Then 
 devtools network tab open: **no asset may 404 or redirect to IxStates** (the allowed prefixes are
 `WIKIOS_ALLOWED_PREFIXES` in `src/lib/system/wikios-standalone.ts`; `wikios-takeover.conf` routes the same set). A
 missing prefix must be added to both before step 8.
+
+**An upload (plan 411).** Sign in to the loopback WikiOS as a user with the upload right, upload a small PNG on
+`/util/upload` (through the SSH tunnel), and check, against the private MediaWiki, that the mirror's `upload` job
+put the same bytes there and that WikiOS now serves the file from MediaWiki's path (the asset's URL is its `/images/` path
+and the staged copy is gone):
+
+```bash
+ls -l /ixwiki/shared/wikios-uploads/                                       # the staged file, until the job has run (within a minute or so)
+curl -s 'http://127.0.0.1:8081/api.php?action=query&titles=File:<Name>&prop=imageinfo&iiprop=url|sha1&format=json' | jq -c '.query.pages[].imageinfo'
+sha1sum /ixwiki/shared/images/<a>/<ab>/<Name>                              # equals the imageinfo sha1
+```
+
+A job that ended dead (`permissiondenied`, `filetype-banned`, a PHP or nginx size refusal) shows in the admin panel's
+mirror section with MediaWiki's answer.
+
+**Uploaded files under `/images/` (plan 411; do this before uploads are opened to users).** Once the `upload` job has run, an
+uploaded file is served by nginx from MediaWiki's `/images/` tree on the wiki's origin, with the content type nginx guesses
+from the name. A PDF or an SVG opened there directly is a document on that origin, so make nginx say that it is a download
+and that its type is not to be guessed. An SVG used as `<img src>` still renders (`Content-Disposition` does not touch an
+image load). Add the map in `http` context and the two `add_header` lines in the vhost's existing `location` that serves
+`/images/` (an `add_header` in a `location` replaces the ones it would inherit, so put them with that location's own):
+
+```bash
+sudo tee /etc/nginx/conf.d/wikios-images-headers.conf >/dev/null <<'EOF'
+# plan 411: an uploaded PDF or SVG opened directly is a download; nothing under /images/ has its type guessed
+map $uri $wikios_image_disposition {
+    default           "";
+    ~*\.(?:pdf|svg)$  "attachment";
+}
+EOF
+sudoedit "$(readlink -f /etc/nginx/sites-enabled/ixwiki.com)"     # in the location that serves /images/, add:
+#     add_header X-Content-Type-Options "nosniff" always;
+#     add_header Content-Disposition $wikios_image_disposition always;    # an empty value adds no header
+sudo nginx -t && sudo systemctl reload nginx
+curl -sI "https://<the wiki host>/images/<a>/<ab>/<Name>.svg" | grep -iE '^(content-disposition|x-content-type-options)'   # attachment + nosniff
+curl -sI "https://<the wiki host>/images/<a>/<ab>/<Name>.png" | grep -iE '^(content-disposition|x-content-type-options)'   # nosniff only
+```
+
+**Rollback:** remove the two `add_header` lines and `sudo rm /etc/nginx/conf.d/wikios-images-headers.conf`, then
+`sudo nginx -t && sudo systemctl reload nginx`.
 
 **Shadowing checks.** nginx will send `/robots.txt`, `/sitemap*`, `/wiki-sitemap*`, `/images/flags/`, `= /maps`, `/sign-in`,
 `/sign-up` and `/sso-callback` to WikiOS, in front of anything MediaWiki served there. Check that nothing real is
@@ -707,7 +784,8 @@ Every one of them is copied into `$BK` before its first edit.
 | File | Edit | Step |
 |------|------|------|
 | `/ixwiki/public/projects/ixstats/next.config.js` | `resolveBasePath()` WikiOS branch; `rewrites()` early return; **remove the `/api/ixwiki-proxy` rewrite** | 5 |
-| `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_API_SESSION_SECRET` (1c); `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN`, `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`) | 1c, 3c, 4 |
+| `/ixwiki/public/projects/ixstats/.env.production.local` | `WIKIOS_API_SESSION_SECRET` (1c); `WIKIOS_MEDIAWIKI_BOT_USER`, `WIKIOS_MEDIAWIKI_BOT_TOKEN`, `WIKIOS_MEDIAWIKI_INTERNAL_URL` (never `NEXT_PUBLIC_WIKIOS_STANDALONE`); `WIKIOS_UPLOAD_DIR` (plan 411) | 1c, 3c, 4, 5 |
+| `/ixwiki/shared/wikios-uploads/` | new directory (750): the staging directory of uploads waiting for the mirror; in the backups until none is waiting | 5 |
 | `/ixwiki/public/wikios/ecosystem.wikios.config.cjs` | new, from the `.example` | 5 |
 | `/ixwiki/public/wikios/.env.wikios-build` | new: `NEXT_PUBLIC_IXSTATES_URL` (build-time, WikiOS only) | 5 |
 | `/etc/nginx/conf.d/wikios-render-internal.conf`, `wikios-upstream.conf` | new | 4, 8 |

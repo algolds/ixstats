@@ -5,9 +5,13 @@
 import { diffWikitext } from "~/lib/wiki-os/transformers/wikitext-diff";
 import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
 import { hashBotPassword } from "~/lib/wiki-os/api-compat/auth";
-import { handleApiRequest, type ApiRequestInput, type ApiResponseOutput } from "~/lib/wiki-os/api-compat/dispatch";
+import {
+  handleApiRequest,
+  type ApiRequestInput,
+  type ApiResponseOutput,
+} from "~/lib/wiki-os/api-compat/dispatch";
 import type { JsonObject } from "~/lib/wiki-os/api-compat/format";
-import type { ApiStore } from "~/lib/wiki-os/api-compat/store-types";
+import type { ApiStore, FileRow } from "~/lib/wiki-os/api-compat/store-types";
 import type {
   ApiDeps,
   ApiServices,
@@ -15,6 +19,7 @@ import type {
   AuthStore,
   BotPasswordRecord,
   PermissionLoader,
+  RequestFile,
   SessionUser,
 } from "~/lib/wiki-os/api-compat/types";
 import { rightsForGroups, type Group, type Right } from "~/lib/wiki-os/rights";
@@ -24,7 +29,10 @@ export const NOW = new Date("2026-09-30T12:00:00Z");
 export const HEKU: SessionUser = {
   name: "Heku",
   mwUserId: 7,
-  ctx: { auth: { userId: "user_clerk_heku" }, user: { id: "u-heku", clerkUserId: "user_clerk_heku", wikiUsername: "Heku" } },
+  ctx: {
+    auth: { userId: "user_clerk_heku" },
+    user: { id: "u-heku", clerkUserId: "user_clerk_heku", wikiUsername: "Heku" },
+  },
 };
 
 export interface FakeAuth extends AuthStore {
@@ -72,7 +80,12 @@ export function fakeLoader(groups: Group[] = ["*", "user", "sysop"]): Permission
     const effective = signedIn ? groups : (["*"] as Group[]);
     const all = rightsForGroups(effective);
     const rights = ceiling ? new Set([...all].filter((right) => ceiling.has(right))) : all;
-    return { groups: effective, rights: rights as Set<Right>, block: null, verifiedWikiUsername: null };
+    return {
+      groups: effective,
+      rights: rights as Set<Right>,
+      block: null,
+      verifiedWikiUsername: null,
+    };
   };
 }
 
@@ -80,10 +93,7 @@ export function fakeStore(overrides: Partial<ApiStore> = {}): ApiStore {
   const unexpected = (name: string) => () => {
     throw new Error(`unexpected store call: ${name}`);
   };
-  const base = new Proxy(
-    {},
-    { get: (_target, name) => unexpected(String(name)) }
-  ) as ApiStore;
+  const base = new Proxy({}, { get: (_target, name) => unexpected(String(name)) }) as ApiStore;
   return { ...base, ...overrides };
 }
 
@@ -93,9 +103,24 @@ export async function makeDeps(overrides: Partial<ApiDeps> = {}): Promise<ApiDep
     loadPermissions: fakeLoader(),
     rateLimit: async () => ({ success: true, resetAt: new Date(NOW.getTime() + 60_000) }),
     search: async () => ({ hits: [], total: 0 }),
-    services: new Proxy({}, { get: (_t, name) => () => { throw new Error(`unexpected service call: ${String(name)}`); } }) as ApiServices,
+    services: new Proxy(
+      {},
+      {
+        get: (_t, name) => () => {
+          throw new Error(`unexpected service call: ${String(name)}`);
+        },
+      }
+    ) as ApiServices,
     store: fakeStore({
-      statistics: async () => ({ pages: 10, articles: 8, edits: 50, images: 2, users: 3, activeUsers: 1, admins: 1 }),
+      statistics: async () => ({
+        pages: 10,
+        articles: 8,
+        edits: 50,
+        images: 2,
+        users: 3,
+        activeUsers: 1,
+        admins: 1,
+      }),
       userStats: async () => ({ editCount: 12, registration: new Date("2020-01-02T03:04:05Z") }),
     }),
     siteUrl: "https://ixwiki.com",
@@ -107,6 +132,8 @@ export async function makeDeps(overrides: Partial<ApiDeps> = {}): Promise<ApiDep
 export interface CallOptions {
   method?: "GET" | "POST";
   body?: Record<string, string>;
+  /** The file parts of a multipart POST, by field name. */
+  files?: Record<string, RequestFile>;
   cookies?: Record<string, string>;
 }
 
@@ -116,6 +143,7 @@ export function inputFor(query: string, options: CallOptions = {}): ApiRequestIn
     method,
     query: new URLSearchParams(query),
     body: options.body ? Object.entries(options.body) : null,
+    ...(options.files ? { files: new Map(Object.entries(options.files)) } : {}),
     sessionCookie: options.cookies?.wikios_api_session,
     loginNonceCookie: options.cookies?.wikios_api_login,
     webAuthId: null,
@@ -126,7 +154,11 @@ export function inputFor(query: string, options: CallOptions = {}): ApiRequestIn
 }
 
 /** One request; returns the response. */
-export function call(deps: ApiDeps, query: string, options: CallOptions = {}): Promise<ApiResponseOutput> {
+export function call(
+  deps: ApiDeps,
+  query: string,
+  options: CallOptions = {}
+): Promise<ApiResponseOutput> {
   return handleApiRequest(inputFor(query, options), deps);
 }
 
@@ -137,11 +169,16 @@ export class Bot {
 
   constructor(readonly deps: ApiDeps) {}
 
-  async request(params: Record<string, string>, post = false): Promise<JsonObject> {
+  async request(
+    params: Record<string, string>,
+    post = false,
+    files?: Record<string, RequestFile>
+  ): Promise<JsonObject> {
     const search = new URLSearchParams(params).toString();
     const output = await call(this.deps, post ? "" : search, {
       method: post ? "POST" : "GET",
       body: post ? params : undefined,
+      files,
       cookies: this.jar,
     });
     for (const cookie of output.setCookies) {
@@ -156,13 +193,19 @@ export class Bot {
     return this.request(params, false);
   }
 
-  post(params: Record<string, string>) {
-    return this.request(params, true);
+  post(params: Record<string, string>, files?: Record<string, RequestFile>) {
+    return this.request(params, true, files);
   }
 
   /** The Pywikibot login sequence: login token, then action=login. */
   async login(name = "Heku@Bot", password = "bot-secret", extra: Record<string, string> = {}) {
-    const tokens = (await this.get({ action: "query", meta: "tokens", type: "login", format: "json", ...extra })) as {
+    const tokens = (await this.get({
+      action: "query",
+      meta: "tokens",
+      type: "login",
+      format: "json",
+      ...extra,
+    })) as {
       query: { tokens: { logintoken: string } };
     };
     return this.post({
@@ -222,13 +265,52 @@ export interface FakeLog {
   timestamp: string;
 }
 
+/** A file of the fake wiki (`wiki_assets` and its upload log), described the way `FileRow` is. */
+export interface FakeFile {
+  /** Canonical file name, spaces, no `File:`. */
+  name: string;
+  url?: string;
+  size?: number;
+  width?: number;
+  height?: number;
+  mime?: string;
+  /** 40 hex digits; omitted: "". */
+  sha1?: string;
+  timestamp?: string;
+  user?: string;
+  comment?: string;
+  pageId?: number;
+}
+
 export interface FakeWikiData {
+  /** The files `prop=imageinfo` and `list=allimages` describe. */
+  files?: FakeFile[];
   /** page title -> the stored fresh HTML */
   html?: Record<string, string>;
   logs?: FakeLog[];
-  users?: Array<{ name: string; userId: number; groups?: string[]; editCount?: number; registration?: string }>;
-  blocks?: Array<{ target: string; reason?: string; expiresAt?: string | null; blockedBy?: string; createdAt: string }>;
-  protectedTitles?: Array<{ id: string; title: string; level: string; timestamp: string; user?: string; comment?: string; expiresAt?: string | null }>;
+  users?: Array<{
+    name: string;
+    userId: number;
+    groups?: string[];
+    editCount?: number;
+    registration?: string;
+  }>;
+  blocks?: Array<{
+    target: string;
+    reason?: string;
+    expiresAt?: string | null;
+    blockedBy?: string;
+    createdAt: string;
+  }>;
+  protectedTitles?: Array<{
+    id: string;
+    title: string;
+    level: string;
+    timestamp: string;
+    user?: string;
+    comment?: string;
+    expiresAt?: string | null;
+  }>;
   /** category name -> page title -> sort key */
   sortKeys?: Record<string, Record<string, string>>;
   pages?: FakePage[];
@@ -243,18 +325,28 @@ export interface FakeWikiData {
   templates?: Record<string, string[]>;
   /** page title -> file names (spaces, no `File:`) it uses (from its last render) */
   images?: Record<string, string[]>;
-  restrictions?: Record<string, Array<{ action: string; level: string; expiresAt?: string | null }>>;
+  restrictions?: Record<
+    string,
+    Array<{ action: string; level: string; expiresAt?: string | null }>
+  >;
 }
 
 const byteLength = (text: string) => Buffer.byteLength(text, "utf8");
 
 /** A MediaWiki-style (base 36, 31 digit) revision hash that differs per revision. */
 export const fakeSha1 = (revId: number) => revId.toString(36).padStart(31, "0");
-export const fakeSha1Hex = (revId: number) => BigInt(`0x${revId.toString(16)}`).toString(16).padStart(40, "0");
+export const fakeSha1Hex = (revId: number) =>
+  BigInt(`0x${revId.toString(16)}`)
+    .toString(16)
+    .padStart(40, "0");
 
 /** An `ApiStore` over plain arrays, with the same ordering and cursor rules as the Prisma store. */
 export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): ApiStore {
-  const state = { get pages() { return (data.pages ?? []).filter((page) => !page.deleted); } };
+  const state = {
+    get pages() {
+      return (data.pages ?? []).filter((page) => !page.deleted);
+    },
+  };
   const revisions = (data.revisions ??= []);
   const articleId = (title: string) => `art:${title}`;
   const titleOfArticle = (id: string) => id.slice("art:".length);
@@ -301,7 +393,9 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
       comment: rev.comment ?? "",
       minor: rev.minor ?? false,
       size: byteLength(rev.content ?? ""),
-      sizeDiff: byteLength(rev.content ?? "") - (index > 0 ? byteLength(history[index - 1]!.content ?? "") : 0),
+      sizeDiff:
+        byteLength(rev.content ?? "") -
+        (index > 0 ? byteLength(history[index - 1]!.content ?? "") : 0),
       sha1: rev.legacy ? null : (rev.sha1 ?? fakeSha1(rev.revId)),
       content: rev.textHidden || !withContent ? null : (rev.content ?? ""),
       textHidden: rev.textHidden ?? false,
@@ -324,9 +418,16 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
         const page = state.pages.find((p) => p.title === title);
         return page ? (source?.[title] ?? []).map((key) => ({ pageId: page.pageId, key })) : [];
       })
-      .filter((row) => !query.titles || query.titles.length === 0 || query.titles.includes(toRow(row.key).title))
+      .filter(
+        (row) =>
+          !query.titles || query.titles.length === 0 || query.titles.includes(toRow(row.key).title)
+      )
       .filter((row) => !keep || keep(row.key))
-      .sort((a, b) => (query.dir === "ascending" ? 1 : -1) * (a.pageId - b.pageId || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)))
+      .sort(
+        (a, b) =>
+          (query.dir === "ascending" ? 1 : -1) *
+          (a.pageId - b.pageId || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+      )
       .filter((row) => {
         const c = query.cursor;
         if (!c) return true;
@@ -344,30 +445,82 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
   };
 
   /** Pages (in page id order) whose title passes `uses`, with the query's namespace, redirect and cursor filters. */
-  const relatedFake = (q: Parameters<ApiStore["listBacklinks"]>[0], uses: (title: string) => boolean) =>
+  const relatedFake = (
+    q: Parameters<ApiStore["listBacklinks"]>[0],
+    uses: (title: string) => boolean
+  ) =>
     state.pages
       .filter((p) => uses(p.title))
       .filter((p) => !q.namespaces || q.namespaces.includes(p.namespace ?? 0))
-      .filter((p) => (q.filterRedirects === "redirects" ? p.redirect !== undefined : q.filterRedirects === "nonredirects" ? p.redirect === undefined : true))
+      .filter((p) =>
+        q.filterRedirects === "redirects"
+          ? p.redirect !== undefined
+          : q.filterRedirects === "nonredirects"
+            ? p.redirect === undefined
+            : true
+      )
       .filter((p) => q.cursor === undefined || p.pageId >= q.cursor)
       .sort((a, b) => a.pageId - b.pageId)
       .slice(0, q.limit + 1)
-      .map((p) => ({ pageId: p.pageId, title: p.title, namespace: p.namespace ?? 0, isRedirect: p.redirect !== undefined }));
+      .map((p) => ({
+        pageId: p.pageId,
+        title: p.title,
+        namespace: p.namespace ?? 0,
+        isRedirect: p.redirect !== undefined,
+      }));
+
+  const fileRow = (file: FakeFile): FileRow => ({
+    name: file.name,
+    title: `File:${file.name}`,
+    pageId: file.pageId ?? 0,
+    url: file.url ?? `https://ixwiki.com/images/a/ab/${file.name.replace(/ /g, "_")}`,
+    size: file.size ?? 1234,
+    width: file.width ?? 640,
+    height: file.height ?? 480,
+    mime: file.mime ?? "image/png",
+    sha1: file.sha1 ?? "",
+    timestamp: new Date(file.timestamp ?? "2026-09-01T10:00:00Z"),
+    user: file.user ?? "Heku",
+    comment: file.comment ?? null,
+  });
 
   const base: Partial<ApiStore> = {
-    pagesByTitle: async (titles) => state.pages.filter((p) => titles.includes(p.title)).map(pageRow),
+    filesByName: async (names) =>
+      (data.files ?? []).filter((file) => names.includes(file.name)).map(fileRow),
+    listFiles: async (q) => {
+      const asc = q.dir === "ascending";
+      const key = (file: FakeFile) => file.name.replace(/ /g, "_");
+      const [lower, upper] = asc ? [q.start, q.end] : [q.end, q.start];
+      return (data.files ?? [])
+        .filter((file) => !q.prefix || key(file).startsWith(q.prefix))
+        .filter((file) => !lower || key(file) >= lower)
+        .filter((file) => !upper || key(file) <= upper)
+        .filter((file) => !q.sha1 || file.sha1 === q.sha1)
+        .filter((file) => !q.mimes || q.mimes.includes(file.mime ?? "image/png"))
+        .filter((file) => q.minSize === undefined || (file.size ?? 1234) >= q.minSize)
+        .filter((file) => q.maxSize === undefined || (file.size ?? 1234) <= q.maxSize)
+        .sort((a, b) => (asc ? 1 : -1) * (key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : 0))
+        .slice(0, q.limit + 1)
+        .map(fileRow);
+    },
+    pagesByTitle: async (titles) =>
+      state.pages.filter((p) => titles.includes(p.title)).map(pageRow),
     pagesById: async (ids) => state.pages.filter((p) => ids.includes(p.pageId)).map(pageRow),
     revisionHashes: async (ids) =>
       new Map(
         ids.flatMap((id) => {
           const rev = revisions.find((r) => r.revId === id);
-          return rev && !rev.textHidden && state.pages.some((p) => p.title === rev.page) ? [[id, mwSha1Base36(rev.content ?? "")] as const] : [];
+          return rev && !rev.textHidden && state.pages.some((p) => p.title === rev.page)
+            ? [[id, mwSha1Base36(rev.content ?? "")] as const]
+            : [];
         })
       ),
     revisionsById: async (ids, withContent) =>
       ids.flatMap((id) => {
         const rev = revisions.find((r) => r.revId === id);
-        return rev && state.pages.some((p) => p.title === rev.page) ? [revisionRow(rev, withContent)] : [];
+        return rev && state.pages.some((p) => p.title === rev.page)
+          ? [revisionRow(rev, withContent)]
+          : [];
       }),
     findRevisions: async (query) => {
       const target = query.articleId ? titleOfArticle(query.articleId) : undefined;
@@ -381,7 +534,13 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
       const rows = revisions
         .filter((rev) => state.pages.some((p) => p.title === rev.page))
         .filter((rev) => (target ? rev.page === target : true))
-        .filter((rev) => (query.namespaces ? query.namespaces.includes(state.pages.find((p) => p.title === rev.page)?.namespace ?? 0) : true))
+        .filter((rev) =>
+          query.namespaces
+            ? query.namespaces.includes(
+                state.pages.find((p) => p.title === rev.page)?.namespace ?? 0
+              )
+            : true
+        )
         .filter((rev) => (query.users ? query.users.includes(rev.user ?? "Heku") : true))
         .filter((rev) => (query.excludeUser ? (rev.user ?? "Heku") !== query.excludeUser : true))
         .filter((rev) => (query.minor === undefined ? true : (rev.minor ?? false) === query.minor))
@@ -393,7 +552,14 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
             !b || sign * cmp(k, point(b)) <= 0;
           return afterFrom(query.from) && afterFrom(query.cursor) && beforeTo(query.to);
         })
-        .sort((a, b) => sign * cmp(key({ timestamp: new Date(a.timestamp).toISOString(), revId: a.revId }), key({ timestamp: new Date(b.timestamp).toISOString(), revId: b.revId })))
+        .sort(
+          (a, b) =>
+            sign *
+            cmp(
+              key({ timestamp: new Date(a.timestamp).toISOString(), revId: a.revId }),
+              key({ timestamp: new Date(b.timestamp).toISOString(), revId: b.revId })
+            )
+        )
         .slice(0, query.limit + 1);
       return rows.map((rev) => revisionRow(rev, query.withContent));
     },
@@ -402,7 +568,16 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
         titles.flatMap((title) => {
           const list = data.restrictions?.[title];
           return list
-            ? [[title, list.map((r) => ({ action: r.action, level: r.level, expiresAt: r.expiresAt ? new Date(r.expiresAt) : null }))] as const]
+            ? [
+                [
+                  title,
+                  list.map((r) => ({
+                    action: r.action,
+                    level: r.level,
+                    expiresAt: r.expiresAt ? new Date(r.expiresAt) : null,
+                  })),
+                ] as const,
+              ]
             : [];
         })
       ),
@@ -411,10 +586,20 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
         .map((id) => titleOfArticle(id))
         .flatMap((source) => {
           const page = state.pages.find((p) => p.title === source);
-          return page ? (data.links?.[source] ?? []).map((target) => ({ pageId: page.pageId, title: target, key: target.toLowerCase().replace(/ /g, "_") })) : [];
+          return page
+            ? (data.links?.[source] ?? []).map((target) => ({
+                pageId: page.pageId,
+                title: target,
+                key: target.toLowerCase().replace(/ /g, "_"),
+              }))
+            : [];
         })
         .filter((row) => !query.titles || query.titles.includes(row.title))
-        .sort((a, b) => (query.dir === "ascending" ? 1 : -1) * (a.pageId - b.pageId || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)))
+        .sort(
+          (a, b) =>
+            (query.dir === "ascending" ? 1 : -1) *
+            (a.pageId - b.pageId || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+        )
         .filter((row) => {
           const c = query.cursor;
           if (!c) return true;
@@ -425,7 +610,11 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
       const next = rows[query.limit];
       return {
         rows: page
-          .map((row) => ({ pageId: row.pageId, title: row.title, namespace: row.title.includes(":") ? 10 : 0 }))
+          .map((row) => ({
+            pageId: row.pageId,
+            title: row.title,
+            namespace: row.title.includes(":") ? 10 : 0,
+          }))
           .filter((row) => !query.namespaces || query.namespaces.includes(row.namespace)),
         next: next ? { pageId: next.pageId, key: next.key } : null,
       };
@@ -436,11 +625,17 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
         .map((id) => titleOfArticle(id))
         .flatMap((source) => {
           const page = state.pages.find((p) => p.title === source);
-          return page ? (data.categories?.[source] ?? []).map((name) => ({ pageId: page.pageId, name })) : [];
+          return page
+            ? (data.categories?.[source] ?? []).map((name) => ({ pageId: page.pageId, name }))
+            : [];
         })
         .filter((row) => !query.titles || query.titles.includes(`Category:${row.name}`))
         .filter((row) => query.hidden === undefined || isHidden(row.name) === query.hidden)
-        .sort((a, b) => (query.dir === "ascending" ? 1 : -1) * (a.pageId - b.pageId || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0)))
+        .sort(
+          (a, b) =>
+            (query.dir === "ascending" ? 1 : -1) *
+            (a.pageId - b.pageId || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+        )
         .filter((row) => {
           const c = query.cursor;
           if (!c) return true;
@@ -459,10 +654,22 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
         next: next ? { pageId: next.pageId, key: next.name } : null,
       };
     },
-    hiddenCategoryNames: async (names) => new Set(names.filter((name) => (data.hiddenCategories ?? []).includes(name))),
-    templatesOf: async (query) => perPageFake(query, data.templates, (title) => ({ title, namespace: title.includes(":") ? Number(title.startsWith("Module:") ? 828 : 10) : 0 })),
+    hiddenCategoryNames: async (names) =>
+      new Set(names.filter((name) => (data.hiddenCategories ?? []).includes(name))),
+    templatesOf: async (query) =>
+      perPageFake(query, data.templates, (title) => ({
+        title,
+        namespace: title.includes(":") ? Number(title.startsWith("Module:") ? 828 : 10) : 0,
+      })),
     imagesOf: async (query) =>
-      perPageFake(query, data.images, (name) => ({ title: `File:${name}`, namespace: 6 }), (query.titles ?? []).length > 0 ? (name) => query.titles!.includes(`File:${name}`) : undefined),
+      perPageFake(
+        query,
+        data.images,
+        (name) => ({ title: `File:${name}`, namespace: 6 }),
+        (query.titles ?? []).length > 0
+          ? (name) => query.titles!.includes(`File:${name}`)
+          : undefined
+      ),
     listPages: async (q) => {
       const asc = q.dir === "ascending";
       const [lower, upper] = asc ? [q.start, q.end] : [q.end, q.start];
@@ -471,10 +678,21 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
         .filter((p) => !q.prefix || p.title.startsWith(q.prefix))
         .filter((p) => !lower || p.title >= lower)
         .filter((p) => !upper || p.title <= upper)
-        .filter((p) => (q.filterRedirects === "redirects" ? p.redirect !== undefined : q.filterRedirects === "nonredirects" ? p.redirect === undefined : true))
+        .filter((p) =>
+          q.filterRedirects === "redirects"
+            ? p.redirect !== undefined
+            : q.filterRedirects === "nonredirects"
+              ? p.redirect === undefined
+              : true
+        )
         .sort((a, b) => (asc ? 1 : -1) * (a.title < b.title ? -1 : a.title > b.title ? 1 : 0))
         .slice(0, q.limit + 1);
-      return rows.map((p) => ({ pageId: p.pageId, title: p.title, namespace: p.namespace ?? 0, isRedirect: p.redirect !== undefined }));
+      return rows.map((p) => ({
+        pageId: p.pageId,
+        title: p.title,
+        namespace: p.namespace ?? 0,
+        isRedirect: p.redirect !== undefined,
+      }));
     },
     listCategoryMembers: async (q) => {
       const name = q.category.slice("Category:".length);
@@ -490,32 +708,80 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
         .map((p) => {
           const sortKey = data.sortKeys?.[name]?.[p.title] ?? null;
           const addedAt = new Date(`2026-02-0${(p.pageId % 9) + 1}T00:00:00Z`);
-          return { pageId: p.pageId, title: p.title, namespace: p.namespace ?? 0, isRedirect: p.redirect !== undefined, sortKey, addedAt, sortValue: q.sort === "timestamp" ? addedAt.toISOString() : (sortKey ?? p.title).toUpperCase() };
+          return {
+            pageId: p.pageId,
+            title: p.title,
+            namespace: p.namespace ?? 0,
+            isRedirect: p.redirect !== undefined,
+            sortKey,
+            addedAt,
+            sortValue:
+              q.sort === "timestamp" ? addedAt.toISOString() : (sortKey ?? p.title).toUpperCase(),
+          };
         })
-        .filter((row) => !q.cursor || (asc ? 1 : -1) * a2(0, `${row.sortValue}`, 0, q.cursor.sortValue) > 0 || (row.sortValue === q.cursor.sortValue && (asc ? row.pageId >= q.cursor.pageId : row.pageId <= q.cursor.pageId)))
-        .sort((a, b) => (asc ? 1 : -1) * (a.sortValue < b.sortValue ? -1 : a.sortValue > b.sortValue ? 1 : a.pageId - b.pageId));
+        .filter(
+          (row) =>
+            !q.cursor ||
+            (asc ? 1 : -1) * a2(0, `${row.sortValue}`, 0, q.cursor.sortValue) > 0 ||
+            (row.sortValue === q.cursor.sortValue &&
+              (asc ? row.pageId >= q.cursor.pageId : row.pageId <= q.cursor.pageId))
+        )
+        .sort(
+          (a, b) =>
+            (asc ? 1 : -1) *
+            (a.sortValue < b.sortValue ? -1 : a.sortValue > b.sortValue ? 1 : a.pageId - b.pageId)
+        );
       return rows.slice(0, q.limit + 1);
     },
     listBacklinks: async (q) => {
       const rows = state.pages
         .filter((p) => (data.links?.[p.title] ?? []).includes(q.target))
         .filter((p) => !q.namespaces || q.namespaces.includes(p.namespace ?? 0))
-        .filter((p) => (q.filterRedirects === "redirects" ? p.redirect !== undefined : q.filterRedirects === "nonredirects" ? p.redirect === undefined : true))
+        .filter((p) =>
+          q.filterRedirects === "redirects"
+            ? p.redirect !== undefined
+            : q.filterRedirects === "nonredirects"
+              ? p.redirect === undefined
+              : true
+        )
         .filter((p) => q.cursor === undefined || p.pageId >= q.cursor)
         .sort((a, b) => a.pageId - b.pageId);
-      return rows.slice(0, q.limit + 1).map((p) => ({ pageId: p.pageId, title: p.title, namespace: p.namespace ?? 0, isRedirect: p.redirect !== undefined }));
+      return rows
+        .slice(0, q.limit + 1)
+        .map((p) => ({
+          pageId: p.pageId,
+          title: p.title,
+          namespace: p.namespace ?? 0,
+          isRedirect: p.redirect !== undefined,
+        }));
     },
-    listEmbeddedIn: async (q) => relatedFake(q, (title) => (data.templates?.[title] ?? []).includes(q.target)),
-    listImageUsage: async (q) => relatedFake(q, (title) => (data.images?.[title] ?? []).some((name) => `File:${name}` === q.target)),
+    listEmbeddedIn: async (q) =>
+      relatedFake(q, (title) => (data.templates?.[title] ?? []).includes(q.target)),
+    listImageUsage: async (q) =>
+      relatedFake(q, (title) =>
+        (data.images?.[title] ?? []).some((name) => `File:${name}` === q.target)
+      ),
     randomPages: async (q) =>
       state.pages
         .filter((p) => q.namespaces.includes(p.namespace ?? 0))
-        .filter((p) => (q.filterRedirects === "redirects" ? p.redirect !== undefined : q.filterRedirects === "nonredirects" ? p.redirect === undefined : true))
+        .filter((p) =>
+          q.filterRedirects === "redirects"
+            ? p.redirect !== undefined
+            : q.filterRedirects === "nonredirects"
+              ? p.redirect === undefined
+              : true
+        )
         .slice(0, q.limit)
-        .map((p) => ({ pageId: p.pageId, title: p.title, namespace: p.namespace ?? 0, isRedirect: p.redirect !== undefined })),
+        .map((p) => ({
+          pageId: p.pageId,
+          title: p.title,
+          namespace: p.namespace ?? 0,
+          isRedirect: p.redirect !== undefined,
+        })),
     listCategories: async (q) => {
       const counts = new Map<string, number>();
-      for (const names of Object.values(data.categories ?? {})) for (const n of names) counts.set(n, (counts.get(n) ?? 0) + 1);
+      for (const names of Object.values(data.categories ?? {}))
+        for (const n of names) counts.set(n, (counts.get(n) ?? 0) + 1);
       const asc = q.dir === "ascending";
       const [lower, upper] = asc ? [q.start, q.end] : [q.end, q.start];
       return [...counts.entries()]
@@ -524,7 +790,11 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
         .filter(([n]) => !upper || n <= upper)
         .sort(([a], [b]) => (asc ? 1 : -1) * (a < b ? -1 : a > b ? 1 : 0))
         .slice(0, q.limit + 1)
-        .map(([name, members]) => ({ name, members, hidden: (data.hiddenCategories ?? []).includes(name) }));
+        .map(([name, members]) => ({
+          name,
+          members,
+          hidden: (data.hiddenCategories ?? []).includes(name),
+        }));
     },
     findLogs: async (q) => {
       const newer = q.dir === "newer";
@@ -538,19 +808,31 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
         .filter((l) => {
           const t = new Date(l.timestamp).getTime();
           const key = [t, l.logId] as const;
-          const ge = (b?: { t: number; id?: number }) => !b || sign * ((t - b.t) || (l.logId - (b.id ?? (newer ? -Infinity : Infinity)))) >= 0;
-          const le = (b?: { t: number; id?: number }) => !b || sign * ((t - b.t) || (l.logId - (b.id ?? (newer ? Infinity : -Infinity)))) <= 0;
+          const ge = (b?: { t: number; id?: number }) =>
+            !b || sign * (t - b.t || l.logId - (b.id ?? (newer ? -Infinity : Infinity))) >= 0;
+          const le = (b?: { t: number; id?: number }) =>
+            !b || sign * (t - b.t || l.logId - (b.id ?? (newer ? Infinity : -Infinity))) <= 0;
           void key;
-          return ge(q.from ? { t: q.from.getTime() } : undefined) && ge(q.cursor ? { t: q.cursor.timestamp.getTime(), id: q.cursor.logId } : undefined) && le(q.to ? { t: q.to.getTime() } : undefined);
+          return (
+            ge(q.from ? { t: q.from.getTime() } : undefined) &&
+            ge(q.cursor ? { t: q.cursor.timestamp.getTime(), id: q.cursor.logId } : undefined) &&
+            le(q.to ? { t: q.to.getTime() } : undefined)
+          );
         })
-        .sort((a, b) => sign * (new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime() || a.logId - b.logId))
+        .sort(
+          (a, b) =>
+            sign *
+            (new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime() || a.logId - b.logId)
+        )
         .slice(0, q.limit + 1);
       return rows.map((l) => ({
         logId: l.logId,
         type: l.type,
         action: l.action,
         title: l.title,
-        namespace: l.title.includes(":") ? ({ User: 2, Template: 10 } as Record<string, number>)[l.title.split(":")[0]!] ?? 0 : 0,
+        namespace: l.title.includes(":")
+          ? (({ User: 2, Template: 10 } as Record<string, number>)[l.title.split(":")[0]!] ?? 0)
+          : 0,
         pageId: state.pages.find((p) => p.title === l.title)?.pageId ?? 0,
         actor: l.actor,
         comment: l.comment ?? null,
@@ -569,7 +851,13 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
         .filter((u) => !q.excludeGroup || !(u.groups ?? []).includes(q.excludeGroup))
         .sort((a, b) => (asc ? 1 : -1) * (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
         .slice(0, q.limit + 1)
-        .map((u) => ({ name: u.name, userId: u.userId, registration: u.registration ? new Date(u.registration) : null, editCount: u.editCount ?? 0, groups: u.groups ?? [] }));
+        .map((u) => ({
+          name: u.name,
+          userId: u.userId,
+          registration: u.registration ? new Date(u.registration) : null,
+          editCount: u.editCount ?? 0,
+          groups: u.groups ?? [],
+        }));
     },
     listBlocks: async (limit, cursor) => {
       const all = data.blocks ?? [];
@@ -577,7 +865,14 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
       const start = cursor ? Number(cursor.replace("block-id-", "")) : 0;
       const slice = all.slice(start, start + limit);
       return {
-        blocks: slice.map((b) => ({ target: b.target, reason: b.reason ?? null, expiresAt: b.expiresAt ? new Date(b.expiresAt) : null, allowUserTalk: true, blockedBy: b.blockedBy ?? null, createdAt: new Date(b.createdAt) })),
+        blocks: slice.map((b) => ({
+          target: b.target,
+          reason: b.reason ?? null,
+          expiresAt: b.expiresAt ? new Date(b.expiresAt) : null,
+          allowUserTalk: true,
+          blockedBy: b.blockedBy ?? null,
+          createdAt: new Date(b.createdAt),
+        })),
         nextCursor: start + limit < all.length ? `block-id-${start + limit}` : null,
       };
     },
@@ -586,10 +881,31 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
       const sign = newer ? 1 : -1;
       return (data.protectedTitles ?? [])
         .filter((r) => !q.level || r.level === q.level)
-        .filter((r) => !q.cursor || sign * ((new Date(r.timestamp).getTime() - q.cursor.timestamp.getTime()) || (r.id < q.cursor.id ? -1 : r.id > q.cursor.id ? 1 : 0)) >= 0)
-        .sort((a, b) => sign * (new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime() || (a.id < b.id ? -1 : 1)))
+        .filter(
+          (r) =>
+            !q.cursor ||
+            sign *
+              (new Date(r.timestamp).getTime() - q.cursor.timestamp.getTime() ||
+                (r.id < q.cursor.id ? -1 : r.id > q.cursor.id ? 1 : 0)) >=
+              0
+        )
+        .sort(
+          (a, b) =>
+            sign *
+            (new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime() ||
+              (a.id < b.id ? -1 : 1))
+        )
         .slice(0, q.limit + 1)
-        .map((r) => ({ id: r.id, title: r.title, namespace: 0, level: r.level, timestamp: new Date(r.timestamp), user: r.user ?? null, comment: r.comment ?? null, expiresAt: r.expiresAt ? new Date(r.expiresAt) : null }));
+        .map((r) => ({
+          id: r.id,
+          title: r.title,
+          namespace: 0,
+          level: r.level,
+          timestamp: new Date(r.timestamp),
+          user: r.user ?? null,
+          comment: r.comment ?? null,
+          expiresAt: r.expiresAt ? new Date(r.expiresAt) : null,
+        }));
     },
     revisionByRowId: async (rowId) => {
       const rev = revisions.find((r) => `row-${r.revId}` === rowId);
@@ -598,7 +914,9 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
     revisionCountOf: async (title) => revisions.filter((r) => r.page === title).length,
     pageHtml: async (id) => {
       const page = (data.pages ?? []).find((p) => `art:${p.title}` === id);
-      return page ? { html: data.html?.[page.title] ?? null, fresh: data.html?.[page.title] !== undefined } : null;
+      return page
+        ? { html: data.html?.[page.title] ?? null, fresh: data.html?.[page.title] !== undefined }
+        : null;
     },
     wikitextByArticle: async (ids) =>
       new Map(
@@ -615,7 +933,6 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
 function a2(pageA: number, keyA: string, pageB: number, keyB: string): number {
   return pageA - pageB || (keyA < keyB ? -1 : keyA > keyB ? 1 : 0);
 }
-
 
 // ---------------------------------------------------------------------------
 // Fake services for the writing actions
@@ -640,8 +957,12 @@ export function fakeServices(data: FakeWikiData, overrides: Partial<ApiServices>
     renderWikitext: record("renderWikitext", async (wikitext: string, title: string) => ({
       html: `<p>rendered(${title}): ${wikitext}</p>`,
       // what a real render reports, read off the text the simple way: {{Name}} and [[File:Name]]
-      templates: [...wikitext.matchAll(/\{\{\s*([^{}|#:]+?)\s*[|}]/g)].map((match) => `Template:${match[1]}`),
-      images: [...wikitext.matchAll(/\[\[File:([^\]|]+)/g)].map((match) => match[1]!.replace(/ /g, "_")),
+      templates: [...wikitext.matchAll(/\{\{\s*([^{}|#:]+?)\s*[|}]/g)].map(
+        (match) => `Template:${match[1]}`
+      ),
+      images: [...wikitext.matchAll(/\[\[File:([^\]|]+)/g)].map((match) =>
+        match[1]!.replace(/ /g, "_")
+      ),
     })),
     ensureRendered: record("ensureRendered", async (articleId: string) => {
       // The render service stores the rendering: the page then has a fresh HTML.
@@ -657,38 +978,108 @@ export function fakeServices(data: FakeWikiData, overrides: Partial<ApiServices>
     requireRight: record("requireRight", async () => undefined),
     authorizeMove: record("authorizeMove", async () => undefined),
     authorizeProtection: record("authorizeProtection", async () => undefined),
-    requireRestorableWikitext: record("requireRestorableWikitext", async (_ctx, _title, revision) => revision.wikitext ?? ""),
-    detectEditConflict: record("detectEditConflict", async (title: string, baseRef: string | undefined) => {
-      const head = (data.revisions ?? []).filter((r) => r.page === title).sort((a, b) => a.timestamp.localeCompare(b.timestamp) || a.revId - b.revId).at(-1);
-      return head && baseRef === String(head.revId) ? null : { currentWikitext: head?.content ?? "", currentRevisionRef: head ? String(head.revId) : null };
-    }),
+    requireRestorableWikitext: record(
+      "requireRestorableWikitext",
+      async (_ctx, _title, revision) => revision.wikitext ?? ""
+    ),
+    detectEditConflict: record(
+      "detectEditConflict",
+      async (title: string, baseRef: string | undefined) => {
+        const head = (data.revisions ?? [])
+          .filter((r) => r.page === title)
+          .sort((a, b) => a.timestamp.localeCompare(b.timestamp) || a.revId - b.revId)
+          .at(-1);
+        return head && baseRef === String(head.revId)
+          ? null
+          : {
+              currentWikitext: head?.content ?? "",
+              currentRevisionRef: head ? String(head.revId) : null,
+            };
+      }
+    ),
     saveWikitext: record("saveWikitext", async (_ctx, save) => {
       const pages = (data.pages ??= []);
       if (!pages.some((p) => p.title === save.title)) {
-        pages.push({ pageId: Math.max(0, ...pages.map((p) => p.pageId)) + 1, title: save.title, namespace: 0 });
+        pages.push({
+          pageId: Math.max(0, ...pages.map((p) => p.pageId)) + 1,
+          title: save.title,
+          namespace: 0,
+        });
       }
       const revId = nextRevId++;
-      (data.revisions ??= []).push({ revId, page: save.title, timestamp: "2026-09-30T12:00:00Z", user: "Heku", comment: save.summary, minor: save.minor, content: save.wikitext });
+      (data.revisions ??= []).push({
+        revId,
+        page: save.title,
+        timestamp: "2026-09-30T12:00:00Z",
+        user: "Heku",
+        comment: save.summary,
+        minor: save.minor,
+        content: save.wikitext,
+      });
       return { revisionRowId: `row-${revId}` };
     }),
     movePage: record("movePage", async (from: string, to: string) => ({
-      success: true, oldTitle: from, newTitle: to, oldSlug: "", newSlug: "", redirectArticleId: "redirect-1", movedArticleId: "a", linksUpdated: 0, talk: null,
+      success: true,
+      oldTitle: from,
+      newTitle: to,
+      oldSlug: "",
+      newSlug: "",
+      redirectArticleId: "redirect-1",
+      movedArticleId: "a",
+      linksUpdated: 0,
+      talk: null,
     })),
     archivePage: record("archivePage", async () => undefined),
     restorePage: record("restorePage", async () => undefined),
     protectPage: record("protectPage", async () => undefined),
+    // the upload service is the real one's business (upload-service.test.ts); here the file just appears
+    uploadFile: record("uploadFile", async (request) => {
+      const name = request.filename.replace(/_/g, " ");
+      (data.files ??= []).push({
+        name,
+        size: request.bytes.length,
+        user: "Heku",
+        comment: request.comment,
+        timestamp: "2026-09-30T12:00:00Z",
+      });
+      return {
+        result: "Success" as const,
+        replaced: false,
+        noChange: false,
+        filename: name,
+        title: `File:${name}`,
+        url: `/api/wiki/file/${name.replace(/ /g, "_")}`,
+        descriptionUrl: `/wiki/File:${name.replace(/ /g, "_")}`,
+        width: 640,
+        height: 480,
+        size: request.bytes.length,
+        mime: "image/png",
+        sha1: "a".repeat(40),
+      };
+    }),
     ...overrides,
   };
   return { services, calls };
 }
 
 /** Deps over a fake wiki, with a logged-in bot's grants, recording every service call. */
-export async function makeWikiDeps(data: FakeWikiData, options: { services?: Partial<ApiServices>; grants?: string[]; groups?: Group[]; extra?: Partial<ApiDeps> } = {}) {
+export async function makeWikiDeps(
+  data: FakeWikiData,
+  options: {
+    services?: Partial<ApiServices>;
+    grants?: string[];
+    groups?: Group[];
+    extra?: Partial<ApiDeps>;
+  } = {}
+) {
   const { services, calls } = fakeServices(data, options.services);
   const deps = await makeDeps({
     store: fakeWiki(data),
     services,
-    auth: await fakeAuthStore("bot-secret", options.grants ?? ["basic", "editpage", "createeditmovepage", "delete", "protect", "rollback"]),
+    auth: await fakeAuthStore(
+      "bot-secret",
+      options.grants ?? ["basic", "editpage", "createeditmovepage", "delete", "protect", "rollback"]
+    ),
     loadPermissions: fakeLoader(options.groups ?? ["*", "user", "sysop"]),
     ...options.extra,
   });
@@ -700,6 +1091,8 @@ export async function makeWikiDeps(data: FakeWikiData, options: { services?: Par
 export async function loggedIn(bot: Bot, type = "csrf"): Promise<string> {
   const login = (await bot.login()) as { login?: { result: string } };
   if (login.login?.result !== "Success") throw new Error(`login failed: ${JSON.stringify(login)}`);
-  const tokens = (await bot.get({ action: "query", meta: "tokens", type, formatversion: "2" })) as { query: { tokens: Record<string, string> } };
+  const tokens = (await bot.get({ action: "query", meta: "tokens", type, formatversion: "2" })) as {
+    query: { tokens: Record<string, string> };
+  };
   return tokens.query.tokens[`${type}token`]!;
 }

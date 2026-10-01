@@ -34,12 +34,17 @@ export interface MirrorStatus {
   counts: Record<MirrorState, number>;
   /** How long the oldest job that has not finished has been waiting, in seconds; null when nothing waits. */
   oldestPendingSeconds: number | null;
+  /**
+   * Uploads (plan 411) that MediaWiki does not hold yet, dead ones included: WikiOS alone keeps their bytes, in its
+   * staging directory, which therefore belongs in the backups until this is 0.
+   */
+  uploadsWaiting: number;
   /** The last dead jobs, newest first. */
   dead: DeadMirrorJob[];
 }
 
 export async function getMirrorStatus(now = new Date()): Promise<MirrorStatus> {
-  const [grouped, oldest, dead] = await Promise.all([
+  const [grouped, oldest, dead, uploadsWaiting] = await Promise.all([
     db.wikiMirrorJob.groupBy({
       by: ["state"],
       where: { source: MIRROR_SOURCE },
@@ -64,6 +69,13 @@ export async function getMirrorStatus(now = new Date()): Promise<MirrorStatus> {
         updatedAt: true,
       },
     }),
+    db.wikiMirrorJob.count({
+      where: {
+        source: MIRROR_SOURCE,
+        kind: "upload",
+        state: { in: ["pending", "running", "dead"] },
+      },
+    }),
   ]);
 
   const counts: Record<MirrorState, number> = {
@@ -84,6 +96,7 @@ export async function getMirrorStatus(now = new Date()): Promise<MirrorStatus> {
     oldestPendingSeconds: oldest
       ? Math.max(0, Math.round((now.getTime() - oldest.createdAt.getTime()) / 1000))
       : null,
+    uploadsWaiting,
     dead: dead.map(({ updatedAt, ...job }) => ({ ...job, diedAt: updatedAt })),
   };
 }
