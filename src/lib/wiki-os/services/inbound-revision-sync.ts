@@ -16,7 +16,7 @@ import { z } from "zod";
 import { db } from "~/server/db";
 import { notificationAPI } from "~/lib/notifications/api";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
-import { mirrorBotName } from "../adapters/mediawiki/csrf-cache";
+import { isMirrorAccount, mirrorBotName } from "../adapters/mediawiki/csrf-cache";
 import {
   ArticleRepository,
   type ImportedHead,
@@ -69,8 +69,7 @@ export async function evictCaches(title: string, articleId?: string | null): Pro
 
 /** Whether `user` is WikiOS's own mirror account: what it writes to MediaWiki is WikiOS's, not news. */
 export function isMirrorUser(user: string | null): boolean {
-  const bot = mirrorBotName();
-  return bot !== null && user !== null && normalizeWikiUsername(user) === bot;
+  return isMirrorAccount(user);
 }
 
 /** The WikiOS user who verified the MediaWiki account `username`, if anyone. */

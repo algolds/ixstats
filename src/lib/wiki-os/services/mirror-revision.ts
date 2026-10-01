@@ -36,7 +36,7 @@ import {
   getMediaWikiAction,
   postMediaWikiAction,
 } from "../adapters/mediawiki/write-service";
-import { mirrorBotName } from "../adapters/mediawiki/csrf-cache";
+import { isMirrorAccount, mirrorBotName } from "../adapters/mediawiki/csrf-cache";
 import { contentModelFor } from "../xml/content-model";
 import { createExportWriter, escapeXmlText, toXmlTimestamp } from "../xml/export-writer";
 import { mwSha1Base36, sha1HexToBase36 } from "../xml/sha1";
@@ -57,9 +57,21 @@ const REVISION_XML_OVERHEAD = 2_000;
 /** Pages of the page's history read to find the revisions of a batch. */
 const MAX_HISTORY_PAGES = 4;
 
-const EDIT_NOTE = "MediaWiki had a newer revision: this text was pushed as an edit instead";
-const SUPERSEDED_NOTE =
-  "Imported, but MediaWiki had a newer revision: only the batch's newest text was pushed, as an edit";
+/**
+ * Why the newest text was pushed as an edit: MediaWiki's newest revision was another editor's, or the mirror's own (a
+ * null revision an earlier import added, dated after this revision: not a conflict with anyone, only the order of two
+ * of the mirror's own writes).
+ */
+function editNote(newerIsMirror: boolean): string {
+  return newerIsMirror
+    ? "MediaWiki's newest revision was the mirror's own (an earlier import's null revision, dated after this revision): this text was pushed as an edit instead"
+    : "MediaWiki had a newer revision: this text was pushed as an edit instead";
+}
+function supersededNote(newerIsMirror: boolean): string {
+  return newerIsMirror
+    ? "Imported, but the page's newest revision was the mirror's own (a null revision dated after it): only the batch's newest text was pushed, as an edit"
+    : "Imported, but MediaWiki had a newer revision: only the batch's newest text was pushed, as an edit";
+}
 const UNMATCHED_NOTE =
   "Imported, but its revision was not found in MediaWiki's history, so it is unstamped";
 
@@ -77,6 +89,7 @@ const revisionsPageSchema = z.object({
               revid: z.number(),
               sha1: z.string().optional(),
               timestamp: z.string().optional(),
+              user: z.string().optional(),
             })
           )
           .optional(),
@@ -102,6 +115,8 @@ interface CurrentRevision {
   revid: number;
   /** `rev_sha1` in MediaWiki's base 36; null when MediaWiki hides it. */
   sha1: string | null;
+  /** Who made it; null when MediaWiki hides that. */
+  user: string | null;
 }
 
 /** One job of a batch: its revision goes into the import, or there is nothing to send for it. */
@@ -346,14 +361,18 @@ async function currentRevision(title: string): Promise<CurrentRevision | null> {
       action: "query",
       prop: "revisions",
       titles: title,
-      rvprop: "ids|sha1|timestamp",
+      rvprop: "ids|sha1|timestamp|user",
       rvlimit: "1",
     },
     revisionsPageSchema
   );
   const revision = data.query.pages[0]?.revisions?.[0];
   if (!revision) return null;
-  return { revid: revision.revid, sha1: revision.sha1 ? sha1HexToBase36(revision.sha1) : null };
+  return {
+    revid: revision.revid,
+    sha1: revision.sha1 ? sha1HexToBase36(revision.sha1) : null,
+    user: revision.user ?? null,
+  };
 }
 
 /**
@@ -475,16 +494,17 @@ async function postImport(plan: RevisionBatchPlan & { xml: string }): Promise<vo
 async function importAndVerify(
   plan: RevisionBatchPlan & { xml: string },
   head: Extract<BatchMember, { send: true }>
-): Promise<{ revid: number; viaEdit: boolean }> {
+): Promise<{ revid: number; viaEdit: boolean; newerIsMirror: boolean }> {
   await postImport(plan);
   const current = await currentRevision(head.job.title);
   if (current !== null && current.sha1 === mwSha1Base36(head.revision.wikitext)) {
-    return { revid: current.revid, viaEdit: false };
+    return { revid: current.revid, viaEdit: false, newerIsMirror: false };
   }
   const summary = summaryOf(head.revision, revisionPayloadSchema.parse(head.job.payload ?? {}));
   return {
     revid: await pushAsEdit(head.job.title, head.revision, summary, current),
     viaEdit: true,
+    newerIsMirror: isMirrorAccount(current?.user),
   };
 }
 
@@ -516,8 +536,9 @@ async function executeBatch(
   const head = last?.send ? last : null;
   let revid: number | null = null;
   let viaEdit = false;
+  let newerIsMirror = false;
   if (head) {
-    ({ revid, viaEdit } = await importAndVerify(plan, head));
+    ({ revid, viaEdit, newerIsMirror } = await importAndVerify(plan, head));
   } else {
     await postImport(plan);
   }
@@ -543,10 +564,18 @@ async function executeBatch(
   return plan.members.map((member): BatchOutcome => {
     if (!member.send) return { job: member.job, mwRevId: member.mwRevId };
     if (member === head) {
-      return { job: member.job, mwRevId: revid, ...(viaEdit ? { note: EDIT_NOTE } : {}) };
+      return {
+        job: member.job,
+        mwRevId: revid,
+        ...(viaEdit ? { note: editNote(newerIsMirror) } : {}),
+      };
     }
     const mwRevId = imported.get(member.revision.id) ?? null;
-    const note = viaEdit ? SUPERSEDED_NOTE : mwRevId === null ? UNMATCHED_NOTE : undefined;
+    const note = viaEdit
+      ? supersededNote(newerIsMirror)
+      : mwRevId === null
+        ? UNMATCHED_NOTE
+        : undefined;
     return { job: member.job, mwRevId, ...(note ? { note } : {}) };
   });
 }

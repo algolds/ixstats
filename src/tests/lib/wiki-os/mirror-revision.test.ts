@@ -284,7 +284,7 @@ describe("importing a revision", () => {
     expect(verify?.params).toMatchObject({
       action: "query",
       titles: "Foo bar",
-      rvprop: "ids|sha1|timestamp",
+      rvprop: "ids|sha1|timestamp|user",
       rvlimit: "1",
     });
     expect(calls.indexOf(verify!)).toBeGreaterThan(
@@ -655,7 +655,9 @@ describe("a batch of revisions of one title", () => {
   const jobFor = (n: number, over: Partial<WikiMirrorJob> = {}) =>
     job({ id: `job-${n}`, revisionId: `rev-${n}`, ...over });
   /** MediaWiki's history of the page, oldest first: the newest is the current revision. */
-  function historyIs(entries: Array<{ revid: number; text: string; timestamp: string }>) {
+  function historyIs(
+    entries: Array<{ revid: number; text: string; timestamp: string; user?: string }>
+  ) {
     wiki.on("query", ({ params }) => {
       const newestFirst = [...entries].reverse();
       const shown = params.rvlimit === "1" ? newestFirst.slice(0, 1) : newestFirst;
@@ -664,10 +666,11 @@ describe("a batch of revisions of one title", () => {
           pages: [
             {
               title: "Foo bar",
-              revisions: shown.map(({ revid, text, timestamp }) => ({
+              revisions: shown.map(({ revid, text, timestamp, user }) => ({
                 revid,
                 sha1: hexSha1(text),
                 timestamp,
+                ...(user ? { user } : {}),
               })),
             },
           ],
@@ -873,7 +876,12 @@ describe("a batch of revisions of one title", () => {
       historyIs([
         { revid: 10, text: T1, timestamp: "2026-09-27T10:00:00Z" },
         { revid: 11, text: T2, timestamp: "2026-09-27T10:00:05Z" },
-        { revid: 12, text: "A human's text.\n", timestamp: "2026-09-27T10:05:00Z" },
+        {
+          revid: 12,
+          text: "A human's text.\n",
+          timestamp: "2026-09-27T10:05:00Z",
+          user: "WikiOSAdmin",
+        },
       ]);
       wiki.on("edit", () => ({ edit: { result: "Success", newrevid: 20 } }));
     });
@@ -898,6 +906,54 @@ describe("a batch of revisions of one title", () => {
       expect(outcomes[0]?.note).toContain("only the batch's newest text was pushed");
       expect(outcomes[1]?.note).toContain("pushed as an edit instead");
       expect(mockArticleUpdateMany.mock.calls[0]?.[0].data).toMatchObject({ mwLatestRevId: 20 });
+    });
+  });
+
+  describe("when the newer revision is the mirror's own null revision", () => {
+    beforeEach(() => {
+      // an earlier import's null revision (the bot's, with another text) is dated after these revisions
+      historyIs([
+        { revid: 10, text: T1, timestamp: "2026-09-27T10:00:00Z" },
+        { revid: 11, text: T2, timestamp: "2026-09-27T10:00:05Z" },
+        {
+          revid: 12,
+          text: "An earlier import's text.\n",
+          timestamp: "2026-09-27T10:05:00Z",
+          user: "WikiOSMirror",
+        },
+      ]);
+      wiki.on("edit", () => ({ edit: { result: "Success", newrevid: 20 } }));
+    });
+
+    it("says so in the notes, not that someone else edited", async () => {
+      const outcomes = await runBatch([jobFor(1), jobFor(2)]);
+
+      expect(outcomes[1]?.note).toContain("the mirror's own");
+      expect(outcomes[1]?.note).not.toContain("MediaWiki had a newer revision");
+      expect(outcomes[0]?.note).toContain("the mirror's own");
+      expect(outcomes[0]?.note).toContain("only the batch's newest text was pushed");
+      expect(requestsTo("edit")).toHaveLength(1); // the fallback itself is the same
+    });
+
+    it("asks MediaWiki who made the current revision", async () => {
+      await runBatch([jobFor(1), jobFor(2)]);
+
+      expect(wiki.calls().find((call) => call.params.rvlimit === "1")?.params.rvprop).toBe(
+        "ids|sha1|timestamp|user"
+      );
+    });
+
+    it("knows the mirror account by its normalised name, whatever the bot-password's app name", async () => {
+      process.env.WIKIOS_MEDIAWIKI_BOT_USER = "wikiOSMirror@other-app";
+      historyIs([
+        { revid: 10, text: T1, timestamp: "2026-09-27T10:00:00Z" },
+        { revid: 11, text: T2, timestamp: "2026-09-27T10:00:05Z" },
+        { revid: 12, text: "x\n", timestamp: "2026-09-27T10:05:00Z", user: "WikiOSMirror" },
+      ]);
+
+      const outcomes = await runBatch([jobFor(1), jobFor(2)]);
+
+      expect(outcomes[1]?.note).toContain("the mirror's own");
     });
   });
 

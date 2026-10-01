@@ -32,6 +32,12 @@ export function mirrorBotName(): string | null {
   return login ? normalizeWikiUsername(login) : null;
 }
 
+/** Whether `user` is the mirror's own MediaWiki account (the bot-password login without its "@appname"). */
+export function isMirrorAccount(user: string | null | undefined): boolean {
+  const bot = mirrorBotName();
+  return bot !== null && Boolean(user) && normalizeWikiUsername(user as string) === bot;
+}
+
 const loginTokenSchema = z.object({
   query: z.object({ tokens: z.object({ logintoken: z.string() }) }),
 });
