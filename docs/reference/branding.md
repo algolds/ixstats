@@ -459,7 +459,7 @@ Cross-platform identity linking service — unifies Forum, Wiki, and Discord ide
 
 ### 6.1 Facet (Design System)
 
-The platform's design system (independently versioned; `FACET_VERSION` = 3 in the registry): HIG colour roles and per-app tints, named text styles, glass for floating chrome only, concentric radii and springs. Tokens live in `src/styles/facet/tokens.css`; see the [Facet 3 reference](facet-design-system.md). _(Formerly "Glass Physics"; the legacy `glass-*` classes were removed in Facet 3.)_
+The platform's design system (independently versioned; `FACET_VERSION` = 3.1 in the registry): HIG colour roles and per-app tints, named text styles, glass for floating chrome only, concentric radii and springs. Tokens live in `src/styles/facet/tokens.css`; see the [Facet 3 reference](facet-design-system.md). _(Formerly "Glass Physics"; the legacy `glass-*` classes were removed in Facet 3.)_
 
 **Glass CSS Variables:**
 

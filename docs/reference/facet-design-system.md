@@ -1,24 +1,51 @@
 # Facet 3 — Design System Reference
 
-**Version:** Facet 3.0 (`FACET_VERSION`, `src/lib/buildVersion.ts`) · **Decisions & rationale:**
-[Facet 3 specification](../specs/2026-09-30-facet-3-design-system.md) · **Evidence for the rewrite:**
-[Facet style audit](../audits/FACET_STYLE_AUDIT_2026-09-30.md)
+**Version:** Facet 3.1 — identity (`FACET_VERSION`, `src/lib/buildVersion.ts`) · **Decisions & rationale:**
+[Facet 3 specification](../specs/2026-09-30-facet-3-design-system.md) (3.1: spec §16) · **Evidence for the
+rewrite:** [Facet style audit](../audits/FACET_STYLE_AUDIT_2026-09-30.md)
 
 Facet is IxStates' design system: Apple's Human Interface Guidelines as the foundation — semantic colour roles, named
-text styles, glass only for floating chrome, concentric shape, springs, accessibility preferences — with the IxStates
-identity on top: the Swiss typeface, per-app tints, Cuelume sound and Halo. This page documents **what ships**. The spec
+text styles, concentric shape, springs, accessibility preferences — with the IxStates identity on top: the Swiss
+typeface with mono data numerals and heavy headings, per-app tints, glass hero cards and acrylic chrome, the
+monochrome / MyCountry-gold primary, press and lift physics, CutoutCard, domain glows, Cuelume sound and Halo. This page documents **what ships**. The spec
 records why; where the two differ, this page is right and the spec notes the deviation.
 
-**Status:** Phases 1 (foundations) and 2 (primitives, settings) are live. Phase 3 (sidebar + tab bar navigation) ships
+**Status:** Phases 1 (foundations) and 2 (primitives, settings) are live; the **Facet 3.1 identity** foundation (§0) is live and apps are adopting it. Phase 3 (sidebar + tab bar navigation) ships
 behind the `facet-nav` flag, off by default (§12). Phase 4 (per-app migration) is pending, so many screens still use
 legacy classes that now alias onto the tokens below.
 
 ---
 
+## 0. Facet 3.1 — identity: adoption guide
+
+Facet 3.1 (spec §16) brings the pre-refactor identity back on the Facet 3 foundations. **Governing rule: evolve the
+existing design — keep the UI and improve on it; no redesign without an explicit owner request. When unsure, match
+v2 (`c5c6b382`).** App agents: use exactly these props and classes; don't hand-roll blur, gradients or glows.
+
+| Need | Use | Notes |
+|---|---|---|
+| **(a) Hero glass card** (an app's top hero/header card, MyCountry shell, dashboard/country-profile heroes, passport, vault, achievements) | `<FacetCard variant="glass" padding="lg">` — add `glow` for the domain glow, `onClick` to make it pressable (it lifts and presses). Not a card? `<FacetMaterial material="hero">`, or `FACET_GLASS_SURFACE` + `<Refraction />` on an element that must keep its tag. | Glass never nests: inside, use opaque roles or `FacetCard variant="inset"`. Dense lists, tables and forms stay on the opaque `FacetCard`. `MotionFacetCard` takes the same props. |
+| **(b) Feature / media card** (dashboard widgets, vault, thinktanks, messages) | `<CutoutCard variant="card">` (or `variant="glass"` on a hero) with `<CutoutCardHeader icon={…} trailing={…}>Title</CutoutCardHeader>`, `<CutoutCardMedia className="aspect-video"><CutoutCardImage src={…} alt="" /></CutoutCardMedia>`, `<CutoutCardStagger>` + `<CutoutCardStaggerItem>` for the text, `<CutoutCardAction>` for hover actions. `onClick` + `aria-label` makes the whole card a button. | 28px `rounded-cutout`; image zoom, lift, press and blur-in are off under Reduce Motion. Keep concentric radii for anything dense inside. |
+| **(c) Glow** | `glow` on `FacetCard`/`CutoutCard` (`true` = blob + tinted shadow, `"blob"`, `"shadow"`; `glowPosition`). Standalone: `<TintGlow position="top-right" />` as the first child of a `relative isolate overflow-hidden` surface with `className="-z-10"`, or the `facet-glow` utility for the tinted shadow. Domain colour: `<TintGlow color="var(--color-green)" />`. | App tint by default. Heroes and feature cards only. **Sports surfaces stay flat — no glow.** |
+| **(d) Gold actions** (MyCountry, Builder) | `<Button>` / `<Button variant="filled">` inside `data-app="mycountry"` — the gold gradient, rim and dark label come from the scope. Non-button gold paint: `facet-gold`; a gold card rim: `facet-gold-rim`. | Everywhere else `filled` is the monochrome primary; the tint stays on `tinted`/`plain`/`link`, selection, links, focus and toggles. Don't override the fill with palette colours. One filled primary per view. |
+| **(e) Numbers** | `<Stat>` (value + delta), `<Badge>{count}</Badge>`, `ActionPill count`, `SegmentedControl` `badge`, `<TableCell>` figures (`numeric` on the column's `TableHead`/`TableCell` right-aligns), `FacetRow trailing={number}` — all switch to the data face automatically. Anything else: `className="font-data tabular-nums"` (`DATA_FONT` in `~/lib/design/identity`). | `font-data` = Azeret Mono, tabular, slashed zero. Stats, figures, counts, ranks, IDs. Words stay in the UI face. |
+| **(f) Flag watermark** | `<FlagWatermark src={flagUrl} />` as the first child of the hero (`relative overflow-hidden`; the hero is a `group`, `FacetCard` or `CutoutCard`), content `relative`. | v2 strength by default: 320px, .14/.18 → .25 + 105% on hover. `interactive={false}` for static; `className="size-56 -top-10 -right-10"` on compact cards. |
+
+Also available: **headings** are heavy and tight automatically (`text-display` … `text-title-3`); **press/lift
+physics** are built into the primitives (`facet-press`, `facet-press-sm`, `facet-press-subtle`, `facet-lift` for
+custom pressables — they carry their own transition); **acrylic chrome** for Halo and the sidebar/tab bar:
+`<FacetMaterial material="acrylic" glow>` (or `material-acrylic` + `<DynamicIslandEffects />` on a `motion` box);
+**achievements**: `facet-aurora`, `facet-radiance`, `facet-foil`, `facet-ghost-heraldry`, `facet-jewel` layers driven
+by `--accent`, `--accent-2` and `--heraldry-mask: url(…)` (positioned with utilities, `aria-hidden`; add
+`data-interactive="true"` to aurora/radiance to brighten on card hover). The materials lab (Admin → Facet lab)
+shows every recipe.
+
+
 ## 1. Rules of the road
 
-1. **Content is opaque, chrome is glass.** Pages, cards, rows and dialogs are opaque. Glass (`material-*`) is only for
-   floating chrome: map panels and toolbars, Halo, popovers and menus, the sidebar/tab bar (§12). Glass never nests.
+1. **Data is opaque; heroes and chrome are glass.** Pages, dense cards, lists, tables, forms and dialogs are opaque.
+   Glass is for hero/feature cards (`FacetCard variant="glass"`, §0) and floating chrome (`material-*`: map panels and
+   toolbars, Halo, popovers and menus, the sidebar/tab bar, §12). Glass never nests.
 2. **Use roles, not colours.** `text-label`, `bg-surface`, `border-separator`, `bg-tint`… switch with the theme and
    the Increase Contrast preference. No `dark:` overrides, no hex in class names, no raw palette for UI chrome.
 3. **Use primitives, not hand-rolled markup.** Every card, row, button, badge, tab, switch, overlay and list on this
@@ -26,7 +53,9 @@ legacy classes that now alias onto the tokens below.
 4. **Utilities always win.** All Facet CSS is layered (`@layer base/components` or `@utility`), so a class on an
    element is never silently overridden. `!important` exists only for user-preference switches over inline animation
    styles (`styles/facet/overrides.css`) and for MediaWiki HTML (`styles/wiki-os/mediawiki.css`).
-5. **The guards are the rules.** `src/tests/architecture/{facet-guards,css-layering,token-contrast}.test.ts` fail the
+5. **Evolve, don't redesign.** Keep the existing UI and improve on it; port the v2 (`c5c6b382`) recipe rather than
+   inventing a new look, unless the product owner explicitly asks (spec §16.0).
+6. **The guards are the rules.** `src/tests/architecture/{facet-guards,css-layering,token-contrast}.test.ts` fail the
    build on regressions (see §11).
 
 ## 2. Tokens
@@ -82,16 +111,18 @@ in `tokens.css`.
 ### 2.3 Typography
 
 **Face:** the Swiss stack (Schibsted Grotesk → Akzidenz-Grotesk → system fallbacks, metric-matched) for all UI;
-National for `text-display`; Azeret Mono (`font-mono`) only for code, IDs, coordinates and hashes. Font stacks are
-owned by `tokens.css`. Numbers use `tabular-nums` in the UI face.
+National for `text-display`. **Figures use the data face `font-data`** (Azeret Mono with `"tnum","zero"` — tabular,
+slashed zero; the v2 `.font-mono`): stats, counts, currency, ranks, IDs. `font-mono` (same face and features) stays
+for code, hashes and coordinates. Font stacks are owned by `tokens.css`. Headings (display → title-3) are heavy and
+tight (Facet 3.1); a face without an 800 cut renders 700.
 
 | Utility | Size/line | Weight | Use |
 |---|---|---|---|
-| `text-display` | 40/44 | 700 (National) | Hero titles only |
-| `text-large-title` | 28/34 | 700 | One per page: the page title |
-| `text-title-1` | 22/28 | 700 | Dialog/sheet titles, major sections |
-| `text-title-2` | 20/26 | 600 | Card titles on overview pages |
-| `text-title-3` | 17/22 | 600 | Group titles, stat values |
+| `text-display` | 40/44 | 800 (National), −0.025em | Hero titles only |
+| `text-large-title` | 28/34 | 800, −0.025em | One per page: the page title |
+| `text-title-1` | 22/28 | 800, −0.025em | Dialog/sheet titles, major sections |
+| `text-title-2` | 20/26 | 700, −0.025em | Card titles on overview pages |
+| `text-title-3` | 17/22 | 700, −0.02em | Group titles |
 | `text-headline` | 14/20 | 600 | Row titles, emphasis |
 | `text-body` | 14/20 | 400 | Default text |
 | `text-callout` | 13/18 | 400 | Helper text, secondary blocks |
@@ -106,7 +137,8 @@ utilities, so `cn("text-body text-label")` keeps both.
 ### 2.4 Shape, space, layout
 
 - **Radius (concentric):** `rounded-sheet` 20 · `rounded-card` 16 · `rounded-row` 12 · `rounded-control-lg` 12 ·
-  `rounded-control` 10 · `rounded-control-sm` 8 · `rounded-full` for chips and avatars. A nested radius is the outer
+  `rounded-control` 10 · `rounded-control-sm` 8 · `rounded-full` for chips and avatars. `rounded-cutout` 28 is
+  CutoutCard's (feature/media cards only). A nested radius is the outer
   radius minus the padding. Continuous (squircle) corners apply where the browser supports `corner-shape`.
 - **Spacing:** Tailwind's 4px scale on an 8px rhythm; avoid x.5 steps except hairline tweaks.
 - **Density:** `html[data-density=compact]` (Settings) shrinks control heights (`--control-height-sm|md|lg`,
@@ -119,6 +151,8 @@ utilities, so `cn("text-body text-label")` keeps both.
 | `material-thin` | Toolbars, sub-headers, small floating buttons |
 | `material-regular` | Map panels, Halo, AppSidebar and TabBar |
 | `material-thick` | Popovers, menus, map context menus and floating dialogs over the map |
+| `material-hero` | Facet 3.1 glass hero tier: hero/feature cards (`FacetCard variant="glass"`, `CutoutCard variant="glass"`, `FacetMaterial material="hero"`) — v2 glass with the tint wash, white rim, tinted border and shadow |
+| `material-acrylic` | Facet 3.1 Halo island and navigation acrylic (`FacetMaterial material="acrylic" glow`) — v2 `.dynamic-island-shell` |
 
 Materials switch to opaque under Reduce Transparency and step down one blur level on small screens. Anything inside a
 material uses opaque roles. **Elevation:** `shadow-card` (cards), `shadow-floating` (popovers, menus, map panels),
@@ -132,7 +166,10 @@ Custom full-screen overlays that must host popovers use 100002–100009. No arbi
 
 `src/lib/design/motion.ts` exports three springs — `springSnappy` (controls, thumbs, segmented selection),
 `springSmooth` (sheets, navigation, layout), `springGentle` (emphasis) — plus `--duration-fast` 150ms,
-`--duration-exit` 120ms and `ease-out-facet`. Rules: animate transform and opacity; enter from scale .96 + fade;
+`--duration-exit` 120ms and `ease-out-facet`. **Physics (Facet 3.1):** `facet-press` (press `.98`;
+`facet-press-sm` `.95` for icon buttons, pills, segments; `facet-press-subtle` `.99` for rows/tiles) and `facet-lift`
+(hover up 2px + lift shadow) — both carry the control transition (don't add a `transition-*` utility beside them)
+and drop the movement under Reduce Motion; the primitives already use them. Rules: animate transform and opacity; enter from scale .96 + fade;
 exits are faster than entrances; keyboard-invoked UI appears instantly; nothing loops except live indicators.
 Overlay animations are the `animate-facet-in/out` and `animate-sheet-in/out` utilities. `<FacetMotionConfig>` (root
 layout) makes motion/react honour both the OS and the in-app Reduce Motion setting.
@@ -141,16 +178,18 @@ layout) makes motion/react honour both the OS and the in-app Reduce Motion setti
 
 | Component | Use |
 |---|---|
-| `FacetCard` (+ `FacetCardHeader/Content/Footer`) | The opaque content card. `padding="sm|md|lg"`; `onClick` or `interactive` makes it pressable (keyboard, focus ring). `variant="inset"` is a panel inside a card: `surface-secondary`, `rounded-row`, no hairline or shadow, `p-4` by default (`padding` still applies). `depth`/`theme` and the legacy `variant` names are accepted and ignored. `as="section|article|aside|header|footer|li|nav|figure"` renders that element (ref typed `HTMLElement`). `FACET_CARD_SURFACE` / `FACET_INSET_SURFACE` hold the classes for a button or third-party element that must keep its own element. |
+| `FacetCard` (+ `FacetCardHeader/Content/Footer`) | The opaque content card. `padding="sm|md|lg"`; `onClick` makes it pressable (button role, keyboard, focus ring, `facet-press`); `onClick` or `interactive` adds the hover lift (`facet-lift`; `lift={false}` opts out). **Facet 3.1:** `variant="glass"` is the glass hero tier (`material-hero` + `<Refraction />`; `refraction={false}` drops the hairline); `glow` (`true` · `"blob"` · `"shadow"`) adds the domain glow, `glowPosition` places the blob; `FACET_GLASS_SURFACE` holds the glass classes. `variant="inset"` is a panel inside a card: `surface-secondary`, `rounded-row`, no hairline or shadow, `p-4` by default (`padding` still applies). `depth`/`theme` and the legacy `variant` names are accepted and ignored. `as="section|article|aside|header|footer|li|nav|figure"` renders that element (ref typed `HTMLElement`). `FACET_CARD_SURFACE` / `FACET_INSET_SURFACE` hold the classes for a button or third-party element that must keep its own element. |
 | `MotionFacetCard` | `FacetCard` as a motion component (`initial`, `animate`, `exit`, `layout`…) for animated cards; replaces spreading `FACET_CARD_SURFACE` onto a `motion.div`. |
 | `FacetList` / `FacetListSection` / `FacetRow` | Inset grouped list — the default for settings, details, rails and most stat grids. Section `header` (sentence case) and `footer`; rows with `leading`, `title`, `subtitle`, `trailing`, `accessory` (`chevron`/`check`/node), `href` or `onClick`, `selected`, `disabled`, `destructive`, `swipeActions`. `variant="plain"` inside a card. Selection: `selectionStyle="fill"` (default, `fill-3` — pickers with a check, `aria-pressed`) or `"tint"` (`tint-fill` + tinted leading icon — the current row of a master–detail list, `aria-current="true"` on button rows, `"page"` on links); `aria-current` overrides. |
-| `Table` (+ `TableHeader/Body/Footer/Row/Head/Cell/Caption`) | Data tables: opaque `surface`, `rounded-card`, `separator` hairlines — inside a `Card`/`FacetCard` it drops its own surface. Headers `text-footnote` `label-secondary`; cells `text-callout` with `tabular-nums`; rows `fill-4` hover, `tint-fill` when `data-state="selected"`/`aria-selected`. Wide tables scroll with a `mask-image` edge fade (no gradient overlay). `<TableHeader sticky>` pins the header; give the scroller a height with `<Table containerClassName="max-h-…">`. |
-| `Stat` | Eyebrow label + tabular value + optional `delta` (icon and text, never colour alone) + `hint`. `icon` adds a 14px decorative glyph to the label row, leading by default (HIG summary tiles) or `iconPlacement="trailing"` at the row's end (metric grids). |
+| `Table` (+ `TableHeader/Body/Footer/Row/Head/Cell/Caption`) | Data tables: opaque `surface`, `rounded-card`, `separator` hairlines — inside a `Card`/`FacetCard` it drops its own surface. Headers `text-footnote` `label-secondary`; cells `text-callout` with `tabular-nums` (figure cells — numbers or text like "1,204" — switch to `font-data`; `numeric` on `TableCell`/`TableHead` forces it and right-aligns); rows `fill-4` hover, `tint-fill` when `data-state="selected"`/`aria-selected`. Wide tables scroll with a `mask-image` edge fade (no gradient overlay). `<TableHeader sticky>` pins the header; give the scroller a height with `<Table containerClassName="max-h-…">`. |
+| `Stat` | Eyebrow label + value in the data face (`font-data`) + optional `delta` (also `font-data`) (icon and text, never colour alone) + `hint`. `icon` adds a 14px decorative glyph to the label row, leading by default (HIG summary tiles) or `iconPlacement="trailing"` at the row's end (metric grids). |
 | `EmptyState` | Icon, title, message and one action; `compact` inside cards. |
-| `FacetMaterial` | Glass: `material="thin|regular|thick"`. Old `satin|paper|rubber|metal` still work (deprecated). |
+| `FacetMaterial` | Glass: `material="thin|regular|thick"`, and (3.1) `"hero"` (glass hero tier, top hairline) and `"acrylic"` (Halo/nav; four refraction edges; `glow` adds the `AcrylicGlow` underlay, `glowOrientation`). `refraction="top|all"|false` overrides the hairlines. Old `satin|paper|rubber|metal` still work (deprecated). |
+| `CutoutCard` (+ `CutoutCardHeader`, `CutoutCardMedia`, `CutoutCardImage`, `CutoutCardContent`, `CutoutCardStagger`/`CutoutCardStaggerItem`, `CutoutCardFooter`, `CutoutCardAction`, `CutoutCardPin`, `CutoutCardInsetLabel`, `CutoutCorner`) | Facet 3.1 feature/media card (v2): `variant="card"` (opaque, 28px, hairline, cutout shadow) or `"glass"`; `onClick` → button (Tab, Enter/Space, focus ring, press); `onClick`/`interactive` → hover lift; `glow`. `CutoutCardHeader` is the tinted tab with inverted-corner notches; `CutoutCardImage` zooms to 105% on hover; `CutoutCardStagger` blurs its items in; `CutoutCardAction` reveals on hover or focus within. Reduce Motion: no zoom/lift/press/blur. Not for dense UI. |
+| `TintGlow` · `Refraction` · `AcrylicGlow` (`~/components/ui/facet`) | Facet 3.1 identity layers: the v2 domain glow blob (`position`, `size`, `color`), the refraction hairline (`edges="top|all"`), the acrylic glow underlay. Decorative (`aria-hidden`, not printed). |
 | `FacetContainer` | **Deprecated.** Content depths render as `FacetCard`; `material=…` renders glass. New code uses `FacetCard` or `FacetMaterial`. |
 | `Skeleton` | Loading placeholders shaped like the final layout (no blur; stops under reduced motion). Never inside `<p>`. |
-| `Badge` | `neutral`, `tinted`, `success`, `warning`, `caution`, `destructive`, `info` (old `default`/`secondary`/`outline` still work); one per system colour (`red` … `gray`). Status and colour variants are the colour's `-ink` on a 15% fill (≥ 4.5:1 on every background role, light/dark, Increase Contrast — `token-contrast.test.ts`) — use these for statuses, categories, rarities and tags instead of `bg-x/15 text-x` classes. |
+| `Badge` | `neutral`, `tinted`, `success`, `warning`, `caution`, `destructive`, `info` (old `default`/`secondary`/`outline` still work); one per system colour (`red` … `gray`). Count badges (numeric children) use `font-data`; `numeric` forces it on/off. Status and colour variants are the colour's `-ink` on a 15% fill (≥ 4.5:1 on every background role, light/dark, Increase Contrast — `token-contrast.test.ts`) — use these for statuses, categories, rarities and tags instead of `bg-x/15 text-x` classes. |
 | `Alert` (+ `AlertTitle`, `AlertDescription`) | Inline message block (not an overlay). `default` (surface + hairline) or a status: `destructive`, `warning`, `caution`, `success`, `info` — the status `-ink` title/icon and a `label` description on a 15% fill (AA, contrast-guarded). `role="alert"` for default/destructive/warning/caution, `role="status"` for info/success; pass `role` to override (e.g. `note`). |
 | `Card` (+ `CardHeader/Title/Description/Action/Content/Footer`) | **Deprecated** — duplicates `FacetCard`. Renders the same opaque surface (`FACET_CARD_SURFACE`) with the shadcn 24px layout; existing call sites keep working. New code uses `FacetCard`. |
 | `FacetDataTable` (+ `FacetTableToolbar`, `FacetTablePagination`, `FacetMobileCard`) | Searchable/sortable/paginated data with a card layout on phones. Toolbar: `SearchField` + bordered export button; sortable headers are buttons with `aria-sort`; loading is `Skeleton`s shaped like the table (`aria-busy`), empty is `EmptyState` in a `FacetCard`; mobile rows are pressable `FacetCard`s with an eyebrow/value `<dl>`; pagination is a named `nav` with `aria-current="page"`. |
@@ -158,9 +197,12 @@ layout) makes motion/react honour both the OS and the in-app Reduce Motion setti
 | `Eyebrow` | Uppercase data label (`text-eyebrow`). |
 | `TextureOverlay` | Decorative only; sanctioned textures are `dots`, `grid`, `paperGrain` (`SANCTIONED_TEXTURES`). |
 
-Hero identity (`FlagWatermark` corner flag, `TintHairline`, `WatermarkGlyph` from `~/components/ui/facet`; the old
-`mycountry/shell/FlagWatermark` path re-exports them) may add a small corner image watermark, a
-tint glow and a tint hairline behind a card's content — never a full-width image wash; it must be `aria-hidden`, not printed, and sit behind the content.
+Hero identity (`FlagWatermark` corner flag, `TintHairline`, `WatermarkGlyph`, `TintGlow`, `Refraction` from
+`~/components/ui/facet`; the old `mycountry/shell/FlagWatermark` path re-exports the first three) adds a corner image
+watermark, a tint glow and a hairline behind a card's content — never a full-width image wash; it must be
+`aria-hidden`, not printed, and sit behind the content. `FlagWatermark` is at v2 strength (Facet 3.1): a 320px disc,
+.14 light / .18 dark → .25 and 105% while its hero (`group`, `FacetCard` or `CutoutCard`) is hovered; `interactive={false}`
+keeps it static; `className` resizes it on compact cards.
 
 **Swipe actions** (`FacetRow` `swipeActions`, `SwipeableRow` in `src/components/ui/facet/swipeable`) are a pointer
 shortcut, never the only way to an action. Keyboard model:
@@ -180,10 +222,10 @@ shortcut, never the only way to an action. Keyboard model:
 
 | Component | Notes |
 |---|---|
-| `Button` | Styles `filled` (tint), `tinted`, `gray`, `plain`, `bordered`, `destructive`, `link`; old `default`→filled, `secondary`→gray, `outline`→bordered, `ghost`→neutral plain. Sizes `sm` 28 · `md` 36 · `lg` 44 · `icon`/`icon-sm`/`icon-lg`; 44px hit area on touch; tint focus outline. One `filled` button per view. |
-| `SegmentedControl` | 2–5 peer choices (views, periods, filters). Radiogroup, or tablist with `asTabs`. Above five options (or with `scrollable`) the track scrolls horizontally at natural segment widths and keeps the selection in view. Options take a trailing `badge` (a count in a tabular pill, `aria-hidden`) and `badgeLabel` for screen readers ("12 unread", joined to the segment's name). The thumb is `bg-control-thumb`. |
+| `Button` | Styles `filled` (the **primary role** — monochrome; the gold gradient + rim inside `data-app="mycountry"`), `tinted` (tint), `gray`, `plain`, `bordered`, `destructive`, `link`; old `default`→filled, `secondary`→gray, `outline`→bordered, `ghost`→neutral plain. Sizes `sm` 28 · `md` 36 · `lg` 44 · `icon`/`icon-sm`/`icon-lg`; 44px hit area on touch; tint focus outline; press physics built in (`facet-press`, icons `facet-press-sm`). One `filled` button per view. A caller's `bg-*`/`text-*` still overrides the fill (pass `bg-none` to drop MyCountry's gradient). |
+| `SegmentedControl` | 2–5 peer choices (views, periods, filters). Radiogroup, or tablist with `asTabs`. Above five options (or with `scrollable`) the track scrolls horizontally at natural segment widths and keeps the selection in view. Options take a trailing `badge` (a count in a `font-data` pill, `aria-hidden`) and `badgeLabel` for screen readers ("12 unread", joined to the segment's name). The thumb is `bg-control-thumb`. |
 | `ToggleGroup` | Multi- or single-select filter chips. `disallowEmpty` (alias `required`) keeps the last pressed item pressed, so a single-select group never clears. |
-| `ActionPill` | Pill-shaped social action (like, repost, save, comment, share): neutral until `pressed`, then a tinted fill in its `tone` (`tint` or a system colour); `icon`, label, `count` (tabular); `aria-pressed` only when `pressed` is set. Forwards its ref, so it can be a `PopoverTrigger asChild`. |
+| `ActionPill` | Pill-shaped social action (like, repost, save, comment, share): neutral until `pressed`, then a tinted fill in its `tone` (`tint` or a system colour); `icon`, label, `count` (`font-data`); presses (`facet-press-sm`); `aria-pressed` only when `pressed` is set. Forwards its ref, so it can be a `PopoverTrigger asChild`. |
 | `Tabs` / `FacetTabs` | Page-level section switching only; full tablist ARIA and arrow keys. `FacetTabs` is a `fill-3` track with a `control-thumb` indicator; `tone` colours the active icon with roles (`neutral` label, `accent` tint, `mycountry` yellow, `forum` orange, `sdi` red); a tab's `themeColor` (any CSS colour, data) tints the indicator with `color-mix`, blending between tabs while dragging. |
 | `Switch`, `Checkbox`, `Slider`, `Stepper` | Settings and numeric input; roles, tint when on, 44px touch targets. A boolean that applies immediately is a `Switch`; a choice submitted with a form is a `Checkbox`. `Slider`'s `aria-label`/`aria-labelledby` name the thumb (the `role="slider"` element). |
 | `RadioCardGroup` / `RadioCard` | A single choice whose options need a title, description or icon (delivery modes, event types). `radiogroup` of `radio`s, one roving tab stop, arrows/Home/End move the selection; the checked card takes `tint-fill`, a tint border and ring and a filled radio dot. `value` (`null` = controlled, nothing checked), `onValueChange`, `columns` 1–4; cards take `value`, `icon`, `title`, `description`, `indicator`. Short peer options → `SegmentedControl`; long lists → `FacetRow`. |
@@ -238,6 +280,11 @@ labels; no exclamation marks in UI chrome.
 - `src/styles/globals.css` imports, in order: Tailwind, `facet/tokens.css`, then the layered sheets (typography,
   utilities, animations, themes aliases, theming, components, domains, `wiki-os/tokens.css`, facet, integrations,
   layout, `facet/shell.css`, clerk). Route sheets: `wiki-os.css` (WikiOS: `--wikios-*` aliases of the roles + Wiki tint, the Reading style and MediaWiki content styles), `forum.css` (Forum: `--forum-*` aliases of the roles + Forum tint, layout and BBCode post styles), `facet/lab.css` (materials lab only). Component sheet: `card-art.css` (trading-card art — card faces/backs, pack covers, holographic layers, cosmetic frames — imported by those components; `card-art-linear-{t,b,r,br,tr}` take Tailwind `from-*`/`via-*`/`to-*` stops so card-art gradients stay out of the UI gradient ceiling; not for UI).
+- `facet.css` also imports `facet/identity.css` (Facet 3.1): the `material-hero`/`material-acrylic` materials, the
+  `facet-press`/`facet-lift` physics, `facet-primary`/`facet-gold`/`facet-gold-rim`/`facet-glow`, and the layered
+  identity classes (`facet-refraction-line`, `facet-tint-glow`, `facet-acrylic-glow`, `facet-flag-watermark`,
+  `facet-aurora`, `facet-radiance`, `facet-foil`, `facet-ghost-heraldry`, `facet-jewel`). Their scalars are in
+  `tokens.css` ("Facet 3.1 — identity"); anything that mixes `--tint` is composed at the element.
 - Material and surface classes never set position, z-index, radius, margin or letter-spacing.
 - Third-party overrides (Clerk, sonner, MapLibre) live unlayered in `integrations.css`/`clerk.css` with a comment.
 
@@ -252,11 +299,12 @@ typography presets in the UI, blur on skeletons, hover/press sound ticks. See th
 
 | Test | Enforces |
 |---|---|
-| `facet-guards.test.ts` | ≥12px text, no `transition-all`, no `scale(0)` entrances, `animate-pulse` ceiling, one blur in `DrillSheets`, one `<FacetMotionConfig>`, no lucide or stray Radix imports, no hand-drawn dot grids, no legacy `glass-*`/`*-hsl`, no arbitrary z in `components/ui`, no block elements inside `<p>`, and for converted apps (MyCountry + its executive panels and atomic selector, maps + the map editor, atomic picker, Help, Country Editor, dashboard, achievements, passport, ThinkPages/ThinkTanks, Messages, Halo, Labs/Onoma, Forum, Admin, WikiOS + media player, Builder, countries index + public pages, Vault + trading cards, Sports): no `dark:`, no hex classes, no arbitrary z, capped gradients |
+| `facet-guards.test.ts` | ≥12px text, no `transition-all`, no `scale(0)` entrances, `animate-pulse` ceiling, one blur in `DrillSheets`, one `<FacetMotionConfig>`, no lucide or stray Radix imports, no hand-drawn dot grids, no legacy `glass-*`/`*-hsl`, no arbitrary z in `components/ui`, no block elements inside `<p>`, and for converted apps (MyCountry + its executive panels and atomic selector, maps + the map editor, atomic picker, Help, Country Editor, dashboard, achievements, passport, ThinkPages/ThinkTanks, Messages, Halo, Labs/Onoma, Forum, Admin, WikiOS + media player, Builder, countries index + public pages, Vault + trading cards, Sports): no `dark:`, no hex classes, no arbitrary z; **3.1:** no Tailwind palette gradient stops outside card art / logo artwork, raw gradient utilities only as scrims, every sanctioned gradient class defined in `identity.css`, no raw `backdrop-blur-*`/inline `backdropFilter` (blur comes from the materials) |
 | `facet-phase4-leftovers.test.ts` | For Builder, countries + country profile, the public pages, dashboard, achievements, passport, ThinkPages/ThinkTanks, Messages, Halo and the settings sidebar: no retired `x.5` spacing steps; builder on-image text only via `app/builder/lib/image-scrim.ts`; Halo uses the named springs and no per-control `data-cuelume-*` ticks; no hard-coded Diplomatic Standing; the settings tier chip is a `Badge` |
 | `facet-mycountry-maps.test.ts` | For MyCountry, maps (core, editor, pipeline, Vexel), the executive panels and the atomic selector/picker: no retired `x.5` spacing steps, no `FacetContainer`, no native `<select>`/checkbox/range fields (the `Select`, `Checkbox`, `Switch` and `Slider` primitives), no per-control `data-cuelume-*` ticks, no `.dynamic-island-shell` and no `prose-invert` (rich text binds the typography colours to roles via `maps/shared/facet-prose.ts`) |
-| `css-layering.test.ts` | Every sheet layered; no `!important` outside the two allowed files; no layout properties on material classes; no orphan comment closers |
-| `token-contrast.test.ts` | WCAG AA for every label/tint pair in both themes |
+| `css-layering.test.ts` | Every sheet layered; no `!important` outside the two allowed files; no layout properties on material classes, `@utility material-*`/`facet-*` utilities or the 3.1 identity classes; no orphan comment closers |
+| `token-contrast.test.ts` | WCAG AA for every label/tint pair in both themes; 3.1: on-primary on the monochrome primary, the monochrome primary as a boundary, the dark label on every gold stop, the gold rim, labels on the glass hero under the wash and glow; CSS ↔ `tokens.ts` parity for the identity tokens |
+| `components/ui/facet-31-identity.test.tsx` | Glass hero, glow, refraction, acrylic, primary role, press/lift physics, data face, headings, CutoutCard, flag watermark |
 | `lib/navigation/app-sections.test.ts` | Every app/section `href` in the section map resolves to a `src/app/**/page.tsx` that renders (no redirect stubs); settings tabs exist; one app and one section per URL |
 
 ## 12. Navigation (Phase 3 — behind `facet-nav`)
@@ -362,6 +410,21 @@ animating that would relayout the page every frame; a transform-based version ne
 `<main>`'s padding during the transition.
 
 ## Changelog
+
+- **3.1 — identity restored (2026-10-01)** — Spec §16; foundation for the app agents. Glass hero tier
+  (`material-hero`; `FacetCard variant="glass"`, `CutoutCard variant="glass"`, `FacetMaterial material="hero"`) and the
+  Halo/navigation acrylic (`material-acrylic`, `FacetMaterial material="acrylic" glow`, `AcrylicGlow`,
+  `DynamicIslandEffects` rebuilt on them); `Refraction` hairlines; domain glow (`TintGlow`, `facet-glow`, FacetCard/
+  CutoutCard `glow`); the **primary role** — `Button filled`/`default` monochrome, gold gradient + rim in
+  `data-app="mycountry"` (`--primary-*`, `--gold-*`, `bg-primary-fill`, `text-on-primary`, `facet-primary`,
+  `facet-gold`, `facet-gold-rim`); press and lift physics (`facet-press`, `-sm`, `-subtle`, `facet-lift`) in
+  Button, Toggle/ToggleGroup, ActionPill, SegmentedControl, FacetRow buttons, FacetCard and CutoutCard; the data face
+  `font-data` (and `font-mono` with `"tnum","zero"`) in Stat, Badge counts, ActionPill/SegmentedControl counts, Table
+  figure cells (`numeric`) and FacetRow figures (`isNumericText`, `src/lib/design/identity.ts`); heavy tight
+  headings (display → title-3); `CutoutCard` restored (`rounded-cutout` 28px, `variant`, keyboard-pressable,
+  `CutoutCardHeader`, `CutoutCardStagger`); `FlagWatermark` at v2 strength with `interactive`; achievement aurora /
+  radiance / foil / ghost heraldry / jewel classes. Guards: sanctioned gradients instead of the ceiling, no raw
+  backdrop blur, identity contrast and parity. `FACET_VERSION` 3.1.
 
 - **3.0 + Phase 4 primitives (2026-10-01)** — Status `Badge`s use the `-ink` tokens (new `--color-<status>-ink`
   aliases), so every Badge variant is AA on every background role; `Alert` gains `warning`, `caution`, `success` and

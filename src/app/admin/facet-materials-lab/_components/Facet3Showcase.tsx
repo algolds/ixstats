@@ -2,8 +2,10 @@
 
 /**
  * Facet 3 showcase — the production system as it ships (docs/reference/facet-design-system.md):
- * per-app tints, text styles, opaque surfaces vs glass chrome, inset grouped lists, controls and
- * badges. Everything here is a real primitive from `src/components/ui`; nothing is lab-only.
+ * the Facet 3.1 identity (glass hero, glow, refraction, monochrome / gold primary, data numerals,
+ * heavy headings, CutoutCard, flag watermark, acrylic, achievement aurora), per-app tints, text
+ * styles, opaque surfaces vs glass chrome, inset grouped lists, controls and badges. Everything
+ * here is a real primitive from `src/components/ui`; nothing is lab-only.
  */
 
 import * as React from "react";
@@ -16,9 +18,20 @@ import {
   Search,
   Spark,
   BoxIso as Package,
+  Crown,
+  Wallet,
+  Trophy,
 } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { FacetMaterial } from "~/components/ui/facet/shared/FacetMaterial";
+import { FlagWatermark } from "~/components/ui/facet";
+import {
+  CutoutCard,
+  CutoutCardHeader,
+  CutoutCardStagger,
+  CutoutCardStaggerItem,
+} from "~/components/ui/cutout-card";
+import { assetUrl } from "~/lib/base-path";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Stat } from "~/components/ui/stat";
 import { Badge } from "~/components/ui/badge";
@@ -105,8 +118,9 @@ export function Facet3Showcase() {
           <div>
             <h3 className="text-title-3 text-label">App tint</h3>
             <p className="text-callout text-label-secondary">
-              Each app root sets <code className="font-mono">data-app</code>; filled buttons,
-              selection, links and focus follow its tint.
+              Each app root sets <code className="font-mono">data-app</code>; selection, links,
+              toggles and focus follow its tint. The filled primary is monochrome — gold in
+              MyCountry and the Builder.
             </p>
           </div>
           <Button>Primary action</Button>
@@ -120,10 +134,12 @@ export function Facet3Showcase() {
         />
       </FacetCard>
 
+      <Facet31Identity />
+
       <section>
         <SectionTitle
           title="Surfaces and materials"
-          description="Content is opaque (FacetCard on the grouped background); glass is only for floating chrome and never nests."
+          description="Dense content is opaque (FacetCard on the grouped background); glass is for floating chrome and, since 3.1, hero/feature cards. Glass never nests."
         />
         <div className="grid gap-4 lg:grid-cols-2">
           <FacetCard padding="md" className="space-y-3">
@@ -169,7 +185,7 @@ export function Facet3Showcase() {
       <section>
         <SectionTitle
           title="Data"
-          description="Stat tiles use an Eyebrow data label and tabular numerals; lists are inset grouped."
+          description="Stat tiles use an Eyebrow data label and the data face (mono, slashed zero); lists are inset grouped."
         />
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="grid grid-cols-2 gap-3">
@@ -320,5 +336,130 @@ export function Facet3Showcase() {
         </div>
       </section>
     </div>
+  );
+}
+
+/** The Facet 3.1 identity layer (spec §16), on a busy backdrop so the glass has something to blur. */
+function Facet31Identity() {
+  return (
+    <section>
+      <SectionTitle
+        title="Facet 3.1 identity"
+        description="Glass hero cards with the domain glow and refraction hairline, the monochrome / gold primary, data numerals, heavy headings, CutoutCard, the flag watermark, acrylic chrome and achievement aurora."
+      />
+      <div className="bg-grouped rounded-card relative isolate overflow-hidden p-4 md:p-6">
+        <div aria-hidden className="absolute inset-0 -z-10">
+          <div className="bg-tint absolute -top-10 left-10 size-40 rounded-full opacity-40 blur-2xl" />
+          <div className="bg-pink absolute top-24 right-16 size-32 rounded-full opacity-30 blur-2xl" />
+          <div className="bg-teal absolute bottom-0 left-1/3 size-48 rounded-full opacity-30 blur-2xl" />
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-3">
+          {/* (a) Hero glass card: variant="glass" + glow + flag watermark + heavy heading + mono stats */}
+          <FacetCard
+            variant="glass"
+            glow
+            padding="lg"
+            className="group overflow-hidden lg:col-span-2"
+          >
+            <FlagWatermark src={assetUrl("/placeholder-flag.svg")} />
+            <div className="relative space-y-4">
+              <div>
+                <Eyebrow>Hero glass</Eyebrow>
+                <h2 className="text-large-title text-label">Republic of Velaria</h2>
+                <p className="text-callout text-label-secondary">
+                  FacetCard variant=&quot;glass&quot; glow — hover to brighten the flag.
+                </p>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <Stat label="GDP" value="$1.20T" delta={{ value: "+2.4%", direction: "up" }} />
+                <Stat label="Population" value="48,031,200" />
+                <Stat label="Rank" value="#3" hint="of 41 in IxWorld" />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button>Primary</Button>
+                <Button variant="tinted">Tinted</Button>
+                <Button variant="bordered">Bordered</Button>
+              </div>
+            </div>
+          </FacetCard>
+
+          {/* (d) Gold actions: data-app="mycountry" scope */}
+          <FacetCard variant="glass" padding="lg" className="space-y-3" data-app="mycountry">
+            <Eyebrow>MyCountry gold</Eyebrow>
+            <h3 className="text-title-2 text-label">Declare a directive</h3>
+            <p className="text-callout text-label-secondary">
+              Inside data-app=&quot;mycountry&quot; the filled primary is the v2 gold gradient with
+              a gold rim.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button>
+                <Crown />
+                Declare
+              </Button>
+              <Button variant="tinted">Draft</Button>
+            </div>
+          </FacetCard>
+
+          {/* (b) Feature / media CutoutCard */}
+          <CutoutCard variant="card" onClick={() => {}} aria-label="Open the Vault" glow>
+            <CutoutCardHeader icon={<Wallet />} trailing={<Badge>12</Badge>}>
+              Vault
+            </CutoutCardHeader>
+            <CutoutCardStagger className="space-y-1 pt-2">
+              <CutoutCardStaggerItem>
+                <h3 className="text-title-3 text-label">Pack drop</h3>
+              </CutoutCardStaggerItem>
+              <CutoutCardStaggerItem>
+                <p className="text-callout text-label-secondary">
+                  CutoutCard: 28px, inverted-corner header, lift and press, blur-in stagger.
+                </p>
+              </CutoutCardStaggerItem>
+            </CutoutCardStagger>
+          </CutoutCard>
+
+          {/* Acrylic chrome (Halo / navigation) */}
+          <FacetMaterial
+            material="acrylic"
+            glow
+            className="flex items-center justify-between rounded-full px-5 py-3"
+          >
+            <span className="text-headline text-label">material-acrylic</span>
+            <Badge variant="tinted">3</Badge>
+          </FacetMaterial>
+
+          {/* Achievement aurora / radiance / foil / ghost heraldry */}
+          <FacetCard
+            padding="md"
+            className="group isolate overflow-hidden"
+            style={
+              {
+                "--accent": "var(--color-green)",
+                "--accent-2": "var(--color-yellow)",
+              } as React.CSSProperties
+            }
+          >
+            <div
+              aria-hidden
+              data-interactive="true"
+              className="facet-aurora absolute -inset-px -z-10 rounded-[inherit]"
+            />
+            <div
+              aria-hidden
+              data-interactive="true"
+              className="facet-radiance absolute inset-0 -z-10"
+            />
+            <div aria-hidden className="facet-foil absolute -inset-px -z-10 rounded-[inherit]" />
+            <div className="relative flex items-center gap-3">
+              <Trophy className="text-green size-6" aria-hidden />
+              <div>
+                <h3 className="text-title-3 text-label">Economic titan</h3>
+                <p className="text-footnote text-label-secondary">Aurora, radiance and foil</p>
+              </div>
+            </div>
+          </FacetCard>
+        </div>
+      </div>
+    </section>
   );
 }

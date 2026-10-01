@@ -15,7 +15,8 @@ const toggleVariants = cva(
     "relative inline-flex cursor-pointer items-center justify-center gap-2 font-medium whitespace-nowrap select-none",
     "text-label-secondary hover:bg-fill-4 hover:text-label",
     "data-[state=on]:bg-tint-fill data-[state=on]:text-tint data-[state=on]:hover:bg-tint/20",
-    "transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out-facet active:scale-[0.98] motion-reduce:active:scale-100",
+    // Facet 3.1 press physics (scale .98, off under Reduce Motion) + the control transition.
+    "facet-press",
     focusRing,
     hitSlop,
     "disabled:pointer-events-none disabled:opacity-50",

@@ -13,7 +13,9 @@ import { SYSTEM_TINTED, type SystemTintedColor } from "~/components/ui/badge";
  *
  * - Pass `pressed` for a toggle (`aria-pressed` is set); omit it for a one-shot action (share).
  * - `icon` is the leading glyph (14px, `aria-hidden`); children are the visible label.
- * - `count` renders after the label in tabular numerals (hidden when `null`/`undefined`/`false`).
+ * - `count` renders after the label in the data face (`font-data`: mono, tabular, slashed zero;
+ *   hidden when `null`/`undefined`/`false`).
+ * - Presses with the Facet 3.1 small-control physics (`facet-press-sm`).
  * - An icon-only pill (no children) needs an `aria-label`.
  * - It forwards its ref and props, so it works as a `PopoverTrigger asChild` / `MenuButton` child.
  *
@@ -91,7 +93,8 @@ export const ActionPill = React.forwardRef<HTMLButtonElement, ActionPillProps>(
         className={cn(
           "relative inline-flex shrink-0 cursor-pointer items-center rounded-full whitespace-nowrap select-none",
           "text-label-secondary hover:bg-fill-4 hover:text-label",
-          "duration-fast ease-out-facet transition-[color,background-color]",
+          // Facet 3.1 press physics (small-control scale .95, off under Reduce Motion).
+          "facet-press facet-press-sm",
           focusRing,
           hitSlop,
           "disabled:cursor-not-allowed disabled:opacity-50",
@@ -108,7 +111,7 @@ export const ActionPill = React.forwardRef<HTMLButtonElement, ActionPillProps>(
         )}
         {children}
         {hasCount && (
-          <span data-slot="action-pill-count" className="tabular-nums">
+          <span data-slot="action-pill-count" className="font-data tabular-nums">
             {count}
           </span>
         )}

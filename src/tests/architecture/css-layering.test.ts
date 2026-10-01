@@ -40,9 +40,16 @@ const ALLOWED_TOP_LEVEL_STATEMENTS =
 /** Conditional group rules may appear at top level only if they contain nothing but allowed blocks. */
 const CONDITIONAL_GROUP = /^@(media|supports|container)\b/;
 
-/** Material/surface classes that must never set layout-affecting properties. */
+/**
+ * Material/surface classes that must never set layout-affecting properties — including the Facet
+ * 3.1 identity paints (glow, refraction, acrylic glow, flag watermark, aurora/radiance/foil, ghost
+ * heraldry, jewel), which the primitives place with utilities.
+ */
 const MATERIAL_CLASS =
-  /\.facet-(depth-\d|hierarchy-[a-z]+|material(?:-[a-z]+)?|surface|floating|overlay|modal)(?![\w-])/;
+  /\.facet-(depth-\d|hierarchy-[a-z]+|material(?:-[a-z]+)?|surface|floating|overlay|modal|tint-glow|refraction-line|acrylic-glow|flag-watermark|aurora|radiance|foil|ghost-heraldry|jewel)(?![\w-])/;
+
+/** `@utility` materials and Facet 3.1 identity utilities: paint only, like the classes above. */
+const MATERIAL_UTILITY = /^@utility (material-[\w-]+|facet-[\w-]+)$/;
 const LAYOUT_PROPERTIES = ["position", "z-index", "border-radius", "margin", "letter-spacing"];
 
 type Node =
@@ -185,7 +192,12 @@ const files = listCssFiles(STYLES_DIR)
 describe("Facet 3 cascade guard (src/styles)", () => {
   it("finds the stylesheets it guards", () => {
     expect(files).toEqual(
-      expect.arrayContaining(["facet/core.css", "facet/physics.css", "wiki-os/components.css"])
+      expect.arrayContaining([
+        "facet/core.css",
+        "facet/physics.css",
+        "facet/identity.css",
+        "wiki-os/components.css",
+      ])
     );
   });
 
@@ -209,6 +221,29 @@ describe("Facet 3 cascade guard (src/styles)", () => {
         expect(lines).toEqual([]);
       });
     }
+
+    it("material and identity utilities set no position, z-index, radius, margin or letter-spacing", () => {
+      const offenders: string[] = [];
+      const visit = (nodes: Node[]) => {
+        for (const node of nodes) {
+          if (node.kind !== "block") continue;
+          const match = MATERIAL_UTILITY.exec(node.prelude);
+          if (match) {
+            // Only the utility's own declarations (nested `&:hover`/`@media` blocks included).
+            const body = node.body.replace(/@media[^{]*\{/g, "{");
+            for (const property of LAYOUT_PROPERTIES) {
+              if (new RegExp(`(^|[;{\\s])${property}\\s*:`).test(body)) {
+                offenders.push(`${match[1]} → ${property}`);
+              }
+            }
+          } else if (node.children) {
+            visit(node.children);
+          }
+        }
+      };
+      visit(tree);
+      expect(offenders).toEqual([]);
+    });
 
     it("material/surface classes set no position, z-index, radius, margin or letter-spacing", () => {
       const offenders: string[] = [];

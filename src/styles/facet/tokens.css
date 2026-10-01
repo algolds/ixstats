@@ -347,43 +347,54 @@
 @theme static {
   --font-sans: "Schibsted Grotesk", "Akzidenz-Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Azeret Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Facet 3.1: `font-mono` carries the v2 `.font-mono` figures — tabular with a slashed zero —
+     through Tailwind's own font-feature hook (no utility hijack). `font-data` is the same face
+     and features for every stat, figure, count and ID in the UI (Stat, Badge counts, table
+     numbers); `font-mono` stays for code, hashes and coordinates. */
+  --font-mono--font-feature-settings: "tnum" 1, "zero" 1;
+  --font-data: "Azeret Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-data--font-feature-settings: "tnum" 1, "zero" 1;
   --font-serif: "Baskerville 10 Pro", "Baskerville", ui-serif, Georgia, serif;
   --font-display: "National", "Neutraface 2", ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ─── §3 Text styles (rem × --text-scale) ────────────────────────────────── */
-/* line-height / weight / tracking defer to `leading-*` / `font-*` / `tracking-*` when set. */
+/* line-height / weight / tracking defer to `leading-*` / `font-*` / `tracking-*` when set.
+   Facet 3.1 (identity): display → title-3 are heavy and tight again, as the v2 headings
+   (`font-bold`/`font-extrabold tracking-tight`): display, large-title and title-1 are 800 at
+   -0.025em; title-2 700 at -0.025em; title-3 700 at -0.02em. Body styles are unchanged. Where a
+   face has no 800 cut loaded (Schibsted Grotesk ships 500–700 here) the browser renders 700. */
 
 @utility text-display {
   font-family: var(--font-display);
   font-size: calc(2.5rem * var(--text-scale, 1));
   line-height: var(--tw-leading, calc(2.75rem * var(--text-scale, 1)));
-  font-weight: var(--tw-font-weight, 700);
-  letter-spacing: var(--tw-tracking, -0.02em);
+  font-weight: var(--tw-font-weight, 800);
+  letter-spacing: var(--tw-tracking, -0.025em);
 }
 @utility text-large-title {
   font-size: calc(1.75rem * var(--text-scale, 1));
   line-height: var(--tw-leading, calc(2.125rem * var(--text-scale, 1)));
-  font-weight: var(--tw-font-weight, 700);
-  letter-spacing: var(--tw-tracking, -0.02em);
+  font-weight: var(--tw-font-weight, 800);
+  letter-spacing: var(--tw-tracking, -0.025em);
 }
 @utility text-title-1 {
   font-size: calc(1.375rem * var(--text-scale, 1));
   line-height: var(--tw-leading, calc(1.75rem * var(--text-scale, 1)));
-  font-weight: var(--tw-font-weight, 700);
-  letter-spacing: var(--tw-tracking, -0.015em);
+  font-weight: var(--tw-font-weight, 800);
+  letter-spacing: var(--tw-tracking, -0.025em);
 }
 @utility text-title-2 {
   font-size: calc(1.25rem * var(--text-scale, 1));
   line-height: var(--tw-leading, calc(1.625rem * var(--text-scale, 1)));
-  font-weight: var(--tw-font-weight, 600);
-  letter-spacing: var(--tw-tracking, -0.01em);
+  font-weight: var(--tw-font-weight, 700);
+  letter-spacing: var(--tw-tracking, -0.025em);
 }
 @utility text-title-3 {
   font-size: calc(1.0625rem * var(--text-scale, 1));
   line-height: var(--tw-leading, calc(1.375rem * var(--text-scale, 1)));
-  font-weight: var(--tw-font-weight, 600);
-  letter-spacing: var(--tw-tracking, -0.005em);
+  font-weight: var(--tw-font-weight, 700);
+  letter-spacing: var(--tw-tracking, -0.02em);
 }
 @utility text-headline {
   font-size: calc(0.875rem * var(--text-scale, 1));
@@ -793,6 +804,191 @@
     background-color: var(--color-background-grouped);
     color: var(--color-label);
   }
+}
+
+/* ─── Facet 3.1 — identity (spec §16) ────────────────────────────────────── */
+/* The v2 identity restored on tokens. Scalars only: everything that mixes the app tint
+   (`--tint`) is composed at the element by the utilities/classes in styles/facet/identity.css,
+   because a custom property that reads `var(--tint)` on :root would bake the root tint into every
+   `[data-app]` subtree. Mirrored in src/lib/design/tokens.ts (`IDENTITY`) and checked by
+   token-contrast.test.ts (monochrome and gold primaries, glass hero legibility). */
+
+@theme static {
+  /* CutoutCard (v2 `rounded-[28px]`) */
+  --radius-cutout: 1.75rem;
+}
+
+@layer base {
+  :root {
+    /* Glass hero tier (`material-hero`, `FacetCard variant="glass"`) — v2 `.facet-hierarchy-parent`
+       light glass (white 90% → 70% at 135°) with the `.facet-depth-1` blur. */
+    --glass-hero-fill-from: 90%;
+    --glass-hero-fill-to: 70%;
+    --glass-hero-blur: 16px;
+    --glass-hero-blur-compact: 12px;
+    --glass-hero-saturate: 150%;
+    --glass-hero-rim: rgb(255 255 255 / 0.9);
+    --glass-hero-border-tint: 30%;
+    /* v2 `.facet-{domain}` wash: tint @ --refraction-medium (.15) → .05 at 50% → transparent. */
+    --glass-hero-wash-from: 15%;
+    --glass-hero-wash-mid: 5%;
+    --glass-hero-shadow: 0 2px 8px rgb(0 0 0 / 0.04), 0 4px 16px rgb(0 0 0 / 0.08);
+    --glass-hero-shadow-tint: 12%;
+    --glass-hero-shadow-hover: 0 2px 8px rgb(0 0 0 / 0.05), 0 4px 16px rgb(0 0 0 / 0.1);
+    --glass-hero-shadow-hover-tint: 18%;
+
+    /* Acrylic (`material-acrylic`: Halo, sidebar, tab bar) — v2 `.dynamic-island-shell`. */
+    --acrylic-fill: rgb(255 255 255 / 0.85);
+    --acrylic-fill-active: rgb(255 255 255 / 0.9);
+    --acrylic-border: rgb(0 0 0 / 0.08);
+    --acrylic-border-active: rgb(0 0 0 / 0.11);
+    --acrylic-blur: 28px;
+    --acrylic-blur-active: 32px;
+    --acrylic-saturate: 190%;
+    --acrylic-saturate-active: 200%;
+    --acrylic-rim: inset 0 1px 0 rgb(255 255 255 / 0.95), inset 0 -1px 0 rgb(0 0 0 / 0.03);
+    --acrylic-rim-active: inset 0 1px 0 rgb(255 255 255 / 1), inset 0 -1px 0 rgb(0 0 0 / 0.04);
+    --acrylic-shadow: 0 16px 36px -8px rgb(0 0 0 / 0.12), 0 4px 12px -2px rgb(0 0 0 / 0.04);
+    --acrylic-shadow-active: 0 20px 44px -8px rgb(0 0 0 / 0.14), 0 6px 14px -2px rgb(0 0 0 / 0.05);
+
+    /* Refraction hairline (`<Refraction />`): v2 `.facet-refraction::after` stops. */
+    --refraction-peak: rgb(255 255 255 / 0.35);
+    --refraction-soft: rgb(255 255 255 / 0.2);
+    --refraction-opacity: 0.8;
+    --refraction-opacity-hover: 1;
+
+    /* Domain glow: v2 blob (`size-40 opacity-15 blur-3xl bg-<domain>`) and v2
+       `.dashboard-section-*` tinted shadow (tint 15% / 10%, hover 25% / 15%). */
+    --glow-opacity: 0.15;
+    --glow-blur: 64px;
+    --glow-shadow-tint: 15%;
+    --glow-shadow-tint-near: 10%;
+    --glow-shadow-tint-hover: 25%;
+    --glow-shadow-tint-near-hover: 15%;
+
+    /* Flag watermark: v2 DashboardHero (.14 light / .18 dark → .25 on hover, luminosity in light). */
+    --flag-watermark-opacity: 0.14;
+    --flag-watermark-opacity-hover: 0.25;
+    --flag-watermark-blend: luminosity;
+
+    /* Physics: v2 press (`active:scale-[0.98]`, small controls `active:scale-95`) and lift
+       (`hover:-translate-y-0.5` + the `.facet-interactive` hover shadow). Reduce Motion drops the
+       transforms in the utilities themselves (identity.css). */
+    --facet-press-scale: 0.98;
+    --facet-lift-y: -2px;
+    --facet-lift-shadow: 0 8px 24px rgb(0 0 0 / 0.08), 0 3px 8px rgb(0 0 0 / 0.04);
+
+    /* Monochrome primary (`Button variant="filled"`): v2 `--primary: text-primary`. */
+    --primary-fill-mono: #18181b;
+    --primary-fill-mono-hover: #3f3f46;
+    --on-primary-mono: #fafafa;
+
+    /* MyCountry / Builder gold: v2 BUILDER_GOLD `from-amber-500 to-yellow-600`. Hover brightens
+       (amber-400 → yellow-500) instead of v2's darker stops, which fail AA with the dark label. */
+    --gold-from: #f59e0b;
+    --gold-to: #ca8a04;
+    --gold-from-hover: #fbbf24;
+    --gold-to-hover: #eab308;
+    --on-gold: #1c1917;
+    /* Gold rim: a light-catching top edge, a 1px edge that holds 3:1 against light surfaces
+       (amber-700), and the v2 `.dashboard-section-mycountry` glow (rgba(202,138,4,.1)). */
+    --gold-rim-edge: #b45309;
+    --gold-rim:
+      inset 0 1px 0 rgb(255 255 255 / 0.35), inset 0 0 0 1px var(--gold-rim-edge),
+      0 4px 12px rgb(202 138 4 / 0.1);
+    --gold-rim-hover:
+      inset 0 1px 0 rgb(255 255 255 / 0.45), inset 0 0 0 1px var(--gold-rim-edge),
+      0 8px 24px rgb(202 138 4 / 0.12);
+
+    /* CutoutCard elevation: the v2 `--facet-shadow-cutout` stack on the label colour. */
+    --cutout-shadow:
+      0 1px 2px -1px color-mix(in oklab, var(--color-label) 8%, transparent),
+      0 4px 8px -2px color-mix(in oklab, var(--color-label) 6%, transparent),
+      0 8px 16px -4px color-mix(in oklab, var(--color-label) 5%, transparent);
+    --cutout-shadow-hover:
+      0 2px 4px -1px color-mix(in oklab, var(--color-label) 10%, transparent),
+      0 8px 16px -4px color-mix(in oklab, var(--color-label) 8%, transparent),
+      0 16px 32px -8px color-mix(in oklab, var(--color-label) 6%, transparent);
+
+    /* Achievement aurora / foil / ghost heraldry (v2 AchievementCardBackdrop). */
+    --aurora-opacity: 0.4;
+    --aurora-opacity-hover: 0.75;
+    --radiance-opacity: 0.45;
+    --radiance-opacity-hover: 0.7;
+    --foil-opacity: 0.6;
+    --heraldry-opacity: 0.065;
+  }
+
+  /* Dark: the more polished, glass-forward theme (deeper blur and saturation, brighter rim). */
+  :root[data-theme="dark"] {
+    --glass-hero-fill-from: 62%;
+    --glass-hero-fill-to: 72%;
+    --glass-hero-blur: 24px;
+    --glass-hero-blur-compact: 16px;
+    --glass-hero-saturate: 180%;
+    --glass-hero-rim: rgb(255 255 255 / 0.12);
+    --glass-hero-border-tint: 25%;
+    --glass-hero-wash-from: 10.5%;
+    --glass-hero-wash-mid: 2.5%;
+    --glass-hero-shadow: 0 4px 20px rgb(0 0 0 / 0.3);
+    --glass-hero-shadow-tint: 12%;
+    --glass-hero-shadow-hover: 0 12px 32px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.2);
+    --glass-hero-shadow-hover-tint: 20%;
+
+    --acrylic-fill: rgb(15 17 24 / 0.88);
+    --acrylic-fill-active: rgb(18 20 28 / 0.92);
+    --acrylic-border: rgb(255 255 255 / 0.12);
+    --acrylic-border-active: rgb(255 255 255 / 0.16);
+    --acrylic-rim: inset 0 1px 0 rgb(255 255 255 / 0.15), inset 0 -1px 0 rgb(0 0 0 / 0.4);
+    --acrylic-rim-active: inset 0 1px 0 rgb(255 255 255 / 0.2), inset 0 -1px 0 rgb(0 0 0 / 0.5);
+    --acrylic-shadow: 0 20px 48px -10px rgb(0 0 0 / 0.65), 0 8px 20px -4px rgb(0 0 0 / 0.45);
+    --acrylic-shadow-active: 0 24px 54px -10px rgb(0 0 0 / 0.72), 0 10px 24px -4px rgb(0 0 0 / 0.5);
+
+    --refraction-peak: rgb(255 255 255 / 0.3);
+    --refraction-soft: rgb(255 255 255 / 0.12);
+
+    --flag-watermark-opacity: 0.18;
+    --flag-watermark-blend: normal;
+
+    --facet-lift-shadow: 0 12px 32px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.2);
+
+    --primary-fill-mono: #f4f4f5;
+    --primary-fill-mono-hover: #d4d4d8;
+    --on-primary-mono: #0b0c0f;
+
+    --gold-rim-edge: rgb(252 211 77 / 0.5);
+
+    --heraldry-opacity: 0.095;
+  }
+
+  /* The primary role: monochrome everywhere, gold inside MyCountry and the Builder. Declared on
+     each scope so a nested app (intel inside MyCountry) resets to monochrome. */
+  :root,
+  [data-app] {
+    --primary-fill: var(--primary-fill-mono);
+    --primary-fill-hover: var(--primary-fill-mono-hover);
+    --primary-fill-image: none;
+    --primary-fill-image-hover: none;
+    --on-primary: var(--on-primary-mono);
+    --primary-rim: 0 0 #0000;
+    --primary-rim-hover: 0 0 #0000;
+  }
+  [data-app="mycountry"] {
+    --primary-fill: var(--gold-to);
+    --primary-fill-hover: var(--gold-to-hover);
+    --primary-fill-image: linear-gradient(to right, var(--gold-from), var(--gold-to));
+    --primary-fill-image-hover: linear-gradient(to right, var(--gold-from-hover), var(--gold-to-hover));
+    --on-primary: var(--on-gold);
+    --primary-rim: var(--gold-rim);
+    --primary-rim-hover: var(--gold-rim-hover);
+  }
+}
+
+@theme inline static {
+  /* `bg-primary-fill`, `text-on-primary` (the monochrome/gold primary role) */
+  --color-primary-fill: var(--primary-fill);
+  --color-primary-fill-hover: var(--primary-fill-hover);
+  --color-on-primary: var(--on-primary);
 }
 
 /* §4 Continuous corners where supported (sheet, card, row and control radii).

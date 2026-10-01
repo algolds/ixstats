@@ -15,7 +15,7 @@ import { springSnappy } from "~/lib/design/motion";
  * natural width, and the selected segment is scrolled into view. `scrollable` forces this on or
  * off; by default it is on above five options.
  *
- * Each option may carry a trailing `badge` (a count in a tabular pill) with a `badgeLabel` for
+ * Each option may carry a trailing `badge` (a count in a `font-data` pill) with a `badgeLabel` for
  * screen readers ("12 unread"); the badge is `aria-hidden` and its label joins the segment's name.
  *
  * ARIA: a `radiogroup` of `radio`s by default; with `asTabs` a `tablist` of `tab`s (pass
@@ -221,7 +221,8 @@ export function SegmentedControl<T extends string = string>({
             onClick={() => select(option.value)}
             className={cn(
               "relative inline-flex min-w-0 cursor-pointer items-center justify-center whitespace-nowrap",
-              "ease-out-facet transition-[color,opacity] duration-150",
+              // Facet 3.1 press physics (small-control scale .95, off under Reduce Motion).
+              "facet-press facet-press-sm",
               "focus-visible:outline-tint outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid",
               "disabled:cursor-not-allowed disabled:opacity-50",
               "[&_svg]:pointer-events-none [&_svg]:shrink-0",
@@ -253,7 +254,7 @@ export function SegmentedControl<T extends string = string>({
                   aria-hidden
                   data-slot="segmented-control-badge"
                   className={cn(
-                    "text-caption inline-flex min-w-5 items-center justify-center rounded-full px-1 tabular-nums",
+                    "text-caption font-data inline-flex min-w-5 items-center justify-center rounded-full px-1 tabular-nums",
                     selected ? "bg-tint-fill text-tint" : "bg-fill-3 text-label-secondary"
                   )}
                 >

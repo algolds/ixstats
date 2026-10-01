@@ -3,14 +3,23 @@
 import * as React from "react";
 import { cn } from "~/lib/utils/cn";
 import { TextureOverlay, type TextureType } from "~/components/ui/texture-overlay";
+import { AcrylicGlow, Refraction, TintGlow } from "~/components/ui/facet/identity/Glow";
 
 /**
- * The only glass surface in Facet 3 (docs/specs/2026-09-30-facet-3-design-system.md §5, §7.1):
+ * Facet glass surfaces (docs/specs/2026-09-30-facet-3-design-system.md §5, §7.1, §16):
  * `thin` (toolbars, sub-headers, map buttons), `regular` (sidebar, tab bar, Halo, map panels),
- * `thick` (sheets, popovers, menus, command palette). Glass is for floating chrome and never
- * nests — anything inside uses opaque roles.
+ * `thick` (sheets, popovers, menus, command palette). Glass never nests — anything inside uses
+ * opaque roles.
+ *
+ * Facet 3.1 adds the identity materials:
+ * - `hero` — the glass hero tier (`material-hero`): v2 glass with the app tint's wash, rim and
+ *   tinted shadow, for hero/feature surfaces that are not a `FacetCard` (prefer
+ *   `FacetCard variant="glass"` for cards).
+ * - `acrylic` — the Halo island / navigation acrylic (`material-acrylic`, v2
+ *   `.dynamic-island-shell`): pass `glow` for the coloured underlay (`AcrylicGlow`) and it draws
+ *   the four-edge refraction. Brightens on hover / focus-within / `data-expanded="true"`.
  */
-export type FacetGlassMaterialType = "thin" | "regular" | "thick";
+export type FacetGlassMaterialType = "thin" | "regular" | "thick" | "hero" | "acrylic";
 
 /** @deprecated v2 physical materials. `satin` renders `regular` glass; use the glass names. */
 export type FacetLegacyMaterialType = "satin" | "paper" | "rubber" | "metal";
@@ -29,6 +38,18 @@ export interface FacetMaterialProps extends React.HTMLAttributes<HTMLDivElement>
    * paper/rubber/metal classes). Off by default for glass and `satin`; on for the other v2 values.
    */
   lightInteraction?: boolean;
+  /**
+   * Facet 3.1 glow behind the content: on `acrylic` the v2 island underlay (`AcrylicGlow`), on
+   * other glass a tint blob (`TintGlow`). The surface becomes `isolate` + `overflow-hidden`.
+   */
+  glow?: boolean;
+  /** Axis of the acrylic glow layers. @default "horizontal" */
+  glowOrientation?: "horizontal" | "vertical";
+  /**
+   * Refraction hairlines: `top`, `all` (four edges) or `false`. Default: `all` on `acrylic`,
+   * `top` on `hero`, none on thin/regular/thick (their top highlight is part of the material).
+   */
+  refraction?: "top" | "all" | false;
   as?: React.ElementType;
   children?: React.ReactNode;
 }
@@ -37,6 +58,16 @@ const GLASS: Record<FacetGlassMaterialType, string> = {
   thin: "material-thin",
   regular: "material-regular",
   thick: "material-thick",
+  hero: "material-hero",
+  acrylic: "material-acrylic",
+};
+
+const DEFAULT_REFRACTION: Record<FacetGlassMaterialType, "top" | "all" | false> = {
+  thin: false,
+  regular: false,
+  thick: false,
+  hero: "top",
+  acrylic: "all",
 };
 
 /** Legacy materials that still have a class (paper in physics.css; rubber/metal in lab.css). */
@@ -54,7 +85,13 @@ const LEGACY_TEXTURE: Record<Exclude<FacetLegacyMaterialType, "satin">, [Texture
 };
 
 function isGlass(material: FacetMaterialType): material is FacetGlassMaterialType {
-  return material === "thin" || material === "regular" || material === "thick";
+  return (
+    material === "thin" ||
+    material === "regular" ||
+    material === "thick" ||
+    material === "hero" ||
+    material === "acrylic"
+  );
 }
 
 function assignRef<T>(ref: React.ForwardedRef<T>, value: T | null) {
@@ -64,7 +101,17 @@ function assignRef<T>(ref: React.ForwardedRef<T>, value: T | null) {
 
 export const FacetMaterial = React.forwardRef<HTMLDivElement, FacetMaterialProps>(
   (
-    { material = "regular", lightInteraction, as: Component = "div", className, children, ...props },
+    {
+      material = "regular",
+      lightInteraction,
+      glow = false,
+      glowOrientation,
+      refraction,
+      as: Component = "div",
+      className,
+      children,
+      ...props
+    },
     ref
   ) => {
     const glass: FacetGlassMaterialType | null =
@@ -131,6 +178,7 @@ export const FacetMaterial = React.forwardRef<HTMLDivElement, FacetMaterialProps
     // The pointer vars are not seeded inline: the CSS reads them with `var(--pointer-x, 50%)`
     // fallbacks, and re-seeding on every render would reset the listener-driven values.
     const texture = legacy ? LEGACY_TEXTURE[legacy] : null;
+    const edges = glass ? (refraction ?? DEFAULT_REFRACTION[glass]) : false;
 
     return (
       <Component
@@ -140,10 +188,19 @@ export const FacetMaterial = React.forwardRef<HTMLDivElement, FacetMaterialProps
         className={cn(
           "rounded-card relative",
           glass ? cn("text-label", GLASS[glass]) : legacy && LEGACY_CLASS[legacy],
+          (glow || edges) && "isolate",
+          glow && "overflow-hidden",
           className
         )}
         {...props}
       >
+        {glow &&
+          (glass === "acrylic" ? (
+            <AcrylicGlow orientation={glowOrientation} className="-z-10" />
+          ) : (
+            <TintGlow className="-z-10" />
+          ))}
+        {edges && <Refraction edges={edges} />}
         {texture && (
           <TextureOverlay texture={texture[0]} opacity={texture[1]} className="z-0 rounded-[inherit]" />
         )}

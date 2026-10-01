@@ -4,8 +4,14 @@
  * Facet 3 surfaces (docs/specs/2026-09-30-facet-3-design-system.md §0 decision 1, §5, §7.1).
  *
  * - `FacetCard` is the opaque content card: `bg-surface`, a `separator` hairline, `rounded-card`,
- *   `shadow-card` (the token halves in dark mode). Content is never glass. `variant="inset"` is the
- *   panel inside a card: `bg-surface-secondary`, `rounded-row`, no hairline or shadow, `p-4`.
+ *   `shadow-card` (the token halves in dark mode). `variant="inset"` is the panel inside a card:
+ *   `bg-surface-secondary`, `rounded-row`, no hairline or shadow, `p-4`.
+ * - Facet 3.1 (spec §16): `variant="glass"` is the glass hero tier for hero and feature cards —
+ *   `material-hero` (v2 glass: blur, saturation, translucent fill, white top rim, the app tint's
+ *   135° wash and tinted border/shadow) plus a refraction hairline. Dense lists, tables and forms
+ *   stay on the opaque card. `glow` adds the v2 domain glow (a tint blob and/or tinted shadow).
+ *   Pressable cards (`onClick`) and `interactive` cards lift on hover (`facet-lift`) and press
+ *   (`facet-press`); both stop under Reduce Motion.
  * - `MotionFacetCard` is `FacetCard` as a motion component (`initial`/`animate`/`layout`…), for
  *   animated cards that used to spread `FACET_CARD_SURFACE` onto a `motion.div`.
  * - `FacetContainer` is a deprecated wrapper kept for the migration. It renders a `FacetCard`
@@ -19,6 +25,7 @@ import React, { forwardRef, useState } from "react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
 import { TextureOverlay, type TextureType } from "./texture-overlay";
+import { Refraction, TintGlow, type TintGlowPosition } from "./facet/identity/Glow";
 
 // ─── Legacy types (accepted for compatibility) ──────────────────────────────
 
@@ -31,7 +38,6 @@ export type FacetVariant =
   | "tactile"
   | "luminous"
   | "solid"
-  | "glass"
   | "wiki"
   | "cards"
   | "messages"
@@ -66,9 +72,9 @@ export function normalizeFacetDepth(d: FacetDepth | undefined): 1 | 2 | 3 | 4 {
 }
 
 /**
- * `"none"` — static. `"hover"` / `"focus"` / `"click"` — hover feedback (a `fill-4` wash).
- * A card becomes pressable (role=button, focusable, Enter/Space, press scale) only when it has an
- * `onClick`. The v2 depth cycling of `"click"` is gone.
+ * `"none"` — static. `"hover"` / `"focus"` / `"click"` — hover feedback (a `fill-4` wash on opaque
+ * cards, and the Facet 3.1 hover lift). A card becomes pressable (role=button, focusable,
+ * Enter/Space, press scale) only when it has an `onClick`. The v2 depth cycling of `"click"` is gone.
  */
 export type FacetInteractivity = "none" | "hover" | "click" | "focus";
 
@@ -99,10 +105,25 @@ export const FACET_CARD_SURFACE =
 export const FACET_INSET_SURFACE = "bg-surface-secondary text-label rounded-row";
 
 /**
- * `FacetCard` surface variants. `"default"` is the card; `"inset"` is a panel inside one. The legacy
- * `FacetVariant` names are still accepted and render the default card.
+ * Facet 3.1 glass hero surface (`material-hero`, styles/facet/identity.css). For an element that
+ * must keep its own tag (a `Link`, a `motion.*`); add `<Refraction />` inside for the hairline.
  */
-export type FacetCardVariant = "default" | "inset";
+export const FACET_GLASS_SURFACE = "material-hero text-label rounded-card";
+
+/**
+ * `FacetCard` surface variants. `"default"` is the opaque card; `"inset"` is a panel inside one;
+ * `"glass"` is the Facet 3.1 glass hero tier (hero and feature cards only — never dense data, never
+ * nested in another glass surface). The legacy `FacetVariant` names are still accepted and render
+ * the default card.
+ */
+export type FacetCardVariant = "default" | "inset" | "glass";
+
+/**
+ * Domain glow (Facet 3.1): `"blob"` — a blurred tint disc behind the content (`TintGlow`, v2
+ * `size-40 opacity-15 blur-3xl`); `"shadow"` — the v2 tinted section shadow (`facet-glow`);
+ * `true` — both. Sports surfaces stay flat.
+ */
+export type FacetCardGlow = boolean | "blob" | "shadow";
 
 /** Inset padding: 16 by default (`md`); inset panels do not grow with the viewport. */
 const INSET_PADDING: Record<FacetCardPadding, string> = {
@@ -113,26 +134,46 @@ const INSET_PADDING: Record<FacetCardPadding, string> = {
 };
 
 /**
- * Hover wash for cards: a `fill-4` layer painted as a background image so the opaque surface
- * colour underneath stays put (a translucent `bg-fill-4` would replace it).
+ * Hover wash for opaque cards: a `fill-4` layer painted as a background image so the opaque surface
+ * colour underneath stays put (a translucent `bg-fill-4` would replace it). Glass cards skip it (the
+ * wash would replace their gradient); their hover is the lift and the brighter refraction.
  */
-const HOVER_WASH =
-  "hover:bg-[image:linear-gradient(var(--color-fill-4),var(--color-fill-4))] transition-[background-color,scale] duration-fast ease-out-facet";
+const HOVER_WASH = "hover:bg-[image:linear-gradient(var(--color-fill-4),var(--color-fill-4))]";
 
-/** Press feedback + focus ring for clickable surfaces (§8 press compression, §10 focus ring). */
+/**
+ * Facet 3.1 hover lift (translate up 2px + lift shadow, v2 `.facet-interactive`) — also carries the
+ * surface transition.
+ */
+const LIFT = "facet-lift";
+
+/**
+ * Press feedback + focus ring for clickable surfaces (§8 press compression .99 for cards, §10 focus
+ * ring). `facet-press` drops the scale under Reduce Motion.
+ */
 const PRESSABLE =
-  "cursor-pointer select-none active:scale-[0.99] motion-reduce:active:scale-100 focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2";
+  "facet-press facet-press-subtle cursor-pointer select-none focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2";
 
 interface SurfaceBehaviour {
   interactive?: FacetInteractivity;
   onClick?: React.MouseEventHandler<HTMLElement>;
   onKeyDown?: React.KeyboardEventHandler<HTMLElement>;
+  /** Glass surfaces keep their gradient (no fill wash). */
+  glass?: boolean;
+  /** Override the hover lift (default: on for interactive surfaces). */
+  lift?: boolean;
 }
 
 /** Shared pressable behaviour: classes plus a11y props for a clickable `<div>` surface. */
-function surfaceBehaviour({ interactive = "none", onClick, onKeyDown }: SurfaceBehaviour) {
+function surfaceBehaviour({
+  interactive = "none",
+  onClick,
+  onKeyDown,
+  glass = false,
+  lift,
+}: SurfaceBehaviour) {
   const isClickable = Boolean(onClick);
   const hasHover = isClickable || interactive !== "none";
+  const lifts = lift ?? hasHover;
 
   const handleKeyDown: React.KeyboardEventHandler<HTMLElement> | undefined = isClickable
     ? (event) => {
@@ -146,7 +187,17 @@ function surfaceBehaviour({ interactive = "none", onClick, onKeyDown }: SurfaceB
     : onKeyDown;
 
   return {
-    className: cn(hasHover && HOVER_WASH, isClickable && PRESSABLE),
+    // `facet-press` and `facet-lift` both carry the transition; lift wins on hover, press on :active.
+    className: cn(
+      hasHover && !glass && HOVER_WASH,
+      lifts && LIFT,
+      isClickable && PRESSABLE,
+      // A hover-only card that opts out of the lift still fades its wash in.
+      hasHover &&
+        !lifts &&
+        !isClickable &&
+        "duration-fast ease-out-facet transition-[background-color,background-image]"
+    ),
     a11y: isClickable ? { role: "button", tabIndex: 0 } : {},
     onKeyDown: handleKeyDown,
   };
@@ -185,10 +236,22 @@ export interface FacetCardProps extends React.HTMLAttributes<HTMLElement> {
   /** @deprecated Ignored — colour belongs on icons/text via roles, or the app tint. */
   theme?: string;
   /**
-   * `"inset"`: a panel inside a card (`surface-secondary`, `rounded-row`, `p-4`). Legacy
+   * `"inset"`: a panel inside a card (`surface-secondary`, `rounded-row`, `p-4`). `"glass"`: the
+   * Facet 3.1 glass hero tier for hero/feature cards (`material-hero` + refraction hairline). Legacy
    * `FacetVariant` names are accepted and ignored (they render the default card).
    */
   variant?: FacetCardVariant | FacetVariant;
+  /**
+   * Facet 3.1 domain glow in the app tint: `"blob"` (a blurred disc behind the content — the card
+   * clips it), `"shadow"` (tinted section shadow) or `true` (both). Hero/feature cards only.
+   */
+  glow?: FacetCardGlow;
+  /** Where the glow blob sits. @default "top-right" */
+  glowPosition?: TintGlowPosition;
+  /** The light-catching top hairline (`<Refraction />`). Default: on for `variant="glass"`. */
+  refraction?: boolean;
+  /** Hover lift (`facet-lift`). Default: on when the card is pressable or `interactive`. */
+  lift?: boolean;
   /** @deprecated Ignored (it never had CSS). */
   enableRefraction?: boolean;
   children?: React.ReactNode;
@@ -208,6 +271,10 @@ export const FacetCard = forwardRef<HTMLElement, FacetCardProps>(
       theme: _theme,
       variant,
       enableRefraction: _enableRefraction,
+      glow = false,
+      glowPosition,
+      refraction,
+      lift,
       className,
       children,
       onClick,
@@ -216,8 +283,12 @@ export const FacetCard = forwardRef<HTMLElement, FacetCardProps>(
     },
     ref
   ) => {
-    const behaviour = surfaceBehaviour({ interactive, onClick, onKeyDown });
     const inset = variant === "inset";
+    const glass = variant === "glass";
+    const behaviour = surfaceBehaviour({ interactive, onClick, onKeyDown, glass, lift });
+    const glowBlob = glow === true || glow === "blob";
+    const glowShadow = glow === true || glow === "shadow";
+    const showRefraction = refraction ?? glass;
     // Every `as` element takes the same HTML attributes; type the tag as one so JSX does not
     // intersect nine ref types.
     const Element = as as "div";
@@ -225,12 +296,27 @@ export const FacetCard = forwardRef<HTMLElement, FacetCardProps>(
       <Element
         ref={ref as React.Ref<HTMLDivElement>}
         data-slot="facet-card"
-        data-variant={inset ? "inset" : undefined}
+        data-variant={inset ? "inset" : glass ? "glass" : undefined}
+        data-glow={
+          glow ? (glowBlob && glowShadow ? "both" : glowBlob ? "blob" : "shadow") : undefined
+        }
         {...behaviour.a11y}
         className={cn(
           "relative",
-          inset ? FACET_INSET_SURFACE : FACET_CARD_SURFACE,
+          inset
+            ? FACET_INSET_SURFACE
+            : glass
+              ? FACET_GLASS_SURFACE
+              : // The glow's shadow stack replaces `shadow-card` (Tailwind's list has no glow slot).
+                glowShadow
+                ? FACET_CARD_SURFACE.replace("shadow-card", "")
+                : FACET_CARD_SURFACE,
           inset ? INSET_PADDING[padding ?? "md"] : PADDING[padding ?? "none"],
+          // Decorative layers sit at -z-10 inside the card's own stacking context, under the
+          // content whether or not it is positioned; the card clips the blob.
+          (glowBlob || glass) && "isolate",
+          glowBlob && "overflow-hidden",
+          glowShadow && "facet-glow",
           behaviour.className,
           className
         )}
@@ -238,6 +324,8 @@ export const FacetCard = forwardRef<HTMLElement, FacetCardProps>(
         onKeyDown={behaviour.onKeyDown}
         {...props}
       >
+        {glowBlob && <TintGlow position={glowPosition} className="-z-10" />}
+        {showRefraction && <Refraction />}
         {texture && texture !== "none" && (
           <TextureOverlay
             texture={texture}

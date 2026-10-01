@@ -20,6 +20,7 @@ import * as React from "react";
 import Link from "next/link";
 import { Check, NavArrowRight } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
+import { isNumericText } from "~/lib/design/identity";
 import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable/SwipeableRow";
 import type { SwipeAction, SwipeCommitAction } from "~/components/ui/facet/swipeable/types";
 
@@ -196,8 +197,9 @@ export interface FacetRowButtonProps extends FacetRowBaseProps {
 
 export type FacetRowProps = FacetRowLinkProps | FacetRowButtonProps;
 
+/** Pressable rows: fill washes, the focus ring and the Facet 3.1 subtle press (scale .99). */
 const ROW_INTERACTIVE =
-  "hover:bg-fill-4 active:bg-fill-3 focus-visible:outline-tint cursor-pointer transition-colors duration-fast ease-out-facet focus-visible:outline-2 focus-visible:-outline-offset-2";
+  "hover:bg-fill-4 active:bg-fill-3 focus-visible:outline-tint cursor-pointer facet-press facet-press-subtle focus-visible:outline-2 focus-visible:-outline-offset-2";
 
 function RowAccessory({
   accessory,
@@ -249,7 +251,15 @@ export const FacetRow = React.forwardRef<HTMLElement, FacetRowProps>((props, ref
 
   const trailingNode =
     typeof trailing === "string" || typeof trailing === "number" ? (
-      <span className="text-body text-label-secondary truncate tabular-nums">{trailing}</span>
+      <span
+        className={cn(
+          "text-body text-label-secondary truncate tabular-nums",
+          // Facet 3.1: figures (a number, or a string that is one) are in the data face.
+          (typeof trailing === "number" || isNumericText(trailing)) && "font-data"
+        )}
+      >
+        {trailing}
+      </span>
     ) : (
       trailing
     );

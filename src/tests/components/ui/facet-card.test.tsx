@@ -57,7 +57,10 @@ describe("FacetCard (opaque content card)", () => {
     );
     const card = screen.getByRole("button", { name: "Open" });
     expect(card).toHaveAttribute("tabindex", "0");
-    expect(classOf(card)).toContain("active:scale-[0.99]");
+    // Facet 3.1 press (.99) and hover lift, both off under Reduce Motion.
+    expect(classOf(card)).toContain("facet-press");
+    expect(classOf(card)).toContain("facet-press-subtle");
+    expect(classOf(card)).toContain("facet-lift");
     expect(classOf(card)).toContain("focus-visible:outline-tint");
     expect(classOf(card)).toContain("hover:bg-[image:linear-gradient(var(--color-fill-4),var(--color-fill-4))]");
     fireEvent.click(card);

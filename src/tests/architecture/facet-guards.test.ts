@@ -143,8 +143,60 @@ const DARK_OVERRIDE_ALLOWED = new Set([
   `${path.join("components", "maps", "core", "MapLoadingScreen.tsx")}: dark:invert`,
 ]);
 
-// Image scrims (flag photos, card art) and the MyCountry logo.
-const CONVERTED_GRADIENT_CEILING = 10;
+/**
+ * Facet 3.1 (spec §16.5): gradients come from sanctioned classes, not ad-hoc palette stops. The
+ * identity sheet (styles/facet/identity.css) owns the gold, glass wash, glow, aurora/foil/radiance,
+ * jewel, acrylic glow and refraction paints; card art owns `card-art-linear-*` (styles/card-art.css);
+ * raw gradient utilities are only image scrims on role/black/white/transparent stops.
+ */
+const SANCTIONED_GRADIENT_CLASSES = [
+  "material-hero",
+  "facet-primary",
+  "facet-gold",
+  "facet-glow",
+  "facet-tint-glow",
+  "facet-acrylic-glow",
+  "facet-refraction-line",
+  "facet-aurora",
+  "facet-radiance",
+  "facet-foil",
+  "facet-jewel",
+] as const;
+
+/** Tailwind palette stops (`from-amber-500`, `via-blue-400/20`…) — the "ad-hoc palette gradient". */
+const PALETTE_STOP =
+  /(?<![\w-])(?:from|via|to)-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-\d{2,3}\b/g;
+
+/**
+ * Artwork that keeps its own palette gradients: trading-card faces, backs, holographic covers,
+ * pack art, reveal and crafting flourishes and cosmetic frames (content, spec §14 Vault), and the
+ * MyCountry logo's gold artwork.
+ */
+const ART_GRADIENT_FILES = [
+  "components/cards/",
+  "components/vault/NeonFrameOverlay.tsx",
+  "components/vault/VaultParticleExplosionModal.tsx",
+  "components/mycountry/shared/primitives/mycountry-logo.tsx",
+].map((dir) => dir.split("/").join(path.sep));
+
+/**
+ * Facet 3.1 (spec §16.1): blur comes from the glass/acrylic materials (`material-*`, FacetCard
+ * `variant="glass"`, FacetMaterial). A raw `backdrop-blur-*`/`backdrop-saturate-*` utility or an
+ * inline `backdropFilter` in converted feature code is a hand-rolled material. `backdrop-blur-none`
+ * (turning a primitive's blur off) is fine.
+ */
+const RAW_BACKDROP = /(?<![\w-])backdrop-(?:blur|saturate)(?:-[\w[\]/.()%-]+)?(?![\w-])/g;
+const INLINE_BACKDROP = /\b(?:Webkit)?[bB]ackdropFilter\s*:/g;
+const RAW_BACKDROP_ALLOWED = new Set([
+  // The drill sheet's own blur (pinned to exactly one by the drill-sheet test above).
+  `${path.join("components", "mycountry", "shell", "DrillSheets.tsx")}: backdrop-blur-xl`,
+]);
+const INLINE_BACKDROP_FILES = [
+  // The rare-card reveal moment (Vault flourish, spec §8) frosts the stage behind the card.
+  "components/cards/pack-opening/Stage3_CardReveal.tsx",
+  // The progressive blur primitive is a material itself (stepped backdrop blur).
+  "components/ui/magicui/progressive-blur.tsx",
+].map((dir) => dir.split("/").join(path.sep));
 
 describe("Facet anti-slop guards", () => {
   it("never nests block elements (Skeleton renders a div) inside <p> — a hydration error", () => {
@@ -213,6 +265,19 @@ describe("Facet anti-slop guards", () => {
       ).toEqual([]);
     });
 
+    it("defines every sanctioned gradient class in the identity sheet (Facet 3.1)", () => {
+      const identity = fs.readFileSync(
+        path.join(srcDir, "styles", "facet", "identity.css"),
+        "utf-8"
+      );
+      for (const name of SANCTIONED_GRADIENT_CLASSES) {
+        expect([name, new RegExp(`(@utility ${name} \\{|\\.${name}\\b)`).test(identity)]).toEqual([
+          name,
+          true,
+        ]);
+      }
+    });
+
     it("references no *-hsl colour tokens (none exist)", () => {
       expect(hits(/var\(--[\w-]+-hsl\)/g)).toEqual([]);
     });
@@ -236,10 +301,39 @@ describe("Facet anti-slop guards", () => {
       expect(convertedHits(/\[#[0-9a-fA-F]{3,8}\]/g)).toEqual([]);
     });
 
-    it(`keep decorative gradients at or below ${CONVERTED_GRADIENT_CEILING}`, () => {
-      expect(convertedHits(/\bbg-gradient-to-[a-z]+/g).length).toBeLessThanOrEqual(
-        CONVERTED_GRADIENT_CEILING
+    it("draw gradients with sanctioned classes, never ad-hoc palette stops (Facet 3.1)", () => {
+      const offenders = convertedHits(PALETTE_STOP).filter(
+        (hit) => !ART_GRADIENT_FILES.some((dir) => hit.startsWith(dir))
       );
+      expect(offenders).toEqual([]);
+    });
+
+    it("keep raw gradient utilities to image scrims (no palette stops on the same element)", () => {
+      const gradient =
+        /\bbg-(?:gradient-to-[a-z]+|linear-[\w-]+|radial(?:-[\w-]+)?|conic(?:-[\w-]+)?)\b/;
+      const offenders = sources
+        .filter(
+          ({ file }) => inConverted(file) && !ART_GRADIENT_FILES.some((d) => file.startsWith(d))
+        )
+        .flatMap(({ file, content }) =>
+          content
+            .split("\n")
+            .map((line, index) => ({ line, index }))
+            .filter(({ line }) => gradient.test(line) && new RegExp(PALETTE_STOP.source).test(line))
+            .map(({ index }) => `${file}:${index + 1}`)
+        );
+      expect(offenders).toEqual([]);
+    });
+
+    it("blur only through the glass/acrylic materials (no raw backdrop-blur utilities)", () => {
+      const raw = convertedHits(RAW_BACKDROP, RAW_BACKDROP_ALLOWED).filter(
+        (hit) => !hit.endsWith(": backdrop-blur-none")
+      );
+      expect(raw).toEqual([]);
+      const inline = convertedHits(INLINE_BACKDROP).filter(
+        (hit) => !INLINE_BACKDROP_FILES.some((file) => hit.startsWith(file))
+      );
+      expect(inline).toEqual([]);
     });
 
     it("keep the navigation shell on the z-* tokens (no arbitrary z-[…] at all)", () => {

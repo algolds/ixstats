@@ -15,7 +15,14 @@ import {
   BACKGROUND_ROLES,
   COLOR_ROLES,
   COLOR_ROLES_MORE_CONTRAST,
+  CUTOUT_RADIUS,
+  FLAG_WATERMARK,
+  GLASS_HERO,
+  GLOW,
+  GOLD,
   ON_SYSTEM_COLOR,
+  PHYSICS,
+  PRIMARY_MONO,
   RADII,
   STATUS_ALIASES,
   SYSTEM_COLORS,
@@ -357,5 +364,177 @@ describe("Facet 3 tokens: contrast (spec §2.3)", () => {
         expect({ name, pair, ok: ratio >= min, ratio }).toMatchObject({ ok: true });
       }
     });
+  });
+});
+
+// ─── Facet 3.1 — identity (spec §16) ─────────────────────────────────────────
+
+/** The identity scalars: the `@layer base › :root` / dark blocks that declare `--primary-fill-mono`. */
+const identity = {
+  light: blocks.find(
+    (b) =>
+      b.stack.length === 2 &&
+      b.stack[0] === "@layer base" &&
+      b.stack[1] === ":root" &&
+      b.decls.has("--primary-fill-mono")
+  )!,
+  dark: blocks.find(
+    (b) =>
+      b.stack.length === 2 &&
+      b.stack[0] === "@layer base" &&
+      b.stack[1] === ':root[data-theme="dark"]' &&
+      b.decls.has("--primary-fill-mono")
+  )!,
+} as const;
+const pct = (value: number) => `${+(value * 100).toFixed(1)}%`;
+
+describe("Facet 3.1 identity tokens: CSS matches src/lib/design/tokens.ts", () => {
+  it("declares the identity blocks for both appearances", () => {
+    expect(identity.light).toBeDefined();
+    expect(identity.dark).toBeDefined();
+  });
+
+  it.each(APPEARANCES)("monochrome primary (%s)", (appearance) => {
+    const b = identity[appearance];
+    expect(decl(b, "--primary-fill-mono")).toBe(PRIMARY_MONO[appearance].fill);
+    expect(decl(b, "--primary-fill-mono-hover")).toBe(PRIMARY_MONO[appearance].hover);
+    expect(decl(b, "--on-primary-mono")).toBe(PRIMARY_MONO[appearance].on);
+  });
+
+  it("gold primary (MyCountry / Builder)", () => {
+    const b = identity.light;
+    expect(decl(b, "--gold-from")).toBe(GOLD.from);
+    expect(decl(b, "--gold-to")).toBe(GOLD.to);
+    expect(decl(b, "--gold-from-hover")).toBe(GOLD.fromHover);
+    expect(decl(b, "--gold-to-hover")).toBe(GOLD.toHover);
+    expect(decl(b, "--on-gold")).toBe(GOLD.on);
+    expect(decl(b, "--gold-rim-edge")).toBe(GOLD.rimEdgeLight);
+    const scope = block("@layer base", '[data-app="mycountry"]');
+    // The scope that sets the tint palette is the first match; the primary lives in the second.
+    const primary = blocks.find(
+      (x) =>
+        x.stack.length === 2 &&
+        x.stack[1] === '[data-app="mycountry"]' &&
+        x.decls.has("--primary-fill-image")
+    )!;
+    expect(scope).toBeDefined();
+    expect(decl(primary, "--primary-fill-image")).toBe(
+      "linear-gradient(to right, var(--gold-from), var(--gold-to))"
+    );
+    expect(decl(primary, "--on-primary")).toBe("var(--on-gold)");
+    expect(decl(primary, "--primary-rim")).toBe("var(--gold-rim)");
+    // Every other scope resets to monochrome (a nested `intel` inside MyCountry is not gold).
+    const reset = blocks.find(
+      (x) => x.stack[1] === ":root, [data-app]" && x.decls.has("--primary-fill")
+    )!;
+    expect(decl(reset, "--primary-fill")).toBe("var(--primary-fill-mono)");
+    expect(decl(reset, "--primary-fill-image")).toBe("none");
+    expect(decl(reset, "--on-primary")).toBe("var(--on-primary-mono)");
+  });
+
+  it.each(APPEARANCES)("glass hero tier (%s)", (appearance) => {
+    const b = identity[appearance];
+    const g = GLASS_HERO[appearance];
+    expect(decl(b, "--glass-hero-fill-from")).toBe(pct(g.fillFrom));
+    expect(decl(b, "--glass-hero-fill-to")).toBe(pct(g.fillTo));
+    expect(decl(b, "--glass-hero-blur")).toBe(`${g.blur}px`);
+    expect(decl(b, "--glass-hero-saturate")).toBe(`${g.saturate}%`);
+    expect(decl(b, "--glass-hero-wash-from")).toBe(pct(g.washFrom));
+    expect(decl(b, "--glass-hero-wash-mid")).toBe(pct(g.washMid));
+    // v2 glass: 16–24px blur, 150–180% saturation (spec §16.2).
+    expect(g.blur).toBeGreaterThanOrEqual(16);
+    expect(g.blur).toBeLessThanOrEqual(24);
+    expect(g.saturate).toBeGreaterThanOrEqual(150);
+    expect(g.saturate).toBeLessThanOrEqual(180);
+  });
+
+  it("glow, flag watermark and physics", () => {
+    expect(decl(identity.light, "--glow-opacity")).toBe(String(GLOW.opacity));
+    expect(decl(identity.light, "--glow-blur")).toBe(`${GLOW.blur}px`);
+    for (const appearance of APPEARANCES) {
+      const wm = FLAG_WATERMARK[appearance];
+      const b = identity[appearance];
+      expect(
+        b.decls.get("--flag-watermark-opacity") ?? decl(identity.light, "--flag-watermark-opacity")
+      ).toBe(String(wm.opacity));
+      expect(
+        b.decls.get("--flag-watermark-blend") ?? decl(identity.light, "--flag-watermark-blend")
+      ).toBe(wm.blend);
+    }
+    expect(decl(identity.light, "--flag-watermark-opacity-hover")).toBe(
+      String(FLAG_WATERMARK.light.hover)
+    );
+    expect(decl(identity.light, "--facet-press-scale")).toBe(String(PHYSICS.pressScale));
+    expect(decl(identity.light, "--facet-lift-y")).toBe(`${PHYSICS.liftY}px`);
+    expect(css).toContain(`--radius-cutout: ${CUTOUT_RADIUS / 16}rem;`);
+  });
+});
+
+describe("Facet 3.1 identity: contrast", () => {
+  describe.each(APPEARANCES)("%s", (appearance) => {
+    it("on-primary on the monochrome primary (rest and hover) ≥ 4.5:1", () => {
+      const { fill, hover, on } = PRIMARY_MONO[appearance];
+      for (const [state, bg] of [
+        ["rest", fill],
+        ["hover", hover],
+      ] as const) {
+        const ratio = contrast(on, bg);
+        expect({ state, ok: ratio >= AA_TEXT, ratio }).toMatchObject({ ok: true });
+      }
+    });
+
+    it("the monochrome primary is a ≥ 3:1 boundary on every background role", () => {
+      for (const more of [false, true]) {
+        for (const bg of BACKGROUND_ROLES) {
+          const ratio = contrast(PRIMARY_MONO[appearance].fill, role(appearance, bg, more));
+          expect({ bg, more, ok: ratio >= AA_UI, ratio }).toMatchObject({ ok: true });
+        }
+      }
+    });
+
+    it("glass hero: labels stay ≥ 4.5:1 over the thinnest fill, the full tint wash and the glow core", () => {
+      const g = GLASS_HERO[appearance];
+      const surface = role(appearance, "surface");
+      const page = role(appearance, "background-grouped");
+      // Worst case: the most transparent fill stop over the grouped page, then the wash at its
+      // strongest stop, then a glow blob's centre (opacity × the post-blur peak).
+      const glass = mix(surface, page, Math.min(g.fillFrom, g.fillTo));
+      for (const [app, sets] of Object.entries(APP_TINTS)) {
+        const tint = sets[appearance].tint;
+        const washed = mix(tint, glass, g.washFrom);
+        const glowed = mix(tint, washed, GLOW.opacity * GLOW.blurPeak);
+        for (const label of ["label", "label-secondary"]) {
+          for (const bg of [glass, washed, glowed]) {
+            const ratio = contrast(role(appearance, label), bg);
+            expect({ app, label, bg, ok: ratio >= AA_TEXT, ratio }).toMatchObject({ ok: true });
+          }
+        }
+      }
+    });
+  });
+
+  it("dark label on every gold stop (rest and hover) ≥ 4.5:1", () => {
+    for (const stop of [GOLD.from, GOLD.to, GOLD.fromHover, GOLD.toHover]) {
+      const ratio = contrast(GOLD.on, stop);
+      expect({ stop, ok: ratio >= AA_TEXT, ratio }).toMatchObject({ ok: true });
+    }
+  });
+
+  it("the gold rim edge is a ≥ 3:1 boundary on light backgrounds", () => {
+    for (const more of [false, true]) {
+      for (const bg of BACKGROUND_ROLES) {
+        const ratio = contrast(GOLD.rimEdgeLight, role("light", bg, more));
+        expect({ bg, more, ok: ratio >= AA_UI, ratio }).toMatchObject({ ok: true });
+      }
+    }
+  });
+
+  it("gold stops are a ≥ 3:1 boundary on every dark background role", () => {
+    for (const stop of [GOLD.from, GOLD.to]) {
+      for (const bg of BACKGROUND_ROLES) {
+        const ratio = contrast(stop, role("dark", bg));
+        expect({ stop, bg, ok: ratio >= AA_UI, ratio }).toMatchObject({ ok: true });
+      }
+    }
   });
 });

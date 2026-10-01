@@ -2,6 +2,7 @@ import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "~/lib/utils/cn";
+import { isNumericText } from "~/lib/design/identity";
 
 const neutral = "bg-fill-3 text-label-secondary [a&]:hover:bg-fill-2";
 const tinted = "bg-tint-fill text-tint [a&]:hover:bg-tint/20";
@@ -39,6 +40,10 @@ export type SystemTintedColor = keyof typeof SYSTEM_TINTED;
  * `-ink` on a 15% fill (AA for 12px text; use these for categories, rarities and tags).
  * Legacy aliases: `default`→tinted, `secondary`→neutral.
  * Colour never carries meaning alone (§10): pair status badges with text or an icon.
+ *
+ * Facet 3.1: a count badge — children that are a number or a figure such as "12" / "+3" /
+ * "1.2K" — is set in the data face (`font-data`: mono, tabular, slashed zero). `numeric` forces it
+ * on (a count inside other markup) or off.
  */
 const badgeVariants = cva(
   [
@@ -75,13 +80,20 @@ export type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>["varia
 function Badge({
   className,
   variant,
+  numeric,
   ...props
-}: React.ComponentProps<"span"> & VariantProps<typeof badgeVariants>) {
+}: React.ComponentProps<"span"> &
+  VariantProps<typeof badgeVariants> & {
+    /** Count badge: the data face. Default: on when the children are a figure. */
+    numeric?: boolean;
+  }) {
+  const count = numeric ?? isNumericText(props.children);
   return (
     <span
       data-slot="badge"
       data-variant={variant ?? "default"}
-      className={cn(badgeVariants({ variant }), className)}
+      data-numeric={count || undefined}
+      className={cn(badgeVariants({ variant }), count && "font-data tabular-nums", className)}
       {...props}
     />
   );

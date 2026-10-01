@@ -12,4 +12,5 @@
 @import "./facet/core.css";
 @import "./facet/physics.css";
 @import "./facet/components.css";
+@import "./facet/identity.css";
 @import "./facet/overrides.css";

@@ -197,13 +197,16 @@ export const APP_TINTS = {
 /** Admin uses the default (shell) tint. */
 export type TintedApp = keyof typeof APP_TINTS;
 
-/** §3 text styles: size / line height in px at a 16px root, before `--text-scale`. */
+/**
+ * §3 text styles: size / line height in px at a 16px root, before `--text-scale`.
+ * Facet 3.1 (identity): display → title-3 are heavy and tight again (v2 headings).
+ */
 export const TEXT_STYLES = {
-  display: { size: 40, lineHeight: 44, weight: 700, tracking: "-0.02em" },
-  "large-title": { size: 28, lineHeight: 34, weight: 700, tracking: "-0.02em" },
-  "title-1": { size: 22, lineHeight: 28, weight: 700, tracking: "-0.015em" },
-  "title-2": { size: 20, lineHeight: 26, weight: 600, tracking: "-0.01em" },
-  "title-3": { size: 17, lineHeight: 22, weight: 600, tracking: "-0.005em" },
+  display: { size: 40, lineHeight: 44, weight: 800, tracking: "-0.025em" },
+  "large-title": { size: 28, lineHeight: 34, weight: 800, tracking: "-0.025em" },
+  "title-1": { size: 22, lineHeight: 28, weight: 800, tracking: "-0.025em" },
+  "title-2": { size: 20, lineHeight: 26, weight: 700, tracking: "-0.025em" },
+  "title-3": { size: 17, lineHeight: 22, weight: 700, tracking: "-0.02em" },
   headline: { size: 14, lineHeight: 20, weight: 600, tracking: "0" },
   body: { size: 14, lineHeight: 20, weight: 400, tracking: "0" },
   callout: { size: 13, lineHeight: 18, weight: 400, tracking: "0" },
@@ -239,4 +242,79 @@ export const Z_INDEX = {
   tooltip: 100020,
   toast: 100050,
   command: 110000,
+} as const;
+
+// ─── Facet 3.1 — identity (spec §16) ─────────────────────────────────────────
+// Mirrors the "Facet 3.1 — identity" block in tokens.css; token-contrast.test.ts checks parity and
+// contrast. Values are the v2 (c5c6b382) originals unless noted.
+
+/** `rounded-cutout` — the v2 CutoutCard radius (`rounded-[28px]`), in px. */
+export const CUTOUT_RADIUS = 28;
+
+/**
+ * Monochrome primary (`Button variant="filled"`, `facet-primary`): v2 `--primary: text-primary`.
+ * `on` on `fill`/`hover` must hold 4.5:1; `fill` against every background role 3:1.
+ */
+export const PRIMARY_MONO = {
+  light: { fill: "#18181b", hover: "#3f3f46", on: "#fafafa" },
+  dark: { fill: "#f4f4f5", hover: "#d4d4d8", on: "#0b0c0f" },
+} as const satisfies Record<Appearance, { fill: string; hover: string; on: string }>;
+
+/**
+ * MyCountry / Builder gold (`[data-app="mycountry"]` primary, `facet-gold`): v2 BUILDER_GOLD
+ * `from-amber-500 to-yellow-600`. Hover brightens (amber-400 → yellow-500) because v2's darker
+ * hover stops fall below 4.5:1 with the dark label. `rimEdgeLight` is the 1px light-theme edge
+ * that keeps the button's boundary at 3:1 on light surfaces (the lower gold stop alone is 2.9:1).
+ */
+export const GOLD = {
+  from: "#f59e0b",
+  to: "#ca8a04",
+  fromHover: "#fbbf24",
+  toHover: "#eab308",
+  on: "#1c1917",
+  rimEdgeLight: "#b45309",
+} as const;
+
+/**
+ * Glass hero tier (`material-hero`, `FacetCard variant="glass"`): surface at `fillFrom` → `fillTo`
+ * (135°) over the page, the tint wash at `washFrom` → `washMid`, `blur`px / `saturate`%.
+ * Light = v2 `.facet-hierarchy-parent` light glass + `.facet-depth-1` blur; dark is the
+ * glass-forward theme (deeper blur/saturation).
+ */
+export const GLASS_HERO = {
+  light: { fillFrom: 0.9, fillTo: 0.7, blur: 16, saturate: 150, washFrom: 0.15, washMid: 0.05 },
+  dark: { fillFrom: 0.62, fillTo: 0.72, blur: 24, saturate: 180, washFrom: 0.105, washMid: 0.025 },
+} as const satisfies Record<
+  Appearance,
+  {
+    fillFrom: number;
+    fillTo: number;
+    blur: number;
+    saturate: number;
+    washFrom: number;
+    washMid: number;
+  }
+>;
+
+/**
+ * Tint glow blob (`TintGlow`, `facet-tint-glow`): v2 `size-40 opacity-15 blur-3xl`. `blurPeak` is
+ * the centre intensity left after the blur (a 160px disc under a 64px Gaussian ≈ 0.54), which the
+ * contrast test uses for text over the glow.
+ */
+export const GLOW = { opacity: 0.15, blur: 64, size: 160, blurPeak: 0.54 } as const;
+
+/** Flag watermark (`FlagWatermark`): v2 DashboardHero opacity, hover brighten and scale. */
+export const FLAG_WATERMARK = {
+  light: { opacity: 0.14, hover: 0.25, blend: "luminosity" },
+  dark: { opacity: 0.18, hover: 0.25, blend: "normal" },
+  hoverScale: 1.05,
+  durationMs: 700,
+} as const;
+
+/** Press and lift physics (`facet-press`, `facet-press-sm`, `facet-press-subtle`, `facet-lift`). */
+export const PHYSICS = {
+  pressScale: 0.98,
+  pressScaleSm: 0.95,
+  pressScaleSubtle: 0.99,
+  liftY: -2,
 } as const;

@@ -29,7 +29,10 @@ describe("Button", () => {
   });
 
   it("maps styles to Facet role tokens", () => {
-    expect(buttonVariants({ variant: "filled" })).toContain("bg-tint text-on-tint");
+    // Facet 3.1: the primary role (monochrome; gold in MyCountry/Builder), not the tint.
+    expect(buttonVariants({ variant: "filled" })).toContain("bg-primary-fill");
+    expect(buttonVariants({ variant: "filled" })).toContain("text-on-primary");
+    expect(buttonVariants({ variant: "filled" })).not.toContain("bg-tint");
     expect(buttonVariants({ variant: "tinted" })).toContain("bg-tint-fill text-tint");
     expect(buttonVariants({ variant: "gray" })).toContain("bg-fill-3");
     expect(buttonVariants({ variant: "bordered" })).toContain("border-separator");

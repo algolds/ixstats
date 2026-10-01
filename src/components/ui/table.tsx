@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { cn } from "~/lib/utils/cn";
+import { isNumericText } from "~/lib/design/identity";
 
 /**
  * Table (Facet 3 §7.1 data tables): an opaque `surface` group with `separator` hairlines between
@@ -12,7 +13,10 @@ import { cn } from "~/lib/utils/cn";
  *   the header while the table scrolls; give the table a height to scroll in with
  *   `containerClassName` (e.g. `max-h-96`), since a horizontally scrolling container is also the
  *   vertical scroll container for sticky cells.
- * - Body cells: `text-callout` with tabular numerals, so figures line up.
+ * - Body cells: `text-callout` with tabular numerals, so figures line up. Facet 3.1: a cell whose
+ *   content is a figure (a number, or text such as "1,204" / "+2.4%") is set in the data face
+ *   (`font-data`: mono, slashed zero) automatically; `numeric` forces it and right-aligns the
+ *   column (pass `numeric` on its `TableHead` too).
  * - Rows: `fill-4` hover; a selected row (`data-state="selected"` or `aria-selected`) takes the
  *   `tint-fill`.
  * - Wide tables scroll horizontally; the clipped edge fades out (a `mask-image`, so it works on
@@ -154,12 +158,23 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   );
 }
 
-function TableHead({ className, ...props }: React.ComponentProps<"th">) {
+interface NumericCellProps {
+  /** A figures column: right-aligned (and, on cells, the data face). */
+  numeric?: boolean;
+}
+
+function TableHead({
+  className,
+  numeric,
+  ...props
+}: React.ComponentProps<"th"> & NumericCellProps) {
   return (
     <th
       data-slot="table-head"
+      data-numeric={numeric || undefined}
       className={cn(
         "text-footnote text-label-secondary h-10 px-3 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        numeric && "text-right",
         className
       )}
       {...props}
@@ -167,12 +182,20 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   );
 }
 
-function TableCell({ className, ...props }: React.ComponentProps<"td">) {
+function TableCell({
+  className,
+  numeric,
+  ...props
+}: React.ComponentProps<"td"> & NumericCellProps) {
+  const figure = numeric ?? isNumericText(props.children);
   return (
     <td
       data-slot="table-cell"
+      data-numeric={figure || undefined}
       className={cn(
         "text-callout px-3 py-3 align-middle whitespace-nowrap tabular-nums [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        figure && "font-data",
+        numeric && "text-right",
         className
       )}
       {...props}

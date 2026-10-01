@@ -61,7 +61,7 @@ export const VERSIONS = {
 
   // Design system.
   design: {
-    facet: 3, // v3: HIG roles, per-app tints, text styles, layered CSS, glass for chrome only (docs/reference/facet-design-system.md)
+    facet: 3.1, // v3: HIG roles, per-app tints, text styles, layered CSS; v3.1: identity restored — glass hero tier, monochrome/gold primary, mono data numerals, heavy headings, press/lift physics, CutoutCard, domain glows (docs/reference/facet-design-system.md)
   },
 
   // WikiOS sub-systems (nested, not top-level).

@@ -1,7 +1,14 @@
 # Facet 3 — Unified Design System Specification
 
-**Status:** 📐 Specification, decided 2026-09-30; Phases 1–2 shipped · **Replaces:** [Facet v2](../reference/facet-design-system.md) once
-Phase 2 lands · **Evidence:** [Facet style audit](../audits/FACET_STYLE_AUDIT_2026-09-30.md)
+**Status:** 📐 Specification, decided 2026-09-30; Phases 1–2 shipped; **amended by Facet 3.1 — identity (2026-10-01, §16)** ·
+**Replaces:** [Facet v2](../reference/facet-design-system.md) once Phase 2 lands · **Evidence:**
+[Facet style audit](../audits/FACET_STYLE_AUDIT_2026-09-30.md)
+
+> **Facet 3.1 (§16) overrides parts of this spec.** The standardisation stays; the pre-refactor (v2, `c5c6b382`)
+> identity comes back on top of it: glass hero cards, a monochrome primary (gold in MyCountry/Builder), mono data
+> numerals, heavy headings, press/hover physics, CutoutCard, domain glows and the v2-strength flag watermark. Where a
+> rule below conflicts with §16, §16 wins; the overridden rules are marked *(amended by §16)*. Governing rule
+> (§16.0): **evolve the existing design; no redesign without an explicit owner request.**
 
 Facet 3 is IxStates' single design system: Apple's Human Interface Guidelines as the foundation (semantic colour roles,
 named text styles, materials for floating layers, concentric shape, springs, accessibility preferences), with the
@@ -18,13 +25,13 @@ The §2 colour values shipped unchanged in Phase 1 (`src/styles/facet/tokens.css
 
 | # | Topic | Decision |
 |---|---|---|
-| 1 | Surfaces | **Opaque content, glass chrome.** Pages, cards and rows are opaque; translucent materials only on floating chrome (sidebar, tab bar, Halo, toolbars, sheets, popovers, menus, map panels). Glass never nests. |
+| 1 | Surfaces | **Opaque content, glass chrome.** Pages, cards and rows are opaque; translucent materials only on floating chrome (sidebar, tab bar, Halo, toolbars, sheets, popovers, menus, map panels). Glass never nests. *(Amended by §16: hero/feature cards are glass; dense data stays opaque.)* |
 | 2 | Materials | **Glass + 3 textures.** Three glass thicknesses; textures limited to dots, grid, paper grain. Satin/paper/rubber/metal/carbon/wood and the other 16 textures move to the lab stylesheet. |
 | 3 | Colour | **HIG semantic roles** (labels, backgrounds, grouped backgrounds, elevated, fills, separators, tint, system colours). shadcn names become aliases. |
-| 4 | Accent | **Per-app tint.** One `--tint`/`--on-tint` pair overridden per app subtree; primary buttons, selection, links and focus inherit it. |
+| 4 | Accent | **Per-app tint.** One `--tint`/`--on-tint` pair overridden per app subtree; primary buttons, selection, links and focus inherit it. *(Amended by §16: filled primaries are monochrome — gold in MyCountry/Builder; the tint keeps selection, links, focus, toggles and active states.)* |
 | 5 | Type scale | **HIG text styles at desktop density** (body 14px, nothing below 12px), rem-based. |
 | 6 | Typeface | **Swiss only** (the DIN/Akzidenz stack) for UI; National/Neutraface as display face only. Presets removed. |
-| 7 | Numerals | **Tabular Swiss figures** for all numbers; `font-mono` (Azeret Mono) only for code, IDs, coordinates, hashes. |
+| 7 | Numerals | **Tabular Swiss figures** for all numbers; `font-mono` (Azeret Mono) only for code, IDs, coordinates, hashes. *(Amended by §16: stats, figures, counts and IDs use the mono data face `font-data`.)* |
 | 8 | Shape | **Concentric radius scale by layer**, continuous corners where supported. |
 | 9 | Appearance | **Follow system**, user override, applied pre-paint; one **Compact/Regular** density setting (spacing and control heights only). |
 | 10 | Navigation | **Sidebar (large) + tab bar (compact)**; Halo is the contextual island; maps stays chromeless. |
@@ -32,7 +39,7 @@ The §2 colour values shipped unchanged in Phase 1 (`src/styles/facet/tokens.css
 | 12 | Lists | **`FacetList` + `FacetRow`** (inset grouped) is the default container for settings, details, rails and most stat grids. |
 | 13 | Controls | **Three sizes (28/36/44)**, 44px hit area on touch; add SegmentedControl, ToggleGroup, Stepper, MenuButton. |
 | 14 | Captions | **Uppercase `Eyebrow` only for short data labels** above a value; section/list headers are sentence case. |
-| 15 | Motion | **Three named springs + short tweens**; 0ms for keyboard-invoked UI; long flourishes only for Vault reveal moments. |
+| 15 | Motion | **Three named springs + short tweens**; 0ms for keyboard-invoked UI; long flourishes only for Vault reveal moments. *(Amended by §16: press and hover-lift physics return.)* |
 | 16 | Accessibility | Honour **Reduce Transparency, Increase Contrast, Reduce Motion** and an in-app **text size** (90–130%). |
 | 17 | Sound | **Cuelume on, restrained:** only meaningful moments; no hover/press ticks; one mute toggle. |
 | 18 | Sub-systems | **WikiOS and Forum fold into Facet roles**; wiki reading typography is the one sanctioned content style. |
@@ -161,6 +168,7 @@ in `.font-*` classes.
 Rules: nothing below 12px; one `large-title` per page; bold (700) only in titles; body copy never `font-bold`.
 Numbers: `tabular-nums` in the Swiss face (stats, tables, currency); `font-mono` only for code, identifiers,
 coordinates and hashes. Readable measure for prose: 42rem (wiki reading style: 38rem).
+*(Amended by §16: display → title-3 are heavy and tight — 800/700 at −0.025/−0.02em; figures use `font-data`.)*
 
 ## 4. Shape, space and layout
 
@@ -179,7 +187,8 @@ sit at `top-(--toolbar-height)`. Safe-area insets respected on mobile (tab bar, 
 
 ## 5. Materials, elevation and depth
 
-**Materials** (chrome only; `@utility material-*`):
+**Materials** (chrome only; `@utility material-*`) *(amended by §16: `material-hero` for hero/feature cards and
+`material-acrylic` for Halo/navigation)*:
 
 | Material | Blur / saturation | Background | Use |
 |---|---|---|---|
@@ -216,7 +225,7 @@ Icon-only buttons need an `aria-label` and a tooltip.
 
 | Component | Use | Replaces |
 |---|---|---|
-| `FacetCard` | Opaque content card (`surface`, `rounded-card`, card padding). Header/Content/Footer parts. `variant="inset"`: a panel inside a card (`surface-secondary`, `rounded-row`, 16px). `as` renders a `section`/`article`/`li`/`aside`/`header`/`footer`/`nav`/`figure`. `MotionFacetCard` for animated cards. `Card` is a deprecated alias of the same surface. | `FacetContainer depth={1–3}`, `Card`, `CutoutCard`, `PanelCard`, `GlassPanel`, hand-rolled `rounded-xl border bg-*` |
+| `FacetCard` | Opaque content card (`surface`, `rounded-card`, card padding). Header/Content/Footer parts. `variant="inset"`: a panel inside a card (`surface-secondary`, `rounded-row`, 16px). `as` renders a `section`/`article`/`li`/`aside`/`header`/`footer`/`nav`/`figure`. `MotionFacetCard` for animated cards. `Card` is a deprecated alias of the same surface. | `FacetContainer depth={1–3}`, `Card`, `PanelCard`, `GlassPanel`, hand-rolled `rounded-xl border bg-*` (*§16: `CutoutCard` returns for feature/media cards; `variant="glass"` is the hero tier*) |
 | `FacetList` / `FacetListSection` / `FacetRow` | Inset grouped list: section header (sentence-case `text-subhead`) and footer, rows with leading icon, title, subtitle, trailing value/badge/accessory/chevron, separators inset to the text, optional swipe actions (`SwipeableRow`), selectable/navigable rows. | KPI grids, divided lists, rails' `RailRow`, settings rows |
 | `Stat` | `Eyebrow` label + `text-title-3` tabular value + optional delta; optional 14px icon in the label row. | Hand-rolled metric tiles |
 | `FacetMaterial` | The only glass surface: `thin`/`regular`/`thick`. | `FacetContainer` glass depths, `.facet-hierarchy-*`, `glass-*` |
@@ -279,7 +288,8 @@ No `createPortal` or `fixed inset-0` overlays in feature code.
 | `duration-exit` | 120ms | Exits (always faster than entrances) |
 
 Rules: animate transform and opacity only; entrances from `scale(0.96)` + opacity 0, never from 0; press compression
-`scale(0.98)`; keyboard-invoked UI appears in 0ms; nothing loops forever except genuine live indicators. Long
+`scale(0.98)` *(amended by §16: built into the primitives as `facet-press`, plus the `facet-lift` hover lift)*;
+keyboard-invoked UI appears in 0ms; nothing loops forever except genuine live indicators. Long
 flourishes (pack openings, rare-card reveals) are allowed only in Vault/cards moments and are skippable. Reduce Motion:
 springs become 150ms cross-fades, parallax/tilt/shimmer off, loops stop.
 
@@ -668,7 +678,116 @@ values on hover or tap.
 
 ## 15. Governance
 
-`FACET_VERSION` becomes 3.0.0 at the end of Phase 2. Changes to tokens or primitives require updating this document
+`FACET_VERSION` becomes 3.0.0 at the end of Phase 2 and 3.1 with the identity amendment (§16). Changes to tokens or primitives require updating this document
 and its changelog in the same PR; `facet-guards` encodes every rule that can be checked statically (roles instead of
 `dark:`, no hex, no arbitrary z, no raw overlays, allowed text styles and radii, Eyebrow usage, no nested materials in
 known containers).
+
+## 16. Facet 3.1 — identity (decided 2026-10-01)
+
+**Why.** The Facet 3 refactor standardised the system (roles, tints, text styles, primitives, guards) and the owner
+wants to keep that — but it also flattened the IxStates look into something generic. Facet 3.1 restores the
+pre-refactor identity (v2, baseline commit `c5c6b382`) on top of the Facet 3 foundations, all at once: the foundation
+(tokens, utilities, primitives, guards, this section) first, then every app adopts it. Adoption recipes are in the
+[reference doc](../reference/facet-design-system.md) §0.
+
+### 16.0 Governing rule — evolve, don't redesign
+
+**Evolve the existing design; no redesign without an explicit owner request.** Unless the product owner overtly asks
+for something new, work keeps the existing UI and improves on it: port the actual v2 values, class recipes and
+components (`facet-depth-*`/`facet-hierarchy-*` glass, `.facet-refraction`, `.facet-mycountry` gold, BUILDER_GOLD,
+`cutout-card.tsx`, `DynamicIslandEffects`/`.dynamic-island-shell`, the DashboardHero flag watermark,
+`AchievementDecorations`, the v2 `.font-mono`) and change only what is needed to fit tokens, light/dark, Reduce
+Motion/Transparency, Increase Contrast and accessibility. When unsure, match v2. Each rule below names its v2 source.
+
+### 16.1 Decisions
+
+| # | Topic | Decision | Overrides |
+|---|---|---|---|
+| 1 | Surfaces | **Glass hero + opaque data.** Hero and feature surfaces (MyCountry shell, dashboard and country profile heroes, passport/vault/achievements, every app's top hero/header card) use the **glass hero tier**: 16–24px blur, 150–180% saturation, a translucent card fill (~0.7), an inset white top rim, a light-catching refraction hairline, the subtle 135° two-stop tint wash and a deeper tinted shadow. Dense lists, tables and forms stay opaque. Glass still never nests. | §0.1, §5 "chrome only" |
+| 2 | Colour | **Hybrid.** Filled primary buttons are **monochrome** (near-black on light, near-white on dark — v2 `--primary: text-primary`). The per-app tint stays for selection, links, focus, toggles and active states. **Exception:** inside `data-app="mycountry"` (MyCountry and the Builder) the primary is the v2 **gold gradient** (`from-amber-500 to-yellow-600`) with a gold rim and a dark label. | §0.4, §2.2 "primary buttons inherit the tint" |
+| 3 | Type | **Mono data numerals** — Azeret Mono with `"tnum","zero"` (slashed zero), as v2 `.font-mono` — for every stat, figure, count and ID (`font-data`). **Heavy tight headings**: display/large-title/title-1 800 at −0.025em, title-2 700 at −0.025em, title-3 700 at −0.02em. Sentence case stays (no uppercase micro-labels beyond `Eyebrow`), the 12px minimum stays, no typography presets. | §0.7, §3 weights |
+| 4 | Motion | **Press + hover physics return**: press scale-down on buttons, pressable cards and tiles (`.98`; `.95` small controls; `.99` rows), hover lift (up 2px + shadow) on interactive cards. Honour Reduce Motion (`data-motion="reduced"` and `prefers-reduced-motion`). No tilt/sheen, no ambient loops, no per-control sound ticks. | §0.15, §8 |
+| 5 | Gradients & glows | Gold MyCountry/Builder gradients and rims; **domain glows** (tinted shadows and soft blurred glow blobs in the app tint behind heroes/feature cards); achievement **aurora / foil / ghost heraldry**. **Sports surfaces stay flat.** Gradients come only from sanctioned classes (§16.5). | §13/§15 gradient ceiling (≤ 10) |
+| 6 | Atmosphere | Refraction hairlines; Halo's **acrylic island** with a coloured glow underlay and edge refraction; wiki reader hero modes; a **stronger flag watermark** — v2 strength with hover brighten + scale. | §14 deviation (f) "small corner watermark" |
+| 7 | Shape | **CutoutCard returns** (28px radius, inverted-corner SVG notch, image zoom on hover, blur-in stagger; Reduce Motion safe; keyboard accessible when pressable) for feature/hero/media cards (dashboard widgets, vault, thinktanks, messages). Concentric radii stay for dense UI. | §7.1 "`FacetCard` replaces `CutoutCard`" |
+| 8 | Theme | Follow system stays; **dark is the more polished, glass-forward theme** (deeper blur and saturation, brighter rim); light glass must still meet contrast. | — |
+| 9 | Navigation | The sidebar and tab bar become v2-styled (acrylic glass, refraction, glow) via `material-acrylic`. | §7.4 `material-regular` |
+| 10 | Rollout | All at once: the foundation ships, then the app agents adopt it immediately. | — |
+
+### 16.2 Materials
+
+| Utility / primitive | v2 source | Values (light / dark) | Use |
+|---|---|---|---|
+| `material-hero` · `FacetCard variant="glass"` · `FacetMaterial material="hero"` · `CutoutCard variant="glass"` | `.facet-hierarchy-parent` light glass, `.facet-depth-1/2`, `.facet-{domain}` wash | fill `surface` 90→70% / 62→72% at 135°; blur 16 / 24px (≤768px 12 / 16); saturate 150 / 180%; rim white .9 / .12; border tint 30 / 25%; wash tint 15→5% / 10.5→2.5%; shadow black + `0 8px 24px` tint 12% (hover deeper, tint 18 / 20%) | Hero and feature cards |
+| `material-acrylic` · `FacetMaterial material="acrylic" glow` | `.dynamic-island-shell`, `DynamicIslandEffects` | white 85% / obsidian 88%, 28px / 190% (32px / 200% on hover, focus-within, `data-expanded`), inset rim + bottom shade, deep shadow; `AcrylicGlow` (three tint layers) + `Refraction edges="all"` | Halo island, sidebar, tab bar |
+| `material-thin` / `-regular` / `-thick` | — (Facet 3) | unchanged (§5) | Toolbars, popovers, menus, map panels |
+
+Reduce Transparency and Increase Contrast turn `material-hero` into the opaque `surface` (tint border kept) and
+`material-acrylic` into `surface-elevated`. Glass never nests: inside a glass card use opaque roles or
+`FacetCard variant="inset"`.
+
+### 16.3 Colour
+
+- **Primary role** (`--primary-fill`, `--primary-fill-hover`, `--on-primary`, `--primary-fill-image`, `--primary-rim`;
+  utilities `bg-primary-fill`, `text-on-primary`): monochrome `#18181b` / `#fafafa` (light), `#f4f4f5` / `#0b0c0f`
+  (dark). In `[data-app="mycountry"]`: `--gold-from` `#f59e0b` → `--gold-to` `#ca8a04`, hover `#fbbf24` → `#eab308`,
+  label `#1c1917`, rim = a light-catching top edge, a 1px edge (`#b45309` light / amber-300 at 50% dark) and the v2
+  `.dashboard-section-mycountry` glow. Every other `data-app` scope resets to monochrome, so `intel` inside MyCountry
+  is not gold. *Deviation from v2:* v2's gold hover went darker (`amber-600 → yellow-700`), which drops to 3.5:1 under
+  the dark label; the hover brightens instead. The shadcn alias `primary` stays the tint until callers migrate.
+- **Tint** keeps `tinted`/`plain`/`link` buttons, selection, links, focus, toggles, active states, glows and washes.
+- **Contrast** (`token-contrast.test.ts`): on-primary on the monochrome fill and hover ≥ 4.5:1; the monochrome fill
+  ≥ 3:1 on every background role (also under Increase Contrast); the dark label on all four gold stops ≥ 4.5:1
+  (5.95:1 minimum); the light gold rim edge ≥ 3:1 on light backgrounds; gold ≥ 3:1 on dark backgrounds; `label` and
+  `label-secondary` ≥ 4.5:1 on the glass hero at its thinnest fill over the grouped page, under the full tint wash and
+  under a glow blob's core, for every app tint in both themes.
+
+### 16.4 Type, physics, shape
+
+- `font-data` (Azeret Mono, `"tnum" 1, "zero" 1`) is a theme font entry; `font-mono` gains the same features
+  through Tailwind's `--font-mono--font-feature-settings` hook (v2 `.font-mono`, no utility hijack). `Stat` values
+  and deltas, numeric `Badge`s, `ActionPill` and `SegmentedControl` counts, figure `Table` cells and numeric
+  `FacetRow` trailing values switch automatically. Letter-spacing still lives only in the text styles (v2's
+  `.font-mono` 0.015em is not carried over: it would fight the text styles' tracking).
+- Headings per §16.1 (3); `TEXT_STYLES` in `src/lib/design/tokens.ts`. A face without an 800 cut renders 700.
+- `facet-press` (`.98`), `facet-press-sm` (`.95`), `facet-press-subtle` (`.99`) and `facet-lift` (−2px + lift
+  shadow) use the individual `scale`/`translate` properties (so they compose with motion's inline `transform`), carry
+  the control transition, and drop the movement under Reduce Motion. Built into `Button`, `Toggle`/`ToggleGroup`,
+  `ActionPill`, `SegmentedControl`, `FacetRow` buttons, pressable/interactive `FacetCard` and `CutoutCard`.
+- `rounded-cutout` (28px) is CutoutCard's radius; dense UI keeps the concentric scale (§4).
+
+### 16.5 Gradients, glows and watermarks
+
+The sanctioned gradient paints — the only ones feature code uses — are the identity sheet's
+(`styles/facet/identity.css`): `material-hero`, `facet-gold`, `facet-primary`, `facet-glow`, `facet-tint-glow`,
+`facet-acrylic-glow`, `facet-refraction-line`, `facet-aurora`, `facet-radiance`, `facet-foil`, `facet-jewel`; card
+art's `card-art-linear-*`; and image scrims (raw gradient utilities on black/white/transparent/role stops). Ad-hoc
+palette stops (`from-amber-500`…) are forbidden outside the card-art and logo-artwork files.
+
+- **Domain glow** = `TintGlow` (v2 `size-40 opacity-15 blur-3xl` disc in the tint) and/or `facet-glow` (v2
+  `.dashboard-section-*` tinted shadow: `0 0 20px` tint 15% + `0 4px 12px` 10%, hover 25% / 15%).
+- **Flag watermark** at v2 strength: 320px disc at `-top-12 -right-12`, opacity .14 light / .18 dark → .25 and
+  `scale(1.05)` over 700ms while the hero is hovered, luminosity blend in light (normal in dark), 1px blur; Reduce
+  Motion keeps the brighten and drops the scale.
+- **Achievements** (v2 `AchievementCardBackdrop`): aurora (`--accent` 15% → `--accent-2` 10% → transparent, .4 → .75
+  under a 24px blur), radiance (`--accent` 10% → 5%, .45 → .7), foil (gold 15% / 10%, .6, epic/legendary), ghost
+  heraldry (the icon as a 144px mask, `currentColor` at .065 / .095) and the jewel icon fill.
+
+### 16.6 Guards
+
+`facet-guards`: the ≤ 10 gradient ceiling is replaced by (a) no Tailwind palette gradient stops in converted code
+outside the card-art and logo-artwork files, (b) raw gradient utilities only as scrims, (c) every sanctioned class
+exists in the identity sheet, and (d) no raw `backdrop-blur-*`/`backdrop-saturate-*` utilities or inline
+`backdropFilter` in converted feature code (blur comes from the materials; the MyCountry drill sheet, the rare-card
+reveal and the progressive-blur primitive are allowlisted). No `dark:`, no hex classes, ≥ 12px text, no
+`transition-all`, no arbitrary z stay. `css-layering`: the identity sheet is layered, and its material/identity
+utilities and classes set no position, z-index, radius, margin or letter-spacing. `token-contrast`: §16.3. Primitive
+behaviour: `src/tests/components/ui/facet-31-identity.test.tsx`.
+
+### 16.7 Rollout
+
+The foundation (tokens, `styles/facet/identity.css`, primitives, guards, this section, the reference doc's adoption
+guide and the materials-lab showcase) shipped 2026-10-01 and `FACET_VERSION` is 3.1. App agents adopt it next:
+MyCountry shell, dashboard and country profile, passport/vault/achievements and each app's hero card; Halo and the
+navigation shell take `material-acrylic`; WikiOS restores its reader hero modes.

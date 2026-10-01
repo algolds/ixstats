@@ -29,3 +29,13 @@ export type {
 
 // Hero identity marks (corner flag watermark, tint hairline, glyph watermark)
 export { FlagWatermark, TintHairline, WatermarkGlyph } from "./identity/FlagWatermark";
+
+// Facet 3.1 identity layers (spec §16): tint glow blob, refraction hairline, acrylic underlay
+export { TintGlow, Refraction, AcrylicGlow } from "./identity/Glow";
+export type {
+  TintGlowProps,
+  TintGlowPosition,
+  RefractionProps,
+  RefractionEdges,
+  AcrylicGlowProps,
+} from "./identity/Glow";

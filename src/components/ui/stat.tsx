@@ -4,7 +4,8 @@ import { cn } from "~/lib/utils/cn";
 import { Eyebrow } from "./eyebrow";
 
 /**
- * Stat (Facet 3 §7.1): an `Eyebrow` data label, a tabular value, an optional delta and hint.
+ * Stat (Facet 3 §7.1): an `Eyebrow` data label, a value, an optional delta and hint. Facet 3.1: the
+ * value and the delta are in the data face (`font-data` — Azeret Mono, tabular, slashed zero).
  *
  *   <Stat label="GDP" value="$1.2T" delta={{ value: "+2.4%", direction: "up" }} hint="vs. last year" />
  *
@@ -59,7 +60,7 @@ export function StatDeltaBadge({ delta, className }: { delta: StatDelta; classNa
       data-direction={delta.direction}
       data-sentiment={sentiment}
       className={cn(
-        "text-footnote inline-flex items-center gap-1 font-medium tabular-nums",
+        "text-footnote font-data inline-flex items-center gap-1 font-medium tabular-nums",
         SENTIMENT_CLASS[sentiment],
         className
       )}
@@ -117,7 +118,7 @@ export const Stat = React.forwardRef<HTMLDivElement, StatProps>(
         <span
           data-slot="stat-value"
           className={cn(
-            "text-label min-w-0 truncate tabular-nums",
+            "text-label font-data min-w-0 truncate tabular-nums",
             size === "sm" ? "text-headline" : "text-title-3"
           )}
         >
