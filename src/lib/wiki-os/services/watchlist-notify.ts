@@ -5,15 +5,21 @@
 // set), cleared by `markWatchedVisited` when they view the page. Whoever made the change is never
 // told about their own change.
 //
-// Every event source calls `notifyWatchers` once, after its commit: a WikiOS save
-// (`ArticleRepository.saveArticle`), the inbound MediaWiki sync, a move and a delete
-// (`PageManagementService`). It never throws: a notification must not fail the edit.
+// Every event source calls `notifyWatchers` once, after its commit, without waiting for it: a WikiOS
+// save (`ArticleRepository.saveArticle`), an XML import that moves a head, the inbound MediaWiki
+// sync, and a move, delete or restore (`PageManagementService`). It never throws: a notification must
+// not fail the edit.
+//
+// The work is batched: per chunk of watchers, one `updateMany` claims their rows and one `createMany`
+// writes their notifications. Notifications belong to the person's Clerk id (that is what the bell
+// and the notification list read), while `WikiWatchlist.userId` is the internal user id.
 
 import { db } from "~/server/db";
 import { notificationAPI } from "~/lib/notifications/api";
+import { isNotificationEventEnabled } from "~/lib/notifications/guard";
 import { wikiReaderPath } from "~/lib/wiki-os/config";
 
-export type HeadChangeKind = "edited" | "moved" | "deleted";
+export type HeadChangeKind = "edited" | "moved" | "deleted" | "restored";
 
 export interface HeadChange {
   kind: HeadChangeKind;
@@ -26,25 +32,32 @@ export interface HeadChange {
   editorUserId?: string | null;
   /** The MediaWiki account that made it: left out the same way when it is linked to a WikiOS user. */
   editorWikiUsername?: string | null;
-  /** The edit summary, or the reason of a move or delete. */
+  /** The edit summary, or the reason of a move, delete or restore. */
   summary?: string | null;
-  /** For an edit: the revision references (history `revid`s) before and after it, which the diff link needs. */
+  /** For an edit: the revision references (history `revid`s) before and after it, which the diff link needs (without both, the link goes to the page). */
   previousRef?: string | null;
   currentRef?: string | null;
   /** For a move: the title the page had. */
   fromTitle?: string | null;
 }
 
-/** Watchers notified per event, bounding the work one change on a very popular page can cause. */
-const MAX_WATCHERS_PER_EVENT = 1000;
-/** Notifications written at once. */
-const CLAIM_BATCH = 25;
+/** The event switch (`notificationEventConfig`) of the notifications written here: `<source>Notification`. */
+const NOTIFICATION_SOURCE = "wikiWatchlist";
+const EVENT_KEY = `${NOTIFICATION_SOURCE}Notification`;
+/** Watchers handled per claim and per notification write: well inside PostgreSQL's bind-parameter limit. */
+const WATCHER_CHUNK = 1000;
 const MAX_SUMMARY_CHARS = 200;
 
 interface NotificationText {
   title: string;
   message: string;
   href: string;
+}
+
+interface Watcher {
+  id: string;
+  /** Their Clerk id, or null for an account that has none (it cannot receive notifications). */
+  user: { clerkUserId: string | null } | null;
 }
 
 function clip(text: string): string {
@@ -66,6 +79,13 @@ function describeChange(change: HeadChange): NotificationText {
     return {
       title: `${change.title} was deleted`,
       message: summary ? `${change.editor}: ${summary}` : `${change.editor} deleted this page`,
+      href: page,
+    };
+  }
+  if (change.kind === "restored") {
+    return {
+      title: `${change.title} was restored`,
+      message: summary ? `${change.editor}: ${summary}` : `${change.editor} restored this page`,
       href: page,
     };
   }
@@ -94,62 +114,112 @@ async function actorUserIds(change: HeadChange): Promise<string[]> {
 }
 
 /**
- * Notify one watcher, once: the row is claimed first (`notificationTime` was still empty), so two
- * changes arriving together send one notification. A notification that cannot be written (the event
- * is switched off, the database hiccups) hands the claim back: the next change tries again.
+ * A timestamp no other claim made by this process shares, so the rows one claim set can be told from
+ * the rows a concurrent claim set (two changes in the same millisecond must not both own a row).
  */
-async function notifyWatcher(
-  watcher: { id: string; userId: string },
+let lastClaimMs = 0;
+function nextClaimStamp(): Date {
+  lastClaimMs = Math.max(Date.now(), lastClaimMs + 1);
+  return new Date(lastClaimMs);
+}
+
+/** The next chunk of the page's watchers who have not been told since they last visited, after `afterId`. */
+function findWatchers(
+  change: HeadChange,
+  excluded: string[],
+  afterId: string | null
+): Promise<Watcher[]> {
+  return db.wikiWatchlist.findMany({
+    where: {
+      articleId: change.articleId,
+      notificationTime: null,
+      ...(excluded.length > 0 ? { userId: { notIn: excluded } } : {}),
+      ...(afterId ? { id: { gt: afterId } } : {}),
+    },
+    orderBy: { id: "asc" },
+    select: { id: true, user: { select: { clerkUserId: true } } },
+    take: WATCHER_CHUNK,
+  });
+}
+
+/**
+ * Notify one chunk of watchers, once each. Their rows are claimed first (`notificationTime` was still
+ * empty) with one `updateMany`, so two changes arriving together send one notification per watcher; the
+ * notifications are then written with one `createMany`. Notifications that cannot be written (the
+ * database hiccups) hand the claims back: the next change tries again.
+ */
+async function notifyChunk(
+  watchers: Watcher[],
   change: HeadChange,
   text: NotificationText
-): Promise<boolean> {
-  const claimed = await db.wikiWatchlist.updateMany({
-    where: { id: watcher.id, notificationTime: null },
-    data: { notificationTime: new Date() },
+): Promise<number> {
+  const recipients = watchers.flatMap((watcher) =>
+    watcher.user?.clerkUserId ? [{ id: watcher.id, clerkUserId: watcher.user.clerkUserId }] : []
+  );
+  if (recipients.length === 0) return 0;
+
+  const claimedAt = nextClaimStamp();
+  const claim = await db.wikiWatchlist.updateMany({
+    where: { id: { in: recipients.map((r) => r.id) }, notificationTime: null },
+    data: { notificationTime: claimedAt },
   });
-  if (claimed.count === 0) return false;
+  if (claim.count === 0) return 0;
+
+  // A shortfall means a concurrent change claimed some rows first: ours are the ones carrying our stamp.
+  const owned =
+    claim.count === recipients.length ? recipients : await ownedBy(claimedAt, recipients);
   try {
-    await notificationAPI.create({
-      userId: watcher.userId,
-      title: text.title,
-      message: text.message,
-      href: text.href,
-      category: "wiki",
-      priority: "low",
-      source: "wikiWatchlist",
-      metadata: { articleId: change.articleId, kind: change.kind },
-    });
-    return true;
+    await notificationAPI.createMany(
+      owned.map((watcher) => ({
+        userId: watcher.clerkUserId,
+        title: text.title,
+        message: text.message,
+        href: text.href,
+        category: "wiki" as const,
+        priority: "low" as const,
+        source: NOTIFICATION_SOURCE,
+        metadata: { articleId: change.articleId, kind: change.kind },
+      }))
+    );
+    return owned.length;
   } catch {
     await db.wikiWatchlist.updateMany({
-      where: { id: watcher.id },
+      where: { id: { in: owned.map((r) => r.id) }, notificationTime: claimedAt },
       data: { notificationTime: null },
     });
-    return false;
+    return 0;
   }
 }
 
-/** Notify the watchers of `change.articleId` who have not been told since they last visited. Returns how many were. */
+/** Of `recipients`, the ones whose row carries `claimedAt`. */
+async function ownedBy<T extends { id: string }>(claimedAt: Date, recipients: T[]): Promise<T[]> {
+  const rows = await db.wikiWatchlist.findMany({
+    where: { id: { in: recipients.map((r) => r.id) }, notificationTime: claimedAt },
+    select: { id: true },
+  });
+  const ids = new Set(rows.map((row) => row.id));
+  return recipients.filter((r) => ids.has(r.id));
+}
+
+/**
+ * Notify the watchers of `change.articleId` who have not been told since they last visited, every one
+ * of them (chunk by chunk). Returns how many were. Does nothing when the event is switched off.
+ */
 export async function notifyWatchers(change: HeadChange): Promise<number> {
   try {
+    // `createMany` has no event guard of its own (`create` does), so the switch is read here, once.
+    if (!(await isNotificationEventEnabled(EVENT_KEY))) return 0;
     const excluded = await actorUserIds(change);
-    const watchers = await db.wikiWatchlist.findMany({
-      where: {
-        articleId: change.articleId,
-        notificationTime: null,
-        ...(excluded.length > 0 ? { userId: { notIn: excluded } } : {}),
-      },
-      select: { id: true, userId: true },
-      take: MAX_WATCHERS_PER_EVENT,
-    });
     const text = describeChange(change);
     let notified = 0;
-    for (let i = 0; i < watchers.length; i += CLAIM_BATCH) {
-      const batch = watchers.slice(i, i + CLAIM_BATCH);
-      const sent = await Promise.all(batch.map((watcher) => notifyWatcher(watcher, change, text)));
-      notified += sent.filter(Boolean).length;
+    let afterId: string | null = null;
+    for (;;) {
+      const chunk = await findWatchers(change, excluded, afterId);
+      notified += await notifyChunk(chunk, change, text);
+      const last = chunk.at(-1);
+      if (!last || chunk.length < WATCHER_CHUNK) return notified;
+      afterId = last.id;
     }
-    return notified;
   } catch (error) {
     console.warn("[WatchlistNotify] Could not notify watchers:", error);
     return 0;
