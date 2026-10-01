@@ -242,7 +242,16 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                   selected={morePrefsExpanded}
                   selectionStyle="tint"
                   aria-current={false}
-                  leading={<BookOpen className="text-blue size-4" />}
+                  leading={
+                    <span
+                      className={cn(
+                        "rounded-control-sm block p-2",
+                        morePrefsExpanded ? "bg-blue/20" : "bg-blue/15"
+                      )}
+                    >
+                      <BookOpen className="text-blue size-3.5" />
+                    </span>
+                  }
                   title={morePrefsExpanded ? "Reader Preferences" : "More Preferences"}
                   subtitle={morePrefsExpanded ? undefined : "Citations, TOC, search, & links"}
                   accessory={
@@ -267,7 +276,11 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                 <FacetListSection aria-label="Account">
                   <FacetRow
                     onClick={() => (window.location.href = createAbsoluteUrl("/settings"))}
-                    leading={<User className="text-blue size-4" />}
+                    leading={
+                      <span className="rounded-control-sm bg-blue/15 block p-2">
+                        <User className="text-blue size-3.5" />
+                      </span>
+                    }
                     title="Account Settings"
                     subtitle="Profile, preferences, & security"
                     accessory="chevron"
@@ -402,7 +415,11 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                       onClose();
                       router.push(withBasePath("/settings#wiki-settings"));
                     }}
-                    leading={<BookOpen className="text-indigo size-4" />}
+                    leading={
+                      <span className="rounded-control-sm bg-indigo/15 block p-2">
+                        <BookOpen className="text-indigo size-3.5" />
+                      </span>
+                    }
                     title="Wiki System Settings"
                     subtitle="Autonomous lore scanner & sources"
                     accessory="chevron"

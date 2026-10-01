@@ -16,6 +16,7 @@ import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { stripBasePath } from "~/lib/base-path";
 import { PreText } from "~/components/ui/pretext";
 import { springSmooth, tweenExit } from "~/lib/design/motion";
+import { FacetMaterial } from "~/components/ui/facet";
 
 // ─── Section color mapping (system colour roles, spec §2.1) ─────────────────────
 export const SECTION_COLORS: Record<string, { accent: string; bg: string; label: string }> = {
@@ -118,7 +119,12 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
           exit={{ opacity: 0, y: -8, scale: 0.96, transition: tweenExit }}
           transition={springSmooth}
         >
-          <div className="material-thick shadow-floating rounded-card overflow-hidden">
+          {/* v2: the island's expanded acrylic sheet with its refraction edges. */}
+          <FacetMaterial
+            material="acrylic"
+            data-expanded="true"
+            className="rounded-card isolate overflow-hidden"
+          >
             {/* Primary nav grid */}
             <div className="grid grid-cols-2 gap-1 p-2">
               {PRIMARY_NAV.map((item, i) => {
@@ -136,15 +142,15 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
                       href={item.href}
                       onClick={onClose}
                       aria-current={active ? "page" : undefined}
-                      className={`group rounded-row flex items-center gap-2 px-3 py-2 transition-colors duration-150 ${
+                      className={`group rounded-row flex items-center gap-2 px-3 py-2 transition-[color,background-color,box-shadow] duration-200 ${
                         active
-                          ? "bg-fill-3 text-label"
+                          ? "bg-fill-3 text-label shadow-card"
                           : "text-label-secondary hover:bg-fill-4 hover:text-label"
                       }`}
                     >
                       <div
-                        className={`rounded-control flex size-8 shrink-0 items-center justify-center transition-colors duration-150 ${
-                          active ? "" : "bg-fill-4 group-hover:bg-fill-3"
+                        className={`rounded-control-sm flex size-8 shrink-0 items-center justify-center transition-colors duration-150 ${
+                          active ? "shadow-card" : "bg-fill-4 group-hover:bg-fill-3"
                         }`}
                         style={
                           active
@@ -158,10 +164,10 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
                           className="flex items-center justify-center"
                           style={active ? { color: item.accent } : undefined}
                         >
-                          <Icon className="size-4" />
+                          <Icon className="size-4 transition-[scale] duration-200 motion-safe:group-hover:scale-110" />
                         </div>
                       </div>
-                      <PreText className="text-caption" whiteSpace="nowrap">
+                      <PreText className="text-caption font-medium" whiteSpace="nowrap">
                         {item.name}
                       </PreText>
                       {active && (
@@ -200,7 +206,7 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
                 ))}
               </div>
             </div>
-          </div>
+          </FacetMaterial>
         </motion.nav>
       )}
     </AnimatePresence>

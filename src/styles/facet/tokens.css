@@ -850,6 +850,18 @@
     --acrylic-rim-active: inset 0 1px 0 rgb(255 255 255 / 1), inset 0 -1px 0 rgb(0 0 0 / 0.04);
     --acrylic-shadow: 0 16px 36px -8px rgb(0 0 0 / 0.12), 0 4px 12px -2px rgb(0 0 0 / 0.04);
     --acrylic-shadow-active: 0 20px 44px -8px rgb(0 0 0 / 0.14), 0 6px 14px -2px rgb(0 0 0 / 0.05);
+    /* Expanded sheet (`data-expanded="true"`) — v2 `.dynamic-island-shell[data-expanded]`. */
+    --acrylic-fill-expanded-from: rgb(255 255 255 / 0.94);
+    --acrylic-fill-expanded-to: rgb(250 250 253 / 0.89);
+    --acrylic-border-expanded: rgb(0 0 0 / 0.1);
+    --acrylic-blur-expanded: 40px;
+    --acrylic-saturate-expanded: 210%;
+    --acrylic-brightness-expanded: 102%;
+    --acrylic-rim-expanded:
+      inset 0 1.5px 1px rgb(255 255 255 / 1), inset 0 0 0 1px rgb(255 255 255 / 0.65),
+      inset 0 -1px 0 rgb(0 0 0 / 0.03);
+    --acrylic-shadow-expanded:
+      0 32px 64px -12px rgb(0 0 0 / 0.18), 0 12px 28px -4px rgb(0 0 0 / 0.08);
 
     /* Refraction hairline (`<Refraction />`): v2 `.facet-refraction::after` stops. */
     --refraction-peak: rgb(255 255 255 / 0.35);
@@ -943,6 +955,15 @@
     --acrylic-rim-active: inset 0 1px 0 rgb(255 255 255 / 0.2), inset 0 -1px 0 rgb(0 0 0 / 0.5);
     --acrylic-shadow: 0 20px 48px -10px rgb(0 0 0 / 0.65), 0 8px 20px -4px rgb(0 0 0 / 0.45);
     --acrylic-shadow-active: 0 24px 54px -10px rgb(0 0 0 / 0.72), 0 10px 24px -4px rgb(0 0 0 / 0.5);
+    --acrylic-fill-expanded-from: rgb(24 28 40 / 0.94);
+    --acrylic-fill-expanded-to: rgb(13 15 22 / 0.96);
+    --acrylic-border-expanded: rgb(255 255 255 / 0.15);
+    --acrylic-brightness-expanded: 104%;
+    --acrylic-rim-expanded:
+      inset 0 1px 1px rgb(255 255 255 / 0.28), inset 0 0 0 1px rgb(255 255 255 / 0.06),
+      inset 0 -1px 0 rgb(0 0 0 / 0.6);
+    --acrylic-shadow-expanded:
+      0 36px 72px -16px rgb(0 0 0 / 0.88), 0 16px 32px -6px rgb(0 0 0 / 0.6);
 
     --refraction-peak: rgb(255 255 255 / 0.3);
     --refraction-soft: rgb(255 255 255 / 0.12);

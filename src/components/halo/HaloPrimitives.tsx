@@ -13,6 +13,7 @@ import React, {
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
 import { springSnappy } from "~/lib/design/motion";
+import { DynamicIslandEffects } from "./DynamicIslandEffects";
 
 // The island morphs with the Facet snappy spring (spec §8): it answers a press directly, at the
 // same settle speed as the controls inside it.
@@ -327,18 +328,21 @@ export const DynamicIslandContent = ({
           }}
           transition={springSnappy}
         >
+          {/* v2 red → orange alert glow, on the system colours. */}
           <div className="bg-destructive/35 absolute inset-0 rounded-[inherit] blur-xl" />
+          <div className="bg-orange/25 absolute inset-0 rounded-[inherit] blur-lg" />
         </motion.div>
       )}
 
       <motion.div
         id={id}
         data-expanded={!isCompact ? "true" : undefined}
-        // Halo is floating chrome (spec §5): regular glass as the pill, thick glass when expanded
-        // into a panel. Content inside stays on opaque roles.
+        // Halo is the v2 acrylic island (spec §16.1 #6, v2 `.dynamic-island-shell`): 28px / 190%
+        // as the pill, the 40px / 210% frosted sheet once `data-expanded` opens it into a panel,
+        // over the v2 blue / indigo / cyan glow underlay with the four refraction edges. Content
+        // inside stays on opaque roles.
         className={cn(
-          "shadow-floating relative mx-auto items-center justify-center text-center",
-          isCompact ? "material-regular" : "material-thick",
+          "material-acrylic facet-acrylic-brand relative mx-auto items-center justify-center text-center",
           isImpersonating && "ring-destructive ring-2"
         )}
         initial={{
@@ -361,6 +365,8 @@ export const DynamicIslandContent = ({
         }}
         {...props}
       >
+        <DynamicIslandEffects />
+
         <div
           ref={contentRef}
           className={`z-raised relative h-auto w-full ${isAutoHeight ? "overflow-visible" : "overflow-hidden"}`}
@@ -426,7 +432,8 @@ export const Halo = ({ children, id, ...props }: { children: ReactNode; id: stri
   if (!mounted) {
     return (
       <HaloOuterWrapper>
-        <div className="material-regular shadow-floating relative mx-auto h-11 items-center justify-center rounded-full px-4 text-center">
+        <div className="material-acrylic facet-acrylic-brand relative isolate mx-auto h-11 items-center justify-center rounded-full px-4 text-center">
+          <DynamicIslandEffects />
           {children}
         </div>
       </HaloOuterWrapper>

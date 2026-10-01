@@ -12,8 +12,10 @@
  * - Settings popover → theme + projection only
  * - Click-outside → smooth retraction
  *
- * Facet 3 chrome (spec §5, §7.4): the island is a `FacetMaterial` — `material-regular` as a
- * pill, `material-thick` while searching — and the results list a `material-regular` panel.
+ * Facet 3.1 chrome (spec §16.1 #6): the island is Halo's acrylic — `FacetMaterial material="acrylic"`
+ * with the v2 blue / indigo / cyan glow underlay and the four refraction edges, opening into the
+ * 40px / 210% expanded sheet (`data-expanded`) while searching — and the results list a
+ * `material-regular` panel.
  * Desktop springs its size (layout animation); phones swap content without it.
  */
 
@@ -237,16 +239,17 @@ export function MapDynamicIsland({
     </>
   );
 
-  /** The island is chrome over the map: `material-regular`, `material-thick` while searching. */
+  /** The island is Halo's acrylic over the map; `data-expanded` while searching. */
   const islandClass = cn(
-    "shadow-floating overflow-hidden rounded-full transition-[outline-color] duration-200",
+    "facet-acrylic-brand overflow-hidden rounded-full transition-[outline-color,background-color,border-color,box-shadow,backdrop-filter] duration-300",
     "outline-2 outline-transparent outline-solid",
     isFlashing && "outline-red/70"
   );
 
   const mobilePill = (
     <FacetMaterial
-      material={searchOpen ? "thick" : "regular"}
+      material="acrylic"
+      glow
       data-expanded={searchOpen ? "true" : undefined}
       className={islandClass}
     >
@@ -262,7 +265,8 @@ export function MapDynamicIsland({
 
   const desktopPill = (
     <MotionFacetMaterial
-      material={searchOpen ? "thick" : "regular"}
+      material="acrylic"
+      glow
       layout
       transition={SPRING}
       animate={isFlashing ? { scale: [1, 1.05, 1] } : { scale: 1 }}

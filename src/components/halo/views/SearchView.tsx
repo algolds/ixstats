@@ -123,7 +123,7 @@ function SearchViewComponent({
                   result.action();
                   closeDropdown();
                 }}
-                className="group rounded-row hover:bg-fill-3 focus-visible:outline-tint duration-fast ease-out-facet flex w-full items-center gap-3 p-3 text-left transition-colors select-none focus-visible:outline-2"
+                className="group rounded-row hover:bg-fill-3 focus-visible:outline-tint facet-press facet-press-subtle flex w-full items-center gap-3 p-3 text-left select-none focus-visible:outline-2"
               >
                 {/* Icon or Flag */}
                 <div className="rounded-control bg-fill-4 flex h-9 w-9 shrink-0 items-center justify-center">

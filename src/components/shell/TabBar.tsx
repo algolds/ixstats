@@ -3,9 +3,11 @@
 /**
  * TabBar (Facet 3 spec §7.4): the primary navigation below 1024px when the `facet-nav` flag is on.
  *
- * A floating `material-regular` bar at the bottom (`z-chrome`, clear of the home indicator via the
- * safe-area inset) with up to four primary apps (`TAB_BAR_PRIORITY`) and "More". More opens a bottom
- * `Sheet` with detents listing the current app's sections and the remaining apps (`FacetList`).
+ * A floating v2-styled acrylic bar at the bottom (Facet 3.1 spec §16.1 #9: `material-acrylic`, the
+ * v2 blue / indigo / cyan glow underlay and refraction edges; `z-chrome`, clear of the home
+ * indicator via the safe-area inset) with up to four primary apps (`TAB_BAR_PRIORITY`) and "More".
+ * More opens a bottom `Sheet` with detents listing the current app's sections and the remaining
+ * apps (`FacetList`).
  * Targets are at least 44px; the current tab and rows carry `aria-current="page"`. Content reserves
  * the bar's height through `--shell-tabbar-height` (`src/styles/facet/shell.css`).
  */
@@ -26,6 +28,7 @@ import {
 } from "~/components/ui/sheet";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { springSnappy } from "~/lib/design/motion";
+import { FacetMaterial } from "~/components/ui/facet";
 import {
   getActiveSectionId,
   getAppForPath,
@@ -91,47 +94,54 @@ export function TabBar({ pathname, searchParams, apps, className }: TabBarProps)
           className
         )}
       >
-        <ul className="material-regular shadow-floating rounded-sheet mx-auto flex h-14 max-w-lg items-stretch gap-1 px-1">
-          {primary.map((app) => {
-            const active = app.id === current?.id;
-            return (
-              <li key={app.id} className="flex min-w-0 flex-1">
-                <Link
-                  href={app.href}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    tabClassName,
-                    focusRing,
-                    active ? "text-tint font-medium" : "text-label-secondary hover:text-label"
-                  )}
-                >
-                  {active && <TabIndicator />}
-                  <TabLabel icon={app.icon} label={app.label} />
-                </Link>
-              </li>
-            );
-          })}
-          <li className="flex min-w-0 flex-1">
-            <button
-              type="button"
-              aria-haspopup="dialog"
-              aria-expanded={moreOpen}
-              onClick={() => setMoreOpen(true)}
-              data-current={!currentIsPrimary && current ? "" : undefined}
-              className={cn(
-                tabClassName,
-                focusRing,
-                "cursor-pointer",
-                !currentIsPrimary && current
-                  ? "text-tint font-medium"
-                  : "text-label-secondary hover:text-label"
-              )}
-            >
-              {!currentIsPrimary && current && <TabIndicator />}
-              <TabLabel icon={MoreHoriz} label="More" />
-            </button>
-          </li>
-        </ul>
+        <FacetMaterial
+          material="acrylic"
+          glow
+          data-slot="tab-bar-panel"
+          className="facet-acrylic-brand rounded-sheet mx-auto max-w-lg"
+        >
+          <ul className="relative flex h-14 items-stretch gap-1 px-1">
+            {primary.map((app) => {
+              const active = app.id === current?.id;
+              return (
+                <li key={app.id} className="flex min-w-0 flex-1">
+                  <Link
+                    href={app.href}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      tabClassName,
+                      focusRing,
+                      active ? "text-tint font-medium" : "text-label-secondary hover:text-label"
+                    )}
+                  >
+                    {active && <TabIndicator />}
+                    <TabLabel icon={app.icon} label={app.label} />
+                  </Link>
+                </li>
+              );
+            })}
+            <li className="flex min-w-0 flex-1">
+              <button
+                type="button"
+                aria-haspopup="dialog"
+                aria-expanded={moreOpen}
+                onClick={() => setMoreOpen(true)}
+                data-current={!currentIsPrimary && current ? "" : undefined}
+                className={cn(
+                  tabClassName,
+                  focusRing,
+                  "cursor-pointer",
+                  !currentIsPrimary && current
+                    ? "text-tint font-medium"
+                    : "text-label-secondary hover:text-label"
+                )}
+              >
+                {!currentIsPrimary && current && <TabIndicator />}
+                <TabLabel icon={MoreHoriz} label="More" />
+              </button>
+            </li>
+          </ul>
+        </FacetMaterial>
       </nav>
 
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>

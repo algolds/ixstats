@@ -319,7 +319,14 @@ function BuilderProgressViewComponent({ filter, context, onClose }: BuilderProgr
             </div>
           </div>
 
-          <Button onClick={handleContinue} className="mt-4 w-full" type="button">
+          {/* v2 BUILDER_GOLD: Halo floats outside the Builder's `data-app="mycountry"` scope, so the
+              primary opts into the gold itself. */}
+          <Button
+            onClick={handleContinue}
+            data-app="mycountry"
+            className="mt-4 w-full"
+            type="button"
+          >
             Continue Designing
             <ArrowRight aria-hidden="true" />
           </Button>

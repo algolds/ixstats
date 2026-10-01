@@ -34,7 +34,9 @@ v2 (`c5c6b382`).** App agents: use exactly these props and classes; don't hand-r
 Also available: **headings** are heavy and tight automatically (`text-display` … `text-title-3`); **press/lift
 physics** are built into the primitives (`facet-press`, `facet-press-sm`, `facet-press-subtle`, `facet-lift` for
 custom pressables — they carry their own transition); **acrylic chrome** for Halo and the sidebar/tab bar:
-`<FacetMaterial material="acrylic" glow>` (or `material-acrylic` + `<DynamicIslandEffects />` on a `motion` box);
+`<FacetMaterial material="acrylic" glow>` (or `material-acrylic` + `<DynamicIslandEffects />` on a `motion` box) —
+add `facet-acrylic-brand` for the v2 blue / indigo / cyan glow hues instead of the tint, and `data-expanded="true"`
+for the 40px / 210% expanded sheet;
 **achievements**: `facet-aurora`, `facet-radiance`, `facet-foil`, `facet-ghost-heraldry`, `facet-jewel` layers driven
 by `--accent`, `--accent-2` and `--heraldry-mask: url(…)` (positioned with utilities, `aria-hidden`; add
 `data-interactive="true"` to aurora/radiance to brighten on card hover). The materials lab (Admin → Facet lab)
@@ -149,10 +151,10 @@ utilities, so `cn("text-body text-label")` keeps both.
 | Utility | Use |
 |---|---|
 | `material-thin` | Toolbars, sub-headers, small floating buttons |
-| `material-regular` | Map panels, Halo, AppSidebar and TabBar |
+| `material-regular` | Map panels and floating map toolbars |
 | `material-thick` | Popovers, menus, map context menus and floating dialogs over the map |
 | `material-hero` | Facet 3.1 glass hero tier: hero/feature cards (`FacetCard variant="glass"`, `CutoutCard variant="glass"`, `FacetMaterial material="hero"`) — v2 glass with the tint wash, white rim, tinted border and shadow |
-| `material-acrylic` | Facet 3.1 Halo island and navigation acrylic (`FacetMaterial material="acrylic" glow`) — v2 `.dynamic-island-shell` |
+| `material-acrylic` | Facet 3.1 Halo island, map island, AppSidebar and TabBar (`FacetMaterial material="acrylic" glow`, `facet-acrylic-brand` for the v2 blue / indigo / cyan glow) — v2 `.dynamic-island-shell`; `data-expanded="true"` is the v2 expanded sheet (40px / 210%, double inset rim), used by the open Halo and its nav tray |
 
 Materials switch to opaque under Reduce Transparency and step down one blur level on small screens. Anything inside a
 material uses opaque roles. **Elevation:** `shadow-card` (cards), `shadow-floating` (popovers, menus, map panels),
@@ -334,8 +336,8 @@ to do the same for page-level differences (e.g. adopting `PageHeader` only under
 |---|---|
 | `AppShell` | Root frame in `app/layout.tsx`: `legacyNav`, `beforeMain`, `children`. Renders `<main data-shell-main>`; sets `data-chromeless` on chromeless routes. |
 | `FacetShell` | Wires the sidebar, tab bar and Halo to the route, user, admin role, admin navigation settings and persisted collapsed state. |
-| `AppSidebar` | `pathname`, `searchParams`, `apps`, `collapsed`, `onCollapsedChange`, `account`, `signIn`. Floating `material-regular` panel, `z-chrome`, 256px / 64px collapsed (persisted, `ixstats-sidebar-collapsed`). App switcher (menu) on top, the current app's sections (current one tinted, `aria-current="page"`, spring-smooth indicator), account + Settings + collapse toggle at the bottom. `<nav aria-label="App navigation">`; collapsed rows keep their names (sr-only) and get tooltips. |
-| `TabBar` | `pathname`, `searchParams`, `apps`. Floating `material-regular` bar above the safe-area inset, `z-chrome`: four primary apps (`TAB_BAR_PRIORITY`) + **More**, which opens a bottom `Sheet` (medium/large detents) with the current app's sections and the other apps as a `FacetList`. 44px targets, `aria-current`. |
+| `AppSidebar` | `pathname`, `searchParams`, `apps`, `collapsed`, `onCollapsedChange`, `account`, `signIn`. Floating v2 acrylic panel (`material-acrylic` + `facet-acrylic-brand` glow, refraction edges), `z-chrome`, 256px / 64px collapsed (persisted, `ixstats-sidebar-collapsed`). App switcher (menu) on top, the current app's sections (current one tinted, `aria-current="page"`, spring-smooth indicator), account + Settings + collapse toggle at the bottom. `<nav aria-label="App navigation">`; collapsed rows keep their names (sr-only) and get tooltips. |
+| `TabBar` | `pathname`, `searchParams`, `apps`. Floating v2 acrylic bar (`material-acrylic` + `facet-acrylic-brand` glow, refraction edges) above the safe-area inset, `z-chrome`: four primary apps (`TAB_BAR_PRIORITY`) + **More**, which opens a bottom `Sheet` (medium/large detents) with the current app's sections and the other apps as a `FacetList`. 44px targets, `aria-current`. |
 | `PageHeader` | `title`, `subtitle?`, `back?: { href, label? }`, `actions?`. `text-large-title` `<h1>` that collapses into a sticky `material-thin` toolbar title when it scrolls under the toolbar (opacity only; instant under Reduce Motion). Reference adoption: `/help` (flag on only). |
 | `ShellGate` | `variant="facet" \| "legacy"`: render children only under that shell (CSS-gated until hydrated). |
 | `ShellPageHeader` | `title`, `subtitle?`, `back?`, `actions?`, `phoneOnly?` (default true), `className?`. An app index page's `PageHeader` inside `ShellGate variant="facet"`, `lg:hidden` by default — phones get a title (the TabBar has none) while the sidebar names the app at ≥1024px. Nothing with the flag off. Adopted on `/dashboard`, `/vault`, `/thinkpages`, `/forum`, `/myleague`, `/settings`, `/admin`, `/countries`. A page that keeps its own title spreads `shellPageTitleProps` (`data-shell-page-title`) on it: under the new shell that element is hidden wherever the page's `ShellPageHeader` shows (below 1024px, or every width with `phoneOnly={false}`), in CSS before first paint — no ad-hoc `facet-nav:max-lg:hidden`. Used by `/countries` and the `/thinkpages` hub. |

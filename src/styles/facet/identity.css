@@ -171,8 +171,10 @@
 
 /* `material-acrylic`: the Halo island / navigation acrylic — v2 `.dynamic-island-shell` (28px /
    190%, white 85% / obsidian 88%, inset top rim and bottom shade, deep shadow), brightening on
-   hover / focus-within / active. Pair with `<AcrylicGlow />` (coloured underlay) and
-   `<Refraction edges="all" />` (edge refraction). Chrome only; never nested. */
+   hover / focus-within / active (32px / 200%). `data-expanded="true"` is the v2 expanded sheet:
+   40px / 210% with a lift in brightness, a top-to-bottom fill, the double inset rim (top lip +
+   inner ring + bottom shade) and the deepest shadow. Pair with `<AcrylicGlow />` (coloured
+   underlay) and `<Refraction edges="all" />` (edge refraction). Chrome only; never nested. */
 
 @utility material-acrylic {
   background-color: var(--acrylic-fill);
@@ -190,8 +192,7 @@
   transition-timing-function: var(--tw-ease, cubic-bezier(0.16, 1, 0.3, 1));
   &:hover,
   &:focus-within,
-  &:active,
-  &[data-expanded="true"] {
+  &:active {
     background-color: var(--acrylic-fill-active);
     border-color: var(--acrylic-border-active);
     --tw-inset-shadow: var(--acrylic-rim-active);
@@ -199,33 +200,65 @@
     -webkit-backdrop-filter: blur(var(--acrylic-blur-active)) saturate(var(--acrylic-saturate-active));
     backdrop-filter: blur(var(--acrylic-blur-active)) saturate(var(--acrylic-saturate-active));
   }
+  /* v2 `.dynamic-island-shell[data-expanded="true"]`: the frosted sheet the island opens into. */
+  &[data-expanded="true"] {
+    background-color: var(--acrylic-fill-expanded-to);
+    background-image: linear-gradient(
+      180deg,
+      var(--acrylic-fill-expanded-from),
+      var(--acrylic-fill-expanded-to)
+    );
+    border-color: var(--acrylic-border-expanded);
+    --tw-inset-shadow: var(--acrylic-rim-expanded);
+    --tw-shadow: var(--acrylic-shadow-expanded);
+    -webkit-backdrop-filter: blur(var(--acrylic-blur-expanded))
+      saturate(var(--acrylic-saturate-expanded)) brightness(var(--acrylic-brightness-expanded));
+    backdrop-filter: blur(var(--acrylic-blur-expanded)) saturate(var(--acrylic-saturate-expanded))
+      brightness(var(--acrylic-brightness-expanded));
+  }
   @media (max-width: 768px) {
     -webkit-backdrop-filter: blur(20px) saturate(var(--acrylic-saturate));
     backdrop-filter: blur(20px) saturate(var(--acrylic-saturate));
+    &[data-expanded="true"] {
+      -webkit-backdrop-filter: blur(28px) saturate(var(--acrylic-saturate-expanded));
+      backdrop-filter: blur(28px) saturate(var(--acrylic-saturate-expanded));
+    }
   }
-  /* Reduce Transparency: opaque, including the brighter hover / expanded states. */
-  @media (prefers-reduced-transparency: reduce) {
+  /* Reduce Transparency and Increase Contrast (spec §16.2): opaque `surface-elevated`, including
+     the brighter hover / expanded states. */
+  @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
     &,
     &:hover,
     &:focus-within,
     &:active,
     &[data-expanded="true"] {
       background-color: var(--color-surface-elevated);
+      background-image: none;
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
     }
   }
-  &:where([data-transparency="reduced"] *) {
+  &:where([data-transparency="reduced"] *, [data-contrast="more"] *) {
     &,
     &:hover,
     &:focus-within,
     &:active,
     &[data-expanded="true"] {
       background-color: var(--color-surface-elevated);
+      background-image: none;
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
     }
   }
+}
+
+/* `facet-acrylic-brand`: the v2 Halo / navigation glow hues (DynamicIslandEffects' blue, indigo
+   and cyan) for the `<AcrylicGlow />` inside this element, instead of the app tint. On the Halo
+   island, the AppSidebar / TabBar acrylic and the map island; the tint still marks selection. */
+@utility facet-acrylic-brand {
+  --acrylic-glow-a: var(--color-blue);
+  --acrylic-glow-b: var(--color-indigo);
+  --acrylic-glow-c: var(--color-cyan);
 }
 
 /* ─── Primary action: monochrome, gold in MyCountry / Builder ─────────────
@@ -349,33 +382,48 @@
   }
 
   /* ─── Acrylic glow underlay (<AcrylicGlow />) ──────────────────────────
-     v2 DynamicIslandEffects' three glow layers (blue/indigo/cyan at 20/15/10% under
-     xl/lg/md blur), recoloured by the app tint. No looping shimmer (spec §8). */
+     v2 DynamicIslandEffects' three glow layers (blue → indigo → blue at 20% under an xl blur,
+     cyan → indigo → blue at 15% under lg, blue-300 → indigo-300 → cyan-300 at 10% under md).
+     The three hues are `--acrylic-glow-a/b/c`; unset, every stop is the app tint. The navigation
+     chrome sets them to the v2 blue / indigo / cyan with `facet-acrylic-brand`. No looping
+     shimmer (spec §8). */
   .facet-acrylic-glow {
     pointer-events: none;
     background-image: linear-gradient(
       var(--acrylic-glow-angle, 90deg),
-      color-mix(in srgb, var(--tint) 20%, transparent),
-      color-mix(in srgb, var(--tint) 14%, transparent),
-      color-mix(in srgb, var(--tint) 20%, transparent)
+      color-mix(in srgb, var(--acrylic-glow-a, var(--tint)) 20%, transparent),
+      color-mix(in srgb, var(--acrylic-glow-b, var(--tint)) 20%, transparent),
+      color-mix(in srgb, var(--acrylic-glow-a, var(--tint)) 20%, transparent)
     );
     filter: blur(24px);
   }
   .facet-acrylic-glow[data-layer="2"] {
     background-image: linear-gradient(
       var(--acrylic-glow-angle, 90deg),
-      color-mix(in srgb, var(--tint) 15%, transparent),
-      color-mix(in srgb, var(--tint) 10%, transparent),
-      color-mix(in srgb, var(--tint) 15%, transparent)
+      color-mix(in srgb, var(--acrylic-glow-c, var(--tint)) 15%, transparent),
+      color-mix(in srgb, var(--acrylic-glow-b, var(--tint)) 15%, transparent),
+      color-mix(in srgb, var(--acrylic-glow-a, var(--tint)) 15%, transparent)
     );
     filter: blur(16px);
   }
   .facet-acrylic-glow[data-layer="3"] {
     background-image: linear-gradient(
       var(--acrylic-glow-angle, 90deg),
-      color-mix(in srgb, color-mix(in srgb, var(--tint) 60%, white) 10%, transparent),
-      color-mix(in srgb, color-mix(in srgb, var(--tint) 60%, white) 6%, transparent),
-      color-mix(in srgb, color-mix(in srgb, var(--tint) 60%, white) 10%, transparent)
+      color-mix(
+        in srgb,
+        color-mix(in srgb, var(--acrylic-glow-a, var(--tint)) 60%, white) 10%,
+        transparent
+      ),
+      color-mix(
+        in srgb,
+        color-mix(in srgb, var(--acrylic-glow-b, var(--tint)) 60%, white) 10%,
+        transparent
+      ),
+      color-mix(
+        in srgb,
+        color-mix(in srgb, var(--acrylic-glow-c, var(--tint)) 60%, white) 10%,
+        transparent
+      )
     );
     filter: blur(12px);
   }

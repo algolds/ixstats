@@ -114,11 +114,13 @@ export function HaloTourTooltip() {
                 : "top-1/2 left-1/2 w-[350px] -translate-x-1/2 -translate-y-1/2"
             )}
           >
+            {/* v2: the island's acrylic with its four refraction edges, a tint ring and a soft
+                tint glow around the card. */}
             <FacetMaterial
-              material="thick"
+              material="acrylic"
               role="dialog"
               aria-label="Halo walkthrough"
-              className="text-label rounded-card shadow-sheet p-6"
+              className="text-label rounded-card ring-tint/25 facet-glow p-6 ring-1"
             >
               <div className="relative z-10 flex flex-col gap-3">
                 {/* Header & Close */}

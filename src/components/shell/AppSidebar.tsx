@@ -3,10 +3,12 @@
 /**
  * AppSidebar (Facet 3 spec §7.4): the primary navigation at ≥1024px when the `facet-nav` flag is on.
  *
- * `material-regular` floating panel on the leading edge (`z-chrome`, 256px, collapsible to 64px
- * icons; the width is the `--shell-sidebar-width` variable from `src/styles/facet/shell.css`, so
- * the persisted collapsed state is right before first paint). Top: the app switcher. Middle: the
- * current app's sections from the section map, the current one tinted and `aria-current="page"`.
+ * v2-styled acrylic panel (Facet 3.1 spec §16.1 #9: `material-acrylic` with the v2 blue / indigo /
+ * cyan glow underlay and the four refraction edges) floating on the leading edge (`z-chrome`,
+ * 256px, collapsible to 64px icons; the width is the `--shell-sidebar-width` variable from
+ * `src/styles/facet/shell.css`, so the persisted collapsed state is right before first paint).
+ * Top: the app switcher. Middle: the current app's sections from the section map, the current one
+ * tinted and `aria-current="page"`.
  * Sections with a `group` are listed under a sub-heading (`role="group"`). Bottom: the account,
  * Settings and the collapse toggle.
  *
@@ -36,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { springSmooth } from "~/lib/design/motion";
+import { FacetMaterial } from "~/components/ui/facet";
 import {
   getActiveSectionId,
   getAppForPath,
@@ -225,7 +228,13 @@ export function AppSidebar({
         className
       )}
     >
-      <div className="material-regular shadow-floating rounded-card flex min-h-0 flex-1 flex-col overflow-hidden">
+      <FacetMaterial
+        material="acrylic"
+        glow
+        glowOrientation="vertical"
+        data-slot="app-sidebar-panel"
+        className="facet-acrylic-brand flex min-h-0 flex-1 flex-col"
+      >
         <div className="p-2">
           <AppSwitcher apps={switcherApps} current={current} collapsed={collapsed} />
         </div>
@@ -343,7 +352,7 @@ export function AppSidebar({
             </button>
           </CollapsedTooltip>
         </div>
-      </div>
+      </FacetMaterial>
     </nav>
   );
 }
