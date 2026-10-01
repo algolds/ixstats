@@ -325,7 +325,6 @@ function ThreadCard({
 
   const deleteCommentMutation = api.wikios.deleteComment.useMutation({
     onSuccess: (result, variables) => {
-      soundEffects.release();
       setMoreComments((prev) => prev.filter((c) => c.id !== variables.commentId));
       notify.success(result.threadDeleted ? "Thread deleted" : "Comment deleted");
       onRefetch();
@@ -463,8 +462,7 @@ function ThreadCard({
           <div className="border-separator space-y-2 border-t pt-1">
             {comments.map((comment) => {
               const commentLiveAvatar = comment.author.isAuthor ? currentUserAvatar : undefined;
-              const canDeleteComment =
-                isAuthenticated && (comment.author.isAuthor || canModerate);
+              const canDeleteComment = isAuthenticated && (comment.author.isAuthor || canModerate);
 
               return (
                 <div
@@ -508,7 +506,7 @@ function ThreadCard({
                             }
                           }}
                           disabled={deleteCommentMutation.isPending}
-                          className="text-label-secondary opacity-0 group-hover:opacity-100 hover:text-red focus-visible:opacity-100"
+                          className="text-label-secondary hover:text-red opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
                           title="Delete comment"
                           aria-label="Delete comment"
                         >

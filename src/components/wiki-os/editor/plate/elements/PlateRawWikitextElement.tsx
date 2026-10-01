@@ -28,9 +28,15 @@ const READ_ONLY = "It is saved exactly as written; edit it in the source editor.
 function describeConstruct(el: PlateNode): ConstructInfo {
   switch (el.construct) {
     case "redirect":
-      return { label: "Redirect", description: `This page redirects to another page. ${READ_ONLY}` };
+      return {
+        label: "Redirect",
+        description: `This page redirects to another page. ${READ_ONLY}`,
+      };
     case "comment":
-      return { label: "Comment", description: `An HTML comment, invisible to readers. ${READ_ONLY}` };
+      return {
+        label: "Comment",
+        description: `An HTML comment, invisible to readers. ${READ_ONLY}`,
+      };
     case "magic-word":
       return {
         label: "Magic word",
@@ -105,15 +111,15 @@ export function PlateRawWikitextElement({
         aria-label={`${label} block, read-only source`}
         tabIndex={0}
         title={description}
-        className="group relative rounded-xl border border-border/60 bg-card/75 px-3 py-2 text-xs shadow-xs backdrop-blur-xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-wiki/50 hover:bg-card/95 focus-visible:border-wiki/60 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+        className="group rounded-row border-separator bg-surface text-footnote shadow-card hover:border-tint/50 focus-visible:border-tint focus-visible:outline-tint relative border px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-visible:outline-2 focus-visible:outline-offset-2"
       >
         <div className="mb-1.5 flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-2">
-            <span className="flex h-6 shrink-0 items-center justify-center rounded-lg border border-wiki/30 bg-wiki/10 px-2 font-mono text-xs font-bold tracking-wider text-wiki uppercase select-none">
+            <span className="border-wiki/30 bg-wiki/10 text-wiki flex h-6 shrink-0 items-center justify-center rounded-lg border px-2 font-mono text-xs font-bold tracking-wider uppercase select-none">
               {label}
             </span>
             {/* One line at rest; the whole text on hover and keyboard focus (and always as the tooltip). */}
-            <span className="min-w-0 truncate pt-1 text-muted-foreground group-focus-within:overflow-visible group-focus-within:whitespace-normal group-hover:overflow-visible group-hover:whitespace-normal">
+            <span className="text-muted-foreground min-w-0 truncate pt-1 group-focus-within:overflow-visible group-focus-within:whitespace-normal group-hover:overflow-visible group-hover:whitespace-normal">
               {description}
             </span>
           </div>
@@ -124,7 +130,7 @@ export function PlateRawWikitextElement({
               onClick={handleCopy}
               aria-label={`Copy the source of this ${label} block`}
               title="Copy the source"
-              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-secondary/60 hover:text-foreground active:scale-[0.97]"
+              className="text-muted-foreground hover:bg-secondary/60 hover:text-foreground flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
             >
               <CopyIcon className="h-3.5 w-3.5" />
             </button>
@@ -135,7 +141,7 @@ export function PlateRawWikitextElement({
                 onClick={() => setConfirmOpen(true)}
                 aria-label={`Remove this ${label} block`}
                 title="Remove this block"
-                className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-destructive/10 hover:text-destructive active:scale-[0.97]"
+                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
               >
                 <TrashIcon className="h-3.5 w-3.5" />
               </button>
@@ -147,7 +153,7 @@ export function PlateRawWikitextElement({
           aria-label={`Source of the ${label} block`}
           // A drag over the source selects text; the editor must not take it for a move of the block.
           onMouseDown={(event) => event.stopPropagation()}
-          className="max-h-48 cursor-text overflow-auto font-mono text-xs break-words whitespace-pre-wrap text-foreground/80 select-text"
+          className="text-foreground/80 max-h-48 cursor-text overflow-auto font-mono text-xs break-words whitespace-pre-wrap select-text"
         >
           {source}
         </pre>

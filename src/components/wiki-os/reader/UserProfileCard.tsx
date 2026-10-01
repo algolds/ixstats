@@ -29,7 +29,7 @@ export function UserProfileCard({
   return (
     <aside
       aria-label={`Profile of ${username}`}
-      className="border-border/40 bg-card/60 mb-4 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl border p-4 text-sm backdrop-blur-xl"
+      className="border-separator bg-surface rounded-card text-body mb-4 flex flex-wrap items-center gap-x-6 gap-y-2 border p-4"
     >
       <div className="flex min-w-0 items-center gap-3">
         {country?.flag ? (

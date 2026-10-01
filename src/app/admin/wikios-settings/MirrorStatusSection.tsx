@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
+import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -32,9 +33,9 @@ function formatWait(seconds: number): string {
 
 function Stat({ label, value, alert = false }: { label: string; value: string; alert?: boolean }) {
   return (
-    <div className="border-border/30 bg-background/40 rounded-xl border px-3 py-2">
-      <div className="text-muted-foreground text-xs">{label}</div>
-      <div className={`text-sm font-semibold ${alert ? "text-red-400" : "text-foreground"}`}>
+    <div className="border-separator bg-surface-secondary rounded-row border px-3 py-2">
+      <div className="text-label-secondary text-footnote">{label}</div>
+      <div className={`text-body font-semibold tabular-nums ${alert ? "text-red" : "text-label"}`}>
         {value}
       </div>
     </div>
@@ -68,12 +69,12 @@ export function MirrorStatusSection() {
   );
 
   return (
-    <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
-      <div className="border-border/20 flex items-center gap-2 border-b pb-3">
-        <Refresh className="h-4 w-4 text-sky-400" />
+    <FacetCard className="space-y-4 p-5">
+      <div className="border-separator flex items-center gap-2 border-b pb-3">
+        <Refresh className="text-tint h-4 w-4" />
         <div>
-          <h3 className="text-foreground text-xs font-bold">MediaWiki Mirror Outbox</h3>
-          <p className="text-muted-foreground text-xs">
+          <h3 className="text-label text-caption">MediaWiki Mirror Outbox</h3>
+          <p className="text-label-secondary text-footnote">
             WikiOS edits, moves, deletions, protections and uploads on their way to classic
             MediaWiki
           </p>
@@ -81,12 +82,12 @@ export function MirrorStatusSection() {
       </div>
 
       {isLoading || !status ? (
-        <Skeleton className="h-16 w-full rounded-xl" />
+        <Skeleton className="rounded-row h-16 w-full" />
       ) : (
         <>
           {(status.paused || !status.botConfigured) && (
-            <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-300">
-              <WarningTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="rounded-row border-yellow/30 bg-yellow/10 text-footnote text-label flex items-start gap-2 border p-3">
+              <WarningTriangle className="text-yellow mt-0.5 h-4 w-4 shrink-0" />
               <span>
                 {status.paused
                   ? "The mirror worker is stopped (SKIP_MEDIAWIKI_SYNC): jobs accumulate and nothing is lost."
@@ -96,8 +97,8 @@ export function MirrorStatusSection() {
           )}
 
           {status.uploadsWaiting > 0 && (
-            <div className="border-border/30 bg-background/40 text-muted-foreground flex items-start gap-2 rounded-xl border p-3 text-xs">
-              <WarningTriangle className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
+            <div className="border-separator bg-surface-secondary text-label-secondary text-footnote rounded-row flex items-start gap-2 border p-3">
+              <WarningTriangle className="text-tint mt-0.5 h-4 w-4 shrink-0" />
               <span>
                 {status.uploadsWaiting} uploaded file{status.uploadsWaiting === 1 ? "" : "s"} not in
                 MediaWiki yet: WikiOS serves {status.uploadsWaiting === 1 ? "it" : "them"} from its
@@ -123,14 +124,14 @@ export function MirrorStatusSection() {
           </div>
 
           {status.dead.length === 0 ? (
-            <div className="flex items-center gap-2 text-xs text-emerald-400">
+            <div className="text-green text-footnote flex items-center gap-2">
               <CheckCircle className="h-4 w-4" />
               No dead jobs: MediaWiki is in step with WikiOS.
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="text-muted-foreground">
+              <table className="text-footnote w-full text-left">
+                <thead className="text-label-secondary">
                   <tr>
                     <th className="px-2 py-1 font-medium">Job</th>
                     <th className="px-2 py-1 font-medium">Page</th>
@@ -140,19 +141,19 @@ export function MirrorStatusSection() {
                     <th className="px-2 py-1" />
                   </tr>
                 </thead>
-                <tbody className="divide-border/20 divide-y">
+                <tbody className="divide-separator divide-y">
                   {status.dead.map((job) => (
                     <tr key={job.id}>
                       <td className="px-2 py-1.5 font-mono">{job.kind}</td>
-                      <td className="text-foreground px-2 py-1.5 font-medium">{job.title}</td>
+                      <td className="text-label px-2 py-1.5 font-medium">{job.title}</td>
                       <td className="px-2 py-1.5">{job.attempts}</td>
                       <td
-                        className="text-muted-foreground max-w-xs truncate px-2 py-1.5"
+                        className="text-label-secondary max-w-xs truncate px-2 py-1.5"
                         title={job.lastError ?? undefined}
                       >
                         {job.lastError}
                       </td>
-                      <td className="text-muted-foreground px-2 py-1.5">
+                      <td className="text-label-secondary px-2 py-1.5">
                         {new Date(job.diedAt).toLocaleString()}
                       </td>
                       <td className="flex gap-1 px-2 py-1.5">
@@ -185,13 +186,13 @@ export function MirrorStatusSection() {
       )}
 
       <AlertDialog open={discarding !== null} onOpenChange={(open) => !open && setDiscarding(null)}>
-        <AlertDialogContent className="border-border bg-card text-card-foreground border shadow-2xl backdrop-blur-2xl">
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-foreground flex items-center gap-2">
-              <WarningTriangle className="h-5 w-5 text-red-400" />
+            <AlertDialogTitle className="flex items-center gap-2">
+              <WarningTriangle className="text-red h-5 w-5" />
               Discard this mirror job?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground text-xs">
+            <AlertDialogDescription className="text-footnote">
               The {discarding?.kind} of &ldquo;{discarding?.title}&rdquo; never reached classic
               MediaWiki. Discarding gives up on it: it is kept as discarded (not done), MediaWiki
               stays out of step for this page until someone edits it again, and the jobs queued
@@ -213,6 +214,6 @@ export function MirrorStatusSection() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </FacetCard>
   );
 }
