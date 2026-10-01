@@ -1,5 +1,7 @@
-// src/components/wiki-os/reader/featured-article.ts
-// Picks the featured-article card out of the Main Page's HTML and dresses it for the hero.
+// src/lib/wiki-os/main-page/featured-article.ts
+// Picks the featured-article card out of the Main Page's HTML and reads its title, image and lead
+// out for the hero. Runs on the server (main-page-service), where `parse` is a jsdom-backed
+// `parseInert`; in a browser the default one is used.
 //
 // This works on the DOM (see transformers/inert-dom.ts): the HTML is already sanitized, and counting
 // `</div>`s or removing `<div ...>[\s\S]*?</div>` by regex on sanitized HTML can be made to end inside
@@ -8,7 +10,8 @@
 // once more on the way to the hero's `dangerouslySetInnerHTML`.
 
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
-import { parseInert } from "~/lib/wiki-os/transformers/inert-dom";
+import { extractLeadImageFromHtml, normalizeWikiImageUrl } from "../transformers/image-url";
+import { parseInert, type InertFragment } from "../transformers/inert-dom";
 
 /** Where the card can be, in order of preference; the first selector that finds one wins. */
 const FEATURED_SELECTORS = [
@@ -23,12 +26,15 @@ const FEATURED_SELECTORS = [
 /** A page this short with a paragraph in it is taken to be the card itself. */
 const WHOLE_PAGE_LIMIT = 2500;
 
+const ELEMENT_NODE = 1;
+
 const classOf = (element: Element) => element.getAttribute("class") ?? "";
 
 /** The elements of `root` (and `root` itself, when it is one) in document order. */
 function elementsOf(root: Element | DocumentFragment): Element[] {
   const all = Array.from(root.querySelectorAll("*"));
-  return root instanceof Element ? [root, ...all] : all;
+  // nodeType, not `instanceof Element`: on the server there is no global Element
+  return root.nodeType === ELEMENT_NODE ? [root as Element, ...all] : all;
 }
 
 function firstMatch(content: DocumentFragment): Element | null {
@@ -70,9 +76,12 @@ function dressCard(root: Element | DocumentFragment): void {
 }
 
 /** The card's HTML from the Main Page's HTML, or null when the page has no featured article. */
-export function extractFeaturedArticle(html: string): string | null {
+export function extractFeaturedArticle(
+  html: string,
+  parse: (html: string) => InertFragment | null = parseInert
+): string | null {
   if (!html) return null;
-  const parsed = parseInert(html);
+  const parsed = parse(html);
   if (!parsed) return null;
   const { template, content } = parsed;
 
@@ -86,4 +95,67 @@ export function extractFeaturedArticle(html: string): string | null {
     return sanitizeWikiArticleHtml(template.innerHTML);
   }
   return null;
+}
+
+export interface FeaturedArticleDetails {
+  title: string;
+  /** The title as a /wiki/ path segment. */
+  slug: string;
+  /** The card's picture (already routed through the image proxy), or null. */
+  image: string | null;
+  /** The card's first paragraph as plain text. */
+  excerpt: string;
+}
+
+const stripTags = (html: string): string => html.replace(/<[^>]+>/g, "").trim();
+
+/** `%`-decoded when it can be: a stray % in a link is used as written. */
+function decodeSegment(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
+/** The title and slug of the link the card is about; its heading is the last resort. */
+function titleOf(cardHtml: string): { title: string; slug: string } {
+  const link =
+    cardHtml.match(
+      /<h3[^>]*>[\s\S]*?<a[^>]+href="(?:\/wiki\/|https?:\/\/ixwiki\.com\/wiki\/)([^">]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<\/h3>/i
+    ) ??
+    cardHtml.match(
+      /<a[^>]+href="(?:\/wiki\/|https?:\/\/ixwiki\.com\/wiki\/)([^">]+)"[^>]*>([\s\S]*?)<\/a>/i
+    );
+  if (link) {
+    return {
+      title: stripTags(link[2] ?? link[1] ?? ""),
+      slug: decodeSegment(link[1] ?? "").replace(/ /g, "_"),
+    };
+  }
+  const heading = cardHtml.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i);
+  if (!heading) return { title: "Featured Article", slug: "Featured_Article" };
+  const title = stripTags(heading[1] ?? "");
+  return { title, slug: title.replace(/ /g, "_") };
+}
+
+/** The card's lead paragraph, without its byline and "Featured article" kicker, as plain text. */
+function excerptOf(cardHtml: string): string {
+  const paragraphs = cardHtml.match(/<p[^>]*>([\s\S]*?)<\/p>/gi) ?? [];
+  const lead = paragraphs.find((p) => {
+    const lower = p.toLowerCase();
+    return !lower.includes("byline") && !lower.includes("featured article");
+  });
+  return (lead ?? "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/^Featured article\s*/i, "")
+    .trim();
+}
+
+/** What the hero shows of the featured-article card (`extractFeaturedArticle`'s output). */
+export function featuredArticleDetails(cardHtml: string): FeaturedArticleDetails {
+  const image =
+    extractLeadImageFromHtml(cardHtml) ??
+    normalizeWikiImageUrl(cardHtml.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i)?.[1]);
+  return { ...titleOf(cardHtml), image, excerpt: excerptOf(cardHtml) };
 }

@@ -29,6 +29,7 @@ import { getArticleSummaryFromShadow } from "~/lib/wiki-os/core/native-search-se
 import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholders";
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
 import { getArticleView, type ImportSource } from "~/lib/wiki-os/services/article-view-service";
+import { getMainPageData } from "~/lib/wiki-os/services/main-page-service";
 import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
@@ -99,6 +100,12 @@ export const wikiosPageContentRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
   // Reader endpoints
   // ---------------------------------------------------------------------------
+
+  /**
+   * Everything the Main Page shows, in one answer (featured article, almanac, recent changes, counts,
+   * topic tiles, a blurb prompt), built from Postgres and kept a minute per process.
+   */
+  getMainPage: publicProcedure.query(() => getMainPageData()),
 
   /**
    * Get pre-transformed article data for the reader mode.
