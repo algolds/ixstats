@@ -4,6 +4,7 @@
 // Operates on native WikiAST blocks and lossless wikitext serialization.
 
 import "~/styles/wiki-os/editors.css";
+import "~/styles/wiki-os/mediawiki-editors.css";
 import React, { useEffect, useRef, useCallback } from "react";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
 import { getDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
@@ -129,10 +130,12 @@ export function WikiVisualEditor({
     }
     const wikitextToSave = wtRef.current.wikitext;
     // Edits that could not be applied as typed, or a block that had to move: the author is told.
-    for (const notice of wtRef.current.notices) state.notify.warning("Check the saved page", notice);
+    for (const notice of wtRef.current.notices)
+      state.notify.warning("Check the saved page", notice);
     const saved = await state.executeSave(() => wikitextToSave);
     // A published page needs no draft (executeSave cleared it); a failed save keeps the work as one.
-    if (!saved) saveDraft(userId, { title, source: "ixwiki", mode: "visual", wikitext: wikitextToSave });
+    if (!saved)
+      saveDraft(userId, { title, source: "ixwiki", mode: "visual", wikitext: wikitextToSave });
   }, [state, title, userId]);
 
   const handleSaveDraft = useCallback(() => {

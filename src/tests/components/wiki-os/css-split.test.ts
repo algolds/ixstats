@@ -44,10 +44,11 @@ function filesUnder(dir: string, skip: (path: string) => boolean, found: string[
 describe("editors.css leaves the reader's stylesheet", () => {
   it("is not imported by wiki-os.css, but by both dynamically loaded editors", () => {
     expect(read("src/styles/wiki-os.css")).not.toMatch(/@import[^;]*editors\.css/);
+    expect(read("src/styles/wiki-os.css")).not.toMatch(/@import[^;]*mediawiki-editors\.css/);
     for (const editor of ["WikiVisualEditor", "WikiSourceEditor"]) {
-      expect(read(`src/components/wiki-os/editor/${editor}.tsx`)).toContain(
-        'import "~/styles/wiki-os/editors.css";'
-      );
+      const source = read(`src/components/wiki-os/editor/${editor}.tsx`);
+      expect(source).toContain('import "~/styles/wiki-os/editors.css";');
+      expect(source).toContain('import "~/styles/wiki-os/mediawiki-editors.css";');
     }
     // and those two are the dynamic chunks of the edit bridge, not imported statically by the reader
     const bridge = read("src/components/wiki-os/editor/WikiEditBridge.tsx");
@@ -66,16 +67,23 @@ describe("editors.css leaves the reader's stylesheet", () => {
         (path) => path.startsWith("src/components/wiki-os/editor") || path.endsWith("editors.css")
       ),
       ...filesUnder("src/app/(wiki-os)", () => false),
-      ...filesUnder("src/styles", (path) => path.endsWith("wiki-os/editors.css")),
+      // mediawiki-editors.css is the editor half of the third-party overrides: it travels with the
+      // editor chunk like editors.css (the reader's mediawiki.css holds only reader selectors)
+      ...filesUnder(
+        "src/styles",
+        (path) =>
+          path.endsWith("wiki-os/editors.css") || path.endsWith("wiki-os/mediawiki-editors.css")
+      ),
       ...filesUnder("src/lib/wiki-os", () => false),
     ];
     const readerText = readerFiles.map((file) => read(file)).join("\n");
     const usedByReader = (name: string) =>
       new RegExp(`(?<![\\w-])${name.replace(/[-]/g, "\\-")}(?![\\w-])`).test(readerText);
 
-    const reachable = selectorParts(read("src/styles/wiki-os/editors.css")).filter((selector) =>
-      classesOf(selector).every(usedByReader)
-    );
+    const reachable = [
+      ...selectorParts(read("src/styles/wiki-os/editors.css")),
+      ...selectorParts(read("src/styles/wiki-os/mediawiki-editors.css")),
+    ].filter((selector) => classesOf(selector).every(usedByReader));
 
     // `typeof="mw:Transclusion"` is Parsoid's RDFa: the reader's HTML comes from action=parse (the
     // legacy parser), which never writes it, so the rule only ever matches inside the editor.

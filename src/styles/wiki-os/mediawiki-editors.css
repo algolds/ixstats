@@ -1,0 +1,142 @@
+/* ===========================================================================
+   WIKIOS — THIRD-PARTY HTML OVERRIDES FOR THE EDITORS (Parsoid / CodeMirror)
+
+   The editor half of wiki-os/mediawiki.css: the `!important` rules for Parsoid /
+   VisualEditor contenteditable output (inline `style` attributes) and CodeMirror's
+   injected theme. It is imported by the two editor components next to
+   wiki-os/editors.css, so it travels with the editor chunk and a reader never
+   downloads a selector only an editor can match (plan 413). Like mediawiki.css it
+   is exempt from the `!important` rule in src/tests/architecture/css-layering.test.ts.
+   =========================================================================== */
+
+@layer components {
+  .wikios-ve-editable {
+    text-align: left !important;
+  }
+
+  .wikios-ve-content ul {
+    list-style-type: disc !important;
+    padding-left: 1.75rem !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .wikios-ve-content ol {
+    list-style-type: decimal !important;
+    padding-left: 1.75rem !important;
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .wikios-ve-content li {
+    display: list-item !important;
+    list-style-position: outside !important;
+    min-height: 1.5em !important;
+    line-height: 1.6 !important;
+    padding-left: 0.25rem !important;
+  }
+
+  .wikios-ve-content li::marker {
+    color: var(--wikios-accent, #3b82f6) !important;
+  }
+
+  .wikios-ve-custom-chip {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 2.5px 8px !important;
+    border-radius: 6px !important;
+    font-family: var(--wikios-font-mono), monospace !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    user-select: none !important;
+    margin: 2px 4px !important;
+    vertical-align: middle !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    text-decoration: none !important;
+  }
+
+  .wikios-ve-custom-chip.chip-mycountry {
+    background: rgba(245, 158, 11, 0.1) !important;
+    border: 1px solid rgba(245, 158, 11, 0.25) !important;
+    color: var(--color-warning) !important;
+  }
+
+  .wikios-ve-custom-chip.chip-mycountry:hover {
+    background: rgba(245, 158, 11, 0.18) !important;
+    border-color: rgba(245, 158, 11, 0.4) !important;
+  }
+
+  .wikios-ve-custom-chip.chip-countrydata {
+    background: rgba(59, 130, 246, 0.1) !important;
+    border: 1px solid rgba(59, 130, 246, 0.25) !important;
+    color: var(--color-info) !important;
+  }
+
+  .wikios-ve-custom-chip.chip-countrydata:hover {
+    background: rgba(59, 130, 246, 0.18) !important;
+    border-color: rgba(59, 130, 246, 0.4) !important;
+  }
+
+  .wikios-ve-custom-chip.chip-businessdata {
+    background: rgba(20, 184, 166, 0.1) !important;
+    border: 1px solid rgba(20, 184, 166, 0.25) !important;
+    color: #14b8a6 !important;
+  }
+
+  .wikios-ve-custom-chip.chip-businessdata:hover {
+    background: rgba(20, 184, 166, 0.18) !important;
+    border-color: rgba(20, 184, 166, 0.4) !important;
+  }
+
+  .wikios-ve-custom-chip.chip-coords {
+    background: rgba(16, 185, 129, 0.1) !important;
+    border: 1px solid rgba(16, 185, 129, 0.25) !important;
+    color: var(--color-success) !important;
+  }
+
+  .wikios-ve-custom-chip.chip-coords:hover {
+    background: rgba(16, 185, 129, 0.18) !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+  }
+
+  .wikios-ve-custom-chip.chip-mapembed {
+    background: rgba(99, 102, 241, 0.1) !important;
+    border: 1px solid rgba(99, 102, 241, 0.25) !important;
+    color: var(--color-brand-primary) !important;
+  }
+
+  .wikios-ve-custom-chip.chip-mapembed:hover {
+    background: rgba(99, 102, 241, 0.18) !important;
+    border-color: rgba(99, 102, 241, 0.4) !important;
+  }
+
+  .wikios-ve-template:has(.infobox),
+  .wikios-ve-template.wikios-ve-infobox,
+  div[typeof*="mw:Transclusion"]:has(.infobox),
+  .wikios-ve-infobox {
+    float: right !important;
+    clear: right !important;
+    margin: 0.5em 0 1.5em 1.5em !important;
+    width: var(--wikios-infobox-width) !important;
+    max-width: 340px !important;
+    display: block !important;
+  }
+
+  .wikios-editor-cm-container .cm-editor,
+  .wikios-editor-cm .cm-editor {
+    height: 100% !important;
+    width: 100% !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .wikios-editor-cm-container .cm-scroller,
+  .wikios-editor-cm .cm-scroller {
+    height: 100% !important;
+    overflow: auto !important;
+    flex: 1 !important;
+  }
+}
