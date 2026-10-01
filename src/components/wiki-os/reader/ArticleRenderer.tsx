@@ -768,7 +768,9 @@ export function ArticleRenderer({
             authorInfo={authors}
             categories={categories}
             awardsData={awardsData}
-            marginThreadsCount={(marginData?.threads as any)?.length ?? 0}
+            marginThreadsCount={
+              (marginData?.totalOpenCount ?? 0) + (marginData?.totalResolvedCount ?? 0)
+            }
             marginAnnotationsCount={(annotationsData as any)?.length ?? 0}
             onOpenMargin={(tab) => {
               setMarginTab(tab || "threads");

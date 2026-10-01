@@ -83,7 +83,8 @@ export function InlineWikiArticlePreview({
     { articleTitle: cleanTitle },
     { enabled: !!cleanTitle, staleTime: 60_000 }
   );
-  const marginThreadsCount = (discussionsData as any)?.threads?.length ?? 0;
+  // The thread count the server reports, not the length of the one page of threads it sent.
+  const marginThreadsCount = discussionsData?.totalOpenCount ?? 0;
 
   // Thinkpages accounts for repost modal
   const { data: accounts = [] } = api.thinkpages.getMyAccounts.useQuery(undefined, {
