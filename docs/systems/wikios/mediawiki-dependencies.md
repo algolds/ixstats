@@ -77,11 +77,11 @@ names a MediaWiki endpoint (`getMediaWikiApiUrl`, `api.php`, `DEFAULT_MEDIAWIKI_
 | `src/app/api/_lib/image-proxy.ts`, `src/app/api/download/external-image/route.ts` | allow-listed external image hosts (ixwiki.com among them) | Generic image download proxy. |
 | `src/app/api/mediawiki/[wiki]/[...path]/route.ts` | the same shapes, for iiwiki, AltHistory and Commons | Sister wikis (below). |
 
-### Public `api.php` proxy
+### Public `api.php` proxy (IxWiki: closed)
 
-| Call site | What it forwards |
+| Call site | What it does |
 | --- | --- |
-| `src/app/api/mediawiki/[wiki]/api.php/route.ts`, `src/app/api/mediawiki/_config.ts` | Read-only `action=query` and `action=opensearch` (IxWiki), `query`/`opensearch`/`parse` (the others), whitelisted parameters only, for **outside** callers (CORS origins). No WikiOS code calls it for IxWiki. Open item: decide whether to retire it or answer it from WikiOS's own `api.php` subset. |
+| `src/app/api/mediawiki/[wiki]/api.php/route.ts`, `src/app/api/mediawiki/_config.ts` | Read-only proxy of a wiki's `api.php` for outside callers. **IxWiki's `allowedActions` is `[]`: the route answers 410 and asks no wiki** (WikiOS serves `/w/api.php` itself, plan 410, and the proxy could return a page WikiOS has deleted; no WikiOS code called it). It still forwards `query`/`opensearch`/`parse` for the sister wikis (below). |
 
 ### url-only (no request)
 
@@ -142,13 +142,11 @@ Already gone before 418, checked: the `getArticleHtml` Main Page `action=parse&p
    previous view or the local compile meanwhile.
 2. A request for a page Postgres has no row for imports it once from MediaWiki (plan 412, budgeted).
 3. Image bytes (the media proxy): not wiki content.
-4. The public `api.php` proxy, for outside callers.
-5. Editing: the editor preview and the template preview.
-6. A sister wiki's page.
+4. Editing: the editor preview and the template preview (both rendered on the server).
+5. A sister wiki's page.
 
 ## 6. Open items found by the audit (not changed by plan 418)
 
-- **Public `api.php` proxy** (above): outside callers can still query IxWiki's MediaWiki through WikiOS.
 - **Admin wiki link of a wiki account with no edits.** `lookupWikiUser` (admin `linkUserWiki`, the passport lookup) now answers
   from Postgres: an account that has no revision, no verified link, no Lorewards row and no group reads as "not found". If
   that matters for linking a brand-new wiki account, `findLinkableWikiAccount` should ask `account-proof.ts` `fetchWikiUser`
