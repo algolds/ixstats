@@ -11,16 +11,20 @@ The editor stack provides a Plate-based visual editor (WikiAST ↔ wikitext), a 
 
 ## 1. Routes (`(wiki-os)` group → `/wiki/*` and `/util/*`)
 
-Utility pages live under `/util/*`. The matching `/wiki/<utility>` index routes are thin redirects to `/util/*`; the dynamic `history/[slug]`, `whatlinkshere/[slug]`, `categories/[...slug]` and `contributions/[user]` pages are currently duplicated under both prefixes.
+Utility pages live under `/util/*`. Every `/wiki/<path>` URL is served by one catch-all route, `wiki/[...slug]`, which is also where the old `/wiki/<tool>` URLs land: a lower-case tool slug (`/wiki/recent-changes`, `/wiki/categories/Countries`, `/wiki/history/Foo`, ...) redirects to its `/util/*` route unless a page with exactly that title exists, so no title is hijacked by a tool.
+
+The route (plan 412) is a server component: `resolveWikiPath` (`src/lib/wiki-os/wiki-path.ts`) parses the URL, the article is read on the server and primed into the query cache (`HydrateClient`), so the first HTML holds the article; a page that does not exist is a 404 (`not-found.tsx`), a redirect page is a 308 to its target with `?rdfrom=`, a non-canonical spelling is a 308 to the canonical one. `generateMetadata` gives the article its own title, description, canonical URL (WikiOS is the canonical host) and link card.
 
 | Route | File | Purpose |
 |-------|------|---------|
 | `/wiki` | `wiki/page.tsx` | WikiOS main page (`WikiOSMainPage`) |
-| `/wiki/[slug]` | `wiki/[slug]/page.tsx` | Article reader + in-place editor bridge. `?action=edit` opens the editor, `?margin=threads` opens Margin, `?source=iiwiki\|althistory` reads another wiki's page read-only |
-| `/wiki/[slug]/edit` | `wiki/[slug]/edit/page.tsx` | Dedicated editor page (visual + source fallback) |
-| `/wiki/[slug]/talk` | `wiki/[slug]/talk/page.tsx` | Legacy redirect → `/wiki/[slug]?margin=threads` |
-| `/wiki/user/[username]` | `wiki/user/[username]/page.tsx` | Redirects to the IxnayID passport Work tab (`/@username?tab=work`) |
-| `/util` | `util/page.tsx` | Special directory & utilities deck (`/wiki/utilities` redirects here) |
+| `/wiki/<title>` (any depth: `/wiki/A/B`) | `wiki/[...slug]/page.tsx` | Article reader + in-place editor bridge. `?action=edit` opens the editor (`&section=new` is "Add topic"), `?action=history` / `?action=info` / `?oldid=` / `?diff=` show those views in place, `?redirect=no` shows a redirect page, `?action=raw` is answered by `/api/wiki/raw`, `?margin=threads` opens Margin, `?source=iiwiki\|althistory` reads another wiki's page read-only |
+| `/wiki/Talk:<title>` and every `<ns> talk:` page | same | Ordinary wikitext pages; the reader's Page / Discussion tabs link the pair. `/wiki/<title>/talk` redirects here, `/wiki/<title>/edit` to `?action=edit` (unless a page with that name exists) |
+| `/wiki/User:<name>`, `/wiki/Category:<name>`, `/wiki/File:<name>` | same | The page's wikitext, plus a profile card / the members of the category (200 to a page, `?from=`) / the file |
+| `/wiki/Special:<Name>[/<arg>]` | same | `Special:RecentChanges`, `Watchlist`, `Categories`, `Search`, `Diff/<a>/<b>`, `Contributions/<user>`, `WhatLinksHere/<title>`, `Export`, `Import` and the rights-model pages (`Log[/type]`, `Move`/`MovePage`, `Delete`, `Undelete`, `Protect` with a title, `Block`, `UserRights` with a user, `BlockList`) redirect to the matching `/util/*` tool (`?action=delete|protect|unprotect` on a page go to the same screens); `Random` and `FilePath/<file>` redirect to a page / the file; `AllPages` and `PrefixIndex/<prefix>` list pages in place; any other special page is a 404 |
+| `/wiki-sitemap`, `/wiki-sitemap/<n>`, `/robots.txt` | `src/app/wiki-sitemap/**`, `src/app/robots.txt/route.ts` | Sitemap index and files (50,000 published main-namespace pages each), robots.txt |
+| `/api/wiki/raw` | `src/app/api/wiki/raw/route.ts` | `text/x-wiki` wikitext of a page or revision; `src/proxy.ts` rewrites `/wiki/<title>?action=raw` here |
+| `/util` | `util/page.tsx` | Special directory & utilities deck (`/wiki/utilities` and `Special:SpecialPages` redirect here) |
 | `/util/search` | `util/search/page.tsx` | Prefix & full-text search |
 | `/util/recent-changes` | `util/recent-changes/page.tsx` | Global append-only edit ledger feed |
 | `/util/history/[slug]` | `util/history/[slug]/page.tsx` | Revision history (scrubbable timeline) |
@@ -30,7 +34,8 @@ Utility pages live under `/util/*`. The matching `/wiki/<utility>` index routes 
 | `/util/whatlinkshere/[slug]` | `util/whatlinkshere/[slug]/page.tsx` | Relational backlinks explorer |
 | `/util/contributions/[user]` | `util/contributions/[user]/page.tsx` | User contribution history |
 | `/util/lorewards` | `util/lorewards/page.tsx` | Lorewards leaderboard & heatmap streak calendar |
-| `/util/repository` | `util/repository/page.tsx` | Native media commons asset repository (`wiki_assets`) |
+| `/util/repository` | `util/repository/page.tsx` | Native media commons asset repository (`wiki_assets`), with an Upload button |
+| `/util/upload` | `util/upload/page.tsx` | Special:Upload: upload a file (`POST /api/wiki/upload`, plan 411) |
 | `/util/templates` | `util/templates/page.tsx` | Template browser |
 | `/util/watchlist` | `util/watchlist/page.tsx` | Article watchlist (`WikiWatchlist` model) |
 
@@ -44,7 +49,7 @@ Utility pages live under `/util/*`. The matching `/wiki/<utility>` index routes 
 | **Speculative Navigation** | Instant link hover/touch prefetching (`useWikiPrefetch`), localStorage client cache (`editor/local-cache.ts`, 24h TTL), and zero-navigation in-place editor bridge (`WikiEditBridge`) |
 | **DOM Acceleration** | Sub-16ms initial paint via CSS `content-visibility: auto` and section containment |
 | **Two-Tier Native Search** | Tier 1 typo-tolerant prefix search (<1.5ms) + Tier 2 weighted `tsvector` full-text search with headline snippets |
-| **Cloudflare Defense** | Invisible Cloudflare Turnstile verification (when the client sends a token) and automated edge CDN cache purging on save |
+| **Cloudflare Defense** | Automated edge CDN cache purging on save (editing itself needs a signed-in account and is rate-limited and rights-checked) |
 | **Reader** | Pre-rendered HTML transforms, 3D tilt hero banner (`ArticleHeader`), sticky TOC, link hover previews (`LinkPreview`), image lightbox, category breadcrumbs, dynamic map embeds |
 | **Editor** | Dual-mode Plate visual editor (WikiAST roundtrip) & CodeMirror 6 source editor with live preview, modular template dialogs, image search/upload modal, and instant 1-click rollback |
 | **Stash** | Color-coded collections, one-click stash toggle, text-selection annotations, per-item notes |
@@ -69,18 +74,17 @@ src/lib/wiki-os/
 │   ├── article-repository.ts  # Authoritative CRUD repository (<2ms read, <10ms write)
 │   ├── link-graph-service.ts  # Link extractor & O(1) relational backlink graph engine
 │   ├── native-search-service.ts # Two-tier Spotlight autocomplete (<1.5ms) & full-text search
-│   ├── parser-functions.ts    # Native JS ParserFunctions evaluator (#if, #switch, #expr)
 │   └── category-service.ts    # Recursive category tree DAG & member lookups
 │
 ├── guardian/                  # Security & Edge Defense
-│   └── cloudflare-guardian.ts # Cloudflare Turnstile verification & global CDN cache purges
+│   └── cloudflare-guardian.ts # global CDN cache purges on save
 │
 ├── adapters/                  # External Service Adapters & Background Workers
 │   └── mediawiki/             # Legacy MediaWiki compatibility & federation suite
 │       ├── parsoid.ts         # Parsoid & Action API HTML <-> wikitext converter
-│       ├── write-service.ts   # Action API write gateway & CSRF token caching
+│       ├── write-service.ts   # The mirror bot's Action API calls (typed errors, XML import upload)
+│       ├── csrf-cache.ts      # The mirror bot's login + CSRF token (no anonymous fallback)
 │       ├── timestamp.ts       # 14-digit timestamp conversion
-│       ├── sync-worker.ts     # Non-blocking MediaWiki export mirror queue
 │       └── bridge/            # PostgreSQL readers (pg-*.ts) & external wiki HTTP federators
 │
 ├── transformers/              # Content Transformers, Parsers & Formatters

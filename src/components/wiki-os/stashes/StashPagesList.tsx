@@ -3,7 +3,7 @@
 // Saved wiki articles view with lead image thumbnail, WikiOS logomark, rich metadata, and quick actions.
 // Full Apple Design & Facet compliance.
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
 import {
@@ -21,8 +21,20 @@ import { Button } from "~/components/ui/button";
 
 interface StashPagesListProps {
   items: StashedPageItem[];
-  onUnstash: (pageTitle: string) => void;
+  onUnstash: (pageTitle: string, contentType?: string) => void;
   thumbnailsMap?: Record<string, string>;
+}
+
+/** A stashed page's own note, sanitized once: one `{ __html }` per note, or React 19 writes it again on every render. */
+function StashNote({ note }: { note: string }) {
+  const markup = useMemo(() => ({ __html: sanitizeUserContent(note) }), [note]);
+
+  return (
+    <div
+      className="rounded-row border-separator bg-surface text-footnote text-label-secondary border p-3 leading-relaxed italic"
+      dangerouslySetInnerHTML={markup}
+    />
+  );
 }
 
 function StashArticleThumbnail({ thumbUrl, title }: { thumbUrl?: string | null; title: string }) {
@@ -120,7 +132,7 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
                   aria-label="Remove from collection"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onUnstash(item.pageTitle);
+                    onUnstash(item.pageTitle, item.contentType);
                   }}
                   title="Remove from collection"
                   className="bg-fill-4 text-label-secondary hover:border-red/30 hover:bg-red/10 hover:text-red"
@@ -131,14 +143,7 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
             </div>
 
             {/* Custom User Note if present */}
-            {item.note && (
-              <div
-                className="rounded-row border-separator bg-surface text-footnote text-label-secondary border p-3 leading-relaxed italic"
-                dangerouslySetInnerHTML={{
-                  __html: sanitizeUserContent(item.note),
-                }}
-              />
-            )}
+            {item.note && <StashNote note={item.note} />}
           </div>
         );
       })}

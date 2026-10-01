@@ -1,0 +1,17 @@
+'''Ostrava''' is a federal monarchy.<ref name="gov">{{cite web|url=https://example.org/ostrava|title=Government of Ostrava|accessdate=2026-01-02}}</ref> It was founded in 1601.<ref>Anon. ''A short history''. Vilena Press, 1904.</ref>
+
+== See also ==
+* [[Vesperia]]
+* [[Arcadia]]
+
+== References ==
+{{Reflist}}
+
+{{Navbox
+| name = Arcadia topics
+| title = [[Arcadia]]
+| group1 = Countries
+| list1 = [[Ostrava]] &bull; [[Vesperia]] &bull; [[Solcordia]]
+}}
+
+[[Category:Federal monarchies]]

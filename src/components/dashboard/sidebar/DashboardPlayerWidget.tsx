@@ -17,7 +17,7 @@ import { cn } from "~/lib/utils";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { AvatarGlow } from "~/components/vault/AvatarGlow";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
-import * as IconoirIcons from "iconoir-react";
+import { resolveChatBadgeIcon } from "~/components/ui/chat-badge-icon";
 import { Skeleton } from "~/components/ui/skeleton";
 import { createUrl } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
@@ -50,7 +50,7 @@ interface DashboardPlayerWidgetProps {
 export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: DashboardPlayerWidgetProps) {
   const { user, isSignedIn } = useUser();
   const { avatarGlow, chatBadge, neonFrame } = useActiveCosmetics();
-  const CrownIcon = (IconoirIcons as any)[chatBadge.icon] || IconoirIcons.Crown;
+  const CrownIcon = resolveChatBadgeIcon(chatBadge.icon);
 
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     undefined,

@@ -1,3 +1,4 @@
+import { pageEditHref } from "~/lib/wiki-os/page-tools";
 import React from "react";
 import { ShieldAlert } from "iconoir-react";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -75,11 +76,7 @@ export function TitleStep({
                 size="sm"
                 onClick={() => {
                   onClose();
-                  router.push(
-                    withBasePath(
-                      `/wiki/${encodeURIComponent(title.trim().replace(/ /g, "_"))}/edit`
-                    )
-                  );
+                  router.push(withBasePath(pageEditHref(title.trim())));
                 }}
                 className="h-auto px-0 align-baseline underline"
               >

@@ -22,7 +22,10 @@ import type {
   WikiMapEmbedBlock,
   WikiParserFunctionBlock,
   WikiInlineTemplateNode,
+  WikiTextNode,
 } from "./types";
+import { buildFileLink } from "./file-params";
+import { joinMarkedSegments, type MarkedSegment } from "./quote-marks";
 
 export function serializeTemplateToWikitext(template: {
   templateName?: string;
@@ -51,43 +54,39 @@ export function serializeTemplateToWikitext(template: {
     Object.values(params).some((v) => v.includes("\n"));
 
   if (isMultiline) {
-    let out = `{{${name}\n`;
+    const lines: string[] = [`{{${name}\n`];
 
     if (paramList && paramList.length > 0) {
       for (const p of paramList) {
-        if (p.isPositional) {
-          out += `| ${p.value}\n`;
-        } else {
-          out += `| ${p.key} = ${p.value}\n`;
-        }
+        lines.push(p.isPositional ? `| ${p.value}\n` : `| ${p.key} = ${p.value}\n`);
       }
     } else {
       // Positional first
       for (const val of positional) {
-        out += `| ${val}\n`;
+        lines.push(`| ${val}\n`);
       }
       // Named params
       for (const [k, v] of Object.entries(params)) {
         if (/^\d+$/.test(k)) continue; // skip positional mirror
-        out += `| ${k} = ${v}\n`;
+        lines.push(`| ${k} = ${v}\n`);
       }
     }
 
-    out += `}}`;
-    return out;
+    lines.push("}}");
+    return lines.join("");
   }
 
   // Single-line compact
-  let out = `{{${name}`;
+  const pieces: string[] = [`{{${name}`];
   for (const val of positional) {
-    out += `|${val}`;
+    pieces.push(`|${val}`);
   }
   for (const [k, v] of Object.entries(params)) {
     if (/^\d+$/.test(k)) continue;
-    out += `|${k}=${v}`;
+    pieces.push(`|${k}=${v}`);
   }
-  out += `}}`;
-  return out;
+  pieces.push("}}");
+  return pieces.join("");
 }
 
 function isInlineNode(node: WikiBlockNode | WikiInlineNode): boolean {
@@ -96,6 +95,7 @@ function isInlineNode(node: WikiBlockNode | WikiInlineNode): boolean {
   return (
     type === "wiki-link" ||
     type === "external-link" ||
+    type === "wiki-file" ||
     type === "chip-coord" ||
     type === "chip-engine-data" ||
     type === "citation-ref" ||
@@ -103,34 +103,19 @@ function isInlineNode(node: WikiBlockNode | WikiInlineNode): boolean {
   );
 }
 
-export function serializeInlineNodeToWikitext(node: WikiInlineNode): string {
-  if (
-    "text" in node &&
-    typeof (node as { text?: unknown }).text === "string" &&
-    (!("type" in node) || (node as any).type === "text")
-  ) {
-    const textNode = node as import("./types").WikiTextNode;
-    let t = textNode.text;
-    if (textNode.bold && textNode.italic) {
-      t = `'''''${t}'''''`;
-    } else if (textNode.bold) {
-      t = `'''${t}'''`;
-    } else if (textNode.italic) {
-      t = `''${t}''`;
-    }
-    if (textNode.code) {
-      t = `<code>${t}</code>`;
-    }
-    if (textNode.strikethrough) {
-      t = `<s>${t}</s>`;
-    }
-    if (textNode.underline) {
-      t = `<u>${t}</u>`;
-    }
-    return t;
-  }
+/** `<code>`, `<s>`, `<u>`, `<sup>` and `<sub>` around a text node: marks with no quote syntax. */
+function withHtmlMarks(node: WikiTextNode, text: string): string {
+  let out = text;
+  if (node.code) out = `<code>${out}</code>`;
+  if (node.strikethrough) out = `<s>${out}</s>`;
+  if (node.underline) out = `<u>${out}</u>`;
+  if (node.superscript) out = `<sup>${out}</sup>`;
+  if (node.subscript) out = `<sub>${out}</sub>`;
+  return out;
+}
 
-  const typed = node as Exclude<WikiInlineNode, import("./types").WikiTextNode>;
+/** The wikitext of an inline element, without the bold/italic state around it. */
+function inlineElementWikitext(typed: Exclude<WikiInlineNode, WikiTextNode>): string {
   switch (typed.type) {
     case "wiki-link": {
       const n = typed as import("./types").WikiLinkInline;
@@ -147,6 +132,11 @@ export function serializeInlineNodeToWikitext(node: WikiInlineNode): string {
         return `[${n.url} ${textChild}]`;
       }
       return `[${n.url}]`;
+    }
+
+    case "wiki-file": {
+      const n = typed as import("./types").WikiFileInline;
+      return buildFileLink(n.target, n.params, n.caption);
     }
 
     case "chip-coord": {
@@ -175,7 +165,7 @@ export function serializeInlineNodeToWikitext(node: WikiInlineNode): string {
       ) {
         return `<ref name="${n.name}" />`;
       }
-      const refInner = n.children?.map(serializeInlineNodeToWikitext).join("") ?? "";
+      const refInner = n.children ? serializeInlineNodes(n.children) : "";
       return n.name ? `<ref name="${n.name}">${refInner}</ref>` : `<ref>${refInner}</ref>`;
     }
 
@@ -195,6 +185,54 @@ export function serializeInlineNodeToWikitext(node: WikiInlineNode): string {
   }
 }
 
+function inlineSegment(node: WikiInlineNode): MarkedSegment {
+  if ("text" in node && typeof (node as { text?: unknown }).text === "string" && (!("type" in node) || (node as any).type === "text")) {
+    const textNode = node as WikiTextNode;
+    return {
+      text: withHtmlMarks(textNode, textNode.text),
+      bold: Boolean(textNode.bold),
+      italic: Boolean(textNode.italic),
+      isText: true,
+    };
+  }
+  const typed = node as Exclude<WikiInlineNode, WikiTextNode>;
+  return {
+    text: inlineElementWikitext(typed),
+    bold: Boolean(typed.bold),
+    italic: Boolean(typed.italic),
+    isText: false,
+  };
+}
+
+/** A run of inline nodes: bold and italic are written from the state across the whole run. */
+export function serializeInlineNodes(nodes: readonly WikiInlineNode[]): string {
+  return joinMarkedSegments(nodes.map(inlineSegment).filter((segment) => segment.text !== ""));
+}
+
+export function serializeInlineNodeToWikitext(node: WikiInlineNode): string {
+  return serializeInlineNodes([node]);
+}
+
+/** Children of a list item, cell or quote: runs of inline nodes keep their marks, blocks serialize as blocks. */
+function serializeMixedChildren(children: readonly (WikiBlockNode | WikiInlineNode)[]): string {
+  const parts: string[] = [];
+  let run: WikiInlineNode[] = [];
+  const flush = (): void => {
+    if (run.length > 0) parts.push(serializeInlineNodes(run));
+    run = [];
+  };
+  for (const child of children) {
+    if (isInlineNode(child)) {
+      run.push(child as WikiInlineNode);
+    } else {
+      flush();
+      parts.push(serializeBlockNodeToWikitext(child as WikiBlockNode));
+    }
+  }
+  flush();
+  return parts.join("");
+}
+
 export function serializeBlockNodeToWikitext(node: WikiBlockNode): string {
   switch (node.type) {
     case "heading":
@@ -203,13 +241,13 @@ export function serializeBlockNodeToWikitext(node: WikiBlockNode): string {
     case "h4": {
       const level = (node as WikiHeadingBlock).level ?? 2;
       const mark = "=".repeat(level);
-      const text = node.children?.map(serializeInlineNodeToWikitext).join("") ?? "";
+      const text = serializeInlineNodes((node.children ?? []) as WikiInlineNode[]);
       return `${mark} ${text} ${mark}`;
     }
 
     case "paragraph":
     case "p":
-      return node.children?.map(serializeInlineNodeToWikitext).join("") ?? "";
+      return serializeInlineNodes((node.children ?? []) as WikiInlineNode[]);
 
     case "infobox":
     case "template":
@@ -244,13 +282,7 @@ export function serializeBlockNodeToWikitext(node: WikiBlockNode): string {
         out += `|-\n`;
         for (const cell of row.children || []) {
           const prefix = cell.isHeader ? `! ` : `| `;
-          const cellText = (cell.children || [])
-            .map((c: WikiBlockNode | WikiInlineNode) =>
-              isInlineNode(c)
-                ? serializeInlineNodeToWikitext(c as WikiInlineNode)
-                : serializeBlockNodeToWikitext(c as WikiBlockNode)
-            )
-            .join("");
+          const cellText = serializeMixedChildren(cell.children || []);
           out += `${prefix}${cellText}\n`;
         }
       }
@@ -266,13 +298,7 @@ export function serializeBlockNodeToWikitext(node: WikiBlockNode): string {
       return (
         lb.children
           ?.map((item: ListBlock["children"][number]) => {
-            const text = (item.children || [])
-              .map((c: WikiBlockNode | WikiInlineNode) =>
-                isInlineNode(c)
-                  ? serializeInlineNodeToWikitext(c as WikiInlineNode)
-                  : serializeBlockNodeToWikitext(c as WikiBlockNode)
-              )
-              .join("");
+            const text = serializeMixedChildren(item.children || []);
             const level = Math.max(1, item.level || 1);
             const prefix = item.prefix || defaultChar.repeat(level);
             return `${prefix} ${text}`;
@@ -284,14 +310,17 @@ export function serializeBlockNodeToWikitext(node: WikiBlockNode): string {
     case "quote":
     case "blockquote": {
       const qb = node as QuoteBlock;
-      const inner =
-        qb.children
-          ?.map((c: WikiBlockNode | WikiInlineNode) =>
-            isInlineNode(c)
-              ? serializeInlineNodeToWikitext(c as WikiInlineNode)
-              : serializeBlockNodeToWikitext(c as WikiBlockNode)
-          )
-          .join("\n") ?? "";
+      // Inline children are one run of text; block children (paragraphs) are one per line.
+      const children: readonly (WikiBlockNode | WikiInlineNode)[] = qb.children ?? [];
+      const inner = children.some((c) => !isInlineNode(c))
+        ? children
+            .map((c) =>
+              isInlineNode(c)
+                ? serializeInlineNodeToWikitext(c as WikiInlineNode)
+                : serializeBlockNodeToWikitext(c as WikiBlockNode)
+            )
+            .join("\n")
+        : serializeInlineNodes(children as WikiInlineNode[]);
       if (qb.author) {
         return `{{Quote|${inner}|${qb.author}${qb.source ? `|${qb.source}` : ""}}}`;
       }

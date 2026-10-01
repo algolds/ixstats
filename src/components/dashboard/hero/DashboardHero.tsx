@@ -11,7 +11,7 @@ import {
   NavArrowUp as ChevronUp,
   NavArrowRight as ChevronRight,
 } from "iconoir-react";
-import * as IconoirIcons from "iconoir-react";
+import { resolveChatBadgeIcon } from "~/components/ui/chat-badge-icon";
 import { useUser } from "~/context/auth-context";
 import { usePremium } from "~/hooks/usePremium";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
@@ -115,7 +115,7 @@ export function DashboardHeroComponent({
   const { user, isSignedIn } = useUser();
   const { isPremium } = usePremium();
   const { avatarGlow, chatBadge, neonFrame } = useActiveCosmetics();
-  const CrownIcon = (IconoirIcons as Record<string, any>)[chatBadge.icon] || IconoirIcons.Crown;
+  const CrownIcon = resolveChatBadgeIcon(chatBadge.icon);
 
   const [activeModal, setActiveModal] = useState<
     "gdp" | "population" | "government" | "vitality" | null

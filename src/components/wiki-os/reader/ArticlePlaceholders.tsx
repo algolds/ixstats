@@ -2,100 +2,10 @@ import React, { useMemo } from "react";
 import Link from "next/link";
 import { MapPin } from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { withBasePath } from "~/lib/base-path";
-import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { distanceKmLatLng } from "~/lib/maps/geo-math";
 
-export function injectPlaceholderElements(html: string): string {
-  let processed = html;
-
-  // 0. Strip redundant <iframe> tags
-  processed = processed.replace(/<iframe[\s\S]*?<\/iframe>/gi, "");
-
-  // 1. Process Coords anchors
-  processed = processed.replace(
-    /<a[^>]*href="[^"]*Coords(?::|%3a)([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
-    (_match, coordsStr, label) => {
-      const decoded = safeDecodeURI(coordsStr);
-      const [lat, lng, zoom] = decoded.split(",");
-      const safeLat = (lat || "0").replace(/"/g, "&quot;");
-      const safeLng = (lng || "0").replace(/"/g, "&quot;");
-      const safeZoom = (zoom || "4").replace(/"/g, "&quot;");
-      const safeLabel = (label || "Location").replace(/"/g, "&quot;");
-      return `<span class="wikios-coords-placeholder" data-lat="${safeLat}" data-lng="${safeLng}" data-zoom="${safeZoom}" data-label="${safeLabel}">${label || "Location"}</span>`;
-    }
-  );
-
-  // 2. Process raw Coords wikitext
-  processed = processed.replace(
-    /\[\[Coords:([^\]|]+)(?:\|([^\]]+))?\]\]/gi,
-    (_match, coordsStr, label) => {
-      const decoded = safeDecodeURI(coordsStr);
-      const [lat, lng, zoom] = decoded.split(",");
-      const safeLat = (lat || "0").replace(/"/g, "&quot;");
-      const safeLng = (lng || "0").replace(/"/g, "&quot;");
-      const safeZoom = (zoom || "4").replace(/"/g, "&quot;");
-      const safeLabel = (label || "Location").replace(/"/g, "&quot;");
-      return `<span class="wikios-coords-placeholder" data-lat="${safeLat}" data-lng="${safeLng}" data-zoom="${safeZoom}" data-label="${safeLabel}">${label || "Location"}</span>`;
-    }
-  );
-
-  // 3. Process MapEmbed anchors
-  processed = processed.replace(
-    /<a[^>]*href="[^"]*MapEmbed(?::|%3a)([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
-    (_match, coordsStr, options) => {
-      const decoded = safeDecodeURI(coordsStr);
-      const [lat, lng, zoom] = decoded.split(",");
-      const safeLat = (lat || "0").replace(/"/g, "&quot;");
-      const safeLng = (lng || "0").replace(/"/g, "&quot;");
-      const safeZoom = (zoom || "4").replace(/"/g, "&quot;");
-      const safeOptions = (options || "").replace(/"/g, "&quot;");
-      return `<div class="wikios-map-embed-placeholder" data-lat="${safeLat}" data-lng="${safeLng}" data-zoom="${safeZoom}" data-options="${safeOptions}"></div>`;
-    }
-  );
-
-  // 4. Process raw MapEmbed wikitext
-  processed = processed.replace(
-    /\[\[MapEmbed:([^\]|]+)(?:\|([^\]]+))?\]\]/gi,
-    (_match, coordsStr, options) => {
-      const decoded = safeDecodeURI(coordsStr);
-      const [lat, lng, zoom] = decoded.split(",");
-      const safeLat = (lat || "0").replace(/"/g, "&quot;");
-      const safeLng = (lng || "0").replace(/"/g, "&quot;");
-      const safeZoom = (zoom || "4").replace(/"/g, "&quot;");
-      const safeOptions = (options || "").replace(/"/g, "&quot;");
-      return `<div class="wikios-map-embed-placeholder" data-lat="${safeLat}" data-lng="${safeLng}" data-zoom="${safeZoom}" data-options="${safeOptions}"></div>`;
-    }
-  );
-
-  // 5. Process Template stats anchors
-  processed = processed.replace(
-    /<a[^>]*href="[^"]*Template(?::|%3a)([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
-    (match, templateName) => {
-      const decoded = safeDecodeURI(templateName);
-      if (
-        decoded.startsWith("MyCountry:") ||
-        decoded.startsWith("CountryData:") ||
-        decoded.startsWith("BusinessData:")
-      ) {
-        const safeKey = decoded.replace(/"/g, "&quot;");
-        return `<span class="wikios-stat-placeholder" data-key="${safeKey}"></span>`;
-      }
-      return match;
-    }
-  );
-
-  // 6. Process raw wikitext templates
-  processed = processed.replace(
-    /\{\{((?:MyCountry|CountryData|BusinessData):[^}\n]+?)\}\}/gi,
-    (_match, key) => {
-      const safeKey = key.replace(/"/g, "&quot;");
-      return `<span class="wikios-stat-placeholder" data-key="${safeKey}"></span>`;
-    }
-  );
-
-  return processed;
-}
+export { injectPlaceholderElements, extractStatKeys } from "./placeholder-dom";
 
 export function calculateDistanceAndBearing(
   lat1: number,
@@ -121,7 +31,7 @@ export function calculateDistanceAndBearing(
 }
 
 const CoordsMiniMap = ({ lat, lng, zoom }: { lat: number; lng: number; zoom: number }) => {
-  const src = withBasePath(
+  const src = ixstatesHref(
     `/maps?embed=true&lat=${lat.toFixed(4)}&lng=${lng.toFixed(4)}&zoom=${zoom}`
   );
 
@@ -272,7 +182,7 @@ export function DynamicStatSpan({
 
         {metadata?.detailsUrl && (
           <Link
-            href={withBasePath(metadata.detailsUrl)}
+            href={ixstatesHref(metadata.detailsUrl)}
             className="border-separator text-caption text-tint hover:text-tint border-t pt-2 text-center font-semibold transition-colors"
           >
             Analyze Dashboard &rarr;

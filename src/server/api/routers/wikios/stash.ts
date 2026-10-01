@@ -6,8 +6,10 @@
  */
 
 import { z } from "zod/v4";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { requireWikiUserId, requireWikiUserIds } from "~/lib/wiki-os/auth";
+import { stashContentTypeForTitle } from "~/lib/wiki-os/stash-content-type";
 
 import { db } from "~/server/db";
 
@@ -62,7 +64,7 @@ export const wikiosStashRouter = createTRPCRouter({
   updateStash: protectedProcedure
     .input(
       z.object({
-        id: z.string(),
+        id: z.string().max(64),
         name: z.string().min(1).max(100).optional(),
         color: z.string().max(20).optional(),
         icon: z.string().max(50).optional(),
@@ -81,7 +83,7 @@ export const wikiosStashRouter = createTRPCRouter({
 
   /** Delete a stash (cannot delete default). */
   deleteStash: protectedProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string().max(64) }))
     .mutation(async ({ input, ctx }) => {
       const userIds = requireWikiUserIds(ctx);
       const stash = await db.stash.findUnique({ where: { id: input.id } });
@@ -96,16 +98,23 @@ export const wikiosStashRouter = createTRPCRouter({
     .input(
       z.object({
         pageTitle: z.string().min(1).max(500),
-        stashId: z.string().optional(),
-        contentType: z.string().optional(),
+        stashId: z.string().max(64).optional(),
+        contentType: z.string().max(32).optional(),
         contentId: z.number().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
       const userId = requireWikiUserId(ctx);
       const userIds = requireWikiUserIds(ctx);
-      let stashId = input.stashId;
-      if (!stashId) {
+      let stashId: string;
+      if (input.stashId) {
+        const owned = await db.stash.findFirst({
+          where: { id: input.stashId, userId: { in: userIds } },
+          select: { id: true },
+        });
+        if (!owned) throw new TRPCError({ code: "NOT_FOUND", message: "Stash not found" });
+        stashId = owned.id;
+      } else {
         let defaultStash = await db.stash.findFirst({
           where: { userId: { in: userIds }, isDefault: true },
           orderBy: { createdAt: "asc" },
@@ -118,15 +127,16 @@ export const wikiosStashRouter = createTRPCRouter({
         stashId = defaultStash.id;
       }
       const pageSlug = encodeURIComponent(input.pageTitle.replace(/ /g, "_"));
-      let resolvedType = input.contentType;
-      if (!resolvedType) {
-        if (input.pageTitle.startsWith("commons:")) resolvedType = "image";
-        else if (input.pageTitle.startsWith("forum:thread:")) resolvedType = "forum_thread";
-        else resolvedType = "wiki";
-      }
+      const resolvedType = input.contentType || stashContentTypeForTitle(input.pageTitle);
 
       await db.stashItem.upsert({
-        where: { stashId_pageTitle: { stashId, pageTitle: input.pageTitle } },
+        where: {
+          stashId_contentType_pageTitle: {
+            stashId,
+            contentType: resolvedType,
+            pageTitle: input.pageTitle,
+          },
+        },
         create: {
           stashId,
           pageTitle: input.pageTitle,
@@ -134,24 +144,33 @@ export const wikiosStashRouter = createTRPCRouter({
           contentType: resolvedType,
           contentId: input.contentId,
         },
-        update: {
-          contentType: resolvedType,
-          ...(input.contentId ? { contentId: input.contentId } : {}),
-        },
+        update: input.contentId ? { contentId: input.contentId } : {},
       });
       return { success: true, stashId };
     }),
 
-  /** Remove a page from a stash (or all stashes if no stashId). */
+  /**
+   * Remove a page from a stash (or all stashes if no stashId). Only the item of one content type is
+   * removed — the one named by `contentType`, else the one the title's prefix implies — so unstashing
+   * the article "Rome" leaves an Onoma name "Rome" alone.
+   */
   unstashPage: protectedProcedure
-    .input(z.object({ pageTitle: z.string().min(1).max(500), stashId: z.string().optional() }))
+    .input(
+      z.object({
+        pageTitle: z.string().min(1).max(500),
+        stashId: z.string().max(64).optional(),
+        contentType: z.string().max(32).optional(),
+      })
+    )
     .mutation(async ({ input, ctx }) => {
       const userIds = requireWikiUserIds(ctx);
+      const contentType = input.contentType || stashContentTypeForTitle(input.pageTitle);
       if (input.stashId) {
         await db.stashItem.deleteMany({
           where: {
             stashId: input.stashId,
             pageTitle: input.pageTitle,
+            contentType,
             stash: { userId: { in: userIds } },
           },
         });
@@ -162,7 +181,7 @@ export const wikiosStashRouter = createTRPCRouter({
         ).map((s) => s.id);
         if (stashIds.length > 0) {
           await db.stashItem.deleteMany({
-            where: { stashId: { in: stashIds }, pageTitle: input.pageTitle },
+            where: { stashId: { in: stashIds }, pageTitle: input.pageTitle, contentType },
           });
         }
       }
@@ -171,10 +190,14 @@ export const wikiosStashRouter = createTRPCRouter({
 
   /** Check if a page is stashed (and in which stashes). Powers the button color. */
   isStashed: protectedProcedure
-    .input(z.object({ pageTitle: z.string().min(1).max(500) }))
+    .input(z.object({ pageTitle: z.string().min(1).max(500), contentType: z.string().max(32).optional() }))
     .query(async ({ input, ctx }) => {
       const items = await db.stashItem.findMany({
-        where: { pageTitle: input.pageTitle, stash: { userId: { in: requireWikiUserIds(ctx) } } },
+        where: {
+          pageTitle: input.pageTitle,
+          contentType: input.contentType || stashContentTypeForTitle(input.pageTitle),
+          stash: { userId: { in: requireWikiUserIds(ctx) } },
+        },
         include: { stash: { select: { id: true, color: true, name: true } } },
       });
       return {
@@ -187,9 +210,9 @@ export const wikiosStashRouter = createTRPCRouter({
   getStashItems: protectedProcedure
     .input(
       z.object({
-        stashId: z.string(),
+        stashId: z.string().max(64),
         limit: z.number().min(1).max(100).default(50),
-        cursor: z.string().optional(),
+        cursor: z.string().max(64).optional(),
       })
     )
     .query(async ({ input, ctx }) => {

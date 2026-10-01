@@ -138,7 +138,8 @@ export function EditorialMastheadHeader({
               )}
               <span className="flex items-center gap-2">
                 <Calendar className="text-label-secondary h-3.5 w-3.5" />
-                {new Date(lastModified).toLocaleDateString(undefined, {
+                {new Date(lastModified).toLocaleDateString("en-US", {
+                  timeZone: "UTC",
                   month: "short",
                   day: "numeric",
                   year: "numeric",

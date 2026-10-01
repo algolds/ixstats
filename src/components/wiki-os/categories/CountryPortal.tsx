@@ -4,6 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import {
   OpenNewWindow as ExternalLink,
   GraphUp as TrendingUp,
@@ -84,7 +85,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Link
-                  href={withBasePath("/wiki/categories")}
+                  href={withBasePath("/util/categories")}
                   className="border-green/20 bg-green/10 text-caption text-green hover:bg-green/15 inline-flex items-center gap-2 rounded-full border px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                 >
                   <span>Nations</span>
@@ -112,7 +113,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
             </Link>
 
             <Link
-              href={withBasePath(`/countries/${country.slug ?? country.id}`)}
+              href={ixstatesHref(`/countries/${country.slug ?? country.id}`)}
               className="rounded-row bg-tint text-caption text-on-tint shadow-card hover:bg-tint inline-flex items-center gap-2 px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               <TrendingUp className="h-3.5 w-3.5" />
@@ -185,7 +186,7 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
                     <Link
                       key={m.title}
                       href={withBasePath(
-                        `/wiki/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`
+                        `/util/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`
                       )}
                       className="wikios-portal-pill"
                     >
@@ -246,14 +247,14 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
               {blurbs.map((r) => (
                 <Link
                   key={r.id}
-                  href={withBasePath(`/blurbs/${r.prompt.slug}`)}
+                  href={ixstatesHref(`/blurbs/${r.prompt.slug}`)}
                   className="wikios-portal-blurb"
                 >
                   <span className="wikios-portal-blurb-prompt">{r.prompt.title}</span>
                   <span className="wikios-portal-blurb-text">{r.content}</span>
                 </Link>
               ))}
-              <Link href={withBasePath("/blurbs")} className="wikios-portal-blurbs-more">
+              <Link href={ixstatesHref("/blurbs")} className="wikios-portal-blurbs-more">
                 All blurbs →
               </Link>
             </div>

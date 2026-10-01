@@ -1,5 +1,6 @@
 "use client";
 
+import { pageEditHref } from "~/lib/wiki-os/page-tools";
 import { Badge } from "~/components/ui/badge";
 import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -278,11 +279,7 @@ export const DossierTab: React.FC<DossierTabProps> = ({
                         </p>
                         <div className="flex flex-wrap items-center justify-center gap-3">
                           <Button asChild>
-                            <Link
-                              href={`/wiki/${encodeURIComponent(countryName.replace(/ /g, "_"))}/edit`}
-                            >
-                              Create Page on WikiOS
-                            </Link>
+                            <Link href={pageEditHref(countryName)}>Create Page on WikiOS</Link>
                           </Button>
                           <Button
                             variant="outline"

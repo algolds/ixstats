@@ -58,29 +58,15 @@ export function WikiUtilitiesRibbon({
   const getActiveTabId = () => {
     if (cleanPath === "/wiki" || cleanPath === "/wiki/" || cleanPath === "/wiki/Main_Page")
       return "main";
-    if (cleanPath.startsWith("/util/categories") || cleanPath.startsWith("/wiki/categories"))
-      return "categories";
-    if (cleanPath.startsWith("/util/recent") || cleanPath.startsWith("/wiki/recent"))
-      return "recent";
-    if (cleanPath.startsWith("/util/repository") || cleanPath.startsWith("/wiki/repository"))
-      return "repository";
-    if (
-      cleanPath === "/util" ||
-      cleanPath === "/util/" ||
-      cleanPath.startsWith("/util/utilities") ||
-      cleanPath.startsWith("/wiki/utilities")
-    )
+    if (cleanPath.startsWith("/util/categories")) return "categories";
+    if (cleanPath.startsWith("/util/recent")) return "recent";
+    if (cleanPath.startsWith("/util/repository")) return "repository";
+    if (cleanPath === "/util" || cleanPath === "/util/" || cleanPath.startsWith("/util/utilities"))
       return "utilities";
-    if (cleanPath.startsWith("/util/random") || cleanPath.startsWith("/wiki/random"))
-      return "random";
-    if (
-      cleanPath.startsWith("/util/watchlist") ||
-      cleanPath.startsWith("/wiki/watchlist") ||
-      cleanPath.startsWith("/stashes")
-    )
+    if (cleanPath.startsWith("/util/random")) return "random";
+    if (cleanPath.startsWith("/util/watchlist") || cleanPath.startsWith("/stashes"))
       return "watchlist";
-    if (cleanPath.startsWith("/util/lorewards") || cleanPath.startsWith("/wiki/lorewards"))
-      return "lorewards";
+    if (cleanPath.startsWith("/util/lorewards")) return "lorewards";
     return null;
   };
 

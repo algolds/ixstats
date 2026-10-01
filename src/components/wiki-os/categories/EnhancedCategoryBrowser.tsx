@@ -64,7 +64,7 @@ export function EnhancedCategoryBrowser({
           <div className="max-w-2xl space-y-2">
             {/* Breadcrumb Navigation Pill */}
             <Link
-              href={withBasePath("/wiki/categories")}
+              href={withBasePath("/util/categories")}
               className="group border-tint/20 bg-tint/10 text-caption text-tint hover:bg-tint/15 inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             >
               <ArrowLeft className="h-3 w-3 transition-transform duration-200 group-hover:-translate-x-0.5" />
@@ -133,7 +133,7 @@ export function EnhancedCategoryBrowser({
                 <Link
                   key={m.title}
                   href={withBasePath(
-                    `/wiki/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`
+                    `/util/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`
                   )}
                   className="text-label group rounded-row border-separator bg-surface text-caption shadow-card hover:border-tint/40 hover:bg-surface hover:text-tint inline-flex items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
                 >

@@ -18,6 +18,7 @@ import { cn } from "~/lib/utils";
 
 import { withBasePath } from "~/lib/base-path";
 import type { ArticleAuthorInfo } from "./ArticleHeader";
+import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
 
 interface ArticleCompanionHUDProps {
@@ -26,6 +27,8 @@ interface ArticleCompanionHUDProps {
   contentHtml: string;
   lastModified?: string | null;
   authorInfo?: ArticleAuthorInfo | null;
+  /** Authorship is on its way: its rows' place is held, so the cards below do not drop when it arrives. */
+  authorsPending?: boolean;
   categories?: string[];
   awardsData?: any;
   marginThreadsCount?: number;
@@ -120,6 +123,7 @@ export function ArticleCompanionHUD({
   contentHtml,
   lastModified,
   authorInfo,
+  authorsPending = false,
   categories = [],
   awardsData,
   marginThreadsCount = 0,
@@ -248,7 +252,8 @@ export function ArticleCompanionHUD({
             <div className="text-footnote flex items-center justify-between">
               <span className="text-label-secondary">Created</span>
               <span className="text-label-secondary text-caption tabular-nums">
-                {new Date(createdAt).toLocaleDateString(undefined, {
+                {new Date(createdAt).toLocaleDateString("en-US", {
+                  timeZone: "UTC",
                   month: "short",
                   day: "numeric",
                   year: "numeric",
@@ -262,7 +267,8 @@ export function ArticleCompanionHUD({
             <div className="border-separator text-footnote flex items-center justify-between border-t pt-2">
               <span className="text-label-secondary">Last Updated</span>
               <span className="text-label text-caption tabular-nums">
-                {new Date(effectiveLastModified).toLocaleDateString(undefined, {
+                {new Date(effectiveLastModified).toLocaleDateString("en-US", {
+                  timeZone: "UTC",
                   month: "short",
                   day: "numeric",
                   year: "numeric",
@@ -297,6 +303,18 @@ export function ArticleCompanionHUD({
                 )}
                 <span className="truncate">{lastEditorName}</span>
               </Link>
+            </div>
+          )}
+
+          {authorsPending && (
+            <div
+              aria-hidden="true"
+              className="border-border/20 min-h-[10.5rem] space-y-2.5 border-t pt-2.5"
+            >
+              <Skeleton className="h-4 w-3/4 rounded bg-white/5" />
+              <Skeleton className="h-4 w-2/3 rounded bg-white/5" />
+              <Skeleton className="h-4 w-3/4 rounded bg-white/5" />
+              <Skeleton className="h-12 w-full rounded bg-white/5" />
             </div>
           )}
 
@@ -415,7 +433,7 @@ export function ArticleCompanionHUD({
               return (
                 <Link
                   key={cleanCat}
-                  href={`/wiki/categories/${encodeURIComponent(cleanCat.replace(/ /g, "_"))}`}
+                  href={`/util/categories/${encodeURIComponent(cleanCat.replace(/ /g, "_"))}`}
                   className="text-label-secondary hover:text-label rounded-control border-separator bg-fill-4 text-caption hover:bg-fill-4 max-w-[180px] truncate border px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.98]"
                 >
                   {cleanCat}

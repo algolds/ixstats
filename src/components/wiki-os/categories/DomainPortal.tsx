@@ -53,7 +53,7 @@ export function DomainPortal({ domain, domainMeta, subcategories, pages }: Domai
           <div className="max-w-2xl space-y-2">
             {/* Breadcrumb Navigation Pill */}
             <Link
-              href={withBasePath("/wiki/categories")}
+              href={withBasePath("/util/categories")}
               className="group border-tint/20 bg-tint/10 text-caption text-facet-accent-ink hover:bg-tint/15 focus-visible:outline-tint facet-press inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               <ArrowLeft
@@ -119,7 +119,7 @@ export function DomainPortal({ domain, domainMeta, subcategories, pages }: Domai
                 <Link
                   key={m.title}
                   href={withBasePath(
-                    `/wiki/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`
+                    `/util/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`
                   )}
                   className="text-label group rounded-row border-separator bg-surface text-caption shadow-card hover:border-tint/40 hover:bg-surface hover:text-tint focus-visible:outline-tint facet-press inline-flex items-center gap-2 border px-4 py-2 font-semibold outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
@@ -199,7 +199,7 @@ export function DomainPortal({ domain, domainMeta, subcategories, pages }: Domai
             directory.
           </p>
           <Link
-            href={withBasePath("/wiki/categories")}
+            href={withBasePath("/util/categories")}
             className="bg-tint text-on-tint hover:bg-tint/90 rounded-row text-caption mt-2 inline-flex items-center gap-2 px-4 py-2 font-semibold transition-colors"
           >
             <Folder className="h-3.5 w-3.5" />

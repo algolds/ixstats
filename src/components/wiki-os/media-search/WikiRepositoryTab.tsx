@@ -4,6 +4,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { withBasePath } from "~/lib/base-path";
+import { isMediaWikiUrl, publicArticleUrl } from "~/lib/wiki-os/config";
 import { cn } from "~/lib/utils";
 import {
   Search,
@@ -188,9 +189,9 @@ export function WikiRepositoryTab({
           ? withBasePath(
               rawUrl.replace(/^https?:\/\/(www\.)?iiwiki\.com\//, "/api/mediawiki/iiwiki/")
             )
-          : rawUrl.includes("ixwiki.com/")
+          : isMediaWikiUrl(rawUrl)
             ? withBasePath(
-                rawUrl.replace(/^https?:\/\/(www\.)?ixwiki\.com\//, "/api/mediawiki/ixwiki/")
+                rawUrl.replace(/^https?:\/\/[^/]+\//, "/api/mediawiki/ixwiki/")
               )
             : rawUrl;
 
@@ -199,9 +200,7 @@ export function WikiRepositoryTab({
           title: img.name.startsWith("File:") ? img.name : `File:${img.name}`,
           thumbUrl: proxiedUrl,
           url: proxiedUrl,
-          descriptionUrl: isIiwiki
-            ? `https://iiwiki.com/wiki/File:${encodeURIComponent(img.name)}`
-            : `https://ixwiki.com/wiki/File:${encodeURIComponent(img.name)}`,
+          descriptionUrl: publicArticleUrl(`File:${img.name}`, isIiwiki ? "iiwiki" : "ixwiki"),
           width: img.width || 0,
           height: img.height || 0,
           mime: img.mime || "image/png",

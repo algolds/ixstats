@@ -41,6 +41,8 @@ interface DashboardSidebarLayoutProps {
   expandedWidthClassName?: string;
   expandedWidthStyle?: string;
   disableGlobalHover?: boolean;
+  /** Told when the collapsed state is set by the user, or restored from the browser's saved copy. */
+  onCollapsedChange?: (collapsed: boolean) => void;
 }
 
 export function DashboardSidebarLayout({
@@ -58,9 +60,9 @@ export function DashboardSidebarLayout({
   expandedWidthClassName,
   expandedWidthStyle,
   disableGlobalHover = false,
+  onCollapsedChange,
 }: DashboardSidebarLayoutProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(defaultCollapsed);
-  const [isMounted, setIsMounted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isHoveredDelayed, setIsHoveredDelayed] = useState(false);
 
@@ -87,16 +89,15 @@ export function DashboardSidebarLayout({
     if (disableCollapse) {
       // oxlint-disable-next-line
       setIsSidebarCollapsed(false);
-      setIsMounted(true);
     } else {
       const stored = localStorage.getItem("ixstats.sidebar.collapsed");
-      if (stored === "true") {
-        setIsSidebarCollapsed(true);
-      } else if (stored === "false") {
-        setIsSidebarCollapsed(false);
+      if (stored === "true" || stored === "false") {
+        setIsSidebarCollapsed(stored === "true");
+        onCollapsedChange?.(stored === "true");
       }
-      setIsMounted(true);
     }
+    // the saved copy is read once, on mount
+    // oxlint-disable-next-line
   }, [disableCollapse]);
 
   const handleToggleSidebar = () => {
@@ -104,9 +105,12 @@ export function DashboardSidebarLayout({
     const next = !isSidebarCollapsed;
     setIsSidebarCollapsed(next);
     localStorage.setItem("ixstats.sidebar.collapsed", String(next));
+    onCollapsedChange?.(next);
   };
 
-  const isCollapsedNow = !disableCollapse && isSidebarCollapsed && isMounted;
+  // The server renders the state `defaultCollapsed` says (the reader's own, for the wiki), so the
+  // first paint is the final one: no waiting for the browser before the rail takes its width.
+  const isCollapsedNow = !disableCollapse && isSidebarCollapsed;
   const isHoverActive = isCollapsedNow && isHoveredDelayed;
 
   const defaultExpandedWidthClass = variant === "rail" ? "w-64" : "w-48";

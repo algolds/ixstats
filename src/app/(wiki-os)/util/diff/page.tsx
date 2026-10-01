@@ -1,17 +1,9 @@
 "use client";
-// src/app/(wiki-os)/wiki/diff/page.tsx
-// WikiOS Native Revision Diff Comparator with DiffViewer
+// src/app/(wiki-os)/util/diff/page.tsx
+// WikiOS Native Revision Diff Comparator: reads the revisions from the query string.
 
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, ViewColumns2 as Columns2, AlignLeft, Undo, Check } from "iconoir-react";
-import { api } from "~/trpc/react";
-import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
-import { DiffViewer } from "~/components/diff-viewer";
-import { withBasePath } from "~/lib/base-path";
-import { Button } from "~/components/ui/button";
-import { SegmentedControl } from "~/components/ui/segmented-control";
+import { RevisionDiffView } from "~/components/wiki-os/history/RevisionDiffView";
 
 export default function DiffPage() {
   const searchParams = useSearchParams();
@@ -21,143 +13,13 @@ export default function DiffPage() {
   // Revision ids are opaque history `revid`s; "prev" and "0" mean "the previous revision".
   const fromrev = fromParam && fromParam !== "prev" && fromParam !== "0" ? fromParam : undefined;
   const torev = toParam === "0" ? "" : toParam;
-  const [layout, setLayout] = useState<"unified" | "split">("unified");
-  const [undoConfirm, setUndoConfirm] = useState(false);
-
-  const { data, isLoading, error } = api.wikios.getDiff.useQuery(
-    { fromrev, torev },
-    { enabled: torev.length > 0, staleTime: 60_000 }
-  );
-
-  const effectiveFromRev = data?.from?.revid || fromrev || "";
-
-  const { data: revContent } = api.wikios.getRevisionContent.useQuery(
-    { revid: effectiveFromRev },
-    { enabled: effectiveFromRev.length > 0 && undoConfirm, staleTime: 300_000 }
-  );
-
-  const revertMutation = api.wikios.revertToRevision.useMutation({
-    onSuccess: () => setUndoConfirm(false),
-  });
 
   return (
-    <WikiOSLayout title="Revision Diff">
-      <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6">
-        {/* Back Link */}
-        <div>
-          <Link
-            href={withBasePath("/util")}
-            className="text-label-secondary hover:text-tint text-caption inline-flex items-center gap-2 transition-colors"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to Utilities
-          </Link>
-        </div>
-
-        {isLoading && (
-          <div className="border-separator bg-surface rounded-card flex h-64 items-center justify-center border">
-            <div className="border-tint h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
-          </div>
-        )}
-
-        {error && (
-          <div className="rounded-card border-red/30 bg-red/10 text-footnote text-red border p-6">
-            Failed to load revision comparison: {error.message}
-          </div>
-        )}
-
-        {data && (
-          <div className="space-y-4">
-            {/* Diff Meta Card */}
-            <div className="border-separator bg-surface rounded-card space-y-4 border p-6">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <span className="text-tint text-eyebrow">Comparing Revisions</span>
-                  <h2 className="text-label text-title-3 mt-1">
-                    r{data.from.revid} &rarr; r{data.to.revid}
-                  </h2>
-                </div>
-
-                {/* Layout Switcher */}
-                <div className="flex items-center gap-2">
-                  <SegmentedControl
-                    size="sm"
-                    aria-label="Diff layout"
-                    value={layout}
-                    onValueChange={setLayout}
-                    options={[
-                      { value: "unified", label: "Unified", icon: <AlignLeft /> },
-                      { value: "split", label: "Split", icon: <Columns2 /> },
-                    ]}
-                  />
-
-                  {/* Undo Button */}
-                  {!undoConfirm ? (
-                    <Button
-                      variant="tinted"
-                      size="sm"
-                      onClick={() => setUndoConfirm(true)}
-                      className="bg-yellow/10 text-yellow hover:bg-yellow/20"
-                    >
-                      <Undo className="h-3.5 w-3.5" />
-                      Revert to r{data.from.revid}
-                    </Button>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        disabled={revertMutation.isPending || !revContent}
-                        onClick={() => {
-                          if (revContent) {
-                            revertMutation.mutate({
-                              title: revContent.title,
-                              revid: data.from.revid,
-                              summary: `Reverted revision ${data.to.revid} by ${data.to.user}`,
-                            });
-                          }
-                        }}
-                        className="bg-yellow hover:bg-yellow/80 text-black"
-                      >
-                        {revertMutation.isPending ? "Reverting…" : "Confirm Revert"}
-                      </Button>
-                      <Button variant="gray" size="sm" onClick={() => setUndoConfirm(false)}>
-                        Cancel
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Status alerts */}
-              {revertMutation.isSuccess && (
-                <div className="rounded-row border-green/30 bg-green/10 text-caption text-green flex items-center gap-2 border px-3 py-2">
-                  <Check className="h-4 w-4" />
-                  Successfully reverted to revision r{data.from.revid}.
-                </div>
-              )}
-            </div>
-
-            {/* DiffViewer Component */}
-            <div className="border-separator bg-surface rounded-card overflow-hidden border p-4">
-              <DiffViewer
-                oldCode={data.oldWikitext ?? ""}
-                newCode={data.newWikitext ?? ""}
-                layout={layout}
-                language="markdown"
-                oldTitle={`Revision r${data.from.revid} (${data.from.user})`}
-                newTitle={`Revision r${data.to.revid} (${data.to.user})`}
-              />
-            </div>
-          </div>
-        )}
-
-        {!isLoading && !data && !torev && (
-          <div className="border-separator bg-surface text-label-secondary rounded-card text-footnote border border-dashed p-12 text-center">
-            No revisions selected for comparison. Specify <code>?to=REV</code> or{" "}
-            <code>?from=REV&to=REV</code> in the URL.
-          </div>
-        )}
-      </div>
-    </WikiOSLayout>
+    <RevisionDiffView
+      fromrev={fromrev}
+      torev={torev}
+      backHref="/util"
+      backLabel="Back to Utilities"
+    />
   );
 }

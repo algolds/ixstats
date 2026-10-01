@@ -25,9 +25,12 @@ own DB schema, themeable). Do C as its own track once 2b/3 land.
 
 ## Portability rules (apply to ALL WikiOS work from here on)
 
-1. **No hard-coded `ixwiki.com`.** All MediaWiki endpoints via `WIKIOS_MEDIAWIKI_API` /
-   `NEXT_PUBLIC_MEDIAWIKI_URL` env (already the pattern; `WIKIOS_PARSOID_URL` is no longer read). New code must follow it.
-   Known exceptions: `transformers/html-transformer.ts` rewrites asset URLs to a literal `https://ixwiki.com/`, and about 48 other non-comment `ixwiki.com` references remain across ~21 WikiOS files (e.g. `write-service.ts`, `csrf-cache.ts`, `parsoid.ts`, `pg-reader.ts`, `image-url.ts`, the `wiki/layout.tsx` canonical).
+1. **No hard-coded `ixwiki.com`.** Every MediaWiki address comes from the one config object, `src/lib/wiki-os/config.ts`
+   (`wikiosConfig`, built from `NEXT_PUBLIC_MEDIAWIKI_URL`, `WIKIOS_MEDIAWIKI_INTERNAL_URL`, `WIKIOS_MEDIAWIKI_API` and
+   `WIKIOS_MEDIAWIKI_BOT_USER`) through `mediaWikiOrigin()`, `mediaWikiApiUrl({ internal })`, `publicArticleUrl()`,
+   `mediaWikiImageUrl()` and `mediaWikiHostPattern()`. The host is spelled once, as the default in that file;
+   `src/tests/architecture/ixwiki-host-literal.test.ts` fails on any other. New code must follow it
+   (`docs/systems/wikios/mediawiki-dependencies.md`, plan 415).
 2. **No new IxStats-specific coupling** in WikiOS code. Country/stat templates are an IxStats
    *plugin*, not core wiki behavior — keep them behind the existing `MyCountry:`/`CountryData:`/
    `BusinessData:` prefix checks, isolated.

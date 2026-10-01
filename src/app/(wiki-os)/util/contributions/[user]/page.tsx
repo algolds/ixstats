@@ -1,5 +1,5 @@
 "use client";
-// src/app/(wiki-os)/wiki/contributions/[user]/page.tsx
+// src/app/(wiki-os)/util/contributions/[user]/page.tsx
 // WikiOS User Contributions — shows edit history for a specific user
 
 import { useParams } from "next/navigation";
@@ -7,6 +7,7 @@ import { useState } from "react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
@@ -140,6 +141,7 @@ export default function ContributionsPage() {
                   size: number;
                   minor: boolean;
                   isNew: boolean;
+                  parked: boolean;
                 }) => (
                   <div
                     key={c.revid}
@@ -157,6 +159,7 @@ export default function ContributionsPage() {
                             m
                           </span>
                         )}
+                        {c.parked && <ParkedBadge />}
                       </div>
 
                       <div className="min-w-0">
@@ -189,7 +192,7 @@ export default function ContributionsPage() {
                       </span>
                       {!c.isNew && (
                         <Link
-                          href={withBasePath(`/wiki/diff?to=${c.revid}`)}
+                          href={withBasePath(`/util/diff?to=${c.revid}`)}
                           className="bg-fill-3 hover:bg-fill-2 text-label rounded-control text-caption inline-flex items-center gap-1 px-3 py-1 font-semibold transition-colors"
                         >
                           <GitCommit className="text-label-secondary h-3 w-3" />

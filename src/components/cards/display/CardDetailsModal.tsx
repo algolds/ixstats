@@ -17,7 +17,7 @@ import {
   Download,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
+import { publicArticleUrl } from "~/lib/wiki-os/config";
 import { Dialog, DialogContent, DialogTitle, DialogClose } from "~/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { RarityBadge } from "./RarityBadge";
@@ -113,9 +113,10 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
       if (card.wikiUrl) return card.wikiUrl;
 
       if (card.wikiArticleTitle) {
-        const path = titleToWikiOSPath(card.wikiArticleTitle);
-        const domain = card.wikiSource === "iiwiki" ? "iiwiki.com" : "ixwiki.com";
-        return `https://${domain}/${path}`;
+        return publicArticleUrl(
+          card.wikiArticleTitle,
+          card.wikiSource === "iiwiki" ? "iiwiki" : "ixwiki"
+        );
       }
       return null;
     }, [card]);

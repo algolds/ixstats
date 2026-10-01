@@ -5,11 +5,11 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { api } from "~/trpc/react";
+import { useNotify } from "~/hooks/useNotify";
 import { fixEditorImageUrls } from "~/lib/wiki-os/transformers/fix-editor-images";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Transforms, Editor, Element as SlateElement, type Node, type Descendant } from "slate";
 import { nanoid } from "platejs";
-import { renderTemplateCached } from "~/lib/wiki-os/templates/preview-service";
 
 // The concrete plate editor type is deeply generic; the formatting layer only
 // relies on Slate runtime APIs, so we keep the ref loose.
@@ -26,6 +26,9 @@ export interface UseWikiVisualFormattingProps {
   editorRef: React.MutableRefObject<PlateEditorLike | null>;
   setIsDirty: (val: boolean) => void;
 }
+
+/** A template preview is read again after a day (the server keeps its own, Redis, copy for as long). */
+const TEMPLATE_PREVIEW_STALE_MS = 24 * 60 * 60 * 1000;
 
 const MARK_MAP: Record<string, string> = {
   bold: "bold",
@@ -169,6 +172,23 @@ function getDomActiveFormats(): Set<string> {
   return fmt;
 }
 
+/** An error from a tRPC call, which carries the procedure's error code in `data`. */
+type ProcedureError = Error & { data?: { code?: string } | null };
+
+/** Why a template preview could not be fetched, in words an author can act on. */
+function previewFailureReason(err: Error): string {
+  switch ((err as ProcedureError).data?.code) {
+    case "TOO_MANY_REQUESTS":
+      return "Too many previews were asked for just now; try again in a minute.";
+    case "UNAUTHORIZED":
+      return "Sign in to preview templates.";
+    case "BAD_REQUEST":
+      return "The preview service refused these parameters.";
+    default:
+      return "The preview service did not answer.";
+  }
+}
+
 function buildDataMw(name: string, params: Record<string, string>): string {
   return JSON.stringify({
     parts: [
@@ -192,6 +212,8 @@ export function useWikiVisualFormatting({
   const lastActiveFormatsRef = useRef<Set<string>>(new Set());
 
   const previewMutation = api.wikios.previewWikitext.useMutation();
+  const utils = api.useUtils();
+  const notify = useNotify();
 
   const withEditor = useCallback(
     <T>(fn: (editor: PlateEditorLike) => T): T | undefined => {
@@ -857,33 +879,47 @@ export function useWikiVisualFormatting({
         return;
       }
 
+      const paramParts = Object.entries(params)
+        .filter(([, v]) => v.trim())
+        .map(([k, v]) => `|${k}=${v}`);
+      const wikitext = `{{${templateName}${paramParts.join("")}}}`;
+
+      // The server renders the preview (sanitized, cached in Redis): the browser never asks MediaWiki itself.
+      // The template is the wikitext either way: when the preview cannot be had (rate limit, refused
+      // parameters, signed out) it is inserted without one, and the author is told.
+      let preview = "";
       try {
-        const paramParts = Object.entries(params)
-          .filter(([, v]) => v.trim())
-          .map(([k, v]) => `|${k}=${v}`);
-        const wikitext = `{{${templateName}${paramParts.join("")}}}`;
-        const preview = await renderTemplateCached(templateName, params);
-        const result = { html: preview.html };
-        withEditor((editor) => {
-          Transforms.insertNodes(editor, {
-            type: "raw-html",
-            id: nanoid(),
-            kind: /infobox/i.test(wikitext) ? "infobox" : "generic",
-            name: templateName,
-            params,
-            dataMw,
-            html: `<div typeof="mw:Transclusion" data-mw='${dataMw.replace(/'/g, "&#39;")}' class="wikios-ve-template">${fixEditorImageUrls(result.html)}</div>`,
-            wikitext,
-            children: [{ text: "" }],
-          } as Descendant);
-          setIsDirty(true);
-        });
+        preview = await utils.wikios.getTemplatePreview.fetch(
+          { template: templateName, params },
+          { staleTime: TEMPLATE_PREVIEW_STALE_MS }
+        );
       } catch (err) {
         console.error("Failed to render template:", err);
+        notify.warning(
+          "Template inserted without a preview",
+          `{{${templateName}}} is in the page as written. ${err instanceof Error ? previewFailureReason(err) : ""}`.trim()
+        );
       }
+
+      withEditor((editor) => {
+        Transforms.insertNodes(editor, {
+          type: "raw-html",
+          id: nanoid(),
+          kind: /infobox/i.test(wikitext) ? "infobox" : "generic",
+          name: templateName,
+          params,
+          dataMw,
+          html: preview
+            ? `<div typeof="mw:Transclusion" data-mw='${dataMw.replace(/'/g, "&#39;")}' class="wikios-ve-template">${fixEditorImageUrls(preview)}</div>`
+            : "",
+          wikitext,
+          children: [{ text: "" }],
+        } as Descendant);
+        setIsDirty(true);
+      });
     },
     // oxlint-disable-next-line
-    [previewMutation, title, withEditor, setIsDirty]
+    [previewMutation, utils, notify, title, withEditor, setIsDirty]
   );
 
   const handleInsertImage = useCallback(

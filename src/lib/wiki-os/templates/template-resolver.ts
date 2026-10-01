@@ -3,6 +3,7 @@
 // Pure, lightweight template parser & replacer. Decoupled from host DB schemas.
 
 import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
+import { forwardFinder } from "../wikitext/forward-finder";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -67,6 +68,42 @@ export function getRegisteredProviders(): readonly TemplateDataProvider[] {
 // Pattern extraction
 // ---------------------------------------------------------------------------
 
+/** A `{{MyCountry:gdp}}`, `{{CountryData:Name:field}}` or `{{BusinessData:Name:field}}` in text. */
+export interface RawChip {
+  /** The index of its `{{`. */
+  readonly index: number;
+  /** The whole chip. */
+  readonly text: string;
+  /** `MyCountry`, `CountryData` or `BusinessData`. */
+  readonly prefix: string;
+  /** What follows the colon: at least one character, none of them `|` or `}`. */
+  readonly rest: string;
+}
+
+/**
+ * The raw chips of `text`, in order (what `/\{\{(MyCountry|CountryData|BusinessData):([^|}]+)\}\}/g` finds). The
+ * first `|` or `}` after an opener is the only place its chip can close, so it is looked for once however many
+ * openers (`{{MyCountry:` and nothing closing it) come before it.
+ */
+export function* rawChipsIn(text: string): Generator<RawChip> {
+  const nextStop = forwardFinder(text, /[|}]/g);
+  const opener = /\{\{(MyCountry|CountryData|BusinessData):/g;
+  for (let found = opener.exec(text); found; found = opener.exec(text)) {
+    const start = found.index + found[0].length;
+    const stop = nextStop(start);
+    if (stop === -1) return; // nothing closes any later chip either
+    if (stop > start && text.startsWith("}}", stop)) {
+      yield {
+        index: found.index,
+        text: text.slice(found.index, stop + 2),
+        prefix: found[1]!,
+        rest: text.slice(start, stop),
+      };
+      opener.lastIndex = stop + 2;
+    }
+  }
+}
+
 /** Extract template keys from rendered HTML (Template: anchor patterns and wikitext braces). */
 export function extractTemplateKeys(html: string): TemplateKey[] {
   const keys = new Map<string, TemplateKey>();
@@ -82,10 +119,8 @@ export function extractTemplateKeys(html: string): TemplateKey[] {
   }
 
   // Also scan for raw wikitext patterns (in case they survive parsing)
-  const rawRegex = /\{\{(MyCountry|CountryData|BusinessData):([^|}]+)\}\}/g;
-  while ((match = rawRegex.exec(html)) !== null) {
-    const raw = `${match[1]}:${match[2]}`;
-    const parsed = parseKey(raw);
+  for (const chip of rawChipsIn(html)) {
+    const parsed = parseKey(`${chip.prefix}:${chip.rest}`);
     if (parsed && !keys.has(parsed.key)) {
       keys.set(parsed.key, parsed);
     }
@@ -166,7 +201,7 @@ const CHIP_STYLES: Record<string, { className: string; icon: string }> = {
   businessdata: { className: "bg-teal-500/10 text-teal-400 border-teal-500/20", icon: "💼" },
 };
 
-function makeChip(key: string, value: string): string {
+export function makeChip(key: string, value: string): string {
   let style = CHIP_STYLES["countrydata"]!;
   if (key.startsWith("MyCountry:")) style = CHIP_STYLES["mycountry"]!;
   else if (key.startsWith("BusinessData:")) style = CHIP_STYLES["businessdata"]!;
@@ -176,45 +211,6 @@ function makeChip(key: string, value: string): string {
     `<span class="opacity-70 text-xs">${style.icon}</span> ` +
     `${escapeHtml(value)}</span>`
   );
-}
-
-/**
- * Replace recognised template anchor patterns in HTML with pre-resolved chips.
- * This handles both `<a href="...Template:...">` patterns and raw `{{...}}` wikitext.
- */
-export function applyResolvedTemplates(
-  html: string,
-  resolved: Map<string, ResolvedTemplate>
-): string {
-  let result = html;
-
-  // 1. Replace Template: anchor links with resolved chips
-  result = result.replace(
-    /<a[^>]*href="[^"]*Template(?::|%3a)([^"|?#&]+)[^"]*"[^>]*>(.*?)<\/a>/gi,
-    (_match, templateName: string) => {
-      const key = safeDecodeURI(templateName);
-      const entry = resolved.get(key);
-      if (entry) {
-        return makeChip(key, entry.value);
-      }
-      return _match;
-    }
-  );
-
-  // 2. Replace raw {{CountryData:...}}, {{BusinessData:...}}, {{MyCountry:...}} wikitext
-  result = result.replace(
-    /\{\{(MyCountry|CountryData|BusinessData):([^|}]+)\}\}/g,
-    (_match, prefix: string, rest: string) => {
-      const key = `${prefix}:${rest}`;
-      const entry = resolved.get(key);
-      if (entry) {
-        return makeChip(key, entry.value);
-      }
-      return _match;
-    }
-  );
-
-  return result;
 }
 
 // ---------------------------------------------------------------------------

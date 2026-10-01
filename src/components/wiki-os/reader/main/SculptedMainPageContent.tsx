@@ -26,6 +26,7 @@ import {
 import { motion, useReducedMotion } from "motion/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
@@ -97,7 +98,7 @@ export function SculptedMainPageContent({
           <div className="border-separator mb-3 flex items-center justify-between border-b pb-2">
             <h2 className="text-label text-headline">Browse by topic</h2>
             <Link
-              href={withBasePath("/wiki/categories/Countries")}
+              href={withBasePath("/util/categories/Countries")}
               data-cuelume-press="press"
               data-cuelume-hover="tick"
               className="text-label-secondary hover:text-label group/all text-caption flex items-center gap-1 transition-colors"
@@ -116,7 +117,7 @@ export function SculptedMainPageContent({
                   return (
                     <Link
                       key={cat.name}
-                      href={withBasePath(`/wiki/categories/${encodeURIComponent(cat.name)}`)}
+                      href={withBasePath(`/util/categories/${encodeURIComponent(cat.name)}`)}
                       data-cuelume-press="page"
                       data-cuelume-hover="tick"
                       className={cn(
@@ -258,7 +259,7 @@ export function SculptedMainPageContent({
           <div className="border-separator mb-3 flex items-center justify-between border-b pb-2">
             <h2 className="text-label text-headline">Recent activity</h2>
             <Link
-              href={withBasePath("/wiki/recent-changes")}
+              href={withBasePath("/util/recent-changes")}
               data-cuelume-press="press"
               data-cuelume-hover="tick"
               className="text-label-secondary hover:text-label group/all text-caption flex items-center gap-1 transition-colors"
@@ -383,7 +384,7 @@ export function SculptedMainPageContent({
           <div className="border-separator mb-3 flex items-center justify-between border-b pb-2">
             <h2 className="text-label text-headline">Explore Countries</h2>
             <Link
-              href={withBasePath("/countries")}
+              href={ixstatesHref("/countries")}
               data-cuelume-press="press"
               data-cuelume-hover="tick"
               className="text-label-secondary hover:text-label group/all rounded-control-sm text-caption focus-visible:ring-indigo flex items-center gap-1 transition-colors focus-visible:ring-2 focus-visible:outline-none"

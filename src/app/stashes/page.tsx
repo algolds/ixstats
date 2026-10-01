@@ -225,9 +225,10 @@ export default function StashesPage() {
     );
   }, [allThreads, query]);
 
-  const handleUnstash = (pageTitle: string) => {
+  const handleUnstash = (pageTitle: string, contentType?: string) => {
     unstashMutation.mutate({
       pageTitle,
+      contentType,
       stashId: activeStash?.id,
     });
   };
@@ -553,7 +554,7 @@ export default function StashesPage() {
                                 <p className="text-footnote text-label-secondary mx-auto max-w-sm">
                                   Browse the{" "}
                                   <Link
-                                    href={withBasePath("/wiki/repository")}
+                                    href={withBasePath("/util/repository")}
                                     className="text-tint font-semibold hover:underline"
                                   >
                                     Media Repository

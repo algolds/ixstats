@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useRef, useState, useEffect, useMemo } from "react";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
+import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
 import Link from "next/link";
 import {
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -166,14 +168,16 @@ export function SculptedEmblemHero({
   const calendarWeekDays = getCurrentWeekDays(clockTime);
   // oxlint-disable-next-line eslint/no-unused-vars
   const weather = useMemo(() => getPrimeMeridianWeather(clockTime), [clockTime]);
+  // one object per HTML: a new one each render would write the featured article's DOM again (React 19)
+  const featuredMarkup = useHtmlMarkup(featuredArticleHtml ?? "");
 
-  const articleCountStr = siteStats?.articles
-    ? `${siteStats.articles.toLocaleString()}+`
-    : "1,400+";
-
+  // The count is what the database holds; without it the placeholder simply says "articles"
+  const articleCount = siteStats?.articles;
   const searchPlaceholders = useMemo(
-    () => [`Search ${articleCountStr} articles...`],
-    [articleCountStr]
+    () => [
+      articleCount ? `Search ${articleCount.toLocaleString()}+ articles...` : "Search articles...",
+    ],
+    [articleCount]
   );
 
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -282,7 +286,7 @@ export function SculptedEmblemHero({
 
         {/* Action 3: Resources */}
         <Link
-          href={withBasePath("/wiki/repository")}
+          href={withBasePath("/util/repository")}
           data-cuelume-press="press"
           data-cuelume-hover="tick"
           className={cn(
@@ -593,8 +597,11 @@ export function SculptedEmblemHero({
               </div>
             ) : (
               <div
-                className="wikios-main-featured-content wikios-article-content text-body relative z-10 text-left leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: featuredArticleHtml ?? "" }}
+                className={cn(
+                  "wikios-main-featured-content wikios-article-content text-body relative z-10 text-left leading-relaxed",
+                  ARTICLE_STYLE_ROOT_CLASS
+                )}
+                dangerouslySetInnerHTML={featuredMarkup}
               />
             )}
           </FeaturedArticleRefractionCard>

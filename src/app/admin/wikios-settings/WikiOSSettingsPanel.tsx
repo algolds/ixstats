@@ -14,6 +14,7 @@ import {
 } from "../wiki/components";
 
 import { WikiOSUtilitiesDeck } from "~/components/wiki-os/utilities/WikiOSUtilitiesDeck";
+import { MirrorStatusSection } from "./MirrorStatusSection";
 
 export function WikiOSSettingsPanel() {
   usePageTitle({ title: "Admin - WikiOS Settings" });
@@ -25,12 +26,11 @@ export function WikiOSSettingsPanel() {
 
   return (
     <div className="space-y-6">
-      <AdminHeader
-        icon={BookOpen}
-        title="WikiOS Settings"
-      />
+      <AdminHeader icon={BookOpen} title="WikiOS Settings" />
 
       <WikiOSUtilitiesDeck embedded={true} defaultDomain="diagnostics" />
+
+      <MirrorStatusSection />
 
       <div className="border-separator space-y-6 border-t pt-6">
         <WikiLinkStatusSection countriesData={countriesData} isLoading={countriesLoading} />

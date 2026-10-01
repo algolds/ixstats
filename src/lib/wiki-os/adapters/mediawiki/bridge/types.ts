@@ -1,7 +1,11 @@
 import { Cache } from "~/lib/cache";
 import { parseMWTimestamp } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
+import { sameTitle } from "~/lib/wiki-os/core/title";
 
 export type WikiSource = "ixwiki" | "iiwiki" | "althistory";
+
+/** A wiki WikiOS does not hold: its pages are read from the wiki itself. */
+export type SisterWikiSource = Exclude<WikiSource, "ixwiki">;
 
 // ──────────────────────────────────────────────
 // Bridge DTO Interfaces
@@ -19,6 +23,8 @@ export interface WikiArticle {
   pageId: number;
   wikitext: string;
   length: number;
+  /** The revision the text is of, when the wiki said (a sister wiki's page: what its rendered view is cached under). */
+  revId?: number;
 }
 
 export interface WikiIntro {
@@ -42,6 +48,18 @@ export interface WikiRecentChange {
   newLen: number;
   blurb?: string | null;
   thumbnail?: string | null;
+  /** A MediaWiki edit that conflicted with WikiOS's head: listed, but never the page's live text. */
+  parked?: boolean;
+}
+
+/** An image used on a page, with the URLs to show it at full size and as a thumbnail. */
+export interface PageImage {
+  /** The file's title, "File:" prefix included. */
+  title: string;
+  url: string;
+  thumbUrl: string;
+  width: number;
+  height: number;
 }
 
 export interface WikiCategoryMembers {
@@ -67,6 +85,23 @@ export function cacheGet<T>(key: string): T | null {
 
 export function cacheSet<T>(key: string, data: T, ttlMs: number = 30 * 60 * 1000): void {
   wikiBridgeCache.set(key, data, ttlMs);
+}
+
+/**
+ * Forget what the bridge cache holds for the page `title` (intro, wikitext, page images), under every
+ * spelling it was asked for: those keys hold the raw or lower-cased title.
+ */
+export function evictBridgeCacheForTitle(title: string, wiki: WikiSource): number {
+  const prefixes = [`intro:${wiki}:`, `wikitext:${wiki}:`, `pageimages:${wiki}:`];
+  let evicted = 0;
+  for (const key of wikiBridgeCache.keys()) {
+    const prefix = prefixes.find((candidate) => key.startsWith(candidate));
+    if (prefix && sameTitle(key.slice(prefix.length), title, wiki)) {
+      wikiBridgeCache.delete(key);
+      evicted++;
+    }
+  }
+  return evicted;
 }
 
 /**

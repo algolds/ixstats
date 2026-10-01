@@ -7,6 +7,7 @@ import { generateSchedule, matchIntervalMs, raceIntervalMs } from "./scheduler";
 import type { ArchetypeType } from "./presets";
 import { resolveMatch, type TeamRatingVector } from "./resolver";
 import { teamWageBill } from "./team-rating";
+import { mediaWikiImageUrl } from "~/lib/wiki-os/config";
 
 type Prisma =
   | PrismaClient
@@ -1066,7 +1067,7 @@ export async function simulateWorldCup(tx: any, seasonNumber: number) {
                 data: {
                   title: cardTitle,
                   description: cardDescription,
-                  artwork: "https://ixwiki.com/worldcup-trophy.png",
+                  artwork: mediaWikiImageUrl("/worldcup-trophy.png"),
                   rarity: "LEGENDARY",
                   cardType: "SPECIAL",
                   season: seasonNumber,

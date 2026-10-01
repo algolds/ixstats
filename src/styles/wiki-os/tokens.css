@@ -59,7 +59,9 @@
     /* Typography: Swiss UI face; the Reading style is the one sanctioned content style */
     --wikios-font-reading: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
     --wikios-font-ui: var(--font-sans);
-    --wikios-font-brand: var(--font-host-grotesk), "Host Grotesk", sans-serif;
+    /* The fallback outside .wikios-brand-scope (a portal under <body>): next/font's family does not
+       resolve on :root, see .wikios-brand-scope below */
+    --wikios-font-brand: "Host Grotesk", sans-serif;
     --wikios-font-mono: var(--font-mono);
 
     /* Margin & highlighter suite (dark) */
@@ -95,6 +97,16 @@
     --wikios-brand: #60a5fa;
     --wikios-brand-ix: #60a5fa;
     --wikios-brand-glow: rgb(96 165 250 / 0.38);
+  }
+
+  /*
+   * The brand font. next/font defines `--font-host-grotesk` (the hashed family it generated) on the
+   * element that carries its `variable` class, not on :root, and a custom property that refers to
+   * another one takes the value it has where it is declared. So `--wikios-font-brand` is declared on
+   * that same element (the (wiki-os) layout's wrapper), where the variable resolves.
+   */
+  .wikios-brand-scope {
+    --wikios-font-brand: var(--font-host-grotesk), "Host Grotesk", sans-serif;
   }
 
   /* Accent = the app tint, resolved on each tint scope (see header). */

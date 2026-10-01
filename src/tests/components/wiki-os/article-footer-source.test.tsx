@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { ArticleFooter } from "~/components/wiki-os/reader/ArticleFooter";
-import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 
 describe("ArticleFooter: View on Original Wiki", () => {
   it("links another wiki's page to that wiki", () => {
@@ -15,7 +15,7 @@ describe("ArticleFooter: View on Original Wiki", () => {
     render(<ArticleFooter title="United Kingdom of Aurelia" lastModified={null} />);
     expect(screen.getByRole("link", { name: "View on Original Wiki" })).toHaveAttribute(
       "href",
-      `${DEFAULT_MEDIAWIKI_URL.replace(/\/$/, "")}/wiki/United_Kingdom_of_Aurelia`
+      `${mediaWikiOrigin()}/wiki/United_Kingdom_of_Aurelia`
     );
   });
 });

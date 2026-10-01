@@ -15,6 +15,7 @@ import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { getWikiProfilePath } from "~/lib/wiki-os/profile-url";
+import { useWikiChromePrefs } from "~/components/wiki-os/shared/WikiChromePrefs";
 
 function getInitials(name: string): string {
   const cleaned = name.trim().replace(/_/g, " ");
@@ -31,7 +32,8 @@ export function WikiOSProfileWidget({
   expanded: boolean;
   isLocalHoverExpanded?: boolean;
 }) {
-  const { user, isSignedIn } = useWikiAuth();
+  const { user, isSignedIn, isLoaded } = useWikiAuth();
+  const { mayBeSignedIn } = useWikiChromePrefs();
   const { themeColors } = useWikiContext();
   const [imgError, setImgError] = useState(false);
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -44,8 +46,14 @@ export function WikiOSProfileWidget({
     staleTime: 5 * 60 * 1000,
   });
 
-  // Signed out → nothing.
-  if (!isSignedIn) return null;
+  // Signed out → nothing. While the auth provider loads, a browser that carries a session holds the
+  // widget's place (its collapsed height, a 36px avatar row), so the rail's menu does not drop by that
+  // much when the profile arrives.
+  if (!isSignedIn) {
+    return !isLoaded && mayBeSignedIn ? (
+      <div aria-hidden="true" className={expanded || isLocalHoverExpanded ? "h-24" : "h-11"} />
+    ) : null;
+  }
 
   const authorProfile = profileQuery.data;
   const displayName = authorProfile?.displayName ?? user?.username ?? "You";

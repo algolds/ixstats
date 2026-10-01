@@ -1,6 +1,6 @@
 # WikiOS Independence & Native Architecture (Stage 2b shipped, Stage 3 pending cutover)
 
-**Status:** Stage 2b shipped (Plan 170 & Plan 191). Stage 3 (render-service isolation) is **not cut over**: the nginx/`LocalSettings.php` work is staged in [`wikios-stage3-config-plan.md`](wikios-stage3-config-plan.md) and `scripts/ops/stage3-nginx-cutover.conf`, held for a launch decision (Sept 29, 2026).  
+**Status:** Stage 2b shipped (Plan 170 & Plan 191). Stage 3 (render-service isolation) is **not cut over**. The old Stage 3 draft ([`wikios-stage3-config-plan.md`](wikios-stage3-config-plan.md), and its `stage3-nginx-cutover.conf` vhost, now deleted) is superseded by the WikiOS takeover kit of plan 417 (September 30, 2026); the ordered operator steps are in [`docs/operations/wikios-v1-cutover.md`](../../operations/wikios-v1-cutover.md).  
 **Package:** `src/lib/wiki-os/`  
 **Authority Model:** PostgreSQL Primary Store (`wiki_articles`, `wiki_revisions`, `wiki_links`, `wiki_assets`) with Headless MediaWiki Federation.
 
@@ -15,7 +15,7 @@ With the completion of Plan 170 and Plan 191 (Stage 2b):
 - **48,200+ link graph edges** are indexed in `wiki_links` for indexed backlink lookups and zero-query Red Link resolution.
 - **7,555+ media files** are registered in `wiki_assets` with MD5 shard paths (hash of the filename) and immutable edge caching.
 - **Spotlight Search** is served via `NativeSearchService` (a Prisma `contains` query; no trigram or GIN index).
-- **Sub-10ms Save Operations** commit directly to PostgreSQL first, dispatching non-blocking background queue tasks (`MediaWikiExportWorker`) to synchronize with upstream MediaWiki.
+- **Sub-10ms Save Operations** commit directly to PostgreSQL first, inserting a durable `WikiMirrorJob` in the same transaction (applied by `services/mirror-worker.ts`, plan 407) to synchronize with upstream MediaWiki.
 - **MediaWiki is demoted to a headless render (`action=parse`), export, and recent-changes source in the app.** Its public web UI is still live until Stage 3 cuts over.
 
 ---
@@ -28,7 +28,7 @@ With the completion of Plan 170 and Plan 191 (Stage 2b):
 2. **PostgreSQL Primary Save Pipeline**:
    - `ArticleRepository.saveArticle()` writes directly to PostgreSQL in <10ms, registers newly referenced images via `MediaAssetService`, updates `wiki_links`, and purges Cloudflare edge caches.
 3. **High-Performance Native Reader**:
-   - `contentHtml` is served when present, but saves currently store it empty, so the next read renders through MediaWiki `action=parse` (PHP). The native ParserFunctions evaluator (`core/parser-functions.ts`) is exercised only by tests.
+   - `contentHtml` is served when present, but saves currently store it empty, so the next read renders through MediaWiki `action=parse` (PHP). The native ParserFunctions evaluator (`core/parser-functions.ts`, exercised only by tests, with inaccurate `#expr` and `#time`) was deleted in plan 415: MediaWiki's own ParserFunctions run in the private render engine.
 4. **Sister-Wiki Federation**:
    - Direct HTTP adapters (`http-reader.ts`) connect to external wikis (`iiwiki`, `althistory`) with a circuit breaker and parallel search dispatch. Their pages open read-only via `/wiki/[slug]?source=…` (Sept 2026).
 5. **Direct-edit capture**:

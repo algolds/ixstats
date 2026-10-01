@@ -35,7 +35,7 @@ To start a new article, search for its title and choose **Create this page** on 
 
 ## Images
 
-Images come from the wiki's media library; browse it in the [Repository](/util/repository). Uploading new files through WikiOS isn't working at the moment, so upload on the classic wiki if you need a new image.
+Images come from the wiki's media library; browse it in the [Repository](/util/repository). To add a new file, use the **Upload** button there, **Special:Upload** (`/util/upload`), or the Upload tab of the editor's Insert Image dialog. You can upload PNG, JPEG, GIF, WebP, SVG and PDF files up to 10 MB, and you need the upload right (an autoconfirmed account, which a verified wiki link gives you). The file is checked by what it really is, not by its name, and an SVG with a script in it is refused. It shows on the wiki right away and is sent on to MediaWiki in the background; if the name is taken, or the same file is already uploaded under another name, you are warned first and can still upload anyway. A new file also gets its own **File:** page, with its history and where it is used.
 
 ## Your wiki profile
 

@@ -14,6 +14,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, adminProcedure, publicProcedure } from "~/server/api/trpc";
 import { requireWikiUserIds } from "~/lib/wiki-os/auth";
+import { canSeeTitle } from "~/lib/wiki-os/permissions";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
 import { CardRarity } from "@prisma/client";
 import { LoreCategory, ArtworkSource } from "~/lib/cards/category-enums";
@@ -304,9 +305,10 @@ export const loreCardsWikiRouter = createTRPCRouter({
             const dbArticles = await ctx.db.wikiArticle.findMany({
               where: input.query.trim()
                 ? {
+                    status: "PUBLISHED",
                     title: { contains: input.query, mode: "insensitive" },
                   }
-                : {},
+                : { status: "PUBLISHED" },
               select: {
                 id: true,
                 title: true,
@@ -364,10 +366,11 @@ export const loreCardsWikiRouter = createTRPCRouter({
             console.warn("[Lore Cards] searchPages error:", e);
           }
 
-          // If searchPages returned empty, fall back to HTTP API with correct User-Agent
-          if (results.length === 0) {
+          // IxWiki's search is native (`searchPages`); only a sister wiki that returned nothing falls
+          // back to its own opensearch, with the correct User-Agent
+          if (results.length === 0 && wikiSrc === "iiwiki") {
             try {
-              const httpUrl = `${getMediaWikiApiUrl(wikiSrc as any)}?action=opensearch&search=${encodeURIComponent(input.query)}&limit=25&format=json`;
+              const httpUrl = `${getMediaWikiApiUrl(wikiSrc)}?action=opensearch&search=${encodeURIComponent(input.query)}&limit=25&format=json`;
               const res = await fetch(httpUrl, {
                 headers: { "User-Agent": DEFAULT_USER_AGENT },
                 signal: AbortSignal.timeout(6000),
@@ -519,7 +522,11 @@ export const loreCardsWikiRouter = createTRPCRouter({
           }
         }
 
-        if (input.source === "ixwiki" || input.source === "iiwiki") {
+        // A deleted page has no metadata for a reader who may not see it (the live wiki's copy included).
+        if (
+          (input.source === "ixwiki" || input.source === "iiwiki") &&
+          (await canSeeTitle(ctx, input.pageTitle, input.source))
+        ) {
           try {
             const wikiSrc = input.source === "iiwiki" ? "iiwiki" : "ixwiki";
             const previews = await wikiLoreCardGenerator.fetchArticleMetadataBatch(

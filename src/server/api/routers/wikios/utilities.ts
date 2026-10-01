@@ -6,10 +6,20 @@
  */
 
 import { z } from "zod/v4";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { adminProcedure, createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { PageManagementService } from "~/lib/wiki-os/core/page-management-service";
+import { getWikiPermissions } from "~/lib/wiki-os/rights";
 import { getSiteStats } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { getInboundSyncStatus } from "~/lib/wiki-os/services/auto-sync-service";
+import {
+  discardMirrorJob,
+  getMirrorStatus,
+  requeueMirrorJob,
+} from "~/lib/wiki-os/services/mirror-admin";
+import { refusals } from "~/lib/wiki-os/permissions";
+
+const mirrorJobInput = z.object({ id: z.string().min(1).max(64) });
 
 export const wikiosUtilitiesRouter = createTRPCRouter({
   /**
@@ -30,6 +40,7 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
         orphans,
         deadEnds,
         brokenRedirects,
+        inboundSync,
       ] = await Promise.all([
         db.wikiArticle
           .count({
@@ -55,6 +66,13 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
         PageManagementService.getOrphanPages(10, realm),
         PageManagementService.getDeadEndPages(10, realm),
         PageManagementService.getBrokenRedirects(10, realm),
+        getInboundSyncStatus().catch(() => ({
+          status: "UNKNOWN" as const,
+          lastRunAt: null,
+          failures: 0,
+          lastError: null,
+          repushSkipped: [],
+        })),
       ]);
 
       const totalArticles = Math.max(siteStats.articles || 0, pgArticles || 0);
@@ -72,11 +90,30 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
         orphanCount: orphans.length,
         deadEndCount: deadEnds.length,
         brokenRedirectCount: brokenRedirects.length,
-        inboundSyncStatus: "ACTIVE",
+        inboundSyncStatus: inboundSync.status,
+        inboundSync,
         integrityScore:
           brokenRedirects.length === 0 ? 100 : Math.max(90, 100 - brokenRedirects.length),
       };
     }),
+
+  /**
+   * The outbound mirror's outbox for administrators: jobs by state, how long the oldest has waited, whether
+   * the worker is stopped or has no bot account, and the last dead jobs (MediaWiki is out of sync for those titles).
+   */
+  getMirrorStatus: adminProcedure.query(() => getMirrorStatus()),
+
+  /** Try a dead mirror job again from its first attempt. */
+  requeueMirrorJob: adminProcedure.input(mirrorJobInput).mutation(async ({ input }) => {
+    await refusals(requeueMirrorJob(input.id));
+    return { success: true as const };
+  }),
+
+  /** Give up on a dead mirror job, so the jobs behind it for its title can run. */
+  discardMirrorJob: adminProcedure.input(mirrorJobInput).mutation(async ({ input }) => {
+    await refusals(discardMirrorJob(input.id));
+    return { success: true as const };
+  }),
 
   /**
    * Diagnostic: Orphan Articles (0 incoming links)
@@ -196,7 +233,9 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
         limit: z.number().min(1).max(100).default(50),
       })
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      // The list of deleted pages is for those who may browse them; everyone else sees none.
+      if (!(await getWikiPermissions(ctx)).rights.has("browsearchive")) return [];
       return db.wikiArticle.findMany({
         where: {
           source: input.realm,
@@ -209,7 +248,6 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
           slug: true,
           title: true,
           summary: true,
-          lastEditorId: true,
           updatedAt: true,
         },
       });
@@ -238,6 +276,17 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
           orderBy: { createdAt: "desc" },
           take: input.limit,
           skip: input.offset,
+          // Public: the actor is named by `actorName`; never the internal `userId` (plan 409 writes it).
+          select: {
+            id: true,
+            logType: true,
+            action: true,
+            title: true,
+            actorName: true,
+            comment: true,
+            params: true,
+            createdAt: true,
+          },
         }),
         db.wikiLog.count({ where }),
       ]);

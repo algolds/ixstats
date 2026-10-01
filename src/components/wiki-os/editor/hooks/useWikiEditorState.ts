@@ -6,6 +6,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { clearDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
+import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import type { StashEntity, StashItemEntity, WikimediaImageMeta, SaveActionType } from "../types";
 import type { EditorModalState } from "../context/EditorModalContext";
 
@@ -21,6 +22,9 @@ export interface UseWikiEditorStateProps {
 
 export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
   const notify = useNotify();
+  // Drafts are kept per account (draft-store): a signed-out editor has none.
+  const { user } = useWikiAuth();
+  const userId = user?.id ?? null;
 
   // Dirty and word count state
   const [isDirty, setIsDirty] = useState(false);
@@ -138,14 +142,14 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
 
   // Consolidated Save Workflow
   const executeSave = useCallback(
-    async (getContent: () => string) => {
-      if (!onSave) return;
+    async (getContent: () => string): Promise<boolean> => {
+      if (!onSave) return false;
       const content = getContent();
       setSaving(true);
       const isSession = saveActionType === "session";
       try {
         await onSave(content, summary, minor, isSession);
-        clearDraft(title, "ixwiki");
+        clearDraft(userId, title, "ixwiki");
         setIsDirty(false);
         setShowSavePanel(false);
         notify.success(
@@ -154,33 +158,38 @@ export function useWikiEditorState({ title, onSave }: UseWikiEditorStateProps) {
             ? "Your progress has been saved successfully."
             : "Your changes have been published to the wiki."
         );
+        return true;
       } catch (err) {
         console.error("Save failed:", err);
         notify.error("Save Failed", "Could not save article changes.");
+        return false;
       } finally {
         setSaving(false);
       }
     },
-    [onSave, saveActionType, summary, minor, title, notify]
+    [onSave, saveActionType, summary, minor, title, notify, userId]
   );
 
   const executeSaveDraft = useCallback(
     (getContent: () => string, mode: "visual" | "source") => {
-      const content = getContent();
-      try {
-        if (mode === "visual") {
-          saveDraft({ title, source: "ixwiki", html: content, mode: "visual" });
-        } else {
-          saveDraft({ title, source: "ixwiki", wikitext: content, mode: "source" });
-        }
+      if (!userId) {
+        notify.error("Sign in to save a draft", "Drafts are kept per account, on this device.");
+        return;
+      }
+      const saved = saveDraft(userId, {
+        title,
+        source: "ixwiki",
+        wikitext: getContent(),
+        mode,
+      });
+      if (saved) {
         setIsDirty(false);
         notify.success("Draft Saved", "Your draft has been saved locally.");
-      } catch (err) {
-        console.error("Failed to save draft:", err);
+      } else {
         notify.error("Save Draft Failed", "Could not write draft to local storage.");
       }
     },
-    [title, notify]
+    [title, notify, userId]
   );
 
   const modalContextValue: EditorModalState = useMemo(

@@ -11,6 +11,7 @@ import {
   HalfMoon as SunMoon,
   Square,
   Eye,
+  ChatBubble,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
@@ -19,6 +20,8 @@ import { StashButton } from "~/components/wiki-os/reader/StashButton";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { MEDIA_THEME_OPTIONS } from "~/lib/wiki-os/transformers/media-theme";
+import { pageEditHref, pageTalkPair } from "~/lib/wiki-os/page-tools";
+import { articleHref } from "~/lib/wiki-os/wiki-path";
 import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Button } from "~/components/ui/button";
@@ -39,6 +42,10 @@ export function WikiOSArticleToolbarWidget({
   const { isCollapsed } = useSidebar();
   const { isMarginOpen, toggleMargin } = useWikiContext();
   const { mediaThemeMode, setMediaThemeMode, cycleMediaThemeMode } = useWikiMediaTheme();
+  // Discussion (`/wiki/Talk:<title>`), or from a talk page its subject page.
+  const pair = pageTalkPair(title);
+  const pairHref = pair ? withBasePath(articleHref(pair.page)) : null;
+  const pairLabel = pair?.isTalk ? "Subject Page" : "Discussion";
 
   const getModeIcon = (mode: string) => {
     switch (mode) {
@@ -59,11 +66,22 @@ export function WikiOSArticleToolbarWidget({
         {/* Edit */}
         {isSignedIn && (
           <Link
-            href={withBasePath(`/wiki/${slug}/edit`)}
+            href={withBasePath(pageEditHref(title, slug))}
             className="rail-glow-blue rail-animate-bounce rounded-row border-tint/20 bg-tint/5 text-tint shadow-card hover:bg-tint/15 flex h-10 w-10 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
             title="Edit Article"
           >
             <FileEdit className="size-4.5" />
+          </Link>
+        )}
+
+        {/* Discussion */}
+        {pairHref && (
+          <Link
+            href={pairHref}
+            className="rounded-row border-cyan/20 bg-cyan/5 text-cyan shadow-card hover:bg-cyan/15 flex h-10 w-10 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+            title={pairLabel}
+          >
+            <ChatBubble className="size-4.5" />
           </Link>
         )}
 
@@ -119,9 +137,19 @@ export function WikiOSArticleToolbarWidget({
         {/* Edit */}
         {isSignedIn && (
           <Button asChild variant="ghost" className={toolRowClassName}>
-            <Link href={withBasePath(`/wiki/${slug}/edit`)}>
+            <Link href={withBasePath(pageEditHref(title, slug))}>
               <FileEdit className="text-tint size-3.5 shrink-0" aria-hidden="true" />
               <span>Edit Article</span>
+            </Link>
+          </Button>
+        )}
+
+        {/* Discussion */}
+        {pairHref && (
+          <Button asChild variant="ghost" className={toolRowClassName}>
+            <Link href={pairHref}>
+              <ChatBubble className="text-cyan size-3.5 shrink-0" aria-hidden="true" />
+              <span>{pairLabel}</span>
             </Link>
           </Button>
         )}

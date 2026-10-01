@@ -3,7 +3,7 @@
 // WikiOS content wrapper with standard DashboardSidebarLayout.
 
 import { type ReactNode, useState, useEffect } from "react";
-import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useWikiOSShortcuts } from "~/components/wiki-os/shared/useWikiOSShortcuts";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -11,6 +11,7 @@ import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { WIKIOS_VERSION } from "~/lib/buildVersion";
 import { stripBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { DashboardSidebarLayout } from "~/components/dashboard/sidebar/DashboardSidebarLayout";
 import { useWikiPrefetch } from "~/hooks/useWikiPrefetch";
 import {
@@ -22,44 +23,44 @@ import {
 } from "~/components/ui/popover";
 
 // Sibling component imports
-import { SearchModal } from "./SearchModal";
 import { WikiOSUnifiedSidebar } from "./WikiOSUnifiedSidebar";
 import { WikiOSContentWrapper } from "./WikiOSContentWrapper";
-import { CreatePageModal } from "./CreatePageModal";
 import { WikiOSLogomark } from "./WikiOSLogomark";
 import { WikiUtilitiesRibbon } from "./WikiUtilitiesRibbon";
 
+import { useMountOnFirstOpen } from "./useMountOnFirstOpen";
+import { useWikiChromePrefs } from "./WikiChromePrefs";
+import { SIDEBAR_COLLAPSED_COOKIE, writeCollapsedCookie } from "~/lib/wiki-os/chrome-prefs";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
+import { isTalkNamespace } from "~/lib/wiki-os/core/talk";
+import { canonicalizeTitle, decodeTitleParam } from "~/lib/wiki-os/core/title";
 
-const RESERVED_WIKI_SLUGS = new Set([
-  "lorewards",
-  "diff",
-  "watchlist",
-  "search",
-  "random",
-  "repository",
-  "recent-changes",
-  "categories",
-  "whatlinkshere",
-  "user",
-  "history",
-  "contributions",
-  "utilities",
-  "templates",
-  "sandbox",
-]);
+// Dialogs nobody has opened when the page paints: each is fetched the first time it is opened.
+const SearchModal = dynamic(() => import("./SearchModal").then((m) => m.SearchModal), {
+  ssr: false,
+});
+const CreatePageModal = dynamic(() => import("./CreatePageModal").then((m) => m.CreatePageModal), {
+  ssr: false,
+});
 
 /**
- * A path that is NOT an editable wiki article: the reserved /wiki/* tool routes, the Special: namespace, and
- * anything not under /wiki/<slug> (util, library and other routes). Article pages (/wiki/<Title> and their
- * /edit, /talk sub-routes) are NOT special, so the page tools (Edit / Talk / History / What Links Here) render
- * for them. NOTE: previously this matched every "/wiki/" path, which hid page tools on all articles.
+ * A path that is NOT an editable wiki article: the Special: namespace, and anything not under
+ * /wiki/<title> (util, library and other routes). Every other /wiki/<title> is a page (a title that
+ * used to be a tool route, such as "Search", is an article now), so the page tools (Edit /
+ * Discussion / History / What Links Here) render for it.
  */
 function isNonArticlePath(cleanPath: string): boolean {
   const wikiSlug = cleanPath.match(/^\/wiki\/([^/]+)/)?.[1];
   if (!wikiSlug) return true;
-  const slug = decodeURIComponent(wikiSlug);
-  return RESERVED_WIKI_SLUGS.has(slug) || /^special:/i.test(slug);
+  return /^special:/i.test(decodeURIComponent(wikiSlug));
+}
+
+/** Whether `cleanPath` is a talk page (`/wiki/Talk:Foo`, `/wiki/User_talk:Jane/Notes`). */
+function isTalkPath(cleanPath: string): boolean {
+  const title = cleanPath.match(/^\/wiki\/(.+)$/)?.[1];
+  if (!title) return false;
+  const canon = canonicalizeTitle(title.split("/").map(decodeTitleParam).join("/"));
+  return canon !== null && isTalkNamespace(canon.namespaceId);
 }
 
 export function WikiOSLayout({
@@ -87,6 +88,9 @@ export function WikiOSLayout({
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
   const [createPageOpen, setCreatePageOpen] = useState(false);
+  const { sidebarCollapsed } = useWikiChromePrefs();
+  const searchMounted = useMountOnFirstOpen(searchOpen);
+  const createPageMounted = useMountOnFirstOpen(createPageOpen);
 
   // Check URL params to auto-open page creation modal
   useEffect(() => {
@@ -135,20 +139,19 @@ export function WikiOSLayout({
 
   const getActiveId = () => {
     const p = stripBasePath(pathname);
-    if (p.includes("/talk")) return "talk";
-    if (p.includes("/edit")) return "edit";
-    if (p.includes("/util/categories") || p.includes("/wiki/categories")) return "categories";
-    if (p.includes("/util/recent") || p.includes("/wiki/recent")) return "recent";
-    if (p.includes("/util/templates") || p.includes("/wiki/templates")) return "templates";
-    if (p === "/util" || p.startsWith("/util") || p.includes("/wiki/utilities")) return "utilities";
-    if (p.includes("/util/lorewards") || p.includes("/wiki/lorewards")) return "lorewards";
+    if (isTalkPath(p)) return "talk";
+    if (p.includes("/util/categories")) return "categories";
+    if (p.includes("/util/recent")) return "recent";
+    if (p.includes("/util/templates")) return "templates";
+    if (p === "/util" || p.startsWith("/util")) return "utilities";
+    if (p.includes("/util/lorewards")) return "lorewards";
     if (p.includes("/blurbs")) return "blurbs";
     if (p.includes("/stashes")) return "stashes";
-    if (p.includes("/util/repository") || p.includes("/wiki/repository")) return "images";
-    if (p.includes("/util/watchlist") || p.includes("/wiki/watchlist")) return "stashes";
-    if (p.includes("/util/random") || p.includes("/wiki/random")) return "random";
-    if (p.includes("/util/search") || p.includes("/wiki/search")) return "search";
-    if (p.includes("/util/history") || p.includes("/wiki/history")) return "history";
+    if (p.includes("/util/repository")) return "images";
+    if (p.includes("/util/watchlist")) return "stashes";
+    if (p.includes("/util/random")) return "random";
+    if (p.includes("/util/search")) return "search";
+    if (p.includes("/util/history")) return "history";
     if (p === "/wiki/Main_Page" || p === "/wiki") return "main";
     return null;
   };
@@ -179,7 +182,8 @@ export function WikiOSLayout({
       <DashboardSidebarLayout
         sidebarContent={sidebarContent}
         showFloatingExpand={false}
-        defaultCollapsed={true}
+        defaultCollapsed={sidebarCollapsed ?? true}
+        onCollapsedChange={(collapsed) => writeCollapsedCookie(SIDEBAR_COLLAPSED_COOKIE, collapsed)}
         disableCollapse={false}
         variant="rail"
         expandedWidthClassName="w-48"
@@ -225,19 +229,21 @@ export function WikiOSLayout({
         </Popover>
 
         <div className="text-label-secondary text-footnote flex items-center justify-center gap-4 font-[var(--wikios-font-ui)]">
-          <Link href="/terms" className="hover:text-yellow transition-colors">
+          <a href={ixstatesHref("/terms")} className="hover:text-yellow transition-colors">
             Terms of Service
-          </Link>
+          </a>
           <span>•</span>
-          <Link href="/privacy" className="hover:text-yellow transition-colors">
+          <a href={ixstatesHref("/privacy")} className="hover:text-yellow transition-colors">
             Privacy Policy
-          </Link>
+          </a>
         </div>
       </footer>
 
       {/* Search Modal */}
-      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
-      <CreatePageModal open={createPageOpen} onClose={() => setCreatePageOpen(false)} />
+      {searchMounted && <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />}
+      {createPageMounted && (
+        <CreatePageModal open={createPageOpen} onClose={() => setCreatePageOpen(false)} />
+      )}
     </div>
   );
 }

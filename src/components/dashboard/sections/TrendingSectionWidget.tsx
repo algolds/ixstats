@@ -21,6 +21,7 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { wikiTitleFromArticleUrl } from "~/lib/wiki-os/config";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import {
   normalizeWikiImageUrl,
@@ -80,7 +81,7 @@ const TRENDING_SOURCE: Record<
 export function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
   const { data: intro } = api.wikios.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
   const { data: pageImages } = api.wikios.getPageImages.useQuery(
-    { title },
+    { title, wiki },
     { enabled: !!title, staleTime: 30 * 60_000 }
   );
 
@@ -328,11 +329,8 @@ export function TrendingSectionWidget() {
             trendingItems.map((item: any) => {
               const src = (item.source && TRENDING_SOURCE[item.source as string]) ?? DEFAULT_SOURCE;
               const SrcIcon = src.icon;
-              const wikiMatch = item.url?.match(/ixwiki\.com\/wiki\/([^#?]+)/);
               const forumMatch = item.url?.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
-              const wikiTitle = wikiMatch
-                ? decodeURIComponent(wikiMatch[1]!).replace(/_/g, " ")
-                : null;
+              const wikiTitle = wikiTitleFromArticleUrl(item.url);
               const forumThreadId = forumMatch ? parseInt(forumMatch[1]!, 10) : null;
 
               const isWiki = !!wikiTitle;

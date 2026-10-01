@@ -2,6 +2,7 @@
 // src/components/wiki-os/reader/hero/HeroSpotlightSearch.tsx
 // Inline Apple Spotlight Search Bar for WikiOS Hero with featured thumbnail images, direct DB queries, page creation, and keyboard navigation.
 
+import { pageEditHref } from "~/lib/wiki-os/page-tools";
 import React, { useState, useEffect, useRef, useDeferredValue, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -23,6 +24,9 @@ interface HeroSpotlightSearchProps {
   className?: string;
   placeholderHints?: string[];
 }
+
+/** Characters before the typeahead looks anything up. */
+const MIN_QUERY_LENGTH = 2;
 
 const DEFAULT_PLACEHOLDERS = [
   "Search all articles, categories, lore...",
@@ -57,21 +61,21 @@ export function HeroSpotlightSearch({
     return () => clearInterval(interval);
   }, [query, isOpen, placeholderHints.length]);
 
-  // Debounce search query (120ms for instant native database spotlight feel)
+  // Debounce search query (150ms: one title lookup per pause, not per keystroke)
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(query.trim());
-    }, 120);
+    }, 150);
     return () => clearTimeout(timer);
   }, [query]);
 
   const deferredQuery = useDeferredValue(debouncedQuery);
 
-  // Direct native database query with featured image thumbnails
-  const { data: searchData, isFetching: isLoading } = api.wikios.advancedSearch.useQuery(
+  // Title typeahead (prefix + trigram) with featured image thumbnails, from 2 characters
+  const { data: searchData, isFetching: isLoading } = api.wikios.typeahead.useQuery(
     { query: deferredQuery, limit: 8 },
     {
-      enabled: isOpen && deferredQuery.length >= 1,
+      enabled: isOpen && deferredQuery.length >= MIN_QUERY_LENGTH,
       staleTime: 60_000,
     }
   );
@@ -107,8 +111,7 @@ export function HeroSpotlightSearch({
   const handleCreatePage = useCallback(
     (rawTitle: string) => {
       setIsOpen(false);
-      const encodedTitle = encodeURIComponent(rawTitle.trim().replace(/ /g, "_"));
-      router.push(withBasePath(`/wiki/${encodedTitle}/edit?mode=visual`));
+      router.push(withBasePath(pageEditHref(rawTitle.trim(), null, { mode: "visual" })));
     },
     [router]
   );
@@ -116,7 +119,7 @@ export function HeroSpotlightSearch({
   const navigateToSearchPage = useCallback(
     (searchTerms: string) => {
       setIsOpen(false);
-      router.push(withBasePath(`/wiki/search?q=${encodeURIComponent(searchTerms)}`));
+      router.push(withBasePath(`/util/search?q=${encodeURIComponent(searchTerms)}`));
     },
     [router]
   );
@@ -284,7 +287,9 @@ export function HeroSpotlightSearch({
               </div>
             ) : results.length === 0 && query.trim().length > 0 ? (
               <div className="text-label-secondary text-footnote py-5 text-center">
-                No matching articles found. Press Enter or click above to create it!
+                {query.trim().length < MIN_QUERY_LENGTH
+                  ? "Keep typing to search articles…"
+                  : "No matching articles found. Press Enter or click above to create it!"}
               </div>
             ) : (
               <div className="max-h-[340px] space-y-0.5 overflow-y-auto">

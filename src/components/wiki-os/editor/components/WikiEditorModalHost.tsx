@@ -10,6 +10,8 @@ import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
+import { ARTICLE_STYLE_ROOT_CLASS } from "~/lib/utils/scope-template-styles";
 import { useEditorModalContext } from "../context/EditorModalContext";
 import { useTemplateSchema } from "../hooks/useTemplateSchema";
 
@@ -174,6 +176,8 @@ function TemplateEditorDialog({
     { template: templateName, params: values },
     { enabled: showPreview, staleTime: 0 }
   );
+  // one object per preview HTML: a new one each render would write the preview's DOM again (React 19)
+  const previewMarkup = useHtmlMarkup(previewQuery.data ?? "");
 
   const schemaKeySet = React.useMemo(() => new Set(paramList.map((p) => p.key)), [paramList]);
   const extraKeys = React.useMemo(
@@ -251,8 +255,8 @@ function TemplateEditorDialog({
 
           {showPreview && previewQuery.data && (
             <div
-              className="wikios-ti-preview"
-              dangerouslySetInnerHTML={{ __html: previewQuery.data }}
+              className={`wikios-ti-preview ${ARTICLE_STYLE_ROOT_CLASS}`}
+              dangerouslySetInnerHTML={previewMarkup}
             />
           )}
         </div>

@@ -5,6 +5,7 @@
 
 import { useEffect, useState, useCallback, useRef, type RefObject } from "react";
 import { createElement } from "react";
+import { useHtmlMarkup } from "~/components/wiki-os/shared/useHtmlMarkup";
 import { VirtualAnchorPopover } from "~/components/ui/popover";
 
 interface TooltipState {
@@ -96,6 +97,9 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
     };
   }, [contentRef, show, hide]);
 
+  // one object per footnote HTML: a new one each render would write the tooltip's DOM again (React 19)
+  const tooltipMarkup = useHtmlMarkup(tooltip?.html ?? "");
+
   // The tooltip: a popover above the citation (flips below near the top of the viewport). The
   // inner `.wikios-cite-tooltip-inner` keeps the reading-face footnote styling and its arrow, which
   // is hidden when the card flips.
@@ -119,7 +123,7 @@ export function useCiteTooltips(contentRef: RefObject<HTMLElement | null>) {
     tooltip
       ? createElement("div", {
           className: "wikios-cite-tooltip-inner",
-          dangerouslySetInnerHTML: { __html: tooltip.html },
+          dangerouslySetInnerHTML: tooltipMarkup,
         })
       : null
   );

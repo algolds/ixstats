@@ -1,5 +1,5 @@
 "use client";
-// src/app/(wiki-os)/wiki/contributions/page.tsx
+// src/app/(wiki-os)/util/contributions/page.tsx
 // WikiOS User Contributions Ledger — Hub & Editor History Search
 
 import { useState } from "react";
@@ -10,6 +10,7 @@ import { api } from "~/trpc/react";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 import { withBasePath } from "~/lib/base-path";
 import { User as UserIcon, Search, Folder as FolderTree, Clock, GitCommit } from "iconoir-react";
 import { Button } from "~/components/ui/button";
@@ -152,6 +153,7 @@ export default function ContributionsHubPage() {
                           m
                         </span>
                       )}
+                      {c.parked && <ParkedBadge />}
                     </div>
 
                     <div className="min-w-0">
@@ -184,7 +186,7 @@ export default function ContributionsHubPage() {
                     </span>
                     {!c.isNew && (
                       <Link
-                        href={withBasePath(`/wiki/diff?to=${c.revid}`)}
+                        href={withBasePath(`/util/diff?to=${c.revid}`)}
                         className="bg-fill-3 hover:bg-fill-2 text-label rounded-control text-caption inline-flex items-center gap-1 px-3 py-1 font-semibold transition-colors"
                       >
                         <GitCommit className="text-label-secondary h-3 w-3" />

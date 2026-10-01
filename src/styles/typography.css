@@ -322,18 +322,9 @@
   line-gap-override: 0%;
 }
 
-/* --- 6. Azeret Mono --- */
-@font-face {
-  font-family: "Azeret Mono";
-  src: url("/fonts/Azeret Mono-400.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-  size-adjust: 91%;
-  ascent-override: 90%;
-  descent-override: 22%;
-  line-gap-override: 0%;
-}
+/* --- 6. Azeret Mono ---
+   public/fonts has the 500, 600 and 700 weights only: weight 400 is answered by the 500 face (the
+   nearest, per CSS font matching), and there is no 400 file to request and 404 on every page. */
 @font-face {
   font-family: "Azeret Mono";
   src: url("/fonts/Azeret Mono-500.ttf") format("truetype");

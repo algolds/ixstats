@@ -28,7 +28,13 @@ import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { api } from "~/trpc/react";
-import { NARRATOR_ACCENT, NARRATOR_SPEEDS, NARRATOR_VOICE_LABELS } from "../types";
+import {
+  NARRATOR_ACCENT,
+  NARRATOR_SPEEDS,
+  NARRATOR_VOICE_LABELS,
+  narratorEngineLabel,
+  type NarratorEngine,
+} from "../types";
 
 interface TOCEntry {
   id: string;
@@ -81,9 +87,19 @@ export function WikiNarratorPlayer({
   const [lastNonZeroVol, setLastNonZeroVol] = useState(0.2);
 
   const hasNarrator = !!(narratorState && narratorState.totalBlocks > 0 && narratorActions);
-  const { data: voicesData } = api.onoma.getKokoroVoices.useQuery(undefined, {
+  // Which voice reads: what the narrator reported when it last played, else what the settings say will.
+  // Read only while the player is open (it is the same cached query the narrator plays from).
+  const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery(undefined, {
     staleTime: 600000,
     enabled: hasNarrator,
+  });
+  const engine: NarratorEngine | null =
+    narratorState?.engine ??
+    (speechConfig ? (speechConfig.kokoro.enabled ? "kokoro" : "browser") : null);
+  // Voices are Kokoro's: the browser voice has no list to pick from.
+  const { data: voicesData } = api.onoma.getKokoroVoices.useQuery(undefined, {
+    staleTime: 600000,
+    enabled: hasNarrator && engine === "kokoro",
   });
   const voiceOptions: string[] = voicesData?.voices ?? Object.keys(NARRATOR_VOICE_LABELS);
 
@@ -393,26 +409,28 @@ export function WikiNarratorPlayer({
 
           {/* Right: Inline Triggers for Voice, Speed, Volume */}
           <div className="flex shrink-0 items-center gap-1">
-            {/* Voice trigger */}
-            <Button
-              type="button"
-              size="sm"
-              variant={activeTray === "voice" ? "tinted" : "gray"}
-              onClick={() => toggleTray("voice")}
-              aria-expanded={activeTray === "voice"}
-              title={`Voice: ${currentVoiceLabel}`}
-              className="gap-1 px-2"
-            >
-              <User aria-hidden className="size-3" />
-              <span className="max-w-[55px] truncate sm:max-w-[75px]">{shortVoiceName}</span>
-              <ChevronDown
-                aria-hidden
-                className={cn(
-                  "size-3 opacity-70 transition-transform duration-150",
-                  activeTray === "voice" && "rotate-180 opacity-100"
-                )}
-              />
-            </Button>
+            {/* Voice trigger: Kokoro's voices only, the browser voice has none to pick */}
+            {engine !== "browser" && (
+              <Button
+                type="button"
+                size="sm"
+                variant={activeTray === "voice" ? "tinted" : "gray"}
+                onClick={() => toggleTray("voice")}
+                aria-expanded={activeTray === "voice"}
+                title={`Voice: ${currentVoiceLabel}`}
+                className="gap-1 px-2"
+              >
+                <User aria-hidden className="size-3" />
+                <span className="max-w-[55px] truncate sm:max-w-[75px]">{shortVoiceName}</span>
+                <ChevronDown
+                  aria-hidden
+                  className={cn(
+                    "size-3 opacity-70 transition-transform duration-150",
+                    activeTray === "voice" && "rotate-180 opacity-100"
+                  )}
+                />
+              </Button>
+            )}
 
             {/* Speed trigger */}
             <Button
@@ -449,10 +467,21 @@ export function WikiNarratorPlayer({
           </div>
         </AudioPlayerControlBar>
 
+        {/* Which voice reads: said plainly, so the natural voice is never claimed for the browser's */}
+        {engine && (
+          <p
+            className="text-muted-foreground px-1 text-xs"
+            data-testid="narrator-engine"
+            title={narratorEngineLabel(engine, currentVoiceId ? currentVoiceLabel : undefined)}
+          >
+            {narratorEngineLabel(engine, currentVoiceId ? currentVoiceLabel : undefined)}
+          </p>
+        )}
+
         {/* ── 4. INLINE EXPANDABLE TRAYS (Guaranteed 0% clipping behind Halo) ── */}
 
         {/* 4A. Inline Voice Picker Tray */}
-        {activeTray === "voice" && (
+        {activeTray === "voice" && engine !== "browser" && (
           <div className="border-separator bg-surface-elevated text-label animate-in fade-in slide-in-from-top-1 rounded-row shadow-card mt-2 space-y-1 border p-2 duration-150">
             <div className="border-separator text-label-secondary text-subhead flex items-center justify-between border-b px-1 pb-1">
               <span>Narrator Voice</span>

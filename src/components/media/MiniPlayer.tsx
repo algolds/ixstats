@@ -5,12 +5,17 @@ import { useIxMedia } from "./MediaContext";
 import { Button } from "~/components/ui/button";
 import { FacetMaterial } from "~/components/ui/facet";
 import { Play, Pause, FastArrowRight as SkipForward, Expand as Maximize2 } from "iconoir-react";
-import { FullPlayer } from "./FullPlayer";
+import dynamic from "next/dynamic";
+import { useMountOnFirstOpen } from "~/components/wiki-os/shared/useMountOnFirstOpen";
+
+// The full-screen player is opened from the mini bar: its chunk is fetched then.
+const FullPlayer = dynamic(() => import("./FullPlayer").then((m) => m.FullPlayer), { ssr: false });
 
 export function MiniPlayer() {
   const { activeTrack, isPlaying, currentTime, duration, pauseTrack, resumeTrack, skipNext } =
     useIxMedia();
   const [isFullOpen, setIsFullOpen] = useState(false);
+  const fullPlayerMounted = useMountOnFirstOpen(isFullOpen);
 
   // WikiOS narration is controlled from the Halo (Dynamic Island → Wiki → Now Playing),
   // not this media bar — don't surface it here.
@@ -83,7 +88,7 @@ export function MiniPlayer() {
         </FacetMaterial>
       </div>
 
-      <FullPlayer isOpen={isFullOpen} onClose={() => setIsFullOpen(false)} />
+      {fullPlayerMounted && <FullPlayer isOpen={isFullOpen} onClose={() => setIsFullOpen(false)} />}
     </>
   );
 }

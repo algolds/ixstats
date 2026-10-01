@@ -1,14 +1,11 @@
 /**
- * template-registry.ts — WikiOS Template Registry.
+ * template-registry.ts — WikiOS Template Registry: the TemplateData types and the pure helpers that sort
+ * templates (noise filter, domain tier).
  *
- * Syncs TemplateData schemas from MediaWiki, caches them in Prisma,
- * and provides lookup/search for the editor's template inserter.
+ * Nothing here talks to MediaWiki or the database, so client code may import it. The calls that do live
+ * in `template-engine.server.ts` (the render engine and the admin refresh) and `template-data-reader.ts`
+ * (Postgres); neither can reach a browser bundle.
  */
-
-import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
-import { transformWikiLinks } from "~/lib/wiki-os/transformers/url-compat";
-import { transformImages, stripConflictingStyles } from "~/lib/wiki-os/transformers/html-transformer";
-import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -38,14 +35,11 @@ export interface TemplateDataInfo {
 }
 
 // ---------------------------------------------------------------------------
-// Fetch from MediaWiki
+// TemplateData text
 // ---------------------------------------------------------------------------
 
-/**
- * Fetch TemplateData for one or more templates from MediaWiki.
- * Uses the templatedata API action.
- */
-function normalizeString(val: unknown): string | undefined {
+/** A TemplateData text that is a string or an object of strings by language: the English one, else the first. */
+export function normalizeString(val: unknown): string | undefined {
   if (!val) return undefined;
   if (typeof val === "string") return val;
   if (typeof val === "object") {
@@ -53,184 +47,6 @@ function normalizeString(val: unknown): string | undefined {
     return obj.en || Object.values(obj)[0] || undefined;
   }
   return undefined;
-}
-
-export async function fetchTemplateData(titles: string[]): Promise<Map<string, TemplateDataInfo>> {
-  const result = new Map<string, TemplateDataInfo>();
-  if (titles.length === 0) return result;
-
-  // MediaWiki API accepts up to 50 titles at once
-  const batches: string[][] = [];
-  for (let i = 0; i < titles.length; i += 50) {
-    batches.push(titles.slice(i, i + 50));
-  }
-
-  for (const batch of batches) {
-    const normalizedTitles = batch.map((t) => (t.startsWith("Template:") ? t : `Template:${t}`));
-    const params = new URLSearchParams({
-      action: "templatedata",
-      titles: normalizedTitles.join("|"),
-      formatversion: "2",
-      format: "json",
-    });
-
-    try {
-      const mwApi = getMediaWikiApiUrl("ixwiki");
-      const res = await fetch(`${mwApi}?${params}`, {
-        headers: {
-          "User-Agent": DEFAULT_USER_AGENT,
-          "Api-User-Agent": DEFAULT_USER_AGENT,
-        },
-        signal: AbortSignal.timeout(15000),
-      });
-      if (!res.ok) continue;
-
-      const rawText = await res.text();
-      if (!rawText.trim().startsWith("{")) continue;
-
-      const data = JSON.parse(rawText) as {
-        pages?: Record<
-          string,
-          {
-            title?: string;
-            description?: unknown;
-            params?: Record<string, any>;
-            paramOrder?: string[];
-            format?: string;
-            sets?: Array<{ label: string; params: string[] }>;
-            notemplatedata?: boolean;
-          }
-        >;
-      };
-
-      if (data.pages) {
-        for (const [, page] of Object.entries(data.pages)) {
-          if (!page.title || page.notemplatedata) continue;
-          // Strip "Template:" prefix for storage
-          const cleanName = page.title.replace(/^Template:/, "");
-          const normalizedParams: Record<string, TemplateParam> = {};
-
-          if (page.params) {
-            for (const [pKey, pVal] of Object.entries(page.params)) {
-              normalizedParams[pKey] = {
-                ...pVal,
-                label: normalizeString(pVal?.label),
-                description: normalizeString(pVal?.description),
-              };
-            }
-          }
-
-          result.set(cleanName, {
-            title: cleanName,
-            description: normalizeString(page.description),
-            params: normalizedParams,
-            paramOrder: page.paramOrder,
-            format: page.format,
-            sets: page.sets,
-          });
-        }
-      }
-    } catch {
-      // Continue next batch
-    }
-  }
-
-  return result;
-}
-
-/**
- * Search for templates by name prefix using MediaWiki's prefix search.
- */
-export async function searchTemplatesFromWiki(
-  query: string,
-  limit = 20
-): Promise<Array<{ title: string; ns: number }>> {
-  const params = new URLSearchParams({
-    action: "query",
-    list: "prefixsearch",
-    pssearch: query,
-    psnamespace: "10", // Template namespace
-    pslimit: String(limit),
-    formatversion: "2",
-    format: "json",
-  });
-
-  try {
-    const mwApi = getMediaWikiApiUrl("ixwiki");
-    const res = await fetch(`${mwApi}?${params}`, {
-      headers: {
-        "User-Agent": DEFAULT_USER_AGENT,
-        "Api-User-Agent": DEFAULT_USER_AGENT,
-      },
-      signal: AbortSignal.timeout(10000),
-    });
-    const data = (await res.json()) as {
-      query?: {
-        prefixsearch?: Array<{ ns: number; title: string; pageid: number }>;
-      };
-    };
-    return (data.query?.prefixsearch ?? []).map((p) => ({
-      title: p.title.replace(/^Template:/, ""),
-      ns: p.ns,
-    }));
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Get a rendered preview of a template with given parameters.
- */
-export async function getTemplatePreview(
-  templateName: string,
-  params: Record<string, string>
-): Promise<string> {
-  // Build wikitext from template name + params
-  const paramParts = Object.entries(params)
-    .filter(([, v]) => v.trim() !== "")
-    .map(([k, v]) => `|${k}=${v}`);
-  const wikitext = `{{${templateName}${paramParts.join("")}}}`;
-
-  const apiParams = new URLSearchParams({
-    action: "parse",
-    text: wikitext,
-    contentmodel: "wikitext",
-    prop: "text",
-    pst: "1",
-    disablelimitreport: "1",
-    disableeditsection: "1",
-    formatversion: "2",
-    format: "json",
-  });
-
-  try {
-    const mwApi = getMediaWikiApiUrl("ixwiki");
-    const res = await fetch(mwApi, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": DEFAULT_USER_AGENT,
-        "Api-User-Agent": DEFAULT_USER_AGENT,
-      },
-      body: apiParams.toString(),
-      signal: AbortSignal.timeout(15000),
-    });
-    if (res.ok) {
-      const data = (await res.json()) as {
-        parse?: { text?: string };
-      };
-      if (data.parse?.text) {
-        return transformWikiLinks(
-          transformImages(stripConflictingStyles(data.parse.text), "ixwiki")
-        );
-      }
-    }
-  } catch {
-    // Fall through to local compiler
-  }
-
-  const localHtml = parseWikitextToHtml(wikitext, "ixwiki");
-  return transformWikiLinks(transformImages(localHtml, "ixwiki"));
 }
 
 /**

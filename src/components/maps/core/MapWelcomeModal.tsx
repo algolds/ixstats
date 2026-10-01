@@ -34,7 +34,7 @@ import {
 import { FacetCard } from "~/components/ui/facet-container";
 import { IxTime } from "~/lib/ixtime";
 import { IXWORLD_VERSION } from "~/lib/buildVersion";
-import { DEFAULT_MEDIAWIKI_URL } from "~/lib/wiki-os/config";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 
 const STORAGE_KEY = "ixworld-welcome-seen";
 
@@ -316,7 +316,7 @@ export function MapWelcomeModal({
                 }
               >
                 <a
-                  href={DEFAULT_MEDIAWIKI_URL}
+                  href={mediaWikiOrigin()}
                   target="_blank"
                   rel="noopener"
                   className="text-label-secondary hover:text-label cursor-help underline decoration-dotted"

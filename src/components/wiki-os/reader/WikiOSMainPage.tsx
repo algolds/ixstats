@@ -8,54 +8,16 @@ import Link from "next/link";
 import { OpenBook as BookOpen, OpenNewWindow as ExternalLink } from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import { api } from "~/trpc/react";
-import { withBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { WikiHeroMaster, type WikiHeroVariant } from "./hero";
 import { EditorialMainPageContent, SculptedMainPageContent } from "./main";
-import {
-  extractLeadImageFromHtml,
-  normalizeWikiImageUrl,
-} from "~/lib/wiki-os/transformers/image-url";
 
 const STORAGE_KEY = "wikios:heroVariant";
-
-const FALLBACK_ALMANAC_PAGES = [
-  "List of countries by GDP",
-  "List of countries by population",
-  "List of countries by Human Development Index",
-  "List of sovereign states by system of government",
-  "List of countries by life expectancy",
-  "List of countries by literacy rate",
-  "List of countries by intentional homicide rate",
-  "List of countries by median age",
-  "List of countries by military expenditures",
-  "List of countries by rail transport network size",
-  "List of countries by electricity consumption",
-  "List of sovereign states by date of formation",
-  "List of countries by carbon dioxide emissions",
-  "List of countries by arable land area",
-];
-
-// ---------------------------------------------------------------------------
-// Category definitions
-// ---------------------------------------------------------------------------
-
-const CATEGORIES = [
-  { name: "Countries", color: "#3b82f6" },
-  { name: "Companies", color: "#f97316" },
-  { name: "Culture", color: "#a855f7" },
-  { name: "Economy", color: "#22c55e" },
-  { name: "Geography", color: "#14b8a6" },
-  { name: "Government", color: "#6366f1" },
-  { name: "History", color: "#eab308" },
-  { name: "Military", color: "#ef4444" },
-  { name: "Nature", color: "#10b981" },
-  { name: "People", color: "#ec4899" },
-  { name: "Politics", color: "#8b5cf6" },
-  { name: "Technology", color: "#06b6d4" },
-] as const;
+/** The page's data is built once a minute on the server. */
+const MAIN_PAGE_STALE_MS = 60_000;
 
 // ---------------------------------------------------------------------------
 // Blurb Modal
@@ -171,14 +133,14 @@ function BlurbPromptModal({
         {/* Footer */}
         <div className="border-separator flex items-center justify-between border-t px-5 py-3">
           <Link
-            href={withBasePath(`/blurbs/${prompt.slug}`)}
+            href={ixstatesHref(`/blurbs/${prompt.slug}`)}
             className="text-footnote text-tint hover:text-wiki-hover inline-flex items-center gap-2 transition-colors"
           >
             <ExternalLink className="h-3 w-3" />
             Open full prompt
           </Link>
           <Link
-            href={withBasePath("/blurbs")}
+            href={ixstatesHref("/blurbs")}
             className="text-label-secondary hover:text-label text-footnote transition-colors"
           >
             All prompts →
@@ -220,17 +182,22 @@ export function WikiOSMainPage() {
     }
   }, []);
 
-  // Fetch Main_Page HTML to extract the featured article from it
-  const { data: mainPageData } = api.wikios.getArticleHtml.useQuery(
-    { title: "Main Page" },
-    { staleTime: 10 * 60 * 1000 }
-  );
-
-  // Fetch recent changes
-  const { data: recentChanges, isLoading: isLoadingRecent } = api.wikios.getRecentChanges.useQuery(
-    { limit: 6 },
-    { staleTime: 30_000 }
-  );
+  // One answer for the whole page (featured article, almanac, recent changes, counts, topic tiles,
+  // prompt): the route reads it on the server, so it is in the first HTML and not fetched again.
+  const {
+    data: main,
+    error: mainError,
+    refetch: refetchMain,
+  } = api.wikios.getMainPage.useQuery(undefined, {
+    staleTime: MAIN_PAGE_STALE_MS,
+    refetchOnWindowFocus: false,
+  });
+  // A page that could not be read says so; its sections must not stay skeletons for good
+  const mainFailed = !main && !!mainError;
+  const categories = main?.categories ?? [];
+  const featured = main?.featured ?? null;
+  const recentChanges = main?.recentChanges;
+  const activePrompt = main?.prompt ?? null;
 
   // Fetch countries for "Explore the World" (all realms)
   const { data: countries } = api.countries.getSelectList.useQuery(
@@ -250,87 +217,17 @@ export function WikiOSMainPage() {
     return copy;
   }, [countries]);
 
-  // Fetch site stats
-  const { data: siteStats } = api.wikios.getSiteStats.useQuery(undefined, {
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Fetch random active blurb prompt
-  const { data: activePrompt } = api.blurbs.getRandomActivePrompt.useQuery(undefined, {
-    staleTime: 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
-
-  // Extract featured article from Main_Page contentHtml
-  const featuredArticleHtml = useMemo(() => {
-    if (!mainPageData?.contentHtml) return null;
-    return extractFeaturedArticle(mainPageData.contentHtml);
-  }, [mainPageData?.contentHtml]);
-
-  // Extract structured featured article details for Apple Editorial card
-  const featuredArticleDetails = useMemo(() => {
-    if (!featuredArticleHtml) return null;
-
-    // Extract title & slug from link or heading
-    const titleMatch =
-      featuredArticleHtml.match(
-        /<h3[^>]*>[\s\S]*?<a[^>]+href="(?:\/wiki\/|https?:\/\/ixwiki\.com\/wiki\/)([^">]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<\/h3>/i
-      ) ||
-      featuredArticleHtml.match(
-        /<a[^>]+href="(?:\/wiki\/|https?:\/\/ixwiki\.com\/wiki\/)([^">]+)"[^>]*>([\s\S]*?)<\/a>/i
-      ) ||
-      featuredArticleHtml.match(/<h3[^>]*>([\s\S]*?)<\/h3>/i);
-
-    const slug = titleMatch
-      ? decodeURIComponent(titleMatch[1] || "").replace(/ /g, "_")
-      : "Featured_Article";
-    const title = titleMatch
-      ? (titleMatch[2] || titleMatch[1])?.replace(/<[^>]+>/g, "").trim()
-      : "Featured Article";
-
-    // Extract image src using robust HTML image scanner with normalizeWikiImageUrl fallback
-    let imgSrc = extractLeadImageFromHtml(featuredArticleHtml);
-    if (!imgSrc) {
-      const imgMatch = featuredArticleHtml.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i);
-      if (imgMatch && imgMatch[1]) {
-        imgSrc = normalizeWikiImageUrl(imgMatch[1]);
-      }
-    }
-
-    // Extract paragraph text (clean of bylines / tags)
-    const pMatches = featuredArticleHtml.match(/<p[^>]*>([\s\S]*?)<\/p>/gi) || [];
-    const validParagraphs = pMatches.filter(
-      (p) => !p.toLowerCase().includes("byline") && !p.toLowerCase().includes("featured article")
-    );
-    const summary =
-      validParagraphs.length > 0
-        ? validParagraphs[0]
-            .replace(/<[^>]+>/g, "")
-            .replace(/^Featured article\s*/i, "")
-            .trim()
-        : "";
-
-    return {
-      title,
-      slug,
-      imgSrc,
-      summary,
-    };
-  }, [featuredArticleHtml]);
-
-  // Live query author info for the extracted featured article
+  // Live query author info for the featured article
   const { data: featuredAuthorInfo } = api.wikios.getArticleAuthors.useQuery(
-    { title: featuredArticleDetails?.title ?? "" },
+    { title: featured?.title ?? "" },
     {
-      enabled: Boolean(
-        featuredArticleDetails?.title && featuredArticleDetails.title !== "Featured Article"
-      ),
+      enabled: Boolean(featured?.title && featured.title !== "Featured Article"),
       staleTime: 5 * 60 * 1000,
     }
   );
 
   const featuredArticleData = useMemo(() => {
-    if (!featuredArticleDetails) return null;
+    if (!featured) return null;
     const creatorName =
       typeof featuredAuthorInfo?.creator === "object"
         ? featuredAuthorInfo?.creator?.username
@@ -341,7 +238,10 @@ export function WikiOSMainPage() {
         : (featuredAuthorInfo?.lastEditor as string | undefined);
 
     return {
-      ...featuredArticleDetails,
+      title: featured.title,
+      slug: featured.slug,
+      imgSrc: featured.image,
+      summary: featured.excerpt,
       authorInfo: featuredAuthorInfo
         ? {
             creator: creatorName || null,
@@ -359,12 +259,11 @@ export function WikiOSMainPage() {
           }
         : null,
     };
-  }, [featuredArticleDetails, featuredAuthorInfo]);
+  }, [featured, featuredAuthorInfo]);
 
   // Extract latest live dispatch change
   const latestChange = useMemo(() => {
-    if (!recentChanges || recentChanges.length === 0) return null;
-    const first = recentChanges[0];
+    const first = recentChanges?.[0];
     if (!first) return null;
     return {
       title: first.title,
@@ -374,88 +273,23 @@ export function WikiOSMainPage() {
     };
   }, [recentChanges]);
 
-  // Fetch members of Category:Bureau_of_International_Statistics for World Almanac Spotlight (limit 100)
-  const { data: almanacMembers, isLoading: isLoadingAlmanacMembers } =
-    api.wikios.getCategoryMembers.useQuery(
-      { category: "Bureau of International Statistics", limit: 100 },
-      { staleTime: 10 * 60 * 1000 }
-    );
-
-  // Pick a pseudo-random daily rotated article from the statistical pool
-  const selectedAlmanacTitle = useMemo(() => {
-    const memberList = almanacMembers?.members;
-    const validPages = (memberList ?? [])
-      .filter((m) => m.type === "page" || !m.isSubcategory)
-      .map((m) => m.title)
-      .filter(
-        (t) =>
-          !t.startsWith("Category:") &&
-          !t.startsWith("Template:") &&
-          !t.startsWith("User:") &&
-          !t.startsWith("MediaWiki:")
-      );
-
-    const pool = validPages.length > 0 ? validPages : FALLBACK_ALMANAC_PAGES;
-
-    // Seeded daily PRNG based on current UTC calendar day: YYYY-MM-DD
-    const now = new Date();
-    const dateKey = `${now.getUTCFullYear()}-${now.getUTCMonth() + 1}-${now.getUTCDate()}`;
-    let hash = 0;
-    for (let i = 0; i < dateKey.length; i++) {
-      hash = (Math.imul(31, hash) + dateKey.charCodeAt(i)) | 0;
-    }
-    const positiveHash = Math.abs(hash);
-    const index = positiveHash % pool.length;
-    return pool[index] || "List of countries by GDP";
-  }, [almanacMembers]);
-
-  // Fetch the live parsed HTML of the selected B.I.S. Almanac article
-  const { data: almanacArticleHtmlData, isLoading: isLoadingAlmanacArticle } =
-    api.wikios.getArticleHtml.useQuery(
-      { title: selectedAlmanacTitle },
-      {
-        enabled: Boolean(selectedAlmanacTitle),
-        staleTime: 10 * 60 * 1000,
-      }
-    );
-
-  // Parse lead paragraph, title, and image directly from the wiki article
+  // The almanac card: the server picked the day's article and read its lead and picture
   const almanacSpotlightData = useMemo(() => {
-    if (!selectedAlmanacTitle) return null;
-    const rawHtml = almanacArticleHtmlData?.contentHtml || "";
-
-    // Extract robust lead image via universal HTML scanner
-    const thumbnail = extractLeadImageFromHtml(rawHtml);
-
-    // Extract clean lead paragraph (skipping empty / infobox paragraphs)
-    const pMatches = rawHtml.match(/<p[^>]*>([\s\S]*?)<\/p>/gi) || [];
-    const validParagraph = pMatches.find(
-      (p) =>
-        p.length > 25 &&
-        !p.toLowerCase().includes("infobox") &&
-        !p.toLowerCase().includes("mw-empty-elt")
-    );
-    const excerpt = validParagraph
-      ? validParagraph
-          .replace(/<[^>]+>/g, "")
-          .replace(/\[\d+\]/g, "")
-          .trim()
-          .replace(/\s+/g, " ")
-      : `Official comparative statistical catalog of the League of Nations Bureau of International Statistics for ${selectedAlmanacTitle.replace(/_/g, " ")}.`;
-
+    const almanac = main?.almanac;
+    if (!almanac) return null;
     return {
-      title: selectedAlmanacTitle.replace(/_/g, " "),
-      slug: encodeURIComponent(selectedAlmanacTitle.replace(/ /g, "_")),
-      category: "Bureau of International Statistics",
-      excerpt,
-      thumbnail,
+      ...almanac,
+      excerpt:
+        almanac.excerpt ||
+        `Official comparative statistical catalog of the League of Nations Bureau of International Statistics for ${almanac.title}.`,
       metricLabel: "B.I.S. Registry",
       metricValue: "Official Index",
     };
-  }, [selectedAlmanacTitle, almanacArticleHtmlData]);
+  }, [main?.almanac]);
 
   return (
     <div className="wikios-main w-full pt-1 pb-3">
+      <h1 className="sr-only">IxWiki, the IxStats encyclopedia</h1>
       <div className="mx-auto w-full max-w-6xl space-y-4 sm:space-y-5">
         {/* ── 1. Master Hero & Direction Switcher ── */}
         <header className="wikios-main-hero relative w-full">
@@ -463,14 +297,10 @@ export function WikiOSMainPage() {
             <WikiHeroMaster
               variant={variant}
               onSelectVariant={handleSelectVariant}
-              siteStats={siteStats}
+              siteStats={main?.stats}
               activePrompt={activePrompt}
-              featuredArticleHtml={featuredArticleHtml}
               featuredArticleData={featuredArticleData}
               latestChange={latestChange}
-              totalNations={
-                countries?.length ? (countries.length > 50 ? countries.length : 82) : 82
-              }
               onOpenBlurbs={() => setBlurbModalOpen(true)}
             />
           </div>
@@ -478,6 +308,19 @@ export function WikiOSMainPage() {
 
         {/* ── 2. Redesigned Main Content Area (Layout-Aware) ── */}
         <main className="w-full">
+          {mainFailed && (
+            <div
+              role="alert"
+              className="border-destructive/40 bg-destructive/10 mb-4 flex flex-col items-center gap-3 rounded-2xl border p-6 text-center"
+            >
+              <p className="text-destructive text-sm font-medium">
+                The Main Page could not be loaded: {mainError.message}
+              </p>
+              <Button variant="outline" size="sm" onClick={() => void refetchMain()}>
+                Try again
+              </Button>
+            </div>
+          )}
           <AnimatePresence mode="wait">
             {variant === "editorial-masthead" ? (
               <motion.div
@@ -488,12 +331,12 @@ export function WikiOSMainPage() {
                 transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               >
                 <EditorialMainPageContent
-                  categories={CATEGORIES}
+                  categories={categories}
                   recentChanges={recentChanges}
-                  isLoadingRecent={isLoadingRecent}
+                  isLoadingRecent={!main && !mainFailed}
                   countries={randomCountries}
                   almanacSpotlight={almanacSpotlightData}
-                  isLoadingAlmanac={isLoadingAlmanacArticle || isLoadingAlmanacMembers}
+                  isLoadingAlmanac={!main && !mainFailed}
                 />
               </motion.div>
             ) : (
@@ -505,12 +348,12 @@ export function WikiOSMainPage() {
                 transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               >
                 <SculptedMainPageContent
-                  categories={CATEGORIES}
+                  categories={categories}
                   recentChanges={recentChanges}
-                  isLoadingRecent={isLoadingRecent}
+                  isLoadingRecent={!main && !mainFailed}
                   countries={randomCountries}
                   almanacSpotlight={almanacSpotlightData}
-                  isLoadingAlmanac={isLoadingAlmanacArticle || isLoadingAlmanacMembers}
+                  isLoadingAlmanac={!main && !mainFailed}
                 />
               </motion.div>
             )}
@@ -528,87 +371,4 @@ export function WikiOSMainPage() {
       )}
     </div>
   );
-}
-
-// ---------------------------------------------------------------------------
-// Extract featured article from Main_Page HTML
-// ---------------------------------------------------------------------------
-
-function extractFeaturedArticle(html: string): string | null {
-  if (!html) return null;
-
-  const patterns = [
-    /<div[^>]*id="featured(?:_|&#95;)article"/i,
-    /<div[^>]*id="mp-tfa"/i,
-    /<div[^>]*id="mainpage-featured"/i,
-    /<div[^>]*class="[^"]*(?:featured-article|tfa-box|mp-box|featured_article)[^"]*"/i,
-    /<section[^>]*class="[^"]*featured[^"]*"/i,
-  ];
-
-  let startIdx = -1;
-  for (const pattern of patterns) {
-    const idx = html.search(pattern);
-    if (idx !== -1) {
-      startIdx = idx;
-      break;
-    }
-  }
-
-  if (startIdx === -1) {
-    const cardIdx = html.search(/<div[^>]*class="[^"]*card[^"]*"/i);
-    if (cardIdx !== -1) {
-      startIdx = cardIdx;
-    }
-  }
-
-  if (startIdx === -1) {
-    if (html.length < 2500 && html.includes("<p>")) {
-      return transformFeaturedContent(html);
-    }
-    return null;
-  }
-
-  let depth = 0;
-  let pos = startIdx;
-  const isSection = html
-    .slice(startIdx, startIdx + 10)
-    .toLowerCase()
-    .startsWith("<section");
-  const openTag = isSection ? "<section" : "<div";
-  const closeTag = isSection ? "</section>" : "</div>";
-
-  while (pos < html.length) {
-    const nextOpen = html.indexOf(openTag, pos + (depth === 0 ? 0 : 1));
-    const nextClose = html.indexOf(closeTag, pos);
-
-    if (nextClose === -1) break;
-
-    if (nextOpen !== -1 && nextOpen < nextClose) {
-      depth++;
-      pos = nextOpen + openTag.length;
-    } else {
-      if (depth <= 1) {
-        const endPos = nextClose + closeTag.length;
-        return transformFeaturedContent(html.slice(startIdx, endPos));
-      }
-      depth--;
-      pos = nextClose + closeTag.length;
-    }
-  }
-
-  return null;
-}
-
-function transformFeaturedContent(cardHtml: string): string {
-  return cardHtml
-    .replace(/<div[^>]*class="[^"]*byline[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "")
-    .replace(/<p[^>]*class="[^"]*byline[^"]*"[^>]*>[\s\S]*?<\/p>/gi, "")
-    .replace(/<div[^>]*class="[^"]*card-byline[^"]*"[^>]*>[\s\S]*?<\/div>/gi, "")
-    .replace(/<p>\s*Featured article\s*<\/p>/gi, "")
-    .replace(/class="card[^"]*"/i, 'class="wikios-fa-card"')
-    .replace(/class="card-image[^"]*"/gi, 'class="wikios-fa-image"')
-    .replace(/class="card-text"/gi, 'class="wikios-fa-text"')
-    .replace(/class="byline"/gi, 'class="wikios-fa-byline hidden"')
-    .replace(/href="\/w\/Special:MyLanguage\//g, 'href="/wiki/')
-    .replace(/href="https?:\/\/ixwiki\.com\/wiki\//g, 'href="/wiki/');
 }

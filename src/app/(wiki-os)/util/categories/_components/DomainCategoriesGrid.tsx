@@ -30,7 +30,7 @@ export function DomainCategoriesGrid({ domains, searchQuery }: DomainCategoriesG
               transition={{ duration: 0.25, delay: index * 0.02 }}
             >
               <Link
-                href={withBasePath(`/wiki/categories/${encodeURIComponent(domain.name)}`)}
+                href={withBasePath(`/util/categories/${encodeURIComponent(domain.name)}`)}
                 className={cn(
                   "group rounded-card relative flex min-h-[160px] flex-col justify-between overflow-hidden p-4 sm:p-5",
                   "border-separator bg-surface border",

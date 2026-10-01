@@ -14,8 +14,7 @@ import {
 } from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import { api } from "~/trpc/react";
-
-import { withBasePath } from "~/lib/base-path";
+import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 import { Button } from "~/components/ui/button";
 
@@ -280,7 +279,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                     </p>
                   </div>
                   <Link
-                    href={withBasePath("/admin/wikios-settings")}
+                    href={ixstatesHref("/admin/wikios-settings")}
                     data-cuelume-press="press"
                     data-cuelume-hover="tick"
                     className="border-tint/40 bg-tint/10 text-tint hover:bg-tint/20 rounded-control text-caption border px-3 py-2 transition-colors active:scale-[0.98]"

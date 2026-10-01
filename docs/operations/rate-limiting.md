@@ -96,9 +96,37 @@ There is no "heavy mutation" tier; `heavyMutationProcedure` and similar builders
 
 Other callers of the limiter:
 - `commons` router (`src/server/api/routers/commons.ts`): its own 100/min `commons` namespace.
-- Route handlers that call `rateLimiter.check()` without explicit limits, so they use `RATE_LIMIT_MAX_REQUESTS`/`RATE_LIMIT_WINDOW_MS` (default 100 per 60s): `/api/wiki/sync-webhook` (`wiki-sync-webhook`), `/api/onoma/tts` (`onoma-tts`), `/api/mediawiki/[wiki]/api.php` (`wiki_proxy`), `/api/upload/image` (`file_upload`).
+- Route handlers that call `rateLimiter.check()` without explicit limits, so they use `RATE_LIMIT_MAX_REQUESTS`/`RATE_LIMIT_WINDOW_MS` (default 100 per 60s): `/api/onoma/tts` (`onoma-tts`), `/api/upload/image` (`file_upload`), and the WikiOS `wiki_proxy` bucket (see [WikiOS buckets](#wikios-buckets)).
 
 `publicProcedure`, `protectedProcedure`, `countryOwnerProcedure`, `premiumProcedure` and the `cached*Procedure` builders apply **no** rate limit.
+
+### WikiOS buckets
+
+The WikiOS routes (plans 401, 410, 411, 412, 416) use their own buckets, so a bot reading in bulk does not use up a
+reader's limit. Every key is the trusted client identity (`resolveRateLimitIdentifier`: `ip:<CF-Connecting-IP or
+X-Real-IP>`, never `X-Forwarded-For`) unless the table says otherwise; the login bucket adds a hash of the account
+name. They are set in code, not by `RATE_LIMIT_MAX_REQUESTS` (`wiki_proxy` is the one that takes the default). This
+table lists every bucket the WikiOS code names: grep `rateLimiter.check(` and `deps.rateLimit(` in `src/app/api/wiki`,
+`src/app/api/wikios`, `src/app/api/mediawiki`, `src/lib/wiki-os` to check it.
+
+| Bucket | Where | Limit | Key |
+|--------|-------|-------|-----|
+| `wiki_api` | every request to `/w/api.php` (`src/lib/wiki-os/api-compat/dispatch.ts`) | 120 per minute anonymous, 600 signed in (bot session or browser user); callers with the `noratelimit` right are skipped | client |
+| `wiki_api_write` | the POST actions of `/w/api.php` (edit, move, delete, undelete, protect, rollback, purge, login, logout), on top of `wiki_api` | 120 per minute | client |
+| `wiki_api_login` | `action=login`, counted once the login token is valid | 10 per 5 minutes; over it the answer is MediaWiki's `Throttled` with a `wait` | client + sha256 of the lower-cased account name (so a name of any length is a fixed-size key) |
+| `wiki_api_render` | the renders api.php causes: `action=parse` of text or an old revision (MediaWiki renders it) for callers without a bot session, 20 per minute; and each page `action=purge` queues for a render, 60 per minute (a request that would pass it is refused whole, `ratelimited`, before any page is purged; accounts with the `noratelimit` right are not counted) | 20 per minute for parse, 60 for purge, one count | client (a signed-in account: `user:<id>`) |
+| `wiki_upload` | uploads: `/api/wiki/upload` (after the signed-in check, before the body is read) and `action=upload` of `/w/api.php` (after the parameters are checked), one count per attempt | 20 per minute | route: the request context's rate-limit identity; api.php: client |
+| `wiki_media` | the two media proxies under `/api/mediawiki/` and the file route `/api/wiki/file/[...name]` (the uploads WikiOS serves itself; a page loads dozens of images) | 600 per minute | client |
+| `wiki_export` | `/api/wiki/export` (Special:Export) | 10 per minute | client or signed-in user |
+| `wiki_raw` | `/api/wiki/raw` (`/wiki/<title>?action=raw`, for bots reading wikitext in bulk) | 300 per minute | client |
+| `wiki_read` | `wikios.getArticleHtml`, the reader's article query (a page load and every hover prefetch; the shared `public` tier of 100 per minute would answer readers with a false 404/busy). Added by the F10 change of the integration sweep | 600 per minute | client |
+| `wiki_proxy` | the fan-out routes `/api/wiki/{random-articles,categories,category-articles,preview-article}` and `/api/mediawiki/[wiki]/api.php` | the default (`RATE_LIMIT_MAX_REQUESTS` per `RATE_LIMIT_WINDOW_MS`, 100 per minute) | client |
+| `wiki-sync-webhook` | `/api/wiki/sync-webhook` (MediaWiki pushing a changed page) | 600 per minute with the valid `WIKI_SYNC_WEBHOOK_SECRET`; 10 per minute without it (those answer 401/503) | `secret:<first 16 hex of sha256(secret)>` with the secret, the client without |
+| `wikios-inbound-sync` | `/api/wikios/inbound-sync` (the cron / webhook that runs an inbound sync cycle) | same as `wiki-sync-webhook` | same as `wiki-sync-webhook` |
+
+A client over a `wiki_api*` bucket gets MediaWiki's `ratelimited` error (HTTP 200 with the error in the body, as
+MediaWiki does); the other buckets answer HTTP 429 with `Retry-After`. Redis holds the counters in production
+(in-memory per process otherwise, so a restart resets them).
 
 ### Operation Examples by Tier
 

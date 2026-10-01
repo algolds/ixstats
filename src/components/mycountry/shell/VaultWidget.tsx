@@ -11,6 +11,7 @@
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { stripBasePath } from "~/lib/base-path";
@@ -35,8 +36,14 @@ import { Button } from "~/components/ui/button";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 
-import { DailyBonusWidget } from "~/components/vault/DailyBonusWidget";
 import { Eyebrow } from "~/components/ui/eyebrow";
+
+// The daily-claim dialog (and the card art it shows) is its own chunk, fetched after the page is interactive
+// (plan 415, F19): the sidebar that mounts this widget is on every wiki page.
+const DailyBonusWidget = dynamic(
+  () => import("~/components/vault/DailyBonusWidget").then((m) => m.DailyBonusWidget),
+  { ssr: false }
+);
 
 export function VaultWidget() {
   const { userId } = useAuth();
