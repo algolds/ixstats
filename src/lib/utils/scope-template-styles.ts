@@ -229,6 +229,13 @@ function parseRules(text: string): RawRule[] | null {
   return braces === 0 && closers.length === 0 ? rules : null;
 }
 
+/** Whether `text` ends in a backslash that is not itself escaped: it would escape whatever is written after it. */
+function endsInEscape(text: string): boolean {
+  let backslashes = 0;
+  for (let i = text.length - 1; i >= 0 && text.charAt(i) === "\\"; i--) backslashes++;
+  return backslashes % 2 === 1;
+}
+
 /** A character that continues an identifier (CSS Syntax 4.2): `token` is not finished before one. */
 const IDENT_CHAR = /[\w\-\\\u0080-\uffff]/;
 
@@ -279,6 +286,7 @@ function scopeSelectors(prelude: string, strings: readonly string[]): string | n
   for (const raw of selectors) {
     const selector = inflate(raw, strings).trim();
     if (!selector || selector.length > MAX_SELECTOR_LENGTH || selector.includes("<")) return null;
+    if (endsInEscape(selector)) return null; // trimmed, it would escape the "," or "{" written after it
     const confined = scopeSelector(selector);
     if (confined === null) return null;
     scoped.push(confined);
@@ -307,7 +315,8 @@ function isAllowedDeclaration(property: string, declaration: string): boolean {
     !BLOCKED_VALUE.test(judged) &&
     !BLOCKED_FUNCTION.test(judged) &&
     urlsAreAllowed(judged) &&
-    !declaration.includes("<")
+    !declaration.includes("<") &&
+    !endsInEscape(declaration) // trimmed, it would escape the ";" or "}" written after it
   );
 }
 

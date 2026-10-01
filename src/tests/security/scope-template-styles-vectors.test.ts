@@ -129,6 +129,30 @@ describe("a sibling combinator on the root does not reach outside the article", 
   });
 });
 
+describe("a trailing backslash does not escape what is written after it", () => {
+  it("in a declaration: `color:red\\ }` is trimmed to `red\\`, which would escape the closing brace", () => {
+    const out = scopeTemplateStyles(".a{color:red\\ }.b{width:1px}");
+
+    expect(out).toBe(`${S} .b{width:1px}`);
+    expect(browserView(out).selectors).toEqual([`${S} .b`]);
+  });
+
+  it("in a declaration before a semicolon, and at the end of a sheet", () => {
+    expect(scopeTemplateStyles(".a{color:red\\ ;width:1px}")).toBe(`${S} .a{width:1px}`);
+    expect(scopeTemplateStyles(".a{width:1px;color:red\\")).toBe("");
+  });
+
+  it("in a selector, which would escape the comma or the brace", () => {
+    expect(scopeTemplateStyles(".a\\ {color:red}.b{width:1px}")).toBe(`${S} .b{width:1px}`);
+    expect(scopeTemplateStyles(".a\\ , .c{color:red}.b{width:1px}")).toBe(`${S} .b{width:1px}`);
+  });
+
+  it("an escaped backslash at the end is only a backslash, and stays", () => {
+    expect(scopeTemplateStyles(".a{content:x\\\\ }")).toBe(`${S} .a{content:x\\\\}`);
+    expect(scopeTemplateStyles(".a\\\\ {color:red}")).toBe(`${S} .a\\\\{color:red}`);
+  });
+});
+
 describe("the other sanitizers are unchanged by the article's allowances", () => {
   const html = `${OPEN}.a{color:red}</style><center>c</center><font color="red">f</font><p>x</p>`;
 
