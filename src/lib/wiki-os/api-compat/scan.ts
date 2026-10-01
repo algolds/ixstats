@@ -8,7 +8,7 @@
  */
 
 import { forwardFinder } from "~/lib/wiki-os/wikitext/forward-finder";
-import { matchBrackets, UNINDEXED } from "~/lib/wiki-os/wikitext/match-index";
+import { matchBrackets, unclosedCommentFrom, UNINDEXED } from "~/lib/wiki-os/wikitext/match-index";
 
 /** A link target or category name is a page title: at most 255 bytes, so a longer run is not one. */
 const MAX_TITLE_CHARS = 300;
@@ -33,8 +33,9 @@ function skipSpaces(text: string, from: number, limit: number): number {
 /** Where each `[[...]]` link starts and where its `]]` is: one pass, nested links included. */
 function* links(text: string): Generator<{ open: number; close: number }> {
   const closes = matchBrackets(text);
+  const commentFrom = unclosedCommentFrom(closes); // a comment that never closes holds the rest of the text
   let open = text.indexOf("[[");
-  while (open !== -1) {
+  while (open !== -1 && open < commentFrom) {
     const close = closes[open];
     if (close !== undefined && close > 0 && close !== UNINDEXED) yield { open, close };
     open = text.indexOf("[[", open + 2);

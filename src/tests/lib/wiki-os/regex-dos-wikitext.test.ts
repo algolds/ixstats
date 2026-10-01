@@ -54,35 +54,35 @@ import {
 
 const fixtures = fixtureTexts();
 
-describe("match-index: a scan from an odd position of an opener run is answered from the index", () => {
-  /** The pass as it was: odd positions of a run of three or more were left to a scan. */
-  function legacyIndex(text: string, open: "{{" | "[[", close: "}}" | "]]"): Int32Array {
-    const index = new Int32Array(text.length).fill(UNINDEXED);
-    const stack: number[] = [];
-    const skipsLinks = open === "{{";
-    let i = 0;
-    while (i < text.length) {
-      if (text.startsWith("<!--", i)) {
-        const end = text.indexOf("-->", i + 4);
-        if (end === -1) break;
-        i = end + 3;
-      } else if (text.startsWith(open, i)) {
-        index[i] = -1;
-        stack.push(i);
-        i += 2;
-      } else if (text.startsWith(close, i)) {
-        const opener = stack.pop();
-        if (opener !== undefined) index[opener] = i;
-        i += 2;
-      } else if (skipsLinks && (text.startsWith("[[", i) || text.startsWith("]]", i))) {
-        i += 2;
-      } else {
-        i++;
-      }
+/** The pass as it was: odd positions of a run of three or more were left to a scan, and everything after a comment that never closes. */
+function legacyIndex(text: string, open: "{{" | "[[", close: "}}" | "]]"): Int32Array {
+  const index = new Int32Array(text.length).fill(UNINDEXED);
+  const stack: number[] = [];
+  const skipsLinks = open === "{{";
+  let i = 0;
+  while (i < text.length) {
+    if (text.startsWith("<!--", i)) {
+      const end = text.indexOf("-->", i + 4);
+      if (end === -1) break;
+      i = end + 3;
+    } else if (text.startsWith(open, i)) {
+      index[i] = -1;
+      stack.push(i);
+      i += 2;
+    } else if (text.startsWith(close, i)) {
+      const opener = stack.pop();
+      if (opener !== undefined) index[opener] = i;
+      i += 2;
+    } else if (skipsLinks && (text.startsWith("[[", i) || text.startsWith("]]", i))) {
+      i += 2;
+    } else {
+      i++;
     }
-    return index;
   }
+  return index;
+}
 
+describe("match-index: a scan from an odd position of an opener run is answered from the index", () => {
   const TOKENS = ["[", "[", "[", "]", "]", "{", "{", "}", "}", "a", "|", "x ", "<!--", "-->", "\n"];
   const NO_COMMENTS = TOKENS.filter((token) => !token.includes("-"));
   const kinds = [
@@ -104,6 +104,27 @@ describe("match-index: a scan from an odd position of an opener run is answered 
       }
     }
   );
+
+  it.each(kinds)(
+    "%s: after a comment that never closes no opener is left to a scan",
+    (open, _close, build) => {
+      const tokens = [...NO_COMMENTS, "<!--", "<nowiki><!--</nowiki>"];
+      for (const text of randomTexts(tokens, 30_000, 9, 20)) {
+        const index = build(text);
+        const comment = text.indexOf("<!--");
+        for (let at = text.indexOf(open); at !== -1; at = text.indexOf(open, at + 1)) {
+          expect([text, at, index[at] === UNINDEXED]).toEqual([text, at, false]);
+          if (comment !== -1 && at > comment) {
+            expect([text, at, index[at]]).toEqual([text, at, scanOf(open, text, at)]);
+          }
+        }
+      }
+    }
+  );
+
+  /** What scanning from the opener at `at` answers (the index not passed). */
+  const scanOf = (open: string, text: string, at: number) =>
+    open === "[[" ? findMatchingClosingBrackets(text, at) : findMatchingClosingBraces(text, at);
 
   it.each(kinds)("%s: outside a comment no opener is left to a scan", (open, _close, build) => {
     for (const text of randomTexts(NO_COMMENTS, 30_000, 8, 20)) {
@@ -882,6 +903,38 @@ describe("match-index: an opener the pass did not reach is scanned for, within a
     }
   });
 
+  it("answers every opener after a comment that never closes as a scan does, however many there are", () => {
+    // a literal `<!--` in a nowiki that is never followed by `-->`, and dense links after it that all close
+    const depth = 20_000;
+    const text = `<nowiki><!--</nowiki>${"[[".repeat(depth)}${"]]".repeat(depth)}`;
+    const index = matchBrackets(text);
+    const first = text.indexOf("[[");
+    const lastCloser = first + 2 * depth + 2 * (depth - 1);
+    expect(index[first]).toBe(lastCloser);
+    for (const at of [first, first + 2, first + 2 * (depth - 1)]) {
+      expect(findMatchingClosingBrackets(text, at, index)).toBe(
+        findMatchingClosingBrackets(text, at)
+      );
+    }
+  });
+
+  it("answers an opener asked about past the budget as unclosed, inside a comment that closes (the one divergence)", () => {
+    // ponytail: the scans of a text's index are bounded by 4 times its length; here every opener is inside a
+    // comment, so each is a scan to its closer: the ones asked about after the budget is spent are answered -1
+    const depth = 60_000;
+    const text = `<!--${"[[".repeat(depth)}-->${"]]".repeat(depth)}`;
+    const index = matchBrackets(text);
+    const first = text.indexOf("[[");
+    const last = first + 2 * (depth - 1);
+    const truth = findMatchingClosingBrackets(text, last);
+    expect(truth).toBeGreaterThan(0);
+    expect(findMatchingClosingBrackets(text, first, index)).toBe(
+      findMatchingClosingBrackets(text, first)
+    );
+    for (let at = first; at <= last; at += 2) findMatchingClosingBrackets(text, at, index);
+    expect(findMatchingClosingBrackets(text, last, index)).toBe(-1);
+  });
+
   it("reads a text of openers after a comment that never closes in linear time", () => {
     const text = `<!--${"[[x ".repeat(200_000)}`;
     const index = matchBrackets(text);
@@ -1203,7 +1256,7 @@ describe("section-locator: findSectionLine answers what the expressions answered
 describe("api-compat/scan: linkTargets answers what it answered", () => {
   /** `linkTargets` as the integration branch had it: a window of up to 300 characters read from each opener. */
   function legacyLinkTargets(wikitext: string, max: number): string[] {
-    const closes = matchBrackets(wikitext);
+    const closes = legacyIndex(wikitext, "[[", "]]");
     const found = new Set<string>();
     for (let open = wikitext.indexOf("[["); open !== -1; open = wikitext.indexOf("[[", open + 2)) {
       const close = closes[open];
@@ -1233,6 +1286,8 @@ describe("api-compat/scan: linkTargets answers what it answered", () => {
     "x".repeat(150),
     "x".repeat(320),
     "{{",
+    "<!--",
+    "-->",
     "}}",
   ];
   it("on random texts, long targets among them, and the real pages", () => {

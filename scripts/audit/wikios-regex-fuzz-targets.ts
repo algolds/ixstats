@@ -1135,12 +1135,12 @@ const CATEGORY_THEN_SPACES: Family = {
   build: (size) => `[[Category:${" ".repeat(Math.max(0, size - 11))}`,
 };
 
-/** `open` as many times as the size allows and then `close` as many: nested, and balanced, to the depth the size gives. */
-const nested = (name: string, open: string, close: string): Family => ({
+/** `prefix`, then `open` as many times as the size allows and `close` as many: nested, and balanced, to the depth the size gives. */
+const nested = (name: string, open: string, close: string, prefix = ""): Family => ({
   name,
   build: (size) => {
-    const depth = Math.floor(size / (open.length + close.length));
-    return open.repeat(depth) + close.repeat(depth);
+    const depth = Math.floor((size - prefix.length) / (open.length + close.length));
+    return prefix + open.repeat(depth) + close.repeat(depth);
   },
 });
 
@@ -1276,6 +1276,8 @@ export const FAMILIES: readonly Family[] = [
   CATEGORY_THEN_SPACES,
   nested("{{a|…}}", "{{a|", "}}"),
   nested("[[…]]", "[[", "]]"),
+  // a literal `<!--` that never closes (in a nowiki, say), and links after it that all close
+  nested("<nowiki><!--</nowiki>[[…]]", "[[", "]]", "<nowiki><!--</nowiki>"),
   { name: "soup:openers#1", build: soup(WIKITEXT_UNIT_TEXTS, 1) },
   { name: "soup:openers#2", build: soup(WIKITEXT_UNIT_TEXTS, 2) },
   { name: "soup:openers#3", build: soup(WIKITEXT_UNIT_TEXTS, 3) },

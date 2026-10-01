@@ -8,7 +8,7 @@
  * `[[`/`]]`) pair up, and for braces a link's own `[[` and `]]` are skipped as two characters.
  */
 
-/** The index has no answer for this position (inside a comment, or after one that never closes): scan instead. */
+/** The index has no answer for this position (inside a comment that closes): scan instead. */
 export const UNINDEXED = -2;
 
 /** `index[i]` for an opener at `i`: the index of its closing pair, or -1 when it never closes. */
@@ -31,18 +31,40 @@ function indexShiftedOpeners(index: MatchIndex, runs: number[]): void {
   }
 }
 
+const unclosedComments = new WeakMap<MatchIndex, number>();
+
+/**
+ * Where a comment that never closes starts in the text of `index` (its length when there is none): the rest of
+ * the text is comment, in which a reader of links (api-compat/scan) finds none, though the index answers the
+ * openers there as a scan from each would.
+ */
+export const unclosedCommentFrom = (index: MatchIndex): number =>
+  unclosedComments.get(index) ?? index.length;
+
 function buildIndex(text: string, open: "{{" | "[[", close: "}}" | "]]"): MatchIndex {
   const index = new Int32Array(text.length).fill(UNINDEXED);
   const stack: number[] = [];
   const runs: number[] = []; // start, length of each run of three or more opener characters
   const skipsLinks = open === "{{";
   const openCode = open.charCodeAt(0);
+  let noCommentCloser = false; // no `-->` follows the last `<!--` looked at, so none follows a later one
+  let unclosedFrom = -1;
   let i = 0;
   while (i < text.length) {
     if (text.startsWith("<!--", i)) {
-      const end = text.indexOf("-->", i + 4);
-      if (end === -1) break;
-      i = end + 3;
+      const end = noCommentCloser ? -1 : text.indexOf("-->", i + 4);
+      if (end === -1) {
+        // A comment that never closes holds the rest of the text for a scan that began before it, so every opener
+        // waiting on the stack never closes (it is -1 already). A scan that begins after it reads the rest as text,
+        // which is a pass that starts here: the text of a nowiki or a gallery that says `<!--` is no reason
+        // to leave every later opener to a scan.
+        if (unclosedFrom === -1) unclosedFrom = i;
+        noCommentCloser = true;
+        stack.length = 0;
+        i += 4;
+      } else {
+        i = end + 3;
+      }
     } else if (text.startsWith(open, i)) {
       let length = 2;
       while (text.charCodeAt(i + length) === openCode) length++;
@@ -63,6 +85,7 @@ function buildIndex(text: string, open: "{{" | "[[", close: "}}" | "]]"): MatchI
     }
   }
   indexShiftedOpeners(index, runs);
+  if (unclosedFrom !== -1) unclosedComments.set(index, unclosedFrom);
   return index;
 }
 
@@ -74,10 +97,11 @@ export const matchBrackets = (text: string): MatchIndex => buildIndex(text, "[["
 
 /**
  * ponytail: the scans of a text's index, 4 times the length of the text. An opener the pass did not reach (inside
- * a comment, or after one that never closes) is answered by scanning from it, as before the index; a text of such
- * openers that never close (`<!--` and then `[[` a hundred thousand times) would read to its end from each. The
- * scans a text's index lets are bounded by this many characters in all, and an opener asked about after that is
- * taken to be unclosed: a text of real links after a forgotten `-->` never gets near it.
+ * a comment that closes) is answered by scanning from it, as before the index; a text of such openers that never
+ * close (`<!--`, `[[` a hundred thousand times, `-->`) would read to its end from each. The scans a text's index lets
+ * are bounded by this many characters in all, and an opener asked about after that is taken to be unclosed: it differs
+ * from the scan only for a comment of that many openers whose closers follow it. A comment that never closes is no
+ * such case: the pass goes on after it.
  */
 const SCAN_BUDGET_FACTOR = 4;
 
