@@ -21,6 +21,7 @@ jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({
 
 // the editor imports its stylesheet (plan 413); Jest has no CSS transform
 jest.mock("~/styles/wiki-os/editors.css", () => ({}));
+jest.mock("~/styles/wiki-os/mediawiki-editors.css", () => ({}));
 jest.mock("~/hooks/useNavigationScroll", () => ({ useNavigationScroll: () => ({ repulsionProgress: 0 }) }));
 jest.mock("~/hooks/useNotify", () => ({
   useNotify: () => ({
