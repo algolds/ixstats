@@ -294,3 +294,38 @@ describe("the url() allowlist judges the target a browser fetches, not a truncat
     expect(performance.now() - started).toBeLessThan(2_000);
   });
 });
+
+describe("a real url() hidden behind a fake one inside a string, or spelled with an escape", () => {
+  // `"url("` is text; read as a function its argument would run over the real url and the `)` in `")"`, and a decoy
+  // string whose `url(` vanishes when unescaped (`\\78 ` is "x") used to keep two counts of `url(` equal
+  it.each([
+    [`.a::before{content:"url(" url(https://evil.example/x.png) ")" "\\78 url(a)"}`],
+    [`.a::before{content:"url(" url(https://evil.example/x.png) ")" "\\2d url(a)"}`],
+    [`.a::before{content:'url(' url(https://evil.example/x.png) ')' '\\78 url(a)'}`],
+    [`.a::before{content:"url(" url(//evil.example/x.png) ")" "\\78 url(a)"}`],
+    [`.a::before{content:"url(" url('https://evil.example/x.png') ")" "\\78 url(a)"}`],
+    [`.a{content:\\75 rl(https://evil.example/x.png) "\\78 url(a)"}`],
+    [`.a{background:u\\72l(https://evil.example/x.png)}`],
+  ])("%s keeps no url to another host", (css) => {
+    const out = scopeTemplateStyles(css, OWN_ORIGIN);
+
+    expect(violations(out)).toEqual([]);
+    expect(out).not.toContain("evil.example");
+  });
+
+  it("keeps what is only a string, a longer name or a plain url", () => {
+    expect(scopeTemplateStyles(`.a{content:"url(a)"}`, OWN_ORIGIN)).toBe(`${S} .a{content:"url(a)"}`);
+    expect(scopeTemplateStyles(`.a{content:"url(" "\\78 url(a)" ")"}`, OWN_ORIGIN)).toContain(`"\\78 url(a)"`);
+    expect(scopeTemplateStyles(`.a{background:url(a.png)}`, OWN_ORIGIN)).toBe(`${S} .a{background:url(a.png)}`);
+    expect(scopeTemplateStyles(`.a{background:url("https://ixwiki.com/a.png")}`, OWN_ORIGIN)).toContain("https://ixwiki.com/a.png");
+    // `xurl(` and `-url(` are other functions; `\\78 url(` is `xurl(` too
+    expect(scopeTemplateStyles(`.a{background:xurl(https://evil.example/x) -url(a)}`, OWN_ORIGIN)).toContain("xurl(");
+    expect(scopeTemplateStyles(`.a{background:\\78 url(a)}`, OWN_ORIGIN)).toContain("\\78 url(a)");
+  });
+
+  it("judges a real url after a string, in every position of the value", () => {
+    expect(scopeTemplateStyles(`.a{content:"x" url(https://evil.example/x)}`, OWN_ORIGIN)).toBe("");
+    expect(scopeTemplateStyles(`.a{content:foo(url(https://evil.example/x))}`, OWN_ORIGIN)).toBe("");
+    expect(scopeTemplateStyles(`.a{content:"x" url(a.png) "y" url(https://ixwiki.com/b.png)}`, OWN_ORIGIN)).toContain("b.png");
+  });
+});
