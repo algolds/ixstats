@@ -11,6 +11,7 @@
  */
 
 import { z } from "zod/v4";
+import { isBlank, skipBlanks } from "../wikitext/blank";
 import { createExportWriter, type ExportSink, type ExportWriter } from "./export-writer";
 import { chunksOfStream, readExport } from "./import-reader";
 import { sha1HexToBase36 } from "./sha1";
@@ -133,12 +134,55 @@ export function apiRevisionToXml(revision: ApiRevision): XmlRevision {
   };
 }
 
-/** The target of `#REDIRECT [[Target#Section|label]]` wikitext, or null when it is not a redirect. */
+const REDIRECT_WORD = "#redirect";
+
+/** Whether `[[…]]` closes at `at`, the first `#`, `|` or `]` of its target: `#Section`, `|label`, then `]]`. */
+function closesRedirectLink(text: string, at: number): boolean {
+  let end = at;
+  if (text.charCodeAt(end) === 35) {
+    end++;
+    while (end < text.length && text.charCodeAt(end) !== 93 && text.charCodeAt(end) !== 124) end++;
+  }
+  if (text.charCodeAt(end) === 124) {
+    end++;
+    while (end < text.length && text.charCodeAt(end) !== 93) end++;
+  }
+  return text.startsWith("]]", end);
+}
+
+/**
+ * The target of `#REDIRECT [[Target#Section|label]]` wikitext, or null when it is not a redirect. It answers what
+ * `/^\s*#REDIRECT\s*:?\s*\[\[\s*:?([^\]|#]+?)\s*(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]/i` captured (trimmed), in one
+ * scan: the target ends at the first `]`, `|` or `#`, less the blanks before it, and the rest of the link must
+ * close from there. (A target of nothing but a `:` or a blank is what the expression gave back to itself.)
+ */
 export function redirectTargetOf(wikitext: string): string | null {
-  const match = /^\s*#REDIRECT\s*:?\s*\[\[\s*:?([^\]|#]+?)\s*(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]/i.exec(
-    wikitext
-  );
-  return match?.[1]?.trim() ?? null;
+  let at = skipBlanks(wikitext, 0);
+  for (let i = 0; i < REDIRECT_WORD.length; i++, at++) {
+    const code = wikitext.charCodeAt(at);
+    if ((code >= 65 && code <= 90 ? code + 32 : code) !== REDIRECT_WORD.charCodeAt(i)) return null;
+  }
+  at = skipBlanks(wikitext, at);
+  if (wikitext.charCodeAt(at) === 58) at++;
+  at = skipBlanks(wikitext, at);
+  if (!wikitext.startsWith("[[", at)) return null;
+
+  const open = at + 2;
+  let end = open;
+  while (end < wikitext.length && !"]|#".includes(wikitext.charAt(end))) end++;
+  if (!closesRedirectLink(wikitext, end)) return null;
+
+  const afterBlanks = skipBlanks(wikitext, open);
+  const colon = wikitext.charCodeAt(afterBlanks) === 58;
+  const start = colon ? afterBlanks + 1 : afterBlanks;
+  if (start < end) {
+    let nameEnd = end;
+    while (nameEnd > 0 && isBlank(wikitext.charCodeAt(nameEnd - 1))) nameEnd--;
+    return wikitext.slice(start, Math.max(start + 1, nameEnd)).trim();
+  }
+  // The target would be empty: the expression gives back the colon, or else the last blank.
+  if (colon) return ":";
+  return afterBlanks > open ? "" : null;
 }
 
 const chunked = <T>(items: T[], size: number): T[][] =>

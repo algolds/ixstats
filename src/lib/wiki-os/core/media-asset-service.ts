@@ -9,6 +9,7 @@ import { db } from "~/server/db";
 import crypto from "crypto";
 import { DEFAULT_MEDIAWIKI_URL } from "../config";
 import { BlurHashService } from "./blurhash-service";
+import { referencedFilenames } from "./media-references";
 
 export interface MediaAssetRecord {
   id: string;
@@ -235,40 +236,7 @@ export class MediaAssetService {
   static async processContentImages(content: string, originBaseUrl?: string): Promise<number> {
     if (!content) return 0;
 
-    const foundFilenames = new Set<string>();
-
-    // 1. Match wikitext [[File:Name.ext...]]
-    const fileRegex = /\[\[(?:File|Image):([^\]|#]+)/gi;
-    let match: RegExpExecArray | null;
-    while ((match = fileRegex.exec(content)) !== null) {
-      if (match[1]) foundFilenames.add(match[1].trim());
-    }
-
-    // 2. Match infobox parameters | image = Name.ext, | flag = Name.ext
-    const infoboxParamRegex =
-      /\|\s*(?:image|logo|flag|coat_of_arms|seal|map|photo)\s*=\s*([^|\n\r]+)/gi;
-    while ((match = infoboxParamRegex.exec(content)) !== null) {
-      const raw = match[1]?.trim();
-      if (raw && !raw.startsWith("{{") && /\.(?:png|jpg|jpeg|svg|gif|webp)$/i.test(raw)) {
-        foundFilenames.add(
-          raw
-            .replace(/^\[\[(?:File|Image):/i, "")
-            .replace(/\]\].*$/, "")
-            .trim()
-        );
-      }
-    }
-
-    // 3. Match <img src="/images/..." data-file="Name.ext">
-    const htmlImgRegex =
-      /<img[^>]+(?:src=["'](?:[^"']*\/images\/[^"']*\/([^"'/?#]+))|data-file=["']([^"']+)["'])/gi;
-    while ((match = htmlImgRegex.exec(content)) !== null) {
-      const raw = match[1] || match[2];
-      if (raw) {
-        const clean = decodeURIComponent(raw).replace(/^(\d+px-)/i, "");
-        foundFilenames.add(clean);
-      }
-    }
+    const foundFilenames = referencedFilenames(content);
 
     let registeredCount = 0;
     for (const filename of foundFilenames) {

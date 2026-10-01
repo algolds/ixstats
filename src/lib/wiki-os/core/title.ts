@@ -64,6 +64,12 @@ export interface CanonicalTitle {
 
 /** MediaWiki's longest page name (namespace prefix excluded), in UTF-8 bytes. */
 const MAX_TITLE_BYTES = 255;
+/**
+ * ponytail: TITLE_HEAD_CEILING, 4,096 characters: the most of a title (the part before a `#`) that is looked
+ * at. A page name is 255 bytes at most, a namespace prefix a few more, and blanks collapse, so a title
+ * longer than this is no title. The fragment after `#` is not bounded: it is stored and shown as written.
+ */
+const TITLE_HEAD_CEILING = 4_096;
 /** Characters MediaWiki never allows in a page name. "#" is gone by then: it starts the fragment. */
 const ILLEGAL_TITLE_CHARS = /[[\]{}|<>]/;
 /** Control characters (MediaWiki's legal-title-character set excludes them all). */
@@ -141,6 +147,8 @@ export function canonicalizeTitle(
   { source = "ixwiki" }: CanonicalizeOptions = {}
 ): CanonicalTitle | null {
   if (CONTROL_CHARS.test(raw)) return null;
+  const hash = raw.indexOf("#");
+  if ((hash === -1 ? raw.length : hash) > TITLE_HEAD_CEILING) return null;
   const { rest, fragment } = splitFragment(raw.normalize("NFC"));
   const parsed = parseWikiTitle(rest, { namespaces: source === "ixwiki" });
   if (!parsed) return null;
