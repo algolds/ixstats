@@ -226,7 +226,7 @@ Never on a request path: `scripts/sync-ixwiki-live.ts`, `scripts/sync-ixwiki-med
 
 | Was (MediaWiki) | Now (Postgres) | Where |
 | --- | --- | --- |
-| live `prop=revisions` on a Postgres miss (`ixwikiGetWikitext`, `ixwikiGetNamespacedWikitext`) | `wiki_articles` only; a stub, a deleted or a missing page is "not found" | `bridge/pg-reader.ts`, `adapters/mediawiki/article-store.ts` |
+| live `prop=revisions` on a Postgres miss (the fallback `ixwikiGetWikitext` had; plan 415 deleted its namespaced twin, which nothing called) | `wiki_articles` only; a stub, a deleted or a missing page is "not found" | `bridge/pg-reader.ts`, `adapters/mediawiki/article-store.ts` |
 | creator, last editor and contributors from `prop=revisions` (last 250 only), `getArticleAuthors` | `wiki_revisions` without parked rows: creator = oldest, last editor = newest, contributors by edit count then name, IP authors folded into "Anonymous" | `core/revision-authors.ts` |
 | `list=recentchanges`, full history, `list=usercontribs`, `list=users` | `wiki_revisions` (contributions also by the verified owner's `authorId`), created pages = pages whose oldest live revision the account made, user info from revisions, the verified link and the rights engine | `bridge/pg-activity.ts`, `core/wiki-user-info.ts` |
 | `prop=images\|imageinfo` on ixwiki and then iiwiki for any title | `wiki_image_links` joined to `wiki_assets` (sister wikis for their own pages only) | `bridge/pg-site.ts`, `bridge/dispatchers.ts` |
