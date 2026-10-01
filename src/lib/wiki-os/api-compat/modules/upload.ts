@@ -19,6 +19,7 @@ import { mwTimestamp, type JsonObject } from "../format";
 import type { FileRow } from "../store-types";
 import type { ApiContext } from "../types";
 import { checkToken, cleanComment, requireBotSession } from "./write-common";
+import { checkedText } from "./edit";
 import { uploadImageInfo } from "./file-info";
 import type { UploadWarnings } from "~/lib/wiki-os/services/upload-service";
 
@@ -44,7 +45,7 @@ export async function runUpload(rc: ApiContext): Promise<JsonObject> {
   const p = rc.params.scope("", "upload");
   const filename = p.string("filename");
   const comment = cleanComment(p.string("comment", ""));
-  const text = p.string("text");
+  const rawText = p.string("text");
   const ignoreWarnings = p.flag("ignorewarnings");
   const filekey = p.string("filekey");
   const url = p.string("url");
@@ -54,6 +55,9 @@ export async function runUpload(rc: ApiContext): Promise<JsonObject> {
   p.string("tags");
   p.string("watchlist");
   checkToken(rc);
+  // The page text is checked as `action=edit` checks it (2,000,000 characters at most, no NUL), before anything is staged:
+  // a text MediaWiki would refuse used to be saved here and then block its file's upload behind a revision job that fails.
+  const text = checkedText("text", rawText);
 
   if (stashed) {
     throw new ApiError(

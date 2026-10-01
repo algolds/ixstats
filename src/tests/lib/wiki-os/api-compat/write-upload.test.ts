@@ -247,6 +247,20 @@ describe("what action=upload refuses", () => {
     );
   });
 
+  it("refuses a page text MediaWiki would refuse, as action=edit does, before the service is asked (review M2)", async () => {
+    const { upload, called } = await setup();
+
+    const tooLong = await upload({ filename: "A.png", text: "x".repeat(3_000_000) });
+    expect(tooLong.error.code).toBe("toobig");
+    expect(tooLong.error.info).toContain("2000000");
+
+    const nul = await upload({ filename: "A.png", text: "a\u0000b" });
+    expect(nul.error.code).toBe("invalidtext");
+    expect(nul.error.info).toContain("NUL");
+
+    expect(called("uploadFile")).toHaveLength(0);
+  });
+
   it("is rate limited per caller, apart from the write limit", async () => {
     const calls: Array<[string, string]> = [];
     const { upload, called } = await setup({

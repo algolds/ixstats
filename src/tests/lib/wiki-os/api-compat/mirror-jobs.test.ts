@@ -39,7 +39,7 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
   wikitextToHtml: jest.fn(),
 }));
 
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createApiDeps } from "~/lib/wiki-os/api-compat/deps";
@@ -146,6 +146,8 @@ afterAll(() => {
 beforeEach(() => {
   jest.clearAllMocks();
   fakeWikiDb.reset();
+  for (const name of readdirSync(uploadDirectory))
+    rmSync(join(uploadDirectory, name), { force: true });
   insertedInTransaction = [];
   // the bot password's account (HEKU in the harness) is a sysop: the real services authorize against these rows
   tables.user.seed({ id: "u-heku", clerkUserId: "user_clerk_heku", wikiUsername: "Heku" });
@@ -263,6 +265,22 @@ describe("api.php action=upload", () => {
     ]);
     // each job went in with the change itself (the page's save, the asset and the log)
     expect(insertedInTransaction).toEqual([true, true]);
+  });
+
+  it("stages nothing and queues nothing for a page text that is too long or has a NUL (review M2)", async () => {
+    const { act } = await setup();
+
+    const tooLong = await act(
+      "upload",
+      { filename: "Flag.png", text: "x".repeat(3_000_000) },
+      part()
+    );
+    const nul = await act("upload", { filename: "Flag.png", text: "a\u0000b" }, part());
+
+    expect([tooLong.error.code, nul.error.code]).toEqual(["toobig", "invalidtext"]);
+    expect(jobs()).toEqual([]);
+    expect(tables.wikiArticle.rows.filter((row) => row.title === "File:Flag.png")).toEqual([]);
+    expect(readdirSync(uploadDirectory)).toEqual([]);
   });
 
   it("queues nothing for a file it refuses, and one job for a replacement", async () => {
