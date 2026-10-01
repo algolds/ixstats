@@ -50,6 +50,7 @@ export interface WikiosConfig {
    * `WIKIOS_TEMPLATESTYLES` is unset, empty, `1`, `true`, `on` or `yes`; any other value (`0`, `off`, a typo) is off,
    * so the lever fails closed: it is the emergency switch if a CSS bypass is reported, and removes every `<style>`
    * again (the behaviour before plan 415). Part of the sanitizer fingerprint, so toggling it re-renders stored bundles.
+   * Server-side only (a browser bundle never sees `WIKIOS_TEMPLATESTYLES`); every `sanitizeWikiArticleHtml` caller runs on the server today.
    */
   readonly templateStyles: boolean;
   readonly mediawiki: {
