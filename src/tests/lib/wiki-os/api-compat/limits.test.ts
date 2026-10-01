@@ -213,6 +213,73 @@ describe("prop=revisions of one page", () => {
   });
 });
 
+describe("rvprop=sha1 on legacy revisions with no stored hash", () => {
+  const sha1HexOf = (text: string) => createHash("sha1").update(text, "utf8").digest("hex");
+  const legacyWiki = (): FakeWikiData => ({
+    pages: [{ pageId: 1, title: "Old" }, { pageId: 2, title: "Other" }],
+    revisions: [
+      ...Array.from({ length: 25 }, (_, i) => ({
+        revId: 100 + i,
+        page: "Old",
+        timestamp: `2026-01-${String(i + 1).padStart(2, "0")}T00:00:00Z`,
+        user: "Heku",
+        content: `text ${i}`,
+        // 12 legacy rows (no stored hash), the others carry one; revision 104 is a legacy row whose text is deleted
+        legacy: i % 2 === 0 && i < 24,
+        textHidden: i === 4,
+      })),
+      { revId: 900, page: "Other", timestamp: "2026-02-01T00:00:00Z", content: "other text", legacy: true },
+    ],
+  });
+  const spied = async () => {
+    const store = fakeWiki(legacyWiki());
+    const spy = jest.spyOn(store, "revisionHashes");
+    return { deps: await makeDeps({ store }), spy };
+  };
+
+  it("hashes the text of those revisions only, ten at a time, and answers a 40-digit hash for each live one", async () => {
+    const { deps, spy } = await spied();
+    const body = (await call(deps, "action=query&titles=Old&prop=revisions&rvprop=ids|sha1&rvlimit=max&formatversion=2")).body as Body;
+    const revisions = body.query.pages[0].revisions as Body[];
+    expect(revisions).toHaveLength(25);
+    for (const rev of revisions) {
+      const index = rev.revid - 100;
+      if (index === 4) expect(rev).toMatchObject({ sha1hidden: true }); // text deleted: no hash to give
+      else if (index % 2 === 0 && index < 24) expect(rev.sha1).toBe(sha1HexOf(`text ${index}`)); // computed
+      else expect(rev.sha1).toMatch(/^[0-9a-f]{40}$/); // stored
+    }
+    // 12 legacy rows, one of them hidden: the 11 live ones in two batches, no other revision read
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(spy.mock.calls.map(([ids]) => ids.length)).toEqual([10, 1]);
+    expect(spy.mock.calls.flatMap(([ids]) => ids).every((id) => (id - 100) % 2 === 0 && id !== 104)).toBe(true);
+  });
+
+  it("gives slotsha1 the same, and reads nothing when no hash was asked for", async () => {
+    const { deps, spy } = await spied();
+    const slots = (await call(deps, "action=query&titles=Old&prop=revisions&rvprop=ids|slotsha1&rvslots=main&rvlimit=3&formatversion=2")).body as Body;
+    // newest first: 124 carries a stored hash, 123 too, 122 is a legacy row
+    expect(slots.query.pages[0].revisions.map((rev: Body) => rev.slots.main.sha1)).toEqual([
+      expect.stringMatching(/^[0-9a-f]{40}$/),
+      expect.stringMatching(/^[0-9a-f]{40}$/),
+      sha1HexOf("text 22"),
+    ]);
+    spy.mockClear();
+    await call(deps, "action=query&titles=Old&prop=revisions&rvprop=ids|size|user&rvlimit=max&formatversion=2");
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("covers several pages and revids, and never asks for a revision that already has its hash", async () => {
+    const { deps, spy } = await spied();
+    const body = (await call(deps, "action=query&titles=Old|Other&prop=revisions&rvprop=ids|sha1&formatversion=2")).body as Body;
+    expect(body.query.pages.map((page: Body) => page.revisions[0].sha1)).toEqual([expect.stringMatching(/^[0-9a-f]{40}$/), sha1HexOf("other text")]);
+    expect(spy.mock.calls.flatMap(([ids]) => ids)).toEqual([900]); // Old's newest revision (124) carries a stored hash
+    spy.mockClear();
+    const byId = (await call(deps, "action=query&revids=100|101&prop=revisions&rvprop=ids|sha1&formatversion=2")).body as Body;
+    expect(byId.query.pages[0].revisions.map((rev: Body) => rev.sha1)).toEqual([sha1HexOf("text 0"), expect.stringMatching(/^[0-9a-f]{40}$/)]);
+    expect(spy.mock.calls.flatMap(([ids]) => ids)).toEqual([100]);
+  });
+});
+
 describe("value lists", () => {
   it("counts a repeated module once: list=allpages|allpages runs it once", async () => {
     const store = fakeWiki(wikiData());

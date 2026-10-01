@@ -106,6 +106,11 @@ describeRealDb("the api.php store against a real PostgreSQL (scratch copy of the
     expect(first!.sha1).toBeNull();
     const [hashed] = await store.revisionsById([rev.revId], true);
     expect(hashed!.sha1).toMatch(/^[0-9a-z]{31}$/);
+    // revisionHashes reads the text of just those revisions (a parked one has none)
+    const parkedRev = (await db.wikiRevision.findFirst({ where: { articleId: long.id, parked: true }, select: { revId: true } }))!;
+    const byRevision = await store.revisionHashes([rev.revId, rev.revId + 1, parkedRev.revId]);
+    expect([...byRevision.keys()].sort()).toEqual([rev.revId, rev.revId + 1]);
+    expect(byRevision.get(rev.revId)).toBe(hashed!.sha1);
 
     // listings: random, categorymembers (row comparison with a cursor), allcategories (GROUP BY, bigint count)
     expect((await store.randomPages({ namespaces: [0], filterRedirects: "all", limit: 5 })).map((page) => page.title).sort()).toEqual(["Alpha", "Blank"]);

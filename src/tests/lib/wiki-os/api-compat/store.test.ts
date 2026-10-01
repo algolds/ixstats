@@ -228,6 +228,19 @@ describe("revisions", () => {
     expect(rows.map((row) => row.sha1)).toEqual([blankHash, null, null, "stored"]);
   });
 
+  it("revisionHashes: reads the text of just those live revisions and hashes it", async () => {
+    mdb.wikiRevision!.findMany!.mockResolvedValue([{ revId: 5, wikitext: "" }, { revId: null, wikitext: "x" }]);
+    const hashes = await store.revisionHashes([5, 6]);
+    expect(hashes).toEqual(new Map([[5, "phoiac9h4m842xq45sp7s6u21eteeq1"]]));
+    expect(mdb.wikiRevision!.findMany!.mock.calls[0]![0]).toEqual({
+      where: { source: "ixwiki", parked: false, textDeleted: false, revId: { in: [5, 6] }, article: { status: { not: "ARCHIVED" } } },
+      select: { revId: true, wikitext: true },
+    });
+    mdb.wikiRevision!.findMany!.mockClear();
+    expect(await store.revisionHashes([])).toEqual(new Map());
+    expect(mdb.wikiRevision!.findMany!).not.toHaveBeenCalled();
+  });
+
   it("fails loudly when a revision has no revId", async () => {
     mdb.wikiRevision!.findMany!.mockResolvedValue([revisionRecord({ revId: null })]);
     await expect(store.findRevisions({ dir: "older", limit: 1, withContent: false })).rejects.toThrow(/wiki_revisions\.revId/);

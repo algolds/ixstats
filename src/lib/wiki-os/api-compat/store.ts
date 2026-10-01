@@ -296,6 +296,21 @@ async function revisionsById(
   return rows.sort((a, b) => (order.get(a.revId) ?? 0) - (order.get(b.revId) ?? 0));
 }
 
+async function revisionHashes(revIds: readonly number[]): Promise<Map<number, string>> {
+  if (revIds.length === 0) return new Map();
+  const records = await db.wikiRevision.findMany({
+    where: {
+      source: SOURCE,
+      parked: false,
+      textDeleted: false,
+      revId: { in: [...revIds] },
+      article: { status: { not: "ARCHIVED" } },
+    },
+    select: { revId: true, wikitext: true },
+  });
+  return new Map(records.flatMap((record) => (record.revId === null ? [] : [[record.revId, mwSha1Base36(record.wikitext)] as const])));
+}
+
 async function revisionByRowId(rowId: string): Promise<RevisionRow | null> {
   const record = await db.wikiRevision.findFirst({ where: { id: rowId, parked: false }, select: REVISION_SELECT });
   return record ? ((await toRevisionRows([record]))[0] ?? null) : null;
@@ -621,6 +636,7 @@ export const prismaApiStore: ApiStore = {
   revisionsById,
   findRevisions,
   revisionByRowId,
+  revisionHashes,
   revisionCountOf,
   pageHtml,
   restrictionsByTitle,

@@ -174,6 +174,26 @@ async function revisionBound(
   return timestamp ? { timestamp } : undefined;
 }
 
+/** Legacy revisions (no stored hash) whose text is read for it per query. */
+const HASH_BATCH = 10;
+
+/**
+ * `rvprop=sha1|slotsha1` for a legacy revision that has no stored hash: its text is read (for those
+ * revisions only, `HASH_BATCH` at a time, never all at once) and hashed, so the answer is never null for a live
+ * revision whose text is not deleted. Revisions that already carry one cost nothing.
+ */
+async function withHashes(rc: ApiContext, rows: RevisionRow[], props: ReadonlySet<RevProp>): Promise<RevisionRow[]> {
+  if (!props.has("sha1") && !props.has("slotsha1")) return rows;
+  const missing = rows.filter((rev) => rev.sha1 === null && !rev.textHidden);
+  if (missing.length === 0) return rows;
+  const hashes = new Map<number, string>();
+  for (let start = 0; start < missing.length; start += HASH_BATCH) {
+    const ids = missing.slice(start, start + HASH_BATCH).map((rev) => rev.revId);
+    for (const [revId, hash] of await rc.deps.store.revisionHashes(ids)) hashes.set(revId, hash);
+  }
+  return rows.map((rev) => (rev.sha1 === null && hashes.has(rev.revId) ? { ...rev, sha1: hashes.get(rev.revId)! } : rev));
+}
+
 /** The bytes a revision adds to the response. */
 const revisionBytes = (rev: RevisionRow, withContent: boolean) =>
   REVISION_OVERHEAD_BYTES + (withContent && !rev.textHidden ? rev.size : 0);
@@ -260,9 +280,8 @@ async function latestRevisions(
 
   for (let start = first; start < wanted.length; start += step) {
     const batch = wanted.slice(start, start + step);
-    const found = new Map(
-      (await rc.deps.store.revisionsById(batch.map((item) => item.revId), withContent)).map((rev) => [rev.revId, rev])
-    );
+    const fetched = await rc.deps.store.revisionsById(batch.map((item) => item.revId), withContent);
+    const found = new Map((await withHashes(rc, fetched, options.props)).map((rev) => [rev.revId, rev]));
     for (const { entry, revId } of batch) {
       const rev = found.get(revId);
       if (!rev || rev.pageId !== entry.key) continue;
@@ -310,7 +329,7 @@ async function singlePageRevisions(
   while (!next && listed.length < limit) {
     const size = withContent ? Math.min(CONTENT_BATCH, limit - listed.length) : limit - listed.length;
     const rows = await store.findRevisions({ ...filter, cursor, limit: size });
-    for (const rev of rows.slice(0, size)) {
+    for (const rev of await withHashes(rc, rows.slice(0, size), options.props)) {
       if (!rc.budget.tryAdd(revisionBytes(rev, withContent))) {
         p.addWarning(TRUNCATED_WARNING);
         next = rev;

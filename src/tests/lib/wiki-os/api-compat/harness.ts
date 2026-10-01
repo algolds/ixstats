@@ -2,6 +2,7 @@
  * Test harness for the api.php modules (plan 410): in-memory deps, a request builder and a tiny
  * "bot" that keeps its cookies between calls, the way Pywikibot does.
  */
+import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
 import { hashBotPassword } from "~/lib/wiki-os/api-compat/auth";
 import { handleApiRequest, type ApiRequestInput, type ApiResponseOutput } from "~/lib/wiki-os/api-compat/dispatch";
 import type { JsonObject } from "~/lib/wiki-os/api-compat/format";
@@ -205,6 +206,8 @@ export interface FakeRevision {
   commentHidden?: boolean;
   userHidden?: boolean;
   sha1?: string;
+  /** A legacy row: it has no stored hash, so the store gives none unless the text is read for it. */
+  legacy?: boolean;
 }
 
 export interface FakeLog {
@@ -298,7 +301,7 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
       minor: rev.minor ?? false,
       size: byteLength(rev.content ?? ""),
       sizeDiff: byteLength(rev.content ?? "") - (index > 0 ? byteLength(history[index - 1]!.content ?? "") : 0),
-      sha1: rev.sha1 ?? fakeSha1(rev.revId),
+      sha1: rev.legacy ? null : (rev.sha1 ?? fakeSha1(rev.revId)),
       content: rev.textHidden || !withContent ? null : (rev.content ?? ""),
       textHidden: rev.textHidden ?? false,
       commentHidden: rev.commentHidden ?? false,
@@ -353,6 +356,13 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
   const base: Partial<ApiStore> = {
     pagesByTitle: async (titles) => state.pages.filter((p) => titles.includes(p.title)).map(pageRow),
     pagesById: async (ids) => state.pages.filter((p) => ids.includes(p.pageId)).map(pageRow),
+    revisionHashes: async (ids) =>
+      new Map(
+        ids.flatMap((id) => {
+          const rev = revisions.find((r) => r.revId === id);
+          return rev && !rev.textHidden && state.pages.some((p) => p.title === rev.page) ? [[id, mwSha1Base36(rev.content ?? "")] as const] : [];
+        })
+      ),
     revisionsById: async (ids, withContent) =>
       ids.flatMap((id) => {
         const rev = revisions.find((r) => r.revId === id);

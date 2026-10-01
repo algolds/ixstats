@@ -332,6 +332,11 @@ export interface ApiStore {
   imagesOf(query: PerPageQuery): Promise<PerPageResult<LinkRow>>;
   /** Which of these category names (without the prefix) are hidden. */
   hiddenCategoryNames(names: readonly string[]): Promise<Set<string>>;
+  /**
+   * MediaWiki's rev_sha1 (base 36) of these revisions, computed from their text, which is read for
+   * just these (a legacy row has no stored hash). A revision whose text is deleted, or that is not live, has none.
+   */
+  revisionHashes(revIds: readonly number[]): Promise<Map<number, string>>;
   /** A revision by its WikiOS row id (right after a save, which answers with the row id). */
   revisionByRowId(rowId: string): Promise<RevisionRow | null>;
   /** How many revisions a page has, deleted pages included (`action=undelete` reports it). */
