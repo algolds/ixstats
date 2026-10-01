@@ -399,6 +399,8 @@ export const ImportSection = React.memo(function ImportSection({
 
   return (
     <div className="pt-1 sm:pt-2">
+      {/* The page title (the import flow has no studio header); results and cards are h2. */}
+      <h1 className="sr-only">Import a nation from a wiki · MyCountry Builder</h1>
       {/* Main Content */}
       <div className="mt-4 space-y-6">
         {/* Loading State Back Button */}

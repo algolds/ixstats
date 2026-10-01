@@ -16,24 +16,75 @@ const RIBBON_TABS: Array<{ id: PassportTabType; label: string; icon: typeof Glob
   { id: "history", label: "History", icon: Clock },
 ];
 
+/** The DOM id of a ribbon tab (`idBase` from the document's `useId`). */
+export function passportTabId(idBase: string, tab: PassportTabType): string {
+  return `${idBase}-tab-${tab}`;
+}
+
+/** The DOM id of the tab panel the ribbon controls. */
+export function passportTabPanelId(idBase: string): string {
+  return `${idBase}-panel`;
+}
+
 interface PassportTabRibbonProps {
   activeTab: PassportTabType;
   onSelectTab: (tab: PassportTabType) => void;
   /** Badge counts for the tabs whose totals are known without loading the tab. */
   counts: Partial<Record<PassportTabType, number>>;
+  /** Shared id prefix with the tab panel (`passportTabPanelId(idBase)`). */
+  idBase: string;
 }
 
-/** The mid-card die-cut index ribbon that switches passport tabs. */
+/**
+ * The mid-card die-cut index ribbon that switches passport tabs — the WAI-ARIA tabs pattern:
+ * `role="tablist"` of `role="tab"`s with `aria-selected`, the selected tab controls the panel
+ * (`passportTabPanelId`), roving tabindex (only the selected tab is in the Tab order), and
+ * ←/→/Home/End move focus and select (automatic activation).
+ */
 export const PassportTabRibbon = React.memo(function PassportTabRibbon({
   activeTab,
   onSelectTab,
   counts,
+  idBase,
 }: PassportTabRibbonProps) {
   const shouldReduceMotion = useReducedMotion();
+  const tabRefs = React.useRef<Array<HTMLButtonElement | null>>([]);
+
+  const handleKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+      const last = RIBBON_TABS.length - 1;
+      let next: number;
+      switch (event.key) {
+        case "ArrowRight":
+          next = index === last ? 0 : index + 1;
+          break;
+        case "ArrowLeft":
+          next = index === 0 ? last : index - 1;
+          break;
+        case "Home":
+          next = 0;
+          break;
+        case "End":
+          next = last;
+          break;
+        default:
+          return;
+      }
+      event.preventDefault();
+      tabRefs.current[next]?.focus();
+      onSelectTab(RIBBON_TABS[next]!.id);
+    },
+    [onSelectTab]
+  );
 
   return (
     <div className="border-separator bg-surface-secondary border-y px-4 py-2 sm:px-6">
-      <div className="-my-2 flex scrollbar-none items-center gap-1 overflow-x-auto py-2">
+      <div
+        role="tablist"
+        aria-label="Passport sections"
+        aria-orientation="horizontal"
+        className="-my-2 flex scrollbar-none items-center gap-1 overflow-x-auto py-2"
+      >
         {RIBBON_TABS.map((tab, idx) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -41,9 +92,17 @@ export const PassportTabRibbon = React.memo(function PassportTabRibbon({
           return (
             <button
               key={tab.id}
+              ref={(node) => {
+                tabRefs.current[idx] = node;
+              }}
               type="button"
+              role="tab"
+              id={passportTabId(idBase, tab.id)}
+              aria-selected={isActive}
+              aria-controls={isActive ? passportTabPanelId(idBase) : undefined}
+              tabIndex={isActive ? 0 : -1}
               onClick={() => onSelectTab(tab.id)}
-              aria-pressed={isActive}
+              onKeyDown={(event) => handleKeyDown(event, idx)}
               className={cn(
                 // v2: the active tab is the inverted (monochrome primary) pill; tabs press. The
                 // 28px pill keeps a 44pt hit area on touch screens (`hitSlop`, inside the py-2).

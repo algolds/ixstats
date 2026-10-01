@@ -102,6 +102,10 @@ export default function AchievementsPage() {
   return (
     <VaultSidebarLayout activeSection="achievements">
       <div className="space-y-6">
+        {/* The page title is the hero's h1; without a profile (signed out, loading, no country)
+            there is no hero, so the h1 is visually hidden — one h1 on every render. */}
+        {!(isMounted && userProfile) && <h1 className="sr-only">Achievements</h1>}
+
         {/* Country profile header card */}
         {isMounted && userProfile && (
           // v2 (c5c6b382): the glass hero with the dot texture and the flag watermark.

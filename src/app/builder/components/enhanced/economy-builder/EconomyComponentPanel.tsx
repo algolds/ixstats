@@ -30,6 +30,8 @@ export function EconomyComponentPanel({
           interactive="none"
         >
           <FacetCardContent className="space-y-6 p-6">
+            {/* Standalone hides the selector's own h2 header; name the tab panel (h3 list, h4 cards). */}
+            <h2 className="sr-only">Economic components</h2>
             <AtomicEconomicComponentSelector
               selectedComponents={selectedComponents}
               onComponentChange={onComponentChange}

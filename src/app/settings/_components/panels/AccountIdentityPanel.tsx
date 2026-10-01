@@ -214,7 +214,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
 
       {/* Account credentials & linked accounts */}
       <SettingsGroup
-        title="Account Credentials"
+        title="Account credentials"
         description="Login details, security settings, and connected community accounts."
         action={
           <Button
@@ -250,7 +250,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
           </span>
         </SettingsRow>
 
-        <SettingsRow label="Primary Email" icon={Mail} glyphClass="bg-yellow/15 text-yellow">
+        <SettingsRow label="Primary email" icon={Mail} glyphClass="bg-yellow/15 text-yellow">
           <span
             className={cn(
               "text-label text-body duration-fast transition-[filter,opacity]",
@@ -264,7 +264,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
 
         {/* Linked accounts (collapsible) */}
         <SettingsRow
-          label="Linked Accounts"
+          label="Linked accounts"
           description={
             status
               ? `${linkedServicesCount} of 3 connected (Forum, wikis, Discord)`
@@ -296,7 +296,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
           <div className="divide-separator bg-surface-secondary border-separator divide-y border-t">
             {/* Forum */}
             <SettingsRow
-              label="Community Forum"
+              label="Community forum"
               description={
                 status?.forum.linked
                   ? `Connected as @${status.forum.username}`

@@ -122,7 +122,7 @@ export function BuilderGuideSheet({
                         {index + 1}
                       </span>
                       <div className="min-w-0 flex-1 space-y-1">
-                        <h4 className="text-label text-headline">{step.title}</h4>
+                        <h3 className="text-label text-headline">{step.title}</h3>
                         <p className="text-footnote text-label-secondary">{step.description}</p>
                       </div>
                     </div>
@@ -151,7 +151,7 @@ export function BuilderGuideSheet({
                         />
                         <div className="min-w-0 flex-1 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <h4 className="text-label text-headline">{rule.title}</h4>
+                            <h3 className="text-label text-headline">{rule.title}</h3>
                             {rule.badge && <Badge variant="secondary">{rule.badge}</Badge>}
                           </div>
                           <p className="text-footnote text-label-secondary">{rule.description}</p>

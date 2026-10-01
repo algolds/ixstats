@@ -4,8 +4,14 @@ import { LogIn, User, Dashboard as LayoutDashboard, Crown } from "iconoir-react"
 import { SignInButton } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Button } from "~/components/ui/button";
-import { getNationUrl } from "~/lib/utils";
+import { cn, getNationUrl } from "~/lib/utils";
 import { useRouter } from "next/navigation";
+
+/**
+ * Controls on the map island (Halo's acrylic pill, which clips at its edge — `overflow-hidden`,
+ * 4px of padding): the focus ring sits just inside the control, as MapDynamicIsland's buttons.
+ */
+const ISLAND_CONTROL = "text-label-secondary hover:text-label focus-visible:-outline-offset-2";
 
 interface AuthSectionProps {
   user: any;
@@ -23,7 +29,7 @@ export function AuthSection({ user, isLoaded, greeting, countryName, router }: A
   if (!user) {
     return (
       <SignInButton mode="modal">
-        <Button variant="ghost" size="sm" className="text-label-secondary hover:text-label px-2">
+        <Button variant="ghost" size="sm" className={cn(ISLAND_CONTROL, "px-2")}>
           <LogIn className="size-3.5" aria-hidden />
           <span className="hidden sm:inline">Sign in</span>
           <span className="sr-only sm:hidden">Sign in</span>
@@ -34,20 +40,31 @@ export function AuthSection({ user, isLoaded, greeting, countryName, router }: A
 
   return (
     <Popover>
-      <PopoverTrigger className="text-label-secondary hover:bg-fill-3 hover:text-label rounded-control-sm text-caption flex cursor-pointer items-center gap-2 px-2 py-0.5 transition-colors">
-        {user.imageUrl ? (
-          <img
-            src={user.imageUrl}
-            alt=""
-            className="ring-separator h-4 w-4 rounded-full object-cover ring-1"
-          />
-        ) : (
-          <User className="h-3 w-3" />
-        )}
-        <span className="hidden whitespace-nowrap sm:inline">
-          {greeting}
-          {user.firstName ? `, ${user.firstName}` : ""}
-        </span>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            ISLAND_CONTROL,
+            "hover:bg-fill-3 rounded-control-sm text-caption gap-2 px-2 font-normal"
+          )}
+        >
+          {user.imageUrl ? (
+            <img
+              src={user.imageUrl}
+              alt=""
+              className="ring-separator h-4 w-4 rounded-full object-cover ring-1"
+            />
+          ) : (
+            <User aria-hidden className="h-3 w-3" />
+          )}
+          <span className="hidden whitespace-nowrap sm:inline">
+            {greeting}
+            {user.firstName ? `, ${user.firstName}` : ""}
+          </span>
+          {/* Phones hide the greeting: keep the trigger named. */}
+          <span className="sr-only sm:hidden">Account</span>
+        </Button>
       </PopoverTrigger>
       <PopoverContent
         side="bottom"

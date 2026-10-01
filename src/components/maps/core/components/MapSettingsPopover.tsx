@@ -70,12 +70,19 @@ export function MapSettingsPopover({
 
   return (
     <Popover>
-      <PopoverTrigger
-        className="text-label-secondary hover:bg-fill-3 hover:text-label focus-visible:ring-tint shrink-0 cursor-pointer rounded-full p-1 transition-colors focus-visible:ring-2 focus-visible:outline-none"
-        title="Settings"
-        aria-label="Map settings"
-      >
-        <Settings className="h-3.5 w-3.5" />
+      {/* An island icon button like its siblings in MapDynamicIsland: the focus ring sits just
+          inside the control (the acrylic pill clips at its edge), 44pt hit slop on touch. */}
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className="text-label-secondary hover:text-label shrink-0 rounded-full focus-visible:-outline-offset-2"
+          title="Settings"
+          aria-label="Map settings"
+        >
+          <Settings aria-hidden className="size-3.5" />
+        </Button>
       </PopoverTrigger>
       <PopoverContent
         side="bottom"

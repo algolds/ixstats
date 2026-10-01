@@ -178,7 +178,7 @@ function PreviewSection({
       className="rounded-card overflow-hidden"
     >
       <FacetCardHeader className="p-0">
-        <h3 className="m-0">
+        <h2 className="m-0">
           <button
             type="button"
             onClick={() => onToggle(id)}
@@ -215,7 +215,7 @@ function PreviewSection({
               )}
             </span>
           </button>
-        </h3>
+        </h2>
       </FacetCardHeader>
       {!collapsed && (
         <FacetCardContent id={contentId} className="p-5">

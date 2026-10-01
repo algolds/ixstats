@@ -133,6 +133,11 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
   return (
     <TooltipProvider delayDuration={150}>
       <header className="relative w-full pb-3">
+        {/* The page title: the bar shows the step only in the stepper, so the h1 is for assistive
+            tech (one h1 per page; step content starts at h2). */}
+        <h1 className="sr-only">
+          {SECTION_LABELS[activeSection]} · MyCountry Builder
+        </h1>
         <div className="mx-auto w-full max-w-6xl px-4">
           {/* v2 studio bar (c5c6b382): a gold-rimmed glass bar over the builder canvas */}
           <FacetCard

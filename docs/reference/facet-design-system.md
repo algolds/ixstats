@@ -38,7 +38,8 @@ custom pressables — they carry their own transition); **acrylic chrome** for H
 add `facet-acrylic-brand` for the v2 blue / indigo / cyan glow hues instead of the tint, and `data-expanded="true"`
 for the 40px / 210% expanded sheet;
 **achievements**: `facet-aurora`, `facet-radiance`, `facet-foil`, `facet-ghost-heraldry`, `facet-jewel` layers driven
-by `--accent`, `--accent-2` and `--heraldry-mask: url(…)` (positioned with utilities, `aria-hidden`; add
+by the card's `accent` (`--facet-accent`; the app tint without one), `--facet-accent-2` (the aurora's second hue,
+default yellow) and `--heraldry-mask: url(…)` (positioned with utilities, `aria-hidden`; add
 `data-interactive="true"` to aurora/radiance to brighten on card hover). The materials lab (Admin → Facet lab)
 shows every recipe.
 
@@ -57,6 +58,9 @@ Replace these as you touch a screen. The workarounds still render, but an inline
 | Coloured text in a hue: `text-tint` under an inline `--tint` | `text-facet-accent-ink` (text) / `text-facet-accent` (icons) | Inks are ≥ 4.5:1 on the accent fill. |
 | `texture="chevron"` (unsanctioned) at 0.04–0.06 | `texture="chevron"` — now sanctioned | Every sanctioned texture is clamped to 0.05 (`TEXTURE_MAX_OPACITY`). |
 | A glass card inside a glass hero | Opaque roles or `FacetCard variant="inset"` | The primitives now render a nested hero-tier glass card opaque (`data-nested-glass`, dev warning). |
+| `style={{ "--accent": … }}` on `facet-aurora` / `facet-radiance` layers (`AchievementCardBackdrop`, `ConditionMatrix`) — both migrated and removed | `accent` on the card (or `facetAccentStyle()`); `--facet-accent-2` for the aurora's second hue | The layers read `var(--facet-accent, var(--tint))`. `--accent` is shadcn's (`fill-3`) and is always set, so it could never be the fallback. |
+| A stronger hand-picked grey for secondary text on Halo / sidebar / tab bar / map island | Nothing — `text-label-secondary` inside `material-acrylic` resolves to `label-vibrant-secondary` | HIG vibrant label: ≥ 4.5:1 over any content behind the acrylic (spec §16.8). `text-label-vibrant-secondary` exists for floating text without the material. |
+| `IxCreditsSymbol` next to a visible "IxCredits" / "IxC" label | `<IxCreditsSymbol decorative />` | The symbol is `role="img"` named "IxCredits" by default (the unit of the figure beside it); `decorative` (or `aria-hidden`) hides it when the unit is already written out or it is ornament. |
 
 ## 1. Rules of the road
 
@@ -86,13 +90,14 @@ Every token is also a Tailwind utility.
 | Role | Utility | Use |
 |---|---|---|
 | `label` · `label-secondary` · `label-tertiary` · `label-quaternary` | `text-label…` | Primary text · secondary text and captions · placeholders/disabled · decorative |
+| `label-vibrant-secondary` | automatic inside `material-acrylic`; `text-label-vibrant-secondary` | HIG vibrant secondary label: `label-secondary` resolves to it on acrylic chrome (Halo, sidebar, tab bar, map island), ≥ 4.5:1 over any content behind (`#46464e` / `#bebec6`; Increase Contrast `#3f3f46` / `#d4d4d8`) |
 | `background` · `background-grouped` | `bg-background` · `bg-grouped` | Plain pages · pages made of grouped sections (default body) |
 | `surface` · `surface-secondary` · `surface-elevated` | `bg-surface…` | Cards and list groups · inset areas inside a card · dialogs, sheets, menus, tooltips |
 | `fill` · `fill-2` · `fill-3` · `fill-4` | `bg-fill…` | Control backgrounds (strong → faint), tracks, hover washes |
 | `control-thumb` | `bg-control-thumb` | The selected segment of a `SegmentedControl` / `FacetTabs` (white in light, a stronger fill in dark) |
 | `scrim` | `bg-scrim` | The modal scrim under dialogs, sheets and alert dialogs (black 25% light / 40% dark) |
 | `separator` · `separator-opaque` | `border-separator…` | Hairlines · separators over glass |
-| `tint` · `tint-hover` · `on-tint` · `tint-fill` | `bg-tint`, `text-tint`, `text-on-tint`, `bg-tint-fill` | Primary actions, links, selection, focus |
+| `tint` · `tint-hover` · `on-tint` · `tint-fill` · `tint-ink` | `bg-tint`, `text-tint`, `text-on-tint`, `bg-tint-fill`, `text-tint-ink` | Primary actions, links, selection, focus; `tint-ink` (the tint 20% toward `label`) is text on `tint-fill` (`Badge variant="tinted"`) |
 | System colours `red orange yellow green mint teal cyan blue indigo purple pink brown gray` (+ `on-*`) | `text-red`, `bg-green`… | Status and data |
 | Tinted-fill inks `<colour>-ink` | `text-red-ink`… on `bg-red/15` | Text on a 15% fill of its colour (colour `Badge`s, pressed `ActionPill`s): the hue pulled 20% toward `label`, ≥ 4.5:1 on every background |
 | Status aliases `destructive warning caution success info` (+ `-ink`) | `text-destructive`…; `text-success-ink`… on `bg-success/15` | Semantic status; the `-ink` aliases are the system colour's ink, for text on a 15% fill (status `Badge`s and `Alert`s) |
@@ -170,7 +175,7 @@ utilities, so `cn("text-body text-label")` keeps both.
 | `material-regular` | Map panels and floating map toolbars |
 | `material-thick` | Popovers, menus, map context menus and floating dialogs over the map |
 | `material-hero` | Facet 3.1 glass hero tier: hero/feature cards (`FacetCard variant="glass"`, `CutoutCard variant="glass"`, `FacetMaterial material="hero"`) — v2 glass with the tint wash, white rim, tinted border and shadow |
-| `material-acrylic` | Facet 3.1 Halo island, map island, AppSidebar and TabBar (`FacetMaterial material="acrylic" glow`, `facet-acrylic-brand` for the v2 blue / indigo / cyan glow) — v2 `.dynamic-island-shell`; `data-expanded="true"` is the v2 expanded sheet (40px / 210%, double inset rim), used by the open Halo and its nav tray |
+| `material-acrylic` | Facet 3.1 Halo island, map island, AppSidebar and TabBar (`FacetMaterial material="acrylic" glow`, `facet-acrylic-brand` for the v2 blue / indigo / cyan glow) — v2 `.dynamic-island-shell`; `data-expanded="true"` is the v2 expanded sheet (40px / 210%, double inset rim), used by the open Halo and its nav tray. Secondary labels inside resolve to the vibrant role (≥ 4.5:1 over any content) |
 
 Materials switch to opaque under Reduce Transparency and step down one blur level on small screens. Anything inside a
 material uses opaque roles. **Elevation:** `shadow-card` (cards), `shadow-floating` (popovers, menus, map panels),
@@ -207,7 +212,7 @@ layout) makes motion/react honour both the OS and the in-app Reduce Motion setti
 | `TintGlow` · `Refraction` · `AcrylicGlow` (`~/components/ui/facet`) | Facet 3.1 identity layers: the v2 domain glow blob (`position`, `size`, `color`), the refraction hairline (`edges="top|all"`), the acrylic glow underlay. Decorative (`aria-hidden`, not printed). |
 | `FacetContainer` | **Deprecated.** Content depths render as `FacetCard`; `material=…` renders glass. New code uses `FacetCard` or `FacetMaterial`. |
 | `Skeleton` | Loading placeholders shaped like the final layout (no blur; stops under reduced motion). Never inside `<p>`. |
-| `Badge` | `neutral`, `tinted`, `success`, `warning`, `caution`, `destructive`, `info` (old `default`/`secondary`/`outline` still work); one per system colour (`red` … `gray`). Count badges (numeric children) use `font-data`; `numeric` forces it on/off. Status and colour variants are the colour's `-ink` on a 15% fill (≥ 4.5:1 on every background role, light/dark, Increase Contrast — `token-contrast.test.ts`) — use these for statuses, categories, rarities and tags instead of `bg-x/15 text-x` classes. |
+| `Badge` | `neutral`, `tinted`, `success`, `warning`, `caution`, `destructive`, `info` (old `default`/`secondary`/`outline` still work); one per system colour (`red` … `gray`). Count badges (numeric children) use `font-data`; `numeric` forces it on/off. Status and colour variants are the colour's `-ink` on a 15% fill, and `tinted` is the app tint's `tint-ink` on `tint-fill` (all ≥ 4.5:1 on every background role, light/dark, Increase Contrast, every app tint — `token-contrast.test.ts`) — use these for statuses, categories, rarities and tags instead of `bg-x/15 text-x` classes. |
 | `Alert` (+ `AlertTitle`, `AlertDescription`) | Inline message block (not an overlay). `default` (surface + hairline) or a status: `destructive`, `warning`, `caution`, `success`, `info` — the status `-ink` title/icon and a `label` description on a 15% fill (AA, contrast-guarded). `role="alert"` for default/destructive/warning/caution, `role="status"` for info/success; pass `role` to override (e.g. `note`). |
 | `Card` (+ `CardHeader/Title/Description/Action/Content/Footer`) | **Deprecated** — duplicates `FacetCard`. Renders the same opaque surface (`FACET_CARD_SURFACE`) with the shadcn 24px layout; existing call sites keep working. New code uses `FacetCard`. |
 | `FacetDataTable` (+ `FacetTableToolbar`, `FacetTablePagination`, `FacetMobileCard`) | Searchable/sortable/paginated data with a card layout on phones. Toolbar: `SearchField` + bordered export button; sortable headers are buttons with `aria-sort`; loading is `Skeleton`s shaped like the table (`aria-busy`), empty is `EmptyState` in a `FacetCard`; mobile rows are pressable `FacetCard`s with an eyebrow/value `<dl>`; pagination is a named `nav` with `aria-current="page"`. |
@@ -428,6 +433,19 @@ animating that would relayout the page every frame; a transform-based version ne
 `<main>`'s padding during the transition.
 
 ## Changelog
+
+- **3.1 — HIG follow-ups (2026-10-01)** — Spec §16.8. **Vibrant labels on acrylic:** new role
+  `label-vibrant-secondary` (`#46464e` / `#bebec6`, Increase Contrast `#3f3f46` / `#d4d4d8`); `material-acrylic` points
+  `--color-label-secondary` at it, so `text-label-secondary` / `text-muted-foreground` on Halo, the sidebar, the tab bar
+  and the map island hold ≥ 4.5:1 over any content (worst case: a black / white backdrop under the thinnest fill and
+  the glow — 5.19 light, 4.84 dark; was 4.29 / 3.48). No app changes. **Achievements:** `facet-aurora` /
+  `facet-radiance` read `--facet-accent` (the card's `accent`) and `--facet-accent-2`; the `--accent` bridges in
+  `AchievementCardBackdrop` and `ConditionMatrix` are gone (same colours). **Halo walkthrough:** the looping
+  box-shadow pulse on the island is a static tint ring + `facet-glow`. **`IxCreditsSymbol`:** `role="img"`
+  `aria-label="IxCredits"` by default, `decorative` to hide it next to a visible unit. **`Badge variant="tinted"`:**
+  `text-tint-ink` (new `tint-ink` role) instead of `text-tint` — the bare tint was 3.47:1 at worst on its fill, the ink
+  is ≥ 4.64:1 for every app tint. Guards: `token-contrast.test.ts` (acrylic worst case, tinted badge),
+  `identity-cascade.test.ts`, `facet-31-hig.test.tsx`.
 
 - **3.1 — HIG pass (2026-10-01)** — Spec §16.8. New APIs: `accent` (`SystemColor | "tint" | "gold"`) on
   `FacetCard`/`MotionFacetCard`/`CutoutCard`/`CutoutCardHeader`/`FacetMaterial` (scoped `--facet-accent`; utilities

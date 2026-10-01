@@ -133,7 +133,7 @@ export function SectorCard({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h4 className="text-label text-headline leading-tight">{template.name}</h4>
+                <h3 className="text-label text-headline leading-tight">{template.name}</h3>
                 {constraint?.locked && <Badge variant="destructive">Constrained</Badge>}
                 {isAffected && (
                   <Badge

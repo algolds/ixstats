@@ -167,7 +167,7 @@ export const BasicInfoCoreIndicators = React.memo(function BasicInfoCoreIndicato
         <div className="rounded-row border-green/20 bg-green/[0.03] space-y-4 border p-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <h5 className="text-label-secondary text-eyebrow">Total Nominal GDP</h5>
+              <h4 className="text-label-secondary text-eyebrow">Total Nominal GDP</h4>
               <div className="text-title-2 text-green mt-1 tabular-nums">
                 <NumberFlowDisplay value={computedGDP} format="currency" decimalPlaces={0} />
               </div>
@@ -177,7 +177,7 @@ export const BasicInfoCoreIndicators = React.memo(function BasicInfoCoreIndicato
             </div>
 
             <div>
-              <h5 className="text-label-secondary text-eyebrow">Est. Base Revenue</h5>
+              <h4 className="text-label-secondary text-eyebrow">Est. Base Revenue</h4>
               <div className="text-title-2 text-yellow mt-1 tabular-nums">
                 <NumberFlowDisplay
                   value={estimatedBaseRevenue}
@@ -193,11 +193,11 @@ export const BasicInfoCoreIndicators = React.memo(function BasicInfoCoreIndicato
 
           <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-t pt-3">
             <div>
-              <h5 className="text-label-secondary text-eyebrow mb-1">Economic Classification</h5>
+              <h4 className="text-label-secondary text-eyebrow mb-1">Economic Classification</h4>
               <Badge variant="success">{economicTier}</Badge>
             </div>
             <div>
-              <h5 className="text-label-secondary text-eyebrow mb-1">Population Tier</h5>
+              <h4 className="text-label-secondary text-eyebrow mb-1">Population Tier</h4>
               <Badge
                 variant="secondary"
                 className="border-teal/30 bg-teal/10 text-caption text-teal px-3 py-0.5 font-semibold"

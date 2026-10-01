@@ -4,10 +4,10 @@ import React from "react";
 import { cn } from "~/lib/utils";
 import { type TextureType } from "~/components/ui/texture-overlay";
 import { FacetCard } from "~/components/ui/facet-container";
-import { type MyCountryAccent } from "./accents";
+import { FACET_ACCENT, type MyCountryAccent } from "./accents";
 
 interface GlassPanelProps {
-  /** Section accent applied to the border and tint. */
+  /** Section accent: re-tints the glass wash, border and shadow (Facet 3.1 `accent`). */
   accent?: MyCountryAccent;
   /** Enables hover elevation (also on when onClick is set). */
   interactive?: boolean;
@@ -19,12 +19,13 @@ interface GlassPanelProps {
 }
 
 /**
- * GlassPanel — theme-compliant frosted surface with the Builder's "glass" feel
- * (backdrop blur + accent tint), built on theme tokens (`bg-surface`) instead
- * of white-based layers so it reads in light + dark.
+ * GlassPanel — the v2 (c5c6b382) frosted MyCountry panel on the Facet 3.1 glass hero tier:
+ * `FacetCard variant="glass"` with the section `accent` (spec §16.8) re-tinting the glass wash,
+ * tinted border and shadow — v2's `ACCENT_CLASSES` border + gradient tint, without a hand-rolled
+ * blur. Inside another glass surface it renders opaque (glass never nests).
  */
 export function GlassPanel({
-  accent: _accent = "neutral",
+  accent = "neutral",
   interactive = false,
   texture = "dots",
   textureOpacity = 0.03,
@@ -32,12 +33,12 @@ export function GlassPanel({
   onClick,
   children,
 }: GlassPanelProps) {
-  // A page-level Facet shell (depth 1). `accent` is kept for API compatibility; the accent
-  // now belongs on icons/text inside the panel, not on a tinted wash.
   const clickable = interactive || Boolean(onClick);
 
   return (
     <FacetCard
+      variant="glass"
+      accent={FACET_ACCENT[accent]}
       interactive={clickable ? "hover" : "none"}
       onClick={onClick}
       texture={texture === "none" ? undefined : texture}

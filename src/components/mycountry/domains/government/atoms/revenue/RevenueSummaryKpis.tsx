@@ -48,7 +48,7 @@ export function RevenueSummaryKpis({ data, totalCalculated }: RevenueSummaryKpis
       {/* Category breakdown */}
       {categoryStats.length > 0 && (
         <div className="space-y-3">
-          <h4 className="text-label text-headline">Revenue shares by category</h4>
+          <h3 className="text-label text-headline">Revenue shares by category</h3>
           <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {categoryStats.map((stat) => {
               const Icon = revenueCategoryIcons[stat.category];

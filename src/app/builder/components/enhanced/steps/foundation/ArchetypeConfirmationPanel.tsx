@@ -37,7 +37,7 @@ export function ArchetypeConfirmationPanel({
                 <Award aria-hidden className="text-tint h-4 w-4" />
                 <span className="text-footnote text-label-secondary">Selected Archetype</span>
               </div>
-              <h4 className="text-headline text-label">{selectedArchetype.name}</h4>
+              <h2 className="text-headline text-label">{selectedArchetype.name}</h2>
             </div>
 
             <div className="flex gap-3">

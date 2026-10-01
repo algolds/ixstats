@@ -355,6 +355,9 @@ export function GovernmentStep({
               interactive="none"
             >
               <FacetCardContent className="p-6">
+                {/* Standalone hides the component's own h2 header; name the tab panel so its
+                    "Available components" h3 and the h4 cards don't skip a level. */}
+                <h2 className="sr-only">Government components</h2>
                 <AtomicGovernmentComponents
                   initialComponents={governmentComponents}
                   onChange={onGovernmentComponentsChange}
@@ -373,10 +376,10 @@ export function GovernmentStep({
             {/* Departments list */}
             <FacetCard texture="chevron" textureOpacity={0.04}>
               <div className="border-separator border-b px-6 py-4">
-                <h3 className="text-label text-headline flex items-center gap-2">
+                <h2 className="text-label text-headline flex items-center gap-2">
                   <Users className="text-tint h-5 w-5" />
                   Government Departments
-                </h3>
+                </h2>
               </div>
               <FacetCardContent className="p-6">
                 <DepartmentList
@@ -432,10 +435,10 @@ export function GovernmentStep({
             {/* Budget Allocations list */}
             <FacetCard texture="chevron" textureOpacity={0.04}>
               <div className="border-separator border-b px-6 py-4">
-                <h3 className="text-label text-headline flex items-center gap-2">
+                <h2 className="text-label text-headline flex items-center gap-2">
                   <DollarSign className="text-tint h-5 w-5" />
                   Budget Allocations
-                </h3>
+                </h2>
               </div>
               <FacetCardContent className="p-6">
                 <BudgetAllocationList

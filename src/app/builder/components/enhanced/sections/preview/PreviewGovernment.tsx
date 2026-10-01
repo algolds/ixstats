@@ -49,10 +49,10 @@ export const PreviewGovernment = memo(function PreviewGovernment({
     <div className="space-y-5">
       {/* Government Details & Leadership */}
       <div className="rounded-row border-separator bg-surface border p-4">
-        <h4 className="text-eyebrow text-label-secondary flex items-center gap-2">
+        <h3 className="text-eyebrow text-label-secondary flex items-center gap-2">
           <Landmark className="text-tint h-3.5 w-3.5" />
           Structure
-        </h4>
+        </h3>
 
         <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-0.5">
@@ -113,10 +113,10 @@ export const PreviewGovernment = memo(function PreviewGovernment({
 
       {/* Selected Institutions / Components */}
       <div className="space-y-2">
-        <h4 className="text-eyebrow text-label-secondary flex items-center gap-2">
+        <h3 className="text-eyebrow text-label-secondary flex items-center gap-2">
           <Shield className="text-tint h-3.5 w-3.5" />
           Institutions
-        </h4>
+        </h3>
 
         {governmentComponents.length === 0 ? (
           <div className="rounded-row border-separator bg-fill-4 text-footnote text-label-secondary border p-3 text-center">

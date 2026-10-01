@@ -505,7 +505,7 @@ function SearchResultItemInline({
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <h4 className="text-label text-body truncate font-medium">{result.title}</h4>
+          <h2 className="text-label text-body truncate font-medium">{result.title}</h2>
           <ExternalLink
             aria-hidden="true"
             className={cn(

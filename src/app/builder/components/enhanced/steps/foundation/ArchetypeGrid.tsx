@@ -172,7 +172,7 @@ export function ArchetypeGrid({
 
           <div>
             {/* v2: the step title in the builder gold */}
-            <h2 className="text-title-1 text-tint">Archetype</h2>
+            <h1 className="text-title-1 text-tint">Archetype</h1>
             <p className="text-footnote text-label-secondary mt-0.5">
               {selectedTemplate ? (
                 <>
@@ -227,7 +227,7 @@ export function ArchetypeGrid({
                   {selectedTemplate.continent || selectedTemplate.region || "Global"}
                 </span>
               </div>
-              <h3 className="text-headline text-label">{selectedTemplate.name}</h3>
+              <h2 className="text-headline text-label">{selectedTemplate.name}</h2>
               <p className="text-footnote text-label-secondary tabular-nums">
                 Population: {formatFullWordNumber(selectedTemplate.population)} • GDP:{" "}
                 {formatFullWordCurrency(selectedTemplate.gdp)} • GDP per capita: $
@@ -261,7 +261,7 @@ export function ArchetypeGrid({
                 <span aria-hidden className="bg-separator-opaque size-1.5 rounded-full" />
                 <span className="text-caption text-tint">Default Demographic Scale</span>
               </div>
-              <h3 className="text-headline text-label">Pure Archetype Foundation</h3>
+              <h2 className="text-headline text-label">Pure Archetype Foundation</h2>
               <p className="text-footnote text-label-secondary">
                 Population: 10 million • Base GDP: $250 billion • Selected archetype sets economic
                 structure and growth
@@ -395,7 +395,7 @@ export function ArchetypeGrid({
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-title-3 text-label">
+                      <h2 className="text-title-3 text-label">
                         <button
                           type="button"
                           aria-pressed={isSelected}
@@ -404,7 +404,7 @@ export function ArchetypeGrid({
                         >
                           {arch.name}
                         </button>
-                      </h3>
+                      </h2>
                       <div className="mt-1 flex flex-wrap gap-2">
                         <Badge variant="neutral">{arch.region}</Badge>
                         <Badge variant={getComplexityBadgeVariant(arch.implementationComplexity)}>

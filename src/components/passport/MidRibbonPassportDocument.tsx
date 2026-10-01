@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useId } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { Check, Copy, Spark as Sparkles } from "iconoir-react";
 import { cn } from "~/lib/utils";
@@ -14,7 +14,11 @@ import { GuillochePattern } from "./cards/GuillochePattern";
 import { PassportBackFace } from "./document/PassportBackFace";
 import { PassportMasthead } from "./document/PassportMasthead";
 import { PassportStatGrid } from "./document/PassportStatGrid";
-import { PassportTabRibbon } from "./document/PassportTabRibbon";
+import {
+  PassportTabRibbon,
+  passportTabId,
+  passportTabPanelId,
+} from "./document/PassportTabRibbon";
 import { PassportLorewardsModal } from "./modals/PassportLorewardsModal";
 import { PassportTabBody } from "./PassportTabPanels";
 import type { PassportPayload, PassportTabType } from "./types";
@@ -95,6 +99,7 @@ export function MidRibbonPassportDocument({
   const handleDone = useCallback(() => setIsFlipped(false), []);
   const handleOpenLorewards = useCallback(() => setIsLorewardsModalOpen(true), []);
   const handleOpenVault = useCallback(() => onSelectTab("vault"), [onSelectTab]);
+  const tabIdBase = `passport-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   const realmName = featuredRealm?.name ?? "—";
   const passportNumber = `IX-${cleanUsername.toUpperCase().substring(0, 4)}-${data.account.userId ? data.account.userId.substring(0, 4).toUpperCase() : "882"}`;
@@ -247,11 +252,17 @@ export function MidRibbonPassportDocument({
               activeTab={activeTab}
               onSelectTab={onSelectTab}
               counts={ribbonCounts}
+              idBase={tabIdBase}
             />
 
-            {/* 3. LOWER TAB BODY CONTENT — Apple §4 spring, §9 rubber-band, §11 will-change */}
+            {/* 3. LOWER TAB BODY CONTENT — Apple §4 spring, §9 rubber-band, §11 will-change.
+                The ribbon's tab panel: labelled by the selected tab, focusable (tabs pattern). */}
             <div
-              className="space-y-6 overscroll-contain p-5 sm:p-7"
+              role="tabpanel"
+              id={passportTabPanelId(tabIdBase)}
+              aria-labelledby={passportTabId(tabIdBase, activeTab)}
+              tabIndex={0}
+              className="focus-visible:outline-tint space-y-6 overscroll-contain p-5 focus-visible:outline-2 focus-visible:-outline-offset-2 sm:p-7"
               style={{ overscrollBehavior: "contain" } as React.CSSProperties}
             >
               <AnimatePresence mode="wait">

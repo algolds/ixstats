@@ -283,10 +283,10 @@ export function BudgetConfigurationSection({
     return (
       <FacetCard>
         <FacetCardHeader className="border-separator border-b px-6 py-4">
-          <h3 className="text-label text-title-3 flex items-center gap-2">
+          <h2 className="text-label text-title-3 flex items-center gap-2">
             <Building2 aria-hidden="true" className="text-label-secondary h-5 w-5" />
             Budget Configuration
-          </h3>
+          </h2>
         </FacetCardHeader>
         <FacetCardContent className="p-6">{content}</FacetCardContent>
       </FacetCard>

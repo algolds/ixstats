@@ -111,7 +111,7 @@ export const DepartmentList = React.memo(function DepartmentList({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-label text-title-2">Government Departments</h2>
+          <h3 className="text-label text-title-2">Government Departments</h3>
           <p className="text-label-secondary text-footnote mt-1">
             Configure ministries, priorities, and link institutional components
           </p>
@@ -292,7 +292,7 @@ export const DepartmentList = React.memo(function DepartmentList({
         {departments.length === 0 && (
           <div className="border-separator rounded-row col-span-full border border-dashed p-12 text-center">
             <Users aria-hidden="true" className="text-label-secondary mx-auto mb-3 h-10 w-10" />
-            <h3 className="text-label text-headline">No Departments Active</h3>
+            <h4 className="text-label text-headline">No Departments Active</h4>
             <p className="text-label-secondary text-footnote mx-auto mt-1 max-w-xs">
               Your nation needs departments to administer services. Add a department to get started.
             </p>

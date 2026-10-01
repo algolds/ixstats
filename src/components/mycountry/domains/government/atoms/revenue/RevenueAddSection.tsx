@@ -75,7 +75,7 @@ export function RevenueAddSection({
 
         {/* Quick Add Presets badges */}
         <div className="border-separator rounded-control space-y-3 border p-4">
-          <h4 className="text-label text-headline">Quick add common channels</h4>
+          <h3 className="text-label text-headline">Quick add common channels</h3>
           <div className="space-y-3">
             {revenueCategories.map((category) => (
               <div key={category} className="space-y-2">
@@ -108,7 +108,7 @@ export function RevenueAddSection({
 
   return (
     <FacetCard variant="inset" className="space-y-4 p-4">
-      <h4 className="text-label text-headline">Configure custom revenue channel</h4>
+      <h3 className="text-label text-headline">Configure custom revenue channel</h3>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-3">
           <Input

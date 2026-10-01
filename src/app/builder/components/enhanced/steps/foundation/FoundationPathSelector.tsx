@@ -37,6 +37,8 @@ export function FoundationPathSelector({
       exit="exit"
       className="w-full space-y-3"
     >
+      {/* The page title for this sub-step (the hero's visible h1 is gone once a path is chosen). */}
+      <h1 className="sr-only">Choose a benchmark country</h1>
       <div className="flex shrink-0 flex-col gap-3 pb-1 sm:flex-row sm:items-center sm:justify-between">
         <Button
           variant="ghost"

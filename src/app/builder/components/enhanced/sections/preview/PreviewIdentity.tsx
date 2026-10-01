@@ -66,10 +66,10 @@ export const PreviewIdentity = memo(function PreviewIdentity({
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* Basic Info */}
         <div className="rounded-row border-separator bg-surface border p-4">
-          <h4 className="text-eyebrow text-label-secondary flex items-center gap-2">
+          <h3 className="text-eyebrow text-label-secondary flex items-center gap-2">
             <Globe className="text-tint h-3.5 w-3.5" />
             Basic Info
-          </h4>
+          </h3>
           <dl className="mt-3 space-y-2">
             <div className="space-y-0.5">
               <dt className="text-eyebrow text-label-secondary">Common Name</dt>
@@ -110,10 +110,10 @@ export const PreviewIdentity = memo(function PreviewIdentity({
 
         {/* Culture */}
         <div className="rounded-row border-separator bg-surface border p-4">
-          <h4 className="text-eyebrow text-label-secondary flex items-center gap-2">
+          <h3 className="text-eyebrow text-label-secondary flex items-center gap-2">
             <Languages className="text-tint h-3.5 w-3.5" />
             Culture
-          </h4>
+          </h3>
           <dl className="mt-3 space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-0.5">

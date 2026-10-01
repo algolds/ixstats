@@ -22,7 +22,14 @@ import { springSmooth } from "~/lib/design/motion";
 import { getHighResFlagUrl } from "./identityUtils";
 import { useNotify } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";
-import { IMAGE_SCRIM, IMAGE_SCRIM_ACTION } from "~/app/builder/lib/image-scrim";
+import { focusRing } from "~/components/ui/button";
+import {
+  IMAGE_SCRIM,
+  IMAGE_SCRIM_ACTION,
+  IMAGE_SCRIM_TOUCH_ACTION,
+  IMAGE_SCRIM_TOUCH_BAND,
+  IMAGE_SCRIM_TOUCH_CLUSTER,
+} from "~/app/builder/lib/image-scrim";
 
 export interface IdentityHeroBannerProps {
   countryName: string;
@@ -230,11 +237,15 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
                 </div>
               )}
 
-              {/* Hover Quick Action Scrim */}
+              {/* Quick actions: a scrim revealed on hover / keyboard focus; on touch (no hover) they
+                  stay visible as a corner cluster over the flag. */}
               <div
+                role="group"
+                aria-label="Flag image"
                 className={cn(
                   "absolute inset-0 flex items-center justify-center gap-2 opacity-0 transition-opacity duration-200 group-focus-within/flag:opacity-100 group-hover/flag:opacity-100",
-                  IMAGE_SCRIM
+                  IMAGE_SCRIM,
+                  IMAGE_SCRIM_TOUCH_CLUSTER
                 )}
               >
                 <Button
@@ -245,7 +256,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
                     soundEffects.press();
                     onSelectFlag();
                   }}
-                  className={IMAGE_SCRIM_ACTION}
+                  className={cn(IMAGE_SCRIM_ACTION, IMAGE_SCRIM_TOUCH_ACTION)}
                   title="Search the IxWiki repository"
                   aria-label="Search the IxWiki repository"
                 >
@@ -259,7 +270,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
                     soundEffects.press();
                     flagInputRef.current?.click();
                   }}
-                  className={IMAGE_SCRIM_ACTION}
+                  className={cn(IMAGE_SCRIM_ACTION, IMAGE_SCRIM_TOUCH_ACTION)}
                   title="Upload a custom flag"
                   aria-label="Upload a custom flag"
                   disabled={isUploadingFlag}
@@ -269,43 +280,41 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
               </div>
             </div>
 
-            {/* Coat of Arms Badge overlapping Flag corner */}
-            <div className="group/coa absolute -right-2 -bottom-2">
-              <div className="border-background bg-surface shadow-card relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2">
+            {/* Coat of Arms badge overlapping the flag corner. The whole 44pt emblem is the button;
+                its scrim shows on hover / keyboard focus, and on touch an always-visible edit band
+                along the bottom edge. */}
+            <div className="absolute -right-2 -bottom-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  soundEffects.press();
+                  onSelectCoatOfArms();
+                }}
+                className={cn(
+                  "group/coa border-background bg-surface shadow-card facet-press facet-press-sm relative flex size-11 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2",
+                  focusRing
+                )}
+                title="Change coat of arms"
+                aria-label="Change coat of arms"
+              >
                 {displayCoa ? (
-                  <img
-                    src={displayCoa}
-                    alt="Coat of Arms"
-                    className="h-full w-full object-contain p-0.5"
-                  />
+                  <img src={displayCoa} alt="" className="h-full w-full object-contain p-0.5" />
                 ) : (
                   <Shield aria-hidden="true" className="text-label-tertiary h-5 w-5" />
                 )}
 
-                {/* Coat of Arms Hover Action Scrim */}
-                <div
+                <span
+                  aria-hidden="true"
                   className={cn(
-                    "absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-focus-within/coa:opacity-100 group-hover/coa:opacity-100",
-                    IMAGE_SCRIM
+                    "absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover/coa:opacity-100 group-focus-visible/coa:opacity-100",
+                    IMAGE_SCRIM,
+                    IMAGE_SCRIM_TOUCH_BAND
                   )}
                 >
-                  <Button
-                    type="button"
-                    variant="plain"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      soundEffects.press();
-                      onSelectCoatOfArms();
-                    }}
-                    className={cn("rounded-full", IMAGE_SCRIM_ACTION)}
-                    title="Change coat of arms"
-                    aria-label="Change coat of arms"
-                  >
-                    <ImageIcon aria-hidden className="size-3.5" />
-                  </Button>
-                </div>
-              </div>
+                  <ImageIcon className="size-3.5 pointer-coarse:size-3" />
+                </span>
+              </button>
             </div>
           </div>
 

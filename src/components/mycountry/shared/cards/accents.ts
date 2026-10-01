@@ -8,6 +8,7 @@
  */
 
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
+import type { FacetAccent } from "~/lib/design/identity";
 
 export type MyCountryAccent = "amber" | "cyan" | "blue" | "red" | "indigo" | "emerald" | "neutral";
 
@@ -56,6 +57,21 @@ export const ACCENT_CLASSES: Record<MyCountryAccent, AccentTokens> = {
     tint: "from-transparent via-transparent to-transparent",
     text: "text-label",
   },
+};
+
+/**
+ * MyCountry accent → the Facet 3.1 `accent` prop (spec §16.8) on `FacetCard` / `CutoutCard` /
+ * `FacetMaterial`: amber is the MyCountry gold (as `HUE_ACCENT.yellow`), emerald the green role;
+ * neutral sets none (the card keeps the app tint).
+ */
+export const FACET_ACCENT: Record<MyCountryAccent, FacetAccent | undefined> = {
+  amber: "gold",
+  cyan: "cyan",
+  blue: "blue",
+  red: "red",
+  indigo: "indigo",
+  emerald: "green",
+  neutral: undefined,
 };
 
 /** Maps a MyCountry section to its canonical card accent. */

@@ -44,10 +44,10 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
       {/* GDP Composition */}
       <FacetCard>
         <FacetCardContent className="p-6">
-          <h4 className="text-headline text-green mb-4 flex items-center gap-2">
+          <h3 className="text-headline text-green mb-4 flex items-center gap-2">
             <PieChart className="h-5 w-5" />
             <span>GDP Composition</span>
-          </h4>
+          </h3>
           {sectorChartData.length === 0 ? (
             <div className="text-label-secondary flex h-[300px] items-center justify-center">
               Add sectors to see GDP composition
@@ -67,10 +67,10 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
       {/* Employment Distribution */}
       <FacetCard>
         <FacetCardContent className="p-6">
-          <h4 className="text-headline text-green mb-4 flex items-center gap-2">
+          <h3 className="text-headline text-green mb-4 flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
             <span>Employment Distribution</span>
-          </h4>
+          </h3>
           {employmentChartData.length === 0 ? (
             <div className="text-label-secondary flex h-[250px] items-center justify-center">
               Add sectors to see employment distribution
@@ -91,10 +91,10 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
       {/* Component Impact Summary */}
       <FacetCard>
         <FacetCardContent className="p-6">
-          <h4 className="text-headline text-green mb-4 flex items-center gap-2">
+          <h3 className="text-headline text-green mb-4 flex items-center gap-2">
             <Zap className="h-5 w-5" />
             <span>Atomic Component Impact</span>
-          </h4>
+          </h3>
           <div className="space-y-3">
             {Object.entries(sectorImpacts).map(([sectorId, impact]) => {
               const template = SECTOR_TEMPLATES[sectorId as keyof typeof SECTOR_TEMPLATES];

@@ -7,7 +7,7 @@ import {
   HomeSimple as Home,
   ArrowLeft,
 } from "iconoir-react";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { createUrl } from "~/lib/utils";
@@ -96,7 +96,10 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
           <Card className="mx-auto max-w-2xl">
             <CardHeader className="text-center">
               <AlertTriangle className="text-red mx-auto mb-4 h-12 w-12" />
-              <CardTitle className="text-title-1 text-red">Builder Error</CardTitle>
+              {/* A heading (CardTitle is a div): the fallback replaces a step's content or the page. */}
+              <h2 data-slot="card-title" className="text-title-1 text-red leading-none">
+                Builder Error
+              </h2>
             </CardHeader>
             <CardContent className="space-y-4">
               <Alert className="border-red/30 bg-red/10">
@@ -111,7 +114,7 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
               {/* Error details (development only) */}
               {process.env.NODE_ENV === "development" && this.state.error && (
                 <div className="bg-surface-secondary rounded-row mt-4 p-4">
-                  <h4 className="text-headline text-label mb-2">Error Details:</h4>
+                  <h3 className="text-headline text-label mb-2">Error Details:</h3>
                   <pre className="text-footnote text-label-secondary max-h-32 overflow-auto">
                     {this.state.error.message}
                   </pre>

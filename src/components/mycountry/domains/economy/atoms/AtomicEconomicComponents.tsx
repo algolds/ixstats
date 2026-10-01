@@ -175,7 +175,9 @@ export function AtomicEconomicComponentSelector({
         <div className={hideSelectedList ? "lg:col-span-3" : "lg:col-span-2"}>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Eyebrow className="block">Available components</Eyebrow>
+              <h3>
+                <Eyebrow className="block">Available components</Eyebrow>
+              </h3>
               <Badge variant="secondary" className="tabular-nums">
                 {builder.selectedComponents.length} / {maxComponents} selected
               </Badge>

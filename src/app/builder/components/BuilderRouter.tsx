@@ -496,7 +496,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
           <FacetCard className="rounded-card mx-auto max-w-md space-y-6 p-8 text-center">
             <Lock aria-hidden="true" className="text-tint mx-auto h-10 w-10" />
             <div className="space-y-2">
-              <h2 className="text-label text-title-1">Authentication Required</h2>
+              <h1 className="text-label text-title-1">Authentication Required</h1>
               <p className="text-label-secondary">
                 Sign in to access the MyCountry Builder and create your custom nation
               </p>

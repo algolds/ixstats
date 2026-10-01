@@ -138,7 +138,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
 
                     <div className="my-auto space-y-2">
                       <div>
-                        <h4 className="text-headline text-label line-clamp-1">{country.name}</h4>
+                        <h3 className="text-headline text-label line-clamp-1">{country.name}</h3>
                         <p className="text-label-secondary text-caption">Use as template?</p>
                       </div>
 

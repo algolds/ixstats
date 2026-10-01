@@ -183,7 +183,7 @@ const EligibleCountryCard = React.memo<EligibleCountryCardProps>(function Eligib
 
                 <div className="my-auto space-y-2">
                   <div>
-                    <h4 className="text-headline text-label line-clamp-1">{country.displayName}</h4>
+                    <h2 className="text-headline text-label line-clamp-1">{country.displayName}</h2>
                     <p className="text-caption text-label-secondary">Import from {siteName}?</p>
                   </div>
 

@@ -772,8 +772,8 @@ palette stops (`from-amber-500`…) are forbidden outside the card-art and logo-
 - **Flag watermark** at v2 strength: 320px disc at `-top-12 -right-12`, opacity .14 light / .18 dark → .25 and
   `scale(1.05)` over 700ms while the hero is hovered, luminosity blend in light (normal in dark), 1px blur; Reduce
   Motion keeps the brighten and drops the scale.
-- **Achievements** (v2 `AchievementCardBackdrop`): aurora (`--accent` 15% → `--accent-2` 10% → transparent, .4 → .75
-  under a 24px blur), radiance (`--accent` 10% → 5%, .45 → .7), foil (gold 15% / 10%, .6, epic/legendary), ghost
+- **Achievements** (v2 `AchievementCardBackdrop`): aurora (the card's accent `--facet-accent` 15% → `--facet-accent-2`
+  10% → transparent, .4 → .75 under a 24px blur), radiance (`--facet-accent` 10% → 5%, .45 → .7), foil (gold 15% / 10%, .6, epic/legendary), ghost
   heraldry (the icon as a 144px mask, `currentColor` at .065 / .095) and the jewel icon fill.
 
 ### 16.6 Guards
@@ -786,7 +786,10 @@ reveal and the progressive-blur primitive are allowlisted). No `dark:`, no hex c
 `transition-all`, no arbitrary z stay. `css-layering`: the identity sheet is layered, and its material/identity
 utilities and classes set no position, z-index, radius, margin or letter-spacing. `token-contrast`: §16.3 and the
 §16.8 accent / header-strip / watermark pairs. `identity-cascade`: compiles the identity sheet with Tailwind and checks
-the rims out-specify every surface border. `facet-guards` (3.1 HIG): converted code uses only `SANCTIONED_TEXTURES`.
+the rims out-specify every surface border, and (HIG follow-ups) that `material-acrylic` re-points the secondary label at the
+vibrant role and `text-label-secondary` / `text-muted-foreground` re-resolve under it. `token-contrast` also covers
+the acrylic worst case and the tinted badge (§16.8). `facet-guards` (3.1 HIG): converted code uses only
+`SANCTIONED_TEXTURES`.
 Primitive behaviour: `src/tests/components/ui/facet-31-identity.test.tsx` and `facet-31-hig.test.tsx`.
 
 ### 16.7 Rollout
@@ -806,7 +809,7 @@ had to move, it is the smallest change that passes the guard.
 
 | API | Does |
 |---|---|
-| `accent?: SystemColor \| "tint" \| "gold"` on `FacetCard`, `MotionFacetCard`, `CutoutCard`, `CutoutCardHeader`, `FacetMaterial` | Sets the scoped `--facet-accent` (inline, `data-accent`). Every identity paint that mixed `--tint` reads `var(--facet-accent, var(--tint))`: the `material-hero` wash, tinted border and shadows, `facet-glow`, `TintGlow`, `AcrylicGlow`, `facet-tint-rim`, the CutoutCard header strip (`bg-facet-accent-fill`) and icon (`text-facet-accent`). `--tint` is untouched, so links, focus rings and controls inside keep the app tint. Gold is `--gold-accent` (amber-700 light — the gold stops are < 3:1 on white — amber-500 dark). Utilities: `text-facet-accent`, `text-facet-accent-ink`, `bg-facet-accent-fill`, `border-facet-accent/30`. Non-primitives: `facetAccentStyle()` (`~/lib/design/identity`). Not `--accent`: that name is shadcn's (`fill-3`) and the achievement backdrop's. |
+| `accent?: SystemColor \| "tint" \| "gold"` on `FacetCard`, `MotionFacetCard`, `CutoutCard`, `CutoutCardHeader`, `FacetMaterial` | Sets the scoped `--facet-accent` (inline, `data-accent`). Every identity paint that mixed `--tint` reads `var(--facet-accent, var(--tint))`: the `material-hero` wash, tinted border and shadows, `facet-glow`, `TintGlow`, `AcrylicGlow`, `facet-tint-rim`, the CutoutCard header strip (`bg-facet-accent-fill`) and icon (`text-facet-accent`), the achievement `facet-aurora` / `facet-radiance` (second aurora hue: `--facet-accent-2`). `--tint` is untouched, so links, focus rings and controls inside keep the app tint. Gold is `--gold-accent` (amber-700 light — the gold stops are < 3:1 on white — amber-500 dark). Utilities: `text-facet-accent`, `text-facet-accent-ink`, `bg-facet-accent-fill`, `border-facet-accent/30`. Non-primitives: `facetAccentStyle()` (`~/lib/design/identity`). Not `--accent`: that name is shadcn's (`fill-3`) and always set, so it can never fall back (the aurora / radiance used it until the follow-ups below; the `--accent` bridges in `AchievementCardBackdrop` and `ConditionMatrix` are removed). |
 | `retint?: boolean` (with `accent`) | Adds `facet-retint`: the subtree's `--tint`, `--tint-hover`, `--tint-fill`, `--on-tint` follow the accent (the v2 per-widget hue on badges, links, `text-tint`). `--tint` is the accent's ink (80% toward `label`): a raw system colour as 12px text on its own fill is 3.9:1, the ink ≥ 4.5:1 (tinted badges on every background role, links, `on-tint`). No-op for `accent="tint"` (a self-reference). |
 | `rim?: "gold" \| "tint"` on `FacetCard`, `CutoutCard` | `facet-gold-rim` / `facet-tint-rim`. The rims put their declarations on `&[class]`, so they beat `border-separator`, `border-<hue>` and the `material-hero` / `material-acrylic` borders whatever order Tailwind emits them in (it sorts by property, not intent — the cause of the lost gold rim). The one sanctioned exception to "a utility always wins": don't pair a rim with another border-colour utility. `variant="inset"` gains a border for the rim. |
 | `CutoutCardHeader as?: "span" \| "div" \| "h2" \| "h3" \| "h4"` | The title element (default `span`): the widget title joins the document outline; the icon and `trailing` stay outside the heading. |
@@ -835,6 +838,24 @@ system colours and gold) 11.4 / 4.9; on the header strip (accent at the `tint-fi
 `accent="gold"` as text 5.0; under `retint` the ink as a tinted badge on every background role ≥ 4.5. Gold button
 text 5.95 and hue badge inks are unchanged (§16.3).
 
+**Vibrant labels on acrylic.** Acrylic chrome (Halo island and nav tray, AppSidebar, TabBar, map island) floats over
+arbitrary content, so its worst case is not the page but a black (light) / white (dark) backdrop under the thinnest
+fill (white 85% / obsidian 88%) plus the `AcrylicGlow` underlay in its most damaging hue. There `label-secondary`
+dropped to 4.29 (light) / 3.48 (dark) — 4.39 / 3.78 with the brand blue / indigo / cyan glow. As in the HIG's vibrant
+label colours, `material-acrylic` resolves `--color-label-secondary` to the new role `label-vibrant-secondary`
+(`#46464e` light, `#bebec6` dark; Increase Contrast `#3f3f46` / `#d4d4d8`), so `text-label-secondary`,
+`text-muted-foreground` and `var(--color-label-secondary)` inside follow automatically — no app changes. Minimums
+over every acrylic state (rest, hover, both expanded stops), glow hue (brand, every accent and app tint) and gradient
+stop: vibrant secondary 5.19 light / 4.84 dark (Increase Contrast 5.75 / 5.81, where the material is also opaque);
+`label` 11.0 / 8.1. `text-label-vibrant-secondary` is available for floating text without the material. The glass
+hero tier keeps `label-secondary` (it sits on the page, where it holds 4.9; over arbitrary content a dark hero would
+need secondary ≈ `label`, which would erase the hierarchy).
+
+**Tinted badges.** `Badge variant="tinted"` (and the legacy default) set the bare app tint as 12px text on
+`tint-fill`: 3.77:1 at worst (light MyCountry on `background-grouped`; 3.47 on the 20% link hover fill). It now uses
+`text-tint-ink` — the new `tint-ink` role, the tint 20% toward `label`, the same formula as the system-colour inks —
+≥ 4.64:1 for every app tint on every background role, rest and hover, light / dark / Increase Contrast.
+
 **Flag watermark.** v2 strength over a white (dark) or black (light) flag region took `label-secondary` to 3.0–4.2:1.
 Instead of dimming the watermark, a tone filter caps the flag's extremes — `--flag-watermark-tone`: `contrast(0.7)`
 light (black reads as `#262626`), `brightness(0.6)` dark (white reads as `#999`) — and the v2 opacities (.14 / .18 →
@@ -848,11 +869,30 @@ clip or cutout notch never clips it (don't wrap pressable cards in a clipping co
 card holds no other interactive content (no nested buttons in a `role="button"`); use a stretched link with
 `interactive` instead.
 
+**App follow-ups closed (2026-10-01).** Pinned by `tests/architecture/facet-hig-leftovers.test.ts`.
+*Touch reveal:* hover-revealed image actions stay visible on coarse pointers (no hover) — the Builder identity
+banner's flag actions collapse to a corner cluster of scrimmed, labelled 44pt buttons (`IMAGE_SCRIM_TOUCH_CLUSTER` /
+`IMAGE_SCRIM_TOUCH_ACTION`); the emblem badge and the Culture symbol thumbnails are the (≥ 44pt) buttons themselves
+and keep an iOS-style edit band along the bottom edge (`IMAGE_SCRIM_TOUCH_BAND`, `app/builder/lib/image-scrim.ts`);
+hover and keyboard focus still reveal the full scrim. *Heading outline:* one h1 per Builder page — `FoundationHero`'s
+"Build your country.", the Archetype sub-step's "Archetype", a visually hidden h1 in the studio header ("Identity ·
+MyCountry Builder"…), the benchmark sub-step and the wiki import, `EditorHeader` in edit mode — and step content
+starts at h2 with no skipped levels (the government and economics panels it renders from `components/mycountry`
+included; standalone selectors get a visually hidden h2). *Tabs:* the passport's index ribbon is a `tablist` of `tab`s
+(`aria-selected`, the selected tab `aria-controls` the `tabpanel`, which is labelled by it), roving tabindex,
+←/→/Home/End with automatic activation; v2 inverted pill, `hitSlop` and mono numbers kept. *Always an h1:*
+`/achievements` renders a visually hidden h1 when there is no profile hero. *Clipping chrome:* the map island's
+settings and account triggers are `Button`s with the ring inset (`focus-visible:-outline-offset-2`), aria-hidden icons
+and a name on phones, like `MapDynamicIsland`'s. *Sentence case:* Settings → IxnayID & Digital Passport labels
+("Account credentials", "Primary email", "Linked accounts", "Community forum"). *Accent:* MyCountry's `GlassPanel` is
+the glass hero tier with its section accent passed through (`FACET_ACCENT`: amber → `gold`, emerald → `green`).
+
 **Materials.** Glass is for chrome and the hero tier only and never nests: `FacetCard variant="glass"`,
 `CutoutCard variant="glass"` and `FacetMaterial material="hero" | "acrylic"` provide `GlassSurfaceContext`; a
 hero-tier glass primitive inside one renders the opaque surface (`data-nested-glass`, a development warning). Chrome
 glass (thin/regular/thick) does not provide it — popovers and sheets portal out of their trigger's tree. Labels on
-the materials use the label roles (`text-label` is set by the materials); every material keeps its separator/rim.
+the materials use the label roles (`text-label` is set by the materials; on `material-acrylic` the secondary label is
+the vibrant role, above); every material keeps its separator/rim.
 
 **Typography.** The heavy headings scale with `--text-scale` like every text style (Dynamic Type 90–130%); the 800
 cut is declared (`Schibsted Grotesk-800`), and a missing cut falls back to the nearest declared weight (700). No text
@@ -862,4 +902,11 @@ and words stay in the UI face (`Stat` labels, non-numeric `Badge`s and `FacetRow
 **Motion.** `facet-press` and `facet-lift` transition over `--duration-fast` (150ms, `DURATION_FAST`) with
 `ease-out-facet` (v2 lift was 200ms). Spring-driven parts use the named springs (`springGentle` for the stagger and
 the action region). The 700ms watermark brighten and image zoom are the sanctioned v2 ambient timings for decoration
-(under Reduce Motion the zoom and the watermark scale are off; the brighten, an opacity change, stays).
+(under Reduce Motion the zoom and the watermark scale are off; the brighten, an opacity change, stays). The Halo
+walkthrough marks the island with a static highlight — the tour tooltip's tint ring (`ring-2 ring-tint/50`) and
+`facet-glow` — instead of the looping box-shadow pulse it had (no ambient loops, §8); with no movement it is the same
+under Reduce Motion.
+
+**Accessible names.** `IxCreditsSymbol` is the unit of the figure beside it: `role="img"` with
+`aria-label="IxCredits"` by default, so "1,250" is not read without its currency. `decorative` (or `aria-hidden`)
+hides it where the unit is already written out ("IxCredits", "IxC") or it is ornament (the reward-burst particles).

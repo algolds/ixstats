@@ -34,7 +34,7 @@ import { soundEffects } from "~/lib/sound/cuelume";
 import type { NationalIdentityData } from "~/app/builder/lib/economy-data-service";
 import { cn, getCurrencyInfo } from "~/lib/utils";
 import { POPULAR_LANGUAGES } from "./identityUtils";
-import { IMAGE_SCRIM_LIGHT } from "~/app/builder/lib/image-scrim";
+import { IMAGE_SCRIM_LIGHT, IMAGE_SCRIM_TOUCH_BAND } from "~/app/builder/lib/image-scrim";
 
 const MediaSearchModal = dynamic(
   () =>
@@ -228,6 +228,7 @@ export const CultureForm = React.memo(
       ({ key, label, icon: Icon, placeholder, imageKey }: HeritageItem) => {
         const textVal = identity[key as keyof NationalIdentityData];
         const imgVal = identity[imageKey as keyof NationalIdentityData];
+        const hasImage = typeof imgVal === "string" && imgVal !== "";
 
         return (
           <div key={key} className="bg-surface-secondary rounded-row flex items-center gap-3 p-3">
@@ -243,23 +244,28 @@ export const CultureForm = React.memo(
                 focusRing
               )}
               title="Upload or search emblem on IxWiki"
+              aria-label={`${hasImage ? "Change" : "Choose"} image for ${label}`}
               data-cuelume-press
             >
-              {typeof imgVal === "string" && imgVal ? (
-                <img src={imgVal} alt={label} className="h-full w-full object-cover" />
+              {hasImage ? (
+                <img src={imgVal} alt="" className="h-full w-full object-cover" />
               ) : (
                 <div className="text-label-tertiary group-hover:text-teal group-focus-visible:text-teal flex h-full w-full items-center justify-center">
                   <Image aria-hidden="true" className="h-5 w-5" />
                 </div>
               )}
-              <div
+              {/* Revealed on hover / keyboard focus; on touch (no hover) an image keeps an
+                  always-visible edit band so the thumbnail reads as changeable. */}
+              <span
+                aria-hidden="true"
                 className={cn(
                   "absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100",
-                  IMAGE_SCRIM_LIGHT
+                  IMAGE_SCRIM_LIGHT,
+                  hasImage && IMAGE_SCRIM_TOUCH_BAND
                 )}
               >
-                <Image aria-hidden className="size-4" />
-              </div>
+                <Image className="size-4 pointer-coarse:size-3" />
+              </span>
             </button>
 
             {/* Text Input */}

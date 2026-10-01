@@ -445,7 +445,7 @@ export default function SetupPage() {
                             <p className="text-headline text-label">Claim submitted</p>
                             <p className="text-body text-label-secondary mt-1">
                               A moderator will review it. Verify your wiki account under Settings →
-                              IxnayID & Passport → Linked Accounts to have claims for nations you
+                              IxnayID & Passport → Linked accounts to have claims for nations you
                               created approved instantly.
                             </p>
                           </div>

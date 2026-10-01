@@ -35,9 +35,9 @@ export function WorkforceSocietyTab({
             ) : (
               <Globe className="text-green h-5 w-5" />
             )}
-            <h3 className="text-headline text-label">
+            <h2 className="text-headline text-label">
               {subTab === "labor" ? "Labor Market & Employment" : "Demographics & Population"}
-            </h3>
+            </h2>
           </div>
 
           <SegmentedControl

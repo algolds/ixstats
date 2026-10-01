@@ -56,7 +56,7 @@ export const BudgetMeter = React.memo(function BudgetMeter({ budgetSummary }: Bu
         <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2">
             <StatusIcon aria-hidden="true" className={cn("h-5 w-5", status.text)} />
-            <h3 className="text-label text-headline">Fiscal allocation status</h3>
+            <h4 className="text-label text-headline">Fiscal allocation status</h4>
           </div>
           <div className="text-caption sm:text-body tabular-nums">
             <span className={cn("text-title-3 mr-1 tabular-nums", status.text)}>

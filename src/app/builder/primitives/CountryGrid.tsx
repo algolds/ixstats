@@ -241,9 +241,7 @@ export function CountryGrid({
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             {/* Left: Title, Counter, Help Button, and Reset */}
             <div className="flex shrink-0 items-center gap-2">
-              <span className="text-headline text-label whitespace-nowrap">
-                Benchmark Templates
-              </span>
+              <h2 className="text-headline text-label whitespace-nowrap">Benchmark Templates</h2>
               <Badge variant="neutral" className="tabular-nums">
                 {filteredCountries.length}{" "}
                 {filteredCountries.length === 1 ? "country" : "countries"}
