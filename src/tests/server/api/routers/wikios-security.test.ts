@@ -196,7 +196,7 @@ describe("S4: wiki identity for authorization is the verified WikiAccountLink", 
     const { ArticleRepository: RealArticleRepository } = jest.requireActual<
       typeof import("~/lib/wiki-os/core/article-repository")
     >("~/lib/wiki-os/core/article-repository");
-    // the save locks the page's row first (SELECT ... FOR UPDATE: the row exists)
+    // the save locks the page's row first (SELECT ... FOR NO KEY UPDATE: the row exists)
     const tx = { ...mockDb, $queryRaw: jest.fn().mockResolvedValue([{ id: "a1" }]), $executeRaw: jest.fn() };
     mockDb.$transaction.mockImplementation(async (fn: (client: typeof tx) => unknown) => fn(tx));
     mockDb.user.findFirst.mockResolvedValue({ id: "db1" });

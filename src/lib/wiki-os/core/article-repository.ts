@@ -639,15 +639,17 @@ export interface FindArticleOptions {
 type SaveTransaction = Prisma.TransactionClient;
 
 /**
- * Serialize the saves of one page: take the article row's lock (`SELECT ... FOR UPDATE`, held until the transaction
- * ends), so a second save of the page waits here until the first has committed and then reads the head it left. The
- * lock is the row's own, so a writer that updates the row (a page move, the inbound sync, an import) queues behind a
- * save too. A page with no row yet cannot be locked: creators of one title queue on an advisory lock instead, and the
+ * Serialize the saves of one page: take the article row's lock (`SELECT ... FOR NO KEY UPDATE`, held until the
+ * transaction ends), so a second save of the page waits here until the first has committed and then reads the head it
+ * left. The lock is the row's own, so a writer that updates the row (a page move, the inbound sync, an import) queues
+ * behind a save too. NO KEY UPDATE, not UPDATE: it conflicts with every other writer of the row but not with the
+ * FOR KEY SHARE lock that the foreign-key check of an insert referencing the row takes (the render's link, category
+ * and image rows), so a render storing its metadata is never blocked behind a save, nor a save behind it. A page with no row yet cannot be locked: creators of one title queue on an advisory lock instead, and the
  * one that gets it second reads the page the first created.
  */
 async function lockPageForSave(tx: SaveTransaction, source: string, title: string): Promise<void> {
   const locked = await tx.$queryRaw<Array<{ id: string }>>`
-    SELECT "id" FROM wiki_articles WHERE "source" = ${source} AND "title" = ${title} FOR UPDATE`;
+    SELECT "id" FROM wiki_articles WHERE "source" = ${source} AND "title" = ${title} FOR NO KEY UPDATE`;
   if (locked.length > 0) return;
   // $executeRaw, not $queryRaw: the function returns `void`, which Prisma cannot read back as a row
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(${ARTICLE_SAVE_LOCK_NAMESPACE}::int, hashtext(${`${source}:${title}`}))`;

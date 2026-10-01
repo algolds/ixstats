@@ -184,7 +184,7 @@ export interface FakeWikiDb {
    */
   $executeRaw(strings: TemplateStringsArray, ...values: unknown[]): Promise<number>;
   /**
-   * Returns no rows, but for `SELECT "id" FROM wiki_articles ... FOR UPDATE` (a save's row lock): it waits for the
+   * Returns no rows, but for `SELECT "id" FROM wiki_articles ... FOR NO KEY UPDATE` (a save's row lock): it waits for the
    * transaction that holds the row, holds it until its own ends, and answers the row's id (none: no row, no lock). The real
    * client cannot read the `void` the advisory lock returns: asking it to is an error here too.
    */
@@ -283,7 +283,7 @@ export function createFakeWikiDb() {
         // what Prisma does with a `SELECT` of a `void` column: the lock must be taken with $executeRaw
         throw new Error("Failed to deserialize column of type 'void'");
       }
-      if (/FROM wiki_articles WHERE "source" = \? AND "title" = \? FOR UPDATE/.test(sql)) {
+      if (/FROM wiki_articles WHERE "source" = \? AND "title" = \? FOR NO KEY UPDATE/.test(sql)) {
         // `ArticleRepository.saveArticle`'s row lock: held until the transaction ends; no row, no lock (and no row back)
         const [source, title] = values;
         const row = tables.wikiArticle.rows.find((a) => a.source === source && a.title === title);

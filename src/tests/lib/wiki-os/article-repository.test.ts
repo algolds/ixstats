@@ -411,13 +411,13 @@ describe("ArticleRepository.saveArticle: the page is locked, and the edit-confli
     expect(notifyWatchers).not.toHaveBeenCalled();
   };
 
-  it("locks the article row (FOR UPDATE, by source and title) before it reads the head, and reads the head before it writes", async () => {
+  it("locks the article row (FOR NO KEY UPDATE, by source and title) before it reads the head, and reads the head before it writes", async () => {
     mockRevisionFindFirst.mockResolvedValue(HEAD);
 
     await save();
 
     const sql = (mockQueryRaw.mock.calls[0]?.[0] as TemplateStringsArray).join("?");
-    expect(sql).toMatch(/FROM wiki_articles WHERE "source" = \? AND "title" = \? FOR UPDATE/);
+    expect(sql).toMatch(/FROM wiki_articles WHERE "source" = \? AND "title" = \? FOR NO KEY UPDATE/);
     expect(mockQueryRaw.mock.calls[0]?.slice(1)).toEqual(["ixwiki", "Foo"]);
     expect(mockExecuteRaw).not.toHaveBeenCalled(); // the row exists: no advisory lock
     const order = (fn: jest.Mock) => fn.mock.invocationCallOrder[0]!;

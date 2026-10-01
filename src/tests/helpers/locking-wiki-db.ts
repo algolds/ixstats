@@ -1,7 +1,7 @@
 /**
  * A model of the part of PostgreSQL that `ArticleRepository.saveArticle` depends on, for tests that run saves at the
  * same time: transactions that buffer their writes until they commit (a transaction that throws leaves nothing, and
- * one that waits for a lock reads what the one before it committed), row locks (`SELECT ... FOR UPDATE` on
+ * one that waits for a lock reads what the one before it committed), row locks (`SELECT ... FOR NO KEY UPDATE` on
  * `wiki_articles` by source and title) and transaction-scoped advisory locks (`pg_advisory_xact_lock(ns, hashtext(key))`),
  * both released when the transaction ends. Every operation yields to the event loop first, so concurrent
  * transactions interleave at each statement, as connections do.
@@ -56,7 +56,7 @@ export function createLockingWikiDb({ locks = true }: { locks?: boolean } = {}) 
     return {
       async $queryRaw(strings: TemplateStringsArray, ...values: unknown[]) {
         await tick();
-        if (!/FROM wiki_articles WHERE "source" = \? AND "title" = \? FOR UPDATE/.test(strings.join("?").replace(/\s+/g, " "))) {
+        if (!/FROM wiki_articles WHERE "source" = \? AND "title" = \? FOR NO KEY UPDATE/.test(strings.join("?").replace(/\s+/g, " "))) {
           throw new Error("the locking model does not understand this query");
         }
         const [source, title] = values;
