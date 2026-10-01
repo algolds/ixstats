@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import localFont from "next/font/local";
 import { headers } from "next/headers";
 import { withBasePath } from "~/lib/base-path";
 import { isStandaloneRequest } from "~/lib/system/standalone-detection";
@@ -6,6 +7,20 @@ import { WikiHalo } from "~/components/halo/plugins";
 import { MediaContextProvider } from "~/components/media/MediaContext";
 import { MiniPlayer } from "~/components/media/MiniPlayer";
 import { MediaThemeProvider } from "~/components/wiki-os/shared/MediaThemeContext";
+
+/**
+ * The brand font of the footer and the editorial masthead (`--wikios-font-brand`), self-hosted from
+ * public/fonts: one variable file, fetched only when a page actually sets text in it (no preload),
+ * with a size-adjusted fallback so its arrival moves nothing.
+ */
+const hostGrotesk = localFont({
+  src: "../../../public/fonts/HostGrotesk/HostGrotesk[wght].ttf",
+  weight: "300 800",
+  style: "normal",
+  variable: "--font-host-grotesk",
+  display: "swap",
+  preload: false,
+});
 
 export const metadata: Metadata = {
   title: "WikiOS — Worldbuilding Encyclopedia",
@@ -28,9 +43,11 @@ export default async function WikiosLayout({ children }: { children: React.React
   return (
     <MediaContextProvider>
       <MediaThemeProvider>
-        <WikiHalo />
-        {children}
-        {!isStandalone && <MiniPlayer />}
+        <div className={hostGrotesk.variable}>
+          <WikiHalo />
+          {children}
+          {!isStandalone && <MiniPlayer />}
+        </div>
       </MediaThemeProvider>
     </MediaContextProvider>
   );

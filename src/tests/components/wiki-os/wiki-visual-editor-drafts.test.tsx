@@ -8,6 +8,8 @@ let mockNodes: unknown[] = [];
 const mockNotifyError = jest.fn();
 const mockNotifyWarning = jest.fn();
 
+// the editor imports its stylesheet (plan 413); Jest has no CSS transform
+jest.mock("~/styles/wiki-os/editors.css", () => ({}));
 jest.mock("~/hooks/useNavigationScroll", () => ({ useNavigationScroll: () => ({ repulsionProgress: 0 }) }));
 jest.mock("~/hooks/useNotify", () => ({
   useNotify: () => ({

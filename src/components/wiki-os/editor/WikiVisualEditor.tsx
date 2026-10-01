@@ -3,6 +3,7 @@
 // Visual editor on Plate (Slate).
 // Operates on native WikiAST blocks and lossless wikitext serialization.
 
+import "~/styles/wiki-os/editors.css";
 import React, { useEffect, useRef, useCallback } from "react";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
 import { getDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
