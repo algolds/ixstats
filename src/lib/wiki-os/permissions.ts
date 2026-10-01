@@ -14,6 +14,7 @@ import { db } from "~/server/db";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import { PageOperationError } from "~/lib/wiki-os/core/page-management-service";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { withoutArchivedTitles } from "~/lib/wiki-os/core/archived-titles";
 import {
   checkEditPolicy,
   isOwnUserSpace,
@@ -334,15 +335,8 @@ export async function visibleTitles(
   rawTitles: readonly string[],
   source = "ixwiki"
 ): Promise<string[]> {
-  const titles = rawTitles.flatMap((raw) => canonicalizeTitle(raw, { source })?.title ?? []);
-  if (titles.length === 0) return [...rawTitles];
   if (await canSeeDeletedPages(ctx)) return [...rawTitles];
-  const rows = await db.wikiArticle.findMany({
-    where: { source, status: "ARCHIVED", title: { in: titles } },
-    select: { title: true },
-  });
-  const hidden = new Set(rows.map((row) => row.title));
-  return rawTitles.filter((raw) => !hidden.has(canonicalizeTitle(raw, { source })?.title ?? ""));
+  return withoutArchivedTitles([...rawTitles], source);
 }
 
 /**

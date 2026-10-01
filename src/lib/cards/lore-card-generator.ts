@@ -20,6 +20,7 @@
 import { db } from "~/server/db";
 import { CardType, CardRarity, Prisma } from "@prisma/client";
 import { getCurrentIxCardSeason } from "./season";
+import { archivedTitlesAmong, withoutArchivedTitles } from "~/lib/wiki-os/core/archived-titles";
 import type { WikiSource } from "~/lib/wiki-os/config";
 import { getMediaWikiApiUrl, getWikiUserAgent } from "~/lib/wiki-os/config";
 import type {
@@ -251,6 +252,8 @@ export class WikiLoreCardGenerator {
    */
   async fetchArticleData(title: string, wikiSource: WikiSource): Promise<any | null> {
     try {
+      // MediaWiki may still have a page WikiOS deleted: it is not a card's source.
+      if ((await archivedTitlesAmong([title], wikiSource)).size > 0) return null;
       const apiUrl = getMediaWikiApiUrl(wikiSource);
       const userAgent = getWikiUserAgent(wikiSource);
 
@@ -486,9 +489,11 @@ export class WikiLoreCardGenerator {
    * Lightweight batched metadata for many articles — ONE request per <=50 titles.
    */
   async fetchArticleMetadataBatch(
-    titles: string[],
+    requestedTitles: string[],
     wikiSource: WikiSource
   ): Promise<ArticleMetadataPreview[]> {
+    // MediaWiki may still have a page WikiOS deleted: it is neither asked about nor previewed.
+    const titles = await withoutArchivedTitles(requestedTitles, wikiSource);
     const apiUrl = getMediaWikiApiUrl(wikiSource);
     const userAgent = getWikiUserAgent(wikiSource);
     const out: ArticleMetadataPreview[] = [];
@@ -799,7 +804,7 @@ export class WikiLoreCardGenerator {
       }
     } while (cmcontinue && titles.length < limit);
 
-    return titles.slice(0, limit);
+    return withoutArchivedTitles(titles.slice(0, limit), wikiSource);
   }
 
   /**
@@ -931,7 +936,7 @@ export class WikiLoreCardGenerator {
       }
     } while (apcontinue && titles.length < limit);
 
-    return titles.slice(0, limit);
+    return withoutArchivedTitles(titles.slice(0, limit), wikiSource);
   }
 
   /**
@@ -1384,10 +1389,13 @@ export class WikiLoreCardGenerator {
       const pages = Object.values(data.query?.pages ?? {}) as Array<
         MediaWikiPageItem & { original?: { source?: string } }
       >;
-      return pages
-        .filter((p) => p?.original?.source)
-        .map((p) => p.title as string)
-        .slice(0, count);
+      return withoutArchivedTitles(
+        pages
+          .filter((p) => p?.original?.source)
+          .map((p) => p.title as string)
+          .slice(0, count),
+        wikiSource
+      );
     } catch (error) {
       console.error(`[Lore Card Generator] Error fetching random articles with images:`, error);
       return [];
@@ -1421,7 +1429,10 @@ export class WikiLoreCardGenerator {
       const data = await response.json();
       const articles = (data.query?.random || []) as Array<{ title: string }>;
 
-      return articles.map((article) => article.title);
+      return withoutArchivedTitles(
+        articles.map((article) => article.title),
+        wikiSource
+      );
     } catch (error) {
       console.error(`[Lore Card Generator] Error fetching random articles:`, error);
       return [];

@@ -3,6 +3,7 @@
  * unavailable system (MediaWiki, Clerk, a table) never blanks the whole passport.
  */
 import { db } from "~/server/db";
+import { archivedTitlesAmong } from "~/lib/wiki-os/core/archived-titles";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import type {
   AuthoredArticleRow,
@@ -110,17 +111,6 @@ export async function loadNativeRevisions(
   );
 }
 
-/** The canonical titles among `rawTitles` that WikiOS has deleted (archived). */
-async function archivedTitles(rawTitles: string[]): Promise<Set<string>> {
-  const titles = rawTitles.flatMap((raw) => canonicalizeTitle(raw)?.title ?? []);
-  if (titles.length === 0) return new Set();
-  const rows = await db.wikiArticle.findMany({
-    where: { source: "ixwiki", status: "ARCHIVED", title: { in: titles } },
-    select: { title: true },
-  });
-  return new Set(rows.map((row) => row.title));
-}
-
 export async function loadDiscussionComments(
   user: IdentityUser | null
 ): Promise<DiscussionCommentRow[]> {
@@ -139,7 +129,7 @@ export async function loadDiscussionComments(
         },
       });
       // A thread only names its page, so the deleted pages' comments are dropped after the read.
-      const hidden = await archivedTitles([...new Set(comments.map((c) => c.thread.articleTitle))]);
+      const hidden = await archivedTitlesAmong(comments.map((c) => c.thread.articleTitle));
       return comments.filter(
         (comment) => !hidden.has(canonicalizeTitle(comment.thread.articleTitle)?.title ?? "")
       );
