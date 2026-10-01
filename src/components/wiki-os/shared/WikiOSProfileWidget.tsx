@@ -131,7 +131,7 @@ export function WikiOSProfileWidget({
         } as React.CSSProperties
       }
     >
-      <TextureOverlay texture="chevron" opacity={0.06} className="rounded-row" />
+      <TextureOverlay texture="chevron" opacity={0.05} className="rounded-row" />
       <div className="relative z-10 flex items-center gap-2">
         {renderAvatar(true)}
         <div className="min-w-0 flex-1">

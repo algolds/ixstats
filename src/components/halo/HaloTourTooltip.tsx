@@ -125,8 +125,8 @@ export function HaloTourTooltip() {
               <div className="relative z-10 flex flex-col gap-3">
                 {/* Header & Close */}
                 <div className="flex items-center justify-between">
-                  <span className="text-tint text-eyebrow">
-                    Halo Walkthrough • {currentStep} of 5
+                  <span className="text-facet-accent-ink text-eyebrow">
+                    Halo walkthrough • <span className="font-data">{currentStep}</span> of 5
                   </span>
                   <Button
                     type="button"
@@ -134,7 +134,7 @@ export function HaloTourTooltip() {
                     size="icon-sm"
                     onClick={skipTour}
                     className="text-label-secondary hover:text-label rounded-full"
-                    aria-label="Close Tour"
+                    aria-label="Close tour"
                   >
                     <X aria-hidden />
                   </Button>

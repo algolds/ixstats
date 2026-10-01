@@ -4,6 +4,10 @@
  * restores the v2 (c5c6b382) gold through the sanctioned identity classes: `facet-gold` for the
  * gradient plates, `facet-glow` for the gold glow, `facet-gold-rim` for gold card rims — no
  * palette stops, no `dark:` pairs. Headlines stay `label` (v2's gold clip-text fails AA on light).
+ *
+ * Gold as text uses the gold accent ink (`text-facet-accent-ink`: the scope's gold pulled 20%
+ * toward `label`, ≥ 4.5:1 on its fill and on every surface in both appearances — spec §16.8); the
+ * raw gold stays for icons, borders and fills (≥ 3:1).
  */
 
 export const splashGold = {
@@ -15,10 +19,11 @@ export const splashGold = {
   gradient: "facet-gold",
   /** The v2 gold glow (tinted shadow). */
   activeGlow: "facet-glow",
-  text: "text-tint",
+  /** Gold text and icons (the accent ink). */
+  text: "text-facet-accent-ink",
   ring: "ring-tint",
 
-  badge: "border border-tint/30 bg-tint-fill text-tint",
+  badge: "border border-tint/30 bg-tint-fill text-facet-accent-ink",
   panel: "rounded-card border facet-gold-rim bg-surface",
   subtlePanel: "rounded-row bg-surface-secondary",
   iconWrap:
@@ -26,9 +31,9 @@ export const splashGold = {
   iconWrapSm:
     "flex shrink-0 items-center justify-center rounded-control-sm facet-gold [&>svg]:text-current",
   headline: "text-label",
-  link: "text-tint underline underline-offset-4 hover:text-tint-hover",
+  link: "text-facet-accent-ink underline underline-offset-4 hover:text-tint-hover",
   statCard: "rounded-row border border-tint/30 bg-surface-secondary p-3 md:p-4",
-  statValue: "text-title-1 font-data tabular-nums text-tint",
+  statValue: "text-title-1 font-data tabular-nums text-facet-accent-ink",
   pulseDot: "size-2 animate-pulse rounded-full bg-tint",
   /** The v2 gold hairline fading out at both ends. */
   divider: "bg-gradient-to-r from-transparent via-tint/40 to-transparent",

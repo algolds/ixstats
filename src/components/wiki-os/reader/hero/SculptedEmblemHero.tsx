@@ -195,19 +195,19 @@ export function SculptedEmblemHero({
       {/* ── 1. The Free-Standing Canonical Laurel Sphere & Typographic Lockup (Centered) ── */}
       <Link
         href={withBasePath("/wiki/Main_Page")}
-        className="group/brand mb-1 flex cursor-pointer flex-col items-center justify-center text-center select-none"
+        aria-label="IxWiki home"
+        className="group/brand rounded-card focus-visible:outline-tint mb-1 flex cursor-pointer flex-col items-center justify-center text-center outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-4"
       >
         <motion.div
           whileHover={reduceMotion ? {} : { scale: 1.04, y: -2 }}
           whileTap={reduceMotion ? {} : { scale: 0.96 }}
           transition={{ type: "spring", stiffness: 360, damping: 24 }}
           className="relative mb-2 flex items-center justify-center sm:mb-3"
-          aria-label="IxWiki Home"
         >
           {/* The Canonical Laurel Sphere Logo - Sculpted Emblem View */}
           <IxWikiLogo
             size={96}
-            className="wikios-brand-mark relative z-10 h-22 w-22 transition-transform duration-300 ease-out group-hover/brand:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover/brand:scale-100 sm:h-26 sm:w-26 lg:h-28 lg:w-28"
+            className="wikios-brand-mark relative z-10 h-22 w-22 transition-transform duration-300 ease-out motion-safe:group-hover/brand:scale-[1.03] motion-safe:group-focus-visible/brand:scale-[1.03] motion-reduce:transition-none sm:h-26 sm:w-26 lg:h-28 lg:w-28"
           />
         </motion.div>
 
@@ -215,7 +215,7 @@ export function SculptedEmblemHero({
         <div className="flex max-w-xl flex-col items-center justify-center gap-1 px-4">
           <IxWikiWordmark
             size="hero"
-            className="group-hover/brand:text-label leading-none transition-colors"
+            className="group-hover/brand:text-label group-focus-visible/brand:text-label leading-none transition-colors"
           />
           <div className="mt-2 flex items-center justify-center">
             <span className="text-label-secondary text-eyebrow sm:text-footnote leading-none tracking-[0.18em]">
@@ -251,10 +251,13 @@ export function SculptedEmblemHero({
             "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
             "material-thin border-separator border",
             "hover:border-yellow/40 hover:bg-yellow/6",
-            "text-label-secondary hover:text-label group facet-press focus-visible:ring-yellow focus-visible:ring-2 focus-visible:outline-none"
+            "text-label-secondary hover:text-label group facet-press focus-visible:ring-tint focus-visible:ring-2 focus-visible:outline-none"
           )}
         >
-          <IconoirTrophy className="text-yellow h-3.5 w-3.5 transition-transform group-hover:scale-110 motion-reduce:group-hover:scale-100" />
+          <IconoirTrophy
+            aria-hidden="true"
+            className="text-yellow h-3.5 w-3.5 transition-transform motion-safe:group-hover:scale-110 motion-safe:group-focus-visible:scale-110"
+          />
           <span>Award-Winning Lore</span>
         </Link>
 
@@ -270,7 +273,10 @@ export function SculptedEmblemHero({
             "text-label-secondary hover:text-label group facet-press focus-visible:ring-tint focus-visible:ring-2 focus-visible:outline-none"
           )}
         >
-          <IconoirOpenBook className="text-tint h-3.5 w-3.5 transition-transform group-hover:scale-110 motion-reduce:group-hover:scale-100" />
+          <IconoirOpenBook
+            aria-hidden="true"
+            className="text-tint h-3.5 w-3.5 transition-transform motion-safe:group-hover:scale-110 motion-safe:group-focus-visible:scale-110"
+          />
           <span>Getting Started</span>
         </Link>
 
@@ -283,10 +289,13 @@ export function SculptedEmblemHero({
             "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
             "material-thin border-separator border",
             "hover:border-green/40 hover:bg-green/6",
-            "text-label-secondary hover:text-label group facet-press focus-visible:ring-green focus-visible:ring-2 focus-visible:outline-none"
+            "text-label-secondary hover:text-label group facet-press focus-visible:ring-tint focus-visible:ring-2 focus-visible:outline-none"
           )}
         >
-          <IconoirFolder className="text-green h-3.5 w-3.5 transition-transform group-hover:scale-110 motion-reduce:group-hover:scale-100" />
+          <IconoirFolder
+            aria-hidden="true"
+            className="text-green h-3.5 w-3.5 transition-transform motion-safe:group-hover:scale-110 motion-safe:group-focus-visible:scale-110"
+          />
           <span>Resources</span>
         </Link>
       </motion.div>
@@ -306,10 +315,10 @@ export function SculptedEmblemHero({
             "group text-left"
           )}
         >
-          <TextureOverlay texture="paperGrain" opacity={0.06} />
+          <TextureOverlay texture="paperGrain" opacity={0.05} />
           <div className="mb-1 flex w-full items-center justify-between">
-            <span className="text-eyebrow text-yellow flex items-center gap-2">
-              <History className="h-3.5 w-3.5" /> Timeline
+            <span className="text-eyebrow text-yellow-ink flex items-center gap-2">
+              <History aria-hidden="true" className="text-yellow h-3.5 w-3.5" /> Timeline
             </span>
             {/* Apple-grade stepper pill */}
             <div className="rounded-control-sm border-separator bg-fill-4 flex items-center gap-0.5 border px-1 py-0.5">
@@ -325,9 +334,9 @@ export function SculptedEmblemHero({
                 aria-label="Previous historical event"
                 className="text-label-secondary size-6"
               >
-                <ChevronLeft className="h-3 w-3" />
+                <ChevronLeft aria-hidden="true" className="h-3 w-3" />
               </Button>
-              <span className="text-label-secondary text-caption px-1 tabular-nums select-none">
+              <span className="text-label-secondary text-caption font-data px-1 select-none">
                 {chronicleIndex + 1}/{CANON_CHRONICLE_EVENTS.length}
               </span>
               <Button
@@ -340,7 +349,7 @@ export function SculptedEmblemHero({
                 aria-label="Next historical event"
                 className="text-label-secondary size-6"
               >
-                <ChevronRight className="h-3 w-3" />
+                <ChevronRight aria-hidden="true" className="h-3 w-3" />
               </Button>
             </div>
           </div>
@@ -360,13 +369,13 @@ export function SculptedEmblemHero({
                   href={withBasePath(`/wiki/${CANON_CHRONICLE_EVENTS[chronicleIndex].slug}`)}
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
-                  className="group/event block transition-transform active:scale-[0.98]"
+                  className="group/event rounded-control-sm focus-visible:outline-tint facet-press-subtle block outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="py-0.2 rounded-control-sm border-yellow/20 bg-yellow/10 text-caption text-yellow shrink-0 border px-2 font-semibold tabular-nums">
+                    <span className="py-0.2 rounded-control-sm border-yellow/20 bg-yellow/10 text-caption text-yellow-ink font-data shrink-0 border px-2 font-semibold">
                       {CANON_CHRONICLE_EVENTS[chronicleIndex].year}
                     </span>
-                    <span className="text-label text-caption group-hover/event:text-yellow sm:text-callout truncate leading-tight font-semibold transition-colors">
+                    <span className="text-label text-caption group-hover/event:text-yellow-ink group-focus-visible/event:text-yellow-ink sm:text-callout truncate leading-tight font-semibold transition-colors">
                       {CANON_CHRONICLE_EVENTS[chronicleIndex].title}
                     </span>
                   </div>
@@ -392,25 +401,32 @@ export function SculptedEmblemHero({
               "group facet-press facet-press-subtle cursor-pointer text-left"
             )}
           >
-            <TextureOverlay texture="paperGrain" opacity={0.06} />
+            <TextureOverlay texture="paperGrain" opacity={0.05} />
             <div className="mb-1 flex w-full items-center justify-between">
-              <span className="text-eyebrow text-tint flex items-center gap-2">
-                <MessageSquare className="h-3.5 w-3.5" /> Blurb of the Week
+              <span className="text-eyebrow text-facet-accent-ink flex items-center gap-2">
+                <MessageSquare aria-hidden="true" className="text-tint h-3.5 w-3.5" /> Blurb of the
+                Week
               </span>
               <div className="flex items-center gap-1">
                 {activePrompt._count?.responses !== undefined &&
                 activePrompt._count.responses > 0 ? (
-                  <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
-                    <span className="tabular-nums">{activePrompt._count.responses}</span>
+                  <span className="border-tint/20 bg-tint/10 text-caption text-facet-accent-ink group-hover:border-tint/30 group-hover:bg-tint/20 group-focus-visible:border-tint/30 group-focus-visible:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
+                    <span className="font-data">{activePrompt._count.responses}</span>
                     <span className="opacity-75">
                       {activePrompt._count.responses === 1 ? "response" : "responses"}
                     </span>
-                    <ArrowUpRight className="h-2.5 w-2.5 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
+                    <ArrowUpRight
+                      aria-hidden="true"
+                      className="h-2.5 w-2.5 opacity-60 transition-[opacity,translate] duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-focus-visible:translate-x-0.5 motion-safe:group-focus-visible:-translate-y-0.5"
+                    />
                   </span>
                 ) : (
-                  <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
+                  <span className="border-tint/20 bg-tint/10 text-caption text-facet-accent-ink group-hover:border-tint/30 group-hover:bg-tint/20 group-focus-visible:border-tint/30 group-focus-visible:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
                     <span>Respond now</span>
-                    <ArrowUpRight className="h-2.5 w-2.5 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
+                    <ArrowUpRight
+                      aria-hidden="true"
+                      className="h-2.5 w-2.5 opacity-60 transition-[opacity,translate] duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-focus-visible:translate-x-0.5 motion-safe:group-focus-visible:-translate-y-0.5"
+                    />
                   </span>
                 )}
               </div>
@@ -436,14 +452,18 @@ export function SculptedEmblemHero({
               "group facet-press facet-press-subtle cursor-pointer text-left"
             )}
           >
-            <TextureOverlay texture="paperGrain" opacity={0.06} />
+            <TextureOverlay texture="paperGrain" opacity={0.05} />
             <div className="mb-1 flex w-full items-center justify-between">
-              <span className="text-eyebrow text-tint flex items-center gap-2">
-                <MessageSquare className="h-3.5 w-3.5" /> Blurb of the Week
+              <span className="text-eyebrow text-facet-accent-ink flex items-center gap-2">
+                <MessageSquare aria-hidden="true" className="text-tint h-3.5 w-3.5" /> Blurb of the
+                Week
               </span>
-              <span className="border-tint/20 bg-tint/10 text-caption text-tint group-hover:border-tint/30 group-hover:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
+              <span className="border-tint/20 bg-tint/10 text-caption text-facet-accent-ink group-hover:border-tint/30 group-hover:bg-tint/20 group-focus-visible:border-tint/30 group-focus-visible:bg-tint/20 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200">
                 <span>View prompts</span>
-                <ArrowUpRight className="h-2.5 w-2.5 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
+                <ArrowUpRight
+                  aria-hidden="true"
+                  className="h-2.5 w-2.5 opacity-60 transition-[opacity,translate] duration-200 group-hover:opacity-100 group-focus-visible:opacity-100 motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-focus-visible:translate-x-0.5 motion-safe:group-focus-visible:-translate-y-0.5"
+                />
               </span>
             </div>
             <div>
@@ -473,8 +493,8 @@ export function SculptedEmblemHero({
             {/* Seamless Top Bar (No dividing line, airy editorial flow) */}
             <div className="relative z-10 mb-4 flex items-center justify-between gap-2 sm:mb-4">
               <div className="flex flex-wrap items-center gap-2">
-                <div className="border-yellow/20 bg-yellow/10 text-caption text-yellow inline-flex items-center gap-2 rounded-full border px-3 py-0.5 font-semibold">
-                  <Star className="fill-yellow text-yellow h-3.5 w-3.5" />
+                <div className="border-yellow/20 bg-yellow/10 text-caption text-yellow-ink inline-flex items-center gap-2 rounded-full border px-3 py-0.5 font-semibold">
+                  <Star aria-hidden="true" className="fill-yellow text-yellow h-3.5 w-3.5" />
                   <span>Featured Article</span>
                 </div>
                 {/* Live Author / Editorial Byline */}
@@ -494,7 +514,7 @@ export function SculptedEmblemHero({
                             className="border-separator h-3.5 w-3.5 rounded-full border object-cover"
                           />
                         ) : (
-                          <User className="text-label-secondary h-3 w-3" />
+                          <User aria-hidden="true" className="text-label-secondary h-3 w-3" />
                         )}
                         <span>
                           By <strong className="text-label font-semibold">{creatorName}</strong>
@@ -513,7 +533,7 @@ export function SculptedEmblemHero({
                   data-cuelume-hover="tick"
                   className="hover:text-label text-caption flex items-center gap-1 transition-colors"
                 >
-                  <History className="h-3 w-3" />
+                  <History aria-hidden="true" className="h-3 w-3" />
                   <span>Archive</span>
                 </Link>
                 <span className="text-label-secondary select-none">·</span>
@@ -521,9 +541,9 @@ export function SculptedEmblemHero({
                   href={withBasePath("/wiki/IxWiki:Featured_article_candidates")}
                   data-cuelume-press="page"
                   data-cuelume-hover="tick"
-                  className="text-caption hover:text-yellow flex items-center gap-1 transition-colors"
+                  className="text-caption hover:text-yellow-ink focus-visible:text-yellow-ink flex items-center gap-1 transition-colors"
                 >
-                  <Lightbulb className="h-3 w-3" />
+                  <Lightbulb aria-hidden="true" className="h-3 w-3" />
                   <span>Suggest</span>
                 </Link>
               </div>
@@ -545,9 +565,9 @@ export function SculptedEmblemHero({
                       href={withBasePath(`/wiki/${featuredArticleData.slug}`)}
                       data-cuelume-press="page"
                       data-cuelume-hover="tick"
-                      className="group/title rounded-control-sm focus-visible:ring-yellow block focus-visible:ring-2 focus-visible:outline-none"
+                      className="group/title rounded-control-sm focus-visible:ring-tint block focus-visible:ring-2 focus-visible:outline-none"
                     >
-                      <h3 className="text-label text-title-3 group-hover/title:text-yellow sm:text-title-2 lg:text-title-1 transition-colors">
+                      <h3 className="text-label text-title-3 group-hover/title:text-yellow-ink group-focus-visible/title:text-yellow-ink sm:text-title-2 lg:text-title-1 transition-colors">
                         {featuredArticleData.title}
                       </h3>
                     </Link>
@@ -560,10 +580,13 @@ export function SculptedEmblemHero({
                       href={withBasePath(`/wiki/${featuredArticleData.slug}`)}
                       data-cuelume-press="droplet"
                       data-cuelume-hover="tick"
-                      className="text-label group/cta text-caption hover:text-yellow inline-flex items-center gap-2 font-semibold transition-colors"
+                      className="text-label group/cta text-caption hover:text-yellow-ink focus-visible:text-yellow-ink inline-flex items-center gap-2 font-semibold transition-colors"
                     >
                       <span>Read full article</span>
-                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/cta:translate-x-1" />
+                      <ArrowRight
+                        aria-hidden="true"
+                        className="h-3.5 w-3.5 transition-transform motion-safe:group-hover/cta:translate-x-1 motion-safe:group-focus-visible/cta:translate-x-1"
+                      />
                     </Link>
                   </div>
                 </div>

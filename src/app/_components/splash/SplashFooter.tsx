@@ -20,7 +20,7 @@ export function SplashFooter() {
         <div className="flex flex-col items-center gap-2 text-center md:items-start md:text-left">
           <div className="flex items-center gap-2">
             <span className="text-headline text-label">IxStates</span>
-            <span className="rounded-control-sm border-separator bg-fill-4 text-footnote text-tint border px-2 py-0.5 font-mono">
+            <span className="rounded-control-sm border-separator bg-fill-4 text-footnote text-facet-accent-ink font-data border px-2 py-0.5">
               {versionString}
             </span>
           </div>

@@ -78,7 +78,7 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
         <button
           type="button"
           onClick={() => setEarthClock((e) => !e)}
-          className="text-label rounded-control hover:text-tint focus-visible:ring-tint/40 flex max-w-[min(92vw,36rem)] flex-col items-center gap-0.5 px-2 py-1 text-center transition-colors focus-visible:ring-2 focus-visible:outline sm:items-start sm:text-left"
+          className="text-label rounded-control hover:text-facet-accent-ink focus-visible:outline-tint flex max-w-[min(92vw,36rem)] flex-col items-center gap-0.5 px-2 py-1 text-center transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 sm:items-start sm:text-left"
           aria-label={
             earthClock
               ? "Showing Earth time. Switch to IxTime."
@@ -166,23 +166,24 @@ export function SplashHero({ globalStats }: SplashHeroProps) {
       )}
 
       <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
-        <Link href="/countries">
-          <Button size="lg" variant="outline" className="border-tint/40 hover:bg-tint-fill">
+        {/* One focus stop per action: the link is the button (no <button> inside <a>). */}
+        <Button asChild size="lg" variant="outline" className="border-tint/40 hover:bg-tint-fill">
+          <Link href="/countries">
             Explore nations
             <motion.span className="ml-2 inline-block">
-              <ArrowRight className="h-5 w-5" />
+              <ArrowRight aria-hidden="true" className="h-5 w-5" />
             </motion.span>
-          </Button>
-        </Link>
-        <Link href="/builder">
-          {/* The gold primary (data-app="mycountry") with the v2 gold glow. */}
-          <Button size="lg" className="facet-glow">
+          </Link>
+        </Button>
+        {/* The gold primary (data-app="mycountry") with the v2 gold glow. */}
+        <Button asChild size="lg" className="facet-glow">
+          <Link href="/builder">
             <motion.span className="mr-2 inline-block">
-              <Hammer className="h-5 w-5" />
+              <Hammer aria-hidden="true" className="h-5 w-5" />
             </motion.span>
             Launch MyCountry Builder
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
       <p className="text-label-secondary text-footnote md:text-body mx-auto mt-4 max-w-md leading-relaxed">
         The builder remembers you after sign-in. Preview it anytime.

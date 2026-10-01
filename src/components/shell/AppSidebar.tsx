@@ -239,7 +239,9 @@ export function AppSidebar({
           <AppSwitcher apps={switcherApps} current={current} collapsed={collapsed} />
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
+        {/* `pt-1`: room for the first row's 2px-offset focus ring inside the scroll clip (the
+            heading above it is screen-reader-only when collapsed). */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-2 pt-1 pb-2">
           {current && sections.length > 0 && (
             <>
               <h2 className="text-subhead text-label-secondary sidebar-collapsed:sr-only px-2.5 pt-2 pb-1">

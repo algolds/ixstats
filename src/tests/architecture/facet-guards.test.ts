@@ -209,9 +209,7 @@ const INLINE_BACKDROP_FILES = [
  * next pass.
  */
 const TEXTURE_ATTR = /\btexture=(?:"(\w+)"|\{"(\w+)"\})/g;
-const UNSANCTIONED_TEXTURE_ALLOWED = new Set([
-  `${path.join("app", "(wiki-os)", "util", "categories", "_components", "DomainCategoriesGrid.tsx")}: halftone`,
-]);
+const UNSANCTIONED_TEXTURE_ALLOWED = new Set<string>([]);
 
 describe("Facet anti-slop guards", () => {
   it("never nests block elements (Skeleton renders a div) inside <p> — a hydration error", () => {

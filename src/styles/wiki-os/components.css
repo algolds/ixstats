@@ -1477,6 +1477,31 @@
       color-mix(in srgb, var(--color-surface) 20%, transparent) 100%
     );
   }
+  /* Dark: the light end of the scrim held at 55% — a white region of the artwork under `lighten`
+     (.32 on hover) otherwise takes `label-secondary` under 4.5:1 where the title and summary sit
+     (spec §16.8: labels on the glass hero stay AA in both appearances). */
+  :root[data-theme="dark"] .wikios-hero-lens-scrim {
+    background-image: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--color-surface) 92%, transparent) 0%,
+      color-mix(in srgb, var(--color-surface) 75%, transparent) 50%,
+      color-mix(in srgb, var(--color-surface) 55%, transparent) 100%
+    );
+  }
+
+  /* Image veil (Harmonic Under-Glow card, the article hero's floating title card): glass over
+     arbitrary artwork is not glass over the page. A surface veil under the text keeps
+     `label` / `label-secondary` ≥ 4.5:1 over a black (light) or white (dark) region of the
+     image at its brightest (hover) — 30% light, 65% dark on top of the material-hero fill — while
+     the halo still glows at the rim and through the frost. Opaque card under Reduce Transparency /
+     Increase Contrast, so the veil goes with the artwork. */
+  .wikios-hero-veil {
+    background-color: color-mix(in srgb, var(--color-surface) 30%, transparent);
+  }
+  :root[data-theme="dark"] .wikios-hero-veil {
+    background-color: color-mix(in srgb, var(--color-surface) 65%, transparent);
+  }
+
   .wikios-hero-lens-chamfer {
     box-shadow:
       inset 0 1.5px 2px rgb(255 255 255 / 0.85),
@@ -1492,19 +1517,21 @@
   @media (prefers-reduced-transparency: reduce) {
     .wikios-hero-underglow,
     .wikios-hero-lens-art,
-    .wikios-hero-lens-scrim {
+    .wikios-hero-lens-scrim,
+    .wikios-hero-veil {
       display: none;
     }
   }
   @media (prefers-contrast: more) {
     .wikios-hero-underglow,
     .wikios-hero-lens-art,
-    .wikios-hero-lens-scrim {
+    .wikios-hero-lens-scrim,
+    .wikios-hero-veil {
       display: none;
     }
   }
   :where([data-transparency="reduced"], [data-contrast="more"])
-    :is(.wikios-hero-underglow, .wikios-hero-lens-art, .wikios-hero-lens-scrim) {
+    :is(.wikios-hero-underglow, .wikios-hero-lens-art, .wikios-hero-lens-scrim, .wikios-hero-veil) {
     display: none;
   }
   @media (prefers-reduced-motion: reduce) {

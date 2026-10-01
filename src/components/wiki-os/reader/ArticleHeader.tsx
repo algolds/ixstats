@@ -20,6 +20,7 @@ import type { FlagColors } from "~/lib/flags/flag-color-extractor";
 import { EditorialMastheadHeader } from "./headers/EditorialMastheadHeader";
 import { WatchButton } from "./WatchButton";
 import { Refraction } from "~/components/ui/facet";
+import { focusRing } from "~/components/ui/button";
 
 export type ArticleThemeColors =
   | FlagColors
@@ -156,42 +157,42 @@ export function WikiOSHeader({
         return {
           Icon: Trophy,
           text: "Loreward Winner",
-          classes: "border-yellow/20 bg-yellow/10 text-yellow hover:bg-yellow/20",
+          classes: "border-yellow/20 bg-yellow/10 text-yellow-ink hover:bg-yellow/20",
           iconColor: "text-yellow",
         };
       case "FEATURED":
         return {
           Icon: Star,
           text: "Featured Article",
-          classes: "border-yellow/20 bg-yellow/10 text-yellow hover:bg-yellow/20",
+          classes: "border-yellow/20 bg-yellow/10 text-yellow-ink hover:bg-yellow/20",
           iconColor: "text-yellow",
         };
       case "COLLABORATION":
         return {
           Icon: Users,
           text: "Collaborative Work",
-          classes: "border-green/20 bg-green/10 text-green hover:bg-green/20",
+          classes: "border-green/20 bg-green/10 text-green-ink hover:bg-green/20",
           iconColor: "text-green",
         };
       case "PEER_REVIEW":
         return {
           Icon: CheckCircle2,
           text: "Peer Reviewed",
-          classes: "border-tint/20 bg-tint/10 text-tint hover:bg-tint/20",
+          classes: "border-tint/20 bg-tint/10 text-facet-accent-ink hover:bg-tint/20",
           iconColor: "text-blue",
         };
       case "EDITOR_MILESTONE":
         return {
           Icon: Sparkles,
           text: "Editor Milestone",
-          classes: "border-indigo/20 bg-indigo/10 text-indigo hover:bg-indigo/20",
+          classes: "border-indigo/20 bg-indigo/10 text-indigo-ink hover:bg-indigo/20",
           iconColor: "text-indigo",
         };
       default:
         return {
           Icon: Trophy,
           text: "Wiki Award",
-          classes: "border-yellow/20 bg-yellow/10 text-yellow hover:bg-yellow/20",
+          classes: "border-yellow/20 bg-yellow/10 text-yellow-ink hover:bg-yellow/20",
           iconColor: "text-yellow",
         };
     }
@@ -322,6 +323,11 @@ export function WikiOSHeader({
       {/* Floating glass title card (v2 HUD box, Facet 3.1 glass hero tier) */}
       <div className="relative z-10 m-3 max-w-xl self-start sm:m-4">
         <div className="material-hero text-label relative isolate space-y-2 overflow-hidden rounded-2xl p-4 text-left sm:p-5">
+          {/* Glass over the artwork: the veil keeps the labels ≥ 4.5:1 over any image (§16.8). */}
+          <div
+            aria-hidden="true"
+            className="wikios-hero-veil pointer-events-none absolute inset-0 -z-10 rounded-[inherit]"
+          />
           <Refraction />
           {/* Breadcrumb Path */}
           <div className="text-label-secondary text-eyebrow flex items-center gap-1">
@@ -339,7 +345,8 @@ export function WikiOSHeader({
                 <PopoverTrigger asChild>
                   <button
                     className={cn(
-                      "group text-caption duration-fast relative flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 transition-[background-color,border-color,transform] active:scale-[0.98]",
+                      "group text-caption duration-fast facet-press relative flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 transition-[background-color,border-color]",
+                      focusRing,
                       badgeConfig.classes,
                       showCelebration &&
                         primaryAward.category === "LOREWARD" &&
@@ -356,10 +363,13 @@ export function WikiOSHeader({
                         ))}
                       </div>
                     )}
-                    <badgeConfig.Icon className={cn("size-3.5 shrink-0", badgeConfig.iconColor)} />
+                    <badgeConfig.Icon
+                      aria-hidden="true"
+                      className={cn("size-3.5 shrink-0", badgeConfig.iconColor)}
+                    />
 
                     {awardsData.awards.length > 1 && (
-                      <span className="text-caption leading-none font-semibold tabular-nums opacity-80">
+                      <span className="text-caption font-data leading-none font-semibold">
                         +{awardsData.awards.length - 1}
                       </span>
                     )}
@@ -402,7 +412,10 @@ export function WikiOSHeader({
                           key={award.id || idx}
                           className="border-separator flex items-start gap-2 border-b pb-2 last:border-0 last:pb-0"
                         >
-                          <AwardIcon className={`mt-0.5 h-4 w-4 shrink-0 ${iconColor}`} />
+                          <AwardIcon
+                            aria-hidden="true"
+                            className={`mt-0.5 h-4 w-4 shrink-0 ${iconColor}`}
+                          />
                           <div className="flex flex-col text-left">
                             <span className="text-label text-caption font-semibold">
                               {award.name}

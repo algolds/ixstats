@@ -329,8 +329,8 @@ export const DynamicIslandContent = ({
           transition={springSnappy}
         >
           {/* v2 red → orange alert glow, on the system colours. */}
-          <div className="bg-destructive/35 absolute inset-0 rounded-[inherit] blur-xl" />
-          <div className="bg-orange/25 absolute inset-0 rounded-[inherit] blur-lg" />
+          <div className="bg-destructive/35 transparency-reduced:hidden absolute inset-0 rounded-[inherit] blur-xl contrast-more:hidden" />
+          <div className="bg-orange/25 transparency-reduced:hidden absolute inset-0 rounded-[inherit] blur-lg contrast-more:hidden" />
         </motion.div>
       )}
 

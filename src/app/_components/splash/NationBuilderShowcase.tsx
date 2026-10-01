@@ -84,12 +84,12 @@ export function NationBuilderShowcase() {
               </div>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2 md:flex-col md:items-end">
-              <Link href="/builder">
-                <Button className="w-full md:w-auto">
+              <Button asChild className="w-full md:w-auto">
+                <Link href="/builder">
                   Launch MyCountry Builder
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
+                  <ArrowRight aria-hidden="true" className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
             </div>
           </div>
 

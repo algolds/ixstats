@@ -110,11 +110,13 @@ export function SystemStatusStrip({ className }: { className?: string }) {
       </span>
       <span className="flex items-center gap-2">
         <span className="text-label-secondary">Countries</span>
-        <span className="text-label font-medium">{s.systemStatus?.countryCount ?? 0}</span>
+        <span className="text-label font-data font-medium">
+          {s.systemStatus?.countryCount ?? 0}
+        </span>
       </span>
       <span className="flex items-center gap-2">
         <span className="text-label-secondary">Storyteller events</span>
-        <span className="text-label font-medium">
+        <span className="text-label font-data font-medium">
           {s.systemStatus?.activeStorytellerEffects ?? 0}
         </span>
       </span>
@@ -168,7 +170,7 @@ export function SystemStatusWidget() {
         variant="ghost"
         onClick={toggleCollapsed}
         aria-expanded={!isCollapsed}
-        className="bg-tint-fill hover:bg-tint/15 relative h-auto w-full justify-between rounded-none px-4 pt-3 pb-5 text-left active:scale-100"
+        className="bg-tint-fill hover:bg-tint/15 relative h-auto w-full justify-between rounded-none px-4 pt-3 pb-5 text-left focus-visible:-outline-offset-2 active:scale-100"
       >
         <CutoutCorner className="text-surface absolute -bottom-px left-0" size={16} />
         <CutoutCorner className="text-surface absolute right-0 -bottom-px -scale-x-100" size={16} />

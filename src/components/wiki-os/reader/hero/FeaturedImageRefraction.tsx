@@ -82,9 +82,10 @@ const UNDERGLOW_MASK: React.CSSProperties = {
  * Facet 3.1 (spec §16.1 #6 "wiki reader hero modes") on the glass hero tier:
  *
  * - `ambient-underglow` (Harmonic Under-Glow): a blurred, saturated copy of the lead image glows
- *   out behind the glass card as a concentric halo (outer radius = inner + inset).
+ *   out behind the glass card as a concentric halo (outer radius = inner + inset), under a surface
+ *   veil inside the card that keeps the labels ≥ 4.5:1 over any artwork in both appearances.
  * - `facet-lens` (Facet Crystal Lens): the lead image tints the card from inside, under a surface
- *   scrim that keeps the text at full contrast, with the chamfered double rim.
+ *   scrim that keeps the text ≥ 4.5:1 (held stronger in dark), with the chamfered double rim.
  *
  * Both sit under the v2 paper grain. Pointer tilt / sheen stay retired (spec §16.1 #4); the
  * artwork brightens on hover / focus-within only. Reduce Transparency and Increase Contrast drop
@@ -115,6 +116,14 @@ export function FeaturedArticleRefractionCard({
         variant="glass"
         className={cn("overflow-hidden rounded-2xl p-4 sm:rounded-3xl sm:p-5 lg:p-6", className)}
       >
+        {/* The halo shows through the frost; the veil keeps the labels AA over it (spec §16.8). */}
+        {mode === "ambient-underglow" && imgSrc && (
+          <div
+            aria-hidden="true"
+            className="wikios-hero-veil pointer-events-none absolute inset-0 -z-10 rounded-[inherit]"
+          />
+        )}
+
         {mode === "facet-lens" && (
           <>
             {imgSrc && (
@@ -173,7 +182,7 @@ export function FeaturedThumbnailFrame({
         src={imgSrc}
         alt={title}
         loading="lazy"
-        className="ease-out-facet h-full w-full object-cover transition-transform duration-300 group-hover/img:scale-105 motion-reduce:transition-none motion-reduce:group-hover/img:scale-100"
+        className="ease-out-facet h-full w-full object-cover transition-transform duration-300 motion-safe:group-hover/img:scale-105 motion-safe:group-focus-visible/img:scale-105 motion-reduce:transition-none"
       />
       {/* v2 bottom scrim: grounds the artwork against the card. */}
       <div

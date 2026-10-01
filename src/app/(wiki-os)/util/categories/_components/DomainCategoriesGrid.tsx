@@ -33,14 +33,12 @@ export function DomainCategoriesGrid({ domains, searchQuery }: DomainCategoriesG
                 href={withBasePath(`/wiki/categories/${encodeURIComponent(domain.name)}`)}
                 className={cn(
                   "group rounded-card relative flex min-h-[160px] flex-col justify-between overflow-hidden p-4 sm:p-5",
-                  "border-separator border",
-                  "bg-surface",
-                  "",
+                  "border-separator bg-surface border",
                   "hover:border-separator hover:bg-surface hover:shadow-floating",
-                  "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]"
+                  "facet-press focus-visible:outline-tint outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
                 )}
               >
-                <TextureOverlay texture="halftone" opacity={0.03} />
+                <TextureOverlay texture="dots" opacity={0.03} />
 
                 {/* Header with Icon + Arrow */}
                 <div className="flex w-full items-start justify-between">
@@ -52,18 +50,21 @@ export function DomainCategoriesGrid({ domains, searchQuery }: DomainCategoriesG
                         color: domain.color,
                       }}
                     >
-                      <Icon className="h-5 w-5 transition-transform duration-200" />
+                      <Icon aria-hidden="true" className="h-5 w-5" />
                     </div>
                     <div>
-                      <h2 className="text-label text-title-3 group-hover:text-tint transition-colors">
+                      <h2 className="text-label text-title-3 group-hover:text-tint group-focus-visible:text-tint transition-colors">
                         {domain.name}
                       </h2>
                       <div className="text-label-secondary text-caption">{domain.metric}</div>
                     </div>
                   </div>
 
-                  <div className="bg-fill-3 text-label-secondary group-hover:text-label group-hover:bg-tint/10 rounded-full p-2 transition-colors">
-                    <ArrowRight className="h-3.5 w-3.5 -rotate-45 transition-transform duration-200 group-hover:rotate-0" />
+                  <div className="bg-fill-3 text-label-secondary group-hover:text-label group-hover:bg-tint/10 group-focus-visible:text-label group-focus-visible:bg-tint/10 rounded-full p-2 transition-colors">
+                    <ArrowRight
+                      aria-hidden="true"
+                      className="h-3.5 w-3.5 -rotate-45 transition-[rotate] duration-200 group-hover:rotate-0 group-focus-visible:rotate-0 motion-reduce:transition-none"
+                    />
                   </div>
                 </div>
 
@@ -75,7 +76,7 @@ export function DomainCategoriesGrid({ domains, searchQuery }: DomainCategoriesG
                 {/* Footer Badge */}
                 <div className="border-separator text-caption text-tint mt-4 flex items-center justify-between border-t pt-3 font-semibold">
                   <span>Open {domain.name} Portal</span>
-                  <span className="text-label-secondary group-hover:text-label transition-colors">
+                  <span className="text-label-secondary group-hover:text-label group-focus-visible:text-label transition-colors">
                     Category:{domain.name} →
                   </span>
                 </div>

@@ -54,7 +54,7 @@ export default function WhatLinksHereHubPage() {
           className="material-hero text-label relative isolate overflow-hidden rounded-3xl p-6 sm:p-8"
         >
           <Refraction />
-          <TextureOverlay texture="paperGrain" opacity={0.06} />
+          <TextureOverlay texture="paperGrain" opacity={0.05} />
 
           <div className="relative z-10 space-y-4">
             <div className="flex items-center gap-2">

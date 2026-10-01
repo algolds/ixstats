@@ -106,8 +106,13 @@ export function WikiOSArticleToolbarWidget({
   return (
     // v2 (c5c6b382): a CutoutCard with the tinted cutout tab header.
     <CutoutCard variant="card" trackPointerHover={false} className="w-48 rounded-xl">
-      <CutoutCardHeader icon={<FileEdit />} cornerSize={16} className="px-3 pt-2 pb-4">
-        Page Tools
+      <CutoutCardHeader
+        as="h2"
+        icon={<FileEdit aria-hidden="true" />}
+        cornerSize={16}
+        className="px-3 pt-2 pb-4"
+      >
+        Page tools
       </CutoutCardHeader>
 
       <div className="space-y-0.5 p-2">

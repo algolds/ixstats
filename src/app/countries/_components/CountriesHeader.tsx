@@ -67,7 +67,7 @@ export const CountriesHeader: React.FC<CountriesHeaderProps> = ({
               title="Explore a random country"
             >
               <Dices aria-hidden="true" />
-              Feeling Lucky
+              Feeling lucky
             </Button>
           )}
         </div>

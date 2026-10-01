@@ -398,12 +398,17 @@ export function SplashFold() {
                 Patch notes, feature chat, and other players building the world alongside your
                 MyCountry arc.
               </p>
-              <a href="https://discord.gg/mgXAEYdqkd" target="_blank" rel="noopener noreferrer">
-                <Button size="lg" variant="outline" className="border-tint/40 hover:bg-tint-fill">
-                  <MessageCircle className="mr-2 h-5 w-5" />
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="border-tint/40 hover:bg-tint-fill"
+              >
+                <a href="https://discord.gg/mgXAEYdqkd" target="_blank" rel="noopener noreferrer">
+                  <MessageCircle aria-hidden="true" className="mr-2 h-5 w-5" />
                   Discord
-                </Button>
-              </a>
+                </a>
+              </Button>
             </div>
 
             <div

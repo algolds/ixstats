@@ -113,7 +113,10 @@ export function MapDynamicIsland({
   const debouncedQueryLength = query.trim().length;
 
   // Island controls: plain icon buttons on the material (no nested surfaces).
-  const iconButton = "text-label-secondary hover:text-label rounded-full";
+  // The focus ring sits just inside the button: the acrylic pill clips its glow (`overflow-hidden`,
+  // 4px of padding), so the shared 2px-offset ring would be cut at the pill's edge (spec §16.8).
+  const iconButton =
+    "text-label-secondary hover:text-label rounded-full focus-visible:-outline-offset-2";
 
   const unreadButton = user && totalUnread > 0 && (
     <Button
@@ -187,7 +190,7 @@ export function MapDynamicIsland({
         onClick={closeSearch}
         className={iconButton}
       >
-        <X className="size-3.5" />
+        <X aria-hidden className="size-3.5" />
       </Button>
     </>
   );
@@ -211,7 +214,7 @@ export function MapDynamicIsland({
         aria-label="Search the map"
         className={iconButton}
       >
-        <Search className="size-3.5" />
+        <Search aria-hidden className="size-3.5" />
       </Button>
 
       <Button
@@ -219,11 +222,11 @@ export function MapDynamicIsland({
         variant="ghost"
         size="icon-sm"
         onClick={onOpenWelcome}
-        title="Help & Tour"
+        title="Help and tour"
         aria-label="Help and tour"
         className={iconButton}
       >
-        <HelpCircle className="size-3.5" />
+        <HelpCircle aria-hidden className="size-3.5" />
       </Button>
 
       {unreadButton}

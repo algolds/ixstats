@@ -2,6 +2,7 @@
 // src/app/countries/_components/CountryListCard.tsx
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Group as Users,
@@ -11,7 +12,6 @@ import {
   Expand as Scaling,
   Pin as LocateFixed,
   WhiteFlag as FlagIcon,
-  OpenNewWindow as ExternalLink,
   OpenBook as BookOpen,
 } from "iconoir-react";
 import { formatPopulation, formatCurrency } from "~/lib/utils";
@@ -96,35 +96,29 @@ export function CountryListCard({
 
   const wikiUrl = `/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`;
 
-  const goToDetail = () => {
-    router.push(createUrl(`/countries/${country.slug}`));
-  };
+  const detailHref = `/countries/${country.slug}`;
 
   return (
+    // A pressable card holds no other control (spec §16.8), so the card is a stretched link on the
+    // name (its ::after covers the card) and the IxWiki button sits above it; the card draws the
+    // focus ring when the link has keyboard focus.
     <FacetCard
       depth={2}
+      interactive="hover"
       className={cn(
-        "group hover:border-label-tertiary rounded-card isolate flex h-full flex-col overflow-hidden",
+        "group hover:border-label-tertiary rounded-card relative isolate flex h-full flex-col overflow-hidden",
+        "has-[a[data-card-link]:focus-visible]:outline-tint has-[a[data-card-link]:focus-visible]:outline-2 has-[a[data-card-link]:focus-visible]:outline-offset-2",
         dominantColor && "border-l-2"
       )}
       // The flag's dominant colour is data, not decoration: a thin identity edge.
       style={dominantColor ? { borderLeftColor: dominantColor } : undefined}
-      onClick={goToDetail}
-      onKeyDown={(e) => {
-        if (e.target !== e.currentTarget) return;
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          goToDetail();
-        }
-      }}
-      aria-label={`Open ${country.name}`}
     >
       {/* v2 (c5c6b382): the flag as a soft blurred accent along the card's top edge, fading out
           toward the content. Decorative only. */}
       {flagUrl && (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-16 bg-cover bg-center opacity-30 blur-[8px] saturate-110 transition-opacity duration-200 group-hover:opacity-40 print:hidden"
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-16 bg-cover bg-center opacity-30 blur-[8px] saturate-110 transition-opacity duration-200 group-focus-within:opacity-40 group-hover:opacity-40 print:hidden"
           style={{
             backgroundImage: `url(${flagUrl})`,
             maskImage: "linear-gradient(to bottom, black, transparent)",
@@ -152,7 +146,13 @@ export function CountryListCard({
             </div>
             <div className="min-w-0">
               <h3 className="text-label text-headline truncate" title={country.name}>
-                {country.name}
+                <Link
+                  href={detailHref}
+                  data-card-link=""
+                  className="outline-none after:absolute after:inset-0 after:content-['']"
+                >
+                  {country.name}
+                </Link>
               </h3>
               {(country.continent || country.region) && (
                 <div className="text-label-secondary text-footnote mt-0.5 flex items-center truncate">
@@ -178,13 +178,13 @@ export function CountryListCard({
                 router.push(createUrl(wikiUrl));
               }}
               aria-label={`View ${country.name} on IxWiki`}
-              className="h-7 w-7"
+              className="relative z-10 h-7 w-7"
             >
               <BookOpen aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
             </Button>
             <ArrowRight
               aria-hidden="true"
-              className="text-label-secondary group-hover:text-label h-4 w-4 transition-[color,transform] duration-150 group-hover:translate-x-0.5"
+              className="text-label-secondary group-hover:text-label group-focus-within:text-label h-4 w-4 transition-[color,translate] duration-150 motion-safe:group-focus-within:translate-x-0.5 motion-safe:group-hover:translate-x-0.5"
             />
           </div>
         </div>

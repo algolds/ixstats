@@ -52,6 +52,13 @@ export interface TabBarProps {
 const tabClassName =
   "relative flex h-full min-h-11 w-full flex-col items-center justify-center gap-0.5 rounded-row px-1 text-caption transition-colors duration-fast ease-out-facet";
 
+/**
+ * The tab focus ring, drawn just inside the tab (around the current-tab indicator): the acrylic
+ * panel clips its glow (`overflow-hidden`) and the tabs fill its height, so the shared 2px-offset
+ * outline would be cut off at the top and bottom (spec §16.8: focus stays visible on acrylic).
+ */
+const tabFocusRing = cn(focusRing, "focus-visible:-outline-offset-2");
+
 function TabIndicator() {
   return (
     <motion.span
@@ -110,7 +117,7 @@ export function TabBar({ pathname, searchParams, apps, className }: TabBarProps)
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       tabClassName,
-                      focusRing,
+                      tabFocusRing,
                       active ? "text-tint font-medium" : "text-label-secondary hover:text-label"
                     )}
                   >
@@ -129,7 +136,7 @@ export function TabBar({ pathname, searchParams, apps, className }: TabBarProps)
                 data-current={!currentIsPrimary && current ? "" : undefined}
                 className={cn(
                   tabClassName,
-                  focusRing,
+                  tabFocusRing,
                   "cursor-pointer",
                   !currentIsPrimary && current
                     ? "text-tint font-medium"

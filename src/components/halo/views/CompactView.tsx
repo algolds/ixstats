@@ -218,7 +218,7 @@ function CompactViewComponent({
                       }
                     }
                   }}
-                  className={`rounded-control-sm hover:bg-fill-2 flex min-w-0 flex-1 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
+                  className={`rounded-control-sm hover:bg-fill-2 focus-visible:outline-tint flex min-w-0 flex-1 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 ${
                     activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
                   }`}
                   title={`Open ${activePlugin.id} mode`}
@@ -284,7 +284,7 @@ function CompactViewComponent({
                               }
                             }
                           }}
-                          className="rounded-control-sm hover:bg-fill-2 flex max-w-[160px] min-w-0 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 sm:max-w-[200px]"
+                          className="rounded-control-sm hover:bg-fill-2 focus-visible:outline-tint flex max-w-[160px] min-w-0 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 sm:max-w-[200px]"
                           title={`Open ${activePlugin.id} mode`}
                         >
                           {pluginCenter}
@@ -296,8 +296,9 @@ function CompactViewComponent({
                       )
                     ) : (
                       <button
+                        type="button"
                         onClick={() => onSwitchMode("mycountry")}
-                        className="text-label hover:bg-fill-4 hover:text-label rounded-control-sm text-caption flex cursor-pointer items-center gap-2 px-2 py-0.5 transition-colors"
+                        className="text-label hover:bg-fill-4 hover:text-label rounded-control-sm text-caption focus-visible:outline-tint flex cursor-pointer items-center gap-2 px-2 py-0.5 transition-colors outline-none focus-visible:outline-2 focus-visible:-outline-offset-2"
                       >
                         {user?.imageUrl ? (
                           <img
@@ -306,8 +307,14 @@ function CompactViewComponent({
                             className="ring-separator h-4 w-4 rounded-full object-cover ring-1"
                           />
                         ) : (
-                          <span className="text-label-secondary text-footnote h-3 w-3">👤</span>
+                          <span
+                            aria-hidden="true"
+                            className="text-label-secondary text-footnote h-3 w-3"
+                          >
+                            👤
+                          </span>
                         )}
+                        <span className="sr-only sm:hidden">Open MyCountry</span>
                         <PreText className="hidden text-inherit sm:inline" whiteSpace="nowrap">
                           {`${currentTime.greeting}${user?.firstName ? `, ${user.firstName}` : ""}`}
                         </PreText>
@@ -330,7 +337,7 @@ function CompactViewComponent({
                         soundEffects.scan();
                         onSwitchMode("search");
                       }}
-                      className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                      className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-visible:-outline-offset-2 ${
                         isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                       }`}
                     >
@@ -352,7 +359,7 @@ function CompactViewComponent({
                           soundEffects.bloom();
                           onSwitchMode("notifications");
                         }}
-                        className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control relative flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                        className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control relative flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-visible:-outline-offset-2 ${
                           isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                         }`}
                       >
@@ -402,7 +409,7 @@ function CompactViewComponent({
                         soundEffects.bloom();
                         onSwitchMode("settings");
                       }}
-                      className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                      className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-visible:-outline-offset-2 ${
                         isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                       }`}
                     >
@@ -424,7 +431,7 @@ function CompactViewComponent({
                           size="sm"
                           variant="ghost"
                           onClick={action.onClick}
-                          className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control relative flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                          className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control relative flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-visible:-outline-offset-2 ${
                             isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
                           }`}
                         >

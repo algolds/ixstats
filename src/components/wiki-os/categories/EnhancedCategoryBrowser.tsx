@@ -58,7 +58,7 @@ export function EnhancedCategoryBrowser({
         className="material-hero text-label relative isolate overflow-hidden rounded-3xl p-6 sm:p-8"
       >
         <Refraction />
-        <TextureOverlay texture="paperGrain" opacity={0.06} />
+        <TextureOverlay texture="paperGrain" opacity={0.05} />
 
         <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
           <div className="max-w-2xl space-y-2">

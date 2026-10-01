@@ -17,6 +17,7 @@ import { stripBasePath } from "~/lib/base-path";
 import { PreText } from "~/components/ui/pretext";
 import { springSmooth, tweenExit } from "~/lib/design/motion";
 import { FacetMaterial } from "~/components/ui/facet";
+import { focusRing } from "~/components/ui/button";
 
 // ─── Section color mapping (system colour roles, spec §2.1) ─────────────────────
 export const SECTION_COLORS: Record<string, { accent: string; bg: string; label: string }> = {
@@ -142,7 +143,7 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
                       href={item.href}
                       onClick={onClose}
                       aria-current={active ? "page" : undefined}
-                      className={`group rounded-row flex items-center gap-2 px-3 py-2 transition-[color,background-color,box-shadow] duration-200 ${
+                      className={`group rounded-row flex items-center gap-2 px-3 py-2 transition-[color,background-color,box-shadow] duration-200 ${focusRing} ${
                         active
                           ? "bg-fill-3 text-label shadow-card"
                           : "text-label-secondary hover:bg-fill-4 hover:text-label"
@@ -164,7 +165,7 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
                           className="flex items-center justify-center"
                           style={active ? { color: item.accent } : undefined}
                         >
-                          <Icon className="size-4 transition-[scale] duration-200 motion-safe:group-hover:scale-110" />
+                          <Icon className="size-4 transition-[scale] duration-200 motion-safe:group-hover:scale-110 motion-safe:group-focus-visible:scale-110" />
                         </div>
                       </div>
                       <PreText className="text-caption font-medium" whiteSpace="nowrap">
@@ -193,7 +194,7 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
                     href={item.href}
                     onClick={onClose}
                     aria-current={isActive(item.href) ? "page" : undefined}
-                    className={`text-caption rounded-control-sm px-2 py-1 transition-colors ${
+                    className={`text-caption rounded-control-sm px-2 py-1 transition-colors ${focusRing} ${
                       isActive(item.href)
                         ? "bg-fill-3 text-label"
                         : "text-label-secondary hover:bg-fill-4 hover:text-label"

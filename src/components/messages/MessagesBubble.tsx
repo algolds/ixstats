@@ -333,12 +333,13 @@ export const MessagesBubble = React.memo(function MessagesBubble({
                 <button
                   key={emoji}
                   type="button"
-                  className="border-separator bg-surface-elevated text-caption text-label shadow-card flex items-center gap-1 rounded-full border px-2 transition-[scale] hover:scale-105 active:scale-[0.98]"
+                  className="border-separator bg-surface-elevated text-caption text-label shadow-card facet-press-sm flex items-center gap-1 rounded-full border px-2 motion-safe:hover:scale-105"
                   onClick={() => actions.onRemoveReaction(message.id, emoji)}
                   title="Remove reaction"
+                  aria-label={`Remove ${emoji} reaction (${count as number})`}
                 >
                   <span>{emoji}</span>
-                  <span className="text-label-secondary tabular-nums">{count as number}</span>
+                  <span className="text-label-secondary font-data">{count as number}</span>
                 </button>
               ))}
             </div>
@@ -348,7 +349,10 @@ export const MessagesBubble = React.memo(function MessagesBubble({
           {!isEditing && (
             <div
               className={cn(
-                "material-thick shadow-floating absolute -top-4 z-20 hidden items-center gap-0.5 rounded-full px-1 py-0.5 group-hover/bubble:flex",
+                // Shown on hover and whenever focus is inside the message, so keyboard users reach
+                // the actions too (spec §16.8); invisible but still in the tab order otherwise.
+                "material-thick shadow-floating duration-fast pointer-events-none absolute -top-4 z-20 flex items-center gap-0.5 rounded-full px-1 py-0.5 opacity-0 transition-opacity group-focus-within/bubble:pointer-events-auto group-focus-within/bubble:opacity-100 group-hover/bubble:pointer-events-auto group-hover/bubble:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100",
+                showReactions && "pointer-events-auto opacity-100",
                 isOwn ? "right-1" : "left-1"
               )}
             >
@@ -382,7 +386,7 @@ export const MessagesBubble = React.memo(function MessagesBubble({
                         key={emoji}
                         type="button"
                         aria-label={`React with ${emoji}`}
-                        className="text-body flex size-7 items-center justify-center rounded-full transition-transform hover:scale-125 active:scale-[0.98]"
+                        className="text-body facet-press-sm flex size-7 items-center justify-center rounded-full motion-safe:hover:scale-125"
                         onClick={() => {
                           soundEffects.success();
                           actions.onAddReaction(message.id, emoji);
