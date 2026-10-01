@@ -233,7 +233,7 @@ describe("addSectionEditLinks", () => {
     const link = container.querySelector<HTMLAnchorElement>(".wikios-section-edit-link")!;
     expect(link.getAttribute("aria-label")).toBe('Edit section: Rock & "Roll" <live>');
     expect(link.getAttribute("href")).toContain(
-      `/wiki/Foo_Bar/edit?section=${encodeURIComponent('Rock & "Roll" <live>')}`
+      `/wiki/Foo_Bar?action=edit&section=${encodeURIComponent('Rock & "Roll" <live>')}`
     );
     expect(link.textContent).toBe("Edit");
   });
