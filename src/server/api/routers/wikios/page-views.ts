@@ -8,7 +8,7 @@ import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { CATEGORY_PAGE_SIZE, CategoryService } from "~/lib/wiki-os/core/category-service";
-import { getFileInfo } from "~/lib/wiki-os/core/file-page-service";
+import { getFileDetails, getFileInfo } from "~/lib/wiki-os/core/file-page-service";
 import { getPageInfo } from "~/lib/wiki-os/core/page-info-service";
 import { listPages } from "~/lib/wiki-os/core/page-list-service";
 import { assertTitleVisible } from "~/lib/wiki-os/permissions";
@@ -61,4 +61,9 @@ export const wikiosPageViewsRouter = createTRPCRouter({
   getFileInfo: publicProcedure
     .input(z.object({ file: z.string().min(1).max(255) }))
     .query(({ input }) => getFileInfo(input.file)),
+
+  /** What a `File:` page shows below the file: its upload history and the pages that use it (plan 411); null for a deleted file. */
+  getFileDetails: publicProcedure
+    .input(z.object({ file: z.string().min(1).max(255) }))
+    .query(({ input }) => getFileDetails(input.file)),
 });

@@ -4,6 +4,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import type { ReactElement, ReactNode } from "react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { CategoryMembers } from "~/components/wiki-os/reader/CategoryMembers";
+import { FileDetails } from "~/components/wiki-os/reader/FileDetails";
 import { FileImage } from "~/components/wiki-os/reader/FileImage";
 import { UserProfileCard } from "~/components/wiki-os/reader/UserProfileCard";
 import { canonicalizeTitle, type CanonicalTitle } from "~/lib/wiki-os/core/title";
@@ -133,13 +134,18 @@ async function categoryView(canon: CanonicalTitle, view: ReadView, query: Search
   });
 }
 
-/** `File:<name>`: the file, then the description page's text; a file with no description page shows the file alone. */
+/**
+ * `File:<name>`: the file, then the description page's text, then the file's upload history and the pages that use it; a
+ * file with no description page shows the file alone (with its history and usage).
+ */
 async function fileView(canon: CanonicalTitle, view: ReadView, query: SearchParamsLike) {
-  const [loaded, file] = await Promise.all([
+  const [loaded, file, details] = await Promise.all([
     loadArticle(canon.title, view.followRedirect),
     orNotFound(api.wikios.getFileInfo({ file: canon.base })),
+    orNotFound(api.wikios.getFileDetails({ file: canon.base })),
   ]);
   const image = file ? <FileImage file={file} /> : undefined;
+  const below = details ? <FileDetails details={details} /> : undefined;
 
   if (loaded.status === "missing") {
     if (!file) notFound();
@@ -147,11 +153,13 @@ async function fileView(canon: CanonicalTitle, view: ReadView, query: SearchPara
       <WikiOSLayout title={canon.title}>
         {image}
         <p className="text-muted-foreground text-sm">This file has no description page yet.</p>
+        {below}
       </WikiOSLayout>
     );
   }
   return articleReader(canon, view, query, loaded.status === "found" ? loaded : null, {
     aside: image,
+    children: below,
   });
 }
 

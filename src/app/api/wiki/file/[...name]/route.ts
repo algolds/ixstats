@@ -108,8 +108,12 @@ export async function GET(
       };
   if (isCached(request, etag))
     return new NextResponse(null, { status: 304, headers: { ...headers, ETag: etag } });
-  return new NextResponse(new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength), {
-    status: 200,
-    headers: { ...headers, ETag: etag, "Content-Length": String(bytes.byteLength) },
-  });
+  // `readFile` gives a Buffer over an ordinary ArrayBuffer (never a shared one): the same bytes, no copy.
+  return new NextResponse(
+    new Uint8Array(bytes.buffer as ArrayBuffer, bytes.byteOffset, bytes.byteLength),
+    {
+      status: 200,
+      headers: { ...headers, ETag: etag, "Content-Length": String(bytes.byteLength) },
+    }
+  );
 }
