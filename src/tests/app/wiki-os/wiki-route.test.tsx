@@ -350,6 +350,39 @@ describe("Special: pages (plan 412 step 3)", () => {
     expect((await outcome(["Special:Import"])).signal).toBe("redirect:/util/import");
   });
 
+  it("maps the rights-model special pages to their /util screens (plan 409)", async () => {
+    expect((await outcome(["Special:Log", "move"])).signal).toBe("redirect:/util/log?type=move");
+    expect((await outcome(["Special:Move", "Foo_bar"])).signal).toBe(
+      "redirect:/util/move?title=Foo+bar"
+    );
+    expect((await outcome(["Special:Undelete", "Foo"])).signal).toBe(
+      "redirect:/util/undelete?title=Foo"
+    );
+    expect((await outcome(["Special:Block", "Jane"])).signal).toBe(
+      "redirect:/util/block?user=Jane"
+    );
+    expect((await outcome(["Special:BlockList"])).signal).toBe("redirect:/util/blocklist");
+    expect((await outcome(["Special:UserRights", "Jane"])).signal).toBe(
+      "redirect:/util/userrights?user=Jane"
+    );
+  });
+
+  it("?action=delete, protect and unprotect on a page go to the /util screens", async () => {
+    expect((await outcome(["foo_bar"], { action: "delete" })).signal).toBe(
+      "permanent:/wiki/Foo_bar?action=delete"
+    );
+    expect((await outcome(["Foo"], { action: "delete" })).signal).toBe(
+      "redirect:/util/delete?title=Foo"
+    );
+    expect((await outcome(["Foo"], { action: "protect" })).signal).toBe(
+      "redirect:/util/protect?title=Foo"
+    );
+    expect((await outcome(["Foo"], { action: "unprotect" })).signal).toBe(
+      "redirect:/util/protect?title=Foo"
+    );
+    expect(mockArticlePrefetch).not.toHaveBeenCalled();
+  });
+
   it("Special:Random redirects to a random page", async () => {
     mockRandomPage.mockResolvedValue({ title: "Treaty of Oakhaven/Text" });
     expect((await outcome(["Special:Random"])).signal).toBe(
@@ -422,7 +455,7 @@ describe("Special: pages (plan 412 step 3)", () => {
 
   it("an unknown special page is a 404, not a redirect to the utilities", async () => {
     expect((await outcome(["Special:NoSuchThing"])).signal).toBe("not-found");
-    expect((await outcome(["Special:Log"])).signal).toBe("not-found"); // plan 409 adds it
+    expect((await outcome(["Special:constructor"])).signal).toBe("not-found");
   });
 
   it("?action=raw that reached the page (the proxy rewrite did not) goes to the raw route, by its contract", async () => {

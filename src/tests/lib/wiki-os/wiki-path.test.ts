@@ -2,6 +2,7 @@
 import {
   articleHref,
   canonicalPathRedirect,
+  pageAdminHref,
   queryParam,
   queryStringOf,
   resolveWikiPath,
@@ -268,9 +269,66 @@ describe("resolveWikiPath: Special pages", () => {
     });
   });
 
-  it("an unknown special page is unknown (Special:Log waits for plan 409)", () => {
+  it("an unknown special page is unknown, and so is anything inherited from Object", () => {
     expect(special(["Special:NoSuchThing"])).toEqual({ type: "unknown" });
-    expect(special(["Special:Log"])).toEqual({ type: "unknown" });
+    for (const name of ["constructor", "toString", "__proto__", "hasOwnProperty"]) {
+      expect(special([`Special:${name}`])).toEqual({ type: "unknown" });
+    }
+  });
+});
+
+describe("resolveWikiPath: the rights-model special pages (plan 409)", () => {
+  const special = (path: string[], query: Record<string, string> = {}) => {
+    const target = resolveWikiPath(path, query);
+    if (target.kind !== "special") throw new Error(`expected a special page, got ${target.kind}`);
+    return target.action;
+  };
+  const to = (href: string) => ({ type: "redirect", href });
+
+  it("Special:Log[/type] is /util/log, with MediaWiki's page and user filters", () => {
+    expect(special(["Special:Log"])).toEqual(to("/util/log"));
+    expect(special(["Special:Log", "delete"])).toEqual(to("/util/log?type=delete"));
+    expect(special(["Special:Log"], { type: "move", page: "Foo bar", user: "Jane" })).toEqual(
+      to("/util/log?type=move&title=Foo+bar&user=Jane")
+    );
+  });
+
+  it("Special:Move/<title> and Special:MovePage/<title> are /util/move?title=", () => {
+    expect(special(["Special:Move", "foo_bar"])).toEqual(to("/util/move?title=Foo+bar"));
+    expect(special(["Special:MovePage", "Template:Foo", "doc"])).toEqual(
+      to("/util/move?title=Template%3AFoo%2Fdoc")
+    );
+    expect(special(["Special:MovePage"], { target: "Foo" })).toEqual(to("/util/move?title=Foo"));
+    expect(special(["Special:Move"])).toEqual(to("/util/move"));
+    expect(special(["Special:Move", "a[b"])).toEqual({ type: "unknown" });
+  });
+
+  it("Special:Delete, Undelete and Protect take a page, Block and UserRights a user, BlockList nothing", () => {
+    expect(special(["Special:Delete", "Foo"])).toEqual(to("/util/delete?title=Foo"));
+    expect(special(["Special:Undelete", "Foo"])).toEqual(to("/util/undelete?title=Foo"));
+    expect(special(["Special:Undelete"])).toEqual(to("/util/undelete"));
+    expect(special(["Special:Protect", "Foo"])).toEqual(to("/util/protect?title=Foo"));
+    expect(special(["Special:Block", "Jane_Doe"])).toEqual(to("/util/block?user=Jane+Doe"));
+    expect(special(["Special:Block", "User:Jane"])).toEqual(to("/util/block?user=Jane"));
+    expect(special(["Special:UserRights", "Jane"])).toEqual(to("/util/userrights?user=Jane"));
+    expect(special(["Special:UserRights"])).toEqual(to("/util/userrights"));
+    expect(special(["Special:BlockList"])).toEqual(to("/util/blocklist"));
+  });
+
+  it("?action=delete, protect and unprotect on an article are the admin view", () => {
+    for (const action of ["delete", "protect", "unprotect"]) {
+      const target = article(resolveWikiPath(["foo_bar"], { action }));
+      expect(target.view).toEqual({ type: "admin", action });
+    }
+    expect(pageAdminHref(canonicalizeTitle("Foo bar")!, "delete")).toBe(
+      "/util/delete?title=Foo+bar"
+    );
+    expect(pageAdminHref(canonicalizeTitle("Foo bar")!, "protect")).toBe(
+      "/util/protect?title=Foo+bar"
+    );
+    expect(pageAdminHref(canonicalizeTitle("Foo bar")!, "unprotect")).toBe(
+      "/util/protect?title=Foo+bar"
+    );
   });
 });
 

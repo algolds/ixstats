@@ -18,12 +18,17 @@ import { parseWikiTitle } from "./namespace-policy";
 export type SearchParamsLike =
   URLSearchParams | Readonly<Record<string, string | string[] | undefined>>;
 
+/** The page-admin actions MediaWiki spells as `?action=`. */
+export type PageAdminAction = "delete" | "protect" | "unprotect";
+
 export type ArticleView =
   /** The article itself; `followRedirect` is false for `?redirect=no`. */
   | { type: "read"; followRedirect: boolean; redirectedFrom: string | null }
   | { type: "edit"; section: string | null; mode: "source" | "visual" }
   | { type: "history" }
   | { type: "info" }
+  /** `?action=delete|protect|unprotect`: MediaWiki's page-admin actions, which are `/util` screens here (plan 409). */
+  | { type: "admin"; action: PageAdminAction }
   /** `?oldid=<ref>`: one old revision. */
   | { type: "revision"; ref: string }
   /** `?diff=<ref|prev|next|cur>` with an optional `?oldid=<ref>`. */
@@ -121,6 +126,9 @@ function resolveView(query: SearchParamsLike): ArticleView | null {
   }
   if (action === "history") return { type: "history" };
   if (action === "info") return { type: "info" };
+  if (action === "delete" || action === "protect" || action === "unprotect") {
+    return { type: "admin", action };
+  }
   return readView(query);
 }
 
@@ -226,7 +234,14 @@ const SPECIAL_TOOLS: Readonly<Record<string, string>> = {
   upload: "/util/repository",
   export: "/util/export",
   import: "/util/import",
+  blocklist: "/util/blocklist",
 };
+
+/** The page-admin screen for `canon` (`?action=delete|protect|unprotect`; unprotecting is a protection of level "none"). */
+export function pageAdminHref(canon: CanonicalTitle, action: PageAdminAction): string {
+  const path = action === "delete" ? "/util/delete" : "/util/protect";
+  return withQuery(path, { title: canon.title });
+}
 
 /** "Recent_changes", "recent-changes" and "RecentChanges" are the same special page. */
 function specialKey(name: string): string {
@@ -294,10 +309,59 @@ function whatLinksHereAction(argument: string, query: SearchParamsLike): Special
   return redirectTo(withQuery("/util/whatlinkshere", { target: queryParam(query, "target") }));
 }
 
+/** A page-admin screen that takes a page: `Special:Move/<title>` is `/util/move?title=<title>`. */
+function pageAdminSpecial(path: string): SpecialHandler {
+  return (argument, query) => {
+    const raw = argument || queryParam(query, "target") || queryParam(query, "title") || "";
+    if (raw === "") return redirectTo(path);
+    const canon = canonicalizeTitle(raw);
+    return canon ? redirectTo(withQuery(path, { title: canon.title })) : { type: "unknown" };
+  };
+}
+
+/** A page-admin screen that takes a user: `Special:Block/<user>` is `/util/block?user=<user>`. */
+function userAdminSpecial(path: string): SpecialHandler {
+  return (argument, query) => {
+    const raw = argument || queryParam(query, "user") || queryParam(query, "wpTarget") || "";
+    const user = raw
+      .replace(/^user:/i, "")
+      .replace(/_/g, " ")
+      .trim();
+    return redirectTo(withQuery(path, { user }));
+  };
+}
+
+/** `Special:Log[/<type>]` with MediaWiki's `?type=`, `?page=` and `?user=`: `/util/log`. */
+const logSpecial: SpecialHandler = (argument, query) =>
+  redirectTo(
+    withQuery("/util/log", {
+      type: argument || queryParam(query, "type"),
+      title: queryParam(query, "page") ?? queryParam(query, "title"),
+      user: queryParam(query, "user"),
+    })
+  );
+
+type SpecialHandler = (argument: string, query: SearchParamsLike) => SpecialAction;
+
+/** The rights-model special pages (plan 409): each is a `/util` screen. */
+const ADMIN_SPECIALS: Readonly<Record<string, SpecialHandler>> = {
+  move: pageAdminSpecial("/util/move"),
+  movepage: pageAdminSpecial("/util/move"),
+  delete: pageAdminSpecial("/util/delete"),
+  undelete: pageAdminSpecial("/util/undelete"),
+  protect: pageAdminSpecial("/util/protect"),
+  block: userAdminSpecial("/util/block"),
+  userrights: userAdminSpecial("/util/userrights"),
+  log: logSpecial,
+};
+
 function specialAction(key: string, argument: string, query: SearchParamsLike): SpecialAction {
-  const tool = SPECIAL_TOOLS[key];
+  // Own keys only: "constructor" and "toString" are not special pages.
+  const tool = Object.hasOwn(SPECIAL_TOOLS, key) ? SPECIAL_TOOLS[key] : undefined;
+  const admin = Object.hasOwn(ADMIN_SPECIALS, key) ? ADMIN_SPECIALS[key] : undefined;
   if (key === "") return redirectTo("/util");
   if (tool) return redirectTo(withQuery(tool, paramsOf(query)));
+  if (admin) return admin(argument, query);
 
   switch (key) {
     case "random":

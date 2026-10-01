@@ -8,6 +8,7 @@ import type { Metadata } from "next";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import {
   canonicalPathRedirect,
+  pageAdminHref,
   resolveWikiPath,
   type ArticleTarget,
   type LegacyTarget,
@@ -54,6 +55,9 @@ function ixwikiArticle(
       return historyView(canon);
     case "info":
       return infoView(canon);
+    case "admin":
+      // MediaWiki's ?action=delete|protect|unprotect are /util screens (plan 409).
+      return redirect(pageAdminHref(canon, view.action));
     case "revision":
       return revisionView(canon, view.ref);
     case "diff":
