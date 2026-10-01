@@ -8,8 +8,10 @@
 --                      delete, an undelete or a protection. The row is inserted in the same transaction as the
 --                      change itself, so a committed edit always has its job; the `wiki-mirror` cron job (and an
 --                      in-process kick after a save) applies the jobs in order per title (state: pending | running
---                      | done | dead; a job is retried with backoff and goes `dead` after 8 failures, which an
---                      administrator requeues or discards from the WikiOS settings panel).
+--                      | done | dead | discarded; a job is retried with backoff and goes `dead` after 8 failures,
+--                      which an administrator requeues or discards from the WikiOS settings panel; a discarded job
+--                      is a dead job given up on, kept and counted apart from the done ones). `state` is plain
+--                      TEXT, so a new state needs no DDL.
 --
 -- Also, once deployed (not part of this SQL):
 --   * add `wiki-mirror` to CRON_ENABLED_JOBS (src/server/cron/jobs.ts; every minute, the in-process run that follows a

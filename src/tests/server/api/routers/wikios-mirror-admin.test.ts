@@ -80,7 +80,7 @@ describe.each([
   ],
   [
     "discardMirrorJob",
-    { where: { id: "j1", source: "ixwiki", state: "dead" }, data: { state: "done" } },
+    { where: { id: "j1", source: "ixwiki", state: "dead" }, data: { state: "discarded" } },
   ],
 ] as const)("%s", (name, expected) => {
   it("acts on a dead job for an administrator", async () => {

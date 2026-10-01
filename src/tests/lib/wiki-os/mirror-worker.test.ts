@@ -34,10 +34,17 @@ const matches = (row: Row, where: Record<string, unknown>): boolean =>
   Object.entries(where).every(([key, condition]) => {
     const value = (row as unknown as Record<string, unknown>)[key];
     if (condition !== null && typeof condition === "object" && !(condition instanceof Date)) {
-      const cond = condition as { not?: unknown; lt?: Date; gt?: Date; in?: unknown[] };
+      const cond = condition as {
+        not?: unknown;
+        lt?: Date;
+        gt?: Date;
+        in?: unknown[];
+        notIn?: unknown[];
+      };
       if ("not" in cond) return value !== cond.not;
       if ("gt" in cond) return (value as Date) > (cond.gt as Date);
       if ("in" in cond) return (cond.in as unknown[]).includes(value);
+      if ("notIn" in cond) return !(cond.notIn as unknown[]).includes(value);
       if ("lt" in cond) return (value as Date) < (cond.lt as Date);
     }
     return value === condition;
@@ -435,14 +442,38 @@ describe("runMirrorCycle", () => {
     expect(byId(live.id)).toMatchObject({ state: "running", attempts: 1 });
   });
 
-  it("forgets the jobs that finished long ago", async () => {
-    const old = addJob({ state: "done" });
-    old.updatedAt = new Date(Date.now() - 31 * 24 * 60 * 60_000);
+  it("does not let a discarded job hold its title, and keeps it out of the cycle", async () => {
+    const discarded = addJob({
+      title: "Foo",
+      state: "discarded",
+      attempts: 8,
+      lastError: "gave up",
+    });
+    const behind = addJob({ title: "Foo" });
+
+    const result = await runMirrorCycle();
+
+    expect(result.done).toBe(1);
+    expect(byId(behind.id).state).toBe("done");
+    expect(byId(discarded.id)).toMatchObject({
+      state: "discarded",
+      attempts: 8,
+      lastError: "gave up",
+    });
+  });
+
+  it("forgets the jobs that finished long ago, discarded ones too", async () => {
+    const month = 31 * 24 * 60 * 60_000;
+    addJob({ state: "done" }).updatedAt = new Date(Date.now() - month);
+    addJob({ state: "discarded" }).updatedAt = new Date(Date.now() - month);
+    const dead = addJob({ state: "dead", title: "Other" });
+    dead.updatedAt = new Date(Date.now() - month);
     const recent = addJob({ state: "done" });
 
     await runMirrorCycle();
 
-    expect(rows.map((row) => row.id)).toEqual([recent.id]);
+    // only finished jobs go; a dead one stays, however old
+    expect(rows.map((row) => row.id)).toEqual([dead.id, recent.id]);
   });
 });
 

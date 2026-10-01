@@ -188,7 +188,7 @@ model WikiMirrorJob {
   revisionId    String?  // WikiRevision.id for kind=revision
   logId         String?  // WikiLog.id for move/delete/undelete/protect
   payload       Json?    // extra params (move target, reason, restrictions, ...)
-  state         String   @default("pending") // pending | running | done | dead
+  state         String   @default("pending") // pending | running | done | dead | discarded (a dead job an administrator gave up on)
   attempts      Int      @default(0)
   nextAttemptAt DateTime @default(now())
   lastError     String?  @db.VarChar(2000)

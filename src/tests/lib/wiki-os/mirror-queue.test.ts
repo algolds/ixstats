@@ -281,7 +281,7 @@ describe("the queue's writes", () => {
     await loadWindow();
 
     expect(mockFindMany).toHaveBeenCalledWith({
-      where: { source: "ixwiki", state: { not: "done" } },
+      where: { source: "ixwiki", state: { notIn: ["done", "discarded"] } },
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       take: 1_000,
     });
@@ -391,7 +391,7 @@ describe("the queue's writes", () => {
     });
   });
 
-  it("forgets only done jobs, a month after they finished", async () => {
+  it("forgets only finished jobs (done or discarded), a month after they finished", async () => {
     mockDeleteMany.mockResolvedValue({ count: 4 });
 
     await expect(purgeDoneJobs(NOW)).resolves.toBe(4);
@@ -399,7 +399,7 @@ describe("the queue's writes", () => {
     expect(mockDeleteMany).toHaveBeenCalledWith({
       where: {
         source: "ixwiki",
-        state: "done",
+        state: { in: ["done", "discarded"] },
         updatedAt: { lt: new Date(NOW.getTime() - 30 * 24 * 60 * 60_000) },
       },
     });

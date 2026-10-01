@@ -58,11 +58,12 @@ describe("getMirrorStatus", () => {
       { state: "pending", _count: { _all: 3 } },
       { state: "dead", _count: { _all: 1 } },
       { state: "done", _count: { _all: 40 } },
+      { state: "discarded", _count: { _all: 2 } },
     ]);
 
     const status = await getMirrorStatus(NOW);
 
-    expect(status.counts).toEqual({ pending: 3, running: 0, done: 40, dead: 1 });
+    expect(status.counts).toEqual({ pending: 3, running: 0, done: 40, dead: 1, discarded: 2 });
     expect(mockGroupBy).toHaveBeenCalledWith({
       by: ["state"],
       where: { source: "ixwiki" },
@@ -160,14 +161,14 @@ describe("requeueMirrorJob", () => {
 });
 
 describe("discardMirrorJob", () => {
-  it("finishes a dead job, keeping its last error, so the jobs behind it can run", async () => {
+  it("makes a dead job `discarded`, not `done`, keeping its last error, so the jobs behind it can run", async () => {
     mockUpdateMany.mockResolvedValue({ count: 1 });
 
     await discardMirrorJob("j1");
 
     expect(mockUpdateMany).toHaveBeenCalledWith({
       where: { id: "j1", source: "ixwiki", state: "dead" },
-      data: { state: "done" },
+      data: { state: "discarded" },
     });
     expect(scheduleMirrorKick).toHaveBeenCalledTimes(1);
   });

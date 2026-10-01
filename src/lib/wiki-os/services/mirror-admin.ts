@@ -11,7 +11,7 @@ import { mirrorBotName } from "../adapters/mediawiki/csrf-cache";
 import { PageOperationError } from "../core/page-management-service";
 import { MIRROR_SOURCE, scheduleMirrorKick } from "./mirror-outbox";
 
-const STATES = ["pending", "running", "done", "dead"] as const;
+const STATES = ["pending", "running", "done", "dead", "discarded"] as const;
 type MirrorState = (typeof STATES)[number];
 const DEAD_JOBS_SHOWN = 20;
 
@@ -66,7 +66,13 @@ export async function getMirrorStatus(now = new Date()): Promise<MirrorStatus> {
     }),
   ]);
 
-  const counts: Record<MirrorState, number> = { pending: 0, running: 0, done: 0, dead: 0 };
+  const counts: Record<MirrorState, number> = {
+    pending: 0,
+    running: 0,
+    done: 0,
+    dead: 0,
+    discarded: 0,
+  };
   for (const row of grouped) {
     const state = STATES.find((candidate) => candidate === row.state);
     if (state) counts[state] = row._count._all;
@@ -95,13 +101,13 @@ export async function requeueMirrorJob(id: string): Promise<void> {
 }
 
 /**
- * Give up on a dead job: it is finished (its last error stays on the row, which is how a discarded job is told
- * from one that succeeded), and the jobs behind it for its title can run. MediaWiki keeps what it had.
+ * Give up on a dead job: it becomes `discarded` (not `done`: MediaWiki never got it, and the status says so, with the
+ * error that killed it still on the row), and the jobs behind it for its title can run. MediaWiki keeps what it had.
  */
 export async function discardMirrorJob(id: string): Promise<void> {
   const { count } = await db.wikiMirrorJob.updateMany({
     where: { id, source: MIRROR_SOURCE, state: "dead" },
-    data: { state: "done" },
+    data: { state: "discarded" },
   });
   if (count === 0) throw noDeadJob();
   scheduleMirrorKick();

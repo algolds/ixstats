@@ -3,6 +3,16 @@
 // The outbound mirror's outbox (WikiOS -> classic MediaWiki): jobs by state, and the dead jobs, which an
 // administrator requeues (tried again) or discards (given up on).
 
+import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogClose,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
@@ -52,6 +62,10 @@ export function MirrorStatusSection() {
     onError,
   });
   const busy = requeue.isPending || discard.isPending;
+  /** The dead job an administrator is being asked to confirm giving up on. */
+  const [discarding, setDiscarding] = useState<{ id: string; kind: string; title: string } | null>(
+    null
+  );
 
   return (
     <div className="border-border/30 bg-card/25 space-y-4 rounded-2xl border p-5 shadow-xs backdrop-blur-md">
@@ -80,10 +94,11 @@ export function MirrorStatusSection() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
             <Stat label="Pending" value={String(status.counts.pending)} />
             <Stat label="Running" value={String(status.counts.running)} />
             <Stat label="Dead" value={String(status.counts.dead)} alert={status.counts.dead > 0} />
+            <Stat label="Discarded" value={String(status.counts.discarded)} />
             <Stat label="Done" value={String(status.counts.done)} />
             <Stat
               label="Oldest waiting"
@@ -141,7 +156,9 @@ export function MirrorStatusSection() {
                           size="xs"
                           variant="destructive"
                           disabled={busy}
-                          onClick={() => discard.mutate({ id: job.id })}
+                          onClick={() =>
+                            setDiscarding({ id: job.id, kind: job.kind, title: job.title })
+                          }
                         >
                           <Trash className="h-3 w-3" /> Discard
                         </Button>
@@ -154,6 +171,36 @@ export function MirrorStatusSection() {
           )}
         </>
       )}
+
+      <AlertDialog open={discarding !== null} onOpenChange={(open) => !open && setDiscarding(null)}>
+        <AlertDialogContent className="border-border bg-card text-card-foreground border shadow-2xl backdrop-blur-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-foreground flex items-center gap-2">
+              <WarningTriangle className="h-5 w-5 text-red-400" />
+              Discard this mirror job?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground text-xs">
+              The {discarding?.kind} of &ldquo;{discarding?.title}&rdquo; never reached classic
+              MediaWiki. Discarding gives up on it: it is kept as discarded (not done), MediaWiki
+              stays out of step for this page until someone edits it again, and the jobs queued
+              behind it for this page can run. Requeue it instead to try again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogClose>Cancel</AlertDialogClose>
+            <Button
+              variant="destructive"
+              disabled={discard.isPending}
+              onClick={() => {
+                if (discarding) discard.mutate({ id: discarding.id });
+                setDiscarding(null);
+              }}
+            >
+              <Trash className="h-3.5 w-3.5" /> Discard job
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

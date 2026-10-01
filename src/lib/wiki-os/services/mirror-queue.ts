@@ -35,6 +35,12 @@ const LAST_ERROR_LIMIT = 2_000;
 
 export type MirrorJob = WikiMirrorJob;
 
+/**
+ * The states of a job that is over: `done` (it reached MediaWiki, or there was nothing to send) and `discarded` (an
+ * administrator gave up on a dead job: MediaWiki never got it). Neither holds its title, and neither is in the window.
+ */
+const FINISHED_STATES = ["done", "discarded"] as const;
+
 /** The wait before attempt number `attempts + 1`, after `attempts` failed ones: 60 s, 2 min, 4 min ... capped at 1 h. */
 export function backoffMs(attempts: number): number {
   return Math.min(BACKOFF_BASE_MS * 2 ** attempts, BACKOFF_MAX_MS);
@@ -97,7 +103,7 @@ export function pickBatch(
 /** The oldest not-done jobs, oldest first. */
 export function loadWindow(): Promise<MirrorJob[]> {
   return db.wikiMirrorJob.findMany({
-    where: { source: MIRROR_SOURCE, state: { not: "done" } },
+    where: { source: MIRROR_SOURCE, state: { notIn: [...FINISHED_STATES] } },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     take: WINDOW_SIZE,
   });
@@ -177,12 +183,12 @@ export function failJob(job: MirrorJob, message: string, now = new Date()): Prom
   });
 }
 
-/** Forget finished jobs after a month: the table is a queue, the WikiOS history is the record. */
+/** Forget finished (and discarded) jobs after a month: the table is a queue, the WikiOS history is the record. */
 export async function purgeDoneJobs(now = new Date()): Promise<number> {
   const { count } = await db.wikiMirrorJob.deleteMany({
     where: {
       source: MIRROR_SOURCE,
-      state: "done",
+      state: { in: [...FINISHED_STATES] },
       updatedAt: { lt: new Date(now.getTime() - DONE_RETENTION_MS) },
     },
   });
