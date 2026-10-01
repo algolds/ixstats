@@ -133,7 +133,7 @@ export async function getPageHistoryShadow(
       size: r.rev_len || 0,
       byteDelta: r.diff || 0,
       minor: r.rev_minor_edit === 1,
-      parked: false,
+      parked: r.parked,
     })),
     hasMore: revList.length >= limit,
     fromShadow: false,

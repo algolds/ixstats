@@ -104,6 +104,7 @@ export async function loadNativeRevisions(
         id: true,
         summary: true,
         minor: true,
+        parked: true,
         createdAt: true,
         article: { select: { title: true, slug: true } },
       },

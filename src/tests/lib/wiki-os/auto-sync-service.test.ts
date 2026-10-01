@@ -239,6 +239,7 @@ const storedHead = (mwRevId: number | null, over: Partial<StoredHead> = {}): Sto
 
 beforeEach(() => {
   jest.clearAllMocks();
+  delete process.env.WIKIOS_MEDIAWIKI_BOT_USER;
   rcResponses = [];
   logResponses = [];
   mwRevisions = new Map();
@@ -756,6 +757,11 @@ describe("echo", () => {
 });
 
 describe("park", () => {
+  // The mirror account is configured: a park pushes WikiOS's head back through it.
+  beforeEach(() => {
+    process.env.WIKIOS_MEDIAWIKI_BOT_USER = "Mirror@WikiOS";
+  });
+
   const parkSetup = () => {
     article = storedArticle();
     head = storedHead(90);
@@ -1208,6 +1214,12 @@ describe("the sync status the telemetry reads", () => {
     }),
   });
   const now = new Date("2026-09-27T10:05:00Z");
+  /** SystemConfig answers the sync status under its key, and the skipped re-pushes under theirs. */
+  const stored = (status: { value: string } | null, skipped: string[] = []) =>
+    mockSystemConfigFindUnique.mockImplementation(async ({ where }) => {
+      if (where.key === "wikiAutoSync.status") return status;
+      return where.key === "wikiAutoSync.repushSkipped" ? { value: JSON.stringify(skipped) } : null;
+    });
 
   it("each cycle leaves its outcome in SystemConfig", async () => {
     rcResponses = [{ changes: [change("A", 1, 1)] }];
@@ -1232,32 +1244,33 @@ describe("the sync status the telemetry reads", () => {
   });
 
   it("is UNKNOWN before any cycle has run, and for a row it cannot read", async () => {
-    mockSystemConfigFindUnique.mockResolvedValue(null);
+    stored(null);
     await expect(getInboundSyncStatus(now)).resolves.toMatchObject({
       status: "UNKNOWN",
       lastRunAt: null,
     });
 
-    mockSystemConfigFindUnique.mockResolvedValue({ value: "{not json" });
+    stored({ value: "{not json" });
     await expect(getInboundSyncStatus(now)).resolves.toMatchObject({ status: "UNKNOWN" });
 
-    mockSystemConfigFindUnique.mockResolvedValue({ value: JSON.stringify({ lastRunAt: 5 }) });
+    stored({ value: JSON.stringify({ lastRunAt: 5 }) });
     await expect(getInboundSyncStatus(now)).resolves.toMatchObject({ status: "UNKNOWN" });
   });
 
   it("is ACTIVE after a clean recent cycle", async () => {
-    mockSystemConfigFindUnique.mockResolvedValue(statusRow());
+    stored(statusRow());
 
     await expect(getInboundSyncStatus(now)).resolves.toEqual({
       status: "ACTIVE",
       lastRunAt: "2026-09-27T10:00:00Z",
       failures: 0,
       lastError: null,
+      repushSkipped: [],
     });
   });
 
   it("is DEGRADED when the last cycle had failures, and says what failed", async () => {
-    mockSystemConfigFindUnique.mockResolvedValue(statusRow({ failures: 2, lastError: "A: boom" }));
+    stored(statusRow({ failures: 2, lastError: "A: boom" }));
 
     await expect(getInboundSyncStatus(now)).resolves.toMatchObject({
       status: "DEGRADED",
@@ -1266,11 +1279,158 @@ describe("the sync status the telemetry reads", () => {
     });
   });
 
+  it("is DEGRADED, naming the articles, when parks went without a re-push (no mirror account)", async () => {
+    stored(statusRow(), ["Foo", "Bar"]);
+
+    await expect(getInboundSyncStatus(now)).resolves.toMatchObject({
+      status: "DEGRADED",
+      failures: 0,
+      repushSkipped: ["Foo", "Bar"],
+    });
+  });
+
   it("is STALE when no cycle has run for an hour (the cron job is not running)", async () => {
-    mockSystemConfigFindUnique.mockResolvedValue(statusRow());
+    stored(statusRow());
 
     await expect(getInboundSyncStatus(new Date("2026-09-27T11:00:01Z"))).resolves.toMatchObject({
       status: "STALE",
     });
+  });
+});
+
+describe("a park never loops: no re-push without a mirror account (plan 406 follow-up)", () => {
+  const SKIPPED_KEY = "wikiAutoSync.repushSkipped";
+  const parkOne = () => {
+    article = storedArticle();
+    head = storedHead(90);
+    rcResponses = [{ changes: [change("Foo", 95, 1)] }];
+    mwRevisions = new Map([
+      [92, { title: "Foo", revid: 92, parentid: 90, text: "Some other text." }],
+      [
+        95,
+        {
+          title: "Foo",
+          revid: 95,
+          parentid: 92,
+          user: "carol",
+          text: "A conflicting edit.",
+          timestamp: "2026-09-27T10:00:01Z",
+        },
+      ],
+    ]);
+  };
+
+  it("parks the edit, tells the editor and pushes nothing, logging an error", async () => {
+    parkOne();
+    mockAccountLinkFindFirst.mockResolvedValue({ userId: "user-7" });
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    await runAutoSyncCycle();
+
+    expect(mockRevisionCreateMany.mock.calls[0]![0].data[0]).toMatchObject({ parked: true });
+    expect(enqueueExport).not.toHaveBeenCalled();
+    expect(notify).toHaveBeenCalledTimes(1);
+    expect(consoleError).toHaveBeenCalledWith(
+      expect.stringContaining("WIKIOS_MEDIAWIKI_BOT_USER is not set")
+    );
+    consoleError.mockRestore();
+  });
+
+  it("marks the article in the telemetry (SystemConfig), once however many times it is parked", async () => {
+    parkOne();
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    let skipped = JSON.stringify(["Other"]);
+    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
+      where.key === SKIPPED_KEY ? { value: skipped } : null
+    );
+    mockSystemConfigUpsert.mockImplementation(async ({ where, update }) => {
+      if (where.key === SKIPPED_KEY) skipped = update.value;
+      return {};
+    });
+
+    await runAutoSyncCycle();
+
+    expect(JSON.parse(skipped)).toEqual(["Other", "Foo"]);
+
+    parkOne();
+    await runAutoSyncCycle();
+    expect(JSON.parse(skipped)).toEqual(["Other", "Foo"]);
+    consoleError.mockRestore();
+  });
+
+  it("keeps at most the 50 newest titles", async () => {
+    parkOne();
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    let skipped = JSON.stringify(Array.from({ length: 50 }, (_, i) => `Page ${i}`));
+    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
+      where.key === SKIPPED_KEY ? { value: skipped } : null
+    );
+    mockSystemConfigUpsert.mockImplementation(async ({ where, update }) => {
+      if (where.key === SKIPPED_KEY) skipped = update.value;
+      return {};
+    });
+
+    await runAutoSyncCycle();
+
+    const titles: string[] = JSON.parse(skipped);
+    expect(titles).toHaveLength(50);
+    expect(titles.at(-1)).toBe("Foo");
+    expect(titles[0]).toBe("Page 1");
+    consoleError.mockRestore();
+  });
+
+  it("an unset or blank account name is no account", async () => {
+    parkOne();
+    process.env.WIKIOS_MEDIAWIKI_BOT_USER = "  @WikiOS";
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+    await runAutoSyncCycle();
+
+    expect(enqueueExport).not.toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
+  it("pushes the heads of the marked articles once an account is configured, then forgets them", async () => {
+    process.env.WIKIOS_MEDIAWIKI_BOT_USER = "Mirror@WikiOS";
+    let skipped = JSON.stringify(["Foo", "Deleted page", "Gone"]);
+    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
+      where.key === SKIPPED_KEY ? { value: skipped } : null
+    );
+    mockSystemConfigUpsert.mockImplementation(async ({ where, update }) => {
+      if (where.key === SKIPPED_KEY) skipped = update.value;
+      return {};
+    });
+    mockArticleFindUnique.mockImplementation(async ({ where }) => {
+      const title = where.source_title.title;
+      if (title === "Foo")
+        return { slug: "foo", title: "Foo", wikitext: "WikiOS text.", status: "PUBLISHED" };
+      if (title === "Deleted page")
+        return { slug: "deleted_page", title, wikitext: "x", status: "ARCHIVED" };
+      return null;
+    });
+
+    await runAutoSyncCycle();
+
+    expect(enqueueExport).toHaveBeenCalledTimes(1);
+    expect(enqueueExport).toHaveBeenCalledWith(
+      expect.objectContaining({ slug: "foo", title: "Foo", wikitext: "WikiOS text.", minor: false })
+    );
+    expect(JSON.parse(skipped)).toEqual([]);
+
+    enqueueExport.mockClear();
+    await runAutoSyncCycle();
+    expect(enqueueExport).not.toHaveBeenCalled();
+  });
+
+  it("pushes nothing and keeps the list while no account is configured", async () => {
+    const skipped = JSON.stringify(["Foo"]);
+    mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
+      where.key === SKIPPED_KEY ? { value: skipped } : null
+    );
+
+    await runAutoSyncCycle();
+
+    expect(enqueueExport).not.toHaveBeenCalled();
+    expect(highWaterWritten(SKIPPED_KEY)).toBeUndefined();
   });
 });

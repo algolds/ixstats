@@ -27,6 +27,8 @@ import {
 } from "./inbound-mediawiki";
 import { applyLogEvent } from "./inbound-log-events";
 import {
+  readRepushSkipped,
+  repushSkippedParks,
   syncLatestRevision,
   syncRevisionById,
   type RevisionOutcome,
@@ -256,6 +258,13 @@ async function runCycle(limit: number): Promise<void> {
   lastStats.failures = 0;
   lastStats.lastError = null;
   try {
+    // A mirror account configured since parks went without a re-push: push those heads now.
+    const repushed = await repushSkippedParks();
+    if (repushed > 0) {
+      console.log(
+        `[WikiAutoSync] Pushed ${repushed} articles back to MediaWiki that were parked without a re-push.`
+      );
+    }
     const [rcMark, logMark] = await Promise.all([
       readHighWater(RC_HWM_KEY),
       readHighWater(LOG_HWM_KEY),
@@ -324,11 +333,16 @@ const storedStatusSchema = z.object({
 });
 
 export interface InboundSyncStatus {
-  /** UNKNOWN: no cycle has run; STALE: none for an hour; DEGRADED: the last one had failures. */
+  /**
+   * UNKNOWN: no cycle has run; STALE: none for an hour; DEGRADED: the last one had failures, or an
+   * edit was parked and WikiOS's text could not be pushed back (no mirror account configured).
+   */
   status: "ACTIVE" | "DEGRADED" | "STALE" | "UNKNOWN";
   lastRunAt: string | null;
   failures: number;
   lastError: string | null;
+  /** Articles parked without a re-push because WIKIOS_MEDIAWIKI_BOT_USER is not set: MediaWiki holds an edit WikiOS keeps out. */
+  repushSkipped: string[];
 }
 
 /** What the last cycle left behind. Best effort: the sync does not depend on its own telemetry. */
@@ -355,11 +369,13 @@ export async function getInboundSyncStatus(now = new Date()): Promise<InboundSyn
     where: { key: STATUS_KEY },
     select: { value: true },
   });
+  const repushSkipped = await readRepushSkipped();
   const unknown: InboundSyncStatus = {
     status: "UNKNOWN",
     lastRunAt: null,
     failures: 0,
     lastError: null,
+    repushSkipped,
   };
   if (!row) return unknown;
 
@@ -370,11 +386,13 @@ export async function getInboundSyncStatus(now = new Date()): Promise<InboundSyn
     return unknown;
   }
   const age = now.getTime() - new Date(stored.lastRunAt).getTime();
-  const status = age > STALE_AFTER_MS ? "STALE" : stored.failures > 0 ? "DEGRADED" : "ACTIVE";
+  const degraded = stored.failures > 0 || repushSkipped.length > 0;
+  const status = age > STALE_AFTER_MS ? "STALE" : degraded ? "DEGRADED" : "ACTIVE";
   return {
     status,
     lastRunAt: stored.lastRunAt,
     failures: stored.failures,
     lastError: stored.lastError,
+    repushSkipped,
   };
 }

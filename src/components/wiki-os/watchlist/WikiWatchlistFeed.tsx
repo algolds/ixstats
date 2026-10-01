@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Eye, EyeClosed, Check, Search, Calendar, Refresh as RefreshCw } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { DiffViewer } from "~/components/diff-viewer";
+import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 import { withBasePath } from "~/lib/base-path";
 
 export function WikiWatchlistFeed() {
@@ -204,6 +205,7 @@ export function WikiWatchlistFeed() {
                             m
                           </span>
                         )}
+                        {item.parked && <ParkedBadge />}
                       </div>
 
                       <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-xs">

@@ -5,6 +5,7 @@
 import { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
+import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
 import { formatMWTimeAgo, parseMWDateObject } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
@@ -28,6 +29,8 @@ interface RawChange {
   type: "edit" | "new" | "log";
   oldLen: number;
   newLen: number;
+  /** A MediaWiki edit that conflicted with WikiOS's head: listed, but never the page's live text. */
+  parked?: boolean;
 }
 
 interface GroupedPage {
@@ -151,14 +154,19 @@ export default function RecentChangesPage() {
       else map.set(c.title, [c]);
     }
 
-    return Array.from(map.entries()).map(([title, edits]) => ({
-      title,
-      edits,
-      totalDelta: edits.reduce((sum, e) => sum + byteDelta(e), 0),
-      latestTimestamp: edits[0]!.timestamp,
-      latestUser: edits[0]!.user,
-      isNew: edits.some((e) => e.type === "new" || e.oldLen === 0),
-    }));
+    return Array.from(map.entries()).map(([title, edits]) => {
+      // A parked edit is listed, but it changed nothing: it is not part of the page's net change or its latest edit.
+      const live = edits.filter((e) => !e.parked);
+      const latest = live[0] ?? edits[0]!;
+      return {
+        title,
+        edits,
+        totalDelta: live.reduce((sum, e) => sum + byteDelta(e), 0),
+        latestTimestamp: latest.timestamp,
+        latestUser: latest.user,
+        isNew: live.some((e) => e.type === "new" || e.oldLen === 0),
+      };
+    });
   }, [filtered]);
 
   const toggleExpand = (title: string) => {
@@ -282,6 +290,7 @@ export default function RecentChangesPage() {
                             <span className="wikios-rc-edit-time">
                               {formatMWTimeAgo(edit.timestamp)}
                             </span>
+                            {edit.parked && <ParkedBadge />}
                             {action.isPill ? (
                               <span
                                 className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium tracking-tight ${action.pillClass}`}
@@ -302,6 +311,7 @@ export default function RecentChangesPage() {
                     group.edits[0] &&
                     (() => {
                       const action = getSemanticAction(group.edits[0]);
+                      const parked = group.edits[0].parked ? <ParkedBadge /> : null;
                       return action.isPill ? (
                         <div className="mt-1 flex items-center gap-1.5 pl-6 text-xs">
                           <span
@@ -309,9 +319,12 @@ export default function RecentChangesPage() {
                           >
                             {action.label}
                           </span>
+                          {parked}
                         </div>
                       ) : (
-                        <div className="wikios-rc-single-comment">{action.label}</div>
+                        <div className="wikios-rc-single-comment">
+                          {action.label} {parked}
+                        </div>
                       );
                     })()}
                 </div>

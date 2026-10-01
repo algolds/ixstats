@@ -59,6 +59,7 @@ describe("wikios.getHealthTelemetry inbound sync (plan 406)", () => {
       lastRunAt: "2026-09-27T10:00:00Z",
       failures: 2,
       lastError: "A: MediaWiki returned HTTP 500",
+      repushSkipped: ["Foo"],
     };
     jest.mocked(getInboundSyncStatus).mockResolvedValue(status);
 
@@ -74,6 +75,7 @@ describe("wikios.getHealthTelemetry inbound sync (plan 406)", () => {
       lastRunAt: "2026-09-27T10:00:00Z",
       failures: 0,
       lastError: null,
+      repushSkipped: [],
     });
 
     expect((await caller().getHealthTelemetry()).inboundSyncStatus).toBe("ACTIVE");
@@ -85,6 +87,10 @@ describe("wikios.getHealthTelemetry inbound sync (plan 406)", () => {
     const telemetry = await caller().getHealthTelemetry();
 
     expect(telemetry.inboundSyncStatus).toBe("UNKNOWN");
-    expect(telemetry.inboundSync).toMatchObject({ lastRunAt: null, failures: 0 });
+    expect(telemetry.inboundSync).toMatchObject({
+      lastRunAt: null,
+      failures: 0,
+      repushSkipped: [],
+    });
   });
 });

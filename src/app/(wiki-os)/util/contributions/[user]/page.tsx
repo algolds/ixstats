@@ -7,6 +7,7 @@ import { useState } from "react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { withBasePath } from "~/lib/base-path";
@@ -136,6 +137,7 @@ export default function ContributionsPage() {
                   size: number;
                   minor: boolean;
                   isNew: boolean;
+                  parked: boolean;
                 }) => (
                   <div
                     key={c.revid}
@@ -153,6 +155,7 @@ export default function ContributionsPage() {
                             m
                           </span>
                         )}
+                        {c.parked && <ParkedBadge />}
                       </div>
 
                       <div className="min-w-0">

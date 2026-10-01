@@ -27,6 +27,8 @@ export interface NativeRevisionRow {
   id: string;
   summary: string | null;
   minor: boolean;
+  /** A MediaWiki edit that did not go live (conflict): the user's, listed, never the page's text. */
+  parked: boolean;
   createdAt: Date;
   article: { title: string; slug: string } | null;
 }
@@ -39,6 +41,7 @@ export interface WikiContribRow {
   rev_comment: string;
   rev_minor_edit: number;
   is_new: boolean;
+  parked?: boolean;
 }
 
 export interface DiscussionCommentRow {
@@ -122,6 +125,7 @@ function revisionItems(revisions: NativeRevisionRow[]): WikiActivityItem[] {
       byteDiff: null,
       timestamp: new Date(rev.createdAt).toISOString(),
       url: `/wiki/${encodeURIComponent(articleSlug || title)}`,
+      parked: rev.parked,
     };
   });
 }
@@ -150,6 +154,7 @@ function contribItems(contribs: WikiContribRow[]): WikiActivityItem[] {
         byteDiff: c.rev_len,
         timestamp: new Date(timestamp).toISOString(),
         url: `/wiki/${encodeURIComponent(c.page_title)}`,
+        parked: c.parked,
       },
     ];
   });

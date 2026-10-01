@@ -13,6 +13,7 @@ import {
   WarningTriangle as AlertTriangle,
 } from "iconoir-react";
 import { DiffViewer } from "~/components/diff-viewer";
+import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 import { api } from "~/trpc/react";
 
 interface RevisionItem {
@@ -34,15 +35,6 @@ interface ScrubbableRevisionTimelineProps {
   slug: string;
   revisions: RevisionItem[];
   isLoading?: boolean;
-}
-
-/** Marks a parked revision: kept in the history, but never the page's current text. */
-function ParkedBadge() {
-  return (
-    <span className="rounded bg-rose-500/15 px-1 text-xs font-semibold text-rose-400">
-      conflict — not live
-    </span>
-  );
 }
 
 /** Size change of a revision against its predecessor, e.g. "(+1,420)" or "(-320)". */

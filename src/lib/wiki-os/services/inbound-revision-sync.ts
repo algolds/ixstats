@@ -12,6 +12,7 @@
  * at a time, oldest first.
  */
 
+import { z } from "zod";
 import { db } from "~/server/db";
 import { notificationAPI } from "~/lib/notifications/api";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
@@ -331,6 +332,78 @@ async function notifyParkedEditor(
   });
 }
 
+// ---------------------------------------------------------------------------
+// Re-pushes the mirror cannot make (no mirror account configured)
+// ---------------------------------------------------------------------------
+
+/** SystemConfig key: the titles of articles whose park was not followed by a re-push, for the telemetry. */
+const REPUSH_SKIPPED_KEY = "wikiAutoSync.repushSkipped";
+const MAX_REPUSH_SKIPPED = 50;
+const titleListSchema = z.array(z.string());
+
+/**
+ * Titles of parked articles whose WikiOS head was NOT pushed back to MediaWiki because no mirror account
+ * is configured. Without one the push would come back as an edit by an unknown account that the sync
+ * cannot tell from a human's: a conflict again, pushed again, forever. The inbound sync status reports
+ * the list, so the missing configuration is seen.
+ */
+export async function readRepushSkipped(): Promise<string[]> {
+  const row = await db.systemConfig.findUnique({
+    where: { key: REPUSH_SKIPPED_KEY },
+    select: { value: true },
+  });
+  if (!row) return [];
+  try {
+    return titleListSchema.parse(JSON.parse(row.value));
+  } catch {
+    return [];
+  }
+}
+
+async function writeRepushSkipped(titles: string[]): Promise<void> {
+  const value = JSON.stringify(titles);
+  await db.systemConfig.upsert({
+    where: { key: REPUSH_SKIPPED_KEY },
+    create: { key: REPUSH_SKIPPED_KEY, value },
+    update: { value },
+  });
+}
+
+async function markRepushSkipped(title: string): Promise<void> {
+  const titles = await readRepushSkipped();
+  if (!titles.includes(title))
+    await writeRepushSkipped([...titles, title].slice(-MAX_REPUSH_SKIPPED));
+}
+
+/**
+ * Once a mirror account is configured, push the head of every article that was parked without a
+ * re-push, and clear the list. Resolves to the number of articles pushed.
+ */
+export async function repushSkippedParks(): Promise<number> {
+  if (mirrorBotName() === null) return 0;
+  const titles = await readRepushSkipped();
+  if (titles.length === 0) return 0;
+
+  let pushed = 0;
+  for (const title of titles) {
+    const article = await db.wikiArticle.findUnique({
+      where: { source_title: { source: SOURCE, title } },
+      select: { slug: true, title: true, wikitext: true, status: true },
+    });
+    if (!article || article.status === "ARCHIVED") continue;
+    MediaWikiExportWorker.enqueue({
+      slug: article.slug,
+      title: article.title,
+      wikitext: article.wikitext,
+      summary: "Restoring the current WikiOS revision (an edit made here conflicted with it)",
+      minor: false,
+    });
+    pushed++;
+  }
+  await writeRepushSkipped([]);
+  return pushed;
+}
+
 /** What a park does after the revision is stored. Best effort: the park itself already happened. */
 async function afterPark(
   rev: MediaWikiRevision,
@@ -339,14 +412,25 @@ async function afterPark(
   headRev: HeadRevision | null,
   headRef: string
 ): Promise<void> {
-  MediaWikiExportWorker.enqueue({
-    slug: article.slug,
-    title: article.title,
-    wikitext: article.wikitext,
-    summary: `Restoring WikiOS revision ${headRef}; your edit (rev ${rev.revid}) was kept in WikiOS history as a conflict`,
-    minor: false,
-    revisionId: headRev?.id,
-  });
+  if (mirrorBotName() === null) {
+    // Never push without a mirror account: its edit could not be told from a human's and would be parked
+    // and pushed again, one edit per cycle, for as long as the page is left alone.
+    console.error(
+      `[WikiAutoSync] WIKIOS_MEDIAWIKI_BOT_USER is not set: the edit ${rev.revid} to "${article.title}" was parked, but WikiOS's text was NOT pushed back to MediaWiki.`
+    );
+    await markRepushSkipped(article.title).catch((error) =>
+      console.warn("[WikiAutoSync] Could not record the skipped re-push:", error)
+    );
+  } else {
+    MediaWikiExportWorker.enqueue({
+      slug: article.slug,
+      title: article.title,
+      wikitext: article.wikitext,
+      summary: `Restoring WikiOS revision ${headRef}; your edit (rev ${rev.revid}) was kept in WikiOS history as a conflict`,
+      minor: false,
+      revisionId: headRev?.id,
+    });
+  }
   try {
     await notifyParkedEditor(rev, canon, headRef);
   } catch (error) {

@@ -10,6 +10,7 @@ import {
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
+import { ParkedBadge } from "~/components/wiki-os/shared/ParkedBadge";
 
 export function QuickHistoryModal({
   title,
@@ -63,13 +64,12 @@ export function QuickHistoryModal({
                   </span>
                   {rev.minor && <span className="wikios-quick-modal-minor">m</span>}
                 </div>
-                {(rev.parked || rev.comment) && (
+                {rev.parked && (
                   <div className="wikios-quick-modal-comment">
-                    {rev.parked && "conflict — not live"}
-                    {rev.parked && rev.comment && " · "}
-                    {rev.comment}
+                    <ParkedBadge />
                   </div>
                 )}
+                {rev.comment && <div className="wikios-quick-modal-comment">{rev.comment}</div>}
               </div>
             );
           })}
