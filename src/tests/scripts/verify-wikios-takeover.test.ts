@@ -308,6 +308,18 @@ describe("buildExpectations", () => {
     });
   });
 
+  it("adds the IxStates upload row only when an upload is given, and WikiOS must serve it", () => {
+    expect(rows.some((r) => r.name.includes("IxStates upload"))).toBe(false);
+    const upload = "/images/uploads/uploaded_1_abc_Flag.png";
+    const withUpload = buildExpectations(checklist({ upload }));
+    expect(withUpload.find((r) => r.path === upload)).toMatchObject({
+      via: "public",
+      expectStatus: 200,
+      expectContentType: "image/",
+      standalone: true,
+    });
+  });
+
   it("uses the given file name for the Special:FilePath row", () => {
     const custom = buildExpectations(checklist({ file: "Flag_of_Ixnay.svg" }));
     expect(custom.some((r) => r.path === "/wiki/Special:FilePath/Flag_of_Ixnay.svg")).toBe(true);
@@ -429,6 +441,7 @@ describe("parseArgs", () => {
       internal: null,
       file: "Example.png",
       image: null,
+      upload: null,
       page: "Main_Page",
       revid: "1",
       subpage: "Template:Infobox_country/doc",
@@ -453,6 +466,8 @@ describe("parseArgs", () => {
           "Foo.png",
           "--image",
           "/images/a/ab/Foo.png",
+          "--upload",
+          "/images/uploads/uploaded_1_abc_Flag.png",
           "--page",
           "Ixnay",
           "--revid",
@@ -475,6 +490,7 @@ describe("parseArgs", () => {
       internal: "http://127.0.0.1:8081",
       file: "Foo.png",
       image: "/images/a/ab/Foo.png",
+      upload: "/images/uploads/uploaded_1_abc_Flag.png",
       page: "Ixnay",
       revid: "77",
       subpage: "Template:Foo/doc",
@@ -509,6 +525,9 @@ describe("parseArgs", () => {
     expect(() => parseArgs(["--base"], {})).toThrow("--base needs a value");
     expect(() => parse(["--base", "--standalone"])).toThrow("--base needs a value");
     expect(() => parse(["--image", "images/a.png"])).toThrow("--image must be an absolute path");
+    expect(() => parse(["--upload", "/images/a/ab/Foo.png"])).toThrow(
+      "--upload must be a path under /images/uploads/"
+    );
     expect(() => parseArgs(["--ixstates", "/projects/ixstates"], {})).toThrow(
       /--ixstates must be an absolute URL/
     );

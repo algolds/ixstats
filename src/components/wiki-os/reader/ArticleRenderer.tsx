@@ -54,6 +54,7 @@ import { extractLeadImage } from "~/lib/wiki-os/transformers/image-url";
 import { useMountOnFirstOpen } from "~/components/wiki-os/shared/useMountOnFirstOpen";
 import { useWikiChromePrefs } from "~/components/wiki-os/shared/WikiChromePrefs";
 import { COMPANION_COLLAPSED_COOKIE, writeCollapsedCookie } from "~/lib/wiki-os/chrome-prefs";
+import { heroCardInputs, mayNameCountry } from "~/lib/wiki-os/hero-card";
 import type { SelectionPayload } from "~/components/wiki-os/margin/SelectionCapsule";
 
 // The margin suite and the TOC drawer are interactions, not the first paint: each is its own chunk.
@@ -154,13 +155,6 @@ type PortalTarget =
       type: "stat";
       data: { key: string };
     };
-
-/** A plain article title that may name a country: not empty, not the Main Page, no namespace. */
-function mayNameCountry(title: string): boolean {
-  return (
-    title.trim() !== "" && title !== "Main Page" && title !== "Main_Page" && !title.includes(":")
-  );
-}
 
 export function ArticleRenderer({
   title,
@@ -515,10 +509,10 @@ export function ArticleRenderer({
     // oxlint-disable-next-line
   }, [processedHtml, processedInfoboxHtml]);
 
-  const { data: countryData } = api.countries.getByIdBasic.useQuery(
-    { id: title },
-    { enabled: mayNameCountry(title), retry: false }
-  );
+  const { data: countryData } = api.countries.getByIdBasic.useQuery(heroCardInputs(title).country, {
+    enabled: mayNameCountry(title),
+    retry: false,
+  });
 
   const themeColors = useMemo(() => {
     if (countryData?.name) {
@@ -622,7 +616,7 @@ export function ArticleRenderer({
 
   // Lorewards and article awards belong to IxWiki pages: another wiki's page asks for none.
   const awardsQuery = api.lorewards.getArticleAwardsAndAchievements.useQuery(
-    { title },
+    heroCardInputs(title).awards,
     { staleTime: 300000, enabled: source === "ixwiki" }
   );
   const awardsData = awardsQuery.data;

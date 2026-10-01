@@ -35,11 +35,23 @@ const mockListPages = jest.fn();
 const mockPageInfo = jest.fn();
 const mockHistory = jest.fn();
 const mockResolveAuthor = jest.fn();
+const mockParentCategoriesPrefetch = jest.fn();
+const mockAwardsPrefetch = jest.fn();
+const mockCountryPrefetch = jest.fn();
 jest.mock("~/trpc/server", () => ({
   __esModule: true,
   api: {
     users: { resolveWikiAuthor: (...args: unknown[]) => mockResolveAuthor(...args) },
+    lorewards: {
+      getArticleAwardsAndAchievements: {
+        prefetch: (...args: unknown[]) => mockAwardsPrefetch(...args),
+      },
+    },
+    countries: { getByIdBasic: { prefetch: (...args: unknown[]) => mockCountryPrefetch(...args) } },
     wikios: {
+      getParentCategories: {
+        prefetch: (...args: unknown[]) => mockParentCategoriesPrefetch(...args),
+      },
       getArticleHtml: { prefetch: (...args: unknown[]) => mockArticlePrefetch(...args) },
       getMainPage: { prefetch: (...args: unknown[]) => mockMainPagePrefetch(...args) },
       getRevisionHtml: { prefetch: (...args: unknown[]) => mockRevisionPrefetch(...args) },
@@ -173,6 +185,40 @@ describe("an article is read on the server (plan 412 step 2)", () => {
       redirectedFrom: null,
     });
     expect(named(ok.tree, "HydrateClient")).toBeDefined(); // the client finds the article in its cache
+  });
+
+  it("also reads what the hero card is made from, with the inputs the client asks with, so the card has its final shape in the first HTML", async () => {
+    await outcome(["Aurelia"]);
+
+    expect(mockParentCategoriesPrefetch).toHaveBeenCalledWith(
+      { title: "Aurelia" },
+      { retry: false }
+    );
+    expect(mockAwardsPrefetch).toHaveBeenCalledWith({ title: "Aurelia" }, { retry: false });
+    expect(mockCountryPrefetch).toHaveBeenCalledWith({ id: "Aurelia" }, { retry: false });
+  });
+
+  it("reads them under the article's own title (a redirect's target), and no country for a namespaced one", async () => {
+    succeeds(article({ title: "Talk:Aurelia" }));
+    await outcome(["Talk:Aurelia"]);
+
+    expect(mockParentCategoriesPrefetch).toHaveBeenCalledWith(
+      { title: "Talk:Aurelia" },
+      { retry: false }
+    );
+    expect(mockAwardsPrefetch).toHaveBeenCalledWith({ title: "Talk:Aurelia" }, { retry: false });
+    expect(mockCountryPrefetch).not.toHaveBeenCalled();
+  });
+
+  it("reads nothing for a hero that is not shown: a missing page is a 404 and a redirect leaves", async () => {
+    fails("NOT_FOUND");
+    await outcome(["Nowhere"]);
+    succeeds(article({ title: "New name", resolvedFrom: "Old name" }));
+    await outcome(["Old_name"]);
+
+    expect(mockParentCategoriesPrefetch).not.toHaveBeenCalled();
+    expect(mockAwardsPrefetch).not.toHaveBeenCalled();
+    expect(mockCountryPrefetch).not.toHaveBeenCalled();
   });
 
   it("a page that does not exist is notFound() (HTTP 404)", async () => {

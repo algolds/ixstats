@@ -20,6 +20,7 @@ import { leanTheFlight } from "../_lib/lean-flight";
 import { loadArticle, type ArticleHtml } from "../_lib/load-article";
 import { userExists } from "../_lib/load-user";
 import { orNotFound } from "../_lib/or-not-found";
+import { prefetchHeroCard } from "../_lib/prefetch-hero";
 
 const MAIN_PAGE = "Main Page";
 const USER_NAMESPACE = 2;
@@ -63,7 +64,10 @@ async function articleReader(
   { aside, children }: Extras = {}
 ): Promise<ReactElement> {
   if (found?.data.resolvedFrom) permanentRedirect(redirectHref(found.data, query));
-  if (found) await leanTheFlight(canon.title, view.followRedirect, found.data);
+  if (found) {
+    await prefetchHeroCard(found.data.title);
+    await leanTheFlight(canon.title, view.followRedirect, found.data);
+  }
   return (
     <HydrateClient>
       <ArticlePageClient

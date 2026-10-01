@@ -1,9 +1,16 @@
 "use client";
 // src/app/(wiki-os)/wiki/[...slug]/not-found.tsx
 // The 404 of /wiki/<path>: a page that does not exist (or cannot be a page). The heading, the message and
-// the search link need nothing from the viewer, so they are in the first HTML; the link to create the
-// page appears for a signed-in reader who may create it (the server renders the page for everyone as an
-// anonymous reader, so it cannot know).
+// the search link need nothing from the viewer; the link to create the page appears for a signed-in reader
+// who may create it (the server renders the page for everyone as an anonymous reader, so it cannot know).
+//
+// Do not count on the heading being in the first HTML. On the dev server (Next 16.3.6) a missing /wiki/<path>
+// is answered with status 404 and Next's error shell (`<html id="__next_error__">`: a head and an empty
+// body, no heading), and the client then renders this page itself (createRoot, no hydration). That was the
+// same with this file reduced to a bare <p> and with generateMetadata's notFound() removed, so it is not
+// this component's content. A production build may behave differently: after the build, check it
+// (`curl -s https://<host>/wiki/<a missing page>`: look for `__next_error__` and for the heading) before
+// relying on the heading for crawlers or for the first paint.
 
 import { usePathname } from "next/navigation";
 import { DeletedPageLinks } from "~/components/wiki-os/reader/DeletedPageLinks";

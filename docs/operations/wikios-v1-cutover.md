@@ -568,17 +568,19 @@ R='http://127.0.0.1:8081/api.php?format=json&action=query'
 curl -s "$R&prop=revisions&titles=Main_Page&rvprop=ids&rvlimit=1&rvdir=newer" | jq -r '.query.pages[].revisions[0].revid'   # -> REVID
 curl -s "$R&titles=Template:Infobox_country/doc%7CCategory:Countries" | jq -c '.query.pages[] | {title, missing: has("missing")}'
 find /ixwiki/shared/images -maxdepth 3 -type f -name '*.png' | head -3
+ls "$IX"/public/images/uploads | head -3      # an IxStates upload (a country's flag): the --upload row
 ```
 
 ```bash
 ( cd "$IX" && bun scripts/ops/verify-wikios-takeover.ts --base http://127.0.0.1:3560 --ixstates "$IXSTATES_URL" \
     --internal http://127.0.0.1:8081 --standalone --page Main_Page --revid <REVID> \
-    --subpage Template:Infobox_country/doc --category Category:Countries )
+    --subpage Template:Infobox_country/doc --category Category:Countries \
+    --upload /images/uploads/<a file of $IX/public/images/uploads> )
 ```
 
 Every row must PASS: `/` (302 to `/wiki/Main_Page`), `/wiki/Main_Page`, `/robots.txt`, `/wiki-sitemap`, a template subpage, a
 category page, `Special:Search`, `?action=raw` (as `text/x-wiki`), `?oldid=`, the runtime requests WikiOS pages make that
-are not routes (`/api/ixtime/current`, `/maplibre/maplibre-gl-worker.mjs`, `/flags/...`, `/images/flags/placeholder.svg`,
+are not routes (`/api/ixtime/current`, `/maplibre/maplibre-gl-worker.mjs`, `/flags/...`, `/images/flags/placeholder.svg`, an IxStates upload under `/images/uploads/` (the `--upload` row),
 `/fonts/...`), `/maps?embed=true` (302 to the IxStates map that article map embeds load), the configured IxStates URL
 (not 404) and the loopback `action=parse`. The routes of plans 410 and 412 (robots, sitemap, subpages, raw, oldid,
 Special:Search) fail until those plans are deployed into the WikiOS build. Then open
@@ -627,14 +629,14 @@ curl -sI "https://<the wiki host>/images/<a>/<ab>/<Name>.png" | grep -iE '^(cont
 **Rollback:** remove the two `add_header` lines and `sudo rm /etc/nginx/conf.d/wikios-images-headers.conf`, then
 `sudo nginx -t && sudo systemctl reload nginx`.
 
-**Shadowing checks.** nginx will send `/robots.txt`, `/sitemap*`, `/wiki-sitemap*`, `/images/flags/`, `= /maps`, `/sign-in`,
+**Shadowing checks.** nginx will send `/robots.txt`, `/sitemap*`, `/wiki-sitemap*`, `/images/flags/`, `/images/uploads/`, `= /maps`, `/sign-in`,
 `/sign-up` and `/sso-callback` to WikiOS, in front of anything MediaWiki served there. Check that nothing real is
 hidden by that (each command should report "No such file" or print nothing):
 
 ```bash
 DOCROOT=<the root value printed in step 4>
 ls -l "$DOCROOT"/robots.txt "$DOCROOT"/sitemap* "$DOCROOT"/wiki-sitemap* 2>&1     # static files would be shadowed
-ls -ld /ixwiki/shared/images/flags 2>&1                                          # an upload directory named "flags" would be shadowed
+ls -ld /ixwiki/shared/images/flags /ixwiki/shared/images/uploads 2>&1             # an upload directory named "flags" or "uploads" would be shadowed
 mysql ixwiki -e "SELECT page_title FROM page WHERE page_namespace = 0 AND (page_title IN ('Maps','Sign-in','Sign-up','Sso-callback') OR page_title LIKE 'Sitemap%')"
 ```
 
@@ -794,7 +796,8 @@ curl -s -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_ca
 ( cd "$IX" && bun scripts/ops/verify-wikios-takeover.ts --base https://ixwiki.com --ixstates "$IXSTATES_URL" \
     --internal http://127.0.0.1:8081 --page Main_Page --revid <REVID> \
     --subpage Template:Infobox_country/doc --category Category:Countries \
-    --file <ExistingFile.png> --image /images/<a>/<ab>/<ExistingFile.png> )
+    --file <ExistingFile.png> --image /images/<a>/<ab>/<ExistingFile.png> \
+    --upload /images/uploads/<a file of $IX/public/images/uploads> )
 ```
 
 Every row must PASS (exit code 0). The public `/api.php` row still expects MediaWiki's `sitename`: `/api.php` stays

@@ -30,7 +30,7 @@ jest.mock("~/components/wiki-os/reader/headers/EditorialMastheadHeader", () => (
   EditorialMastheadHeader: () => <div data-testid="masthead" />,
 }));
 jest.mock("~/components/wiki-os/shared/MediaThemeContext", () => ({
-  useWikiMediaTheme: () => ({ getImageStyle: () => ({}) }),
+  useWikiMediaTheme: () => ({ getImageAttributes: () => ({}) }),
 }));
 let mockAuth = { isLoaded: false, isSignedIn: false, user: null };
 jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({ useWikiAuth: () => mockAuth }));
