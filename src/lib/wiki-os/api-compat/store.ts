@@ -12,6 +12,7 @@
 import { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { toRevisionRef } from "~/lib/wiki-os/core/domain-types";
 import { isActive } from "~/lib/wiki-os/rights";
 import { syntheticUserId } from "./auth-store";
 import {
@@ -163,6 +164,8 @@ async function pagesById(pageIds: readonly number[]): Promise<PageRow[]> {
 // ---------------------------------------------------------------------------
 
 const REVISION_SELECT = {
+  id: true,
+  mwRevId: true,
   revId: true,
   createdAt: true,
   author: true,
@@ -235,6 +238,7 @@ async function toRevisionRows(records: readonly RevisionRecord[]): Promise<Revis
       : 0;
     return {
       revId,
+      ref: toRevisionRef({ id: record.id, mwRevId: record.mwRevId }),
       parentId: parents.get(revId) ?? 0,
       pageId: article.pageId,
       title: article.title,
@@ -268,6 +272,23 @@ async function revisionsById(
   const rows = await toRevisionRows(records);
   const order = new Map(revIds.map((id, index) => [id, index]));
   return rows.sort((a, b) => (order.get(a.revId) ?? 0) - (order.get(b.revId) ?? 0));
+}
+
+async function revisionByRowId(rowId: string): Promise<RevisionRow | null> {
+  const record = await db.wikiRevision.findUnique({ where: { id: rowId }, select: REVISION_SELECT });
+  return record ? ((await toRevisionRows([record]))[0] ?? null) : null;
+}
+
+async function revisionCountOf(title: string): Promise<number> {
+  return db.wikiRevision.count({ where: { source: SOURCE, article: { title } } });
+}
+
+async function pageHtml(articleId: string): Promise<{ html: string | null; fresh: boolean } | null> {
+  const row = await db.wikiArticle.findUnique({
+    where: { id: articleId },
+    select: { contentHtml: true, htmlSyncedAt: true },
+  });
+  return row ? { html: row.contentHtml, fresh: row.htmlSyncedAt !== null } : null;
 }
 
 /** `createdAt` / `revId` at or beyond `bound` on `side` (`gte` = at or after it, `lte` = at or before it). */
@@ -482,6 +503,9 @@ export const prismaApiStore: ApiStore = {
   pagesById,
   revisionsById,
   findRevisions,
+  revisionByRowId,
+  revisionCountOf,
+  pageHtml,
   restrictionsByTitle,
   linksFrom,
   categoriesOf,

@@ -16,11 +16,12 @@ import {
 } from "~/lib/wiki-os/auth";
 import {
   authorizeAction,
+  authorizeMove,
+  authorizeProtection,
   refusals,
   requireCanonicalTitle,
   requireGroupChange,
   requireRight,
-  rightForLevel,
   RESTRICTION_LEVELS,
 } from "~/lib/wiki-os/permissions";
 import {
@@ -30,11 +31,7 @@ import {
   loadTargetPermissions,
   type WikiPermissions,
 } from "~/lib/wiki-os/rights";
-import {
-  PageManagementService,
-  talkTitleOf,
-  type PageActor,
-} from "~/lib/wiki-os/core/page-management-service";
+import { PageManagementService, type PageActor } from "~/lib/wiki-os/core/page-management-service";
 import { LOG_TYPES, RightsAdminService } from "~/lib/wiki-os/core/rights-admin-service";
 
 const titleInput = z.string().min(1).max(500);
@@ -69,33 +66,6 @@ function publicPermissions(permissions: WikiPermissions) {
     rights: [...permissions.rights],
     block: permissions.block,
   };
-}
-
-/**
- * The caller may move `from` to `to` (and, with `moveTalk`, their talk pages). Besides `move` on the
- * source and create on the destination, they must be able to write the source itself: its edit
- * protection would otherwise travel with the page to a mover it keeps out, and a redirect at the old
- * title is a new page there, so `create` (which also holds a salted title back) when one is left.
- */
-async function authorizeMove(
-  ctx: WikiAuthContext,
-  from: string,
-  to: string,
-  { moveTalk, leaveRedirect }: { moveTalk: boolean; leaveRedirect: boolean }
-): Promise<void> {
-  const writeSource = leaveRedirect ? "create" : "edit";
-  await authorizeAction(ctx, "move", from);
-  await authorizeAction(ctx, writeSource, from);
-  await authorizeAction(ctx, "move", to);
-  await authorizeAction(ctx, "create", to);
-  const fromTalk = moveTalk ? talkTitleOf(from) : null;
-  const toTalk = moveTalk ? talkTitleOf(to) : null;
-  if (fromTalk && toTalk) {
-    await authorizeAction(ctx, "move", fromTalk);
-    await authorizeAction(ctx, writeSource, fromTalk);
-    await authorizeAction(ctx, "move", toTalk);
-    await authorizeAction(ctx, "create", toTalk);
-  }
 }
 
 export const wikiosPageAdminRouter = createTRPCRouter({
@@ -180,10 +150,11 @@ export const wikiosPageAdminRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const title = requireCanonicalTitle(input.title);
-      await authorizeAction(ctx, "protect", title);
-      for (const { level } of input.restrictions) {
-        if (level) await requireRight(ctx, rightForLevel(level));
-      }
+      await authorizeProtection(
+        ctx,
+        title,
+        input.restrictions.map((restriction) => restriction.level)
+      );
       await RightsAdminService.protect({
         title,
         changes: input.restrictions,

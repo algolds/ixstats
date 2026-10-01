@@ -46,6 +46,8 @@ export interface PageRow {
 /** A revision, with the page it belongs to. */
 export interface RevisionRow {
   revId: number;
+  /** The revision's public reference (`toRevisionRef`): what `detectEditConflict` compares. */
+  ref: string;
   /** The previous revision of the page; 0 for the first. */
   parentId: number;
   pageId: number;
@@ -318,6 +320,12 @@ export interface ApiStore {
   linksFrom(query: PerPageQuery): Promise<PerPageResult<LinkRow>>;
   /** Categories of pages, ordered by (page id, category name). */
   categoriesOf(query: PerPageQuery & { hidden?: boolean }): Promise<PerPageResult<CategoryRow>>;
+  /** A revision by its WikiOS row id (right after a save, which answers with the row id). */
+  revisionByRowId(rowId: string): Promise<RevisionRow | null>;
+  /** How many revisions a page has, deleted pages included (`action=undelete` reports it). */
+  revisionCountOf(title: string): Promise<number>;
+  /** The page's stored rendering: `fresh` when it matches the current wikitext. */
+  pageHtml(articleId: string): Promise<{ html: string | null; fresh: boolean } | null>;
   /** The wikitext of pages, by WikiOS article id (for `prop=pageprops`). */
   wikitextByArticle(articleIds: readonly string[]): Promise<Map<string, string>>;
 

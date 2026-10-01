@@ -8,6 +8,7 @@ import type { JsonObject } from "~/lib/wiki-os/api-compat/format";
 import type { ApiStore } from "~/lib/wiki-os/api-compat/store-types";
 import type {
   ApiDeps,
+  ApiServices,
   ApiSessionRecord,
   AuthStore,
   BotPasswordRecord,
@@ -21,7 +22,7 @@ export const NOW = new Date("2026-09-30T12:00:00Z");
 export const HEKU: SessionUser = {
   name: "Heku",
   mwUserId: 7,
-  ctx: { auth: { userId: "user_clerk_heku" }, user: { id: "u-heku", clerkUserId: "user_clerk_heku" } },
+  ctx: { auth: { userId: "user_clerk_heku" }, user: { id: "u-heku", clerkUserId: "user_clerk_heku", wikiUsername: "Heku" } },
 };
 
 export interface FakeAuth extends AuthStore {
@@ -89,6 +90,7 @@ export async function makeDeps(overrides: Partial<ApiDeps> = {}): Promise<ApiDep
     loadPermissions: fakeLoader(),
     rateLimit: async () => ({ success: true, resetAt: new Date(NOW.getTime() + 60_000) }),
     search: async () => ({ hits: [], total: 0 }),
+    services: new Proxy({}, { get: (_t, name) => () => { throw new Error(`unexpected service call: ${String(name)}`); } }) as ApiServices,
     store: fakeStore({
       statistics: async () => ({ pages: 10, articles: 8, edits: 50, images: 2, users: 3, activeUsers: 1, admins: 1 }),
       userStats: async () => ({ editCount: 12, registration: new Date("2020-01-02T03:04:05Z") }),
@@ -213,6 +215,8 @@ export interface FakeLog {
 }
 
 export interface FakeWikiData {
+  /** page title -> the stored fresh HTML */
+  html?: Record<string, string>;
   logs?: FakeLog[];
   users?: Array<{ name: string; userId: number; groups?: string[]; editCount?: number; registration?: string }>;
   blocks?: Array<{ target: string; reason?: string; expiresAt?: string | null; blockedBy?: string; createdAt: string }>;
@@ -232,8 +236,8 @@ const byteLength = (text: string) => Buffer.byteLength(text, "utf8");
 
 /** An `ApiStore` over plain arrays, with the same ordering and cursor rules as the Prisma store. */
 export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): ApiStore {
-  const pages = (data.pages ?? []).filter((page) => !page.deleted);
-  const revisions = data.revisions ?? [];
+  const state = { get pages() { return (data.pages ?? []).filter((page) => !page.deleted); } };
+  const revisions = (data.revisions ??= []);
   const articleId = (title: string) => `art:${title}`;
   const titleOfArticle = (id: string) => id.slice("art:".length);
 
@@ -261,11 +265,12 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
   };
 
   const revisionRow = (rev: FakeRevision, withContent: boolean) => {
-    const page = pages.find((p) => p.title === rev.page)!;
+    const page = state.pages.find((p) => p.title === rev.page)!;
     const history = revisionsOf(rev.page);
     const index = history.findIndex((r) => r.revId === rev.revId);
     return {
       revId: rev.revId,
+      ref: String(rev.revId),
       parentId: index > 0 ? history[index - 1]!.revId : 0,
       pageId: page.pageId,
       title: page.title,
@@ -287,12 +292,12 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
   };
 
   const base: Partial<ApiStore> = {
-    pagesByTitle: async (titles) => pages.filter((p) => titles.includes(p.title)).map(pageRow),
-    pagesById: async (ids) => pages.filter((p) => ids.includes(p.pageId)).map(pageRow),
+    pagesByTitle: async (titles) => state.pages.filter((p) => titles.includes(p.title)).map(pageRow),
+    pagesById: async (ids) => state.pages.filter((p) => ids.includes(p.pageId)).map(pageRow),
     revisionsById: async (ids, withContent) =>
       ids.flatMap((id) => {
         const rev = revisions.find((r) => r.revId === id);
-        return rev && pages.some((p) => p.title === rev.page) ? [revisionRow(rev, withContent)] : [];
+        return rev && state.pages.some((p) => p.title === rev.page) ? [revisionRow(rev, withContent)] : [];
       }),
     findRevisions: async (query) => {
       const target = query.articleId ? titleOfArticle(query.articleId) : undefined;
@@ -304,9 +309,9 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
       const point = (bound: { timestamp: Date; revId?: number }) =>
         [bound.timestamp.toISOString(), bound.revId ?? (newer ? -Infinity : Infinity)] as const;
       const rows = revisions
-        .filter((rev) => pages.some((p) => p.title === rev.page))
+        .filter((rev) => state.pages.some((p) => p.title === rev.page))
         .filter((rev) => (target ? rev.page === target : true))
-        .filter((rev) => (query.namespaces ? query.namespaces.includes(pages.find((p) => p.title === rev.page)?.namespace ?? 0) : true))
+        .filter((rev) => (query.namespaces ? query.namespaces.includes(state.pages.find((p) => p.title === rev.page)?.namespace ?? 0) : true))
         .filter((rev) => (query.users ? query.users.includes(rev.user ?? "Heku") : true))
         .filter((rev) => (query.excludeUser ? (rev.user ?? "Heku") !== query.excludeUser : true))
         .filter((rev) => (query.minor === undefined ? true : (rev.minor ?? false) === query.minor))
@@ -335,7 +340,7 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
       const rows = query.articleIds
         .map((id) => titleOfArticle(id))
         .flatMap((source) => {
-          const page = pages.find((p) => p.title === source);
+          const page = state.pages.find((p) => p.title === source);
           return page ? (data.links?.[source] ?? []).map((target) => ({ pageId: page.pageId, title: target, key: target.toLowerCase().replace(/ /g, "_") })) : [];
         })
         .filter((row) => !query.titles || query.titles.includes(row.title))
@@ -360,7 +365,7 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
       const rows = query.articleIds
         .map((id) => titleOfArticle(id))
         .flatMap((source) => {
-          const page = pages.find((p) => p.title === source);
+          const page = state.pages.find((p) => p.title === source);
           return page ? (data.categories?.[source] ?? []).map((name) => ({ pageId: page.pageId, name })) : [];
         })
         .filter((row) => !query.titles || query.titles.includes(`Category:${row.name}`))
@@ -386,7 +391,7 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
     listPages: async (q) => {
       const asc = q.dir === "ascending";
       const [lower, upper] = asc ? [q.start, q.end] : [q.end, q.start];
-      const rows = pages
+      const rows = state.pages
         .filter((p) => (p.namespace ?? 0) === q.namespace)
         .filter((p) => !q.prefix || p.title.startsWith(q.prefix))
         .filter((p) => !lower || p.title >= lower)
@@ -399,7 +404,7 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
     listCategoryMembers: async (q) => {
       const name = q.category.slice("Category:".length);
       const asc = q.dir === "ascending";
-      const rows = pages
+      const rows = state.pages
         .filter((p) => (data.categories?.[p.title] ?? []).includes(name))
         .filter((p) => !q.namespaces || q.namespaces.includes(p.namespace ?? 0))
         .filter((p) => {
@@ -417,7 +422,7 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
       return rows.slice(0, q.limit + 1);
     },
     listBacklinks: async (q) => {
-      const rows = pages
+      const rows = state.pages
         .filter((p) => (data.links?.[p.title] ?? []).includes(q.target))
         .filter((p) => !q.namespaces || q.namespaces.includes(p.namespace ?? 0))
         .filter((p) => (q.filterRedirects === "redirects" ? p.redirect !== undefined : q.filterRedirects === "nonredirects" ? p.redirect === undefined : true))
@@ -426,7 +431,7 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
       return rows.slice(0, q.limit + 1).map((p) => ({ pageId: p.pageId, title: p.title, namespace: p.namespace ?? 0, isRedirect: p.redirect !== undefined }));
     },
     randomPages: async (q) =>
-      pages
+      state.pages
         .filter((p) => q.namespaces.includes(p.namespace ?? 0))
         .filter((p) => (q.filterRedirects === "redirects" ? p.redirect !== undefined : q.filterRedirects === "nonredirects" ? p.redirect === undefined : true))
         .slice(0, q.limit)
@@ -469,7 +474,7 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
         action: l.action,
         title: l.title,
         namespace: l.title.includes(":") ? ({ User: 2, Template: 10 } as Record<string, number>)[l.title.split(":")[0]!] ?? 0 : 0,
-        pageId: pages.find((p) => p.title === l.title)?.pageId ?? 0,
+        pageId: state.pages.find((p) => p.title === l.title)?.pageId ?? 0,
         actor: l.actor,
         comment: l.comment ?? null,
         params: l.params ?? null,
@@ -508,12 +513,102 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
         .slice(0, q.limit + 1)
         .map((r) => ({ id: r.id, title: r.title, namespace: 0, level: r.level, timestamp: new Date(r.timestamp), user: r.user ?? null, comment: r.comment ?? null, expiresAt: r.expiresAt ? new Date(r.expiresAt) : null }));
     },
+    revisionByRowId: async (rowId) => {
+      const rev = revisions.find((r) => `row-${r.revId}` === rowId);
+      return rev ? revisionRow(rev, false) : null;
+    },
+    revisionCountOf: async (title) => revisions.filter((r) => r.page === title).length,
+    pageHtml: async (id) => {
+      const page = (data.pages ?? []).find((p) => `art:${p.title}` === id);
+      return page ? { html: data.html?.[page.title] ?? null, fresh: data.html?.[page.title] !== undefined } : null;
+    },
     wikitextByArticle: async (ids) =>
-      new Map(ids.map((id) => [id, pages.find((p) => p.title === titleOfArticle(id))?.wikitext ?? ""])),
+      new Map(
+        ids.map((id) => {
+          const title = titleOfArticle(id);
+          const page = state.pages.find((p) => p.title === title);
+          return [id, page?.wikitext ?? revisionsOf(title).at(-1)?.content ?? ""] as const;
+        })
+      ),
   };
   return fakeStore({ ...base, ...extra });
 }
 
 function a2(pageA: number, keyA: string, pageB: number, keyB: string): number {
   return pageA - pageB || (keyA < keyB ? -1 : keyA > keyB ? 1 : 0);
+}
+
+
+// ---------------------------------------------------------------------------
+// Fake services for the writing actions
+// ---------------------------------------------------------------------------
+
+export interface ServiceCall {
+  name: string;
+  args: unknown[];
+}
+
+/** `ApiServices` that record what they were asked and apply saves to the fake wiki's data. */
+export function fakeServices(data: FakeWikiData, overrides: Partial<ApiServices> = {}) {
+  const calls: ServiceCall[] = [];
+  const record =
+    <A extends unknown[], R>(name: string, fn: (...args: A) => R) =>
+    (...args: A): R => {
+      calls.push({ name, args });
+      return fn(...args);
+    };
+  let nextRevId = 9000;
+  const services: ApiServices = {
+    renderWikitext: record("renderWikitext", async (wikitext: string, title: string) => `<p>rendered(${title}): ${wikitext}</p>`),
+    diff: record("diff", (a: string, b: string) => `<tr><td>${a}</td><td>${b}</td></tr>`),
+    assertCanEdit: record("assertCanEdit", async () => undefined),
+    authorize: record("authorize", async () => undefined),
+    requireRight: record("requireRight", async () => undefined),
+    authorizeMove: record("authorizeMove", async () => undefined),
+    authorizeProtection: record("authorizeProtection", async () => undefined),
+    requireRestorableWikitext: record("requireRestorableWikitext", async (_ctx, _title, revision) => revision.wikitext ?? ""),
+    detectEditConflict: record("detectEditConflict", async (title: string, baseRef: string | undefined) => {
+      const head = (data.revisions ?? []).filter((r) => r.page === title).sort((a, b) => a.timestamp.localeCompare(b.timestamp) || a.revId - b.revId).at(-1);
+      return head && baseRef === String(head.revId) ? null : { currentWikitext: head?.content ?? "", currentRevisionRef: head ? String(head.revId) : null };
+    }),
+    saveWikitext: record("saveWikitext", async (_ctx, save) => {
+      const pages = (data.pages ??= []);
+      if (!pages.some((p) => p.title === save.title)) {
+        pages.push({ pageId: Math.max(0, ...pages.map((p) => p.pageId)) + 1, title: save.title, namespace: 0 });
+      }
+      const revId = nextRevId++;
+      (data.revisions ??= []).push({ revId, page: save.title, timestamp: "2026-09-30T12:00:00Z", user: "Heku", comment: save.summary, minor: save.minor, content: save.wikitext });
+      return { revisionRowId: `row-${revId}` };
+    }),
+    movePage: record("movePage", async (from: string, to: string) => ({
+      success: true, oldTitle: from, newTitle: to, oldSlug: "", newSlug: "", redirectArticleId: "redirect-1", movedArticleId: "a", linksUpdated: 0, talk: null,
+    })),
+    archivePage: record("archivePage", async () => undefined),
+    restorePage: record("restorePage", async () => undefined),
+    protectPage: record("protectPage", async () => undefined),
+    ...overrides,
+  };
+  return { services, calls };
+}
+
+/** Deps over a fake wiki, with a logged-in bot's grants, recording every service call. */
+export async function makeWikiDeps(data: FakeWikiData, options: { services?: Partial<ApiServices>; grants?: string[]; groups?: Group[]; extra?: Partial<ApiDeps> } = {}) {
+  const { services, calls } = fakeServices(data, options.services);
+  const deps = await makeDeps({
+    store: fakeWiki(data),
+    services,
+    auth: await fakeAuthStore("bot-secret", options.grants ?? ["basic", "editpage", "createeditmovepage", "delete", "protect", "rollback"]),
+    loadPermissions: fakeLoader(options.groups ?? ["*", "user", "sysop"]),
+    ...options.extra,
+  });
+  const bot = new Bot(deps);
+  return { deps, calls, bot, data };
+}
+
+/** Log a bot in and fetch the token a write of `type` needs. */
+export async function loggedIn(bot: Bot, type = "csrf"): Promise<string> {
+  const login = (await bot.login()) as { login?: { result: string } };
+  if (login.login?.result !== "Success") throw new Error(`login failed: ${JSON.stringify(login)}`);
+  const tokens = (await bot.get({ action: "query", meta: "tokens", type, formatversion: "2" })) as { query: { tokens: Record<string, string> } };
+  return tokens.query.tokens[`${type}token`]!;
 }

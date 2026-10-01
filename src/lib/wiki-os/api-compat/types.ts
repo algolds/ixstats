@@ -7,7 +7,12 @@
 
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import type { Right, WikiPermissions } from "~/lib/wiki-os/rights";
-import type { FormatVersion } from "./format";
+import type { EditConflict } from "~/lib/wiki-os/core/edit-conflict";
+import type { MovePageOptions, MovePageResult, PageActor } from "~/lib/wiki-os/core/page-management-service";
+import type { RestrictionChange } from "~/lib/wiki-os/core/rights-admin-service";
+import type { WikiAction } from "~/lib/wiki-os/permissions";
+import type { WikitextSave } from "~/lib/wiki-os/services/edit-service";
+import type { FormatVersion, JsonValue } from "./format";
 import type { ApiParams } from "./params";
 import type { ApiStore } from "./store-types";
 
@@ -113,17 +118,72 @@ export type SearchFn = (
   offset: number
 ) => Promise<{ hits: SearchHit[]; total: number }>;
 
+/**
+ * The existing WikiOS services api.php writes through. Permission checks, saves, moves, deletions and
+ * protections are never re-implemented here: each is the function the tRPC routers call.
+ */
+export interface ApiServices {
+  /** MediaWiki's render of wikitext, without storing anything (`action=parse&text=`). */
+  renderWikitext(wikitext: string, title: string): Promise<string>;
+  /** The server diff: the `<tr>` rows of MediaWiki's diff table. */
+  diff(oldText: string, newText: string): string;
+  /** May the caller edit (or create) `title`? Throws the permission refusals. */
+  assertCanEdit(ctx: WikiAuthContext, title: string): Promise<void>;
+  authorize(ctx: WikiAuthContext, action: WikiAction, title: string): Promise<void>;
+  requireRight(ctx: WikiAuthContext, right: Right): Promise<void>;
+  authorizeMove(
+    ctx: WikiAuthContext,
+    from: string,
+    to: string,
+    options: { moveTalk: boolean; leaveRedirect: boolean }
+  ): Promise<void>;
+  authorizeProtection(
+    ctx: WikiAuthContext,
+    title: string,
+    levels: ReadonlyArray<"autoconfirmed" | "sysop" | null>
+  ): Promise<void>;
+  /** The text a rollback may save from `revision` (refuses a placeholder, another page's revision, a blanking). */
+  requireRestorableWikitext(
+    ctx: WikiAuthContext,
+    title: string,
+    revision: { wikitext: string | null; title: string }
+  ): Promise<string>;
+  /** `detectEditConflict`: has the page moved on from the revision `baseRef` names? */
+  detectEditConflict(title: string, baseRef: string | undefined): Promise<EditConflict | null>;
+  /** Save a revision (PostgreSQL, then the MediaWiki mirror and the cache purge); answers the new revision's row id. */
+  saveWikitext(ctx: WikiAuthContext, save: WikitextSave): Promise<{ revisionRowId: string }>;
+  movePage(
+    from: string,
+    to: string,
+    reason: string,
+    actor: PageActor,
+    options: MovePageOptions
+  ): Promise<MovePageResult>;
+  archivePage(title: string, reason: string, actor: PageActor): Promise<void>;
+  restorePage(title: string, reason: string, actor: PageActor): Promise<void>;
+  protectPage(params: {
+    title: string;
+    changes: readonly RestrictionChange[];
+    reason: string;
+    actor: PageActor;
+  }): Promise<void>;
+}
+
 /** What a module needs from the outside world: the data store, the existing services, the clock. */
 export interface ApiDeps {
   auth: AuthStore;
   loadPermissions: PermissionLoader;
   rateLimit: RateLimitCheck;
   store: ApiStore;
+  services: ApiServices;
   search: SearchFn;
   /** The public origin, without a trailing slash: `https://ixwiki.com`. */
   siteUrl: string;
   now: () => Date;
 }
+
+/** What an action answers with: an object, or (`opensearch`) a bare array. */
+export type ApiResult = { [key: string]: JsonValue } | JsonValue[];
 
 /** One request, as every module sees it. */
 export interface ApiContext {

@@ -115,10 +115,13 @@ export class ResponseBuilder {
     this.warnings.set(module, list);
   };
 
-  /** The JSON body: the module's result, `warnings` when there are any, all in `version`'s shape. */
-  finish(result: JsonObject, version: FormatVersion): JsonObject {
+  /**
+   * The JSON body: the module's result, `warnings` when there are any (an array result, such as
+   * `opensearch`'s, has no place for them), all in `version`'s shape.
+   */
+  finish(result: JsonValue, version: FormatVersion): JsonValue {
     const warnings = warningsBody(this.warnings, version);
-    const body = warnings ? { ...result, warnings } : result;
-    return toWire(body, version) as JsonObject;
+    const isObject = result !== null && typeof result === "object" && !Array.isArray(result);
+    return toWire(warnings && isObject ? { ...result, warnings } : result, version);
   }
 }

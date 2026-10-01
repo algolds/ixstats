@@ -21,12 +21,17 @@ import {
   errorBody,
   type ErrorFormat,
   type FormatVersion,
-  type JsonObject,
+  type JsonValue,
 } from "./format";
 import { parseRequestParams, type ApiParams } from "./params";
+import { runCompare } from "./modules/compare";
+import { runEdit } from "./modules/edit";
 import { runLogin, runLogout } from "./modules/login";
+import { runOpenSearch } from "./modules/opensearch";
+import { runDelete, runMove, runProtect, runRollback, runUndelete } from "./modules/page-ops";
+import { runParse } from "./modules/parse";
 import { runQuery } from "./modules/query";
-import type { ApiContext, ApiDeps, ApiSession, CookieSpec } from "./types";
+import type { ApiContext, ApiDeps, ApiResult, ApiSession, CookieSpec } from "./types";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 
 export interface ApiRequestInput {
@@ -46,13 +51,13 @@ export interface ApiRequestInput {
 
 export interface ApiResponseOutput {
   /** The JSON body, already in the requested format version's shape. */
-  body: JsonObject;
+  body: JsonValue;
   setCookies: CookieSpec[];
   /** The error code, for the `MediaWiki-API-Error` header; null on success. */
   errorCode: string | null;
 }
 
-type ActionHandler = (rc: ApiContext) => Promise<JsonObject>;
+type ActionHandler = (rc: ApiContext) => Promise<ApiResult>;
 
 interface ActionSpec {
   run: ActionHandler;
@@ -62,8 +67,17 @@ interface ActionSpec {
 
 const ACTIONS: Readonly<Record<string, ActionSpec>> = {
   query: { run: runQuery, post: false },
+  parse: { run: runParse, post: false },
+  opensearch: { run: runOpenSearch, post: false },
+  compare: { run: runCompare, post: false },
   login: { run: runLogin, post: true },
   logout: { run: runLogout, post: true },
+  edit: { run: runEdit, post: true },
+  move: { run: runMove, post: true },
+  delete: { run: runDelete, post: true },
+  undelete: { run: runUndelete, post: true },
+  protect: { run: runProtect, post: true },
+  rollback: { run: runRollback, post: true },
 };
 
 /** Requests per minute: anonymous, signed in, and for writes (a bot with `noratelimit` is not counted). */
