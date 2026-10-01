@@ -145,42 +145,54 @@ function isBadUrl(css: string, start: number): boolean {
   return false; // the sheet ends inside the url: nothing follows to misread
 }
 
+/** Whether a character can be the last of `url` once escapes are resolved: `l`, or the end of the escape of one (`\\6c `). */
+const MAY_END_URL = /[lL0-9a-fA-F \t\n\r\f]/;
+
 function lex(css: string): Lexed | null {
   const strings: string[] = [];
   const masked: string[] = [];
-  // The end of the masked sheet, kept as it grows (the end of a string built by `+=` cannot be sliced without flattening all of it).
-  let tail = "";
-  const keep = (piece: string) => {
+  // The masked text is the sheet with comments and strings replaced, built from runs of the sheet as it is and the
+  // replacements; `kept` is the end (up to 256 characters) of what has been pushed. The end of a string built by `+=`
+  // cannot be sliced without flattening all of it, and a character at a time is a piece each.
+  let kept = "";
+  let runStart = 0; // css[runStart, i) is text that stays as it is and is not pushed yet
+  const push = (piece: string) => {
     masked.push(piece);
-    tail += piece;
-    if (tail.length > 512) tail = tail.slice(-256);
+    kept = (kept + piece).slice(-256);
+  };
+  const flush = (to: number) => {
+    if (to > runStart) push(css.slice(runStart, to));
   };
   let i = 0;
   while (i < css.length) {
     const ch = css.charAt(i);
     if (ch === "\\") {
-      keep(css.slice(i, i + 2));
       i += 2;
     } else if (ch === "/" && css.charAt(i + 1) === "*") {
       const end = css.indexOf("*/", i + 2);
-      if (end === -1) break; // an unterminated comment runs to the end of the sheet
-      keep(" ");
+      flush(i);
+      if (end === -1) return { masked: masked.join(""), strings }; // an unterminated comment runs to the end of the sheet
+      push(" ");
       i = end + 2;
+      runStart = i;
     } else if (ch === "(") {
-      if (endsWithUrlName(tail.slice(-256)) && isBadUrl(css, i + 1)) return null;
-      keep(ch);
+      const last = i > runStart ? css.charAt(i - 1) : kept.charAt(kept.length - 1);
+      const tail = (kept + css.slice(Math.max(runStart, i - 256), i)).slice(-256);
+      if (MAY_END_URL.test(last) && endsWithUrlName(tail) && isBadUrl(css, i + 1)) return null;
       i++;
     } else if (ch === '"' || ch === "'") {
       const end = endOfString(css, i);
       if (end === -1) return null;
+      flush(i);
       strings.push(css.slice(i, end + 1));
-      keep(`${STRING_OPEN}${strings.length - 1}${STRING_CLOSE}`);
+      push(`${STRING_OPEN}${strings.length - 1}${STRING_CLOSE}`);
       i = end + 1;
+      runStart = i;
     } else {
-      keep(ch);
       i++;
     }
   }
+  flush(Math.min(i, css.length));
   return { masked: masked.join(""), strings };
 }
 
