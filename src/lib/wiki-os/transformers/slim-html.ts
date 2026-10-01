@@ -144,17 +144,28 @@ function dropEmptyAttributes(element: Element): void {
   }
 }
 
+/** A block element laid out inline by its own style (`display:inline-block`): space beside it shows. */
+const isStyledInline = (element: Element): boolean =>
+  (element.getAttribute("style") ?? "").toLowerCase().includes("inline");
+
 const isBlock = (node: Node | null): boolean =>
   node === null ||
-  (node.nodeType === ELEMENT_NODE && BLOCK_ELEMENTS.has((node as Element).tagName));
+  (node.nodeType === ELEMENT_NODE &&
+    BLOCK_ELEMENTS.has((node as Element).tagName) &&
+    !isStyledInline(node as Element));
+
+/** Space, tab, line feed, carriage return and form feed: the whitespace CSS collapses. U+00A0 is not. */
+const COLLAPSIBLE_WHITESPACE_ONLY = /^[ \t\n\r\f]*$/;
 
 /**
  * Whitespace-only text that carries no space a reader could see: in a table's or list's structure,
  * or between block elements (or at a block's edge). Inside an inline element or between inline
- * neighbours a space can separate two words, so it stays.
+ * neighbours a space can separate two words, so it stays; so does a no-break space (U+00A0, an
+ * `&nbsp;` spacer is content, `String.trim` would take it for whitespace) and the space beside a
+ * block whose style makes it inline.
  */
 function isLayoutWhitespace(text: Text): boolean {
-  if (text.data.trim() !== "") return false;
+  if (!COLLAPSIBLE_WHITESPACE_ONLY.test(text.data)) return false;
   const parent = text.parentElement; // null at the fragment's root
   if (parent?.closest(WHITESPACE_SENSITIVE)) return false;
   if (parent && STRUCTURAL_PARENTS.has(parent.tagName)) return true;

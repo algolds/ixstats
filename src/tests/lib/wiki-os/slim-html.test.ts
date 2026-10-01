@@ -75,6 +75,36 @@ describe("slimArticleHtml", () => {
     expect(out).toContain("<p><b>bold</b> <i>italic</i> <span> </span>");
   });
 
+  it("keeps a no-break space: an &nbsp; spacer is content, not collapsible whitespace", () => {
+    const spacer = '<div style="float:right;width:6em;height:2.6em">&nbsp;</div>';
+    const out = slimArticleHtml(`<div>${spacer}<p>a</p>&nbsp;<p>b</p>\u00a0\u2003</div>`);
+
+    expect(out).toContain(spacer);
+    // between blocks too, and the other Unicode spaces (em space) that String.trim also strips
+    expect(out).toContain("<p>a</p>&nbsp;<p>b</p>&nbsp;\u2003");
+    // …while a plain run of space, tab, newline, CR and form feed is still removed
+    expect(slimArticleHtml("<div>\n\t \r\f<p>a</p> \n <p>b</p></div>")).toBe(
+      "<div><p>a</p><p>b</p></div>"
+    );
+  });
+
+  it("keeps the space beside a block laid out inline by its style", () => {
+    const out = slimArticleHtml(
+      '<div><div style="display:inline-block">a</div> <div style="display: inline-block">b</div>' +
+        ' <p style="display:inline">c</p> <p>d</p></div>'
+    );
+
+    // inline-block siblings keep the gap between them, and so does the one before the inline <p>
+    expect(out).toContain(
+      '<div style="display:inline-block">a</div> <div style="display: inline-block">b</div>' +
+        ' <p style="display:inline">c</p>'
+    );
+    // a plain block next to the inline one: that space is still next to an inline sibling, so it stays
+    expect(out).toContain("</p> <p>d</p>");
+    // two ordinary blocks lose theirs
+    expect(slimArticleHtml("<div><p>x</p> <p>y</p></div>")).toBe("<div><p>x</p><p>y</p></div>");
+  });
+
   it("keeps whitespace in <pre> and where the author asked for it", () => {
     const out = slimArticleHtml(
       '<div><pre>\n  <b>a</b>\n  <b>b</b>\n</pre></div><div style="white-space:pre-wrap"><p>a</p>\n<p>b</p></div>'
