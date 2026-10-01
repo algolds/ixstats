@@ -185,6 +185,43 @@ const mustRefuse: Array<[string, string | Uint8Array]> = [
   ["pi containing script (PI hides?)", `<svg ${NS}><?x <script>alert(1)</script> ?></svg>`],
   ["cdata hiding open tag", `<svg ${NS}><![CDATA[ ]]><script>alert(1)</script></svg>`],
   ["comment end trick", `<svg ${NS}><!-- a --!><script>alert(1)</script> --></svg>`],
+  [
+    "root in the XHTML namespace",
+    `<svg xmlns="http://www.w3.org/1999/xhtml"><meta http-equiv="refresh" content="0;url=https://evil.example/"/></svg>`,
+  ],
+  ["root namespace written with a reference", `<svg xmlns="http://www.w3.org/1999/&#x78;html"/>`],
+  ["root with no valid namespace value", `<svg xmlns=""/>`],
+  [
+    "nested default namespace of XHTML",
+    `<svg ${NS}><g xmlns="http://www.w3.org/1999/xhtml"><meta http-equiv="refresh" content="0;url=https://evil.example/"/></g></svg>`,
+  ],
+  ["prefixed root in the XHTML namespace", `<svg:svg xmlns:svg="http://www.w3.org/1999/xhtml"/>`],
+  [
+    "XHTML declared under a prefix",
+    `<svg ${NS}><x:meta xmlns:x="http://www.w3.org/1999/xhtml" http-equiv="refresh" content="0;url=https://evil.example/"/></svg>`,
+  ],
+  [
+    "style import with a long-zeros reference",
+    `<svg ${NS}><style>@&#x0000069;mport "//evil.example/x.css";</style></svg>`,
+  ],
+  [
+    "style url with a long-zeros decimal reference",
+    `<svg ${NS}><style>a{fill:&#0000000117;rl(//evil.example/a)}</style></svg>`,
+  ],
+  [
+    "javascript: href with a long-zeros reference",
+    `<svg ${NS}><a href="&#x000000006a;avascript:alert(1)"><text>x</text></a></svg>`,
+  ],
+  [
+    "encoding declared after 300 characters of declaration",
+    `<?xml version="1.0"${" ".repeat(300)}encoding="UTF-16"?><svg ${NS}/>`,
+  ],
+  [
+    "XML declaration longer than 1024 characters",
+    `<?xml version="1.0"${" ".repeat(1100)}encoding="UTF-8"?><svg ${NS}/>`,
+  ],
+  ["an end tag that closes another element", `<svg ${NS}><g><rect></g></rect></svg>`],
+  ["an end tag with the wrong case", `<svg ${NS}><g></G></svg>`],
   ["svg only in comment", `<!-- <svg> --><html><script>alert(1)</script></html>`],
 ];
 
@@ -207,6 +244,10 @@ const mustAccept: Array<[string, string]> = [
   [
     "w3c doctype external",
     `<?xml version="1.0"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg ${NS}/>`,
+  ],
+  [
+    "inkscape-style namespaces and a metadata block",
+    `<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg ${NS} xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/"><sodipodi:namedview inkscape:zoom="1"/><metadata><rdf:RDF><dc:title>flag</dc:title></rdf:RDF></metadata><g xmlns="http://www.w3.org/2000/svg"><rect width="2" height="2"/></g></svg>`,
   ],
   ["onwards word in text", `<svg ${NS}><text>online</text></svg>`],
 ];
@@ -286,6 +327,29 @@ describe("SVG scan bounds and reasons", () => {
     expect(svgProblem(`<!DOCTYPE svg SYSTEM "a>[b"><svg/>`)).toBeNull();
     expect(svgProblem(`<!DOCTYPE svg SYSTEM "a>b" [ ]><svg/>`)).toBe(
       "its DOCTYPE has an internal subset"
+    );
+  });
+
+  it("takes a prefixed root in the SVG namespace and matching end tags, and names a mismatch", () => {
+    expect(
+      svgProblem(
+        `<svg:svg xmlns:svg="http://www.w3.org/2000/svg"><svg:rect width="1" height="1"/></svg:svg>`
+      )
+    ).toBeNull();
+    expect(svgProblem(`<svg ${NS}><g><rect/></g></svg>`)).toBeNull();
+    expect(svgProblem(`<svg ${NS}><g><rect></g></rect></svg>`)).toBe(
+      "it is not well-formed XML (</g> does not close <rect>)"
+    );
+    expect(svgProblem(`<svg xmlns="http://www.w3.org/1999/xhtml"/>`)).toBe(
+      "its default namespace is not the SVG namespace"
+    );
+    expect(
+      svgProblem(
+        `<svg:svg xmlns:svg="http://www.w3.org/2000/svg" xmlns:h="http://www.w3.org/1999/xhtml"/>`
+      )
+    ).toBe("it declares the XHTML namespace");
+    expect(svgProblem(`<svg:svg xmlns:svg="urn:other"/>`)).toBe(
+      "its root element is not in the SVG namespace"
     );
   });
 

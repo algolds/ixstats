@@ -6,8 +6,10 @@
  * scan reads the file the way an XML parser does and is strict about it: a file that is not well-formed XML would only
  * show the browser's parse error, so it is refused (this also closes the tricks that rely on a tag or comment that one reader sees and
  * another does not). What it checks:
- *   - the document is UTF-8 (a declared UTF-7 or UTF-16 body reads differently to a browser than to this scan), has one root
- *     element, and that element is `svg`; a DOCTYPE has no internal subset;
+ *   - the document is UTF-8 (a declared UTF-7 or UTF-16 body reads differently to a browser than to this scan), its tags
+ *     are well-formed and every end tag closes the element that is open (a stack, at most 2048 deep), it has one root
+ *     element, and that element is `svg`, in the SVG namespace (no `xmlns` of another value, no XHTML namespace declared);
+ *     a DOCTYPE has no internal subset;
  *   - no `script`, `foreignObject`, `iframe`, `embed`, `object`, `handler`, `listener`; no event-handler attribute (`on...`),
  *     also as the target of `<set>` and `<animate>` (`attributeName`); a `href` goes only to a fragment (`#id`) or an inline
  *     raster image; no `url()`, `@import`, `expression()`, `javascript:`, `vbscript:` or HTML `data:` URL anywhere, judged after
@@ -45,6 +47,8 @@ const NAMED_REFERENCES: Readonly<Record<string, string>> = {
   lpar: "(",
   rpar: ")",
 };
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+const XHTML_NAMESPACE = "http://www.w3.org/1999/xhtml";
 /** The encodings a declaration may name: UTF-8, and US-ASCII which is the same bytes. */
 const ALLOWED_ENCODINGS: ReadonlySet<string> = new Set(["utf-8", "us-ascii"]);
 
@@ -70,13 +74,16 @@ function safeChar(code: number): string {
 /** `value` with XML character references (`&#x6a;`, `&#106;`, `&colon;`) decoded. */
 function decodeReferences(value: string): string {
   if (!value.includes("&")) return value;
-  return value
-    .replace(/&#x([0-9a-f]{1,6});?/gi, (_, hex: string) => safeChar(parseInt(hex, 16)))
-    .replace(/&#(\d{1,7});?/g, (_, dec: string) => safeChar(parseInt(dec, 10)))
-    .replace(
-      /&([a-z]{2,8});/gi,
-      (match, name: string) => NAMED_REFERENCES[name.toLowerCase()] ?? match
-    );
+  return (
+    value
+      // any number of digits: `&#x0000061;` is `a` (an out-of-range number is no character)
+      .replace(/&#x([0-9a-f]+);?/gi, (_, hex: string) => safeChar(parseInt(hex, 16)))
+      .replace(/&#(\d+);?/g, (_, dec: string) => safeChar(parseInt(dec, 10)))
+      .replace(
+        /&([a-z]{2,8});/gi,
+        (match, name: string) => NAMED_REFERENCES[name.toLowerCase()] ?? match
+      )
+  );
 }
 
 /** `value` with CSS escapes resolved: `\75` and `\000075` are `u`, `\u` is `u`, a backslash before a line break is nothing. */
@@ -245,11 +252,31 @@ function* tagsOf(text: string): Generator<SvgTag> {
 /** The part of an element name after any namespace prefix, lower-cased (`svg:script` is `script`). */
 const localName = (name: string): string => name.slice(name.lastIndexOf(":") + 1).toLowerCase();
 
+/** What is wrong with the namespace of a prefixed root (`<svg:svg xmlns:svg="...">`): the prefix must be the SVG namespace's. */
+function rootNamespaceProblem({ name, attrs }: SvgTag): string | null {
+  const colon = name.indexOf(":");
+  if (colon === -1) return null;
+  const declared = attrs.find(([key]) => key === `xmlns:${name.slice(0, colon)}`)?.[1];
+  return declared !== undefined && decodeReferences(declared) !== SVG_NAMESPACE
+    ? "its root element is not in the SVG namespace"
+    : null;
+}
+
 /** What is wrong with one start tag, or null. */
 function tagProblem({ name, attrs }: SvgTag): string | null {
   if (FORBIDDEN_ELEMENTS.has(localName(name))) return `it contains a <${localName(name)}> element`;
   for (const [attribute, value] of attrs) {
     const key = attribute.toLowerCase();
+    // a default namespace other than SVG's makes the element something else (an XHTML `meta` refresh, a `form`)
+    if (attribute === "xmlns" && decodeReferences(value) !== SVG_NAMESPACE) {
+      return "its default namespace is not the SVG namespace";
+    }
+    if (
+      attribute.startsWith("xmlns:") &&
+      normalizeReference(value).toLowerCase() === XHTML_NAMESPACE
+    ) {
+      return "it declares the XHTML namespace";
+    }
     if (key.startsWith("on")) return `it has an event handler (${attribute})`;
     if (localName(key) === "href" && !isLocalReference(value)) {
       return "it refers to something outside the file (href)";
@@ -296,11 +323,17 @@ function externalUrlFunction(css: string): string | null {
   return null;
 }
 
-/** The encoding an XML declaration names, if the text starts with one. */
+/** The longest XML declaration read: it is a handful of pseudo-attributes. */
+const MAX_DECLARATION_LENGTH = 1024;
+
+/** The encoding the XML declaration names, if the text starts with one: looked for in the whole declaration, up to its `?>`. */
 function declaredEncoding(text: string): string | null {
-  return (
-    /^<\?xml\s[^>]{0,200}?\bencoding\s*=\s*["']([^"']+)["']/i.exec(text.slice(0, 400))?.[1] ?? null
-  );
+  if (!/^<\?xml\s/i.test(text)) return null;
+  const head = text.slice(0, MAX_DECLARATION_LENGTH);
+  const end = head.indexOf("?>");
+  if (end === -1)
+    throw malformed(`the XML declaration is longer than ${MAX_DECLARATION_LENGTH} characters`);
+  return /\bencoding\s*=\s*["']([^"']+)["']/i.exec(head.slice(0, end))?.[1] ?? null;
 }
 
 type SvgScan = { problem: string } | { problem: null; root: SvgTag };
@@ -333,25 +366,29 @@ function scan(text: string): SvgScan {
   }
 
   let root: SvgTag | null = null;
-  let depth = 0;
+  const open: string[] = [];
   for (const tag of tagsOf(text)) {
     if (tag.kind === "end") {
-      if (--depth < 0) throw malformed("an end tag closes nothing");
+      const opened = open.pop();
+      if (opened === undefined) throw malformed("an end tag closes nothing");
+      if (opened !== tag.name) throw malformed(`</${tag.name}> does not close <${opened}>`);
       continue;
     }
-    if (depth === 0) {
+    if (open.length === 0) {
       if (root) throw malformed("more than one root element");
       if (localName(tag.name) !== "svg")
         return { problem: `its root element is <${localName(tag.name)}>, not <svg>` };
       root = tag;
+      const namespace = rootNamespaceProblem(tag);
+      if (namespace) return { problem: namespace };
     }
     const problem = tagProblem(tag);
     if (problem) return { problem };
-    if (!tag.selfClosing && ++depth > MAX_DEPTH)
-      throw malformed(`elements are nested deeper than ${MAX_DEPTH}`);
+    if (!tag.selfClosing) open.push(tag.name);
+    if (open.length > MAX_DEPTH) throw malformed(`elements are nested deeper than ${MAX_DEPTH}`);
   }
   if (root === null) throw malformed("there is no root element");
-  if (depth !== 0) throw malformed("an element is never closed");
+  if (open.length !== 0) throw malformed("an element is never closed");
   const outside = externalUrlFunction(css);
   return outside ? { problem: outside } : { problem: null, root };
 }
