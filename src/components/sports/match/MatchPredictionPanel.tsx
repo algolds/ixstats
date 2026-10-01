@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { cn } from "~/lib/utils";
@@ -27,12 +27,12 @@ export function MatchPredictionPanel({ matchId, homeName, awayName }: MatchPredi
 
   const place = api.sports.placePrediction.useMutation({
     onSuccess: () => {
-      soundEffects.success();
+      soundCues.success();
       notify.success("Prediction placed!");
       void utils.sports.getMatchPredictions.invalidate({ matchId });
     },
     onError: (err) => {
-      soundEffects.error();
+      soundCues.error();
       notify.error(err.message || "Failed to place prediction");
     },
   });
@@ -50,11 +50,11 @@ export function MatchPredictionPanel({ matchId, homeName, awayName }: MatchPredi
     stakeNumber <= (data?.maxStake ?? 10000);
 
   return (
-    <div className="border-border/40 bg-card/50 space-y-3 rounded-2xl border p-4">
+    <div className="border-separator bg-surface rounded-card space-y-3 border p-4">
       <div className="flex items-center justify-between">
-        <span className="text-foreground text-xs font-bold">Predict the result</span>
+        <span className="text-label text-footnote font-semibold">Predict the result</span>
         {data && (
-          <span className="text-muted-foreground text-xs">
+          <span className="text-label-secondary text-footnote">
             Pool: {data.totalPool.toLocaleString()} ({data.entries}{" "}
             {data.entries === 1 ? "entry" : "entries"})
           </span>
@@ -62,9 +62,9 @@ export function MatchPredictionPanel({ matchId, homeName, awayName }: MatchPredi
       </div>
 
       {data?.mine ? (
-        <p className="text-muted-foreground text-xs">
+        <p className="text-label-secondary text-footnote">
           You backed{" "}
-          <span className="text-foreground font-semibold">
+          <span className="text-label font-semibold">
             {data.mine.outcome === "home"
               ? homeName
               : data.mine.outcome === "away"
@@ -82,19 +82,18 @@ export function MatchPredictionPanel({ matchId, homeName, awayName }: MatchPredi
                 key={o.id}
                 type="button"
                 onClick={() => {
-                  soundEffects.press();
                   setOutcome(o.id);
                 }}
                 className={cn(
-                  "rounded-xl border px-2 py-2 text-xs font-semibold transition",
+                  "rounded-row text-footnote border px-2 py-2 font-semibold transition",
                   outcome === o.id
-                    ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                    : "border-border/40 text-muted-foreground hover:text-foreground"
+                    ? "border-green/40 bg-green/15 text-green"
+                    : "border-separator text-label-secondary hover:text-label"
                 )}
               >
                 <span className="block truncate">{o.label}</span>
                 {data && (
-                  <span className="text-muted-foreground block font-normal">
+                  <span className="text-label-secondary block font-normal">
                     {data.pool[o.id].toLocaleString()}
                   </span>
                 )}
@@ -109,22 +108,21 @@ export function MatchPredictionPanel({ matchId, homeName, awayName }: MatchPredi
               step={1}
               value={stake}
               onChange={(e) => setStake(e.target.value)}
-              className="h-8 flex-1 rounded-xl text-xs"
+              className="rounded-row text-footnote h-8 flex-1"
               aria-label="Stake in Sovereigns"
             />
             <Button
               size="sm"
               disabled={place.isPending || !validStake}
               onClick={() => {
-                soundEffects.press();
                 place.mutate({ matchId, outcome, stake: stakeNumber });
               }}
-              className="h-8 rounded-xl bg-emerald-600 px-3 text-xs font-semibold text-white hover:bg-emerald-700 dark:bg-emerald-500"
+              className="rounded-row bg-green text-footnote text-on-green h-8 px-3 font-semibold"
             >
               Stake Sovereigns
             </Button>
           </div>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-label-secondary text-footnote">
             One prediction per match, closed at kickoff. If nobody picks the result, stakes are
             refunded.
           </p>

@@ -58,19 +58,17 @@ export function GallerySidebarContent({
     <div className="space-y-3">
       {/* Source Toggle */}
       <div>
-        <p className="text-muted-foreground mb-1.5 text-xs font-semibold tracking-wider uppercase">
-          Source
-        </p>
+        <p className="text-label-secondary text-eyebrow mb-1.5">Source</p>
         <div className="flex gap-1">
           {(["all", "ns", "lore"] as GallerySource[]).map((s) => (
             <button
               key={s}
               onClick={() => setSource(s)}
               className={cn(
-                "flex flex-1 items-center justify-center gap-1 rounded-md px-2 py-1 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                "rounded-control-sm text-footnote flex flex-1 items-center justify-center gap-1 px-2 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                 source === s
-                  ? "bg-amber-500/15 font-bold text-amber-600 shadow-xs dark:text-amber-400"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  ? "bg-tint-fill text-tint font-medium"
+                  : "text-label-secondary hover:text-label hover:bg-fill-3"
               )}
             >
               {s === "all" ? (
@@ -90,19 +88,19 @@ export function GallerySidebarContent({
 
       {/* Search */}
       <div className="relative">
-        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2 h-3 w-3 -translate-y-1/2" />
+        <Search className="text-label-secondary pointer-events-none absolute top-1/2 left-2 h-3 w-3 -translate-y-1/2" />
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search cards..."
-          className="border-border/50 placeholder:text-muted-foreground/50 bg-muted/30 focus:bg-background h-7 pr-6 pl-6.5 text-xs"
+          className="border-separator placeholder:text-label-tertiary bg-fill-4 focus:bg-background text-footnote h-7 pr-6 pl-6.5"
         />
         {search && (
           <button
             onClick={() => setSearch("")}
             className="absolute top-1/2 right-1.5 -translate-y-1/2"
           >
-            <X className="text-muted-foreground hover:text-foreground h-3 w-3 transition-colors" />
+            <X className="text-label-secondary hover:text-label h-3 w-3 transition-colors" />
           </button>
         )}
       </div>
@@ -114,9 +112,8 @@ export function GallerySidebarContent({
       >
         <SelectTrigger
           className={cn(
-            "h-7 w-full px-2 text-xs",
-            season !== "all" &&
-              "border-amber-500/30 bg-amber-500/10 font-bold text-amber-600 dark:text-amber-400"
+            "text-footnote h-7 w-full px-2",
+            season !== "all" && "bg-tint-fill text-tint font-medium"
           )}
         >
           <Calendar className="mr-1.5 h-3 w-3 shrink-0" />
@@ -134,9 +131,8 @@ export function GallerySidebarContent({
       <Select value={rarity} onValueChange={(v) => setRarity(v as CardRarity | "all")}>
         <SelectTrigger
           className={cn(
-            "h-7 w-full px-2 text-xs",
-            rarity !== "all" &&
-              "border-amber-500/30 bg-amber-500/20 font-bold text-amber-600 dark:text-amber-300"
+            "text-footnote h-7 w-full px-2",
+            rarity !== "all" && "bg-tint-fill text-tint font-medium"
           )}
         >
           <Sparkles className="mr-1.5 h-3 w-3 shrink-0" />
@@ -161,10 +157,8 @@ export function GallerySidebarContent({
         >
           <SelectTrigger
             className={cn(
-              "h-7 w-full px-2 text-xs",
-              cteFilter &&
-                cteFilter !== "all" &&
-                "border-amber-500/30 bg-amber-500/20 font-bold text-amber-600 dark:text-amber-300"
+              "text-footnote h-7 w-full px-2",
+              cteFilter && cteFilter !== "all" && "bg-tint-fill text-tint font-medium"
             )}
           >
             <SelectValue placeholder="Nation Status" />
@@ -179,11 +173,9 @@ export function GallerySidebarContent({
 
       {/* Sort */}
       <div>
-        <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wider uppercase">
-          Sort By
-        </p>
+        <p className="text-label-secondary text-eyebrow mb-1">Sort By</p>
         <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="h-7 w-full text-xs">
+          <SelectTrigger className="text-footnote h-7 w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -201,10 +193,10 @@ export function GallerySidebarContent({
           size="sm"
           variant="outline"
           onClick={onRequestLoreCard}
-          className="h-8 w-full border-wiki/30 text-xs text-wiki hover:bg-wiki/10"
+          className="border-wiki/30 text-wiki hover:bg-wiki/10 w-full"
         >
           <BookOpen className="mr-1.5 h-3 w-3" /> Request Lore Card
-          <span className="ml-1.5 flex items-center gap-0.5 rounded-full bg-amber-500/10 px-1.5 py-0 text-xs font-semibold text-amber-600 dark:bg-amber-500/20 dark:text-amber-400">
+          <span className="bg-yellow/10 text-footnote text-yellow ml-1.5 flex items-center gap-0.5 rounded-full px-1.5 py-0 font-semibold">
             <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
             50
           </span>
@@ -215,7 +207,7 @@ export function GallerySidebarContent({
       {(search || rarity !== "all" || season !== "all") && (
         <button
           onClick={onClearFilters}
-          className="border-border/50 text-muted-foreground hover:text-foreground hover:bg-muted/50 flex w-full items-center justify-center gap-1 rounded-lg border py-1.5 text-xs font-semibold transition-colors"
+          className="border-separator text-label-secondary hover:text-label hover:bg-fill-3 rounded-control text-footnote flex w-full items-center justify-center gap-1 border py-1.5 font-semibold transition-colors"
         >
           <X className="h-3 w-3" /> Clear Filters
         </button>

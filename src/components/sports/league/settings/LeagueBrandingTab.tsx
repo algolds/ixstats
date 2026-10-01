@@ -61,7 +61,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
           placeholder="e.g. Liga_Ixnay"
           maxLength={100}
         />
-        <p className="text-muted-foreground text-xs">
+        <p className="text-label-secondary text-footnote">
           Links this league to its IxWiki article.
         </p>
       </div>
@@ -71,14 +71,14 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
         <div className="flex items-start gap-4">
           <div
             className={cn(
-              "flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed",
-              previewSrc ? "border-border bg-muted/50" : "border-border/50 bg-muted/30"
+              "rounded-row flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden border-2 border-dashed",
+              previewSrc ? "border-separator bg-fill-3" : "border-separator bg-fill-4"
             )}
           >
             {previewSrc ? (
               <img src={previewSrc} alt="Logo preview" className="h-full w-full object-cover" />
             ) : (
-              <span className="text-muted-foreground text-xs font-medium">No logo</span>
+              <span className="text-label-secondary text-footnote font-medium">No logo</span>
             )}
           </div>
 
@@ -89,7 +89,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
               size="sm"
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="text-xs"
+              className="text-footnote"
             >
               {isUploading ? (
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -103,7 +103,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
               variant="outline"
               size="sm"
               onClick={() => onOpenMediaSearch("logo")}
-              className="text-xs"
+              className="text-footnote"
             >
               <ImageIcon className="mr-1.5 h-3.5 w-3.5" />
               Browse Media
@@ -114,13 +114,13 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
                 variant="ghost"
                 size="sm"
                 onClick={onRemoveLogo}
-                className="text-destructive hover:text-destructive text-xs"
+                className="text-destructive"
               >
                 <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                 Remove
               </Button>
             )}
-            <p className="text-muted-foreground text-xs leading-tight">
+            <p className="text-label-secondary text-footnote leading-tight">
               PNG, JPEG, GIF, or WebP. Max 5 MB.
             </p>
           </div>
@@ -137,20 +137,20 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
       {/* Cover Image */}
       <div className="space-y-2">
         <Label>Cover Image</Label>
-        <p className="text-muted-foreground text-xs leading-tight">
+        <p className="text-label-secondary text-footnote leading-tight">
           Shown on the card carousel. Recommended 3:2 ratio.
         </p>
         <div className="flex items-start gap-4">
           <div
             className={cn(
-              "flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed",
-              coverUrl ? "border-border bg-muted/50" : "border-border/50 bg-muted/30"
+              "rounded-control flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden border-2 border-dashed",
+              coverUrl ? "border-separator bg-fill-3" : "border-separator bg-fill-4"
             )}
           >
             {coverUrl ? (
               <img src={coverUrl} alt="Cover preview" className="h-full w-full object-cover" />
             ) : (
-              <span className="text-muted-foreground text-xs font-medium">No cover</span>
+              <span className="text-label-secondary text-footnote font-medium">No cover</span>
             )}
           </div>
           <div className="flex flex-col gap-2">
@@ -159,7 +159,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
               variant="outline"
               size="sm"
               onClick={() => onOpenMediaSearch("cover")}
-              className="text-xs"
+              className="text-footnote"
             >
               <ImageIcon className="mr-1.5 h-3.5 w-3.5" />
               Browse Media
@@ -170,7 +170,7 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
                 variant="ghost"
                 size="sm"
                 onClick={() => setCoverUrl("")}
-                className="text-destructive hover:text-destructive text-xs"
+                className="text-destructive text-footnote"
               >
                 <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                 Remove

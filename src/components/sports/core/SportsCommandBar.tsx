@@ -41,22 +41,22 @@ export function SportsCommandBar({
   const theme = getSportTheme(sportPreset);
 
   return (
-    <div className="facet-hierarchy-parent sticky top-16 z-30 mb-4 flex flex-col gap-3 rounded-2xl border border-border/40 bg-card/75 p-3.5 shadow-sm backdrop-blur-xl md:flex-row md:items-center md:justify-between">
+    <div className="material-thin z-sticky shadow-floating rounded-card sticky top-[calc(var(--shell-top-offset)-1rem)] mb-4 flex flex-col gap-3 p-3 md:flex-row md:items-center md:justify-between">
       {/* Left: Breadcrumbs & Entity Identity */}
       <div className="flex flex-wrap items-center gap-2">
         <Link
           href={withBasePath(lobbyHref)}
-          className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs font-semibold transition-colors"
+          className="text-label-secondary hover:text-label text-footnote flex items-center gap-1 font-semibold transition-colors"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>{lobbyLabel}</span>
         </Link>
 
-        <ChevronRight className="text-muted-foreground/40 h-3 w-3" />
+        <ChevronRight className="text-label-tertiary h-3 w-3" />
 
         <div className="flex items-center gap-2">
           <div
-            className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border/40 text-xs shadow-inner"
+            className="rounded-control border-separator text-footnote flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden border shadow-inner"
             style={{
               backgroundColor: color ? `${color}20` : "rgba(255,255,255,0.05)",
             }}
@@ -67,20 +67,22 @@ export function SportsCommandBar({
               <span>{theme.emoji}</span>
             )}
           </div>
-          <span className="text-foreground text-sm font-bold tracking-tight">{title}</span>
+          <span className="text-label text-headline">{title}</span>
         </div>
 
         {activeSectionLabel && (
           <>
-            <ChevronRight className="text-muted-foreground/40 h-3 w-3" />
-            <span className="text-muted-foreground text-xs font-medium">{activeSectionLabel}</span>
+            <ChevronRight className="text-label-tertiary h-3 w-3" />
+            <span className="text-label-secondary text-footnote font-medium">
+              {activeSectionLabel}
+            </span>
           </>
         )}
 
         {/* Sport Badge */}
         <Badge
           variant="outline"
-          className={cn("hidden sm:inline-flex px-2 py-0.5 text-xs font-bold uppercase tracking-wider", theme.badgeClass)}
+          className={cn("text-eyebrow hidden px-2 py-0.5 sm:inline-flex", theme.badgeClass)}
         >
           {theme.name}
         </Badge>
@@ -89,12 +91,12 @@ export function SportsCommandBar({
       {/* Right: Active Focus Indicator & Actions */}
       <div className="flex items-center gap-2">
         {focus && (
-          <div className="flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-400 backdrop-blur-md">
+          <div className="bg-tint-fill text-tint text-footnote flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium">
             <span className="capitalize">{focus.type} Focus</span>
             <button
               type="button"
               onClick={clearFocus}
-              className="hover:text-amber-200 cursor-pointer rounded-full p-0.5 transition"
+              className="hover:text-label cursor-pointer rounded-full p-0.5 transition-colors"
               title="Clear Focus"
             >
               <Xmark className="h-3 w-3" />
@@ -105,14 +107,8 @@ export function SportsCommandBar({
         {extraActions}
 
         {canManage && onOpenSettings && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onOpenSettings}
-            data-cuelume-press="subtle"
-            className="border-border/50 bg-card/60 h-8 cursor-pointer text-xs font-semibold hover:bg-muted/40 active:scale-[0.98]"
-          >
-            <Settings className="mr-1.5 h-3.5 w-3.5" />
+          <Button variant="gray" size="sm" onClick={onOpenSettings}>
+            <Settings />
             <span>Manage</span>
           </Button>
         )}

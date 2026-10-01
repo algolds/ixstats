@@ -1,3 +1,4 @@
+import "~/styles/card-art.css";
 import React from "react";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
@@ -17,11 +18,11 @@ export function NeonFrameOverlay({ neonFrame, className }: NeonFrameOverlayProps
   return (
     <motion.div
       className={cn(
-        "pointer-events-none absolute inset-0 z-30 rounded-2xl",
+        "rounded-card pointer-events-none absolute inset-0 z-30",
         style === "ruby" &&
-          "border-2 border-red-500 bg-gradient-to-r from-red-500/10 to-red-600/10 shadow-[0_0_8px_rgba(239,68,68,0.3),_inset_0_0_4px_rgba(239,68,68,0.2)]",
+          "card-art-linear-r border-2 border-red-500 from-red-500/10 to-red-600/10 shadow-[0_0_8px_rgba(239,68,68,0.3),_inset_0_0_4px_rgba(239,68,68,0.2)]",
         style === "winter" &&
-          "border-2 border-cyan-300 bg-gradient-to-br from-cyan-400/15 via-cyan-300/5 to-transparent shadow-[0_0_8px_rgba(6,182,212,0.3),_inset_0_0_4px_rgba(6,182,212,0.2)] after:absolute after:inset-0 after:rounded-2xl after:bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent)]",
+          "card-art-linear-br after:rounded-card border-2 border-cyan-300 from-cyan-400/15 via-cyan-300/5 to-transparent shadow-[0_0_8px_rgba(6,182,212,0.3),_inset_0_0_4px_rgba(6,182,212,0.2)] after:absolute after:inset-0 after:bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent)]",
         style !== "ruby" && style !== "winter" && "border-2",
         className
       )}
@@ -47,9 +48,9 @@ export function NeonFrameOverlay({ neonFrame, className }: NeonFrameOverlayProps
       {/* Winter snowflakes come from CosmeticParticles (SVG_SNOWFLAKE) above. */}
       {/* Ruby gem shimmer sweep effect */}
       {style === "ruby" && (
-        <div className="absolute inset-0 overflow-hidden rounded-2xl">
+        <div className="rounded-card absolute inset-0 overflow-hidden">
           <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+            className="card-art-linear-r absolute inset-0 from-transparent via-white/20 to-transparent"
             style={{
               transform: "skewX(-20deg)",
             }}

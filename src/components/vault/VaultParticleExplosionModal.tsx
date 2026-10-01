@@ -1,6 +1,9 @@
 "use client";
 
+import "~/styles/card-art.css";
+
 import React, { useMemo } from "react";
+import { springGentle } from "~/lib/design/motion";
 import { motion, AnimatePresence } from "motion/react";
 import { Sparks as Sparkles } from "iconoir-react";
 import { IxCreditsSymbol } from "./IxCreditsSymbol";
@@ -48,13 +51,16 @@ export function VaultParticleExplosionModal({
   return (
     <AnimatePresence>
       {open && (
-        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div
+          aria-live="polite"
+          className="z-sheet pointer-events-none fixed inset-0 flex items-center justify-center bg-black/40"
+        >
           <div className="relative">
             {/* Drifting Gold Coins / Particles */}
             {particles.map((p) => (
               <motion.div
                 key={p.id}
-                className="absolute flex h-6 w-6 items-center justify-center rounded-full border border-amber-300 bg-gradient-to-br from-amber-400 to-yellow-500 p-1 text-amber-950 shadow-[0_0_8px_rgba(245,158,11,0.5)] select-none"
+                className="card-art-linear-br absolute flex h-6 w-6 items-center justify-center rounded-full border border-amber-300 from-amber-400 to-yellow-500 p-1 text-amber-950 shadow-[0_0_8px_rgba(245,158,11,0.5)] select-none"
                 initial={{ x: 0, y: 0, scale: 0.2, opacity: 1 }}
                 animate={{
                   x: p.x,
@@ -71,27 +77,24 @@ export function VaultParticleExplosionModal({
 
             {/* Central Celebration Card */}
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: [0.8, 1.05, 1], opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              className="bg-popover/95 relative flex flex-col items-center rounded-2xl border border-amber-500/35 border-t-amber-400/50 px-10 py-7 text-center shadow-[0_0_40px_rgba(245,158,11,0.25)] backdrop-blur-xl"
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              transition={springGentle}
+              className="bg-surface-elevated rounded-sheet border-separator shadow-sheet relative flex flex-col items-center border px-10 py-7 text-center"
             >
-              <div className="mb-3 animate-bounce rounded-full border border-amber-500/30 bg-amber-500/10 p-3.5 text-amber-400">
+              <div className="bg-tint-fill text-tint mb-3 rounded-full p-3.5">
                 {icon || <Sparkles className="h-7 w-7" />}
               </div>
-              <h3 className="text-foreground text-lg font-bold tracking-tight uppercase dark:text-white">
-                {title}
-              </h3>
+              <h3 className="text-label text-title-3">{title}</h3>
               {amount !== undefined && (
-                <p className="mt-2 flex items-center justify-center gap-1 font-mono text-3xl font-bold text-white tabular-nums drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">
-                  +<IxCreditsSymbol className="h-7 w-7 shrink-0 text-amber-400" />
+                <p className="text-large-title text-label mt-2 flex items-center justify-center gap-1 tabular-nums">
+                  +<IxCreditsSymbol className="text-yellow h-7 w-7 shrink-0" />
                   {amount.toLocaleString()}
                 </p>
               )}
               {subtitle && (
-                <p className="mt-2 max-w-[240px] text-xs leading-relaxed text-slate-400">
-                  {subtitle}
-                </p>
+                <p className="text-callout text-label-secondary mt-2 max-w-[240px]">{subtitle}</p>
               )}
             </motion.div>
           </div>

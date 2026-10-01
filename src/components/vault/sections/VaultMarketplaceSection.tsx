@@ -1,5 +1,6 @@
 "use client";
 
+import { springSmooth } from "~/lib/design/motion";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -60,7 +61,7 @@ export function VaultMarketplaceSection({ initialTab }: VaultMarketplaceSectionP
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.15 }}
+          transition={springSmooth}
           className="outline-none"
         >
           {activeTab === "store" && <VaultStoreTab />}

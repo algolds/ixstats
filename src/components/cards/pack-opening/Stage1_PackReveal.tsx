@@ -1,4 +1,6 @@
 "use client";
+
+import "~/styles/card-art.css";
 // src/components/cards/pack-opening/Stage1_PackReveal.tsx
 // Stage 1: Pack appearance with 3D rotation and pulsing glow
 
@@ -41,7 +43,6 @@ export const Stage1_PackReveal = React.memo<Stage1_PackRevealProps>(
     return (
       <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
         {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black/40" />
 
         {/* Animated pack container */}
         <motion.div
@@ -82,7 +83,7 @@ export const Stage1_PackReveal = React.memo<Stage1_PackRevealProps>(
         >
           {/* Pulsing glow effect */}
           <motion.div
-            className="absolute inset-0 rounded-2xl blur-3xl"
+            className="rounded-card absolute inset-0 blur-3xl"
             animate={{
               scale: [1, 1.2, 1],
               opacity: [0.5, 0.8, 0.5],
@@ -98,15 +99,15 @@ export const Stage1_PackReveal = React.memo<Stage1_PackRevealProps>(
           />
 
           {/* Pack image */}
-          <div className="relative h-96 w-72 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 p-1 backdrop-blur-sm">
+          <div className="rounded-card card-art-linear-br relative h-96 w-72 from-white/10 to-white/5 p-1">
             {/* Inner glow border */}
-            <div className="h-full w-full rounded-xl bg-gradient-to-br from-white/5 to-transparent p-4">
+            <div className="rounded-row card-art-linear-br h-full w-full from-white/5 to-transparent p-4">
               {/* Pack artwork */}
               <PackHolographicCover
                 packType={packType}
                 packArtwork={packArtwork}
                 size="lg"
-                className="rounded-lg"
+                className="rounded-control"
               />
             </div>
           </div>
@@ -150,11 +151,11 @@ export const Stage1_PackReveal = React.memo<Stage1_PackRevealProps>(
               repeat: Infinity,
               ease: "easeInOut",
             }}
-            className="text-xl font-semibold text-white/90"
+            className="text-title-2 font-semibold text-white/90"
           >
             Tap to Open
           </motion.div>
-          <div className="mt-2 text-sm text-white/60">{packType} Pack</div>
+          <div className="text-body mt-2 text-white/60">{packType} Pack</div>
         </motion.div>
       </div>
     );

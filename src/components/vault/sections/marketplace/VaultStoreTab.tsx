@@ -1,5 +1,6 @@
 "use client";
 
+import { springSmooth } from "~/lib/design/motion";
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
@@ -48,7 +49,8 @@ import {
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { storePrerequisiteMet } from "~/lib/vault/store-purchases";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { FacetCard } from "~/components/ui/facet-container";
+import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
@@ -231,56 +233,56 @@ export function VaultStoreTab() {
   const activeConfig = {
     "my-packs": {
       title: "My Unopened Packs",
-      icon: <Package className="h-4 w-4 text-blue-500" />,
+      icon: <Package className="text-blue h-4 w-4" />,
       description: "Packs you own that are ready to rip open. Reveal rare and legendary cards!",
-      badgeStyle: "border-blue-500/20 text-blue-500 dark:text-blue-400 bg-blue-500/5",
+      badgeStyle: "border-blue/20 text-blue bg-blue/5",
       statusText: "Inventory",
     },
     boosters: {
       title: "Booster Packs",
-      icon: <Store className="h-4 w-4 text-amber-500" />,
+      icon: <Store className="text-tint h-4 w-4" />,
       description: "Purchase new card packs to expand your collection.",
-      badgeStyle: "border-amber-500/20 text-amber-600 dark:text-amber-400 bg-amber-500/5",
+      badgeStyle: "border-yellow/20 text-yellow bg-yellow/5",
       statusText: "Marketplace",
     },
     cosmetics: {
       title: "Profile Customizations",
-      icon: <Sparkles className="h-4 w-4 text-indigo-500" />,
+      icon: <Sparkles className="text-indigo h-4 w-4" />,
       description:
         "Exclusive decorations, neon frames, and elite name tags to customize your profile presence.",
-      badgeStyle: "border-indigo-500/20 text-indigo-600 dark:text-indigo-400 bg-indigo-500/5",
+      badgeStyle: "border-indigo/20 text-indigo bg-indigo/5",
       statusText: "Cosmetics",
     },
     upgrades: {
       title: "Vault System Upgrades",
-      icon: <TrendingUp className="h-4 w-4 text-emerald-500" />,
+      icon: <TrendingUp className="text-green h-4 w-4" />,
       description:
         "Permanent collection expansion, passive credit yield buffs, and wiki lore submission tokens.",
-      badgeStyle: "border-emerald-500/20 text-emerald-600 dark:text-emerald-400 bg-emerald-500/5",
+      badgeStyle: "border-green/20 text-green bg-green/5",
       statusText: "Account Upgrades",
     },
   }[storeTab];
 
   const tabColors = {
     "my-packs": {
-      text: "text-blue-600 dark:text-blue-400",
-      bg: "bg-blue-500/10 dark:bg-blue-500/15 border-blue-500/20",
-      icon: "text-blue-500",
+      text: "text-blue",
+      bg: "bg-blue/10 border-blue/20",
+      icon: "text-blue",
     },
     boosters: {
-      text: "text-amber-600 dark:text-amber-400",
-      bg: "bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/20",
-      icon: "text-amber-500",
+      text: "text-yellow",
+      bg: "bg-yellow/10 border-yellow/20",
+      icon: "text-yellow",
     },
     cosmetics: {
-      text: "text-indigo-600 dark:text-indigo-400",
-      bg: "bg-indigo-500/10 dark:bg-indigo-500/15 border-indigo-500/20",
-      icon: "text-indigo-500",
+      text: "text-indigo",
+      bg: "bg-indigo/10 border-indigo/20",
+      icon: "text-indigo",
     },
     upgrades: {
-      text: "text-emerald-600 dark:text-emerald-400",
-      bg: "bg-emerald-500/10 dark:bg-emerald-500/15 border-emerald-500/20",
-      icon: "text-emerald-500",
+      text: "text-green",
+      bg: "bg-green/10 border-green/20",
+      icon: "text-green",
     },
   };
 
@@ -289,10 +291,11 @@ export function VaultStoreTab() {
   return (
     <div className="pb-10">
       {/* Large Storefront Showcase Window */}
-      <div className="facet-surface facet-refraction border-border/40 relative min-h-[380px] w-full overflow-hidden rounded-2xl border bg-gradient-to-b from-white/[0.01] to-black/5 p-6 shadow-xl backdrop-blur-md dark:to-black/40">
-        <TextureOverlay texture="dots" opacity={0.03} />
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:24px_24px] opacity-40" />
-
+      <FacetCard
+        texture="dots"
+        textureOpacity={0.03}
+        className="relative min-h-[380px] w-full overflow-hidden p-6"
+      >
         {/* Category Sub-Tabs Selector */}
         <StoreCategoryHeader
           tabs={STORE_TABS}
@@ -304,19 +307,16 @@ export function VaultStoreTab() {
         />
 
         {/* Storefront Window Header */}
-        <div className="border-border/50 mb-4 flex flex-col items-start justify-between gap-2 border-b pb-4 sm:flex-row sm:items-center dark:border-white/5">
+        <div className="border-separator mb-4 flex flex-col items-start justify-between gap-2 border-b pb-4 sm:flex-row sm:items-center">
           <div>
-            <h3 className="flex items-center gap-2 text-xs font-bold tracking-wide text-slate-900 uppercase dark:text-white">
+            <h3 className="text-eyebrow text-label flex items-center gap-2">
               {activeConfig.icon}
               {activeConfig.title}
             </h3>
-            <p className="text-muted-foreground mt-1 text-xs">{activeConfig.description}</p>
+            <p className="text-label-secondary text-footnote mt-1">{activeConfig.description}</p>
           </div>
           <span
-            className={cn(
-              "rounded-full border px-2 py-0.5 text-xs font-semibold tracking-wider uppercase",
-              activeConfig.badgeStyle
-            )}
+            className={cn("text-eyebrow rounded-full border px-2 py-0.5", activeConfig.badgeStyle)}
           >
             {activeConfig.statusText}
           </span>
@@ -326,7 +326,7 @@ export function VaultStoreTab() {
         {isLoading ? (
           <div className="flex flex-wrap justify-center gap-8 py-6">
             {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-[280px] w-44 shrink-0 rounded-2xl bg-white/5" />
+              <Skeleton key={i} className="rounded-card bg-fill-4 h-[280px] w-44 shrink-0" />
             ))}
           </div>
         ) : (
@@ -336,7 +336,7 @@ export function VaultStoreTab() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.2 }}
+              transition={springSmooth}
               className="relative"
             >
               {storeTab === "my-packs" &&
@@ -357,7 +357,7 @@ export function VaultStoreTab() {
                                     packType: packData.packType,
                                   })
                                 }
-                                className="h-7 w-full border-none bg-gradient-to-r from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-md hover:from-blue-500 hover:to-indigo-500"
+                                className="h-7 w-full"
                               >
                                 Rip Open Pack
                               </Button>
@@ -369,17 +369,13 @@ export function VaultStoreTab() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <Package className="text-muted-foreground/20 mb-3 h-12 w-12" />
-                    <h4 className="text-foreground text-sm font-bold">No Unopened Packs</h4>
-                    <p className="text-muted-foreground mt-1 mb-4 max-w-xs text-xs">
+                    <Package className="text-label-tertiary mb-3 h-12 w-12" />
+                    <h4 className="text-label text-headline">No Unopened Packs</h4>
+                    <p className="text-label-secondary text-footnote mt-1 mb-4 max-w-xs">
                       You don't have any packs in your inventory right now. Head over to the
                       marketplace to get some!
                     </p>
-                    <Button
-                      size="sm"
-                      onClick={() => setStoreTab("boosters")}
-                      className="border-none bg-gradient-to-r from-amber-600 to-yellow-600 text-xs font-bold text-white shadow-md"
-                    >
+                    <Button size="sm" onClick={() => setStoreTab("boosters")}>
                       <Store className="mr-1.5 h-3.5 w-3.5" /> Browse Marketplace
                     </Button>
                   </div>
@@ -405,13 +401,13 @@ export function VaultStoreTab() {
                                   })
                                 }
                                 disabled={isPending}
-                                className="h-7 w-full border-none bg-gradient-to-r from-amber-600 to-yellow-600 text-xs font-bold text-white shadow-md hover:from-amber-500 hover:to-yellow-500"
+                                className="h-7 w-full"
                               >
                                 {isPending ? (
                                   "Buying..."
                                 ) : (
-                                  <span className="flex items-center gap-1 font-mono">
-                                    <IxCreditsSymbol className="h-3 w-3 shrink-0 text-white" />
+                                  <span className="flex items-center gap-1 tabular-nums">
+                                    <IxCreditsSymbol className="text-label h-3 w-3 shrink-0" />
                                     Buy ({pack.priceCredits})
                                   </span>
                                 )}
@@ -424,9 +420,9 @@ export function VaultStoreTab() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <Store className="text-muted-foreground/20 mb-3 h-12 w-12" />
-                    <h4 className="text-foreground text-sm font-bold">No Packs Available</h4>
-                    <p className="text-muted-foreground mt-1 text-xs">
+                    <Store className="text-label-tertiary mb-3 h-12 w-12" />
+                    <h4 className="text-label text-headline">No Packs Available</h4>
+                    <p className="text-label-secondary text-footnote mt-1">
                       Check back later for new pack drops and special seasonal releases.
                     </p>
                   </div>
@@ -448,9 +444,9 @@ export function VaultStoreTab() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <Sparkles className="text-muted-foreground/20 mb-3 h-12 w-12" />
-                    <h4 className="text-foreground text-sm font-bold">No Cosmetics Listed</h4>
-                    <p className="text-muted-foreground mt-1 text-xs">
+                    <Sparkles className="text-label-tertiary mb-3 h-12 w-12" />
+                    <h4 className="text-label text-headline">No Cosmetics Listed</h4>
+                    <p className="text-label-secondary text-footnote mt-1">
                       Profile customization cosmetics will appear here soon.
                     </p>
                   </div>
@@ -473,9 +469,9 @@ export function VaultStoreTab() {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <TrendingUp className="text-muted-foreground/20 mb-3 h-12 w-12" />
-                    <h4 className="text-foreground text-sm font-bold">No Upgrades Listed</h4>
-                    <p className="text-muted-foreground mt-1 text-xs">
+                    <TrendingUp className="text-label-tertiary mb-3 h-12 w-12" />
+                    <h4 className="text-label text-headline">No Upgrades Listed</h4>
+                    <p className="text-label-secondary text-footnote mt-1">
                       Account system upgrades will appear here soon.
                     </p>
                   </div>
@@ -483,7 +479,7 @@ export function VaultStoreTab() {
             </motion.div>
           </AnimatePresence>
         )}
-      </div>
+      </FacetCard>
 
       <StorePurchaseDialog
         item={activeCheckoutItem}
@@ -501,23 +497,39 @@ export function VaultStoreTab() {
       />
 
       {/* Booster pack opening overlay */}
-      {openingPack && (
-        <div className="fixed inset-0 z-50">
-          <PackOpeningSequence
-            userPackId={openingPack.id}
-            packType={openingPack.packType as any}
-            onComplete={() => {
-              setOpeningPack(null);
-              purchasePackMutation.reset();
-              void refetchMyPacks();
-            }}
-            onCancel={() => {
-              setOpeningPack(null);
-              purchasePackMutation.reset();
-            }}
-          />
-        </div>
-      )}
+      <Dialog
+        open={!!openingPack}
+        onOpenChange={(open) => {
+          if (open) return;
+          // Escape skips the flourish; the pack is already opened server-side.
+          setOpeningPack(null);
+          purchasePackMutation.reset();
+          void refetchMyPacks();
+        }}
+      >
+        <DialogContent
+          showCloseButton={false}
+          aria-describedby={undefined}
+          className="h-dvh max-h-dvh w-screen max-w-none gap-0 overflow-hidden rounded-none border-0 bg-black p-0"
+        >
+          <DialogTitle className="sr-only">Opening pack</DialogTitle>
+          {openingPack && (
+            <PackOpeningSequence
+              userPackId={openingPack.id}
+              packType={openingPack.packType as any}
+              onComplete={() => {
+                setOpeningPack(null);
+                purchasePackMutation.reset();
+                void refetchMyPacks();
+              }}
+              onCancel={() => {
+                setOpeningPack(null);
+                purchasePackMutation.reset();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

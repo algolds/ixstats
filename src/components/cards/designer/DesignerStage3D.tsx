@@ -116,9 +116,9 @@ export const DesignerStage3D = React.memo<DesignerStage3DProps>(({ state, classN
       </div>
 
       {/* Stage Toolbar Controls */}
-      <div className="border-border bg-card/80 flex w-full shrink-0 items-center justify-between rounded-2xl border p-2.5 text-xs shadow-xs backdrop-blur-md">
-        <div className="text-foreground flex items-center gap-2 text-xs font-semibold">
-          <SlidersHorizontal className="text-primary h-3.5 w-3.5" />
+      <div className="border-separator bg-surface rounded-card text-footnote shadow-card flex w-full shrink-0 items-center justify-between border p-2.5">
+        <div className="text-label text-footnote flex items-center gap-2 font-semibold">
+          <SlidersHorizontal className="text-tint h-3.5 w-3.5" />
           <span>Card Controls</span>
         </div>
 
@@ -127,9 +127,9 @@ export const DesignerStage3D = React.memo<DesignerStage3DProps>(({ state, classN
             variant="outline"
             size="sm"
             onClick={() => setSide((s) => (s === "front" ? "back" : "front"))}
-            className="border-border/80 bg-background hover:bg-muted text-foreground h-7 cursor-pointer gap-1.5 rounded-lg px-2.5 text-xs font-medium shadow-2xs"
+            className="border-separator bg-background hover:bg-fill-3 text-label rounded-control text-footnote h-7 cursor-pointer gap-1.5 px-2.5 font-medium shadow-2xs"
           >
-            <RotateCw className="text-primary h-3.5 w-3.5" />
+            <RotateCw className="text-tint h-3.5 w-3.5" />
             <span>Rotate ({side === "front" ? "Front" : "Back"})</span>
           </Button>
 
@@ -137,9 +137,9 @@ export const DesignerStage3D = React.memo<DesignerStage3DProps>(({ state, classN
             variant="outline"
             size="sm"
             onClick={handleReset}
-            className="border-border/80 bg-background hover:bg-muted text-foreground h-7 cursor-pointer gap-1.5 rounded-lg px-2.5 text-xs font-medium shadow-2xs"
+            className="bg-background px-2.5 shadow-2xs"
           >
-            <RotateCcw className="text-primary h-3.5 w-3.5" />
+            <RotateCcw className="text-tint h-3.5 w-3.5" />
             <span>Reset</span>
           </Button>
 
@@ -147,7 +147,7 @@ export const DesignerStage3D = React.memo<DesignerStage3DProps>(({ state, classN
             variant="outline"
             size="sm"
             onClick={() => setIsExpandedModalOpen(true)}
-            className="border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary h-7 cursor-pointer gap-1.5 rounded-lg px-2.5 text-xs font-semibold shadow-2xs"
+            className="border-tint/40 bg-tint-fill text-tint rounded-control text-footnote h-7 cursor-pointer gap-1.5 px-2.5 font-semibold shadow-2xs"
           >
             <Maximize2 className="h-3.5 w-3.5" />
             <span>Expand</span>

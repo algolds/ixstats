@@ -3,7 +3,11 @@
 import React, { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { getSportColors, type SportPresetKey } from "~/lib/sports/presets";
-import { Card, CardContent } from "~/components/ui/card";
+import { FacetCard } from "~/components/ui/facet-container";
+import { EmptyState } from "~/components/ui/empty-state";
+import { Eyebrow } from "~/components/ui/eyebrow";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { springSmooth } from "~/lib/design/motion";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -20,7 +24,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 
 export interface LeagueScheduleTabProps {
   leagueId: string;
@@ -67,7 +71,7 @@ export function LeagueScheduleTab({
 
   const simulateSingleMatch = api.sports.simulateSingleMatch.useMutation({
     onSuccess: () => {
-      soundEffects.bloom();
+      soundCues.success();
       void utils.sports.getSeason.invalidate({ id: seasonId ?? "" });
       void utils.sports.getSchedule.invalidate({ seasonId: seasonId ?? "" });
       void utils.sports.getLeague.invalidate({ id: leagueId });
@@ -128,21 +132,23 @@ export function LeagueScheduleTab({
 
   if (!seasonId) {
     return (
-      <Card className="rounded-2xl border border-border/40 bg-card/40 p-8 text-center">
-        <Calendar className="mx-auto mb-3 h-10 w-10 text-muted-foreground/40" />
-        <h3 className="text-base font-bold text-foreground">No Schedule Available</h3>
-        <p className="text-xs text-muted-foreground mt-1">Start a season to generate fixtures.</p>
-      </Card>
+      <FacetCard>
+        <EmptyState
+          icon={<Calendar />}
+          title="No Schedule Available"
+          message="Start a season to generate fixtures."
+        />
+      </FacetCard>
     );
   }
 
   if (seasonLoading || scheduleLoading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-16 w-full rounded-2xl" />
+        <Skeleton className="rounded-card h-16 w-full" />
         <div className="grid gap-3 sm:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 w-full rounded-2xl" />
+            <Skeleton key={i} className="rounded-card h-28 w-full" />
           ))}
         </div>
       </div>
@@ -151,48 +157,35 @@ export function LeagueScheduleTab({
 
   if (!season || !schedule) {
     return (
-      <Card className="rounded-2xl border border-border/40 bg-card/40 p-8 text-center">
-        <p className="text-xs text-muted-foreground">Unable to load competition fixtures.</p>
-      </Card>
+      <FacetCard padding="lg" className="text-center">
+        <p className="text-footnote text-label-secondary">Unable to load competition fixtures.</p>
+      </FacetCard>
     );
   }
 
   const selectedRoundMatches = matchDaysMap.get(selectedRound) ?? [];
   const isRoundCompleted =
-    selectedRoundMatches.length > 0 &&
-    selectedRoundMatches.every((m) => m.status === "completed");
+    selectedRoundMatches.length > 0 && selectedRoundMatches.every((m) => m.status === "completed");
   const isRoundActive = selectedRoundMatches.some((m) => m.status === "scheduled");
 
   return (
     <div className="space-y-6">
       {/* ─── 1. TIMELINE SCRUBBER RIBBON ─── */}
-      <div className="rounded-3xl border border-border/40 bg-card/70 p-5 shadow-lg backdrop-blur-xl space-y-4">
+      <FacetCard padding="md" className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <Badge
-                variant="outline"
-                className="border-cyan-500/30 bg-cyan-500/10 text-xs font-black uppercase tracking-wider text-cyan-400"
-              >
-                COMPETITION TIMELINE
-              </Badge>
-              <span className="text-xs text-muted-foreground font-semibold">
+              <Eyebrow className="text-tint">Competition timeline</Eyebrow>
+              <span className="text-footnote text-label-secondary tabular-nums">
                 Season {season.seasonNumber} • {allRounds.length} Total Rounds
               </span>
             </div>
-            <h3 className="mt-1 text-xl font-black text-foreground">
-              Round {selectedRound} Fixtures
-            </h3>
+            <h3 className="text-title-2 text-label mt-1">Round {selectedRound} Fixtures</h3>
           </div>
 
           <div className="flex items-center gap-2">
             {initialActiveRound !== selectedRound && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setSelectedRound(initialActiveRound)}
-                className="h-9 rounded-xl text-xs font-bold border-border/60 hover:bg-muted/40 cursor-pointer"
-              >
+              <Button size="sm" variant="gray" onClick={() => setSelectedRound(initialActiveRound)}>
                 Jump to Active (R{initialActiveRound})
               </Button>
             )}
@@ -201,24 +194,21 @@ export function LeagueScheduleTab({
               <Button
                 size="sm"
                 onClick={() => {
-                  soundEffects.bloom();
                   simulateMatchDay.mutate({
                     seasonId: season.id,
                     matchDay: selectedRound,
                   });
                 }}
                 disabled={simulateMatchDay.isPending}
-                data-cuelume-press="subtle"
-                className="h-9 rounded-xl bg-foreground text-background font-bold text-xs shadow-md transition hover:bg-foreground/90 active:scale-[0.98] cursor-pointer"
               >
                 {simulateMatchDay.isPending ? (
                   <>
-                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="animate-spin" />
                     <span>Simulating Round {selectedRound}...</span>
                   </>
                 ) : (
                   <>
-                    <Play className="mr-1.5 h-3.5 w-3.5 fill-background" />
+                    <Play className="fill-current" />
                     <span>Simulate Round {selectedRound}</span>
                   </>
                 )}
@@ -227,43 +217,30 @@ export function LeagueScheduleTab({
           </div>
         </div>
 
-        {/* Horizontal Round Scrubber Chips */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-1 scrollbar-none">
-          {allRounds.map((round) => {
+        {/* Horizontal Round Scrubber */}
+        <SegmentedControl
+          size="sm"
+          scrollable
+          aria-label="Round"
+          value={String(selectedRound)}
+          onValueChange={(value) => setSelectedRound(Number(value))}
+          options={allRounds.map((round) => {
             const matchesInDay = matchDaysMap.get(round) ?? [];
             const isCompleted =
               matchesInDay.length > 0 && matchesInDay.every((m) => m.status === "completed");
             const isCurrentActive = round === initialActiveRound;
-            const isSelected = round === selectedRound;
-
-            return (
-              <button
-                key={round}
-                onClick={() => setSelectedRound(round)}
-                className={cn(
-                  "group relative flex shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-black uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
-                  isSelected
-                    ? "border-foreground bg-foreground text-background shadow-md"
-                    : isCompleted
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-                      : isCurrentActive
-                        ? "border-amber-500/50 bg-amber-500/10 text-amber-400"
-                        : "border-border/40 bg-card/40 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-                )}
-              >
-                {isCompleted ? (
-                  <Check className="h-3.5 w-3.5" />
-                ) : isCurrentActive ? (
-                  <Play className="h-3 w-3 fill-amber-400" />
-                ) : (
-                  <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
-                )}
-                <span>R{round}</span>
-              </button>
-            );
+            return {
+              value: String(round),
+              label: `R${round}`,
+              icon: isCompleted ? (
+                <Check className="text-green" aria-label="Completed" />
+              ) : isCurrentActive ? (
+                <Play className="text-yellow fill-current" aria-label="Active" />
+              ) : undefined,
+            };
           })}
-        </div>
-      </div>
+        />
+      </FacetCard>
 
       {/* ─── 2. MATCHDAY FIXTURE CARDS GRID ─── */}
       <div className="grid gap-4 sm:grid-cols-2">
@@ -280,37 +257,28 @@ export function LeagueScheduleTab({
                 initial={{ opacity: 0, scale: 0.97 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.97 }}
-                transition={{ duration: 0.2 }}
+                transition={springSmooth}
               >
-                <div
+                <FacetCard
+                  padding="md"
                   onClick={() => onMatchClick?.(m.id)}
-                  className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border/40 bg-card/60 p-4 shadow-sm backdrop-blur-md transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-md active:scale-[0.98] cursor-pointer"
+                  className="group flex flex-col justify-between overflow-hidden"
                 >
                   {/* Top Bar: Match status & Rivalry Tag */}
-                  <div className="flex items-center justify-between border-b border-border/20 pb-2.5 text-xs font-bold uppercase">
+                  <div className="border-separator flex items-center justify-between border-b pb-3">
                     <div className="flex items-center gap-1.5">
-                      <span
-                        className={cn(
-                          "rounded-full px-2 py-0.5 text-xs font-black",
-                          isCompleted
-                            ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                            : "border border-amber-500/30 bg-amber-500/10 text-amber-400"
-                        )}
-                      >
+                      <Badge variant={isCompleted ? "success" : "caution"}>
                         {isCompleted ? "Final Result" : "Scheduled"}
-                      </span>
+                      </Badge>
                       {m.isRivalry && (
-                        <Badge
-                          variant="outline"
-                          className="border-red-500/30 bg-red-500/10 text-xs font-bold text-red-400 flex items-center gap-1"
-                        >
-                          <Flame className="h-3 w-3" />
+                        <Badge variant="destructive">
+                          <Flame />
                           Rivalry
                         </Badge>
                       )}
                     </div>
 
-                    <span className="text-muted-foreground text-xs font-medium">
+                    <span className="text-label-secondary text-footnote font-mono">
                       Match #{m.id.slice(-4).toUpperCase()}
                     </span>
                   </div>
@@ -319,13 +287,13 @@ export function LeagueScheduleTab({
                   <div className="grid grid-cols-5 items-center gap-2 py-4">
                     {/* Home Team */}
                     <div
-                      className="col-span-2 flex items-center gap-2.5 min-w-0"
+                      className="col-span-2 flex min-w-0 items-center gap-2.5"
                       onClick={(e) => {
                         e.stopPropagation();
                         onTeamClick?.(m.homeTeam.id);
                       }}
                     >
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/50 bg-background/80 shadow-xs">
+                      <div className="border-separator bg-surface-secondary rounded-row flex size-9 shrink-0 items-center justify-center overflow-hidden border">
                         {m.homeTeam.logo ? (
                           <img
                             src={withBasePath(m.homeTeam.logo)}
@@ -340,8 +308,8 @@ export function LeagueScheduleTab({
                         )}
                       </div>
                       <div className="min-w-0">
-                        <span className="text-muted-foreground text-xs font-medium block">Home</span>
-                        <h4 className="line-clamp-1 text-sm font-extrabold text-foreground group-hover:text-primary transition-colors">
+                        <span className="text-label-secondary text-footnote block">Home</span>
+                        <h4 className="text-headline text-label group-hover:text-tint line-clamp-1 transition-colors">
                           {m.homeTeam.name}
                         </h4>
                       </div>
@@ -350,17 +318,17 @@ export function LeagueScheduleTab({
                     {/* Center Score / VS Badge */}
                     <div className="col-span-1 text-center">
                       {isCompleted ? (
-                        <div className="flex items-center justify-center gap-1.5 font-mono text-lg font-black text-foreground">
-                          <span className={cn(homeScore > awayScore && "text-emerald-400")}>
+                        <div className="text-title-3 text-label flex items-center justify-center gap-1.5 tabular-nums">
+                          <span className={cn(homeScore > awayScore && "text-green")}>
                             {homeScore}
                           </span>
-                          <span className="text-muted-foreground font-normal">-</span>
-                          <span className={cn(awayScore > homeScore && "text-emerald-400")}>
+                          <span className="text-label-secondary font-normal">-</span>
+                          <span className={cn(awayScore > homeScore && "text-green")}>
                             {awayScore}
                           </span>
                         </div>
                       ) : (
-                        <span className="rounded-lg border border-border/40 bg-muted/30 px-2.5 py-1 text-xs font-black uppercase text-muted-foreground">
+                        <span className="text-caption text-label-secondary bg-fill-3 rounded-control-sm px-2 py-1">
                           VS
                         </span>
                       )}
@@ -368,19 +336,19 @@ export function LeagueScheduleTab({
 
                     {/* Away Team */}
                     <div
-                      className="col-span-2 flex items-center justify-end gap-2.5 min-w-0 text-right"
+                      className="col-span-2 flex min-w-0 items-center justify-end gap-2.5 text-right"
                       onClick={(e) => {
                         e.stopPropagation();
                         onTeamClick?.(m.awayTeam.id);
                       }}
                     >
                       <div className="min-w-0">
-                        <span className="text-muted-foreground text-xs font-medium block">Away</span>
-                        <h4 className="line-clamp-1 text-sm font-extrabold text-foreground group-hover:text-primary transition-colors">
+                        <span className="text-label-secondary text-footnote block">Away</span>
+                        <h4 className="text-headline text-label group-hover:text-tint line-clamp-1 transition-colors">
                           {m.awayTeam.name}
                         </h4>
                       </div>
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/50 bg-background/80 shadow-xs">
+                      <div className="border-separator bg-surface-secondary rounded-row flex size-9 shrink-0 items-center justify-center overflow-hidden border">
                         {m.awayTeam.logo ? (
                           <img
                             src={withBasePath(m.awayTeam.logo)}
@@ -398,8 +366,8 @@ export function LeagueScheduleTab({
                   </div>
 
                   {/* Bottom Action Strip */}
-                  <div className="flex items-center justify-between border-t border-border/20 pt-2.5">
-                    <span className="text-xs text-muted-foreground font-medium">
+                  <div className="border-separator flex items-center justify-between border-t pt-3">
+                    <span className="text-footnote text-label-secondary">
                       {isCompleted ? "Click to view analysis" : "Fixture scheduled"}
                     </span>
 
@@ -407,22 +375,24 @@ export function LeagueScheduleTab({
                       {!isCompleted && (
                         <Button
                           size="sm"
-                          variant="ghost"
+                          variant="plain"
                           onClick={(e) => {
                             e.stopPropagation();
                             simulateSingleMatch.mutate({ matchId: m.id });
                           }}
                           disabled={simulateSingleMatch.isPending}
-                          className="h-7 px-2 text-xs font-bold text-primary hover:bg-primary/10 rounded-lg cursor-pointer"
                         >
-                          <Play className="mr-1 h-3 w-3 fill-current" />
+                          <Play className="fill-current" />
                           Simulate
                         </Button>
                       )}
-                      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-transform group-hover:translate-x-0.5" />
+                      <ArrowRight
+                        className="text-label-tertiary group-hover:text-tint size-4 transition-colors"
+                        aria-hidden
+                      />
                     </div>
                   </div>
-                </div>
+                </FacetCard>
               </motion.div>
             );
           })}

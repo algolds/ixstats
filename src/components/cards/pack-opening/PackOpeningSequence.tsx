@@ -2,6 +2,7 @@
 // src/components/cards/pack-opening/PackOpeningSequence.tsx
 // Main orchestrator for 4-stage pack opening animation sequence
 
+import { Button } from "~/components/ui/button";
 import React, { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import type { PackType, CardRarity, CardType } from "@prisma/client";
@@ -135,19 +136,18 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
       return (
         <div className="flex h-full w-full items-center justify-center">
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
+            initial={{ scale: 0.96, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="max-w-md rounded-2xl bg-red-500/10 p-8 text-center backdrop-blur-sm"
+            className="rounded-card bg-surface-elevated shadow-sheet max-w-md p-8 text-center"
           >
-            <div className="mb-4 text-6xl">⚠️</div>
-            <h3 className="text-2xl font-bold text-red-400">Error Opening Pack</h3>
-            <p className="mt-2 text-white/70">{error}</p>
-            <button
-              onClick={onCancel}
-              className="mt-6 rounded-lg bg-white/10 px-6 py-3 font-medium text-white hover:bg-white/20"
-            >
+            <div className="text-large-title mb-4" aria-hidden>
+              ⚠️
+            </div>
+            <h3 className="text-title-2 text-destructive">Error Opening Pack</h3>
+            <p className="text-body text-label-secondary mt-2">{error}</p>
+            <Button variant="gray" className="mt-6" onClick={onCancel}>
               Close
-            </button>
+            </Button>
           </motion.div>
         </div>
       );
@@ -170,20 +170,20 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
             className="text-center"
           >
             <div className="text-6xl">✨</div>
-            <div className="mt-4 text-xl font-semibold text-white/80">Opening pack...</div>
+            <div className="text-title-3 mt-4 text-white/80">Opening pack...</div>
           </motion.div>
         </div>
       );
     }
 
     return (
-      <div className="relative h-full w-full overflow-hidden bg-gradient-to-b from-gray-900 via-black to-gray-900">
+      <div className="relative h-full w-full overflow-hidden bg-black">
         {/* Close/Cancel button (only in reveal and actions stages) */}
         {(stage === "reveal" || stage === "actions") && (
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="absolute top-4 right-4 z-50 rounded-lg bg-black/40 p-3 text-white/80 backdrop-blur-sm transition-colors hover:bg-black/60 hover:text-white"
+            className="z-raised duration-fast absolute top-4 right-4 cursor-pointer rounded-full bg-white/10 p-3 text-white/80 transition-colors hover:bg-white/20 hover:text-white focus-visible:outline-2 focus-visible:outline-white"
             onClick={onCancel}
             aria-label="Close"
           >
@@ -263,7 +263,7 @@ export const PackOpeningSequence = React.memo<PackOpeningSequenceProps>(
 
         {/* Stage indicator (dev/debug) */}
         {process.env.NODE_ENV === "development" && (
-          <div className="absolute top-4 left-4 rounded-lg bg-black/60 px-3 py-2 font-mono text-xs text-white/60 backdrop-blur-sm">
+          <div className="rounded-control text-footnote absolute top-4 left-4 bg-black/60 px-3 py-2 font-mono text-white/60">
             Stage: {stage} | Cards: {cards.length}
           </div>
         )}

@@ -1,14 +1,9 @@
 "use client";
 
+import { springSmooth } from "~/lib/design/motion";
 import React from "react";
 import { motion } from "motion/react";
-import {
-  Globe,
-  ShieldCheck,
-  CheckCircle,
-  Download,
-  Check,
-} from "iconoir-react";
+import { Globe, ShieldCheck, CheckCircle, Download, Check } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
 export type WizardStep = "intro" | "verify" | "preview" | "importing" | "complete";
@@ -37,32 +32,25 @@ export function ImportStepIndicator({ currentStep }: { currentStep: WizardStep }
             <motion.div
               className={cn(
                 "relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-                isComplete && "border-emerald-500 bg-emerald-500/20",
-                isCurrent && "border-amber-500 bg-amber-500/20",
-                !isComplete && !isCurrent && "border-white/10 bg-white/5"
+                isComplete && "border-green bg-green/20",
+                isCurrent && "border-tint bg-tint-fill",
+                !isComplete && !isCurrent && "border-separator bg-fill-4"
               )}
-              animate={isCurrent ? { scale: [1, 1.08, 1] } : {}}
-              transition={isCurrent ? { duration: 2, repeat: Infinity, ease: "easeInOut" } : {}}
             >
               {isComplete ? (
-                <Check className="h-4 w-4 text-emerald-500" />
+                <Check className="text-green h-4 w-4" />
               ) : (
-                <Icon
-                  className={cn(
-                    "h-4 w-4",
-                    isCurrent ? "text-amber-500 dark:text-amber-400" : "text-muted-foreground/50"
-                  )}
-                />
+                <Icon className={cn("h-4 w-4", isCurrent ? "text-tint" : "text-label-tertiary")} />
               )}
             </motion.div>
 
             {/* Label */}
             <span
               className={cn(
-                "ml-1.5 hidden text-xs font-semibold sm:inline",
-                isComplete && "text-emerald-500 dark:text-emerald-400",
-                isCurrent && "text-amber-500 dark:text-amber-400",
-                !isComplete && !isCurrent && "text-muted-foreground/50"
+                "text-footnote ml-1.5 hidden font-semibold sm:inline",
+                isComplete && "text-green",
+                isCurrent && "text-tint",
+                !isComplete && !isCurrent && "text-label-tertiary"
               )}
             >
               {step.label}
@@ -70,12 +58,12 @@ export function ImportStepIndicator({ currentStep }: { currentStep: WizardStep }
 
             {/* Connecting line */}
             {idx < WIZARD_STEPS.length - 1 && (
-              <div className="mx-2 h-px flex-1 overflow-hidden rounded-full bg-white/10">
+              <div className="bg-fill-3 mx-2 h-px flex-1 overflow-hidden rounded-full">
                 <motion.div
-                  className="h-full rounded-full bg-emerald-500"
+                  className="bg-green h-full rounded-full"
                   initial={{ width: "0%" }}
                   animate={{ width: isComplete ? "100%" : isCurrent ? "50%" : "0%" }}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  transition={springSmooth}
                 />
               </div>
             )}

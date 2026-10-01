@@ -42,30 +42,45 @@ export function CollectionHeaderStats({
   onDelete,
 }: CollectionHeaderStatsProps) {
   return (
-    <Card className="facet-hierarchy-parent">
+    <Card>
       <CardHeader>
         <div className="flex flex-col items-start justify-between gap-4 lg:flex-row">
           <div className="flex-1">
             <div className="mb-2 flex items-center gap-3">
-              <CardTitle className="text-2xl text-white sm:text-3xl">{name}</CardTitle>
+              <CardTitle className="text-title-1 text-label sm:text-large-title">{name}</CardTitle>
               {isPublic ? (
-                <Globe className="h-5 w-5 text-blue-400" />
+                <Globe className="text-blue h-5 w-5" />
               ) : (
-                <Lock className="text-amber-400 h-5 w-5" />
+                <Lock className="text-yellow h-5 w-5" />
               )}
             </div>
-            <p className="text-sm text-white/70 sm:text-base">{description || "No description"}</p>
+            <p className="text-body text-label-secondary">{description || "No description"}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={onLike} className="facet-hierarchy-child">
-              <Heart className="mr-2 h-4 w-4 text-red-400" />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onLike}
+              className="bg-surface-secondary border"
+            >
+              <Heart className="text-red mr-2 h-4 w-4" />
               Like
             </Button>
-            <Button variant="outline" size="sm" onClick={onShare} className="facet-hierarchy-child">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onShare}
+              className="bg-surface-secondary border"
+            >
               <Share2 className="mr-2 h-4 w-4" />
               Share
             </Button>
-            <Button variant="outline" size="sm" onClick={onEdit} className="facet-hierarchy-child">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onEdit}
+              className="bg-surface-secondary border"
+            >
               <Edit2 className="mr-2 h-4 w-4" />
               Edit
             </Button>
@@ -73,7 +88,7 @@ export function CollectionHeaderStats({
               variant="outline"
               size="sm"
               onClick={onDelete}
-              className="facet-hierarchy-child text-red-400 hover:bg-red-500/10"
+              className="bg-surface-secondary text-red hover:bg-red/10 border"
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Delete
@@ -83,24 +98,24 @@ export function CollectionHeaderStats({
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
-            <p className="mb-1 text-xs text-white/60">Card Count</p>
-            <p className="text-xl font-bold text-white sm:text-2xl">{stats.cardCount}</p>
+          <div className="bg-surface-secondary border-separator rounded-control border p-3 sm:p-4">
+            <p className="text-footnote text-label-secondary mb-1">Card Count</p>
+            <p className="text-title-2 text-label sm:text-title-1">{stats.cardCount}</p>
           </div>
-          <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
-            <p className="mb-1 text-xs text-white/60">Total Value</p>
-            <p className="flex items-center gap-1 text-xl font-bold text-amber-400 sm:text-2xl">
+          <div className="bg-surface-secondary border-separator rounded-control border p-3 sm:p-4">
+            <p className="text-footnote text-label-secondary mb-1">Total Value</p>
+            <p className="text-title-2 text-yellow sm:text-title-1 flex items-center gap-1">
               <IxCreditsSymbol className="h-5 w-5 shrink-0" />
               {stats.totalValue.toLocaleString()}
             </p>
           </div>
-          <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
-            <p className="mb-1 text-xs text-white/60">Likes</p>
-            <p className="text-xl font-bold text-red-400 sm:text-2xl">{stats.likes}</p>
+          <div className="bg-surface-secondary border-separator rounded-control border p-3 sm:p-4">
+            <p className="text-footnote text-label-secondary mb-1">Likes</p>
+            <p className="text-title-2 text-red sm:text-title-1">{stats.likes}</p>
           </div>
-          <div className="facet-hierarchy-child rounded-lg p-3 sm:p-4">
-            <p className="mb-1 text-xs text-white/60">Comments</p>
-            <p className="text-xl font-bold text-blue-400 sm:text-2xl">{stats.comments}</p>
+          <div className="bg-surface-secondary border-separator rounded-control border p-3 sm:p-4">
+            <p className="text-footnote text-label-secondary mb-1">Comments</p>
+            <p className="text-title-2 text-blue sm:text-title-1">{stats.comments}</p>
           </div>
         </div>
       </CardContent>

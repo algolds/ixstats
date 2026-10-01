@@ -224,7 +224,7 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
         title="Daily Bonus Claimed!"
         subtitle="Added to Vault Balance"
         amount={claimedBonusAmount}
-        icon={<div className="animate-bounce text-4xl">🎁</div>}
+        icon={<div className="text-large-title animate-bounce">🎁</div>}
       />
     </div>
   );

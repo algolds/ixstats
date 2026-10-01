@@ -17,7 +17,7 @@
  * @example
  * ```tsx
  * <CategoryIcon category="MILITARY" treatment="watermark" />
- * <CategoryIcon category="GEOGRAPHY" treatment="emblem" className="text-emerald-500" />
+ * <CategoryIcon category="GEOGRAPHY" treatment="emblem" className="text-green" />
  * <CategoryIcon category="SCIENCE" treatment="seal" size="xs" />
  * ```
  */

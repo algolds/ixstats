@@ -3,7 +3,9 @@
 import React, { useState, useMemo } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
+import { SearchField } from "~/components/ui/search-field";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Shield, Search, ArrowRight, User, City, Star } from "iconoir-react";
 import { FacetCard } from "~/components/ui/facet-container";
 import { withBasePath } from "~/lib/base-path";
@@ -51,82 +53,54 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
   return (
     <div className="space-y-6">
       {/* ─── DIRECTORATE TOOLBAR & CONTROLS ─── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/20 pb-4">
+      <div className="border-separator flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h3 className="text-xl font-black tracking-tight text-foreground">
-              Franchise Directorate
-            </h3>
-            <Badge
-              variant="outline"
-              className="border-border/60 bg-muted/30 text-xs font-bold text-foreground"
-            >
+            <h3 className="text-title-2 text-label">Franchise Directorate</h3>
+            <Badge variant="neutral" className="tabular-nums">
               {teams.length} Registered
             </Badge>
           </div>
-          <p className="text-xs text-muted-foreground font-medium">
+          <p className="text-callout text-label-secondary">
             Directory of all member organizations, stadium origins, and club managers.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           {/* Filter Pills */}
-          <div className="flex items-center rounded-xl border border-border/40 bg-background/60 p-1 shadow-sm backdrop-blur-md">
-            <button
-              onClick={() => setFilter("all")}
-              className={cn(
-                "rounded-lg px-3 py-1 text-xs font-bold uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] cursor-pointer",
-                filter === "all"
-                  ? "bg-foreground text-background shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              All ({teams.length})
-            </button>
-            <button
-              onClick={() => setFilter("managed")}
-              className={cn(
-                "rounded-lg px-3 py-1 text-xs font-bold uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] cursor-pointer",
-                filter === "managed"
-                  ? "bg-cyan-500 text-white shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Managed ({managedCount})
-            </button>
-            <button
-              onClick={() => setFilter("unclaimed")}
-              className={cn(
-                "rounded-lg px-3 py-1 text-xs font-bold uppercase transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] cursor-pointer",
-                filter === "unclaimed"
-                  ? "bg-amber-500 text-black shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Unclaimed ({unclaimedCount})
-            </button>
-          </div>
+          <SegmentedControl
+            size="sm"
+            aria-label="Franchise filter"
+            value={filter}
+            onValueChange={setFilter}
+            options={[
+              { value: "all", label: `All (${teams.length})` },
+              { value: "managed", label: `Managed (${managedCount})` },
+              { value: "unclaimed", label: `Unclaimed (${unclaimedCount})` },
+            ]}
+          />
 
           {/* Search Box */}
-          <div className="relative min-w-[200px]">
-            <Search className="absolute start-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-            <Input
-              placeholder="Search franchises..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-9 rounded-xl border-border/60 bg-card/40 ps-8 text-xs placeholder:text-muted-foreground/60"
-            />
-          </div>
+          <SearchField
+            size="sm"
+            placeholder="Search franchises..."
+            aria-label="Search franchises"
+            value={search}
+            onValueChange={setSearch}
+            containerClassName="min-w-[200px]"
+          />
         </div>
       </div>
 
       {/* ─── FRANCHISE CARDS SHOWCASE ─── */}
       {filteredTeams.length === 0 ? (
-        <div className="rounded-3xl border border-border/40 bg-card/40 p-12 text-center backdrop-blur-md space-y-2">
-          <Shield className="mx-auto h-10 w-10 text-muted-foreground/40" />
-          <h4 className="text-base font-bold text-foreground">No Franchises Match Filter</h4>
-          <p className="text-xs text-muted-foreground">Try clearing search terms or status filters.</p>
-        </div>
+        <FacetCard>
+          <EmptyState
+            icon={<Shield />}
+            title="No Franchises Match Filter"
+            message="Try clearing search terms or status filters."
+          />
+        </FacetCard>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filteredTeams.map((team) => {
@@ -135,22 +109,15 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
             return (
               <FacetCard
                 key={team.id}
-                depth={2}
-                interactive="hover"
                 onClick={() => onTeamClick(team.id)}
-                className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/40 bg-card/75 shadow-lg backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:-translate-y-1 hover:border-border hover:shadow-2xl active:scale-[0.98] cursor-pointer"
+                aria-label={`Open ${team.name}`}
+                className="group flex flex-col justify-between overflow-hidden"
               >
-                {/* Header Ambient Color Band */}
-                <div
-                  className="relative h-24 p-4 flex items-end justify-between overflow-hidden"
-                  style={{
-                    background: `linear-gradient(135deg, ${teamColor}35 0%, rgba(255,255,255,0.02) 100%)`,
-                  }}
-                >
-                  <div className="absolute inset-0 bg-card/20 backdrop-blur-xs" />
-
+                {/* Club colour hairline (data colour) */}
+                <div aria-hidden className="h-1" style={{ backgroundColor: teamColor }} />
+                <div className="flex items-end justify-between p-5 pb-0">
                   {/* Club Crest */}
-                  <div className="relative z-10 flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-border/60 bg-background/90 shadow-xl">
+                  <div className="border-separator bg-surface-secondary rounded-row flex size-14 items-center justify-center overflow-hidden border">
                     {team.logo ? (
                       <img
                         src={withBasePath(team.logo)}
@@ -159,7 +126,7 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
                       />
                     ) : (
                       <div
-                        className="flex h-full w-full items-center justify-center text-sm font-black text-white shadow-inner"
+                        className="text-headline flex h-full w-full items-center justify-center text-white shadow-inner"
                         style={{ backgroundColor: teamColor }}
                       >
                         {team.shortName || team.name.slice(0, 2).toUpperCase()}
@@ -168,45 +135,36 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
                   </div>
 
                   {/* Status Badge */}
-                  <div className="relative z-10">
+                  <div>
                     {team.ownerUserId ? (
-                      <Badge
-                        variant="outline"
-                        className="border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-xs font-bold text-cyan-400 backdrop-blur-md"
-                      >
-                        Managed
-                      </Badge>
+                      <Badge variant="tinted">Managed</Badge>
                     ) : (
-                      <Badge
-                        variant="outline"
-                        className="border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-400 backdrop-blur-md"
-                      >
-                        Unclaimed
-                      </Badge>
+                      <Badge variant="caution">Unclaimed</Badge>
                     )}
                   </div>
                 </div>
 
                 {/* Card Body */}
-                <div className="flex flex-1 flex-col justify-between p-5 space-y-4">
+                <div className="flex flex-1 flex-col justify-between space-y-4 p-5">
                   <div>
-                    <h4 className="text-base font-extrabold text-foreground tracking-tight group-hover:text-primary transition-colors line-clamp-1">
+                    <h4 className="text-headline text-label group-hover:text-tint line-clamp-1 transition-colors">
                       {team.name}
                     </h4>
-                    <p className="text-xs text-muted-foreground font-semibold mt-0.5">
+                    <p className="text-footnote text-label-secondary mt-0.5">
                       {team.city ? `${team.city} • ` : ""}
                       {team.shortName ?? "Franchise Member"}
                     </p>
                   </div>
 
                   {/* Card Footer Action Bar */}
-                  <div className="flex items-center justify-between border-t border-border/20 pt-3 text-xs font-bold">
-                    <span className="text-muted-foreground group-hover:text-foreground transition-colors">
+                  <div className="text-footnote border-separator flex items-center justify-between border-t pt-3 font-medium">
+                    <span className="text-label-secondary group-hover:text-label transition-colors">
                       Inspect Squad
                     </span>
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/40 bg-background/50 shadow-xs group-hover:bg-primary group-hover:text-primary-foreground transition-[color,background-color,border-color,box-shadow,opacity,transform]">
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </div>
+                    <ArrowRight
+                      className="text-label-tertiary group-hover:text-tint size-4 transition-colors"
+                      aria-hidden
+                    />
                   </div>
                 </div>
               </FacetCard>

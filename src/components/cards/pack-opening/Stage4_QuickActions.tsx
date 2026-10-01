@@ -1,4 +1,6 @@
 "use client";
+
+import "~/styles/card-art.css";
 // src/components/cards/pack-opening/Stage4_QuickActions.tsx
 // Stage 4: Post-reveal quick actions for cards
 
@@ -109,21 +111,19 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
         <motion.div
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="border-b border-white/10 bg-black/20 p-6 backdrop-blur-sm"
+          className="border-separator bg-surface-secondary border-b p-6"
         >
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-white">Cards Received</h2>
-              <p className="mt-1 text-sm text-white/60">
+              <h2 className="text-title-1 text-label">Cards Received</h2>
+              <p className="text-body text-label-secondary mt-1">
                 {cards.length} card{cards.length !== 1 ? "s" : ""}
               </p>
             </div>
 
             <div className="text-right">
-              <div className="text-sm text-white/60">Estimated Value</div>
-              <div className="text-2xl font-bold text-yellow-400">
-                {estimatedValue.toLocaleString()} IC
-              </div>
+              <div className="text-body text-label-secondary">Estimated Value</div>
+              <div className="text-title-1 text-yellow">{estimatedValue.toLocaleString()} IC</div>
             </div>
           </div>
 
@@ -131,28 +131,32 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
           <div className="mt-4 flex items-center gap-4">
             <button
               onClick={() => setBulkMode(!bulkMode)}
-              className="rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/20"
+              className="rounded-control bg-fill-3 text-body text-label hover:bg-fill-2 px-4 py-2 font-medium transition-colors"
             >
               {bulkMode ? "Exit Bulk Mode" : "Bulk Select"}
             </button>
 
             {bulkMode && selectedCards.size > 0 && (
-              <motion.div initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1 }} className="flex gap-2">
+              <motion.div
+                initial={{ scale: 0.96, opacity: 0 }}
+                animate={{ scale: 1 }}
+                className="flex gap-2"
+              >
                 <button
                   onClick={() => handleBulkAction("junk")}
-                  className="rounded-lg bg-red-500/20 px-3 py-1 text-sm font-medium text-red-300 hover:bg-red-500/30"
+                  className="rounded-control bg-red/20 text-body text-red hover:bg-red/30 px-3 py-1 font-medium"
                 >
                   Junk ({selectedCards.size})
                 </button>
                 <button
                   onClick={() => handleBulkAction("keep")}
-                  className="rounded-lg bg-green-500/20 px-3 py-1 text-sm font-medium text-green-300 hover:bg-green-500/30"
+                  className="rounded-control bg-green/20 text-body text-green hover:bg-green/30 px-3 py-1 font-medium"
                 >
                   Keep ({selectedCards.size})
                 </button>
                 <button
                   onClick={() => handleBulkAction("list")}
-                  className="rounded-lg bg-blue-500/20 px-3 py-1 text-sm font-medium text-blue-300 hover:bg-blue-500/30"
+                  className="rounded-control bg-blue/20 text-body text-blue hover:bg-blue/30 px-3 py-1 font-medium"
                 >
                   List ({selectedCards.size})
                 </button>
@@ -186,23 +190,23 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
         <motion.div
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="border-t border-white/10 bg-black/20 p-6 backdrop-blur-sm"
+          className="border-separator bg-surface-secondary border-t p-6"
         >
           <div className="flex items-center justify-between">
-            <div className="text-sm text-white/60">
+            <div className="text-body text-label-secondary">
               {cardActions.size} of {cards.length} cards processed
             </div>
 
             <div className="flex gap-3">
               <button
                 onClick={handleCollectAll}
-                className="rounded-lg bg-green-500/20 px-6 py-3 font-medium text-green-300 transition-colors hover:bg-green-500/30"
+                className="rounded-control bg-green/20 text-green hover:bg-green/30 px-6 py-3 font-medium transition-colors"
               >
                 Collect All
               </button>
               <button
                 onClick={onComplete}
-                className="rounded-lg bg-blue-500/20 px-6 py-3 font-medium text-blue-300 transition-colors hover:bg-blue-500/30"
+                className="rounded-control bg-blue/20 text-blue hover:bg-blue/30 px-6 py-3 font-medium transition-colors"
               >
                 Done
               </button>
@@ -246,48 +250,48 @@ const CardActionItem = React.memo<CardActionItemProps>(
           stiffness: 300,
           damping: 25,
         }}
-        className={`relative rounded-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-          isSelected ? "ring-2 ring-blue-400" : ""
+        className={`rounded-row relative transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+          isSelected ? "ring-blue ring-2" : ""
         } ${action ? "opacity-50" : ""}`}
       >
         {/* Card preview */}
         <div
-          className="group relative cursor-pointer overflow-hidden rounded-xl"
+          className="group rounded-row relative cursor-pointer overflow-hidden"
           onClick={() => bulkMode && onToggleSelect(card.id)}
         >
           {/* Rarity glow */}
           <div
-            className="absolute -inset-1 rounded-xl opacity-50 blur-lg"
+            className="rounded-row absolute -inset-1 opacity-50 blur-lg"
             style={{
               backgroundColor: rarityColor,
             }}
           />
 
           {/* Card image */}
-          <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-gradient-to-br from-white/10 to-white/5">
+          <div className="rounded-row card-art-linear-br relative aspect-[3/4] overflow-hidden from-white/10 to-white/5">
             <CardHolographicCover cardType={card.cardType} rarity={card.rarity} />
             <div
-              className="absolute inset-0 bg-cover bg-center transition-transform group-hover:scale-110"
+              className="absolute inset-0 bg-cover bg-center transition-transform"
               style={{
                 backgroundImage: `url(${proxyCardArtwork(card.artwork)})`,
               }}
             >
               {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+              <div className="card-art-linear-t absolute inset-0 from-black/80 via-transparent to-transparent" />
 
               {/* Card info */}
               <div className="absolute right-0 bottom-0 left-0 p-3">
-                <div className="text-xs font-medium tracking-wide text-white/60 uppercase">
+                <div className="text-eyebrow text-label-secondary">
                   {card.rarity.replace("_", " ")}
                 </div>
-                <div className="mt-1 text-sm font-bold text-white">
+                <div className="text-headline text-label mt-1">
                   {card.name || card.title || "Unknown"}
                 </div>
               </div>
 
               {/* Rarity badge */}
               <div
-                className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-xs font-bold"
+                className="text-footnote absolute top-2 right-2 rounded-full px-2 py-0.5 font-semibold"
                 style={{
                   backgroundColor: `${rarityColor}80`,
                   color: "white",
@@ -300,12 +304,12 @@ const CardActionItem = React.memo<CardActionItemProps>(
               {bulkMode && (
                 <div
                   className={`absolute top-2 left-2 h-6 w-6 rounded-full border-2 transition-colors ${
-                    isSelected ? "border-blue-400 bg-blue-400" : "border-white/40 bg-transparent"
+                    isSelected ? "border-blue bg-blue" : "border-separator bg-transparent"
                   }`}
                 >
                   {isSelected && (
                     <svg
-                      className="h-full w-full text-white"
+                      className="text-label h-full w-full"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -324,7 +328,7 @@ const CardActionItem = React.memo<CardActionItemProps>(
               {/* Action indicator */}
               {action && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-                  <div className="rounded-lg bg-white/10 px-4 py-2 text-sm font-bold text-white uppercase backdrop-blur-sm">
+                  <div className="rounded-control bg-fill-3 text-headline text-label px-4 py-2 uppercase">
                     {action}
                   </div>
                 </div>
@@ -343,21 +347,21 @@ const CardActionItem = React.memo<CardActionItemProps>(
           >
             <button
               onClick={() => onAction(card.id, "junk")}
-              className="flex-1 rounded bg-red-500/20 py-1 text-xs font-medium text-red-300 hover:bg-red-500/30"
+              className="bg-red/20 text-footnote text-red hover:bg-red/30 flex-1 rounded py-1 font-medium"
               title="Junk for credits"
             >
               Junk
             </button>
             <button
               onClick={() => onAction(card.id, "keep")}
-              className="flex-1 rounded bg-green-500/20 py-1 text-xs font-medium text-green-300 hover:bg-green-500/30"
+              className="bg-green/20 text-footnote text-green hover:bg-green/30 flex-1 rounded py-1 font-medium"
               title="Keep in collection"
             >
               Keep
             </button>
             <button
               onClick={() => onAction(card.id, "list")}
-              className="flex-1 rounded bg-blue-500/20 py-1 text-xs font-medium text-blue-300 hover:bg-blue-500/30"
+              className="bg-blue/20 text-footnote text-blue hover:bg-blue/30 flex-1 rounded py-1 font-medium"
               title="List on marketplace"
             >
               List
@@ -366,7 +370,9 @@ const CardActionItem = React.memo<CardActionItemProps>(
         )}
 
         {/* Estimated value */}
-        <div className="mt-1 text-center text-xs text-white/50">~{estimatedValue} IC</div>
+        <div className="text-footnote text-label-secondary mt-1 text-center">
+          ~{estimatedValue} IC
+        </div>
       </motion.div>
     );
   }

@@ -170,12 +170,12 @@ export const CardDesignerStudio: React.FC = () => {
       {/* Main Two-Column Split Workspace */}
       <div className="grid flex-1 grid-cols-1 items-start gap-6 p-6 lg:grid-cols-12">
         {/* Left Column: 3D Physics Viewport (5 of 12 cols = ~42%) */}
-        <div className="bg-card border-border flex h-[calc(100vh-140px)] max-h-[820px] min-h-[580px] flex-col self-start overflow-hidden rounded-2xl border shadow-xs lg:sticky lg:top-4 lg:col-span-5">
+        <div className="bg-surface border-separator rounded-card shadow-card flex h-[calc(100vh-140px)] max-h-[820px] min-h-[580px] flex-col self-start overflow-hidden border lg:sticky lg:top-4 lg:col-span-5">
           <DesignerStage3D state={state} onReset={() => setState(DEFAULT_DESIGN_STATE)} />
         </div>
 
         {/* Right Column: Multi-Section Tuning Rack (7 of 12 cols = ~58%) */}
-        <div className="bg-card border-border flex max-h-[calc(100vh-140px)] flex-col self-start overflow-y-auto rounded-2xl border p-6 shadow-xs lg:sticky lg:top-4 lg:col-span-7">
+        <div className="bg-surface border-separator rounded-card shadow-card flex max-h-[calc(100vh-140px)] flex-col self-start overflow-y-auto border p-6 lg:sticky lg:top-4 lg:col-span-7">
           <DesignerControlRack
             state={state}
             onChange={setState}

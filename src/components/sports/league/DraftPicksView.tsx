@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { TableCell, TableHead, TableRow } from "~/components/ui/table";
 import { Search } from "iconoir-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
@@ -44,7 +45,7 @@ const TableComponents = {
       {...props}
       data-slot="table"
       className={cn(
-        "w-full min-w-full caption-bottom border-collapse text-xs sm:text-sm",
+        "text-footnote sm:text-body w-full min-w-full caption-bottom border-collapse",
         props.className
       )}
     />
@@ -55,7 +56,7 @@ const TableComponents = {
         ref={ref}
         {...props}
         data-slot="table-header"
-        className={cn("bg-background/95 sticky top-0 z-10 [&_tr]:border-b", props.className)}
+        className={cn("bg-surface-secondary sticky top-0 z-10 [&_tr]:border-b", props.className)}
       />
     )
   ),
@@ -74,7 +75,7 @@ const TableComponents = {
       {...props}
       data-slot="table-row"
       className={cn(
-        "hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
+        "hover:bg-fill-3 data-[state=selected]:bg-fill-3 border-b transition-colors",
         props.className
       )}
     />
@@ -120,10 +121,10 @@ export function DraftPicksView({
   }, [picks, selectedRound, searchQuery]);
 
   const getRatingBadgeClass = (rating: number) => {
-    if (rating >= 80) return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
-    if (rating >= 70) return "bg-blue-500/10 text-blue-400 border-blue-500/30";
-    if (rating >= 60) return "bg-amber-500/10 text-amber-400 border-amber-500/30";
-    return "bg-slate-500/10 text-slate-400 border-slate-500/30";
+    if (rating >= 80) return "bg-green/10 text-green border-green/30";
+    if (rating >= 70) return "bg-blue/10 text-blue border-blue/30";
+    if (rating >= 60) return "bg-yellow/10 text-yellow border-yellow/30";
+    return "bg-fill-3 text-label-secondary border-separator";
   };
 
   const getPlayerOverall = (ratings: Prisma.JsonValue | undefined): number => {
@@ -138,9 +139,7 @@ export function DraftPicksView({
   if (!picks || picks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <p className="text-muted-foreground">
-          No draft picks or signings recorded for this season.
-        </p>
+        <p className="text-label-secondary">No draft picks or signings recorded for this season.</p>
       </div>
     );
   }
@@ -150,7 +149,7 @@ export function DraftPicksView({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Search */}
         <div className="relative max-w-xs flex-1">
-          <Search className="text-muted-foreground absolute top-2.5 left-3 h-4 w-4" />
+          <Search className="text-label-secondary absolute top-2.5 left-3 h-4 w-4" />
           <Input
             placeholder="Search players, teams..."
             className="pl-9"
@@ -161,44 +160,27 @@ export function DraftPicksView({
 
         {/* Round Filter */}
         {rounds.length > 1 && (
-          <div className="flex flex-wrap gap-1">
-            <button
-              onClick={() => setSelectedRound("all")}
-              className={cn(
-                "rounded-md border px-3 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                selectedRound === "all"
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background text-muted-foreground hover:text-foreground border-border"
-              )}
-            >
-              All Rounds
-            </button>
-            {rounds.map((round) => (
-              <button
-                key={round}
-                onClick={() => setSelectedRound(round)}
-                className={cn(
-                  "rounded-md border px-3 py-1 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                  selectedRound === round
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-background text-muted-foreground hover:text-foreground border-border"
-                )}
-              >
-                Round {round}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            size="sm"
+            aria-label="Round"
+            value={String(selectedRound)}
+            onValueChange={(value) => setSelectedRound(value === "all" ? "all" : Number(value))}
+            options={[
+              { value: "all", label: "All Rounds" },
+              ...rounds.map((round) => ({ value: String(round), label: `Round ${round}` })),
+            ]}
+          />
         )}
       </div>
 
-      <div className="facet-surface border-border/40 overflow-hidden rounded-xl border">
+      <div className="border-separator rounded-row overflow-hidden border">
         <TableVirtuoso
           style={{ height: "600px" }}
           data={filteredPicks}
           components={TableComponents}
           // oxlint-disable-next-line
           fixedHeaderContent={() => (
-            <TableRow className="bg-muted/40 backdrop-blur-md">
+            <TableRow className="bg-fill-3">
               <TableHead className="w-16 text-center">Pick</TableHead>
               <TableHead className="w-20 text-center">Round</TableHead>
               <TableHead>Team</TableHead>
@@ -213,10 +195,10 @@ export function DraftPicksView({
 
             return (
               <>
-                <TableCell className="text-muted-foreground w-16 text-center font-bold">
+                <TableCell className="text-label-secondary w-16 text-center font-semibold tabular-nums">
                   #{pick.pickNumber}
                 </TableCell>
-                <TableCell className="text-muted-foreground w-20 text-center">
+                <TableCell className="text-label-secondary w-20 text-center">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <span className="cursor-help">R{pick.round}</span>
@@ -243,13 +225,12 @@ export function DraftPicksView({
                     <button
                       type="button"
                       onClick={() => pick.player?.id && focusAthlete(pick.player.id)}
-                      data-cuelume-press="subtle"
-                      className="cursor-pointer text-left font-semibold text-foreground hover:text-primary hover:underline transition active:scale-[0.98]"
+                      className="text-label hover:text-tint cursor-pointer text-left font-medium transition-colors hover:underline"
                     >
                       {pick.player.firstName} {pick.player.lastName}
                     </button>
                   ) : (
-                    <span className="text-muted-foreground italic">Skipped / No Pick</span>
+                    <span className="text-label-secondary">Skipped / No Pick</span>
                   )}
                 </TableCell>
                 <TableCell className="w-24 text-center">
@@ -272,7 +253,7 @@ export function DraftPicksView({
                       <TooltipTrigger asChild>
                         <Badge
                           variant="outline"
-                          className={cn("cursor-help font-bold", getRatingBadgeClass(overall))}
+                          className={cn("cursor-help font-semibold", getRatingBadgeClass(overall))}
                         >
                           {overall}
                         </Badge>

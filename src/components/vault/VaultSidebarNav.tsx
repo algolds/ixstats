@@ -12,12 +12,7 @@ import { cn } from "~/lib/utils";
 import { stripBasePath } from "~/lib/base-path";
 import { useTheme } from "~/context/theme-context";
 
-import {
-  CutoutCard,
-  CutoutCardContent,
-  CutoutCorner,
-  cutoutCardSurfaceClassName,
-} from "~/components/ui/cutout-card";
+import { FacetCard } from "~/components/ui/facet-container";
 
 export type VaultSection =
   "dashboard" | "cards" | "marketplace" | "import" | "achievements" | "leaderboards";
@@ -34,28 +29,28 @@ export const VAULT_NAV_ITEMS: {
     href: "/vault",
     icon: Home,
     title: "Dashboard",
-    activeColor: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
+    activeColor: "bg-tint-fill text-tint",
   },
   {
     id: "cards",
     href: "/vault/cards",
     icon: Grid3x3,
     title: "Cards",
-    activeColor: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30",
+    activeColor: "bg-tint-fill text-tint",
   },
   {
     id: "marketplace",
     href: "/vault/marketplace",
     icon: ShoppingCart,
     title: "Marketplace",
-    activeColor: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30",
+    activeColor: "bg-tint-fill text-tint",
   },
   {
     id: "import",
     href: "/vault/import",
     icon: Download,
     title: "Import",
-    activeColor: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30",
+    activeColor: "bg-tint-fill text-tint",
   },
 ];
 
@@ -157,26 +152,25 @@ export function VaultSidebarNav({
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
     return (
-      <nav className="facet-hierarchy-child border-border overflow-hidden rounded-xl border p-1.5 backdrop-blur-md">
-        <div className="hide-scrollbar flex gap-1.5 overflow-x-auto">
+      <nav className="bg-surface border-separator rounded-row overflow-hidden border p-1">
+        <div className="hide-scrollbar flex gap-1 overflow-x-auto">
           {filteredNavItems.map((item) => {
             const isActive = item.id === activeId;
             const Icon = item.icon;
             const cls = cn(
-              "flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 border",
-              isActive
-                ? cn("font-bold shadow-xs", item.activeColor)
-                : "text-muted-foreground hover:bg-muted hover:text-foreground border-transparent"
+              "focus-visible:outline-tint text-footnote flex shrink-0 items-center gap-1.5 rounded-control px-3 py-2 font-medium transition-colors duration-fast focus-visible:outline-2 focus-visible:-outline-offset-2",
+              isActive ? item.activeColor : "text-label-secondary hover:bg-fill-3 hover:text-label"
             );
 
             return isControlled ? (
               <button
+                type="button"
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
                 className={cls}
                 aria-current={isActive ? "page" : undefined}
               >
-                <Icon className="h-3.5 w-3.5 shrink-0" />
+                <Icon className="size-3.5 shrink-0" />
                 <span className="whitespace-nowrap">{item.title}</span>
               </button>
             ) : (
@@ -186,7 +180,7 @@ export function VaultSidebarNav({
                 className={cls}
                 aria-current={isActive ? "page" : undefined}
               >
-                <Icon className="h-3.5 w-3.5 shrink-0" />
+                <Icon className="size-3.5 shrink-0" />
                 <span className="whitespace-nowrap">{item.title}</span>
               </Link>
             );
@@ -196,75 +190,47 @@ export function VaultSidebarNav({
     );
   }
 
-  /* ── Desktop: cutout card navigation ── */
+  /* ── Desktop: card navigation ── */
   return (
-    <CutoutCard
-      className={cn(cutoutCardSurfaceClassName, "w-48 overflow-hidden rounded-xl")}
-      trackPointerHover={false}
-      texture="dots"
-      textureOpacity={0.06}
-    >
-      {/* Cutout tab header */}
-      <div className="relative bg-amber-500/10 px-3 pt-2.5 pb-4">
-        <div className="text-card-foreground flex items-center gap-1.5 text-xs font-bold">
-          <svg
-            className="h-3.5 w-3.5 text-amber-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-            />
-          </svg>
-          Vault Sections
-        </div>
-        <CutoutCorner className="text-card absolute -bottom-px left-0" size={16} />
-        <CutoutCorner className="text-card absolute right-0 -bottom-px -scale-x-100" size={16} />
-      </div>
-      <CutoutCardContent className="space-y-1.5 p-2.5 pt-1">
+    <FacetCard className="w-48 overflow-hidden">
+      <h2 className="text-subhead text-label-secondary px-3 pt-3 pb-1">Vault sections</h2>
+      <div className="space-y-1 p-2 pt-1">
         {filteredNavItems.map((item) => {
           const isActive = item.id === activeId;
           const Icon = item.icon;
-
-          const rowEl = (
-            <div
-              className={cn(
-                "flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 border",
-                isActive
-                  ? cn("font-bold shadow-xs", item.activeColor)
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/5 border-transparent"
-              )}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              <span className="truncate text-xs font-medium">{item.title}</span>
-            </div>
+          const cls = cn(
+            "focus-visible:outline-tint text-body flex w-full cursor-pointer items-center gap-2.5 rounded-control px-2.5 py-2 text-left font-medium transition-colors duration-fast outline-none focus-visible:outline-2 focus-visible:-outline-offset-2",
+            isActive ? item.activeColor : "text-label hover:bg-fill-4"
+          );
+          const content = (
+            <>
+              <Icon className={cn("size-4 shrink-0", !isActive && "text-label-secondary")} />
+              <span className="truncate">{item.title}</span>
+            </>
           );
 
           return isControlled ? (
             <button
+              type="button"
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className="w-full rounded-lg border-none bg-transparent p-0 text-left outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+              className={cls}
               aria-current={isActive ? "page" : undefined}
             >
-              {rowEl}
+              {content}
             </button>
           ) : (
             <Link
               key={item.id}
               href={item.href}
-              className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+              className={cls}
               aria-current={isActive ? "page" : undefined}
             >
-              {rowEl}
+              {content}
             </Link>
           );
         })}
-      </CutoutCardContent>
-    </CutoutCard>
+      </div>
+    </FacetCard>
   );
 }

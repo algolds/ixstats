@@ -13,6 +13,9 @@
  * 5. Import Summary
  */
 
+import { useNotify } from "~/hooks/useNotify";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import type { NSCard } from "~/lib/nationstates/api-client";
@@ -33,6 +36,7 @@ interface ImportResults {
 type WizardStep = "auth" | "preview" | "options" | "progress" | "summary";
 
 export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
+  const notify = useNotify();
   const [currentStep, setCurrentStep] = useState<WizardStep>("auth");
   const [nationName, setNationName] = useState("");
   const [verificationId, setVerificationId] = useState<string | null>(null);
@@ -55,7 +59,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
 
   const handleRequestVerification = async () => {
     if (!nationName.trim()) {
-      alert("Please enter a nation name");
+      notify.error("Please enter a nation name");
       return;
     }
 
@@ -70,13 +74,13 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
       window.open(result.verificationUrl, "_blank");
     } catch (error) {
       console.error("Failed to request verification:", error);
-      alert("Failed to request verification. Please try again.");
+      notify.error("Failed to request verification. Please try again.");
     }
   };
 
   const handleCheckVerification = async () => {
     if (!verificationId || !checksum.trim()) {
-      alert("Please enter your verification code");
+      notify.error("Please enter your verification code");
       return;
     }
 
@@ -95,11 +99,11 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
         setDeckData(deck);
         setCurrentStep("preview");
       } else {
-        alert("Verification failed. Please check your code and try again.");
+        notify.error("Verification failed. Please check your code and try again.");
       }
     } catch (error) {
       console.error("Verification check failed:", error);
-      alert("Verification failed. Please try again.");
+      notify.error("Verification failed. Please try again.");
     }
   };
 
@@ -109,12 +113,14 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
 
   const handleStartImport = async () => {
     if (!verificationId) {
-      alert("Verification required");
+      notify.error("Verification required");
       return;
     }
 
     if (!hasGrantedConsent) {
-      alert("Please confirm your first-party content permission to proceed with the import.");
+      notify.error(
+        "Please confirm your first-party content permission to proceed with the import."
+      );
       return;
     }
 
@@ -135,7 +141,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
       setCurrentStep("summary");
     } catch (error) {
       console.error("Import failed:", error);
-      alert("Import failed. Please try again.");
+      notify.error("Import failed. Please try again.");
       setCurrentStep("options");
     }
   };
@@ -147,7 +153,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
   };
 
   return (
-    <div className="border-border bg-card min-h-[600px] rounded-xl border p-8">
+    <div className="border-separator bg-surface rounded-row min-h-[600px] border p-8">
       {/* Progress Bar */}
       <div className="mb-8">
         <div className="mb-2 flex items-center justify-between">
@@ -158,16 +164,16 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
                   className={`mx-2 h-1 flex-1 ${
                     ["auth", "preview", "options", "progress", "summary"].indexOf(currentStep) >
                     idx - 1
-                      ? "bg-gold-400"
-                      : "bg-white/20"
+                      ? "bg-tint"
+                      : "bg-fill-2"
                   }`}
                 />
               )}
               <div
-                className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold ${
+                className={`text-body flex h-10 w-10 items-center justify-center rounded-full font-semibold ${
                   ["auth", "preview", "options", "progress", "summary"].indexOf(currentStep) >= idx
-                    ? "bg-gold-400 text-gray-900"
-                    : "bg-white/20 text-white/60"
+                    ? "bg-tint text-on-tint"
+                    : "bg-fill-2 text-label-secondary"
                 }`}
               >
                 {idx + 1}
@@ -175,7 +181,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
             </div>
           ))}
         </div>
-        <div className="flex justify-between text-xs text-white/60">
+        <div className="text-footnote text-label-secondary flex justify-between">
           <span>Verify</span>
           <span>Preview</span>
           <span>Options</span>
@@ -187,104 +193,103 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
       {/* Step Content */}
       {currentStep === "auth" && (
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-white">Step 1: Verify Nation Ownership</h2>
-          <p className="text-white/80">
+          <h2 className="text-title-1 text-label">Step 1: Verify Nation Ownership</h2>
+          <p className="text-label">
             Enter your NationStates nation name to begin the import process.
           </p>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-white/90">Nation Name</label>
-            <input
+            <label className="text-subhead text-label-secondary mb-2 block">Nation Name</label>
+            <Input
               type="text"
               value={nationName}
               onChange={(e) => setNationName(e.target.value)}
-              className="border-border bg-muted/50 w-full rounded-lg border px-4 py-2 text-white placeholder-white/40"
+              className="w-full"
               placeholder="Enter nation name"
             />
           </div>
 
           {!verificationId ? (
-            <button
+            <Button
               onClick={handleRequestVerification}
               disabled={requestVerificationMutation.isPending}
-              className="facet-interactive w-full rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20 disabled:opacity-50"
+              size="lg"
+              variant="filled"
+              className="w-full"
             >
               {requestVerificationMutation.isPending ? "Requesting..." : "Request Verification"}
-            </button>
+            </Button>
           ) : (
             <div className="space-y-4">
-              <div className="bg-muted/50 rounded-lg p-4">
-                <p className="mb-2 text-sm text-white/80">
+              <div className="bg-surface-secondary rounded-row p-4">
+                <p className="text-body text-label mb-2">
                   A verification window has been opened. Copy your verification code and paste it
                   below.
                 </p>
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-white/90">
+                <label className="text-subhead text-label-secondary mb-2 block">
                   Verification Code
                 </label>
-                <input
+                <Input
                   type="text"
                   value={checksum}
                   onChange={(e) => setChecksum(e.target.value)}
-                  className="border-border bg-muted/50 w-full rounded-lg border px-4 py-2 text-white placeholder-white/40"
+                  className="w-full"
                   placeholder="Paste verification code"
                 />
               </div>
 
-              <button
+              <Button
                 onClick={handleCheckVerification}
                 disabled={checkVerificationMutation.isPending}
-                className="facet-interactive w-full rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20 disabled:opacity-50"
+                size="lg"
+                variant="filled"
+                className="w-full"
               >
                 {checkVerificationMutation.isPending ? "Verifying..." : "Verify & Continue"}
-              </button>
+              </Button>
             </div>
           )}
 
-          <button
-            onClick={onCancel}
-            className="w-full rounded-lg px-6 py-3 font-semibold text-white/60 transition-colors hover:text-white"
-          >
+          <Button onClick={onCancel} size="lg" variant="plain" className="w-full">
             Cancel
-          </button>
+          </Button>
         </div>
       )}
 
       {currentStep === "preview" && deckData && (
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-white">Step 2: Deck Preview</h2>
-          <p className="text-white/80">Review your NationStates deck before importing.</p>
+          <h2 className="text-title-1 text-label">Step 2: Deck Preview</h2>
+          <p className="text-label">Review your NationStates deck before importing.</p>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-muted/50 rounded-lg p-4">
-              <div className="text-sm text-white/60">Total Cards</div>
-              <div className="text-2xl font-bold text-white">{deckData.totalCards}</div>
+            <div className="bg-surface-secondary rounded-row p-4">
+              <div className="text-body text-label-secondary">Total Cards</div>
+              <div className="text-title-1 text-label">{deckData.totalCards}</div>
             </div>
-            <div className="bg-muted/50 rounded-lg p-4">
-              <div className="text-sm text-white/60">Unique Cards</div>
-              <div className="text-2xl font-bold text-white">{deckData.uniqueCards}</div>
+            <div className="bg-surface-secondary rounded-row p-4">
+              <div className="text-body text-label-secondary">Unique Cards</div>
+              <div className="text-title-1 text-label">{deckData.uniqueCards}</div>
             </div>
-            <div className="bg-muted/50 col-span-2 rounded-lg p-4">
-              <div className="text-sm text-white/60">Deck Value</div>
-              <div className="text-gold-400 text-2xl font-bold">
-                {deckData.deckValue.toFixed(2)} Bank
-              </div>
+            <div className="bg-fill-3 rounded-control col-span-2 p-4">
+              <div className="text-body text-label-secondary">Deck Value</div>
+              <div className="text-tint text-title-1">{deckData.deckValue.toFixed(2)} Bank</div>
             </div>
           </div>
 
-          <div className="bg-muted/50 max-h-96 overflow-y-auto rounded-lg p-4">
-            <h3 className="mb-4 font-semibold text-white">Cards (showing first 20)</h3>
+          <div className="bg-fill-3 rounded-control max-h-96 overflow-y-auto p-4">
+            <h3 className="text-headline text-label mb-4">Cards (showing first 20)</h3>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
               {deckData.cards.slice(0, 20).map((card, idx) => (
-                <div key={idx} className="bg-muted/50 rounded-lg p-3 text-center">
-                  <div className="truncate text-xs font-semibold text-white/90">
+                <div key={idx} className="bg-surface-secondary rounded-row p-3 text-center">
+                  <div className="text-footnote text-label truncate font-semibold">
                     {card.name || `Card ${card.id}`}
                   </div>
-                  <div className="mt-1 text-xs text-white/60">{card.rarity}</div>
+                  <div className="text-footnote text-label-secondary mt-1">{card.rarity}</div>
                   {card.quantity && card.quantity > 1 && (
-                    <div className="text-gold-400 mt-1 text-xs">x{card.quantity}</div>
+                    <div className="text-tint text-footnote mt-1">x{card.quantity}</div>
                   )}
                 </div>
               ))}
@@ -292,73 +297,72 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
           </div>
 
           <div className="flex gap-4">
-            <button
+            <Button
               onClick={() => setCurrentStep("auth")}
-              className="flex-1 rounded-lg px-6 py-3 font-semibold text-white/60 transition-colors hover:text-white"
+              size="lg"
+              variant="plain"
+              className="flex-1"
             >
               Back
-            </button>
-            <button
-              onClick={handleProceedToOptions}
-              className="facet-interactive flex-1 rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20"
-            >
+            </Button>
+            <Button onClick={handleProceedToOptions} size="lg" variant="filled" className="flex-1">
               Continue
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {currentStep === "options" && (
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-white">Step 3: Import Options</h2>
-          <p className="text-white/80">Choose how to handle duplicate cards.</p>
+          <h2 className="text-title-1 text-label">Step 3: Import Options</h2>
+          <p className="text-label">Choose how to handle duplicate cards.</p>
 
           <div className="space-y-3">
-            <label className="bg-muted/50 flex cursor-pointer items-start gap-3 rounded-lg p-4 transition-colors hover:bg-white/10">
+            <label className="bg-fill-3 rounded-control flex cursor-pointer items-start gap-3 p-4 transition-colors">
               <input
                 type="radio"
                 name="duplicateOption"
                 value="skip"
                 checked={duplicateOption === "skip"}
                 onChange={(e) => setDuplicateOption(e.target.value as "skip" | "merge")}
-                className="mt-1"
+                className="accent-tint mt-1"
               />
               <div>
-                <div className="font-semibold text-white">Skip Duplicates</div>
-                <div className="text-sm text-white/60">
+                <div className="text-label font-semibold">Skip Duplicates</div>
+                <div className="text-body text-label-secondary">
                   Don't import cards you already own. Faster and cleaner.
                 </div>
               </div>
             </label>
 
-            <label className="bg-muted/50 flex cursor-pointer items-start gap-3 rounded-lg p-4 transition-colors hover:bg-white/10">
+            <label className="bg-fill-3 rounded-control flex cursor-pointer items-start gap-3 p-4 transition-colors">
               <input
                 type="radio"
                 name="duplicateOption"
                 value="merge"
                 checked={duplicateOption === "merge"}
                 onChange={(e) => setDuplicateOption(e.target.value as "skip" | "merge")}
-                className="mt-1"
+                className="accent-tint mt-1"
               />
               <div>
-                <div className="font-semibold text-white">Merge Duplicates</div>
-                <div className="text-sm text-white/60">
+                <div className="text-label font-semibold">Merge Duplicates</div>
+                <div className="text-body text-label-secondary">
                   Update existing cards with latest NS data. Recommended for syncing.
                 </div>
               </div>
             </label>
           </div>
 
-          <div className="rounded-lg border border-amber-400/30 bg-amber-500/10 p-4">
+          <div className="rounded-row bg-tint-fill p-4">
             <label className="flex cursor-pointer items-start gap-3">
               <input
                 type="checkbox"
                 checked={hasGrantedConsent}
                 onChange={(e) => setHasGrantedConsent(e.target.checked)}
-                className="mt-1 h-4 w-4 rounded border-white/30 text-amber-400 focus:ring-amber-400"
+                className="accent-tint mt-1 size-4"
               />
-              <div className="text-sm text-white/90">
-                <span className="font-semibold text-white">
+              <div className="text-body text-label">
+                <span className="text-label font-semibold">
                   First-Party Content Permission & Grant:
                 </span>{" "}
                 I verify that I am the owner or authorized operator of{" "}
@@ -369,67 +373,68 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
           </div>
 
           <div className="flex gap-4">
-            <button
+            <Button
               onClick={() => setCurrentStep("preview")}
-              className="flex-1 rounded-lg px-6 py-3 font-semibold text-white/60 transition-colors hover:text-white"
+              size="lg"
+              variant="plain"
+              className="flex-1"
             >
               Back
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleStartImport}
               disabled={!hasGrantedConsent || importDeckMutation.isPending}
-              className="facet-interactive flex-1 rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
+              size="lg"
+              variant="filled"
+              className="flex-1"
             >
               {importDeckMutation.isPending ? "Importing..." : "Start Import"}
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {currentStep === "progress" && (
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-white">Step 4: Importing...</h2>
-          <p className="text-white/80">
+          <h2 className="text-title-1 text-label">Step 4: Importing...</h2>
+          <p className="text-label">
             Please wait while we import your cards. This may take a few moments.
           </p>
 
-          <div className="bg-muted/50 rounded-lg p-8 text-center">
-            <div className="border-t-gold-400 mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-white/20"></div>
-            <div className="text-lg font-semibold text-white">Importing your deck...</div>
-            <div className="mt-2 text-sm text-white/60">This may take a minute</div>
+          <div className="bg-surface-secondary rounded-row p-8 text-center">
+            <div className="border-t-tint border-separator mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 motion-reduce:animate-none"></div>
+            <div className="text-title-3 text-label">Importing your deck...</div>
+            <div className="text-body text-label-secondary mt-2">This may take a minute</div>
           </div>
         </div>
       )}
 
       {currentStep === "summary" && importResults && (
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-white">Step 5: Import Complete!</h2>
-          <p className="text-white/80">Your NationStates deck has been successfully imported.</p>
+          <h2 className="text-title-1 text-label">Step 5: Import Complete!</h2>
+          <p className="text-label">Your NationStates deck has been successfully imported.</p>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-muted/50 rounded-lg p-4">
-              <div className="text-sm text-white/60">Cards Imported</div>
-              <div className="text-2xl font-bold text-green-400">{importResults.cardsImported}</div>
+            <div className="bg-surface-secondary rounded-row p-4">
+              <div className="text-body text-label-secondary">Cards Imported</div>
+              <div className="text-title-1 text-green">{importResults.cardsImported}</div>
             </div>
-            <div className="bg-muted/50 rounded-lg p-4">
-              <div className="text-sm text-white/60">Cards Skipped</div>
-              <div className="text-2xl font-bold text-white/60">{importResults.cardsSkipped}</div>
+            <div className="bg-surface-secondary rounded-row p-4">
+              <div className="text-body text-label-secondary">Cards Skipped</div>
+              <div className="text-title-1 text-label-secondary">{importResults.cardsSkipped}</div>
             </div>
-            <div className="bg-muted/50 col-span-2 rounded-lg p-4">
-              <div className="text-sm text-white/60">Bonus Credits Earned</div>
-              <div className="text-gold-400 flex items-center gap-1 text-2xl font-bold">
-                <IxCreditsSymbol className="h-6 w-6 shrink-0 text-amber-400" />
+            <div className="bg-fill-3 rounded-control col-span-2 p-4">
+              <div className="text-body text-label-secondary">Bonus Credits Earned</div>
+              <div className="text-tint text-title-1 flex items-center gap-1">
+                <IxCreditsSymbol className="text-yellow h-6 w-6 shrink-0" />
                 {importResults.bonusCredits}
               </div>
             </div>
           </div>
 
-          <button
-            onClick={handleComplete}
-            className="facet-interactive w-full rounded-lg px-6 py-3 font-semibold text-white transition-colors hover:bg-white/20"
-          >
+          <Button onClick={handleComplete} size="lg" variant="filled" className="w-full">
             View My Collection
-          </button>
+          </Button>
         </div>
       )}
     </div>

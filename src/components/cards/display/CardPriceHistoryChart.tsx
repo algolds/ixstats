@@ -35,18 +35,16 @@ export const CardPriceHistoryChart: React.FC<CardPriceHistoryChartProps> = ({ ca
   if (isLoading) {
     return (
       <div className="flex h-48 w-full flex-col justify-between p-2">
-        <Skeleton className="h-full w-full rounded bg-white/5" />
+        <Skeleton className="bg-fill-4 h-full w-full rounded" />
       </div>
     );
   }
 
   if (!history || history.length === 0) {
     return (
-      <div className="flex h-48 w-full flex-col items-center justify-center rounded-lg border border-dashed border-slate-200 dark:border-white/10">
-        <Coins className="h-8 w-8 text-slate-400 opacity-40" />
-        <span className="text-slate-450 mt-2 text-xs dark:text-white/40">
-          No price history available
-        </span>
+      <div className="rounded-control border-separator flex h-48 w-full flex-col items-center justify-center border border-dashed">
+        <Coins className="text-label-secondary h-8 w-8 opacity-40" />
+        <span className="text-label-secondary text-footnote mt-2">No price history available</span>
       </div>
     );
   }

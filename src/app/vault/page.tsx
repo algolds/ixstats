@@ -17,7 +17,7 @@ export default function VaultPage() {
   return (
     <>
       {/* Phone title under the new navigation shell (nothing with the flag off). */}
-      <ShellPageHeader title="Vault" className="px-0 sm:px-0" />
+      <ShellPageHeader title="Vault" className="px-0" />
       <VaultDashboardSection onNavigate={handleNavigate} />
     </>
   );

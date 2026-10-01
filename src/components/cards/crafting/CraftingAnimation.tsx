@@ -1,4 +1,6 @@
 "use client";
+
+import "~/styles/card-art.css";
 /**
  * CraftingAnimation Component
  * Crafting success/failure animation with glass fusion effects
@@ -8,7 +10,7 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
-import { CometCard } from "~/components/ui/comet-card";
+import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
 import { CardDisplay } from "../display/CardDisplay";
 
 /**
@@ -95,190 +97,199 @@ export const CraftingAnimation: React.FC<CraftingAnimationProps> = ({
   };
 
   return (
-    <motion.div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={onComplete}
-    >
-      <div className="relative w-full max-w-2xl p-8">
-        <AnimatePresence mode="wait">
-          {/* Stage 1: Fusion */}
-          {stage === "fusion" && (
-            <motion.div
-              key="fusion"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 1.2, opacity: 0 }}
-              className="text-center"
-            >
-              {/* Fusion circles */}
-              <div className="relative flex h-64 items-center justify-center">
-                {/* Left circle */}
-                <motion.div
-                  className="absolute h-32 w-32 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 opacity-50"
-                  animate={{
-                    x: [-100, 0],
-                    scale: [1, 1.2, 0.8],
-                    opacity: [0.5, 0.8, 0],
-                  }}
-                  transition={{
-                    duration: 2,
-                    ease: "easeInOut",
-                  }}
-                />
-
-                {/* Right circle */}
-                <motion.div
-                  className="absolute h-32 w-32 rounded-full bg-gradient-to-br from-amber-500 to-indigo-500 opacity-50"
-                  animate={{
-                    x: [100, 0],
-                    scale: [1, 1.2, 0.8],
-                    opacity: [0.5, 0.8, 0],
-                  }}
-                  transition={{
-                    duration: 2,
-                    ease: "easeInOut",
-                  }}
-                />
-
-                {/* Center fusion point */}
-                <motion.div
-                  className="absolute h-16 w-16 rounded-full bg-white"
-                  animate={{
-                    scale: [0.2, 1.5, 1],
-                    opacity: [0, 1, 0.8],
-                  }}
-                  transition={{
-                    duration: 2,
-                    ease: "easeInOut",
-                  }}
-                />
-              </div>
-
+    <Dialog open onOpenChange={(open) => !open && onComplete()}>
+      <DialogContent
+        showCloseButton={false}
+        aria-describedby={undefined}
+        className="h-dvh max-h-dvh w-screen max-w-none place-items-center rounded-none border-0 bg-black/90 p-0 text-white"
+      >
+        <DialogTitle className="sr-only">
+          {success ? "Crafting succeeded" : "Crafting failed"}
+        </DialogTitle>
+        <button
+          type="button"
+          onClick={onComplete}
+          aria-label="Continue"
+          className="absolute inset-0 cursor-pointer"
+        />
+        <div className="pointer-events-none relative w-full max-w-2xl p-8">
+          <AnimatePresence mode="wait">
+            {/* Stage 1: Fusion */}
+            {stage === "fusion" && (
               <motion.div
-                className="text-2xl font-bold tracking-tight text-white"
-                animate={{
-                  opacity: [0.5, 1, 0.5],
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                }}
+                key="fusion"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 1.2, opacity: 0 }}
+                className="text-center"
               >
-                Crafting...
-              </motion.div>
-            </motion.div>
-          )}
-
-          {/* Stage 2: Reveal */}
-          {stage === "reveal" && (
-            <motion.div
-              key="reveal"
-              initial={{ scale: 1.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="text-center"
-            >
-              <motion.div
-                className={cn(
-                  "mb-4 text-6xl font-bold tracking-tight",
-                  success ? "text-green-400" : "text-red-400"
-                )}
-                animate={{
-                  scale: [0.5, 1.2, 1],
-                  rotate: [0, 360, 360],
-                }}
-                transition={{
-                  duration: 0.8,
-                }}
-              >
-                {success ? "SUCCESS!" : "FAILED"}
-              </motion.div>
-              <div className="text-xl text-white/70">
-                {success
-                  ? "Your card has been crafted!"
-                  : "Crafting failed. Materials were consumed."}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Stage 3: Result */}
-          {stage === "result" && (
-            <motion.div
-              key="result"
-              initial={{ scale: 0.8, opacity: 0, y: 50 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.8, opacity: 0, y: -50 }}
-              className="space-y-6 text-center"
-            >
-              {success && resultCard ? (
-                <>
-                  {/* Particle effects */}
-                  {particles.map((particle) => (
-                    <motion.div
-                      key={particle.id}
-                      className="absolute h-2 w-2 rounded-full bg-yellow-400"
-                      initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
-                      animate={{
-                        x: particle.x * 5,
-                        y: particle.y * 5,
-                        opacity: 0,
-                        scale: 0,
-                      }}
-                      transition={{
-                        duration: 2,
-                        ease: "easeOut",
-                      }}
-                    />
-                  ))}
-
-                  {/* Result card */}
+                {/* Fusion circles */}
+                <div className="relative flex h-64 items-center justify-center">
+                  {/* Left circle */}
                   <motion.div
-                    className="flex justify-center"
+                    className="card-art-linear-br absolute h-32 w-32 rounded-full from-blue-500 to-indigo-500 opacity-50"
                     animate={{
-                      y: [0, -10, 0],
+                      x: [-100, 0],
+                      scale: [1, 1.2, 0.8],
+                      opacity: [0.5, 0.8, 0],
                     }}
                     transition={{
                       duration: 2,
-                      repeat: Infinity,
                       ease: "easeInOut",
                     }}
-                  >
-                    <CardDisplay card={resultCard.card} size="large" enableHolographic={true} />
-                  </motion.div>
+                  />
 
-                  {/* XP badge */}
-                  {xpGained > 0 && (
-                    <motion.div
-                      initial={{ scale: 0.8, opacity: 0, rotate: -180 }}
-                      animate={{ scale: 1, opacity: 1, rotate: 0 }}
-                      transition={{ delay: 0.5, type: "spring" }}
-                    >
-                      <CometCard className="inline-block px-6 py-3" glassDepth="interactive">
-                        <div className="text-sm text-white/60 uppercase">XP Gained</div>
-                        <div className="text-3xl font-bold tracking-tight text-blue-400 tabular-nums">
-                          +{xpGained}
-                        </div>
-                      </CometCard>
-                    </motion.div>
+                  {/* Right circle */}
+                  <motion.div
+                    className="card-art-linear-br absolute h-32 w-32 rounded-full from-amber-500 to-indigo-500 opacity-50"
+                    animate={{
+                      x: [100, 0],
+                      scale: [1, 1.2, 0.8],
+                      opacity: [0.5, 0.8, 0],
+                    }}
+                    transition={{
+                      duration: 2,
+                      ease: "easeInOut",
+                    }}
+                  />
+
+                  {/* Center fusion point */}
+                  <motion.div
+                    className="absolute h-16 w-16 rounded-full bg-white"
+                    animate={{
+                      scale: [0.2, 1.5, 1],
+                      opacity: [0, 1, 0.8],
+                    }}
+                    transition={{
+                      duration: 2,
+                      ease: "easeInOut",
+                    }}
+                  />
+                </div>
+
+                <motion.div
+                  className="text-title-1 text-white"
+                  animate={{
+                    opacity: [0.5, 1, 0.5],
+                  }}
+                  transition={{
+                    duration: 1,
+                    repeat: Infinity,
+                  }}
+                >
+                  Crafting...
+                </motion.div>
+              </motion.div>
+            )}
+
+            {/* Stage 2: Reveal */}
+            {stage === "reveal" && (
+              <motion.div
+                key="reveal"
+                initial={{ scale: 1.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="text-center"
+              >
+                <motion.div
+                  className={cn(
+                    "mb-4 text-6xl font-bold tracking-tight",
+                    success ? "text-green-400" : "text-red-400"
                   )}
+                  animate={{
+                    scale: [0.5, 1.2, 1],
+                    rotate: [0, 360, 360],
+                  }}
+                  transition={{
+                    duration: 0.8,
+                  }}
+                >
+                  {success ? "SUCCESS!" : "FAILED"}
+                </motion.div>
+                <div className="text-title-3 text-white/70">
+                  {success
+                    ? "Your card has been crafted!"
+                    : "Crafting failed. Materials were consumed."}
+                </div>
+              </motion.div>
+            )}
 
-                  <div className="text-sm text-white/60">Click anywhere to continue</div>
-                </>
-              ) : (
-                <>
-                  {/* Failure message */}
-                  <div className="text-8xl">😢</div>
-                  <div className="text-xl text-white">Better luck next time!</div>
-                  <div className="text-sm text-white/60">Click anywhere to continue</div>
-                </>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </motion.div>
+            {/* Stage 3: Result */}
+            {stage === "result" && (
+              <motion.div
+                key="result"
+                initial={{ scale: 0.8, opacity: 0, y: 50 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.8, opacity: 0, y: -50 }}
+                className="space-y-6 text-center"
+              >
+                {success && resultCard ? (
+                  <>
+                    {/* Particle effects */}
+                    {particles.map((particle) => (
+                      <motion.div
+                        key={particle.id}
+                        className="absolute h-2 w-2 rounded-full bg-yellow-400"
+                        initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+                        animate={{
+                          x: particle.x * 5,
+                          y: particle.y * 5,
+                          opacity: 0,
+                          scale: 0,
+                        }}
+                        transition={{
+                          duration: 2,
+                          ease: "easeOut",
+                        }}
+                      />
+                    ))}
+
+                    {/* Result card */}
+                    <motion.div
+                      className="flex justify-center"
+                      animate={{
+                        y: [0, -10, 0],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    >
+                      <CardDisplay card={resultCard.card} size="large" enableHolographic={true} />
+                    </motion.div>
+
+                    {/* XP badge */}
+                    {xpGained > 0 && (
+                      <motion.div
+                        initial={{ scale: 0.8, opacity: 0, rotate: -180 }}
+                        animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                        transition={{ delay: 0.5, type: "spring" }}
+                      >
+                        <div className="rounded-card inline-block bg-white/10 px-6 py-3">
+                          <div className="text-eyebrow text-white/60">XP Gained</div>
+                          <div className="text-large-title text-blue-400 tabular-nums">
+                            +{xpGained}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    <div className="text-body text-white/60">Click anywhere to continue</div>
+                  </>
+                ) : (
+                  <>
+                    {/* Failure message */}
+                    <div className="text-8xl">😢</div>
+                    <div className="text-title-3 text-white">Better luck next time!</div>
+                    <div className="text-body text-white/60">Click anywhere to continue</div>
+                  </>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };

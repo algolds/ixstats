@@ -1,5 +1,6 @@
 "use client";
 
+import { springSmooth } from "~/lib/design/motion";
 import React from "react";
 import { motion } from "motion/react";
 import { Globe, EditPencil as PenTool } from "iconoir-react";
@@ -58,16 +59,16 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={springSmooth}
       className="space-y-4"
     >
       {/* Wiki source + category + author badges */}
       <div className="flex flex-wrap items-center gap-2">
         <span
           className={cn(
-            "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-bold tracking-wider uppercase shadow-xs backdrop-blur-md",
+            "rounded-control text-eyebrow shadow-card inline-flex items-center gap-1 border px-2.5 py-1",
             card.wikiSource === "iiwiki"
-              ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+              ? "border-green/30 bg-green/15 text-green"
               : "border-wiki/30 bg-wiki/15 text-wiki"
           )}
         >
@@ -77,7 +78,7 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
 
         {resolvedCategory && categoryLabel && (
           <span
-            className="border-border/40 bg-card/60 text-foreground inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold shadow-xs backdrop-blur-md"
+            className="border-separator bg-surface text-label rounded-control text-footnote shadow-card inline-flex items-center gap-1.5 border px-2.5 py-1 font-semibold"
             style={
               categoryTheme
                 ? {
@@ -98,8 +99,8 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
         )}
 
         {cleanAuthor && (
-          <span className="inline-flex items-center gap-1 rounded-lg border border-amber-500/30 bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-600 shadow-xs backdrop-blur-md dark:text-amber-400">
-            <PenTool className="h-3 w-3 text-amber-500" />
+          <span className="rounded-control border-yellow/30 bg-yellow/15 text-footnote text-yellow shadow-card inline-flex items-center gap-1 border px-2.5 py-1 font-semibold">
+            <PenTool className="text-yellow h-3 w-3" />
             {cleanAuthor}
           </span>
         )}
@@ -114,28 +115,28 @@ export function CardLoreTab({ card, wikiUrl }: { card: CardInstance; wikiUrl: st
           { historicalSignificance?: number; culturalImpact?: number } | undefined;
         if (!loreStats) return null;
         return (
-          <div className="facet-hierarchy-child border-border/40 space-y-3 rounded-xl border p-4 backdrop-blur-md">
-            <h4 className="text-foreground text-muted-foreground/80 text-xs font-bold tracking-wider uppercase">
-              Historical Metrics
-            </h4>
+          <div className="bg-surface-secondary border-separator rounded-row space-y-3 border p-4">
+            <h4 className="text-label text-label-secondary text-eyebrow">Historical Metrics</h4>
             <div className="grid grid-cols-2 gap-3">
-              <div className="border-border/40 bg-card/60 rounded-lg border p-3">
-                <div className="text-muted-foreground text-xs font-medium">
+              <div className="border-separator bg-surface rounded-control border p-3">
+                <div className="text-label-secondary text-footnote font-medium">
                   Historical Significance
                 </div>
-                <div className="mt-1 font-mono text-xl font-bold text-amber-500 tabular-nums dark:text-amber-400">
+                <div className="text-title-2 text-yellow mt-1 tabular-nums">
                   {loreStats.historicalSignificance ?? 0}/100
                 </div>
               </div>
-              <div className="border-border/40 bg-card/60 rounded-lg border p-3">
-                <div className="text-muted-foreground text-xs font-medium">Cultural Impact</div>
-                <div className="mt-1 font-mono text-xl font-bold text-indigo-500 tabular-nums dark:text-indigo-400">
+              <div className="border-separator bg-surface rounded-control border p-3">
+                <div className="text-label-secondary text-footnote font-medium">
+                  Cultural Impact
+                </div>
+                <div className="text-title-2 text-indigo mt-1 tabular-nums">
                   {loreStats.culturalImpact ?? 0}/100
                 </div>
               </div>
             </div>
             {meta?.qualityScore != null && (
-              <div className="text-muted-foreground/70 pt-1 text-xs">
+              <div className="text-label-tertiary text-footnote pt-1">
                 Article Quality Score: {Math.round(Number(meta.qualityScore))}/100
               </div>
             )}

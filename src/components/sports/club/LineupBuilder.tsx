@@ -71,7 +71,8 @@ export function LineupBuilder({
     },
   });
 
-  const startingSlots: Record<string, number> = (preset?.startingSlots as Record<string, number>) ?? {};
+  const startingSlots: Record<string, number> =
+    (preset?.startingSlots as Record<string, number>) ?? {};
 
   const maxStarters: number = useMemo(() => {
     return Object.values(startingSlots).reduce((sum: number, val: number) => sum + val, 0);
@@ -127,15 +128,12 @@ export function LineupBuilder({
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px] xl:grid-cols-[1fr_400px]">
-      <Card className="facet-hierarchy-child bg-card/40 border-border h-full">
+      <Card className="h-full">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base font-bold">
-            <Shirt className="h-5 w-5" style={{ color: teamColor }} />
+          <CardTitle className="flex items-center gap-2">
+            <Shirt className="text-label-secondary size-5" aria-hidden />
             Starting XI
-            <Badge
-              variant="outline"
-              className="border-border text-muted-foreground ml-2 text-xs"
-            >
+            <Badge variant="neutral" className="ml-2 tabular-nums">
               {starterCount} selected
             </Badge>
           </CardTitle>
@@ -154,89 +152,76 @@ export function LineupBuilder({
                 const ovr = player.ratings?.overall ?? 50;
 
                 return (
-                  <button
+                  <div
                     key={player.id}
-                    onClick={() => handleToggleStarter(player.id)}
-                    style={
-                      isStarter
-                        ? { borderColor: `${teamColor}60`, backgroundColor: `${teamColor}15` }
-                        : {}
-                    }
                     className={cn(
-                      "flex items-center gap-3 rounded-lg border p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                      "rounded-row duration-fast ease-out-facet flex items-center gap-1 border pe-1 transition-colors",
                       isStarter
-                        ? "text-foreground border-transparent"
-                        : "border-border bg-muted/40 hover:bg-muted/80 text-foreground"
+                        ? "border-tint/40 bg-tint-fill"
+                        : "border-separator bg-surface-secondary"
                     )}
                   >
-                    {player.number && (
-                      <span className="text-muted-foreground w-5 text-center text-xs font-bold tabular-nums">
-                        #{player.number}
-                      </span>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="truncate text-sm font-medium">
-                          {player.firstName} {player.lastName}
+                    <button
+                      type="button"
+                      aria-pressed={isStarter}
+                      onClick={() => handleToggleStarter(player.id)}
+                      className="focus-visible:outline-tint text-label rounded-row flex min-w-0 flex-1 cursor-pointer items-center gap-3 p-2.5 text-left focus-visible:outline-2 focus-visible:-outline-offset-2"
+                    >
+                      {player.number && (
+                        <span className="text-label-secondary text-footnote w-6 text-center font-medium tabular-nums">
+                          #{player.number}
                         </span>
-                        {isCaptain && <Star className="h-3 w-3 shrink-0 text-amber-400" />}
-                      </div>
-                      <div className="mt-0.5 flex items-center gap-2">
-                        <PositionTooltip position={player.position}>
-                          <Badge
-                            variant="outline"
-                            className="border-border text-muted-foreground cursor-help rounded px-1 py-0 text-xs"
-                          >
-                            {player.position}
-                          </Badge>
-                        </PositionTooltip>
-                        <span
-                          className={cn(
-                            "text-xs font-bold",
-                            ovr >= 80
-                              ? "text-amber-400"
-                              : ovr >= 70
-                                ? "text-emerald-400"
-                                : "text-muted-foreground"
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-body truncate font-medium">
+                            {player.firstName} {player.lastName}
+                          </span>
+                          {isCaptain && (
+                            <Star className="text-yellow size-3.5 shrink-0" aria-label="Captain" />
                           )}
-                        >
-                          {ovr}
-                        </span>
+                        </div>
+                        <div className="mt-0.5 flex items-center gap-2">
+                          <PositionTooltip position={player.position}>
+                            <Badge variant="neutral" className="cursor-help">
+                              {player.position}
+                            </Badge>
+                          </PositionTooltip>
+                          <span
+                            className={cn(
+                              "text-footnote font-semibold tabular-nums",
+                              ovr >= 80
+                                ? "text-yellow"
+                                : ovr >= 70
+                                  ? "text-green"
+                                  : "text-label-secondary"
+                            )}
+                          >
+                            {ovr}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    {isStarter && (
-                      <Check className="h-4 w-4 shrink-0" style={{ color: teamColor }} />
-                    )}
+                      {isStarter && <Check className="text-tint size-4 shrink-0" aria-hidden />}
+                    </button>
                     {!isStarter && isCaptain !== false && (
-                      <button
+                      <Button
                         type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCaptainId(isCaptain ? null : player.id);
-                        }}
-                        className={cn(
-                          "rounded p-1 text-xs transition",
-                          isCaptain
-                            ? "bg-amber-500/10 text-amber-400"
-                            : "text-muted-foreground hover:text-amber-400"
-                        )}
+                        size="icon-sm"
+                        variant="plain"
+                        onClick={() => setCaptainId(isCaptain ? null : player.id)}
+                        className={isCaptain ? "text-yellow" : "text-label-secondary"}
                         title={isCaptain ? "Remove captain" : "Set as captain"}
+                        aria-label={isCaptain ? "Remove captain" : "Set as captain"}
                       >
-                        <Star className="h-3.5 w-3.5" />
-                      </button>
+                        <Star />
+                      </Button>
                     )}
-                  </button>
+                  </div>
                 );
               })}
           </div>
 
-          <Button
-            onClick={handleSave}
-            disabled={setLineup.isPending}
-            className="w-full text-xs font-semibold text-white transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:opacity-90"
-            size="sm"
-            style={{ backgroundColor: teamColor }}
-          >
+          <Button onClick={handleSave} disabled={setLineup.isPending} className="w-full" size="sm">
             {setLineup.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
             Save Lineup
           </Button>

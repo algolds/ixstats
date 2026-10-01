@@ -50,7 +50,8 @@ const purchase = api.cardPacks.purchasePack.useMutation();
 
 ```tsx
 {openingPackId && (
-  <div className="fixed inset-0 z-50 bg-black">
+  // In the app this sits in a full-screen <Dialog> (see VaultStoreTab), not a raw fixed overlay.
+  <div className="h-dvh w-screen bg-black">
     <PackOpeningSequence
       userPackId={openingPackId}
       packType={selectedPack.packType}

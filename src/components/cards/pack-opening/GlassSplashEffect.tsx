@@ -1,4 +1,6 @@
 "use client";
+
+import "~/styles/card-art.css";
 // src/components/cards/pack-opening/GlassSplashEffect.tsx
 // Premium glass splash effect for card reveals with rarity-specific particles
 
@@ -248,7 +250,7 @@ export const GlassSplashEffect = React.memo<GlassSplashEffectProps>(
             return (
               <motion.div
                 key={`ray-${i}`}
-                className="absolute h-1 bg-gradient-to-r from-white/80 to-transparent"
+                className="card-art-linear-r absolute h-1 from-white/80 to-transparent"
                 style={{
                   left: `${x}px`,
                   top: `${y}px`,

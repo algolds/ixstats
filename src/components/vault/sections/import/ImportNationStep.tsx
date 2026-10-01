@@ -1,5 +1,6 @@
 "use client";
 
+import { springSmooth } from "~/lib/design/motion";
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -38,20 +39,18 @@ export function ImportNationStep({
       {/* Hero visual / Header */}
       <div className="flex flex-col items-center py-4 text-center">
         <div className="mb-2.5 flex items-center justify-center gap-2.5">
-          <h2 className="text-foreground text-3xl font-bold tracking-tight select-none sm:text-4xl">
-            Trading Cards
-          </h2>
+          <h2 className="text-label text-large-title select-none">Trading Cards</h2>
           <div className="relative h-7 w-10 shrink-0 select-none">
-            <div className="border-foreground/80 dark:border-border dark:bg-card absolute top-0.5 left-0 h-6.5 w-4 -rotate-12 rounded-[4px] border-2 bg-white shadow-sm" />
-            <div className="border-foreground/80 dark:border-border dark:bg-card absolute top-0 left-3 flex h-6.5 w-4 items-center justify-center rounded-[4px] border-2 bg-white shadow-sm">
-              <div className="dark:bg-foreground h-1.5 w-1.5 rounded-full bg-slate-900" />
+            <div className="border-foreground/80 bg-surface shadow-card absolute top-0.5 left-0 h-6.5 w-4 -rotate-12 rounded-[4px] border-2" />
+            <div className="border-foreground/80 bg-surface shadow-card absolute top-0 left-3 flex h-6.5 w-4 items-center justify-center rounded-[4px] border-2">
+              <div className="bg-surface-secondary h-1.5 w-1.5 rounded-full" />
             </div>
-            <div className="border-foreground/80 dark:border-border dark:bg-card absolute top-0.5 left-6 flex h-6.5 w-4 rotate-12 items-center justify-center rounded-[4px] border-2 bg-white shadow-sm">
-              <div className="dark:bg-foreground h-1.5 w-1.5 rounded-full bg-slate-900" />
+            <div className="border-foreground/80 bg-surface shadow-card absolute top-0.5 left-6 flex h-6.5 w-4 rotate-12 items-center justify-center rounded-[4px] border-2">
+              <div className="bg-surface-secondary h-1.5 w-1.5 rounded-full" />
             </div>
           </div>
         </div>
-        <p className="text-muted-foreground max-w-md text-sm">
+        <p className="text-label-secondary text-body max-w-md">
           Bring your NationStates trading cards into IxCards. Verify nation ownership and import in
           minutes.
         </p>
@@ -89,45 +88,34 @@ export function ImportNationStep({
             color: "indigo",
           },
         ].map((item) => (
-          <FacetCard
-            key={item.step}
-            depth={2}
-            className="flex items-start gap-3 rounded-xl p-4 shadow-sm"
-          >
+          <FacetCard key={item.step} padding="md" className="flex items-start gap-3">
             <div
               className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white shadow-xs",
-                item.color === "amber" && "bg-amber-500 text-black",
-                item.color === "cyan" && "bg-cyan-500 text-black",
-                item.color === "emerald" && "bg-emerald-500",
-                item.color === "indigo" && "bg-indigo-500"
+                "bg-tint-fill text-tint rounded-control text-footnote flex size-8 shrink-0 items-center justify-center font-semibold tabular-nums"
               )}
             >
               {item.step}
             </div>
             <div>
-              <p className="text-foreground text-sm font-semibold">{item.title}</p>
-              <p className="text-muted-foreground text-xs">{item.desc}</p>
+              <p className="text-label text-headline">{item.title}</p>
+              <p className="text-label-secondary text-footnote">{item.desc}</p>
             </div>
           </FacetCard>
         ))}
       </div>
 
       {/* Safety Disclaimer */}
-      <FacetCard
-        depth={1}
-        className="text-muted-foreground flex items-start gap-2.5 rounded-xl p-4 text-xs select-none"
-      >
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+      <FacetCard className="text-label-secondary rounded-row text-footnote flex items-start gap-2.5 p-4 select-none">
+        <ShieldCheck className="text-blue mt-0.5 h-4 w-4 shrink-0" />
         <div className="space-y-0.5">
-          <p className="text-foreground font-bold">Important</p>
+          <p className="text-label font-semibold">Important</p>
           <p className="leading-relaxed">
             Verification uses the official{" "}
             <a
               href="https://www.nationstates.net/page=api"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:underline dark:text-blue-400"
+              className="text-blue hover:underline"
             >
               NationStates API
             </a>{" "}
@@ -145,11 +133,11 @@ export function ImportNationStep({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
+            transition={springSmooth}
           >
             <Button
               onClick={() => setShowNameInput(true)}
-              className="h-11 w-full text-sm font-semibold"
+              className="text-headline h-11 w-full"
               size="lg"
             >
               Get Started
@@ -162,23 +150,23 @@ export function ImportNationStep({
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.2 }}
+            transition={springSmooth}
           >
-            <FacetCard depth={2} className="space-y-3 rounded-xl p-5">
+            <FacetCard className="rounded-row space-y-3 p-5">
               <div className="flex items-center justify-between">
-                <label className="text-foreground text-sm font-semibold">Your Nation Name</label>
+                <label className="text-label text-headline">Your Nation Name</label>
                 <button
                   onClick={() => {
                     setNationName("");
                     setShowNameInput(false);
                   }}
-                  className="text-muted-foreground hover:text-foreground text-xs underline transition-colors"
+                  className="text-label-secondary hover:text-label text-footnote underline transition-colors"
                 >
                   Cancel
                 </button>
               </div>
               <div className="relative">
-                <Globe className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                <Globe className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                 <Input
                   value={nationName}
                   onChange={(e) => setNationName(e.target.value)}
@@ -188,15 +176,15 @@ export function ImportNationStep({
                     }
                   }}
                   placeholder="e.g. Testlandia"
-                  className="bg-muted/30 focus:bg-background h-12 pl-10 text-base"
+                  className="bg-fill-4 focus:bg-background text-body h-12 pl-10"
                   autoFocus
                 />
               </div>
               <Button
                 onClick={() => onRequestVerification(nationName)}
                 disabled={!nationName.trim() || isPending}
-                className="h-11 w-full bg-amber-500 font-bold text-black shadow-xs hover:bg-amber-400 active:scale-[0.98] dark:bg-amber-400 dark:text-black dark:hover:bg-amber-300"
                 size="lg"
+                className="w-full"
               >
                 {isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

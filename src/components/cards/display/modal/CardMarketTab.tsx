@@ -1,5 +1,6 @@
 "use client";
 
+import { springSmooth } from "~/lib/design/motion";
 import React from "react";
 import { motion } from "motion/react";
 import {
@@ -41,33 +42,31 @@ export function CardMarketTab({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={springSmooth}
       className="space-y-6"
     >
-      <div className="facet-hierarchy-child rounded-lg p-6">
-        <h3 className="text-foreground mb-4 flex items-center gap-2 text-lg font-semibold">
+      <div className="bg-surface-secondary border-separator rounded-control border p-6">
+        <h3 className="text-label text-title-3 mb-4 flex items-center gap-2 font-semibold">
           <BarChart3 className="h-5 w-5" />
           Market History
         </h3>
 
         {/* Market stats */}
         <div className="mb-6 grid grid-cols-3 gap-4">
-          <div className="facet-hierarchy-child rounded-lg p-4">
-            <p className="text-muted-foreground mb-1 text-xs">Current Value</p>
-            <p className={cn("flex items-baseline gap-1 text-2xl font-bold", rarityConfig.color)}>
+          <div className="bg-surface-secondary border-separator rounded-control border p-4">
+            <p className="text-label-secondary text-footnote mb-1">Current Value</p>
+            <p className={cn("text-title-1 flex items-baseline gap-1", rarityConfig.color)}>
               <IxCreditsSymbol size="1em" variant="ic" />
               {card.marketValue.toLocaleString()}
             </p>
           </div>
-          <div className="facet-hierarchy-child rounded-lg p-4">
-            <p className="text-muted-foreground mb-1 text-xs">Total Supply</p>
-            <p className="text-foreground text-2xl font-bold">
-              {card.totalSupply.toLocaleString()}
-            </p>
+          <div className="bg-surface-secondary border-separator rounded-control border p-4">
+            <p className="text-label-secondary text-footnote mb-1">Total Supply</p>
+            <p className="text-label text-title-1">{card.totalSupply.toLocaleString()}</p>
           </div>
-          <div className="facet-hierarchy-child rounded-lg p-4">
-            <p className="text-muted-foreground mb-1 text-xs">Last Trade</p>
-            <p className="text-foreground text-sm font-semibold">
+          <div className="bg-surface-secondary border-separator rounded-control border p-4">
+            <p className="text-label-secondary text-footnote mb-1">Last Trade</p>
+            <p className="text-label text-headline">
               {card.lastTrade ? new Date(card.lastTrade).toLocaleDateString() : "Never"}
             </p>
           </div>
@@ -80,65 +79,65 @@ export function CardMarketTab({
       </div>
 
       {/* Provenance & Ownership Timeline */}
-      <div className="facet-hierarchy-child rounded-lg p-6">
-        <h3 className="text-foreground mb-4 flex items-center gap-2 text-lg font-semibold">
-          <History className="h-5 w-5 text-amber-500" />
+      <div className="bg-surface-secondary border-separator rounded-control border p-6">
+        <h3 className="text-label text-title-3 mb-4 flex items-center gap-2 font-semibold">
+          <History className="text-yellow h-5 w-5" />
           Provenance & Ownership History
         </h3>
 
         {isLoadingProvenance ? (
           <div className="flex h-32 items-center justify-center">
-            <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
+            <div className="border-tint h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
           </div>
         ) : !provenanceEvents || provenanceEvents.length === 0 ? (
-          <div className="text-muted-foreground flex h-24 items-center justify-center text-xs">
+          <div className="text-label-secondary text-footnote flex h-24 items-center justify-center">
             No ownership transfer events recorded for this card
           </div>
         ) : (
-          <div className="border-border/60 relative ml-3 space-y-6 border-l pl-6">
+          <div className="border-separator relative ml-3 space-y-6 border-l pl-6">
             {provenanceEvents.map((event) => {
-              let icon = <Package className="h-4 w-4 text-white" />;
+              let icon = <Package className="text-label h-4 w-4" />;
               let actionLabel: React.ReactNode = "Transferred";
-              let colorClass = "bg-blue-500";
+              let colorClass = "bg-blue";
 
               if (event.action === "PACK_OPEN") {
-                icon = <Package className="h-4 w-4 text-white" />;
+                icon = <Package className="text-label h-4 w-4" />;
                 actionLabel = "Pulled from Card Pack";
-                colorClass = "bg-indigo-500";
+                colorClass = "bg-indigo";
               } else if (event.action === "DAILY_CLAIM") {
-                icon = <Award className="h-4 w-4 text-white" />;
+                icon = <Award className="text-label h-4 w-4" />;
                 actionLabel = "Claimed as Daily Bonus";
-                colorClass = "bg-amber-500";
+                colorClass = "bg-yellow";
               } else if (event.action === "GIFT") {
-                icon = <Gift className="h-4 w-4 text-white" />;
+                icon = <Gift className="text-label h-4 w-4" />;
                 actionLabel = event.fromUserName
                   ? `Gifted from ${event.fromUserName} to ${event.toUserName}`
                   : `Gifted to ${event.toUserName}`;
-                colorClass = "bg-blue-500";
+                colorClass = "bg-blue";
               } else if (event.action === "TRADE") {
-                icon = <ArrowRightLeft className="h-4 w-4 text-white" />;
+                icon = <ArrowRightLeft className="text-label h-4 w-4" />;
                 actionLabel = event.fromUserName
                   ? `Traded from ${event.fromUserName} to ${event.toUserName}`
                   : `Traded to ${event.toUserName}`;
-                colorClass = "bg-cyan-500";
+                colorClass = "bg-teal";
               } else if (event.action === "AUCTION_BUYOUT" || event.action === "AUCTION_END") {
-                icon = <ShoppingBag className="h-4 w-4 text-white" />;
+                icon = <ShoppingBag className="text-label h-4 w-4" />;
                 actionLabel = (
                   <span className="inline-flex items-center gap-1">
                     Purchased at Auction by {event.toUserName}
                     {event.price && (
-                      <span className="inline-flex items-center gap-0.5 font-bold text-amber-500">
+                      <span className="text-yellow inline-flex items-center gap-0.5 font-semibold">
                         for <IxCreditsSymbol className="h-3 w-3 shrink-0" />
                         {event.price.toLocaleString()}
                       </span>
                     )}
                   </span>
                 );
-                colorClass = "bg-amber-500";
+                colorClass = "bg-yellow";
               } else if (event.action === "ADMIN") {
-                icon = <Star className="h-4 w-4 text-white" />;
+                icon = <Star className="text-label h-4 w-4" />;
                 actionLabel = `Assigned by Admin to ${event.toUserName}`;
-                colorClass = "bg-red-500";
+                colorClass = "bg-red";
               }
 
               return (
@@ -146,14 +145,14 @@ export function CardMarketTab({
                   {/* Dot Indicator */}
                   <div
                     className={cn(
-                      "absolute top-0.5 -left-[37px] flex h-6 w-6 items-center justify-center rounded-full shadow-md",
+                      "shadow-card absolute top-0.5 -left-[37px] flex h-6 w-6 items-center justify-center rounded-full",
                       colorClass
                     )}
                   >
                     {icon}
                   </div>
-                  <div className="text-foreground text-sm font-semibold">{actionLabel}</div>
-                  <div className="text-muted-foreground text-xs">
+                  <div className="text-label text-headline">{actionLabel}</div>
+                  <div className="text-label-secondary text-footnote">
                     {new Date(event.createdAt).toLocaleString(undefined, {
                       year: "numeric",
                       month: "short",

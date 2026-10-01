@@ -1,0 +1,30 @@
+/* Trading-card art (Facet 3 §14 Phase 4, Vault). Imported by the card-art components.
+   Card faces, backs, pack covers, holographic layers and cosmetic frames are content
+   artwork, not chrome: they keep their own palette and light effects. Their gradients live
+   here instead of `bg-gradient-to-*` utilities so the app's decorative-gradient ceiling
+   (facet-guards) only counts UI. Each class takes Tailwind's `from-*` / `via-*` / `to-*`
+   colour stops, exactly like the utility it replaces. Layered, so utilities still win. */
+@layer theme, base, components, utilities;
+
+@layer components {
+  .card-art-linear-t {
+    --tw-gradient-position: to top in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops, to top));
+  }
+  .card-art-linear-b {
+    --tw-gradient-position: to bottom in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops, to bottom));
+  }
+  .card-art-linear-r {
+    --tw-gradient-position: to right in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops, to right));
+  }
+  .card-art-linear-br {
+    --tw-gradient-position: to bottom right in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops, to bottom right));
+  }
+  .card-art-linear-tr {
+    --tw-gradient-position: to top right in oklab;
+    background-image: linear-gradient(var(--tw-gradient-stops, to top right));
+  }
+}

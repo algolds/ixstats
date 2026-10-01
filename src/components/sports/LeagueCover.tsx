@@ -24,10 +24,7 @@ export function LeagueCover({
   if (!src || failed) {
     return (
       <div
-        className={cn(
-          "flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900 text-4xl",
-          className
-        )}
+        className={cn("bg-fill-3 text-large-title flex items-center justify-center", className)}
         aria-label={alt}
       >
         <span>{getSportEmoji(sportPreset)}</span>

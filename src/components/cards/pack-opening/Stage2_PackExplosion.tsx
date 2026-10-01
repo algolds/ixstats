@@ -1,4 +1,6 @@
 "use client";
+
+import "~/styles/card-art.css";
 // src/components/cards/pack-opening/Stage2_PackExplosion.tsx
 // Stage 2: Enhanced explosion effect with premium glass physics and rarity-aware particles
 
@@ -242,10 +244,10 @@ export const Stage2_PackExplosion = React.memo<Stage2_PackExplosionProps>(
                   }}
                 >
                   {/* Mini card representation */}
-                  <div className="relative h-32 w-24 overflow-hidden rounded-lg bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-sm">
+                  <div className="rounded-control card-art-linear-br relative h-32 w-24 overflow-hidden from-white/20 to-white/5">
                     <CardHolographicCover cardType={card.cardType} rarity={card.rarity} />
                     <div
-                      className="absolute inset-0 rounded-lg bg-cover bg-center opacity-60"
+                      className="rounded-control absolute inset-0 bg-cover bg-center opacity-60"
                       style={{
                         backgroundImage: `url(${proxyCardArtwork(card.artwork)})`,
                       }}
@@ -284,7 +286,7 @@ export const Stage2_PackExplosion = React.memo<Stage2_PackExplosionProps>(
               >
                 {/* Main burst line */}
                 <div
-                  className="h-1.5 bg-gradient-to-r"
+                  className="card-art-linear-r h-1.5"
                   style={{
                     width: `${length}px`,
                     background: `linear-gradient(to right, ${burstColor}CC 0%, ${burstColor}66 50%, transparent 100%)`,
@@ -293,7 +295,7 @@ export const Stage2_PackExplosion = React.memo<Stage2_PackExplosionProps>(
                 />
                 {/* Glow trail */}
                 <div
-                  className="absolute inset-0 h-3 -translate-y-1/4 bg-gradient-to-r blur-sm"
+                  className="card-art-linear-r absolute inset-0 h-3 -translate-y-1/4 blur-sm"
                   style={{
                     width: `${length}px`,
                     background: `linear-gradient(to right, ${burstColor}40 0%, transparent 100%)`,

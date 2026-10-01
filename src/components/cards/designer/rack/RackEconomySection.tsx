@@ -14,7 +14,7 @@ export const RackEconomySection = React.memo(function RackEconomySection({
   return (
     <div className="space-y-3">
       <div>
-        <label className="text-muted-foreground mb-1 block text-xs font-medium">
+        <label className="text-label-secondary text-footnote mb-1 block font-medium">
           Market Value (IxCredits)
         </label>
         <Input
@@ -27,16 +27,18 @@ export const RackEconomySection = React.memo(function RackEconomySection({
               useAutoValuation: false,
             }))
           }
-          className="h-8 font-mono text-xs"
+          className="text-footnote h-8 tabular-nums"
         />
       </div>
 
       <div className="flex items-center justify-between pt-1">
         <div>
-          <span className="text-foreground block text-xs font-medium">
+          <span className="text-label text-footnote block font-medium">
             Limited Supply Print Run
           </span>
-          <span className="text-muted-foreground text-xs">Cap total prints in circulation</span>
+          <span className="text-label-secondary text-footnote">
+            Cap total prints in circulation
+          </span>
         </div>
         <input
           type="checkbox"
@@ -48,13 +50,13 @@ export const RackEconomySection = React.memo(function RackEconomySection({
               totalSupply: e.target.checked ? p.totalSupply || 100 : null,
             }))
           }
-          className="accent-primary h-4 w-4 rounded-md"
+          className="accent-primary rounded-control-sm h-4 w-4"
         />
       </div>
 
       {state.isLimitedSupply && (
         <div>
-          <label className="text-muted-foreground mb-1 block text-xs font-medium">
+          <label className="text-label-secondary text-footnote mb-1 block font-medium">
             Total Supply Cap
           </label>
           <Input
@@ -67,7 +69,7 @@ export const RackEconomySection = React.memo(function RackEconomySection({
                 totalSupply: Number(e.target.value) || 1,
               }))
             }
-            className="h-8 font-mono text-xs"
+            className="text-footnote h-8 tabular-nums"
           />
         </div>
       )}

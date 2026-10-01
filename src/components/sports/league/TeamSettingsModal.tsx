@@ -198,7 +198,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
                 placeholder="#3b82f6"
-                className="h-9 flex-1 font-mono text-xs"
+                className="text-footnote h-9 flex-1 tabular-nums"
               />
             </div>
           </div>
@@ -212,7 +212,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
               placeholder="e.g. Real_Capital"
               maxLength={100}
             />
-            <p className="text-muted-foreground text-xs">
+            <p className="text-label-secondary text-footnote">
               Links this team to its IxWiki article.
             </p>
           </div>
@@ -222,8 +222,8 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
             <div className="flex items-start gap-4">
               <div
                 className={cn(
-                  "flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed",
-                  logoPreviewSrc ? "border-border bg-muted/50" : "border-border/50 bg-muted/30"
+                  "rounded-row flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden border-2 border-dashed",
+                  logoPreviewSrc ? "border-separator bg-fill-3" : "border-separator bg-fill-4"
                 )}
               >
                 {logoPreviewSrc ? (
@@ -233,7 +233,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <span className="text-muted-foreground text-xs font-medium">No logo</span>
+                  <span className="text-label-secondary text-footnote font-medium">No logo</span>
                 )}
               </div>
 
@@ -247,7 +247,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                     fileInputRef.current?.click();
                   }}
                   disabled={isUploading}
-                  className="text-xs"
+                  className="text-footnote"
                 >
                   {isUploading && uploadingType === "logo" ? (
                     <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -261,7 +261,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                   variant="outline"
                   size="sm"
                   onClick={() => setMediaSearchFor("logo")}
-                  className="text-xs"
+                  className="text-footnote"
                 >
                   <ImageIcon className="mr-1.5 h-3.5 w-3.5" />
                   Browse Media
@@ -272,7 +272,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                     variant="ghost"
                     size="sm"
                     onClick={handleRemoveLogo}
-                    className="text-destructive hover:text-destructive text-xs"
+                    className="text-destructive"
                   >
                     <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                     Remove
@@ -292,14 +292,14 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
           {/* Cover Image */}
           <div className="space-y-2">
             <Label>Cover Image</Label>
-            <p className="text-muted-foreground text-xs leading-tight">
+            <p className="text-label-secondary text-footnote leading-tight">
               Shown as the background banner for your club.
             </p>
             <div className="flex items-start gap-4">
               <div
                 className={cn(
-                  "flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed",
-                  coverPreviewSrc ? "border-border bg-muted/50" : "border-border/50 bg-muted/30"
+                  "rounded-control flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden border-2 border-dashed",
+                  coverPreviewSrc ? "border-separator bg-fill-3" : "border-separator bg-fill-4"
                 )}
               >
                 {coverPreviewSrc ? (
@@ -309,7 +309,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <span className="text-muted-foreground text-xs font-medium">No cover</span>
+                  <span className="text-label-secondary text-footnote font-medium">No cover</span>
                 )}
               </div>
               <div className="flex flex-col gap-2">
@@ -322,7 +322,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                     fileInputRef.current?.click();
                   }}
                   disabled={isUploading}
-                  className="text-xs"
+                  className="text-footnote"
                 >
                   {isUploading && uploadingType === "cover" ? (
                     <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -336,7 +336,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                   variant="outline"
                   size="sm"
                   onClick={() => setMediaSearchFor("cover")}
-                  className="text-xs"
+                  className="text-footnote"
                 >
                   <ImageIcon className="mr-1.5 h-3.5 w-3.5" />
                   Browse Media
@@ -347,7 +347,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
                     variant="ghost"
                     size="sm"
                     onClick={handleRemoveCover}
-                    className="text-destructive hover:text-destructive text-xs"
+                    className="text-destructive"
                   >
                     <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                     Remove
@@ -376,10 +376,10 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="text-xs">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="text-footnote">
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={updateTeam.isPending} className="text-xs">
+          <Button onClick={handleSave} disabled={updateTeam.isPending}>
             {updateTeam.isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null}
             Save Changes
           </Button>

@@ -37,25 +37,19 @@ export function PlayerTrainingButton({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        className={cn(
-          buttonVariants({ variant: "ghost", size: "sm" }),
-          "text-muted-foreground hover:text-foreground h-7 px-2 text-xs"
-        )}
-      >
-        <Dumbbell className="mr-1 h-3 w-3" />
+      <PopoverTrigger className={cn(buttonVariants({ variant: "gray", size: "sm" }))}>
+        <Dumbbell />
         Train
       </PopoverTrigger>
 
-      <PopoverContent className="border-border bg-card pointer-events-auto w-52 rounded-xl border p-3 shadow-xl backdrop-blur-xl">
-        <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
-          Focus Attribute
-        </p>
+      <PopoverContent className="pointer-events-auto w-56 p-3">
+        <p className="text-subhead text-label-secondary mb-2">Focus attribute</p>
         <div className="max-h-40 space-y-1 overflow-y-auto">
           {attributes.map((attr) => {
             const val = currentRatings[attr] ?? 50;
             return (
               <button
+                type="button"
                 key={attr}
                 disabled={trainPlayer.isPending}
                 onClick={() => {
@@ -63,29 +57,22 @@ export function PlayerTrainingButton({
                   setOpen(false);
                 }}
                 className={cn(
-                  "hover:bg-muted flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs transition",
+                  "hover:bg-fill-3 text-body text-label focus-visible:outline-tint rounded-control-sm duration-fast flex w-full cursor-pointer items-center justify-between px-2 py-1.5 transition-colors focus-visible:outline-2",
                   trainPlayer.isPending && "opacity-50"
                 )}
               >
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="h-3 w-3 text-emerald-400" />
+                  <TrendingUp className="text-green size-3.5" aria-hidden />
                   <span className="capitalize">{attr}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge
-                    variant="outline"
-                    className={cn(
-                      "rounded px-1 py-0 text-xs font-bold",
-                      val >= 80
-                        ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
-                        : val >= 70
-                          ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                          : "border-muted bg-muted/50 text-muted-foreground"
-                    )}
+                    className="tabular-nums"
+                    variant={val >= 80 ? "caution" : val >= 70 ? "success" : "neutral"}
                   >
                     {val}
                   </Badge>
-                  <span className="text-muted-foreground text-xs">25c</span>
+                  <span className="text-label-secondary text-footnote tabular-nums">25c</span>
                 </div>
               </button>
             );
@@ -93,7 +80,7 @@ export function PlayerTrainingButton({
         </div>
         {trainPlayer.isPending && (
           <div className="mt-2 flex items-center justify-center">
-            <Loader2 className="text-muted-foreground h-3 w-3 animate-spin" />
+            <Loader2 className="text-label-secondary size-3.5 animate-spin" aria-label="Training" />
           </div>
         )}
       </PopoverContent>

@@ -222,8 +222,10 @@ export function PackStore() {
         </button>
       ))}
 
+      {/* Present it in a full-screen Dialog (Facet 3: no hand-rolled `fixed inset-0` overlays);
+          see VaultStoreTab for the reference wiring. */}
       {opening && (
-        <div className="fixed inset-0 z-50">
+        <div className="h-dvh w-screen">
           <PackOpeningSequence
             userPackId={opening.userPackId}
             packType={opening.packType as any}

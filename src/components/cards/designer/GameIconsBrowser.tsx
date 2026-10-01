@@ -141,23 +141,23 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
 
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="border-border bg-background flex h-[88vh] max-h-[800px] max-w-5xl flex-col gap-0 overflow-hidden p-0">
+        <DialogContent className="border-separator bg-background flex h-[88vh] max-h-[800px] max-w-5xl flex-col gap-0 overflow-hidden p-0">
           {/* Header */}
-          <DialogHeader className="border-border bg-card/50 border-b p-5 pb-4">
+          <DialogHeader className="border-separator bg-surface border-b p-5 pb-4">
             <div className="flex items-center gap-3">
-              <div className="bg-primary/10 text-primary rounded-lg p-2">
+              <div className="bg-tint-fill text-tint rounded-control p-2">
                 <Layers className="h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="flex items-center gap-2 text-base font-semibold">
+                <DialogTitle className="text-headline flex items-center gap-2">
                   Game-Icons Vector Library
-                  <Badge variant="secondary" className="font-mono text-xs">
+                  <Badge variant="secondary" className="text-footnote tabular-nums">
                     {filteredIcons.length.toLocaleString()} icons
                   </Badge>
                 </DialogTitle>
-                <DialogDescription className="text-muted-foreground text-xs">
+                <DialogDescription className="text-label-secondary text-footnote">
                   Selecting for:{" "}
-                  <span className="text-foreground font-semibold">
+                  <span className="text-label font-semibold">
                     {targetSlot === "emblem" ? "Center Emblem / Sigil" : "Background Watermark"}
                   </span>
                 </DialogDescription>
@@ -166,23 +166,23 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
           </DialogHeader>
 
           {/* Search & Tag Filter Toolbar */}
-          <div className="border-border bg-muted/20 space-y-2.5 border-b p-3">
+          <div className="border-separator bg-fill-4 space-y-2.5 border-b p-3">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                <Search className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                 <Input
                   type="text"
                   placeholder="Search 4,100+ icons (e.g. sword, crown, dragon, scale, astrolabe)..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-9 pr-8 pl-9 text-xs"
+                  className="text-footnote h-9 pr-8 pl-9"
                   autoFocus
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery("")}
-                    className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2.5 -translate-y-1/2"
+                    className="text-label-secondary hover:text-label absolute top-1/2 right-2.5 -translate-y-1/2"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -191,7 +191,7 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
 
               {/* Author Filter Dropdown */}
               <Select value={selectedAuthor} onValueChange={setSelectedAuthor}>
-                <SelectTrigger className="h-9 w-[160px] text-xs">
+                <SelectTrigger className="text-footnote h-9 w-[160px]">
                   <SelectValue placeholder="All Authors" />
                 </SelectTrigger>
                 <SelectContent>
@@ -216,7 +216,7 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
                     variant={isActive ? "default" : "outline"}
                     size="sm"
                     onClick={() => setActiveTag(preset.tag)}
-                    className="h-7 shrink-0 gap-1 rounded-md px-2.5 text-xs font-medium"
+                    className="rounded-control-sm text-footnote h-7 shrink-0 gap-1 px-2.5 font-medium"
                   >
                     {IconComponent && <IconComponent className="h-3 w-3" />}
                     <span>{preset.label}</span>
@@ -229,15 +229,15 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
           {/* Icons Grid Content */}
           <div className="flex-1 overflow-y-auto p-4">
             {loading ? (
-              <div className="text-muted-foreground flex h-64 flex-col items-center justify-center gap-2 text-xs">
-                <Loader2 className="text-primary h-6 w-6 animate-spin" />
+              <div className="text-label-secondary text-footnote flex h-64 flex-col items-center justify-center gap-2">
+                <Loader2 className="text-tint h-6 w-6 animate-spin" />
                 <span>Loading 4,100+ Game-Icons library...</span>
               </div>
             ) : filteredIcons.length === 0 ? (
-              <div className="text-muted-foreground flex h-64 flex-col items-center justify-center p-6 text-center text-xs">
+              <div className="text-label-secondary text-footnote flex h-64 flex-col items-center justify-center p-6 text-center">
                 <Layers className="mb-2 h-8 w-8 opacity-30" />
-                <p className="text-foreground font-medium">No matching icons found</p>
-                <p className="text-muted-foreground mt-1 text-xs">
+                <p className="text-label font-medium">No matching icons found</p>
+                <p className="text-label-secondary text-footnote mt-1">
                   Try searching with broader terms or clearing category filters.
                 </p>
               </div>
@@ -256,10 +256,10 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
                         }}
                         title={`${icon.name} (by ${icon.author})`}
                         className={cn(
-                          "group relative flex aspect-square flex-col items-center justify-center rounded-lg border p-2 text-center transition-colors",
+                          "group rounded-control relative flex aspect-square flex-col items-center justify-center border p-2 text-center transition-colors",
                           isSelected
-                            ? "bg-primary text-primary-foreground border-primary ring-primary/40 shadow-xs ring-2"
-                            : "border-border bg-card hover:bg-muted text-foreground"
+                            ? "bg-tint text-on-tint border-tint ring-tint shadow-card ring-2"
+                            : "border-separator bg-surface hover:bg-fill-3 text-label"
                         )}
                       >
                         <div className="mb-1 flex h-8 w-8 items-center justify-center">
@@ -267,18 +267,18 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
                             src={icon.path}
                             alt={icon.name}
                             className={cn(
-                              "h-full w-full object-contain invert filter dark:filter-none",
+                              "h-full w-full object-contain invert filter",
                               isSelected ? "brightness-200" : "opacity-80 group-hover:opacity-100"
                             )}
                             loading="lazy"
                           />
                         </div>
-                        <span className="line-clamp-1 w-full text-xs leading-tight font-medium">
+                        <span className="text-footnote line-clamp-1 w-full leading-tight font-medium">
                           {icon.name}
                         </span>
 
                         {isSelected && (
-                          <div className="bg-primary-foreground text-primary absolute top-1 right-1 rounded-full p-0.5 shadow-xs">
+                          <div className="bg-primary-foreground text-tint shadow-card absolute top-1 right-1 rounded-full p-0.5">
                             <Check className="h-2.5 w-2.5" />
                           </div>
                         )}
@@ -293,7 +293,7 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
                       variant="outline"
                       size="sm"
                       onClick={() => setPage((p) => p + 1)}
-                      className="text-xs"
+                      className="text-footnote"
                     >
                       Load More Icons (
                       {(filteredIcons.length - displayedIcons.length).toLocaleString()} remaining)
@@ -305,20 +305,20 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
           </div>
 
           {/* Footer */}
-          <div className="border-border bg-card/30 text-muted-foreground flex items-center justify-between border-t p-3 px-5 text-xs">
+          <div className="border-separator bg-surface text-label-secondary text-footnote flex items-center justify-between border-t p-3 px-5">
             <span>
               Icons by Lorc, Delapouite & contributors,{" "}
               <a
                 href="https://game-icons.net"
                 target="_blank"
                 rel="noreferrer"
-                className="text-primary font-medium hover:underline"
+                className="text-tint font-medium hover:underline"
               >
                 game-icons.net
               </a>{" "}
               (CC BY 3.0)
             </span>
-            <Button variant="outline" size="sm" onClick={onClose} className="text-xs">
+            <Button variant="outline" size="sm" onClick={onClose}>
               Close
             </Button>
           </div>

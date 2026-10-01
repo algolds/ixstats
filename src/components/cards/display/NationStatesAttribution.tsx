@@ -16,7 +16,7 @@ export function NationStatesAttribution({
 }) {
   return (
     <div
-      className={`border-border/40 bg-card/40 text-muted-foreground flex shrink-0 items-center justify-between gap-2.5 rounded-lg border px-2.5 py-1.5 text-xs leading-tight backdrop-blur-sm ${className ?? ""}`}
+      className={`border-separator bg-surface text-label-secondary rounded-control text-footnote flex shrink-0 items-center justify-between gap-2.5 border px-2.5 py-1.5 leading-tight ${className ?? ""}`}
     >
       <div className="flex min-w-0 flex-1 items-start gap-1.5">
         <NationStatesLogo size="xs" className="mt-0.5 shrink-0" />
@@ -26,7 +26,7 @@ export function NationStatesAttribution({
             href="https://www.nationstates.net/pages/api.html#cards"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+            className="text-blue font-medium hover:underline"
           >
             NationStates API
           </a>
@@ -41,7 +41,7 @@ export function NationStatesAttribution({
           <button
             type="button"
             onClick={onRequestTakedown}
-            className="inline-flex shrink-0 items-center gap-1 font-medium text-red-500 transition-colors hover:text-red-600 hover:underline dark:text-red-400 dark:hover:text-red-300"
+            className="text-red inline-flex shrink-0 items-center gap-1 font-medium transition-colors hover:underline"
           >
             <ShieldAlert className="h-3 w-3 shrink-0" />
             <span>Verify & Request Takedown</span>

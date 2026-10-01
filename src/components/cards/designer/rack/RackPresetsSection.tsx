@@ -27,7 +27,7 @@ export const RackPresetsSection = React.memo(function RackPresetsSection({
           value={presetNameInput}
           onChange={(e) => setPresetNameInput(e.target.value)}
           placeholder="Preset Name..."
-          className="h-8 text-xs"
+          className="text-footnote h-8"
         />
         <Button
           variant="secondary"
@@ -37,7 +37,7 @@ export const RackPresetsSection = React.memo(function RackPresetsSection({
             onSavePreset(presetNameInput.trim());
             setPresetNameInput("");
           }}
-          className="h-8 shrink-0 gap-1 text-xs"
+          className="text-footnote h-8 shrink-0 gap-1"
         >
           <Save className="h-3.5 w-3.5" />
           Save
@@ -50,16 +50,16 @@ export const RackPresetsSection = React.memo(function RackPresetsSection({
           {presets.map((preset) => (
             <div
               key={preset.id}
-              className="border-border bg-muted/20 hover:bg-muted/50 flex items-center justify-between rounded-lg border p-2 transition-colors"
+              className="border-separator bg-fill-4 hover:bg-fill-3 rounded-control flex items-center justify-between border p-2 transition-colors"
             >
-              <span className="text-foreground truncate text-xs font-medium">{preset.name}</span>
+              <span className="text-label text-footnote truncate font-medium">{preset.name}</span>
 
               <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => onLoadPreset(preset)}
-                  className="text-primary h-6 px-2 text-xs"
+                  className="text-tint text-footnote h-6 px-2"
                 >
                   Load
                 </Button>
@@ -67,7 +67,7 @@ export const RackPresetsSection = React.memo(function RackPresetsSection({
                   variant="ghost"
                   size="sm"
                   onClick={() => onDeletePreset(preset.id)}
-                  className="text-muted-foreground hover:text-destructive h-6 px-1.5 text-xs"
+                  className="text-label-secondary hover:text-destructive text-footnote h-6 px-1.5"
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>
@@ -76,7 +76,7 @@ export const RackPresetsSection = React.memo(function RackPresetsSection({
           ))}
         </div>
       ) : (
-        <div className="text-muted-foreground py-1 text-xs italic">
+        <div className="text-label-secondary text-footnote py-1 italic">
           No saved presets yet. Type a name and save your layout!
         </div>
       )}

@@ -64,23 +64,23 @@ export function CollectionsTab({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Folder className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-          <span className="text-xs font-bold">My Collections</span>
+          <Folder className="text-tint h-3.5 w-3.5" />
+          <span className="text-footnote font-semibold">My Collections</span>
         </div>
       </div>
 
       {isLoading ? (
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-16 rounded-lg" />
+            <Skeleton key={i} className="rounded-control h-16" />
           ))}
         </div>
       ) : !collections || collections.length === 0 ? (
-        <Card className="facet-hierarchy-child">
+        <Card>
           <CardContent className="flex flex-col items-center justify-center py-8">
-            <Folder className="text-muted-foreground/40 mb-3 h-10 w-10" />
-            <p className="text-foreground/80 mb-1 text-sm font-bold">No Collections</p>
-            <p className="text-muted-foreground max-w-md text-center text-xs">
+            <Folder className="text-label-tertiary mb-3 h-10 w-10" />
+            <p className="text-label text-headline mb-1">No Collections</p>
+            <p className="text-label-secondary text-footnote max-w-md text-center">
               Create collections to organize cards by theme, rarity, or custom categories.
             </p>
             <Button
@@ -101,17 +101,17 @@ export function CollectionsTab({
               <button
                 onClick={() => setExpandedId(expandedId === collection.id ? null : collection.id)}
                 className={cn(
-                  "facet-hierarchy-child flex w-full items-center justify-between rounded-lg border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  "bg-surface-secondary border-separator rounded-control flex w-full items-center justify-between border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   expandedId === collection.id
-                    ? "border-amber-400/30"
-                    : "border-border hover:border-foreground/20"
+                    ? "border-yellow/30"
+                    : "border-separator hover:border-foreground/20"
                 )}
               >
                 <div className="flex items-center gap-2.5">
-                  <Folder className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <Folder className="text-tint h-4 w-4" />
                   <div>
-                    <span className="text-xs font-bold">{collection.name}</span>
-                    <p className="text-muted-foreground text-xs">
+                    <span className="text-footnote font-semibold">{collection.name}</span>
+                    <p className="text-label-secondary text-footnote">
                       {collection._count?.items ?? 0} cards
                       {collection.isPublic && " • Public"}
                     </p>
@@ -121,7 +121,7 @@ export function CollectionsTab({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 w-6 p-0 text-red-400 hover:bg-red-500/10"
+                    className="text-red hover:bg-red/10 h-6 w-6 p-0"
                     onClick={(e) => {
                       e.stopPropagation();
                       deleteCollection.mutate({ collectionId: collection.id });
@@ -148,7 +148,7 @@ export function CollectionsTab({
                   >
                     <div className="pt-2 pl-4">
                       {!collectionCards || collectionCards.length === 0 ? (
-                        <p className="text-muted-foreground py-4 text-center text-xs">
+                        <p className="text-label-secondary text-footnote py-4 text-center">
                           No cards in this collection yet. Use Select Mode in Inventory to add
                           cards.
                         </p>
@@ -177,28 +177,30 @@ export function CollectionsTab({
       <Dialog open={createOpen} onOpenChange={onCreateOpenChange}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-sm font-bold">Create Collection</DialogTitle>
+            <DialogTitle className="text-headline">Create Collection</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <label className="text-muted-foreground mb-1 block text-xs font-semibold">Name</label>
+              <label className="text-label-secondary text-footnote mb-1 block font-semibold">
+                Name
+              </label>
               <Input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="My Rare Cards"
-                className="h-8 text-xs"
+                className="text-footnote h-8"
                 maxLength={100}
               />
             </div>
             <div>
-              <label className="text-muted-foreground mb-1 block text-xs font-semibold">
+              <label className="text-label-secondary text-footnote mb-1 block font-semibold">
                 Description (optional)
               </label>
               <Input
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
                 placeholder="A collection of my rarest finds"
-                className="h-8 text-xs"
+                className="text-footnote h-8"
               />
             </div>
             <label className="flex cursor-pointer items-center gap-2">
@@ -206,7 +208,9 @@ export function CollectionsTab({
                 checked={newIsPublic}
                 onCheckedChange={(v) => setNewIsPublic(v as boolean)}
               />
-              <span className="text-muted-foreground text-xs">Make this collection public</span>
+              <span className="text-label-secondary text-footnote">
+                Make this collection public
+              </span>
             </label>
           </div>
           <DialogFooter>
@@ -214,13 +218,12 @@ export function CollectionsTab({
               variant="outline"
               size="sm"
               onClick={() => onCreateOpenChange(false)}
-              className="text-xs"
+              className="text-footnote"
             >
               Cancel
             </Button>
             <Button
               size="sm"
-              className="text-xs"
               disabled={!newName.trim() || createCollection.isPending}
               onClick={() =>
                 createCollection.mutate({

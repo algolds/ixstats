@@ -90,6 +90,13 @@ const FACET_CONVERTED = [
   "components/wiki-os/",
   "app/(wiki-os)/",
   "components/media/",
+  // Phase 4 apps: Vault (+ the trading-card UI) and Sports (MyLeague, MyClub).
+  "app/vault/",
+  "components/vault/",
+  "components/cards/",
+  "components/sports/",
+  "app/myleague/",
+  "app/myclub/",
   // Phase 4 apps: Builder (all of it, MyCountry tint) and the countries index + public pages.
   "app/builder/",
   "app/countries/_components/",

@@ -19,14 +19,14 @@ export default function SeasonDetailPage() {
 
   return (
     <div className="container mx-auto max-w-md px-4 py-24 text-center">
-      <Trophy className="text-amber-400 mx-auto mb-4 h-12 w-12 animate-pulse" />
-      <h2 className="text-foreground text-xl font-bold">Redirecting to Season Archive...</h2>
-      <p className="text-muted-foreground mt-2 text-xs">
+      <Trophy className="text-yellow mx-auto mb-4 size-12" aria-hidden />
+      <h2 className="text-label text-title-2">Redirecting to Season Archive...</h2>
+      <p className="text-label-secondary text-footnote mt-2">
         Historical standings and roll-of-honor are unified in the league archive.
       </p>
       {leagueId && (
         <Button
-          className="mt-6 text-xs font-bold"
+          className="mt-6"
           onClick={() => router.replace(withBasePath(`/myleague/${leagueId}?section=history`))}
         >
           <ArrowLeft className="mr-2 h-4 w-4" /> Go to Archive

@@ -42,7 +42,12 @@ export interface SportsNavItem {
 }
 
 export const LEAGUE_NAV_ITEMS: SportsNavItem[] = [
-  { id: "overview", label: "Overview", icon: Activity, description: "Competition pulse & matchday" },
+  {
+    id: "overview",
+    label: "Overview",
+    icon: Activity,
+    description: "Competition pulse & matchday",
+  },
   { id: "standings", label: "Standings", icon: Trophy, description: "League tables & form" },
   { id: "schedule", label: "Schedule", icon: Calendar, description: "Match calendar & fixtures" },
   { id: "bracket", label: "Bracket", icon: Shield, description: "Tournament knockout tree" },
@@ -56,7 +61,12 @@ export const CLUB_NAV_ITEMS: SportsNavItem[] = [
   { id: "overview", label: "Dashboard", icon: Activity, description: "Next match & squad summary" },
   { id: "roster", label: "Roster", icon: Users, description: "Athletes & depth chart" },
   { id: "tactics", label: "Tactics", icon: Settings, description: "Formation & strategy" },
-  { id: "transfers", label: "Transfers", icon: ArrowLeftRight, description: "Escrow market & bids" },
+  {
+    id: "transfers",
+    label: "Transfers",
+    icon: ArrowLeftRight,
+    description: "Escrow market & bids",
+  },
   { id: "management", label: "Management", icon: Shield, description: "Finances & operations" },
   { id: "history", label: "History", icon: Clock, description: "Titles & past seasons" },
 ];
@@ -98,7 +108,12 @@ export function SportsSidebarNav({
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
     return (
-      <nav className={cn("facet-hierarchy-child border-border/40 bg-card/60 overflow-hidden rounded-xl border p-1.5 backdrop-blur-md", className)}>
+      <nav
+        className={cn(
+          "bg-surface border-separator rounded-row overflow-hidden border p-1",
+          className
+        )}
+      >
         <div className="hide-scrollbar flex items-center gap-1.5 overflow-x-auto">
           {filteredItems.map((item) => {
             const isActive = item.id === activeSection;
@@ -106,11 +121,10 @@ export function SportsSidebarNav({
             const noteCount = notifications?.[item.id] ?? 0;
 
             const buttonClass = cn(
-              "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 cursor-pointer outline-none select-none",
+              "focus-visible:outline-tint text-footnote relative flex shrink-0 cursor-pointer items-center gap-1.5 rounded-control px-3 py-2 font-medium transition-colors duration-fast outline-none select-none focus-visible:outline-2 focus-visible:-outline-offset-2",
               isActive
-                ? "bg-foreground text-background shadow-md font-bold"
-                : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
-              "active:scale-[0.98]"
+                ? "bg-tint-fill text-tint"
+                : "text-label-secondary hover:bg-fill-3 hover:text-label"
             );
 
             const content = (
@@ -118,7 +132,10 @@ export function SportsSidebarNav({
                 <Icon className="h-3.5 w-3.5 shrink-0" />
                 <span className="whitespace-nowrap">{item.label}</span>
                 {noteCount > 0 && !isActive && (
-                  <span className="ring-background absolute top-1 right-1 h-2 w-2 rounded-full bg-amber-500 ring-2" />
+                  <span
+                    className="ring-surface bg-yellow absolute top-1 right-1 size-2 rounded-full ring-2"
+                    aria-label="New activity"
+                  />
                 )}
               </>
             );
@@ -128,8 +145,8 @@ export function SportsSidebarNav({
                 <button
                   key={item.id}
                   type="button"
-                  data-cuelume-press="subtle"
                   onClick={() => onNavigate?.(item.id)}
+                  aria-current={isActive ? "page" : undefined}
                   className={buttonClass}
                 >
                   {content}
@@ -150,28 +167,28 @@ export function SportsSidebarNav({
 
   /* ── Desktop: Expanded or Icon Rail ── */
   return (
-    <nav className={cn("facet-hierarchy-child border-border/40 bg-card/60 flex flex-col gap-1 rounded-2xl border p-2 backdrop-blur-md", className)}>
+    <nav
+      className={cn(
+        "bg-surface border-separator rounded-card flex flex-col gap-1 border p-2",
+        className
+      )}
+    >
       {filteredItems.map((item) => {
         const isActive = item.id === activeSection;
         const Icon = item.icon;
         const noteCount = notifications?.[item.id] ?? 0;
 
         const buttonClass = cn(
-          "group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 cursor-pointer outline-none select-none",
-          isActive
-            ? "bg-foreground text-background shadow-sm font-bold"
-            : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
-          "active:scale-[0.98]"
+          "group focus-visible:outline-tint text-body relative flex w-full cursor-pointer items-center gap-3 rounded-row px-3 py-2 text-left font-medium transition-colors duration-fast outline-none select-none focus-visible:outline-2 focus-visible:-outline-offset-2",
+          isActive ? "bg-tint-fill text-tint" : "text-label hover:bg-fill-3"
         );
 
         const content = (
           <>
             <div
               className={cn(
-                "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors",
-                isActive
-                  ? "bg-background/20 text-background"
-                  : "bg-muted/30 text-muted-foreground group-hover:text-foreground"
+                "rounded-control-sm flex size-7 shrink-0 items-center justify-center transition-colors",
+                isActive ? "bg-tint text-on-tint" : "bg-fill-3 text-label-secondary"
               )}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -182,18 +199,13 @@ export function SportsSidebarNav({
                 <div className="flex items-center justify-between">
                   <span className="truncate">{item.label}</span>
                   {noteCount > 0 && (
-                    <span className="rounded-full bg-amber-500/20 px-1.5 py-0.2 text-xs font-bold text-amber-400">
+                    <span className="text-caption bg-yellow/15 text-yellow rounded-full px-1.5 tabular-nums">
                       {noteCount}
                     </span>
                   )}
                 </div>
                 {item.description && (
-                  <p
-                    className={cn(
-                      "truncate text-xs font-normal",
-                      isActive ? "text-background/70" : "text-muted-foreground/60"
-                    )}
-                  >
+                  <p className={cn("text-footnote truncate font-normal", "text-label-secondary")}>
                     {item.description}
                   </p>
                 )}
@@ -207,8 +219,8 @@ export function SportsSidebarNav({
             <button
               key={item.id}
               type="button"
-              data-cuelume-press="subtle"
               onClick={() => onNavigate?.(item.id)}
+              aria-current={isActive ? "page" : undefined}
               className={buttonClass}
               title={item.label}
             >

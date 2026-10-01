@@ -1,5 +1,7 @@
 "use client";
 
+import "~/styles/card-art.css";
+
 /**
  * PackHolographicCover — Procedural holographic pack cover
  *
@@ -134,11 +136,11 @@ function getHoloOpacity(rarity: CardRarity): number {
 // ─── Size presets ───────────────────────────────────────────────
 
 const SIZE_CLASSES = { sm: "h-20", md: "h-40", lg: "h-full min-h-[320px]" } as const;
-const LABEL_SIZES = { sm: "text-xs", md: "text-xs", lg: "text-base" } as const;
+const LABEL_SIZES = { sm: "text-footnote", md: "text-footnote", lg: "text-body" } as const;
 const STAMP_SIZES = {
-  sm: "text-xs h-5 w-5",
-  md: "text-lg h-8 w-8",
-  lg: "text-3xl h-14 w-14",
+  sm: "text-footnote h-5 w-5",
+  md: "text-title-3 h-8 w-8",
+  lg: "text-large-title h-14 w-14",
 } as const;
 
 // ─── Component ──────────────────────────────────────────────────
@@ -266,7 +268,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               style={{ backgroundImage: `url(${packArtwork})` }}
             />
           ) : (
-            <div className={cn("absolute inset-0 bg-gradient-to-br", theme.base)} />
+            <div className={cn("card-art-linear-br absolute inset-0", theme.base)} />
           )}
 
           {/* Layer 2: Holographic foil sweep */}
@@ -395,7 +397,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               <div
                 className={cn(
                   "mb-1 flex items-center justify-center rounded-full",
-                  "bg-gradient-to-br shadow-lg backdrop-blur-sm",
+                  "card-art-linear-br shadow-floating",
                   foilStamp.color,
                   STAMP_SIZES[size]
                 )}
@@ -405,7 +407,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               </div>
             )}
 
-            <div className="relative w-full bg-gradient-to-t from-black/70 via-black/30 to-transparent px-2 pt-4 pb-1.5">
+            <div className="card-art-linear-t relative w-full from-black/70 via-black/30 to-transparent px-2 pt-4 pb-1.5">
               {packName && size !== "sm" && (
                 <p
                   className={cn(
@@ -424,7 +426,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               <p
                 className={cn(
                   "text-center font-semibold tracking-wider text-white/40 uppercase",
-                  size === "sm" ? "text-[7px]" : "text-xs"
+                  size === "sm" ? "text-[7px]" : "text-footnote"
                 )}
               >
                 IxCards

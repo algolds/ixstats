@@ -97,12 +97,12 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
           placeholder={`Search ${wikiSource === "ixwiki" ? "IxWiki" : "IIWiki"} articles...`}
-          className="border-border bg-muted/50 w-full rounded-lg border px-4 py-3 pr-10 text-white placeholder-white/40"
+          className="border-separator bg-fill-3 rounded-control text-label placeholder:text-label-tertiary w-full border px-4 py-3 pr-10"
         />
 
         {loading && (
           <div className="absolute top-1/2 right-3 -translate-y-1/2">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white"></div>
+            <div className="border-separator border-t-separator h-5 w-5 animate-spin rounded-full border-2"></div>
           </div>
         )}
 
@@ -112,7 +112,7 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
               setSearchQuery("");
               setSuggestions([]);
             }}
-            className="absolute top-1/2 right-3 -translate-y-1/2 text-white/60 hover:text-white"
+            className="text-label-secondary hover:text-label absolute top-1/2 right-3 -translate-y-1/2"
           >
             <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
               <path
@@ -127,16 +127,18 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
 
       {/* Suggestions Dropdown */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="border-border bg-popover absolute z-10 border mt-2 max-h-96 w-full overflow-y-auto rounded-lg shadow-lg">
+        <div className="border-separator bg-surface-elevated rounded-control shadow-floating absolute z-10 mt-2 max-h-96 w-full overflow-y-auto border">
           {suggestions.map((suggestion, idx) => (
             <button
               key={idx}
               onClick={() => handleSelect(suggestion.title)}
-              className="w-full px-4 py-3 text-left transition-colors first:rounded-t-lg last:rounded-b-lg hover:bg-white/10"
+              className="first:rounded-t-control last:rounded-b-control hover:bg-fill-3 w-full px-4 py-3 text-left transition-colors"
             >
-              <div className="font-semibold text-white">{suggestion.title}</div>
+              <div className="text-label font-semibold">{suggestion.title}</div>
               {suggestion.snippet && (
-                <div className="mt-1 line-clamp-2 text-sm text-white/60">{suggestion.snippet}</div>
+                <div className="text-body text-label-secondary mt-1 line-clamp-2">
+                  {suggestion.snippet}
+                </div>
               )}
             </button>
           ))}
@@ -145,8 +147,8 @@ export function ArticleSearch({ wikiSource, onSelect, value = "" }: ArticleSearc
 
       {/* No Results Message */}
       {!loading && searchQuery.length >= 3 && suggestions.length === 0 && showSuggestions && (
-        <div className="border-border bg-popover absolute z-10 border mt-2 w-full rounded-lg px-4 py-3 shadow-lg">
-          <div className="text-center text-sm text-white/60">
+        <div className="border-separator bg-surface-elevated rounded-control shadow-floating absolute z-10 mt-2 w-full border px-4 py-3">
+          <div className="text-body text-label-secondary text-center">
             No articles found matching "{searchQuery}"
           </div>
         </div>

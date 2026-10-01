@@ -6,7 +6,12 @@ import { FacetCard } from "~/components/ui/facet-container";
 import { withBasePath } from "~/lib/base-path";
 import Link from "next/link";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
-import { OpenBook as BookOpen, Download, StatUp as TrendingUp, StatDown as TrendingDown } from "iconoir-react";
+import {
+  OpenBook as BookOpen,
+  Download,
+  StatUp as TrendingUp,
+  StatDown as TrendingDown,
+} from "iconoir-react";
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
 
 export interface StandingsRow {
@@ -82,7 +87,12 @@ export function StandingsTable({
 
   if (!standings || standings.length === 0) {
     return (
-      <div className={cn("text-muted-foreground mx-auto w-full py-12 text-center text-xs font-semibold", className)}>
+      <div
+        className={cn(
+          "text-label-secondary text-footnote mx-auto w-full py-12 text-center font-semibold",
+          className
+        )}
+      >
         No standings data recorded for this season yet.
       </div>
     );
@@ -123,17 +133,16 @@ export function StandingsTable({
 
   return (
     <FacetCard
-      depth={2}
       className={cn(
-        "border-border/40 bg-card/85 mx-auto w-full overflow-hidden rounded-3xl border p-6 shadow-2xl backdrop-blur-xl",
+        "border-separator bg-surface rounded-sheet shadow-card mx-auto w-full overflow-hidden border p-6",
         className
       )}
     >
       {/* Table Title and Export Button */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/20 pb-4">
+      <div className="border-separator mb-6 flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-foreground text-xl font-black tracking-tight">{title}</h3>
-          <p className="text-xs text-muted-foreground mt-0.5 font-medium">
+          <h3 className="text-label text-title-2">{title}</h3>
+          <p className="text-footnote text-label-secondary mt-0.5 font-medium">
             Live season table with qualification zones and team form momentum.
           </p>
         </div>
@@ -141,8 +150,7 @@ export function StandingsTable({
         <button
           type="button"
           onClick={() => exportStandingsCsv(title, standings)}
-          data-cuelume-press="subtle"
-          className="text-muted-foreground hover:text-foreground border-border/40 bg-muted/40 hover:bg-muted/70 flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-xs font-bold transition-[color,background-color,border-color,box-shadow,opacity,transform] cursor-pointer active:scale-[0.98] w-fit"
+          className="text-label-secondary hover:text-label border-separator bg-fill-3 rounded-row text-footnote flex w-fit cursor-pointer items-center gap-1.5 border px-3.5 py-1.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
           title="Export CSV"
         >
           <Download className="h-3.5 w-3.5" />
@@ -153,16 +161,16 @@ export function StandingsTable({
       {groups.map((group, groupIdx) => (
         <div key={groupIdx} className="mb-8 last:mb-0">
           {group.label && (
-            <div className="text-muted-foreground mb-3 border-b border-border/30 pb-1.5 text-xs font-black tracking-wider uppercase flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-primary" />
+            <div className="text-label-secondary border-separator text-eyebrow mb-3 flex items-center gap-2 border-b pb-1.5">
+              <span className="bg-tint h-2 w-2 rounded-full" />
               <span>{group.label}</span>
             </div>
           )}
 
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-left text-xs">
+            <table className="text-footnote w-full border-collapse text-left">
               <thead>
-                <tr className="text-muted-foreground border-b border-border/30 text-xs font-black tracking-wider uppercase">
+                <tr className="text-label-secondary border-separator text-eyebrow border-b">
                   <th className="w-14 py-3 pl-3 text-center">Rank</th>
                   <th className="py-3">Franchise</th>
                   <th className="py-3 text-center">GP</th>
@@ -170,11 +178,11 @@ export function StandingsTable({
                   <th className="py-3 text-center">D</th>
                   <th className="py-3 text-center">L</th>
                   <th className="py-3 text-center">DIFF</th>
-                  <th className="text-foreground py-3 text-center font-black">PTS</th>
+                  <th className="text-label py-3 text-center font-semibold">PTS</th>
                   <th className="py-3 pr-3 text-center">Form</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/10">
+              <tbody className="divide-separator divide-y">
                 {group.standings.map((team, idx) => {
                   const played = team.wins + team.losses + team.draws;
                   const diff = team.pointsFor - team.pointsAgainst;
@@ -200,30 +208,30 @@ export function StandingsTable({
                     <tr
                       key={team.id || team.teamId}
                       className={cn(
-                        "group transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 cursor-pointer active:scale-[0.99]",
-                        isLeader && "bg-amber-500/5 hover:bg-amber-500/10",
-                        isPromotion && !isLeader && "bg-emerald-500/5 hover:bg-emerald-500/10",
-                        isRelegation && "bg-red-500/5 hover:bg-red-500/10",
-                        !isLeader && !isPromotion && !isRelegation && "hover:bg-muted/40"
+                        "group cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 active:scale-[0.99]",
+                        isLeader && "bg-yellow/5 hover:bg-yellow/10",
+                        isPromotion && !isLeader && "bg-green/5 hover:bg-green/10",
+                        isRelegation && "bg-red/5 hover:bg-red/10",
+                        !isLeader && !isPromotion && !isRelegation && "hover:bg-fill-3"
                       )}
                       onClick={() => handleRowClick(team.teamId)}
                     >
                       {/* Rank with indicator */}
-                      <td className="py-3 pl-3 text-center font-black">
+                      <td className="py-3 pl-3 text-center font-semibold">
                         <div className="flex items-center justify-center gap-1.5">
                           {isLeader ? (
-                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500/20 text-xs font-black text-amber-400">
+                            <span className="bg-yellow/20 text-footnote text-yellow flex h-5 w-5 items-center justify-center rounded-full font-semibold">
                               1
                             </span>
                           ) : (
                             <span
                               className={cn(
-                                "text-xs font-bold tabular-nums",
+                                "text-footnote font-semibold tabular-nums",
                                 isPromotion
-                                  ? "text-emerald-400"
+                                  ? "text-green"
                                   : isRelegation
-                                    ? "text-red-400"
-                                    : "text-muted-foreground"
+                                    ? "text-red"
+                                    : "text-label-secondary"
                               )}
                             >
                               {rank}
@@ -235,12 +243,12 @@ export function StandingsTable({
                       {/* Team Name and Logo */}
                       <td className="py-3">
                         <div className="flex items-center gap-3">
-                          <div className="border-border/40 bg-background flex aspect-square w-7 shrink-0 items-center justify-center rounded-xl border p-0.5 shadow-sm">
+                          <div className="border-separator bg-background rounded-row shadow-card flex aspect-square w-7 shrink-0 items-center justify-center border p-0.5">
                             {team.logo ? (
                               <img
                                 src={withBasePath(team.logo)}
                                 alt={team.teamName || team.teamId}
-                                className="h-full w-full rounded-lg object-cover"
+                                className="rounded-control h-full w-full object-cover"
                               />
                             ) : (
                               <div
@@ -249,14 +257,14 @@ export function StandingsTable({
                               />
                             )}
                           </div>
-                          <span className="text-foreground text-xs font-extrabold tracking-tight group-hover:text-primary transition-colors">
+                          <span className="text-label text-footnote group-hover:text-tint font-semibold transition-colors">
                             {team.teamName || team.teamId}
                           </span>
                           {team.wikiSlug && (
                             <Link
                               href={titleToWikiOSPath(team.wikiSlug)}
                               onClick={(e) => e.stopPropagation()}
-                              className="text-muted-foreground hover:text-foreground opacity-60 transition-opacity hover:opacity-100"
+                              className="text-label-secondary hover:text-label opacity-60 transition-opacity hover:opacity-100"
                               title={`Wiki: ${team.teamName}`}
                             >
                               <BookOpen className="h-3.5 w-3.5" />
@@ -265,24 +273,24 @@ export function StandingsTable({
                         </div>
                       </td>
 
-                      <td className="py-3 text-center font-semibold text-muted-foreground tabular-nums">
+                      <td className="text-label-secondary py-3 text-center font-semibold tabular-nums">
                         {played}
                       </td>
-                      <td className="py-3 text-center font-bold text-foreground tabular-nums">
+                      <td className="text-label py-3 text-center font-semibold tabular-nums">
                         {team.wins}
                       </td>
-                      <td className="py-3 text-center font-semibold text-muted-foreground tabular-nums">
+                      <td className="text-label-secondary py-3 text-center font-semibold tabular-nums">
                         {team.draws}
                       </td>
-                      <td className="py-3 text-center font-semibold text-muted-foreground tabular-nums">
+                      <td className="text-label-secondary py-3 text-center font-semibold tabular-nums">
                         {team.losses}
                       </td>
-                      <td className="py-3 text-center font-bold text-muted-foreground tabular-nums">
-                        <span className={cn(diff > 0 && "text-emerald-400", diff < 0 && "text-red-400")}>
+                      <td className="text-label-secondary py-3 text-center font-semibold tabular-nums">
+                        <span className={cn(diff > 0 && "text-green", diff < 0 && "text-red")}>
                           {diff > 0 ? `+${diff}` : diff}
                         </span>
                       </td>
-                      <td className="py-3 text-center font-black text-foreground tabular-nums text-sm">
+                      <td className="text-label text-headline py-3 text-center tabular-nums">
                         {team.points}
                       </td>
 
@@ -293,10 +301,10 @@ export function StandingsTable({
                             <span
                               key={i}
                               className={cn(
-                                "flex h-4.5 w-4.5 items-center justify-center rounded-md text-xs font-black uppercase shadow-xs",
-                                res === "W" && "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",
-                                res === "D" && "bg-amber-500/20 text-amber-400 border border-amber-500/30",
-                                res === "L" && "bg-red-500/20 text-red-400 border border-red-500/30"
+                                "rounded-control-sm text-eyebrow shadow-card flex h-4.5 w-4.5 items-center justify-center",
+                                res === "W" && "bg-green/20 text-green border-green/30 border",
+                                res === "D" && "bg-yellow/20 text-yellow border-yellow/30 border",
+                                res === "L" && "bg-red/20 text-red border-red/30 border"
                               )}
                             >
                               {res}

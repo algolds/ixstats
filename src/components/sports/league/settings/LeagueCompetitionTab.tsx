@@ -54,7 +54,7 @@ export const LeagueCompetitionTab = React.memo(function LeagueCompetitionTab({
         <div className="space-y-2">
           <Label htmlFor="league-status">League Status</Label>
           <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger id="league-status" className="h-9 text-xs">
+            <SelectTrigger id="league-status" className="text-footnote h-9">
               <SelectValue placeholder="Select status..." />
             </SelectTrigger>
             <SelectContent>
@@ -74,7 +74,7 @@ export const LeagueCompetitionTab = React.memo(function LeagueCompetitionTab({
             min={1}
             value={tier}
             onChange={(e) => setTier(Math.max(1, Number(e.target.value) || 1))}
-            className="h-9 text-xs"
+            className="text-footnote h-9"
           />
         </div>
       </div>
@@ -88,7 +88,7 @@ export const LeagueCompetitionTab = React.memo(function LeagueCompetitionTab({
             min={0}
             value={promotionCount}
             onChange={(e) => setPromotionCount(Math.max(0, Number(e.target.value) || 0))}
-            className="h-9 text-xs"
+            className="text-footnote h-9"
           />
         </div>
 
@@ -100,14 +100,14 @@ export const LeagueCompetitionTab = React.memo(function LeagueCompetitionTab({
             min={0}
             value={relegationCount}
             onChange={(e) => setRelegationCount(Math.max(0, Number(e.target.value) || 0))}
-            className="h-9 text-xs"
+            className="text-footnote h-9"
           />
         </div>
       </div>
 
       {/* Archetype Specific Settings */}
       {isDivisionConference && (
-        <div className="border-border/30 space-y-2 border-t pt-3">
+        <div className="border-separator space-y-2 border-t pt-3">
           <Label htmlFor="divisions-count">Divisions Count</Label>
           <Input
             id="divisions-count"
@@ -115,16 +115,16 @@ export const LeagueCompetitionTab = React.memo(function LeagueCompetitionTab({
             min={1}
             value={divisions}
             onChange={(e) => setDivisions(Math.max(1, Number(e.target.value) || 1))}
-            className="h-9 text-xs"
+            className="text-footnote h-9"
           />
-          <p className="text-muted-foreground text-xs">
+          <p className="text-label-secondary text-footnote">
             Configures the number of divisions within the league's conference.
           </p>
         </div>
       )}
 
       {isCircuit && (
-        <div className="border-border/30 space-y-2 border-t pt-3">
+        <div className="border-separator space-y-2 border-t pt-3">
           <Label htmlFor="race-count">Race Count</Label>
           <Input
             id="race-count"
@@ -132,25 +132,25 @@ export const LeagueCompetitionTab = React.memo(function LeagueCompetitionTab({
             min={1}
             value={raceCount}
             onChange={(e) => setRaceCount(Math.max(1, Number(e.target.value) || 1))}
-            className="h-9 text-xs"
+            className="text-footnote h-9"
           />
-          <p className="text-muted-foreground text-xs">
+          <p className="text-label-secondary text-footnote">
             Configures the number of races run in a season.
           </p>
         </div>
       )}
 
       {isBoxing && (
-        <div className="border-border/30 space-y-2 border-t pt-3">
+        <div className="border-separator space-y-2 border-t pt-3">
           <Label htmlFor="weight-classes">Weight Classes (Comma Separated)</Label>
           <Input
             id="weight-classes"
             value={weightClassesRaw}
             onChange={(e) => setWeightClassesRaw(e.target.value)}
             placeholder="Heavyweight, Middleweight, Welterweight..."
-            className="h-9 text-xs"
+            className="text-footnote h-9"
           />
-          <p className="text-muted-foreground text-xs">
+          <p className="text-label-secondary text-footnote">
             Comma-separated list of weight divisions.
           </p>
         </div>

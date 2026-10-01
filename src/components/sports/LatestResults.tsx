@@ -51,7 +51,7 @@ export function LatestResults({
 
   if (completedMatches.length === 0) {
     return (
-      <div className={cn("text-muted-foreground mx-auto w-full px-5 py-8 text-center", className)}>
+      <div className={cn("text-label-secondary mx-auto w-full px-5 py-8 text-center", className)}>
         No results simulated yet.
       </div>
     );
@@ -85,18 +85,10 @@ export function LatestResults({
 
   return (
     <div className={cn("mx-auto w-full px-2 sm:w-[500px]", className)}>
-      <FacetCard
-        depth={2}
-        interactive="hover"
-        className="border-border/40 bg-card/90 relative overflow-hidden rounded-3xl border p-5 shadow-xl"
-      >
+      <FacetCard interactive="hover" className="relative overflow-hidden p-5">
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-foreground text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            {title}
-          </h3>
-          <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase select-none">
-            Swipe Up/Down
-          </span>
+          <h3 className="text-label text-label-secondary text-eyebrow">{title}</h3>
+          <span className="text-label-secondary text-eyebrow select-none">Swipe Up/Down</span>
         </div>
 
         {/* Scrollable Container */}
@@ -114,11 +106,9 @@ export function LatestResults({
                 className="flex h-[380px] snap-start flex-col justify-between py-2"
               >
                 {/* Match Day Indicator */}
-                <div className="mb-2 flex items-center justify-between border-b border-white/5 pb-2">
-                  <span className="text-foreground text-sm font-bold tracking-tight">
-                    Matchday {matchDay}
-                  </span>
-                  <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs font-medium">
+                <div className="border-separator mb-2 flex items-center justify-between border-b pb-2">
+                  <span className="text-label text-headline">Matchday {matchDay}</span>
+                  <span className="bg-fill-3 text-label-secondary text-footnote rounded-full px-2 py-0.5 font-medium">
                     {dayMatches.length} Matches
                   </span>
                 </div>
@@ -136,7 +126,7 @@ export function LatestResults({
                         key={match.id}
                         onClick={() => onMatchClick?.(match.id)}
                         className={cn(
-                          "bg-muted/40 hover:bg-muted/70 flex items-center justify-between rounded-xl p-2.5 transition-colors",
+                          "bg-fill-3 rounded-row flex items-center justify-between p-2.5 transition-colors",
                           onMatchClick && "cursor-pointer"
                         )}
                       >
@@ -150,7 +140,7 @@ export function LatestResults({
                             }}
                             className="group flex items-center gap-2 text-left hover:underline"
                           >
-                            <div className="border-border/40 bg-background flex aspect-square w-7 shrink-0 items-center justify-center rounded-full border p-0.5 shadow-sm">
+                            <div className="border-separator bg-background shadow-card flex aspect-square w-7 shrink-0 items-center justify-center rounded-full border p-0.5">
                               {match.homeLogo ? (
                                 <img
                                   src={withBasePath(match.homeLogo)}
@@ -166,8 +156,8 @@ export function LatestResults({
                             </div>
                             <span
                               className={cn(
-                                "text-xs font-semibold tracking-tight",
-                                homeWon ? "text-foreground font-bold" : "text-muted-foreground"
+                                "text-footnote font-semibold",
+                                homeWon ? "text-label font-semibold" : "text-label-secondary"
                               )}
                             >
                               {match.homeShortName || match.homeTeamName}
@@ -177,7 +167,7 @@ export function LatestResults({
                             <Link
                               href={titleToWikiOSPath(match.homeWikiSlug)}
                               onClick={(e) => e.stopPropagation()}
-                              className="text-muted-foreground hover:text-foreground opacity-60 transition-opacity hover:opacity-100"
+                              className="text-label-secondary hover:text-label opacity-60 transition-opacity hover:opacity-100"
                               title={`Wiki: ${match.homeTeamName}`}
                             >
                               <BookOpen className="h-3 w-3" />
@@ -186,20 +176,20 @@ export function LatestResults({
                         </div>
 
                         {/* Scores */}
-                        <div className="bg-background/80 border-border/30 mx-2 flex items-center gap-1.5 rounded-lg border px-2.5 py-1 shadow-inner">
+                        <div className="bg-surface-secondary border-separator rounded-control mx-2 flex items-center gap-1.5 border px-2.5 py-1 shadow-inner">
                           <span
                             className={cn(
-                              "text-xs font-bold tabular-nums",
-                              homeWon ? "text-foreground font-extrabold" : "text-muted-foreground"
+                              "text-footnote font-semibold tabular-nums",
+                              homeWon ? "text-label font-semibold" : "text-label-secondary"
                             )}
                           >
                             {match.homeScore ?? "-"}
                           </span>
-                          <span className="text-muted-foreground/40 text-xs">:</span>
+                          <span className="text-label-tertiary text-footnote">:</span>
                           <span
                             className={cn(
-                              "text-xs font-bold tabular-nums",
-                              awayWon ? "text-foreground font-extrabold" : "text-muted-foreground"
+                              "text-footnote font-semibold tabular-nums",
+                              awayWon ? "text-label font-semibold" : "text-label-secondary"
                             )}
                           >
                             {match.awayScore ?? "-"}
@@ -212,7 +202,7 @@ export function LatestResults({
                             <Link
                               href={titleToWikiOSPath(match.awayWikiSlug)}
                               onClick={(e) => e.stopPropagation()}
-                              className="text-muted-foreground hover:text-foreground opacity-60 transition-opacity hover:opacity-100"
+                              className="text-label-secondary hover:text-label opacity-60 transition-opacity hover:opacity-100"
                               title={`Wiki: ${match.awayTeamName}`}
                             >
                               <BookOpen className="h-3 w-3" />
@@ -228,13 +218,13 @@ export function LatestResults({
                           >
                             <span
                               className={cn(
-                                "text-xs font-semibold tracking-tight",
-                                awayWon ? "text-foreground font-bold" : "text-muted-foreground"
+                                "text-footnote font-semibold",
+                                awayWon ? "text-label font-semibold" : "text-label-secondary"
                               )}
                             >
                               {match.awayShortName || match.awayTeamName}
                             </span>
-                            <div className="border-border/40 bg-background flex aspect-square w-7 shrink-0 items-center justify-center rounded-full border p-0.5 shadow-sm">
+                            <div className="border-separator bg-background shadow-card flex aspect-square w-7 shrink-0 items-center justify-center rounded-full border p-0.5">
                               {match.awayLogo ? (
                                 <img
                                   src={withBasePath(match.awayLogo)}
@@ -267,7 +257,7 @@ export function LatestResults({
                 key={idx}
                 className={cn(
                   "h-1.5 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
-                  activeIndex === idx ? "bg-primary w-4" : "bg-muted-foreground/30 w-1.5"
+                  activeIndex === idx ? "bg-tint w-4" : "bg-fill w-1.5"
                 )}
               />
             ))}

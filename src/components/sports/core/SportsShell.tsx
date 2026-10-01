@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { getSportCssVars } from "~/lib/sports/theming";
 import { SportsSidebarNav, type SportsNavSection, type SportsNavItem } from "./SportsSidebarNav";
@@ -40,11 +41,8 @@ export function SportsShell({
   const { focus } = useSportsFocus();
 
   return (
-    <div
-      style={sportVars}
-      className={cn("min-h-screen w-full transition-colors duration-300", className)}
-    >
-      <div className="mx-auto max-w-[1700px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8 space-y-4">
+    <div style={sportVars} className={cn("min-h-screen w-full", className)}>
+      <div className="mx-auto max-w-[1700px] space-y-4 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
         {/* Top Command Bar */}
         {commandBar}
 
@@ -66,10 +64,10 @@ export function SportsShell({
         </div>
 
         {/* Main Content Layout with optional docked Focus Rail */}
-        <div className="flex flex-col gap-6 lg:flex-row items-start">
+        <div className="flex flex-col items-start gap-6 lg:flex-row">
           {/* Desktop Left Rail: sticky at --shell-top-offset (80px under the legacy navbar) */}
-          <aside className="hidden lg:block w-60 shrink-0">
-            <div className="lg:sticky lg:top-(--shell-top-offset) space-y-4">
+          <aside className="hidden w-60 shrink-0 lg:block">
+            <div className="space-y-4 lg:sticky lg:top-(--shell-top-offset)">
               <SportsSidebarNav
                 activeSection={activeSection}
                 onNavigate={onNavigate}
@@ -85,15 +83,13 @@ export function SportsShell({
           </aside>
 
           {/* Main Content Workspace */}
-          <main className="min-w-0 flex-1 w-full">
-            <div className="facet-hierarchy-parent rounded-2xl border border-border/40 bg-card/40 p-4 sm:p-6 shadow-lg backdrop-blur-xl transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
-              {children}
-            </div>
+          <main className="w-full min-w-0 flex-1">
+            <FacetCard className="p-4 sm:p-6">{children}</FacetCard>
           </main>
 
           {/* Desktop Right Rail: Contextual Focus Panel */}
           {focus && (
-            <div className="hidden lg:block shrink-0">
+            <div className="hidden shrink-0 lg:block">
               <div className="lg:sticky lg:top-(--shell-top-offset)">
                 <SportsFocusPanel sportPreset={sportPreset} />
               </div>
@@ -109,4 +105,3 @@ export function SportsShell({
     </div>
   );
 }
-

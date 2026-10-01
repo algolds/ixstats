@@ -190,20 +190,20 @@ export function CardGalleryTab({
     <div className="space-y-4">
       {/* Library stats banner (NS source) */}
       {(source === "all" || source === "ns") && libraryStats && libraryStats.totalCards > 0 && (
-        <div className="flex flex-wrap items-center gap-4 rounded-xl border border-border/40 bg-muted/20 px-4 py-2.5">
+        <div className="rounded-row border-separator bg-fill-4 flex flex-wrap items-center gap-4 border px-4 py-2.5">
           <div className="flex items-center gap-2">
-            <Layers className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
-            <span className="text-xs font-bold text-foreground">
+            <Layers className="text-tint h-3.5 w-3.5" />
+            <span className="text-footnote text-label font-semibold">
               <NumberFlow value={libraryStats.totalCards} />
             </span>
-            <span className="text-muted-foreground text-xs">cards in library</span>
+            <span className="text-label-secondary text-footnote">cards in library</span>
           </div>
           {libraryStats.cardsByRegion?.length > 0 && (
             <div className="flex items-center gap-1.5">
-              <MapPin className="text-muted-foreground h-3 w-3" />
-              <span className="text-muted-foreground text-xs">
+              <MapPin className="text-label-secondary h-3 w-3" />
+              <span className="text-label-secondary text-footnote">
                 Top:{" "}
-                <span className="text-foreground/80 font-semibold">
+                <span className="text-label font-semibold">
                   {libraryStats.cardsByRegion[0]?.region}
                 </span>
               </span>
@@ -216,15 +216,15 @@ export function CardGalleryTab({
       {isLoading && offset === 0 ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <Skeleton key={i} className="h-72 rounded-xl" />
+            <Skeleton key={i} className="rounded-row h-72" />
           ))}
         </div>
       ) : displayCards.length === 0 ? (
-        <Card className="facet-hierarchy-child">
+        <Card>
           <CardContent className="flex flex-col items-center justify-center py-8">
-            <Globe className="text-muted-foreground/40 mb-3 h-10 w-10" />
-            <p className="text-foreground/80 mb-1 text-sm font-bold">No Cards Found</p>
-            <p className="text-muted-foreground max-w-md text-center text-xs">
+            <Globe className="text-label-tertiary mb-3 h-10 w-10" />
+            <p className="text-label text-headline mb-1">No Cards Found</p>
+            <p className="text-label-secondary text-footnote max-w-md text-center">
               {search || rarity !== "all" || season !== "all"
                 ? "Try adjusting your filters"
                 : source === "lore"
@@ -250,7 +250,7 @@ export function CardGalleryTab({
 
           {/* Load More + count */}
           <div className="flex flex-col items-center gap-3 pt-2">
-            <p className="text-muted-foreground text-xs">
+            <p className="text-label-secondary text-footnote">
               Showing {displayCards.length} of {totalCount.toLocaleString()} cards
             </p>
             {hasMore && (
@@ -259,7 +259,7 @@ export function CardGalleryTab({
                 size="sm"
                 onClick={() => setOffset((prev) => prev + PAGE_SIZE)}
                 disabled={nsFetching}
-                className="border-white/10 text-xs"
+                className="border-separator text-footnote"
               >
                 {nsFetching ? (
                   <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />

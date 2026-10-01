@@ -32,15 +32,15 @@ export function StorePurchaseDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="border-border/50 bg-card/90 max-w-sm rounded-3xl p-6 shadow-2xl backdrop-blur-2xl">
+      <DialogContent className="border-separator bg-surface rounded-sheet shadow-card max-w-sm p-6">
         <DialogHeader>
-          <DialogTitle className="text-foreground text-center text-lg font-black tracking-tight">
+          <DialogTitle className="text-label text-title-3 text-center">
             Confirm Purchase
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground text-center text-xs">
+          <DialogDescription className="text-label-secondary text-footnote text-center">
             Are you sure you want to purchase{" "}
-            <strong className="text-foreground font-bold">{item.name}</strong> for{" "}
-            <span className="inline-flex items-center gap-0.5 font-bold text-amber-500">
+            <strong className="text-label font-semibold">{item.name}</strong> for{" "}
+            <span className="text-yellow inline-flex items-center gap-0.5 font-semibold">
               <IxCreditsSymbol className="h-3 w-3 shrink-0" />
               {item.price}
             </span>
@@ -55,20 +55,10 @@ export function StorePurchaseDialog({
         </div>
 
         <DialogFooter className="mt-4 flex gap-2 sm:gap-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onClose}
-            className="border-input text-foreground hover:bg-accent bg-transparent text-xs"
-          >
+          <Button variant="outline" size="sm" onClick={onClose} className="bg-transparent">
             Cancel
           </Button>
-          <Button
-            size="sm"
-            onClick={onConfirm}
-            disabled={isPurchasing}
-            className="border-none bg-gradient-to-r from-amber-600 to-yellow-600 text-xs font-bold text-white"
-          >
+          <Button size="sm" onClick={onConfirm} disabled={isPurchasing}>
             {isPurchasing ? (
               "Purchasing..."
             ) : (

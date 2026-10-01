@@ -1,5 +1,6 @@
 "use client";
 
+import { springSmooth } from "~/lib/design/motion";
 import React, { useState, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
@@ -52,7 +53,7 @@ const InventoryCardItem = React.memo(function InventoryCardItem({
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.2 }}
+      transition={springSmooth}
       className="relative"
     >
       {selectMode && (
@@ -60,7 +61,7 @@ const InventoryCardItem = React.memo(function InventoryCardItem({
           <Checkbox
             checked={isSelected}
             onCheckedChange={handleToggle}
-            className="h-6 w-6 border-2 border-white bg-black/60 backdrop-blur-sm"
+            className="size-6 border-2 border-white/70 bg-black/60"
           />
         </div>
       )}
@@ -72,7 +73,7 @@ const InventoryCardItem = React.memo(function InventoryCardItem({
         performanceMode={performanceMode}
         className={cn(
           "transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-          selectMode && isSelected && "ring-2 ring-amber-400 ring-offset-2 ring-offset-black"
+          selectMode && isSelected && "ring-tint ring-offset-surface ring-2 ring-offset-2"
         )}
       />
     </motion.div>
@@ -162,13 +163,13 @@ export function InventoryTab({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={springSmooth}
           >
-            <Card className="facet-hierarchy-child border-amber-500/30 bg-amber-500/5">
+            <Card className="border-tint/30">
               <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
                 <div className="flex items-center gap-2">
-                  <CheckSquare className="h-5 w-5 text-amber-400" />
-                  <span className="text-foreground text-sm font-semibold">
+                  <CheckSquare className="text-tint h-5 w-5" />
+                  <span className="text-label text-headline">
                     {selectedCards.size} card{selectedCards.size !== 1 ? "s" : ""} selected
                   </span>
                 </div>
@@ -181,7 +182,7 @@ export function InventoryTab({
                       const allKeys = filteredCards.map((c) => c.ownershipId || c.id);
                       setSelectedCards(new Set(allKeys));
                     }}
-                    className="h-8 text-xs"
+                    className="text-footnote h-8"
                   >
                     Select All ({filteredCards.length})
                   </Button>
@@ -189,7 +190,7 @@ export function InventoryTab({
                     variant="outline"
                     size="sm"
                     onClick={() => setSelectedCards(new Set())}
-                    className="h-8 text-xs"
+                    className="text-footnote h-8"
                   >
                     Deselect All
                   </Button>
@@ -200,7 +201,7 @@ export function InventoryTab({
                     variant="outline"
                     size="sm"
                     disabled
-                    className="text-muted-foreground h-8 text-xs opacity-50"
+                    className="text-label-secondary opacity-50"
                   >
                     <Folder className="mr-1.5 h-3.5 w-3.5" /> Move
                   </Button>
@@ -208,12 +209,12 @@ export function InventoryTab({
                     variant="outline"
                     size="sm"
                     disabled
-                    className="text-muted-foreground h-8 text-xs opacity-50"
+                    className="text-label-secondary opacity-50"
                   >
                     <ShoppingBag className="mr-1.5 h-3.5 w-3.5" /> List Market
                   </Button>
 
-                  <div className="border-border/60 flex items-center gap-2 border-l pl-2">
+                  <div className="border-separator flex items-center gap-2 border-l pl-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -222,7 +223,7 @@ export function InventoryTab({
                         junkCardsMutation.mutate({ ownershipIds });
                       }}
                       disabled={junkCardsMutation.isPending || selectedCards.size === 0}
-                      className="h-8 text-xs text-red-400 hover:bg-red-500/10"
+                      className="text-footnote text-red hover:bg-red/10 h-8"
                     >
                       {junkCardsMutation.isPending ? (
                         <>
@@ -248,15 +249,15 @@ export function InventoryTab({
         {isLoading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <Skeleton key={i} className="h-80 rounded-2xl" />
+              <Skeleton key={i} className="rounded-card h-80" />
             ))}
           </div>
         ) : filteredCards.length === 0 ? (
-          <Card className="facet-hierarchy-child">
+          <Card>
             <CardContent className="flex flex-col items-center justify-center py-8">
-              <AlertCircle className="text-muted-foreground/40 mb-3 h-10 w-10" />
-              <p className="text-foreground/80 mb-1 text-sm font-bold">No cards found</p>
-              <p className="text-muted-foreground max-w-md text-center text-xs">
+              <AlertCircle className="text-label-tertiary mb-3 h-10 w-10" />
+              <p className="text-label text-headline mb-1">No cards found</p>
+              <p className="text-label-secondary text-footnote max-w-md text-center">
                 {filters.search || filters.rarity !== "all" || filters.cardType !== "all"
                   ? "Try adjusting your filters to see more results"
                   : "Import some NS cards or open a pack to get started!"}
@@ -296,7 +297,7 @@ export function InventoryTab({
           </div>
         )}
         {!isLoading && filteredCards.length > 0 && (
-          <div className="text-muted-foreground mt-6 text-center text-sm">
+          <div className="text-label-secondary text-body mt-6 text-center">
             Showing {filteredCards.length} of {totalCards} cards
           </div>
         )}

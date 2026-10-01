@@ -1,3 +1,4 @@
+import "~/styles/card-art.css";
 import React from "react";
 import { MediaImage as ImageIcon, BookStack as Library, Palette } from "iconoir-react";
 import { cn } from "~/lib/utils";
@@ -22,19 +23,19 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
   return (
     <div className="space-y-4">
       {/* Artwork subsection */}
-      <div className="border-border bg-muted/20 space-y-3 rounded-lg border p-3">
+      <div className="border-separator bg-fill-4 rounded-control space-y-3 border p-3">
         <div className="flex items-center justify-between">
-          <div className="text-foreground flex items-center gap-1.5 text-xs font-semibold">
-            <ImageIcon className="text-primary h-4 w-4" />
+          <div className="text-label text-footnote flex items-center gap-1.5 font-semibold">
+            <ImageIcon className="text-tint h-4 w-4" />
             <span>Card Artwork & Media</span>
           </div>
           {state.artworkUrl && (
-            <label className="text-muted-foreground flex cursor-pointer items-center gap-1.5 text-xs">
+            <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-1.5">
               <input
                 type="checkbox"
                 checked={state.enableArtwork}
                 onChange={(e) => onChange((p) => ({ ...p, enableArtwork: e.target.checked }))}
-                className="accent-primary h-3.5 w-3.5 rounded-md"
+                className="accent-primary rounded-control-sm h-3.5 w-3.5"
               />
               <span>Show on Card</span>
             </label>
@@ -42,9 +43,9 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
         </div>
 
         {state.artworkUrl ? (
-          <div className="border-border bg-card flex items-center justify-between rounded-lg border p-2">
+          <div className="border-separator bg-surface rounded-control flex items-center justify-between border p-2">
             <div className="flex min-w-0 items-center gap-2.5">
-              <div className="bg-muted border-border flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border">
+              <div className="bg-fill-3 border-separator rounded-control flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden border">
                 <img
                   src={proxyCardArtwork(state.artworkUrl)}
                   alt="Artwork"
@@ -53,12 +54,12 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
               </div>
 
               <div className="min-w-0 flex-1">
-                <div className="text-foreground truncate text-xs font-semibold">
+                <div className="text-label text-footnote truncate font-semibold">
                   {state.artworkSource === "WIKI_FETCHED"
                     ? "Wiki Article Artwork"
                     : "Custom Artwork"}
                 </div>
-                <div className="text-muted-foreground truncate font-mono text-xs">
+                <div className="text-label-secondary text-footnote truncate font-mono">
                   {state.artworkUrl}
                 </div>
               </div>
@@ -68,14 +69,14 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
               variant="ghost"
               size="sm"
               onClick={() => onChange((p) => ({ ...p, artworkUrl: null, enableArtwork: false }))}
-              className="text-muted-foreground hover:text-destructive h-6 shrink-0 px-2 text-xs"
+              className="text-label-secondary hover:text-destructive text-footnote h-6 shrink-0 px-2"
             >
               Clear
             </Button>
           </div>
         ) : (
           <div>
-            <label className="text-muted-foreground mb-1 block text-xs font-medium">
+            <label className="text-label-secondary text-footnote mb-1 block font-medium">
               Direct Image URL (or search via Lore Import)
             </label>
             <Input
@@ -89,14 +90,14 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
                 }))
               }
               placeholder="https://..."
-              className="h-8 font-mono text-xs"
+              className="text-footnote h-8 font-mono"
             />
           </div>
         )}
 
         {state.artworkUrl && state.enableArtwork && (
           <div className="flex items-center gap-3 pt-1">
-            <span className="text-muted-foreground shrink-0 text-xs font-medium">
+            <span className="text-label-secondary text-footnote shrink-0 font-medium">
               Artwork Opacity:
             </span>
             <input
@@ -106,9 +107,9 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
               step="0.05"
               value={state.artworkOpacity ?? 0.85}
               onChange={(e) => onChange((p) => ({ ...p, artworkOpacity: Number(e.target.value) }))}
-              className="bg-muted accent-primary h-1 flex-1 rounded-lg"
+              className="bg-fill-3 accent-primary rounded-control h-1 flex-1"
             />
-            <span className="text-foreground w-8 text-right font-mono text-xs">
+            <span className="text-label text-footnote w-8 text-right tabular-nums">
               {Math.round((state.artworkOpacity ?? 0.85) * 100)}%
             </span>
           </div>
@@ -118,31 +119,31 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
       {/* Icons and Sigils */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {/* Primary Emblem */}
-        <div className="border-border bg-muted/20 space-y-2 rounded-lg border p-3">
+        <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
           <div className="flex items-center justify-between">
-            <span className="text-foreground text-xs font-semibold">Primary Icon</span>
+            <span className="text-label text-footnote font-semibold">Primary Icon</span>
             <Button
               variant="outline"
               size="sm"
               onClick={() => onOpenIconBrowser("emblem")}
-              className="h-6 gap-1 px-2 text-xs"
+              className="text-footnote h-6 gap-1 px-2"
             >
-              <Library className="text-primary h-3 w-3" />
+              <Library className="text-tint h-3 w-3" />
               4,100+ Icons
             </Button>
           </div>
 
           {state.emblemIcon ? (
-            <div className="border-border bg-card flex items-center justify-between rounded-lg border p-1.5">
+            <div className="border-separator bg-surface rounded-control flex items-center justify-between border p-1.5">
               <div className="flex items-center gap-2">
-                <div className="bg-muted border-border flex h-6 w-6 items-center justify-center rounded border p-0.5">
+                <div className="bg-fill-3 border-separator flex h-6 w-6 items-center justify-center rounded border p-0.5">
                   <img
                     src={state.emblemIcon.path}
                     alt={state.emblemIcon.name}
-                    className="h-full w-full object-contain invert filter dark:filter-none"
+                    className="h-full w-full object-contain invert filter"
                   />
                 </div>
-                <span className="max-w-[90px] truncate text-xs font-medium">
+                <span className="text-footnote max-w-[90px] truncate font-medium">
                   {state.emblemIcon.name}
                 </span>
               </div>
@@ -150,19 +151,19 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
                 variant="ghost"
                 size="sm"
                 onClick={() => onChange((p) => ({ ...p, emblemIcon: null }))}
-                className="text-muted-foreground hover:text-destructive h-5 px-1 text-xs"
+                className="text-label-secondary hover:text-destructive text-footnote h-5 px-1"
               >
                 Reset
               </Button>
             </div>
           ) : (
-            <div className="text-muted-foreground text-xs italic">
+            <div className="text-label-secondary text-footnote italic">
               Default {getCategoryLabel(state.category)} Sigil
             </div>
           )}
 
           <div className="flex items-center gap-2 pt-1">
-            <span className="text-muted-foreground shrink-0 text-xs">Scale:</span>
+            <span className="text-label-secondary text-footnote shrink-0">Scale:</span>
             <input
               type="range"
               min="0.5"
@@ -170,18 +171,18 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
               step="0.05"
               value={state.emblemScale}
               onChange={(e) => onChange((p) => ({ ...p, emblemScale: Number(e.target.value) }))}
-              className="bg-muted accent-primary h-1 flex-1 rounded-lg"
+              className="bg-fill-3 accent-primary rounded-control h-1 flex-1"
             />
-            <span className="text-foreground w-7 text-right font-mono text-xs">
+            <span className="text-label text-footnote w-7 text-right tabular-nums">
               {state.emblemScale.toFixed(2)}x
             </span>
           </div>
 
           {/* Emblem Color Swatches */}
-          <div className="border-border/40 space-y-1.5 border-t pt-2">
+          <div className="border-separator space-y-1.5 border-t pt-2">
             <div className="flex items-center justify-between">
-              <span className="text-foreground text-xs font-semibold">Emblem Color</span>
-              <span className="text-primary font-mono text-xs">
+              <span className="text-label text-footnote font-semibold">Emblem Color</span>
+              <span className="text-tint text-footnote font-mono">
                 {state.emblemColor ? state.emblemColor.toUpperCase() : "Auto"}
               </span>
             </div>
@@ -198,14 +199,14 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
                       "flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       preset.bgClass,
                       isActive
-                        ? "ring-primary ring-offset-background scale-110 border-white shadow-xs ring-2 ring-offset-2"
-                        : "border-border/60 opacity-80 hover:scale-105 hover:opacity-100"
+                        ? "ring-tint ring-offset-surface border-separator shadow-card scale-110 ring-2 ring-offset-2"
+                        : "border-separator opacity-80 hover:opacity-100"
                     )}
                   />
                 );
               })}
               <label
-                className="border-border bg-card relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105"
+                className="border-separator bg-surface relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                 title="Custom Hex Color"
               >
                 <input
@@ -214,38 +215,38 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
                   onChange={(e) => onChange((p) => ({ ...p, emblemColor: e.target.value }))}
                   className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                 />
-                <Palette className="text-muted-foreground h-3 w-3" />
+                <Palette className="text-label-secondary h-3 w-3" />
               </label>
             </div>
           </div>
         </div>
 
         {/* Watermark Icon */}
-        <div className="border-border bg-muted/20 space-y-2 rounded-lg border p-3">
+        <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
           <div className="flex items-center justify-between">
-            <span className="text-foreground text-xs font-semibold">Background Pattern</span>
+            <span className="text-label text-footnote font-semibold">Background Pattern</span>
             <Button
               variant="outline"
               size="sm"
               onClick={() => onOpenIconBrowser("watermark")}
-              className="h-6 gap-1 px-2 text-xs"
+              className="text-footnote h-6 gap-1 px-2"
             >
-              <Library className="text-primary h-3 w-3" />
+              <Library className="text-tint h-3 w-3" />
               Open
             </Button>
           </div>
 
           {state.watermarkIcon ? (
-            <div className="border-border bg-card flex items-center justify-between rounded-lg border p-1.5">
+            <div className="border-separator bg-surface rounded-control flex items-center justify-between border p-1.5">
               <div className="flex items-center gap-2">
-                <div className="bg-muted border-border flex h-6 w-6 items-center justify-center rounded border p-0.5">
+                <div className="bg-fill-3 border-separator flex h-6 w-6 items-center justify-center rounded border p-0.5">
                   <img
                     src={state.watermarkIcon.path}
                     alt={state.watermarkIcon.name}
-                    className="h-full w-full object-contain invert filter dark:filter-none"
+                    className="h-full w-full object-contain invert filter"
                   />
                 </div>
-                <span className="max-w-[90px] truncate text-xs font-medium">
+                <span className="text-footnote max-w-[90px] truncate font-medium">
                   {state.watermarkIcon.name}
                 </span>
               </div>
@@ -253,19 +254,19 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
                 variant="ghost"
                 size="sm"
                 onClick={() => onChange((p) => ({ ...p, watermarkIcon: null }))}
-                className="text-muted-foreground hover:text-destructive h-5 px-1 text-xs"
+                className="text-label-secondary hover:text-destructive text-footnote h-5 px-1"
               >
                 Reset
               </Button>
             </div>
           ) : (
-            <div className="text-muted-foreground text-xs italic">
+            <div className="text-label-secondary text-footnote italic">
               Default {getCategoryLabel(state.category)} Watermark
             </div>
           )}
 
           <div className="flex items-center gap-2 pt-1">
-            <span className="text-muted-foreground shrink-0 text-xs">Opacity:</span>
+            <span className="text-label-secondary text-footnote shrink-0">Opacity:</span>
             <input
               type="range"
               min="0.05"
@@ -275,18 +276,18 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
               onChange={(e) =>
                 onChange((p) => ({ ...p, watermarkOpacity: Number(e.target.value) }))
               }
-              className="bg-muted accent-primary h-1 flex-1 rounded-lg"
+              className="bg-fill-3 accent-primary rounded-control h-1 flex-1"
             />
-            <span className="text-foreground w-7 text-right font-mono text-xs">
+            <span className="text-label text-footnote w-7 text-right tabular-nums">
               {Math.round(state.watermarkOpacity * 100)}%
             </span>
           </div>
 
           {/* Watermark Color Swatches */}
-          <div className="border-border/40 space-y-1.5 border-t pt-2">
+          <div className="border-separator space-y-1.5 border-t pt-2">
             <div className="flex items-center justify-between">
-              <span className="text-foreground text-xs font-semibold">Watermark Color</span>
-              <span className="text-primary font-mono text-xs">
+              <span className="text-label text-footnote font-semibold">Watermark Color</span>
+              <span className="text-tint text-footnote font-mono">
                 {state.watermarkColor ? state.watermarkColor.toUpperCase() : "Auto"}
               </span>
             </div>
@@ -303,14 +304,14 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
                       "flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                       preset.bgClass,
                       isActive
-                        ? "ring-primary ring-offset-background scale-110 border-white shadow-xs ring-2 ring-offset-2"
-                        : "border-border/60 opacity-80 hover:scale-105 hover:opacity-100"
+                        ? "ring-tint ring-offset-surface border-separator shadow-card scale-110 ring-2 ring-offset-2"
+                        : "border-separator opacity-80 hover:opacity-100"
                     )}
                   />
                 );
               })}
               <label
-                className="border-border bg-card relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:scale-105"
+                className="border-separator bg-surface relative flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                 title="Custom Hex Color"
               >
                 <input
@@ -319,7 +320,7 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
                   onChange={(e) => onChange((p) => ({ ...p, watermarkColor: e.target.value }))}
                   className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                 />
-                <Palette className="text-muted-foreground h-3 w-3" />
+                <Palette className="text-label-secondary h-3 w-3" />
               </label>
             </div>
           </div>
@@ -327,10 +328,10 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
       </div>
 
       {/* Custom Hue Override */}
-      <div className="border-border flex items-center justify-between border-t pt-2">
+      <div className="border-separator flex items-center justify-between border-t pt-2">
         <div>
-          <span className="text-foreground block text-xs font-medium">Custom Hue Override</span>
-          <span className="text-muted-foreground text-xs">
+          <span className="text-label text-footnote block font-medium">Custom Hue Override</span>
+          <span className="text-label-secondary text-footnote">
             Overrides base material gradient hue
           </span>
         </div>
@@ -339,14 +340,14 @@ export const RackAppearanceSection = React.memo(function RackAppearanceSection({
             type="color"
             value={state.accentColorOverride || "#6366f1"}
             onChange={(e) => onChange((p) => ({ ...p, accentColorOverride: e.target.value }))}
-            className="h-8 w-8 cursor-pointer rounded-lg border-0 bg-transparent"
+            className="rounded-control h-8 w-8 cursor-pointer border-0 bg-transparent"
           />
           {state.accentColorOverride && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onChange((p) => ({ ...p, accentColorOverride: "" }))}
-              className="text-muted-foreground h-6 px-1.5 text-xs"
+              className="text-label-secondary text-footnote h-6 px-1.5"
             >
               Reset
             </Button>
