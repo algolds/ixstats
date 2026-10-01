@@ -91,6 +91,50 @@ function restrictionTypes(entry: PageEntry): string[] {
 const urlOf = (siteUrl: string, title: string) =>
   `${siteUrl}/wiki/${encodeURIComponent(title.replace(/ /g, "_")).replace(/%3A/g, ":").replace(/%2F/g, "/")}`;
 
+/** What `prop=info` says of one page, for the props the request asked for. */
+function pageInfo(
+  entry: PageEntry,
+  props: ReadonlySet<InfoProp>,
+  lookups: {
+    siteUrl: string;
+    restrictions: Map<string, PageRestrictionRow[]>;
+    related: Map<string, { pageId: number }>;
+  }
+): JsonObject {
+  const info: JsonObject = {
+    contentmodel: contentModelFor(entry.title).model,
+    pagelanguage: "en",
+    pagelanguagehtmlcode: "en",
+    pagelanguagedir: "ltr",
+  };
+  const { row } = entry;
+  if (row) {
+    info.touched = mwTimestamp(row.touched);
+    info.lastrevid = row.headRevId ?? 0;
+    info.length = row.length;
+    info.redirect = row.isRedirect;
+  }
+  if (props.has("protection")) {
+    info.protection = protectionOf(lookups.restrictions.get(entry.title) ?? []);
+    info.restrictiontypes = restrictionTypes(entry);
+  }
+  const talk = props.has("talkid") ? talkTitleOf(entry.title) : null;
+  const talkRow = talk ? lookups.related.get(talk) : undefined;
+  if (talkRow) info.talkid = talkRow.pageId;
+  const subject = props.has("subjectid") ? subjectTitleOf(entry.title) : null;
+  const subjectRow = subject ? lookups.related.get(subject) : undefined;
+  if (subjectRow) info.subjectid = subjectRow.pageId;
+  if (props.has("url")) {
+    const url = urlOf(lookups.siteUrl, entry.title);
+    info.fullurl = url;
+    info.editurl = `${lookups.siteUrl}${SCRIPT_PATH}/index.php?title=${encodeURIComponent(entry.title.replace(/ /g, "_"))}&action=edit`;
+    info.canonicalurl = url;
+  }
+  if (props.has("readable")) info.readable = true;
+  if (props.has("displaytitle")) info.displaytitle = escapeHtml(entry.title);
+  return info;
+}
+
 export async function propInfo(pc: PropContext): Promise<void> {
   const { rc, pageSet } = pc;
   const props = new Set<InfoProp>(rc.params.scope("in", "info").listOf("prop", INFO_PROPS));
@@ -107,40 +151,8 @@ export async function propInfo(pc: PropContext): Promise<void> {
   const related = new Map(
     (await store.pagesByTitle(relatedTitles.filter((t): t is string => t !== null))).map((row) => [row.title, row])
   );
-
   for (const entry of entries) {
-    const info: JsonObject = {
-      contentmodel: contentModelFor(entry.title).model,
-      pagelanguage: "en",
-      pagelanguagehtmlcode: "en",
-      pagelanguagedir: "ltr",
-    };
-    const { row } = entry;
-    if (row) {
-      info.touched = mwTimestamp(row.touched);
-      info.lastrevid = row.headRevId ?? 0;
-      info.length = row.length;
-      info.redirect = row.isRedirect;
-    }
-    if (props.has("protection")) {
-      info.protection = protectionOf(restrictions.get(entry.title) ?? []);
-      info.restrictiontypes = restrictionTypes(entry);
-    }
-    const talk = talkTitleOf(entry.title);
-    const talkRow = talk ? related.get(talk) : undefined;
-    if (props.has("talkid") && talkRow) info.talkid = talkRow.pageId;
-    const subject = subjectTitleOf(entry.title);
-    const subjectRow = subject ? related.get(subject) : undefined;
-    if (props.has("subjectid") && subjectRow) info.subjectid = subjectRow.pageId;
-    if (props.has("url")) {
-      const url = urlOf(siteUrl, entry.title);
-      info.fullurl = url;
-      info.editurl = `${siteUrl}${SCRIPT_PATH}/index.php?title=${encodeURIComponent(entry.title.replace(/ /g, "_"))}&action=edit`;
-      info.canonicalurl = url;
-    }
-    if (props.has("readable")) info.readable = true;
-    if (props.has("displaytitle")) info.displaytitle = escapeHtml(entry.title);
-    Object.assign(fieldsOf(pc, entry), info);
+    Object.assign(fieldsOf(pc, entry), pageInfo(entry, props, { siteUrl, restrictions, related }));
   }
 }
 
@@ -201,14 +213,22 @@ function slotJson(rev: RevisionRow, { props, version }: RevisionOptions): JsonOb
   return slot;
 }
 
-export function revisionJson(rev: RevisionRow, options: RevisionOptions): JsonObject {
-  const { props, slots, version } = options;
+function revisionIds(rev: RevisionRow, props: ReadonlySet<RevProp>): JsonObject {
   const out: JsonObject = {};
   if (props.has("ids")) {
     out.revid = rev.revId;
     out.parentid = rev.parentId;
   }
   if (props.has("flags")) out.minor = rev.minor;
+  if (props.has("timestamp")) out.timestamp = mwTimestamp(rev.timestamp);
+  if (props.has("size")) out.size = rev.size;
+  if (props.has("tags")) out.tags = [];
+  return out;
+}
+
+/** The revision's author, honouring a revision deletion of the user name. */
+function revisionAuthor(rev: RevisionRow, props: ReadonlySet<RevProp>): JsonObject {
+  const out: JsonObject = {};
   if (props.has("user")) {
     if (rev.userHidden) out.userhidden = true;
     else {
@@ -217,8 +237,12 @@ export function revisionJson(rev: RevisionRow, options: RevisionOptions): JsonOb
     }
   }
   if (props.has("userid") && !rev.userHidden) out.userid = rev.userId;
-  if (props.has("timestamp")) out.timestamp = mwTimestamp(rev.timestamp);
-  if (props.has("size")) out.size = rev.size;
+  return out;
+}
+
+/** The comment and the hash, honouring revision deletion of the comment and of the text. */
+function revisionDescribed(rev: RevisionRow, props: ReadonlySet<RevProp>): JsonObject {
+  const out: JsonObject = {};
   if (props.has("sha1")) {
     if (rev.textHidden) out.sha1hidden = true;
     else out.sha1 = rev.sha1;
@@ -230,21 +254,32 @@ export function revisionJson(rev: RevisionRow, options: RevisionOptions): JsonOb
       if (props.has("parsedcomment")) out.parsedcomment = escapeHtml(rev.comment ?? "");
     }
   }
-  if (props.has("tags")) out.tags = [];
-  if (slots) {
-    const slot = slotJson(rev, options);
-    if (slot) out.slots = { main: slot };
-  } else {
-    const { model, format } = contentModelFor(rev.title);
-    if (props.has("contentmodel") || props.has("content")) out.contentmodel = model;
-    if (props.has("content")) {
-      out.contentformat = format;
-      if (rev.textHidden) out.texthidden = true;
-      else if (version === 1) out["*"] = rev.content ?? "";
-      else out.content = rev.content ?? "";
-    }
+  return out;
+}
+
+/** The text as the revision itself carries it (no `rvslots`): MediaWiki's legacy shape. */
+function legacyContent(rev: RevisionRow, { props, version }: RevisionOptions): JsonObject {
+  const out: JsonObject = {};
+  const { model, format } = contentModelFor(rev.title);
+  if (props.has("contentmodel") || props.has("content")) out.contentmodel = model;
+  if (props.has("content")) {
+    out.contentformat = format;
+    if (rev.textHidden) out.texthidden = true;
+    else if (version === 1) out["*"] = rev.content ?? "";
+    else out.content = rev.content ?? "";
   }
   return out;
+}
+
+export function revisionJson(rev: RevisionRow, options: RevisionOptions): JsonObject {
+  const { props, slots } = options;
+  const slot = slots ? slotJson(rev, options) : undefined;
+  return {
+    ...revisionIds(rev, props),
+    ...revisionAuthor(rev, props),
+    ...revisionDescribed(rev, props),
+    ...(slots ? (slot ? { slots: { main: slot } } : {}) : legacyContent(rev, options)),
+  };
 }
 
 function decodeRevisionCursor(raw: string | undefined): RevisionCursor | undefined {

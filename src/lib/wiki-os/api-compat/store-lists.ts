@@ -325,6 +325,8 @@ export async function listUsers(query: UserListQuery): Promise<UserListRow[]> {
       : db.wikiUserGroup.findMany({
           where: { OR: [{ userId: { in: ids } }, { wikiUsername: { in: names } }] },
           select: { userId: true, wikiUsername: true, group: true, expiresAt: true },
+          // Several rows per user: more than the guard's default 1000 for a full page of users.
+          take: 50_000,
         }),
     query.withEditCount && links.length > 0
       ? db.wikiRevision.groupBy({

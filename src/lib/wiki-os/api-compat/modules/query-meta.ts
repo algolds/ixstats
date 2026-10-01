@@ -138,7 +138,6 @@ function general(rc: ApiContext): JsonObject {
     servername: new URL(server).host,
     wikiid: "ixwiki",
     time: mwTimestamp(rc.now),
-    readonly: false,
     writeapi: true,
     uploadsenabled: false,
     interwikimagic: true,

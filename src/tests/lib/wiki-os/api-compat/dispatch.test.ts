@@ -77,6 +77,24 @@ describe("errors and the request pipeline", () => {
     expect((await fast.get({ action: "query", meta: "tokens" })).query).toBeDefined();
   });
 
+  it("limits an anonymous caller by address and a logged-in bot by account", async () => {
+    const seen: string[] = [];
+    const deps = await makeDeps({
+      rateLimit: async (identity, bucket) => {
+        seen.push(`${bucket}:${identity}`);
+        return { success: true, resetAt: new Date(NOW.getTime() + 1000) };
+      },
+    });
+    await call(deps, "action=query&meta=tokens");
+    expect(seen).toEqual(["wiki_api:ip:203.0.113.9"]);
+    seen.length = 0;
+    const bot = new Bot(deps);
+    await bot.login();
+    seen.length = 0;
+    await bot.get({ action: "query", meta: "tokens" });
+    expect(seen).toEqual(["wiki_api:user:u-heku"]); // by account, not by address
+  });
+
   it("adds no warnings to a clean request", async () => {
     const body = await run("action=query&meta=siteinfo&siprop=general&formatversion=2");
     expect(body.warnings).toBeUndefined();

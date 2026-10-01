@@ -29,11 +29,6 @@ export function mwTimestamp(date: Date): string {
   return `${date.toISOString().slice(0, 19)}Z`;
 }
 
-/** `20260930123456`: the 14-digit form MediaWiki uses in continuation values. */
-export function mwTimestamp14(date: Date): string {
-  return date.toISOString().slice(0, 19).replace(/[-:T]/g, "");
-}
-
 /** v1 shows text as `{"*": text}`; v2 shows the text itself. */
 export function wrapText(text: string, version: FormatVersion): JsonValue {
   return version === 1 ? { "*": text } : text;

@@ -12,6 +12,7 @@ import { createHash } from "node:crypto";
 import { ApiError, missingOneOf, mixedParams } from "../errors";
 import { mwTimestamp, type JsonObject } from "../format";
 import type { ApiParams } from "../params";
+import type { PageRow } from "../store-types";
 import type { ApiContext } from "../types";
 import { beginWrite, namedPage } from "./write-common";
 import { contentModelFor } from "~/lib/wiki-os/xml/content-model";
@@ -117,13 +118,16 @@ async function baseConflicts(rc: ApiContext, p: ApiParams, title: string, articl
   return false;
 }
 
-export async function runEdit(rc: ApiContext): Promise<JsonObject> {
-  beginWrite(rc);
-  const p = rc.params.scope("", "edit");
-  const { title, row } = await namedPage(rc, p, { title: "title", id: "pageid" });
-  const textParams = readTextParams(p);
+interface EditTarget {
+  title: string;
+  /** The live page, or null when it does not exist (or is deleted). */
+  row: PageRow | null;
+  model: string;
+  textParams: TextParams;
+}
 
-  const model = contentModelFor(title).model;
+/** The refusals that need no permission check: the model, createonly and nocreate. */
+function checkEditPreconditions(p: ApiParams, row: PageRow | null, model: string): void {
   const requestedModel = p.string("contentmodel");
   if (requestedModel !== undefined && requestedModel !== model) {
     throw new ApiError("cantchangecontentmodel", "You don't have permission to change the content model of a page.");
@@ -134,6 +138,20 @@ export async function runEdit(rc: ApiContext): Promise<JsonObject> {
   if (!row && p.flag("nocreate")) {
     throw new ApiError("missingtitle", "The page you specified doesn't exist.");
   }
+}
+
+async function resolveEditTarget(rc: ApiContext, p: ApiParams): Promise<EditTarget> {
+  const { title, row } = await namedPage(rc, p, { title: "title", id: "pageid" });
+  const textParams = readTextParams(p);
+  const model = contentModelFor(title).model;
+  checkEditPreconditions(p, row, model);
+  return { title, row, model, textParams };
+}
+
+export async function runEdit(rc: ApiContext): Promise<JsonObject> {
+  beginWrite(rc);
+  const p = rc.params.scope("", "edit");
+  const { title, row, model, textParams } = await resolveEditTarget(rc, p);
 
   // The permission gate every save passes (block, namespace, protection, rights; a deleted page is refused here).
   await rc.deps.services.assertCanEdit(rc.session.ctx, title);
@@ -141,11 +159,9 @@ export async function runEdit(rc: ApiContext): Promise<JsonObject> {
   const base = row ? ((await rc.deps.store.wikitextByArticle([row.articleId])).get(row.articleId) ?? "") : "";
   const edited = editedText(p, base, textParams);
   const wikitext = normalized(edited.wikitext);
-  const hasBase = p.has("baserevid") || p.has("basetimestamp");
-  if (row && hasBase && (await baseConflicts(rc, p, title, row.articleId))) {
+  if (row && (p.has("baserevid") || p.has("basetimestamp")) && (await baseConflicts(rc, p, title, row.articleId))) {
     throw new ApiError("editconflict", "Edit conflict detected.");
   }
-
   if (row && wikitext === normalized(base)) {
     return { edit: { result: "Success", nochange: true, title, pageid: row.pageId, contentmodel: model } };
   }

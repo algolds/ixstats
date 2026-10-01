@@ -13,7 +13,6 @@ import {
   ResponseBuilder,
   errorBody,
   mwTimestamp,
-  mwTimestamp14,
   toWire,
   wrapText,
 } from "~/lib/wiki-os/api-compat/format";
@@ -54,10 +53,8 @@ describe("wrapText", () => {
 });
 
 describe("timestamps", () => {
-  it("formats ISO to the second and 14 digits for continuation values", () => {
-    const date = new Date("2026-09-30T12:34:56.789Z");
-    expect(mwTimestamp(date)).toBe("2026-09-30T12:34:56Z");
-    expect(mwTimestamp14(date)).toBe("20260930123456");
+  it("formats ISO to the second, without fractions", () => {
+    expect(mwTimestamp(new Date("2026-09-30T12:34:56.789Z"))).toBe("2026-09-30T12:34:56Z");
   });
 });
 

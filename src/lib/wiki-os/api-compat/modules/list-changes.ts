@@ -56,26 +56,39 @@ interface RcFilter {
   props: ReadonlySet<RcProp>;
 }
 
+function editWho(rev: RevisionRow, props: ReadonlySet<RcProp>): JsonObject {
+  const out: JsonObject = {};
+  if (props.has("user")) {
+    if (rev.userHidden) out.userhidden = true;
+    else {
+      out.user = rev.user ?? "";
+      if (isAnonymousName(rev.user)) out.anon = true;
+    }
+  }
+  if (props.has("userid") && !rev.userHidden) out.userid = rev.userId;
+  return out;
+}
+
+function editComment(rev: RevisionRow, props: ReadonlySet<RcProp>): JsonObject {
+  if (!props.has("comment") && !props.has("parsedcomment")) return {};
+  if (rev.commentHidden) return { commenthidden: true };
+  return {
+    ...(props.has("comment") ? { comment: rev.comment ?? "" } : {}),
+    ...(props.has("parsedcomment") ? { parsedcomment: escapeHtml(rev.comment ?? "") } : {}),
+  };
+}
+
 function editItem(rev: RevisionRow, { props }: RcFilter): JsonObject {
   const isNew = rev.parentId === 0;
-  const anon = isAnonymousName(rev.user);
   return {
     type: isNew ? "new" : "edit",
     ...(props.has("title") ? { ns: rev.namespace, title: rev.title } : {}),
     ...(props.has("ids") ? { pageid: rev.pageId, revid: rev.revId, old_revid: rev.parentId, rcid: rev.revId } : {}),
-    ...(props.has("user") ? (rev.userHidden ? { userhidden: true } : { user: rev.user ?? "", ...(anon ? { anon: true } : {}) }) : {}),
-    ...(props.has("userid") && !rev.userHidden ? { userid: rev.userId } : {}),
+    ...editWho(rev, props),
     ...(props.has("flags") ? { bot: false, new: isNew, minor: rev.minor } : {}),
     ...(props.has("sizes") ? { oldlen: rev.size - rev.sizeDiff, newlen: rev.size } : {}),
     ...(props.has("timestamp") ? { timestamp: mwTimestamp(rev.timestamp) } : {}),
-    ...(props.has("comment") || props.has("parsedcomment")
-      ? rev.commentHidden
-        ? { commenthidden: true }
-        : {
-            ...(props.has("comment") ? { comment: rev.comment ?? "" } : {}),
-            ...(props.has("parsedcomment") ? { parsedcomment: escapeHtml(rev.comment ?? "") } : {}),
-          }
-      : {}),
+    ...editComment(rev, props),
     ...(props.has("sha1") ? { sha1: rev.sha1 } : {}),
     ...(props.has("tags") ? { tags: [] } : {}),
   };
@@ -140,44 +153,59 @@ function keepLog(row: LogRow, { show }: RcFilter, namespaces: readonly number[] 
   );
 }
 
-async function runRecentChanges(rc: ApiContext, p: ApiParams): Promise<ListResult> {
+interface RcRequest {
+  filter: RcFilter;
+  limit: number;
+  newer: boolean;
+  namespaces: number[] | undefined;
+  cursor: { time: number; kind: string; id: number } | undefined;
+  user: string | undefined;
+  excludeUser: string | undefined;
+  from: Date | undefined;
+  to: Date | undefined;
+}
+
+function readRcRequest(rc: ApiContext, p: ApiParams): RcRequest {
   const filter: RcFilter = {
     props: new Set(p.listOf("prop", RC_PROPS, ["title", "timestamp", "ids"])),
     types: new Set(p.listOf("type", RC_TYPES, RC_TYPES)),
     show: new Set(p.listOf("show", RC_SHOW)),
   };
   checkShow([...filter.show]);
-  const limit = p.limit("limit", { fallback: 10, high: rc.highLimits });
-  const dir = directionParam(p, ["newer", "older"], "older");
-  const newer = dir === "ascending";
-  const namespaces = namespacesParam(p);
-  const cursorParts = optionalCursor(p.raw("continue"), ["s", "s", "n"] as const);
-  const cursor = cursorParts
-    ? { time: new Date(cursorParts[0]).getTime(), kind: cursorParts[1], id: cursorParts[2] }
-    : undefined;
-  if (cursor && (Number.isNaN(cursor.time) || !["e", "l"].includes(cursor.kind))) {
-    throw badContinue();
-  }
+  const parts = optionalCursor(p.raw("continue"), ["s", "s", "n"] as const);
+  const cursor = parts ? { time: new Date(parts[0]).getTime(), kind: parts[1], id: parts[2] } : undefined;
+  if (cursor && (Number.isNaN(cursor.time) || !["e", "l"].includes(cursor.kind))) throw badContinue();
   const user = p.string("user");
   const excludeUser = p.string("excludeuser");
-  const start = p.timestamp("start", rc.now);
-  const end = p.timestamp("end", rc.now);
-  const cursors = sourceCursors(cursor);
-  const [from, to] = [start, end];
+  return {
+    filter,
+    limit: p.limit("limit", { fallback: 10, high: rc.highLimits }),
+    newer: directionParam(p, ["newer", "older"], "older") === "ascending",
+    namespaces: namespacesParam(p),
+    cursor,
+    user: user ? normalizeWikiUsername(user) : undefined,
+    excludeUser: excludeUser ? normalizeWikiUsername(excludeUser) : undefined,
+    from: p.timestamp("start", rc.now),
+    to: p.timestamp("end", rc.now),
+  };
+}
 
-  // The stores answer up to `limit + 1` rows; a short in-memory filter may leave fewer, so read a window.
-  const window = limit * 3;
+/** Up to a window of rows from each source the request asks for (the stores answer `window + 1` rows each). */
+async function readRcSources(rc: ApiContext, request: RcRequest, window: number) {
+  const { filter, newer, cursor } = request;
+  const cursors = sourceCursors(cursor);
   const wantsEdits = filter.types.has("edit") || filter.types.has("new");
+  const dir = newer ? "newer" : "older";
   const [revisions, logs] = await Promise.all([
     wantsEdits
       ? rc.deps.store.findRevisions({
-          dir: newer ? "newer" : "older",
-          namespaces,
-          users: user ? [normalizeWikiUsername(user)] : undefined,
-          excludeUser: excludeUser ? normalizeWikiUsername(excludeUser) : undefined,
+          dir,
+          namespaces: request.namespaces,
+          users: request.user ? [request.user] : undefined,
+          excludeUser: request.excludeUser,
           minor: filter.show.has("minor") ? true : filter.show.has("!minor") ? false : undefined,
-          from: from ? { timestamp: from } : undefined,
-          to: to ? { timestamp: to } : undefined,
+          from: request.from ? { timestamp: request.from } : undefined,
+          to: request.to ? { timestamp: request.to } : undefined,
           cursor: cursors.edit,
           limit: window,
           withContent: false,
@@ -185,49 +213,59 @@ async function runRecentChanges(rc: ApiContext, p: ApiParams): Promise<ListResul
       : [],
     filter.types.has("log")
       ? rc.deps.store.findLogs({
-          dir: newer ? "newer" : "older",
-          user: user ? normalizeWikiUsername(user) : undefined,
-          excludeUser: excludeUser ? normalizeWikiUsername(excludeUser) : undefined,
-          from,
-          to,
+          dir,
+          user: request.user,
+          excludeUser: request.excludeUser,
+          from: request.from,
+          to: request.to,
           cursor: cursors.log,
           limit: window,
         })
       : [],
   ]);
+  return { revisions, logs };
+}
 
-  const entry = (kind: "e" | "l") => (time: Date, id: number, item: JsonObject): RcEntry => ({
-    time: time.getTime(),
-    rank: kind === "e" ? 1 : 0,
-    id,
-    item,
-  });
-  const edit = entry("e");
-  const log = entry("l");
-  const seenRevisions = revisions.slice(0, window);
-  const seenLogs = logs.slice(0, window);
+const rcEntry = (kind: "e" | "l", time: Date, id: number, item: JsonObject): RcEntry => ({
+  time: time.getTime(),
+  rank: kind === "e" ? 1 : 0,
+  id,
+  item,
+});
+
+async function runRecentChanges(rc: ApiContext, p: ApiParams): Promise<ListResult> {
+  const request = readRcRequest(rc, p);
+  const { filter, limit, newer, namespaces } = request;
+  // The stores answer up to `limit + 1` rows; an in-memory filter may leave fewer, so read a window.
+  const window = limit * 3;
+  const { revisions, logs } = await readRcSources(rc, request, window);
+  const order = (a: RcEntry, b: RcEntry) => (newer ? 1 : -1) * compareEntries(a, b);
+
   const entries = [
-    ...seenRevisions.filter((rev) => keepEdit(rev, filter)).map((rev) => edit(rev.timestamp, rev.revId, editItem(rev, filter))),
-    ...seenLogs.filter((row) => keepLog(row, filter, namespaces)).map((row) => log(row.timestamp, row.logId, logItem(row, filter))),
-  ].sort((a, b) => (newer ? 1 : -1) * compareEntries(a, b));
+    ...revisions
+      .slice(0, window)
+      .filter((rev) => keepEdit(rev, filter))
+      .map((rev) => rcEntry("e", rev.timestamp, rev.revId, editItem(rev, filter))),
+    ...logs
+      .slice(0, window)
+      .filter((row) => keepLog(row, filter, namespaces))
+      .map((row) => rcEntry("l", row.timestamp, row.logId, logItem(row, filter))),
+  ].sort(order);
 
   // A source cut short hides rows beyond its last one: nothing past the earliest such row can be trusted.
-  const unseen: RcEntry[] = [
-    ...(revisions.length > window ? [edit(revisions[window]!.timestamp, revisions[window]!.revId, {})] : []),
-    ...(logs.length > window ? [log(logs[window]!.timestamp, logs[window]!.logId, {})] : []),
-  ].sort((a, b) => (newer ? 1 : -1) * compareEntries(a, b));
-  const horizon = unseen[0];
-  const trusted = horizon
-    ? entries.filter((candidate) => (newer ? 1 : -1) * compareEntries(candidate, horizon) < 0)
-    : entries;
+  const extraRevision = revisions[window];
+  const extraLog = logs[window];
+  const horizon = [
+    ...(extraRevision ? [rcEntry("e", extraRevision.timestamp, extraRevision.revId, {})] : []),
+    ...(extraLog ? [rcEntry("l", extraLog.timestamp, extraLog.logId, {})] : []),
+  ].sort(order)[0];
+  const trusted = horizon ? entries.filter((candidate) => order(candidate, horizon) < 0) : entries;
 
-  const page = trusted.slice(0, limit);
   const nextEntry = trusted[limit] ?? horizon;
-  const nextKind = nextEntry?.rank === 1 ? "e" : "l";
   return {
-    items: page.map((candidate) => candidate.item),
+    items: trusted.slice(0, limit).map((candidate) => candidate.item),
     next: nextEntry
-      ? encodeCursor([new Date(nextEntry.time).toISOString(), nextKind, nextEntry.id])
+      ? encodeCursor([new Date(nextEntry.time).toISOString(), nextEntry.rank === 1 ? "e" : "l", nextEntry.id])
       : null,
   };
 }

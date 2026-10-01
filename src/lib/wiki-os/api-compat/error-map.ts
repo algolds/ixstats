@@ -33,7 +33,7 @@ function fromForbidden(message: string): ApiError {
  * The api.php error for a service refusal, or null when `error` is not one (a bug: the dispatcher
  * logs it and answers `internal_api_error`).
  */
-export function toApiError(error: unknown): ApiError | null {
+export function toApiError(error: Error): ApiError | null {
   if (error instanceof ApiError) return error;
   if (error instanceof PageOperationError) return fromPageCode(error.code, error.message);
   if (error instanceof TRPCError) return fromTrpc(error);

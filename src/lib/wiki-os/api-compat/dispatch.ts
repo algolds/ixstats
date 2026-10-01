@@ -179,7 +179,8 @@ export async function handleApiRequest(
       now,
       loginNonce: input.loginNonceCookie,
       cookiePath: input.cookiePath,
-      clientKey: input.clientKey,
+      // A signed-in caller is limited by account, an anonymous one by address.
+      clientKey: session.ctx.user?.id ? `user:${session.ctx.user.id}` : input.clientKey,
       setCookies,
       highLimits: session.permissions.rights.has("apihighlimits"),
     };
@@ -187,7 +188,8 @@ export async function handleApiRequest(
     await enforceRateLimit(rc, spec);
     const result = await spec.run(rc);
     return { body: response.finish(result, version), setCookies, errorCode: null };
-  } catch (error) {
+  } catch (caught) {
+    const error = caught instanceof Error ? caught : new Error(String(caught));
     const apiError = toApiError(error) ?? internalError(error);
     return {
       body: response.finish(errorBody(apiError, version, errorFormat), version),
@@ -197,7 +199,7 @@ export async function handleApiRequest(
   }
 }
 
-function internalError(error: unknown): ApiError {
+function internalError(error: Error): ApiError {
   console.error("[api.php] unexpected failure:", error);
   return new ApiError("internal_api_error", "Exception caught while handling the request.");
 }
