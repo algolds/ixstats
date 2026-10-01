@@ -14,7 +14,7 @@ import { ResponseBuilder, errorBody, type JsonValue } from "./format";
 import { ACTIONS, ACTION_NAMES, type ActionSpec } from "./actions";
 import { readMainParams, type MainRequest, type OutputSettings } from "./main-params";
 import { parseRequestParams } from "./params";
-import type { ApiContext, ApiDeps, ApiSession, CookieSpec } from "./types";
+import type { ApiContext, ApiDeps, ApiSession, CookieSpec, RequestFile } from "./types";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 
 export interface ApiRequestInput {
@@ -22,6 +22,8 @@ export interface ApiRequestInput {
   query: URLSearchParams;
   /** The form body of a POST (`application/x-www-form-urlencoded` or `multipart/form-data` text fields). */
   body: Iterable<readonly [string, string]> | null;
+  /** The file parts of a multipart POST, by field name (`action=upload`'s `file`). */
+  files?: ReadonlyMap<string, RequestFile>;
   sessionCookie: string | undefined;
   loginNonceCookie: string | undefined;
   /** The Clerk id of a signed-in browser user, if any. */
@@ -129,6 +131,7 @@ export async function handleApiRequest(
       setCookies,
       highLimits: session.permissions.rights.has("apihighlimits"),
       budget: new SizeBudget(),
+      files: input.files ?? new Map(),
     };
     assertSession(main, session);
     await enforceRateLimit(rc, spec);

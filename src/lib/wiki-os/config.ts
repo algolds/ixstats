@@ -258,3 +258,54 @@ export function getMediaWikiApiUrl(source: WikiSource = "ixwiki"): string {
   const wikiConfig = WIKI_SOURCES[source] ?? WIKI_SOURCES.ixwiki;
   return `${wikiConfig.baseUrl}${wikiConfig.apiEndpoint}`;
 }
+
+// ---------------------------------------------------------------------------
+// Uploads (plan 411)
+//
+// Server-side limits and paths. They are NOT part of the frozen `wikiosConfig`: the three `get*` readers look at the
+// environment on every call (their contract, and their tests set WIKIOS_MAX_IMAGE_AREA, WIKIOS_MAX_SVG_BYTES and
+// WIKIOS_UPLOAD_DIR after this module has loaded), and none of them names the wiki's host or endpoints.
+// ---------------------------------------------------------------------------
+
+/**
+ * The largest upload WikiOS takes, in bytes. A decimal 10 MB, not 10 MiB: the request body (the file itself, see
+ * app/api/wiki/upload) must stay under Next's `experimental.proxyClientMaxBodySize` (10 MiB by default), which clones
+ * a proxied body and silently truncates it past that size. Raise the two together (docs/operations/wikios-v1-cutover.md).
+ */
+export const MAX_UPLOAD_BYTES = 10_000_000;
+
+/** The file types an upload may be, by extension. The bytes are what decide: see core/file-sniff.ts. */
+export const UPLOAD_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "pdf"] as const;
+
+/**
+ * The most pixels (width times height) a raster upload may have: MediaWiki's `$wgMaxImageArea` default, 12.5 megapixels,
+ * above which it cannot make a thumbnail of the file. WikiOS refuses such an upload as MediaWiki's own would end up useless.
+ * A wiki that raised `$wgMaxImageArea` sets WIKIOS_MAX_IMAGE_AREA to the same number. An SVG is a drawing and is not held to it
+ * (it is held to the byte limit like every file). Server only.
+ */
+export const DEFAULT_MAX_IMAGE_AREA = 12_500_000;
+
+export function getMaxImageArea(): number {
+  const configured = Number(process.env.WIKIOS_MAX_IMAGE_AREA);
+  return Number.isSafeInteger(configured) && configured > 0 ? configured : DEFAULT_MAX_IMAGE_AREA;
+}
+
+/**
+ * The largest SVG upload, in bytes: half the general limit. An SVG is read by a scan (core/svg-scan.ts) that takes
+ * about a second at 10 MB in the worst case, and MediaWiki deployments commonly cap SVGs at a few megabytes. Set
+ * WIKIOS_MAX_SVG_BYTES to change it (never above `MAX_UPLOAD_BYTES`, which holds first). Server only.
+ */
+export const DEFAULT_MAX_SVG_BYTES = 5_000_000;
+
+export function getMaxSvgBytes(): number {
+  const configured = Number(process.env.WIKIOS_MAX_SVG_BYTES);
+  return Number.isSafeInteger(configured) && configured > 0 ? configured : DEFAULT_MAX_SVG_BYTES;
+}
+
+/** Where WikiOS keeps an upload until MediaWiki holds it too: WIKIOS_UPLOAD_DIR, else `.wikios-uploads` under the app. Server only. */
+export function getUploadDir(): string {
+  return process.env.WIKIOS_UPLOAD_DIR || `${process.cwd()}/.wikios-uploads`;
+}
+
+/** The path WikiOS serves an upload from while it alone holds the bytes (`wiki_assets.url`); the file's name follows. */
+export const STAGED_FILE_PATH = "/api/wiki/file/";

@@ -2,7 +2,7 @@
  * mirror-outbox.ts — the durable outbox of the outbound mirror (WikiOS -> classic MediaWiki).
  *
  * A WikiOS write that classic MediaWiki must receive (a saved revision, a move, a delete, an undelete, a
- * protection) inserts its job in the SAME transaction as the change itself, so a committed edit always has
+ * protection, an uploaded file) inserts its job in the SAME transaction as the change itself, so a committed edit always has
  * its job and a rolled-back one never does. The jobs are applied by services/mirror-worker.ts: on the
  * `wiki-mirror` cron job, and in-process shortly after a write (`scheduleMirrorKick`).
  *
@@ -22,7 +22,7 @@ const INTERFACE_NAMESPACE = 8;
 /** Name of the cron job and of its advisory lock: the cron runner and the in-process kick share it. */
 export const MIRROR_LOCK_NAME = "wiki-mirror";
 
-export type MirrorJobKind = "revision" | "move" | "delete" | "undelete" | "protect";
+export type MirrorJobKind = "revision" | "move" | "delete" | "undelete" | "protect" | "upload";
 
 /** `revision`: `restore` pushes the page's head again (a park's re-push): dated now, credited to the mirror. */
 export const revisionPayloadSchema = z.object({
@@ -58,6 +58,17 @@ export const protectPayloadSchema = z.object({
   ),
 });
 export type ProtectPayload = z.infer<typeof protectPayloadSchema>;
+
+/**
+ * `upload`: put the file staged under `sha1` (a version of the job's `File:` title) in MediaWiki, with `comment` as the
+ * version's comment. The bytes are in the staging directory (services/upload-staging.ts), never in the row.
+ */
+export const uploadPayloadSchema = z.object({
+  /** `wiki_assets.sha1`: the staged file's name. */
+  sha1: z.string(),
+  comment: z.string(),
+});
+export type UploadPayload = z.infer<typeof uploadPayloadSchema>;
 
 type Tx = Prisma.TransactionClient;
 
@@ -116,7 +127,7 @@ async function insertPageJob(
   tx: Tx,
   kind: Exclude<MirrorJobKind, "revision">,
   job: PageJobBase,
-  payload: MovePayload | ReasonPayload | ProtectPayload
+  payload: MovePayload | ReasonPayload | ProtectPayload | UploadPayload
 ): Promise<void> {
   if (!isMirrored(job.source, "to" in payload ? [job.title, payload.to] : [job.title])) return;
   await tx.wikiMirrorJob.create({
@@ -152,6 +163,11 @@ export function enqueueProtectJob(tx: Tx, job: PageJobBase & ProtectPayload): Pr
     reason: job.reason,
     restrictions: job.restrictions,
   });
+}
+
+/** Queue an `upload`: the file `payload.sha1` is the new current version of `File:` page `job.title`. */
+export function enqueueUploadJob(tx: Tx, job: PageJobBase & UploadPayload): Promise<void> {
+  return insertPageJob(tx, "upload", job, { sha1: job.sha1, comment: job.comment });
 }
 
 // ---------------------------------------------------------------------------

@@ -52,6 +52,9 @@ module.exports = {
         NEXT_PUBLIC_BASE_PATH: "",
         // Private MediaWiki render engine (scripts/ops/nginx/wikios-render-internal.conf).
         WIKIOS_MEDIAWIKI_INTERNAL_URL: "http://127.0.0.1:8081/api.php",
+        // Uploads (plan 411): staged here until the mirror's `upload` job has put them in MediaWiki. The SAME directory as
+        // the IxStates process (which runs the mirror cron job) uses: set it in the shared .env.production.local as well.
+        WIKIOS_UPLOAD_DIR: "/ixwiki/shared/wikios-uploads",
       },
     },
   ],

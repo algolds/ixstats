@@ -1,7 +1,7 @@
 "use client";
 // src/app/admin/wikios-settings/MirrorStatusSection.tsx
-// The outbound mirror's outbox (WikiOS -> classic MediaWiki): jobs by state, and the dead jobs, which an
-// administrator requeues (tried again) or discards (given up on).
+// The outbound mirror's outbox (WikiOS -> classic MediaWiki): jobs by state, the uploads still waiting, and the dead
+// jobs, which an administrator requeues (tried again) or discards (given up on).
 
 import { useState } from "react";
 import {
@@ -74,7 +74,8 @@ export function MirrorStatusSection() {
         <div>
           <h3 className="text-foreground text-xs font-bold">MediaWiki Mirror Outbox</h3>
           <p className="text-muted-foreground text-xs">
-            WikiOS edits, moves, deletions and protections on their way to classic MediaWiki
+            WikiOS edits, moves, deletions, protections and uploads on their way to classic
+            MediaWiki
           </p>
         </div>
       </div>
@@ -90,6 +91,17 @@ export function MirrorStatusSection() {
                 {status.paused
                   ? "The mirror worker is stopped (SKIP_MEDIAWIKI_SYNC): jobs accumulate and nothing is lost."
                   : "No mirror bot account is configured (WIKIOS_MEDIAWIKI_BOT_USER and WIKIOS_MEDIAWIKI_BOT_TOKEN): every job fails."}
+              </span>
+            </div>
+          )}
+
+          {status.uploadsWaiting > 0 && (
+            <div className="border-border/30 bg-background/40 text-muted-foreground flex items-start gap-2 rounded-xl border p-3 text-xs">
+              <WarningTriangle className="mt-0.5 h-4 w-4 shrink-0 text-sky-400" />
+              <span>
+                {status.uploadsWaiting} uploaded file{status.uploadsWaiting === 1 ? "" : "s"} not in
+                MediaWiki yet: WikiOS serves {status.uploadsWaiting === 1 ? "it" : "them"} from its
+                upload directory (WIKIOS_UPLOAD_DIR), which is the only copy until the job is done.
               </span>
             </div>
           )}

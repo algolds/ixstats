@@ -246,7 +246,7 @@ const SPECIAL_TOOLS: Readonly<Record<string, string>> = {
   categorytree: "/util/categories",
   templates: "/util/templates",
   listfiles: "/util/repository",
-  upload: "/util/repository",
+  upload: "/util/upload",
   export: "/util/export",
   import: "/util/import",
   blocklist: "/util/blocklist",

@@ -18,6 +18,7 @@ import {
 } from "~/lib/wiki-os/services/edit-service";
 import { purgeArticle } from "~/lib/wiki-os/services/purge-service";
 import { ensureRendered } from "~/lib/wiki-os/services/render-service";
+import { uploadFile } from "~/lib/wiki-os/services/upload-service";
 import { diffWikitext } from "~/lib/wiki-os/transformers/wikitext-diff";
 import { capWikiPermissions, getWikiPermissions } from "~/lib/wiki-os/rights";
 import { prismaAuthStore } from "./auth-store";
@@ -81,6 +82,7 @@ const services: ApiServices = {
     await PageManagementService.restoreArticle(title, actor, "ixwiki", reason || undefined);
   },
   protectPage: (params) => RightsAdminService.protect(params),
+  uploadFile,
 };
 
 export function createApiDeps(): ApiDeps {

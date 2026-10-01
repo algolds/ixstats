@@ -9,6 +9,7 @@
 import type { JsonObject } from "../format";
 import type { ApiParams } from "../params";
 import type { ApiContext } from "../types";
+import { allImages } from "./file-info";
 import { recentChanges, userContribs, logEvents } from "./list-changes";
 import { allCategories, allPages, backlinks, categoryMembers, embeddedIn, imageUsage, random, search } from "./list-pages";
 import { allUsers, blocks, protectedTitles } from "./list-users";
@@ -50,4 +51,5 @@ export const LIST_MODULES: Readonly<Record<string, ListModule>> = {
   blocks,
   protectedtitles: protectedTitles,
   random,
+  allimages: allImages,
 };

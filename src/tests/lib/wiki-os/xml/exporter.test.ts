@@ -15,9 +15,6 @@ jest.mock("~/server/db", () => jest.requireActual("./fake-wiki-db").createFakeDb
 jest.mock("~/lib/wiki-os/core/link-graph-service", () => ({
   LinkGraphService: { syncArticleLinks: jest.fn().mockResolvedValue(0) },
 }));
-jest.mock("~/lib/wiki-os/core/media-asset-service", () => ({
-  MediaAssetService: { processContentImages: jest.fn().mockResolvedValue(undefined) },
-}));
 
 const FIXTURE = readFileSync(
   join(__dirname, "../../../fixtures/xml/mediawiki-export-0.11.xml"),

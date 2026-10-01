@@ -6,7 +6,9 @@
  * authorship lookup on a fresh article. Only an article that was never rendered (or is stale and
  * has no bundle) waits, bounded, for its render; if even that fails the reader gets what there is
  * (the previous bundle, else a locally compiled fallback) marked `stale`, and asks again soon.
- * Per-viewer template chips are filled in last, per request, into the bundle's inert markers.
+ * A bundle that an older renderer version built is never waited for: it is served at once, marked
+ * `stale`, while a background render replaces it. Per-viewer template chips are filled in last, per
+ * request, into the bundle's inert markers.
  */
 
 import { ByteBoundedCache } from "~/lib/cache/byte-bounded-cache";
@@ -22,6 +24,7 @@ import {
   ensureRendered,
   loadViewBundle,
   renderFallbackView,
+  renderInBackground,
   type ViewBundle,
 } from "./render-service";
 
@@ -148,27 +151,34 @@ function sizeOf(view: SharedView): number {
 const viewKey = (articleId: string, htmlSyncedAt: Date) =>
   `view:${articleId}:${htmlSyncedAt.getTime()}`;
 
-/** The key of the view served while a render is pending: it changes when the article is saved again. */
+/**
+ * The key of the view served while a render is pending: it changes when the article is saved again,
+ * and when a render lands (`htmlSyncedAt`), so an outdated bundle is never kept past its replacement.
+ */
 const pendingViewKey = (head: ArticleViewHead) =>
-  `pending:${head.id}:${head.lastModified?.getTime() ?? 0}`;
+  `pending:${head.id}:${head.lastModified?.getTime() ?? 0}:${head.htmlSyncedAt?.getTime() ?? 0}`;
 
 /**
  * The viewer-independent view of an article, or null when it has no content to show (a stub).
- * A fresh bundle comes from the cache or one column read; otherwise the render is awaited, and
- * whatever exists afterwards (an older bundle, else a fallback) is served as `stale`.
+ * A fresh bundle comes from the cache or one column read. A bundle an older renderer version built is
+ * served at once as `stale` (kept for PENDING_VIEW_TTL_MS, so it is sanitized again at most that
+ * often) while a background render replaces it. Otherwise the render is awaited, and whatever exists
+ * afterwards (an older bundle, else a fallback) is served as `stale`.
  */
 async function readSharedView(head: ArticleViewHead): Promise<SharedView | null> {
-  const cacheKey = head.htmlSyncedAt ? viewKey(head.id, head.htmlSyncedAt) : pendingViewKey(head);
-  const cached = viewCache.get(cacheKey);
+  const freshKey = head.htmlSyncedAt && viewKey(head.id, head.htmlSyncedAt);
+  const cached = (freshKey && viewCache.get(freshKey)) || viewCache.get(pendingViewKey(head));
   if (cached) return cached;
 
   let loaded = head.htmlSyncedAt ? await loadViewBundle(head.id) : null;
-  if (!loaded?.htmlSyncedAt) {
+  if (loaded?.outdated) {
+    renderInBackground(head.id);
+  } else if (!loaded?.htmlSyncedAt) {
     await ensureRendered(head.id, { waitMs: RENDER_WAIT_MS });
     loaded = await loadViewBundle(head.id);
   }
 
-  if (loaded?.htmlSyncedAt) {
+  if (loaded?.htmlSyncedAt && !loaded.outdated) {
     const key = viewKey(head.id, loaded.htmlSyncedAt);
     const fresh = toSharedView(loaded.bundle, "rendered", key);
     viewCache.set(key, fresh, sizeOf(fresh));

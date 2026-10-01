@@ -19,6 +19,7 @@ import {
   searchShadowArticles,
   NativeSearchService,
 } from "~/lib/wiki-os/core/native-search-service";
+import { assetUrl } from "~/lib/base-path";
 import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
 
 export const wikiosSearchRouter = createTRPCRouter({
@@ -261,7 +262,8 @@ export const wikiosSearchRouter = createTRPCRouter({
         return assets.map((a) => ({
           name: a.filename || a.title,
           title: `File:${a.title}`,
-          url: a.url,
+          // An upload only WikiOS holds is a path on this site (`/api/wiki/file/<name>`): it needs the base path.
+          url: assetUrl(a.url) ?? a.url,
           size: a.sizeBytes || 0,
           width: a.width ?? 800,
           height: a.height ?? 600,

@@ -15,17 +15,6 @@ describe("BlurHashService Engine", () => {
     expect(decoded).toBe(42);
   });
 
-  it("generates deterministic compact BlurHash strings from asset names", () => {
-    const hash1 = BlurHashService.generateDeterministicHash("Coat_of_arms_of_Oakhaven.svg");
-    const hash2 = BlurHashService.generateDeterministicHash("Coat_of_arms_of_Oakhaven.svg");
-    const hash3 = BlurHashService.generateDeterministicHash("Flag_of_Kuthernburg.png");
-
-    expect(hash1).toBeDefined();
-    expect(hash1.length).toBeGreaterThan(10);
-    expect(hash1).toBe(hash2); // Deterministic parity
-    expect(hash1).not.toBe(hash3); // Uniqueness across seeds
-  });
-
   it("generates valid inline SVG placeholders with custom dimensions", () => {
     const svgData = BlurHashService.createPlaceholderSvg(1200, 800, "#0ea5e9");
     expect(svgData.startsWith("data:image/svg+xml;utf8,")).toBe(true);

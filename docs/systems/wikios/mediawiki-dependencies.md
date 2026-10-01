@@ -6,7 +6,8 @@ WikiOS owns IxWiki's pages. PostgreSQL holds every page, revision, link, categor
 group and log entry (`wiki_articles`, `wiki_revisions`, `wiki_links`, `wiki_category_members`, `wiki_image_links`,
 `wiki_template_links`, `wiki_assets`, `wiki_user_groups`, `wiki_logs`). MediaWiki is a **private render engine**, the
 **mirror target** of WikiOS edits, the **source of edits made on classic MediaWiki**, the **proof of wiki-account
-ownership**, the **host of uploaded file bytes**, and a neighbour: **sister wikis** (iiwiki, AltHistory, Commons) are other
+ownership**, the **eventual host of uploaded file bytes** (WikiOS stages an upload and serves it first, plan 411; MediaWiki
+gets the same bytes in the background), and a neighbour: **sister wikis** (iiwiki, AltHistory, Commons) are other
 people's wikis and are read where they live.
 
 Nothing else may call an IxWiki MediaWiki. A read that is not on the list below goes to Postgres, and when
@@ -33,7 +34,7 @@ expression from the configured host (`mediaWikiHostPattern()`, `isMediaWikiUrl(u
 | **mirror** | Outbound: WikiOS edits are exported to MediaWiki in the background (plan 407). |
 | **account-proof** | Reads that prove a person controls a wiki account, or who created a page. |
 | **admin-refresh** | An operator presses a button; MediaWiki is the data source of that one action. |
-| **media-bytes** | The bytes of an uploaded file live on the MediaWiki host; WikiOS proxies them. No wiki content. |
+| **media-bytes** | The bytes of an uploaded file live on the MediaWiki host (or, until the mirror's `upload` job has run, in WikiOS's staging directory); WikiOS proxies or serves them. No wiki content. |
 | **sister** | iiwiki, AltHistory, Commons: read from their own wikis; WikiOS holds no copy. |
 | **import-script** | One-time or operator-run scripts, never on a request path. |
 | **url-only** | The file builds a MediaWiki URL for a link or an image `src`; it makes no request. |
@@ -62,9 +63,10 @@ expression from the configured host (`mediaWikiHostPattern()`, `isMediaWikiUrl(u
 ### mirror (outbound, plan 407)
 
 A WikiOS write never calls MediaWiki itself. The writer inserts a row into the **outbox** (`wiki_mirror_jobs`, kinds
-`revision`, `move`, `delete`, `undelete`, `protect`) in the same transaction as the page change (`saveArticle`,
-`movePage`, `archiveArticle`, `restoreArticle`, `RightsAdminService.protect`, and the re-push of a parked head), so a
-committed change always has its job. This includes every write that arrives through WikiOS's own `/w/api.php` (plan 410):
+`revision`, `move`, `delete`, `undelete`, `protect`, `upload`) in the same transaction as the change (`saveArticle`,
+`movePage`, `archiveArticle`, `restoreArticle`, `RightsAdminService.protect`, the re-push of a parked head, and
+`uploadFile`, which records the asset, the upload log entry and the `upload` job together), so a committed change always
+has its job. This includes every write that arrives through WikiOS's own `/w/api.php` (plan 410):
 it reaches the same services, so one write is one job. The worker applies the jobs per title in order as the dedicated
 mirror bot account (`WIKIOS_MEDIAWIKI_BOT_USER` and `WIKIOS_MEDIAWIKI_BOT_TOKEN`; without them every job fails, and a bot
 login that fails is a failed job, never an anonymous write). Only the realm `ixwiki` is mirrored, and never the
@@ -73,11 +75,13 @@ login that fails is a failed job, never an anonymous write). Only the realm `ixw
 | Call site | What it does |
 | --- | --- |
 | `src/lib/wiki-os/services/mirror-revision.ts` | The revision jobs that wait next in line for one title (at most 50, about 6 MB of XML) go out together as ONE `action=import` with `assignknownusers=1` and `interwikiprefix=wikios`: each revision keeps its author (a verified wiki-account link by name, anyone else as `wikios>Name`) and its timestamp, and MediaWiki adds one null revision by the bot. Reads (`action=query`, `prop=revisions`) verify the newest text against MediaWiki's current revision and map each imported revision back to its MediaWiki revision (sha1 and timestamp), which is stamped on `wiki_revisions`. When the import is not current, the newest text only is sent as an `action=edit` by the bot, with a note on the job. |
+| `src/lib/wiki-os/services/mirror-upload.ts` | The `upload` job (plan 411): the file staged by WikiOS (`WIKIOS_UPLOAD_DIR`, named by its SHA-1) goes out as ONE multipart `action=upload` as the bot (`filename`, `file`, `comment` with the uploader's name, `text` = the `File:` page's current wikitext for a page MediaWiki lacks, `ignorewarnings=1`, token last). It is idempotent in what MediaWiki holds: `action=query&prop=imageinfo&iiprop=sha1` is asked first and after a "no change"/duplicate refusal, and a file MediaWiki holds with these bytes counts as done. When done the asset's URL switches to MediaWiki's `/images/<shard>/<Name>` path, the pages that use the file are marked stale and the staged copy is released unless another job or asset still needs it. The `File:` page's revision job and the upload job share a title, so the per-title order puts the page first. |
+| `src/lib/wiki-os/services/upload-service.ts`, `src/lib/wiki-os/services/upload-staging.ts`, `src/lib/wiki-os/services/upload-error.ts` | The writer of an upload (`uploadFile`, shared by the browser's route and api.php's `action=upload`): rights, sniffed type and size, warnings, the staging directory, the `File:` page through the ordinary save, and the outbox insert. They call no MediaWiki endpoint (the file is served from WikiOS at once). |
 | `src/lib/wiki-os/services/mirror-page-ops.ts` | The page jobs: `action=move` (one job per page moved, talk page included), `action=delete`, `action=undelete`, `action=protect`, each after an `action=query` that checks the title's state on MediaWiki. |
 | `src/lib/wiki-os/services/mirror-worker.ts`, `src/lib/wiki-os/services/mirror-queue.ts`, `src/lib/wiki-os/services/mirror-outbox.ts` | The worker (cron job `wiki-mirror`, every minute, plus an in-process run about 2 seconds after a write, under one job lock), the per-title order, the batch picker, backoff (`min(2^attempts x 30 s, 1 h)`, dead after 8 attempts), the attempt time limit, and the insert helpers the writers call. `SKIP_MEDIAWIKI_SYNC=true` stops the worker; the jobs accumulate. |
 | `src/lib/wiki-os/services/mirror-alerts.ts` | A Discord warning when a job goes `dead` (at most one per 30 minutes). |
 | `src/lib/wiki-os/services/mirror-admin.ts`, `src/app/admin/wikios-settings/MirrorStatusSection.tsx` | The administrator's view of the outbox in the WikiOS settings panel (`wikios.getMirrorStatus`, `requeueMirrorJob`, `discardMirrorJob`), reached through tRPC only. The panel names `WIKIOS_MEDIAWIKI_BOT_USER` and `WIKIOS_MEDIAWIKI_BOT_TOKEN` in a warning and calls MediaWiki not at all. |
-| `src/lib/wiki-os/adapters/mediawiki/write-service.ts` `postMediaWikiAction`, `executeMediaWikiWrite` | The bot session's request helpers: JSON form posts and the multipart post of an import (120 s limit; other requests 30 s), the status and a 200-character excerpt of a body that is not JSON, and `action=upload` (`wikios.uploadFile` in `src/server/api/routers/wikios/editing.ts`, the one write that does not go through the outbox: a file's bytes). |
+| `src/lib/wiki-os/adapters/mediawiki/write-service.ts` `postMediaWikiAction`, `executeMediaWikiWrite` | The bot session's request helpers: JSON form posts and the multipart post of an import or an upload (120 s limit; other requests 30 s), the status and a 200-character excerpt of a body that is not JSON. Every write to MediaWiki goes through the outbox now; `executeMediaWikiWrite` only makes the fallback `action=edit` of the revision job. |
 | `src/lib/wiki-os/adapters/mediawiki/csrf-cache.ts` | Bot login and CSRF token (a failed login throws), `mirrorBotName` and `isMirrorAccount`. |
 | `src/lib/wiki-os/adapters/mediawiki/attempt-scope.ts` | The time limit of one attempt, passed to every request of that attempt as an abort signal. |
 
@@ -97,6 +101,8 @@ login that fails is a failed job, never an anonymous write). Only the realm `ixw
 
 | Call site | What it fetches | Notes |
 | --- | --- | --- |
+| `src/app/api/wiki/file/[...name]/route.ts` | WikiOS's own copy of an uploaded file (plan 411): `/api/wiki/file/<name>` streams the staged bytes (type from the stored sniffing, `nosniff`, a 5-minute cache and an ETag; an SVG inline only as an image through `_media-response.ts`'s rules, a PDF always a download) until the mirror's `upload` job has put the file in MediaWiki, then answers 302 to the asset's `/images/...` URL. It makes no request. |
+| `src/app/api/wiki/upload/route.ts` | The browser's upload (`POST /api/wiki/upload`, the file as the raw body, 10,000,000 bytes at most, counted as it streams): no request to MediaWiki, it ends in `uploadFile`. Api.php's `action=upload` is the bots' way in. |
 | `src/app/api/mediawiki/ixwiki/[...path]/route.ts`, `src/app/api/mediawiki/_media-response.ts` | `images/...`, `images/thumb/...`, `Special:FilePath/<name>`, `thumb.php?f=<name>&width=<n>` | Image-only proxy (image/* only, 15 MB cap). Rate-limited. Registers the file in `wiki_assets` on first sight. This is a file download, not a wiki read: the bytes of an uploaded file are not in Postgres. |
 | `src/app/api/_lib/image-proxy.ts`, `src/app/api/download/external-image/route.ts` | allow-listed external image hosts (ixwiki.com among them) | Generic image download proxy. |
 | `src/app/api/mediawiki/[wiki]/[...path]/route.ts` | the same shapes, for iiwiki, AltHistory and Commons | Sister wikis (below). |
@@ -123,15 +129,19 @@ These files implement or link to the MediaWiki-compatible API that WikiOS **serv
 `src/lib/wiki-os/api-compat/errors.ts`,
 `src/lib/wiki-os/api-compat/format.ts`,
 `src/lib/wiki-os/api-compat/main-params.ts`,
+`src/lib/wiki-os/api-compat/modules/file-info.ts` (`prop=imageinfo`, `list=allimages`, plan 411),
 `src/lib/wiki-os/api-compat/modules/page-ops.ts`,
 `src/lib/wiki-os/api-compat/modules/query-meta.ts`,
 `src/lib/wiki-os/api-compat/modules/query-prop.ts`,
 `src/lib/wiki-os/api-compat/params.ts`,
 `src/lib/wiki-os/api-compat/registry.ts`,
+`src/lib/wiki-os/api-compat/store-files.ts`,
 `src/lib/wiki-os/api-compat/store-lists.ts`,
 `src/lib/wiki-os/api-compat/store-types.ts`,
 `src/lib/wiki-os/api-compat/store.ts`,
 `src/lib/wiki-os/api-compat/types.ts`.
+`action=upload` (`api-compat/modules/upload.ts`, the file as a multipart part read by `src/app/w/api.php/route.ts`) goes to the
+same `uploadFile` service as the browser's upload (mirror section above): it names no MediaWiki endpoint and sends no request.
 
 ### url-only (no request)
 

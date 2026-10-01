@@ -20,19 +20,33 @@ export function FileImage({ file }: { file: FileInfo }) {
     file.mimeType,
   ].filter(Boolean);
 
+  // A PDF (plan 411) has no picture to show: the link is the file.
+  const isPicture = !file.mimeType || file.mimeType.startsWith("image/");
+
   return (
     <figure className="mb-6">
-      <a href={src} target="_blank" rel="noopener">
-        <img
-          src={src}
-          alt={file.name}
-          width={file.width ?? undefined}
-          height={file.height ?? undefined}
-          referrerPolicy="no-referrer"
-          fetchPriority="high"
-          className="max-h-[70vh] max-w-full rounded-lg border border-white/10 object-contain"
-        />
-      </a>
+      {isPicture ? (
+        <a href={src} target="_blank" rel="noopener">
+          <img
+            src={src}
+            alt={file.name}
+            width={file.width ?? undefined}
+            height={file.height ?? undefined}
+            referrerPolicy="no-referrer"
+            fetchPriority="high"
+            className="max-h-[70vh] max-w-full rounded-lg border border-white/10 object-contain"
+          />
+        </a>
+      ) : (
+        <a
+          href={src}
+          target="_blank"
+          rel="noopener"
+          className="text-wiki text-sm font-medium underline"
+        >
+          Download {file.name}
+        </a>
+      )}
       <figcaption className="text-muted-foreground mt-2 text-xs">
         {file.name}
         {facts.length > 0 ? ` (${facts.join(", ")})` : ""}

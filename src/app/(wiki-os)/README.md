@@ -34,7 +34,8 @@ The route (plan 412) is a server component: `resolveWikiPath` (`src/lib/wiki-os/
 | `/util/whatlinkshere/[slug]` | `util/whatlinkshere/[slug]/page.tsx` | Relational backlinks explorer |
 | `/util/contributions/[user]` | `util/contributions/[user]/page.tsx` | User contribution history |
 | `/util/lorewards` | `util/lorewards/page.tsx` | Lorewards leaderboard & heatmap streak calendar |
-| `/util/repository` | `util/repository/page.tsx` | Native media commons asset repository (`wiki_assets`) |
+| `/util/repository` | `util/repository/page.tsx` | Native media commons asset repository (`wiki_assets`), with an Upload button |
+| `/util/upload` | `util/upload/page.tsx` | Special:Upload: upload a file (`POST /api/wiki/upload`, plan 411) |
 | `/util/templates` | `util/templates/page.tsx` | Template browser |
 | `/util/watchlist` | `util/watchlist/page.tsx` | Article watchlist (`WikiWatchlist` model) |
 

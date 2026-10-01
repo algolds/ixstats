@@ -125,6 +125,20 @@ describe("grants", () => {
     expect(GRANT_RIGHTS.protect).toContain("editprotected");
   });
 
+  it("has MediaWiki's two upload grants (plan 411): a new file, and replacing or moving one", () => {
+    const upload = rightsForGrants(["uploadfile"]);
+    expect(upload.has("upload")).toBe(true);
+    expect(upload.has("reupload")).toBe(false);
+    expect(upload.has("edit")).toBe(false);
+
+    const replace = rightsForGrants(["uploadeditmovefile"]);
+    expect([...replace].filter((right) => ["upload", "reupload", "movefile"].includes(right)).sort()).toEqual([
+      "movefile",
+      "reupload",
+      "upload",
+    ]);
+  });
+
   describe("capWikiPermissions: effective rights = user rights ∩ grant rights", () => {
     beforeEach(() => {
       jest.clearAllMocks();
