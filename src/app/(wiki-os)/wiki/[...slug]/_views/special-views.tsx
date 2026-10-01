@@ -6,6 +6,7 @@ import { PageList } from "~/components/wiki-os/reader/PageList";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import type { SpecialAction, SpecialTarget } from "~/lib/wiki-os/wiki-path";
 import { api } from "~/trpc/server";
+import { orNotFound } from "../_lib/or-not-found";
 
 /** `Special:AllPages` and `Special:PrefixIndex` list this many pages at a time. */
 const LIST_SIZE = 200;
@@ -22,19 +23,21 @@ async function randomPage(): Promise<never> {
 
 /** `Special:FilePath/<file>`: the file's own URL. */
 async function filePath(file: string): Promise<never> {
-  const info = await api.wikios.getFileInfo({ file });
+  const info = await orNotFound(api.wikios.getFileInfo({ file }));
   if (!info) notFound();
   // A protocol-relative URL would be taken for a path on this site.
   return redirect(info.url.startsWith("//") ? `https:${info.url}` : info.url);
 }
 
 async function pageList(action: ListAction) {
-  const listing = await api.wikios.listPages({
-    namespace: action.namespace,
-    prefix: action.prefix,
-    from: action.from,
-    limit: LIST_SIZE,
-  });
+  const listing = await orNotFound(
+    api.wikios.listPages({
+      namespace: action.namespace,
+      prefix: action.prefix,
+      from: action.from,
+      limit: LIST_SIZE,
+    })
+  );
   const isPrefix = action.mode === "prefix";
   const query: Record<string, string> = { namespace: String(action.namespace) };
   if (isPrefix) query.prefix = action.prefix;

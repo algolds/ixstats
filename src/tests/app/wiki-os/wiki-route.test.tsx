@@ -408,17 +408,29 @@ describe("Special: pages (plan 412 step 3)", () => {
     });
   });
 
+  it("an input the procedures refuse (a title or cursor too long to be one) is a 404, not a 500", async () => {
+    const refused = new TRPCError({ code: "BAD_REQUEST" });
+    mockListPages.mockRejectedValue(refused);
+    expect((await outcome(["Special:AllPages"], { from: "x".repeat(300) })).signal).toBe(
+      "not-found"
+    );
+    mockFileInfo.mockRejectedValue(refused);
+    expect((await outcome(["Special:FilePath", "x".repeat(300)])).signal).toBe("not-found");
+    mockMissingPages.mockRejectedValue(refused);
+    expect((await outcome(["recent-changes"])).signal).toBe("not-found");
+  });
+
   it("an unknown special page is a 404, not a redirect to the utilities", async () => {
     expect((await outcome(["Special:NoSuchThing"])).signal).toBe("not-found");
     expect((await outcome(["Special:Log"])).signal).toBe("not-found"); // plan 409 adds it
   });
 
-  it("?action=raw that reached the page (the proxy rewrite did not) goes to the raw route", async () => {
+  it("?action=raw that reached the page (the proxy rewrite did not) goes to the raw route, by its contract", async () => {
     expect((await outcome(["Foo_bar"], { action: "raw" })).signal).toBe(
-      "redirect:/api/wiki/raw?title=Foo%20bar"
+      "redirect:/api/wiki/raw?path=Foo_bar&action=raw"
     );
     expect((await outcome(["Foo"], { action: "raw", oldid: "77" })).signal).toBe(
-      "redirect:/api/wiki/raw?title=Foo&oldid=77"
+      "redirect:/api/wiki/raw?path=Foo&action=raw&oldid=77"
     );
   });
 });

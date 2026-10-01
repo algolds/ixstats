@@ -34,9 +34,9 @@ export async function infoView(canon: CanonicalTitle) {
 /** `?diff=`: the diff view in place, with `next` and `cur` worked out from the page's history. */
 export async function diffView(canon: CanonicalTitle, spec: DiffSpec) {
   const history = diffNeedsHistory(spec)
-    ? (await api.wikios.getHistory({ title: canon.title, limit: HISTORY_WINDOW })).revisions.map(
-        (revision) => revision.revid
-      )
+    ? (
+        await orNotFound(api.wikios.getHistory({ title: canon.title, limit: HISTORY_WINDOW }))
+      ).revisions.map((revision) => revision.revid)
     : [];
   const revisions = resolveDiffRefs(spec, history);
   if (!revisions) notFound();

@@ -96,8 +96,11 @@ export default async function WikiPage({ params, searchParams }: RouteProps) {
     case "special":
       return specialView(target);
     case "raw": {
+      // Normally the proxy answers this URL itself; this takes the same contract: `path` and `action`.
       const oldid = target.ref ? `&oldid=${encodeURIComponent(target.ref)}` : "";
-      return redirect(`/api/wiki/raw?title=${encodeURIComponent(target.canon.title)}${oldid}`);
+      return redirect(
+        `/api/wiki/raw?path=${encodeURIComponent(target.canon.urlPath)}&action=raw${oldid}`
+      );
     }
     case "tool-redirect":
     case "legacy-redirect":

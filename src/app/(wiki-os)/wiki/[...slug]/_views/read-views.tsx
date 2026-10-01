@@ -16,6 +16,7 @@ import {
 import { HydrateClient, api } from "~/trpc/server";
 import ArticlePageClient from "../ArticlePageClient";
 import { loadArticle, type ArticleHtml } from "../_lib/load-article";
+import { orNotFound } from "../_lib/or-not-found";
 
 const MAIN_PAGE = "Main Page";
 const USER_NAMESPACE = 2;
@@ -104,7 +105,7 @@ async function categoryView(canon: CanonicalTitle, view: ReadView, query: Search
   const from = queryParam(query, "from") ?? "";
   const [loaded, page] = await Promise.all([
     loadArticle(canon.title, view.followRedirect),
-    api.wikios.getCategoryPage({ category: canon.base, from }),
+    orNotFound(api.wikios.getCategoryPage({ category: canon.base, from })),
   ]);
   const members = (
     <CategoryMembers
@@ -129,7 +130,7 @@ async function categoryView(canon: CanonicalTitle, view: ReadView, query: Search
 async function fileView(canon: CanonicalTitle, view: ReadView, query: SearchParamsLike) {
   const [loaded, file] = await Promise.all([
     loadArticle(canon.title, view.followRedirect),
-    api.wikios.getFileInfo({ file: canon.base }),
+    orNotFound(api.wikios.getFileInfo({ file: canon.base })),
   ]);
   const image = file ? <FileImage file={file} /> : undefined;
 
