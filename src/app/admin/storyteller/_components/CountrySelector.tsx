@@ -10,7 +10,8 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
-import { Search, Xmark as X, Globe, CheckCircle as CheckCircle2 } from "iconoir-react";
+import { Search, Xmark as X, Globe } from "iconoir-react";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 interface CountrySelectorProps {
   selectedIds: string[];
@@ -93,16 +94,18 @@ export function CountrySelector({
             const c = countries.find((c) => c.id === id);
             if (!c) return null;
             return (
-              <Badge
+              <Button
                 key={id}
-                variant="outline"
-                className="hover:bg-destructive/10 cursor-pointer gap-1 pr-1"
+                size="sm"
+                variant="bordered"
+                aria-label={`Remove ${c.name}`}
+                className="hover:bg-destructive/10 gap-1 rounded-full pr-2 pl-1.5"
                 onClick={() => toggle(id)}
               >
                 <UnifiedCountryFlag countryName={c.name} flagUrl={c.flag} size="xs" />
                 {c.name}
-                <X className="h-3 w-3" />
-              </Badge>
+                <X aria-hidden className="size-3" />
+              </Button>
             );
           })}
           {selectedIds.length > 10 && (
@@ -113,32 +116,23 @@ export function CountrySelector({
 
       {/* Country list */}
       <ScrollArea className="border-separator rounded-control h-[280px] border">
-        <div className="space-y-0.5 p-2">
-          {filtered.map((c) => {
-            const isSelected = selectedIds.includes(c.id);
-            return (
-              <button
-                key={c.id}
-                onClick={() => toggle(c.id)}
-                className={`rounded-control text-body flex w-full items-center gap-3 px-3 py-2 text-left transition-colors ${
-                  isSelected ? "border-tint/30 bg-tint-fill border" : "hover:bg-fill-4"
-                }`}
-              >
-                <UnifiedCountryFlag countryName={c.name} flagUrl={c.flag} size="sm" />
-                <div className="min-w-0 flex-1">
-                  <span className="text-label font-medium">{c.name}</span>
-                  <span className="text-label-secondary text-footnote ml-2">
-                    {c.economicTier ?? "Unknown"}
-                  </span>
-                </div>
-                {isSelected && <CheckCircle2 className="text-tint h-4 w-4 shrink-0" />}
-              </button>
-            );
-          })}
-          {filtered.length === 0 && (
-            <p className="text-label-secondary text-body py-4 text-center">No countries found</p>
-          )}
-        </div>
+        <FacetListSection variant="plain" aria-label="Countries">
+          {filtered.map((c) => (
+            <FacetRow
+              key={c.id}
+              onClick={() => toggle(c.id)}
+              selected={selectedIds.includes(c.id)}
+              selectionStyle="tint"
+              accessory="check"
+              leading={<UnifiedCountryFlag countryName={c.name} flagUrl={c.flag} size="sm" />}
+              title={c.name}
+              subtitle={c.economicTier ?? "Unknown"}
+            />
+          ))}
+        </FacetListSection>
+        {filtered.length === 0 && (
+          <p className="text-label-secondary text-body py-4 text-center">No countries found</p>
+        )}
       </ScrollArea>
 
       <p className="text-label-secondary text-footnote">

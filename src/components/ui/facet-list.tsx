@@ -152,6 +152,18 @@ interface FacetRowBaseProps {
   accessory?: FacetRowAccessory;
   /** Selected state: fill highlight + check accessory; `aria-current` / `aria-pressed`. */
   selected?: boolean;
+  /**
+   * How `selected` looks. `"fill"` (default): a neutral `fill-3` highlight — pickers with a check.
+   * `"tint"`: a `tint-fill` highlight with a tinted leading icon — the current item of a
+   * master–detail list or rail. A tint button row also reports `aria-current="true"` when
+   * selected (unless it is a check toggle, which keeps `aria-pressed`).
+   */
+  selectionStyle?: "fill" | "tint";
+  /**
+   * Overrides the row's `aria-current` (links default to `"page"` when selected; tint button rows
+   * to `"true"`). Pass `false` to suppress it.
+   */
+  "aria-current"?: React.AriaAttributes["aria-current"];
   disabled?: boolean;
   /** Destructive action (red title and icon). */
   destructive?: boolean;
@@ -218,6 +230,7 @@ export const FacetRow = React.forwardRef<HTMLElement, FacetRowProps>((props, ref
     trailing,
     accessory: accessoryProp,
     selected = false,
+    selectionStyle = "fill",
     disabled = false,
     destructive = false,
     swipeActions,
@@ -225,7 +238,9 @@ export const FacetRow = React.forwardRef<HTMLElement, FacetRowProps>((props, ref
     itemClassName,
     id,
     "aria-label": ariaLabel,
+    "aria-current": ariaCurrentProp,
   } = props;
+  const tintSelected = selected && selectionStyle === "tint";
 
   const isLink = props.href !== undefined && !disabled;
   const isButton = !isLink && props.onClick !== undefined;
@@ -246,7 +261,7 @@ export const FacetRow = React.forwardRef<HTMLElement, FacetRowProps>((props, ref
           data-slot="facet-row-leading"
           className={cn(
             "flex shrink-0 items-center justify-center self-center py-2 pr-3",
-            destructive ? "text-destructive" : "text-label-secondary"
+            destructive ? "text-destructive" : tintSelected ? "text-tint" : "text-label-secondary"
           )}
         >
           {leading}
@@ -283,8 +298,10 @@ export const FacetRow = React.forwardRef<HTMLElement, FacetRowProps>((props, ref
 
   const rowClass = cn(
     "flex w-full items-stretch pl-4 text-left",
-    selected && "bg-fill-3",
+    selected && (selectionStyle === "tint" ? "bg-tint-fill" : "bg-fill-3"),
     (isLink || isButton) && ROW_INTERACTIVE,
+    // Keep the tint highlight under the pointer so the current row stays identifiable.
+    tintSelected && (isLink || isButton) && "hover:bg-tint-fill active:bg-tint-fill",
     disabled && "cursor-not-allowed opacity-50",
     swipeActions && !selected && "bg-surface",
     className
@@ -305,7 +322,7 @@ export const FacetRow = React.forwardRef<HTMLElement, FacetRowProps>((props, ref
         scroll={scroll}
         replace={replace}
         aria-label={ariaLabel}
-        aria-current={selected ? "page" : undefined}
+        aria-current={ariaCurrentProp !== undefined ? ariaCurrentProp : selected ? "page" : undefined}
         data-slot="facet-row"
         className={rowClass}
       >
@@ -323,6 +340,13 @@ export const FacetRow = React.forwardRef<HTMLElement, FacetRowProps>((props, ref
         disabled={disabled}
         aria-label={ariaLabel}
         aria-pressed={accessory === "check" ? selected : undefined}
+        aria-current={
+          ariaCurrentProp !== undefined
+            ? ariaCurrentProp
+            : tintSelected && accessory !== "check"
+              ? "true"
+              : undefined
+        }
         data-slot="facet-row"
         className={rowClass}
       >
@@ -336,6 +360,7 @@ export const FacetRow = React.forwardRef<HTMLElement, FacetRowProps>((props, ref
         id={id}
         aria-label={ariaLabel}
         aria-disabled={disabled || undefined}
+        aria-current={ariaCurrentProp}
         data-slot="facet-row"
         className={rowClass}
       >
@@ -351,6 +376,7 @@ export const FacetRow = React.forwardRef<HTMLElement, FacetRowProps>((props, ref
     <li
       data-slot="facet-row-item"
       data-selected={selected || undefined}
+      data-selection-style={selected ? selectionStyle : undefined}
       className={cn("group/row relative list-none", itemClassName)}
     >
       {hasSwipe && swipeActions ? (

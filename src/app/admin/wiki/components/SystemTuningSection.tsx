@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -230,21 +231,22 @@ export function SystemTuningSection() {
                       className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                     />
                     {showSuggestions && suggestions && suggestions.length > 0 && (
-                      <div className="border-separator bg-surface-elevated text-label rounded-row absolute z-50 mt-1 max-h-40 w-full overflow-y-auto border p-1">
+                      <FacetListSection
+                        variant="plain"
+                        aria-label="Template suggestions"
+                        className="border-separator bg-surface-elevated text-label rounded-row shadow-floating absolute z-50 mt-1 max-h-40 w-full overflow-y-auto border"
+                      >
                         {suggestions.map((name) => (
-                          <button
+                          <FacetRow
                             key={name}
-                            type="button"
                             onClick={() => {
                               setTemplateSearchInput(name);
                               setShowSuggestions(false);
                             }}
-                            className="hover:bg-fill-4 rounded-control text-caption w-full px-2.5 py-1 text-left transition-colors"
-                          >
-                            {name}
-                          </button>
+                            title={name}
+                          />
                         ))}
-                      </div>
+                      </FacetListSection>
                     )}
                   </div>
                   <Button

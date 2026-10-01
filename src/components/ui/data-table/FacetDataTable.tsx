@@ -378,25 +378,19 @@ export function FacetDataTable<T extends Record<string, any>>({
         <>
           {/* ─── Desktop Table Mode (sm: and up) ────────────────────── */}
           {layoutMode !== "cards" && (
-            <div
-              className={cn(
-                layoutMode === "auto" ? "hidden sm:block" : "block",
-                "border-border/40 bg-card/30 overflow-hidden rounded-2xl border shadow-xs backdrop-blur-md",
-                tableContainerClassName
-              )}
-            >
-              <Table>
-                <TableHeader className="bg-muted/40">
-                  <TableRow className="border-border/40">
+            <div className={cn(layoutMode === "auto" ? "hidden sm:block" : "block")}>
+              <Table containerClassName={tableContainerClassName}>
+                <TableHeader>
+                  <TableRow>
                     {columns.map((col) => (
                       <TableHead
                         key={col.key}
                         className={cn(
-                          "text-muted-foreground px-4 py-3 text-xs font-semibold tracking-wider select-none",
+                          "px-4 py-3 select-none",
                           col.align === "center" && "text-center",
                           col.align === "right" && "text-right",
                           col.sortable &&
-                            "hover:text-foreground hover:bg-muted/50 cursor-pointer transition-colors",
+                            "hover:text-label hover:bg-fill-4 cursor-pointer transition-colors",
                           col.className,
                           col.headerClassName
                         )}
@@ -417,14 +411,13 @@ export function FacetDataTable<T extends Record<string, any>>({
                   </TableRow>
                 </TableHeader>
 
-                <TableBody className="divide-border/30 divide-y">
+                <TableBody>
                   {paginatedData.map((row, index) => (
                     <TableRow
                       key={row.id || index}
                       onClick={() => onRowClick?.(row)}
                       className={cn(
-                        "hover:bg-muted/30 border-border/20 transition-colors",
-                        onRowClick && "active:bg-muted/50 cursor-pointer",
+                        onRowClick && "active:bg-fill-3 cursor-pointer",
                         rowClassName?.(row, index)
                       )}
                     >
@@ -432,7 +425,7 @@ export function FacetDataTable<T extends Record<string, any>>({
                         <TableCell
                           key={col.key}
                           className={cn(
-                            "px-4 py-3 text-xs",
+                            "px-4 py-3",
                             col.align === "center" && "text-center",
                             col.align === "right" && "text-right",
                             col.className,

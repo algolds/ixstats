@@ -353,18 +353,20 @@ export function RealmsTab() {
                   <td className="px-4 py-3 text-right">
                     {isEditing ? (
                       <span className="inline-flex gap-1">
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
                           aria-label={`Save ${realm.name}`}
                           onClick={() => saveEdit(realm.id)}
                           disabled={updateMutation.isPending}
-                          className="rounded-control text-green hover:bg-green/10 p-1 transition-transform active:scale-[0.98]"
+                          className="text-green"
                         >
                           {updateMutation.isPending ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="animate-spin" />
                           ) : (
-                            <Check className="h-4 w-4" />
+                            <Check />
                           )}
-                        </button>
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon-sm"

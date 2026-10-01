@@ -4,6 +4,7 @@
 // Add/edit dialog for defense manufacturers.
 
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import {
   Dialog,
@@ -117,14 +118,12 @@ export function ManufacturerFormDialog({
           </div>
 
           <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
+            <Checkbox
               id="isActive"
               checked={manufacturerFormData.isActive}
-              onChange={(e) =>
-                setManufacturerFormData({ ...manufacturerFormData, isActive: e.target.checked })
+              onCheckedChange={(checked) =>
+                setManufacturerFormData({ ...manufacturerFormData, isActive: checked === true })
               }
-              className="border-separator rounded-control-sm"
             />
             <label htmlFor="isActive" className="text-label text-body cursor-pointer font-medium">
               Active

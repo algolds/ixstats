@@ -5,6 +5,8 @@
 import { useState, useRef, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { useNotify } from "~/hooks/useNotify";
 import { FacetCard } from "~/components/ui/facet-container";
@@ -1010,31 +1012,35 @@ export function LoreCardBatchAdmin() {
                 {isCategoryDropdownOpen &&
                   categorySearchData?.categories &&
                   categorySearchData.categories.length > 0 && (
-                    <div className="border-separator bg-surface-elevated rounded-row absolute top-10 right-0 left-0 z-50 max-h-48 space-y-0.5 overflow-y-auto border p-1.5">
-                      <div className="text-label-secondary border-separator text-caption flex items-center justify-between border-b px-2 py-1 pb-1">
+                    <div className="border-separator bg-surface-elevated rounded-row shadow-floating absolute top-10 right-0 left-0 z-50 max-h-48 overflow-y-auto border p-1.5">
+                      <div className="text-label-secondary border-separator text-caption flex items-center justify-between border-b px-2 pb-1">
                         <span>Matching {globalWikiSource.toUpperCase()} Categories</span>
-                        <button
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           onClick={() => setIsCategoryDropdownOpen(false)}
-                          className="text-label-secondary hover:text-label text-footnote hover:underline"
                         >
                           Close
-                        </button>
+                        </Button>
                       </div>
-                      {categorySearchData.categories.map((cat) => (
-                        <button
-                          key={cat}
-                          onClick={() => handleCrawlCategory(cat)}
-                          className="text-label hover:bg-fill-4 group rounded-control text-footnote flex w-full items-center justify-between px-2.5 py-1.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-                        >
-                          <span className="flex items-center gap-1.5 font-medium">
-                            <BookOpen className="text-purple h-3 w-3" />
-                            {cat}
-                          </span>
-                          <span className="text-label-secondary group-hover:text-tint text-footnote tabular-nums transition-colors">
-                            Crawl Category →
-                          </span>
-                        </button>
-                      ))}
+                      <FacetListSection
+                        variant="plain"
+                        aria-label={`Matching ${globalWikiSource.toUpperCase()} categories`}
+                      >
+                        {categorySearchData.categories.map((cat) => (
+                          <FacetRow
+                            key={cat}
+                            onClick={() => handleCrawlCategory(cat)}
+                            leading={<BookOpen aria-hidden className="text-purple size-3.5" />}
+                            title={cat}
+                            trailing={
+                              <span className="text-label-secondary text-footnote">
+                                Crawl Category →
+                              </span>
+                            }
+                          />
+                        ))}
+                      </FacetListSection>
                     </div>
                   )}
               </div>
@@ -1715,16 +1721,18 @@ export function LoreCardBatchAdmin() {
                     <span className="text-label-secondary max-w-[400px] truncate">
                       {previewImage.imageUrl}
                     </span>
-                    <button
+                    <Button
                       type="button"
+                      variant="link"
+                      size="sm"
                       onClick={() => {
                         void navigator.clipboard.writeText(previewImage.imageUrl);
                         notify.success("Copied", "Image URL copied to clipboard.");
                       }}
-                      className="text-tint ml-2 flex shrink-0 cursor-pointer items-center gap-1 font-sans hover:underline"
+                      className="ml-2 h-auto shrink-0 gap-1 px-0 font-sans"
                     >
-                      <Copy className="h-3 w-3" /> Copy URL
-                    </button>
+                      <Copy aria-hidden className="size-3.5" /> Copy URL
+                    </Button>
                   </div>
                 )}
               </div>
@@ -2001,16 +2009,18 @@ export function LoreCardBatchAdmin() {
             {/* Overwrite Toggle */}
             <div className="border-separator bg-fill-4 rounded-row flex items-center justify-between border p-3">
               <div>
-                <span className="text-label text-caption block">Force Overwrite</span>
-                <span className="text-label-secondary text-footnote">
+                <span id="reclassify-force-label" className="text-label text-caption block">
+                  Force Overwrite
+                </span>
+                <span id="reclassify-force-hint" className="text-label-secondary text-footnote">
                   Re-classify all cards, not just unclassified/defaults
                 </span>
               </div>
-              <input
-                type="checkbox"
+              <Checkbox
+                aria-labelledby="reclassify-force-label"
+                aria-describedby="reclassify-force-hint"
                 checked={reclassifyForce}
-                onChange={(e) => setReclassifyForce(e.target.checked)}
-                className="border-separator rounded-control-sm text-purple focus:ring-purple h-4 w-4"
+                onCheckedChange={(checked) => setReclassifyForce(checked === true)}
               />
             </div>
 

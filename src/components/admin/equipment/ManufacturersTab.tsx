@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Badge } from "~/components/ui/badge";
+import { FacetCard } from "~/components/ui/facet-container";
 import {
   Plus,
   EditPencil as Pencil,
@@ -137,7 +138,7 @@ export function ManufacturersTab({
       </div>
 
       {/* Table */}
-      <div className="bg-surface border-separator rounded-row border p-6">
+      <FacetCard className="p-6">
         {manufacturersLoading ? (
           <div className="py-12 text-center">
             <div className="border-tint mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2"></div>
@@ -153,133 +154,131 @@ export function ManufacturersTab({
             </Button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>
-                    <button
-                      onClick={() => handleSort("name")}
-                      className="hover:text-tint flex items-center gap-1 transition-colors"
-                    >
-                      Name
-                      <ArrowUpDown className="h-3 w-3" />
-                    </button>
-                  </TableHead>
-                  <TableHead>
-                    <button
-                      onClick={() => handleSort("country")}
-                      className="hover:text-tint flex items-center gap-1 transition-colors"
-                    >
-                      Country
-                      <ArrowUpDown className="h-3 w-3" />
-                    </button>
-                  </TableHead>
-                  <TableHead>Specialties</TableHead>
-                  <TableHead>
-                    <button
-                      onClick={() => handleSort("founded")}
-                      className="hover:text-tint flex items-center gap-1 transition-colors"
-                    >
-                      Founded
-                      <ArrowUpDown className="h-3 w-3" />
-                    </button>
-                  </TableHead>
-                  <TableHead>
-                    <button
-                      onClick={() => handleSort("equipmentCount")}
-                      className="hover:text-tint flex items-center gap-1 transition-colors"
-                    >
-                      Equipment
-                      <ArrowUpDown className="h-3 w-3" />
-                    </button>
-                  </TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredManufacturers.map((manufacturer) => {
-                  const specialties = parseSpecialties(manufacturer.specialty ?? null);
-                  const equipmentCount = manufacturer.equipmentCount ?? 0;
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort("name")}
+                    className="hover:text-tint flex items-center gap-1 transition-colors"
+                  >
+                    Name
+                    <ArrowUpDown className="h-3 w-3" />
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort("country")}
+                    className="hover:text-tint flex items-center gap-1 transition-colors"
+                  >
+                    Country
+                    <ArrowUpDown className="h-3 w-3" />
+                  </button>
+                </TableHead>
+                <TableHead>Specialties</TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort("founded")}
+                    className="hover:text-tint flex items-center gap-1 transition-colors"
+                  >
+                    Founded
+                    <ArrowUpDown className="h-3 w-3" />
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => handleSort("equipmentCount")}
+                    className="hover:text-tint flex items-center gap-1 transition-colors"
+                  >
+                    Equipment
+                    <ArrowUpDown className="h-3 w-3" />
+                  </button>
+                </TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredManufacturers.map((manufacturer) => {
+                const specialties = parseSpecialties(manufacturer.specialty ?? null);
+                const equipmentCount = manufacturer.equipmentCount ?? 0;
 
-                  return (
-                    <TableRow key={manufacturer.id}>
-                      <TableCell className="font-medium">{manufacturer.name}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Globe className="text-label-secondary h-3 w-3" />
-                          {manufacturer.country}
+                return (
+                  <TableRow key={manufacturer.id}>
+                    <TableCell className="font-medium">{manufacturer.name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Globe className="text-label-secondary h-3 w-3" />
+                        {manufacturer.country}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {specialties.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {specialties.slice(0, 3).map((spec) => (
+                            <Badge key={spec} variant="secondary">
+                              {spec}
+                            </Badge>
+                          ))}
+                          {specialties.length > 3 && (
+                            <Badge variant="outline">+{specialties.length - 3}</Badge>
+                          )}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {specialties.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {specialties.slice(0, 3).map((spec) => (
-                              <Badge key={spec} variant="secondary">
-                                {spec}
-                              </Badge>
-                            ))}
-                            {specialties.length > 3 && (
-                              <Badge variant="outline">+{specialties.length - 3}</Badge>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-label-secondary text-body italic">None</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {manufacturer.founded ? (
-                          <span className="text-body">{manufacturer.founded}</span>
-                        ) : (
-                          <span className="text-label-secondary text-body italic">N/A</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Package className="text-label-secondary h-3 w-3" />
-                          <span className="text-body font-medium">{equipmentCount}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {manufacturer.isActive ? (
-                          <Badge variant="green">Active</Badge>
-                        ) : (
-                          <span className="bg-surface-secondary text-caption text-label inline-flex items-center rounded-full px-2 py-1">
-                            Inactive
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleEditManufacturer(manufacturer)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleToggleActive(manufacturer)}
-                          >
-                            {manufacturer.isActive ? (
-                              <ToggleRight className="h-4 w-4" />
-                            ) : (
-                              <ToggleLeft className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+                      ) : (
+                        <span className="text-label-secondary text-body italic">None</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {manufacturer.founded ? (
+                        <span className="text-body">{manufacturer.founded}</span>
+                      ) : (
+                        <span className="text-label-secondary text-body italic">N/A</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Package className="text-label-secondary h-3 w-3" />
+                        <span className="text-body font-medium">{equipmentCount}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {manufacturer.isActive ? (
+                        <Badge variant="green">Active</Badge>
+                      ) : (
+                        <span className="bg-surface-secondary text-caption text-label inline-flex items-center rounded-full px-2 py-1">
+                          Inactive
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEditManufacturer(manufacturer)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleToggleActive(manufacturer)}
+                        >
+                          {manufacturer.isActive ? (
+                            <ToggleRight className="h-4 w-4" />
+                          ) : (
+                            <ToggleLeft className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         )}
-      </div>
+      </FacetCard>
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">

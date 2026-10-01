@@ -540,6 +540,7 @@ export function IxTimeVisualizer() {
               <button
                 type="button"
                 onClick={() => setShowDiagnostics(!showDiagnostics)}
+                aria-expanded={showDiagnostics}
                 className="hover:text-label group flex w-full items-center justify-between text-left transition-colors"
               >
                 <span className="text-label-secondary group-hover:text-label text-eyebrow">

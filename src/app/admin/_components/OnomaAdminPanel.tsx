@@ -2,7 +2,7 @@
 // src/app/admin/_components/OnomaAdminPanel.tsx
 // Onoma Voice & Phonology Admin Panel
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
   FloppyDisk as Save,
   Microphone as Mic,
@@ -18,6 +18,7 @@ import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 import { Switch } from "~/components/ui/switch";
+import { Slider } from "~/components/ui/slider";
 import { useNotify } from "~/hooks/useNotify";
 import { translateToIPA } from "~/lib/onoma/phonology";
 import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
@@ -57,7 +58,7 @@ const VOICE_LABELS: Record<string, string> = {
 };
 const voiceLabel = (id: string) => (VOICE_LABELS[id] ? `${VOICE_LABELS[id]} (${id})` : id);
 
-function Slider({
+function LabeledSlider({
   label,
   value,
   min,
@@ -74,23 +75,25 @@ function Slider({
   suffix?: string;
   onChange: (v: number) => void;
 }) {
+  const labelId = useId();
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       <div className="flex justify-between">
-        <Label className="text-footnote">{label}</Label>
+        <Label id={labelId} className="text-footnote">
+          {label}
+        </Label>
         <span className="text-tint text-footnote tabular-nums">
           {value}
           {suffix}
         </span>
       </div>
-      <input
-        type="range"
+      <Slider
+        aria-labelledby={labelId}
         min={min}
         max={max}
         step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="accent-tint w-full cursor-pointer"
+        value={[value]}
+        onValueChange={([v]) => onChange(v ?? value)}
       />
     </div>
   );
@@ -309,20 +312,21 @@ export function OnomaAdminPanel() {
                     </span>
                   )}
 
-                  <button
+                  <Button
                     type="button"
+                    variant="tinted"
+                    size="sm"
                     onClick={handleWakeServer}
                     disabled={isWaking}
                     title="Send a wake-up ping to the Kokoro server"
-                    className="border-separator bg-fill-3 text-label hover:border-tint/40 hover:bg-tint-fill hover:text-tint rounded-row text-caption flex cursor-pointer items-center gap-1 border px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] disabled:opacity-50"
                   >
                     {isWaking ? (
-                      <Loader2 className="text-tint h-3 w-3 animate-spin" />
+                      <Loader2 aria-hidden className="animate-spin" />
                     ) : (
-                      <Zap className="text-tint h-3 w-3" />
+                      <Zap aria-hidden />
                     )}
                     <span>{isWaking ? "Waking..." : "Ping Server"}</span>
-                  </button>
+                  </Button>
                 </div>
               </div>
               {wakeStatusMessage && (
@@ -390,16 +394,18 @@ export function OnomaAdminPanel() {
                 className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
               />
               {kokoroData?.hasApiKey && (
-                <button
+                <Button
                   type="button"
+                  variant="link"
+                  size="sm"
                   onClick={() => {
                     setClearKokoroApiKey((v) => !v);
                     setKokoroApiKey("");
                   }}
-                  className="text-label-secondary hover:text-label text-footnote underline-offset-2 hover:underline"
+                  className="text-label-secondary hover:text-label h-auto px-0"
                 >
                   {clearKokoroApiKey ? "Keep the saved key" : "Remove the saved key on save"}
-                </button>
+                </Button>
               )}
             </div>
 
@@ -438,7 +444,7 @@ export function OnomaAdminPanel() {
               </div>
             </div>
 
-            <Slider
+            <LabeledSlider
               label="Speed Multiplier"
               value={kokoroSpeed}
               min={0.2}

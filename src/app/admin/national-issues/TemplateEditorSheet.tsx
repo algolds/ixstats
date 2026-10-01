@@ -12,6 +12,7 @@ import {
 } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Textarea } from "~/components/ui/textarea";
 import {
   Select,
@@ -442,21 +443,17 @@ export function TemplateEditorSheet({
             {/* Settings Toggles */}
             <div className="flex gap-4">
               <label className="text-caption flex cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={isActive}
-                  onChange={(e) => setIsActive(e.target.checked)}
-                  className="rounded-control-sm border-separator bg-fill-4 accent-yellow h-4 w-4"
+                  onCheckedChange={(checked) => setIsActive(checked === true)}
                 />
                 <span>Active Template</span>
               </label>
 
               <label className="text-caption flex cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={isGlobal}
-                  onChange={(e) => setIsGlobal(e.target.checked)}
-                  className="rounded-control-sm border-separator bg-fill-4 accent-yellow h-4 w-4"
+                  onCheckedChange={(checked) => setIsGlobal(checked === true)}
                 />
                 <span>Is Global Event</span>
               </label>

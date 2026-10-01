@@ -15,6 +15,7 @@ import {
   Clock,
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 const CRON_JOBS = [
   {
@@ -86,45 +87,30 @@ export function SystemCronScheduleWidget() {
       <div className="border-separator rounded-row flex min-h-[380px] flex-1 flex-col gap-4 p-4 md:flex-row">
         {/* Left Side: Cron List */}
         <div className="border-separator flex w-full flex-col gap-2 border-b pb-4 md:w-2/5 md:border-r md:border-b-0 md:pr-4 md:pb-0">
-          <p className="text-label-secondary text-eyebrow mb-1">Registered Tasks</p>
-          <div className="flex max-h-[300px] flex-col gap-1.5 overflow-y-auto pr-1 md:max-h-[340px]">
+          <FacetListSection
+            header="Registered tasks"
+            variant="plain"
+            groupClassName="max-h-[300px] overflow-y-auto md:max-h-[340px]"
+          >
             {CRON_JOBS.map((job) => {
               const JobIcon = job.icon;
-              const isSelected = job.id === selectedId;
-
               return (
-                <button
+                <FacetRow
                   key={job.id}
                   onClick={() => setSelectedId(job.id)}
-                  className={cn(
-                    "rounded-control duration-fast flex w-full cursor-pointer items-start gap-3 border p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                    isSelected
-                      ? "bg-tint-fill border-tint/30"
-                      : "hover:bg-fill-4 hover:border-separator border-transparent bg-transparent"
-                  )}
-                >
-                  <div className={cn("rounded-control shrink-0 border p-1.5", job.color)}>
-                    <JobIcon className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span
-                        className={cn(
-                          "text-caption truncate",
-                          isSelected ? "text-tint" : "text-label"
-                        )}
-                      >
-                        {job.title}
-                      </span>
-                    </div>
-                    <code className="text-label-secondary text-footnote mt-0.5 block font-mono">
-                      {job.expression}
-                    </code>
-                  </div>
-                </button>
+                  selected={job.id === selectedId}
+                  selectionStyle="tint"
+                  leading={
+                    <span className={cn("rounded-control shrink-0 border p-1.5", job.color)}>
+                      <JobIcon aria-hidden className="size-4" />
+                    </span>
+                  }
+                  title={job.title}
+                  subtitle={<code className="font-mono">{job.expression}</code>}
+                />
               );
             })}
-          </div>
+          </FacetListSection>
         </div>
 
         {/* Right Side: Visualizer */}

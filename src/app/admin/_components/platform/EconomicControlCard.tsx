@@ -264,6 +264,7 @@ export function EconomicControlCard({
               <button
                 type="button"
                 onClick={() => setShowTierModifiers(!showTierModifiers)}
+                aria-expanded={showTierModifiers}
                 className="group hover:text-label flex w-full items-center justify-between text-left transition-colors"
               >
                 <Label className="text-label-secondary group-hover:text-label text-subhead cursor-pointer">

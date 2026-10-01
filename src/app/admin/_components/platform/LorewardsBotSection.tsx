@@ -874,15 +874,18 @@ export function LorewardsBotSection() {
                       <span className="text-label-secondary text-footnote tabular-nums">
                         Expires: {date ? String(date).slice(0, 10) : "Permanent"}
                       </span>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label={`Remove ${user} from the blacklist`}
                         onClick={() =>
                           updateBlacklistMutation.mutate({ username: user, action: "remove" })
                         }
                         disabled={updateBlacklistMutation.isPending}
-                        className="text-destructive/80 hover:text-destructive transition-colors"
+                        className="text-destructive"
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                        <Trash2 aria-hidden />
+                      </Button>
                     </div>
                   </div>
                 ))

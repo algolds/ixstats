@@ -10,6 +10,7 @@ import {
   Package as Box,
   Code,
   NavArrowRight as ChevronRight,
+  Check,
 } from "iconoir-react";
 import { type LabConfig } from "../types";
 
@@ -99,6 +100,7 @@ export function InteractiveCardTemplates({
               </p>
             </div>
             <button
+              type="button"
               onClick={() => setSecureStatus(!secureStatus)}
               className="rounded-control-sm text-eyebrow cursor-pointer border px-2 py-0.5 transition-colors"
               style={{
@@ -131,6 +133,7 @@ export function InteractiveCardTemplates({
           </div>
           <div className="relative z-10 mt-2 flex gap-2">
             <button
+              type="button"
               onClick={handleLinkClick}
               disabled={linking || !secureStatus}
               className="rounded-control text-caption text-label flex-1 cursor-pointer px-3 py-1.5 transition-opacity hover:opacity-90 disabled:pointer-events-none disabled:opacity-40"
@@ -139,6 +142,7 @@ export function InteractiveCardTemplates({
               {linking ? "Establishing..." : linkEstablished ? "Disconnect Link" : "Establish Link"}
             </button>
             <button
+              type="button"
               onClick={() => setButtonClickCount((c) => c + 1)}
               className="bg-fill-3 hover:bg-fill-4 text-label-secondary border-separator rounded-control text-caption cursor-pointer border px-3 py-1.5 transition-colors"
             >
@@ -183,6 +187,8 @@ export function InteractiveCardTemplates({
 
             <div className="flex gap-2">
               <button
+                type="button"
+                aria-pressed={activeNode === 1}
                 onClick={() => setActiveNode(activeNode === 1 ? null : 1)}
                 className={cn(
                   "facet-hierarchy-interactive text-caption relative z-20 flex-1 cursor-pointer px-3 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]",
@@ -193,9 +199,12 @@ export function InteractiveCardTemplates({
                   boxShadow: activeNode === 1 ? `0 0 12px ${customAccent}40` : undefined,
                 }}
               >
-                Node Admin 1 {activeNode === 1 && "🟢"}
+                Node Admin 1
+                {activeNode === 1 && <Check aria-hidden className="ml-1 inline size-3.5" />}
               </button>
               <button
+                type="button"
+                aria-pressed={activeNode === 2}
                 onClick={() => setActiveNode(activeNode === 2 ? null : 2)}
                 className={cn(
                   "facet-hierarchy-interactive text-caption relative z-20 flex-1 cursor-pointer px-3 py-2 text-center transition-[color,background-color,border-color,box-shadow,opacity,transform]",
@@ -206,7 +215,8 @@ export function InteractiveCardTemplates({
                   boxShadow: activeNode === 2 ? `0 0 12px ${customAccent}40` : undefined,
                 }}
               >
-                Node Admin 2 {activeNode === 2 && "🟢"}
+                Node Admin 2
+                {activeNode === 2 && <Check aria-hidden className="ml-1 inline size-3.5" />}
               </button>
             </div>
           </div>

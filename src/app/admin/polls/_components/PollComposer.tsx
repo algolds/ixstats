@@ -4,6 +4,7 @@ import { useState } from "react";
 import { api } from "~/trpc/react";
 import { ALL_REALMS } from "~/lib/realms/realm-ids";
 import { Button } from "~/components/ui/button";
+import { StepIndicator } from "~/components/ui/step-indicator";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -28,7 +29,6 @@ import {
   CheckCircle,
 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
-import { cn } from "~/lib/utils";
 
 interface PollComposerProps {
   onSuccess?: () => void;
@@ -166,29 +166,13 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
               <span className="text-label-secondary text-caption">Step {step} of 3</span>
             </div>
 
-            {/* Stepper Progress bar */}
-            <div className="mt-4 flex items-center justify-between gap-2">
-              {STEPS.map((s, _idx) => (
-                <div key={s.number} className="flex flex-1 flex-col gap-1.5">
-                  <div className="bg-fill-3 h-1 overflow-hidden rounded-full">
-                    <div
-                      className={cn(
-                        "duration-fast h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                        step >= s.number ? "bg-poll" : "bg-transparent"
-                      )}
-                    />
-                  </div>
-                  <span
-                    className={cn(
-                      "text-caption transition-colors",
-                      step === s.number ? "text-poll font-semibold" : "text-label-secondary"
-                    )}
-                  >
-                    {s.label}
-                  </span>
-                </div>
-              ))}
-            </div>
+            {/* Wizard progress */}
+            <StepIndicator
+              aria-label="Poll wizard progress"
+              className="mt-4"
+              steps={STEPS.map((st) => ({ id: String(st.number), label: st.label }))}
+              current={step - 1}
+            />
           </CardHeader>
 
           <CardContent className="p-6">

@@ -6,6 +6,7 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import {
@@ -106,24 +107,28 @@ export function ManualLinkEditorSection({ countriesData }: { countriesData: any 
               className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
             />
             {showDropdown && filteredCountries.length > 0 && !selectedCountry && (
-              <div className="border-separator bg-surface-elevated text-label rounded-row absolute z-50 mt-1 max-h-48 w-full overflow-y-auto border p-1">
+              <FacetListSection
+                variant="plain"
+                aria-label="Countries"
+                className="border-separator bg-surface-elevated text-label rounded-row shadow-floating absolute z-50 mt-1 max-h-48 w-full overflow-y-auto border"
+              >
                 {filteredCountries.map((c) => (
-                  <button
+                  <FacetRow
                     key={c.id}
                     onClick={() => {
                       setSelectedCountryId(c.id);
                       setCountrySearch("");
                       setShowDropdown(false);
                     }}
-                    className="hover:bg-fill-4 rounded-control text-caption flex w-full items-center justify-between px-3 py-1.5 text-left"
-                  >
-                    <span>{c.name}</span>
-                    <span className="text-label-secondary text-footnote font-mono">
-                      {c.id.slice(0, 8)}...
-                    </span>
-                  </button>
+                    title={c.name}
+                    trailing={
+                      <span className="text-label-secondary text-footnote font-mono">
+                        {c.id.slice(0, 8)}...
+                      </span>
+                    }
+                  />
                 ))}
-              </div>
+              </FacetListSection>
             )}
           </div>
         </div>

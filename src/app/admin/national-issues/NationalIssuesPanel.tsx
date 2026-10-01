@@ -8,12 +8,11 @@ import {
   Plus,
   Play,
   Trash as Trash2,
-  SwitchOff as ToggleLeft,
-  SwitchOn as ToggleRight,
   ControlSlider as Sliders,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { Switch } from "~/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -314,17 +313,14 @@ export function NationalIssuesPanel() {
                         </span>
                       </td>
                       <td className="px-4 py-2.5">
-                        <button
-                          onClick={() => toggleTemplate.mutate({ id: t.id, isActive: !t.isActive })}
-                          className="transition-transform active:scale-[0.98]"
+                        <Switch
+                          checked={t.isActive}
+                          onCheckedChange={(isActive) =>
+                            toggleTemplate.mutate({ id: t.id, isActive })
+                          }
+                          aria-label={`Active: ${t.title}`}
                           title="Toggle Status"
-                        >
-                          {t.isActive ? (
-                            <ToggleRight className="text-green h-5 w-5" />
-                          ) : (
-                            <ToggleLeft className="text-label-secondary h-5 w-5" />
-                          )}
-                        </button>
+                        />
                       </td>
                       <td className="px-4 py-2.5 text-right">
                         <div className="inline-flex items-center gap-1">

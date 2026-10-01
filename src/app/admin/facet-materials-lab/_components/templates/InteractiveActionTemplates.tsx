@@ -207,6 +207,8 @@ export function InteractiveActionTemplates({
               return (
                 <button
                   key={btn.label}
+                  type="button"
+                  aria-pressed={isClicked}
                   onClick={() =>
                     setGlassClickStates((prev) => ({ ...prev, [btn.label]: !isClicked }))
                   }

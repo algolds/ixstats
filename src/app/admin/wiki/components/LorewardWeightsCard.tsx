@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Slider } from "~/components/ui/slider";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import {
@@ -15,6 +16,14 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { FacetCard } from "~/components/ui/facet-container";
+
+const WEIGHT_SLIDERS = [
+  { key: "lorewardWeight_bytesAdded", label: "Bytes Added Weight" },
+  { key: "lorewardWeight_proseRatio", label: "Prose Ratio Weight" },
+  { key: "lorewardWeight_editDepth", label: "Edit Depth Weight" },
+  { key: "lorewardWeight_collaborationBonus", label: "Collaboration Bonus Weight" },
+  { key: "lorewardWeight_newArticleBonus", label: "New Article Bonus Weight" },
+] as const;
 
 export function LorewardWeightsCard() {
   const notify = useNotify();
@@ -143,112 +152,29 @@ export function LorewardWeightsCard() {
         <div>
           {tempWeights ? (
             <form onSubmit={handleSaveWeights} className="space-y-4">
-              <div className="space-y-3.5">
-                <div className="space-y-1.5">
-                  <div className="text-caption flex justify-between">
-                    <span className="text-label">Bytes Added Weight</span>
-                    <span className="text-blue font-semibold tabular-nums">
-                      {tempWeights.lorewardWeight_bytesAdded}
-                    </span>
+              <div className="space-y-4">
+                {WEIGHT_SLIDERS.map(({ key, label }) => (
+                  <div key={key} className="space-y-2">
+                    <div className="text-caption flex justify-between">
+                      <span id={`loreward-${key}`} className="text-label">
+                        {label}
+                      </span>
+                      <span className="text-blue font-semibold tabular-nums">
+                        {tempWeights[key]}
+                      </span>
+                    </div>
+                    <Slider
+                      aria-labelledby={`loreward-${key}`}
+                      min={0}
+                      max={3}
+                      step={0.1}
+                      value={[Number(tempWeights[key] ?? 0)]}
+                      onValueChange={([v]) => {
+                        if (v !== undefined) handleWeightChange(key, v);
+                      }}
+                    />
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="3"
-                    step="0.1"
-                    value={tempWeights.lorewardWeight_bytesAdded}
-                    onChange={(e) =>
-                      handleWeightChange("lorewardWeight_bytesAdded", parseFloat(e.target.value))
-                    }
-                    className="bg-fill-3 rounded-control accent-blue h-1.5 w-full"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="text-caption flex justify-between">
-                    <span className="text-label">Prose Ratio Weight</span>
-                    <span className="text-blue font-semibold tabular-nums">
-                      {tempWeights.lorewardWeight_proseRatio}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="3"
-                    step="0.1"
-                    value={tempWeights.lorewardWeight_proseRatio}
-                    onChange={(e) =>
-                      handleWeightChange("lorewardWeight_proseRatio", parseFloat(e.target.value))
-                    }
-                    className="bg-fill-3 rounded-control accent-blue h-1.5 w-full"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="text-caption flex justify-between">
-                    <span className="text-label">Edit Depth Weight</span>
-                    <span className="text-blue font-semibold tabular-nums">
-                      {tempWeights.lorewardWeight_editDepth}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="3"
-                    step="0.1"
-                    value={tempWeights.lorewardWeight_editDepth}
-                    onChange={(e) =>
-                      handleWeightChange("lorewardWeight_editDepth", parseFloat(e.target.value))
-                    }
-                    className="bg-fill-3 rounded-control accent-blue h-1.5 w-full"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="text-caption flex justify-between">
-                    <span className="text-label">Collaboration Bonus Weight</span>
-                    <span className="text-blue font-semibold tabular-nums">
-                      {tempWeights.lorewardWeight_collaborationBonus}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="3"
-                    step="0.1"
-                    value={tempWeights.lorewardWeight_collaborationBonus}
-                    onChange={(e) =>
-                      handleWeightChange(
-                        "lorewardWeight_collaborationBonus",
-                        parseFloat(e.target.value)
-                      )
-                    }
-                    className="bg-fill-3 rounded-control accent-blue h-1.5 w-full"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="text-caption flex justify-between">
-                    <span className="text-label">New Article Bonus Weight</span>
-                    <span className="text-blue font-semibold tabular-nums">
-                      {tempWeights.lorewardWeight_newArticleBonus}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="3"
-                    step="0.1"
-                    value={tempWeights.lorewardWeight_newArticleBonus}
-                    onChange={(e) =>
-                      handleWeightChange(
-                        "lorewardWeight_newArticleBonus",
-                        parseFloat(e.target.value)
-                      )
-                    }
-                    className="bg-fill-3 rounded-control accent-blue h-1.5 w-full"
-                  />
-                </div>
+                ))}
               </div>
 
               <Button

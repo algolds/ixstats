@@ -194,7 +194,9 @@ export function CommonsFlagImporterAdmin() {
           {/* Quick Preset Shortcuts */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <span className="text-label-secondary text-caption">Quick Categories:</span>
-            <button
+            <Button
+              size="sm"
+              variant="bordered"
               onClick={() => {
                 const url =
                   "https://commons.wikimedia.org/wiki/Category:SVG_flags_of_fictional_countries";
@@ -202,11 +204,12 @@ export function CommonsFlagImporterAdmin() {
                 setActiveCategory("Category:SVG_flags_of_fictional_countries");
                 setSelectedItemUrls(new Set());
               }}
-              className="border-separator bg-surface text-label hover:bg-fill-4 rounded-control text-caption border px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             >
               SVG flags of fictional countries
-            </button>
-            <button
+            </Button>
+            <Button
+              size="sm"
+              variant="bordered"
               onClick={() => {
                 const url =
                   "https://commons.wikimedia.org/wiki/Category:SVG_special_or_fictional_flags";
@@ -214,10 +217,9 @@ export function CommonsFlagImporterAdmin() {
                 setActiveCategory("Category:SVG_special_or_fictional_flags");
                 setSelectedItemUrls(new Set());
               }}
-              className="border-separator bg-surface text-label hover:bg-fill-4 rounded-control text-caption border px-2.5 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
             >
               SVG special or fictional flags
-            </button>
+            </Button>
           </div>
         </div>
 

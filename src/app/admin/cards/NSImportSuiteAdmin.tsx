@@ -693,12 +693,15 @@ export function NSImportSuiteAdmin() {
                         <RefreshCw className="mr-1 h-3 w-3" /> Retry Region Fetch
                       </Button>
                     )}
-                    <button
+                    <Button
+                      variant="link"
+                      size="sm"
+                      aria-expanded={showErrorDetails}
                       onClick={() => setShowErrorDetails(!showErrorDetails)}
-                      className="text-caption text-red cursor-pointer underline hover:no-underline"
+                      className="text-red px-0"
                     >
                       {showErrorDetails ? "Hide Nations" : `View Nations (${parsedErrors.count})`}
-                    </button>
+                    </Button>
                   </div>
                 </div>
 

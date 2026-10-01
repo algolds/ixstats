@@ -38,6 +38,7 @@ import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import {
   Select,
   SelectContent,
@@ -1494,27 +1495,30 @@ export function CountryInspector() {
             {showDropdown && (
               <div className="border-separator bg-surface-elevated text-label rounded-control absolute right-0 left-0 z-50 mt-1.5 border">
                 <ScrollArea className="h-[220px]">
-                  <div className="space-y-0.5 p-1">
-                    {filteredCountries.map((c) => (
-                      <button
-                        key={c.id}
-                        onClick={() => {
-                          setSelectedCountryId(c.id);
-                          setSearchQuery(c.name);
-                          setShowDropdown(false);
-                        }}
-                        className={cn(
-                          "hover:bg-fill-4 hover:text-label rounded-control-sm text-footnote flex w-full items-center gap-2.5 px-2.5 py-1.5 text-left transition-colors",
-                          selectedCountryId === c.id ? "bg-fill-3 text-label" : ""
-                        )}
-                      >
-                        <UnifiedCountryFlag countryName={c.name} flagUrl={c.flag} size="xs" />
-                        <span className="text-label font-semibold">{c.name}</span>
-                        <span className="text-label-secondary text-footnote ml-auto">
-                          {c.economicTier}
-                        </span>
-                      </button>
-                    ))}
+                  <div className="p-1">
+                    <FacetListSection variant="plain" aria-label="Countries">
+                      {filteredCountries.map((c) => (
+                        <FacetRow
+                          key={c.id}
+                          onClick={() => {
+                            setSelectedCountryId(c.id);
+                            setSearchQuery(c.name);
+                            setShowDropdown(false);
+                          }}
+                          selected={selectedCountryId === c.id}
+                          accessory="check"
+                          leading={
+                            <UnifiedCountryFlag countryName={c.name} flagUrl={c.flag} size="xs" />
+                          }
+                          title={c.name}
+                          trailing={
+                            <span className="text-label-secondary text-footnote">
+                              {c.economicTier}
+                            </span>
+                          }
+                        />
+                      ))}
+                    </FacetListSection>
                     {filteredCountries.length === 0 && (
                       <div className="text-label-secondary text-footnote py-3 text-center">
                         No matching countries.
@@ -1527,23 +1531,21 @@ export function CountryInspector() {
           </div>
 
           {/* Fullscreen Button */}
-          <button
+          <Button
+            variant="bordered"
             onClick={() => {
               setIsFullscreen(!isFullscreen);
               setSidebarHidden(!sidebarHidden);
             }}
-            className="bg-fill-4 border-separator hover:bg-fill-4 text-label-secondary hover:text-label rounded-control text-caption flex h-9 shrink-0 items-center gap-1.5 border px-3 py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+            className="shrink-0"
             title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            aria-pressed={isFullscreen}
           >
-            {isFullscreen ? (
-              <Minimize2 className="h-3.5 w-3.5" />
-            ) : (
-              <Maximize2 className="h-3.5 w-3.5" />
-            )}
+            {isFullscreen ? <Minimize2 aria-hidden /> : <Maximize2 aria-hidden />}
             <span className="hidden sm:inline">
               {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
             </span>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -1645,17 +1647,14 @@ export function CountryInspector() {
                             {eff.value >= 0 ? "+" : ""}
                             {(eff.value * 100).toFixed(1)}%
                           </span>
-                          <button
+                          <Button
+                            size="sm"
+                            variant={isDisabled ? "tinted" : "plain"}
                             onClick={() => handleToggleDbEffect(eff.id)}
-                            className={cn(
-                              "rounded-control-sm text-caption border px-1.5 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-                              isDisabled
-                                ? "bg-tint-fill text-tint border-tint/20"
-                                : "bg-destructive/10 text-destructive border-destructive/20"
-                            )}
+                            className={cn(!isDisabled && "text-destructive")}
                           >
                             {isDisabled ? "Enable" : "Disable"}
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     );

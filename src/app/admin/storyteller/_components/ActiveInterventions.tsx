@@ -92,6 +92,8 @@ function CountryInterventionRow({
   return (
     <div className="border-separator hover:border-separator rounded-row duration-fast border transition-[color,background-color,border-color,box-shadow,opacity,transform]">
       <button
+        type="button"
+        aria-expanded={expanded}
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center justify-between p-3 text-left"
       >

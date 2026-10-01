@@ -4,6 +4,7 @@ import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   Select,
   SelectTrigger,
@@ -215,12 +216,10 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
               </SelectContent>
             </Select>
             <div className="mt-1 flex items-center gap-1.5">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="homeScandal"
                 checked={homeScandal}
-                onChange={(e) => setHomeScandal(e.target.checked)}
-                className="border-separator text-tint focus:ring-tint rounded-control-sm h-3.5 w-3.5"
+                onCheckedChange={(checked) => setHomeScandal(checked === true)}
               />
               <label
                 htmlFor="homeScandal"
@@ -245,12 +244,10 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
               </SelectContent>
             </Select>
             <div className="mt-1 flex items-center gap-1.5">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="awayScandal"
                 checked={awayScandal}
-                onChange={(e) => setAwayScandal(e.target.checked)}
-                className="border-separator text-tint focus:ring-tint rounded-control-sm h-3.5 w-3.5"
+                onCheckedChange={(checked) => setAwayScandal(checked === true)}
               />
               <label
                 htmlFor="awayScandal"

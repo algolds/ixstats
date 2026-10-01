@@ -81,10 +81,10 @@ type scale (`text-display-hero` … `micro-badge`) with **0 uses**.
 | ui primitives | 5.5 | 128 `dark:`, 20 magic z-indexes |
 | builder | 5 | half Facet, 137 `dark:` — *converted in Phase 4 (spec §14)* |
 | countries/explore | 4.5 | 80% semantic colour, 17% Facet — *countries index, explore and the public pages (landing, feed, changelog, setup, realms, leaderboards, stashes) converted in Phase 4 (spec §14)* |
-| sports | 4 | 70% bold-or-heavier type, 93 raw cards |
-| admin | 3.5 | 274 raw cards, 331 blurs, 237 hand labels — *converted in Phase 4 (spec §14)* |
+| sports | 4 | 70% bold-or-heavier type, 93 raw cards — *converted in Phase 4 (spec §14)* |
+| admin | 3.5 | 274 raw cards, 331 blurs, 237 hand labels — *converted in Phase 4 (spec §14); selection, form-control and Table leftovers closed 2026-10-01* |
 | forum | 3.5 | own `--forum-*` tokens + legacy glass — *converted in Phase 4 (spec §14)* |
-| messages, vault+cards | 3 | vault: 113 durations >250ms, 156 `text-white` |
+| messages, vault+cards | 3 | vault: 113 durations >250ms, 156 `text-white` — *messages and vault + trading cards converted in Phase 4 (spec §14)* |
 | halo/nav, labs/onoma, wiki-os | 2.5 | wiki-os: 306 raw buttons, 518 `dark:`; onoma: 418 `text-[Npx]` — *labs/onoma and WikiOS (+ media player, wiki stylesheets) converted in Phase 4 (spec §14)* |
 | thinkpages, passport/settings | 2 | 308 / 259 `dark:`, custom modals — *passport + its settings panel converted in Phase 4 (spec §14)* |
 | dashboard, achievements | 1–1.5 | no Facet surfaces at all — *converted in Phase 4 (spec §14)* |

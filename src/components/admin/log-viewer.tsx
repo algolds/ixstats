@@ -226,20 +226,20 @@ function ToolbarButton({
   className?: string;
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="icon-sm"
       onClick={onClick}
       aria-label={label}
       className={cn(
-        "rounded-control-sm inline-flex size-7 items-center justify-center transition-colors outline-none",
-        "text-label-secondary hover:bg-fill-4 hover:text-label",
-        "focus-visible:ring-tint focus-visible:ring-2 focus-visible:ring-offset-1",
+        "text-label-secondary hover:text-label size-7",
         active && "bg-fill-3 text-label",
         className
       )}
     >
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -718,16 +718,18 @@ function LogViewerFilterable({
           <div className="text-label-secondary text-body flex flex-col items-center justify-center gap-1 py-10">
             <span>No matching log entries.</span>
             {(searchQuery || activeLevels.size < levels.length) && (
-              <button
+              <Button
                 type="button"
+                variant="link"
+                size="sm"
                 onClick={() => {
                   setSearchQuery("");
                   setActiveLevels(new Set(levels));
                 }}
-                className="text-label-secondary hover:text-label text-footnote underline underline-offset-2"
+                className="text-label-secondary hover:text-label h-auto px-0"
               >
                 Reset filters
-              </button>
+              </Button>
             )}
           </div>
         ) : (

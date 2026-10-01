@@ -19,6 +19,7 @@ import {
   RADII,
   SYSTEM_COLORS,
   TEXT_STYLES,
+  TINTED_FILL,
   Z_INDEX,
   type Appearance,
 } from "~/lib/design/tokens";
@@ -124,6 +125,19 @@ function contrast(a: string, b: string): number {
   return (hi! + 0.05) / (lo! + 0.05);
 }
 
+/** `color-mix(in srgb, a weight, b)` / `a` at `weight` alpha over opaque `b`, as #rrggbb. */
+function mix(a: string, b: string, weight: number): string {
+  const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const [ca, cb] = [channels(a), channels(b)];
+  return `#${ca
+    .map((c, i) =>
+      Math.round(c * weight + cb[i]! * (1 - weight))
+        .toString(16)
+        .padStart(2, "0")
+    )
+    .join("")}`;
+}
+
 const AA_TEXT = 4.5;
 const AA_UI = 3;
 
@@ -147,6 +161,20 @@ describe("Facet 3 tokens: CSS matches src/lib/design/tokens.ts", () => {
       expect([name, role(appearance, name)]).toEqual([name, values[appearance]]);
     }
     expect(role(appearance, "on-system")).toBe(ON_SYSTEM_COLOR[appearance]);
+  });
+
+  it("tinted-fill inks pull each system colour toward the label", () => {
+    const aliases = blocks.find(
+      (b) =>
+        b.stack.length === 1 && b.stack[0] === "@theme inline static" && b.decls.has("--color-tint")
+    )!;
+    for (const name of Object.keys(SYSTEM_COLORS)) {
+      expect([name, decl(aliases, `--color-${name}-ink`)]).toEqual([
+        name,
+        `color-mix(in srgb, var(--color-${name}) ${TINTED_FILL.inkMix * 100}%, var(--color-label))`,
+      ]);
+      expect([name, decl(aliases, `--color-on-${name}`)]).toEqual([name, "var(--color-on-system)"]);
+    }
   });
 
   it("app tints", () => {
@@ -239,6 +267,19 @@ describe("Facet 3 tokens: contrast (spec §2.3)", () => {
         ];
         for (const [pair, ratio, min] of checks) {
           expect({ app, pair, ok: ratio >= min, ratio }).toMatchObject({ ok: true });
+        }
+      });
+    });
+
+    describe.each([false, true])("increase contrast: %s", (more) => {
+      // Badge colour variants and ActionPill pressed tones: 12px ink text on a 15% fill.
+      it.each(Object.keys(SYSTEM_COLORS))("%s ink on its tinted fill ≥ 4.5:1", (name) => {
+        const color = role(appearance, name);
+        const ink = mix(color, role(appearance, "label", more), TINTED_FILL.inkMix);
+        for (const bg of BACKGROUND_ROLES) {
+          const fill = mix(color, role(appearance, bg, more), TINTED_FILL.alpha);
+          const ratio = contrast(ink, fill);
+          expect({ name, bg, ok: ratio >= AA_TEXT, ratio }).toMatchObject({ ok: true });
         }
       });
     });

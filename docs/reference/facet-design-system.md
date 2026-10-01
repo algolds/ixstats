@@ -141,7 +141,8 @@ layout) makes motion/react honour both the OS and the in-app Reduce Motion setti
 |---|---|
 | `FacetCard` (+ `FacetCardHeader/Content/Footer`) | The opaque content card. `padding="sm|md|lg"`; `onClick` or `interactive` makes it pressable (keyboard, focus ring). `variant="inset"` is a panel inside a card: `surface-secondary`, `rounded-row`, no hairline or shadow, `p-4` by default (`padding` still applies). `depth`/`theme` and the legacy `variant` names are accepted and ignored. `FACET_CARD_SURFACE` / `FACET_INSET_SURFACE` hold the classes for a `<section>`, `<li>` or button that must keep its element. |
 | `MotionFacetCard` | `FacetCard` as a motion component (`initial`, `animate`, `exit`, `layout`…) for animated cards; replaces spreading `FACET_CARD_SURFACE` onto a `motion.div`. |
-| `FacetList` / `FacetListSection` / `FacetRow` | Inset grouped list — the default for settings, details, rails and most stat grids. Section `header` (sentence case) and `footer`; rows with `leading`, `title`, `subtitle`, `trailing`, `accessory` (`chevron`/`check`/node), `href` or `onClick`, `selected`, `disabled`, `destructive`, `swipeActions`. `variant="plain"` inside a card. |
+| `FacetList` / `FacetListSection` / `FacetRow` | Inset grouped list — the default for settings, details, rails and most stat grids. Section `header` (sentence case) and `footer`; rows with `leading`, `title`, `subtitle`, `trailing`, `accessory` (`chevron`/`check`/node), `href` or `onClick`, `selected`, `disabled`, `destructive`, `swipeActions`. `variant="plain"` inside a card. Selection: `selectionStyle="fill"` (default, `fill-3` — pickers with a check, `aria-pressed`) or `"tint"` (`tint-fill` + tinted leading icon — the current row of a master–detail list, `aria-current="true"` on button rows, `"page"` on links); `aria-current` overrides. |
+| `Table` (+ `TableHeader/Body/Footer/Row/Head/Cell/Caption`) | Data tables: opaque `surface`, `rounded-card`, `separator` hairlines — inside a `Card`/`FacetCard` it drops its own surface. Headers `text-footnote` `label-secondary`; cells `text-callout` with `tabular-nums`; rows `fill-4` hover, `tint-fill` when `data-state="selected"`/`aria-selected`. Wide tables scroll with a `mask-image` edge fade (no gradient overlay). `<TableHeader sticky>` pins the header; give the scroller a height with `<Table containerClassName="max-h-…">`. |
 | `Stat` | Eyebrow label + tabular value + optional `delta` (icon and text, never colour alone) + `hint`. `icon` adds a 14px decorative glyph to the label row, leading by default (HIG summary tiles) or `iconPlacement="trailing"` at the row's end (metric grids). |
 | `EmptyState` | Icon, title, message and one action; `compact` inside cards. |
 | `FacetMaterial` | Glass: `material="thin|regular|thick"`. Old `satin|paper|rubber|metal` still work (deprecated). |
@@ -179,7 +180,8 @@ shortcut, never the only way to an action. Keyboard model:
 | `ToggleGroup` | Multi- or single-select filter chips. `disallowEmpty` (alias `required`) keeps the last pressed item pressed, so a single-select group never clears. |
 | `ActionPill` | Pill-shaped social action (like, repost, save, comment, share): neutral until `pressed`, then a tinted fill in its `tone` (`tint` or a system colour); `icon`, label, `count` (tabular); `aria-pressed` only when `pressed` is set. Forwards its ref, so it can be a `PopoverTrigger asChild`. |
 | `Tabs` / `FacetTabs` | Page-level section switching only; full tablist ARIA and arrow keys. |
-| `Switch`, `Checkbox`, `Slider`, `Stepper` | Settings and numeric input; roles, tint when on, 44px touch targets. |
+| `Switch`, `Checkbox`, `Slider`, `Stepper` | Settings and numeric input; roles, tint when on, 44px touch targets. A boolean that applies immediately is a `Switch`; a choice submitted with a form is a `Checkbox`. `Slider`'s `aria-label`/`aria-labelledby` name the thumb (the `role="slider"` element). |
+| `RadioCardGroup` / `RadioCard` | A single choice whose options need a title, description or icon (delivery modes, event types). `radiogroup` of `radio`s, one roving tab stop, arrows/Home/End move the selection; the checked card takes `tint-fill`, a tint border and ring and a filled radio dot. `value` (`null` = controlled, nothing checked), `onValueChange`, `columns` 1–4; cards take `value`, `icon`, `title`, `description`, `indicator`. Short peer options → `SegmentedControl`; long lists → `FacetRow`. |
 | `Input`, `Textarea`, `Select`, `SearchField`, `MenuButton` | Shared field style (`fieldStyles`): fill background, `rounded-control`, red `aria-invalid`, 16px text on phones. `MenuButton` opens a `DropdownMenu`. |
 
 Ordinary controls make no sound.
@@ -189,6 +191,7 @@ Ordinary controls make no sound.
 | Need | Use |
 |---|---|
 | Task, detail view, multi-step flow | `Sheet` — `side="auto"` (default): right side sheet ≥768px, bottom sheet below with `detents` (`medium`/`large`), grabber and drag-to-dismiss. Explicit `side` values still work. `size="wide"` (~48rem) for two-column detail views. |
+| Progress through a multi-step flow (wizard) | `StepIndicator` — `steps` (`id`, `label`, optional `icon`), zero-based `current`, optional `onStepClick` (completed steps become buttons; `navigable="all"` allows jumping ahead). A named `<nav>` with an ordered list; the current step is `aria-current="step"`, completed steps are checked. Not the numeric `Stepper`. |
 | Confirm a destructive or irreversible decision | `AlertDialog` (`AlertDialogAction variant="destructive"`) |
 | Small contextual edit or info | `Popover` (`PopoverAnchor` positions it against another element when the trigger's own click must not toggle it) |
 | Short focused form | `Dialog` |
@@ -228,7 +231,7 @@ labels; no exclamation marks in UI chrome.
 
 - `src/styles/globals.css` imports, in order: Tailwind, `facet/tokens.css`, then the layered sheets (typography,
   utilities, animations, themes aliases, theming, components, domains, `wiki-os/tokens.css`, facet, integrations,
-  layout, `facet/shell.css`, clerk). Route sheets: `wiki-os.css` (WikiOS: `--wikios-*` aliases of the roles + Wiki tint, the Reading style and MediaWiki content styles), `forum.css` (Forum: `--forum-*` aliases of the roles + Forum tint, layout and BBCode post styles), `facet/lab.css` (materials lab only).
+  layout, `facet/shell.css`, clerk). Route sheets: `wiki-os.css` (WikiOS: `--wikios-*` aliases of the roles + Wiki tint, the Reading style and MediaWiki content styles), `forum.css` (Forum: `--forum-*` aliases of the roles + Forum tint, layout and BBCode post styles), `facet/lab.css` (materials lab only). Component sheet: `card-art.css` (trading-card art — card faces/backs, pack covers, holographic layers, cosmetic frames — imported by those components; `card-art-linear-{t,b,r,br,tr}` take Tailwind `from-*`/`via-*`/`to-*` stops so card-art gradients stay out of the UI gradient ceiling; not for UI).
 - Material and surface classes never set position, z-index, radius, margin or letter-spacing.
 - Third-party overrides (Clerk, sonner, MapLibre) live unlayered in `integrations.css`/`clerk.css` with a comment.
 
@@ -243,7 +246,7 @@ typography presets in the UI, blur on skeletons, hover/press sound ticks. See th
 
 | Test | Enforces |
 |---|---|
-| `facet-guards.test.ts` | ≥12px text, no `transition-all`, no `scale(0)` entrances, `animate-pulse` ceiling, one blur in `DrillSheets`, one `<FacetMotionConfig>`, no lucide or stray Radix imports, no hand-drawn dot grids, no legacy `glass-*`/`*-hsl`, no arbitrary z in `components/ui`, no block elements inside `<p>`, and for converted apps (MyCountry, maps, atomic picker, Help, Country Editor, dashboard, achievements, passport, ThinkPages/ThinkTanks, Messages, Halo, Labs/Onoma, Forum, Admin, WikiOS + media player, Builder, countries index + public pages): no `dark:`, no hex classes, no arbitrary z, capped gradients |
+| `facet-guards.test.ts` | ≥12px text, no `transition-all`, no `scale(0)` entrances, `animate-pulse` ceiling, one blur in `DrillSheets`, one `<FacetMotionConfig>`, no lucide or stray Radix imports, no hand-drawn dot grids, no legacy `glass-*`/`*-hsl`, no arbitrary z in `components/ui`, no block elements inside `<p>`, and for converted apps (MyCountry, maps, atomic picker, Help, Country Editor, dashboard, achievements, passport, ThinkPages/ThinkTanks, Messages, Halo, Labs/Onoma, Forum, Admin, WikiOS + media player, Builder, countries index + public pages, Vault + trading cards, Sports): no `dark:`, no hex classes, no arbitrary z, capped gradients |
 | `css-layering.test.ts` | Every sheet layered; no `!important` outside the two allowed files; no layout properties on material classes; no orphan comment closers |
 | `token-contrast.test.ts` | WCAG AA for every label/tint pair in both themes |
 | `lib/navigation/app-sections.test.ts` | Every app/section `href` in the section map resolves to a `src/app/**/page.tsx` that renders (no redirect stubs); settings tabs exist; one app and one section per URL |
@@ -352,6 +355,12 @@ animating that would relayout the page every frame; a transform-based version ne
 
 ## Changelog
 
+- **3.0 + Phase 4 selection primitives (2026-10-01)** — `RadioCardGroup`/`RadioCard` (radio cards with
+  roving focus) and `StepIndicator` (wizard progress); `FacetRow` `selectionStyle="tint"` and `aria-current`;
+  `Table` restyled to Facet 3 (opaque surface or card-inherited, separator hairlines, footnote headers, tabular
+  callout cells, tint-fill selection, mask scroll hint, `TableHeader sticky` + `Table containerClassName`);
+  `FacetDataTable`'s table drops its glass wrapper for it; `Slider` names its thumbs. Admin's master–detail rows,
+  radio cards, wizard steps, native checkboxes and range inputs moved onto them.
 - **3.0 + Phase 4 primitive gaps (2026-09-30)** — `FacetCard variant="inset"` and `FACET_INSET_SURFACE`;
   `MotionFacetCard`; `Stat` `icon`/`iconPlacement`; system colours `mint`, `cyan`, `brown`, `gray` and the
   `<colour>-ink` tinted-fill tokens (contrast-guarded); `Badge` variants for all thirteen system colours; `ActionPill`;

@@ -24,7 +24,6 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { ScrollArea } from "~/components/ui/scroll-area";
 import { useNotify } from "~/hooks/useNotify";
 import {
   ControlSlider as SlidersHorizontal,
@@ -176,87 +175,85 @@ export function AlertRulesPanel() {
 
       <Card>
         <CardContent className="p-0">
-          <ScrollArea className="max-h-[600px]">
-            <Table>
-              <TableHeader>
+          <Table containerClassName="max-h-[600px]">
+            <TableHeader sticky>
+              <TableRow>
+                <TableHead>Metric</TableHead>
+                <TableHead>Alert Type</TableHead>
+                <TableHead>Country</TableHead>
+                <TableHead className="text-center">Critical</TableHead>
+                <TableHead className="text-center">High</TableHead>
+                <TableHead className="text-center">Medium</TableHead>
+                <TableHead className="text-center">Active</TableHead>
+                <TableHead className="w-10" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
                 <TableRow>
-                  <TableHead>Metric</TableHead>
-                  <TableHead>Alert Type</TableHead>
-                  <TableHead>Country</TableHead>
-                  <TableHead className="text-center">Critical</TableHead>
-                  <TableHead className="text-center">High</TableHead>
-                  <TableHead className="text-center">Medium</TableHead>
-                  <TableHead className="text-center">Active</TableHead>
-                  <TableHead className="w-10" />
+                  <TableCell colSpan={8} className="text-label-secondary py-8 text-center">
+                    Loading...
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-label-secondary py-8 text-center">
-                      Loading...
-                    </TableCell>
-                  </TableRow>
-                ) : data?.thresholds.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-label-secondary py-8 text-center">
-                      <SlidersHorizontal className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                      No alert rules configured
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  data?.thresholds.map((t) => {
-                    const country = countries?.find((c: any) => c.id === t.countryId);
-                    return (
-                      <TableRow
-                        key={t.id}
-                        className={!t.isActive ? "opacity-50" : "cursor-pointer"}
-                        onClick={() => handleEdit(t)}
-                      >
-                        <TableCell className="font-medium">{t.metricName}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{t.alertType}</Badge>
-                        </TableCell>
-                        <TableCell className="text-body">
-                          {country?.name ?? t.countryId.slice(0, 8)}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {t.criticalMin ?? "—"} / {t.criticalMax ?? "—"}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {t.highMin ?? "—"} / {t.highMax ?? "—"}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {t.mediumMin ?? "—"} / {t.mediumMax ?? "—"}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div
-                            className={`mx-auto h-2 w-2 rounded-full ${t.isActive ? "bg-green" : "bg-fill"}`}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-8 p-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm("Delete this threshold rule?")) {
-                                deleteMutation.mutate({ id: t.id });
-                              }
-                            }}
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </ScrollArea>
+              ) : data?.thresholds.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-label-secondary py-8 text-center">
+                    <SlidersHorizontal className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                    No alert rules configured
+                  </TableCell>
+                </TableRow>
+              ) : (
+                data?.thresholds.map((t) => {
+                  const country = countries?.find((c: any) => c.id === t.countryId);
+                  return (
+                    <TableRow
+                      key={t.id}
+                      className={!t.isActive ? "opacity-50" : "cursor-pointer"}
+                      onClick={() => handleEdit(t)}
+                    >
+                      <TableCell className="font-medium">{t.metricName}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{t.alertType}</Badge>
+                      </TableCell>
+                      <TableCell className="text-body">
+                        {country?.name ?? t.countryId.slice(0, 8)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {t.criticalMin ?? "—"} / {t.criticalMax ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {t.highMin ?? "—"} / {t.highMax ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {t.mediumMin ?? "—"} / {t.mediumMax ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <div
+                          className={`mx-auto h-2 w-2 rounded-full ${t.isActive ? "bg-green" : "bg-fill"}`}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-8 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm("Delete this threshold rule?")) {
+                              deleteMutation.mutate({ id: t.id });
+                            }
+                          }}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 

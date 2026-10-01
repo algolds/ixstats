@@ -126,50 +126,48 @@ export const StandingsInspectorNode = React.memo(function StandingsInspectorNode
             </div>
           )}
 
-          <div className="thin-scrollbar max-h-[260px] space-y-2 overflow-y-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-footnote w-10">#</TableHead>
-                  <TableHead className="text-footnote">Team</TableHead>
-                  <TableHead className="text-footnote text-center">W-L-D</TableHead>
-                  <TableHead className="text-footnote text-center">Pts</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {dbSeason.standings.map((s, i) => {
-                  const promotionCount = (dbLeague as any)?.promotionCount ?? 3;
-                  const relegationCount = (dbLeague as any)?.relegationCount ?? 3;
-                  const totalTeams = dbSeason.standings.length;
+          <Table containerClassName="max-h-[260px]">
+            <TableHeader sticky>
+              <TableRow>
+                <TableHead className="text-footnote w-10">#</TableHead>
+                <TableHead className="text-footnote">Team</TableHead>
+                <TableHead className="text-footnote text-center">W-L-D</TableHead>
+                <TableHead className="text-footnote text-center">Pts</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {dbSeason.standings.map((s, i) => {
+                const promotionCount = (dbLeague as any)?.promotionCount ?? 3;
+                const relegationCount = (dbLeague as any)?.relegationCount ?? 3;
+                const totalTeams = dbSeason.standings.length;
 
-                  const isPromotionZone = i < promotionCount && (dbLeague as any)?.parentLeague;
-                  const isRelegationZone =
-                    i >= totalTeams - relegationCount && (dbLeague as any)?.subLeagues?.length > 0;
+                const isPromotionZone = i < promotionCount && (dbLeague as any)?.parentLeague;
+                const isRelegationZone =
+                  i >= totalTeams - relegationCount && (dbLeague as any)?.subLeagues?.length > 0;
 
-                  return (
-                    <TableRow
-                      key={s.id}
-                      className={cn(
-                        isPromotionZone && "border-l-green bg-green/5 hover:bg-green/10 border-l-2",
-                        isRelegationZone && "border-l-red bg-red/5 hover:bg-red/10 border-l-2"
-                      )}
-                    >
-                      <TableCell className="text-caption">{s.rank ?? i + 1}</TableCell>
-                      <TableCell className="text-caption flex max-w-[120px] items-center gap-1 truncate">
-                        {s.team.name}
-                        {isPromotionZone && <Badge variant="green">Prom</Badge>}
-                        {isRelegationZone && <Badge variant="red">Releg</Badge>}
-                      </TableCell>
-                      <TableCell className="text-footnote text-center tabular-nums">
-                        {s.wins}-{s.losses}-{s.draws}
-                      </TableCell>
-                      <TableCell className="text-caption text-center">{s.points}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+                return (
+                  <TableRow
+                    key={s.id}
+                    className={cn(
+                      isPromotionZone && "border-l-green bg-green/5 hover:bg-green/10 border-l-2",
+                      isRelegationZone && "border-l-red bg-red/5 hover:bg-red/10 border-l-2"
+                    )}
+                  >
+                    <TableCell className="text-caption">{s.rank ?? i + 1}</TableCell>
+                    <TableCell className="text-caption flex max-w-[120px] items-center gap-1 truncate">
+                      {s.team.name}
+                      {isPromotionZone && <Badge variant="green">Prom</Badge>}
+                      {isRelegationZone && <Badge variant="red">Releg</Badge>}
+                    </TableCell>
+                    <TableCell className="text-footnote text-center tabular-nums">
+                      {s.wins}-{s.losses}-{s.draws}
+                    </TableCell>
+                    <TableCell className="text-caption text-center">{s.points}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

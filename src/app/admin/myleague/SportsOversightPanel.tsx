@@ -5,6 +5,7 @@ import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
+import { Slider } from "~/components/ui/slider";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -495,30 +496,30 @@ function AINarratorLab() {
 
             {/* Advanced Settings Toggle */}
             <div className="pt-1 select-none">
-              <button
+              <Button
                 type="button"
+                size="sm"
+                variant="ghost"
                 onClick={() => setShowConfig(!showConfig)}
-                className="text-label-secondary hover:text-label text-caption flex items-center gap-1.5 transition select-none active:scale-[0.98]"
+                aria-expanded={showConfig}
+                className="text-label-secondary hover:text-label"
               >
-                <Settings className="h-3.5 w-3.5" />
+                <Settings aria-hidden />
                 {showConfig ? "Hide Advanced Settings" : "Configure AI Settings"}
-              </button>
+              </Button>
             </div>
 
             {/* Config Fields */}
             {showConfig && (
               <div className="border-separator rounded-row space-y-3.5 border p-4">
                 <div className="border-separator flex items-center gap-2 border-b pb-2.5 select-none">
-                  <input
-                    type="checkbox"
+                  <Switch
                     id="applyGlobally"
                     checked={applyGlobally}
-                    onChange={(e) => {
-                      const v = e.target.checked;
+                    onCheckedChange={(v) => {
                       setApplyGlobally(v);
                       saveConfig("applyGlobally", v);
                     }}
-                    className="border-separator bg-background text-tint accent-tint rounded-control-sm h-3.5 w-3.5 cursor-pointer"
                   />
                   <label htmlFor="applyGlobally" className="text-label text-subhead cursor-pointer">
                     Apply settings globally (Write to DB)
@@ -546,21 +547,24 @@ function AINarratorLab() {
                     </select>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-label-secondary text-subhead block">
+                    <label
+                      id="sports-ai-temperature"
+                      className="text-label-secondary text-subhead block tabular-nums"
+                    >
                       Temp ({temperature})
                     </label>
-                    <input
-                      type="range"
+                    <Slider
+                      aria-labelledby="sports-ai-temperature"
                       min={0}
                       max={1}
                       step={0.1}
-                      value={temperature}
-                      onChange={(e) => {
-                        const v = parseFloat(e.target.value);
+                      value={[temperature]}
+                      onValueChange={([v]) => {
+                        if (v === undefined) return;
                         setTemperature(v);
                         saveConfig("temperature", v);
                       }}
-                      className="accent-yellow h-8 w-full cursor-pointer"
+                      className="h-8"
                     />
                   </div>
                 </div>
@@ -572,14 +576,12 @@ function AINarratorLab() {
                       Higher quality, much slower. Off = fast commentary.
                     </span>
                   </span>
-                  <input
-                    type="checkbox"
+                  <Switch
                     checked={reasoning}
-                    onChange={(e) => {
-                      setReasoning(e.target.checked);
-                      saveConfig("reasoning", e.target.checked);
+                    onCheckedChange={(v) => {
+                      setReasoning(v);
+                      saveConfig("reasoning", v);
                     }}
-                    className="accent-yellow h-4 w-4 cursor-pointer"
                   />
                 </label>
 

@@ -12,6 +12,9 @@ import { Badge } from "~/components/ui/badge";
 import { Slider } from "~/components/ui/slider";
 import { Textarea } from "~/components/ui/textarea";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { StepIndicator } from "~/components/ui/step-indicator";
 import { CountrySelector } from "./CountrySelector";
 import {
   StatDown as TrendingDown,
@@ -220,29 +223,12 @@ export function EventWizard({ onCreated }: EventWizardProps) {
   return (
     <div className="space-y-6">
       {/* Step Progress */}
-      <div className="flex items-center gap-1">
-        {STEPS.map((s, i) => (
-          <div key={s.number} className="flex items-center">
-            <button
-              onClick={() => s.number < step && setStep(s.number)}
-              disabled={s.number > step}
-              className={`text-caption flex h-8 items-center gap-1.5 rounded-full px-3 transition-colors ${
-                s.number === step
-                  ? "bg-tint text-on-tint"
-                  : s.number < step
-                    ? "bg-tint-fill text-tint hover:bg-tint/30 cursor-pointer"
-                    : "bg-fill-3 text-label-secondary"
-              }`}
-            >
-              <span>{s.number}</span>
-              <span className="hidden sm:inline">{s.label}</span>
-            </button>
-            {i < STEPS.length - 1 && (
-              <div className={`mx-1 h-px w-4 ${s.number < step ? "bg-tint/40" : "bg-separator"}`} />
-            )}
-          </div>
-        ))}
-      </div>
+      <StepIndicator
+        aria-label="Event wizard progress"
+        steps={STEPS.map((st) => ({ id: String(st.number), label: st.label }))}
+        current={step - 1}
+        onStepClick={(index) => setStep(index + 1)}
+      />
 
       {/* Step Content */}
       <div className="min-h-[400px]">
@@ -336,29 +322,25 @@ function Step1EventType({
       <p className="text-label-secondary text-body mb-4">
         Select the category of world event to create.
       </p>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <RadioCardGroup
+        aria-label="Event type"
+        value={selected || null}
+        onValueChange={(value) => onSelect(value as EventTypeValue)}
+        className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3"
+      >
         {EVENT_TYPES.map((type) => {
           const Icon = type.icon;
-          const isSelected = selected === type.value;
           return (
-            <button
+            <RadioCard
               key={type.value}
-              onClick={() => onSelect(type.value)}
-              className={`rounded-row border p-4 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
-                isSelected
-                  ? `${type.bg} border-2`
-                  : "border-separator hover:border-separator hover:bg-fill-4"
-              }`}
-            >
-              <div className="mb-2 flex items-center gap-2">
-                <Icon className={`h-5 w-5 ${type.color}`} />
-                <span className="text-label text-body font-medium">{type.label}</span>
-              </div>
-              <p className="text-label-secondary text-footnote">{type.description}</p>
-            </button>
+              value={type.value}
+              icon={<Icon className={type.color} />}
+              title={type.label}
+              description={type.description}
+            />
           );
         })}
-      </div>
+      </RadioCardGroup>
     </div>
   );
 }
@@ -381,24 +363,16 @@ function Step2Scope({
         Choose whether this event affects all countries or specific targets.
       </p>
 
-      <div className="mb-4 flex gap-2">
-        <Button
-          variant={scope === "global" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onScopeChange("global")}
-        >
-          <Globe className="mr-1 h-4 w-4" />
-          Global (All Countries)
-        </Button>
-        <Button
-          variant={scope === "targeted" ? "default" : "outline"}
-          size="sm"
-          onClick={() => onScopeChange("targeted")}
-        >
-          <Swords className="mr-1 h-4 w-4" />
-          Targeted Countries
-        </Button>
-      </div>
+      <SegmentedControl
+        aria-label="Event scope"
+        className="mb-4"
+        value={scope}
+        onValueChange={onScopeChange}
+        options={[
+          { value: "global", label: "Global (All Countries)", icon: <Globe aria-hidden /> },
+          { value: "targeted", label: "Targeted Countries", icon: <Swords aria-hidden /> },
+        ]}
+      />
 
       {scope === "targeted" ? (
         <CountrySelector selectedIds={selectedIds} onSelectionChange={onSelectionChange} />

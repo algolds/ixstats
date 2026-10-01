@@ -3,6 +3,7 @@
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import {
   Select,
   SelectContent,
@@ -102,73 +103,67 @@ export function DiplomaticScenariosHeader({
         <span className="text-label-secondary text-caption mr-1">Filter by:</span>
 
         {/* Relationship filters */}
-        {RELATIONSHIP_LEVELS.map((rel) => {
-          const isSelected = relationshipFilter.includes(rel.value);
-          return (
-            <button
-              key={rel.value}
-              type="button"
-              onClick={() => {
-                setRelationshipFilter((prev) =>
-                  isSelected ? prev.filter((r) => r !== rel.value) : [...prev, rel.value]
-                );
-              }}
-              className={`text-footnote rounded-full px-3 py-1 transition-colors ${
-                isSelected
-                  ? "bg-blue text-on-blue"
-                  : "bg-fill-4 hover:bg-fill-4 text-label-secondary"
-              }`}
+        <ToggleGroup
+          type="multiple"
+          variant="pill"
+          size="sm"
+          aria-label="Relationship"
+          value={relationshipFilter}
+          onValueChange={setRelationshipFilter}
+          className="flex flex-wrap gap-1.5"
+        >
+          {RELATIONSHIP_LEVELS.map((item) => (
+            <ToggleGroupItem
+              key={item.value}
+              value={item.value}
+              className="data-[state=on]:bg-blue/15 data-[state=on]:text-blue-ink data-[state=on]:hover:bg-blue/20"
             >
-              {rel.label}
-            </button>
-          );
-        })}
+              {item.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
 
         {/* Difficulty filters */}
-        {DIFFICULTY_LEVELS.map((diff) => {
-          const isSelected = difficultyFilter.includes(diff.value);
-          return (
-            <button
-              key={diff.value}
-              type="button"
-              onClick={() => {
-                setDifficultyFilter((prev) =>
-                  isSelected ? prev.filter((d) => d !== diff.value) : [...prev, diff.value]
-                );
-              }}
-              className={`text-footnote rounded-full px-3 py-1 transition-colors ${
-                isSelected
-                  ? "bg-yellow text-on-yellow font-medium"
-                  : "bg-fill-4 hover:bg-fill-4 text-label-secondary"
-              }`}
+        <ToggleGroup
+          type="multiple"
+          variant="pill"
+          size="sm"
+          aria-label="Difficulty"
+          value={difficultyFilter}
+          onValueChange={setDifficultyFilter}
+          className="flex flex-wrap gap-1.5"
+        >
+          {DIFFICULTY_LEVELS.map((item) => (
+            <ToggleGroupItem
+              key={item.value}
+              value={item.value}
+              className="data-[state=on]:bg-yellow/15 data-[state=on]:text-yellow-ink data-[state=on]:hover:bg-yellow/20"
             >
-              {diff.label}
-            </button>
-          );
-        })}
+              {item.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
 
         {/* Time frame filters */}
-        {TIME_FRAMES.map((tf) => {
-          const isSelected = timeFrameFilter.includes(tf.value);
-          return (
-            <button
-              key={tf.value}
-              type="button"
-              onClick={() => {
-                setTimeFrameFilter((prev) =>
-                  isSelected ? prev.filter((t) => t !== tf.value) : [...prev, tf.value]
-                );
-              }}
-              className={`text-footnote rounded-full px-3 py-1 transition-colors ${
-                isSelected
-                  ? "bg-teal text-on-teal"
-                  : "bg-fill-4 hover:bg-fill-4 text-label-secondary"
-              }`}
+        <ToggleGroup
+          type="multiple"
+          variant="pill"
+          size="sm"
+          aria-label="Time frame"
+          value={timeFrameFilter}
+          onValueChange={setTimeFrameFilter}
+          className="flex flex-wrap gap-1.5"
+        >
+          {TIME_FRAMES.map((item) => (
+            <ToggleGroupItem
+              key={item.value}
+              value={item.value}
+              className="data-[state=on]:bg-teal/15 data-[state=on]:text-teal-ink data-[state=on]:hover:bg-teal/20"
             >
-              {tf.label}
-            </button>
-          );
-        })}
+              {item.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
       </div>
     </div>
   );

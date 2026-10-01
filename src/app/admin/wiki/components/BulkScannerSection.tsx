@@ -4,6 +4,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "~/components/ui/button";
+import { Checkbox } from "~/components/ui/checkbox";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -227,11 +228,10 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
                     )}
                   >
                     <td className="px-3 py-2.5 text-center">
-                      <input
-                        type="checkbox"
+                      <Checkbox
+                        aria-label={`Select ${result.countryName}`}
                         checked={result.selected}
-                        onChange={() => toggleResult(result.countryId)}
-                        className="border-separator rounded-control-sm"
+                        onCheckedChange={() => toggleResult(result.countryId)}
                       />
                     </td>
                     <td className="text-label px-3 py-2.5 font-semibold">{result.countryName}</td>

@@ -8,6 +8,7 @@ import { AdminHeader } from "../_components/AdminHeader";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
+import { Slider } from "~/components/ui/slider";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -217,19 +218,22 @@ export function NarratorPanel() {
                   </Select>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <div className="flex justify-between">
-                    <Label className="text-label-secondary text-subhead">Temperature</Label>
+                    <Label id="narrator-temperature" className="text-label-secondary text-subhead">
+                      Temperature
+                    </Label>
                     <span className="text-caption text-yellow tabular-nums">{temperature}</span>
                   </div>
-                  <input
-                    type="range"
+                  <Slider
+                    aria-labelledby="narrator-temperature"
                     min={0}
                     max={2}
                     step={0.1}
-                    value={temperature}
-                    onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                    className="bg-fill-3 rounded-control accent-yellow h-1.5 w-full cursor-pointer"
+                    value={[temperature]}
+                    onValueChange={([v]) => {
+                      if (v !== undefined) setTemperature(v);
+                    }}
                   />
                 </div>
 
@@ -274,16 +278,18 @@ export function NarratorPanel() {
                   className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
                 />
                 {settingsData?.hasApiKey && (
-                  <button
+                  <Button
                     type="button"
+                    variant="link"
+                    size="sm"
                     onClick={() => {
                       setClearApiKey((v) => !v);
                       setApiKey("");
                     }}
-                    className="text-label-secondary hover:text-label text-footnote underline-offset-2 hover:underline"
+                    className="text-label-secondary hover:text-label h-auto px-0"
                   >
                     {clearApiKey ? "Keep the saved key" : "Remove the saved key on save"}
-                  </button>
+                  </Button>
                 )}
               </div>
 
@@ -291,8 +297,10 @@ export function NarratorPanel() {
               <div className="space-y-1.5 pt-2">
                 <div className="flex items-center justify-between">
                   <Label className="text-label-secondary text-subhead">Global System Prompt</Label>
-                  <button
+                  <Button
                     type="button"
+                    variant="link"
+                    size="sm"
                     onClick={() => {
                       if (
                         window.confirm(
@@ -302,10 +310,10 @@ export function NarratorPanel() {
                         setSystemPrompt(DEFAULT_FLAVOR_SYSTEM_PROMPT);
                       }
                     }}
-                    className="text-eyebrow text-yellow hover:underline"
+                    className="text-yellow h-auto px-0"
                   >
                     Reset to Default
-                  </button>
+                  </Button>
                 </div>
                 <Textarea
                   value={systemPrompt}

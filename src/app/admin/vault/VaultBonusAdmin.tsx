@@ -17,6 +17,7 @@ import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
 import { FacetCard } from "~/components/ui/facet-container";
 import { Input } from "~/components/ui/input";
+import { Checkbox } from "~/components/ui/checkbox";
 
 interface BonusField {
   key: string;
@@ -140,11 +141,11 @@ export function VaultBonusAdmin() {
 
           <div className="flex items-center gap-3">
             <label className="bg-surface border-separator rounded-row flex cursor-pointer items-center gap-2 border px-3 py-1.5">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={enabled}
-                onChange={(e) => setForm((p) => ({ ...p, enabled: e.target.checked ? 1 : 0 }))}
-                className="border-separator rounded-control-sm accent-green h-4 w-4"
+                onCheckedChange={(checked) =>
+                  setForm((p) => ({ ...p, enabled: checked === true ? 1 : 0 }))
+                }
               />
               <span className="text-label text-caption">
                 {enabled ? "Bonuses Active" : "Bonuses Paused"}

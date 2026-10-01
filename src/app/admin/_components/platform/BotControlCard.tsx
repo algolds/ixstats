@@ -18,7 +18,6 @@ import {
   Activity,
   Cpu,
   Component as Layers,
-  NavArrowRight as ChevronRight,
   InfoCircle as Info,
   CheckCircle as CheckCircle2,
   XmarkCircle as XCircle,
@@ -29,6 +28,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Separator } from "~/components/ui/separator";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Switch } from "~/components/ui/switch";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -629,26 +629,22 @@ export function BotControlCard({
             ) : (
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
                 {/* Commands list */}
-                <div className="border-separator bg-surface rounded-control max-h-[450px] space-y-1 overflow-y-auto border p-2 lg:col-span-2">
-                  <span className="text-label-secondary border-separator text-eyebrow block border-b px-2 pb-1.5">
-                    Commands Registry
-                  </span>
+                <FacetListSection
+                  header="Commands registry"
+                  className="lg:col-span-2"
+                  groupClassName="max-h-[450px] overflow-y-auto"
+                >
                   {commands.map((cmd: any) => (
-                    <button
+                    <FacetRow
                       key={cmd.name}
                       onClick={() => setSelectedCommandName(cmd.name)}
-                      className={cn(
-                        "rounded-control-sm text-caption flex w-full items-center justify-between px-2.5 py-2 text-left transition-colors",
-                        selectedCommandName === cmd.name
-                          ? "bg-tint-fill text-tint border-tint/20 border"
-                          : "text-label-secondary hover:bg-fill-4 hover:text-label border border-transparent"
-                      )}
-                    >
-                      <span className="font-mono">/{cmd.name}</span>
-                      <ChevronRight className="text-label-secondary h-3 w-3 opacity-60" />
-                    </button>
+                      selected={selectedCommandName === cmd.name}
+                      selectionStyle="tint"
+                      title={<span className="font-mono">/{cmd.name}</span>}
+                      accessory="chevron"
+                    />
                   ))}
-                </div>
+                </FacetListSection>
 
                 {/* Simulation controls & Preview mockup */}
                 <div className="space-y-4 lg:col-span-3">

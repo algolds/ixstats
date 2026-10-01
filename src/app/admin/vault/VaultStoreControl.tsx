@@ -279,118 +279,116 @@ export function VaultStoreControl() {
           No items found in the database. Seeding standard items...
         </div>
       ) : (
-        <div className="border-separator bg-surface rounded-row overflow-x-auto border">
-          <Table>
-            <TableHeader className="bg-fill-3">
-              <TableRow>
-                <TableHead className="w-12 text-center">Icon</TableHead>
-                <TableHead>Item Details</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Quality / Badge</TableHead>
-                <TableHead className="text-right">Price (IxC)</TableHead>
-                <TableHead className="text-center">Status</TableHead>
-                <TableHead className="text-center">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.map((item: any) => {
-                const IconComponent = ICON_MAP[item.icon] || Sparkles;
-                return (
-                  <TableRow key={item.id} className="hover:bg-fill-4 transition-colors">
-                    <TableCell className="text-center">
-                      <div className="border-separator rounded-control bg-fill-4 text-label inline-flex border p-2">
-                        <IconComponent className="text-yellow h-5 w-5" />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-label font-semibold">{item.name}</div>
-                      <div className="text-label-secondary text-footnote max-w-sm truncate">
-                        {item.description || "No description provided."}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="capitalize">
-                        {item.category}
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-12 text-center">Icon</TableHead>
+              <TableHead>Item Details</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Quality / Badge</TableHead>
+              <TableHead className="text-right">Price (IxC)</TableHead>
+              <TableHead className="text-center">Status</TableHead>
+              <TableHead className="text-center">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map((item: any) => {
+              const IconComponent = ICON_MAP[item.icon] || Sparkles;
+              return (
+                <TableRow key={item.id}>
+                  <TableCell className="text-center">
+                    <div className="border-separator rounded-control bg-fill-4 text-label inline-flex border p-2">
+                      <IconComponent className="text-yellow h-5 w-5" />
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-label font-semibold">{item.name}</div>
+                    <div className="text-label-secondary text-footnote max-w-sm truncate">
+                      {item.description || "No description provided."}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="capitalize">
+                      {item.category}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="space-y-1">
+                    <div className="flex gap-1.5">
+                      <Badge
+                        variant="outline"
+                        className={`text-eyebrow px-1.5 py-0 ${getQualityBadge(item.quality)}`}
+                      >
+                        {item.quality}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="space-y-1">
-                      <div className="flex gap-1.5">
+                      {item.badgeText && (
                         <Badge
                           variant="outline"
-                          className={`text-eyebrow px-1.5 py-0 ${getQualityBadge(item.quality)}`}
+                          className="bg-fill-3 text-label-secondary border-separator px-1.5 py-0"
                         >
-                          {item.quality}
+                          {item.badgeText}
                         </Badge>
-                        {item.badgeText && (
-                          <Badge
-                            variant="outline"
-                            className="bg-fill-3 text-label-secondary border-separator px-1.5 py-0"
-                          >
-                            {item.badgeText}
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-yellow text-right font-semibold tabular-nums">
-                      {item.price.toLocaleString()} IxC
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge
-                        variant={item.isActive ? "default" : "secondary"}
-                        className={`text-footnote ${
-                          item.isActive
-                            ? "border-green/20 bg-green/10 text-green hover:bg-green/15"
-                            : "border-separator bg-fill-3 text-label-secondary hover:bg-fill-4"
-                        }`}
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-yellow text-right font-semibold tabular-nums">
+                    {item.price.toLocaleString()} IxC
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge
+                      variant={item.isActive ? "default" : "secondary"}
+                      className={`text-footnote ${
+                        item.isActive
+                          ? "border-green/20 bg-green/10 text-green hover:bg-green/15"
+                          : "border-separator bg-fill-3 text-label-secondary hover:bg-fill-4"
+                      }`}
+                    >
+                      {item.isActive ? "Active" : "Disabled"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => handleOpenEdit(item)}
+                        className="w-8"
+                        title="Edit Item"
                       >
-                        {item.isActive ? "Active" : "Disabled"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={() => handleOpenEdit(item)}
-                          className="w-8"
-                          title="Edit Item"
-                        >
-                          <Edit2 className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={() => handleOpenHistory(item.id)}
-                          className="w-8"
-                          title="Price History Ledger"
-                        >
-                          <History className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={() => handleToggleActive(item)}
-                          className={`h-8 w-8 border-none ${
-                            item.isActive
-                              ? "text-green hover:text-green"
-                              : "text-label-secondary hover:text-label-secondary"
-                          }`}
-                          title={item.isActive ? "Disable Item" : "Enable Item"}
-                        >
-                          {item.isActive ? (
-                            <ToggleRight className="h-5 w-5" />
-                          ) : (
-                            <ToggleLeft className="h-5 w-5" />
-                          )}
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                        <Edit2 className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => handleOpenHistory(item.id)}
+                        className="w-8"
+                        title="Price History Ledger"
+                      >
+                        <History className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => handleToggleActive(item)}
+                        className={`h-8 w-8 border-none ${
+                          item.isActive
+                            ? "text-green hover:text-green"
+                            : "text-label-secondary hover:text-label-secondary"
+                        }`}
+                        title={item.isActive ? "Disable Item" : "Enable Item"}
+                      >
+                        {item.isActive ? (
+                          <ToggleRight className="h-5 w-5" />
+                        ) : (
+                          <ToggleLeft className="h-5 w-5" />
+                        )}
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       )}
 
       {/* Create / Edit Dialog */}
@@ -519,24 +517,27 @@ export function VaultStoreControl() {
                             const IconComponent = ICON_MAP[iconName] || Sparkles;
                             const isSelected = formData.icon === iconName;
                             return (
-                              <button
+                              <Button
                                 key={iconName}
                                 type="button"
+                                variant="gray"
+                                size="icon"
                                 title={iconName}
+                                aria-label={iconName}
+                                aria-pressed={isSelected}
                                 onClick={() => {
                                   setFormData({ ...formData, icon: iconName });
                                   setIsIconPopoverOpen(false);
                                   setIconSearch("");
                                 }}
                                 className={cn(
-                                  "border-separator text-label hover:bg-fill-4 rounded-control flex h-9 w-9 items-center justify-center border p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
-                                  isSelected
-                                    ? "border-yellow/50 bg-yellow/15 text-yellow"
-                                    : "bg-fill-3"
+                                  "text-label",
+                                  isSelected &&
+                                    "bg-yellow/15 text-yellow-ink ring-yellow/50 hover:bg-yellow/20 ring-1"
                                 )}
                               >
-                                <IconComponent className="h-4 w-4" />
-                              </button>
+                                <IconComponent aria-hidden />
+                              </Button>
                             );
                           })}
                       </div>
@@ -688,32 +689,30 @@ export function VaultStoreControl() {
                 No pricing edits have been recorded for this item.
               </p>
             ) : (
-              <div className="border-separator bg-fill-4 rounded-control max-h-60 overflow-hidden overflow-y-auto border">
-                <Table>
-                  <TableHeader className="bg-fill-3">
-                    <TableRow>
-                      <TableHead>Changed Date</TableHead>
-                      <TableHead className="text-right">Price</TableHead>
-                      <TableHead className="text-right">Admin</TableHead>
+              <Table containerClassName="max-h-60">
+                <TableHeader sticky>
+                  <TableRow>
+                    <TableHead>Changed Date</TableHead>
+                    <TableHead className="text-right">Price</TableHead>
+                    <TableHead className="text-right">Admin</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {priceHistory.map((hist: any) => (
+                    <TableRow key={hist.id}>
+                      <TableCell className="text-label-secondary text-footnote">
+                        {new Date(hist.changedAt).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-caption text-yellow text-right tabular-nums">
+                        {hist.price.toLocaleString()} IxC
+                      </TableCell>
+                      <TableCell className="text-label-secondary text-footnote max-w-[100px] truncate text-right">
+                        {hist.adminId.substring(0, 8)}...
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {priceHistory.map((hist: any) => (
-                      <TableRow key={hist.id}>
-                        <TableCell className="text-label-secondary text-footnote">
-                          {new Date(hist.changedAt).toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-caption text-yellow text-right tabular-nums">
-                          {hist.price.toLocaleString()} IxC
-                        </TableCell>
-                        <TableCell className="text-label-secondary text-footnote max-w-[100px] truncate text-right">
-                          {hist.adminId.substring(0, 8)}...
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </div>
           <DialogFooter className="border-separator mt-4 border-t pt-2">

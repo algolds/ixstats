@@ -4,30 +4,117 @@ import * as React from "react";
 
 import { cn } from "~/lib/utils/cn";
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+/**
+ * Table (Facet 3 §7.1 data tables): an opaque `surface` group with `separator` hairlines between
+ * rows — or, inside a `Card`/`FacetCard`, no surface of its own (the card is the surface).
+ *
+ * - Header cells: `text-footnote` in `label-secondary`, sentence case. `<TableHeader sticky>` pins
+ *   the header while the table scrolls; give the table a height to scroll in with
+ *   `containerClassName` (e.g. `max-h-96`), since a horizontally scrolling container is also the
+ *   vertical scroll container for sticky cells.
+ * - Body cells: `text-callout` with tabular numerals, so figures line up.
+ * - Rows: `fill-4` hover; a selected row (`data-state="selected"` or `aria-selected`) takes the
+ *   `tint-fill`.
+ * - Wide tables scroll horizontally; the clipped edge fades out (a `mask-image`, so it works on
+ *   any background) only while there is more to scroll to.
+ */
+
+type OverflowEdge = "none" | "start" | "end" | "both";
+
+function useHorizontalOverflow(ref: React.RefObject<HTMLDivElement | null>): OverflowEdge {
+  const [edge, setEdge] = React.useState<OverflowEdge>("none");
+
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      const max = el.scrollWidth - el.clientWidth;
+      if (max <= 1) return setEdge("none");
+      // RTL scrollers report negative scrollLeft; the magnitude is what matters.
+      const left = Math.abs(el.scrollLeft);
+      const atStart = left <= 1;
+      const atEnd = left >= max - 1;
+      setEdge(atStart ? "end" : atEnd ? "start" : "both");
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : null;
+    observer?.observe(el);
+    const table = el.querySelector("table");
+    if (table) observer?.observe(table);
+    return () => {
+      el.removeEventListener("scroll", update);
+      observer?.disconnect();
+    };
+  }, [ref]);
+
+  return edge;
+}
+
+interface TableProps extends React.ComponentProps<"table"> {
+  /** Classes for the outer container (e.g. a `max-h-*` so a sticky header has room to scroll). */
+  containerClassName?: string;
+}
+
+function Table({ className, containerClassName, ...props }: TableProps) {
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const overflow = useHorizontalOverflow(scrollRef);
+
   return (
     <div
       data-slot="table-container"
-      className="border-border/50 bg-background/50 relative -mx-4 w-full overflow-x-auto rounded-lg border sm:mx-0"
+      className={cn(
+        "bg-surface border-separator rounded-card relative flex w-full min-w-0 flex-col overflow-hidden border",
+        // Inside a card the card is the surface: no second border, fill or radius.
+        "in-data-[slot=card]:rounded-none in-data-[slot=card]:border-0 in-data-[slot=card]:bg-transparent",
+        "in-data-[slot=facet-card]:rounded-none in-data-[slot=facet-card]:border-0 in-data-[slot=facet-card]:bg-transparent",
+        containerClassName
+      )}
     >
-      <div className="min-w-full">
+      <div
+        ref={scrollRef}
+        data-slot="table-scroll"
+        data-overflow={overflow}
+        className={cn(
+          "min-h-0 w-full flex-1 overflow-auto overscroll-x-contain",
+          "data-[overflow=end]:[mask-image:linear-gradient(to_right,black_calc(100%_-_2rem),transparent)]",
+          "data-[overflow=start]:[mask-image:linear-gradient(to_left,black_calc(100%_-_2rem),transparent)]",
+          "data-[overflow=both]:[mask-image:linear-gradient(to_right,transparent,black_2rem,black_calc(100%_-_2rem),transparent)]"
+        )}
+      >
         <table
           data-slot="table"
-          className={cn("w-full min-w-full caption-bottom text-xs sm:text-sm", className)}
+          className={cn(
+            "text-callout text-label w-full min-w-full caption-bottom border-collapse tabular-nums",
+            className
+          )}
           {...props}
         />
       </div>
-      {/* Scroll indicator for mobile */}
-      <div
-        className="from-background/80 pointer-events-none absolute right-0 bottom-0 h-full w-8 bg-gradient-to-l to-transparent sm:hidden"
-        aria-hidden="true"
-      />
     </div>
   );
 }
 
-function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
-  return <thead data-slot="table-header" className={cn("[&_tr]:border-b", className)} {...props} />;
+interface TableHeaderProps extends React.ComponentProps<"thead"> {
+  /** Pin the header row to the top of the table's scroll container. */
+  sticky?: boolean;
+}
+
+function TableHeader({ className, sticky = false, ...props }: TableHeaderProps) {
+  return (
+    <thead
+      data-slot="table-header"
+      data-sticky={sticky || undefined}
+      className={cn(
+        "[&_tr]:border-separator [&_tr]:border-b",
+        // Collapsed borders do not travel with sticky cells, so the hairline is an inset shadow.
+        sticky &&
+          "[&_th]:bg-surface [&_th]:z-raised [&_th]:sticky [&_th]:top-0 [&_th]:shadow-[inset_0_-1px_0_var(--color-separator)]",
+        className
+      )}
+      {...props}
+    />
+  );
 }
 
 function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
@@ -44,7 +131,10 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
   return (
     <tfoot
       data-slot="table-footer"
-      className={cn("bg-muted/50 border-t font-medium [&>tr]:last:border-b-0", className)}
+      className={cn(
+        "bg-surface-secondary border-separator text-label border-t font-medium [&>tr]:last:border-b-0",
+        className
+      )}
       {...props}
     />
   );
@@ -55,7 +145,8 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
+        "border-separator hover:bg-fill-4 ease-out-facet border-b transition-colors duration-150",
+        "aria-selected:bg-tint-fill data-[state=selected]:bg-tint-fill",
         className
       )}
       {...props}
@@ -68,7 +159,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "text-foreground h-10 px-2 text-left align-middle text-xs font-medium whitespace-nowrap sm:px-3 sm:text-sm [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "text-footnote text-label-secondary h-10 px-3 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}
       {...props}
@@ -81,7 +172,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "p-2 align-middle text-xs whitespace-nowrap sm:p-3 sm:text-sm [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "text-callout px-3 py-2.5 align-middle whitespace-nowrap tabular-nums [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}
       {...props}
@@ -93,7 +184,7 @@ function TableCaption({ className, ...props }: React.ComponentProps<"caption">) 
   return (
     <caption
       data-slot="table-caption"
-      className={cn("text-muted-foreground mt-4 text-sm", className)}
+      className={cn("text-footnote text-label-secondary mt-4", className)}
       {...props}
     />
   );

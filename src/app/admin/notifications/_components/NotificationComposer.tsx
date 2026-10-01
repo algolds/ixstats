@@ -17,6 +17,7 @@ import {
 } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
+import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 import { useNotify } from "~/hooks/useNotify";
 import {
   Send,
@@ -28,7 +29,6 @@ import {
   Globe,
   Sparks as Sparkles,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
 
 type BroadcastMode = "platform_alert" | "system_message" | "direct_message";
 
@@ -294,67 +294,31 @@ export function NotificationComposer() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-              <button
-                type="button"
-                onClick={() => handleField("mode", "platform_alert")}
-                aria-pressed={form.mode === "platform_alert"}
-                className={cn(
-                  "rounded-row flex cursor-pointer flex-col items-start gap-1 border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-                  form.mode === "platform_alert"
-                    ? "text-label border-tint bg-tint-fill"
-                    : "border-separator bg-surface text-label-secondary hover:border-separator hover:bg-fill-4"
-                )}
-              >
-                <div className="text-caption flex items-center gap-1.5">
-                  <Bell className="text-red h-3.5 w-3.5" />
-                  Platform Alert
-                </div>
-                <p className="text-label-secondary text-footnote leading-tight">
-                  Halo tray & realtime notification center.
-                </p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleField("mode", "system_message")}
-                aria-pressed={form.mode === "system_message"}
-                className={cn(
-                  "rounded-row flex cursor-pointer flex-col items-start gap-1 border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-                  form.mode === "system_message"
-                    ? "text-label border-tint bg-tint-fill"
-                    : "border-separator bg-surface text-label-secondary hover:border-separator hover:bg-fill-4"
-                )}
-              >
-                <div className="text-caption flex items-center gap-1.5">
-                  <Crown className="text-yellow h-3.5 w-3.5" />
-                  System Message
-                </div>
-                <p className="text-label-secondary text-footnote leading-tight">
-                  Pinned System Messages thread in /messages inbox.
-                </p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleField("mode", "direct_message")}
-                aria-pressed={form.mode === "direct_message"}
-                className={cn(
-                  "rounded-row flex cursor-pointer flex-col items-start gap-1 border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]",
-                  form.mode === "direct_message"
-                    ? "text-label border-tint bg-tint-fill"
-                    : "border-separator bg-surface text-label-secondary hover:border-separator hover:bg-fill-4"
-                )}
-              >
-                <div className="text-caption flex items-center gap-1.5">
-                  <MessageSquare className="text-indigo h-3.5 w-3.5" />
-                  Direct Dispatch
-                </div>
-                <p className="text-label-secondary text-footnote leading-tight">
-                  Direct conversation or diplomatic cable in /messages.
-                </p>
-              </button>
-            </div>
+            <RadioCardGroup
+              aria-label="Delivery destination"
+              columns={3}
+              value={form.mode}
+              onValueChange={(mode) => handleField("mode", mode as BroadcastMode)}
+            >
+              <RadioCard
+                value="platform_alert"
+                icon={<Bell className="text-red" />}
+                title="Platform Alert"
+                description="Halo tray & realtime notification center."
+              />
+              <RadioCard
+                value="system_message"
+                icon={<Crown className="text-yellow" />}
+                title="System Message"
+                description="Pinned System Messages thread in /messages inbox."
+              />
+              <RadioCard
+                value="direct_message"
+                icon={<MessageSquare className="text-indigo" />}
+                title="Direct Dispatch"
+                description="Direct conversation or diplomatic cable in /messages."
+              />
+            </RadioCardGroup>
           </CardContent>
         </Card>
 

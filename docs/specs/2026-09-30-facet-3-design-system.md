@@ -455,11 +455,19 @@ values on hover or tap.
    a *Facet 3 system* showcase (tint scopes, `FacetCard` vs `material-thin/regular/thick`, `Stat`, `FacetList`, every
    `Button`/`Badge` style, `SegmentedControl`/`ToggleGroup`/`SearchField`, text styles, system colours, `EmptyState`);
    the v2 configurator stays as *Lab materials* (lab-only `lab.css` materials, labelled as such) and its appearance
-   toggle now switches the real theme (roles only switch on `html[data-theme]`). **Remaining:** `x.5` spacing steps;
-   ~60 role-styled selectable list/option `<button>`s (master–detail lists, radio cards, wizard steps); native
-   checkboxes/range inputs in a few forms; MapLibre fallback paint hex in `SvgPreviewMap` (map data); the lab
-   templates keep their v2 demo classes. Primitive gap: `Table` (`components/ui/table.tsx`) still ships v2 classes
-   (`border-border/50 bg-background/50 rounded-lg`, a gradient scroll hint, no `tabular-nums`).
+   toggle now switches the real theme (roles only switch on `html[data-theme]`). **Leftovers closed 2026-10-01:**
+   master–detail lists (cron jobs, bot commands, formulas, country pickers, autocomplete suggestions) →
+   `FacetRow` (`selectionStyle="tint"`, `aria-current`; multi-select rows `accessory="check"`); radio cards
+   (notification delivery mode, storyteller event type) → `RadioCardGroup`; wizard progress (storyteller events,
+   polls) → `StepIndicator`; filter pills → `ToggleGroup`; choice pairs → `SegmentedControl`; status toggles →
+   `Switch`; all native checkboxes → `Checkbox` (form choices) or `Switch` (applied immediately) and range inputs
+   → `Slider` (thumbs named via `aria-labelledby`); icon/link `<button>`s → `Button`; disclosures carry
+   `aria-expanded`; `Table` restyled to Facet 3 (§7.1) with sticky headers where admin tables scroll; the unused
+   palette helper in `lib/admin/admin-formatters.ts` deleted. **Remaining:** `x.5` spacing steps; the admin rail's
+   compact nav rows (sidebar-style, `aria-current`, intentionally not 44px `FacetRow`s); image-thumbnail and
+   table sort-header buttons; the log viewer's per-level filter chips (`role="checkbox"`, colour-coded per level);
+   MapLibre fallback paint hex in `SvgPreviewMap` (map data); the lab templates keep their v2 demo classes (their
+   toggles now expose `aria-pressed`); a few hand-built `<table>`s and native `<select>`s.
    **WikiOS — ✅ converted 2026-10-01** (`components/wiki-os`, `app/(wiki-os)`, `components/media`,
    `styles/wiki-os`; ink `data-app="wiki"` with `PortalTintSync` on the route group, now in `facet-guards`' converted
    areas). **Tokens:** every `--wikios-*` chrome token in `wiki-os/tokens.css` is an alias of a Facet role (opaque
@@ -522,6 +530,33 @@ values on hover or tap.
    image scrims (flag cards, emblem hover actions); role-styled option `<button>`s in builder pickers (currency quick
    select, filter rails, popover lists); tiny `rounded-sm` flag thumbnails; `font-mono` kept for ISO/currency codes and
    coordinates. Primitive gap: `Alert` has no `caution`/`info` variants (builder alerts tint themselves with roles).
+   **Vault (+ trading cards) and Sports — ✅ converted 2026-10-01** (`app/vault`, `components/vault`,
+   `components/cards`, `components/sports`, `app/myleague`, `app/myclub`; copper `data-app="vault"` and teal
+   `data-app="sports"` roots with `PortalTintSync`, now in `facet-guards`' converted areas). Glass `bg-card/NN` +
+   `backdrop-blur` panels, `facet-hierarchy-*`, `CutoutCard` (vault sidebar nav) and `FacetContainer` → opaque
+   `FacetCard` (`Card` kept where it is used with its header/content parts — it is the same opaque surface) with
+   `surface-secondary` insets; metric tiles → `Stat`; empty states → `EmptyState`; hand-rolled view switchers, filter
+   pills, round scrubbers and the vault `VaultSubTabNav` → `SegmentedControl`/`ToggleGroup`/`SearchField`/`Select`;
+   gradient and team-colour buttons → `Button` styles (one filled tint action per view); selection states → tint
+   (`bg-tint-fill`) instead of per-item amber/blue/teal; `confirm()` → one `AlertDialog` (league admin), `alert()` →
+   `useNotify()` (sponsor deck, crafting, lore card, NS import); the pack-opening and crafting-result overlays and the
+   crafting card picker → `Dialog` (the reveal moments are full-screen dialogs; Escape skips them), the championship
+   reveal → `Dialog`, the designer's subcategory menu (a `fixed inset-0` click-catcher) → `Popover`; the
+   `SportsCommandBar` is sticky `material-thin` chrome at `--shell-top-offset`, the league/club section bars stay inside
+   `SportsShell` (entity-scoped) with tint selection and `aria-current`; `VaultSidebarLayout` keeps `data-app-subnav`
+   and its `--shell-top-offset` rail. Hero image washes, glow blobs and team-colour gradient bands → a data-colour
+   hairline / border on the crest, cover images as banners; sports surfaces (pitch, rink, field, circuit) use flat
+   system colours; ~4.9k palette/`dark:`/`text-xs`/`rounded-*`/`tracking-*` hits → roles, text styles and radius tokens;
+   `font-mono` numbers → `tabular-nums` (kept for codes, URLs and hex values); framer durations → `springSmooth`/
+   `springGentle`/`tweenFast`; `data-cuelume-press` and `soundEffects.press` ticks removed, outcomes use
+   `soundCues.success/error`. **Card art** (card faces and backs, holographic layers, pack covers, cosmetic frames,
+   reveal flourishes) keeps its own palette and light effects as content; its gradients moved from `bg-gradient-to-*`
+   to the layered `styles/card-art.css` (`card-art-linear-*`). **Remaining:** `x.5` spacing steps; card-art palette
+   classes and image scrims on card faces (content, not chrome); ~95 role-styled `<button>`s
+   (selectable tiles, sort headers, link-like team names) and three native `<select>`s; `Card` (the shadcn-shaped
+   Facet surface) still used by 18 vault/cards/sports files; the pack-opening "moment" components keep their own motion
+   timings (spec §8 flourishes). Primitive gap: `SegmentedControl` options have no per-option badge slot (vault tab
+   counts are rendered inside the label).
 
 ## 15. Governance
 

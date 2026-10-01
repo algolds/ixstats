@@ -205,6 +205,7 @@ export function TimeControlCard({
                 variant="outline"
                 size="sm"
                 onClick={() => onTimeMultiplierChange(preset.value)}
+                aria-pressed={isSelected}
                 className={cn(
                   "text-caption duration-fast flex h-9 items-center justify-center gap-1.5 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
                   isSelected ? "bg-tint-fill border-tint/30 text-tint" : preset.color

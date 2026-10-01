@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
+import { Checkbox } from "~/components/ui/checkbox";
 import type { BaseCountryData } from "~/types/ixstats";
 import { IxTime } from "~/lib/ixtime";
 
@@ -182,7 +183,9 @@ export function ImportPreviewDialog({
                     className="rounded-control border-green/20 bg-green/10 border p-3"
                   >
                     <button
+                      type="button"
                       onClick={() => toggleExpandCountry(change.country.country)}
+                      aria-expanded={expandedCountry === change.country.country}
                       className="flex w-full items-center justify-between text-left"
                     >
                       <span className="text-green font-medium">{change.country.country}</span>
@@ -214,7 +217,9 @@ export function ImportPreviewDialog({
                     className="rounded-control border-blue/20 bg-blue/10 border p-4"
                   >
                     <button
+                      type="button"
                       onClick={() => toggleExpandCountry(change.country.country)}
+                      aria-expanded={expandedCountry === change.country.country}
                       className="mb-2 flex w-full items-center justify-between text-left"
                     >
                       <span className="text-blue font-medium">{change.country.country}</span>
@@ -302,11 +307,9 @@ export function ImportPreviewDialog({
                 </p>
 
                 <label className="mb-3 flex cursor-pointer items-center">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={syncEpoch}
-                    onChange={(e) => setSyncEpoch(e.target.checked)}
-                    className="border-separator rounded-control-sm text-yellow focus:ring-yellow h-4 w-4"
+                    onCheckedChange={(checked) => setSyncEpoch(checked === true)}
                   />
                   <span className="text-body text-yellow ml-2 font-medium">
                     Sync epoch time with imported data
@@ -356,11 +359,9 @@ export function ImportPreviewDialog({
           {updatedCountries.length > 0 && (
             <div className="mb-4">
               <label className="flex cursor-pointer items-center">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={confirmReplace}
-                  onChange={(e) => setConfirmReplace(e.target.checked)}
-                  className="border-separator rounded-control-sm text-indigo focus:ring-indigo h-4 w-4"
+                  onCheckedChange={(checked) => setConfirmReplace(checked === true)}
                 />
                 <span className="text-label-secondary text-body ml-2">
                   Confirm updating {updatedCountries.length} existing countries with new data from

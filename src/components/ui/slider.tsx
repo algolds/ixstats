@@ -7,7 +7,8 @@ import { cn } from "~/lib/utils/cn";
 
 /**
  * Slider (spec §7.2): Radix slider (`role="slider"` thumbs with `aria-valuenow/min/max`). Track
- * `fill-2`, range tint, white thumb; 44px hit area on touch.
+ * `fill-2`, range tint, white thumb; 44px hit area on touch. `aria-label` / `aria-labelledby`
+ * name the thumb(s) — the element screen readers announce — not the wrapper.
  */
 function Slider({
   className,
@@ -15,6 +16,8 @@ function Slider({
   value,
   min = 0,
   max = 100,
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledBy,
   ...props
 }: React.ComponentProps<typeof SliderPrimitive.Root>) {
   const _values = React.useMemo(
@@ -52,6 +55,8 @@ function Slider({
         <SliderPrimitive.Thumb
           data-slot="slider-thumb"
           key={index}
+          aria-label={ariaLabel}
+          aria-labelledby={ariaLabelledBy}
           className={cn(
             "relative block size-5 shrink-0 cursor-grab rounded-full border border-separator bg-white shadow-card active:cursor-grabbing",
             "transition-[box-shadow,transform] duration-150 ease-out-facet active:scale-[1.08] motion-reduce:active:scale-100",

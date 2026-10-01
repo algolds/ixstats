@@ -26,6 +26,7 @@ import {
 import { SYSTEM_FORMULAS } from "./system-formulas";
 import { CalculationSimulator } from "./CalculationSimulator";
 import { FacetCard } from "~/components/ui/facet-container";
+import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 export function CalculationEditor() {
   const notify = useNotify();
@@ -166,36 +167,30 @@ export function CalculationEditor() {
             className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
           />
         </div>
-        <div className="max-h-[calc(100vh-280px)] space-y-1 overflow-y-auto pr-0.5">
+        <FacetListSection
+          variant="plain"
+          aria-label="Formulas"
+          groupClassName="max-h-[calc(100vh-280px)] overflow-y-auto"
+        >
           {filteredModules.map((module) => {
             const cat = CALCULATION_CATEGORIES[module.category] || CALCULATION_CATEGORIES.economic;
             const Icon = cat.icon;
-            const isSelected = selectedModule?.id === module.id;
-
             return (
-              <button
+              <FacetRow
                 key={module.id}
                 onClick={() => {
                   setSelectedModule(module);
                   setIsEditing(false);
                 }}
-                className={`rounded-row flex w-full items-start gap-2.5 p-2.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
-                  isSelected
-                    ? "border-tint/40 bg-tint-fill text-label border font-semibold"
-                    : "text-label-secondary hover:text-label hover:bg-fill-4 border border-transparent"
-                }`}
-              >
-                <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${cat.color}`} />
-                <div className="min-w-0 flex-1">
-                  <p className="text-footnote truncate">{module.name}</p>
-                  <p className="text-label-secondary text-footnote truncate capitalize">
-                    {module.category}
-                  </p>
-                </div>
-              </button>
+                selected={selectedModule?.id === module.id}
+                selectionStyle="tint"
+                leading={<Icon aria-hidden className={`size-4 ${cat.color}`} />}
+                title={module.name}
+                subtitle={<span className="capitalize">{module.category}</span>}
+              />
             );
           })}
-        </div>
+        </FacetListSection>
       </FacetCard>
 
       {/* Main Detail / Editor */}

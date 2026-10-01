@@ -8,6 +8,8 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import { Switch } from "~/components/ui/switch";
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -34,8 +36,6 @@ import {
   Xmark as X,
   Search,
   Filter,
-  SwitchOff as ToggleLeft,
-  SwitchOn as ToggleRight,
   StatsReport as BarChart3,
 } from "iconoir-react";
 import { AdminHeader } from "../_components/AdminHeader";
@@ -338,11 +338,9 @@ export function DiplomaticOptionsPanel() {
               </Select>
 
               <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-1.5 px-2 select-none">
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={showInactive}
-                  onChange={(e) => setShowInactive(e.target.checked)}
-                  className="border-separator rounded-control-sm"
+                  onCheckedChange={(checked) => setShowInactive(checked === true)}
                 />
                 <span>Show inactive</span>
               </label>
@@ -396,13 +394,12 @@ export function DiplomaticOptionsPanel() {
                 <thead>
                   <tr className="border-separator bg-fill-4 text-label-secondary border-b font-semibold">
                     <th className="w-10 px-3 py-2.5">
-                      <input
-                        type="checkbox"
+                      <Checkbox
+                        aria-label="Select all options"
                         checked={
                           selectedIds.size === filteredOptions.length && filteredOptions.length > 0
                         }
-                        onChange={toggleSelectAll}
-                        className="border-separator rounded-control-sm"
+                        onCheckedChange={toggleSelectAll}
                       />
                     </th>
                     <th className="px-4 py-2.5 text-left font-medium">Type</th>
@@ -417,11 +414,10 @@ export function DiplomaticOptionsPanel() {
                   {filteredOptions.map((option) => (
                     <tr key={option.id} className="hover:bg-fill-4 transition-colors">
                       <td className="px-3 py-2.5">
-                        <input
-                          type="checkbox"
+                        <Checkbox
+                          aria-label={`Select ${option.value}`}
                           checked={selectedIds.has(option.id)}
-                          onChange={() => toggleSelection(option.id)}
-                          className="border-separator rounded-control-sm"
+                          onCheckedChange={() => toggleSelection(option.id)}
                         />
                       </td>
                       <td className="px-4 py-2.5">
@@ -458,19 +454,14 @@ export function DiplomaticOptionsPanel() {
                       </td>
                       <td className="px-4 py-2.5 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <button
-                            className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control p-1 transition-transform active:scale-[0.98]"
-                            onClick={() =>
-                              handleUpdate(option.id, { ...option, isActive: !option.isActive })
+                          <Switch
+                            checked={option.isActive}
+                            onCheckedChange={(isActive) =>
+                              handleUpdate(option.id, { ...option, isActive })
                             }
+                            aria-label={`Active: ${option.value}`}
                             title="Toggle Status"
-                          >
-                            {option.isActive ? (
-                              <ToggleRight className="text-green h-4 w-4" />
-                            ) : (
-                              <ToggleLeft className="text-label-secondary h-4 w-4" />
-                            )}
-                          </button>
+                          />
                           <Button
                             variant="ghost"
                             size="icon-sm"
