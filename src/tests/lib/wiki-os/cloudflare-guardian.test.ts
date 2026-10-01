@@ -40,8 +40,10 @@ describe("CloudflareGuardian.purgeArticleEdgeCache", () => {
     ];
     expect(url).toBe("https://api.cloudflare.com/client/v4/zones/zone/purge_cache");
     expect(init.headers.Authorization).toBe("Bearer token");
-    const { files } = JSON.parse(init.body) as { files: string[] };
-    expect(files).toEqual([
+    const body = JSON.parse(init.body) as { files: string[] };
+    // one purge type per request: `files` alone, no `tags`
+    expect(Object.keys(body)).toEqual(["files"]);
+    expect(body.files).toEqual([
       "https://ixwiki.com/wiki/Foo_bar/Caf%C3%A9",
       "https://ixwiki.com/projects/ixstates/wiki/Foo_bar/Caf%C3%A9",
     ]);

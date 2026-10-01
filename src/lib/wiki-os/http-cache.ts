@@ -18,9 +18,10 @@
 import { hasClerkSessionCookie, type CookieEntry } from "./chrome-prefs";
 
 /**
- * Fresh 30 s at the edge, then served stale for up to 30 s more while one request refreshes it: the
- * Main Page and an article are edited and the edit purges the edge copy, so a long stale window would
- * only keep serving what was just replaced.
+ * Fresh 30 s at the edge, then served stale for up to 30 s more while one request refreshes it. This
+ * is the ceiling on how long an edited page can show its old text there: a save purges the page's own
+ * URLs (CloudflareGuardian), never these tRPC read URLs, so they only expire. Hence the short window
+ * after s-maxage, not a longer one.
  */
 export const PUBLIC_READ_CACHE_CONTROL =
   "public, max-age=0, s-maxage=30, stale-while-revalidate=30";

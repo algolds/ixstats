@@ -48,10 +48,10 @@ export class CloudflareGuardian {
           Authorization: `Bearer ${apiToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          files: purgeUrls,
-          tags: [`wiki_${realm}_${canon.urlPath}`],
-        }),
+        // One purge type per request: `files` only. (`tags` is an Enterprise feature, and a body
+        // naming both is refused.) The tRPC read URLs are never purged: they expire on their own, see
+        // PUBLIC_READ_CACHE_CONTROL's stale-while-revalidate in lib/wiki-os/http-cache.ts.
+        body: JSON.stringify({ files: purgeUrls }),
         signal: AbortSignal.timeout(3000),
       });
 
