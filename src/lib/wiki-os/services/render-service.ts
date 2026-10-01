@@ -169,7 +169,13 @@ async function renderSource(article: {
 }
 
 /** The page properties worth keeping; the rest of what MediaWiki reports is its own bookkeeping. */
-const KEPT_PAGE_PROPS = ["defaultsort", "disambiguation", "page_image_free", "notoc", "noeditsection"];
+const KEPT_PAGE_PROPS = [
+  "defaultsort",
+  "disambiguation",
+  "page_image_free",
+  "notoc",
+  "noeditsection",
+];
 
 /** Whether the response told WikiOS anything it can store (a response without any of it is left alone). */
 function reportsAnything(metadata: RenderMetadata): boolean {
@@ -201,7 +207,8 @@ async function persistRenderMetadata(
 
   await db.$transaction(
     async (tx) => {
-      if (metadata.links) await LinkGraphService.replaceLinks(tx, articleId, source, metadata.links);
+      if (metadata.links)
+        await LinkGraphService.replaceLinks(tx, articleId, source, metadata.links);
       if (metadata.templates) {
         await LinkGraphService.replaceTemplateLinks(tx, articleId, metadata.templates);
       }
@@ -255,7 +262,10 @@ export async function renderArticle(articleId: string): Promise<RenderResult> {
     if (stored.count > 0) {
       if (rendered.metadata && reportsAnything(rendered.metadata)) {
         await persistRenderMetadata(articleId, article.source, rendered.metadata).catch((error) =>
-          console.warn(`[WikiOS:render] Storing what MediaWiki reported about "${article.title}" failed:`, error)
+          console.warn(
+            `[WikiOS:render] Storing what MediaWiki reported about "${article.title}" failed:`,
+            error
+          )
         );
       }
       return { ok: true };
@@ -491,7 +501,9 @@ export interface StaleBatchResult {
  */
 export async function renderStaleBatch(limit = 20): Promise<StaleBatchResult> {
   const now = Date.now();
-  const backingOff = [...staleFailures].flatMap(([id, failure]) => (failure.retryAt > now ? [id] : []));
+  const backingOff = [...staleFailures].flatMap(([id, failure]) =>
+    failure.retryAt > now ? [id] : []
+  );
   const stale = await db.wikiArticle.findMany({
     where: {
       status: "PUBLISHED",
@@ -519,6 +531,8 @@ export async function renderStaleBatch(limit = 20): Promise<StaleBatchResult> {
       }
     }
   };
-  await Promise.all(Array.from({ length: Math.min(STALE_BATCH_CONCURRENCY, stale.length) }, worker));
+  await Promise.all(
+    Array.from({ length: Math.min(STALE_BATCH_CONCURRENCY, stale.length) }, worker)
+  );
   return result;
 }

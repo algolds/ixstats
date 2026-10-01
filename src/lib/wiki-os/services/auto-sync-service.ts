@@ -26,7 +26,11 @@ import {
   type RecentChange,
 } from "./inbound-mediawiki";
 import { applyLogEvent } from "./inbound-log-events";
-import { syncLatestRevision, syncRevisionById, type RevisionOutcome } from "./inbound-revision-sync";
+import {
+  syncLatestRevision,
+  syncRevisionById,
+  type RevisionOutcome,
+} from "./inbound-revision-sync";
 
 export interface AutoSyncStats {
   /** Recent changes and log events read in the last cycle. */
@@ -237,10 +241,7 @@ async function runSteps(steps: SyncStep[]): Promise<StepsResult> {
  * `collectList` that never throws: a list that cannot be read is a failure of this cycle, and the stream
  * simply has nothing to do (its high-water mark stays), so the other stream still runs.
  */
-async function collectOrNothing<T>(
-  what: string,
-  collect: () => Promise<T[]>
-): Promise<T[]> {
+async function collectOrNothing<T>(what: string, collect: () => Promise<T[]>): Promise<T[]> {
   try {
     return await collect();
   } catch (err) {
@@ -297,7 +298,9 @@ async function runCycle(limit: number): Promise<void> {
  */
 export async function runAutoSyncCycle(limit = 30): Promise<AutoSyncStats> {
   try {
-    await withJobLock(db, INBOUND_LOCK, () => runCycle(limit), { timeoutMs: CYCLE_LOCK_TIMEOUT_MS });
+    await withJobLock(db, INBOUND_LOCK, () => runCycle(limit), {
+      timeoutMs: CYCLE_LOCK_TIMEOUT_MS,
+    });
   } catch (err) {
     // The lock itself could not be taken (the database is down): nothing ran.
     console.error("[WikiAutoSync] Could not start a cycle:", errorMessage(err));
@@ -352,7 +355,12 @@ export async function getInboundSyncStatus(now = new Date()): Promise<InboundSyn
     where: { key: STATUS_KEY },
     select: { value: true },
   });
-  const unknown: InboundSyncStatus = { status: "UNKNOWN", lastRunAt: null, failures: 0, lastError: null };
+  const unknown: InboundSyncStatus = {
+    status: "UNKNOWN",
+    lastRunAt: null,
+    failures: 0,
+    lastError: null,
+  };
   if (!row) return unknown;
 
   let stored: z.infer<typeof storedStatusSchema>;
@@ -363,5 +371,10 @@ export async function getInboundSyncStatus(now = new Date()): Promise<InboundSyn
   }
   const age = now.getTime() - new Date(stored.lastRunAt).getTime();
   const status = age > STALE_AFTER_MS ? "STALE" : stored.failures > 0 ? "DEGRADED" : "ACTIVE";
-  return { status, lastRunAt: stored.lastRunAt, failures: stored.failures, lastError: stored.lastError };
+  return {
+    status,
+    lastRunAt: stored.lastRunAt,
+    failures: stored.failures,
+    lastError: stored.lastError,
+  };
 }

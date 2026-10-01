@@ -39,7 +39,12 @@ interface Row {
 }
 
 const rows: Row[] = [
-  { name: "the page is new to WikiOS", head: null, rev: rev({ parentid: 0 }), expected: "fast-forward" },
+  {
+    name: "the page is new to WikiOS",
+    head: null,
+    rev: rev({ parentid: 0 }),
+    expected: "fast-forward",
+  },
   {
     name: "the page exists in WikiOS but has no revision",
     head: null,
@@ -118,7 +123,9 @@ describe("decideInbound", () => {
   });
 
   it("covers every decision", () => {
-    expect(new Set(rows.map((row) => row.expected))).toEqual(new Set(["echo", "fast-forward", "park"]));
+    expect(new Set(rows.map((row) => row.expected))).toEqual(
+      new Set(["echo", "fast-forward", "park"])
+    );
     expect(rows.length).toBeGreaterThanOrEqual(8);
   });
 });

@@ -210,8 +210,7 @@ async function applyMove(tx: Tx, { event, canon }: EventContext): Promise<Applie
     return {
       outcome: "applied",
       articleId: renamed?.id ?? null,
-      afterCommit:
-        renamed && leftRedirect(event) ? () => bringOver(canon.title) : undefined,
+      afterCommit: renamed && leftRedirect(event) ? () => bringOver(canon.title) : undefined,
     };
   }
 
@@ -220,7 +219,9 @@ async function applyMove(tx: Tx, { event, canon }: EventContext): Promise<Applie
     select: { id: true, redirectTargetSlug: true },
   });
   if (clash && !(await clearRedirectAt(tx, clash))) {
-    console.warn(`[WikiAutoSync] Not renaming "${canon.title}": "${target.title}" exists in WikiOS.`);
+    console.warn(
+      `[WikiAutoSync] Not renaming "${canon.title}": "${target.title}" exists in WikiOS.`
+    );
     return SKIPPED;
   }
 
@@ -288,7 +289,8 @@ function restrictionsOf(event: LogEvent): ParsedRestriction[] {
     return [
       {
         action,
-        level: detail.data.level === "autoconfirmed" ? ("autoconfirmed" as const) : ("sysop" as const),
+        level:
+          detail.data.level === "autoconfirmed" ? ("autoconfirmed" as const) : ("sysop" as const),
         expiresAt: parseExpiry(detail.data.expiry),
         cascade: detail.data.cascade ?? topCascade,
       },
@@ -302,7 +304,9 @@ async function applyProtect(tx: Tx, { event, canon }: EventContext): Promise<App
 
   const restrictions = setting ? restrictionsOf(event) : [];
   if (setting && restrictions.length === 0) {
-    console.warn(`[WikiAutoSync] Protect event ${event.logid} on "${canon.title}" names no restriction WikiOS can read.`);
+    console.warn(
+      `[WikiAutoSync] Protect event ${event.logid} on "${canon.title}" names no restriction WikiOS can read.`
+    );
     return SKIPPED;
   }
 
@@ -384,9 +388,16 @@ async function applyBlock(tx: Tx, { event, canon }: EventContext): Promise<Appli
 // rights: the groups WikiOS knows (sysop, bureaucrat, interface-admin, bot)
 // ---------------------------------------------------------------------------
 
-const MAPPED_GROUPS: ReadonlySet<string> = new Set(["sysop", "bureaucrat", "interface-admin", "bot"]);
+const MAPPED_GROUPS: ReadonlySet<string> = new Set([
+  "sysop",
+  "bureaucrat",
+  "interface-admin",
+  "bot",
+]);
 
-const groupMetadataSchema = z.array(z.looseObject({ group: z.string(), expiry: z.string().nullish() }));
+const groupMetadataSchema = z.array(
+  z.looseObject({ group: z.string(), expiry: z.string().nullish() })
+);
 
 /** The groups of a rights change that WikiOS maps, and when each membership ends. */
 function newMemberships(event: LogEvent): Array<{ group: string; expiresAt: Date | null }> {
@@ -412,7 +423,9 @@ async function applyRights(tx: Tx, { event, canon }: EventContext): Promise<Appl
       select: { id: true, source: true },
     });
     if (!existing) {
-      await tx.wikiUserGroup.create({ data: { wikiUsername, group, expiresAt, source: "mw-import" } });
+      await tx.wikiUserGroup.create({
+        data: { wikiUsername, group, expiresAt, source: "mw-import" },
+      });
     } else if (existing.source === "mw-import") {
       await tx.wikiUserGroup.update({ where: { id: existing.id }, data: { expiresAt } });
     }

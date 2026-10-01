@@ -49,7 +49,9 @@ jest.mock("~/lib/wiki-os/services/inbound-revision-sync", () => ({
 }));
 jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
 
-const event = (over: Partial<LogEvent> & Pick<LogEvent, "type" | "action" | "title">): LogEvent => ({
+const event = (
+  over: Partial<LogEvent> & Pick<LogEvent, "type" | "action" | "title">
+): LogEvent => ({
   logid: 501,
   user: "Admin",
   timestamp: "2026-09-27T10:00:00Z",
@@ -77,7 +79,9 @@ describe("which events are applied", () => {
   it.each(["upload", "import", "newusers", "patrol", "thanks", "create"])(
     "ignores %s events",
     async (type) => {
-      await expect(applyLogEvent(event({ type, action: type, title: "Foo" }))).resolves.toBe("ignored");
+      await expect(applyLogEvent(event({ type, action: type, title: "Foo" }))).resolves.toBe(
+        "ignored"
+      );
 
       expect(mockLogCreate).not.toHaveBeenCalled();
     }
@@ -203,8 +207,10 @@ describe("delete and restore", () => {
 });
 
 describe("move", () => {
-  const moveEvent = (params: LogEvent["params"] = { target_title: "New name", target_ns: 0 }, action = "move") =>
-    event({ type: "move", action, title: "Old name", params });
+  const moveEvent = (
+    params: LogEvent["params"] = { target_title: "New name", target_ns: 0 },
+    action = "move"
+  ) => event({ type: "move", action, title: "Old name", params });
 
   it("renames the page (its revisions stay attached), marks it stale, moves its protections and imports the redirect left behind", async () => {
     tx.wikiArticle.findUnique.mockImplementation(async ({ where }) =>
@@ -330,7 +336,12 @@ describe("protect", () => {
           cascade: false,
           details: [
             { type: "edit", level: "sysop", expiry: "infinity", cascade: false },
-            { type: "move", level: "autoconfirmed", expiry: "2030-01-01T00:00:00Z", cascade: false },
+            {
+              type: "move",
+              level: "autoconfirmed",
+              expiry: "2030-01-01T00:00:00Z",
+              cascade: false,
+            },
           ],
         })
       )
@@ -354,12 +365,19 @@ describe("protect", () => {
       where: { id: "art-1" },
       data: { protectionLevel: "SYSOP", protectionExpiry: null },
     });
-    expect(loggedRow()).toMatchObject({ logType: "protect", action: "protect", articleId: "art-1" });
+    expect(loggedRow()).toMatchObject({
+      logType: "protect",
+      action: "protect",
+      articleId: "art-1",
+    });
   });
 
   it("modifies: the restrictions MediaWiki no longer lists are removed", async () => {
     await applyLogEvent(
-      protectEvent({ details: [{ type: "edit", level: "autoconfirmed", expiry: "infinity" }] }, "modify")
+      protectEvent(
+        { details: [{ type: "edit", level: "autoconfirmed", expiry: "infinity" }] },
+        "modify"
+      )
     );
 
     expect(tx.wikiRestriction.upsert).toHaveBeenCalledTimes(1);
@@ -381,7 +399,9 @@ describe("protect", () => {
 
   it("reads a level WikiOS does not know as sysop, and a cascade flag from the list", async () => {
     await applyLogEvent(
-      protectEvent({ details: [{ type: "edit", level: "templateeditor", expiry: "infinity", cascade: true }] })
+      protectEvent({
+        details: [{ type: "edit", level: "templateeditor", expiry: "infinity", cascade: true }],
+      })
     );
 
     expect(tx.wikiRestriction.upsert.mock.calls[0]?.[0].create).toMatchObject({
@@ -391,7 +411,13 @@ describe("protect", () => {
   });
 
   it("protects the title of a page that does not exist yet (create protection)", async () => {
-    await applyLogEvent(protectEvent({ details: [{ type: "create", level: "sysop", expiry: "infinity" }] }, "protect", "Not yet"));
+    await applyLogEvent(
+      protectEvent(
+        { details: [{ type: "create", level: "sysop", expiry: "infinity" }] },
+        "protect",
+        "Not yet"
+      )
+    );
 
     expect(tx.wikiRestriction.upsert.mock.calls[0]?.[0].where.source_title_action).toEqual({
       source: "ixwiki",
@@ -406,7 +432,9 @@ describe("protect", () => {
     const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
 
     await expect(applyLogEvent(protectEvent({ details: "nonsense" }))).resolves.toBe("skipped");
-    await expect(applyLogEvent(protectEvent({ details: [{ type: "edit" }] }))).resolves.toBe("skipped");
+    await expect(applyLogEvent(protectEvent({ details: [{ type: "edit" }] }))).resolves.toBe(
+      "skipped"
+    );
 
     expect(tx.wikiRestriction.upsert).not.toHaveBeenCalled();
     expect(tx.wikiRestriction.deleteMany).not.toHaveBeenCalled();
@@ -425,7 +453,14 @@ describe("block", () => {
 
   it("records a sitewide block of the wiki account, with its expiry and reason", async () => {
     await expect(
-      applyLogEvent(blockEvent({ duration: "1 week", expiry: "2026-10-04T10:00:00Z", flags: ["nocreate"], sitewide: true }))
+      applyLogEvent(
+        blockEvent({
+          duration: "1 week",
+          expiry: "2026-10-04T10:00:00Z",
+          flags: ["nocreate"],
+          sitewide: true,
+        })
+      )
     ).resolves.toBe("applied");
 
     expect(tx.wikiBlock.create).toHaveBeenCalledWith({
@@ -441,7 +476,9 @@ describe("block", () => {
   });
 
   it("an indefinite block never expires, and 'nousertalk' takes the user's talk page away", async () => {
-    await applyLogEvent(blockEvent({ duration: "infinite", expiry: "infinity", flags: ["nousertalk"] }));
+    await applyLogEvent(
+      blockEvent({ duration: "infinite", expiry: "infinity", flags: ["nousertalk"] })
+    );
 
     expect(tx.wikiBlock.create.mock.calls[0]?.[0].data).toMatchObject({
       expiresAt: null,
@@ -472,7 +509,9 @@ describe("block", () => {
   it("ignores a partial block, a block of an IP address and a block that is not about a user", async () => {
     await expect(applyLogEvent(blockEvent({ sitewide: false }))).resolves.toBe("ignored");
     await expect(applyLogEvent(blockEvent({}, "block", "User:192.0.2.5"))).resolves.toBe("ignored");
-    await expect(applyLogEvent(blockEvent({}, "block", "User:2001:db8::1"))).resolves.toBe("ignored");
+    await expect(applyLogEvent(blockEvent({}, "block", "User:2001:db8::1"))).resolves.toBe(
+      "ignored"
+    );
     await expect(applyLogEvent(blockEvent({}, "block", "Foo"))).resolves.toBe("ignored");
 
     expect(tx.wikiBlock.create).not.toHaveBeenCalled();
@@ -480,7 +519,9 @@ describe("block", () => {
   });
 
   it("does not take a user whose name is only hexadecimal letters for an IP address", async () => {
-    await expect(applyLogEvent(blockEvent({ expiry: "infinity" }, "block", "User:Dead"))).resolves.toBe("applied");
+    await expect(
+      applyLogEvent(blockEvent({ expiry: "infinity" }, "block", "User:Dead"))
+    ).resolves.toBe("applied");
     expect(tx.wikiBlock.create.mock.calls[0]?.[0].data.wikiUsername).toBe("Dead");
   });
 });
@@ -507,13 +548,23 @@ describe("rights", () => {
     const created = tx.wikiUserGroup.create.mock.calls.map(([args]) => args.data);
     expect(created).toEqual([
       { wikiUsername: "Jane", group: "sysop", expiresAt: null, source: "mw-import" },
-      { wikiUsername: "Jane", group: "bot", expiresAt: new Date("2027-01-01T00:00:00Z"), source: "mw-import" },
+      {
+        wikiUsername: "Jane",
+        group: "bot",
+        expiresAt: new Date("2027-01-01T00:00:00Z"),
+        source: "mw-import",
+      },
     ]);
     expect(loggedRow()).toMatchObject({ logType: "rights", title: "User:Jane" });
   });
 
   it("removes the mapped groups MediaWiki took away, but only memberships this sync granted", async () => {
-    await applyLogEvent(rightsEvent({ oldgroups: ["sysop", "bureaucrat", "autopatrolled"], newgroups: ["bureaucrat"] }));
+    await applyLogEvent(
+      rightsEvent({
+        oldgroups: ["sysop", "bureaucrat", "autopatrolled"],
+        newgroups: ["bureaucrat"],
+      })
+    );
 
     expect(tx.wikiUserGroup.deleteMany).toHaveBeenCalledWith({
       where: { wikiUsername: "Jane", group: { in: ["sysop"] }, source: "mw-import" },
@@ -533,7 +584,11 @@ describe("rights", () => {
     tx.wikiUserGroup.findUnique.mockResolvedValue({ id: "g1", source: "mw-import" });
 
     await applyLogEvent(
-      rightsEvent({ oldgroups: ["sysop"], newgroups: ["sysop"], newmetadata: [{ group: "sysop", expiry: "2028-02-02T00:00:00Z" }] })
+      rightsEvent({
+        oldgroups: ["sysop"],
+        newgroups: ["sysop"],
+        newmetadata: [{ group: "sysop", expiry: "2028-02-02T00:00:00Z" }],
+      })
     );
 
     expect(tx.wikiUserGroup.update).toHaveBeenCalledWith({
@@ -543,6 +598,8 @@ describe("rights", () => {
   });
 
   it("ignores a rights change that is not about a user", async () => {
-    await expect(applyLogEvent(rightsEvent({ newgroups: ["sysop"] }, "Foo"))).resolves.toBe("ignored");
+    await expect(applyLogEvent(rightsEvent({ newgroups: ["sysop"] }, "Foo"))).resolves.toBe(
+      "ignored"
+    );
   });
 });

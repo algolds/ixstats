@@ -44,8 +44,26 @@ beforeEach(() => {
   jest.clearAllMocks();
   jest.mocked(getArticleHistoryShadow).mockResolvedValue({
     revisions: [
-      { revid: "r2", user: "bob", timestamp: "", comment: "", size: 1, byteDelta: 0, minor: false, parked: false },
-      { revid: "r1", user: "amy", timestamp: "", comment: "", size: 1, byteDelta: 0, minor: false, parked: false },
+      {
+        revid: "r2",
+        user: "bob",
+        timestamp: "",
+        comment: "",
+        size: 1,
+        byteDelta: 0,
+        minor: false,
+        parked: false,
+      },
+      {
+        revid: "r1",
+        user: "amy",
+        timestamp: "",
+        comment: "",
+        size: 1,
+        byteDelta: 0,
+        minor: false,
+        parked: false,
+      },
     ],
     hasMore: false,
     fromShadow: true,
@@ -84,8 +102,26 @@ describe("wikiosHistoryDiffRouter.getHistory (plan 406)", () => {
   it("asks the store for parked revisions and passes them on flagged", async () => {
     jest.mocked(getArticleHistoryShadow).mockResolvedValue({
       revisions: [
-        { revid: "9001", user: "carol", timestamp: "", comment: "x", size: 1, byteDelta: 0, minor: false, parked: true },
-        { revid: "r1", user: "amy", timestamp: "", comment: "", size: 1, byteDelta: 0, minor: false, parked: false },
+        {
+          revid: "9001",
+          user: "carol",
+          timestamp: "",
+          comment: "x",
+          size: 1,
+          byteDelta: 0,
+          minor: false,
+          parked: true,
+        },
+        {
+          revid: "r1",
+          user: "amy",
+          timestamp: "",
+          comment: "",
+          size: 1,
+          byteDelta: 0,
+          minor: false,
+          parked: false,
+        },
       ],
       hasMore: false,
       fromShadow: true,

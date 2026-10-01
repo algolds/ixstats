@@ -89,7 +89,14 @@ import { renderArticleViaMediaWiki } from "~/lib/wiki-os/adapters/mediawiki/pars
 /** A render of `html` that reports nothing about the page (what MediaWiki says about links and categories is plan 406's). */
 const rendered = (html: string) => ({
   html,
-  metadata: { links: null, templates: null, images: null, categories: null, displayTitle: null, properties: {} },
+  metadata: {
+    links: null,
+    templates: null,
+    images: null,
+    categories: null,
+    displayTitle: null,
+    properties: {},
+  },
 });
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { syncSinglePage } from "~/lib/wiki-os/services/auto-sync-service";

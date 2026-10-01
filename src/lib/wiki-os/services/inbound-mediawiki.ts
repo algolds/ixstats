@@ -15,7 +15,7 @@ const API_URL = `${MEDIAWIKI_URL.replace(/\/+$/, "")}/api.php`;
 const REQUEST_TIMEOUT_MS = 12_000;
 
 /** Postgres text cannot hold a NUL. */
-export function sanitize(str: string | null | undefined): string {
+function sanitize(str: string | null | undefined): string {
   return str ? str.replace(/\0/g, "") : "";
 }
 
@@ -48,7 +48,9 @@ export async function mediaWikiGet<T>(
   const body = await res.json();
   const apiError = apiErrorSchema.safeParse(body);
   if (apiError.success) {
-    throw new Error(`MediaWiki API error ${apiError.data.error.code}: ${apiError.data.error.info ?? ""}`);
+    throw new Error(
+      `MediaWiki API error ${apiError.data.error.code}: ${apiError.data.error.info ?? ""}`
+    );
   }
   return schema.parse(body);
 }
@@ -71,9 +73,7 @@ const revisionSchema = z.looseObject({
   texthidden: z.boolean().optional(),
   slots: z
     .looseObject({
-      main: z
-        .looseObject({ content: z.string().optional(), contentmodel: z.string().optional() })
-        .optional(),
+      main: z.looseObject({ content: z.string().optional() }).optional(),
     })
     .optional(),
 });
@@ -109,7 +109,6 @@ export interface MediaWikiRevision {
   wikitext: string;
   /** `rev_sha1` (base 36) of `wikitext`, computed from the text. */
   sha1: string;
-  contentModel: string;
 }
 
 /** The revision of `page` the sync can import, or null (page missing, text or timestamp hidden or absent). */
@@ -139,7 +138,6 @@ function toMediaWikiRevision(page: z.infer<typeof pageSchema>): MediaWikiRevisio
     minor: rev.minor ?? false,
     wikitext,
     sha1: mwSha1Base36(wikitext),
-    contentModel: main.contentmodel ?? "wikitext",
   };
 }
 
@@ -205,12 +203,10 @@ export async function fetchRevisionSha1(revid: number): Promise<string | null> {
 // Recent changes and log events (both are read oldest first from a high-water mark)
 // ---------------------------------------------------------------------------
 
-/** What the next page of a continued list asks for (`rccontinue`, `lecontinue`, `continue`). */
-export type ListContinuation = Record<string, string>;
-
 export interface ListPage<T> {
   entries: T[];
-  next: ListContinuation | null;
+  /** What the next page of the list asks for (`rccontinue`, `lecontinue`, `continue`); null on the last. */
+  next: Record<string, string> | null;
 }
 
 const continueSchema = z.record(z.string(), z.string());
@@ -223,7 +219,6 @@ const recentChangesSchema = z.object({
           title: z.string().optional(),
           revid: z.number().optional(),
           timestamp: z.string().optional(),
-          user: z.string().optional(),
         })
       ),
     })
@@ -235,7 +230,6 @@ export interface RecentChange {
   title: string;
   revid: number;
   timestamp: string;
-  user: string | null;
 }
 
 /** One `list=recentchanges` request over every namespace, edits and page creations only. */
@@ -257,7 +251,6 @@ export async function fetchRecentChangesPage(
       title: plainTitle(rc.title ?? ""),
       revid: rc.revid ?? 0,
       timestamp: rc.timestamp ?? "",
-      user: rc.user === undefined ? null : sanitize(rc.user),
     })),
     next: data.continue ?? null,
   };

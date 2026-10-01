@@ -25,7 +25,14 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/parsoid", () => ({
       ? null
       : {
           html,
-          metadata: { links: null, templates: null, images: null, categories: null, displayTitle: null, properties: {} },
+          metadata: {
+            links: null,
+            templates: null,
+            images: null,
+            categories: null,
+            displayTitle: null,
+            properties: {},
+          },
         };
   },
 }));

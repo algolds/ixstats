@@ -181,7 +181,9 @@ export function ScrubbableRevisionTimeline({
                 className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-400 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-red-500/20 active:scale-[0.98]"
               >
                 <RotateLeft className="h-3.5 w-3.5" />
-                {rollbackMutation.isPending ? "Rolling back…" : `Rollback ${liveRevisions[0]?.author}`}
+                {rollbackMutation.isPending
+                  ? "Rolling back…"
+                  : `Rollback ${liveRevisions[0]?.author}`}
               </button>
             )}
           </div>

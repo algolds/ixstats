@@ -17,7 +17,8 @@ const transaction = tx as never;
 jest.mock("~/server/db", () => ({ db: {} }));
 
 const titles = (...list: string[]) => list.map((title) => ({ title }));
-const linkRows = (): Array<Record<string, unknown>> => tx.wikiLink.createMany.mock.calls[0]?.[0].data ?? [];
+const linkRows = (): Array<Record<string, unknown>> =>
+  tx.wikiLink.createMany.mock.calls[0]?.[0].data ?? [];
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -36,7 +37,15 @@ describe("LinkGraphService.replaceLinks", () => {
       transaction,
       "src-1",
       "ixwiki",
-      titles("nato", "file:x.png", "Category:Y", "Image:z.png", "Media:a.ogg", "special:random", "Foo bar")
+      titles(
+        "nato",
+        "file:x.png",
+        "Category:Y",
+        "Image:z.png",
+        "Media:a.ogg",
+        "special:random",
+        "Foo bar"
+      )
     );
 
     expect(count).toBe(2);
@@ -46,7 +55,12 @@ describe("LinkGraphService.replaceLinks", () => {
       take: 2,
     });
     expect(linkRows()).toEqual([
-      { sourceArticleId: "src-1", targetSlug: "nato", targetArticleId: "id-nato", isExternal: false },
+      {
+        sourceArticleId: "src-1",
+        targetSlug: "nato",
+        targetArticleId: "id-nato",
+        isExternal: false,
+      },
       { sourceArticleId: "src-1", targetSlug: "foo_bar", targetArticleId: null, isExternal: false },
     ]);
   });
@@ -79,7 +93,9 @@ describe("LinkGraphService.replaceLinks", () => {
 
     await LinkGraphService.replaceLinks(transaction, "src-1", "ixwiki", titles("NATO"));
 
-    expect(linkRows()).toEqual([expect.objectContaining({ targetSlug: "nato", targetArticleId: null })]);
+    expect(linkRows()).toEqual([
+      expect.objectContaining({ targetSlug: "nato", targetArticleId: null }),
+    ]);
   });
 
   it("gives another wiki's links no IxWiki namespaces, but still skips File and Category", async () => {
@@ -94,7 +110,12 @@ describe("LinkGraphService.replaceLinks", () => {
   });
 
   it("queries nothing but the delete when the render reports no article links", async () => {
-    const count = await LinkGraphService.replaceLinks(transaction, "src-1", "ixwiki", titles("File:x.png"));
+    const count = await LinkGraphService.replaceLinks(
+      transaction,
+      "src-1",
+      "ixwiki",
+      titles("File:x.png")
+    );
 
     expect(count).toBe(0);
     expect(tx.wikiArticle.findMany).not.toHaveBeenCalled();
@@ -104,7 +125,12 @@ describe("LinkGraphService.replaceLinks", () => {
 
   it("does not throw on a title with a stray percent sign, and drops one MediaWiki would refuse", async () => {
     await expect(
-      LinkGraphService.replaceLinks(transaction, "src-1", "ixwiki", titles("100% Pure", "100%_Pure", "100%41"))
+      LinkGraphService.replaceLinks(
+        transaction,
+        "src-1",
+        "ixwiki",
+        titles("100% Pure", "100%_Pure", "100%41")
+      )
     ).resolves.toBe(1);
   });
 
@@ -114,7 +140,9 @@ describe("LinkGraphService.replaceLinks", () => {
     const count = await LinkGraphService.replaceLinks(transaction, "src-1", "ixwiki", many);
 
     expect(count).toBe(5_000);
-    expect(tx.wikiLink.createMany.mock.calls.map(([args]) => args.data.length)).toEqual([2_000, 2_000, 1_000]);
+    expect(tx.wikiLink.createMany.mock.calls.map(([args]) => args.data.length)).toEqual([
+      2_000, 2_000, 1_000,
+    ]);
     expect(tx.wikiArticle.findMany).toHaveBeenCalledTimes(3);
   });
 });

@@ -110,7 +110,10 @@ describe("what MediaWiki reports about the page (plan 406)", () => {
 
   it("has no display title unless the page sets one (MediaWiki always reports the plain title)", async () => {
     fetchMock.mockResolvedValue(
-      okParseWith({ displaytitle: '<span class="mw-page-title-main">Aurelia</span>', properties: {} })
+      okParseWith({
+        displaytitle: '<span class="mw-page-title-main">Aurelia</span>',
+        properties: {},
+      })
     );
 
     expect((await renderArticleViaMediaWiki("x", "T"))?.metadata.displayTitle).toBeNull();
@@ -118,7 +121,13 @@ describe("what MediaWiki reports about the page (plan 406)", () => {
 
   it("reads a field it cannot understand as not reported (null), and still returns the HTML", async () => {
     fetchMock.mockResolvedValue(
-      okParseWith({ links: "nonsense", templates: [{ title: 5 }], images: { a: 1 }, categories: 3, properties: [] })
+      okParseWith({
+        links: "nonsense",
+        templates: [{ title: 5 }],
+        images: { a: 1 },
+        categories: 3,
+        properties: [],
+      })
     );
 
     const rendered = await renderArticleViaMediaWiki("x", "T");
@@ -134,7 +143,9 @@ describe("what MediaWiki reports about the page (plan 406)", () => {
   });
 
   it("an empty list is a report of nothing, not an unknown", async () => {
-    fetchMock.mockResolvedValue(okParseWith({ links: [], templates: [], images: [], categories: [] }));
+    fetchMock.mockResolvedValue(
+      okParseWith({ links: [], templates: [], images: [], categories: [] })
+    );
 
     expect((await renderArticleViaMediaWiki("x", "T"))?.metadata).toMatchObject({
       links: [],

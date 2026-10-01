@@ -48,7 +48,12 @@ const metadata = (over: Record<string, unknown> = {}) => ({
 let ids = 0;
 function stubArticle(wikitext = "[[Eurth]] text") {
   const id = `art-${++ids}`;
-  mockFindUnique.mockResolvedValue({ title: "Aurelia", source: "ixwiki", wikitext, contentHtml: null });
+  mockFindUnique.mockResolvedValue({
+    title: "Aurelia",
+    source: "ixwiki",
+    wikitext,
+    contentHtml: null,
+  });
   return id;
 }
 
@@ -71,7 +76,11 @@ describe("renderArticle stores what MediaWiki reported", () => {
     mockRender.mockResolvedValue({
       html: HTML,
       metadata: metadata({
-        links: [{ ns: 0, title: "Eurth" }, { ns: 0, title: "Nowhere" }, { ns: 6, title: "File:A.png" }],
+        links: [
+          { ns: 0, title: "Eurth" },
+          { ns: 0, title: "Nowhere" },
+          { ns: 6, title: "File:A.png" },
+        ],
         templates: [
           { ns: 10, title: "Template:Infobox country" },
           { ns: 828, title: "Module:Infobox" },
@@ -84,7 +93,9 @@ describe("renderArticle stores what MediaWiki reported", () => {
     await expect(renderArticle(id)).resolves.toEqual({ ok: true });
 
     expect(mockTransaction).toHaveBeenCalledTimes(1);
-    expect(mockUpdateMany.mock.invocationCallOrder[0]).toBeLessThan(mockTransaction.mock.invocationCallOrder[0]!);
+    expect(mockUpdateMany.mock.invocationCallOrder[0]).toBeLessThan(
+      mockTransaction.mock.invocationCallOrder[0]!
+    );
     expect(tx.wikiLink.createMany.mock.calls[0]?.[0].data).toEqual([
       { sourceArticleId: id, targetSlug: "eurth", targetArticleId: "art-eurth", isExternal: false },
       { sourceArticleId: id, targetSlug: "nowhere", targetArticleId: null, isExternal: false },
@@ -179,7 +190,7 @@ describe("renderArticle stores what MediaWiki reported", () => {
     mockRender.mockResolvedValue({
       html: HTML,
       metadata: metadata({
-        displayTitle: '<i>Aurelia</i><script>alert(1)</script>',
+        displayTitle: "<i>Aurelia</i><script>alert(1)</script>",
         properties: {
           defaultsort: "Aurelia",
           notoc: "",
@@ -195,7 +206,11 @@ describe("renderArticle stores what MediaWiki reported", () => {
     const data = tx.wikiArticle.update.mock.calls[0]?.[0].data;
     expect(data.displayTitle).toContain("<i>Aurelia</i>");
     expect(data.displayTitle).not.toContain("script");
-    expect(data.pageProps).toEqual({ defaultsort: "Aurelia", notoc: "", page_image_free: "Flag.svg" });
+    expect(data.pageProps).toEqual({
+      defaultsort: "Aurelia",
+      notoc: "",
+      page_image_free: "Flag.svg",
+    });
   });
 
   it("stores no display title and no properties for an ordinary page", async () => {
@@ -214,7 +229,12 @@ describe("renderArticle stores what MediaWiki reported", () => {
     const id = stubArticle();
     mockRender.mockResolvedValue({
       html: HTML,
-      metadata: metadata({ links: null, templates: null, images: null, categories: [{ name: "Only", sortKey: null, hidden: false }] }),
+      metadata: metadata({
+        links: null,
+        templates: null,
+        images: null,
+        categories: [{ name: "Only", sortKey: null, hidden: false }],
+      }),
     });
 
     await renderArticle(id);
@@ -262,7 +282,12 @@ describe("renderArticle stores what MediaWiki reported", () => {
 
   it("stores no metadata for an HTML-only row (nothing was rendered)", async () => {
     const id = `art-${++ids}`;
-    mockFindUnique.mockResolvedValue({ title: "Stub", source: "ixwiki", wikitext: "", contentHtml: HTML });
+    mockFindUnique.mockResolvedValue({
+      title: "Stub",
+      source: "ixwiki",
+      wikitext: "",
+      contentHtml: HTML,
+    });
 
     await expect(renderArticle(id)).resolves.toEqual({ ok: true });
 

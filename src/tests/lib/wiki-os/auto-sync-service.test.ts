@@ -395,7 +395,13 @@ describe("the cycle", () => {
 // ---------------------------------------------------------------------------
 
 describe("log events in the cycle", () => {
-  const logEvent = (type: string, action: string, title: string, logid: number, second: number): FakeLogEvent => ({
+  const logEvent = (
+    type: string,
+    action: string,
+    title: string,
+    logid: number,
+    second: number
+  ): FakeLogEvent => ({
     logid,
     type,
     action,
@@ -408,7 +414,10 @@ describe("log events in the cycle", () => {
       where.key === LOG_HWM_KEY ? { value: "2026-09-27T08:00:00Z" } : null
     );
     logResponses = [
-      { events: [logEvent("delete", "delete", "A", 1, 1)], next: { lecontinue: "y", continue: "-||" } },
+      {
+        events: [logEvent("delete", "delete", "A", 1, 1)],
+        next: { lecontinue: "y", continue: "-||" },
+      },
       { events: [logEvent("block", "block", "User:B", 2, 2)] },
     ];
 
@@ -426,7 +435,9 @@ describe("log events in the cycle", () => {
   });
 
   it("the first run asks for the newest events (reversed to oldest first) and writes the log mark", async () => {
-    logResponses = [{ events: [logEvent("move", "move", "B", 2, 2), logEvent("delete", "delete", "A", 1, 1)] }];
+    logResponses = [
+      { events: [logEvent("move", "move", "B", 2, 2), logEvent("delete", "delete", "A", 1, 1)] },
+    ];
 
     await runAutoSyncCycle();
 
@@ -446,10 +457,21 @@ describe("log events in the cycle", () => {
     });
     importPageRevisions.mockImplementation(async (input) => {
       order.push(`edit:${input.revisions[0]?.mwRevId}`);
-      return { created: false, inserted: 1, filled: 0, skipped: 0, conflicts: 0, headUpdated: true };
+      return {
+        created: false,
+        inserted: 1,
+        filled: 0,
+        skipped: 0,
+        conflicts: 0,
+        headUpdated: true,
+      };
     });
     rcResponses = [{ changes: [change("Foo", 11, 2), change("Foo", 12, 3)] }];
-    logResponses = [{ events: [logEvent("delete", "delete", "Foo", 7, 2), logEvent("move", "move", "Bar", 8, 4)] }];
+    logResponses = [
+      {
+        events: [logEvent("delete", "delete", "Foo", 7, 2), logEvent("move", "move", "Bar", 8, 4)],
+      },
+    ];
     mwRevisions = new Map([
       [11, { title: "Foo", revid: 11 }],
       [12, { title: "Foo", revid: 12 }],
@@ -462,7 +484,9 @@ describe("log events in the cycle", () => {
 
   it("does not advance the log mark past a failed event, still applies the edits, and holds the page's later events back", async () => {
     mockSystemConfigFindUnique.mockImplementation(async ({ where }) =>
-      where.key === LOG_HWM_KEY ? { value: "2026-09-27T08:00:00Z" } : { value: "2026-09-27T09:00:00Z" }
+      where.key === LOG_HWM_KEY
+        ? { value: "2026-09-27T08:00:00Z" }
+        : { value: "2026-09-27T09:00:00Z" }
     );
     applyEvent.mockImplementation(async (e) => {
       if (e.logid === 2) throw new Error("db down");
@@ -494,7 +518,11 @@ describe("log events in the cycle", () => {
   it("an ignored or skipped event does not hold the mark back", async () => {
     mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T08:00:00Z" });
     applyEvent.mockResolvedValueOnce("ignored").mockResolvedValueOnce("skipped");
-    logResponses = [{ events: [logEvent("upload", "upload", "File:X", 1, 1), logEvent("move", "move", "A", 2, 2)] }];
+    logResponses = [
+      {
+        events: [logEvent("upload", "upload", "File:X", 1, 1), logEvent("move", "move", "A", 2, 2)],
+      },
+    ];
 
     await runAutoSyncCycle();
 
@@ -593,8 +621,26 @@ describe("fast-forward", () => {
     head = storedHead(90);
     rcResponses = [{ changes: [change("Foo", 91, 1), change("Foo", 92, 2)] }];
     mwRevisions = new Map([
-      [91, { title: "Foo", revid: 91, parentid: 90, text: "First edit.", timestamp: "2026-09-27T10:00:01Z" }],
-      [92, { title: "Foo", revid: 92, parentid: 91, text: "Second edit.", timestamp: "2026-09-27T10:00:02Z" }],
+      [
+        91,
+        {
+          title: "Foo",
+          revid: 91,
+          parentid: 90,
+          text: "First edit.",
+          timestamp: "2026-09-27T10:00:01Z",
+        },
+      ],
+      [
+        92,
+        {
+          title: "Foo",
+          revid: 92,
+          parentid: 91,
+          text: "Second edit.",
+          timestamp: "2026-09-27T10:00:02Z",
+        },
+      ],
     ]);
 
     await runAutoSyncCycle();
@@ -626,7 +672,16 @@ describe("fast-forward", () => {
     head = storedHead(90, { createdAt: new Date("2026-09-27T10:00:05.500Z") });
     rcResponses = [{ changes: [change("Foo", 91, 1)] }];
     mwRevisions = new Map([
-      [91, { title: "Foo", revid: 91, parentid: 90, text: "Quick edit.", timestamp: "2026-09-27T10:00:05Z" }],
+      [
+        91,
+        {
+          title: "Foo",
+          revid: 91,
+          parentid: 90,
+          text: "Quick edit.",
+          timestamp: "2026-09-27T10:00:05Z",
+        },
+      ],
     ]);
 
     await runAutoSyncCycle();
@@ -912,7 +967,12 @@ describe("identity of a synced page (plan 402, 403)", () => {
   });
 
   it("applies a revision to the article MediaWiki's page id names when the title is unknown (a page moved in MediaWiki)", async () => {
-    article = storedArticle({ title: "Old name", slug: "old_name", mwPageId: 7, wikitext: "Text." });
+    article = storedArticle({
+      title: "Old name",
+      slug: "old_name",
+      mwPageId: 7,
+      wikitext: "Text.",
+    });
     mockArticleFindFirst.mockImplementation(async ({ where }) =>
       where.mwPageId === 7 ? article : null
     );
@@ -1072,7 +1132,7 @@ describe("failures are counted, not swallowed", () => {
     expect(failed.failures).toBe(1);
     expect(failed.lastError).toBe("A: MediaWiki returned HTTP 500");
     expect(consoleError).toHaveBeenCalledWith(
-      expect.stringContaining('Error syncing A'),
+      expect.stringContaining("Error syncing A"),
       "MediaWiki returned HTTP 500"
     );
 
@@ -1087,7 +1147,19 @@ describe("failures are counted, not swallowed", () => {
 
   it("a list that cannot be read is a counted failure, and the other list is still synced", async () => {
     mockSystemConfigFindUnique.mockResolvedValue({ value: "2026-09-27T09:00:00Z" });
-    logResponses = [{ events: [{ logid: 1, type: "delete", action: "delete", title: "A", timestamp: "2026-09-27T10:00:01Z" }] }];
+    logResponses = [
+      {
+        events: [
+          {
+            logid: 1,
+            type: "delete",
+            action: "delete",
+            title: "A",
+            timestamp: "2026-09-27T10:00:01Z",
+          },
+        ],
+      },
+    ];
     fetchMock.mockImplementationOnce(async () => jsonResponse({}, 503));
     const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
 
@@ -1161,7 +1233,10 @@ describe("the sync status the telemetry reads", () => {
 
   it("is UNKNOWN before any cycle has run, and for a row it cannot read", async () => {
     mockSystemConfigFindUnique.mockResolvedValue(null);
-    await expect(getInboundSyncStatus(now)).resolves.toMatchObject({ status: "UNKNOWN", lastRunAt: null });
+    await expect(getInboundSyncStatus(now)).resolves.toMatchObject({
+      status: "UNKNOWN",
+      lastRunAt: null,
+    });
 
     mockSystemConfigFindUnique.mockResolvedValue({ value: "{not json" });
     await expect(getInboundSyncStatus(now)).resolves.toMatchObject({ status: "UNKNOWN" });

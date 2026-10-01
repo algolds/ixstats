@@ -52,13 +52,7 @@ const DELETED_AUTHOR = "(deleted)";
  *   would refuse);  echo: WikiOS's own text coming back;  fast-forward: imported as the page's new head;
  *   parked: stored as a conflict;  deferred: would be parked, and the caller leaves that to the ordered cycle.
  */
-export type RevisionOutcome =
-  | "known"
-  | "skipped"
-  | "echo"
-  | "fast-forward"
-  | "parked"
-  | "deferred";
+export type RevisionOutcome = "known" | "skipped" | "echo" | "fast-forward" | "parked" | "deferred";
 
 /**
  * Forget what every cache holds about `title` (a page that came back, was renamed or deleted). Loaded on
@@ -368,7 +362,14 @@ async function parkRevision(
 ): Promise<RevisionOutcome> {
   const deleted = article.status === "ARCHIVED";
   const headRef = headRev ? toRevisionRef(headRev) : "none";
-  if (!(await insertParked(rev, article, headRev, deleted ? "conflict:deleted" : `conflict:${headRef}`))) {
+  if (
+    !(await insertParked(
+      rev,
+      article,
+      headRev,
+      deleted ? "conflict:deleted" : `conflict:${headRef}`
+    ))
+  ) {
     return "known";
   }
   // A page WikiOS deleted has no head to push back (that would bring it back to life in MediaWiki).
@@ -387,7 +388,12 @@ async function decideFor(
 ): Promise<InboundDecision> {
   const input = {
     head,
-    rev: { revid: rev.revid, parentid: rev.parentid, sha1: rev.sha1, byMirrorBot: isMirrorUser(rev.user) },
+    rev: {
+      revid: rev.revid,
+      parentid: rev.parentid,
+      sha1: rev.sha1,
+      byMirrorBot: isMirrorUser(rev.user),
+    },
     parentSha1: null,
   };
   const first = decideInbound(input);
@@ -408,7 +414,9 @@ async function applyRevision(
 ): Promise<RevisionOutcome> {
   const canon = canonicalizeTitle(rev.title);
   if (!canon) {
-    console.warn(`[WikiAutoSync] Skipping revision ${rev.revid}: "${rev.title}" is not a valid title.`);
+    console.warn(
+      `[WikiAutoSync] Skipping revision ${rev.revid}: "${rev.title}" is not a valid title.`
+    );
     return "skipped";
   }
 

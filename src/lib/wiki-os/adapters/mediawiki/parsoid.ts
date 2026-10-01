@@ -62,7 +62,9 @@ const parseResponseSchema = z.object({
     .optional(),
 });
 
-function toMetadata(parsed: NonNullable<z.infer<typeof parseResponseSchema>["parse"]>): RenderMetadata {
+function toMetadata(
+  parsed: NonNullable<z.infer<typeof parseResponseSchema>["parse"]>
+): RenderMetadata {
   const properties: Record<string, string> = {};
   for (const [name, value] of Object.entries(parsed.properties ?? {})) {
     if (typeof value === "string") properties[name] = value;
@@ -78,7 +80,10 @@ function toMetadata(parsed: NonNullable<z.infer<typeof parseResponseSchema>["par
         hidden: entry.hidden === true || entry.hidden === "",
       })) ?? null,
     // The title MediaWiki shows is a page property only when the page sets one; otherwise it is the title itself.
-    displayTitle: "displaytitle" in properties ? (parsed.displaytitle ?? properties.displaytitle ?? null) : null,
+    displayTitle:
+      "displaytitle" in properties
+        ? (parsed.displaytitle ?? properties.displaytitle ?? null)
+        : null,
     properties,
   };
 }
@@ -171,4 +176,3 @@ export async function wikitextToHtml(wikitext: string, title = "Preview"): Promi
 
   return parseWikitextToHtml(wikitext, "ixwiki");
 }
-

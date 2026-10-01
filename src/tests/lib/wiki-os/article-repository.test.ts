@@ -609,7 +609,9 @@ describe("ArticleRepository.getHistory", () => {
       parked: false,
     });
 
-    const history = await ArticleRepository.getHistory("nato", "ixwiki", 50, { includeParked: true });
+    const history = await ArticleRepository.getHistory("nato", "ixwiki", 50, {
+      includeParked: true,
+    });
     expect(mockRevisionFindMany.mock.calls[1]?.[0].where).toEqual({ articleId: "id-NATO" });
     expect(history.map((r) => r.parked)).toEqual([true, false]);
   });

@@ -246,7 +246,9 @@ describe("fresh import of the export-0.11 fixture", () => {
 
   it("leaves the link graph, templates and categories of each page it gave a head to the render it queues (plan 406)", () => {
     expect(enqueueRender).toHaveBeenCalledTimes(5);
-    expect(enqueueRender).toHaveBeenCalledWith(article("Kingdom of Testia").id, { background: true });
+    expect(enqueueRender).toHaveBeenCalledWith(article("Kingdom of Testia").id, {
+      background: true,
+    });
   });
 
   it("imports each page in one transaction with room for a long history", () => {
