@@ -226,15 +226,15 @@ The group's rights must include `import importupload move move-subpages suppress
 which uploads the page as an XML file, and XML escaping makes it bigger than the text: a 2,000,000-character page of
 `&` (MediaWiki's page limit is 2 MB) is about 10 MB of XML, and a batch of revisions is capped at about 6 MB. PHP's
 default `upload_max_filesize` is 2M. Set both `upload_max_filesize` and `post_max_size` to at least 16M, and check the
-`client_max_body_size` of the `ixwiki.com` server block (WikiOS writes through the public `api.php`; nginx's default
-is 1m). An upload that is too big does not fail quietly: the job's error shows the HTTP status and the start of the
+`client_max_body_size` of the loopback server of step 4 (WikiOS writes through it, and `wikios-render-internal.conf`
+sets 16m) and of the `ixwiki.com` server block (outside bots; nginx's default is 1m). An upload that is too big does not fail quietly: the job's error shows the HTTP status and the start of the
 answer, and the job ends up dead for an operator.
 
 ```bash
 sudo php-fpm8.4 -i 2>/dev/null | grep -E '^(upload_max_filesize|post_max_size)'          # both must show 16M or more
 printf 'upload_max_filesize = 16M\npost_max_size = 16M\n' | sudo tee /etc/php/8.4/fpm/conf.d/99-wikios-import.ini
 sudo php-fpm8.4 -t && sudo systemctl reload php8.4-fpm
-sudo nginx -T 2>/dev/null | grep -n client_max_body_size                                # the ixwiki.com block: 16m or more
+sudo nginx -T 2>/dev/null | grep -n client_max_body_size                                # the ixwiki.com block: 16m or more (step 4 checks the loopback one)
 ```
 
 **Rollback:** `sudo cp -a "$BK/LocalSettings.php.step3" /ixwiki/config/LocalSettings.php && sudo rm /ixwiki/config/wikios-localsettings.php && sudo php-fpm8.4 -t && sudo systemctl reload php8.4-fpm`
@@ -306,6 +306,32 @@ ss -ltnp | grep ':8081'                                              # must show
 curl -s 'http://127.0.0.1:8081/api.php?action=parse&text=%7B%7B%23expr%3A2%2B3%7D%7D&contentmodel=wikitext&format=json' | head -c 300
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:8081/index.php    # 404: only api.php and load.php are served
 ```
+
+This server carries more than renders: every server-side call to IxWiki's MediaWiki goes through it (plan 415), among them
+the mirror's bot login and its `action=edit`, `action=import` (the page as an XML upload of up to about 10 MB) and
+`action=upload` POSTs (plans 407 and 411). That is why its `client_max_body_size` is `16m`, matching the PHP limits of
+step 3: at 8m a big import would die with a bare 413. Check the installed value, and prove a bot login works through the
+loopback, with the password read from the env file into a shell variable, never typed or echoed (it reaches `curl` on
+stdin, not on its command line):
+
+```bash
+sudo nginx -T 2>/dev/null | awk '/listen 127.0.0.1:8081/,/^}/' | grep client_max_body_size   # 16m
+curl -s -o /dev/null -w '%{http_code}\n' 'http://127.0.0.1:8081/api.php?action=query&meta=siteinfo&format=json'   # must be 200, not 301 (see the warning)
+BOT_USER=$(grep '^WIKIOS_MEDIAWIKI_BOT_USER=' "$IX/.env.production.local" | cut -d= -f2-)
+BOT_PASS=$(grep '^WIKIOS_MEDIAWIKI_BOT_TOKEN=' "$IX/.env.production.local" | cut -d= -f2-)
+JAR=$(mktemp); chmod 600 "$JAR"
+LT=$(curl -s -c "$JAR" 'http://127.0.0.1:8081/api.php?action=query&meta=tokens&type=login&format=json' | jq -r '.query.tokens.logintoken')
+printf '%s' "$BOT_PASS" | curl -s -b "$JAR" -c "$JAR" -d action=login -d format=json \
+  --data-urlencode "lgname=$BOT_USER" --data-urlencode "lgtoken=$LT" --data-urlencode 'lgpassword@-' \
+  http://127.0.0.1:8081/api.php | jq -r '.login.result'                  # must print Success
+unset BOT_PASS BOT_USER LT; shred -u "$JAR"
+```
+
+**Warning: `$wgForceHTTPS`.** If `LocalSettings.php` sets `$wgForceHTTPS = true`, MediaWiki answers a plain-http loopback request with
+a redirect to https, and every call of the mirror, the inbound sync and the renderer then fails (a 301 is not an
+answer to `action=parse`, and a login POST does not survive it). Confirm the siteinfo request above prints `200`, not `301`.
+If it prints `301`, stop here: the loopback needs `$wgForceHTTPS` off (or a condition that spares requests from 127.0.0.1)
+before the next step.
 
 The parse call must return JSON containing `"parse"`. Then add this line to `$IX/.env.production.local` by hand (back
 it up first: `bk "$IX/.env.production.local" env.production.local.step4`):
