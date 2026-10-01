@@ -393,10 +393,36 @@ describe("lists for IxWiki", () => {
     expect(await wikiLoreCardGenerator.fetchRandomArticlesWithImages(5, "ixwiki")).toEqual([
       "Has picture",
     ]);
-    expect(sqlOf(mocked.$queryRaw.mock.calls[0]!)).toContain("ORDER BY random()");
+    expect(sqlOf(mocked.$queryRaw.mock.calls[0]!)).toContain('random() AS "r"');
     // Image pages are looked for among a few times as many random candidates.
     expect(mocked.$queryRaw.mock.calls[1]).toContain(15);
     expect(guard.calls()).toEqual([]);
+  });
+
+  it("picks the random pages on ids alone and reads the start of the text of the picked ones only", async () => {
+    titles = [{ title: "Has picture", head: "[[File:Pic.png|thumb]] text" }];
+
+    await wikiLoreCardGenerator.fetchRandomArticlesWithImages(5, "ixwiki");
+
+    // The query with its embedded fragments (`Prisma.sql`) written out.
+    const [strings, ...values] = mocked.$queryRaw.mock.calls[0]! as [TemplateStringsArray, ...unknown[]];
+    const sql = strings.reduce((text, part, i) => {
+      const value = values[i - 1] as { sql?: string } | undefined;
+      return text + (typeof value?.sql === "string" ? value.sql : "?") + part;
+    });
+    const picking = sql.slice(sql.indexOf("FROM ("), sql.indexOf(") picked"));
+    const outer = sql.replace(picking, "");
+
+    // The random order and the limit are inside a sub-select over ids, which never touches the text...
+    expect(picking).toContain('random() AS "r"');
+    expect(picking).toContain('ORDER BY "r"');
+    expect(picking).toContain("LIMIT");
+    expect(picking).not.toContain("wikitext");
+    expect(picking).not.toContain("left(");
+    // ...and `left()` is in the outer query, which joins the picked ids back and keeps their random order.
+    expect(outer).toContain("left(a.\"wikitext\"");
+    expect(outer).toContain('JOIN wiki_articles a ON a."id" = picked."id"');
+    expect(outer.trimEnd().endsWith('ORDER BY picked."r"')).toBe(true);
   });
 
   it("searches categories by prefix and counts their members, never asking a wiki", async () => {

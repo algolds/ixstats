@@ -375,14 +375,21 @@ export async function ixwikiRandomTitles(
   { withImage }: { withImage: boolean }
 ): Promise<string[]> {
   const pool = withImage ? Math.min(count * IMAGE_POOL_FACTOR, MAX_IMAGE_POOL) : count;
+  // The random pick is made on ids alone, then joined back for the start of the text: `left()` on every
+  // page before the sort took over a second on 6,000 pages. The outer ORDER BY keeps the pick's random order.
   const rows = await db.$queryRaw<Array<{ title: string; head: string }>>`
     SELECT a."title" AS "title",
            ${withImage ? Prisma.sql`left(a."wikitext", ${PREVIEW_HEAD_CHARS}::int)` : Prisma.sql`''`} AS "head"
-    FROM wiki_articles a
-    WHERE a."source" = 'ixwiki' AND a."status" = 'PUBLISHED' AND a."namespace" = 0
-      AND a."redirectTargetSlug" IS NULL
-    ORDER BY random()
-    LIMIT ${pool}`;
+    FROM (
+      SELECT p."id" AS "id", random() AS "r"
+      FROM wiki_articles p
+      WHERE p."source" = 'ixwiki' AND p."status" = 'PUBLISHED' AND p."namespace" = 0
+        AND p."redirectTargetSlug" IS NULL
+      ORDER BY "r"
+      LIMIT ${pool}
+    ) picked
+    JOIN wiki_articles a ON a."id" = picked."id"
+    ORDER BY picked."r"`;
   const picked = withImage ? rows.filter((row) => extractLeadImageFileName(row.head)) : rows;
   return picked.slice(0, count).map((row) => row.title);
 }
