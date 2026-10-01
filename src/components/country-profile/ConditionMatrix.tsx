@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { Bank, Community, GraduationCap, City, Suitcase } from "iconoir-react";
 import { Progress } from "~/components/ui/progress";
 import { cn } from "~/lib/utils/cn";
+import { facetAccentStyle, type FacetAccent } from "~/lib/design/identity";
 import type { ConditionKey, ConditionPillar } from "./derive";
 
 const ICON: Record<ConditionKey, typeof Bank> = {
@@ -16,20 +17,19 @@ const ICON: Record<ConditionKey, typeof Bank> = {
  * The concept's per-pillar hue (Macro sky, Demographics emerald, Institutions amber…), as system
  * colour roles. It re-tints the tile: icon chip, figure, meter and the category radiance wash.
  */
-const HUE: Record<ConditionKey, string> = {
-  employment: "var(--color-blue)",
-  approval: "var(--color-green)",
-  stability: "var(--color-yellow)",
-  literacy: "var(--color-indigo)",
-  urban: "var(--color-purple)",
+const HUE: Record<ConditionKey, FacetAccent> = {
+  employment: "blue",
+  approval: "green",
+  stability: "yellow",
+  literacy: "indigo",
+  urban: "purple",
 };
 
-const hueStyle = (color: string) =>
-  ({
-    "--tint": color,
-    "--tint-fill": `color-mix(in srgb, ${color} 16%, transparent)`,
-    "--accent": color,
-  }) as CSSProperties;
+/**
+ * The radiance layer reads `--accent` (the achievement backdrop's variable), not the tile's
+ * `--facet-accent`; bridge it on the layer itself (which also shadows shadcn's global `--accent`).
+ */
+const RADIANCE_ACCENT = { "--accent": "var(--facet-accent)" } as CSSProperties;
 
 /**
  * ConditionMatrix — the Sovereign Command OS "national condition" grid on real readings: one
@@ -52,20 +52,21 @@ export function ConditionMatrix({
         return (
           <li
             key={p.key}
-            style={hueStyle(HUE[p.key])}
-            className="bg-surface-secondary border-separator hover:border-tint/40 rounded-row duration-fast ease-out-facet relative isolate flex flex-col gap-3 overflow-hidden border p-4 transition-colors"
+            style={facetAccentStyle(HUE[p.key])}
+            className="facet-retint bg-surface-secondary border-separator hover:border-facet-accent/40 rounded-row duration-fast ease-out-facet relative isolate flex flex-col gap-3 overflow-hidden border p-4 transition-colors"
           >
             {/* Concept tile wash (`from-<hue>/20 to-<hue>/5`): the sanctioned category radiance. */}
             <span
               aria-hidden
               data-interactive="true"
+              style={RADIANCE_ACCENT}
               className="facet-radiance absolute inset-0 -z-10 rounded-[inherit]"
             />
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <span
                   aria-hidden
-                  className="bg-tint-fill text-tint border-tint/20 rounded-control-sm flex size-8 shrink-0 items-center justify-center border"
+                  className="bg-facet-accent-fill text-facet-accent border-facet-accent/20 rounded-control-sm flex size-8 shrink-0 items-center justify-center border"
                 >
                   <Icon className="size-4" />
                 </span>

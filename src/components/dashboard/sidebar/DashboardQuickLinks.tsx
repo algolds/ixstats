@@ -15,14 +15,13 @@ import {
 import { Dialog, DialogContent, DialogTrigger } from "~/components/ui/dialog";
 import { FeedbackModal } from "~/components/dashboard/sidebar/FeedbackModal";
 import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
-import { widgetAccent, WIDGET_ACCENT } from "../widget-accent";
 import { Badge } from "~/components/ui/badge";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 
 const EXTERNAL_LINKS = [
   {
-    label: "Getting Started",
+    label: "Getting started",
     href: "/help/getting-started/welcome",
     icon: BookOpen,
     color: "text-yellow",
@@ -40,6 +39,10 @@ const EXTERNAL_LINKS = [
     color: "text-green",
   },
 ] as const;
+
+/** The legal footer's text links: underline on hover and keyboard focus, with the focus ring. */
+const FOOTER_LINK =
+  "hover:text-label focus-visible:text-label rounded-control-sm focus-visible:outline-tint transition-colors hover:underline focus-visible:underline focus-visible:outline-2 focus-visible:outline-offset-2";
 
 interface DashboardQuickLinksProps {
   /** Server-rendered Discord badge passed from a server component boundary. */
@@ -74,15 +77,14 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
     // v2 (c5c6b382): a CutoutCard with the cyan header strip, dot texture and coloured link glyphs.
     <CutoutCard
       variant="card"
+      accent="cyan"
+      retint
       className="w-48"
       trackPointerHover={false}
       texture="dots"
-      style={widgetAccent(WIDGET_ACCENT.quickLinks)}
     >
-      <CutoutCardHeader icon={<Compass />} cornerSize={16} className="px-3">
-        <span role="heading" aria-level={3}>
-          Quick links
-        </span>
+      <CutoutCardHeader icon={<Compass />} as="h2" cornerSize={16} className="px-3">
+        Quick links
       </CutoutCardHeader>
       <div className="relative space-y-2 p-3 pt-1">
         {/* Links */}
@@ -104,13 +106,13 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
                 key={link.label}
                 href={link.href}
                 {...extraProps}
-                className="group text-label-secondary hover:text-label hover:bg-fill-4 active:bg-fill-3 rounded-row text-footnote facet-press focus-visible:outline-tint flex items-center justify-between gap-2 px-2 py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="group text-label-secondary hover:text-label focus-visible:text-label hover:bg-fill-4 active:bg-fill-3 rounded-row text-footnote facet-press focus-visible:outline-tint flex items-center justify-between gap-2 px-2 py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <Icon
                     aria-hidden
                     className={cn(
-                      "ease-out-facet duration-fast size-3.5 shrink-0 transition-[scale] group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100",
+                      "ease-out-facet duration-fast size-3.5 shrink-0 transition-[scale] group-hover:scale-110 group-focus-visible:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100 motion-reduce:group-focus-visible:scale-100",
                       link.color
                     )}
                   />
@@ -139,7 +141,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
               label={`v${PLATFORM_VERSION} ${channelTheme.shortName} · Build ${BUILD_VERSION}`}
               size="sm"
               className={cn(
-                "text-caption group-hover:border-separator w-full justify-center tabular-nums transition-colors",
+                "text-caption group-hover:border-separator group-focus-visible:border-separator w-full justify-center tabular-nums transition-colors",
                 channelTheme.borderColor,
                 channelTheme.bgColor
               )}
@@ -148,16 +150,15 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
 
           <div className="space-y-1 text-center">
             <div className="text-label-secondary text-footnote flex items-center justify-center gap-2">
-              <Link href="/privacy" className="hover:text-label transition-colors hover:underline">
-                Privacy Policy
+              <Link href="/privacy" className={FOOTER_LINK}>
+                Privacy policy
               </Link>
-              <span className="opacity-40">·</span>
+              <span aria-hidden className="opacity-40">
+                ·
+              </span>
               <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>
-                  <button
-                    type="button"
-                    className="hover:text-label cursor-pointer transition-colors hover:underline"
-                  >
+                  <button type="button" className={cn(FOOTER_LINK, "cursor-pointer")}>
                     Feedback
                   </button>
                 </DialogTrigger>
@@ -165,8 +166,10 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
                   <FeedbackModal onClose={() => setIsOpen(false)} />
                 </DialogContent>
               </Dialog>
-              <span className="opacity-40">·</span>
-              <Link href="/terms" className="hover:text-label transition-colors hover:underline">
+              <span aria-hidden className="opacity-40">
+                ·
+              </span>
+              <Link href="/terms" className={FOOTER_LINK}>
                 Terms
               </Link>
             </div>

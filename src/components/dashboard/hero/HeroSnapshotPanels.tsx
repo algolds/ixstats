@@ -31,9 +31,9 @@ import { StandingBands } from "~/components/mycountry/shell/StandingBands";
 const SNAPSHOT_BUTTON =
   "group facet-press facet-press-sm hover:bg-fill-4 rounded-control focus-visible:outline-tint flex min-w-0 cursor-pointer items-center gap-2 px-2 py-1 text-left focus-visible:outline-2 focus-visible:outline-offset-2";
 
-/** v2 icon nudge on hover (Reduce Motion: still). */
+/** v2 icon nudge on hover and keyboard focus (Reduce Motion: still). */
 const ICON_GROW =
-  "ease-out-facet transition-[scale] duration-fast group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100";
+  "ease-out-facet transition-[scale] duration-fast group-hover:scale-110 group-focus-visible:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100 motion-reduce:group-focus-visible:scale-100";
 
 // Helper UI primitives
 export function StatPill({
@@ -276,7 +276,7 @@ function HeroSnapshotPanelsComponent({
           <Users aria-hidden className={cn("text-blue size-4 shrink-0", ICON_GROW)} />
           <span className="min-w-0">
             <span className="text-label-secondary text-eyebrow block">Pop</span>
-            <span className="text-label text-caption sm:text-headline font-data block truncate tabular-nums group-hover:underline">
+            <span className="text-label text-caption sm:text-headline font-data block truncate tabular-nums group-hover:underline group-focus-visible:underline">
               {pop}
             </span>
           </span>
@@ -291,7 +291,7 @@ function HeroSnapshotPanelsComponent({
           <Coins aria-hidden className={cn("text-green size-4 shrink-0", ICON_GROW)} />
           <span className="min-w-0">
             <span className="text-label-secondary text-eyebrow block">GDP</span>
-            <span className="text-success text-caption sm:text-headline font-data block truncate tabular-nums group-hover:underline">
+            <span className="text-success text-caption sm:text-headline font-data block truncate tabular-nums group-hover:underline group-focus-visible:underline">
               {gdp}
             </span>
           </span>
@@ -306,7 +306,7 @@ function HeroSnapshotPanelsComponent({
           <Activity aria-hidden className={cn("text-yellow size-4 shrink-0", ICON_GROW)} />
           <span className="min-w-0">
             <span className="text-label-secondary text-eyebrow block">Standing</span>
-            <span className="text-success text-caption sm:text-headline block truncate group-hover:underline">
+            <span className="text-success text-caption sm:text-headline block truncate group-hover:underline group-focus-visible:underline">
               Optimal
             </span>
           </span>

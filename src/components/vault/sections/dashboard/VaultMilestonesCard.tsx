@@ -75,12 +75,16 @@ export function VaultMilestonesCard({
       <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
         <div className="flex items-center gap-2">
           <div className="rounded-row bg-tint-fill text-tint shadow-card flex h-8 w-8 items-center justify-center border font-medium">
-            <Trophy className="text-yellow h-4.5 w-4.5" />
+            <Trophy aria-hidden className="text-yellow h-4.5 w-4.5" />
           </div>
-          <span className="text-label-secondary text-eyebrow">Milestones & Rank</span>
+          <span className="text-label-secondary text-eyebrow">Milestones & rank</span>
         </div>
-        <span className="text-footnote text-yellow flex items-center gap-1 font-semibold tabular-nums">
-          <Award className="h-3.5 w-3.5" /> {myRank} ({totalScore} pts)
+        <span className="text-footnote text-yellow-ink flex items-center gap-1 font-semibold">
+          <Award aria-hidden className="h-3.5 w-3.5" />
+          <span className={cn(myRank !== "Unranked" && "font-data tabular-nums")}>{myRank}</span>
+          <span>
+            (<span className="font-data tabular-nums">{totalScore}</span> pts)
+          </span>
         </span>
       </div>
 
@@ -90,13 +94,10 @@ export function VaultMilestonesCard({
           const isComplete = progress >= 100;
 
           return (
-            <div
-              key={idx}
-              className="border-separator bg-fill-4 hover:bg-fill-3 rounded-card space-y-2 border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
-            >
+            <div key={idx} className="border-separator bg-fill-4 rounded-card space-y-2 border p-3">
               <div className="text-footnote flex items-center justify-between">
                 <span className="text-label font-semibold">{m.title}</span>
-                <span className="text-label-secondary text-footnote font-semibold tabular-nums">
+                <span className="text-label-secondary text-footnote font-data font-semibold tabular-nums">
                   {m.current.toLocaleString()} / {m.max.toLocaleString()}
                 </span>
               </div>
@@ -111,7 +112,7 @@ export function VaultMilestonesCard({
               </div>
               <div className="text-label-secondary text-footnote flex items-center justify-between">
                 <span>{m.target}</span>
-                <span className="text-yellow font-semibold">{m.reward}</span>
+                <span className="text-yellow-ink font-semibold">{m.reward}</span>
               </div>
             </div>
           );

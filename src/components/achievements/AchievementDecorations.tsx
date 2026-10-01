@@ -3,6 +3,7 @@
 import React, { type CSSProperties } from "react";
 import { Lock } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { accentColor } from "~/lib/design/identity";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import type { CategoryTheme } from "./constants";
 
@@ -11,11 +12,16 @@ function maskVar(iconPath: string): string {
   return `url("${iconPath.replace(/"/g, '\\"')}")`;
 }
 
-/** The category colours that drive the identity sheet's aurora / radiance layers. */
+/**
+ * The category colours that drive the identity sheet's aurora / radiance layers. Those layers read
+ * `--accent` / `--accent-2` (not the primitives' `--facet-accent`), so they are set on each layer
+ * itself — that also shadows shadcn's global `--accent` (fill-3) there. The card takes the same
+ * category as its `accent` prop (`categoryTheme.accent`).
+ */
 function accentVars(categoryTheme: CategoryTheme): CSSProperties {
   return {
-    "--accent": categoryTheme.accent,
-    "--accent-2": categoryTheme.accent2,
+    "--accent": accentColor(categoryTheme.accent),
+    "--accent-2": accentColor(categoryTheme.accent2),
   } as CSSProperties;
 }
 
@@ -44,7 +50,7 @@ export function JewelAchievementIcon({
           className="size-6 object-contain opacity-20 blur-[1.5px]"
           loading="lazy"
         />
-        <Lock aria-label="Locked" className="text-label-secondary absolute size-5" />
+        <Lock role="img" aria-label="Locked" className="text-label-secondary absolute size-5" />
       </div>
     );
   }
@@ -76,8 +82,8 @@ export function JewelAchievementIcon({
  * - the 144px ghost heraldic watermark of the icon in the bottom-right corner
  *   (`facet-ghost-heraldry`).
  * All decorative (`aria-hidden`, no pointer events). Render it as the first children of a
- * `relative overflow-hidden` card and keep the content `relative`; the hover brighten follows
- * the card (the layers' direct parent).
+ * `relative overflow-hidden` card (with `accent={categoryTheme.accent}`) and keep the content
+ * `relative`; the hover brighten follows the card (the layers' direct parent).
  */
 export function AchievementCardBackdrop({
   iconPath,

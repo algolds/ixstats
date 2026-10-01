@@ -156,7 +156,7 @@ export default function AchievementsPage() {
                   label="Achievement points"
                   value={
                     <span className="flex items-baseline gap-1">
-                      <span className="text-success">
+                      <span className="text-success-ink">
                         <NumberFlow value={gameplayPoints} />
                       </span>
                       <span className="text-footnote text-label-secondary">pts</span>

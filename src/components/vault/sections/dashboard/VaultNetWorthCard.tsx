@@ -36,34 +36,35 @@ export function VaultNetWorthCard({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="rounded-row bg-tint-fill text-tint shadow-card flex h-8 w-8 items-center justify-center border font-medium">
-              <Wallet className="text-tint h-4.5 w-4.5" />
+              <Wallet aria-hidden className="text-tint h-4.5 w-4.5" />
             </div>
-            <span className="text-label-secondary text-eyebrow">MyVault Balance</span>
+            <span className="text-label-secondary text-eyebrow">MyVault balance</span>
           </div>
-          <Badge className="border-yellow/30 bg-yellow/10 text-eyebrow text-yellow shadow-card px-3 py-1">
-            Tier {vaultLevel} Account
+          {/* Facet 3.1 HIG: a yellow Badge (the AA ink on its 15% fill), not raw yellow text. */}
+          <Badge variant="yellow" className="shadow-card px-3 py-1">
+            Tier <span className="font-data tabular-nums">{vaultLevel}</span> account
           </Badge>
         </div>
 
         <div className="mt-5">
           <div className="text-large-title text-yellow font-data flex items-center gap-2 tabular-nums">
-            <IxCreditsSymbol className="text-yellow h-8 w-8 shrink-0 sm:h-10 sm:w-10" />
+            <IxCreditsSymbol aria-hidden className="text-yellow h-8 w-8 shrink-0 sm:h-10 sm:w-10" />
             <NumberFlow value={netWorth} />
           </div>
         </div>
 
         <div className="border-separator text-footnote mt-6 grid grid-cols-2 gap-4 border-t pt-4">
           <div>
-            <span className="text-label-secondary text-eyebrow block">Available Balance</span>
+            <span className="text-label-secondary text-eyebrow block">Available balance</span>
             <div className="text-title-3 text-yellow font-data mt-1 flex items-center gap-1 tabular-nums">
-              <IxCreditsSymbol className="text-yellow h-4.5 w-4.5 shrink-0" />
+              <IxCreditsSymbol aria-hidden className="text-yellow h-4.5 w-4.5 shrink-0" />
               <NumberFlow value={liquidCredits} />
             </div>
           </div>
           <div>
-            <span className="text-label-secondary text-eyebrow block">Card Deck Value</span>
+            <span className="text-label-secondary text-eyebrow block">Card deck value</span>
             <div className="text-title-3 text-indigo font-data mt-1 flex items-center gap-1 tabular-nums">
-              <IxCreditsSymbol className="text-indigo h-4.5 w-4.5 shrink-0" />
+              <IxCreditsSymbol aria-hidden className="text-indigo h-4.5 w-4.5 shrink-0" />
               <NumberFlow value={collectionValuation} />
             </div>
           </div>
@@ -72,7 +73,7 @@ export function VaultNetWorthCard({
         {/* Quick stats inline interactive pills */}
         <div className="border-separator text-footnote mt-5 flex flex-wrap gap-2 border-t pt-4">
           <div className="border-separator bg-fill-3 text-label flex cursor-default items-center gap-2 rounded-full border px-3 py-1 font-medium select-none">
-            <Layers className="text-tint h-3.5 w-3.5 shrink-0" />
+            <Layers aria-hidden className="text-tint h-3.5 w-3.5 shrink-0" />
             <span>
               Cards:{" "}
               <strong className="text-label font-data font-semibold tabular-nums">
@@ -81,7 +82,7 @@ export function VaultNetWorthCard({
             </span>
           </div>
           <div className="border-separator bg-fill-3 text-label flex cursor-default items-center gap-2 rounded-full border px-3 py-1 font-medium select-none">
-            <Package className="text-indigo h-3.5 w-3.5 shrink-0" />
+            <Package aria-hidden className="text-indigo h-3.5 w-3.5 shrink-0" />
             <span>
               Packs:{" "}
               <strong className="text-label font-data font-semibold tabular-nums">
@@ -90,7 +91,7 @@ export function VaultNetWorthCard({
             </span>
           </div>
           <div className="border-separator bg-fill-3 text-label flex cursor-default items-center gap-2 rounded-full border px-3 py-1 font-medium select-none">
-            <ShoppingBag className="text-blue h-3.5 w-3.5 shrink-0" />
+            <ShoppingBag aria-hidden className="text-blue h-3.5 w-3.5 shrink-0" />
             <span>
               Auctions:{" "}
               <strong className="text-label font-data font-semibold tabular-nums">

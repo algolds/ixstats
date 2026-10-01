@@ -136,6 +136,7 @@ function GroupedSeriesCard({
       animate={{ opacity: 1, y: 0 }}
       transition={springSmooth}
       variant={isUnlocked ? "glass" : undefined}
+      accent={categoryTheme.accent}
       interactive={isUnlocked ? "hover" : undefined}
       className={cn(
         "flex flex-col justify-between overflow-hidden p-5",
@@ -263,10 +264,10 @@ function GroupedSeriesCard({
                         isCurrent
                           ? "bg-surface text-label shadow-card"
                           : lvlUnlocked
-                            ? "text-success hover:bg-fill-4 cursor-pointer"
+                            ? "text-success-ink hover:bg-fill-4 cursor-pointer"
                             : "text-label-tertiary cursor-not-allowed"
                       )}
-                      title={`Level ${idx + 1}: ${lvl.title} (${lvlUnlocked ? "Unlocked - Click to view" : "Locked Tier (Immutable)"})`}
+                      title={`Level ${idx + 1}: ${lvl.title} (${lvlUnlocked ? "unlocked, select to view" : "locked tier"})`}
                     >
                       <span>{ROMAN_NUMERALS[idx] || idx + 1}</span>
                       {!lvlUnlocked && (
@@ -278,8 +279,11 @@ function GroupedSeriesCard({
               </div>
             </div>
 
-            <span className="text-label-secondary text-footnote tabular-nums">
-              {item.unlockedCount} / {item.totalLevels} mastered
+            <span className="text-label-secondary text-footnote">
+              <span className="font-data tabular-nums">
+                {item.unlockedCount} / {item.totalLevels}
+              </span>{" "}
+              mastered
             </span>
           </div>
         )}
@@ -297,7 +301,7 @@ function GroupedSeriesCard({
                   e.stopPropagation();
                   toggleSecretReveal(activeLevel.key);
                 }}
-                title={isRevealed ? "Hide Secret" : "Reveal Secret"}
+                title={isRevealed ? "Hide secret" : "Reveal secret"}
                 aria-label={isRevealed ? "Hide secret" : "Reveal secret"}
                 aria-pressed={isRevealed}
               >
@@ -305,19 +309,21 @@ function GroupedSeriesCard({
               </Button>
             )}
 
-            <Badge variant="success" className="tabular-nums select-none">
+            <Badge variant="success" numeric className="select-none">
               {activeLevel.points || 10} pts
             </Badge>
           </div>
 
           <div className="text-footnote text-right">
             {isUnlocked && activeLevel.unlockedAt ? (
-              <span className="text-label tabular-nums">
+              <span className="text-label">
                 Unlocked{" "}
-                {new Date(activeLevel.unlockedAt).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                })}
+                <span className="font-data tabular-nums">
+                  {new Date(activeLevel.unlockedAt).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </span>
               </span>
             ) : (
               <span className="text-label-secondary inline-flex items-center gap-1">
@@ -384,7 +390,11 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
   }, [groupedItems, selectedRarity, searchQuery]);
 
   return (
-    <section aria-label="Achievement catalogue" className="space-y-4">
+    <section aria-labelledby="achievement-catalogue-title" className="space-y-4">
+      {/* The catalogue's cards are h3s: name the section in the outline (after the showcase h2). */}
+      <h2 id="achievement-catalogue-title" className="sr-only">
+        Achievement catalogue
+      </h2>
       {/* Search and filters */}
       <FacetCard
         padding="sm"
@@ -417,7 +427,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
                 <ToggleGroupItem key={r} value={r} className="gap-2">
                   <RarityIcon aria-hidden className="size-3.5" />
                   <span>{config.label}</span>
-                  <span className="text-label-secondary tabular-nums">{count}</span>
+                  <span className="text-label-secondary font-data tabular-nums">{count}</span>
                 </ToggleGroupItem>
               );
             })}

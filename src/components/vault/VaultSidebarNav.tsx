@@ -12,63 +12,63 @@ import { cn } from "~/lib/utils";
 import { stripBasePath } from "~/lib/base-path";
 import { useTheme } from "~/context/theme-context";
 
-import type { CSSProperties } from "react";
 import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
+import { facetAccentStyle, type FacetAccent } from "~/lib/design/identity";
 
 export type VaultSection =
   "dashboard" | "cards" | "marketplace" | "import" | "achievements" | "leaderboards";
+
+/**
+ * The current section's row (Facet 3.1, spec §16.8): each row carries its hue as
+ * `style={facetAccentStyle(accent)}` — fill, rim and icon read `--facet-accent`, and `facet-retint`
+ * re-tints the row's focus ring with the hue's AA ink.
+ */
+const ACTIVE_ROW =
+  "bg-facet-accent-fill border-facet-accent/30 text-label shadow-card font-semibold";
 
 export const VAULT_NAV_ITEMS: {
   id: VaultSection;
   href: string;
   icon: typeof Home;
   title: string;
-  /** Active-row classes; the hue comes from `accent` (re-tints the row). */
+  /** Active-row classes; the hue comes from `accent` (`bg-facet-accent-fill`, rim, icon). */
   activeColor: string;
   /** v2 per-section hue (Dashboard amber, Cards indigo, Marketplace blue, Import cyan). */
-  accent: string;
+  accent: FacetAccent;
 }[] = [
   {
     id: "dashboard",
     href: "/vault",
     icon: Home,
     title: "Dashboard",
-    activeColor: "bg-tint-fill border-tint/30 text-label shadow-card font-semibold",
-    accent: "var(--color-yellow)",
+    activeColor: ACTIVE_ROW,
+    accent: "yellow",
   },
   {
     id: "cards",
     href: "/vault/cards",
     icon: Grid3x3,
     title: "Cards",
-    activeColor: "bg-tint-fill border-tint/30 text-label shadow-card font-semibold",
-    accent: "var(--color-indigo)",
+    activeColor: ACTIVE_ROW,
+    accent: "indigo",
   },
   {
     id: "marketplace",
     href: "/vault/marketplace",
     icon: ShoppingCart,
     title: "Marketplace",
-    activeColor: "bg-tint-fill border-tint/30 text-label shadow-card font-semibold",
-    accent: "var(--color-blue)",
+    activeColor: ACTIVE_ROW,
+    accent: "blue",
   },
   {
     id: "import",
     href: "/vault/import",
     icon: Download,
     title: "Import",
-    activeColor: "bg-tint-fill border-tint/30 text-label shadow-card font-semibold",
-    accent: "var(--color-cyan)",
+    activeColor: ACTIVE_ROW,
+    accent: "cyan",
   },
 ];
-
-/** Re-tints a nav row with its section hue (tint fill, rim, icon and focus ring). */
-function accentStyle(color: string): CSSProperties {
-  return {
-    "--tint": color,
-    "--tint-fill": `color-mix(in srgb, ${color} 16%, transparent)`,
-  } as CSSProperties;
-}
 
 /** Map any vault pathname to its parent section + optional sub-tab */
 export function getSectionFromPathname(rawPathname: string): VaultSection {
@@ -168,13 +168,16 @@ export function VaultSidebarNav({
   /* ── Mobile: horizontal pill bar ── */
   if (variant === "mobile") {
     return (
-      <nav className="bg-surface border-separator rounded-row overflow-hidden border p-1">
+      <nav
+        aria-label="Vault sections"
+        className="bg-surface border-separator rounded-row overflow-hidden border p-1"
+      >
         <div className="hide-scrollbar flex gap-1 overflow-x-auto">
           {filteredNavItems.map((item) => {
             const isActive = item.id === activeId;
             const Icon = item.icon;
             const cls = cn(
-              "focus-visible:outline-tint text-footnote facet-press facet-press-sm flex shrink-0 items-center gap-2 rounded-control border px-3 py-2 font-medium focus-visible:outline-2 focus-visible:-outline-offset-2",
+              "facet-retint focus-visible:outline-tint text-footnote facet-press facet-press-sm pointer-coarse:min-h-11 flex shrink-0 items-center gap-2 rounded-control border px-3 py-2 font-medium focus-visible:outline-2 focus-visible:-outline-offset-2",
               isActive
                 ? item.activeColor
                 : "text-label-secondary hover:bg-fill-3 hover:text-label border-transparent"
@@ -186,10 +189,13 @@ export function VaultSidebarNav({
                 key={item.id}
                 onClick={() => onNavigate(item.id)}
                 className={cls}
-                style={accentStyle(item.accent)}
+                style={facetAccentStyle(item.accent)}
                 aria-current={isActive ? "page" : undefined}
               >
-                <Icon className={cn("size-3.5 shrink-0", isActive && "text-tint")} />
+                <Icon
+                  aria-hidden
+                  className={cn("size-3.5 shrink-0", isActive && "text-facet-accent")}
+                />
                 <span className="whitespace-nowrap">{item.title}</span>
               </button>
             ) : (
@@ -197,10 +203,13 @@ export function VaultSidebarNav({
                 key={item.id}
                 href={item.href}
                 className={cls}
-                style={accentStyle(item.accent)}
+                style={facetAccentStyle(item.accent)}
                 aria-current={isActive ? "page" : undefined}
               >
-                <Icon className={cn("size-3.5 shrink-0", isActive && "text-tint")} />
+                <Icon
+                  aria-hidden
+                  className={cn("size-3.5 shrink-0", isActive && "text-facet-accent")}
+                />
                 <span className="whitespace-nowrap">{item.title}</span>
               </Link>
             );
@@ -220,23 +229,25 @@ export function VaultSidebarNav({
       trackPointerHover={false}
       texture="dots"
     >
-      <CutoutCardHeader icon={<Grid3x3 />} cornerSize={16} className="px-3 pt-2 pb-4">
-        <span role="heading" aria-level={2}>
-          Vault sections
-        </span>
+      <CutoutCardHeader icon={<Grid3x3 />} as="h2" cornerSize={16} className="px-3 pt-2 pb-4">
+        Vault sections
       </CutoutCardHeader>
       <div className="space-y-1 p-2 pt-1">
         {filteredNavItems.map((item) => {
           const isActive = item.id === activeId;
           const Icon = item.icon;
           const cls = cn(
-            "focus-visible:outline-tint text-body facet-press flex w-full cursor-pointer items-center gap-2 rounded-control border px-3 py-2 text-left font-medium outline-none focus-visible:outline-2 focus-visible:-outline-offset-2",
+            "facet-retint focus-visible:outline-tint text-body facet-press flex w-full cursor-pointer items-center gap-2 rounded-control border px-3 py-2 text-left font-medium outline-none focus-visible:outline-2 focus-visible:-outline-offset-2",
             isActive ? item.activeColor : "text-label hover:bg-fill-4 border-transparent"
           );
           const content = (
             <>
               <Icon
-                className={cn("size-4 shrink-0", isActive ? "text-tint" : "text-label-secondary")}
+                aria-hidden
+                className={cn(
+                  "size-4 shrink-0",
+                  isActive ? "text-facet-accent" : "text-label-secondary"
+                )}
               />
               <span className="truncate">{item.title}</span>
             </>
@@ -248,7 +259,7 @@ export function VaultSidebarNav({
               key={item.id}
               onClick={() => onNavigate(item.id)}
               className={cls}
-              style={accentStyle(item.accent)}
+              style={facetAccentStyle(item.accent)}
               aria-current={isActive ? "page" : undefined}
             >
               {content}
@@ -258,7 +269,7 @@ export function VaultSidebarNav({
               key={item.id}
               href={item.href}
               className={cls}
-              style={accentStyle(item.accent)}
+              style={facetAccentStyle(item.accent)}
               aria-current={isActive ? "page" : undefined}
             >
               {content}

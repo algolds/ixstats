@@ -8,8 +8,8 @@ import { Button } from "~/components/ui/button";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { createUrl } from "~/lib/utils";
-import { widgetAccent, WIDGET_ACCENT } from "../widget-accent";
+import { DATA_FONT, isNumericText } from "~/lib/design/identity";
+import { cn, createUrl } from "~/lib/utils";
 
 export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCountryId: string }) {
   const [seed, setSeed] = useState(0);
@@ -42,15 +42,9 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
 
   return (
     // v2 (c5c6b382): a CutoutCard with the blue cutout tab header and flag-backed rows.
-    <CutoutCard
-      variant="card"
-      trackPointerHover={false}
-      style={widgetAccent(WIDGET_ACCENT.countries)}
-    >
-      <CutoutCardHeader icon={<Users />}>
-        <span role="heading" aria-level={3}>
-          Countries to explore
-        </span>
+    <CutoutCard variant="card" accent="blue" retint trackPointerHover={false}>
+      <CutoutCardHeader icon={<Users />} as="h2">
+        Countries to explore
       </CutoutCardHeader>
       <div className="space-y-2 px-4 pb-4">
         <ul className="space-y-1">
@@ -59,7 +53,7 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
             return (
               <li
                 key={c.id}
-                className="group/c bg-surface-secondary border-separator hover:bg-fill-3 rounded-row duration-fast ease-out-facet relative isolate flex items-center gap-2 overflow-hidden border p-2 transition-colors"
+                className="group/c bg-surface-secondary border-separator hover:bg-fill-3 focus-within:bg-fill-3 rounded-row duration-fast ease-out-facet relative isolate flex items-center gap-2 overflow-hidden border p-2 transition-colors"
               >
                 {/* v2 flag backdrop on the row's trailing edge, behind an opaque scrim. */}
                 {c.flagUrl && (
@@ -68,7 +62,7 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
                       src={c.flagUrl}
                       alt=""
                       loading="lazy"
-                      className="ease-out-facet size-full object-cover object-right opacity-40 transition-[scale] duration-300 group-hover/c:scale-105 motion-reduce:transition-none motion-reduce:group-hover/c:scale-100"
+                      className="ease-out-facet size-full object-cover object-right opacity-40 transition-[scale] duration-300 group-focus-within/c:scale-105 group-hover/c:scale-105 motion-reduce:transition-none motion-reduce:group-focus-within/c:scale-100 motion-reduce:group-hover/c:scale-100"
                     />
                     <span className="from-surface-secondary via-surface-secondary/85 absolute inset-0 bg-gradient-to-r to-transparent" />
                   </span>
@@ -83,12 +77,15 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
                 <div className="min-w-0 flex-1">
                   <Link
                     href={createUrl(`/countries/${c.slug}`)}
-                    className="text-label text-headline block truncate hover:underline"
+                    className="text-label text-headline focus-visible:outline-tint rounded-control-sm block truncate hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
                   >
                     {c.name}
                   </Link>
                   <span className="text-label-secondary text-footnote">
-                    Tier <span className="font-data tabular-nums">{c.economicTier}</span>
+                    Tier{" "}
+                    <span className={cn(isNumericText(c.economicTier) && DATA_FONT)}>
+                      {c.economicTier}
+                    </span>
                   </span>
                 </div>
                 <Button

@@ -212,7 +212,7 @@ export function MidRibbonPassportDocument({
                     <Stat
                       size="sm"
                       label="Status"
-                      value={<span className="text-success">Active</span>}
+                      value={<span className="text-success-ink">Active</span>}
                     />
                   </div>
 

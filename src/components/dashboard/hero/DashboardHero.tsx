@@ -240,11 +240,11 @@ export function DashboardHeroComponent({
             <div className="mb-2 flex items-center justify-between gap-2">
               <Link
                 href={`/countries/${profileSlug}`}
-                className="group/title flex min-w-0 cursor-pointer items-center gap-2"
+                className="group/title rounded-control focus-visible:outline-tint flex min-w-0 cursor-pointer items-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2"
                 title={`View ${stats.countryName} Profile`}
               >
                 <AvatarGlow avatarGlow={avatarGlow} roundedClass="rounded-control">
-                  <div className="bg-surface border-separator rounded-control ease-out-facet flex items-center justify-center overflow-hidden border p-1 transition-[scale] duration-300 group-hover/title:scale-105 motion-reduce:transition-none motion-reduce:group-hover/title:scale-100">
+                  <div className="bg-surface border-separator rounded-control ease-out-facet flex items-center justify-center overflow-hidden border p-1 transition-[scale] duration-300 group-hover/title:scale-105 group-focus-visible/title:scale-105 motion-reduce:transition-none motion-reduce:group-hover/title:scale-100 motion-reduce:group-focus-visible/title:scale-100">
                     <UnifiedCountryFlag
                       showTooltip={false}
                       countryName={stats.countryName}
@@ -257,11 +257,15 @@ export function DashboardHeroComponent({
 
                 <div className="flex min-w-0 flex-col">
                   <div className="flex items-center gap-2">
-                    <span className="text-label text-title-3 group-hover/title:text-tint truncate underline-offset-2 transition-colors group-hover/title:underline">
+                    <span className="text-label text-title-3 group-hover/title:text-tint group-focus-visible/title:text-tint truncate underline-offset-2 transition-colors group-hover/title:underline group-focus-visible/title:underline">
                       {stats.countryName}
                     </span>
                     {chatBadge.enabled && (
-                      <CrownIcon className="size-4 shrink-0" style={{ color: chatBadge.color }} />
+                      <CrownIcon
+                        aria-hidden
+                        className="size-4 shrink-0"
+                        style={{ color: chatBadge.color }}
+                      />
                     )}
                   </div>
 

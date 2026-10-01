@@ -23,19 +23,20 @@ import { createUrl } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { CutoutCard, CutoutCorner } from "~/components/ui/cutout-card";
-import { widgetAccent, WIDGET_ACCENT } from "../widget-accent";
+import { facetAccentStyle } from "~/lib/design/identity";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { formatCompactNumber, formatCompactCurrency } from "~/lib/utils";
 
 /**
  * A quick-action tile in the 12rem sidebar card — v2 (c5c6b382) coloured tiles: a domain-tinted
- * fill and rim (set `widgetAccent` on the tile), the glyph grows on hover, the tile presses.
+ * fill and rim (`style={facetAccentStyle(hue)}` on the tile; `facet-retint` re-tints its badge and
+ * focus ring), the glyph grows on hover and keyboard focus, the tile presses.
  */
 const QUICK_ACTION =
-  "group/icon text-body text-label bg-tint-fill border-tint/30 hover:border-tint/50 hover:bg-fill-3 rounded-row facet-press focus-visible:outline-tint flex min-h-9 min-w-0 items-center gap-2 border px-2 py-2 focus-visible:outline-2 focus-visible:outline-offset-2";
+  "group/icon facet-retint text-body text-label bg-facet-accent-fill border-facet-accent/30 hover:border-facet-accent/50 focus-visible:border-facet-accent/50 hover:bg-fill-3 rounded-row facet-press focus-visible:outline-tint flex min-h-9 min-w-0 items-center gap-2 border px-2 py-2 focus-visible:outline-2 focus-visible:outline-offset-2";
 const QUICK_ACTION_ICON =
-  "text-tint ease-out-facet duration-fast size-4 shrink-0 transition-[scale] group-hover/icon:scale-110 motion-reduce:transition-none motion-reduce:group-hover/icon:scale-100";
+  "text-facet-accent ease-out-facet duration-fast size-4 shrink-0 transition-[scale] group-hover/icon:scale-110 group-focus-visible/icon:scale-110 motion-reduce:transition-none motion-reduce:group-hover/icon:scale-100 motion-reduce:group-focus-visible/icon:scale-100";
 const QUICK_ACTION_DISABLED =
   "text-body text-label-tertiary bg-fill-4 rounded-row flex min-h-9 min-w-0 cursor-not-allowed items-center gap-2 px-2 py-2";
 
@@ -102,13 +103,8 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
 
   if (profileLoading) {
     return (
-      <CutoutCard
-        variant="card"
-        className="w-48"
-        trackPointerHover={false}
-        style={widgetAccent(WIDGET_ACCENT.player)}
-      >
-        <div className="bg-tint-fill relative flex min-h-[90px] flex-col items-center justify-center px-3 pt-3 pb-6">
+      <CutoutCard variant="card" accent="indigo" retint className="w-48" trackPointerHover={false}>
+        <div className="bg-facet-accent-fill relative flex min-h-[90px] flex-col items-center justify-center px-3 pt-3 pb-6">
           <Skeleton className="h-4 w-24 rounded-full" />
           <CutoutCorner className="text-surface absolute -bottom-px left-0" size={16} />
           <CutoutCorner
@@ -143,15 +139,16 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
     // under a dark scrim, with the inverted-corner notches, dot texture and coloured action tiles.
     <CutoutCard
       variant="card"
+      accent="indigo"
+      retint
       className="group w-48"
       trackPointerHover={false}
       texture="dots"
-      style={widgetAccent(WIDGET_ACCENT.player)}
     >
       {/* Neon Frame Overlay */}
       <NeonFrameOverlay neonFrame={neonFrame} className="rounded-cutout" />
       {/* Identity header: the flag behind an image scrim, avatar and nation name */}
-      <div className="bg-tint-fill relative flex min-h-[96px] flex-col items-center justify-center overflow-hidden px-3 pt-4 pb-6">
+      <div className="bg-facet-accent-fill relative flex min-h-[96px] flex-col items-center justify-center overflow-hidden px-3 pt-4 pb-6">
         {userProfile?.country?.name && (
           <div aria-hidden className="absolute inset-0 overflow-hidden">
             <UnifiedCountryFlag
@@ -160,7 +157,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               fitContainer={true}
               showTooltip={false}
               rounded={false}
-              className="ease-out-facet h-full w-full object-cover opacity-40 brightness-90 transition-[scale] duration-500 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+              className="ease-out-facet h-full w-full object-cover opacity-40 brightness-90 transition-[scale] duration-500 group-focus-within:scale-105 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-focus-within:scale-100 motion-reduce:group-hover:scale-100"
             />
             {/* Image scrim so the name stays readable over any flag */}
             <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/55 to-black/75" />
@@ -171,7 +168,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
         <AvatarGlow
           avatarGlow={avatarGlow}
           roundedClass="rounded-full"
-          className="bg-tint shadow-card ease-out-facet relative mb-2 h-9 w-9 ring-1 ring-white/20 transition-[scale] duration-200 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+          className="bg-tint shadow-card ease-out-facet relative mb-2 h-9 w-9 ring-1 ring-white/20 transition-[scale] duration-200 group-focus-within:scale-105 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-focus-within:scale-100 motion-reduce:group-hover:scale-100"
         >
           <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full">
             {user?.imageUrl ? (
@@ -194,13 +191,17 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
         <Link
           href={createUrl(`/countries/${userProfile?.country?.slug ?? ""}`)}
           className={cn(
-            "text-headline relative flex items-center justify-center gap-1 text-center underline-offset-2 hover:underline",
+            "text-headline focus-visible:outline-tint rounded-control-sm relative flex items-center justify-center gap-1 text-center underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-2 focus-visible:outline-offset-2",
             userProfile?.country?.name ? "text-white" : "text-label"
           )}
         >
           <span>{userProfile?.country?.name ?? "My Country"}</span>
           {chatBadge.enabled && (
-            <CrownIcon className="size-3.5 shrink-0" style={{ color: chatBadge.color }} />
+            <CrownIcon
+              aria-hidden
+              className="size-3.5 shrink-0"
+              style={{ color: chatBadge.color }}
+            />
           )}
         </Link>
 
@@ -271,7 +272,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
           <Link
             href="/messages"
             className={QUICK_ACTION}
-            style={widgetAccent("var(--color-indigo)")}
+            style={facetAccentStyle("indigo")}
             title={
               totalUnreadMessages > 0
                 ? `${totalUnreadMessages} unread messages`
@@ -293,7 +294,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
             <Link
               href={createUrl("/mycountry/executive?focus=directives")}
               className={QUICK_ACTION}
-              style={widgetAccent("var(--color-yellow)")}
+              style={facetAccentStyle("yellow")}
               title={`${issueCount} pending directives (${urgentCount} urgent)`}
             >
               <ClipboardList aria-hidden className={QUICK_ACTION_ICON} />
@@ -317,9 +318,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
             <Link
               href={createUrl("/mycountry/executive?focus=agenda")}
               className={QUICK_ACTION}
-              style={widgetAccent(
-                pendingActions > 0 ? "var(--color-orange)" : "var(--color-green)"
-              )}
+              style={facetAccentStyle(pendingActions > 0 ? "orange" : "green")}
               title={
                 pendingActions > 0 ? `${pendingActions} pending agenda items` : "All agenda clear"
               }

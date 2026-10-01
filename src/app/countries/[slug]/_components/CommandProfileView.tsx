@@ -196,7 +196,7 @@ function CommandBody({
                 "focus-visible:outline-tint facet-press flex items-center gap-2 focus-visible:outline-2 focus-visible:-outline-offset-2",
                 orientation === "vertical"
                   ? "text-body rounded-control-sm w-full px-3 py-2"
-                  : "text-caption flex-col rounded-full px-3 py-1",
+                  : "text-caption flex-col justify-center rounded-full px-3 py-1 pointer-coarse:min-h-11",
                 current
                   ? "bg-tint-fill text-tint ring-tint/30 font-semibold ring-1"
                   : "text-label-secondary hover:bg-fill-4 hover:text-label"

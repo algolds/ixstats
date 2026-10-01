@@ -111,7 +111,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
           <Button asChild variant="tinted" size="sm">
             <Link href={passportUrl}>
               <ExternalLink aria-hidden />
-              <span>View Public Passport</span>
+              <span>View public passport</span>
             </Link>
           </Button>
         }
@@ -147,7 +147,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                   Verified
                 </Badge>
                 <Badge variant="success">
-                  <span className="font-data tabular-nums">{totalConnectedCount}/4</span> Connected
+                  <span className="font-data tabular-nums">{totalConnectedCount}/4</span> connected
                 </Badge>
               </div>
 
@@ -168,7 +168,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                   </Link>
                 ) : (
                   <Link href="/setup" className="text-tint font-medium hover:underline">
-                    + Link Country
+                    + Link country
                   </Link>
                 )}
                 {userProfile?.membershipTier &&
@@ -195,7 +195,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
               ) : (
                 <>
                   <Copy aria-hidden />
-                  <span>Copy Link</span>
+                  <span>Copy link</span>
                 </>
               )}
             </Button>

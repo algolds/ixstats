@@ -82,9 +82,9 @@ export function ImportVerifyStep({
       )}
 
       {/* Code input */}
-      <FacetCard className="rounded-row border-tint/30 bg-tint-fill space-y-2 border p-5">
-        <label className="text-eyebrow text-yellow">
-          Paste Verification Code from NationStates
+      <FacetCard rim="tint" className="rounded-row bg-tint-fill space-y-2 p-5">
+        <label className="text-eyebrow text-yellow-ink">
+          Paste verification code from NationStates
         </label>
         <Input
           value={checksum}

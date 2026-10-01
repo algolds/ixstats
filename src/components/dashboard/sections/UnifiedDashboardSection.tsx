@@ -22,7 +22,6 @@ import {
 import { useUser } from "~/context/auth-context";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { FacetTabs } from "~/components/ui/facet";
-import { widgetAccent, WIDGET_ACCENT } from "../widget-accent";
 
 type ThinkpagesAccountItem = RouterOutputs["thinkpages"]["getMyAccounts"][number];
 
@@ -362,15 +361,9 @@ export function UnifiedDashboardSection({
             {/* Economic Tier Distribution */}
             {(globalStats as any)?.economicTierDistribution && (
               // v2 (c5c6b382): a CutoutCard with the emerald cutout tab header.
-              <CutoutCard
-                variant="card"
-                trackPointerHover={false}
-                style={widgetAccent(WIDGET_ACCENT.economy)}
-              >
-                <CutoutCardHeader icon={<Globe />}>
-                  <span role="heading" aria-level={3}>
-                    Economic tiers
-                  </span>
+              <CutoutCard variant="card" accent="green" retint trackPointerHover={false}>
+                <CutoutCardHeader icon={<Globe />} as="h2">
+                  Economic tiers
                 </CutoutCardHeader>
                 <div className="flex flex-wrap items-center gap-1 px-4 pb-4">
                   {Object.entries((globalStats as any).economicTierDistribution).map(

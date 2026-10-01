@@ -32,9 +32,9 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
     >
       <div className="border-separator mb-4 flex items-center gap-2 border-b pb-4">
         <div className="text-label-secondary rounded-row border-separator bg-fill-3 shadow-card flex h-8 w-8 items-center justify-center border">
-          <History className="text-label-secondary h-4.5 w-4.5" />
+          <History aria-hidden className="text-label-secondary h-4.5 w-4.5" />
         </div>
-        <span className="text-label-secondary text-eyebrow">Recent Activity</span>
+        <span className="text-label-secondary text-eyebrow">Recent activity</span>
       </div>
 
       {loading ? (
@@ -54,10 +54,12 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
             return (
               <div
                 key={activity.id}
-                className="border-separator bg-fill-4 hover:bg-fill-3 rounded-card text-footnote flex cursor-pointer items-center justify-between border px-4 py-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.985]"
+                // A ledger row, not a control: no hover wash or press (Facet 3.1 HIG).
+                className="border-separator bg-fill-4 rounded-card text-footnote flex items-center justify-between border px-4 py-3"
               >
                 <div className="flex items-center gap-3">
                   <div
+                    aria-hidden
                     className={cn(
                       "shadow-card flex h-7 w-7 items-center justify-center rounded-full border",
                       isEarn
@@ -80,12 +82,12 @@ export function VaultRecentActivityCard({ loading, activities }: VaultRecentActi
                 </div>
                 <span
                   className={cn(
-                    "text-body flex items-center gap-0.5 font-semibold tabular-nums",
-                    isEarn ? "text-green" : "text-red"
+                    "text-body font-data flex items-center gap-0.5 font-semibold tabular-nums",
+                    isEarn ? "text-green-ink" : "text-red-ink"
                   )}
                 >
                   {isEarn ? "+" : "-"}
-                  <IxCreditsSymbol className="h-3 w-3 shrink-0" />
+                  <IxCreditsSymbol aria-hidden className="h-3 w-3 shrink-0" />
                   {Math.abs(activity.amount).toLocaleString()}
                 </span>
               </div>

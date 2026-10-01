@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import {
   ChatBubble as MessageCircle,
@@ -14,7 +14,7 @@ import {
 } from "iconoir-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
+import { Button, buttonVariants } from "~/components/ui/button";
 import { FacetCard } from "~/components/ui/facet-container";
 import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -24,10 +24,10 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { cn, createUrl } from "~/lib/utils";
 import { timeAgo as formatRelativeTime } from "~/lib/format/compact";
-import { widgetAccent, WIDGET_ACCENT } from "../widget-accent";
 
 export function BlurbSection() {
   const [modalOpen, setModalOpen] = useState(false);
+  const questionId = useId();
   const { data: prompt, isLoading } = api.blurbs.getRandomActivePrompt.useQuery(undefined, {
     staleTime: 5 * 60_000,
   });
@@ -57,14 +57,17 @@ export function BlurbSection() {
 
   return (
     <>
-      {/* v2 (c5c6b382): a pressable CutoutCard with the indigo cutout tab header. */}
+      {/* v2 (c5c6b382): a pressable CutoutCard with the indigo cutout tab header. The whole card
+          is the button (Facet 3.1 HIG: no nested controls), so "Respond" is its visual label. */}
       <CutoutCard
         variant="card"
+        accent="indigo"
+        retint
         onClick={() => setModalOpen(true)}
         aria-label="Open blurb of the day"
+        aria-describedby={questionId}
         className="no-wiki-tooltip flex flex-col justify-between"
         trackPointerHover={false}
-        style={widgetAccent(WIDGET_ACCENT.blurb)}
       >
         <CutoutCardHeader
           icon={<Quote />}
@@ -75,16 +78,14 @@ export function BlurbSection() {
             </Badge>
           }
         >
-          <span role="heading" aria-level={3}>
-            Blurb of the day
-          </span>
+          Blurb of the day
         </CutoutCardHeader>
 
         <div className="space-y-3 px-4 pb-4">
           {/* Prompt question */}
           <div className="space-y-1">
-            {prompt.title && <p className="text-subhead text-tint">{prompt.title}</p>}
-            <blockquote className="text-label text-callout line-clamp-3 select-text">
+            {prompt.title && <p className="text-subhead text-facet-accent-ink">{prompt.title}</p>}
+            <blockquote id={questionId} className="text-label text-callout line-clamp-3">
               &ldquo;{prompt.question}&rdquo;
             </blockquote>
           </div>
@@ -92,24 +93,22 @@ export function BlurbSection() {
           {/* Footer meta and call to action */}
           <div className="flex items-center justify-between pt-1">
             <span className="text-label-secondary text-footnote flex items-center gap-2">
-              <MessageCircle aria-hidden className="text-tint size-3.5" />
+              <MessageCircle aria-hidden className="text-facet-accent size-3.5" />
               <span className="font-data tabular-nums">{responseCount}</span>
               {responseCount === 1 ? "response" : "responses"}
             </span>
 
-            <Button
-              type="button"
-              variant="tinted"
-              size="sm"
-              className="rounded-full"
-              onClick={(e) => {
-                e.stopPropagation();
-                setModalOpen(true);
-              }}
+            <span
+              aria-hidden
+              className={buttonVariants({
+                variant: "tinted",
+                size: "sm",
+                className: "pointer-events-none rounded-full",
+              })}
             >
               <span>Respond</span>
               <ChevronRight />
-            </Button>
+            </span>
           </div>
         </div>
       </CutoutCard>

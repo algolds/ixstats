@@ -36,8 +36,11 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-label-secondary text-footnote tabular-nums">
-            {rarestShowcase?.length || 0} / {Math.min(rarestAll?.length || 0, 9)} displayed
+          <span className="text-label-secondary text-footnote">
+            <span className="font-data tabular-nums">
+              {rarestShowcase?.length || 0} / {Math.min(rarestAll?.length || 0, 9)}
+            </span>{" "}
+            displayed
           </span>
 
           {(rarestAll?.length || 0) > 3 && (
@@ -84,6 +87,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                 transition={{ ...springSmooth, delay: Math.min(idx * 0.02, 0.2) }}
                 // v2 showcase: glass cabinet cards that lift on hover, with the full backdrop.
                 variant="glass"
+                accent={categoryTheme.accent}
                 interactive="hover"
                 className={cn(
                   "flex flex-col justify-between overflow-hidden p-4",

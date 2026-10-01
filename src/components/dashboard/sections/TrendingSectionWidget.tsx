@@ -29,7 +29,6 @@ import {
   isNoticeOrUtilityIcon,
 } from "~/lib/wiki-os/transformers/image-url";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
-import { widgetAccent, WIDGET_ACCENT } from "../widget-accent";
 
 const TRENDING_DEFAULT_LIMIT = 4;
 const TRENDING_FILTER_LIMIT = 10;
@@ -39,7 +38,7 @@ type FilterTab = "all" | "forum" | "wiki";
 const DEFAULT_SOURCE = {
   icon: Activity,
   color: "text-yellow",
-  label: "Live Activity",
+  label: "Live activity",
 };
 
 const TRENDING_SOURCE: Record<
@@ -64,12 +63,12 @@ const TRENDING_SOURCE: Record<
   ixstats: {
     icon: Activity,
     color: "text-yellow",
-    label: "Live Activity",
+    label: "Live activity",
   },
   general: {
     icon: Activity,
     color: "text-yellow",
-    label: "Live Activity",
+    label: "Live activity",
   },
   crisis: {
     icon: AlertTriangle,
@@ -287,14 +286,13 @@ export function TrendingSectionWidget() {
     // v2 (c5c6b382): a CutoutCard with the amber cutout tab header.
     <CutoutCard
       variant="card"
+      accent="orange"
+      retint
       className="no-wiki-tooltip"
       trackPointerHover={false}
-      style={widgetAccent(WIDGET_ACCENT.trending)}
     >
-      <CutoutCardHeader icon={<Flame />}>
-        <span role="heading" aria-level={3}>
-          Trending topics
-        </span>
+      <CutoutCardHeader icon={<Flame />} as="h2">
+        Trending topics
       </CutoutCardHeader>
 
       <div className="space-y-3 px-4 pb-4">
@@ -384,7 +382,7 @@ export function TrendingSectionWidget() {
                   >
                     <SrcIcon
                       className={cn(
-                        "ease-out-facet duration-fast size-3.5 transition-[scale] group-hover/item:scale-110 motion-reduce:transition-none motion-reduce:group-hover/item:scale-100",
+                        "ease-out-facet duration-fast size-3.5 transition-[scale] group-hover/item:scale-110 group-focus-visible/item:scale-110 motion-reduce:transition-none motion-reduce:group-hover/item:scale-100 motion-reduce:group-focus-visible/item:scale-100",
                         src.color
                       )}
                     />
@@ -392,7 +390,7 @@ export function TrendingSectionWidget() {
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-label text-headline group-hover/item:text-tint truncate transition-colors">
+                      <span className="text-label text-headline group-hover/item:text-tint group-focus-visible/item:text-tint truncate transition-colors">
                         {displayTitle}
                       </span>
                       <Badge variant="neutral">{src.label}</Badge>

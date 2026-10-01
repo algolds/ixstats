@@ -165,7 +165,7 @@ export function InventoryTab({
             exit={{ opacity: 0, height: 0 }}
             transition={springSmooth}
           >
-            <Card className="border-tint/30">
+            <Card className="facet-tint-rim">
               <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
                 <div className="flex items-center gap-2">
                   <CheckSquare className="text-tint h-5 w-5" />
