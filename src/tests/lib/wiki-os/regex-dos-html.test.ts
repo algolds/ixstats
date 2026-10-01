@@ -28,7 +28,9 @@ import {
   nestsTooDeep,
 } from "~/lib/wiki-os/transformers/inert-dom";
 import { safeDecodeURI } from "~/lib/wiki-os/transformers/safe-decode";
+import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { slimArticleHtml } from "~/lib/wiki-os/transformers/slim-html";
+import { slimArticleHtml as legacySlimArticleHtml } from "./legacy/slim-html";
 import { featuredArticleDetails as legacyFeaturedArticleDetails } from "./legacy/featured-article";
 import {
   stripConflictingStyles as legacyStripConflictingStyles,
@@ -507,5 +509,71 @@ describe("a page nested too deep is left to the passes that only tidy it", () =>
     expect(slimArticleHtml('<div> <p>a</p> </div><a title="x">x</a>')).toBe(
       "<div><p>a</p></div><a>x</a>"
     );
+  });
+});
+
+// ---- slim-html: a blank between blocks is emptied, not removed -------------------------------------------------
+
+describe("slimArticleHtml empties the blanks between blocks instead of removing them", () => {
+  const TOKENS = [
+    "<p>",
+    "</p>",
+    "<div>",
+    "</div>",
+    '<div style="display:inline">',
+    "<ul>",
+    "</ul>",
+    "<li>",
+    "</li>",
+    "<table>",
+    "<tr>",
+    "<td>",
+    "</td>",
+    "</tr>",
+    "</table>",
+    "<pre>",
+    "</pre>",
+    "<blockquote>",
+    "</blockquote>",
+    "<span>",
+    "</span>",
+    "<br>",
+    "<b>",
+    "</b>",
+    '<a title="x" class="mw-redirect">',
+    "</a>",
+    "a",
+    "b c",
+    " ",
+    "\n",
+    "\t",
+    "\u00a0",
+    "&nbsp;",
+    "<!-- c -->",
+  ];
+
+  it("serializes what the removing version did, on random pages and the HTML of the real ones", () => {
+    const pages = [
+      ...randomTexts(TOKENS, 6_000, 51, 24),
+      ...fixtures.map((text) => parseWikitextToHtml(text)),
+    ];
+    expect(disagreements(pages, slimArticleHtml, legacySlimArticleHtml)).toEqual([]);
+  });
+
+  it("takes time linear in the siblings: a hundred thousand characters of lines of one kind of block", () => {
+    const lines = (unit: string, open = "", close = "") =>
+      `${open}${unit.repeat(Math.ceil(100_000 / unit.length))}${close}`;
+    const started = performance.now();
+    for (const html of [
+      lines("<p>x</p>\n"),
+      lines("<div>a</div>\n"),
+      lines("<blockquote>a</blockquote>\n"),
+      lines("<li>a</li>\n", "<ul>", "</ul>"),
+      lines("<tr><td>a</td></tr>\n", "<table>", "</table>"),
+    ]) {
+      expect(slimArticleHtml(html)).not.toContain("\n");
+    }
+    // the removing version takes 1.7 s on the first of these alone
+    expect(performance.now() - started).toBeLessThan(3_000);
   });
 });

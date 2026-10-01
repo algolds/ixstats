@@ -1,3 +1,6 @@
+// The HTML slimmer as the integration branch has it (515ca3c72), before the regex-DoS sweep (plan F15), verbatim apart from its
+// import paths: regex-dos-html.test.ts holds the empty-the-text rewrite against it. Not used by any code.
+
 // src/lib/wiki-os/transformers/slim-html.ts
 // Takes weight out of a view bundle's HTML at render time, once per revision, so every reader's
 // first response (and its hydration copy) carries less. Server only: it works on a jsdom DOM, and
@@ -10,8 +13,7 @@
 //   - whitespace between block elements, and in a table's or list's structure.
 
 import { cssIdentifiers } from "~/lib/utils/scope-template-styles";
-import { leavesAlone } from "./inert-dom";
-import { parseInertOnServer } from "./server-dom";
+import { parseInertOnServer } from "~/lib/wiki-os/transformers/server-dom";
 
 /**
  * MediaWiki's and its citation templates' own classes: no WikiOS stylesheet has a rule for them and
@@ -204,7 +206,7 @@ function isLayoutWhitespace(text: Text): boolean {
  * page style (the body's sheet styles the infobox too).
  */
 export function slimArticleHtml(html: string, styled: ReadonlySet<string> = NO_CLASSES): string {
-  if (!html || leavesAlone(html)) return html;
+  if (!html) return html;
   const { template, content, document } = parseInertOnServer(html);
   const kept = html.includes("data-mw-deduplicate")
     ? new Set([...styled, ...templateStyleIdentifiers(html)])
@@ -221,9 +223,7 @@ export function slimArticleHtml(html: string, styled: ReadonlySet<string> = NO_C
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     if (isLayoutWhitespace(node as Text)) removable.push(node as Text);
   }
-  // `data = ""`, not `remove()`: jsdom's remove is linear in the parent's children, and a page of a hundred
-  // thousand `<p>…</p>` lines is one parent. An empty text node serializes to nothing.
-  for (const text of removable) text.data = "";
+  for (const text of removable) text.remove();
 
   return template.innerHTML;
 }

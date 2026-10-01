@@ -1178,6 +1178,11 @@ const HTML_UNITS: ReadonlyArray<readonly [name: string, unit: string]> = [
   ["<p>a</p><p>", "<p>a</p><p>"],
   ["<p>text</p>", "<p>text</p>"],
   ["<script", "<script"],
+  // blocks that are siblings, a line each (a whitespace-only text between them is dead weight to take out)
+  ["<p>x</p>␤", "<p>x</p>\n"],
+  ["<li>a</li>␤", "<li>a</li>\n"],
+  ["<div>a</div>␤", "<div>a</div>\n"],
+  ["<blockquote>a</blockquote>␤", "<blockquote>a</blockquote>\n"],
 ];
 
 /** The XML units, for the dump reader. */
