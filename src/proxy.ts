@@ -12,6 +12,7 @@ import {
   wikiStandaloneRedirect,
 } from "~/lib/system/wikios-standalone";
 import { buildCSPTemplate, renderCsp } from "~/lib/security/csp";
+import { RAW_PATH_HEADER, RAW_ROUTE_PATH } from "~/lib/wiki-os/raw-path";
 
 // Get base path from environment - should match Next.js basePath
 const BASE_PATH = process.env.BASE_PATH || "";
@@ -162,6 +163,36 @@ function handleWikiStandaloneRouting(req: NextRequest): NextResponse | null {
 }
 
 /**
+ * `/wiki/<title>?action=raw` (MediaWiki's raw-wikitext URL, used by bots) is answered by
+ * /api/wiki/raw. The path after `/wiki/` goes in a request header (`x-wikios-raw-path`, see
+ * lib/wiki-os/raw-path.ts): a rewrite keeps the original query string, so a query parameter added
+ * here would never reach the route. The header is set from the incoming headers with any value the
+ * client sent overwritten.
+ */
+function handleWikiRawRewrite(req: NextRequest): NextResponse | null {
+  const { pathname, searchParams } = req.nextUrl;
+  if (!pathname.startsWith("/wiki/") || searchParams.get("action") !== "raw") return null;
+
+  const url = req.nextUrl.clone();
+  url.pathname = RAW_ROUTE_PATH;
+  const headers = new Headers(req.headers);
+  headers.set(RAW_PATH_HEADER, pathname.slice("/wiki/".length));
+  return NextResponse.rewrite(url, { request: { headers } });
+}
+
+/**
+ * A direct request to the raw route carrying `x-wikios-raw-path` is a client forging the proxy's
+ * header: continue with it removed (the route needs neither Clerk nor the page security headers).
+ */
+function handleRawPathHeaderStrip(req: NextRequest): NextResponse | null {
+  if (req.nextUrl.pathname !== RAW_ROUTE_PATH || !req.headers.has(RAW_PATH_HEADER)) return null;
+
+  const headers = new Headers(req.headers);
+  headers.delete(RAW_PATH_HEADER);
+  return NextResponse.next({ request: { headers } });
+}
+
+/**
  * /admin and /settings are only gated inside the Clerk callback. When Clerk is
  * unavailable, those routes must fail closed instead of falling through unauthenticated.
  */
@@ -298,6 +329,9 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
 
   const wikiStandaloneRedirectResponse = handleWikiStandaloneRouting(req);
   if (wikiStandaloneRedirectResponse) return wikiStandaloneRedirectResponse;
+
+  const wikiRawRewrite = handleWikiRawRewrite(req) ?? handleRawPathHeaderStrip(req);
+  if (wikiRawRewrite) return wikiRawRewrite;
 
   const clerk = getClerkMiddleware();
   if (clerk) {

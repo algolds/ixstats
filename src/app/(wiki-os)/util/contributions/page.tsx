@@ -1,5 +1,5 @@
 "use client";
-// src/app/(wiki-os)/wiki/contributions/page.tsx
+// src/app/(wiki-os)/util/contributions/page.tsx
 // WikiOS User Contributions Ledger — Hub & Editor History Search
 
 import { useState } from "react";
@@ -182,7 +182,7 @@ export default function ContributionsHubPage() {
                     </span>
                     {!c.isNew && (
                       <Link
-                        href={withBasePath(`/wiki/diff?to=${c.revid}`)}
+                        href={withBasePath(`/util/diff?to=${c.revid}`)}
                         className="bg-muted hover:bg-muted/80 text-foreground inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors"
                       >
                         <GitCommit className="text-muted-foreground h-3 w-3" />

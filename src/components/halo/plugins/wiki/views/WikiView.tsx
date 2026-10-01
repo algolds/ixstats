@@ -42,6 +42,8 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
     narratorActions,
   } = useWikiContext();
 
+  // Local drafts are kept per account (draft-store): a signed-out reader has none.
+  const { isSignedIn, userId } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [localDrafts, setLocalDrafts] = useState<LocalDraft[]>([]);
   const [pausedSessions, setPausedSessions] = useState<PausedSession[]>([]);
@@ -62,7 +64,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
 
     // 1. Scan local drafts
     try {
-      const drafts = listDrafts().map((d) => ({
+      const drafts = listDrafts(userId).map((d) => ({
         title: d.title,
         type: d.mode as "visual" | "source",
       }));
@@ -87,7 +89,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
       console.error("Failed to read paused sessions:", e);
     }
     // oxlint-disable-next-line
-  }, [articleTitle, pathname]);
+  }, [articleTitle, pathname, userId]);
 
   const isMainPage =
     pathname?.includes("/wiki/Main_Page") || pathname?.includes("/wiki/Main%20Page") || false;
@@ -103,7 +105,6 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   );
 
   const slug = articleTitle ? encodeURIComponent(articleTitle.replace(/ /g, "_")) : null;
-  const { isSignedIn } = useAuth();
 
   // Stash state
   const { data: stashStatus, refetch: refetchStash } = api.wikios.isStashed.useQuery(

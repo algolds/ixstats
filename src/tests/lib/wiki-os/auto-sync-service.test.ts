@@ -612,6 +612,8 @@ describe("fast-forward", () => {
     const input = importPageRevisions.mock.calls[0]![0];
     expect(input.title).toBe("Foo");
     expect(input.revisions[0]).toMatchObject({ mwRevId: 91, byteDelta: 20 - 12 });
+    // watchlist (plan 416): the importer tells the page's watchers; the head it replaces makes it a diff link.
+    expect(input.previousRef).toBe("90");
     expect(mockRevisionCreateMany).not.toHaveBeenCalled();
     expect(enqueueExport).not.toHaveBeenCalled();
   });

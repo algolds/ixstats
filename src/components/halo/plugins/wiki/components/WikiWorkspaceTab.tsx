@@ -75,7 +75,7 @@ export function WikiWorkspaceTab({
                 onClick={() => {
                   onClose();
                   navigateWithBasePath(
-                    `/wiki/${encodeURIComponent(draft.title.replace(/ /g, "_"))}/edit`,
+                    `/wiki/${encodeURIComponent(draft.title.replace(/ /g, "_"))}?action=edit`,
                     router
                   );
                 }}
@@ -215,7 +215,7 @@ function IxWikiPageActions({
           shortcut="Tab Tab"
           onClick={() => {
             onClose();
-            navigateWithBasePath(`/wiki/${slug}/edit`, router);
+            navigateWithBasePath(`/wiki/${slug}?action=edit`, router);
           }}
         />
       )}
@@ -224,7 +224,7 @@ function IxWikiPageActions({
         label="History"
         onClick={() => {
           onClose();
-          navigateWithBasePath(`/wiki/history/${slug}`, router);
+          navigateWithBasePath(`/util/history/${slug}`, router);
         }}
       />
       <QuickAction
@@ -232,7 +232,7 @@ function IxWikiPageActions({
         label="What links here"
         onClick={() => {
           onClose();
-          navigateWithBasePath(`/wiki/whatlinkshere/${slug}`, router);
+          navigateWithBasePath(`/util/whatlinkshere/${slug}`, router);
         }}
       />
     </>

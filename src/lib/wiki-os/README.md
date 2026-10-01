@@ -14,7 +14,7 @@ WikiOS is the **primary and default encyclopedia platform** for the IxStates eco
 ```
                                ┌──────────────────────────────────────────────────────────┐
                                │                    WikiOS Primary Hub                    │
-                               │           (/wiki, /wiki/[slug], /wiki/categories)        │
+                               │           (/wiki, /wiki/[...slug], /util/categories)        │
                                └────────────────────────────┬─────────────────────────────┘
                                                             │
                             ┌───────────────────────────────┴───────────────────────────────┐
@@ -91,5 +91,5 @@ export type WikiSource = "ixwiki" | "iiwiki" | "althistory";
 ```
 
 - **`ixwiki`**: Local PostgreSQL store; the only editable source.
-- **`iiwiki`** & **`althistory`**: External community sister wikis read over HTTP with a 5-minute circuit breaker for offline/403 hosts. In the reader they open via `/wiki/[slug]?source=…` and are read-only (links, Watch, edit route and `?margin` follow the page's wiki).
+- **`iiwiki`** & **`althistory`**: External community sister wikis read over HTTP with a 5-minute circuit breaker for offline/403 hosts. In the reader they open via `/wiki/<title>?source=…` and are read-only (links, Watch, edit route and `?margin` follow the page's wiki).
 - **`all`**: Parallel concurrent queries (`Promise.all`) for unified cross-encyclopedia search (`api.wikios.search`).

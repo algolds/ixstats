@@ -6,6 +6,7 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { useNavigationScroll } from "~/hooks/useNavigationScroll";
 import { getDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
+import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { parseTemplateWikitext } from "~/lib/wiki-os/editor/parse-template-wikitext";
 import { Editor, Transforms, type Descendant } from "slate";
 import { useWikiEditorState } from "./hooks/useWikiEditorState";
@@ -67,6 +68,8 @@ export function WikiVisualEditor({
     notices: [],
   });
   const { repulsionProgress } = useNavigationScroll();
+  const { user } = useWikiAuth();
+  const userId = user?.id ?? null;
 
   const state = useWikiEditorState({ title, onSave });
   const fmt = useWikiVisualFormatting({
@@ -77,7 +80,7 @@ export function WikiVisualEditor({
 
   // Draft restore prompt
   const initialContent = React.useMemo(() => {
-    const existingDraft = restoreLocalDraft ? getDraft(title, "ixwiki") : null;
+    const existingDraft = restoreLocalDraft ? getDraft(userId, title, "ixwiki") : null;
     if (existingDraft?.wikitext) {
       return { wikitext: existingDraft.wikitext };
     }
@@ -88,7 +91,7 @@ export function WikiVisualEditor({
       return { wikitext: initialWikitext };
     }
     return { html: fixEditorImageUrls(initialHtml || "") };
-  }, [title, initialHtml, initialWikitext, restoreLocalDraft]);
+  }, [userId, title, initialHtml, initialWikitext, restoreLocalDraft]);
 
   const { setIsDirty, setWordCount } = state;
   const onSerializedWikitextRef = useRef(onSerializedWikitext);
@@ -122,8 +125,8 @@ export function WikiVisualEditor({
     for (const notice of wtRef.current.notices) state.notify.warning("Check the saved page", notice);
     const saved = await state.executeSave(() => wikitextToSave);
     // A published page needs no draft (executeSave cleared it); a failed save keeps the work as one.
-    if (!saved) saveDraft({ title, source: "ixwiki", mode: "visual", wikitext: wikitextToSave });
-  }, [state, title]);
+    if (!saved) saveDraft(userId, { title, source: "ixwiki", mode: "visual", wikitext: wikitextToSave });
+  }, [state, title, userId]);
 
   const handleSaveDraft = useCallback(() => {
     state.executeSaveDraft(() => wtRef.current.wikitext, "visual");

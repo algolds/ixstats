@@ -24,7 +24,7 @@ export function WikiAuthorPopover({ username }: { username: string }) {
   );
 
   const wikiUserUrl = createUrl(getWikiProfilePath(username));
-  const wikiContribsUrl = createUrl(`/wiki/contributions/${username}`);
+  const wikiContribsUrl = createUrl(`/util/contributions/${username}`);
 
   return (
     <HoverCard open={open} onOpenChange={setOpen} openDelay={300} closeDelay={100}>

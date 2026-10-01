@@ -58,7 +58,7 @@ jest.mock("~/lib/wiki-os/adapters/mediawiki/sync-worker", () => ({
 }));
 jest.mock("~/lib/wiki-os/guardian/cloudflare-guardian", () => ({
   __esModule: true,
-  CloudflareGuardian: { verifyTurnstile: jest.fn(), purgeArticleEdgeCache: jest.fn() },
+  CloudflareGuardian: { purgeArticleEdgeCache: jest.fn() },
 }));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/article-store", () => ({
   __esModule: true,
@@ -602,7 +602,13 @@ describe("S5: forum stashThread / unstashThread only touch the caller's own stas
     expect(result).toEqual({ success: true, stashId: "mine" });
     expect(mockDb.stashItem.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { stashId_pageTitle: { stashId: "mine", pageTitle: "forum:thread:7" } },
+        where: {
+          stashId_contentType_pageTitle: {
+            stashId: "mine",
+            contentType: "forum_thread",
+            pageTitle: "forum:thread:7",
+          },
+        },
       })
     );
   });
@@ -623,7 +629,7 @@ describe("S5: forum stashThread / unstashThread only touch the caller's own stas
     await forumCaller().unstashThread({ threadId: 7, stashId: "mine" });
 
     expect(mockDb.stashItem.deleteMany).toHaveBeenCalledWith({
-      where: { stashId: "mine", pageTitle: "forum:thread:7" },
+      where: { stashId: "mine", pageTitle: "forum:thread:7", contentType: "forum_thread" },
     });
   });
 
@@ -669,7 +675,7 @@ describe("S8: bounded inputs on stash, placeholder, profile and discussion endpo
       join(process.cwd(), "src/server/api/routers/wikios/discussions.ts"),
       "utf8"
     );
-    for (const name of ["createThread", "postComment", "resolveThread", "deleteThread"]) {
+    for (const name of ["createThread", "postComment", "resolveThread", "deleteThread", "deleteComment"]) {
       expect(source).toMatch(new RegExp(`${name}: lightMutationProcedure`));
     }
     expect(source).not.toMatch(/: protectedProcedure/);
@@ -681,5 +687,21 @@ describe("S8: bounded inputs on stash, placeholder, profile and discussion endpo
     await expect(caller.deleteThread({ threadId: "t".repeat(65) })).rejects.toMatchObject(bad);
     await expect(caller.resolveThread({ threadId: "t".repeat(65), resolved: true })).rejects.toMatchObject(bad);
     await expect(caller.postComment({ threadId: "t".repeat(65), content: "hi" })).rejects.toMatchObject(bad);
+  });
+});
+
+describe("Plan 416 item 5: no inert Turnstile plumbing", () => {
+  const read = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
+
+  it("saveWikitext takes no CAPTCHA token and calls no CAPTCHA verification", () => {
+    const editing = read("src/server/api/routers/wikios/editing.ts");
+    expect(editing).not.toMatch(/turnstile/i);
+    expect(editing).toContain("CloudflareGuardian.purgeArticleEdgeCache");
+  });
+
+  it("the guardian keeps the edge cache purge and has no Turnstile verification that fails open", () => {
+    const guardian = read("src/lib/wiki-os/guardian/cloudflare-guardian.ts");
+    expect(guardian).toContain("static async purgeArticleEdgeCache");
+    expect(guardian).not.toMatch(/verifyTurnstile|siteverify|TURNSTILE_SECRET/);
   });
 });

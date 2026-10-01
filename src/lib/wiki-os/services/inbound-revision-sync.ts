@@ -257,6 +257,9 @@ async function fastForward(
       },
     ],
     head: buildHead(rev, createdAt),
+    // watchlist: importPageRevisions tells the page's watchers (once each until they visit) that its head
+    // moved, leaving the editor out; the previous head's reference makes their notification a diff link.
+    previousRef: headRev ? toRevisionRef(headRev) : null,
     dryRun: false,
   };
 

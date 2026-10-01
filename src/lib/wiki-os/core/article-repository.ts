@@ -12,6 +12,7 @@ import {
   toArticleSlug,
   toArticleId,
   toRevisionId,
+  toRevisionRef,
   // oxlint-disable-next-line typescript/no-unused-vars
   type ArticleId,
   type RevisionId,
@@ -31,6 +32,7 @@ import {
 import { mwSha1Base36 } from "../xml/sha1";
 import { cleanWikitextExcerpt } from "../transformers/wikitext-parser";
 import { enqueueRender, invalidateDependents } from "../services/render-service";
+import { notifyWatchers } from "../services/watchlist-notify";
 
 /** `WikiArticle.summary` is a VarChar(500); the excerpt stays under it. */
 const MAX_EXCERPT_LENGTH = 480;
@@ -334,6 +336,11 @@ export interface ImportPageInput {
   revisions: ImportedRevision[];
   /** The newest dump revision that has text, or null when none does. */
   head: ImportedHead | null;
+  /**
+   * The reference (`toRevisionRef`) of the head the page had before this import, when the caller knows
+   * it: the watchers' notification then links the diff, not just the page.
+   */
+  previousRef?: string | null;
   /** Read and plan, write nothing. */
   dryRun: boolean;
 }
@@ -768,7 +775,7 @@ export class ArticleRepository {
       const previous = await tx.wikiRevision.findFirst({
         where: { articleId: article.id, parked: false },
         orderBy: { createdAt: "desc" },
-        select: { byteSize: true },
+        select: { id: true, mwRevId: true, byteSize: true },
       });
       const revision = await tx.wikiRevision.create({
         data: {
@@ -790,11 +797,12 @@ export class ArticleRepository {
           summary: true,
           minor: true,
           author: true,
+          authorId: true,
           createdAt: true,
         },
       });
 
-      return { article, revision, textUnchanged };
+      return { article, revision, textUnchanged, previous };
     });
 
     // 3. Render the new text off the read path (the commit above marked the old view stale). The render
@@ -803,6 +811,17 @@ export class ArticleRepository {
     if (!result.textUnchanged) {
       enqueueRender(result.article.id);
       void invalidateDependents(title, source);
+      // watchlist: tell the page's watchers (once each until they visit); the editor is left out.
+      void notifyWatchers({
+        kind: "edited",
+        articleId: result.article.id,
+        title: result.article.title,
+        editor: authorName,
+        editorUserId: result.revision.authorId,
+        summary: result.revision.summary,
+        previousRef: result.previous ? toRevisionRef(result.previous) : null,
+        currentRef: toRevisionRef(result.revision),
+      });
     }
 
     // 4. Auto-register any new image references in PostgreSQL wiki_assets
@@ -836,6 +855,21 @@ export class ArticleRepository {
       // and the categories; pages that transclude this one are stale now too.
       enqueueRender(articleId, { background: true });
       void invalidateDependents(input.title, input.source);
+      // watchlist: a head that moved on an existing page is a change its watchers hear of (once each
+      // until they visit); a page the import just created has none yet. The author is left out.
+      const headRevision = input.revisions.filter((revision) => revision.wikitext !== null).at(-1);
+      if (!result.created && headRevision) {
+        void notifyWatchers({
+          kind: "edited",
+          articleId,
+          title: input.title,
+          editor: headRevision.author,
+          editorUserId: headRevision.authorId,
+          summary: headRevision.summary,
+          ...(input.previousRef ? { previousRef: input.previousRef } : {}),
+          currentRef: head.mwRevId === null ? null : String(head.mwRevId),
+        });
+      }
     }
     return result;
   }

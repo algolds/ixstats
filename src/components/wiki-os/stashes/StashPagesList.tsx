@@ -20,7 +20,7 @@ import type { StashedPageItem } from "./types";
 
 interface StashPagesListProps {
   items: StashedPageItem[];
-  onUnstash: (pageTitle: string) => void;
+  onUnstash: (pageTitle: string, contentType?: string) => void;
   thumbnailsMap?: Record<string, string>;
 }
 
@@ -120,7 +120,7 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
                   onClick={(e) => {
                     e.stopPropagation();
                     soundEffects.release();
-                    onUnstash(item.pageTitle);
+                    onUnstash(item.pageTitle, item.contentType);
                   }}
                   className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-xl border border-[var(--wikios-border)] bg-white/5 text-[var(--wikios-text-dim)] shadow-2xs transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-400 active:scale-95"
                   title="Remove from collection"

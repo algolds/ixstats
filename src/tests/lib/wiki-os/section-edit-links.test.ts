@@ -12,9 +12,9 @@ describe("addSectionEditLinks", () => {
     expect(out).toContain(
       '<h2 id="History">History &amp; Origins<a class="wikios-section-edit-link" href="'
     );
-    expect(out).toContain(`/wiki/Foo_Bar/edit?section=${encodeURIComponent("History & Origins")}`);
+    expect(out).toContain(`/wiki/Foo_Bar?action=edit&amp;section=${encodeURIComponent("History & Origins")}`);
     expect(out).toContain('aria-label="Edit section: History &amp; Origins"');
-    expect(out).toContain(`edit?section=${encodeURIComponent("Early years")}`);
+    expect(out).toContain(`action=edit&amp;section=${encodeURIComponent("Early years")}`);
     expect(out).toContain('<h4 id="Deep">Deep</h4>');
   });
 

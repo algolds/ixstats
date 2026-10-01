@@ -5,9 +5,15 @@
  * template registry, watchlist, advanced search, and category tree.
  */ import { z } from "zod/v4";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
-import { getArticleWikitext, resolveRedirect, getInfobox, getImageMeta } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import type { WikiAuthContext } from "~/lib/wiki-os/auth";
+import {
+  getArticleWikitext,
+  resolveRedirect,
+  getInfobox,
+  getImageMeta,
+} from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import {
   transformArticleHtml,
   stripConflictingStyles,
@@ -22,7 +28,7 @@ import {
 import { getArticleSummaryFromShadow } from "~/lib/wiki-os/core/native-search-service";
 import { resolveWikiPlaceholdersInternal } from "~/server/shared/wiki-placeholders";
 import { ArticleRepository, MediaAssetService } from "~/lib/wiki-os/core";
-import { getArticleView } from "~/lib/wiki-os/services/article-view-service";
+import { getArticleView, type ImportSource } from "~/lib/wiki-os/services/article-view-service";
 import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
@@ -33,9 +39,62 @@ import {
   visibleTitles,
 } from "~/lib/wiki-os/permissions";
 import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
+import { downloadMedia } from "~/lib/wiki-os/services/media-download";
 
 // Register host-app template data provider
 registerTemplateProvider(ixstatsTemplateProvider);
+
+/**
+ * Who is asking, for the MediaWiki import of a page WikiOS does not have yet: the server's own
+ * caller (`x-trpc-source: rsc`, set in `~/trpc/server`) is a page request, which only a request that
+ * asks for HTML may import for; any other caller is the reader's client.
+ */
+function importSourceOf(headers: Headers | undefined): ImportSource {
+  if (headers?.get("x-trpc-source") !== "rsc") return "client";
+  return /\btext\/html\b/i.test(headers.get("accept") ?? "") ? "ssr" : "none";
+}
+
+/**
+ * The reader's view of the IxWiki page `title` (canonical, redirects already followed), or null when
+ * there is none. Not asking MediaWiki about a missing page right now is "busy", not "no such page".
+ */
+async function readIxWikiView(ctx: WikiAuthContext & { headers?: Headers }, title: string) {
+  return getArticleView(
+    title,
+    () => resolveActiveCountryId(ctx),
+    () => canSeeDeletedPages(ctx),
+    importSourceOf(ctx.headers)
+  ).catch((error: Error) => {
+    if (error instanceof ThrottledError) {
+      throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: error.message });
+    }
+    throw error;
+  });
+}
+
+/** The most redirect resolutions (each up to two hops) followed before a chain is called a cycle. */
+const MAX_REDIRECT_ROUNDS = 3;
+
+/**
+ * Where `rawTitle` really leads: the page after its redirects, with the section the last redirect
+ * named. Null when the redirects lead back to a title already seen (A to B to A, A to B to C to A)
+ * or never end: a reader sent to either end of a cycle would be sent round it for ever, so the
+ * caller shows the page asked for.
+ */
+async function followRedirects(
+  rawTitle: string
+): Promise<{ title: string; fragment: string | null } | null> {
+  const seen = new Set([rawTitle]);
+  let current = { title: rawTitle, fragment: null as string | null };
+  for (let round = 0; round < MAX_REDIRECT_ROUNDS; round++) {
+    const next = await resolveRedirect(current.title);
+    if (next.title === current.title) return current; // not a redirect: this is the page
+    if (seen.has(next.title)) return null;
+    seen.add(next.title);
+    current = { title: next.title, fragment: next.fragment ?? current.fragment };
+  }
+  return null;
+}
 
 export const wikiosPageContentRouter = createTRPCRouter({
   // ---------------------------------------------------------------------------
@@ -52,6 +111,8 @@ export const wikiosPageContentRouter = createTRPCRouter({
       z.object({
         title: z.string().min(1).max(500),
         wikiSource: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+        /** "no" shows a redirect page itself instead of following it (`?redirect=no`). */
+        redirect: z.literal("no").optional(),
       })
     )
     .query(async ({ input, ctx }) => {
@@ -121,6 +182,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
           lastModified: null,
           isRedirect: false,
           redirectTarget: null,
+          redirectFragment: null,
           resolvedFrom: null,
           wikiSource,
           authorInfo,
@@ -139,48 +201,20 @@ export const wikiosPageContentRouter = createTRPCRouter({
         });
       }
       const rawTitle = canon.title;
-      const rawTitleLower = rawTitle.toLowerCase().replace(/[\s_]+/g, "-");
-      const RESERVED_SYSTEM_ROUTES = new Set([
-        "utilities",
-        "categories",
-        "category-index",
-        "recent-changes",
-        "recentchanges",
-        "templates",
-        "sandbox",
-        "search",
-        "watchlist",
-        "repository",
-        "history",
-        "diff",
-        "whatlinkshere",
-        "lorewards",
-        "specialpages",
-      ]);
 
-      if (
-        RESERVED_SYSTEM_ROUTES.has(rawTitleLower) ||
-        RESERVED_SYSTEM_ROUTES.has(rawTitle.toLowerCase())
-      ) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `"${input.title}" is a system tool route.`,
-        });
+      // A title is always a page here: a WikiOS tool slug ("search") is an article title like any
+      // other, and the old slugs redirect to their tool in the route, not in this query.
+      const self = { title: rawTitle, fragment: null };
+      const followed = input.redirect === "no" ? self : ((await followRedirects(rawTitle)) ?? self);
+
+      let shown = followed;
+      let view = await readIxWikiView(ctx, followed.title);
+      if (!view && followed.title !== rawTitle) {
+        // The redirect's target does not exist: show the redirect page itself, as MediaWiki does
+        // (its "Redirect to: Target" with a red link), not "no such page" for a page that exists.
+        shown = { title: rawTitle, fragment: null };
+        view = await readIxWikiView(ctx, rawTitle);
       }
-
-      const { title: resolvedTitle } = await resolveRedirect(rawTitle);
-
-      const view = await getArticleView(
-        resolvedTitle,
-        () => resolveActiveCountryId(ctx),
-        () => canSeeDeletedPages(ctx)
-      ).catch((error: Error) => {
-        // Not asking MediaWiki about a missing page right now is "busy", not "no such page".
-        if (error instanceof ThrottledError) {
-          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: error.message });
-        }
-        throw error;
-      });
       if (!view) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -192,7 +226,9 @@ export const wikiosPageContentRouter = createTRPCRouter({
         ...view,
         isRedirect: false,
         redirectTarget: null,
-        resolvedFrom: resolvedTitle !== rawTitle ? rawTitle : null,
+        /** The section the redirect points to, or null. */
+        redirectFragment: shown.fragment,
+        resolvedFrom: shown.title !== rawTitle ? rawTitle : null,
         wikiSource: "ixwiki" as const,
         // The reader fetches authorship lazily (getArticleAuthors) so it never holds the article back.
         authorInfo: null,
@@ -415,8 +451,17 @@ export const wikiosPageContentRouter = createTRPCRouter({
 
   /**
    * Get forum thread preview by threadId.
+   *
+   * Public on purpose: forum-link tooltips render for anonymous wiki readers, so it cannot require
+   * sign-in. Three things keep it from becoming a window onto the private forum (plan 416 item 6):
+   * it is rate-limited like the other public reads; a thread whose `discussion_state` is not exactly
+   * "visible" (moderated, deleted, or missing from the answer) yields nothing; and XenForo itself
+   * decides which forums this key may see. OPERATOR CHECK: the XenForo API key must be a
+   * non-super-user key scoped to a guest-like user, or a super-user key used without `XF-Api-User`
+   * (as here), so XenForo enforces forum visibility. The response carries no per-forum "public" flag
+   * to check from this side.
    */
-  getForumThreadPreview: publicProcedure
+  getForumThreadPreview: rateLimitedPublicProcedure
     .input(z.object({ threadId: z.number().int().positive() }))
     .query(async ({ input }) => {
       const { getXfApiKey, getXfApiUrl } = await import("~/server/modules/forum");
@@ -441,13 +486,14 @@ export const wikiosPageContentRouter = createTRPCRouter({
             post_date: number;
             reply_count: number;
             view_count: number;
+            discussion_state?: string;
             Forum?: { title: string };
             first_post?: { message: string };
           };
         };
 
         const t = data.thread;
-        if (!t) return null;
+        if (t?.discussion_state !== "visible") return null;
 
         const rawMsg = t.first_post?.message ?? "";
         const excerpt = rawMsg
@@ -489,9 +535,10 @@ export const wikiosPageContentRouter = createTRPCRouter({
     }),
 
   /**
-   * Download a media file from the wiki as base64.
+   * Download a media file from the wiki as base64 (allowlisted hosts only, at most 10 MB). Public, so
+   * rate-limited: every call fetches and buffers a file.
    */
-  downloadFile: publicProcedure
+  downloadFile: rateLimitedPublicProcedure
     .input(z.object({ filename: z.string().min(1).max(500) }))
     .query(async ({ input }) => {
       const cleanFilename = input.filename.replace(/^File:/i, "");
@@ -500,11 +547,10 @@ export const wikiosPageContentRouter = createTRPCRouter({
       if (!url) return null;
 
       try {
-        const res = await fetch(url);
-        if (!res.ok) return null;
-        const arrayBuffer = await res.arrayBuffer();
-        const base64 = Buffer.from(arrayBuffer).toString("base64");
-        return { content: base64, mime: asset?.mimeType || "image/png" };
+        // Allowlisted hosts only, at most 10 MB: this endpoint is public (plan 416).
+        const bytes = await downloadMedia(url);
+        if (!bytes) return null;
+        return { content: bytes.toString("base64"), mime: asset?.mimeType || "image/png" };
       } catch (err) {
         console.error("[WikiOS] Failed to download media file:", err);
         return null;

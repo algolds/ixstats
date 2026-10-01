@@ -26,7 +26,13 @@ import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { useAudioStore } from "~/lib/audio-store";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import { NARRATOR_ACCENT, NARRATOR_SPEEDS, NARRATOR_VOICE_LABELS } from "../types";
+import {
+  NARRATOR_ACCENT,
+  NARRATOR_SPEEDS,
+  NARRATOR_VOICE_LABELS,
+  narratorEngineLabel,
+  type NarratorEngine,
+} from "../types";
 
 interface TOCEntry {
   id: string;
@@ -79,9 +85,19 @@ export function WikiNarratorPlayer({
   const [lastNonZeroVol, setLastNonZeroVol] = useState(0.2);
 
   const hasNarrator = !!(narratorState && narratorState.totalBlocks > 0 && narratorActions);
-  const { data: voicesData } = api.onoma.getKokoroVoices.useQuery(undefined, {
+  // Which voice reads: what the narrator reported when it last played, else what the settings say will.
+  // Read only while the player is open (it is the same cached query the narrator plays from).
+  const { data: speechConfig } = api.onoma.getSpeechConfig.useQuery(undefined, {
     staleTime: 600000,
     enabled: hasNarrator,
+  });
+  const engine: NarratorEngine | null =
+    narratorState?.engine ??
+    (speechConfig ? (speechConfig.kokoro.enabled ? "kokoro" : "browser") : null);
+  // Voices are Kokoro's: the browser voice has no list to pick from.
+  const { data: voicesData } = api.onoma.getKokoroVoices.useQuery(undefined, {
+    staleTime: 600000,
+    enabled: hasNarrator && engine === "kokoro",
   });
   const voiceOptions: string[] = voicesData?.voices ?? Object.keys(NARRATOR_VOICE_LABELS);
 
@@ -388,36 +404,38 @@ export function WikiNarratorPlayer({
 
           {/* Right: Inline Triggers for Voice, Speed, Volume */}
           <div className="flex shrink-0 items-center gap-1">
-            {/* Voice Trigger (Inline) */}
-            <button
-              type="button"
-              onClick={() => toggleTray("voice")}
-              className={cn(
-                "flex h-7 cursor-pointer items-center gap-1 rounded-lg px-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
-                activeTray === "voice"
-                  ? "border font-bold shadow-xs"
-                  : "bg-muted/40 hover:bg-muted/70 text-foreground border border-transparent"
-              )}
-              style={
-                activeTray === "voice"
-                  ? {
-                      backgroundColor: getRgbaColor(accentColor, 0.15),
-                      borderColor: getRgbaColor(accentColor, 0.35),
-                      color: accentColor,
-                    }
-                  : undefined
-              }
-              title={`Voice: ${currentVoiceLabel}`}
-            >
-              <User className="h-3 w-3 shrink-0" style={{ color: accentColor }} />
-              <span className="max-w-[55px] truncate sm:max-w-[75px]">{shortVoiceName}</span>
-              <ChevronDown
+            {/* Voice Trigger (Inline): Kokoro's voices only, the browser voice has none to pick */}
+            {engine !== "browser" && (
+              <button
+                type="button"
+                onClick={() => toggleTray("voice")}
                 className={cn(
-                  "h-3 w-3 opacity-70 transition-transform duration-150",
-                  activeTray === "voice" && "rotate-180 opacity-100"
+                  "flex h-7 cursor-pointer items-center gap-1 rounded-lg px-2 text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95",
+                  activeTray === "voice"
+                    ? "border font-bold shadow-xs"
+                    : "bg-muted/40 hover:bg-muted/70 text-foreground border border-transparent"
                 )}
-              />
-            </button>
+                style={
+                  activeTray === "voice"
+                    ? {
+                        backgroundColor: getRgbaColor(accentColor, 0.15),
+                        borderColor: getRgbaColor(accentColor, 0.35),
+                        color: accentColor,
+                      }
+                    : undefined
+                }
+                title={`Voice: ${currentVoiceLabel}`}
+              >
+                <User className="h-3 w-3 shrink-0" style={{ color: accentColor }} />
+                <span className="max-w-[55px] truncate sm:max-w-[75px]">{shortVoiceName}</span>
+                <ChevronDown
+                  className={cn(
+                    "h-3 w-3 opacity-70 transition-transform duration-150",
+                    activeTray === "voice" && "rotate-180 opacity-100"
+                  )}
+                />
+              </button>
+            )}
 
             {/* Speed Trigger (Inline) */}
             <button
@@ -476,10 +494,21 @@ export function WikiNarratorPlayer({
           </div>
         </AudioPlayerControlBar>
 
+        {/* Which voice reads: said plainly, so the natural voice is never claimed for the browser's */}
+        {engine && (
+          <p
+            className="text-muted-foreground px-1 text-xs"
+            data-testid="narrator-engine"
+            title={narratorEngineLabel(engine, currentVoiceId ? currentVoiceLabel : undefined)}
+          >
+            {narratorEngineLabel(engine, currentVoiceId ? currentVoiceLabel : undefined)}
+          </p>
+        )}
+
         {/* ── 4. INLINE EXPANDABLE TRAYS (Guaranteed 0% clipping behind Halo) ── */}
 
         {/* 4A. Inline Voice Picker Tray */}
-        {activeTray === "voice" && (
+        {activeTray === "voice" && engine !== "browser" && (
           <div className="border-border/50 bg-popover/90 text-popover-foreground animate-in fade-in slide-in-from-top-1 mt-2 space-y-1 rounded-xl border p-2 shadow-md backdrop-blur-xl duration-150 dark:bg-zinc-900/90">
             <div className="border-border/40 text-muted-foreground flex items-center justify-between border-b px-1 pb-1 text-xs font-bold tracking-wider uppercase">
               <span>Narrator Voice</span>

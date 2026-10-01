@@ -150,7 +150,7 @@ src/lib/wiki-os/
 
 ### Margin and discussions
 
-WikiOS Margin replaces standalone talk pages with an inspector docked to the reader.
+WikiOS Margin is an inspector docked to the reader, on top of MediaWiki-style talk pages: `Talk:<title>` and every `<ns> talk:` page are ordinary wikitext pages (the reader's Page / Discussion tabs link the pair, "Add topic" opens the editor on a new section), and Margin stays an extra anchored layer on the subject page.
 
 | Feature | Description |
 |---|---|
@@ -161,7 +161,7 @@ WikiOS Margin replaces standalone talk pages with an inspector docked to the rea
 | Selection capsule | Context menu on text selection with Highlight, Discuss, and Stash actions |
 | Gutter pins | Margin indicators showing discussions and annotations next to headings and paragraphs |
 | Hold-to-resolve | Hold action button to resolve discussions or record consensus |
-| Legacy route bridge | Navigating to `/wiki/[slug]/talk` redirects to `/wiki/[slug]?margin=threads` |
+| Legacy route bridge | Navigating to `/wiki/<title>/talk` redirects to the talk page `/wiki/Talk:<title>` (unless a page named `<title>/talk` exists); `/wiki/<title>?margin=threads` still opens Margin on the subject page |
 
 ### Stash (Collections)
 

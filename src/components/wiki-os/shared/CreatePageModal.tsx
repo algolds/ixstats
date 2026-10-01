@@ -1,5 +1,6 @@
 "use client";
 
+import { pageEditHref } from "~/lib/wiki-os/page-tools";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -181,9 +182,11 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
     });
     onClose();
 
-    const encodedTitle = encodeURIComponent(title.trim().replace(/ /g, "_"));
-    const prefillParam = wikitext ? `&prefill=${encodeURIComponent(wikitext)}` : "";
-    router.push(withBasePath(`/wiki/${encodedTitle}/edit?mode=${editorMode}${prefillParam}`));
+    router.push(
+      withBasePath(
+        pageEditHref(title.trim(), null, { mode: editorMode, prefill: wikitext || null })
+      )
+    );
   };
 
   return (

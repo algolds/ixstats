@@ -14,6 +14,8 @@ import {
   setEditorBase,
   type WikiEditorDraft,
 } from "~/lib/wiki-os/editor/draft-store";
+import { appendNewSection, NEW_SECTION_HEADING } from "~/lib/wiki-os/wikitext/new-section";
+import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import type { WikitextSerializeResult } from "./plate/wiki-wikitext";
 
 const WikiVisualEditor = dynamic(
@@ -40,6 +42,8 @@ interface WikiEditBridgeProps {
   initialMode?: "source" | "visual";
   /** Heading text to open the source editor at. */
   initialSection?: string;
+  /** "Add topic": open on the page's text with an empty new section appended (`?section=new`). */
+  newSection?: boolean;
   onClose: () => void;
   onSaveSuccess?: () => void;
 }
@@ -75,11 +79,15 @@ export function WikiEditBridge({
   title,
   initialMode = "source",
   initialSection,
+  newSection = false,
   onClose,
   onSaveSuccess,
 }: WikiEditBridgeProps) {
   const notify = useNotify();
   const utils = api.useUtils();
+  // Drafts are kept per account (draft-store); a signed-out editor has none.
+  const { user, isLoaded: authLoaded } = useWikiAuth();
+  const userId = user?.id ?? null;
   const [mode, setMode] = useState<"source" | "visual">(initialMode);
   const [_saving, setSaving] = useState(false);
   const [conflict, setConflict] = useState<ConflictState | null>(null);
@@ -126,9 +134,9 @@ export function WikiEditBridge({
   // Drafts saved from any editor component are stamped with the revision this editor was loaded from.
   useEffect(() => {
     if (loaded === null) return;
-    setEditorBase(title, loaded.revisionRef);
-    return () => clearEditorBase(title);
-  }, [title, loaded]);
+    setEditorBase(userId, title, loaded.revisionRef);
+    return () => clearEditorBase(userId, title);
+  }, [userId, title, loaded]);
 
   const restoreDraft = useCallback((draft: WikiEditorDraft) => {
     if (draft.wikitext) setActiveWikitext(draft.wikitext);
@@ -138,9 +146,10 @@ export function WikiEditBridge({
   // A local draft is restored only while the page has not changed since it was written; a draft
   // that is older than the published page waits for the author's decision instead of replacing it.
   useEffect(() => {
-    if (loaded === null || draftResolved) return;
+    // Drafts are per account: ask only once it is known whose they are.
+    if (loaded === null || draftResolved || !authLoaded) return;
     // The draft lives in localStorage, an external store this effect synchronises with.
-    const draft = getDraft(title);
+    const draft = getDraft(userId, title);
     if (!draft || !(draft.wikitext || draft.html)) {
       // oxlint-disable-next-line react/set-state-in-effect
       setDraftResolved(true);
@@ -151,7 +160,7 @@ export function WikiEditBridge({
       restoreDraft(draft);
       setDraftResolved(true);
     }
-  }, [title, loaded, draftResolved, restoreDraft]);
+  }, [userId, authLoaded, title, loaded, draftResolved, restoreDraft]);
 
   // Restoring an old draft edits the text it was written on, so a save is checked against that revision.
   const handleRestoreStaleDraft = useCallback(() => {
@@ -166,10 +175,10 @@ export function WikiEditBridge({
   }, [staleDraft, restoreDraft]);
 
   const handleDiscardStaleDraft = useCallback(() => {
-    clearDraft(title);
+    clearDraft(userId, title);
     setStaleDraft(null);
     setDraftResolved(true);
-  }, [title]);
+  }, [userId, title]);
 
   // Instant In-Memory Mode Switching (Invariant 3 & Invariant 7)
   const handleModeSwitch = useCallback(
@@ -178,7 +187,7 @@ export function WikiEditBridge({
 
       if (dirty) {
         setActiveWikitext(currentContent);
-        saveDraft({
+        saveDraft(userId, {
           title,
           source: "ixwiki",
           mode: newMode,
@@ -187,7 +196,7 @@ export function WikiEditBridge({
       }
       setMode(newMode);
     },
-    [mode, title]
+    [mode, title, userId]
   );
 
   const lastSerializedRef = useRef<WikitextSerializeResult | null>(null);
@@ -220,7 +229,7 @@ export function WikiEditBridge({
         pendingSave.current = null;
         setSetAsideText(null);
         setRestoredOverCurrent(false);
-        clearDraft(title);
+        clearDraft(userId, title);
 
         if (save.keepEditing) {
           // The next save builds on this one.
@@ -244,7 +253,7 @@ export function WikiEditBridge({
         setSaving(false);
       }
     },
-    [title, saveWikitext, refetchWikitext, utils, onSaveSuccess, onClose]
+    [title, userId, saveWikitext, refetchWikitext, utils, onSaveSuccess, onClose]
   );
 
   const handleVisualSave = useCallback(
@@ -269,7 +278,7 @@ export function WikiEditBridge({
   const handleLoadCurrent = useCallback(() => {
     if (!conflict) return;
     const mine = readContentRef.current?.() ?? pendingSave.current?.wikitext ?? null;
-    clearDraft(title);
+    clearDraft(userId, title);
     setSetAsideText(mine);
     setRestoredOverCurrent(false);
     pendingSave.current = null;
@@ -277,7 +286,7 @@ export function WikiEditBridge({
     setLoaded({ wikitext: conflict.currentWikitext, ...revisionOf(conflict.currentRevisionRef) });
     setConflict(null);
     setEditorKey((key) => key + 1);
-  }, [conflict, title]);
+  }, [conflict, title, userId]);
 
   const handleRestoreMyText = useCallback(() => {
     if (setAsideText === null) return;
@@ -343,7 +352,8 @@ export function WikiEditBridge({
     return <EditorLoading text="Loading article..." />;
   }
 
-  const initialWikitextValue = activeWikitext ?? loaded.wikitext;
+  const initialWikitextValue =
+    activeWikitext ?? (newSection ? appendNewSection(loaded.wikitext) : loaded.wikitext);
 
   return (
     <div className="wikios-edit-bridge relative min-h-[600px] w-full">
@@ -410,7 +420,7 @@ export function WikiEditBridge({
           key={editorKey}
           title={title}
           initialWikitext={initialWikitextValue}
-          initialSection={initialSection}
+          initialSection={newSection ? NEW_SECTION_HEADING : initialSection}
           onSave={handleSourceSave}
           onCancel={onClose}
           onSwitchToVisual={(dirty, wt) => handleModeSwitch("visual", dirty, wt)}

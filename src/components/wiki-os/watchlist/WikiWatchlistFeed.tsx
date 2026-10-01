@@ -275,7 +275,7 @@ export function WikiWatchlistFeed() {
                         Revision <strong className="text-foreground">{item.id}</strong> preview
                       </span>
                       <Link
-                        href={withBasePath(`/wiki/history/${item.articleSlug}`)}
+                        href={withBasePath(`/util/history/${item.articleSlug}`)}
                         className="text-wiki text-xs font-medium hover:underline"
                       >
                         View Full History &rarr;

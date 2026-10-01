@@ -76,7 +76,7 @@ jest.mock("~/server/shared/ixstats-template-provider", () => ({
   },
 }));
 
-import { describe, it, expect, beforeEach } from "@jest/globals";
+import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
 import { wikiosPageContentRouter } from "~/server/api/routers/wikios/page-content";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -100,9 +100,13 @@ const rendered = (html: string) => ({
 });
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { syncSinglePage } from "~/lib/wiki-os/services/auto-sync-service";
+import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
 import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import { registerTemplateProvider } from "~/lib/wiki-os/templates/template-resolver";
 import { buildViewBundle } from "~/lib/wiki-os/services/render-service";
+import { getArticleView } from "~/lib/wiki-os/services/article-view-service";
+
+const syncSinglePageMockReset = () => jest.mocked(syncSinglePage).mockClear();
 import { evictArticleView } from "~/lib/wiki-os/services/article-view-service";
 
 const caller = () =>
@@ -532,16 +536,254 @@ describe("getArticleHtml (IxWiki) for a title Postgres does not have", () => {
     nowSpy.mockRestore();
   });
 
-  it("does not look at MediaWiki for a system route or a title it would refuse", async () => {
-    await expect(caller().getArticleHtml({ title: "Utilities" })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
+  it("does not look at MediaWiki for a title it would refuse", async () => {
     await expect(caller().getArticleHtml({ title: "a[b" })).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
 
     expect(findArticleForView).not.toHaveBeenCalled();
     expect(syncSinglePage).not.toHaveBeenCalled();
+  });
+
+  it("a WikiOS tool name is an ordinary title: plan 412 redirects the old slugs in the route, not here", async () => {
+    findArticleForView.mockResolvedValue(head({ title: "Utilities" }));
+    setRow(freshBundleRow("<p>The utilities of Eurth.</p>"));
+
+    const result = await caller().getArticleHtml({ title: "Utilities" });
+
+    expect(findArticleForView).toHaveBeenCalledWith("Utilities");
+    expect(result.title).toBe("Utilities");
+  });
+});
+
+describe("getArticleHtml (IxWiki) redirects (plan 412)", () => {
+  // The import budget is module state that earlier tests in this file spent: a later minute has it full.
+  let minutesLater = 0;
+  let clock: jest.SpyInstance;
+  beforeEach(() => {
+    const realNow = Date.now.bind(Date);
+    const offset = ++minutesLater * 600_000;
+    clock = jest.spyOn(Date, "now").mockImplementation(() => realNow() + offset);
+  });
+  afterEach(() => clock.mockRestore());
+
+  beforeEach(() => {
+    findArticleForView.mockImplementation(async (title: string) => head({ title }));
+    setRow(freshBundleRow("<p>The Republic.</p>"));
+    jest
+      .mocked(resolveRedirect)
+      .mockImplementation(async (title: string) =>
+        title === "Old name"
+          ? { title: "New name", fragment: "History" }
+          : { title, fragment: null }
+      );
+  });
+
+  it("follows a redirect and says where it came from and which section it points to", async () => {
+    const result = await caller().getArticleHtml({ title: "old_name" });
+
+    expect(findArticleForView).toHaveBeenCalledWith("New name");
+    expect(result).toMatchObject({
+      title: "New name",
+      resolvedFrom: "Old name",
+      redirectFragment: "History",
+    });
+  });
+
+  it("?redirect=no shows the redirect page itself", async () => {
+    const result = await caller().getArticleHtml({ title: "Old name", redirect: "no" });
+
+    expect(resolveRedirect).not.toHaveBeenCalled();
+    expect(findArticleForView).toHaveBeenCalledWith("Old name");
+    expect(result).toMatchObject({ resolvedFrom: null, redirectFragment: null });
+  });
+
+  /** The real resolver's rule (ixwikiResolveRedirect): up to two hops, never revisiting a page. */
+  function redirectGraph(links: Record<string, string>) {
+    jest.mocked(resolveRedirect).mockImplementation(async (title: string) => {
+      const visited = new Set([title]);
+      let current = title;
+      for (let hop = 0; hop < 2; hop++) {
+        const target = links[current];
+        if (!target || visited.has(target)) break;
+        visited.add(target);
+        current = target;
+      }
+      return { title: current, fragment: null };
+    });
+  }
+
+  it.each([
+    ["A to B and back", { A: "B", B: "A" }, ["A", "B"]],
+    ["A to B to C to A", { A: "B", B: "C", C: "A" }, ["A", "B", "C"]],
+    ["a four-page cycle", { A: "B", B: "C", C: "D", D: "A" }, ["A", "B", "C", "D"]],
+    [
+      "a seven-page cycle",
+      { A: "B", B: "C", C: "D", D: "E", E: "F", F: "G", G: "A" },
+      ["A", "D", "G"],
+    ],
+    ["a page that redirects to itself", { A: "A" }, ["A"]],
+  ])(
+    "%s: every page of the cycle shows itself, so no reader is sent round it",
+    async (_name, links, starts) => {
+      redirectGraph(links);
+      findArticleForView.mockImplementation(async (title: string) => head({ title }));
+      setRow(freshBundleRow("<p>#REDIRECT</p>"));
+
+      for (const start of starts) {
+        const result = await caller().getArticleHtml({ title: start });
+        expect(result).toMatchObject({ title: start, resolvedFrom: null, redirectFragment: null });
+      }
+    }
+  );
+
+  it("still follows a chain that ends: A to B to C (two hops) and A to B", async () => {
+    redirectGraph({ A: "B", B: "C" });
+    findArticleForView.mockImplementation(async (title: string) => head({ title }));
+    setRow(freshBundleRow("<p>The page.</p>"));
+
+    await expect(caller().getArticleHtml({ title: "A" })).resolves.toMatchObject({
+      title: "C",
+      resolvedFrom: "A",
+    });
+    await expect(caller().getArticleHtml({ title: "B" })).resolves.toMatchObject({
+      title: "C",
+      resolvedFrom: "B",
+    });
+  });
+
+  it("a redirect to a page that does not exist shows the redirect page itself, not 'no such page'", async () => {
+    // "Old name" redirects to "New name", which has no article; "Old name" itself does.
+    findArticleForView.mockImplementation(async (title: string) =>
+      title === "New name" ? null : head({ title })
+    );
+    setRow(
+      freshBundleRow('<div class="redirectMsg"><p>Redirect to:</p><ul><li>New name</li></ul></div>')
+    );
+
+    const result = await caller().getArticleHtml({ title: "Old name" });
+
+    expect(findArticleForView.mock.calls.map((call) => call[0])).toEqual(["New name", "Old name"]);
+    expect(result).toMatchObject({
+      title: "Old name",
+      resolvedFrom: null, // the route renders it where it is: no redirect to a missing page
+      redirectFragment: null,
+    });
+    expect(result.contentHtml).toContain("redirectMsg");
+  });
+
+  it("is still 'no such page' when neither the target nor the redirect page exists", async () => {
+    findArticleForView.mockResolvedValue(null);
+    await expect(caller().getArticleHtml({ title: "Old name" })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+
+  it("a busy lookup of the target is busy, not a reason to show the redirect page", async () => {
+    findArticleForView.mockImplementation(async (title: string) => {
+      if (title === "New name") return null;
+      return head({ title });
+    });
+    jest.mocked(syncSinglePage).mockImplementation(async () => {
+      throw new ThrottledError("Importing pages from MediaWiki");
+    });
+
+    await expect(caller().getArticleHtml({ title: "Old name" })).rejects.toMatchObject({
+      code: "TOO_MANY_REQUESTS",
+    });
+    expect(findArticleForView).toHaveBeenCalledTimes(1);
+  });
+
+  it("a page that is not a redirect has neither", async () => {
+    const result = await caller().getArticleHtml({ title: "Aurelia" });
+    expect(result).toMatchObject({ resolvedFrom: null, redirectFragment: null });
+  });
+});
+
+describe("MediaWiki imports by who asked (plan 412 review)", () => {
+  // Imports are per-process budgets that earlier tests in this file spent: a later minute has them full.
+  let minutesLater = 100;
+  let clock: jest.SpyInstance;
+  beforeEach(() => {
+    const realNow = Date.now.bind(Date);
+    const offset = ++minutesLater * 3_600_000;
+    clock = jest.spyOn(Date, "now").mockImplementation(() => realNow() + offset);
+    findArticleForView.mockResolvedValue(null);
+  });
+  afterEach(() => clock.mockRestore());
+
+  const asHeaders = (headers: Record<string, string>) =>
+    createCallerFactory(wikiosPageContentRouter)(
+      createMockRouterContext({ auth: null, user: null, headers: new Headers(headers) }) as never
+    );
+  const BROWSER = { "x-trpc-source": "rsc", accept: "text/html,application/xhtml+xml,*/*;q=0.8" };
+
+  it("a server render of a page request, which asks for HTML, imports a missing page", async () => {
+    await expect(
+      asHeaders(BROWSER).getArticleHtml({ title: "Ssr page one" })
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(syncSinglePage).toHaveBeenCalledWith("Ssr page one");
+  });
+
+  it.each([
+    ["a client navigation's RSC fetch", { "x-trpc-source": "rsc", accept: "text/x-component" }],
+    ["a bare request", { "x-trpc-source": "rsc", accept: "*/*" }],
+    ["a request with no Accept at all", { "x-trpc-source": "rsc" }],
+    ["an API client", { "x-trpc-source": "rsc", accept: "application/json" }],
+  ])("%s never imports: a missing page is simply missing", async (_name, headers) => {
+    await expect(
+      asHeaders(headers).getArticleHtml({ title: "No import page" })
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(syncSinglePage).not.toHaveBeenCalled();
+  });
+
+  it("the reader's own call (not the server's) imports whatever it accepts", async () => {
+    await expect(
+      asHeaders({ accept: "application/json" }).getArticleHtml({ title: "Client page" })
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(syncSinglePage).toHaveBeenCalledWith("Client page");
+  });
+
+  it("server renders import at most 10 pages a minute, from a budget of their own", async () => {
+    const codes: string[] = [];
+    for (let i = 1; i <= 12; i++) {
+      await asHeaders(BROWSER)
+        .getArticleHtml({ title: `Flood ${i}` })
+        .catch((error: { code: string }) => codes.push(error.code));
+    }
+
+    expect(codes.slice(0, 10)).toEqual(Array(10).fill("NOT_FOUND"));
+    expect(codes.slice(10)).toEqual(["TOO_MANY_REQUESTS", "TOO_MANY_REQUESTS"]);
+    expect(syncSinglePage).toHaveBeenCalledTimes(10);
+
+    // The readers' budget is untouched by the flood.
+    syncSinglePageMockReset();
+    await expect(
+      asHeaders({}).getArticleHtml({ title: "Reader after the flood" })
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(syncSinglePage).toHaveBeenCalledWith("Reader after the flood");
+  });
+
+  it("a title that is not in canonical form is never imported, whoever asks", async () => {
+    for (const source of ["client", "ssr"] as const) {
+      await expect(
+        getArticleView("junk_title with  spaces", async () => null, undefined, source)
+      ).resolves.toBeNull();
+    }
+    expect(syncSinglePage).not.toHaveBeenCalled();
+
+    await expect(
+      getArticleView("Junk title", async () => null, undefined, "ssr")
+    ).resolves.toBeNull();
+    expect(syncSinglePage).toHaveBeenCalledTimes(1); // a canonical one is
   });
 });
 

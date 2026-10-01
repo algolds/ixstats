@@ -12,6 +12,7 @@
 import { ByteBoundedCache } from "~/lib/cache/byte-bounded-cache";
 import { sanitizeWikiArticleHtml } from "~/lib/utils/sanitize-html";
 import { ArticleRepository, type ArticleViewHead } from "../core/article-repository";
+import { canonicalizeTitle } from "../core/title";
 import { chipKeysIn, substituteChipMarkers, templateKeysOf } from "../templates/chip-markers";
 import { makeChip, resolveTemplates, type ResolvedTemplate } from "../templates/template-resolver";
 import type { TocEntry } from "../transformers/html-transformer";
@@ -69,6 +70,31 @@ const importLimiter = new OutboundLimiter({
   maxConcurrent: 4,
   perMinute: 30,
 });
+
+/**
+ * Who asked for the page: a client call (the reader in a browser: `client`), or the server render of
+ * a page request (`ssr`, which anyone, crawlers and scanners included, can trigger with any URL), or
+ * a server render that is not a page request (`none`, e.g. a client navigation's RSC fetch).
+ * A server render imports only for a request that asks for HTML, from a budget of its own: a flood
+ * of junk URLs can empty that bucket and nothing else, and never the readers' one.
+ */
+export type ImportSource = "client" | "ssr" | "none";
+
+const ssrImportLimiter = new OutboundLimiter({
+  name: "Importing pages from MediaWiki for page requests",
+  maxConcurrent: 2,
+  perMinute: 10,
+});
+
+const LIMITERS: Record<Exclude<ImportSource, "none">, OutboundLimiter> = {
+  client: importLimiter,
+  ssr: ssrImportLimiter,
+};
+
+/** What an import for `source` runs under; a title that is not already in canonical form is never imported. */
+function mayImport(title: string, source: ImportSource): source is Exclude<ImportSource, "none"> {
+  return source !== "none" && canonicalizeTitle(title)?.title === title;
+}
 
 /** The viewer-independent part of a response. */
 interface SharedView {
@@ -183,12 +209,15 @@ function recordImport(title: string): void {
  * same one), at most one try per title per minute, and only while the limiter has room. Resolves
  * true when a page came of it; rejects with `ThrottledError` when it was not even tried.
  */
-function importFromMediaWiki(title: string): Promise<boolean> {
+function importFromMediaWiki(
+  title: string,
+  source: Exclude<ImportSource, "none">
+): Promise<boolean> {
   const running = importsInFlight.get(title);
   if (running) return running;
   if (importedRecently(title)) return Promise.resolve(false);
 
-  const attempt = importLimiter
+  const attempt = LIMITERS[source]
     .run(() => {
       recordImport(title);
       return syncSinglePage(title);
@@ -213,11 +242,16 @@ async function readArticle(
  * refuses, and is never imported again. When Postgres has no row (or only a stub) the page is
  * imported from MediaWiki first, then looked at once more.
  */
-async function findArticle(title: string, canSeeDeleted: () => Promise<boolean>) {
+async function findArticle(
+  title: string,
+  canSeeDeleted: () => Promise<boolean>,
+  importSource: ImportSource
+) {
   const head = await ArticleRepository.findArticleForView(title);
   if (head?.status === "ARCHIVED" && !(await canSeeDeleted())) return null;
   const found = await readArticle(head);
-  if (found || !(await importFromMediaWiki(title))) return found;
+  if (found || !mayImport(title, importSource)) return found;
+  if (!(await importFromMediaWiki(title, importSource))) return found;
   return readArticle(await ArticleRepository.findArticleForView(title));
 }
 
@@ -282,15 +316,17 @@ async function withViewerChips(
 /**
  * The reader's view of the IxWiki article `title` (already canonical, redirects already followed),
  * or null when there is no such article. `getViewerCountryId` is called only for an article that
- * carries per-viewer template chips, `canSeeDeleted` only for a deleted page. Rejects with
- * `ThrottledError` when the article is missing and MediaWiki could not be asked about it right now.
+ * carries per-viewer template chips, `canSeeDeleted` only for a deleted page. A missing article is
+ * imported from MediaWiki as `importSource` allows. Rejects with `ThrottledError` when the article is
+ * missing and MediaWiki could not be asked about it right now.
  */
 export async function getArticleView(
   title: string,
   getViewerCountryId: () => Promise<string | null>,
-  canSeeDeleted: () => Promise<boolean> = () => Promise.resolve(false)
+  canSeeDeleted: () => Promise<boolean> = () => Promise.resolve(false),
+  importSource: ImportSource = "client"
 ): Promise<ArticleView | null> {
-  const found = await findArticle(title, canSeeDeleted);
+  const found = await findArticle(title, canSeeDeleted, importSource);
   if (!found) return null;
 
   const view = await withViewerChips(found.shared, getViewerCountryId);

@@ -97,7 +97,7 @@ export function SculptedMainPageContent({
               Browse by topic
             </h2>
             <Link
-              href={withBasePath("/wiki/categories/Countries")}
+              href={withBasePath("/util/categories/Countries")}
               data-cuelume-press="press"
               data-cuelume-hover="tick"
               className="text-muted-foreground hover:text-foreground group/all flex items-center gap-1 text-xs font-medium transition-colors"
@@ -116,7 +116,7 @@ export function SculptedMainPageContent({
                   return (
                     <Link
                       key={cat.name}
-                      href={withBasePath(`/wiki/categories/${encodeURIComponent(cat.name)}`)}
+                      href={withBasePath(`/util/categories/${encodeURIComponent(cat.name)}`)}
                       data-cuelume-press="page"
                       data-cuelume-hover="tick"
                       className={cn(
@@ -257,7 +257,7 @@ export function SculptedMainPageContent({
               Recent activity
             </h2>
             <Link
-              href={withBasePath("/wiki/recent-changes")}
+              href={withBasePath("/util/recent-changes")}
               data-cuelume-press="press"
               data-cuelume-hover="tick"
               className="text-muted-foreground hover:text-foreground group/all flex items-center gap-1 text-xs font-medium transition-colors"

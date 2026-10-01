@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
-import WikiOSArticlePage from "~/app/(wiki-os)/wiki/[slug]/page";
+import ArticlePageClient, {
+  type ArticlePageClientProps,
+} from "~/app/(wiki-os)/wiki/[...slug]/ArticlePageClient";
 
 const mockUseQuery = jest.fn();
 const mockPrefetch = jest.fn();
@@ -8,15 +10,12 @@ const mockRenderer = jest.fn();
 const mockEditor = jest.fn();
 const mockLayout = jest.fn();
 const mockSetActiveModal = jest.fn();
-const mockReplace = jest.fn();
 let mockSearch = "";
-let mockSlug = "Portal%3AEurth";
 let mockSignedIn = true;
+let mockAuthLoaded = true;
 
 jest.mock("next/navigation", () => ({
-  useParams: () => ({ slug: mockSlug }),
   useSearchParams: () => new URLSearchParams(mockSearch),
-  useRouter: () => ({ replace: mockReplace, push: jest.fn() }),
 }));
 jest.mock("~/trpc/react", () => ({
   api: {
@@ -25,7 +24,7 @@ jest.mock("~/trpc/react", () => ({
   },
 }));
 jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({
-  useWikiAuth: () => ({ isSignedIn: mockSignedIn }),
+  useWikiAuth: () => ({ isSignedIn: mockSignedIn, isLoaded: mockAuthLoaded }),
 }));
 jest.mock("~/components/wiki-os/shared/WikiOSLayout", () => ({
   WikiOSLayout: ({ children, readOnly }: { children: ReactNode; readOnly?: boolean }) => {
@@ -45,12 +44,20 @@ jest.mock("~/components/wiki-os/reader/ArticleRenderer", () => ({
 jest.mock("~/components/wiki-os/reader/WikiOSMainPage", () => ({
   WikiOSMainPage: () => <div>main page</div>,
 }));
+jest.mock("~/components/wiki-os/reader/ArticleTabs", () => ({
+  ArticleTabs: ({ title }: { title: string }) => <nav data-testid="tabs">{title}</nav>,
+}));
 jest.mock("~/components/wiki-os/editor/WikiEditBridge", () => ({
-  WikiEditBridge: () => {
-    mockEditor();
+  WikiEditBridge: (props: Record<string, unknown>) => {
+    mockEditor(props);
     return <div>editor</div>;
   },
 }));
+
+/** The reader as the route renders it: the route has already resolved the title and the wiki. */
+function Reader(props: Partial<ArticlePageClientProps>) {
+  return <ArticlePageClient title="Portal:Eurth" wikiSource="ixwiki" {...props} />;
+}
 
 const article = {
   title: "Portal:Eurth",
@@ -72,70 +79,145 @@ function found(title = article.title) {
   });
 }
 
-describe("WikiOS reader ?source=", () => {
+describe("WikiOS reader (plan 412: title and wiki come from the route)", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockSlug = "Portal%3AEurth";
     mockSearch = "";
     mockSignedIn = true;
+    mockAuthLoaded = true;
     Object.assign(window, { requestIdleCallback: (cb: () => void) => cb() });
     document.head.querySelector('link[rel="canonical"]')?.remove();
   });
 
   it("reads an iiwiki page from iiwiki and renders it as one", () => {
-    mockSearch = "source=iiwiki";
     found();
-    render(<WikiOSArticlePage />);
+    render(<Reader wikiSource="iiwiki" />);
 
     expect(mockUseQuery).toHaveBeenCalledWith(
       { title: "Portal:Eurth", wikiSource: "iiwiki" },
       expect.anything()
     );
     expect(mockRenderer).toHaveBeenCalledWith(expect.objectContaining({ wikiSource: "iiwiki" }));
+    // Another wiki's page is client-rendered: it sets its own canonical link.
     expect(document.head.querySelector('link[rel="canonical"]')).toHaveAttribute(
       "href",
       "https://iiwiki.com/wiki/Portal%3AEurth"
     );
     expect(mockPrefetch).not.toHaveBeenCalled(); // ixwiki wikitext only warms the ixwiki editor
     expect(mockLayout).toHaveBeenCalledWith({ readOnly: true }); // no page tools (ruling E-l)
+    expect(screen.queryByTestId("tabs")).not.toBeInTheDocument(); // no talk page on another wiki
   });
 
-  it.each(["", "source=eurth", "source=IIWIKI"])("%p reads from ixwiki", (search) => {
-    mockSearch = search;
-    mockSlug = "Aurelia";
+  it("reads an IxWiki page with the query the route primed, and leaves its canonical link to the server", () => {
     found("Aurelia");
-    render(<WikiOSArticlePage />);
+    render(<Reader title="Aurelia" />);
 
-    // The same key hover prefetch warms for IxWiki links
+    // The same key hover prefetch warms for IxWiki links and the route's server render primes
     expect(mockUseQuery).toHaveBeenCalledWith({ title: "Aurelia" }, expect.anything());
     expect(mockLayout).toHaveBeenCalledWith({ readOnly: false });
     expect(mockRenderer).toHaveBeenCalledWith(expect.objectContaining({ wikiSource: "ixwiki" }));
     expect(mockPrefetch).toHaveBeenCalledWith({ title: "Aurelia" }, expect.anything());
-    expect(document.head.querySelector('link[rel="canonical"]')).toHaveAttribute(
+    expect(document.head.querySelector('link[rel="canonical"]')).toBeNull();
+    expect(screen.getByTestId("tabs")).toHaveTextContent("Aurelia");
+  });
+
+  it("?redirect=no asks for the redirect page itself, with the input the route primed", () => {
+    found("Old name");
+    render(<Reader title="Old name" followRedirect={false} />);
+
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      { title: "Old name", redirect: "no" },
+      expect.anything()
+    );
+  });
+
+  it("says where the reader was redirected from", () => {
+    found("New name");
+    render(<Reader title="New name" redirectedFrom="Old name" />);
+
+    expect(screen.getByText(/Redirected from/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Old name" })).toHaveAttribute(
       "href",
-      "https://ixwiki.com/wiki/Aurelia"
+      "/wiki/Old_name?redirect=no"
     );
   });
 
   it("warms the editor's wikitext only for a signed-in reader (plan 404)", () => {
-    mockSlug = "Aurelia";
     found("Aurelia");
 
     mockSignedIn = false;
-    render(<WikiOSArticlePage />);
+    render(<Reader title="Aurelia" />);
     expect(mockPrefetch).not.toHaveBeenCalled();
 
     mockSignedIn = true;
-    render(<WikiOSArticlePage />);
+    render(<Reader title="Aurelia" />);
     expect(mockPrefetch).toHaveBeenCalledWith({ title: "Aurelia" }, expect.anything());
   });
 
   it("passes the page's own authorship through untouched: an IxWiki page gets none and loads it itself (plan 404)", () => {
-    mockSlug = "Aurelia";
     found("Aurelia");
-    render(<WikiOSArticlePage />);
+    render(<Reader title="Aurelia" />);
 
     expect(mockRenderer).toHaveBeenCalledWith(expect.objectContaining({ authorInfo: null }));
+  });
+
+  it("puts a page's aside above the article and its children below it", () => {
+    found("Aurelia");
+    render(
+      <Reader title="Aurelia" aside={<p>profile card</p>}>
+        <p>member list</p>
+      </Reader>
+    );
+
+    const card = screen.getByText("profile card");
+    const body = screen.getByRole("article");
+    const members = screen.getByText("member list");
+    expect(card.compareDocumentPosition(body) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(body.compareDocumentPosition(members) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  describe("viewer-specific chips (the route reads the article as an anonymous viewer)", () => {
+    const chipHtml =
+      '<p>Your GDP: <span class="wikios-stat-resolved" data-key="MyCountry:gdp">No Country Loaded</span></p>';
+    const withChips = (refetch: jest.Mock, contentHtml = chipHtml) =>
+      mockUseQuery.mockReturnValue({
+        data: { ...article, title: "Aurelia", contentHtml },
+        isLoading: false,
+        error: null,
+        refetch,
+      });
+
+    it("a signed-in reader asks once more, with their session, for their own chips", () => {
+      const refetch = jest.fn();
+      withChips(refetch);
+      const { rerender } = render(<Reader title="Aurelia" />);
+      rerender(<Reader title="Aurelia" />);
+
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("waits for the session to load", () => {
+      const refetch = jest.fn();
+      mockAuthLoaded = false;
+      withChips(refetch);
+      render(<Reader title="Aurelia" />);
+
+      expect(refetch).not.toHaveBeenCalled();
+    });
+
+    it("an anonymous reader keeps what the server sent, and so does a page with no such chip", () => {
+      const refetch = jest.fn();
+      mockSignedIn = false;
+      withChips(refetch);
+      const { unmount } = render(<Reader title="Aurelia" />);
+      unmount();
+
+      mockSignedIn = true;
+      withChips(refetch, "<p>Population: 12,000,000</p>");
+      render(<Reader title="Aurelia" />);
+
+      expect(refetch).not.toHaveBeenCalled();
+    });
   });
 
   describe("a stale article (its render still pending) is asked for again soon (plan 404 review)", () => {
@@ -149,9 +231,8 @@ describe("WikiOS reader ?source=", () => {
     const queryWith = (data?: { stale: boolean }) => ({ state: { data } });
 
     it("refetches after ~5 s while the article is stale, and stops once it is not", () => {
-      mockSlug = "Aurelia";
       found("Aurelia");
-      render(<WikiOSArticlePage />);
+      render(<Reader title="Aurelia" />);
 
       expect(options().refetchInterval(queryWith({ stale: true }))).toBe(5_000);
       expect(options().refetchInterval(queryWith({ stale: false }))).toBe(false);
@@ -159,18 +240,16 @@ describe("WikiOS reader ?source=", () => {
     });
 
     it("never treats a stale article as fresh for ten minutes", () => {
-      mockSlug = "Aurelia";
       found("Aurelia");
-      render(<WikiOSArticlePage />);
+      render(<Reader title="Aurelia" />);
 
       expect(options().staleTime(queryWith({ stale: true }))).toBe(0);
       expect(options().staleTime(queryWith({ stale: false }))).toBe(10 * 60 * 1000);
     });
 
     it("retries a busy answer (TOO_MANY_REQUESTS) twice, and nothing else", () => {
-      mockSlug = "Aurelia";
       found("Aurelia");
-      render(<WikiOSArticlePage />);
+      render(<Reader title="Aurelia" />);
 
       const busy = { data: { code: "TOO_MANY_REQUESTS" } };
       expect(options().retry(0, busy)).toBe(true);
@@ -183,38 +262,86 @@ describe("WikiOS reader ?source=", () => {
   });
 
   it("?margin=1 opens the margin on an IxWiki page only (ruling E-l′)", () => {
-    mockSearch = "source=iiwiki&margin=1";
+    mockSearch = "margin=1";
     found();
-    render(<WikiOSArticlePage />);
+    render(<Reader wikiSource="iiwiki" />);
     expect(mockSetActiveModal).not.toHaveBeenCalled();
 
-    mockSearch = "margin=1";
-    mockSlug = "Aurelia";
     found("Aurelia");
-    render(<WikiOSArticlePage />);
+    render(<Reader title="Aurelia" />);
     expect(mockSetActiveModal).toHaveBeenCalledWith("margin");
   });
 
   it("never opens the ixwiki editor for another wiki's page", () => {
-    mockSearch = "source=iiwiki&action=edit";
+    mockSearch = "action=edit";
     found();
-    render(<WikiOSArticlePage />);
+    render(<Reader wikiSource="iiwiki" initialEdit={{ mode: "source", section: null }} />);
     expect(mockEditor).not.toHaveBeenCalled();
     expect(mockRenderer).toHaveBeenCalled();
   });
 
-  it("a missing IxWiki page offers to create it", () => {
-    mockSlug = "Nowhere";
+  describe("the editor (?action=edit, kept working with plan 414's bridge)", () => {
+    it("opens on load for initialEdit, at the section the URL named", () => {
+      found("Aurelia");
+      render(<Reader title="Aurelia" initialEdit={{ mode: "source", section: "Geography" }} />);
+
+      expect(mockEditor).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Aurelia",
+          initialMode: "source",
+          initialSection: "Geography",
+          newSection: false,
+        })
+      );
+      expect(mockRenderer).not.toHaveBeenCalled();
+    });
+
+    it("opens the visual editor on request", () => {
+      found("Aurelia");
+      render(<Reader title="Aurelia" initialEdit={{ mode: "visual", section: null }} />);
+      expect(mockEditor).toHaveBeenCalledWith(expect.objectContaining({ initialMode: "visual" }));
+    });
+
+    it("section=new (Add topic) opens the source editor on a new topic, not at a heading named 'new'", () => {
+      found("Talk:Aurelia");
+      render(<Reader title="Talk:Aurelia" initialEdit={{ mode: "source", section: "new" }} />);
+      expect(mockEditor).toHaveBeenCalledWith(
+        expect.objectContaining({ initialSection: undefined, newSection: true })
+      );
+    });
+
+    it("?action=edit in the address bar opens it too, without a server hint", () => {
+      mockSearch = "action=edit";
+      found("Aurelia");
+      render(<Reader title="Aurelia" />);
+      expect(mockEditor).toHaveBeenCalledWith(expect.objectContaining({ initialMode: "source" }));
+    });
+  });
+
+  it("a missing IxWiki page offers to create it to a signed-in reader", () => {
     mockUseQuery.mockReturnValue({
       data: undefined,
       isLoading: false,
       error: new Error("not found"),
       refetch: jest.fn(),
     });
-    render(<WikiOSArticlePage />);
+    render(<Reader title="Nowhere" />);
     expect(screen.getByText(/does not exist on IxWiki/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /create this page/i }));
     expect(mockEditor).toHaveBeenCalled();
+  });
+
+  it("a missing IxWiki page offers no creation to a signed-out reader", () => {
+    mockSignedIn = false;
+    mockUseQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new Error("not found"),
+      refetch: jest.fn(),
+    });
+    render(<Reader title="Nowhere" />);
+    expect(screen.getByText(/does not exist on IxWiki/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /create this page/i })).not.toBeInTheDocument();
   });
 
   describe("a busy answer (TOO_MANY_REQUESTS) is not a missing page (plan 404 review)", () => {
@@ -224,14 +351,13 @@ describe("WikiOS reader ?source=", () => {
 
     it("says WikiOS is busy and offers a retry, never 'does not exist' or 'create this page'", () => {
       const refetch = jest.fn();
-      mockSlug = "Nowhere";
       mockUseQuery.mockReturnValue({
         data: undefined,
         isLoading: false,
         error: busyError,
         refetch,
       });
-      render(<WikiOSArticlePage />);
+      render(<Reader title="Nowhere" />);
 
       expect(screen.getByText("WikiOS is busy")).toBeInTheDocument();
       expect(screen.queryByText(/does not exist/)).not.toBeInTheDocument();
@@ -242,7 +368,6 @@ describe("WikiOS reader ?source=", () => {
     });
 
     it("shows a retrying state while the automatic retries run", () => {
-      mockSlug = "Nowhere";
       mockUseQuery.mockReturnValue({
         data: undefined,
         isLoading: true,
@@ -250,13 +375,12 @@ describe("WikiOS reader ?source=", () => {
         refetch: jest.fn(),
         failureCount: 1,
       });
-      render(<WikiOSArticlePage />);
+      render(<Reader title="Nowhere" />);
 
       expect(screen.getByText(/WikiOS is busy — retrying/)).toBeInTheDocument();
     });
 
     it("shows plain loading before any failure, and still not-found for any other error", () => {
-      mockSlug = "Nowhere";
       mockUseQuery.mockReturnValue({
         data: undefined,
         isLoading: true,
@@ -264,7 +388,7 @@ describe("WikiOS reader ?source=", () => {
         refetch: jest.fn(),
         failureCount: 0,
       });
-      const { unmount } = render(<WikiOSArticlePage />);
+      const { unmount } = render(<Reader title="Nowhere" />);
       expect(screen.getByText("Loading article...")).toBeInTheDocument();
       unmount();
 
@@ -274,116 +398,31 @@ describe("WikiOS reader ?source=", () => {
         error: Object.assign(new Error("nope"), { data: { code: "NOT_FOUND" } }),
         refetch: jest.fn(),
       });
-      render(<WikiOSArticlePage />);
+      render(<Reader title="Nowhere" />);
       expect(screen.getByText(/does not exist on IxWiki/)).toBeInTheDocument();
     });
   });
 
   it("a missing iiwiki page names iiwiki and offers no ixwiki page creation", () => {
-    mockSearch = "source=iiwiki";
     mockUseQuery.mockReturnValue({
       data: undefined,
       isLoading: false,
       error: new Error("not found"),
       refetch: jest.fn(),
     });
-    render(<WikiOSArticlePage />);
+    render(<Reader wikiSource="iiwiki" />);
     expect(screen.getByText(/does not exist on IIWiki/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /create this page/i })).not.toBeInTheDocument();
   });
-});
 
-describe("WikiOS reader canonical titles (plan 403)", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockSearch = "";
-    Object.assign(window, { requestIdleCallback: (cb: () => void) => cb() });
-  });
-
-  it("moves a non-canonical URL to the canonical one, keeping the query string", () => {
-    mockSlug = "foo_bar";
-    mockSearch = "margin=threads";
-    found("Foo bar");
-    render(<WikiOSArticlePage />);
-
-    expect(mockUseQuery).toHaveBeenCalledWith({ title: "Foo bar" }, expect.anything());
-    expect(mockReplace).toHaveBeenCalledWith("/wiki/Foo_bar?margin=threads");
-  });
-
-  it("never redirects another wiki's page (?source=), which is read under its own title rules", () => {
-    mockSlug = "foo_bar";
-    mockSearch = "source=iiwiki";
-    found("Foo bar");
-    render(<WikiOSArticlePage />);
-
-    expect(mockUseQuery).toHaveBeenCalledWith(
-      { title: "Foo bar", wikiSource: "iiwiki" },
-      expect.anything()
-    );
-    expect(mockReplace).not.toHaveBeenCalled();
-  });
-
-  it("gives another wiki's title no IxWiki namespace (Project: is not IxWiki:)", () => {
-    mockSlug = "project%3Afoo";
-    mockSearch = "source=althistory";
-    found("Project:foo");
-    render(<WikiOSArticlePage />);
-
-    expect(mockUseQuery).toHaveBeenCalledWith(
-      { title: "Project:foo", wikiSource: "althistory" },
-      expect.anything()
-    );
-  });
-
-  it("never redirects a subpage title: its canonical path needs the catch-all route (plan 412)", () => {
-    for (const slug of ["foo%2Fbar", "talk%3Afoo%2Fbar", "Foo/bar"]) {
-      mockSlug = slug;
-      found("Foo/bar");
-      render(<WikiOSArticlePage />);
-    }
-
-    expect(mockReplace).not.toHaveBeenCalled();
-    expect(mockUseQuery).toHaveBeenCalledWith({ title: "Foo/bar" }, expect.anything());
-    expect(mockUseQuery).toHaveBeenCalledWith({ title: "Talk:Foo/bar" }, expect.anything());
-  });
-
-  it("keeps a namespace colon literal and carries a fragment typed into the path", () => {
-    mockSlug = "user%20talk%3Ajane%23Notes";
-    found("User talk:Jane");
-    render(<WikiOSArticlePage />);
-
-    expect(mockReplace).toHaveBeenCalledWith("/wiki/User_talk:Jane#Notes");
-  });
-
-  it("does not redirect a URL that already is canonical, however it is percent-encoded", () => {
-    for (const slug of ["Portal%3AEurth", "Portal:Eurth", "100%25_Pure"]) {
-      mockSlug = slug;
-      found();
-      render(<WikiOSArticlePage />);
-    }
-
-    expect(mockReplace).not.toHaveBeenCalled();
-    expect(mockUseQuery).toHaveBeenCalledWith({ title: "100% Pure" }, expect.anything());
-  });
-
-  it("decodes the segment once: a title with '%' reaches the query intact", () => {
-    mockSlug = "100%25_Pure";
-    found("100% Pure");
-    render(<WikiOSArticlePage />);
-
-    expect(mockUseQuery).toHaveBeenCalledWith({ title: "100% Pure" }, expect.anything());
-  });
-
-  it("renders the not-found state for a title MediaWiki would refuse, without querying", () => {
-    mockSlug = "a%5Bb";
+  it("the Main Page is the Main Page component, with no article query", () => {
     mockUseQuery.mockReturnValue({ data: undefined, isLoading: false, error: null });
-    render(<WikiOSArticlePage />);
+    render(<Reader title="Main Page" />);
 
-    expect(screen.getByText(/does not exist on IxWiki/)).toBeInTheDocument();
+    expect(screen.getByText("main page")).toBeInTheDocument();
     expect(mockUseQuery).toHaveBeenCalledWith(
-      expect.anything(),
+      { title: "Main Page" },
       expect.objectContaining({ enabled: false })
     );
-    expect(mockReplace).not.toHaveBeenCalled();
   });
 });

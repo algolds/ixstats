@@ -430,7 +430,7 @@ export function transformImages(
 
 /**
  * Append an "Edit" link to every h2/h3 heading, opening the source editor at that section
- * (`/wiki/{slug}/edit?section={heading text}`). `slug` must already be URI-encoded. The DOM does the
+ * (`/wiki/{slug}?action=edit&section={heading text}`). `slug` must already be URI-encoded. The DOM does the
  * work: the HTML is sanitized already, and string surgery on sanitized HTML is not safe (a heading
  * whose attribute holds `</h2>` would have the link written into that attribute). Outside a browser
  * the HTML comes back untouched.
@@ -448,7 +448,7 @@ export function addSectionEditLinks(html: string, slug: string): string {
     link.className = "wikios-section-edit-link";
     link.setAttribute(
       "href",
-      withBasePath(`/wiki/${slug}/edit?section=${encodeURIComponent(text)}`)
+      withBasePath(`/wiki/${slug}?action=edit&section=${encodeURIComponent(text)}`)
     );
     link.setAttribute("aria-label", `Edit section: ${text}`);
     link.textContent = "Edit";
