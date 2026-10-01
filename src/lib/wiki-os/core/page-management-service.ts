@@ -10,6 +10,7 @@ import { db } from "~/server/db";
 import { toArticleSlug } from "./domain-types";
 import { canonicalizeTitle, NAMESPACE_CANONICAL_NAMES, type CanonicalTitle } from "./title";
 import { enqueueRender } from "../services/render-service";
+import { evictWikiTitleCaches } from "../services/title-cache-eviction";
 
 /** Who performed an operation: the WikiOS user row (for the foreign keys) and the name the log shows. */
 export interface PageActor {
@@ -31,6 +32,8 @@ export class PageOperationError extends Error {
 }
 
 export interface MoveOneResult {
+  oldTitle: string;
+  newTitle: string;
   oldSlug: string;
   newSlug: string;
   redirectArticleId: string | null;
@@ -131,9 +134,14 @@ export class PageManagementService {
       return { success: true, ...moved, talk };
     });
 
-    // A moved page is stale under its new name: render it off the read path.
-    enqueueRender(result.movedArticleId);
-    if (result.talk) enqueueRender(result.talk.movedArticleId);
+    // A moved page is stale under its new name: render it off the read path, and forget what the
+    // caches hold under either of its names (the old one is a redirect now).
+    for (const moved of [result, result.talk]) {
+      if (!moved) continue;
+      enqueueRender(moved.movedArticleId);
+      await evictWikiTitleCaches(moved.oldTitle, realm, moved.movedArticleId);
+      await evictWikiTitleCaches(moved.newTitle, realm, moved.movedArticleId);
+    }
     return result;
   }
 
@@ -259,6 +267,8 @@ export class PageManagementService {
     });
 
     return {
+      oldTitle: original.title,
+      newTitle: newCanonicalTitle,
       oldSlug,
       newSlug,
       redirectArticleId,
@@ -343,7 +353,7 @@ export class PageManagementService {
     actor: PageActor,
     realm = "ixwiki"
   ): Promise<{ success: boolean; articleId: string }> {
-    return db.$transaction(async (tx) => {
+    const { title, articleId } = await db.$transaction(async (tx) => {
       const article = await findPage(tx, slugOrTitle, realm);
       if (!article) {
         throw new PageOperationError("NOT_FOUND", `Article "${slugOrTitle}" not found.`);
@@ -369,8 +379,11 @@ export class PageManagementService {
           articleId: article.id,
         },
       });
-      return { success: true, articleId: article.id };
+      return { title: article.title, articleId: article.id };
     });
+    // A deleted page must not be read out of a cache.
+    await evictWikiTitleCaches(title, realm, articleId);
+    return { success: true, articleId };
   }
 
   /**
@@ -382,7 +395,7 @@ export class PageManagementService {
     realm = "ixwiki",
     reason = "Restored from archive"
   ): Promise<{ success: boolean; articleId: string }> {
-    return db.$transaction(async (tx) => {
+    const { title, articleId } = await db.$transaction(async (tx) => {
       const article = await findPage(tx, slugOrTitle, realm);
       if (!article) {
         throw new PageOperationError("NOT_FOUND", `Archived article "${slugOrTitle}" not found.`);
@@ -408,8 +421,11 @@ export class PageManagementService {
           articleId: article.id,
         },
       });
-      return { success: true, articleId: article.id };
+      return { title: article.title, articleId: article.id };
     });
+    // The page was "missing" while deleted: forget that, and anything cached from before.
+    await evictWikiTitleCaches(title, realm, articleId);
+    return { success: true, articleId };
   }
 
   /**

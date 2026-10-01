@@ -12,6 +12,7 @@ import {
   type PageActor,
 } from "~/lib/wiki-os/core/page-management-service";
 import { enqueueRender } from "~/lib/wiki-os/services/render-service";
+import { evictWikiTitleCaches } from "~/lib/wiki-os/services/title-cache-eviction";
 
 const mockFindFirst = jest.fn();
 const mockFindMany = jest.fn();
@@ -25,6 +26,9 @@ const mockRestrictionUpdateMany = jest.fn();
 const mockRestrictionFindUnique = jest.fn();
 
 jest.mock("~/lib/wiki-os/services/render-service", () => ({ enqueueRender: jest.fn() }));
+jest.mock("~/lib/wiki-os/services/title-cache-eviction", () => ({
+  evictWikiTitleCaches: jest.fn().mockResolvedValue(undefined),
+}));
 jest.mock("~/server/db", () => {
   const tx = {
     wikiArticle: {
@@ -460,7 +464,10 @@ describe("PageManagementService.movePage and the rendered view (plan 404)", () =
   it("marks the moved page stale under its new name and queues its render after the commit", async () => {
     await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
 
-    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({ title: "New name", htmlSyncedAt: null });
+    expect(mockUpdate.mock.calls[0]?.[0].data).toMatchObject({
+      title: "New name",
+      htmlSyncedAt: null,
+    });
     expect(mockUpdate.mock.calls[0]?.[0].data).not.toHaveProperty("contentHtml");
     expect(enqueueRender).toHaveBeenCalledTimes(1);
     expect(enqueueRender).toHaveBeenCalledWith("orig");
@@ -468,19 +475,26 @@ describe("PageManagementService.movePage and the rendered view (plan 404)", () =
 
   it("queues the moved talk page's render too", async () => {
     pages({ old_name: original, "talk:old_name": talkOriginal });
-    mockUpdate.mockImplementation(async ({ where }: { where: { id: string } }) => ({ id: where.id }));
+    mockUpdate.mockImplementation(async ({ where }: { where: { id: string } }) => ({
+      id: where.id,
+    }));
 
     await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
 
-    expect(jest.mocked(enqueueRender).mock.calls.map((call) => call[0]).sort()).toEqual(["orig", "talk-orig"]);
+    expect(
+      jest
+        .mocked(enqueueRender)
+        .mock.calls.map((call) => call[0])
+        .sort()
+    ).toEqual(["orig", "talk-orig"]);
   });
 
   it("queues nothing for a move that failed", async () => {
     mockFindFirst.mockReset().mockResolvedValue(null);
 
-    await expect(PageManagementService.movePage("old_name", "new_name", "x", actor)).rejects.toThrow(
-      "not found"
-    );
+    await expect(
+      PageManagementService.movePage("old_name", "new_name", "x", actor)
+    ).rejects.toThrow("not found");
     expect(enqueueRender).not.toHaveBeenCalled();
   });
 });
@@ -601,5 +615,64 @@ describe("PageManagementService.getBrokenRedirects", () => {
 
     await expect(PageManagementService.getBrokenRedirects(10)).resolves.toEqual([]);
     expect(mockFindMany).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("PageManagementService forgets what the caches hold about a page it changed", () => {
+  it("evicts a deleted page by title and id, after the delete committed", async () => {
+    mockFindFirst.mockResolvedValue({ id: "a1", title: "Old name", status: "PUBLISHED" });
+    mockUpdate.mockResolvedValue({ id: "a1" });
+    mockLogCreate.mockImplementation(async () => {
+      expect(evictWikiTitleCaches).not.toHaveBeenCalled(); // still inside the transaction
+    });
+
+    await PageManagementService.archiveArticle("Old name", "spam", actor);
+
+    expect(evictWikiTitleCaches).toHaveBeenCalledTimes(1);
+    expect(evictWikiTitleCaches).toHaveBeenCalledWith("Old name", "ixwiki", "a1");
+  });
+
+  it("evicts a restored page, whose negative cache entries would still say it is missing", async () => {
+    mockFindFirst.mockResolvedValue({ id: "a1", title: "Old name", status: "ARCHIVED" });
+    mockUpdate.mockResolvedValue({ id: "a1" });
+
+    await PageManagementService.restoreArticle("Old name", actor);
+
+    expect(evictWikiTitleCaches).toHaveBeenCalledWith("Old name", "ixwiki", "a1");
+  });
+
+  it("evicts neither when the operation was refused", async () => {
+    mockFindFirst.mockResolvedValue({ id: "a1", title: "Old name", status: "ARCHIVED" });
+    await expect(PageManagementService.archiveArticle("Old name", "x", actor)).rejects.toThrow();
+    mockFindFirst.mockResolvedValue({ id: "a1", title: "Old name", status: "PUBLISHED" });
+    await expect(PageManagementService.restoreArticle("Old name", actor)).rejects.toThrow();
+
+    expect(evictWikiTitleCaches).not.toHaveBeenCalled();
+  });
+
+  it("evicts both names of a moved page and of its talk page", async () => {
+    pages({ old_name: original, "talk:old_name": talkOriginal });
+
+    await PageManagementService.movePage("old_name", "new_name", "tidy", actor);
+
+    const evicted = jest
+      .mocked(evictWikiTitleCaches)
+      .mock.calls.map(([title, , id]) => `${title}@${id}`);
+    expect(evicted.sort()).toEqual(
+      [
+        "Old name@orig",
+        "New name@orig",
+        "Talk:Old name@talk-orig",
+        "Talk:New name@talk-orig",
+      ].sort()
+    );
+  });
+
+  it("evicts nothing for a move that failed", async () => {
+    mockFindFirst.mockReset().mockResolvedValue(null);
+    await expect(
+      PageManagementService.movePage("old_name", "new_name", "x", actor)
+    ).rejects.toThrow();
+    expect(evictWikiTitleCaches).not.toHaveBeenCalled();
   });
 });

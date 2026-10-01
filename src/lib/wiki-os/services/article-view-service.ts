@@ -51,6 +51,15 @@ const viewCache = new ByteBoundedCache<SharedView>({
 });
 
 /**
+ * Forget every view kept for the article `articleId`: its bundle view, a pending view and the views
+ * filled with a viewer's chips (all keys carry the id between colons). A deleted or moved page must not
+ * be served from here for the rest of the cache's lifetime.
+ */
+export function evictArticleView(articleId: string): number {
+  return viewCache.deleteWhere((key) => key.includes(`:${articleId}:`));
+}
+
+/**
  * Imports from MediaWiki: anyone can ask for a page that does not exist, and each import is an HTTP
  * call. A few in flight, and a steady rate per process; past either the request is refused as busy
  * (`ThrottledError`), never answered "not found".

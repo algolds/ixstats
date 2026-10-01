@@ -10,6 +10,7 @@ import { parseInfoboxWithTemplates, type UnifiedInfoboxData } from "./unified-pa
 import { cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { ArticleRepository } from "~/lib/wiki-os/core/article-repository";
 import { Cache } from "~/lib/cache";
+import { sameTitle } from "~/lib/wiki-os/core/title";
 
 export function cleanWikitextForDisplay(raw: string): string {
   return cleanWikiMarkup(raw);
@@ -214,7 +215,15 @@ export class WikiCacheService {
    * Invalidate cached entries
    */
   invalidate(title: string, wikiSource: WikiSource = "ixwiki"): void {
-    profileMemoryCache.delete(`${wikiSource}:${title}`);
+    // The profile (`<wiki>:<name>`) and the parsed infobox (`parsed-infobox:<wiki>:<name>`), under any
+    // spelling of the name they were asked for.
+    const prefixes = [`${wikiSource}:`, `parsed-infobox:${wikiSource}:`];
+    for (const key of profileMemoryCache.keys()) {
+      const prefix = prefixes.find((candidate) => key.startsWith(candidate));
+      if (prefix && sameTitle(key.slice(prefix.length), title, wikiSource)) {
+        profileMemoryCache.delete(key);
+      }
+    }
   }
 
   /**

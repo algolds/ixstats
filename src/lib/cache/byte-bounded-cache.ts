@@ -63,6 +63,17 @@ export class ByteBoundedCache<V> {
     this.held += bytes;
   }
 
+  /** Drop every entry whose key `matches`; returns how many went. */
+  deleteWhere(matches: (key: string) => boolean): number {
+    let dropped = 0;
+    for (const [key, entry] of this.entries) {
+      if (!matches(key)) continue;
+      this.remove(key, entry);
+      dropped++;
+    }
+    return dropped;
+  }
+
   private remove(key: string, entry: Entry<V>): void {
     this.entries.delete(key);
     this.held -= entry.bytes;

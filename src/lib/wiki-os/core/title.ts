@@ -163,6 +163,16 @@ export function canonicalizeTitle(
 }
 
 /**
+ * Whether two spellings name the same page, ignoring case: a cache keyed by a raw or lower-cased title
+ * is evicted for every spelling it may hold ("foo_bar", "Foo bar", "foo bar").
+ */
+export function sameTitle(a: string, b: string, source = "ixwiki"): boolean {
+  const key = (raw: string) =>
+    (canonicalizeTitle(raw, { source })?.title ?? raw.replace(/_/g, " ").trim()).toLowerCase();
+  return key(a) === key(b);
+}
+
+/**
  * The namespace columns to store for a page with canonical title `canon` that MediaWiki reports in
  * namespace `mwNamespaceId`. A namespace missing from NAMESPACE_CANONICAL_NAMES (MediaWiki's
  * "Portal:", say) keeps MediaWiki's id and the title's own prefix text instead of being forced
