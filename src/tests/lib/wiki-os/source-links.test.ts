@@ -81,19 +81,21 @@ describe("transformArticleHtml links for another wiki's page (ruling E-l)", () =
   });
 });
 
-describe("transformArticleHtml links for an IxWiki page are unchanged", () => {
+describe("transformArticleHtml links for an IxWiki page", () => {
   const html = transformArticleHtml(parsed, "", "ixwiki").contentHtml;
 
-  it("routes articles in-app, and files, special pages and red links to ixwiki", () => {
+  it("routes articles and red links in-app, and files and special pages to ixwiki", () => {
     expect(html).toContain('href="/wiki/Gallambria"');
     expect(html).toContain('href="/wiki/Gallambria#History"');
     expect(html).toContain(`href="${mediaWikiOrigin()}/wiki/File:Map.png" rel="noreferrer"`);
     expect(html).toContain(`href="${mediaWikiOrigin()}/wiki/Special:Random" rel="noreferrer"`);
     expect(html).toContain('href="/wiki/User:Kir"');
-    expect(html).toContain(
-      `href="${mediaWikiOrigin()}/index.php?title=Aurelian_Empire&amp;action=edit&amp;redlink=1" rel="noreferrer"`
-    );
+    // a red link opens WikiOS's own editor (plan 415, F16), not MediaWiki's index.php
+    expect(html).toContain('href="/wiki/Aurelian_Empire?action=edit&amp;redlink=1"');
+    expect(html).not.toContain("index.php?title=Aurelian_Empire");
     expect(html).toContain('class="new wikios-redlink"');
+    // an upload link is not a red link of a page: it still opens on the wiki
+    expect(html).toContain(`href="${mediaWikiOrigin()}/index.php?title=Special:Upload&amp;wpDestFile=Flag_of_Aurelia.png" rel="noreferrer"`);
     expect(html).not.toContain("source=");
   });
 });
