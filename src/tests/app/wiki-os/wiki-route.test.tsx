@@ -623,11 +623,11 @@ describe("generateMetadata (plan 412 step 2)", () => {
     expect(result.alternates?.canonical).toBe("https://ixwiki.com/wiki/NATO");
   });
 
-  it("does not index a page that does not exist", async () => {
+  it("a page that does not exist is notFound() in the metadata too: crawlers get the real 404", async () => {
     fails("NOT_FOUND");
-    await expect(metadata(["Nowhere"])).resolves.toEqual({
-      robots: { index: false, follow: false },
-    });
+    await expect(metadata(["Nowhere"])).rejects.toThrow("not-found");
+    await expect(metadata(["a%5Bb"])).rejects.toThrow("not-found");
+    await expect(metadata(["Special:NoSuchThing"])).rejects.toThrow("not-found");
   });
 
   it("indexes a category, user or file page even with no text of its own", async () => {
@@ -662,7 +662,6 @@ describe("generateMetadata (plan 412 step 2)", () => {
     await expect(metadata(["Main_Page"])).resolves.toEqual({});
     await expect(metadata(["Foo"], { source: "iiwiki" })).resolves.toEqual({});
     await expect(metadata(["Special:Random"])).resolves.toEqual({});
-    await expect(metadata(["a%5Bb"])).resolves.toEqual({});
   });
 
   it("keeps the canonical link when the lookup is busy", async () => {

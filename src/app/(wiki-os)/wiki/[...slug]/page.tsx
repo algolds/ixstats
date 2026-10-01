@@ -28,6 +28,12 @@ interface RouteProps {
 export async function generateMetadata({ params, searchParams }: RouteProps): Promise<Metadata> {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
   const target = resolveWikiPath(slug, query);
+  if (
+    target.kind === "invalid" ||
+    (target.kind === "special" && target.action.type === "unknown")
+  ) {
+    return notFound(); // the page says so too; see articleTargetMetadata
+  }
   return target.kind === "article" ? articleTargetMetadata(target, slug, query) : {};
 }
 

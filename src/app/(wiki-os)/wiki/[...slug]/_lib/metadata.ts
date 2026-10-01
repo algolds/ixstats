@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { getWikiBaseUrl } from "~/lib/wiki-os/config";
 import { articleSeo } from "~/lib/wiki-os/article-seo";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
@@ -50,8 +51,12 @@ function articleMetadata(data: ArticleHtml): Metadata {
 /**
  * The metadata of `/wiki/<path>`: an article's own title, description, canonical URL (WikiOS is the
  * canonical host, plan D12) and card; edit, history, diff, revision and info views are not indexed
- * and point at the article; a missing page is not indexed. Another wiki's page is client-rendered
- * and sets its own. Tool, special and raw routes redirect, so they have none.
+ * and point at the article. Another wiki's page is client-rendered and sets its own. Tool, special
+ * and raw routes redirect, so they have none.
+ *
+ * A page that does not exist is `notFound()` here as well as in the page: the response streams
+ * (the root loading.tsx sends the shell at once), so by the time the page says 404 the status line
+ * is gone. Metadata is resolved before a crawler's response starts, so crawlers get the real 404.
  */
 export async function articleTargetMetadata(
   target: ArticleTarget,
@@ -72,7 +77,9 @@ export async function articleTargetMetadata(
   if (loaded.status === "found")
     return loaded.data.resolvedFrom ? {} : articleMetadata(loaded.data);
   if (loaded.status === "unavailable") return { alternates: { canonical } };
-  return NAMESPACES_WITHOUT_TEXT.has(canon.namespaceId)
-    ? { title: canon.title, alternates: { canonical } }
-    : { robots: NO_INDEX };
+  // A category, user or file page can be worth showing with no text of its own: the page decides.
+  if (NAMESPACES_WITHOUT_TEXT.has(canon.namespaceId)) {
+    return { title: canon.title, alternates: { canonical } };
+  }
+  return notFound();
 }
