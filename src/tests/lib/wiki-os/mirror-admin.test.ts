@@ -2,6 +2,13 @@
 /**
  * Plan 407: the administrator's view of the outbox, and requeue / discard of dead jobs (only dead ones).
  */
+// The mirror's api.php and bot login come from `wikiosConfig`; this test sets their variables as it runs.
+jest.mock("~/lib/wiki-os/config", () =>
+  jest
+    .requireActual("~/tests/helpers/live-wikios-config")
+    .withLiveEnvironment(jest.requireActual("~/lib/wiki-os/config"))
+);
+
 import {
   discardMirrorJob,
   getMirrorStatus,

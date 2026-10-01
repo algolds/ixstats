@@ -19,7 +19,7 @@ names a MediaWiki endpoint (`getMediaWikiApiUrl`, the `config.ts` URL helpers `m
 
 **One config object (plan 415, v1 decision D14).** The wiki's host, its endpoints and its name are read from the environment
 once, in `src/lib/wiki-os/config.ts` (`wikiosConfig`, frozen). `NEXT_PUBLIC_MEDIAWIKI_URL` is the public origin (default
-`https://ixwiki.com`, spelled once, there; plan 407's three files still carry their own, see "The literals that remain"); `WIKIOS_MEDIAWIKI_INTERNAL_URL` is the loopback `api.php` every server-side call to
+`https://ixwiki.com`, spelled once, there; see "The literals that remain"); `WIKIOS_MEDIAWIKI_INTERNAL_URL` is the loopback `api.php` every server-side call to
 IxWiki's MediaWiki uses (`mediaWikiApiUrl({ internal: true })`, `getMediaWikiApiUrl("ixwiki")`); a URL a browser follows is built
 from the public origin (`mediaWikiOrigin()`, `publicArticleUrl(title)`, `mediaWikiImageUrl(path)`). A link detector builds its regular
 expression from the configured host (`mediaWikiHostPattern()`, `isMediaWikiUrl(url)`, `wikiTitleFromArticleUrl(url)`).
@@ -201,15 +201,17 @@ configuration object, never from a literal:
 
 ### The literals that remain (plan 415 count)
 
-`grep -rn "ixwiki.com" src` (tests excluded) still names the wiki's host as a functional address in four lines. Every other hit is
-a comment, a `User-Agent` contact string, or a subdomain that is not MediaWiki (above).
+`grep -rn "ixwiki.com" src` (tests excluded) names the wiki's host as a functional address in **one** line, and
+`src/tests/architecture/ixwiki-host-literal.test.ts` keeps it so. Every other hit is a comment, a `User-Agent` contact string,
+or a subdomain that is not MediaWiki (above).
 
 - `src/lib/wiki-os/config.ts`: the one default of `NEXT_PUBLIC_MEDIAWIKI_URL`, spelled once.
-- `src/lib/wiki-os/adapters/mediawiki/csrf-cache.ts` and `src/lib/wiki-os/adapters/mediawiki/write-service.ts`
-  (`WIKIOS_MEDIAWIKI_API ?? "https://ixwiki.com/api.php"`) and `src/lib/wiki-os/services/inbound-mediawiki.ts`
-  (`NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com"`): the mirror and the inbound sync, which plan 407 is rewriting. They are the
-  last three places that build the origin by hand; after plan 407 they read `wikiosConfig.mediawiki.writeApiUrl`,
-  `wikiosConfig.mediawiki.botUser` and `mediaWikiApiUrl({ internal: true })` (the config already carries them).
+
+The mirror (`csrf-cache.ts`, `write-service.ts`) reads `wikiosConfig.mediawiki.writeApiUrl` (`WIKIOS_MEDIAWIKI_API`, else the
+internal URL, else the public one) and `wikiosConfig.mediawiki.botUser`; the bot password stays an environment variable
+(`WIKIOS_MEDIAWIKI_BOT_TOKEN`), since the config object holds no secret. The inbound sync (`inbound-mediawiki.ts`) reads
+`mediaWikiApiUrl({ internal: true })`. With only `WIKIOS_MEDIAWIKI_INTERNAL_URL` set (the production cutover's setting), both now go to
+that loopback `api.php`; they used to go to the public host, which after the takeover is WikiOS's own `/api.php`.
 
 ## 3. Scripts (operator-run, outside `src/`)
 

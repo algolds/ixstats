@@ -315,7 +315,9 @@ WIKIOS_MEDIAWIKI_INTERNAL_URL=http://127.0.0.1:8081/api.php
 ```
 
 (IxStates reads it too and starts rendering through loopback after its next restart; the `wikios` ecosystem file sets
-it as well.)
+it as well. The mirror's writes and the inbound sync's reads use it too, since every server-side call to IxWiki's MediaWiki
+does (plan 415), unless `WIKIOS_MEDIAWIKI_API` names another `api.php` for the mirror; before, they went to the public host,
+which after the takeover is WikiOS's own `/api.php`.)
 
 **Rollback:** `sudo rm /etc/nginx/conf.d/wikios-render-internal.conf && sudo nginx -t && sudo systemctl reload nginx`, and
 restore `"$BK/env.production.local.step4"` over `$IX/.env.production.local`.

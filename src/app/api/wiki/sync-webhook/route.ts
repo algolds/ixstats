@@ -8,7 +8,7 @@ import { syncSinglePage } from "~/lib/wiki-os/services/auto-sync-service";
 /**
  * POST /api/wiki/sync-webhook
  *
- * Instant Webhook endpoint for MediaWiki PageSaveComplete hook or MariaDB change notifications.
+ * Instant Webhook endpoint for MediaWiki PageSaveComplete hook (or any change notification an operator wires to it).
  * Immediately syncs the edited page into PostgreSQL in <100ms.
  * Requires WIKI_SYNC_WEBHOOK_SECRET (header x-wiki-webhook-secret or Authorization: Bearer).
  *

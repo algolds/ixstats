@@ -7,7 +7,7 @@
  */
 
 import { z } from "zod";
-import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT, wikiosConfig } from "~/lib/wiki-os/config";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { requestSignal } from "~/lib/wiki-os/adapters/mediawiki/attempt-scope";
 
@@ -19,16 +19,9 @@ const REQUEST_TIMEOUT_MS = 20_000;
 /** The CSRF token MediaWiki hands a session that is not logged in. */
 const ANONYMOUS_CSRF_TOKEN = "+\\";
 
-const PRODUCTION_API = "https://ixwiki.com/api.php";
-
-/** The api.php WikiOS writes to. */
-export function mediaWikiApiUrl(): string {
-  return process.env.WIKIOS_MEDIAWIKI_API ?? PRODUCTION_API;
-}
-
 /** The MediaWiki account the mirror edits as: the bot-password login without its "@appname". */
 export function mirrorBotName(): string | null {
-  const login = process.env.WIKIOS_MEDIAWIKI_BOT_USER?.split("@")[0]?.trim();
+  const login = wikiosConfig.mediawiki.botUser?.split("@")[0]?.trim();
   return login ? normalizeWikiUsername(login) : null;
 }
 
@@ -151,9 +144,9 @@ export async function getBotSessionAndToken(): Promise<{ cookies: string[]; csrf
     return { cookies: cachedBotCookies, csrfToken: cachedBotToken };
   }
 
-  const apiBase = mediaWikiApiUrl();
+  // the api.php and the login are the config's; the bot password is a secret, so it is not part of that object
+  const { writeApiUrl: apiBase, botUser } = wikiosConfig.mediawiki;
   const botToken = process.env.WIKIOS_MEDIAWIKI_BOT_TOKEN;
-  const botUser = process.env.WIKIOS_MEDIAWIKI_BOT_USER;
   if (!botUser || !botToken) {
     throw new Error(
       "WIKIOS_MEDIAWIKI_BOT_USER and WIKIOS_MEDIAWIKI_BOT_TOKEN are not set: the mirror has no MediaWiki account to write as"

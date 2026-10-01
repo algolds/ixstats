@@ -3,11 +3,19 @@
  * Plan 407: the mirror's MediaWiki session. A login that does not succeed is an error: there is no anonymous
  * fallback, because a write with no login would land as an IP edit.
  */
+// The mirror's api.php and bot login come from `wikiosConfig`; this test sets their variables as it runs.
+jest.mock("~/lib/wiki-os/config", () =>
+  jest
+    .requireActual("~/tests/helpers/live-wikios-config")
+    .withLiveEnvironment(jest.requireActual("~/lib/wiki-os/config"))
+);
+
 import {
   getBotSessionAndToken,
   invalidateCsrfToken,
   mirrorBotName,
 } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
+import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { API_URL, createFakeMediaWiki } from "~/tests/helpers/fake-mediawiki";
 
 const realFetch = globalThis.fetch;
@@ -24,6 +32,36 @@ beforeEach(() => {
 
 afterEach(() => {
   globalThis.fetch = realFetch;
+  delete process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL;
+});
+
+describe("the api.php the mirror logs in to (plan 415: wikiosConfig.mediawiki.writeApiUrl)", () => {
+  const urlsRequested = () => wiki.fetch.mock.calls.map(([input]) => String(input).split("?")[0]);
+
+  it("is WIKIOS_MEDIAWIKI_API when it is set", async () => {
+    process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL = "http://127.0.0.1:8081/api.php";
+
+    await getBotSessionAndToken();
+
+    expect(new Set(urlsRequested())).toEqual(new Set([API_URL]));
+  });
+
+  it("is the internal URL when only that is set: a server-side call never goes out through the public host", async () => {
+    delete process.env.WIKIOS_MEDIAWIKI_API;
+    process.env.WIKIOS_MEDIAWIKI_INTERNAL_URL = "http://127.0.0.1:8081/api.php";
+
+    await getBotSessionAndToken();
+
+    expect(new Set(urlsRequested())).toEqual(new Set(["http://127.0.0.1:8081/api.php"]));
+  });
+
+  it("is the public api.php when neither is set", async () => {
+    delete process.env.WIKIOS_MEDIAWIKI_API;
+
+    await getBotSessionAndToken();
+
+    expect(new Set(urlsRequested())).toEqual(new Set([`${mediaWikiOrigin()}/api.php`]));
+  });
 });
 
 describe("getBotSessionAndToken", () => {

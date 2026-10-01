@@ -6,6 +6,13 @@
  * current one, and every revision is stamped with its MediaWiki revision. MediaWiki is a scripted fake: nothing
  * here touches a real wiki.
  */
+// The mirror's api.php and bot login come from `wikiosConfig`; this test sets their variables as it runs.
+jest.mock("~/lib/wiki-os/config", () =>
+  jest
+    .requireActual("~/tests/helpers/live-wikios-config")
+    .withLiveEnvironment(jest.requireActual("~/lib/wiki-os/config"))
+);
+
 import type { WikiMirrorJob } from "@prisma/client";
 import { ConflictError } from "~/lib/app-error";
 import { invalidateCsrfToken } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";

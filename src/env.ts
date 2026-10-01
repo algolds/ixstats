@@ -92,9 +92,9 @@ export const env = createEnv({
     // Declared for visibility; call sites still read process.env directly (plan 339).
     // MediaWiki bot password (lgpassword) for the WikiOS bot login (csrf-cache.ts)
     WIKIOS_MEDIAWIKI_BOT_TOKEN: z.string().optional(),
-    // MediaWiki api.php URL used for WikiOS writes and CSRF tokens
+    // MediaWiki api.php URL the mirror logs in to and writes through (default: WIKIOS_MEDIAWIKI_INTERNAL_URL, else the public api.php)
     WIKIOS_MEDIAWIKI_API: z.string().optional(),
-    // Internal (same-server) ixwiki api.php URL that overrides the public one for reads
+    // Internal (same-server) ixwiki api.php URL that overrides the public one for every server-side call: renders, reads and the mirror's writes
     WIKIOS_MEDIAWIKI_INTERNAL_URL: z.string().optional(),
     // iiwiki api.php proxy URL that overrides the default iiwiki endpoint
     IIWIKI_DEV_PROXY_URL: z.string().optional(),
