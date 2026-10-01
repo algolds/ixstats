@@ -15,6 +15,7 @@ import {
   LOGIN_NONCE_COOKIE,
   SESSION_COOKIE,
   readCookie,
+  readSessionCookie,
   serializeCookie,
 } from "~/lib/wiki-os/api-compat/auth";
 import { createApiDeps } from "~/lib/wiki-os/api-compat/deps";
@@ -30,11 +31,16 @@ export const dynamic = "force-dynamic";
 const MAX_BODY_BYTES = 4 * 1024 * 1024;
 /**
  * The largest body of an upload (`action=upload`: a multipart POST with the file): the upload limit plus the form's
- * other fields. Only a request that carries a session cookie may send that much (the session is checked before
- * anything is written, but the body is read first): an anonymous caller keeps the small limit. It stays under Next's
+ * other fields. Only a request whose session cookie this server signed may send that much (the signature is a cheap
+ * HMAC check; the session itself is looked up after the body is read): anyone else keeps the small limit. It stays under Next's
  * `experimental.proxyClientMaxBodySize` (10 MiB by default), which truncates a cloned body past that size.
  */
 const MAX_UPLOAD_BODY_BYTES = MAX_UPLOAD_BYTES + 64 * 1024;
+/**
+ * Parts a multipart body may have. A form needs the action's fields and a file part (api.php takes under 30 parameters);
+ * the platform's `formData()` costs seconds and hundreds of MB on 10 MB of tiny parts, so they are counted, natively, before it runs.
+ */
+const MAX_MULTIPART_PARTS = 64;
 
 const deps = createApiDeps();
 
@@ -70,10 +76,37 @@ async function readBodyBytes(req: NextRequest, maxBytes: number): Promise<Uint8A
   return Buffer.concat(chunks);
 }
 
+/** Thrown when a multipart body has more parts than api.php reads. */
+class TooManyParts extends Error {}
+
+/** Whether `bytes` has more than `MAX_MULTIPART_PARTS` parts: occurrences of its boundary line, counted without parsing the body. */
+function hasTooManyParts(bytes: Uint8Array, contentType: string): boolean {
+  const boundary = /boundary=(?:"([^"]+)"|([^;\s]+))/i.exec(contentType);
+  const name = boundary?.[1] ?? boundary?.[2];
+  if (!name) return false; // `formData()` refuses a body with no boundary
+  const body = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const marker = Buffer.from(`--${name}`);
+  // one boundary line per part, and one more closes the body
+  let lines = 0;
+  for (let at = body.indexOf(marker); at !== -1; at = body.indexOf(marker, at + marker.length)) {
+    if (++lines > MAX_MULTIPART_PARTS + 1) return true;
+  }
+  return false;
+}
+
 /** The fields of a POST body, and the file parts of a multipart one (`action=upload`'s `file`). */
 interface RequestBody {
   fields: Array<readonly [string, string]>;
   files: Map<string, RequestFile>;
+}
+
+/** Whether the cookie is a session this server signed (it may still be expired: the lookup comes later). Without a signing key, none is. */
+function hasSignedSession(cookie: string | undefined): boolean {
+  try {
+    return readSessionCookie(cookie) !== null;
+  } catch {
+    return false;
+  }
 }
 
 async function readBody(req: NextRequest, hasSession: boolean): Promise<RequestBody> {
@@ -89,6 +122,7 @@ async function readBody(req: NextRequest, hasSession: boolean): Promise<RequestB
       files: new Map(),
     };
   }
+  if (hasTooManyParts(bytes, type)) throw new TooManyParts();
   // The bytes are already bounded; the platform's multipart parser reads them from memory.
   const form = await new Response(bytes, { headers: { "content-type": type } }).formData();
   const body: RequestBody = { fields: [], files: new Map() };
@@ -134,9 +168,16 @@ async function handle(req: NextRequest): Promise<NextResponse> {
   const sessionCookie = readCookie(cookieHeader, SESSION_COOKIE);
   let body: RequestBody | null = null;
   try {
-    body = method === "POST" ? await readBody(req, sessionCookie !== undefined) : null;
+    body = method === "POST" ? await readBody(req, hasSignedSession(sessionCookie)) : null;
   } catch (error) {
     if (error instanceof BodyTooLarge) return tooBig();
+    if (error instanceof TooManyParts) {
+      const info = `A multipart request may have at most ${MAX_MULTIPART_PARTS} parts.`;
+      return NextResponse.json(
+        { error: { code: "badrequest", info, "*": API_DOCREF } },
+        { status: 400, headers: jsonHeaders("badrequest") }
+      );
+    }
     // A multipart body the parser cannot read.
     return NextResponse.json(
       { error: { code: "badrequest", info: "The request body could not be read.", "*": API_DOCREF } },

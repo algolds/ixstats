@@ -237,6 +237,37 @@ describe("an upload: a multipart body with a file part (plan 411)", () => {
     expect((await json(anonymous)).error.code).toBe("toobig");
   });
 
+  it("lets only a session this server signed send a file that large: a made-up cookie keeps the 4 MB limit (review M4)", async () => {
+    const { cookie } = await login();
+    const token = await csrfToken(cookie);
+    const big = new Uint8Array(5 * MB);
+
+    for (const forged of ["wikios_api_session=forged", "wikios_api_session=abc.def", "wikios_api_session="]) {
+      const response = await route.POST(new NextRequest(url(), { method: "POST", headers: { cookie: forged }, body: uploadForm(big, token) }));
+      expect(response.status).toBe(413);
+      expect((await json(response)).error.code).toBe("toobig");
+    }
+  });
+
+  it("counts a multipart body's parts before it parses them, and refuses too many (review M4)", async () => {
+    const { cookie } = await login();
+    const token = await csrfToken(cookie);
+    const many = (parts: number) => {
+      const form = uploadForm(new Uint8Array([1, 2, 3]), token);
+      for (let i = 0; i < parts; i++) form.set(`pad${i}`, "x");
+      return form;
+    };
+
+    const accepted = await route.POST(new NextRequest(url(), { method: "POST", headers: { cookie }, body: many(40) }));
+    expect((await json(accepted)).upload.result).toBe("Success");
+
+    const started = Date.now();
+    const refused = await route.POST(new NextRequest(url(), { method: "POST", headers: { cookie }, body: many(5000) }));
+    expect(refused.status).toBe(400);
+    expect((await json(refused)).error).toMatchObject({ code: "badrequest", info: expect.stringContaining("64 parts") });
+    expect(Date.now() - started).toBeLessThan(2_000);
+  });
+
   it("refuses a body past the upload limit even with a session, and stops reading it", async () => {
     const { cookie } = await login();
     const token = await csrfToken(cookie);
