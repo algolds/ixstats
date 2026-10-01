@@ -6,6 +6,7 @@
 import { transform } from "lightningcss";
 import postcss from "postcss";
 import { ARTICLE_STYLE_SCOPE, scopeTemplateStyles } from "~/lib/utils/scope-template-styles";
+import { violations, OWN_ORIGIN } from "../../../scripts/lib/template-styles-oracle";
 import {
   sanitizeHtml,
   sanitizeUserContent,
@@ -196,6 +197,34 @@ describe("the other sanitizers are unchanged by the article's allowances", () =>
   it("the article sanitizer keeps a scoped style", () => {
     expect(sanitizeWikiArticleHtml(`${OPEN}.a{color:red}</style><p>x</p>`)).toBe(
       `${OPEN}${S} .a{color:red}</style><p>x</p>`
+    );
+  });
+});
+
+describe("a comment holding a `)` inside an unquoted url() (a browser reads url text, the lexer drops a comment)", () => {
+  it.each([
+    [`.a{background:url(a/*)*/ "x);}body{display:none}.b{background:url(a/*)*/ "y)}`],
+    [`.a{background:url(a/*)*/"x);}body{display:none}.b{background:url(a/*)*/"y)}`],
+    [`.a{background:url(a/*)*/'x);}body{display:none}.b{background:url(a/*)*/'y)}`],
+    [`.a{background:URL(a/*)*/ "x);}body{display:none}.b{background:url(a/*)*/ "y)}`],
+    [`.a{background:\\75 rl(a/*)*/ "x);}body{display:none}.b{background:url(a/*)*/ "y)}`],
+    [`.a:is(url(a/*)*/ "x)){color:red}body{display:none}.b:is(url(a/*)*/ "y)){color:red}`],
+    [`.a{background:url(/*)*/a "x);}body{display:none}.b{background:url(/*)*/a "y)}`],
+  ])("%s keeps no rule outside the root", (css) => {
+    expect(violations(scopeTemplateStyles(css, OWN_ORIGIN))).toEqual([]);
+  });
+
+  it("end to end: the article sanitizer does not keep `body{display:none}`", () => {
+    const out = sanitizeWikiArticleHtml(
+      `${OPEN}.a{background:url(a/*)*/ "x);}body{display:none}.b{background:url(a/*)*/ "y)}</style><p>t</p>`
+    );
+
+    expect(out).not.toMatch(/body\{display:none\}/);
+  });
+
+  it("a comment after a quoted url is still a comment: the url is a string, the rest is read as before", () => {
+    expect(scopeTemplateStyles(`.a{background:url("a.png") /* c */;color:red}`, OWN_ORIGIN)).toBe(
+      `${S} .a{background:url("a.png");color:red}`
     );
   });
 });

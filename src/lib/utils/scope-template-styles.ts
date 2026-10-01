@@ -107,10 +107,12 @@ function endsWithUrlName(masked: string): boolean {
 }
 
 /**
- * Whether the unquoted `url(` whose contents begin at `start` is a <bad-url-token> (CSS Syntax 4.3.6): a quote, a
- * `(`, a character a url must not hold, a bad escape, or whitespace followed by more than the closing `)`. A browser
- * reads a bad url as running to the first unescaped `)`, with its quotes and braces inert; a lexer that read the
- * quote as a string would see the sheet's structure somewhere else, and the text it keeps would not be what it
+ * Whether the unquoted `url(` whose contents begin at `start` is read differently by a browser and by `lex()`: a
+ * <bad-url-token> (CSS Syntax 4.3.6: a quote, a `(`, a character a url must not hold, a bad escape, or whitespace
+ * followed by more than the closing `)`), or a comment opener, which is text inside an unquoted url but a comment to
+ * `lex()` (a `)` after it ends the url for the browser, while the lexer drops it with the comment).
+ * A browser reads a bad url as running to the first unescaped `)`, with its quotes and braces inert; a lexer that read
+ * the quote as a string would see the sheet's structure somewhere else, and the text it keeps would not be what it
  * judged. `url("...")` and `url( '...' )` (a function holding a string) are not this case.
  */
 function isBadUrl(css: string, start: number): boolean {
@@ -122,6 +124,7 @@ function isBadUrl(css: string, start: number): boolean {
     const ch = css.charAt(i);
     if (ch === ")") return false;
     if (ch === '"' || ch === "'" || ch === "(" || NON_PRINTABLE.test(ch)) return true;
+    if (ch === "/" && css.charAt(i + 1) === "*") return true; // url text to a browser, a comment to this lexer
     if (CSS_SPACE.test(ch)) {
       let after = i + 1;
       while (CSS_SPACE.test(css.charAt(after))) after++;
