@@ -4,6 +4,18 @@ import { parseInfoboxToHtml } from "./infobox-parser";
 import { splitBalancedPipes } from "../wikitext/parameter-parser";
 import { findMatchingClosingBrackets } from "../wikitext/link-parser";
 import { matchBrackets } from "../wikitext/match-index";
+import {
+  nextFileOpener,
+  replaceInlineTemplates,
+  stripBareExternalLinks,
+  stripComments,
+  stripHtmlTags,
+  stripNamespacedLinks,
+  stripSelfClosingRefs,
+  stripTagBlocks,
+  stripUnclosedTemplateTail,
+  unpackExternalLinks,
+} from "./clean-markup-passes";
 import { extractTableCellContent, splitBalancedDoubleTokens } from "../wikitext/table-parser";
 
 /**
@@ -15,48 +27,58 @@ function stripWikitextTemplates(input: string): string {
 
   let text = input;
 
-  // 1. Process inline text templates that should render nicely
+  // 1. Process inline text templates that should render nicely. Each is cut at the first `}}` (see
+  // replaceInlineTemplates), so a page of `{{flag|` that never closes is read once, not once per opener.
   // Handle {{flag|Urcea}} -> Urcea, {{flagicon|Urcea}} -> ""
-  text = text.replace(
-    /\{\{(?:flag|flagcountry|flagicon)\s*\|\s*([^|}]+)[^}]*\}\}/gi,
-    (_match, name: string) => {
-      return _match.toLowerCase().includes("flagicon") ? "" : name.trim();
-    }
+  text = replaceInlineTemplates(
+    text,
+    /\{\{(?:flag|flagcountry|flagicon)\s*\|\s*([^|}]+)[^}]*\}\}/,
+    (match) => (match[0].toLowerCase().includes("flagicon") ? "" : (match[1] ?? "").trim())
   );
 
   // Handle {{quote|Text|Author}} or {{blockquote|Text}}
-  text = text.replace(
-    /\{\{(?:quote|blockquote|cite quote)\s*\|\s*([^|}]+)(?:\|([^|}]+))?[^}]*\}\}/gi,
-    (_match, quote: string, author?: string) => {
-      const q = quote.trim();
-      const a = author ? author.trim() : "";
+  text = replaceInlineTemplates(
+    text,
+    /\{\{(?:quote|blockquote|cite quote)\s*\|\s*([^|}]+)(?:\|([^|}]+))?[^}]*\}\}/,
+    (match) => {
+      const q = (match[1] ?? "").trim();
+      const a = match[2] ? match[2].trim() : "";
       return `\n\n<blockquote class="my-2 border-l-2 border-primary/50 pl-3 italic text-muted-foreground">${q}${a ? ` &mdash; <span class="font-semibold text-foreground">${a}</span>` : ""}</blockquote>\n\n`;
     }
   );
 
   // Handle {{main|Article}} or {{see also|Article}} or {{further|Article}}
-  text = text.replace(
-    /\{\{(?:main|main article|see also|further)\s*\|\s*([^|}]+)[^}]*\}\}/gi,
-    (_match, target: string) => {
-      const t = target.trim();
+  text = replaceInlineTemplates(
+    text,
+    /\{\{(?:main|main article|see also|further)\s*\|\s*([^|}]+)[^}]*\}\}/,
+    (match) => {
+      const t = (match[1] ?? "").trim();
       const route = titleToWikiOSRoute(t);
       return `\n\n<p class="text-xs italic text-muted-foreground/80 my-1 font-medium">Main article: <a href="${route}" class="text-primary hover:underline font-semibold">${t}</a></p>\n\n`;
     }
   );
 
-  // Handle {{convert|val|unit1|unit2}} -> "val unit1"
-  text = text.replace(
-    /\{\{convert\s*\|\s*([\d.]+)\s*\|\s*([^|}]+)\s*\|\s*([^|}]+)[^}]*\}\}/gi,
-    (_match, val: string, u1: string) => {
-      return `${val} ${u1.trim()}`;
-    }
+  // Handle {{convert|val|unit1|unit2}} -> "val unit1". (No `\s*` around the units: the characters they
+  // may hold already include blanks, and a run of blanks there made the expression quadratic.)
+  text = replaceInlineTemplates(
+    text,
+    /\{\{convert\s*\|\s*([\d.]+)\s*\|([^|}]+)\|[^|}]+[^}]*\}\}/,
+    (match) => `${match[1] ?? ""} ${(match[2] ?? "").trim()}`
   );
 
   // Handle {{lang|code|text}} or {{lang-xx|text}}
-  text = text.replace(/\{\{lang(?:-[a-z]+)?\s*\|(?:[a-z-]+\|)?([^|}]+)[^}]*\}\}/gi, "$1");
+  text = replaceInlineTemplates(
+    text,
+    /\{\{lang(?:-[a-z]+)?\s*\|(?:[a-z-]+\|)?([^|}]+)[^}]*\}\}/,
+    (match) => match[1] ?? ""
+  );
 
   // Handle {{nowrap|text}}, {{small|text}}, {{smaller|text}}, {{nobr|text}}
-  text = text.replace(/\{\{(?:nowrap|nobr|small|smaller|font)\s*\|\s*([^|}]+)[^}]*\}\}/gi, "$1");
+  text = replaceInlineTemplates(
+    text,
+    /\{\{(?:nowrap|nobr|small|smaller|font)\s*\|\s*([^|}]+)[^}]*\}\}/,
+    (match) => match[1] ?? ""
+  );
 
   // 2. Strip multiline unclosed top-level templates (e.g. Infobox truncated at end of excerpt)
   text = text.replace(
@@ -101,7 +123,7 @@ function stripWikitextTemplates(input: string): string {
   }
 
   // 4. Cleanup any unclosed {{... at the end or stray unattached }}
-  text = text.replace(/\{\{[^}]*$/g, "");
+  text = stripUnclosedTemplateTail(text);
   text = text.replace(/^[^{]*\}\}/g, "");
   text = text.replace(/\{\{|\}\}/g, "");
 
@@ -235,31 +257,26 @@ function convertWikitextImages(text: string, wikiSource: string): string {
  * Strips wikitext file, image, and media links, properly handling nested brackets.
  */
 export function stripWikitextFiles(text: string): string {
-  let result = "";
-  let i = 0;
+  const pieces: string[] = [];
+  let copied = 0;
+  let from = 0;
   // Where every `[[` closes, from one pass: scanning forward from each opener would be quadratic on a page
   // with thousands of openers that never close.
   const index = matchBrackets(text);
 
-  while (i < text.length) {
-    const prefix = text.slice(i, i + 8).toLowerCase();
-    if (
-      prefix.startsWith("[[file:") ||
-      prefix.startsWith("[[image:") ||
-      prefix.startsWith("[[media:")
-    ) {
-      const closeIdx = findMatchingClosingBrackets(text, i, index);
-      if (closeIdx !== -1) {
-        i = closeIdx + 2;
-        continue;
-      }
+  for (;;) {
+    const open = nextFileOpener(text, from);
+    if (open === -1) break;
+    const closeIdx = findMatchingClosingBrackets(text, open, index);
+    if (closeIdx === -1) {
+      from = open + 1;
+      continue;
     }
-
-    result += text[i];
-    i++;
+    pieces.push(text.slice(copied, open));
+    copied = from = closeIdx + 2;
   }
-
-  return result;
+  pieces.push(text.slice(copied));
+  return pieces.join("");
 }
 
 /**
@@ -537,51 +554,54 @@ export function unpackInternalLinks(text: string): string {
 }
 
 /**
- * ponytail: the most `cleanWikiMarkup` reads of a text, 20,000 characters. Several of its passes are
- * regular expressions that a text of openers that never close (`[[` repeated) makes quadratic, so a
- * hostile 200 kB page would hold the event loop for seconds; past this ceiling the text is cut before any
- * pass runs, which bounds the worst case at about 0.2 s. An excerpt (`maxLength > 0`) only ever shows
- * the lead of the page, and `saveArticle` and the inbound sync already cut to this length; a caller that
- * cleans a whole section (`maxLength` 0) gets the first 20,000 characters of it.
+ * ponytail: the most an EXCERPT (`cleanWikiMarkup` with `maxLength > 0`) reads of a text, 20,000
+ * characters: it only shows the lead of the page, and `saveArticle` and the inbound sync already cut to
+ * this length, so a hostile 2 MB page costs what 20,000 characters cost. A caller that cleans a whole
+ * section (`maxLength` 0: the country-import heuristics, the cache and content extractors) gets all of
+ * the text, and every pass reads it in linear time (clean-markup-passes.ts); the ones that stayed regular
+ * expressions cannot run away (anchored, or bounded by the next `=`, `}` or line end).
  */
 export const CLEAN_MARKUP_CEILING = 20_000;
 
 /**
  * ponytail: Single authoritative plaintext wikitext cleaner.
  * Strips all wikitext markup, templates, tags, references, and formatting into clean plain text.
- * Reads at most CLEAN_MARKUP_CEILING characters of `rawText`.
+ * An excerpt (`maxLength > 0`) reads at most CLEAN_MARKUP_CEILING characters of `rawText`; with
+ * `maxLength` 0 the whole text is cleaned.
  */
 export function cleanWikiMarkup(rawText: string | null | undefined, maxLength: number = 0): string {
   if (!rawText || !rawText.trim()) return "";
 
   let text =
-    rawText.length > CLEAN_MARKUP_CEILING ? rawText.slice(0, CLEAN_MARKUP_CEILING) : rawText;
+    maxLength > 0 && rawText.length > CLEAN_MARKUP_CEILING
+      ? rawText.slice(0, CLEAN_MARKUP_CEILING)
+      : rawText;
 
   // 1. Strip blurb tags: [blurb:slug|Title]
   text = text.replace(/^\[blurb:[^\]]+\]\s*/gi, "");
 
   // 2. Strip HTML comments: <!-- ... -->
-  text = text.replace(/<!--[\s\S]*?-->/g, "");
+  text = stripComments(text);
 
   // 3. Strip MediaWiki magic words & behavior switches
   text = text.replace(/__(?:NOTOC|TOC|NOEDITSECTION|FORCETOC|SHOWFACTBOX|DISAMBIG)__/gi, "");
 
   // 4. Strip ref tags: <ref>...</ref> or <ref ... />
-  text = text.replace(/<ref\b[^>]*>[\s\S]*?<\/ref>/gi, "");
-  text = text.replace(/<ref\b[^>]*\/>/gi, "");
+  text = stripTagBlocks(text, "ref");
+  text = stripSelfClosingRefs(text);
 
   // 5. Strip gallery and math tags
-  text = text.replace(/<gallery\b[^>]*>[\s\S]*?<\/gallery>/gi, "");
-  text = text.replace(/<math\b[^>]*>[\s\S]*?<\/math>/gi, "");
+  text = stripTagBlocks(text, "gallery");
+  text = stripTagBlocks(text, "math");
 
   // 6. Strip file/image links: [[File:...]], [[Image:...]]
   text = stripWikitextFiles(text);
 
   // 7. Strip category links: [[Category:...]]
-  text = text.replace(/\[\[(?:Category|category):[^\]]+\]\]/gi, "");
+  text = stripNamespacedLinks(text, "category:");
 
   // 8. Strip Template references: [[Template:...]] or Template:Foo
-  text = text.replace(/\[\[(?:Template|template):[^\]]+\]\]/gi, "");
+  text = stripNamespacedLinks(text, "template:");
   text = text.replace(/(?:Template|template)\s*:[^\n.<|\]}]*/gi, "");
 
   // 9. Iteratively strip nested templates: {{...}}
@@ -591,11 +611,11 @@ export function cleanWikiMarkup(rawText: string | null | undefined, maxLength: n
   text = unpackInternalLinks(text);
 
   // 11. Convert external links [url text] -> text or [url] -> ""
-  text = text.replace(/\[https?:\/\/[^\s\]]+\s+([^\]]+)\]/g, "$1");
-  text = text.replace(/\[https?:\/\/[^\s\]]+\]/g, "");
+  text = unpackExternalLinks(text);
+  text = stripBareExternalLinks(text);
 
   // 12. Strip HTML tags
-  text = text.replace(/<[^>]+>/g, "");
+  text = stripHtmlTags(text);
 
   // 13. Strip headings: == Heading ==
   text = text.replace(/^==+[^=]+==+/gm, "");

@@ -2,8 +2,9 @@
 /**
  * Plan 406 follow-up: `cleanWikiMarkup` (and so `cleanWikitextExcerpt`) runs on text MediaWiki editors
  * write. Internal links are unpacked in one pass (the regular expression rescanned the rest of the
- * text from every `[[` that never closed), file links are matched from one bracket index, and no text
- * is read past CLEAN_MARKUP_CEILING characters, which bounds every other pass.
+ * text from every `[[` that never closed), file links are matched from one bracket index, and an EXCERPT
+ * (`maxLength > 0`) is read no further than CLEAN_MARKUP_CEILING characters. A whole page (`maxLength` 0)
+ * is read in full, in linear time: tests/lib/wiki-os/clean-markup-linear.test.ts.
  */
 import {
   CLEAN_MARKUP_CEILING,
@@ -123,14 +124,14 @@ describe("cleanWikiMarkup on hostile text", () => {
     expect(performance.now() - started).toBeLessThan(BUDGET_MS);
   });
 
-  it("reads no more than the ceiling of a text", () => {
+  it("reads no more than the ceiling of a text for an excerpt, and all of it for a whole page", () => {
     expect(CLEAN_MARKUP_CEILING).toBe(20_000);
     const lead = "The lead paragraph. ";
     const text = lead + "x ".repeat(100_000) + " END";
-    expect(cleanWikiMarkup(text)).toBe(
-      (lead + "x ".repeat(100_000)).slice(0, CLEAN_MARKUP_CEILING).trim()
-    );
-    expect(cleanWikiMarkup(text)).not.toContain("END");
+    const excerpt = cleanWikiMarkup(text, 1_000_000);
+    expect(excerpt).toBe((lead + "x ".repeat(100_000)).slice(0, CLEAN_MARKUP_CEILING).trim());
+    expect(excerpt).not.toContain("END");
+    expect(cleanWikiMarkup(text).endsWith(" END")).toBe(true);
   });
 
   it("leaves a text within the ceiling, and an excerpt of a long page, as they were", () => {
