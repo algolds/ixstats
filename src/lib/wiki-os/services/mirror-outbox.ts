@@ -6,15 +6,19 @@
  * its job and a rolled-back one never does. The jobs are applied by services/mirror-worker.ts: on the
  * `wiki-mirror` cron job, and in-process shortly after a write (`scheduleMirrorKick`).
  *
- * Only the `ixwiki` realm has a classic MediaWiki to mirror to; a write to any other realm enqueues nothing.
+ * Only the `ixwiki` realm has a classic MediaWiki to mirror to, and not its `MediaWiki:` namespace (see `isMirrored`):
+ * a write to anything else enqueues nothing.
  * This module holds no MediaWiki code and imports no worker at load time, so the repositories can use it.
  */
 
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
+import { canonicalizeTitle } from "../core/title";
 
 /** The one realm that is mirrored. */
 export const MIRROR_SOURCE = "ixwiki";
+/** The `MediaWiki:` namespace: site messages, behind the `editinterface` right the mirror account must never hold. */
+const INTERFACE_NAMESPACE = 8;
 /** Name of the cron job and of its advisory lock: the cron runner and the in-process kick share it. */
 export const MIRROR_LOCK_NAME = "wiki-mirror";
 
@@ -75,9 +79,24 @@ export interface RevisionJobInput {
   restore?: { summary: string };
 }
 
+/**
+ * Whether a write to `titles` of `source` is mirrored at all: only the ixwiki realm is, and never the `MediaWiki:`
+ * namespace. MediaWiki refuses the mirror account every write there (an import silently skips it, an edit is
+ * `protectednamespace-interface`), so such a job could only burn its attempts, go dead and block its title.
+ */
+function isMirrored(source: string | undefined, titles: readonly string[]): boolean {
+  return (
+    (source ?? MIRROR_SOURCE) === MIRROR_SOURCE &&
+    titles.every(
+      (title) =>
+        canonicalizeTitle(title, { source: MIRROR_SOURCE })?.namespaceId !== INTERFACE_NAMESPACE
+    )
+  );
+}
+
 /** Queue a `revision` job: push WikiOS revision `revisionId` of `title` to MediaWiki. */
 export async function enqueueRevisionJob(tx: Tx, job: RevisionJobInput): Promise<void> {
-  if ((job.source ?? MIRROR_SOURCE) !== MIRROR_SOURCE) return;
+  if (!isMirrored(job.source, [job.title])) return;
   const payload: RevisionPayload | undefined = job.restore
     ? { restore: true, summary: job.restore.summary }
     : undefined;
@@ -99,7 +118,7 @@ async function insertPageJob(
   job: PageJobBase,
   payload: MovePayload | ReasonPayload | ProtectPayload
 ): Promise<void> {
-  if ((job.source ?? MIRROR_SOURCE) !== MIRROR_SOURCE) return;
+  if (!isMirrored(job.source, "to" in payload ? [job.title, payload.to] : [job.title])) return;
   await tx.wikiMirrorJob.create({
     data: {
       source: MIRROR_SOURCE,

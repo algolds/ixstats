@@ -138,6 +138,55 @@ describe("the inserts", () => {
     expect(create).not.toHaveBeenCalled();
   });
 
+  it("writes nothing for the MediaWiki: namespace, which the mirror account may never write", async () => {
+    await enqueueRevisionJob(tx, { title: "MediaWiki:Sidebar", articleId: "a1", revisionId: "r1" });
+    await enqueueRevisionJob(tx, {
+      title: "mediawiki:common.css",
+      articleId: "a1",
+      revisionId: "r1",
+    });
+    await enqueueDeleteJob(tx, "delete", {
+      title: "MediaWiki:Sidebar",
+      articleId: "a1",
+      logId: "l",
+      reason: "",
+    });
+    await enqueueProtectJob(tx, {
+      title: "MediaWiki:Sidebar",
+      articleId: "a1",
+      logId: "l",
+      reason: "",
+      restrictions: [{ action: "edit", level: "sysop", expiresAt: null }],
+    });
+    // a move out of, or into, the namespace is as impossible
+    await enqueueMoveJob(tx, {
+      title: "MediaWiki:Sidebar",
+      articleId: "a1",
+      logId: "l",
+      to: "Sidebar",
+      reason: "",
+      leaveRedirect: true,
+    });
+    await enqueueMoveJob(tx, {
+      title: "Sidebar",
+      articleId: "a1",
+      logId: "l",
+      to: "MediaWiki:Sidebar",
+      reason: "",
+      leaveRedirect: true,
+    });
+
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("still mirrors the namespaces around it (Template:, Module:, MediaWiki talk:)", async () => {
+    for (const title of ["Template:Box", "Module:Box", "MediaWiki talk:Sidebar", "Foo"]) {
+      await enqueueRevisionJob(tx, { title, articleId: "a1", revisionId: "r1" });
+    }
+
+    expect(create).toHaveBeenCalledTimes(4);
+  });
+
   it("lets a failed insert fail the caller's transaction", async () => {
     create.mockRejectedValue(new Error("outbox down"));
 

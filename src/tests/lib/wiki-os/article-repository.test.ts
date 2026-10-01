@@ -508,6 +508,21 @@ describe("ArticleRepository.saveArticle and the mirror outbox (plan 407)", () =>
     expect(scheduleMirrorKick).not.toHaveBeenCalled();
   });
 
+  it("writes no job for the MediaWiki: namespace: the mirror account may never write it", async () => {
+    mockUpsert.mockImplementation(async (args: { create: { title: string } }) =>
+      savedRow(args.create.title)
+    );
+
+    await ArticleRepository.saveArticle({
+      slug: "MediaWiki:Sidebar",
+      title: "MediaWiki:Sidebar",
+      wikitext: "text",
+    });
+
+    expect(mockRevisionCreate).toHaveBeenCalledTimes(1);
+    expect(mockJobCreate).not.toHaveBeenCalled();
+  });
+
   it("writes no job for a realm that has no MediaWiki to mirror to", async () => {
     await save({ source: "iiwiki" });
 
