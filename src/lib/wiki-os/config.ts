@@ -161,4 +161,26 @@ export function buildApiUrl(
   return url.toString();
 }
 
+// ---------------------------------------------------------------------------
+// Uploads (plan 411)
+// ---------------------------------------------------------------------------
+
+/**
+ * The largest upload WikiOS takes, in bytes. A decimal 10 MB, not 10 MiB: the request body (the file itself, see
+ * app/api/wiki/upload) must stay under Next's `experimental.proxyClientMaxBodySize` (10 MiB by default), which clones
+ * a proxied body and silently truncates it past that size. Raise the two together (docs/operations/wikios-v1-cutover.md).
+ */
+export const MAX_UPLOAD_BYTES = 10_000_000;
+
+/** The file types an upload may be, by extension. The bytes are what decide: see core/file-sniff.ts. */
+export const UPLOAD_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "pdf"] as const;
+
+/** Where WikiOS keeps an upload until MediaWiki holds it too: WIKIOS_UPLOAD_DIR, else `.wikios-uploads` under the app. Server only. */
+export function getUploadDir(): string {
+  return process.env.WIKIOS_UPLOAD_DIR || `${process.cwd()}/.wikios-uploads`;
+}
+
+/** The path WikiOS serves an upload from while it alone holds the bytes (`wiki_assets.url`); the file's name follows. */
+export const STAGED_FILE_PATH = "/api/wiki/file/";
+
 export { type CachedArticleData } from "./types";
