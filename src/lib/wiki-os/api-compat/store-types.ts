@@ -5,6 +5,8 @@
  * test hands a module a fake. Rows carry MediaWiki's integers (`pageId`, `revId`), never cuids.
  */
 
+import type { JsonValue } from "./format";
+
 export interface SiteStatistics {
   pages: number;
   /** Content pages: main-namespace pages that are not redirects. */
@@ -57,6 +59,8 @@ export interface RevisionRow {
   comment: string | null;
   minor: boolean;
   size: number;
+  /** Bytes added (negative: removed) against the previous revision. */
+  sizeDiff: number;
   sha1: string | null;
   /** The wikitext; null unless asked for. */
   content: string | null;
@@ -140,6 +144,162 @@ export interface PerPageResult<T> {
   next: { pageId: number; key: string } | null;
 }
 
+/** A page in a listing (no revision data). */
+export interface PageListRow {
+  pageId: number;
+  title: string;
+  namespace: number;
+  isRedirect: boolean;
+}
+
+export interface ListPagesQuery {
+  namespace: number;
+  /** Canonical full titles (namespace prefix included): the listing starts at `start` (inclusive), runs in `dir`, stops at `end`. */
+  start?: string;
+  end?: string;
+  prefix?: string;
+  filterRedirects: "all" | "redirects" | "nonredirects";
+  dir: "ascending" | "descending";
+  limit: number;
+}
+
+export interface CategoryMemberQuery {
+  /** Canonical title of the category ("Category:Cats"). */
+  category: string;
+  namespaces?: readonly number[];
+  types: readonly ("page" | "subcat" | "file")[];
+  sort: "sortkey" | "timestamp";
+  dir: "ascending" | "descending";
+  limit: number;
+  /** The first row to return: its sort value (the sort key or an ISO time) and page id. */
+  cursor?: { sortValue: string; pageId: number };
+  /** For sort=timestamp: only members added within [start, end] (in `dir`'s order). */
+  start?: Date;
+  end?: Date;
+}
+
+export interface CategoryMemberRow extends PageListRow {
+  sortKey: string | null;
+  /** The value the listing sorts by: the sort key (or title) or the ISO time the page was added. */
+  sortValue: string;
+  addedAt: Date;
+}
+
+export interface BacklinkQuery {
+  /** Canonical title the pages link to. */
+  target: string;
+  namespaces?: readonly number[];
+  filterRedirects: "all" | "redirects" | "nonredirects";
+  limit: number;
+  /** The first page id to return. */
+  cursor?: number;
+}
+
+export interface RandomPagesQuery {
+  namespaces: readonly number[];
+  filterRedirects: "all" | "redirects" | "nonredirects";
+  limit: number;
+}
+
+export interface CategorySummaryRow {
+  name: string;
+  members: number;
+}
+
+export interface CategoryListQuery {
+  /** Category names (without the namespace prefix). */
+  start?: string;
+  end?: string;
+  prefix?: string;
+  dir: "ascending" | "descending";
+  limit: number;
+}
+
+export interface LogRow {
+  logId: number;
+  type: string;
+  action: string;
+  /** Canonical title the entry is about. */
+  title: string;
+  namespace: number;
+  /** The page's id when it is a page WikiOS holds, else 0. */
+  pageId: number;
+  actor: string;
+  comment: string | null;
+  params: JsonValue;
+  timestamp: Date;
+}
+
+export interface LogQuery {
+  type?: string;
+  /** "block/reblock" style: the entry's action, with `type`. */
+  action?: string;
+  title?: string;
+  /** Titles start with this (canonical). */
+  titlePrefix?: string;
+  user?: string;
+  excludeUser?: string;
+  dir: "older" | "newer";
+  from?: Date;
+  to?: Date;
+  /** The first row to return. */
+  cursor?: { timestamp: Date; logId: number };
+  /** Returns up to limit + 1 rows. */
+  limit: number;
+}
+
+export interface UserListQuery {
+  start?: string;
+  end?: string;
+  prefix?: string;
+  /** Only members of this explicit group. */
+  group?: string;
+  excludeGroup?: string;
+  dir: "ascending" | "descending";
+  limit: number;
+  withEditCount: boolean;
+}
+
+export interface UserListRow {
+  name: string;
+  userId: number;
+  registration: Date | null;
+  editCount: number;
+  /** Explicit groups (not `*`/`user`). */
+  groups: string[];
+}
+
+export interface BlockListRow {
+  target: string;
+  reason: string | null;
+  expiresAt: Date | null;
+  allowUserTalk: boolean;
+  blockedBy: string | null;
+  createdAt: Date;
+}
+
+export interface ProtectedTitleQuery {
+  namespaces?: readonly number[];
+  level?: string;
+  dir: "older" | "newer";
+  from?: Date;
+  to?: Date;
+  cursor?: { timestamp: Date; id: string };
+  limit: number;
+}
+
+export interface ProtectedTitleRow {
+  /** Row id, for the continuation. */
+  id: string;
+  title: string;
+  namespace: number;
+  level: string;
+  timestamp: Date;
+  user: string | null;
+  comment: string | null;
+  expiresAt: Date | null;
+}
+
 export interface ApiStore {
   statistics(): Promise<SiteStatistics>;
   /** Edit count and registration date of a WikiOS user (by internal id) and wiki name. */
@@ -160,4 +320,22 @@ export interface ApiStore {
   categoriesOf(query: PerPageQuery & { hidden?: boolean }): Promise<PerPageResult<CategoryRow>>;
   /** The wikitext of pages, by WikiOS article id (for `prop=pageprops`). */
   wikitextByArticle(articleIds: readonly string[]): Promise<Map<string, string>>;
+
+  /** Up to `limit + 1` pages of a namespace, in title order. */
+  listPages(query: ListPagesQuery): Promise<PageListRow[]>;
+  /** Up to `limit + 1` members of a category. */
+  listCategoryMembers(query: CategoryMemberQuery): Promise<CategoryMemberRow[]>;
+  /** Up to `limit + 1` pages that link to a title, in page id order. */
+  listBacklinks(query: BacklinkQuery): Promise<PageListRow[]>;
+  randomPages(query: RandomPagesQuery): Promise<PageListRow[]>;
+  /** Up to `limit + 1` categories, in name order. */
+  listCategories(query: CategoryListQuery): Promise<CategorySummaryRow[]>;
+  /** Up to `limit + 1` log entries. */
+  findLogs(query: LogQuery): Promise<LogRow[]>;
+  /** Up to `limit + 1` users with a verified wiki account, in name order. */
+  listUsers(query: UserListQuery): Promise<UserListRow[]>;
+  /** The blocks in force now, newest first: a page and the continuation. */
+  listBlocks(limit: number, cursor?: string): Promise<{ blocks: BlockListRow[]; nextCursor: string | null }>;
+  /** Up to `limit + 1` create-protected titles that have no page. */
+  listProtectedTitles(query: ProtectedTitleQuery): Promise<ProtectedTitleRow[]>;
 }

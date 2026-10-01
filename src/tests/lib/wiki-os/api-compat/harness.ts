@@ -88,6 +88,7 @@ export async function makeDeps(overrides: Partial<ApiDeps> = {}): Promise<ApiDep
     auth: await fakeAuthStore(),
     loadPermissions: fakeLoader(),
     rateLimit: async () => ({ success: true, resetAt: new Date(NOW.getTime() + 60_000) }),
+    search: async () => ({ hits: [], total: 0 }),
     store: fakeStore({
       statistics: async () => ({ pages: 10, articles: 8, edits: 50, images: 2, users: 3, activeUsers: 1, admins: 1 }),
       userStats: async () => ({ editCount: 12, registration: new Date("2020-01-02T03:04:05Z") }),
@@ -200,7 +201,24 @@ export interface FakeRevision {
   sha1?: string;
 }
 
+export interface FakeLog {
+  logId: number;
+  type: string;
+  action: string;
+  title: string;
+  actor: string;
+  comment?: string;
+  params?: Record<string, string | number | boolean>;
+  timestamp: string;
+}
+
 export interface FakeWikiData {
+  logs?: FakeLog[];
+  users?: Array<{ name: string; userId: number; groups?: string[]; editCount?: number; registration?: string }>;
+  blocks?: Array<{ target: string; reason?: string; expiresAt?: string | null; blockedBy?: string; createdAt: string }>;
+  protectedTitles?: Array<{ id: string; title: string; level: string; timestamp: string; user?: string; comment?: string; expiresAt?: string | null }>;
+  /** category name -> page title -> sort key */
+  sortKeys?: Record<string, Record<string, string>>;
   pages?: FakePage[];
   revisions?: FakeRevision[];
   /** page title -> target titles it links to */
@@ -258,6 +276,7 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
       comment: rev.comment ?? "",
       minor: rev.minor ?? false,
       size: byteLength(rev.content ?? ""),
+      sizeDiff: byteLength(rev.content ?? "") - (index > 0 ? byteLength(history[index - 1]!.content ?? "") : 0),
       sha1: rev.sha1 ?? "sha1-" + rev.revId,
       content: rev.textHidden || !withContent ? null : (rev.content ?? ""),
       textHidden: rev.textHidden ?? false,
@@ -287,6 +306,7 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
       const rows = revisions
         .filter((rev) => pages.some((p) => p.title === rev.page))
         .filter((rev) => (target ? rev.page === target : true))
+        .filter((rev) => (query.namespaces ? query.namespaces.includes(pages.find((p) => p.title === rev.page)?.namespace ?? 0) : true))
         .filter((rev) => (query.users ? query.users.includes(rev.user ?? "Heku") : true))
         .filter((rev) => (query.excludeUser ? (rev.user ?? "Heku") !== query.excludeUser : true))
         .filter((rev) => (query.minor === undefined ? true : (rev.minor ?? false) === query.minor))
@@ -362,6 +382,131 @@ export function fakeWiki(data: FakeWikiData, extra: Partial<ApiStore> = {}): Api
         })),
         next: next ? { pageId: next.pageId, key: next.name } : null,
       };
+    },
+    listPages: async (q) => {
+      const asc = q.dir === "ascending";
+      const [lower, upper] = asc ? [q.start, q.end] : [q.end, q.start];
+      const rows = pages
+        .filter((p) => (p.namespace ?? 0) === q.namespace)
+        .filter((p) => !q.prefix || p.title.startsWith(q.prefix))
+        .filter((p) => !lower || p.title >= lower)
+        .filter((p) => !upper || p.title <= upper)
+        .filter((p) => (q.filterRedirects === "redirects" ? p.redirect !== undefined : q.filterRedirects === "nonredirects" ? p.redirect === undefined : true))
+        .sort((a, b) => (asc ? 1 : -1) * (a.title < b.title ? -1 : a.title > b.title ? 1 : 0))
+        .slice(0, q.limit + 1);
+      return rows.map((p) => ({ pageId: p.pageId, title: p.title, namespace: p.namespace ?? 0, isRedirect: p.redirect !== undefined }));
+    },
+    listCategoryMembers: async (q) => {
+      const name = q.category.slice("Category:".length);
+      const asc = q.dir === "ascending";
+      const rows = pages
+        .filter((p) => (data.categories?.[p.title] ?? []).includes(name))
+        .filter((p) => !q.namespaces || q.namespaces.includes(p.namespace ?? 0))
+        .filter((p) => {
+          const ns = p.namespace ?? 0;
+          const type = ns === 14 ? "subcat" : ns === 6 ? "file" : "page";
+          return q.types.includes(type);
+        })
+        .map((p) => {
+          const sortKey = data.sortKeys?.[name]?.[p.title] ?? null;
+          const addedAt = new Date(`2026-02-0${(p.pageId % 9) + 1}T00:00:00Z`);
+          return { pageId: p.pageId, title: p.title, namespace: p.namespace ?? 0, isRedirect: p.redirect !== undefined, sortKey, addedAt, sortValue: q.sort === "timestamp" ? addedAt.toISOString() : (sortKey ?? p.title).toUpperCase() };
+        })
+        .filter((row) => !q.cursor || (asc ? 1 : -1) * a2(0, `${row.sortValue}`, 0, q.cursor.sortValue) > 0 || (row.sortValue === q.cursor.sortValue && (asc ? row.pageId >= q.cursor.pageId : row.pageId <= q.cursor.pageId)))
+        .sort((a, b) => (asc ? 1 : -1) * (a.sortValue < b.sortValue ? -1 : a.sortValue > b.sortValue ? 1 : a.pageId - b.pageId));
+      return rows.slice(0, q.limit + 1);
+    },
+    listBacklinks: async (q) => {
+      const rows = pages
+        .filter((p) => (data.links?.[p.title] ?? []).includes(q.target))
+        .filter((p) => !q.namespaces || q.namespaces.includes(p.namespace ?? 0))
+        .filter((p) => (q.filterRedirects === "redirects" ? p.redirect !== undefined : q.filterRedirects === "nonredirects" ? p.redirect === undefined : true))
+        .filter((p) => q.cursor === undefined || p.pageId >= q.cursor)
+        .sort((a, b) => a.pageId - b.pageId);
+      return rows.slice(0, q.limit + 1).map((p) => ({ pageId: p.pageId, title: p.title, namespace: p.namespace ?? 0, isRedirect: p.redirect !== undefined }));
+    },
+    randomPages: async (q) =>
+      pages
+        .filter((p) => q.namespaces.includes(p.namespace ?? 0))
+        .filter((p) => (q.filterRedirects === "redirects" ? p.redirect !== undefined : q.filterRedirects === "nonredirects" ? p.redirect === undefined : true))
+        .slice(0, q.limit)
+        .map((p) => ({ pageId: p.pageId, title: p.title, namespace: p.namespace ?? 0, isRedirect: p.redirect !== undefined })),
+    listCategories: async (q) => {
+      const counts = new Map<string, number>();
+      for (const names of Object.values(data.categories ?? {})) for (const n of names) counts.set(n, (counts.get(n) ?? 0) + 1);
+      const asc = q.dir === "ascending";
+      const [lower, upper] = asc ? [q.start, q.end] : [q.end, q.start];
+      return [...counts.entries()]
+        .filter(([n]) => !q.prefix || n.startsWith(q.prefix))
+        .filter(([n]) => !lower || n >= lower)
+        .filter(([n]) => !upper || n <= upper)
+        .sort(([a], [b]) => (asc ? 1 : -1) * (a < b ? -1 : a > b ? 1 : 0))
+        .slice(0, q.limit + 1)
+        .map(([name, members]) => ({ name, members }));
+    },
+    findLogs: async (q) => {
+      const newer = q.dir === "newer";
+      const sign = newer ? 1 : -1;
+      const rows = (data.logs ?? [])
+        .filter((l) => !q.type || l.type === q.type)
+        .filter((l) => !q.action || l.action === q.action)
+        .filter((l) => !q.title || l.title === q.title)
+        .filter((l) => !q.user || l.actor === q.user)
+        .filter((l) => !q.excludeUser || l.actor !== q.excludeUser)
+        .filter((l) => {
+          const t = new Date(l.timestamp).getTime();
+          const key = [t, l.logId] as const;
+          const ge = (b?: { t: number; id?: number }) => !b || sign * ((t - b.t) || (l.logId - (b.id ?? (newer ? -Infinity : Infinity)))) >= 0;
+          const le = (b?: { t: number; id?: number }) => !b || sign * ((t - b.t) || (l.logId - (b.id ?? (newer ? Infinity : -Infinity)))) <= 0;
+          void key;
+          return ge(q.from ? { t: q.from.getTime() } : undefined) && ge(q.cursor ? { t: q.cursor.timestamp.getTime(), id: q.cursor.logId } : undefined) && le(q.to ? { t: q.to.getTime() } : undefined);
+        })
+        .sort((a, b) => sign * (new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime() || a.logId - b.logId))
+        .slice(0, q.limit + 1);
+      return rows.map((l) => ({
+        logId: l.logId,
+        type: l.type,
+        action: l.action,
+        title: l.title,
+        namespace: l.title.includes(":") ? ({ User: 2, Template: 10 } as Record<string, number>)[l.title.split(":")[0]!] ?? 0 : 0,
+        pageId: pages.find((p) => p.title === l.title)?.pageId ?? 0,
+        actor: l.actor,
+        comment: l.comment ?? null,
+        params: l.params ?? null,
+        timestamp: new Date(l.timestamp),
+      }));
+    },
+    listUsers: async (q) => {
+      const asc = q.dir === "ascending";
+      const [lower, upper] = asc ? [q.start, q.end] : [q.end, q.start];
+      return (data.users ?? [])
+        .filter((u) => !q.prefix || u.name.startsWith(q.prefix))
+        .filter((u) => !lower || u.name >= lower)
+        .filter((u) => !upper || u.name <= upper)
+        .filter((u) => !q.group || (u.groups ?? []).includes(q.group))
+        .filter((u) => !q.excludeGroup || !(u.groups ?? []).includes(q.excludeGroup))
+        .sort((a, b) => (asc ? 1 : -1) * (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+        .slice(0, q.limit + 1)
+        .map((u) => ({ name: u.name, userId: u.userId, registration: u.registration ? new Date(u.registration) : null, editCount: u.editCount ?? 0, groups: u.groups ?? [] }));
+    },
+    listBlocks: async (limit, cursor) => {
+      const all = data.blocks ?? [];
+      const start = cursor ? Number(cursor) : 0;
+      const slice = all.slice(start, start + limit);
+      return {
+        blocks: slice.map((b) => ({ target: b.target, reason: b.reason ?? null, expiresAt: b.expiresAt ? new Date(b.expiresAt) : null, allowUserTalk: true, blockedBy: b.blockedBy ?? null, createdAt: new Date(b.createdAt) })),
+        nextCursor: start + limit < all.length ? String(start + limit) : null,
+      };
+    },
+    listProtectedTitles: async (q) => {
+      const newer = q.dir === "newer";
+      const sign = newer ? 1 : -1;
+      return (data.protectedTitles ?? [])
+        .filter((r) => !q.level || r.level === q.level)
+        .filter((r) => !q.cursor || sign * ((new Date(r.timestamp).getTime() - q.cursor.timestamp.getTime()) || (r.id < q.cursor.id ? -1 : r.id > q.cursor.id ? 1 : 0)) >= 0)
+        .sort((a, b) => sign * (new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime() || (a.id < b.id ? -1 : 1)))
+        .slice(0, q.limit + 1)
+        .map((r) => ({ id: r.id, title: r.title, namespace: 0, level: r.level, timestamp: new Date(r.timestamp), user: r.user ?? null, comment: r.comment ?? null, expiresAt: r.expiresAt ? new Date(r.expiresAt) : null }));
     },
     wikitextByArticle: async (ids) =>
       new Map(ids.map((id) => [id, pages.find((p) => p.title === titleOfArticle(id))?.wikitext ?? ""])),

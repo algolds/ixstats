@@ -12,7 +12,8 @@ import type { JsonObject, JsonValue } from "../format";
 import { buildPageSet, pageStub, type PageSelectors, type PageSet } from "../pages";
 import { HIGH_VALUE_LIMIT, NORMAL_VALUE_LIMIT } from "../params";
 import type { ApiContext } from "../types";
-import { DEFERRED_REASON, generatorFor, generatorNames, type GeneratorResult } from "./generator";
+import { DEFERRED_REASON } from "./deferred";
+import { generatorFor, generatorNames, type GeneratorResult } from "./generator";
 import { LIST_MODULES } from "./query-list";
 import { metaSiteinfo, metaTokens, metaUserinfo } from "./query-meta";
 import {
@@ -141,9 +142,10 @@ export async function runQuery(rc: ApiContext): Promise<JsonObject> {
   for (const name of lists) {
     const listModule = LIST_MODULES[name]!;
     const scoped = p.scope(listModule.prefix, name);
-    const { items, next } = await listModule.run(rc, scoped);
+    const { items, next, extra } = await listModule.run(rc, scoped);
     query[listModule.resultKey] = items;
-    if (next !== null) continuation.add(scoped.fullName("continue"), next);
+    Object.assign(query, extra);
+    if (next !== null) continuation.add(scoped.fullName(listModule.continueParam ?? "continue"), next);
   }
 
   if (generator || props.length > 0 || hasSelectors(selectors)) {

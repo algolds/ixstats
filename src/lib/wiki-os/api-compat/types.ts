@@ -99,12 +99,27 @@ export type RateLimitCheck = (
   limits: { maxRequests: number; windowMs: number }
 ) => Promise<RateLimitResult>;
 
+export interface SearchHit {
+  title: string;
+  /** Plain text (never markup). */
+  snippet: string;
+}
+
+/** `list=search`: `what` is the text or only the titles; one page of hits starting at `offset`, and how many matched. */
+export type SearchFn = (
+  query: string,
+  what: "text" | "title",
+  limit: number,
+  offset: number
+) => Promise<{ hits: SearchHit[]; total: number }>;
+
 /** What a module needs from the outside world: the data store, the existing services, the clock. */
 export interface ApiDeps {
   auth: AuthStore;
   loadPermissions: PermissionLoader;
   rateLimit: RateLimitCheck;
   store: ApiStore;
+  search: SearchFn;
   /** The public origin, without a trailing slash: `https://ixwiki.com`. */
   siteUrl: string;
   now: () => Date;

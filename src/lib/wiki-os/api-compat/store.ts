@@ -14,6 +14,17 @@ import { db } from "~/server/db";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 import { isActive } from "~/lib/wiki-os/rights";
 import { syntheticUserId } from "./auth-store";
+import {
+  findLogs,
+  listBacklinks,
+  listBlocks,
+  listCategories,
+  listCategoryMembers,
+  listPages,
+  listProtectedTitles,
+  listUsers,
+  randomPages,
+} from "./store-lists";
 import type {
   ApiStore,
   CategoryRow,
@@ -159,6 +170,7 @@ const REVISION_SELECT = {
   summary: true,
   minor: true,
   byteSize: true,
+  byteDelta: true,
   sha1: true,
   textDeleted: true,
   commentDeleted: true,
@@ -233,6 +245,7 @@ async function toRevisionRows(records: readonly RevisionRecord[]): Promise<Revis
       comment: record.summary,
       minor: record.minor,
       size: record.byteSize,
+      sizeDiff: record.byteDelta,
       sha1: record.sha1,
       content: record.textDeleted ? null : (record.wikitext ?? null),
       textHidden: record.textDeleted,
@@ -473,4 +486,13 @@ export const prismaApiStore: ApiStore = {
   linksFrom,
   categoriesOf,
   wikitextByArticle,
+  listPages,
+  listCategoryMembers,
+  listBacklinks,
+  randomPages,
+  listCategories,
+  findLogs,
+  listUsers,
+  listBlocks,
+  listProtectedTitles,
 };

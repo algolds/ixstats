@@ -10,6 +10,7 @@ import { badValues, unavailable } from "../errors";
 import { encodeCursor, optionalCursor } from "../continuation";
 import type { PageSet } from "../pages";
 import type { ApiContext } from "../types";
+import { DEFERRED_REASON } from "./deferred";
 import { LIST_MODULES } from "./query-list";
 import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
 
@@ -22,10 +23,6 @@ export interface GeneratorResult {
 }
 
 type GeneratorRun = (rc: ApiContext, base: PageSet) => Promise<GeneratorResult>;
-
-/** What the deferred modules wait for: plan 406's template and image link tables. */
-export const DEFERRED_REASON =
-  "WikiOS has no template or image link tables yet (plan 406), so this module is not available.";
 
 const deferred =
   (name: string): GeneratorRun =>
@@ -62,7 +59,7 @@ function listGenerator(name: string): GeneratorRun {
       titles: items.flatMap((item) =>
         typeof item.title === "string" ? [canonicalizeTitle(item.title)?.title ?? item.title] : []
       ),
-      continueParam: p.fullName("continue"),
+      continueParam: p.fullName(listModule.continueParam ?? "continue"),
       next,
     };
   };
