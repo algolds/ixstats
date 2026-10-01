@@ -51,6 +51,7 @@ const revisionRow = (over: Record<string, unknown> = {}) => ({
   createdAt: MADE_AT,
   mwRevId: null,
   sha1: mwSha1Base36(TEXT),
+  byteSize: Buffer.byteLength(String(over.wikitext ?? TEXT)),
   ...over,
 });
 
@@ -718,7 +719,21 @@ describe("a batch of revisions of one title", () => {
 
     expect(imports()[0]?.params.summary).toBe("edit 2");
     expect(mockLinkFindMany).toHaveBeenCalledTimes(1);
-    expect(mockRevisionFindMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("decides the batch from the revisions' sizes, then reads the text of the revisions it sends and no other", async () => {
+    revisionsAre(row(1, T1, AT1, { mwRevId: 5 }), row(2, T2, AT2));
+
+    await planRevisionBatch([jobFor(1), jobFor(2)]);
+
+    expect(mockRevisionFindMany).toHaveBeenCalledTimes(2);
+    expect(mockRevisionFindMany.mock.calls[0]?.[0]).toEqual({
+      where: { id: { in: ["rev-1", "rev-2"] } },
+      select: { id: true, byteSize: true, mwRevId: true },
+    });
+    // rev-1 is already in MediaWiki: its text is not read
+    expect(mockRevisionFindMany.mock.calls[1]?.[0].where).toEqual({ id: { in: ["rev-2"] } });
+    expect(mockRevisionFindMany.mock.calls[1]?.[0].select.wikitext).toBe(true);
   });
 
   it("stamps the newest revision with the current revision (the null one) and each earlier one with its own import", async () => {
@@ -979,6 +994,31 @@ describe("a batch of revisions of one title", () => {
 
       expect(plan.members.map((member) => member.job.id)).toEqual(["job-1"]);
       expect(Buffer.byteLength(plan.xml ?? "")).toBeGreaterThan(MAX_BATCH_BYTES);
+    });
+
+    it("never reads the text of the jobs beyond the cap", async () => {
+      revisionsAre(big(1, AT1), big(2, AT2), big(3, AT3));
+
+      await planRevisionBatch([jobFor(1), jobFor(2), jobFor(3)]);
+
+      expect(mockRevisionFindMany.mock.calls[1]?.[0].where).toEqual({ id: { in: ["rev-1"] } });
+    });
+
+    it("reads no text at all when every revision is already in MediaWiki", async () => {
+      revisionsAre(row(1, T1, AT1, { mwRevId: 5 }), row(2, T2, AT2, { mwRevId: 6 }));
+
+      await planRevisionBatch([jobFor(1), jobFor(2)]);
+
+      expect(mockRevisionFindMany).toHaveBeenCalledTimes(1);
+    });
+
+    it("reads a restore's head even though MediaWiki has a revision for it", async () => {
+      revisionsAre(row(1, T1, AT1, { mwRevId: 5 }));
+
+      const plan = await planRevisionBatch([jobFor(1, { payload: { restore: true } })]);
+
+      expect(mockRevisionFindMany.mock.calls[1]?.[0].where).toEqual({ id: { in: ["rev-1"] } });
+      expect(plan.members[0]).toMatchObject({ send: true });
     });
 
     it("takes every revision of a small batch", async () => {

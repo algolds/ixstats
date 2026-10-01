@@ -142,8 +142,63 @@ function summaryOf(revision: MirroredRevision, payload: RevisionPayload): string
   return (own?.trim() || DEFAULT_SUMMARY).slice(0, SUMMARY_LIMIT);
 }
 
-async function loadRevisions(jobs: readonly MirrorJob[]): Promise<Map<string, MirroredRevision>> {
+/** The size and stamp of each job's revision: all a batch needs to be decided before any text is read. */
+interface RevisionHead {
+  id: string;
+  byteSize: number;
+  mwRevId: number | null;
+}
+
+async function loadHeads(jobs: readonly MirrorJob[]): Promise<Map<string, RevisionHead>> {
   const ids = jobs.flatMap((job) => job.revisionId ?? []);
+  if (ids.length === 0) return new Map();
+  const rows = await db.wikiRevision.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, byteSize: true, mwRevId: true },
+  });
+  return new Map(rows.map((row) => [row.id, row]));
+}
+
+/** Whether a job's revision goes into the import: it exists, and (but for a restore) MediaWiki does not have it yet. */
+function isSent(head: RevisionHead | undefined, restore: boolean): head is RevisionHead {
+  return head !== undefined && (restore || head.mwRevId === null);
+}
+
+/**
+ * The jobs, from the oldest, that can make one batch by their sizes alone: the revisions to send add up (with their
+ * tags) to at most `MAX_BATCH_BYTES`, the first one always counting. The text of the rest is never read.
+ */
+function withinBudget(
+  jobs: readonly MirrorJob[],
+  heads: ReadonlyMap<string, RevisionHead>,
+  restore: boolean
+): MirrorJob[] {
+  const taken: MirrorJob[] = [];
+  let sending = 0;
+  let bytes = 0;
+  for (const job of jobs) {
+    const head = job.revisionId ? heads.get(job.revisionId) : undefined;
+    if (isSent(head, restore)) {
+      const size = head.byteSize + REVISION_XML_OVERHEAD;
+      if (sending > 0 && bytes + size > MAX_BATCH_BYTES) break;
+      bytes += size;
+      sending++;
+    }
+    taken.push(job);
+  }
+  return taken;
+}
+
+/** The revisions of `jobs` that go into the import, with their text. */
+async function loadRevisions(
+  jobs: readonly MirrorJob[],
+  heads: ReadonlyMap<string, RevisionHead>,
+  restore: boolean
+): Promise<Map<string, MirroredRevision>> {
+  const ids = jobs.flatMap((job) => {
+    const head = job.revisionId ? heads.get(job.revisionId) : undefined;
+    return isSent(head, restore) ? head.id : [];
+  });
   if (ids.length === 0) return new Map();
   const rows = await db.wikiRevision.findMany({
     where: { id: { in: ids } },
@@ -204,14 +259,16 @@ function requireMirrorBot(): string {
  * Decide the batch the `jobs` (revision jobs of one title, oldest first, as `pickBatch` hands them over) make, and
  * build its XML. A restore goes alone. A revision the inbound sync already stamped, or one that went with its page,
  * is settled without being sent; the batch takes no revision that would grow its XML past `MAX_BATCH_BYTES`, except
- * the first. Only reads: nothing is claimed or sent yet.
+ * the first (decided from the revisions' sizes first, so the text of the jobs left for the next batch is never
+ * read, then checked against the XML as escaped). Only reads: nothing is claimed or sent yet.
  */
 export async function planRevisionBatch(jobs: readonly MirrorJob[]): Promise<RevisionBatchPlan> {
   const first = jobs[0];
   if (!first) throw new Error("A revision batch needs a job");
   const restore = revisionPayloadSchema.parse(first.payload ?? {}).restore;
-  const candidates = restore ? [first] : jobs;
-  const revisions = await loadRevisions(candidates);
+  const heads = await loadHeads(restore ? [first] : jobs);
+  const candidates = withinBudget(restore ? [first] : jobs, heads, restore);
+  const revisions = await loadRevisions(candidates, heads, restore);
   const usernames = restore
     ? new Map<string, string>()
     : await verifiedUsernames(revisions.values());
@@ -225,11 +282,14 @@ export async function planRevisionBatch(jobs: readonly MirrorJob[]): Promise<Rev
 
   function* revisionsToSend(): Generator<XmlRevision> {
     for (const job of candidates) {
-      const revision = job.revisionId ? revisions.get(job.revisionId) : undefined;
-      if (!revision) {
+      const head = job.revisionId ? heads.get(job.revisionId) : undefined;
+      const revision = head ? revisions.get(head.id) : undefined;
+      if (!head) {
         members.push({ job, send: false, mwRevId: null });
-      } else if (!restore && revision.mwRevId !== null) {
-        members.push({ job, send: false, mwRevId: revision.mwRevId });
+      } else if (!isSent(head, restore)) {
+        members.push({ job, send: false, mwRevId: head.mwRevId });
+      } else if (!revision) {
+        members.push({ job, send: false, mwRevId: null }); // went with its page since
       } else if (summaries.length > 0 && bytes + xmlSizeOf(revision) > MAX_BATCH_BYTES) {
         return;
       } else {
