@@ -42,6 +42,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { invalidateCsrfToken } from "~/lib/wiki-os/adapters/mediawiki/csrf-cache";
 import { hashFile } from "~/lib/wiki-os/core/file-hash";
+import { STAGED_FILE_LOCK_NAMESPACE } from "~/lib/wiki-os/services/staged-uploads";
 import { runUploadJob } from "~/lib/wiki-os/services/mirror-upload";
 import { isStaged, releaseStaged } from "~/lib/wiki-os/services/upload-staging";
 import { uploadFile } from "~/lib/wiki-os/services/upload-service";
@@ -132,11 +133,14 @@ describe("an upload and the mirror job of the same bytes, at the same moment (re
   it("takes the file's advisory lock to record the rows and again to finish the job", async () => {
     await upload("Flag.png");
     const [first] = jobsOf("File:Flag.png");
-    expect(advisoryLocks).toEqual([`wiki-upload:${SHA1}`]);
+    expect(advisoryLocks).toEqual([`${STAGED_FILE_LOCK_NAMESPACE}:${SHA1}`]);
 
     await runUploadJob(first!);
 
-    expect(advisoryLocks).toEqual([`wiki-upload:${SHA1}`, `wiki-upload:${SHA1}`]);
+    expect(advisoryLocks).toEqual([
+      `${STAGED_FILE_LOCK_NAMESPACE}:${SHA1}`,
+      `${STAGED_FILE_LOCK_NAMESPACE}:${SHA1}`,
+    ]);
   });
 
   it("B records its rows while A's job finishes: A waits for B, sees its rows and keeps the file, and B's job finds it", async () => {

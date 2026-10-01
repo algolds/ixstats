@@ -20,11 +20,18 @@ import { releaseStaged } from "./upload-staging";
 
 type Tx = Prisma.TransactionClient;
 
+/**
+ * The first int of the staged-file locks, in the two-int form `pg_advisory_xact_lock(namespace, key)`: a different key space from
+ * the single-int locks (`withJobLock`'s `hashtext(key)`), so a staged file's lock can never be one of those, and distinct from the
+ * other namespaces (cards/serial-number.ts: 7331). Arbitrary; it identifies these locks in pg_locks.
+ */
+export const STAGED_FILE_LOCK_NAMESPACE = 41101;
+
 /** Run `work` in a transaction that holds the advisory lock of the staged file `sha1` until it ends. */
 export function withStagedFileLock<T>(sha1: string, work: (tx: Tx) => Promise<T>): Promise<T> {
   return db.$transaction(async (tx) => {
     // $executeRaw, not $queryRaw: the function returns `void`, which Prisma cannot read back as a row
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`wiki-upload:${sha1}`}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${STAGED_FILE_LOCK_NAMESPACE}::int, hashtext(${sha1}))`;
     return work(tx);
   });
 }

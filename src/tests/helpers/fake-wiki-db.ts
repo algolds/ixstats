@@ -269,7 +269,9 @@ export function createFakeWikiDb() {
     },
     $executeRaw: async (strings, ...values) => {
       if (strings.join("?").includes("pg_advisory_xact_lock")) {
-        await acquireAdvisoryLock(String(values[0]));
+        // the two-int form `(namespace, hashtext(key))`: the single-int keys are another space, which the services avoid
+        if (values.length !== 2) throw new Error("an advisory lock takes a namespace and a key");
+        await acquireAdvisoryLock(values.join(":"));
         return 0;
       }
       executedSql.push({ sql: strings.join("?").replace(/\s+/g, " ").trim(), values });
