@@ -24,6 +24,7 @@ import {
   Printer,
   Wrench,
   Folder,
+  ChatBubble,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
@@ -44,6 +45,8 @@ import { useNotify } from "~/hooks/useNotify";
 import { soundEffects } from "~/lib/sound/cuelume";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 import { PageAdminMenuItems } from "~/components/wiki-os/admin/PageAdminMenuItems";
+import { articleHref } from "~/lib/wiki-os/wiki-path";
+import { pageEditHref, pageTalkPair } from "~/lib/wiki-os/page-tools";
 
 const NAV_GROUP_1 = [
   { id: "main", href: "/wiki/Main_Page", icon: Home, title: "Main Page" },
@@ -93,11 +96,10 @@ export function WikiOSUnifiedSidebar({
   const isArticlePage =
     !isSpecialPage &&
     pathname.startsWith("/wiki/") &&
-    pathname !== "/wiki/Main_Page" &&
-    pathname !== "/wiki/recent-changes" &&
-    pathname !== "/wiki/random" &&
-    pathname !== "/wiki/repository" &&
-    pathname !== "/wiki/search";
+    pathname !== "/wiki/Main_Page";
+
+  // The page on the other side of the subject/talk pairing: its Discussion, or from a talk page its subject.
+  const pairPage = isArticlePage ? pageTalkPair(title) : null;
 
   // Dynamic in-page stash query for current article
   const stashQuery = api.wikios.isStashed.useQuery(
@@ -441,10 +443,7 @@ export function WikiOSUnifiedSidebar({
           title: "Repository",
           glowClass:
             "border-indigo-500/20 bg-indigo-500/5 text-indigo-400 hover:bg-indigo-500/15",
-          isActive:
-            pathname === "/util/repository" ||
-            pathname.startsWith("/util/repository/") ||
-            pathname.startsWith("/wiki/repository/"),
+          isActive: pathname === "/util/repository" || pathname.startsWith("/util/repository/"),
           index: rowIndex++,
         })}
 
@@ -455,10 +454,7 @@ export function WikiOSUnifiedSidebar({
             icon: Wrench,
             title: "Utilities",
             glowClass: "rail-glow-di border-wiki/30 bg-wiki/10 text-wiki hover:bg-wiki/20",
-            isActive:
-              pathname === "/util" ||
-              pathname.startsWith("/util") ||
-              pathname.startsWith("/wiki/utilities"),
+            isActive: pathname === "/util" || pathname.startsWith("/util"),
             index: rowIndex++,
           })}
 
@@ -470,12 +466,24 @@ export function WikiOSUnifiedSidebar({
             {isSignedIn &&
               renderRow({
                 id: "edit",
-                href: withBasePath(`/wiki/${slug}/edit`),
+                href: withBasePath(pageEditHref(title, slug)),
                 icon: FileEdit,
                 title: "Edit Article",
                 glowClass:
                   "rail-glow-blue rail-animate-bounce border-blue-500/20 bg-blue-500/5 text-blue-400 hover:bg-blue-500/15",
-                isActive: activeId === "edit",
+                isActive: false,
+                index: rowIndex++,
+              })}
+
+            {pairPage &&
+              renderRow({
+                id: "talk",
+                href: withBasePath(articleHref(pairPage.page)),
+                icon: ChatBubble,
+                title: pairPage.isTalk ? "Subject Page" : "Discussion",
+                glowClass:
+                  "border-sky-500/20 bg-sky-500/5 text-sky-400 hover:bg-sky-500/15",
+                isActive: activeId === "talk",
                 index: rowIndex++,
               })}
 

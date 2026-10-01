@@ -75,7 +75,7 @@ export function WikiWorkspaceTab({
                 onClick={() => {
                   onClose();
                   navigateWithBasePath(
-                    `/wiki/${encodeURIComponent(draft.title.replace(/ /g, "_"))}/edit`,
+                    `/wiki/${encodeURIComponent(draft.title.replace(/ /g, "_"))}?action=edit`,
                     router
                   );
                 }}
@@ -215,7 +215,7 @@ function IxWikiPageActions({
           shortcut="Tab Tab"
           onClick={() => {
             onClose();
-            navigateWithBasePath(`/wiki/${slug}/edit`, router);
+            navigateWithBasePath(`/wiki/${slug}?action=edit`, router);
           }}
         />
       )}

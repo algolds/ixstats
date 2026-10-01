@@ -12,7 +12,7 @@
 
 Traditional wiki "Talk Pages" fail because they break spatial and temporal continuity: asking or answering a question about a sentence forces a full page navigation away from the text to a disconnected wall of unstyled wikitext.
 
-WikiOS replaces `/wiki/[slug]/talk` with **WikiOS Margin** — a responsive, hardware-accelerated split-canvas inspector that docks to the reading view. It converges three previously fragmented systems into one fluid panel:
+WikiOS adds **WikiOS Margin** beside `Talk:` pages (which are ordinary wikitext pages, owner decision D10) — a responsive, hardware-accelerated split-canvas inspector that docks to the reading view. It converges three previously fragmented systems into one fluid panel:
 
 ```
 ┌────────────────────────────────────────────────────────┬──────────────────────────────────────────┐
@@ -30,7 +30,7 @@ WikiOS replaces `/wiki/[slug]/talk` with **WikiOS Margin** — a responsive, har
 └────────────────────────────────────────────────────────┴──────────────────────────────────────────┘
 ```
 
-1. **💬 Threads**: Structured, threaded conversations anchored to the entire page or specific heading sections (replaces legacy talk pages).
+1. **💬 Threads**: Structured, threaded conversations anchored to the entire page or specific heading sections (an extra layer next to the `Talk:` page, which stays a full wikitext page).
 2. **✏️ Markup & Annotations**: Multi-color text highlights, paragraph notes, and suggested draft edits.
 3. **📑 Stash & Citations**: Personal bookmarks, clipped excerpts, attached factbook metrics, and collection links.
 
@@ -119,7 +119,7 @@ When a user selects text anywhere in the article, a compact, origin-aware action
 
 | Before (Legacy Pattern) | After (Design-Engineered Pattern) | Why & Technical Rationale |
 | :--- | :--- | :--- |
-| Full-page route push to `/wiki/[slug]/talk` | Split-canvas slide-over inspector (`transform: translateX()`) | Preserves reading context; zero navigation latency |
+| Full-page route push to `/wiki/Talk:<title>` for a quick question | Split-canvas slide-over inspector (`transform: translateX()`) | Preserves reading context; zero navigation latency |
 | `transition: all 300ms ease` | `transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1)` | `all` recalculates expensive layout; custom curve provides punchy, instant response |
 | `scale(0)` entry animation on selection popup | `transform: scale(0.95); opacity: 0` $\to$ `scale(1); opacity: 1` | Nothing in physical reality scales from zero; $0.95$ feels natural and un-jarring |
 | `transform-origin: center` on selection capsule | `transform-origin: center bottom` | Capsule emerges directly out of the user's highlighted text selection |
@@ -251,4 +251,4 @@ read by `getArticleMarginData`, but nothing writes it.
 3. **Pillar Tabs**: The drawer shows two tabs, Threads (`tabs/MarginThreadsTab.tsx`) and Markup (`tabs/MarginMarkupTab.tsx`). The planned **📑 Stash** tab was never built (there is no `MarginStashTab.tsx`); stashing happens from the selection capsule and the reader's `StashButton`. A third **Inspect** tab (`tabs/MarginInspectTab.tsx`) exists but is hidden in `WikiMarginDrawer.tsx` pending a redesign.
 4. **Backend Router**: Implemented in `src/server/api/routers/wikios/discussions.ts` and registered in `src/server/api/routers/wikios/index.ts`.
 5. **Reader Integration**: Mounted in `src/components/wiki-os/reader/ArticleRenderer.tsx` with hotkeys `T` / `I`.
-6. **Route Forwarding**: Legacy `/wiki/[slug]/talk` routes cleanly redirect to `/wiki/[slug]?margin=threads`. `?margin` is honored only for IxWiki pages; pages opened with `?source=` (another wiki) stay read-only.
+6. **Route Forwarding**: Legacy `/wiki/<title>/talk` routes redirect to the talk page `/wiki/Talk:<title>` (plan 412; they used to open Margin). `/wiki/<title>?margin=threads` opens Margin on the subject page. `?margin` is honored only for IxWiki pages; pages opened with `?source=` (another wiki) stay read-only.

@@ -61,9 +61,11 @@ describe("WikiOSLayout for another wiki's page (read-only, ruling E-l)", () => {
 
   it.each([
     ["/wiki/Aurelia", false],
-    ["/wiki/Aurelia/talk", false],
-    ["/wiki/search", true],
-    ["/wiki/recent-changes", true],
+    ["/wiki/Talk:Aurelia", false],
+    ["/wiki/A/B", false],
+    // Titles that used to be tool routes are articles now (the old slugs redirect before this renders).
+    ["/wiki/Search", false],
+    ["/wiki/Recent_changes", false],
     ["/wiki/Special:Random", true],
     ["/wiki/special%3Arandom", true],
     ["/util/search", true],
@@ -97,6 +99,6 @@ describe("WikiOSLayout for another wiki's page (read-only, ruling E-l)", () => {
   it("the edit shortcut still opens the editor for an IxWiki article", () => {
     renderLayout();
     act(() => void window.dispatchEvent(new Event("wikios:edit")));
-    expect(mockPush).toHaveBeenCalledWith("/wiki/Portal:Eurth/edit");
+    expect(mockPush).toHaveBeenCalledWith("/wiki/Portal:Eurth?action=edit");
   });
 });
