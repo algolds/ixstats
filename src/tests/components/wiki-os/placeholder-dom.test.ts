@@ -8,7 +8,7 @@ import {
   extractStatKeys,
   injectPlaceholderElements,
 } from "~/components/wiki-os/reader/placeholder-dom";
-import { addSectionEditLinks } from "~/lib/wiki-os/transformers/html-transformer";
+import { appendSectionEditLinks } from "~/lib/wiki-os/transformers/html-transformer";
 
 /** What a browser makes of `html` once it is put in the page. */
 function mount(html: string): HTMLElement {
@@ -149,6 +149,17 @@ describe("injectPlaceholderElements", () => {
     if (probe) Object.defineProperty(HTMLImageElement.prototype, "src", probe);
   });
 });
+
+/**
+ * The links added to a parsed fragment, as HTML. The reader adds them to its live article instead
+ * (plan 413); the DOM-only way of doing it is what these cases are about.
+ */
+function addSectionEditLinks(html: string, slug: string): string {
+  const template = document.createElement("template");
+  template.innerHTML = html;
+  appendSectionEditLinks(template.content, slug);
+  return template.innerHTML;
+}
 
 describe("parsing stays inert (plan 404 review)", () => {
   it("makes and serializes every node in the template's own document, never in the live page", () => {

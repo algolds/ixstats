@@ -29,6 +29,8 @@ import { WikiOSLogomark } from "./WikiOSLogomark";
 import { WikiUtilitiesRibbon } from "./WikiUtilitiesRibbon";
 
 import { useMountOnFirstOpen } from "./useMountOnFirstOpen";
+import { useWikiChromePrefs } from "./WikiChromePrefs";
+import { SIDEBAR_COLLAPSED_COOKIE, writeCollapsedCookie } from "~/lib/wiki-os/chrome-prefs";
 import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 import { isTalkNamespace } from "~/lib/wiki-os/core/talk";
 import { canonicalizeTitle, decodeTitleParam } from "~/lib/wiki-os/core/title";
@@ -86,6 +88,7 @@ export function WikiOSLayout({
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
   const [createPageOpen, setCreatePageOpen] = useState(false);
+  const { sidebarCollapsed } = useWikiChromePrefs();
   const searchMounted = useMountOnFirstOpen(searchOpen);
   const createPageMounted = useMountOnFirstOpen(createPageOpen);
 
@@ -179,7 +182,8 @@ export function WikiOSLayout({
       <DashboardSidebarLayout
         sidebarContent={sidebarContent}
         showFloatingExpand={false}
-        defaultCollapsed={true}
+        defaultCollapsed={sidebarCollapsed ?? true}
+        onCollapsedChange={(collapsed) => writeCollapsedCookie(SIDEBAR_COLLAPSED_COOKIE, collapsed)}
         disableCollapse={false}
         variant="rail"
         expandedWidthClassName="w-48"

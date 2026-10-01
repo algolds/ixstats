@@ -970,12 +970,9 @@ html:not([data-theme="light"]) .wikios-fa-image {
 
 /* ---------------------------------------------------------------------------
    Instant Performance & Content-Visibility Rules
+   (No rule for the article's heading blocks: each held a heading only, so a 400px placeholder
+   height was reserved for a 40px element and the page's height jumped as they rendered.)
    --------------------------------------------------------------------------- */
-.wikios-article-section {
-  content-visibility: auto;
-  contain-intrinsic-size: 1px 400px;
-}
-
 .wikios-infobox-container {
   content-visibility: auto;
   contain-intrinsic-size: 300px 450px;

@@ -2,6 +2,8 @@ import type { ComponentProps, ReactNode } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { ArticleRenderer } from "~/components/wiki-os/reader/ArticleRenderer";
 import { api } from "~/trpc/react";
+import { WikiChromePrefsProvider } from "~/components/wiki-os/shared/WikiChromePrefs";
+import { DEFAULT_CHROME_PREFS } from "~/lib/wiki-os/chrome-prefs";
 
 const mockToggleMargin = jest.fn();
 const mockSetWikiPage = jest.fn();
@@ -18,7 +20,10 @@ jest.mock("next/dynamic", () => (loader: () => Promise<unknown>) => {
     return null;
   };
 });
-jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({ useWikiAuth: () => ({ isSignedIn: true }) }));
+let mockSignedIn = true;
+jest.mock("~/lib/wiki-os/use-wiki-auth", () => ({
+  useWikiAuth: () => ({ isSignedIn: mockSignedIn }),
+}));
 jest.mock("~/components/wiki-os/shared/WikiContext", () => ({
   useWikiContext: () => ({
     setWikiPage: mockSetWikiPage,
@@ -293,5 +298,94 @@ describe("ArticleRenderer loads authorship beside the article (plan 404)", () =>
     expect(mockHeader).toHaveBeenLastCalledWith(
       expect.objectContaining({ authorInfo: expect.objectContaining({ creator: "Carol" }) })
     );
+  });
+});
+
+describe("ArticleRenderer first paint and signing in (plan 413)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockMarginOpen = false;
+    mockSignedIn = true;
+    document.cookie = "wikios_companion_collapsed=; max-age=0; path=/";
+    localStorage.clear();
+  });
+
+  const companion = () => screen.queryByLabelText("Article companion and table of contents");
+
+  it("signing in adds the section edit links to the article that is already there, never rewriting its HTML", () => {
+    mockSignedIn = false;
+    const view = renderArticle("ixwiki");
+    const paragraph = view.container.querySelector("p");
+    expect(view.container.querySelector(".wikios-section-edit-link")).toBeNull();
+
+    mockSignedIn = true;
+    view.rerender(
+      <ArticleRenderer
+        title="Portal:Eurth"
+        contentHtml={content}
+        infoboxHtml={null}
+        noticesHtml={null}
+        toc={[]}
+        categories={[]}
+        lastModified={null}
+        wikiSource="ixwiki"
+        authorInfo={null}
+      />
+    );
+
+    expect(view.container.querySelector(".wikios-section-edit-link")).not.toBeNull();
+    expect(view.container.querySelector("p")).toBe(paragraph); // the same node: nothing was re-injected
+  });
+
+  it("a re-render (the companion collapsing) does not write the article's HTML again: React 19 does that for a new {__html} object", () => {
+    const view = renderArticle("ixwiki");
+    const paragraph = view.container.querySelector("p");
+    const link = view.container.querySelector(".wikios-section-edit-link");
+
+    fireEvent.click(screen.getByLabelText("Hide companion"));
+
+    expect(view.container.querySelector("p")).toBe(paragraph);
+    expect(view.container.querySelector(".wikios-section-edit-link")).toBe(link);
+  });
+
+  it("the companion is collapsed from the first render when the reader's cookie says so", () => {
+    render(
+      <WikiChromePrefsProvider prefs={{ ...DEFAULT_CHROME_PREFS, companionCollapsed: true }}>
+        <ArticleRenderer
+          title="Portal:Eurth"
+          contentHtml={content}
+          infoboxHtml={null}
+          noticesHtml={null}
+          toc={[]}
+          categories={[]}
+          lastModified={null}
+          wikiSource="ixwiki"
+          authorInfo={null}
+        />
+      </WikiChromePrefsProvider>
+    );
+
+    expect(companion()).toBeNull();
+    expect(screen.getByLabelText("Show companion")).toBeInTheDocument();
+  });
+
+  it("is open from the first render without a cookie, and hiding it saves the choice in a cookie", () => {
+    renderArticle("ixwiki");
+    expect(companion()).not.toBeNull();
+
+    fireEvent.click(screen.getByLabelText("Hide companion"));
+
+    expect(document.cookie).toContain("wikios_companion_collapsed=1");
+    expect(localStorage.getItem("wikios:companionCollapsed")).toBe("true");
+    expect(companion()).toBeNull();
+  });
+
+  it("a choice kept only in localStorage is picked up after mount and written to the cookie", () => {
+    localStorage.setItem("wikios:companionCollapsed", "true");
+
+    renderArticle("ixwiki");
+
+    expect(companion()).toBeNull();
+    expect(document.cookie).toContain("wikios_companion_collapsed=1");
   });
 });

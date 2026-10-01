@@ -25,6 +25,8 @@ interface ArticleCompanionHUDProps {
   contentHtml: string;
   lastModified?: string | null;
   authorInfo?: ArticleAuthorInfo | null;
+  /** Authorship is on its way: its rows' place is held, so the cards below do not drop when it arrives. */
+  authorsPending?: boolean;
   categories?: string[];
   awardsData?: any;
   marginThreadsCount?: number;
@@ -119,6 +121,7 @@ export function ArticleCompanionHUD({
   contentHtml,
   lastModified,
   authorInfo,
+  authorsPending = false,
   categories = [],
   awardsData,
   marginThreadsCount = 0,
@@ -298,6 +301,18 @@ export function ArticleCompanionHUD({
                 )}
                 <span className="truncate">{lastEditorName}</span>
               </Link>
+            </div>
+          )}
+
+          {authorsPending && (
+            <div
+              aria-hidden="true"
+              className="border-border/20 min-h-[10.5rem] space-y-2.5 border-t pt-2.5"
+            >
+              <div className="h-4 w-3/4 animate-pulse rounded bg-white/5" />
+              <div className="h-4 w-2/3 animate-pulse rounded bg-white/5" />
+              <div className="h-4 w-3/4 animate-pulse rounded bg-white/5" />
+              <div className="h-12 w-full animate-pulse rounded bg-white/5" />
             </div>
           )}
 
