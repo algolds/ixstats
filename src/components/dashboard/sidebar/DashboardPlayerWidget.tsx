@@ -205,7 +205,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               <Badge
                 key={ach.key}
                 title={ach.description}
-                variant="neutral"
+                variant="default"
                 className="bg-surface/85 cursor-help"
               >
                 <span>{ach.iconUrl || "🏆"}</span>
@@ -275,7 +275,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
             <Mail aria-hidden className={QUICK_ACTION_ICON} />
             <span className="min-w-0 flex-1 truncate">Mail</span>
             {totalUnreadMessages > 0 && (
-              <Badge variant="tinted" numeric>
+              <Badge variant="secondary">
                 {totalUnreadMessages}
                 <span className="sr-only"> unread</span>
               </Badge>
@@ -293,7 +293,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
               <ClipboardList aria-hidden className={QUICK_ACTION_ICON} />
               <span className="min-w-0 flex-1 truncate">Directives</span>
               {(issueCount > 0 || urgentCount > 0) && (
-                <Badge variant={urgentCount > 0 ? "destructive" : "caution"} numeric>
+                <Badge variant={urgentCount > 0 ? "destructive" : "warning"}>
                   {urgentCount > 0 ? urgentCount : issueCount}
                   <span className="sr-only">{urgentCount > 0 ? " urgent" : " pending"}</span>
                 </Badge>

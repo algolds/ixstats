@@ -45,7 +45,7 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <h4 className="text-headline text-label truncate">{archetype.name}</h4>
-              {isSelected && <Badge variant="green">Active preset</Badge>}
+              {isSelected && <Badge variant="success">Active preset</Badge>}
             </div>
             <div className="text-footnote text-label-secondary mt-0.5 flex items-center gap-1">
               <Globe aria-hidden className="size-3.5 shrink-0" />

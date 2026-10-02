@@ -295,7 +295,7 @@ export function NarratorPlaygroundTab() {
         <div className="flex items-center justify-between">
           <Label className="text-label-secondary text-subhead">Chronicle Card Mockup Preview</Label>
           {playgroundLatency !== null && (
-            <Badge variant="teal" className="tabular-nums">
+            <Badge variant="info" className="tabular-nums">
               {playgroundLatency}ms
             </Badge>
           )}

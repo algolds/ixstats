@@ -158,7 +158,7 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
       {dbSeason && (
         <div className="border-separator text-footnote flex items-center justify-between border-b py-2">
           <span className="text-label-secondary">Active Stage:</span>
-          <Badge variant="yellow">Stage {(dbSeason as any).activeStage ?? 1}</Badge>
+          <Badge variant="warning">Stage {(dbSeason as any).activeStage ?? 1}</Badge>
         </div>
       )}
 
@@ -201,12 +201,12 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
               </span>
               <div className="flex items-center gap-2">
                 {(m as any).stage && (
-                  <Badge variant="secondary" className="px-1 tabular-nums">
+                  <Badge variant="default" className="px-1 tabular-nums">
                     S{(m as any).stage}
                   </Badge>
                 )}
                 {m.status === "completed" ? (
-                  <Badge variant="secondary">
+                  <Badge variant="default">
                     {m.homeScore} - {m.awayScore}
                   </Badge>
                 ) : (

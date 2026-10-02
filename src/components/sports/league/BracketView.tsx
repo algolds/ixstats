@@ -119,7 +119,10 @@ function BracketRounds({
             <div key={round} className="space-y-3">
               <div className="flex items-center gap-2">
                 {isFinalRound ? (
-                  <Badge className="border-yellow/40 bg-yellow/20 text-eyebrow text-yellow px-3 py-0.5">
+                  <Badge
+                    className="border-yellow/40 bg-yellow/20 text-eyebrow text-yellow px-3 py-0.5"
+                    variant="secondary"
+                  >
                     <Trophy className="mr-1 h-3.5 w-3.5" />
                     Championship Final
                   </Badge>

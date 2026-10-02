@@ -148,7 +148,7 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
           <div className="min-w-0 space-y-0.5">
             <h3 className="text-label text-headline flex flex-wrap items-center gap-2">
               Sector Tariff Planner
-              <Badge variant="orange">Not saved</Badge>
+              <Badge variant="warning">Not saved</Badge>
             </h3>
             <p className="text-label-secondary text-footnote">
               Try out tariffs by sector. Changes here reset when you leave the page and don&apos;t

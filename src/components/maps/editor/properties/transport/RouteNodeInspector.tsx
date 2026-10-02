@@ -378,7 +378,7 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
                     <span className="text-label-secondary text-footnote tabular-nums">
                       #{idx + 1}
                     </span>
-                    {isStart && <Badge variant="green">Start</Badge>}
+                    {isStart && <Badge variant="success">Start</Badge>}
                     {isEnd && <Badge variant="destructive">End</Badge>}
                   </div>
 

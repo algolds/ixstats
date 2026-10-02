@@ -101,7 +101,7 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
             </p>
           </div>
         </div>
-        <Badge variant="secondary" className="shrink-0">
+        <Badge variant="default" className="shrink-0">
           Player fiat
         </Badge>
       </Card>

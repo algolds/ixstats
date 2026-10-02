@@ -65,7 +65,7 @@ function EquipmentRow({
         <div className="mb-1 flex flex-wrap items-center gap-2">
           <h5 className="text-label text-body font-medium">{equipment.name}</h5>
           <Badge variant="outline">{equipment.category}</Badge>
-          <Badge variant="secondary">{era?.label.split(" ")[0]}</Badge>
+          <Badge variant="default">{era?.label.split(" ")[0]}</Badge>
         </div>
         <p className="text-label-secondary text-footnote">
           {manufacturer ? `${manufacturer.name} • ${manufacturer.country}` : equipment.manufacturer}

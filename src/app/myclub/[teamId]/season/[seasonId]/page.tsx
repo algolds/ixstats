@@ -154,7 +154,7 @@ function MatchCard({
               </p>
             </div>
 
-            <Badge variant={isCompleted ? "outline" : "neutral"} className="shrink-0 gap-1">
+            <Badge variant={isCompleted ? "outline" : "default"} className="shrink-0 gap-1">
               {MATCH_STATUS_ICON[status] ?? null}
               {MATCH_STATUS_LABEL[status] ?? status}
             </Badge>
@@ -270,10 +270,10 @@ export default function MyClubSeasonDetailPage() {
           <Badge
             variant={
               season.status === "in_progress"
-                ? "tinted"
+                ? "secondary"
                 : season.status === "completed"
                   ? "outline"
-                  : "neutral"
+                  : "default"
             }
           >
             {season.status === "in_progress"
@@ -439,7 +439,7 @@ export default function MyClubSeasonDetailPage() {
                             {(s.team as Record<string, string>).name}
                           </span>
                           {(s.team as Record<string, string>).id === teamId && (
-                            <Badge variant="tinted">YOU</Badge>
+                            <Badge variant="secondary">YOU</Badge>
                           )}
                         </div>
                       </TableCell>
@@ -494,7 +494,7 @@ export default function MyClubSeasonDetailPage() {
                     </span>
                   </span>
                   {seasonHistoryEntry.isChampion && (
-                    <Badge variant="caution">
+                    <Badge variant="warning">
                       <Trophy />
                       Champion
                     </Badge>

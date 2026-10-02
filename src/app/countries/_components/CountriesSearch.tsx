@@ -342,23 +342,23 @@ export function CountriesSearch({
           <div className="mt-2 flex flex-wrap items-center gap-1">
             <span className="mr-1 font-medium">Active Filters:</span>
             {searchTerm && (
-              <Badge variant="secondary">
+              <Badge variant="default">
                 Search: "
                 {`${searchTerm.length > 15 ? `${searchTerm.substring(0, 12)}...` : searchTerm}`}"
               </Badge>
             )}
-            {tierFilter !== "all" && <Badge variant="secondary">Tier: {tierFilter}</Badge>}
+            {tierFilter !== "all" && <Badge variant="default">Tier: {tierFilter}</Badge>}
             {continentFilter !== "all" && (
-              <Badge variant="secondary">Continent: {continentFilter}</Badge>
+              <Badge variant="default">Continent: {continentFilter}</Badge>
             )}
-            {regionFilter !== "all" && <Badge variant="secondary">Region: {regionFilter}</Badge>}
+            {regionFilter !== "all" && <Badge variant="default">Region: {regionFilter}</Badge>}
             {(populationRange.min !== undefined || populationRange.max !== undefined) && (
-              <Badge variant="secondary">
+              <Badge variant="default">
                 Pop:{populationRange.min ?? 0}-{populationRange.max ?? "∞"}
               </Badge>
             )}
             {(sortField !== "name" || sortDirection !== "asc") && (
-              <Badge variant="secondary">
+              <Badge variant="default">
                 Sort: {sortOptions.find((o) => o.value === sortField)?.label} ({sortDirection})
               </Badge>
             )}

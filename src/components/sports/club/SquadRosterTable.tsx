@@ -205,7 +205,7 @@ export function SquadRosterTable({
 
                 {/* Position */}
                 <td className="px-3 py-3 text-center">
-                  <Badge variant="neutral">{player.position}</Badge>
+                  <Badge variant="default">{player.position}</Badge>
                 </td>
 
                 {/* Age */}

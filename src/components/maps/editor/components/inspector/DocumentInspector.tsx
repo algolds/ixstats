@@ -129,7 +129,7 @@ export const DocumentInspector = React.memo(function DocumentInspector({
               <h3 className="text-label text-headline truncate leading-tight">{displayName}</h3>
             </div>
           </div>
-          <Badge variant="green" className="shrink-0">
+          <Badge variant="success" className="shrink-0">
             Active
           </Badge>
         </div>

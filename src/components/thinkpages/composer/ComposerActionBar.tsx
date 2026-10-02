@@ -124,7 +124,7 @@ export function ComposerActionBar({
                       <Image />
                       {selectedImages.length > 0 && (
                         <Badge
-                          variant="secondary"
+                          variant="default"
                           className="border-background bg-tint text-on-tint text-footnote absolute -top-2 -right-2 flex h-3.5 min-w-3.5 items-center justify-center rounded-full border p-0 font-semibold tabular-nums"
                         >
                           {selectedImages.length}

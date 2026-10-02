@@ -22,7 +22,7 @@ export function CalculationLogsCard({ logs, isLoading, error }: CalculationLogsC
           <Database className="text-indigo h-5 w-5" />
           Recent Calculation Logs
           {logs && logs.length > 0 && (
-            <Badge variant="secondary" className="ml-auto">
+            <Badge variant="default" className="ml-auto">
               {logs.length}
             </Badge>
           )}

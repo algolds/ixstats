@@ -70,7 +70,7 @@ export function BlurbSection() {
         <CutoutCardHeader
           icon={<Quote />}
           trailing={
-            <Badge variant="tinted">
+            <Badge variant="secondary">
               <Compass aria-hidden />
               Daily prompt
             </Badge>
@@ -181,7 +181,7 @@ export function BlurbResponseModal({
             <div className="min-w-0 flex-1 pr-6">
               <div className="flex flex-wrap items-center gap-2">
                 <DialogTitle>{prompt.title ?? "Blurb of the day"}</DialogTitle>
-                <Badge variant="tinted" className="tabular-nums">
+                <Badge variant="secondary" className="tabular-nums">
                   {totalCount} {totalCount === 1 ? "response" : "responses"}
                 </Badge>
               </div>
@@ -312,7 +312,7 @@ export function BlurbResponseModal({
                       />
                     )}
                     <span className="text-label text-headline">{countryName}</span>
-                    {r.featured && <Badge variant="caution">Featured</Badge>}
+                    {r.featured && <Badge variant="warning">Featured</Badge>}
                   </div>
 
                   {r.createdAt && (

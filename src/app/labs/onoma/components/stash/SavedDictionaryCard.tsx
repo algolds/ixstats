@@ -126,7 +126,7 @@ export function SavedDictionaryCard({
           </div>
 
           <div className="text-caption flex flex-wrap items-center gap-2">
-            <Badge variant={dict.isPublic ? "success" : "neutral"}>
+            <Badge variant={dict.isPublic ? "success" : "default"}>
               {dict.isPublic ? (
                 <>
                   <Globe />
@@ -140,12 +140,12 @@ export function SavedDictionaryCard({
               )}
             </Badge>
             {dict.role && (
-              <Badge variant="tinted" className="capitalize">
+              <Badge variant="secondary" className="capitalize">
                 {dict.role}
                 {dict.gender && dict.gender !== "any" ? ` · ${dict.gender}` : ""}
               </Badge>
             )}
-            {dict.setName && <Badge variant="neutral">⚇ {dict.setName}</Badge>}
+            {dict.setName && <Badge variant="default">⚇ {dict.setName}</Badge>}
             {dict.clonedFromId && (
               <>
                 <span>•</span>
@@ -256,7 +256,7 @@ export function SavedDictionaryCard({
               <PopoverContent align="start" className="w-56 p-2">
                 <div className="border-separator mb-1 flex items-center justify-between border-b px-2 py-2">
                   <span className="text-subhead text-label-secondary">Stash folders</span>
-                  <Badge variant="tinted">Global</Badge>
+                  <Badge variant="secondary">Global</Badge>
                 </div>
                 {stashesQuery.isLoading && (
                   <div className="text-label-secondary text-footnote flex items-center gap-2 px-2 py-2">

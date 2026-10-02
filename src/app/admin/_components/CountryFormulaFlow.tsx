@@ -112,7 +112,10 @@ function CalcNode({ data, selected }: NodeProps) {
         <div className="flex items-center justify-between">
           <span className="text-label-secondary text-eyebrow">{data.title as string}</span>
           {selected && (
-            <Badge className="bg-tint-fill text-tint h-3.5 border-0 px-1 select-none">
+            <Badge
+              className="bg-tint-fill text-tint h-3.5 border-0 px-1 select-none"
+              variant="secondary"
+            >
               Selected
             </Badge>
           )}

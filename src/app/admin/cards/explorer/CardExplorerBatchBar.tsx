@@ -78,7 +78,7 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
             <EyeOff className="mr-2 h-3.5 w-3.5" />
             Bulk Visibility Controls
           </Button>
-          <Badge variant="neutral" className="gap-2">
+          <Badge variant="default" className="gap-2">
             <Layers className="text-tint h-3.5 w-3.5" />
             Showing <strong className="text-label">{loadedCount}</strong> of{" "}
             <strong className="text-label">{total.toLocaleString()}</strong>

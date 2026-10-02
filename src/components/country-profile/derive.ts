@@ -20,7 +20,7 @@ export function ratePercent(value: number | null): number | null {
 
 // ─── National pulse ─────────────────────────────────────────────────────────
 
-export type PulseTone = "success" | "info" | "warning" | "neutral";
+export type PulseTone = "success" | "info" | "warning" | "default";
 
 export interface PulseStatus {
   label: string;
@@ -50,7 +50,7 @@ export function pulseStatus(
   if (gdp >= 0 && v.stabilityScore != null && v.stabilityScore >= 75)
     return { label: "Stable and prosperous", tone: "info", summary };
   if (gdp < 0) return { label: "Economic headwinds", tone: "warning", summary };
-  return { label: "Consolidating", tone: "neutral", summary };
+  return { label: "Consolidating", tone: "default", summary };
 }
 
 function joinList(parts: string[]): string {

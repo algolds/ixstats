@@ -61,12 +61,12 @@ export function EconomicTemplateDialog({
 
                 <div className="mb-3 flex flex-wrap gap-1">
                   {template.components.slice(0, 4).map((comp) => (
-                    <Badge key={comp} variant="gray">
+                    <Badge key={comp} variant="default">
                       {comp.split("_").slice(0, 2).join(" ")}...
                     </Badge>
                   ))}
                   {template.components.length > 4 && (
-                    <Badge variant="gray">+{template.components.length - 4} more</Badge>
+                    <Badge variant="default">+{template.components.length - 4} more</Badge>
                   )}
                 </div>
               </Card>

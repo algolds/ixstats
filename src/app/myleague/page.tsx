@@ -64,9 +64,9 @@ const MYLEAGUE_HELP_STEPS: HeroHelpStep[] = [
 const STATUS_BADGE: Record<string, BadgeVariant> = {
   active: "success",
   in_progress: "success",
-  paused: "caution",
+  paused: "warning",
   completed: "info",
-  archived: "neutral",
+  archived: "default",
 };
 
 export default function MyLeaguePage() {
@@ -192,12 +192,12 @@ export default function MyLeaguePage() {
               <div className="flex flex-1 flex-col justify-between gap-6 p-5 md:flex-row md:items-end md:p-6">
                 <div className="max-w-2xl space-y-4">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="tinted">Spotlight</Badge>
-                    <Badge variant="neutral">
+                    <Badge variant="secondary">Spotlight</Badge>
+                    <Badge variant="default">
                       {SPORT_LABELS[featuredLeague.sportPreset] || featuredLeague.sportPreset}
                     </Badge>
                     <Badge
-                      variant={STATUS_BADGE[featuredLeague.status] ?? "neutral"}
+                      variant={STATUS_BADGE[featuredLeague.status] ?? "default"}
                       className="capitalize"
                     >
                       {featuredLeague.status}
@@ -346,11 +346,11 @@ export default function MyLeaguePage() {
 
                         {/* Badges */}
                         <div className="absolute inset-x-3 top-3 flex items-start justify-between">
-                          <Badge variant="neutral" className="bg-surface text-label">
+                          <Badge variant="default" className="bg-surface text-label">
                             {SPORT_LABELS[league.sportPreset] || league.sportPreset}
                           </Badge>
                           <Badge
-                            variant={STATUS_BADGE[league.status] ?? "neutral"}
+                            variant={STATUS_BADGE[league.status] ?? "default"}
                             className="bg-surface capitalize"
                           >
                             {league.status}
@@ -365,7 +365,7 @@ export default function MyLeaguePage() {
                             <span className="text-footnote text-label-secondary">
                               {ARCHETYPE_LABELS[league.archetype] || league.archetype}
                             </span>
-                            {isUserOwned && <Badge variant="tinted">Custom</Badge>}
+                            {isUserOwned && <Badge variant="secondary">Custom</Badge>}
                           </div>
                           <h3 className="text-title-3 text-label group-hover:text-tint line-clamp-1 transition-colors">
                             {league.name}

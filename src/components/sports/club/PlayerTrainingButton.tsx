@@ -66,7 +66,7 @@ export function PlayerTrainingButton({
                 <div className="flex items-center gap-2">
                   <Badge
                     className="tabular-nums"
-                    variant={val >= 80 ? "caution" : val >= 70 ? "success" : "neutral"}
+                    variant={val >= 80 ? "warning" : val >= 70 ? "success" : "default"}
                   >
                     {val}
                   </Badge>

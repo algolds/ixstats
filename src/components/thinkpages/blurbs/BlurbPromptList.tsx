@@ -45,7 +45,7 @@ export function BlurbPromptList() {
                   {prompt.question}
                 </p>
               </div>
-              <Badge variant="neutral" className="shrink-0 tabular-nums">
+              <Badge variant="default" className="shrink-0 tabular-nums">
                 {prompt._count.responses} {prompt._count.responses === 1 ? "response" : "responses"}
               </Badge>
             </div>

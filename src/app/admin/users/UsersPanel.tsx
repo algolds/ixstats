@@ -249,7 +249,7 @@ export function UsersPanel() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-eyebrow text-red">Active Admin Impersonation Session</span>
-                <Badge variant="red">Playing As</Badge>
+                <Badge variant="destructive">Playing As</Badge>
               </div>
               <p className="text-footnote text-label mt-0.5">
                 Simulating user identity:{" "}
@@ -415,7 +415,7 @@ export function UsersPanel() {
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-2">
                               <Badge
-                                variant="secondary"
+                                variant="default"
                                 className="bg-wiki/15 text-wiki border-wiki/30 font-semibold"
                               >
                                 {u.wikiUsername}
@@ -441,7 +441,7 @@ export function UsersPanel() {
                         {u.discordUsername ? (
                           <div className="space-y-0.5">
                             <Badge
-                              variant="secondary"
+                              variant="default"
                               className="bg-discord/15 text-discord border-discord/30 font-medium"
                             >
                               @{u.discordUsername}
@@ -463,7 +463,7 @@ export function UsersPanel() {
                             {u.role?.name || "Member"}
                           </Badge>
                           {u.membershipTier === "mycountry_premium" && (
-                            <Badge variant="yellow">VIP</Badge>
+                            <Badge variant="warning">VIP</Badge>
                           )}
                         </div>
                       </TableCell>
@@ -568,17 +568,17 @@ export function UsersPanel() {
                       </TableCell>
                       <TableCell>
                         {e.status === "ALREADY_LINKED" && (
-                          <Badge variant="green" className="gap-1">
+                          <Badge variant="success" className="gap-1">
                             <CheckCircle className="h-3 w-3" /> Linked & Verified
                           </Badge>
                         )}
                         {e.status === "ALT_MERGED" && (
-                          <Badge variant="blue" className="gap-1">
+                          <Badge variant="info" className="gap-1">
                             <Sparkles className="h-3 w-3" /> Alt Merged ({e.isAltFor})
                           </Badge>
                         )}
                         {e.status === "READY_TO_LINK" && (
-                          <Badge variant="yellow" className="gap-1">
+                          <Badge variant="warning" className="gap-1">
                             <WarningCircle className="h-3 w-3" /> Ready to Link
                           </Badge>
                         )}
@@ -734,9 +734,9 @@ export function UsersPanel() {
                             <div className="flex items-center gap-2">
                               <span className="text-label font-semibold">@{s.discordUsername}</span>
                               {s.discordNick && (
-                                <Badge variant="secondary">Nick: {s.discordNick}</Badge>
+                                <Badge variant="default">Nick: {s.discordNick}</Badge>
                               )}
-                              <Badge variant="green">Match: {s.matchedCountryName}</Badge>
+                              <Badge variant="success">Match: {s.matchedCountryName}</Badge>
                             </div>
                             <div className="text-label-secondary text-footnote">{s.reason}</div>
                           </div>

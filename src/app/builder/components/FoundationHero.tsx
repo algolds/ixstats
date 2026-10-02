@@ -402,7 +402,7 @@ export function FoundationHero({ onSelectPath, onResume }: FoundationHeroProps) 
 
                       <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex items-center gap-2">
-                          <Badge variant="yellow">Draft in progress</Badge>
+                          <Badge variant="warning">Draft in progress</Badge>
                           <span className="text-label-secondary text-caption">
                             {inProgressData.stepLabel}
                           </span>

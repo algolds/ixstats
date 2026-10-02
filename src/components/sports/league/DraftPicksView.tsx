@@ -241,7 +241,7 @@ export function DraftPicksView({
                   {pick.player && (
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Badge variant="secondary" className="cursor-help font-semibold">
+                        <Badge variant="default" className="cursor-help font-semibold">
                           {pick.player.position}
                         </Badge>
                       </TooltipTrigger>

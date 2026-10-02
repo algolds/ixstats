@@ -98,7 +98,7 @@ function TaxRateCardComponent({
               <PercentageFlow value={rate} decimalPlaces={1} />
             </span>
           ) : (
-            <Badge variant="orange">Not set</Badge>
+            <Badge variant="warning">Not set</Badge>
           )}
         </div>
       </div>

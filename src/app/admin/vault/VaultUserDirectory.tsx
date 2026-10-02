@@ -373,7 +373,7 @@ export function VaultUserDirectory() {
         mobileRole: "field",
         accessor: (user: any) => user.vault?.loginStreak ?? 0,
         render: (_val: unknown, user: any) => (
-          <Badge variant="orange">{user.vault?.loginStreak ?? 0}d</Badge>
+          <Badge variant="warning">{user.vault?.loginStreak ?? 0}d</Badge>
         ),
       },
       {
@@ -383,7 +383,7 @@ export function VaultUserDirectory() {
         mobileRole: "field",
         accessor: (user: any) => user.vault?.vaultLevel ?? 1,
         render: (_val: unknown, user: any) => (
-          <Badge variant="blue">Lvl {user.vault?.vaultLevel ?? 1}</Badge>
+          <Badge variant="info">Lvl {user.vault?.vaultLevel ?? 1}</Badge>
         ),
       },
       {

@@ -319,7 +319,10 @@ export function CardPacksAdmin() {
                     />
                     <div className="min-w-0">
                       <h3 className="text-label line-clamp-1 font-semibold">{pack.name}</h3>
-                      <Badge className={`${colors.bg} ${colors.text} text-footnote`}>
+                      <Badge
+                        className={`${colors.bg} ${colors.text} text-footnote`}
+                        variant="secondary"
+                      >
                         {pack.packType}
                       </Badge>
                     </div>

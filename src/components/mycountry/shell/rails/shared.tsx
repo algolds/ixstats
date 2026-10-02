@@ -115,7 +115,7 @@ export function RailEmpty({ children }: { children: React.ReactNode }) {
 /** Count accessory for a rail card header. */
 export function RailCount({ children }: { children: React.ReactNode }) {
   return (
-    <Badge variant="secondary" className="tabular-nums">
+    <Badge variant="default" className="tabular-nums">
       {children}
     </Badge>
   );

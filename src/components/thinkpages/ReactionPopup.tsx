@@ -214,7 +214,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
               const isDiscordEmoji = type.startsWith("discord:");
 
               return (
-                <Badge key={type} variant="neutral">
+                <Badge key={type} variant="default">
                   {isDiscordEmoji ? (
                     <img
                       src={

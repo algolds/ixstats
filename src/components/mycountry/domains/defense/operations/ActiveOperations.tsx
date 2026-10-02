@@ -53,7 +53,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const SUCCESS_RATING_BADGE: Record<string, BadgeVariant> = {
   success: "success",
-  partial: "caution",
+  partial: "warning",
 };
 
 export function ActiveOperations({ countryId }: ActiveOperationsProps) {

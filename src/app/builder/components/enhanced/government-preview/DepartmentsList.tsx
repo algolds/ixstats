@@ -61,7 +61,7 @@ export function DepartmentsList({
               <div className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
                 Government Departments
-                <Badge variant="secondary" className="ml-2">
+                <Badge variant="default" className="ml-2">
                   {departments.length}
                 </Badge>
               </div>

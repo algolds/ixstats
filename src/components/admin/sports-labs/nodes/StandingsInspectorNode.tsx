@@ -156,8 +156,8 @@ export const StandingsInspectorNode = React.memo(function StandingsInspectorNode
                     <TableCell className="text-caption">{s.rank ?? i + 1}</TableCell>
                     <TableCell className="text-caption flex max-w-[120px] items-center gap-1 truncate">
                       {s.team.name}
-                      {isPromotionZone && <Badge variant="green">Prom</Badge>}
-                      {isRelegationZone && <Badge variant="red">Releg</Badge>}
+                      {isPromotionZone && <Badge variant="success">Prom</Badge>}
+                      {isRelegationZone && <Badge variant="destructive">Releg</Badge>}
                     </TableCell>
                     <TableCell className="text-footnote text-center tabular-nums">
                       {s.wins}-{s.losses}-{s.draws}

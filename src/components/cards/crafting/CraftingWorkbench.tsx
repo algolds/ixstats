@@ -209,8 +209,8 @@ export const CraftingWorkbench: React.FC<CraftingWorkbenchProps> = ({
             <p className="text-body text-label-secondary">{recipeData.description}</p>
           )}
           <div className="text-body flex items-center justify-center gap-4">
-            <Badge variant="neutral">{recipeData.recipeType}</Badge>
-            <Badge variant="tinted">{recipeData.resultRarity}</Badge>
+            <Badge variant="default">{recipeData.recipeType}</Badge>
+            <Badge variant="secondary">{recipeData.resultRarity}</Badge>
           </div>
         </div>
 

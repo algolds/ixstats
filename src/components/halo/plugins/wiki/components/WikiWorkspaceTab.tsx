@@ -130,7 +130,7 @@ export function WikiWorkspaceTab({
                     {`Last read ${timeAgo(session.updatedAt)}`}
                   </PreText>
                 </div>
-                <Badge variant="neutral" className="tabular-nums">
+                <Badge variant="default" className="tabular-nums">
                   {session.scrollPercent}%
                 </Badge>
               </button>

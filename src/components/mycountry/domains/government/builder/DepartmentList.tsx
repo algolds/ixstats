@@ -232,7 +232,7 @@ export const DepartmentList = React.memo(function DepartmentList({
                       </span>
                       <span className="text-label flex items-center gap-2 font-medium tabular-nums">
                         Priority {priorityLevel}/10
-                        <Badge variant="secondary">{getPriorityLabel(department.priority)}</Badge>
+                        <Badge variant="default">{getPriorityLabel(department.priority)}</Badge>
                       </span>
                     </div>
 

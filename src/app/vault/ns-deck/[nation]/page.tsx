@@ -143,13 +143,13 @@ export default function NSDeckPage() {
                         {card.rarity.replace("_", " ")}
                       </Badge>
                       {card.quantity && card.quantity > 1 && (
-                        <Badge variant="default" className="bg-blue text-on-blue font-semibold">
+                        <Badge variant="secondary" className="bg-blue text-on-blue font-semibold">
                           x{card.quantity}
                         </Badge>
                       )}
                     </div>
                     <div className="absolute right-2 bottom-2">
-                      <Badge variant="secondary">S{card.season}</Badge>
+                      <Badge variant="default">S{card.season}</Badge>
                     </div>
                   </div>
                 </CardHeader>

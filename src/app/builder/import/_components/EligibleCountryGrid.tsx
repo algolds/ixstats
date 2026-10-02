@@ -161,7 +161,7 @@ const EligibleCountryCard = React.memo<EligibleCountryCardProps>(function Eligib
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between">
-                  <Badge variant="tinted">
+                  <Badge variant="secondary">
                     <Check aria-hidden className="stroke-[3]" />
                     <span>Confirm</span>
                   </Badge>

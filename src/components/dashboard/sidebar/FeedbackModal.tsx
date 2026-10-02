@@ -199,7 +199,7 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
                             log.type === "error"
                               ? "destructive"
                               : log.type === "warn"
-                                ? "caution"
+                                ? "warning"
                                 : "info"
                           }
                           className="select-none"
@@ -223,7 +223,12 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
       </div>
 
       <div className="flex items-center justify-end gap-2 pt-2">
-        <Button type="button" variant="secondary" onClick={onClose} disabled={submitMutation.isPending}>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={onClose}
+          disabled={submitMutation.isPending}
+        >
           Cancel
         </Button>
         <Button type="submit" variant="default" disabled={submitMutation.isPending}>

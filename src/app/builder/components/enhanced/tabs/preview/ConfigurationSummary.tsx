@@ -57,7 +57,7 @@ export function ConfigurationSummary({
             <h4 className="text-body font-medium">Primary Sectors:</h4>
             <div className="flex flex-wrap gap-1">
               {structure.primarySectors.map((sector, index) => (
-                <Badge key={index} variant="secondary">
+                <Badge key={index} variant="default">
                   {sector}
                 </Badge>
               ))}
@@ -68,7 +68,7 @@ export function ConfigurationSummary({
             <h4 className="text-body font-medium">Secondary Sectors:</h4>
             <div className="flex flex-wrap gap-1">
               {structure.secondarySectors.map((sector, index) => (
-                <Badge key={index} variant="secondary">
+                <Badge key={index} variant="default">
                   {sector}
                 </Badge>
               ))}
@@ -79,7 +79,7 @@ export function ConfigurationSummary({
             <h4 className="text-body font-medium">Tertiary Sectors:</h4>
             <div className="flex flex-wrap gap-1">
               {structure.tertiarySectors.map((sector, index) => (
-                <Badge key={index} variant="secondary">
+                <Badge key={index} variant="default">
                   {sector}
                 </Badge>
               ))}

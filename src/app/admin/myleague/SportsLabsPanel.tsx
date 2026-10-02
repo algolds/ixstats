@@ -367,7 +367,7 @@ export default function SportsLabsPanel() {
           <div>
             <h1 className="text-label text-title-1 flex items-center gap-2">
               MatchResolver
-              <Badge variant="yellow" className="text-eyebrow">
+              <Badge variant="warning" className="text-eyebrow">
                 Simulation Kernel Layer
               </Badge>
             </h1>

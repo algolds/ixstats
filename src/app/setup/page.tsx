@@ -234,8 +234,8 @@ export default function SetupPage() {
       : tier === "Developed"
         ? "info"
         : tier === "Emerging"
-          ? "caution"
-          : "neutral";
+          ? "warning"
+          : "default";
 
   const errorNote = error && (
     <motion.div
@@ -320,7 +320,7 @@ export default function SetupPage() {
                           </div>
                           <div className="space-y-2">
                             <h2 className="text-title-1 text-label">Create New Country</h2>
-                            <Badge variant="tinted">✨ Recommended</Badge>
+                            <Badge variant="secondary">✨ Recommended</Badge>
                           </div>
                         </div>
 

@@ -961,7 +961,7 @@ export function LoreCardBatchAdmin() {
                       <Icon className="text-purple h-3.5 w-3.5" />
                     )}
                     <span>{preset.name}</span>
-                    <Badge variant="neutral" className="tabular-nums">
+                    <Badge variant="default" className="tabular-nums">
                       {isPresetCrawling ? "Crawling..." : liveCount.toLocaleString()}
                     </Badge>
                   </Button>
@@ -1337,7 +1337,7 @@ export function LoreCardBatchAdmin() {
                           <div className="flex flex-col">
                             <div className="flex items-center gap-2">
                               <span>{c.articleTitle}</span>
-                              {c.category && <Badge variant="tinted">{c.category}</Badge>}
+                              {c.category && <Badge variant="secondary">{c.category}</Badge>}
                             </div>
                             {c.author &&
                               c.author !== "Unknown" &&
@@ -1360,11 +1360,11 @@ export function LoreCardBatchAdmin() {
                           {c.wikiSource === "iiwiki" ? (
                             <IIWikiBadge size="xs" />
                           ) : (
-                            <Badge variant="neutral">{c.wikiSource}</Badge>
+                            <Badge variant="default">{c.wikiSource}</Badge>
                           )}
                         </TableCell>
                         <TableCell className="px-4">
-                          <Badge variant="purple">{c.targetRarity}</Badge>
+                          <Badge variant="secondary">{c.targetRarity}</Badge>
                         </TableCell>
                         <TableCell className="text-label-secondary px-4">S{c.season}</TableCell>
                         <TableCell className="px-4 whitespace-normal">
@@ -1555,11 +1555,11 @@ export function LoreCardBatchAdmin() {
                           {request.wikiSource === "iiwiki" ? (
                             <IIWikiBadge size="xs" />
                           ) : (
-                            <Badge variant="neutral">{request.wikiSource}</Badge>
+                            <Badge variant="default">{request.wikiSource}</Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-label px-4 font-medium">
-                          <Badge variant="tinted" className="gap-2">
+                          <Badge variant="secondary" className="gap-2">
                             <UserCheck className="h-3 w-3" />
                             {request.requesterName || request.userId}
                           </Badge>
@@ -1568,10 +1568,10 @@ export function LoreCardBatchAdmin() {
                           {new Date(request.requestedAt).toLocaleDateString()}
                         </TableCell>
                         <TableCell className="px-4">
-                          {isPending && <Badge variant="yellow">Pending</Badge>}
-                          {isApproved && <Badge variant="blue">Approved</Badge>}
-                          {isGenerated && <Badge variant="green">Generated</Badge>}
-                          {isRejected && <Badge variant="red">Rejected</Badge>}
+                          {isPending && <Badge variant="warning">Pending</Badge>}
+                          {isApproved && <Badge variant="info">Approved</Badge>}
+                          {isGenerated && <Badge variant="success">Generated</Badge>}
+                          {isRejected && <Badge variant="destructive">Rejected</Badge>}
                         </TableCell>
                         <TableCell className="px-4 text-right">
                           <div className="flex justify-end gap-2">
@@ -1680,11 +1680,11 @@ export function LoreCardBatchAdmin() {
                 </div>
                 <div className="flex items-center gap-2">
                   {previewImage.wikiSource && (
-                    <Badge variant="neutral" className="tabular-nums">
+                    <Badge variant="default" className="tabular-nums">
                       {previewImage.wikiSource}
                     </Badge>
                   )}
-                  {previewImage.rarity && <Badge variant="purple">{previewImage.rarity}</Badge>}
+                  {previewImage.rarity && <Badge variant="secondary">{previewImage.rarity}</Badge>}
                 </div>
               </div>
 
@@ -1825,7 +1825,7 @@ export function LoreCardBatchAdmin() {
                             {g.wikiSource}
                           </span>
                         </div>
-                        <Badge variant="red">
+                        <Badge variant="destructive">
                           {g.count} copies (+{g.redundantCount} redundant)
                         </Badge>
                       </div>

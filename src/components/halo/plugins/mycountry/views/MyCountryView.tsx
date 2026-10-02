@@ -182,9 +182,9 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               </div>
               {/* Membership badge */}
               {userProfile.membershipTier === "mycountry_premium" ? (
-                <Badge variant="yellow">Premium</Badge>
+                <Badge variant="warning">Premium</Badge>
               ) : (
-                <Badge variant="neutral">Basic</Badge>
+                <Badge variant="default">Basic</Badge>
               )}
             </div>
 
@@ -210,13 +210,13 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               (userProfile.role?.level !== undefined && userProfile.role.level <= 20)) && (
               <div className="mt-1 mb-2 flex flex-wrap gap-1">
                 {userProfile.role && (
-                  <Badge variant="indigo">
+                  <Badge variant="secondary">
                     <Shield aria-hidden />
                     {userProfile.role.displayName}
                   </Badge>
                 )}
                 {userProfile.role?.level !== undefined && userProfile.role.level <= 20 && (
-                  <Badge variant="yellow">
+                  <Badge variant="warning">
                     <Crown aria-hidden />
                     Founding Member
                   </Badge>

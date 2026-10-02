@@ -86,7 +86,7 @@ function CollapsibleSection({
           <Icon className="text-label-secondary h-4 w-4" />
           <span>{title}</span>
           {badge && (
-            <Badge variant="secondary" className="text-footnote px-2 py-0">
+            <Badge variant="default" className="text-footnote px-2 py-0">
               {badge}
             </Badge>
           )}

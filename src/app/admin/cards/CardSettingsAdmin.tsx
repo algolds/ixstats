@@ -200,7 +200,7 @@ export function CardSettingsAdmin({
                 {subtab.label}
                 {subtab.badge && (
                   <Badge
-                    variant={subtab.badgeVariant === "destructive" ? "destructive" : "neutral"}
+                    variant={subtab.badgeVariant === "destructive" ? "destructive" : "default"}
                     className="tabular-nums"
                   >
                     {subtab.badge}

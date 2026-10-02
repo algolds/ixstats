@@ -121,7 +121,7 @@ export const AgingInspectorNode = React.memo(function AgingInspectorNode({
                       .map(([k, v]) => (
                         <Badge
                           key={k}
-                          variant="secondary"
+                          variant="default"
                           className={cn(
                             "text-footnote tabular-nums",
                             v >= 0 ? "text-green" : "text-red"

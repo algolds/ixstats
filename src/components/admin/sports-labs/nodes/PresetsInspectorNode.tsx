@@ -84,7 +84,7 @@ export const PresetsInspectorNode = React.memo(function PresetsInspectorNode({
               <span className="text-label-secondary">Rating Vectors</span>
               <div className="mt-1 flex flex-wrap gap-1">
                 {activePreset.ratingVector.map((v) => (
-                  <Badge key={v} variant="secondary">
+                  <Badge key={v} variant="default">
                     {v}
                   </Badge>
                 ))}

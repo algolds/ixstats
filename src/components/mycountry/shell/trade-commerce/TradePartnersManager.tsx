@@ -46,7 +46,7 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
             <Handshake aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
             <h3 className="text-label text-headline">Bilateral Trade Agreements & Partners</h3>
           </div>
-          <Badge variant="secondary" className="shrink-0 tabular-nums">
+          <Badge variant="default" className="shrink-0 tabular-nums">
             {partners.length} connected
           </Badge>
         </div>
@@ -83,7 +83,7 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
             </div>
 
             {partner.tradeAgreement ? (
-              <Badge variant="green" className="shrink-0">
+              <Badge variant="success" className="shrink-0">
                 <Handshake aria-hidden="true" />
                 Trade treaty
               </Badge>

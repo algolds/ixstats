@@ -103,7 +103,7 @@ export function FeedItemHeader({
       {/* Right-aligned metadata chips */}
       <div className="flex shrink-0 items-center gap-2">
         {!isWiki && (
-          <Badge variant="neutral" className="shrink-0">
+          <Badge variant="default" className="shrink-0">
             {resolvedConfig.label}
           </Badge>
         )}
@@ -116,7 +116,7 @@ export function FeedItemHeader({
                 ? "success"
                 : activity._totalBytes < 0
                   ? "destructive"
-                  : "neutral"
+                  : "default"
             }
             className="tabular-nums"
           >

@@ -24,16 +24,16 @@ import {
 /** Badge variant for an implementation complexity (status roles, Facet 3 §7.1). */
 export function getComplexityBadgeVariant(
   complexity: string | undefined
-): "success" | "caution" | "destructive" | "neutral" {
+): "success" | "warning" | "destructive" | "default" {
   switch ((complexity ?? "").toLowerCase()) {
     case "low":
       return "success";
     case "medium":
-      return "caution";
+      return "warning";
     case "high":
       return "destructive";
     default:
-      return "neutral";
+      return "default";
   }
 }
 

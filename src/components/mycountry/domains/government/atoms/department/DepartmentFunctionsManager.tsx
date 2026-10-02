@@ -71,11 +71,7 @@ export const DepartmentFunctionsManager = React.memo(function DepartmentFunction
 
       <div className="flex flex-wrap gap-2 pt-1">
         {functions.map((fn, idx) => (
-          <Badge
-            key={idx}
-            variant="secondary"
-            className="text-footnote gap-2 px-3 py-1 font-normal"
-          >
+          <Badge key={idx} variant="default" className="text-footnote gap-2 px-3 py-1 font-normal">
             <span>{fn}</span>
             {!isReadOnly && (
               <Button

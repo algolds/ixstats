@@ -142,7 +142,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
             <div className="min-w-0 flex-1 space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-label text-title-3">@{passportHandle}</span>
-                <Badge variant="tinted">
+                <Badge variant="secondary">
                   <ShieldCheck aria-hidden />
                   Verified
                 </Badge>
@@ -175,7 +175,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                   (() => {
                     const tierInfo = formatMembershipTier(userProfile.membershipTier);
                     return (
-                      <Badge variant={tierInfo.isPremium ? "caution" : "neutral"}>
+                      <Badge variant={tierInfo.isPremium ? "warning" : "default"}>
                         {tierInfo.isPremium && <Crown aria-hidden />}
                         {tierInfo.label}
                       </Badge>

@@ -26,7 +26,7 @@ export function DatabaseExplorer() {
                 </CardDescription>
               </div>
             </div>
-            <Badge variant="green">
+            <Badge variant="success">
               <CheckCircle className="mr-1 h-3.5 w-3.5" />
               Connected (Port 5433)
             </Badge>

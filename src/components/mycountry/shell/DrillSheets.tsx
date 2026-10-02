@@ -287,7 +287,7 @@ function IntentDetail({
             >
               {intent.tier} tier
             </Badge>
-            <Badge variant="secondary" className="capitalize">
+            <Badge variant="default" className="capitalize">
               {intent.category}
             </Badge>
             {intent.target && <Badge variant="outline">Target: {intent.target}</Badge>}
@@ -397,7 +397,7 @@ function IntentDetail({
         title="Resistance progress"
         icon={Shield}
         accessory={
-          <Badge variant="secondary" className="shrink-0 tabular-nums">
+          <Badge variant="default" className="shrink-0 tabular-nums">
             {linked.data?.resolvedCount ?? 0} / {linked.data?.totalCount ?? 0} resolved
           </Badge>
         }
@@ -475,7 +475,7 @@ function IntentDetail({
             <p className="text-label text-body truncate font-medium">{brokerInfo.name}</p>
           </div>
         </div>
-        <Badge variant="green" className="shrink-0">
+        <Badge variant="success" className="shrink-0">
           Cabinet aligned
         </Badge>
       </Card>
@@ -485,7 +485,7 @@ function IntentDetail({
         <SheetSection
           title="Applied line-items"
           icon={Sliders}
-          accessory={<Badge variant="secondary">{parsedChanges.length}</Badge>}
+          accessory={<Badge variant="default">{parsedChanges.length}</Badge>}
         >
           <ol className="divide-separator divide-y">
             {parsedChanges.map((change, idx) => (

@@ -72,11 +72,11 @@ export function LanguagePackCard({
       >
         {/* Card Header: Category Badge + Rating */}
         <div className="flex items-center justify-between gap-2">
-          <Badge variant="neutral" className={cn("font-mono", theme.text)}>
+          <Badge variant="default" className={cn("font-mono", theme.text)}>
             {pack.culturalFamily}
           </Badge>
 
-          <Badge variant="caution" className="tabular-nums">
+          <Badge variant="warning" className="tabular-nums">
             <Star className="fill-yellow" />
             <span>{pack.ratingAvg > 0 ? pack.ratingAvg.toFixed(1) : "New"}</span>
             {pack.ratingCount > 0 && (

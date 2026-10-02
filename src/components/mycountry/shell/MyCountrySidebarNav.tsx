@@ -103,7 +103,7 @@ interface MyCountrySidebarNavProps {
 /** The small MyCountry-accent "Premium" chip. */
 function PremiumBadge() {
   return (
-    <Badge variant="tinted" className="px-2 py-0">
+    <Badge variant="secondary" className="px-2 py-0">
       Premium
     </Badge>
   );
@@ -272,10 +272,7 @@ export function MyCountrySidebarNav({
                 <span className="truncate">{item.title}</span>
                 {isLocked && <Lock aria-label="Premium" className="ml-auto size-3.5 shrink-0" />}
                 {!isLocked && noteCount > 0 && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-auto rounded-full px-2 py-0 tabular-nums"
-                  >
+                  <Badge variant="default" className="ml-auto rounded-full px-2 py-0 tabular-nums">
                     {noteCount}
                   </Badge>
                 )}

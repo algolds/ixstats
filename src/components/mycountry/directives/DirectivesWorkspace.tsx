@@ -232,7 +232,7 @@ export function DirectivesWorkspace({
             >
               {v.label}
               {v.count != null && v.count > 0 && (
-                <Badge variant="secondary" className="rounded-full px-2 tabular-nums">
+                <Badge variant="default" className="rounded-full px-2 tabular-nums">
                   {v.count}
                 </Badge>
               )}

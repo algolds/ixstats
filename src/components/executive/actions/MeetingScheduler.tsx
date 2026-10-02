@@ -390,7 +390,7 @@ export function MeetingScheduler({
                       <span className="text-label font-medium">
                         {defaultMeeting.prefilledAgenda.title}
                       </span>
-                      <Badge variant="yellow" className="font-semibold">
+                      <Badge variant="warning" className="font-semibold">
                         {defaultMeeting.prefilledAgenda.linkedIssueId
                           ? "CRISIS ISSUE"
                           : "DRAFT POLICY"}
@@ -789,7 +789,7 @@ export function MeetingScheduler({
                             <span className="text-label text-caption truncate font-semibold">
                               {item.title}
                             </span>
-                            <Badge variant="neutral" className="tabular-nums">
+                            <Badge variant="default" className="tabular-nums">
                               {item.duration}m
                             </Badge>
                           </div>

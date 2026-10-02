@@ -121,7 +121,7 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
         <div className="text-footnote flex items-center justify-between">
           <span className="text-label-secondary">Complexity:</span>
           <Badge
-            variant="secondary"
+            variant="default"
             className={cn(
               "text-footnote h-3.5 px-1 leading-none",
               getComplexityBgColor(component.metadata.complexity),

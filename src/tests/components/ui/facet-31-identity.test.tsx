@@ -275,9 +275,9 @@ describe("data face for figures", () => {
   it("Badge counts switch to the data face; words do not", () => {
     render(
       <>
-        <Badge>12</Badge>
-        <Badge>Tier 3</Badge>
-        <Badge numeric>
+        <Badge variant="secondary">12</Badge>
+        <Badge variant="secondary">Tier 3</Badge>
+        <Badge variant="secondary">
           <span>7</span>
         </Badge>
       </>

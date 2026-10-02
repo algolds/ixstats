@@ -202,7 +202,7 @@ export function SplashIssuesTeaser() {
                       return <Icon className={`h-5 w-5 shrink-0 ${splashGold.text}`} aria-hidden />;
                     })()}
                   </div>
-                  <Badge variant="tinted">{formatSeverityLabel(current.severity)}</Badge>
+                  <Badge variant="secondary">{formatSeverityLabel(current.severity)}</Badge>
                 </div>
                 <p className="text-label-secondary text-eyebrow mb-1">
                   {current.country.name.replace(/_/g, " ")}

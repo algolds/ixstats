@@ -57,7 +57,7 @@ export function ChronicleTimeline({
                 <span className="text-footnote text-label-secondary tabular-nums">
                   {entry.dateLabel}
                 </span>
-                <Badge variant={entry.source === "ixtime" ? "tinted" : "neutral"}>
+                <Badge variant={entry.source === "ixtime" ? "secondary" : "default"}>
                   {CHRONICLE_KIND_LABEL[entry.kind]}
                 </Badge>
               </div>

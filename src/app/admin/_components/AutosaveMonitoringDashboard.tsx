@@ -502,7 +502,7 @@ function ActiveUsersTable({ users }: ActiveUsersTableProps) {
               {new Date(user.lastAutosave).toLocaleString()}
             </TableCell>
             <TableCell className="px-4">
-              <Badge variant="blue">{user.section || "N/A"}</Badge>
+              <Badge variant="info">{user.section || "N/A"}</Badge>
             </TableCell>
             <TableCell className="px-4 text-right font-semibold">{user.autosaveCount}</TableCell>
           </TableRow>

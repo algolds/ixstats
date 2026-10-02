@@ -113,7 +113,7 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
                 </div>
 
                 {link.label === "ThinkTanks" && thinktankUnreadCount > 0 && (
-                  <Badge variant="success" numeric>
+                  <Badge variant="success">
                     {thinktankUnreadCount > 99 ? "99+" : thinktankUnreadCount}
                     <span className="sr-only"> unread</span>
                   </Badge>

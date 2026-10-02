@@ -109,7 +109,7 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
                     <template.icon className="h-4 w-4" />
                     <span className="text-body">{template.name}</span>
                   </div>
-                  <Badge variant={impact > 1 ? "default" : "secondary"}>
+                  <Badge variant={impact > 1 ? "secondary" : "default"}>
                     {impact > 1 ? "+" : ""}
                     {((impact - 1) * 100).toFixed(1)}%
                   </Badge>

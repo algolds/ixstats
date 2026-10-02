@@ -274,7 +274,7 @@ export function ReactionsDialog({
                               </span>
                             )}
                             {reaction.account.isDiscordUser ? (
-                              <Badge className="bg-discord/15 text-discord">
+                              <Badge className="bg-discord/15 text-discord" variant="secondary">
                                 <DiscordGlyph />
                                 <span>Discord</span>
                               </Badge>
@@ -307,7 +307,7 @@ export function ReactionsDialog({
                             {React.createElement(ReactionIcon, { className: "size-4" })}
                           </div>
                         ) : (
-                          <Badge variant="neutral">{reaction.reactionType}</Badge>
+                          <Badge variant="default">{reaction.reactionType}</Badge>
                         )}
                       </div>
                     );

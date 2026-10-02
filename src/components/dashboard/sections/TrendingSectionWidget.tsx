@@ -133,7 +133,7 @@ export function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwi
       <div className="flex items-center gap-2">
         <WikiOSLogomark aria-hidden className="text-wiki size-3.5 shrink-0" />
         <span className="text-label text-headline truncate">{title}</span>
-        <Badge variant="neutral" className="ml-auto">
+        <Badge variant="default" className="ml-auto">
           {wiki === "ixwiki" ? "IxWiki" : "IIWiki"}
         </Badge>
       </div>
@@ -180,7 +180,7 @@ export function ForumPreviewContent({ threadId }: { threadId: number }) {
         <MessageSquare aria-hidden className="text-label-secondary size-3.5 shrink-0" />
         <span className="text-label text-headline truncate">{thread.title}</span>
       </div>
-      {thread.forumName && <Badge variant="neutral">{thread.forumName}</Badge>}
+      {thread.forumName && <Badge variant="default">{thread.forumName}</Badge>}
       {thread.excerpt && (
         <p className="text-label-secondary text-footnote line-clamp-3">
           {thread.excerpt.substring(0, 250)}
@@ -387,7 +387,7 @@ export function TrendingSectionWidget() {
                       <span className="text-label text-headline group-hover/item:text-tint group-focus-visible/item:text-tint truncate transition-colors">
                         {displayTitle}
                       </span>
-                      <Badge variant="neutral">{src.label}</Badge>
+                      <Badge variant="default">{src.label}</Badge>
                     </div>
 
                     {displayExcerpt && (

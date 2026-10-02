@@ -232,7 +232,7 @@ export function GeoProfileContent({ countryId }: GeoProfileContentProps) {
           <div className="mt-1 flex flex-wrap gap-1">
             {profile.neighbors.map(
               (n: { id: string; name: string; slug: string | null; sharedBorderKm: number }) => (
-                <Badge key={n.id} variant="secondary">
+                <Badge key={n.id} variant="default">
                   {n.name}
                   {n.sharedBorderKm > 0 && (
                     <span className="text-label-secondary">

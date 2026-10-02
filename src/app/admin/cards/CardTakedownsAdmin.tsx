@@ -115,7 +115,7 @@ export function CardTakedownsAdmin() {
                       NS ID: {card.nsCardId} S{card.nsSeason}
                     </span>
                     {card.selfService && (
-                      <Badge variant="red" className="ml-2">
+                      <Badge variant="destructive" className="ml-2">
                         flag-owner request
                       </Badge>
                     )}

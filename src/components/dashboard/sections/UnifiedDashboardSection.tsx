@@ -368,7 +368,7 @@ export function UnifiedDashboardSection({
                 <div className="flex flex-wrap items-center gap-1 px-4 pb-4">
                   {Object.entries((globalStats as any).economicTierDistribution).map(
                     ([tier, count]) => (
-                      <Badge key={tier} variant="neutral">
+                      <Badge key={tier} variant="default">
                         <span>{tier}</span>
                         <span className="text-label font-data tabular-nums">{count as number}</span>
                       </Badge>

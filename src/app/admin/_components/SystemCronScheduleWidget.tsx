@@ -81,7 +81,7 @@ export function SystemCronScheduleWidget() {
           <Clock className="text-tint h-4.5 w-4.5" />
           System Cron Schedules
         </h2>
-        <Badge variant="tinted">UTC Reference</Badge>
+        <Badge variant="secondary">UTC Reference</Badge>
       </div>
 
       <div className="border-separator rounded-row flex min-h-[380px] flex-1 flex-col gap-4 p-4 md:flex-row">

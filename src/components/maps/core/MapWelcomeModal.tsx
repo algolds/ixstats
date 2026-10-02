@@ -151,7 +151,7 @@ export function MapWelcomeModal({
               </DialogDescription>
             </div>
           </div>
-          <Badge variant="secondary" className="tabular-nums">
+          <Badge variant="default" className="tabular-nums">
             v{IXWORLD_VERSION}
           </Badge>
         </DialogHeader>

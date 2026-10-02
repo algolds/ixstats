@@ -201,7 +201,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
                       accessory="check"
                       title={b.name}
                       trailing={
-                        <Badge variant="neutral" className="capitalize">
+                        <Badge variant="default" className="capitalize">
                           {b.category}
                         </Badge>
                       }

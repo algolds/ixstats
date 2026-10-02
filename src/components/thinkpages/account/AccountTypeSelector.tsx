@@ -105,7 +105,7 @@ export function AccountTypeSelector({
                 <p className="text-callout text-label-secondary">{type.description}</p>
                 <div className="flex flex-wrap gap-1 pt-1">
                   {type.examples.map((ex, i) => (
-                    <Badge key={i} variant="neutral">
+                    <Badge key={i} variant="default">
                       {ex}
                     </Badge>
                   ))}

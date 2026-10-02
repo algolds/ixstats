@@ -128,9 +128,19 @@ export function CountryShowcaseCard({ country }: { country: Record<string, unkno
               {identity?.officialName || displayName}
             </h3>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge className={splashGold.badge}>{economicTier}</Badge>
-              {governmentType && <Badge className={splashGold.badge}>{governmentType}</Badge>}
-              {continent && <Badge className={splashGold.badge}>{continent}</Badge>}
+              <Badge className={splashGold.badge} variant="secondary">
+                {economicTier}
+              </Badge>
+              {governmentType && (
+                <Badge className={splashGold.badge} variant="secondary">
+                  {governmentType}
+                </Badge>
+              )}
+              {continent && (
+                <Badge className={splashGold.badge} variant="secondary">
+                  {continent}
+                </Badge>
+              )}
             </div>
           </div>
           {coatOfArmsUrl && (

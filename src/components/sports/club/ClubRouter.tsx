@@ -295,7 +295,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-label text-title-1">{team.name}</h1>
-              {team.shortName && <Badge variant="neutral">{team.shortName}</Badge>}
+              {team.shortName && <Badge variant="default">{team.shortName}</Badge>}
             </div>
             <div className="text-label-secondary text-footnote mt-1 flex flex-wrap items-center gap-3">
               {team.city && (

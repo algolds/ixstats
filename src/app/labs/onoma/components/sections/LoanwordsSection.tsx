@@ -390,7 +390,7 @@ export default function LoanwordsSection() {
                       </span>
                     }
                     trailing={
-                      <Badge variant="neutral" className="font-mono capitalize">
+                      <Badge variant="default" className="font-mono capitalize">
                         {c.domain}
                       </Badge>
                     }

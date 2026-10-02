@@ -161,6 +161,7 @@ export function PollManager({ onCreateNew }: PollManagerProps) {
                               ? "border-red/35 bg-red/10 text-red hover:bg-red/20"
                               : "border-separator bg-fill-3 text-label-secondary hover:bg-fill-4"
                         }`}
+                        variant="secondary"
                       >
                         {poll.isActive && !isExpired
                           ? "Active"

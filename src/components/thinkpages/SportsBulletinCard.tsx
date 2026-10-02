@@ -63,7 +63,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
           <div>
             <div className="flex items-center gap-2">
               <h4 className="text-headline text-label">{league.name}</h4>
-              {isChampionBulletin && <Badge variant="caution">Champion crowned</Badge>}
+              {isChampionBulletin && <Badge variant="warning">Champion crowned</Badge>}
             </div>
             <p className="text-footnote text-label-secondary flex items-center gap-2 tabular-nums">
               {isChampionBulletin ? (
@@ -132,7 +132,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
 
                   <div className="flex shrink-0 items-center gap-2">
                     {res.isUpset && (
-                      <Badge variant="caution">
+                      <Badge variant="warning">
                         <Zap aria-hidden="true" />
                         Upset
                       </Badge>
@@ -167,7 +167,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
                     </div>
 
                     <Badge
-                      variant={isUp ? "success" : isDown ? "destructive" : "neutral"}
+                      variant={isUp ? "success" : isDown ? "destructive" : "default"}
                       className="tabular-nums"
                     >
                       {isUp ? `▲${jump}` : isDown ? `▼${Math.abs(jump)}` : "—"}

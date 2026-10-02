@@ -12,7 +12,7 @@ const DOT: Record<PulseTone, string> = {
   success: "bg-success",
   info: "bg-info",
   warning: "bg-warning",
-  neutral: "bg-label-tertiary",
+  default: "bg-label-tertiary",
 };
 
 /**

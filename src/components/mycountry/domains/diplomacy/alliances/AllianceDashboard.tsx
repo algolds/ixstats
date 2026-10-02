@@ -40,10 +40,10 @@ interface AllianceDashboardProps {
   onLeave?: () => void;
 }
 
-const ROLE_BADGES: Record<string, { variant: "default" | "secondary" | "outline"; label: string }> =
+const ROLE_BADGES: Record<string, { variant: "secondary" | "default" | "outline"; label: string }> =
   {
-    founder: { variant: "default", label: "Founder" },
-    leader: { variant: "secondary", label: "Leader" },
+    founder: { variant: "secondary", label: "Founder" },
+    leader: { variant: "default", label: "Leader" },
     member: { variant: "outline", label: "Member" },
     observer: { variant: "outline", label: "Observer" },
   };

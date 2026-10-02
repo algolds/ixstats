@@ -335,7 +335,10 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
             <div>
               <Eyebrow>Economic Tier</Eyebrow>
               <div className="mt-2">
-                <Badge className={`text-headline ${tierInfo?.currentTier?.color}`}>
+                <Badge
+                  className={`text-headline ${tierInfo?.currentTier?.color}`}
+                  variant="secondary"
+                >
                   {countryData?.economicTier || "Unknown"}
                 </Badge>
               </div>
@@ -555,7 +558,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                   <Card variant="inset" padding="none" className="p-4">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-title-3">{countryData?.economicTier}</span>
-                      <Badge className={tierInfo?.currentTier?.color}>
+                      <Badge className={tierInfo?.currentTier?.color} variant="secondary">
                         {tierInfo?.currentTier?.name}
                       </Badge>
                     </div>
@@ -594,7 +597,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                               <>
                                 <div className="mb-2 flex items-center justify-between">
                                   <span className="text-title-3">{nextTier.name}</span>
-                                  <Badge variant="yellow">Next Level</Badge>
+                                  <Badge variant="warning">Next Level</Badge>
                                 </div>
                                 <p className="text-label-secondary text-footnote">
                                   Minimum: {formatCurrency(nextTier.min)}

@@ -116,7 +116,7 @@ export function CurrencySelector({
                 </span>
               )}
               {(activeOption?.symbol || currencyInfo.symbol) && (
-                <Badge variant="neutral" className="ml-1 shrink-0">
+                <Badge variant="default" className="ml-1 shrink-0">
                   {activeOption?.symbol || currencyInfo.symbol}
                 </Badge>
               )}
@@ -255,7 +255,7 @@ export function CurrencyInput({
           )}
         />
         {currencyInfo?.symbol && (
-          <Badge variant="secondary" className="text-footnote inline-flex items-center gap-1">
+          <Badge variant="default" className="text-footnote inline-flex items-center gap-1">
             <CurrencyIcon code={value} symbol={currencyInfo.symbol} className="h-3 w-3" />
             <span>{currencyInfo.symbol}</span>
           </Badge>

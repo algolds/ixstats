@@ -90,7 +90,7 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
                   className="group rounded-card flex-col items-stretch justify-between gap-0 overflow-hidden p-4"
                 >
                   <div className="flex items-center justify-between">
-                    <Badge variant="caution">Season {season.seasonNumber}</Badge>
+                    <Badge variant="warning">Season {season.seasonNumber}</Badge>
                     <span className="text-footnote text-label-secondary tabular-nums">
                       {season.totalMatches} Matches · {season.totalGoals} Goals
                     </span>
@@ -266,7 +266,7 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
                         </span>
                       }
                       trailing={
-                        <Badge variant="caution" className="tabular-nums">
+                        <Badge variant="warning" className="tabular-nums">
                           {team.titles} {team.titles === 1 ? "Title" : "Titles"}
                         </Badge>
                       }

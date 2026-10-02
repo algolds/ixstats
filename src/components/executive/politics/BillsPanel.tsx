@@ -144,7 +144,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
         </div>
         <div className="flex items-center gap-2">
           {committeeCount > 0 && (
-            <Badge variant="yellow" className="font-semibold">
+            <Badge variant="warning" className="font-semibold">
               {committeeCount} Pending
             </Badge>
           )}
@@ -264,6 +264,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                           )}
                           <Badge
                             className={`text-caption px-2 py-0.5 font-semibold ${statusMeta.className}`}
+                            variant="secondary"
                           >
                             {statusMeta.label}
                           </Badge>

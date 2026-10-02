@@ -439,7 +439,7 @@ export function PostActions({
         {/* Reply */}
         <ActionPill
           size={pillSize}
-          tone="blue"
+          tone="info"
           icon={<MessageCircle />}
           count={showCounts && replyCount > 0 ? replyCount : undefined}
           onClick={() => onReply?.(postId)}
@@ -465,7 +465,7 @@ export function PostActions({
           <ActionPill
             ref={reactionButtonRef}
             size={pillSize}
-            tone="pink"
+            tone="secondary"
             pressed={isLiked || showReactionPopup}
             icon={<Heart className={cn(isLiked && "fill-current")} />}
             count={showCounts && likeCount > 0 ? likeCount : undefined}

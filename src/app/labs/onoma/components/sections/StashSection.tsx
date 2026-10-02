@@ -324,7 +324,7 @@ export function StashSection({
                                   <span className="text-subhead text-label-secondary">
                                     Stash folders
                                   </span>
-                                  <Badge variant="tinted">Global</Badge>
+                                  <Badge variant="secondary">Global</Badge>
                                 </div>
                                 {stashesQuery.isLoading && (
                                   <div className="text-label-secondary text-footnote flex items-center gap-2 px-2 py-2">

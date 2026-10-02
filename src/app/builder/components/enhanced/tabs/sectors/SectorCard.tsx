@@ -137,7 +137,7 @@ export function SectorCard({
                 {constraint?.locked && <Badge variant="destructive">Constrained</Badge>}
                 {isAffected && (
                   <Badge
-                    variant={isBoosted ? "default" : "secondary"}
+                    variant={isBoosted ? "secondary" : "default"}
                     className={cn(
                       "text-footnote px-2 py-0 leading-none",
                       isBoosted
@@ -407,7 +407,7 @@ export function SectorCard({
           {template.characteristics.slice(0, 2).map((char, idx) => (
             <Badge
               key={idx}
-              variant="secondary"
+              variant="default"
               className="bg-fill-4 text-footnote text-label-secondary hover:bg-fill-4 border-none px-2 py-1 leading-none font-normal"
             >
               {char}
@@ -415,7 +415,7 @@ export function SectorCard({
           ))}
           {template.characteristics.length > 2 && (
             <Badge
-              variant="secondary"
+              variant="default"
               className="bg-fill-4 text-footnote text-label-secondary hover:bg-fill-4 flex items-center justify-center border-none px-1 py-1 leading-none font-normal"
             >
               +{template.characteristics.length - 2}

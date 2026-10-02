@@ -356,7 +356,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
                 <div className="flex items-center gap-2">
                   <Icon className="text-blue h-4 w-4" />
                   <span className="text-body font-medium">{section.title}</span>
-                  <Badge variant="neutral" className="tabular-nums">
+                  <Badge variant="default" className="tabular-nums">
                     {section.fields.length}
                   </Badge>
                 </div>

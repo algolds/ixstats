@@ -96,11 +96,11 @@ const DEFAULT_LEVEL_COLORS: Record<LogLevel, LevelColors> = {
 
 /** Pressed-filter tone per level (the system colour behind each default `badge`). */
 const LEVEL_TONES: Record<LogLevel, ActionPillTone> = {
-  error: "red",
-  warn: "yellow",
-  info: "blue",
-  debug: "purple",
-  verbose: "gray",
+  error: "destructive",
+  warn: "warning",
+  info: "info",
+  debug: "secondary",
+  verbose: "secondary",
 };
 
 const LEVEL_LABELS: Record<LogLevel, string> = {

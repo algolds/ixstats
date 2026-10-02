@@ -117,7 +117,7 @@ export function EconomicControlCard({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label className="text-label text-caption">Global Growth Factor</Label>
-            <Badge variant="indigo" className="rounded-full px-3 py-0.5 tabular-nums">
+            <Badge variant="secondary" className="rounded-full px-3 py-0.5 tabular-nums">
               {globalGrowthFactor.toFixed(4)} ({growthPercent}%)
             </Badge>
           </div>
@@ -158,7 +158,7 @@ export function EconomicControlCard({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Label className="text-label text-caption">Base Inflation Rate</Label>
-            <Badge variant="blue" className="rounded-full px-3 py-0.5 tabular-nums">
+            <Badge variant="info" className="rounded-full px-3 py-0.5 tabular-nums">
               {(baseInflationRate * 100).toFixed(1)}%
             </Badge>
           </div>
@@ -195,7 +195,7 @@ export function EconomicControlCard({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-label text-caption">Threshold</Label>
-                  <Badge variant="indigo" className="rounded-full px-3 py-0.5 tabular-nums">
+                  <Badge variant="secondary" className="rounded-full px-3 py-0.5 tabular-nums">
                     ${(diminishingReturnsThreshold / 1000).toFixed(0)}k
                   </Badge>
                 </div>
@@ -212,7 +212,7 @@ export function EconomicControlCard({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-label text-caption">Factor (strength)</Label>
-                  <Badge variant="indigo" className="rounded-full px-3 py-0.5 tabular-nums">
+                  <Badge variant="secondary" className="rounded-full px-3 py-0.5 tabular-nums">
                     {diminishingReturnsFactor.toFixed(2)}
                   </Badge>
                 </div>
@@ -238,7 +238,7 @@ export function EconomicControlCard({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="text-label text-caption">Minimum Growth Floor</Label>
-                <Badge variant="indigo" className="rounded-full px-3 py-0.5 tabular-nums">
+                <Badge variant="secondary" className="rounded-full px-3 py-0.5 tabular-nums">
                   {(minGrowthFloor * 100).toFixed(1)}%
                 </Badge>
               </div>

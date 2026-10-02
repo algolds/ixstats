@@ -265,7 +265,7 @@ export function DashboardHeroComponent({
 
                   <div className="mt-0.5 flex flex-wrap items-center gap-2">
                     {stats.governmentType && (
-                      <Badge variant="neutral">{stats.governmentType}</Badge>
+                      <Badge variant="default">{stats.governmentType}</Badge>
                     )}
                     {stats.continent && (
                       <span className="text-label-secondary text-footnote hidden sm:inline">

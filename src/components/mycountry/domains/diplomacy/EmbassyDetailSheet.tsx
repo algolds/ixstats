@@ -115,7 +115,7 @@ export function EmbassyDetailSheet({
     const s = status?.toLowerCase() ?? "active";
     if (s === "active")
       return (
-        <Badge variant="green">
+        <Badge variant="success">
           <CheckCircle />
           Active
         </Badge>
@@ -129,7 +129,7 @@ export function EmbassyDetailSheet({
       );
     if (s === "under_construction")
       return (
-        <Badge variant="yellow">
+        <Badge variant="warning">
           <Clock />
           Building
         </Badge>
@@ -144,7 +144,7 @@ export function EmbassyDetailSheet({
       3: "Grand Embassy",
     };
     const l = level ?? 1;
-    return <Badge variant="secondary">{labels[l] ?? `Level ${l}`}</Badge>;
+    return <Badge variant="default">{labels[l] ?? `Level ${l}`}</Badge>;
   };
 
   const missions = embassy?.missions ?? [];
@@ -274,7 +274,7 @@ export function EmbassyDetailSheet({
                       <Star className="h-3.5 w-3.5" />
                       Specialization
                     </Eyebrow>
-                    <Badge variant="secondary">{embassy.specialization}</Badge>
+                    <Badge variant="default">{embassy.specialization}</Badge>
                   </div>
                 </>
               )}

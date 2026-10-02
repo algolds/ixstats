@@ -148,7 +148,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
               </div>
             </div>
             {departments.length > 0 && (
-              <Badge variant="secondary" className="shrink-0">
+              <Badge variant="default" className="shrink-0">
                 {departments.length} department{departments.length !== 1 ? "s" : ""}
               </Badge>
             )}
@@ -194,7 +194,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
                                 Vacant
                               </Badge>
                             ) : (
-                              <Badge variant="indigo">
+                              <Badge variant="secondary">
                                 {deptOfficials.length} official
                                 {deptOfficials.length !== 1 ? "s" : ""}
                               </Badge>

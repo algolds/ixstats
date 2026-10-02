@@ -429,7 +429,7 @@ export function DiplomaticOptionsPanel() {
                         />
                       </TableCell>
                       <TableCell className="px-4">
-                        <Badge variant="teal">
+                        <Badge variant="info">
                           {TYPE_LABELS[option.type as DiplomaticOptionType]}
                         </Badge>
                       </TableCell>
@@ -455,9 +455,9 @@ export function DiplomaticOptionsPanel() {
                       </TableCell>
                       <TableCell className="px-4">
                         {option.isActive ? (
-                          <Badge variant="green">Active</Badge>
+                          <Badge variant="success">Active</Badge>
                         ) : (
-                          <Badge variant="neutral">Inactive</Badge>
+                          <Badge variant="default">Inactive</Badge>
                         )}
                       </TableCell>
                       <TableCell className="px-4 text-right">

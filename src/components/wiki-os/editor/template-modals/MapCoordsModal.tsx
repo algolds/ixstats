@@ -361,7 +361,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                       onClick={() => handleMarkerSelect(p.coordinates[1], p.coordinates[0], p.name)}
                       title={p.name}
                       trailing={
-                        <Badge variant="neutral" className="capitalize">
+                        <Badge variant="default" className="capitalize">
                           {p.category}
                         </Badge>
                       }

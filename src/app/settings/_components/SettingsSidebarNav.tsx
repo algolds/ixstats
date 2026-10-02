@@ -96,7 +96,7 @@ export function SettingsSidebarNav({
                     );
                   })()}
                 {roleDisplayName && (
-                  <Badge variant="purple">
+                  <Badge variant="secondary">
                     <Crown aria-hidden />
                     {roleDisplayName}
                   </Badge>

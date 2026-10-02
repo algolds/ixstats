@@ -148,8 +148,7 @@ export function WorldCensusList({
                   </span>
                   {/* A top-three rank is the one meaningful status here: it takes the v2 gold. */}
                   <Badge
-                    numeric
-                    variant={r.global.position <= 3 ? "yellow" : "neutral"}
+                    variant={r.global.position <= 3 ? "warning" : "default"}
                     className={cn(
                       "min-w-14 font-semibold",
                       r.global.position <= 3 && "border-yellow/30"

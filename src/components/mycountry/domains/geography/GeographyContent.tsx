@@ -525,7 +525,7 @@ function PoiCard({
         )}
       </div>
       <div className="text-label-secondary text-footnote mb-1 flex items-center gap-1">
-        <Badge variant="secondary" className="capitalize">
+        <Badge variant="default" className="capitalize">
           {poi.category}
         </Badge>
         {poi.wikiPageTitle ? <span>· wiki: {poi.wikiPageTitle}</span> : null}

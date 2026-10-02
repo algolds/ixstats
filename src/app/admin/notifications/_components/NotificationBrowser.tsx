@@ -183,8 +183,8 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
                     n.priority === "critical"
                       ? "destructive"
                       : n.priority === "high"
-                        ? "default"
-                        : "secondary"
+                        ? "secondary"
+                        : "default"
                   }
                   className="h-4 px-2 py-0 leading-none"
                 >

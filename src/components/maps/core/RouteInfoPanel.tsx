@@ -128,8 +128,8 @@ const TYPE_META: Record<string, { icon: typeof Train; label: string }> = {
 
 /** Semantic status tint for the outline status badge. */
 const STATUS_BADGE: Record<string, BadgeVariant> = {
-  planned: "neutral",
-  under_construction: "caution",
+  planned: "default",
+  under_construction: "warning",
   operational: "success",
   abandoned: "destructive",
 };

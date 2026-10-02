@@ -72,7 +72,9 @@ export function NationBuilderShowcase() {
                 <Sparkles className="h-6 w-6 md:h-7 md:w-7" aria-hidden />
               </motion.div>
               <div>
-                <Badge className={`mb-2 ${splashGold.badge}`}>MyCountry © Builder</Badge>
+                <Badge className={`mb-2 ${splashGold.badge}`} variant="secondary">
+                  MyCountry © Builder
+                </Badge>
                 <h2 className={`text-title-1 md:text-large-title ${splashGold.headline}`}>
                   Begin at the blueprint
                 </h2>

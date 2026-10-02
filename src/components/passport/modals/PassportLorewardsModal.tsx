@@ -116,12 +116,12 @@ export function PassportLorewardsModal({
             </div>
 
             {stats?.rank ? (
-              <Badge variant="caution" className="tabular-nums">
+              <Badge variant="warning" className="tabular-nums">
                 <Trophy aria-hidden />
                 <span>Global Rank #{stats.rank}</span>
               </Badge>
             ) : (
-              <Badge variant="neutral">Unranked</Badge>
+              <Badge variant="default">Unranked</Badge>
             )}
           </div>
         </SheetHeader>
@@ -327,12 +327,12 @@ export function PassportLorewardsModal({
                         <Badge
                           variant={
                             award.type === "daily"
-                              ? "caution"
+                              ? "warning"
                               : award.type === "weekly"
                                 ? "info"
                                 : award.type === "monthly"
-                                  ? "tinted"
-                                  : "neutral"
+                                  ? "secondary"
+                                  : "default"
                           }
                           className="capitalize"
                         >

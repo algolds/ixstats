@@ -208,7 +208,7 @@ export function StoryPinRows({ land, limit = 4 }: { land: ProfileLand; limit?: n
               {(p.eraLabel || p.year != null) && (
                 <span className="text-footnote tabular-nums">{p.eraLabel ?? p.year}</span>
               )}
-              <Badge variant="neutral">{p.category}</Badge>
+              <Badge variant="default">{p.category}</Badge>
             </span>
           }
         />

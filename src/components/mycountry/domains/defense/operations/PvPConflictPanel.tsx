@@ -369,7 +369,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
                       <X aria-hidden="true" className="text-destructive h-3.5 w-3.5" />
                     )}
                     <span>vs {opponent?.name ?? "Unknown"}</span>
-                    <Badge variant={draw ? "neutral" : won ? "success" : "destructive"}>
+                    <Badge variant={draw ? "default" : won ? "success" : "destructive"}>
                       {draw
                         ? c.winner === "declined"
                           ? "Declined"

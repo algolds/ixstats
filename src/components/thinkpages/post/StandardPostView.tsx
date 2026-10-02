@@ -305,7 +305,7 @@ export function StandardPostView({
             )}
 
             {post.account?.bio?.startsWith("Former Nation") && (
-              <Badge variant="neutral">Former Nation</Badge>
+              <Badge variant="default">Former Nation</Badge>
             )}
 
             <div

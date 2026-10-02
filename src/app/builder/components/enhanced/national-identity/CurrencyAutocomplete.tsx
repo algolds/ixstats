@@ -142,7 +142,7 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
                 <span>Standard ISO</span>
               </Badge>
             ) : (
-              <Badge variant="neutral">Custom Sovereign Currency</Badge>
+              <Badge variant="default">Custom Sovereign Currency</Badge>
             )}
             {currencyInfo.symbol && (
               <span className="text-label-secondary text-footnote inline-flex items-center gap-2">

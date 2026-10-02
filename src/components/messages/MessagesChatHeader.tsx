@@ -247,17 +247,17 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
               <div className="flex items-center gap-2">
                 <h3 className="text-headline text-label truncate">{displayTitle}</h3>
                 {isSystemThread || isLoreBotThread ? (
-                  <Badge variant="caution">Official</Badge>
+                  <Badge variant="warning">Official</Badge>
                 ) : (
                   identity && <MessagesIdentityBadge identity={identity} />
                 )}
                 {isDiplomatic && (
-                  <Badge variant="caution">
+                  <Badge variant="warning">
                     <Shield aria-hidden="true" />
                     Diplomatic Cable
                   </Badge>
                 )}
-                {isGroup && <Badge variant="tinted">Group Chat</Badge>}
+                {isGroup && <Badge variant="secondary">Group Chat</Badge>}
               </div>
               <p className="text-footnote text-label-secondary truncate">
                 {isSystemThread

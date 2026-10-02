@@ -204,7 +204,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
             </Button>
           )}
 
-          <Badge variant="neutral" className="tabular-nums">
+          <Badge variant="default" className="tabular-nums">
             Matchday {match.matchDay ?? 1}
           </Badge>
 
@@ -386,7 +386,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
               {trace.map((event, idx) => (
                 <div key={idx} className="flex items-center justify-between p-3">
                   <div className="flex items-center gap-3">
-                    <Badge variant="neutral" className="tabular-nums">
+                    <Badge variant="default" className="tabular-nums">
                       {event.minute ? `${event.minute}'` : `P${event.period ?? 1}`}
                     </Badge>
                     <div>
@@ -483,7 +483,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
                     </div>
                   </div>
 
-                  <Badge variant="caution" className="tabular-nums">
+                  <Badge variant="warning" className="tabular-nums">
                     Impact: {analysisFacts.keyPerformer.impactScore}
                   </Badge>
                 </Card>

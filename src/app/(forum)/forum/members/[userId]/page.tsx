@@ -86,7 +86,7 @@ export default function MemberProfilePage() {
                 <h1 className="text-large-title text-label">{member.username}</h1>
                 {member.userTitle && <p className="text-body text-tint">{member.userTitle}</p>}
                 {member.isStaff && (
-                  <Badge variant="purple" className="mt-1">
+                  <Badge variant="secondary" className="mt-1">
                     Staff
                   </Badge>
                 )}

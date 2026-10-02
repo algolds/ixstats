@@ -661,7 +661,7 @@ export function AwardsManagerSection() {
                           {recipients.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
                               {recipients.map((user) => (
-                                <Badge key={user} variant="secondary" className="px-2 py-0">
+                                <Badge key={user} variant="default" className="px-2 py-0">
                                   {user}
                                 </Badge>
                               ))}

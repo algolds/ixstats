@@ -426,7 +426,7 @@ export function ComparisonCharts({
             {countries.map((country) => (
               <Badge
                 key={country.id}
-                variant="secondary"
+                variant="default"
                 className="flex items-center gap-1"
                 style={{ backgroundColor: `${country.color}20`, borderColor: country.color }}
               >

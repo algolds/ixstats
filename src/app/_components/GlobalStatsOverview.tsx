@@ -88,7 +88,7 @@ export function GlobalStatsOverview({ globalStats, isLoading }: GlobalStatsOverv
         <CardTitle className="flex items-center gap-2">
           <Globe className="h-5 w-5" />
           Global Statistics
-          <Badge variant="secondary" className="ml-auto">
+          <Badge variant="default" className="ml-auto">
             Live Data
           </Badge>
         </CardTitle>

@@ -57,7 +57,7 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <h3 className="text-title-2 text-label">Franchise Directorate</h3>
-            <Badge variant="neutral" className="tabular-nums">
+            <Badge variant="default" className="tabular-nums">
               {teams.length} Registered
             </Badge>
           </div>
@@ -138,9 +138,9 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
                   {/* Status Badge */}
                   <div>
                     {team.ownerUserId ? (
-                      <Badge variant="tinted">Managed</Badge>
+                      <Badge variant="secondary">Managed</Badge>
                     ) : (
-                      <Badge variant="caution">Unclaimed</Badge>
+                      <Badge variant="warning">Unclaimed</Badge>
                     )}
                   </div>
                 </div>

@@ -260,7 +260,7 @@ export function ManufacturersTab({
                       {specialties.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {specialties.slice(0, 3).map((spec) => (
-                            <Badge key={spec} variant="secondary">
+                            <Badge key={spec} variant="default">
                               {spec}
                             </Badge>
                           ))}
@@ -287,7 +287,7 @@ export function ManufacturersTab({
                     </TableCell>
                     <TableCell>
                       {manufacturer.isActive ? (
-                        <Badge variant="green">Active</Badge>
+                        <Badge variant="success">Active</Badge>
                       ) : (
                         <span className="bg-surface-secondary text-caption text-label inline-flex items-center rounded-full px-2 py-1">
                           Inactive

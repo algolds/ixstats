@@ -339,7 +339,7 @@ export function BotControlCard({
               <Loader2 className="text-label-secondary h-3.5 w-3.5 animate-spin" />
             )}
             {isAvailable ? (
-              <Badge variant="green" className="text-eyebrow">
+              <Badge variant="success" className="text-eyebrow">
                 <span className="bg-green mr-2 h-1.5 w-1.5 rounded-full" />
                 Daemon Active
               </Badge>
@@ -409,7 +409,7 @@ export function BotControlCard({
                           {proc.name}
                         </span>
                         <Badge
-                          variant={isOnline ? "default" : "destructive"}
+                          variant={isOnline ? "secondary" : "destructive"}
                           className={cn(
                             "text-eyebrow px-2 py-0",
                             isOnline
@@ -991,7 +991,7 @@ export function BotControlCard({
                         </TableCell>
                         <TableCell className="px-4">
                           {isAdm ? (
-                            <Badge variant="yellow" className="text-eyebrow px-2 py-0">
+                            <Badge variant="warning" className="text-eyebrow px-2 py-0">
                               Admin Permit
                             </Badge>
                           ) : (

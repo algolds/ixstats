@@ -181,7 +181,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
           <FadeIn direction="up" delay={0.1}>
             <div className="flex flex-wrap items-center gap-2">
               <Eyebrow>Country Actions</Eyebrow>
-              {country.continent && <Badge variant="secondary">{country.continent}</Badge>}
+              {country.continent && <Badge variant="default">{country.continent}</Badge>}
               {country.region && <Badge variant="outline">{country.region}</Badge>}
             </div>
           </FadeIn>

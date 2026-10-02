@@ -133,7 +133,7 @@ export function LineupBuilder({
           <CardTitle className="flex items-center gap-2">
             <Shirt className="text-label-secondary size-5" aria-hidden />
             Starting XI
-            <Badge variant="neutral" className="ml-2 tabular-nums">
+            <Badge variant="default" className="ml-2 tabular-nums">
               {starterCount} selected
             </Badge>
           </CardTitle>
@@ -183,7 +183,7 @@ export function LineupBuilder({
                         </div>
                         <div className="mt-0.5 flex items-center gap-2">
                           <PositionTooltip position={player.position}>
-                            <Badge variant="neutral" className="cursor-help">
+                            <Badge variant="default" className="cursor-help">
                               {player.position}
                             </Badge>
                           </PositionTooltip>

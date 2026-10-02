@@ -294,7 +294,7 @@ export function CountryAdminPanel() {
                   )}
                 </TableCell>
                 <TableCell className="p-2 text-center">
-                  <Badge variant="secondary">{country.economicTier || "—"}</Badge>
+                  <Badge variant="default">{country.economicTier || "—"}</Badge>
                 </TableCell>
                 <TableCell className="p-2 text-center">
                   <Checkbox

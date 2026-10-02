@@ -395,7 +395,7 @@ export function NPCPersonalitiesPanel() {
                     )}
                   </TableCell>
                   <TableCell className="px-4">
-                    <Badge variant="teal" className="capitalize">
+                    <Badge variant="info" className="capitalize">
                       {p.archetype.replace(/_/g, " ")}
                     </Badge>
                   </TableCell>
@@ -419,9 +419,12 @@ export function NPCPersonalitiesPanel() {
                   </TableCell>
                   <TableCell className="px-4">
                     {p.isActive ? (
-                      <Badge variant="green">Active</Badge>
+                      <Badge variant="success">Active</Badge>
                     ) : (
-                      <Badge className="bg-fill-3 text-label-secondary border-separator">
+                      <Badge
+                        className="bg-fill-3 text-label-secondary border-separator"
+                        variant="secondary"
+                      >
                         Inactive
                       </Badge>
                     )}

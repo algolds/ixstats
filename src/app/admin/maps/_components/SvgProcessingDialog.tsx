@@ -192,7 +192,7 @@ export function SvgProcessingDialog({
                       </div>
                       <div className="text-label-secondary text-footnote flex items-center gap-3">
                         {f.countryMatch && (
-                          <Badge variant="secondary">
+                          <Badge variant="default">
                             {f.countryMatch.matchType === "exact" ? "exact" : "fuzzy"} →{" "}
                             {f.countryMatch.countryName}
                           </Badge>

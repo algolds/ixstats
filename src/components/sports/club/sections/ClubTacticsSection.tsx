@@ -169,7 +169,7 @@ export function ClubTacticsSection({
                 >
                   <div className="flex items-center justify-between">
                     <h4 className="text-headline text-label">{tactic.name}</h4>
-                    {isActive && <Badge variant="tinted">Active</Badge>}
+                    {isActive && <Badge variant="secondary">Active</Badge>}
                   </div>
                   <p className="text-label-secondary text-callout mt-2">{tactic.description}</p>
                 </button>

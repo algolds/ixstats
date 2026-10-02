@@ -234,7 +234,7 @@ export function Facet3Showcase() {
                 leading={<Package />}
                 title="Card packs"
                 subtitle="3 drafts"
-                trailing={<Badge variant="caution">Review</Badge>}
+                trailing={<Badge variant="warning">Review</Badge>}
               />
               <FacetRow leading={<Trash />} title="Purge cache" destructive onClick={() => {}} />
             </FacetListSection>
@@ -287,11 +287,11 @@ export function Facet3Showcase() {
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="neutral">Neutral</Badge>
-            <Badge variant="tinted">Tinted</Badge>
+            <Badge variant="default">Neutral</Badge>
+            <Badge variant="secondary">Tinted</Badge>
             <Badge variant="success">Success</Badge>
             <Badge variant="warning">Warning</Badge>
-            <Badge variant="caution">Caution</Badge>
+            <Badge variant="warning">Caution</Badge>
             <Badge variant="destructive">Destructive</Badge>
             <Badge variant="info">Info</Badge>
           </div>
@@ -403,7 +403,7 @@ function Facet31Identity() {
             <CutoutCardHeader
               as="h3"
               icon={<Wallet />}
-              trailing={<Badge variant="tinted">12</Badge>}
+              trailing={<Badge variant="secondary">12</Badge>}
             >
               Vault
             </CutoutCardHeader>
@@ -425,7 +425,7 @@ function Facet31Identity() {
             className="flex items-center justify-between rounded-full px-5 py-3"
           >
             <span className="text-headline text-label">material-acrylic</span>
-            <Badge variant="tinted">3</Badge>
+            <Badge variant="secondary">3</Badge>
           </FacetMaterial>
 
           {/* Accents and rims (HIG pass): accent re-tints the glow, wash, tinted border and rim */}

@@ -167,7 +167,7 @@ export function UnifiedMediaServiceAdmin() {
               Health: {parseFloat(hitRate) > 80 ? "Optimal" : "Cold"}
             </span>
             {lastUpdated && (
-              <Badge variant="neutral" className="tabular-nums">
+              <Badge variant="default" className="tabular-nums">
                 Synced {lastUpdated.toLocaleTimeString()}
               </Badge>
             )}

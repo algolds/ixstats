@@ -310,7 +310,7 @@ export function ThinktankPapersTab({
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-title-2 text-label">{activeDoc.title}</h2>
-                  <Badge variant="tinted" className="tabular-nums">
+                  <Badge variant="secondary" className="tabular-nums">
                     v{activeDoc.version || 1}
                   </Badge>
                 </div>

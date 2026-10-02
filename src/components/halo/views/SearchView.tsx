@@ -17,16 +17,16 @@ const FILTERS: { value: SearchFilter; label: string }[] = [
 
 /** Result category → Badge colour (system colours; the wiki uses its own ink tint). */
 const CATEGORY_BADGE: Record<string, BadgeVariant> = {
-  Statecraft: "yellow",
-  Vault: "teal",
-  Geography: "green",
-  Knowledge: "blue",
-  Community: "blue",
-  Sports: "yellow",
-  Labs: "indigo",
-  System: "neutral",
-  Country: "blue",
-  Wiki: "indigo",
+  Statecraft: "warning",
+  Vault: "info",
+  Geography: "success",
+  Knowledge: "info",
+  Community: "info",
+  Sports: "warning",
+  Labs: "secondary",
+  System: "default",
+  Country: "info",
+  Wiki: "secondary",
 };
 
 function SearchViewComponent({
@@ -113,7 +113,7 @@ function SearchViewComponent({
             const cat =
               (result.metadata?.category as string) ||
               (result.type === "country" ? "Country" : "Command");
-            const badgeVariant = CATEGORY_BADGE[cat] ?? "neutral";
+            const badgeVariant = CATEGORY_BADGE[cat] ?? "default";
 
             return (
               <button

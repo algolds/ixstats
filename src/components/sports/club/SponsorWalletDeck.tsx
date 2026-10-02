@@ -162,7 +162,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
         <div className="space-y-4 pt-2">
           {currentSponsor ? (
             <div className="bg-surface rounded-row mb-2 p-4">
-              <Badge variant="tinted" className="mb-1">
+              <Badge variant="secondary" className="mb-1">
                 Active Partner
               </Badge>
               <h5 className="text-headline text-label">{currentSponsor.name}</h5>
@@ -224,7 +224,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                   <p className="text-headline text-label">{s.name}</p>
                   <p className="text-label-secondary text-footnote">{s.desc}</p>
                 </div>
-                <Badge variant="neutral" className="shrink-0 tabular-nums">
+                <Badge variant="default" className="shrink-0 tabular-nums">
                   {s.payout}
                 </Badge>
               </button>

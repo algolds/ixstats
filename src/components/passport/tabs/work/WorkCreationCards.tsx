@@ -116,7 +116,7 @@ export const WorkCreationCards = React.memo(function WorkCreationCards({
           <article key={item.id} className={CARD_CLASS}>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Badge variant="tinted">
+                <Badge variant="secondary">
                   <Globe aria-hidden />
                   Language Pack
                 </Badge>
@@ -147,7 +147,7 @@ export const WorkCreationCards = React.memo(function WorkCreationCards({
           <article key={item.id} className={CARD_CLASS}>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Badge variant="caution">
+                <Badge variant="warning">
                   <Flash aria-hidden />
                   Directive
                 </Badge>

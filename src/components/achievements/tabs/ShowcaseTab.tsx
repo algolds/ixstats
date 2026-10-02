@@ -132,7 +132,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                       />
                       {isUnlocked && count > 1 && (
                         <Badge
-                          variant="caution"
+                          variant="warning"
                           className="bg-surface absolute -top-2 -right-2 tabular-nums"
                         >
                           {count}
@@ -155,9 +155,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                 </div>
 
                 <div className="border-separator relative mt-3 flex items-center justify-between border-t pt-2">
-                  <Badge variant="success" numeric>
-                    {achievement.points} pts
-                  </Badge>
+                  <Badge variant="success">{achievement.points} pts</Badge>
                   {achievement.unlockedAt && (
                     <span className="text-label-secondary text-footnote font-data tabular-nums">
                       {new Date(achievement.unlockedAt).toLocaleDateString()}

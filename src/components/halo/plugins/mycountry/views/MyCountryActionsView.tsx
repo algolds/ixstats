@@ -119,7 +119,7 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
               <Icon aria-hidden className={item.iconClass} />
               <span className="flex-1 truncate text-left">{item.label}</span>
               {item.isPremium && (
-                <Badge variant="yellow">
+                <Badge variant="warning">
                   <Crown aria-hidden />
                   Premium
                 </Badge>

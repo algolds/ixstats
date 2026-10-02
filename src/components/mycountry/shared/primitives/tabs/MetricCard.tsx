@@ -95,7 +95,7 @@ export function MetricCard({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {badge && <Badge variant={badge.variant || "default"}>{badge.label}</Badge>}
+          {badge && <Badge variant={badge.variant || "secondary"}>{badge.label}</Badge>}
           {actions}
         </div>
       </CardHeader>

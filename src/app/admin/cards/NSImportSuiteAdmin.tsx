@@ -69,7 +69,7 @@ function statusBadgeVariant(status: string) {
     case "ERROR":
       return "destructive" as const;
     default:
-      return "neutral" as const;
+      return "default" as const;
   }
 }
 
@@ -518,7 +518,7 @@ export function NSImportSuiteAdmin() {
             <div className="flex items-center gap-2">
               <h2 className="text-label text-title-3">Sync Operations & Import Runs</h2>
               {selectedSyncLog && (
-                <Badge variant="blue">
+                <Badge variant="info">
                   <Filter className="h-3 w-3" /> Filtered View
                 </Badge>
               )}
@@ -719,7 +719,7 @@ export function NSImportSuiteAdmin() {
                 {showErrorDetails && (
                   <div className="rounded-control border-red/20 bg-fill-4 flex max-h-40 flex-wrap gap-2 overflow-y-auto border p-2">
                     {parsedErrors.nations.map((n, i) => (
-                      <Badge key={i} variant="red" className="tabular-nums">
+                      <Badge key={i} variant="destructive" className="tabular-nums">
                         {n.nation}
                         {n.reason && <span className="text-footnote opacity-70">({n.reason})</span>}
                       </Badge>

@@ -199,7 +199,7 @@ export const BasicInfoCoreIndicators = React.memo(function BasicInfoCoreIndicato
             <div>
               <h4 className="text-label-secondary text-eyebrow mb-1">Population Tier</h4>
               <Badge
-                variant="secondary"
+                variant="default"
                 className="border-teal/30 bg-teal/10 text-caption text-teal px-3 py-0.5 font-semibold"
               >
                 Tier {populationTier}

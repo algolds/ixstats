@@ -304,7 +304,7 @@ export function VaultStoreControl() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className="capitalize">
+                    <Badge variant="default" className="capitalize">
                       {item.category}
                     </Badge>
                   </TableCell>
@@ -331,7 +331,7 @@ export function VaultStoreControl() {
                   </TableCell>
                   <TableCell className="text-center">
                     <Badge
-                      variant={item.isActive ? "default" : "secondary"}
+                      variant={item.isActive ? "secondary" : "default"}
                       className={`text-footnote ${
                         item.isActive
                           ? "border-green/20 bg-green/10 text-green hover:bg-green/15"

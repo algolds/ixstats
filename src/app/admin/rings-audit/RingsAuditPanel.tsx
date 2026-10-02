@@ -90,7 +90,7 @@ function CountryRingsCard({
                 className={`p-4 ${ep.id === "getActivityRingsData" ? "md:border-separator md:border-r" : ""}`}
               >
                 <div className="mb-3 flex items-center gap-2">
-                  <Badge variant="blue" className="font-mono">
+                  <Badge variant="info" className="font-mono">
                     {ep.endpoint}
                   </Badge>
                 </div>

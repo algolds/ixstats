@@ -62,7 +62,7 @@ function RealmRoleBadge({ role }: { role: string }) {
     normalizedRole.includes("PRIME_MINISTER")
   ) {
     return (
-      <Badge variant="caution">
+      <Badge variant="warning">
         <Crown aria-hidden />
         <span>{role}</span>
       </Badge>
@@ -75,7 +75,7 @@ function RealmRoleBadge({ role }: { role: string }) {
     normalizedRole.includes("MODERATOR")
   ) {
     return (
-      <Badge variant="tinted">
+      <Badge variant="secondary">
         <Shield aria-hidden />
         <span>{role}</span>
       </Badge>
@@ -83,7 +83,7 @@ function RealmRoleBadge({ role }: { role: string }) {
   }
 
   return (
-    <Badge variant="neutral">
+    <Badge variant="default">
       <User aria-hidden />
       <span>{role}</span>
     </Badge>
@@ -193,7 +193,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                       <RealmRoleBadge role={item.role} />
 
                       {item.isFeatured && (
-                        <Badge variant="tinted">
+                        <Badge variant="secondary">
                           <Crown aria-hidden />
                           Primary
                         </Badge>

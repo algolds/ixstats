@@ -175,7 +175,7 @@ describe("Badge system colours", () => {
 
   it("keeps the existing variants (status text is the AA ink since Phase 4)", () => {
     expect(badgeVariants({ variant: "success" })).toContain("bg-success/15 text-success-ink");
-    expect(badgeVariants()).toBe(badgeVariants({ variant: "tinted" }));
+    expect(badgeVariants()).toBe(badgeVariants({ variant: "secondary" }));
   });
 });
 
@@ -213,7 +213,7 @@ describe("ActionPill", () => {
 
   it("uses a system colour tone when pressed and renders a tabular count", () => {
     render(
-      <ActionPill pressed tone="red" count={3} aria-label="Like">
+      <ActionPill pressed tone="destructive" count={3} aria-label="Like">
         {null}
       </ActionPill>
     );

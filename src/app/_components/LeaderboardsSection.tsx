@@ -209,7 +209,7 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
                     {country.name}
                   </h3>
                   <Badge
-                    variant="secondary"
+                    variant="default"
                     className={`text-footnote ${getTierColor(country.economicTier)}`}
                   >
                     {country.economicTier}
@@ -240,7 +240,7 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
         <CardTitle className="flex items-center gap-2">
           <Trophy aria-hidden className="text-yellow h-5 w-5" />
           Global Leaderboards
-          <Badge variant="neutral" className="ml-auto">
+          <Badge variant="default" className="ml-auto">
             Top 7
           </Badge>
         </CardTitle>

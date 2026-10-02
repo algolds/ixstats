@@ -52,10 +52,10 @@ const ACHIEVEMENT_TIER_CONFIG: Record<
     badge: BadgeVariant;
   }
 > = {
-  platinum: { label: "Legendary", icon: Zap, badge: "yellow" },
-  gold: { label: "Epic", icon: Gem, badge: "purple" },
-  silver: { label: "Rare", icon: Hexagon, badge: "blue" },
-  bronze: { label: "Core", icon: Target, badge: "neutral" },
+  platinum: { label: "Legendary", icon: Zap, badge: "warning" },
+  gold: { label: "Epic", icon: Gem, badge: "secondary" },
+  silver: { label: "Rare", icon: Hexagon, badge: "info" },
+  bronze: { label: "Core", icon: Target, badge: "default" },
 };
 
 /** Rarity filter: label and icon per option. */
@@ -163,7 +163,7 @@ function GroupedSeriesCard({
             </Badge>
 
             {isUltraRare && (
-              <Badge variant="teal" className="tabular-nums">
+              <Badge variant="info" className="tabular-nums">
                 <Diamond aria-hidden />
                 <span>{activeLevel.globalUnlockPercent}% ultra-rare</span>
               </Badge>
@@ -310,7 +310,7 @@ function GroupedSeriesCard({
               </Button>
             )}
 
-            <Badge variant="success" numeric className="select-none">
+            <Badge variant="success" className="select-none">
               {activeLevel.points || 10} pts
             </Badge>
           </div>

@@ -84,7 +84,7 @@ export const PassportHistoryTab = React.memo(function PassportHistoryTab({
               <Card variant="inset" className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <Badge variant="neutral">
+                    <Badge variant="default">
                       <Icon aria-hidden />
                       {badge.label}
                     </Badge>

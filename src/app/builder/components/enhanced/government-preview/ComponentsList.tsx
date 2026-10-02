@@ -32,7 +32,7 @@ export function ComponentsList({ components, isOpen, onOpenChange }: ComponentsL
               <div className="flex items-center gap-2">
                 <Target className="h-5 w-5" />
                 Selected Atomic Components
-                <Badge variant="secondary" className="ml-2">
+                <Badge variant="default" className="ml-2">
                   {components.length}
                 </Badge>
               </div>

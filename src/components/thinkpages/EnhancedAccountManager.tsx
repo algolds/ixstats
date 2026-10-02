@@ -212,7 +212,7 @@ export function EnhancedAccountManager({
             <Icon className="size-3.5" aria-hidden="true" />
           </div>
           <Badge variant="outline">{account.accountType}</Badge>
-          {!account.isActive && <Badge variant="neutral">Inactive</Badge>}
+          {!account.isActive && <Badge variant="default">Inactive</Badge>}
         </div>
 
         {/* Performance Metrics */}

@@ -245,7 +245,7 @@ export function WikiArticleActions({ title: cleanTitle, trailing }: WikiArticleA
             icon={<Edit />}
             count={
               marginThreadsCount > 0 ? (
-                <Badge variant="tinted" className="tabular-nums">
+                <Badge variant="secondary" className="tabular-nums">
                   {marginThreadsCount}
                 </Badge>
               ) : null
@@ -270,7 +270,7 @@ export function WikiArticleActions({ title: cleanTitle, trailing }: WikiArticleA
             <PopoverTrigger asChild>
               <ActionPill
                 pressed={hasLiked}
-                tone="red"
+                tone="destructive"
                 icon={
                   selectedEmoji ? (
                     <span className="text-footnote">{selectedEmoji}</span>

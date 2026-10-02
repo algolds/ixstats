@@ -237,7 +237,7 @@ export function ThinktankDirectorySidebar({
                     <span className="text-headline text-label truncate">{g.name}</span>
                     <div className="flex shrink-0 items-center gap-1">
                       {g.hasRecentActivity && g.lastActivity && (
-                        <Badge variant="tinted" className="px-2">
+                        <Badge variant="secondary" className="px-2">
                           <Sparks aria-hidden="true" />
                           {formatRelativeTime(g.lastActivity)}
                         </Badge>

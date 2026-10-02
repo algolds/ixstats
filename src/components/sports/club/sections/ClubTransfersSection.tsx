@@ -181,7 +181,7 @@ export function ClubTransfersSection({
                             </Button>
                           </>
                         ) : (
-                          <Badge variant="neutral">Not Listed</Badge>
+                          <Badge variant="default">Not Listed</Badge>
                         )}
                       </div>
                     </div>
@@ -262,7 +262,7 @@ export function ClubTransfersSection({
                       </Button>
                     </div>
                   ) : (
-                    <Badge variant="neutral">My Player</Badge>
+                    <Badge variant="default">My Player</Badge>
                   )}
                 </div>
               ))
@@ -332,7 +332,7 @@ export function ClubTransfersSection({
                       </p>
                       <p className="text-label-secondary text-footnote">Bid amount: ₷{b.amount}</p>
                     </div>
-                    <Badge variant="caution" className="capitalize">
+                    <Badge variant="warning" className="capitalize">
                       {b.status}
                     </Badge>
                   </div>
@@ -395,7 +395,7 @@ export function ClubTransfersSection({
                         : b.status === "rejected"
                           ? "destructive"
                           : b.status === "pending"
-                            ? "caution"
+                            ? "warning"
                             : "outline"
                     }
                   >

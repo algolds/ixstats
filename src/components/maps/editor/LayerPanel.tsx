@@ -375,7 +375,7 @@ export const LayerPanel = React.memo(function LayerPanel({
                   )}
                   <Icon className="text-label-secondary h-3.5 w-3.5" />
                   <span className="text-caption flex-1 truncate">{group.name}</span>
-                  <Badge variant="secondary" className="tabular-nums">
+                  <Badge variant="default" className="tabular-nums">
                     {groupFeats.length}
                   </Badge>
                 </Button>
@@ -512,7 +512,7 @@ export const LayerPanel = React.memo(function LayerPanel({
 
                 {/* Badge Count */}
                 {count !== undefined && count > 0 && (
-                  <Badge variant="secondary" className="mr-2 tabular-nums">
+                  <Badge variant="default" className="mr-2 tabular-nums">
                     {count}
                   </Badge>
                 )}
@@ -624,7 +624,7 @@ export const LayerPanel = React.memo(function LayerPanel({
 
               {/* Count */}
               {guides.length > 0 && (
-                <Badge variant="secondary" className="mr-2 tabular-nums">
+                <Badge variant="default" className="mr-2 tabular-nums">
                   {guides.length}
                 </Badge>
               )}

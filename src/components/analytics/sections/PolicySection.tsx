@@ -64,7 +64,7 @@ export const PolicySection = React.memo<PolicySectionProps>(
                 <div className="rounded-lg bg-green-50 p-4 dark:bg-green-950/20">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-sm font-medium">Overall Effectiveness</span>
-                    <Badge variant="default" className="bg-green-600">
+                    <Badge variant="secondary" className="bg-green-600">
                       High
                     </Badge>
                   </div>
@@ -150,7 +150,7 @@ export const PolicySection = React.memo<PolicySectionProps>(
             <div className="mt-4 rounded-lg bg-gradient-to-br from-indigo-50 to-indigo-50 p-4 dark:from-indigo-950/20 dark:to-indigo-950/20">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium">Net Benefit Ratio</p>
-                <Badge variant="default" className="bg-indigo-600">
+                <Badge variant="secondary" className="bg-indigo-600">
                   Excellent
                 </Badge>
               </div>

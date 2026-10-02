@@ -170,7 +170,7 @@ export function MatchTickerSim({
             <span className="text-label-tertiary">:</span>
             <span>{awayScore}</span>
           </div>
-          <Badge variant="neutral" className="tabular-nums">
+          <Badge variant="default" className="tabular-nums">
             {currentMinute}' min
           </Badge>
         </div>

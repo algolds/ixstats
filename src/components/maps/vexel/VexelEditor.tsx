@@ -29,7 +29,7 @@ function EditorShell() {
       <header className="border-separator bg-fill-3 flex h-14 shrink-0 items-center justify-between border-b px-6">
         <div className="flex items-center gap-3">
           <span className="text-title-2 text-tint">Vexel</span>
-          <Badge variant="tinted">Heraldry lab</Badge>
+          <Badge variant="secondary">Heraldry lab</Badge>
         </div>
         <div className="flex items-center gap-4">
           <span className="text-label-secondary text-footnote">

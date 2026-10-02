@@ -217,7 +217,7 @@ export function CountryListCard({
       </CardContent>
 
       <CardFooter className="flex min-h-0 items-center justify-between gap-2 px-3 pt-0 pb-3">
-        <Badge variant="secondary">{country.economicTier ?? "—"}</Badge>
+        <Badge variant="default">{country.economicTier ?? "—"}</Badge>
         <Badge variant="outline">{country.populationTier ?? "—"}</Badge>
       </CardFooter>
     </Card>

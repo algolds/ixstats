@@ -174,7 +174,7 @@ export function GovernmentMetricModals({
                               Complementary systems boost administrative output.
                             </p>
                           </div>
-                          <Badge variant="green" className="shrink-0 tabular-nums">
+                          <Badge variant="success" className="shrink-0 tabular-nums">
                             +{score}%
                           </Badge>
                         </li>

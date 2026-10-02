@@ -124,7 +124,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                   {category}
                 </Badge>
                 {pin.importance >= 1 && (
-                  <Badge variant="yellow">{IMPORTANCE_LABELS[pin.importance]}</Badge>
+                  <Badge variant="warning">{IMPORTANCE_LABELS[pin.importance]}</Badge>
                 )}
               </div>
               <SheetTitle className="text-title-2 sm:text-title-1">{pin.title}</SheetTitle>

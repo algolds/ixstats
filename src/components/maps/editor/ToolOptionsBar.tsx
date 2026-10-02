@@ -481,7 +481,7 @@ export const ToolOptionsBar = memo(function ToolOptionsBar(props: ToolOptionsBar
       {mode === "edit-route" && (
         <>
           <ToolLabel icon={Route} label="Edit Route" />
-          {props.editingRouteName && <Badge variant="secondary">{props.editingRouteName}</Badge>}
+          {props.editingRouteName && <Badge variant="default">{props.editingRouteName}</Badge>}
           <span className="text-label-secondary text-footnote tabular-nums">
             {props.editingRouteNodesCount ?? 0} nodes
           </span>

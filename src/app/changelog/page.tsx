@@ -212,7 +212,7 @@ export default function ChangelogPage() {
 
         {/* Hero Header */}
         <div className="mb-12 text-center sm:text-left">
-          <Badge variant="tinted">
+          <Badge variant="secondary">
             <Flame aria-hidden />
             <span>Public Release Notes & Changelog</span>
           </Badge>

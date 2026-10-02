@@ -255,7 +255,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
             title="Sector output and complexity"
             icon={PieChart}
             accessory={
-              <Badge variant="secondary" className="tabular-nums">
+              <Badge variant="default" className="tabular-nums">
                 Complexity {complexity != null ? complexity.toFixed(1) : "—"}
               </Badge>
             }
@@ -293,7 +293,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
             title="Labor market and employment"
             icon={Briefcase}
             accessory={
-              <Badge variant="secondary" className="tabular-nums">
+              <Badge variant="default" className="tabular-nums">
                 Female participation {pct(femaleParticipation)}
               </Badge>
             }
@@ -323,7 +323,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
             title="Income and wealth equality"
             icon={Scale}
             accessory={
-              <Badge variant="secondary" className="tabular-nums">
+              <Badge variant="default" className="tabular-nums">
                 Gini {giniLabel(gini)}
               </Badge>
             }
@@ -346,7 +346,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
           <EconomySection
             title="Revenue integration and budget balance"
             icon={Landmark}
-            accessory={<Badge variant="secondary">Integrated treasury</Badge>}
+            accessory={<Badge variant="default">Integrated treasury</Badge>}
           >
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <StatTile

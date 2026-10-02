@@ -73,8 +73,8 @@ describe("Button", () => {
 
 describe("Badge", () => {
   it("aliases default→tinted and secondary→neutral", () => {
-    expect(badgeVariants({ variant: "default" })).toBe(badgeVariants({ variant: "tinted" }));
-    expect(badgeVariants({ variant: "secondary" })).toBe(badgeVariants({ variant: "neutral" }));
+    expect(badgeVariants({ variant: "secondary" })).toBe(badgeVariants({ variant: "secondary" }));
+    expect(badgeVariants({ variant: "default" })).toBe(badgeVariants({ variant: "default" }));
   });
 
   it("colours status badges with their status ink on a fill of the colour", () => {

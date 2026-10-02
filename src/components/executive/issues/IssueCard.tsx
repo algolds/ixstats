@@ -131,7 +131,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
               {issue.title}
             </h4>
             {isNew && (
-              <Badge variant="yellow" className="shrink-0">
+              <Badge variant="warning" className="shrink-0">
                 NEW
               </Badge>
             )}

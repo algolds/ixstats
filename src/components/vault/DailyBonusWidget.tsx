@@ -348,7 +348,7 @@ export const DailyBonusWidget: React.FC = () => {
                         {claimResult.cardAwarded.title}
                       </p>
                       <div className="flex items-center justify-center gap-2">
-                        <Badge variant="secondary" className="capitalize">
+                        <Badge variant="default" className="capitalize">
                           {claimResult.cardAwarded.rarity.toLowerCase().replace(/_/g, " ")}
                         </Badge>
                         <span className="text-label-secondary text-body">

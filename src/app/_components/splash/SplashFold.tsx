@@ -224,7 +224,7 @@ export function SplashFold() {
                           {component.description}
                         </p>
                         <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant="secondary" className="text-footnote">
+                          <Badge variant="default" className="text-footnote">
                             {component.effectiveness}% effective
                           </Badge>
                           <Badge variant="outline" className="text-footnote">

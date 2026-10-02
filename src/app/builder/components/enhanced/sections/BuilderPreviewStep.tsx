@@ -197,7 +197,7 @@ function PreviewSection({
             </span>
             <span className="flex min-w-0 items-center gap-2">
               <Badge
-                variant={hue}
+                variant="secondary"
                 className="max-w-[180px] truncate sm:max-w-[240px]"
                 title={badge}
               >

@@ -147,7 +147,7 @@ export function OnomaFooter({
             >
               <OnomaGlyph name={page.glyph} size="xs" />
               <span>{page.label}</span>
-              {page.isPro && <Badge variant="caution">Premium</Badge>}
+              {page.isPro && <Badge variant="warning">Premium</Badge>}
             </Button>
           ))}
         </nav>

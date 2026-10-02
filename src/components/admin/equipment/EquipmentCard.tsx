@@ -68,11 +68,11 @@ export function EquipmentCard({
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="red" className="capitalize">
+          <Badge variant="destructive" className="capitalize">
             {equipment.category}
           </Badge>
           {equipment.subcategory && (
-            <Badge variant="blue" className="capitalize">
+            <Badge variant="info" className="capitalize">
               {equipment.subcategory}
             </Badge>
           )}

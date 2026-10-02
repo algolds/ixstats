@@ -104,7 +104,7 @@ function BlurbPromptModal({
               </div>
               <p className="text-label-secondary text-body leading-relaxed">{prompt.question}</p>
               <div className="mt-2 flex items-center gap-2">
-                <Badge variant="secondary" className="text-footnote">
+                <Badge variant="default" className="text-footnote">
                   {prompt._count.responses}{" "}
                   {prompt._count.responses === 1 ? "response" : "responses"}
                 </Badge>

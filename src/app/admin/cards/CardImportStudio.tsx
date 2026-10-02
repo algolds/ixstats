@@ -69,7 +69,7 @@ export function CardImportStudio({
       description: "Batch generate & scrape lore cards from IxWiki, IIWiki & WikiOS",
       icon: BookOpen,
       badge: pendingRequestsCount > 0 ? `${pendingRequestsCount} requests` : undefined,
-      badgeVariant: "secondary" as const,
+      badgeVariant: "default" as const,
     },
     {
       id: "ns" as ImportSubtab,
@@ -77,7 +77,7 @@ export function CardImportStudio({
       description: "Region scrapers, sync daemons & active/CTE nation compatibility",
       icon: Globe,
       badge: activeJobsCount > 0 ? `${activeJobsCount} active` : undefined,
-      badgeVariant: "default" as const,
+      badgeVariant: "secondary" as const,
     },
     {
       id: "flags" as ImportSubtab,
@@ -120,7 +120,7 @@ export function CardImportStudio({
                   <>
                     {tab.label}
                     {tab.badge && (
-                      <Badge variant={tab.badgeVariant || "secondary"} className="tabular-nums">
+                      <Badge variant={tab.badgeVariant || "default"} className="tabular-nums">
                         {tab.badge}
                       </Badge>
                     )}

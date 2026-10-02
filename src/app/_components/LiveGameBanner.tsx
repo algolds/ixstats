@@ -232,7 +232,7 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
         <div className="mt-3 flex items-center justify-between md:hidden">
           <div className="flex items-center gap-2">
             <Badge
-              variant={botStatus.available ? "default" : "destructive"}
+              variant={botStatus.available ? "secondary" : "destructive"}
               className={botStatus.available ? "bg-green" : "bg-red"}
             ></Badge>
           </div>

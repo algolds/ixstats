@@ -116,7 +116,7 @@ export const WizardStepReview = React.memo(function WizardStepReview({
           <h5 className="text-label-secondary text-headline mb-3">Objectives</h5>
           <div className="flex flex-wrap gap-2">
             {data.objectives.map((obj) => (
-              <Badge key={obj} variant="secondary">
+              <Badge key={obj} variant="default">
                 {obj}
               </Badge>
             ))}

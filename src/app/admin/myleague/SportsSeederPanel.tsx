@@ -169,7 +169,7 @@ export default function SportsSeederPanel() {
             <div>
               <h1 className="text-label text-title-1 flex items-center gap-2">
                 Data Lab & Seeder
-                <Badge variant="indigo">ADMIN TOOLS</Badge>
+                <Badge variant="secondary">ADMIN TOOLS</Badge>
               </h1>
               <p className="text-label-secondary text-body">
                 Configure, initialize, and re-seed the canonical database sports structures.
@@ -245,7 +245,7 @@ export default function SportsSeederPanel() {
                             <span className="text-title-3">{preset.icon}</span>
                             {preset.name}
                           </span>
-                          <Badge variant="indigo" className="text-eyebrow">
+                          <Badge variant="secondary" className="text-eyebrow">
                             {preset.teams} teams
                           </Badge>
                         </div>
@@ -338,7 +338,7 @@ export default function SportsSeederPanel() {
                   <Cpu className="text-green h-3.5 w-3.5" />
                   Sports Presets Engine
                 </span>
-                <Badge variant="green" className="text-eyebrow">
+                <Badge variant="success" className="text-eyebrow">
                   Operational
                 </Badge>
               </div>
@@ -347,7 +347,7 @@ export default function SportsSeederPanel() {
                   <Sparkles className="text-green h-3.5 w-3.5" />
                   AI Commentary Narrator
                 </span>
-                <Badge variant="green" className="text-eyebrow">
+                <Badge variant="success" className="text-eyebrow">
                   Connected
                 </Badge>
               </div>
@@ -356,7 +356,7 @@ export default function SportsSeederPanel() {
                   <Database className="text-green h-3.5 w-3.5" />
                   Redis Cache Connection
                 </span>
-                <Badge variant="green" className="text-eyebrow">
+                <Badge variant="success" className="text-eyebrow">
                   Online
                 </Badge>
               </div>
@@ -365,7 +365,7 @@ export default function SportsSeederPanel() {
                   <Trophy className="text-green h-3.5 w-3.5" />
                   Simulation Kernel Status
                 </span>
-                <Badge variant="green" className="text-eyebrow">
+                <Badge variant="success" className="text-eyebrow">
                   Active Loop
                 </Badge>
               </div>

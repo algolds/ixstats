@@ -49,7 +49,7 @@ export function DirectiveRows({
             </span>
           }
           trailing={
-            <Badge variant={d.status === "completed" ? "success" : "tinted"}>
+            <Badge variant={d.status === "completed" ? "success" : "secondary"}>
               {d.status === "completed" ? "Completed" : "In force"}
             </Badge>
           }
@@ -95,7 +95,7 @@ export function IssueOutcomeRows({
               {o.ixTime != null && <span className="tabular-nums">{formatIxDate(o.ixTime)}</span>}
             </span>
           }
-          trailing={<Badge variant="neutral">{o.domain}</Badge>}
+          trailing={<Badge variant="default">{o.domain}</Badge>}
         />
       ))}
     </FacetListSection>

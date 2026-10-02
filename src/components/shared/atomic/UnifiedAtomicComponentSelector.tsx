@@ -239,7 +239,7 @@ export function UnifiedAtomicComponentSelector<T extends string>({
                 return (
                   <Badge
                     key={componentId}
-                    variant="default"
+                    variant="secondary"
                     className={cn(
                       "flex items-center gap-1",
                       `text-${themeClasses.primary}-ink`,

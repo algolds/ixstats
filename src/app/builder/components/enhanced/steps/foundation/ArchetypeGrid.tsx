@@ -403,7 +403,7 @@ export function ArchetypeGrid({
                         </button>
                       </h2>
                       <div className="mt-1 flex flex-wrap gap-2">
-                        <Badge variant="neutral">{arch.region}</Badge>
+                        <Badge variant="default">{arch.region}</Badge>
                         <Badge variant={getComplexityBadgeVariant(arch.implementationComplexity)}>
                           Complexity: {arch.implementationComplexity || "Medium"}
                         </Badge>

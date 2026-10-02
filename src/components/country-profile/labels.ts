@@ -19,13 +19,13 @@ export function relationshipBadge(relationship: string): { label: string; varian
     case "FRIENDLY":
       return { label: "Friendly", variant: "info" };
     case "TENSE":
-      return { label: "Tense", variant: "caution" };
+      return { label: "Tense", variant: "warning" };
     case "HOSTILE":
       return { label: "Hostile", variant: "warning" };
     case "WAR":
       return { label: "At war", variant: "destructive" };
     default:
-      return { label: "Neutral", variant: "neutral" };
+      return { label: "Neutral", variant: "default" };
   }
 }
 

@@ -41,7 +41,7 @@ export function VaultNetWorthCard({
             <span className="text-label-secondary text-eyebrow">MyVault balance</span>
           </div>
           {/* Facet 3.1 HIG: a yellow Badge (the AA ink on its 15% fill), not raw yellow text. */}
-          <Badge variant="yellow" className="shadow-card px-3 py-1">
+          <Badge variant="warning" className="shadow-card px-3 py-1">
             Tier <span className="font-data tabular-nums">{vaultLevel}</span> account
           </Badge>
         </div>

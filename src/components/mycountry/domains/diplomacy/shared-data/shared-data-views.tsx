@@ -161,7 +161,7 @@ export function IntelligenceDataTab({
                 </h3>
                 <p className="text-label-secondary text-body">{report.summary}</p>
               </div>
-              <Badge variant={report.classification === "PUBLIC" ? "default" : "secondary"}>
+              <Badge variant={report.classification === "PUBLIC" ? "secondary" : "default"}>
                 {report.classification}
               </Badge>
             </div>
@@ -283,7 +283,7 @@ export function PolicyDataTab({ data }: { data: SharedPolicyData[] | undefined }
                 </h3>
                 <p className="text-label-secondary text-body">{policy.agreementType} agreement</p>
               </div>
-              <Badge variant={policy.status === "ratified" ? "default" : "secondary"}>
+              <Badge variant={policy.status === "ratified" ? "secondary" : "default"}>
                 {policy.status}
               </Badge>
             </div>

@@ -131,8 +131,8 @@ function FlagGraphic({ countryName, flag }: { countryName: string; flag?: string
 }
 
 const PODIUM = {
-  1: { icon: Crown, label: "Gold champion", badge: "caution" },
-  2: { icon: Medal, label: "Silver runner-up", badge: "neutral" },
+  1: { icon: Crown, label: "Gold champion", badge: "warning" },
+  2: { icon: Medal, label: "Silver runner-up", badge: "default" },
   3: { icon: Award, label: "Bronze podium", badge: "warning" },
 } as const;
 

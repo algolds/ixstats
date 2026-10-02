@@ -45,7 +45,7 @@ export function RevenueSourcesList({
               <div className="flex items-center gap-2">
                 <Receipt className="h-5 w-5" />
                 Revenue Sources
-                <Badge variant="secondary" className="ml-2">
+                <Badge variant="default" className="ml-2">
                   {sources.length}
                 </Badge>
               </div>

@@ -309,9 +309,9 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
             <Badge
               variant={
                 modelHealthDisplay.score >= 85
-                  ? "default"
+                  ? "secondary"
                   : modelHealthDisplay.score >= 70
-                    ? "secondary"
+                    ? "default"
                     : "destructive"
               }
             >

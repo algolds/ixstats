@@ -272,7 +272,7 @@ export function LeagueScheduleTab({
                   {/* Top Bar: Match status & Rivalry Tag */}
                   <div className="border-separator flex items-center justify-between border-b pb-3">
                     <div className="flex items-center gap-2">
-                      <Badge variant={isCompleted ? "success" : "caution"}>
+                      <Badge variant={isCompleted ? "success" : "warning"}>
                         {isCompleted ? "Final Result" : "Scheduled"}
                       </Badge>
                       {m.isRivalry && (

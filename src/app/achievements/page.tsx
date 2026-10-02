@@ -116,7 +116,7 @@ export default function AchievementsPage() {
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <h1 className="text-label text-title-1 flex flex-wrap items-center gap-3">
                   <span>Achievements</span>
-                  <Badge variant="yellow">
+                  <Badge variant="warning">
                     <span className="font-data tabular-nums">{completionPercent}%</span> mastered
                   </Badge>
                 </h1>

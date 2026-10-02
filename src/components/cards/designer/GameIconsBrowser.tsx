@@ -151,7 +151,7 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
               <div>
                 <DialogTitle className="text-headline flex items-center gap-2">
                   Game-Icons Vector Library
-                  <Badge variant="secondary" className="text-footnote tabular-nums">
+                  <Badge variant="default" className="text-footnote tabular-nums">
                     {filteredIcons.length.toLocaleString()} icons
                   </Badge>
                 </DialogTitle>

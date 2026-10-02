@@ -210,7 +210,7 @@ export function EconomicMetricModals({
                                 {synergy.description}
                               </p>
                             </div>
-                            <Badge variant="green" className="shrink-0 tabular-nums">
+                            <Badge variant="success" className="shrink-0 tabular-nums">
                               +{synergy.bonus}%
                             </Badge>
                           </div>

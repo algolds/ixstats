@@ -82,7 +82,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
                     province.confidence >= 0.8
                       ? "success"
                       : province.confidence >= 0.5
-                        ? "caution"
+                        ? "warning"
                         : "destructive"
                   }
                   className="tabular-nums"

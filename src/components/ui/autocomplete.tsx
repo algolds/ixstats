@@ -87,9 +87,7 @@ export const Autocomplete = React.memo(function Autocomplete({
   const normalizedDefaults = useMemo<AutocompleteSuggestion[]>(() => {
     if (!defaultSuggestions || defaultSuggestions.length === 0) return [];
     return defaultSuggestions.map((item) =>
-      typeof item === "string"
-        ? { id: `def-${item}`, value: item, isGlobal: true }
-        : item
+      typeof item === "string" ? { id: `def-${item}`, value: item, isGlobal: true } : item
     );
   }, [defaultSuggestions]);
 
@@ -109,7 +107,10 @@ export const Autocomplete = React.memo(function Autocomplete({
   );
 
   const filteredUser = useMemo(
-    () => (query ? userSuggestions.filter((s) => s.value.toLowerCase().includes(query)) : userSuggestions),
+    () =>
+      query
+        ? userSuggestions.filter((s) => s.value.toLowerCase().includes(query))
+        : userSuggestions,
     [userSuggestions, query]
   );
 
@@ -161,10 +162,10 @@ export const Autocomplete = React.memo(function Autocomplete({
           disabled={disabled}
           placeholder={placeholder}
           className={cn(
-            "flex h-(--control-height) w-full min-w-0 rounded-control bg-fill-3 px-3 py-1 pr-8 text-body text-label",
+            "rounded-control bg-fill-3 text-body text-label flex h-(--control-height) w-full min-w-0 px-3 py-1 pr-8",
             "placeholder:text-label-tertiary selection:bg-tint selection:text-on-tint",
-            "transition-[background-color,box-shadow] duration-fast ease-out-facet outline-none",
-            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-tint",
+            "duration-fast ease-out-facet transition-[background-color,box-shadow] outline-none",
+            "focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid",
             "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
             className
           )}
@@ -177,7 +178,7 @@ export const Autocomplete = React.memo(function Autocomplete({
             handleOpenChange(!open);
             inputRef.current?.focus();
           }}
-          className="absolute right-2 flex size-5 items-center justify-center rounded-control-sm text-label-tertiary transition-colors duration-fast hover:text-label"
+          className="rounded-control-sm text-label-tertiary duration-fast hover:text-label absolute right-2 flex size-5 items-center justify-center transition-colors"
           aria-label="Toggle options"
         >
           {isLoading ? (
@@ -189,13 +190,13 @@ export const Autocomplete = React.memo(function Autocomplete({
       </div>
 
       {open && totalSuggestions > 0 && (
-        <div className="absolute z-popover mt-1 w-full origin-top animate-facet-in rounded-row border border-separator bg-surface-elevated p-1 text-label shadow-floating">
+        <div className="z-popover animate-facet-in rounded-row border-separator bg-surface-elevated text-label shadow-floating absolute mt-1 w-full origin-top border p-1">
           <Command shouldFilter={false} className="rounded-control-sm bg-transparent">
             <CommandList className="max-h-[260px]">
               {isLoading ? (
                 <div className="flex items-center justify-center py-4">
-                  <Loader2 className="size-4 animate-spin text-label-secondary" />
-                  <span className="ml-2 text-footnote text-label-secondary">Loading…</span>
+                  <Loader2 className="text-label-secondary size-4 animate-spin" />
+                  <span className="text-footnote text-label-secondary ml-2">Loading…</span>
                 </div>
               ) : (
                 <>
@@ -209,17 +210,17 @@ export const Autocomplete = React.memo(function Autocomplete({
                             key={suggestion.id}
                             value={suggestion.value}
                             onSelect={() => handleSelect(suggestion.value)}
-                            className="cursor-pointer text-callout"
+                            className="text-callout cursor-pointer"
                           >
                             <Check
                               className={cn(
-                                "mr-2 size-3.5 text-tint",
+                                "text-tint mr-2 size-3.5",
                                 isSelected ? "opacity-100" : "opacity-0"
                               )}
                             />
                             <span className="flex-1 font-medium">{suggestion.value}</span>
                             {suggestion.usageCount && suggestion.usageCount > 1 && (
-                              <Badge variant="secondary" className="ml-2 tabular-nums">
+                              <Badge variant="default" className="ml-2 tabular-nums">
                                 {suggestion.usageCount}x
                               </Badge>
                             )}
@@ -239,11 +240,11 @@ export const Autocomplete = React.memo(function Autocomplete({
                             key={suggestion.id}
                             value={suggestion.value}
                             onSelect={() => handleSelect(suggestion.value)}
-                            className="cursor-pointer text-callout"
+                            className="text-callout cursor-pointer"
                           >
                             <Check
                               className={cn(
-                                "mr-2 size-3.5 text-tint",
+                                "text-tint mr-2 size-3.5",
                                 isSelected ? "opacity-100" : "opacity-0"
                               )}
                             />

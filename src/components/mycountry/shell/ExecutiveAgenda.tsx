@@ -190,7 +190,7 @@ function ExecutiveAgendaComponent({
                 Agenda
                 {unread.length > 0 ? (
                   <Badge
-                    variant="tinted"
+                    variant="secondary"
                     className="font-data tabular-nums"
                     data-testid="agenda-unread-count"
                   >

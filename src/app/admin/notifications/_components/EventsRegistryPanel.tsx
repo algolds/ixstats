@@ -378,7 +378,7 @@ export function EventsRegistryPanel() {
                             <div className="flex items-center gap-2">
                               <h4 className="text-body truncate font-medium">{event.name}</h4>
                               <Badge
-                                variant={event.enabled ? "default" : "secondary"}
+                                variant={event.enabled ? "secondary" : "default"}
                                 className="h-5"
                               >
                                 {event.enabled ? "ON" : "OFF"}

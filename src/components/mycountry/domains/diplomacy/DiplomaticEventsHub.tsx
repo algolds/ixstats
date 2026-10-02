@@ -491,7 +491,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                             {eventConfig.icon}
                             {eventConfig.label}
                           </Badge>
-                          <Badge variant="secondary" className="capitalize">
+                          <Badge variant="default" className="capitalize">
                             {event.status}
                           </Badge>
                         </div>

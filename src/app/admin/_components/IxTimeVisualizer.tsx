@@ -229,13 +229,13 @@ export function IxTimeVisualizer() {
   }, []);
 
   const getStatusBadgeVariant = useCallback(
-    (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    (status: string): "secondary" | "default" | "destructive" | "outline" => {
       switch (status) {
         case "excellent":
         case "good":
-          return "default";
-        case "warning":
           return "secondary";
+        case "warning":
+          return "default";
         case "critical":
           return "destructive";
         default:

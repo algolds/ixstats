@@ -24,16 +24,16 @@ const FEED_STYLE: Record<
   { icon: typeof BookOpen; badge: BadgeVariant; label: string }
 > = {
   publish: { icon: BookOpen, badge: "info", label: "Created page" },
-  revision: { icon: EditPencil, badge: "tinted", label: "Revised page" },
-  minor_edit: { icon: EditPencil, badge: "neutral", label: "Copyedit" },
-  discussion: { icon: ChatBubble, badge: "neutral", label: "Discussion" },
-  laurel: { icon: Medal, badge: "caution", label: "Laurel" },
+  revision: { icon: EditPencil, badge: "secondary", label: "Revised page" },
+  minor_edit: { icon: EditPencil, badge: "default", label: "Copyedit" },
+  discussion: { icon: ChatBubble, badge: "default", label: "Discussion" },
+  laurel: { icon: Medal, badge: "warning", label: "Laurel" },
 };
 
 function ByteDiff({ bytes }: { bytes: number }) {
   return (
     <Badge
-      variant={bytes > 0 ? "success" : bytes < 0 ? "destructive" : "neutral"}
+      variant={bytes > 0 ? "success" : bytes < 0 ? "destructive" : "default"}
       className="tabular-nums"
     >
       {bytes > 0 && <ArrowUpRight aria-hidden />}

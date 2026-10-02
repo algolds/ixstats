@@ -5,7 +5,7 @@
 import type { EconomicTier, PopulationTier } from "~/types/ixstats";
 
 /** The `Badge` variant (Facet 3 §7.1) a membership tier renders with. */
-export type TierBadgeVariant = "caution" | "neutral";
+export type TierBadgeVariant = "warning" | "default";
 
 export interface TierInfo {
   label: string;
@@ -19,7 +19,7 @@ export function formatMembershipTier(tier?: string | null): TierInfo {
     return {
       label: "Citizen",
       isPremium: false,
-      badgeVariant: "neutral",
+      badgeVariant: "default",
     };
   }
 
@@ -31,7 +31,7 @@ export function formatMembershipTier(tier?: string | null): TierInfo {
     return {
       label: "Premium",
       isPremium: true,
-      badgeVariant: "caution",
+      badgeVariant: "warning",
     };
   }
 
@@ -41,7 +41,7 @@ export function formatMembershipTier(tier?: string | null): TierInfo {
         ? "Citizen"
         : tier.charAt(0).toUpperCase() + tier.slice(1).replace(/_/g, " "),
     isPremium: false,
-    badgeVariant: "neutral",
+    badgeVariant: "default",
   };
 }
 

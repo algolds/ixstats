@@ -134,7 +134,7 @@ export function RevenueSourceForm({
           <Badge variant={totalPercent > 100 ? "destructive" : "outline"}>
             {data.length} Channels
           </Badge>
-          <Badge variant="secondary" className="tabular-nums">
+          <Badge variant="default" className="tabular-nums">
             {formatExactCurrency(totalCalculated, currency)}
           </Badge>
         </div>

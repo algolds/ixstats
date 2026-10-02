@@ -56,14 +56,14 @@ export default function CountriesFilterSidebar({
     <Card className="rounded-card space-y-4 p-4">
       {hasFilters && (
         <div className="mb-2 flex flex-wrap gap-1">
-          {searchTerm && <Badge variant="secondary">Search: {searchTerm}</Badge>}
-          {tierFilter !== "all" && <Badge variant="secondary">Tier: {tierFilter}</Badge>}
+          {searchTerm && <Badge variant="default">Search: {searchTerm}</Badge>}
+          {tierFilter !== "all" && <Badge variant="default">Tier: {tierFilter}</Badge>}
           {continentFilter !== "all" && (
-            <Badge variant="secondary">Continent: {continentFilter}</Badge>
+            <Badge variant="default">Continent: {continentFilter}</Badge>
           )}
-          {regionFilter !== "all" && <Badge variant="secondary">Region: {regionFilter}</Badge>}
+          {regionFilter !== "all" && <Badge variant="default">Region: {regionFilter}</Badge>}
           {(populationRange.min !== undefined || populationRange.max !== undefined) && (
-            <Badge variant="secondary">
+            <Badge variant="default">
               Pop: {populationRange.min ?? 0}-{populationRange.max ?? "∞"}
             </Badge>
           )}

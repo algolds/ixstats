@@ -178,7 +178,7 @@ export function AtomicEconomicComponentSelector({
               <h3>
                 <Eyebrow className="block">Available components</Eyebrow>
               </h3>
-              <Badge variant="secondary" className="tabular-nums">
+              <Badge variant="default" className="tabular-nums">
                 {builder.selectedComponents.length} / {maxComponents} selected
               </Badge>
             </div>

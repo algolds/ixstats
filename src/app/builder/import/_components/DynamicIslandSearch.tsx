@@ -370,7 +370,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                 </MenuButton>
 
                 {/* Nation Count Badge */}
-                <Badge variant="neutral" className="tabular-nums">
+                <Badge variant="default" className="tabular-nums">
                   {nationCount} {nationCount === 1 ? "nation" : "nations"}
                 </Badge>
 

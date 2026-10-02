@@ -152,7 +152,7 @@ describe("CutoutCard accent and header", () => {
   it("retint is the widgetAccent replacement (subtree --tint follows the accent)", () => {
     render(
       <CutoutCard data-testid="cut" variant="card">
-        <Badge variant="tinted">3</Badge>
+        <Badge variant="secondary">3</Badge>
       </CutoutCard>
     );
     expect(classOf(screen.getByTestId("cut"))).toMatch(/\bfacet-retint\b/);
@@ -174,7 +174,7 @@ describe("CutoutCard accent and header", () => {
     (as) => {
       render(
         <CutoutCard variant="card">
-          <CutoutCardHeader as={as} icon={<svg />} trailing={<Badge>12</Badge>}>
+          <CutoutCardHeader as={as} icon={<svg />} trailing={<Badge variant="secondary">12</Badge>}>
             Countries to explore
           </CutoutCardHeader>
         </CutoutCard>
@@ -502,7 +502,7 @@ describe("IxCreditsSymbol accessible name", () => {
 
 describe('Badge variant="tinted"', () => {
   it("sets the tint's ink on the tint fill (AA; token-contrast.test.ts)", () => {
-    render(<Badge variant="tinted">New</Badge>);
+    render(<Badge variant="secondary">New</Badge>);
     const cls = classOf(screen.getByText("New"));
     expect(cls).toMatch(/\btext-tint-ink\b/);
     expect(cls).not.toMatch(/\btext-tint(?![\w-])/);

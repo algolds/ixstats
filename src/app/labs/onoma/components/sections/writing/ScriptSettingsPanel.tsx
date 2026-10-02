@@ -103,10 +103,10 @@ export function ScriptSettingsPanel({
                   title={<span className="text-footnote truncate">{s.name}</span>}
                   trailing={
                     <span className="flex shrink-0 items-center gap-2">
-                      <Badge variant="neutral" className="font-mono capitalize">
+                      <Badge variant="default" className="font-mono capitalize">
                         {s.scriptType}
                       </Badge>
-                      <Badge variant="neutral" className="font-mono">
+                      <Badge variant="default" className="font-mono">
                         {glyphCount} glyphs
                       </Badge>
                     </span>

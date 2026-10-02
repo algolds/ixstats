@@ -291,7 +291,7 @@ export function SvgUploadManager() {
                         <span className="text-label-secondary text-footnote">
                           {formatBytes(upload.fileSizeBytes)}
                         </span>
-                        {upload.isActive && <Badge variant="green">Active</Badge>}
+                        {upload.isActive && <Badge variant="success">Active</Badge>}
                       </div>
                     </TableCell>
                     <TableCell className="px-4">

@@ -9,7 +9,7 @@
  */
 
 import React from "react";
-import { Badge, badgeVariants, type SystemTintedColor } from "~/components/ui/badge";
+import { Badge, badgeVariants, type BadgeVariant } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Plus, Check, Flash as Zap, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
@@ -35,20 +35,20 @@ export interface AtomicCardProps<TType extends string = string> {
  * badge and its selected ring — the v2 Tailwind hues mapped onto the Facet system colours, applied
  * as the card's Facet accent (`accent`; the chip and ring read `facet-accent`).
  */
-const COMPONENT_HUE: Record<string, SystemTintedColor> = {
-  emerald: "green",
-  green: "green",
-  blue: "blue",
-  indigo: "indigo",
-  purple: "indigo",
-  amber: "yellow",
-  yellow: "yellow",
-  orange: "orange",
-  red: "red",
-  teal: "cyan",
-  cyan: "cyan",
-  zinc: "gray",
-  gray: "gray",
+const COMPONENT_HUE: Record<string, BadgeVariant> = {
+  emerald: "success",
+  green: "success",
+  blue: "info",
+  indigo: "secondary",
+  purple: "secondary",
+  amber: "warning",
+  yellow: "warning",
+  orange: "warning",
+  red: "destructive",
+  teal: "info",
+  cyan: "info",
+  zinc: "default",
+  gray: "default",
 };
 
 /** Complexity reads as a semantic status: high is costly, medium a caution, low easy. */
@@ -70,7 +70,7 @@ function AtomicCardComponent<TType extends string = string>({
   conflictingWith = [],
   currencyFormatter = formatCurrency,
 }: AtomicCardProps<TType>) {
-  const hue = COMPONENT_HUE[component.color?.toLowerCase() ?? "blue"] ?? "blue";
+  const hue = COMPONENT_HUE[component.color?.toLowerCase() ?? "blue"] ?? "info";
   const Icon = component.icon;
 
   const hasSynergies = synergisticWith.length > 0;
@@ -141,7 +141,7 @@ function AtomicCardComponent<TType extends string = string>({
             {component.metadata.complexity}
           </Badge>
 
-          <Badge variant="outline" numeric className="text-label-secondary">
+          <Badge variant="outline" className="text-label-secondary">
             {component.effectiveness}% eff.
           </Badge>
 
@@ -152,7 +152,7 @@ function AtomicCardComponent<TType extends string = string>({
                   type="button"
                   onClick={(e) => e.stopPropagation()}
                   aria-label={`${synergisticWith.length} synergies`}
-                  className={cn(badgeVariants({ variant: "green" }), "cursor-help tabular-nums")}
+                  className={cn(badgeVariants({ variant: "success" }), "cursor-help tabular-nums")}
                 >
                   <Zap aria-hidden="true" />
                   <span>+{synergisticWith.length}</span>

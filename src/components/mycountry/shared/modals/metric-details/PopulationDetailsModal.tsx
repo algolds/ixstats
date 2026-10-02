@@ -542,7 +542,7 @@ export function PopulationDetailsModal({
                               {tier.description}
                             </span>
                             {idx === populationTierInfo.currentIndex && (
-                              <Badge variant="secondary" className="ml-1">
+                              <Badge variant="default" className="ml-1">
                                 Current
                               </Badge>
                             )}
@@ -554,7 +554,7 @@ export function PopulationDetailsModal({
                 )}
               </div>
               <div className="mt-2">
-                <Badge variant="secondary" className="text-headline">
+                <Badge variant="default" className="text-headline">
                   {populationTierInfo?.currentTier?.name || "Unknown"}
                 </Badge>
               </div>

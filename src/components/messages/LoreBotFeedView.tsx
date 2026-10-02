@@ -253,7 +253,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                         New Article
                       </Badge>
                     ) : item.type === "watchlist" ? (
-                      <Badge variant="caution">
+                      <Badge variant="warning">
                         <Eye aria-hidden="true" />
                         Watchlist
                       </Badge>
@@ -276,7 +276,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
 
                     {/* Watched tag */}
                     {item.isWatched && item.type !== "watchlist" && (
-                      <Badge variant="neutral">
+                      <Badge variant="default">
                         <Eye aria-hidden="true" />
                         Watched
                       </Badge>

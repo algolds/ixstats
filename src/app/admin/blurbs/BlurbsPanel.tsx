@@ -136,8 +136,8 @@ function BlurbStatsSummary() {
 // ── Prompt Management Section ────────────────────────────────────────────────
 
 const STATUS_CONFIG = {
-  DRAFT: { label: "Draft", icon: FileText, variant: "secondary" as const },
-  ACTIVE: { label: "Active", icon: CheckCircle, variant: "default" as const },
+  DRAFT: { label: "Draft", icon: FileText, variant: "default" as const },
+  ACTIVE: { label: "Active", icon: CheckCircle, variant: "secondary" as const },
   CLOSED: { label: "Closed", icon: Clock, variant: "outline" as const },
   ARCHIVED: { label: "Archived", icon: Archive, variant: "outline" as const },
 };
@@ -362,7 +362,7 @@ function PromptManagementSection() {
                     <div className="flex items-center gap-2">
                       <span className="text-label text-caption truncate">{prompt.title}</span>
                       <Badge variant={config.variant}>{config.label}</Badge>
-                      {prompt.featured && <Badge variant="yellow">Featured</Badge>}
+                      {prompt.featured && <Badge variant="warning">Featured</Badge>}
                     </div>
                     <p className="text-label-secondary text-footnote mt-0.5 truncate">
                       {prompt.question}
@@ -525,7 +525,7 @@ function ResponseModerationSection() {
                   <span className="text-label text-caption">
                     {r.country?.name ?? "Unknown Realm"}
                   </span>
-                  {r.featured && <Badge variant="yellow">Featured</Badge>}
+                  {r.featured && <Badge variant="warning">Featured</Badge>}
                 </div>
 
                 <Button

@@ -249,7 +249,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
         <div>
           <h2 className="text-label text-title-3">{issue.title}</h2>
           {issue.intentId && (
-            <Badge variant="secondary" className="mt-2">
+            <Badge variant="default" className="mt-2">
               <Command />
               Linked to an active directive
             </Badge>
@@ -273,7 +273,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
               {issue.status === "auto_resolved" ? "Auto-Resolved" : "Decision Made"}
             </span>
             {issue.ixCreditsAwarded > 0 && (
-              <Badge variant="yellow">
+              <Badge variant="warning">
                 +{issue.ixCreditsAwarded}
                 <IxCreditsSymbol className="h-3 w-3 shrink-0" />
               </Badge>

@@ -63,7 +63,7 @@ export function ClubHistorySection({ teamId }: { teamId: string }) {
                   </p>
                 </div>
                 {season.isChampion && (
-                  <Badge variant="caution">
+                  <Badge variant="warning">
                     <Trophy /> Champion
                   </Badge>
                 )}

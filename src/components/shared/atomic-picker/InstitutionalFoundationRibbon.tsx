@@ -120,7 +120,7 @@ export const InstitutionalFoundationRibbon = React.memo(function InstitutionalFo
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               {governmentComponents.slice(0, 5).map((comp) => (
-                <Badge key={comp} variant="secondary">
+                <Badge key={comp} variant="default">
                   {formatGovName(comp)}
                 </Badge>
               ))}
@@ -137,7 +137,7 @@ export const InstitutionalFoundationRibbon = React.memo(function InstitutionalFo
         <div className="border-separator flex shrink-0 items-center gap-2 border-t pt-2 sm:border-t-0 sm:pt-0">
           {activeSynergies.length > 0 ? (
             <>
-              <Badge variant="green">
+              <Badge variant="success">
                 <Zap aria-hidden="true" />
                 {activeSynergies.length} cross-
                 {activeSynergies.length === 1 ? "synergy" : "synergies"} active

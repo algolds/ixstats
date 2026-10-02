@@ -108,7 +108,7 @@ export function ThinkPagesShareModal({
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <Badge variant="secondary">
+            <Badge variant="default">
               <ShieldCheck />
               Official Government Account
             </Badge>

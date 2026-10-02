@@ -167,7 +167,7 @@ export function LeagueOverviewTab({
           <Card padding="md" className="space-y-4">
             <div className="flex items-center justify-between">
               <Eyebrow>Next Round</Eyebrow>
-              <Badge variant={activeSeason ? "success" : "neutral"}>
+              <Badge variant={activeSeason ? "success" : "default"}>
                 {activeSeason ? `Round ${nextMatchDay ?? 1}` : "Completed"}
               </Badge>
             </div>

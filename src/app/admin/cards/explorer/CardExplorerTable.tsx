@@ -74,11 +74,11 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
       if (isIIWiki) {
         return <IIWikiBadge size="xs" />;
       }
-      return <Badge variant="yellow">Wiki</Badge>;
+      return <Badge variant="warning">Wiki</Badge>;
     }
 
     if (card.cardType === "COMMONS_IMPORT") {
-      return <Badge variant="teal">Commons Import</Badge>;
+      return <Badge variant="info">Commons Import</Badge>;
     }
 
     if (
@@ -87,10 +87,10 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
       card.nsCardId > 0 &&
       card.cardType === "NS_IMPORT"
     ) {
-      return <Badge variant="blue">NS Import</Badge>;
+      return <Badge variant="info">NS Import</Badge>;
     }
 
-    return <Badge variant="teal">User Imported</Badge>;
+    return <Badge variant="info">User Imported</Badge>;
   };
 
   const columns = useMemo<FacetColumn<any>[]>(
@@ -213,8 +213,8 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
         mobileRole: "badge",
         render: (_val: unknown, card: any) => (
           <div className="flex items-center gap-2">
-            <Badge variant="purple">S{card.season}</Badge>
-            <Badge variant="yellow">{card.rarity}</Badge>
+            <Badge variant="secondary">S{card.season}</Badge>
+            <Badge variant="warning">{card.rarity}</Badge>
           </div>
         ),
       },
@@ -332,14 +332,14 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
           }
           if (isCTE) {
             return (
-              <Badge variant="red">
+              <Badge variant="destructive">
                 <AlertTriangle className="text-red h-3 w-3" />
                 CTE (Defunct)
               </Badge>
             );
           }
           return (
-            <Badge variant="green">
+            <Badge variant="success">
               <CheckCircle className="text-green h-3 w-3" />
               Active Nation
             </Badge>
@@ -355,7 +355,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
           return (
             <ActionPill
               pressed={isRetired}
-              tone="orange"
+              tone="warning"
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleTakedown(card.id, isRetired);

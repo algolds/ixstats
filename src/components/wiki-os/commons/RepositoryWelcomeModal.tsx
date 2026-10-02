@@ -151,7 +151,7 @@ export function RepositoryWelcomeModal({
               </DialogDescription>
             </div>
           </div>
-          <Badge variant="neutral" className="tabular-nums">
+          <Badge variant="default" className="tabular-nums">
             v{WIKIOS_VERSION}
           </Badge>
         </div>
