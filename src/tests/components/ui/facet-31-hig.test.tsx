@@ -354,56 +354,30 @@ describe("textures", () => {
 describe("accessibility preferences in the identity sheet", () => {
   it("Reduce Transparency and Increase Contrast remove the blurred / translucent layers", () => {
     const block = identityCss.slice(
-      identityCss.indexOf(
-        "@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {\n    .facet-tint-glow"
-      )
+      identityCss.indexOf(".facet-aurora,\n  .facet-radiance,\n  .facet-foil {")
     );
-    for (const cls of [
-      ".facet-tint-glow",
-      ".facet-acrylic-glow",
-      ".facet-aurora",
-      ".facet-radiance",
-      ".facet-foil",
-    ]) {
-      expect(block.slice(0, 400)).toContain(cls);
-    }
-    expect(block.slice(0, 400)).toContain("display: none;");
-    // The in-app switches too.
-    expect(identityCss).toMatch(
-      /:where\(\[data-transparency="reduced"\], \[data-contrast="more"\]\)\s*:is\(\.facet-tint-glow, \.facet-acrylic-glow, \.facet-aurora, \.facet-radiance, \.facet-foil\) \{\s*display: none;/
-    );
+    expect(block.slice(0, 300)).toContain("@variant transparency-reduced {\n      display: none;");
+    expect(block.slice(0, 300)).toContain("@variant contrast-more {\n      display: none;");
   });
 
-  it("Increase Contrast: the hero border and the rims become full-strength edges, no watermark brighten", () => {
-    const hero = utility("material-hero");
-    expect(hero).toMatch(
-      /@media \(prefers-contrast: more\) \{[^}]*border-color: var\(--facet-accent, var\(--tint\)\);/
-    );
-    expect(hero).toMatch(
-      /&:where\(\[data-contrast="more"\] \*\) \{[^}]*border-color: var\(--facet-accent, var\(--tint\)\);/
-    );
-    expect(utility("material-acrylic")).toContain("border-color: var(--color-separator-opaque);");
-    expect(utility("facet-gold-rim")).toContain("border-color: var(--gold-rim-edge);");
-    expect(utility("facet-tint-rim")).toContain("border-color: var(--facet-accent, var(--tint));");
-    expect(identityCss).toMatch(
-      /@media \(prefers-contrast: more\) \{\s*:is\(\.group, \[data-slot="facet-card"\], \[data-slot="cutout-card"\]\):hover\s*\.facet-flag-watermark\[data-interactive="true"\] \{\s*opacity: var\(--flag-watermark-opacity\);/
-    );
+  it("Increase Contrast turns the hairline into the opaque separator and stops the watermark brightening", () => {
+    expect(tokensCss).toContain("--glass-hairline: var(--color-separator-opaque);");
+    expect(identityCss).toMatch(/@variant contrast-more \{\s*opacity: var\(--watermark-opacity\);/);
   });
 
   it("Reduce Transparency / Increase Contrast make both identity materials opaque", () => {
-    for (const name of ["material-hero", "material-acrylic"]) {
-      const rule = utility(name);
-      expect(rule).toContain("prefers-reduced-transparency: reduce");
-      expect(rule).toContain('[data-transparency="reduced"]');
-      expect(rule).toContain("prefers-contrast: more");
-      expect(rule).toContain("backdrop-filter: none;");
+    for (const variant of ["transparency-reduced", "contrast-more"]) {
+      const start = tokensCss.indexOf(`@variant ${variant} {\n      --glass-fill: 100%;`);
+      expect(start).toBeGreaterThanOrEqual(0);
+      expect(tokensCss.slice(start, start + 260)).toContain(
+        "--acrylic-fill: var(--color-surface-elevated);"
+      );
     }
   });
 
   it("the flag watermark carries the HIG tone filter", () => {
-    expect(identityCss).toContain("filter: blur(1px) var(--flag-watermark-tone);");
-    expect(tokensCss).toContain("--flag-watermark-tone: contrast(0.7);");
-    expect(tokensCss).toContain("--flag-watermark-tone: brightness(0.6);");
+    expect(identityCss).toContain("filter: blur(1px) contrast(0.7);");
+    expect(identityCss).toContain("filter: blur(1px) brightness(0.6);");
   });
 });
 

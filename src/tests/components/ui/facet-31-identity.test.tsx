@@ -211,14 +211,12 @@ describe("primary actions", () => {
 
   it("the gold primary is scoped to MyCountry / Builder and reset for every other app scope", () => {
     const mycountry = tokensCss.slice(
-      tokensCss.indexOf('[data-app="mycountry"] {\n    --primary-fill')
+      tokensCss.indexOf('[data-app="mycountry"],\n  [data-app="builder"] {')
     );
-    expect(mycountry).toContain(
-      "--primary-fill-image: linear-gradient(to right, var(--gold-from), var(--gold-to));"
-    );
+    expect(mycountry).toContain("--primary-fill: var(--gold);");
     expect(mycountry).toContain("--on-primary: var(--on-gold);");
     expect(tokensCss).toMatch(
-      /:root,\n\s+\[data-app\] \{\n\s+--primary-fill: var\(--primary-fill-mono\);/
+      /:root,\n\s+\[data-app\] \{\n\s+--primary-fill: var\(--primary-mono\);/
     );
   });
 });
@@ -263,8 +261,7 @@ describe("press and lift physics", () => {
     for (const utility of ["facet-press", "facet-lift"]) {
       const body = identityCss.slice(identityCss.indexOf(`@utility ${utility} {`));
       const rule = body.slice(0, body.indexOf("\n}\n"));
-      expect(rule).toContain("@media (prefers-reduced-motion: reduce)");
-      expect(rule).toContain('[data-motion="reduced"]');
+      expect(rule).toContain("@variant motion-reduce");
       expect(rule).not.toMatch(/\btransform:/);
     }
     expect(identityCss).toMatch(/@utility facet-press \{[\s\S]*?scale: var\(--facet-press-scale\)/);
@@ -374,14 +371,21 @@ describe("data face for figures", () => {
   });
 });
 
-describe("heavy tight headings", () => {
-  it.each(["display", "large-title", "title-1", "title-2", "title-3"] as const)(
-    "%s is bold-or-heavier and tight",
-    (style) => {
-      expect(TEXT_STYLES[style].weight).toBeGreaterThanOrEqual(700);
-      expect(parseFloat(TEXT_STYLES[style].tracking)).toBeLessThanOrEqual(-0.02);
-    }
-  );
+describe("headings", () => {
+  it.each(["display", "large-title", "title-1"] as const)("%s is bold and tight", (style) => {
+    expect(TEXT_STYLES[style].weight).toBe(700);
+    expect(TEXT_STYLES[style].tracking).toBe("-0.015em");
+  });
+
+  it.each(["title-2", "title-3", "headline"] as const)("%s is semibold", (style) => {
+    expect(TEXT_STYLES[style].weight).toBe(600);
+  });
+
+  it("tracking tightens only as the size grows", () => {
+    const sizes = Object.values(TEXT_STYLES).sort((a, b) => b.size - a.size);
+    const tracking = sizes.map((s) => parseFloat(s.tracking));
+    expect(tracking).toEqual([...tracking].sort((a, b) => a - b));
+  });
 
   it("body styles keep their weights", () => {
     expect(TEXT_STYLES.body.weight).toBe(400);
@@ -503,14 +507,10 @@ describe("FlagWatermark (v2 strength)", () => {
   });
 
   it("the CSS brightens to .25 and scales to 105% on hover, and drops the scale under Reduce Motion", () => {
-    expect(tokensCss).toContain("--flag-watermark-opacity: 0.14;");
-    expect(tokensCss).toContain("--flag-watermark-opacity: 0.18;");
-    expect(tokensCss).toContain("--flag-watermark-opacity-hover: 0.25;");
+    expect(identityCss).toContain("--watermark-opacity: 0.14;");
+    expect(identityCss).toContain("--watermark-opacity: 0.18;");
     expect(identityCss).toMatch(
-      /\.facet-flag-watermark\[data-interactive="true"\] \{\s*opacity: var\(--flag-watermark-opacity-hover\);\s*scale: 1\.05;/
-    );
-    expect(identityCss).toMatch(
-      /prefers-reduced-motion[\s\S]*\.facet-flag-watermark \{\s*scale: none;/
+      /\.facet-flag-watermark\[data-interactive="true"\] \{\s*opacity: 0\.25;\s*scale: 1\.05;\s*@variant motion-reduce \{\s*scale: none;/
     );
   });
 });

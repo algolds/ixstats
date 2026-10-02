@@ -122,7 +122,7 @@ export function Navigation() {
       <nav
         onMouseEnter={onNavMouseEnter}
         onMouseLeave={onNavMouseLeave}
-        className={`navigation-bar fixed top-0 right-0 left-0 z-[var(--z-navigation)] border-b backdrop-blur-xl transition-colors duration-200 ${
+        className={`navigation-bar fixed top-0 right-0 left-0 z-nav border-b backdrop-blur-xl transition-colors duration-200 ${
           isWikiPage
             ? "border-[var(--wikios-border)] bg-[var(--wikios-bg)] shadow-sm"
             : "border-border/40 bg-background/80 shadow-xs"
@@ -177,7 +177,7 @@ export function Navigation() {
       <AnimatePresence>
         {isMobile && mobileMenuOpen && (
           <motion.div
-            className="fixed inset-0 z-[calc(var(--z-navigation)+100)]"
+            className="fixed inset-0 z-[calc(var(--z-index-nav)+100)]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -220,7 +220,7 @@ export function Navigation() {
         <motion.div
           onMouseEnter={!isImmersionPage ? onNavMouseEnter : undefined}
           onMouseLeave={!isImmersionPage ? onNavMouseLeave : undefined}
-          className="pointer-events-none fixed top-0 right-0 left-0 z-[var(--z-command)] flex justify-center"
+          className="pointer-events-none fixed top-0 right-0 left-0 z-command flex justify-center"
           animate={{
             y: activeIsSticky ? 8 : 10,
           }}

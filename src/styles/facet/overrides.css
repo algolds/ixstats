@@ -30,20 +30,10 @@
      PackHolographicCover / LoreCardHolographicCover set `animation` inline,
      so only an important declaration can stop them. */
 
-  @media (prefers-reduced-motion: reduce) {
-    .pack-holo-drift,
-    .pack-foil-sweep,
-    .pack-geo-spin,
-    .lore-ink-flow {
+  :is(.pack-holo-drift, .pack-foil-sweep, .pack-geo-spin, .lore-ink-flow) {
+    @variant motion-reduce {
       animation: none !important;
     }
-  }
-
-  html[data-motion="reduced"] .pack-holo-drift,
-  html[data-motion="reduced"] .pack-foil-sweep,
-  html[data-motion="reduced"] .pack-geo-spin,
-  html[data-motion="reduced"] .lore-ink-flow {
-    animation: none !important;
   }
 
   /* ─── Reduce Transparency: no backdrop blur on the legacy glass classes ──

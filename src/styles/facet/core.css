@@ -1,19 +1,16 @@
 /* ==========================================================================
-   FACET DESIGN SYSTEM — CORE TOKENS, VOLUMETRIC DEPTHS & LAYOUTS
+   FACET — CORE TOKENS, VOLUMETRIC DEPTHS & LAYOUTS
 
-   Everything here is layered (Facet 3 §1): custom-property blocks live in
-   `@layer base`, classes in `@layer components`, so any Tailwind utility on the
-   same element wins. Material/surface classes set only visual properties —
-   never position, z-index, radius, margin or letter-spacing. FacetContainer
-   adds `relative` itself; stacking and shape come from utilities.
+   Everything here is layered: custom-property blocks live in `@layer base`, classes in
+   `@layer components`, so any Tailwind utility on the same element wins. Material/surface
+   classes set only visual properties — never position, z-index, radius, margin or
+   letter-spacing.
    ========================================================================== */
 
 @layer base {
   :root {
-    /* Domain accents (read by legacy domain components; Phase 2 → `data-app` + --tint) */
+    /* Domain accents read by domain components */
     --facet-mycountry: var(--color-theme-gold);
-
-    /* --z-depth-* aliases are owned by facet/tokens.css. */
 
     /* Blur intensities */
     --blur-subtle: 8px;
@@ -24,7 +21,7 @@
     /* Texture pattern foreground colour */
     --facet-texture-color: rgba(0, 0, 0, 0.25);
 
-    /* Halo (formerly Dynamic Island) */
+    /* Halo */
     --facet-halo-glow-color: rgba(59, 130, 246, 0.3);
   }
 
@@ -122,7 +119,7 @@
     }
   }
 
-  /* ─── 3. Stacking hierarchy (legacy; Phase 2 → FacetCard / FacetMaterial) ─ */
+  /* ─── 3. Stacking hierarchy ──────────────────────────────────────────── */
 
   /* Default corner radius at zero specificity so any `rounded-*` wins. */
   :where(.facet-hierarchy-child, .facet-hierarchy-interactive) {

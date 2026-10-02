@@ -1,18 +1,9 @@
 /* ==========================================================================
    ANIMATIONS — SHARED KEYFRAMES & ANIMATION CLASSES
 
-   Keyframes stay top-level; classes are layered. Deleted 2026-09-30 (no
-   callers): pause-animation, marquee-*, animate-optimized,
-   interface-transition, infinite-scroll, animated-flag/flag-drift-*,
-   perspective-1000, backface-hidden (shadowed Tailwind's utility), flip-card,
-   holographic-shimmer class, animate-di-{pulse,success,warning},
-   animate-ripple-underneath, animate-rainbow-fast, the --color-1..5 /
-   --animate-rainbow variables and the dead keyframes animated-glow,
-   pulse-glow, rainbow-subtle, soft-gradient-pulse, subtle-glow, flag-*,
-   card-flip, infinite-scroll, ripple-underneath, di-{pulse-glow,success-flash,
-   warning-flash}. Reduced-motion guards for the inline-animated card layers
-   (.pack-*, .lore-ink-flow) live in facet/overrides.css because they must
-   beat inline `animation` styles.
+   Keyframes stay top-level; classes are layered. Reduced-motion guards for the inline-animated
+   card layers (.pack-*, .lore-ink-flow) live in facet/overrides.css because they must beat
+   inline `animation` styles.
    ========================================================================== */
 
 @layer components {
@@ -120,7 +111,7 @@
   }
 }
 
-/* ─── Facet 3 presentation (spec §7.3, §8) ────────────────────────────────
+/* ─── Overlay presentation ────────────────────────────────────────────────
    Entrances and exits for the overlay primitives (dialog, alert-dialog, sheet,
    popover, dropdown-menu, hover-card, tooltip). Radix unmounts closed content
    only after `animationend`, so exits are keyframes, not transitions.
@@ -165,19 +156,13 @@
 
 @utility animate-facet-in {
   animation: facet-pop-in 200ms var(--ease-out-facet) both;
-  @media (prefers-reduced-motion: reduce) {
-    animation: facet-fade-in var(--duration-fast) var(--ease-out-facet) both;
-  }
-  &:where([data-motion="reduced"] *) {
+  @variant motion-reduce {
     animation: facet-fade-in var(--duration-fast) var(--ease-out-facet) both;
   }
 }
 @utility animate-facet-out {
   animation: facet-pop-out var(--duration-exit) var(--ease-out-facet) both;
-  @media (prefers-reduced-motion: reduce) {
-    animation-name: facet-fade-out;
-  }
-  &:where([data-motion="reduced"] *) {
+  @variant motion-reduce {
     animation-name: facet-fade-out;
   }
 }
@@ -191,19 +176,13 @@
 /* Side / top sheets slide from their edge (`sheet-from-*` sets the edge). */
 @utility animate-sheet-in {
   animation: facet-sheet-in 280ms var(--ease-out-facet) both;
-  @media (prefers-reduced-motion: reduce) {
-    animation: facet-fade-in var(--duration-fast) var(--ease-out-facet) both;
-  }
-  &:where([data-motion="reduced"] *) {
+  @variant motion-reduce {
     animation: facet-fade-in var(--duration-fast) var(--ease-out-facet) both;
   }
 }
 @utility animate-sheet-out {
   animation: facet-sheet-out 200ms var(--ease-out-facet) both;
-  @media (prefers-reduced-motion: reduce) {
-    animation: facet-fade-out var(--duration-exit) var(--ease-out-facet) both;
-  }
-  &:where([data-motion="reduced"] *) {
+  @variant motion-reduce {
     animation: facet-fade-out var(--duration-exit) var(--ease-out-facet) both;
   }
 }

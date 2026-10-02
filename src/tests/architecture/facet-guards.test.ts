@@ -301,7 +301,7 @@ describe("Facet anti-slop guards", () => {
       expect(convertedHits(/\bdark:[a-z][a-z0-9-]*/g, DARK_OVERRIDE_ALLOWED)).toEqual([]);
     });
 
-    it("use the --z-depth scale instead of arbitrary high z-index values", () => {
+    it("use the --z-index scale instead of arbitrary high z-index values", () => {
       expect(convertedHits(/\bz-\[\d{4,}\]/g)).toEqual([]);
     });
 

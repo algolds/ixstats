@@ -1,6 +1,6 @@
 /* ==========================================================================
-   FACET 3 — TOKENS
-   The single token source (docs/specs/2026-09-30-facet-3-design-system.md §1).
+   TOKENS
+   The single token source.
 
    Every token is a CSS variable *and* a Tailwind utility. Values that switch
    with appearance live in `@theme static` (light) and are overridden under
@@ -11,14 +11,14 @@
    src/tests/architecture/token-contrast.test.ts) and src/lib/design/motion.ts.
 
    Theme selection: `html[data-theme="light"|"dark"]`, written pre-paint by the
-   inline script in src/app/layout.tsx. The legacy `.light` / `.dark` classes
-   are kept in sync for CSS that still targets them.
+   inline script in src/app/layout.tsx, with the `.light` / `.dark` classes kept
+   in sync.
    ========================================================================== */
 
 /* ─── Variants ───────────────────────────────────────────────────────────── */
 
-/* Tailwind `dark:` follows the theme attribute (and the legacy class). Feature code
-   should prefer roles, which already switch. */
+/* Tailwind `dark:` follows the theme attribute and the class. Feature code should prefer
+   roles, which already switch. */
 @custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
 
 /* Accessibility variants honour both the OS media query and the in-app override on <html>. */
@@ -55,7 +55,7 @@
 }
 @custom-variant compact (&:where([data-density="compact"], [data-density="compact"] *));
 
-/* ─── §2.1 Colour roles (light values; dark below) ───────────────────────── */
+/* ─── Colour roles (light values; dark below) ────────────────────────────── */
 
 @theme static {
   /* Labels */
@@ -113,7 +113,7 @@
 @theme inline static {
   --color-grouped: var(--color-background-grouped);
 
-  /* App tint (§2.2) — scoped per subtree by [data-app] */
+  /* App tint — scoped per subtree by [data-app] */
   --color-tint: var(--tint);
   --color-tint-hover: var(--tint-hover);
   --color-on-tint: var(--on-tint);
@@ -172,9 +172,9 @@
   --color-caution-ink: var(--color-yellow-ink);
   --color-success-ink: var(--color-green-ink);
   --color-info-ink: var(--color-blue-ink);
-  --color-error: var(--color-red); /* legacy name */
+  --color-error: var(--color-red);
 
-  /* shadcn names → roles (kept until the migration finishes; §2.1) */
+  /* shadcn names → roles */
   --color-foreground: var(--color-label);
   --color-card: var(--color-surface);
   --color-card-foreground: var(--color-label);
@@ -193,7 +193,7 @@
   --color-input: var(--color-separator);
   --color-ring: var(--tint);
 
-  /* §2.4 categorical series: blue, orange, green, purple, pink, teal, yellow, red */
+  /* Categorical series: blue, orange, green, purple, pink, teal, yellow, red */
   --color-chart-1: var(--color-blue);
   --color-chart-2: var(--color-orange);
   --color-chart-3: var(--color-green);
@@ -204,7 +204,7 @@
   --color-chart-8: var(--color-red);
 }
 
-/* ─── §4 Shape · §5 Elevation & z · §8 Motion ────────────────────────────── */
+/* ─── Shape · Elevation & z · Motion ─────────────────────────────────────── */
 
 @theme static {
   /* Concentric radius scale */
@@ -239,7 +239,7 @@
   --z-index-toast: 100050;
   --z-index-command: 110000;
 
-  /* Motion (§8). Springs are for motion/react — see src/lib/design/motion.ts. */
+  /* Motion. Springs are for motion/react — see src/lib/design/motion.ts. */
   --duration-fast: 150ms; /* colour and opacity changes */
   --duration-slow: 300ms; /* glass and chrome state changes */
   --duration-exit: 120ms; /* exits, always faster than entrances */
@@ -259,7 +259,7 @@
   --transition-duration-exit: var(--duration-exit);
 }
 
-/* ─── Legacy colour utilities (pre-Facet 3; migrate to roles) ─────────────── */
+/* ─── Legacy colour utilities (migrate to roles) ──────────────────────────── */
 
 @theme static {
   --color-text-secondary: #d4d4d8;
@@ -347,7 +347,7 @@
   --color-onoma-accent-glow: rgba(254, 240, 54, 0.3);
 }
 
-/* ─── §3 Typefaces ─────────────────────────────────────────────────────────── */
+/* ─── Typefaces ────────────────────────────────────────────────────────────── */
 /* The single owner of the font stacks (the @font-face faces live in styles/typography.css).
    Schibsted Grotesk for all UI; Azeret Mono only for code, IDs, coordinates and hashes; National
    only through `text-display`. */
@@ -362,7 +362,7 @@
   --font-display: "National", "Neutraface 2", ui-sans-serif, system-ui, sans-serif;
 }
 
-/* ─── §3 Text styles (rem × --text-scale) ────────────────────────────────── */
+/* ─── Text styles (rem × --text-scale) ───────────────────────────────────── */
 /* line-height / weight / tracking defer to `leading-*` / `font-*` / `tracking-*` when set. Tracking
    tightens only as the size grows; body styles are 0. */
 
@@ -450,7 +450,7 @@
   text-transform: uppercase;
 }
 
-/* ─── §5 Materials (floating chrome only; never nested) ──────────────────── */
+/* ─── Materials (floating chrome only; never nested) ─────────────────────── */
 /* No position / z-index / radius / margin — those belong to the component. Reduce Transparency
    makes them opaque. */
 
@@ -527,38 +527,14 @@
     --shadow-strength: 1;
     --material-highlight: rgba(255, 255, 255, 0.2);
 
-    /* Density (§4): component padding/gap multiplier and control heights 28/36/44 */
+    /* Density: component padding/gap multiplier and control heights 28/36/44 */
     --density: 1;
     --control-height-sm: 1.75rem;
     --control-height: 2.25rem;
     --control-height-lg: 2.75rem;
-
-    /* Legacy z-index names → the one scale (existing numeric values kept) */
-    --z-background: -1;
-    --z-surface: var(--z-index-base);
-    --z-floating: var(--z-index-sticky);
-    --z-overlay: 1000; /* no Facet 3 equivalent; migrate to z-chrome / z-sheet */
-    --z-navigation: var(--z-index-nav);
-    --z-backdrop: var(--z-index-backdrop);
-    --z-modal: var(--z-index-sheet);
-    --z-popover: var(--z-index-popover);
-    --z-tooltip: var(--z-index-tooltip);
-    --z-toast: var(--z-index-toast);
-    --z-command: var(--z-index-command);
-    --z-depth-background: var(--z-background);
-    --z-depth-surface: var(--z-surface);
-    --z-depth-floating: var(--z-floating);
-    --z-depth-overlay: var(--z-overlay);
-    --z-depth-navigation: var(--z-navigation);
-    --z-depth-popover: var(--z-popover);
-    --z-depth-tooltip: var(--z-tooltip);
-    --z-depth-toast: var(--z-toast);
-    --z-depth-backdrop: var(--z-backdrop);
-    --z-depth-modal: var(--z-modal);
-    --z-depth-command: var(--z-command);
   }
 
-  /* §2.1 dark values */
+  /* Dark values */
   :root[data-theme="dark"] {
     color-scheme: dark;
     --shadow-strength: 0.5;
@@ -624,7 +600,7 @@
     --color-rarity-legendary: #b45309;
   }
 
-  /* §2.2 App tints. Each scope sets its palette; the generic rules below derive
+  /* App tints. Each scope sets its palette; the generic rules below derive
      --tint / --tint-hover / --on-tint / --tint-fill on the scope element itself so
      nested scopes and appearance changes resolve correctly. */
   :root,
@@ -751,7 +727,7 @@
     }
   }
 
-  /* Density: Compact multiplies component padding/gaps by 0.75; controls 28/32/40 (§4) */
+  /* Density: Compact multiplies component padding/gaps by 0.75; controls 28/32/40 */
   :root[data-density="compact"] {
     --density: 0.75;
     --control-height-sm: 1.75rem;
@@ -759,7 +735,7 @@
     --control-height-lg: 2.5rem;
   }
 
-  /* Reduce Motion (§8): the page stops smooth-scrolling; motion/react and the
+  /* Reduce Motion: the page stops smooth-scrolling; motion/react and the
      motion-reduce: variant handle the rest. */
   :root[data-motion="reduced"] {
     scroll-behavior: auto;
@@ -884,105 +860,3 @@
     transparent
   );
 }
-
-/* §4 Continuous corners where supported (sheet, card, row and control radii).
-   Covered forms: the base utilities and any variant of them (`md:rounded-card`,
-   `hover:rounded-control`) via four substring selectors, and the side/corner forms
-   (`rounded-t-sheet`, `rounded-tl-row`…) as plain class selectors. Variant + side
-   combinations (`md:rounded-t-sheet`) are not covered. Nothing else sets `corner-shape`. */
-@supports (corner-shape: squircle) {
-  @layer utilities {
-    [class*="rounded-sheet"],
-    [class*="rounded-card"],
-    [class*="rounded-row"],
-    [class*="rounded-control"],
-    .rounded-t-sheet,
-    .rounded-r-sheet,
-    .rounded-b-sheet,
-    .rounded-l-sheet,
-    .rounded-s-sheet,
-    .rounded-e-sheet,
-    .rounded-tl-sheet,
-    .rounded-tr-sheet,
-    .rounded-br-sheet,
-    .rounded-bl-sheet,
-    .rounded-ss-sheet,
-    .rounded-se-sheet,
-    .rounded-es-sheet,
-    .rounded-ee-sheet,
-    .rounded-t-card,
-    .rounded-r-card,
-    .rounded-b-card,
-    .rounded-l-card,
-    .rounded-s-card,
-    .rounded-e-card,
-    .rounded-tl-card,
-    .rounded-tr-card,
-    .rounded-br-card,
-    .rounded-bl-card,
-    .rounded-ss-card,
-    .rounded-se-card,
-    .rounded-es-card,
-    .rounded-ee-card,
-    .rounded-t-row,
-    .rounded-r-row,
-    .rounded-b-row,
-    .rounded-l-row,
-    .rounded-s-row,
-    .rounded-e-row,
-    .rounded-tl-row,
-    .rounded-tr-row,
-    .rounded-br-row,
-    .rounded-bl-row,
-    .rounded-ss-row,
-    .rounded-se-row,
-    .rounded-es-row,
-    .rounded-ee-row,
-    .rounded-t-control-lg,
-    .rounded-r-control-lg,
-    .rounded-b-control-lg,
-    .rounded-l-control-lg,
-    .rounded-s-control-lg,
-    .rounded-e-control-lg,
-    .rounded-tl-control-lg,
-    .rounded-tr-control-lg,
-    .rounded-br-control-lg,
-    .rounded-bl-control-lg,
-    .rounded-ss-control-lg,
-    .rounded-se-control-lg,
-    .rounded-es-control-lg,
-    .rounded-ee-control-lg,
-    .rounded-t-control,
-    .rounded-r-control,
-    .rounded-b-control,
-    .rounded-l-control,
-    .rounded-s-control,
-    .rounded-e-control,
-    .rounded-tl-control,
-    .rounded-tr-control,
-    .rounded-br-control,
-    .rounded-bl-control,
-    .rounded-ss-control,
-    .rounded-se-control,
-    .rounded-es-control,
-    .rounded-ee-control,
-    .rounded-t-control-sm,
-    .rounded-r-control-sm,
-    .rounded-b-control-sm,
-    .rounded-l-control-sm,
-    .rounded-s-control-sm,
-    .rounded-e-control-sm,
-    .rounded-tl-control-sm,
-    .rounded-tr-control-sm,
-    .rounded-br-control-sm,
-    .rounded-bl-control-sm,
-    .rounded-ss-control-sm,
-    .rounded-se-control-sm,
-    .rounded-es-control-sm,
-    .rounded-ee-control-sm {
-      corner-shape: squircle;
-    }
-  }
-}
-
-

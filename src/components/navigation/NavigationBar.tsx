@@ -138,7 +138,7 @@ export function NavigationBar({
   return (
     <div className="relative hidden h-16 w-full items-center justify-between lg:flex">
       {/* Left Side Navigation */}
-      <div className="z-[var(--z-floating)] flex flex-1 items-center justify-start gap-2 xl:gap-3">
+      <div className="z-sticky flex flex-1 items-center justify-start gap-2 xl:gap-3">
         <NavigationMenu>
           <NavigationMenuList className="flex items-center gap-2">
             {leftNavItems.map((item) => (
@@ -155,7 +155,7 @@ export function NavigationBar({
       </div>
 
       {/* Right Side Navigation */}
-      <div className="z-[var(--z-floating)] flex flex-1 items-center justify-end gap-2 xl:gap-3">
+      <div className="z-sticky flex flex-1 items-center justify-end gap-2 xl:gap-3">
         <NavigationMenu>
           <NavigationMenuList className="flex items-center gap-2">
             {rightNavItems.map((item) => (
