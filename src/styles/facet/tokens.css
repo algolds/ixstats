@@ -347,17 +347,12 @@
 
 /* ─── §3 Typefaces ─────────────────────────────────────────────────────────── */
 /* The single owner of the font stacks (the @font-face faces live in styles/typography.css).
-   Swiss for all UI; Azeret Mono only for code, IDs, coordinates and hashes; National /
-   Neutraface only through `text-display`. The legacy `data-typography="national|sovereign"`
-   preset still overrides `--font-sans`/`--font-mono`/`--font-display` there until presets go. */
+   Schibsted Grotesk for all UI; Azeret Mono only for code, IDs, coordinates and hashes; National
+   only through `text-display`. */
 
 @theme static {
   --font-sans: "Schibsted Grotesk", "Akzidenz-Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Azeret Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  /* Facet 3.1: `font-mono` carries the v2 `.font-mono` figures — tabular with a slashed zero —
-     through Tailwind's own font-feature hook (no utility hijack). `font-data` is the same face
-     and features for every stat, figure, count and ID in the UI (Stat, Badge counts, table
-     numbers); `font-mono` stays for code, hashes and coordinates. */
   --font-mono--font-feature-settings: "tnum" 1, "zero" 1;
   --font-data: "Azeret Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-data--font-feature-settings: "tnum" 1, "zero" 1;
@@ -366,42 +361,39 @@
 }
 
 /* ─── §3 Text styles (rem × --text-scale) ────────────────────────────────── */
-/* line-height / weight / tracking defer to `leading-*` / `font-*` / `tracking-*` when set.
-   Facet 3.1 (identity): display → title-3 are heavy and tight again, as the v2 headings
-   (`font-bold`/`font-extrabold tracking-tight`): display, large-title and title-1 are 800 at
-   -0.025em; title-2 700 at -0.025em; title-3 700 at -0.02em. Body styles are unchanged. Where a
-   face has no 800 cut loaded (Schibsted Grotesk ships 500–700 here) the browser renders 700. */
+/* line-height / weight / tracking defer to `leading-*` / `font-*` / `tracking-*` when set. Tracking
+   tightens only as the size grows; body styles are 0. */
 
 @utility text-display {
   font-family: var(--font-display);
   font-size: calc(2.5rem * var(--text-scale, 1));
   line-height: var(--tw-leading, calc(2.75rem * var(--text-scale, 1)));
-  font-weight: var(--tw-font-weight, 800);
-  letter-spacing: var(--tw-tracking, -0.025em);
+  font-weight: var(--tw-font-weight, 700);
+  letter-spacing: var(--tw-tracking, -0.015em);
 }
 @utility text-large-title {
   font-size: calc(1.75rem * var(--text-scale, 1));
   line-height: var(--tw-leading, calc(2.125rem * var(--text-scale, 1)));
-  font-weight: var(--tw-font-weight, 800);
-  letter-spacing: var(--tw-tracking, -0.025em);
+  font-weight: var(--tw-font-weight, 700);
+  letter-spacing: var(--tw-tracking, -0.015em);
 }
 @utility text-title-1 {
   font-size: calc(1.375rem * var(--text-scale, 1));
   line-height: var(--tw-leading, calc(1.75rem * var(--text-scale, 1)));
-  font-weight: var(--tw-font-weight, 800);
-  letter-spacing: var(--tw-tracking, -0.025em);
+  font-weight: var(--tw-font-weight, 700);
+  letter-spacing: var(--tw-tracking, -0.015em);
 }
 @utility text-title-2 {
   font-size: calc(1.25rem * var(--text-scale, 1));
   line-height: var(--tw-leading, calc(1.625rem * var(--text-scale, 1)));
-  font-weight: var(--tw-font-weight, 700);
-  letter-spacing: var(--tw-tracking, -0.025em);
+  font-weight: var(--tw-font-weight, 600);
+  letter-spacing: var(--tw-tracking, -0.01em);
 }
 @utility text-title-3 {
   font-size: calc(1.0625rem * var(--text-scale, 1));
   line-height: var(--tw-leading, calc(1.375rem * var(--text-scale, 1)));
-  font-weight: var(--tw-font-weight, 700);
-  letter-spacing: var(--tw-tracking, -0.02em);
+  font-weight: var(--tw-font-weight, 600);
+  letter-spacing: var(--tw-tracking, -0.005em);
 }
 @utility text-headline {
   font-size: calc(0.875rem * var(--text-scale, 1));
@@ -439,8 +431,16 @@
   font-weight: var(--tw-font-weight, 500);
   letter-spacing: var(--tw-tracking, 0.01em);
 }
-/* Eyebrow: short uppercase data label above a value — used by the Eyebrow primitive only. */
+/* Eyebrow: a sentence-case label above a section or field. */
 @utility text-eyebrow {
+  font-size: calc(0.75rem * var(--text-scale, 1));
+  line-height: var(--tw-leading, calc(1rem * var(--text-scale, 1)));
+  font-weight: var(--tw-font-weight, 500);
+  letter-spacing: var(--tw-tracking, 0);
+  color: var(--color-label-secondary);
+}
+/* Stat label: a short uppercase label above a number. */
+@utility text-stat-label {
   font-size: calc(0.75rem * var(--text-scale, 1));
   line-height: var(--tw-leading, calc(1rem * var(--text-scale, 1)));
   font-weight: var(--tw-font-weight, 500);

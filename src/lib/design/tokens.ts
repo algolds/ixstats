@@ -203,16 +203,13 @@ export const APP_TINTS = {
 /** Admin uses the default (shell) tint. */
 export type TintedApp = keyof typeof APP_TINTS;
 
-/**
- * §3 text styles: size / line height in px at a 16px root, before `--text-scale`.
- * Facet 3.1 (identity): display → title-3 are heavy and tight again (v2 headings).
- */
+/** §3 text styles: size / line height in px at a 16px root, before `--text-scale`. */
 export const TEXT_STYLES = {
-  display: { size: 40, lineHeight: 44, weight: 800, tracking: "-0.025em" },
-  "large-title": { size: 28, lineHeight: 34, weight: 800, tracking: "-0.025em" },
-  "title-1": { size: 22, lineHeight: 28, weight: 800, tracking: "-0.025em" },
-  "title-2": { size: 20, lineHeight: 26, weight: 700, tracking: "-0.025em" },
-  "title-3": { size: 17, lineHeight: 22, weight: 700, tracking: "-0.02em" },
+  display: { size: 40, lineHeight: 44, weight: 700, tracking: "-0.015em" },
+  "large-title": { size: 28, lineHeight: 34, weight: 700, tracking: "-0.015em" },
+  "title-1": { size: 22, lineHeight: 28, weight: 700, tracking: "-0.015em" },
+  "title-2": { size: 20, lineHeight: 26, weight: 600, tracking: "-0.01em" },
+  "title-3": { size: 17, lineHeight: 22, weight: 600, tracking: "-0.005em" },
   headline: { size: 14, lineHeight: 20, weight: 600, tracking: "0" },
   body: { size: 14, lineHeight: 20, weight: 400, tracking: "0" },
   callout: { size: 13, lineHeight: 18, weight: 400, tracking: "0" },
