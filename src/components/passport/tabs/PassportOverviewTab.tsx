@@ -69,13 +69,13 @@ function FeaturedRealm({ data, cleanUsername }: PassportOverviewTabProps) {
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
-        <Button asChild variant="bordered" size="sm">
+        <Button asChild variant="outline" size="sm">
           <Link href={`/r/${realm.slug}/${encodeURIComponent(cleanUsername)}`}>
             <Globe aria-hidden />
             <span>In {realm.name}</span>
           </Link>
         </Button>
-        <Button asChild variant="tinted" size="sm">
+        <Button asChild variant="secondary" size="sm">
           <Link href={`/countries/${realm.country.slug}`}>
             <span>View Country</span>
             <ArrowRight aria-hidden />

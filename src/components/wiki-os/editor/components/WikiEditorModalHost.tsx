@@ -257,11 +257,11 @@ function TemplateEditorDialog({
           )}
         </div>
         <div className="border-separator flex items-center justify-between gap-2 border-t px-5 py-3">
-          <Button variant="plain" size="sm" onClick={onRemove} className="text-red">
+          <Button variant="ghost" size="sm" onClick={onRemove} className="text-red">
             Remove template
           </Button>
           <div className="flex items-center gap-2">
-            <Button variant="gray" size="sm" onClick={() => setShowPreview(!showPreview)}>
+            <Button variant="secondary" size="sm" onClick={() => setShowPreview(!showPreview)}>
               {showPreview ? "Hide Preview" : "Preview"}
             </Button>
             <Button

@@ -103,7 +103,7 @@ export function FacetTablePagination({
         <div className="flex items-center gap-1 self-end sm:self-auto">
           <Button
             type="button"
-            variant="gray"
+            variant="secondary"
             size="icon-sm"
             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
@@ -127,7 +127,7 @@ export function FacetTablePagination({
                   )}
                   <Button
                     type="button"
-                    variant={isCurrent ? "tinted" : "plain"}
+                    variant={isCurrent ? "secondary" : "ghost"}
                     size="sm"
                     aria-current={isCurrent ? "page" : undefined}
                     aria-label={`Page ${p}`}
@@ -146,7 +146,7 @@ export function FacetTablePagination({
 
           <Button
             type="button"
-            variant="gray"
+            variant="secondary"
             size="icon-sm"
             onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}

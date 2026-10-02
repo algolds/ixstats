@@ -154,7 +154,7 @@ export default function MyLeaguePage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Button variant="gray" onClick={() => router.push(withBasePath("/myclub"))}>
+            <Button variant="secondary" onClick={() => router.push(withBasePath("/myclub"))}>
               <Users />
               MyClub Portfolio
             </Button>
@@ -240,7 +240,7 @@ export default function MyLeaguePage() {
 
                 <Button
                   size="lg"
-                  variant="tinted"
+                  variant="secondary"
                   className="group/btn w-full sm:w-auto"
                   onClick={() => router.push(withBasePath(`/myleague/${featuredLeague.id}`))}
                 >
@@ -382,7 +382,7 @@ export default function MyLeaguePage() {
 
                         <div className="mt-5 flex items-center gap-2">
                           <Button
-                            variant="gray"
+                            variant="secondary"
                             className="flex-1"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -392,7 +392,7 @@ export default function MyLeaguePage() {
                             Open Hub
                           </Button>
                           <Button
-                            variant="gray"
+                            variant="secondary"
                             size="icon"
                             onClick={(e) => {
                               e.stopPropagation();

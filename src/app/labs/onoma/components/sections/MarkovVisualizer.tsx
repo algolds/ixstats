@@ -64,7 +64,7 @@ function NeighborNode({
   return (
     <div className="group relative">
       <Button
-        variant="bordered"
+        variant="outline"
         size="sm"
         onClick={data.onClick}
         className="relative min-w-[85px] justify-center font-mono"
@@ -92,7 +92,7 @@ function EndNode({
   return (
     <div className="group relative">
       <Button
-        variant="bordered"
+        variant="outline"
         size="sm"
         onClick={data.onClick}
         className="text-red relative min-w-[85px] justify-center"
@@ -311,7 +311,7 @@ export function MarkovVisualizerInner({
           />
 
           <Button
-            variant="bordered"
+            variant="outline"
             size="icon-sm"
             onClick={handleSpeak}
             disabled={!activePrefix}
@@ -325,7 +325,7 @@ export function MarkovVisualizerInner({
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
           <Button
-            variant="tinted"
+            variant="secondary"
             size="sm"
             onClick={handleDerivePath}
             className="justify-center"
@@ -335,7 +335,7 @@ export function MarkovVisualizerInner({
           </Button>
 
           <Button
-            variant="bordered"
+            variant="outline"
             size="sm"
             onClick={() => onChangePrefix("")}
 

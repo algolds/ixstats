@@ -507,7 +507,7 @@ export function PopulationDetailsModal({
                     <HoverCardTrigger asChild>
                       <Button
                         type="button"
-                        variant="gray"
+                        variant="secondary"
                         size="icon-sm"
                         aria-label="About population tiers"
                         className="text-label-secondary hover:text-label size-5 rounded-full"

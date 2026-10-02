@@ -111,8 +111,8 @@ export function GovernmentTab({
               {/* Metric 1: Structure */}
               <Button
                 type="button"
-                variant="bordered"
-                size="md"
+                variant="outline"
+                size="default"
                 onClick={() =>
                   setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
@@ -150,8 +150,8 @@ export function GovernmentTab({
               {/* Metric 2: Budget */}
               <Button
                 type="button"
-                variant="bordered"
-                size="md"
+                variant="outline"
+                size="default"
                 onClick={() =>
                   setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
@@ -199,8 +199,8 @@ export function GovernmentTab({
               {/* Metric 3: Fiscal */}
               <Button
                 type="button"
-                variant="bordered"
-                size="md"
+                variant="outline"
+                size="default"
                 onClick={() =>
                   setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,

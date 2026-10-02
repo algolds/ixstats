@@ -128,7 +128,7 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
         <div className="mr-10 flex justify-end gap-2">
           <Button
             type="button"
-            variant="gray"
+            variant="secondary"
             size="icon-lg"
             className="relative rounded-full"
             onClick={scrollLeft}
@@ -139,7 +139,7 @@ export const Carousel = ({ items, initialScroll = 0 }: CarouselProps) => {
           </Button>
           <Button
             type="button"
-            variant="gray"
+            variant="secondary"
             size="icon-lg"
             className="relative rounded-full"
             onClick={scrollRight}
@@ -233,7 +233,7 @@ export const Card = ({
             )}
             <Button
               type="button"
-              variant="gray"
+              variant="secondary"
               size="icon-sm"
               className="sticky top-4 right-0 ml-auto flex rounded-full"
               onClick={handleClose}

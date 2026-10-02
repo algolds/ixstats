@@ -62,7 +62,7 @@ export class DashboardErrorBoundary extends Component<DashboardErrorBoundaryProp
               "An unexpected error occurred while loading this view."
             }
             action={
-              <Button type="button" variant="bordered" size="sm" onClick={this.reset}>
+              <Button type="button" variant="outline" size="sm" onClick={this.reset}>
                 <RotateCcw aria-hidden />
                 Try again
               </Button>

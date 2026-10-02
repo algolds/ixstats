@@ -90,7 +90,7 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
             Post, browse, and interact from the unified feed.
           </p>
         </div>
-        <Button asChild size="sm" variant="bordered">
+        <Button asChild size="sm" variant="outline">
           <Link href={"/dashboard"}>
             Go to Dashboard
             <ArrowRight aria-hidden="true" />

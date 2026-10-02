@@ -224,7 +224,7 @@ export function ThinktankFeedTab({
                 ].map((item) => (
                   <Button
                     type="button"
-                    variant="gray"
+                    variant="secondary"
                     size="sm"
                     key={item.tag}
                     onClick={() => {

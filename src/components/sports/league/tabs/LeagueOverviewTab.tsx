@@ -140,7 +140,7 @@ export function LeagueOverviewTab({
               <Trophy className="text-yellow size-4" aria-hidden />
               Standings
             </h3>
-            <Button variant="plain" size="sm" onClick={() => onNavigate("standings")}>
+            <Button variant="ghost" size="sm" onClick={() => onNavigate("standings")}>
               <span>Full Table</span>
               <ArrowRight />
             </Button>
@@ -328,7 +328,7 @@ export function LeagueOverviewTab({
             <Activity className="size-4" aria-hidden />
             Recent Results
           </h3>
-          <Button variant="plain" size="sm" onClick={() => onNavigate("schedule")}>
+          <Button variant="ghost" size="sm" onClick={() => onNavigate("schedule")}>
             <span>Full Schedule</span>
             <ArrowRight />
           </Button>

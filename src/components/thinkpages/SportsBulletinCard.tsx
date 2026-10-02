@@ -103,7 +103,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
             </div>
           </div>
           {championId && (
-            <Button asChild variant="tinted" size="sm">
+            <Button asChild variant="secondary" size="sm">
               <Link href={`/myclub/${championId}`}>
                 <span>View Club</span>
                 <ChevronRight aria-hidden="true" />
@@ -203,7 +203,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
 
       {leagueHref && (
         <div className="border-separator flex items-center justify-end border-t px-4 py-2">
-          <Button asChild variant="gray" size="sm">
+          <Button asChild variant="secondary" size="sm">
             <Link href={leagueHref}>
               <span>Open League</span>
               <ChevronRight aria-hidden="true" />

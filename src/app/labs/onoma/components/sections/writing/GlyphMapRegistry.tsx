@@ -112,7 +112,7 @@ export function GlyphMapRegistry({
               {STARTER_SCRIPT_PACKS.map((pack) => (
                 <Button
                   key={pack.id}
-                  variant="bordered"
+                  variant="outline"
                   onClick={() => {
                     onLoadStarterPack(pack);
                     setShowPackDrawer(false);

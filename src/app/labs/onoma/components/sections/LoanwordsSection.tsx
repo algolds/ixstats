@@ -352,7 +352,7 @@ export default function LoanwordsSection() {
                 >
                   <HelpCircle className="h-3.5 w-3.5" />
                 </Toggle>
-                <Button variant="tinted" size="sm" onClick={handleNewChannel}>
+                <Button variant="secondary" size="sm" onClick={handleNewChannel}>
                   <Plus className="h-3 w-3" />
                   <span>New Channel</span>
                 </Button>
@@ -511,7 +511,7 @@ export default function LoanwordsSection() {
                   <div className="flex items-center gap-1">
                     {PHONETIC_LAW_PRESETS.map((law) => (
                       <Button
-                        variant="bordered"
+                        variant="outline"
                         size="sm"
                         key={law.name}
                         onClick={() => handleApplyPhoneticLaw(law)}
@@ -575,7 +575,7 @@ export default function LoanwordsSection() {
                       className="text-footnote flex-1 font-mono"
                     />
                     <Button
-                      variant="bordered"
+                      variant="outline"
                       size="sm"
                       type="button"
                       onClick={handleAddShift}
@@ -650,7 +650,7 @@ export default function LoanwordsSection() {
               <div className="flex items-center gap-2">
                 {sourcePack && (
                   <Button
-                    variant="tinted"
+                    variant="secondary"
                     size="sm"
                     onClick={handleSyncSourceLexicon}
                     title={`Sync lexicon words from ${sourcePack.name}`}
@@ -804,7 +804,7 @@ export default function LoanwordsSection() {
                   onChange={(e) => setNewTestMeaning(e.target.value)}
                   className="text-footnote flex-1"
                 />
-                <Button variant="bordered" size="sm" type="submit" className="shrink-0">
+                <Button variant="outline" size="sm" type="submit" className="shrink-0">
                   <Plus className="text-tint mr-1 inline h-3.5 w-3.5" />
                   <span>Add Word</span>
                 </Button>

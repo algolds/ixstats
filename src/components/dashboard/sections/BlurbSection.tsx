@@ -101,7 +101,7 @@ export function BlurbSection() {
             <span
               aria-hidden
               className={buttonVariants({
-                variant: "tinted",
+                variant: "secondary",
                 size: "sm",
                 className: "pointer-events-none rounded-full",
               })}
@@ -217,7 +217,7 @@ export function BlurbResponseModal({
                   </span>
                   <Button
                     size="sm"
-                    variant="filled"
+                    variant="default"
                     onClick={() =>
                       submitMutation.mutate({
                         promptId: prompt.id,
@@ -353,7 +353,7 @@ export function BlurbResponseModal({
           {hasNextPage && (
             <div className="pt-2 text-center">
               <Button
-                variant="plain"
+                variant="ghost"
                 size="sm"
                 onClick={() => fetchNextPage()}
                 disabled={isFetchingNextPage}

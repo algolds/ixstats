@@ -214,7 +214,7 @@ export function DomainControlBar({
       <div className="bg-tint hover:bg-tint-hover active:bg-tint-hover group rounded-row border-separator shadow-card relative flex h-11 w-full items-center overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none">
         {/* Left / Center: Primary Generate Action Trigger */}
         <Button
-          variant="plain"
+          variant="ghost"
           onClick={handleGenerate}
           disabled={gen.isGenerating}
           className="text-on-tint hover:text-on-tint h-full flex-1 gap-2 rounded-none pr-3 pl-4 hover:bg-transparent"

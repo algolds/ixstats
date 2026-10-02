@@ -180,7 +180,7 @@ export function ThinktankDirectorySidebar({
             }
             action={
               activeTab === "my" ? (
-                <Button variant="bordered" size="sm" onClick={() => setActiveTab("discover")}>
+                <Button variant="outline" size="sm" onClick={() => setActiveTab("discover")}>
                   Discover Groups
                 </Button>
               ) : undefined

@@ -73,7 +73,7 @@ function SeedDemoAuctionsButton() {
           </div>
         </div>
         <Button
-          variant="tinted"
+          variant="secondary"
           onClick={() => setConfirmOpen(true)}
           disabled={seedMutation.isPending}
         >

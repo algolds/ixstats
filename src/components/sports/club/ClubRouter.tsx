@@ -222,7 +222,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
               <p className="text-label-secondary text-body">
                 You own this club. Refreshing session data...
               </p>
-              <Button variant="gray" onClick={() => void refetchOverview()}>
+              <Button variant="secondary" onClick={() => void refetchOverview()}>
                 Reload Dashboard
               </Button>
             </div>
@@ -318,7 +318,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="gray" size="sm" onClick={() => setSettingsOpen(true)}>
+          <Button variant="secondary" size="sm" onClick={() => setSettingsOpen(true)}>
             <Settings />
             Manage Club
           </Button>
@@ -453,7 +453,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="gray" onClick={() => setSelectedPlayer(null)}>
+            <Button variant="secondary" onClick={() => setSelectedPlayer(null)}>
               Cancel
             </Button>
             <Button

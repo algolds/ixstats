@@ -149,7 +149,7 @@ export function StandingsTable({
         </div>
 
         <Button
-          variant="bordered"
+          variant="outline"
           size="sm"
           onClick={() => exportStandingsCsv(title, standings)}
           title="Export CSV"

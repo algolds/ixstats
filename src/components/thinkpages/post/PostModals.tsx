@@ -124,7 +124,7 @@ export function PostModals({
           />
           <DialogFooter>
             <Button
-              variant="gray"
+              variant="secondary"
               onClick={() => {
                 setShowFlagDialog(false);
                 setFlagReason("");
@@ -192,7 +192,7 @@ export function PostModals({
                 Copy Link
               </Button>
               <div className="bg-separator h-4 w-px" aria-hidden="true" />
-              <Button variant="gray" size="sm" onClick={() => setLightboxMedia(null)}>
+              <Button variant="secondary" size="sm" onClick={() => setLightboxMedia(null)}>
                 <X aria-hidden="true" />
                 Close
               </Button>

@@ -603,7 +603,7 @@ function CategoryRow({
           </span>
         )}
         <Button
-          variant="bordered"
+          variant="outline"
           size="icon-sm"
           aria-pressed={isActive}
           onClick={onToggle}

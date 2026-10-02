@@ -371,7 +371,7 @@ export function FollowingFeedContent({
           title="Not following anyone yet"
           message="Follow countries or ThinkPages accounts to see their activity here."
           action={
-            <Button asChild size="sm" variant="bordered">
+            <Button asChild size="sm" variant="outline">
               <Link href={"/countries"}>Explore countries</Link>
             </Button>
           }

@@ -213,7 +213,7 @@ export function GovernanceSection({ searchFilter }: GovernanceSectionProps) {
                             )}
                           </div>
                           <Button
-                            variant="tinted"
+                            variant="secondary"
                             size="sm"
                             onClick={() => handleRestore(item.title, item.slug)}
                             disabled={restoringSlug === item.slug}

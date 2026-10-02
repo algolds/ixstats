@@ -228,7 +228,7 @@ export function SliderWithDirectInput({
               {allowModeToggle && (
                 <Button
                   type="button"
-                  variant="gray"
+                  variant="secondary"
                   size="icon-sm"
                   onClick={() => setInputMode(inputMode === "slider" ? "input" : "slider")}
                   className="text-label-secondary hover:text-label"

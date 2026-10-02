@@ -207,7 +207,7 @@ export function LineupBuilder({
                       <Button
                         type="button"
                         size="icon-sm"
-                        variant="plain"
+                        variant="ghost"
                         onClick={() => setCaptainId(isCaptain ? null : player.id)}
                         className={isCaptain ? "text-yellow" : "text-label-secondary"}
                         title={isCaptain ? "Remove captain" : "Set as captain"}

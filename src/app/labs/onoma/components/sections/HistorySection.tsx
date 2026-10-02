@@ -140,7 +140,7 @@ export default function HistorySection({
         ) : (
           <div />
         )}
-        <Button variant="bordered" size="sm" onClick={() => setShowStats(!showStats)}>
+        <Button variant="outline" size="sm" onClick={() => setShowStats(!showStats)}>
           <BarChart3 className="h-3.5 w-3.5" />
           Stats
         </Button>
@@ -363,7 +363,7 @@ export default function HistorySection({
                                 <div className="flex flex-wrap items-center gap-2">
                                   {onLoadToStudio && (
                                     <Button
-                                      variant="tinted"
+                                      variant="secondary"
                                       size="sm"
                                       type="button"
                                       onClick={() =>
@@ -382,7 +382,7 @@ export default function HistorySection({
                                     </Button>
                                   )}
                                   <Button
-                                    variant="tinted"
+                                    variant="secondary"
                                     size="sm"
                                     onClick={async () => {
                                       const title = event.sessionId
@@ -402,7 +402,7 @@ export default function HistorySection({
                                     <span>Save as Dictionary</span>
                                   </Button>
                                   <Button
-                                    variant="gray"
+                                    variant="secondary"
                                     size="sm"
                                     type="button"
                                     onClick={() => {
@@ -480,8 +480,8 @@ export default function HistorySection({
           {hasMore && (
             <div className="flex justify-center">
               <Button
-                variant="bordered"
-                size="md"
+                variant="outline"
+                size="default"
                 onClick={() => loadMore()}
                 disabled={isLoadingMore}
               >

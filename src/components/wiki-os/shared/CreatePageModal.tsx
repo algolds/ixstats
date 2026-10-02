@@ -241,7 +241,7 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
         <div className="border-separator mt-6 flex items-center justify-between border-t pt-4">
           <div>
             {step > 1 && (
-              <Button variant="plain" size="sm" onClick={handleBack}>
+              <Button variant="ghost" size="sm" onClick={handleBack}>
                 <ChevronLeft aria-hidden="true" />
                 Back
               </Button>
@@ -249,7 +249,7 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="gray" size="sm" onClick={onClose}>
+            <Button variant="secondary" size="sm" onClick={onClose}>
               Cancel
             </Button>
             <Button

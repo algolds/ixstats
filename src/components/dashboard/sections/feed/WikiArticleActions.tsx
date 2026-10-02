@@ -375,7 +375,7 @@ export function WikiArticleActions({ title: cleanTitle, trailing }: WikiArticleA
                 {isStashed && (
                   <Button
                     type="button"
-                    variant="plain"
+                    variant="ghost"
                     size="sm"
                     className="text-destructive w-full justify-start"
                     onClick={() => {
@@ -455,7 +455,7 @@ export function WikiArticleActions({ title: cleanTitle, trailing }: WikiArticleA
               <div className="flex items-center justify-end gap-2 pt-1">
                 <Button
                   type="button"
-                  variant="gray"
+                  variant="secondary"
                   size="sm"
                   onClick={() => setIsMarginOpen(false)}
                 >
@@ -463,7 +463,7 @@ export function WikiArticleActions({ title: cleanTitle, trailing }: WikiArticleA
                 </Button>
                 <Button
                   type="submit"
-                  variant="filled"
+                  variant="default"
                   size="sm"
                   disabled={!marginNote.trim() || isSubmittingNote}
                 >

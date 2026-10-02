@@ -74,7 +74,7 @@ export function ActivityFeedContainer() {
 
           <div className="flex items-center gap-2">
             <Button
-              variant="bordered"
+              variant="outline"
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
               className="hidden sm:flex"
@@ -83,7 +83,7 @@ export function ActivityFeedContainer() {
               Filters
             </Button>
             <Button
-              variant="bordered"
+              variant="outline"
               size="icon-sm"
               onClick={() => refetch()}
               disabled={isFetching}
@@ -123,7 +123,7 @@ export function ActivityFeedContainer() {
           {/* Mobile Filter Button */}
           <div className="mb-4 sm:hidden">
             <Button
-              variant="bordered"
+              variant="outline"
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
               className="w-full"
@@ -198,7 +198,7 @@ export function ActivityFeedContainer() {
           {/* Load More */}
           {feedData?.nextCursor && (
             <div className="mt-6 text-center">
-              <Button variant="bordered" onClick={() => refetch()}>
+              <Button variant="outline" onClick={() => refetch()}>
                 Load More
               </Button>
             </div>

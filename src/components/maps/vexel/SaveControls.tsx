@@ -194,7 +194,7 @@ export default function SaveControls() {
           {/* Publish Button */}
           {achievementId && (
             <Button
-              variant={currentAchievement?.isPublished ? "bordered" : "tinted"}
+              variant={currentAchievement?.isPublished ? "outline" : "secondary"}
               size="sm"
               onClick={handlePublishToggle}
               disabled={isPublishing}

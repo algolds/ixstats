@@ -378,7 +378,7 @@ export const DynamicIslandSearch: React.FC<DynamicIslandSearchProps> = ({
                 {hasActiveFilters && (
                   <Button
                     type="button"
-                    variant="plain"
+                    variant="ghost"
                     size="sm"
                     onClick={() => {
                       soundEffects.press();

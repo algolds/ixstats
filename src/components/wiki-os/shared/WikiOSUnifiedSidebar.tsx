@@ -409,7 +409,7 @@ export function WikiOSUnifiedSidebar({
             badge:
               isArticlePage && isSignedIn ? (
                 <Button
-                  variant="bordered"
+                  variant="outline"
                   size="icon-sm"
                   aria-pressed={isCurrentPageStashed}
                   aria-label="Stash current article"

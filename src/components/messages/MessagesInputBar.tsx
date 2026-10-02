@@ -134,7 +134,7 @@ export function MessagesInputBar({
       <div className="flex items-end gap-2">
         <Button
           type="button"
-          variant="gray"
+          variant="secondary"
           size="icon-lg"
           onClick={() => setIsStashModalOpen(true)}
           className="mb-1 shrink-0"

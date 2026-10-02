@@ -509,7 +509,7 @@ export function StudioNameSets() {
                     </div>
                   );
                 })}
-                <Button variant="tinted" size="sm" onClick={addSlot}>
+                <Button variant="secondary" size="sm" onClick={addSlot}>
                   <Plus className="h-3 w-3" /> Add slot
                 </Button>
 
@@ -552,7 +552,7 @@ export function StudioNameSets() {
                   </Button>
                 </div>
                 <Button
-                  size="md"
+                  size="default"
                   onClick={generate}
                   disabled={slots.length === 0}
                   className="flex-1 justify-center"

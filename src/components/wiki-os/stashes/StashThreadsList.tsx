@@ -68,7 +68,7 @@ export function StashThreadsList({ items, onUnstash }: StashThreadsListProps) {
                 </Link>
 
                 <Button
-                  variant="bordered"
+                  variant="outline"
                   size="icon-sm"
                   aria-label="Remove from stash"
                   onClick={(e) => {

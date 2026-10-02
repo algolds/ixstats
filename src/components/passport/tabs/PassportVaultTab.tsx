@@ -48,7 +48,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
           title="No Vault Collection"
           message={`@${cleanUsername} hasn't started collecting IxCards yet.`}
           action={
-            <Button asChild variant="tinted" size="sm">
+            <Button asChild variant="secondary" size="sm">
               <Link href="/vault">
                 <span>Explore Vault</span>
                 <ArrowRight aria-hidden />

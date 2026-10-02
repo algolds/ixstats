@@ -24,7 +24,7 @@ export function QueuePanel() {
         <h3 className="text-subhead text-label-secondary">Up Next</h3>
         {queue.length > 0 && (
           <Button
-            variant="plain"
+            variant="ghost"
             size="sm"
             onClick={clearQueue}
             className="text-red hover:bg-red/10"

@@ -336,7 +336,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                     Chronological Epochs & Rules
                   </h4>
                 </div>
-                <Button variant="bordered" size="sm" onClick={handleAddEpoch}>
+                <Button variant="outline" size="sm" onClick={handleAddEpoch}>
                   <Plus className="h-3.5 w-3.5" />
                   <span>Add Epoch</span>
                 </Button>
@@ -347,7 +347,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                 <span className="text-label-secondary text-eyebrow mr-1">Insert:</span>
                 {QUICK_SYMBOLS.map((sym) => (
                   <Button
-                    variant="bordered"
+                    variant="outline"
                     size="sm"
                     key={sym.label}
                     onClick={() => handleInsertSymbol(sym.value)}
@@ -505,7 +505,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                       ))}
 
                       <Button
-                        variant="plain"
+                        variant="ghost"
                         size="sm"
                         onClick={() => handleAddRule(epochIdx)}
                         className="text-label-secondary hover:text-tint text-label-secondary hover:text-tint px-2"
@@ -568,7 +568,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                     </span>
                   </div>
                   <Button
-                    variant="tinted"
+                    variant="secondary"
                     size="sm"
                     onClick={async () => {
                       const words = evolutionResults.map((r) => r.final);

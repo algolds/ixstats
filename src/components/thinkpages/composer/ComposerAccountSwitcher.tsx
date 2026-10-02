@@ -76,7 +76,7 @@ export function ComposerAccountSwitcher({
             <span className="text-subhead text-label-secondary">Switch account</span>
             {isOwner && accounts.length < 25 && (
               <Button
-                variant="plain"
+                variant="ghost"
                 size="sm"
                 onClick={() => {
                   onCreateAccount?.();

@@ -41,7 +41,7 @@ export default function SearchPage() {
             className="wikios-fullsearch-input"
             autoFocus
           />
-          <Button variant="tinted" type="submit">
+          <Button variant="secondary" type="submit">
             Search
           </Button>
         </form>

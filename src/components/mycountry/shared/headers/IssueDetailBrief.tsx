@@ -585,8 +585,8 @@ function PathwayButton({
   return (
     <Button
       type="button"
-      variant="bordered"
-      size="md"
+      variant="outline"
+      size="default"
       onClick={onClick}
       disabled={disabled}
       className="h-auto flex-col justify-center gap-1 p-2 whitespace-normal disabled:opacity-50"

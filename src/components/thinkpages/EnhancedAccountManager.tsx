@@ -285,7 +285,7 @@ export function EnhancedAccountManager({
               title="No accounts in this category"
               action={
                 isOwner ? (
-                  <Button variant="bordered" size="sm" onClick={onCreateAccount}>
+                  <Button variant="outline" size="sm" onClick={onCreateAccount}>
                     <Plus aria-hidden="true" />
                     Create Account
                   </Button>
@@ -308,7 +308,7 @@ export function EnhancedAccountManager({
             e.stopPropagation();
             onCreateAccount();
           }}
-          variant="bordered"
+          variant="outline"
           size="sm"
           className="w-full"
           type="button"

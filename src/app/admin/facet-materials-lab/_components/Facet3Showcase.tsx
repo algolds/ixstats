@@ -249,11 +249,11 @@ export function Facet3Showcase() {
         />
         <FacetCard padding="md" className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="filled">Filled</Button>
-            <Button variant="tinted">Tinted</Button>
-            <Button variant="gray">Gray</Button>
-            <Button variant="bordered">Bordered</Button>
-            <Button variant="plain">Plain</Button>
+            <Button variant="default">Filled</Button>
+            <Button variant="secondary">Tinted</Button>
+            <Button variant="secondary">Gray</Button>
+            <Button variant="outline">Bordered</Button>
+            <Button variant="ghost">Plain</Button>
             <Button variant="destructive">Destructive</Button>
             <Button variant="link">Link</Button>
           </div>
@@ -327,7 +327,7 @@ export function Facet3Showcase() {
               title="No results"
               message="Empty states pair an icon, a title and one action."
               action={
-                <Button variant="tinted" size="sm">
+                <Button variant="secondary" size="sm">
                   <Spark />
                   Clear filters
                 </Button>
@@ -379,8 +379,8 @@ function Facet31Identity() {
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button>Primary</Button>
-                <Button variant="tinted">Tinted</Button>
-                <Button variant="bordered">Bordered</Button>
+                <Button variant="secondary">Tinted</Button>
+                <Button variant="outline">Bordered</Button>
               </div>
             </div>
           </FacetCard>
@@ -404,7 +404,7 @@ function Facet31Identity() {
                 <Crown />
                 Declare
               </Button>
-              <Button variant="tinted">Draft</Button>
+              <Button variant="secondary">Draft</Button>
             </div>
           </FacetCard>
 

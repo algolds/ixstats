@@ -138,7 +138,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
             title={error ? "This country could not be loaded" : "Country not found"}
             message={error ?? "No country matches this address."}
             action={
-              <Button asChild variant="gray" size="sm">
+              <Button asChild variant="secondary" size="sm">
                 <Link href={createUrl("/countries")}>All countries</Link>
               </Button>
             }
@@ -183,7 +183,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
             </BreadcrumbList>
           </Breadcrumb>
 
-          <Button variant="filled" size="sm" onClick={() => setShowCountryActions(true)}>
+          <Button variant="default" size="sm" onClick={() => setShowCountryActions(true)}>
             <Users aria-hidden />
             {isOwnCountry ? "Country management" : "Country actions"}
           </Button>

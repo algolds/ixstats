@@ -119,7 +119,7 @@ export const WorkActivityFeed = React.memo(function WorkActivityFeed({
               </div>
 
               <div className="flex shrink-0 items-center justify-end pt-1 sm:pt-0">
-                <Button asChild variant="gray" size="sm">
+                <Button asChild variant="secondary" size="sm">
                   <Link href={item.url}>
                     <span>View in WikiOS</span>
                     <ArrowRight aria-hidden />

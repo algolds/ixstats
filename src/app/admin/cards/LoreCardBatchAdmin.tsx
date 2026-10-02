@@ -949,7 +949,7 @@ export function LoreCardBatchAdmin() {
                 return (
                   <Button
                     key={preset.name}
-                    variant="bordered"
+                    variant="outline"
                     size="sm"
                     disabled={Boolean(crawlingPresetName)}
                     onClick={() => handleApplyPreset(preset)}
@@ -1007,7 +1007,7 @@ export function LoreCardBatchAdmin() {
                   />
                   {categorySearchQuery.trim() && (
                     <Button
-                      variant="tinted"
+                      variant="secondary"
                       size="sm"
                       disabled={isCrawlingCategory}
                       onClick={() => handleCrawlCategory(categorySearchQuery)}
@@ -1063,7 +1063,7 @@ export function LoreCardBatchAdmin() {
               {/* Crawl All Namespace 0 (Main Pages) Action Button */}
               <Button
                 size="sm"
-                variant="tinted"
+                variant="secondary"
                 disabled={isCrawlingAllPages}
                 onClick={handleCrawlAllMainPages}
                 title={`Fetch all articles in the main namespace (namespace 0) on ${globalWikiSource.toUpperCase()}`}
@@ -1087,7 +1087,7 @@ export function LoreCardBatchAdmin() {
                 Add Articles & Categories to Queue (Comma or Newline Separated)
               </label>
               <Button
-                variant="tinted"
+                variant="secondary"
                 size="sm"
                 onClick={handleAddArticlesFromText}
                 disabled={!articleInput.trim()}
@@ -1149,7 +1149,7 @@ export function LoreCardBatchAdmin() {
                   {/* Backfill Authors Button */}
                   <Button
                     size="sm"
-                    variant="tinted"
+                    variant="secondary"
                     onClick={() => setIsBackfillDialogOpen(true)}
                     disabled={isProcessingBatch}
 
@@ -1161,7 +1161,7 @@ export function LoreCardBatchAdmin() {
                   {/* Re-Catalog Categories Button */}
                   <Button
                     size="sm"
-                    variant="tinted"
+                    variant="secondary"
                     onClick={() => setIsReclassifyDialogOpen(true)}
                     disabled={isProcessingBatch}
 
@@ -1181,7 +1181,7 @@ export function LoreCardBatchAdmin() {
                   </Button>
 
                   <Button
-                    variant="tinted"
+                    variant="secondary"
                     size="sm"
                     onClick={handleProcessBatch}
                     disabled={isProcessingBatch || candidates.every((c) => c.status !== "idle")}
@@ -1280,7 +1280,7 @@ export function LoreCardBatchAdmin() {
                         <TableCell className="px-3 text-center">
                           {artworkToShow ? (
                             <Button
-                              variant="gray"
+                              variant="secondary"
                               size="icon-lg"
                               aria-label={`Inspect artwork for ${c.articleTitle}`}
                               onClick={() =>
@@ -1311,7 +1311,7 @@ export function LoreCardBatchAdmin() {
                             </Button>
                           ) : (
                             <Button
-                              variant="gray"
+                              variant="secondary"
                               size="icon-lg"
                               aria-label={`Inspect details for ${c.articleTitle} (no image)`}
                               onClick={() =>
@@ -1382,7 +1382,7 @@ export function LoreCardBatchAdmin() {
                           {c.status === "error" && (
                             <div className="flex flex-col gap-1">
                               <Button
-                                variant="plain"
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => setSelectedErrorCandidate(c)}
                                 className="bg-red/15 text-red-ink hover:bg-red/25 self-start rounded-full px-2"
@@ -1584,7 +1584,7 @@ export function LoreCardBatchAdmin() {
                             {isPending && (
                               <>
                                 <Button
-                                  variant="tinted"
+                                  variant="secondary"
                                   size="sm"
                                   onClick={() => approveMutation.mutate({ requestId: request.id })}
                                   disabled={approveMutation.isPending}
@@ -1602,7 +1602,7 @@ export function LoreCardBatchAdmin() {
                             )}
                             {(isPending || isApproved) && (
                               <Button
-                                variant="tinted"
+                                variant="secondary"
                                 size="sm"
                                 onClick={() =>
                                   generateRequestedMutation.mutate({ requestId: request.id })

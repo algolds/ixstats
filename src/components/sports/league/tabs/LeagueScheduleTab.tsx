@@ -185,7 +185,7 @@ export function LeagueScheduleTab({
 
           <div className="flex items-center gap-2">
             {initialActiveRound !== selectedRound && (
-              <Button size="sm" variant="gray" onClick={() => setSelectedRound(initialActiveRound)}>
+              <Button size="sm" variant="secondary" onClick={() => setSelectedRound(initialActiveRound)}>
                 Jump to Active (R{initialActiveRound})
               </Button>
             )}
@@ -375,7 +375,7 @@ export function LeagueScheduleTab({
                       {!isCompleted && (
                         <Button
                           size="sm"
-                          variant="plain"
+                          variant="ghost"
                           onClick={(e) => {
                             e.stopPropagation();
                             simulateSingleMatch.mutate({ matchId: m.id });

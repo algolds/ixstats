@@ -231,7 +231,7 @@ export function VoicePreferencesPanel({
             </span>
           )}
           <Button
-            variant="bordered"
+            variant="outline"
             size="sm"
             type="button"
             onClick={handleWakeServer}
@@ -575,7 +575,7 @@ export function VoicePreferencesPanel({
         </div>
 
         <div className="pt-2">
-          <Button variant="bordered" size="sm" onClick={onResetPreferences}>
+          <Button variant="outline" size="sm" onClick={onResetPreferences}>
             <RotateCcw className="h-3 w-3" /> Reset Preferences
           </Button>
         </div>

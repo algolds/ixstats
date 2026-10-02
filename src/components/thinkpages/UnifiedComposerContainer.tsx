@@ -113,7 +113,7 @@ export function UnifiedComposerContainer({
               title="Select an Account to Compose"
               message="Choose an account from the Accounts tab to start posting"
               action={
-                <Button variant="bordered" onClick={() => setActiveTab("accounts")}>
+                <Button variant="outline" onClick={() => setActiveTab("accounts")}>
                   <Users aria-hidden="true" />
                   Manage Accounts
                 </Button>

@@ -107,8 +107,8 @@ export function EconomyTab({
               {/* Metric 1: GDP */}
               <Button
                 type="button"
-                variant="bordered"
-                size="md"
+                variant="outline"
+                size="default"
                 onClick={() =>
                   setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
@@ -174,8 +174,8 @@ export function EconomyTab({
               {/* Metric 2: Fiscal */}
               <Button
                 type="button"
-                variant="bordered"
-                size="md"
+                variant="outline"
+                size="default"
                 onClick={() =>
                   setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,
@@ -225,8 +225,8 @@ export function EconomyTab({
               {/* Metric 3: Trade */}
               <Button
                 type="button"
-                variant="bordered"
-                size="md"
+                variant="outline"
+                size="default"
                 onClick={() =>
                   setMetricViewAction((v: MyCountryMetricView) => ({
                     ...v,

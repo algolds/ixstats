@@ -188,7 +188,7 @@ export function MidRibbonPassportDocument({
                       <h2 className="text-label text-title-1">{displayName}</h2>
                       <Button
                         type="button"
-                        variant="gray"
+                        variant="secondary"
                         size="sm"
                         onClick={handleCopyHandle}
                         aria-label={

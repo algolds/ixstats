@@ -198,7 +198,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
       <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-4">
         <div className="flex items-center gap-3">
           {onClose && (
-            <Button variant="gray" size="sm" onClick={onClose}>
+            <Button variant="secondary" size="sm" onClick={onClose}>
               <ArrowLeft />
               <span>Back</span>
             </Button>

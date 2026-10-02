@@ -313,8 +313,8 @@ export const DocumentInspector = React.memo(function DocumentInspector({
         <div className="grid grid-cols-3 gap-2">
           <Button
             type="button"
-            variant="bordered"
-            size="md"
+            variant="outline"
+            size="default"
             onClick={() => onModeChange("add-subdivision")}
             className="text-label h-auto flex-col justify-center gap-1 p-2 whitespace-normal"
           >
@@ -327,8 +327,8 @@ export const DocumentInspector = React.memo(function DocumentInspector({
 
           <Button
             type="button"
-            variant="bordered"
-            size="md"
+            variant="outline"
+            size="default"
             onClick={() => onModeChange("add-city")}
             className="text-label h-auto flex-col justify-center gap-1 p-2 whitespace-normal"
           >
@@ -341,8 +341,8 @@ export const DocumentInspector = React.memo(function DocumentInspector({
 
           <Button
             type="button"
-            variant="bordered"
-            size="md"
+            variant="outline"
+            size="default"
             onClick={() => onModeChange("add-route")}
             className="text-label h-auto flex-col justify-center gap-1 p-2 whitespace-normal"
           >

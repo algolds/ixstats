@@ -223,10 +223,10 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
       </div>
 
       <div className="flex items-center justify-end gap-2 pt-2">
-        <Button type="button" variant="gray" onClick={onClose} disabled={submitMutation.isPending}>
+        <Button type="button" variant="secondary" onClick={onClose} disabled={submitMutation.isPending}>
           Cancel
         </Button>
-        <Button type="submit" variant="filled" disabled={submitMutation.isPending}>
+        <Button type="submit" variant="default" disabled={submitMutation.isPending}>
           {submitMutation.isPending ? (
             <>
               <Loader2 aria-hidden className="animate-spin" />

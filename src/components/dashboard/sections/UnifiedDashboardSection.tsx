@@ -236,7 +236,7 @@ export function UnifiedDashboardSection({
               {/* Settings gear */}
               {isSignedIn && (
                 <Button
-                  variant="gray"
+                  variant="secondary"
                   size="icon"
                   onClick={() => setIsAccountModalOpen(true)}
                   className="shrink-0"

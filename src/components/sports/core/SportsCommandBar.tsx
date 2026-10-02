@@ -109,7 +109,7 @@ export function SportsCommandBar({
         {extraActions}
 
         {canManage && onOpenSettings && (
-          <Button variant="gray" size="sm" onClick={onOpenSettings}>
+          <Button variant="secondary" size="sm" onClick={onOpenSettings}>
             <Settings />
             <span>Manage</span>
           </Button>

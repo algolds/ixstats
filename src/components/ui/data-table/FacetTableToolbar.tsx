@@ -68,7 +68,7 @@ export function FacetTableToolbar({
         {toolbarActions}
 
         {exportable && onExport && (
-          <Button type="button" variant="bordered" size="md" onClick={onExport}>
+          <Button type="button" variant="outline" size="default" onClick={onExport}>
             <Download aria-hidden="true" />
             Export CSV
           </Button>

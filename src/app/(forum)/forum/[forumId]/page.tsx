@@ -148,7 +148,7 @@ function MarkReadButton({ forumId }: { forumId: number }) {
 
   return (
     <Button
-      variant="gray"
+      variant="secondary"
       size="sm"
       onClick={() => markRead.mutate({ forumId })}
       disabled={markRead.isPending}

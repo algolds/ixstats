@@ -145,11 +145,11 @@ export function PronunciationEditor({
       </div>
 
       <div className="flex items-center justify-between gap-2 pt-0.5">
-        <Button variant="bordered" size="sm" onClick={onReset} title="Reset to defaults">
+        <Button variant="outline" size="sm" onClick={onReset} title="Reset to defaults">
           <RotateCcw className="h-3 w-3" /> Reset
         </Button>
         <div className="flex gap-2">
-          <Button variant="bordered" size="sm" onClick={onPreview}>
+          <Button variant="outline" size="sm" onClick={onPreview}>
             <Volume2 className="h-3 w-3" /> Preview
           </Button>
           <Button size="sm" onClick={onSave}>

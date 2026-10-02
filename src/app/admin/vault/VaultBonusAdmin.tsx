@@ -207,7 +207,7 @@ export function VaultBonusAdmin() {
       {/* Save Button Bar */}
       <div className="flex justify-end pt-2">
         <Button
-          variant="tinted"
+          variant="secondary"
           onClick={() => saveMutation.mutate(form)}
           disabled={saveMutation.isPending}
           className="h-10"

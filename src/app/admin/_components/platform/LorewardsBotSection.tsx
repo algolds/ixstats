@@ -620,7 +620,7 @@ export function LorewardsBotSection() {
                 className="rounded-control-sm md:text-footnote h-(--control-height-sm) w-36"
               />
               <Button
-                variant="tinted"
+                variant="secondary"
                 onClick={() => crossValidateMutation.mutate({ date: adminDate })}
                 disabled={crossValidateMutation.isPending}
                 className="gap-2"

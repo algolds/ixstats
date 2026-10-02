@@ -128,7 +128,7 @@ export function ArchetypeGrid({
       <div className="border-separator flex flex-col justify-between gap-4 border-b pb-4 md:flex-row md:items-center">
         <div className="space-y-2">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <Button variant="bordered" size="sm" onClick={onBackToBenchmark}>
+            <Button variant="outline" size="sm" onClick={onBackToBenchmark}>
               <ArrowLeft aria-hidden /> Back to Benchmark Country
               {selectedTemplate?.name ? ` (${selectedTemplate.name})` : ""}
             </Button>
@@ -239,7 +239,7 @@ export function ArchetypeGrid({
           </div>
 
           <div className="flex items-center gap-2 self-stretch sm:self-center">
-            <Button variant="bordered" size="sm" onClick={onBackToBenchmark}>
+            <Button variant="outline" size="sm" onClick={onBackToBenchmark}>
               Change Benchmark Country
             </Button>
             <Button size="sm" onClick={onSkipArchetype}>
@@ -270,7 +270,7 @@ export function ArchetypeGrid({
           </div>
 
           <div className="flex items-center gap-2 self-stretch sm:self-center">
-            <Button variant="tinted" size="sm" onClick={onBackToBenchmark}>
+            <Button variant="secondary" size="sm" onClick={onBackToBenchmark}>
               + Add Benchmark Country
             </Button>
           </div>
@@ -322,7 +322,7 @@ export function ArchetypeGrid({
             action={
               <Button
                 type="button"
-                variant="bordered"
+                variant="outline"
                 size="sm"
                 onClick={() => {
                   setSearchQuery("");
@@ -373,7 +373,7 @@ export function ArchetypeGrid({
                       <div className="relative z-10 flex items-center gap-2">
                         <Button
                           type="button"
-                          variant="gray"
+                          variant="secondary"
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -496,7 +496,7 @@ export function ArchetypeGrid({
                         onConfirmFaction(arch);
                       }}
                       size="sm"
-                      variant={isSelected ? "tinted" : "filled"}
+                      variant={isSelected ? "secondary" : "default"}
                       className="flex-1"
                     >
                       <Check aria-hidden />
@@ -508,7 +508,7 @@ export function ArchetypeGrid({
                         e.stopPropagation();
                         onOpenDetailsModal(arch);
                       }}
-                      variant="bordered"
+                      variant="outline"
                       size="sm"
                     >
                       <Info aria-hidden />

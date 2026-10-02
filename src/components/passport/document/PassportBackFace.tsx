@@ -129,7 +129,7 @@ export const PassportBackFace = React.memo(function PassportBackFace({
             </div>
           </div>
 
-          <Button type="button" variant="filled" onClick={handleDone}>
+          <Button type="button" variant="default" onClick={handleDone}>
             <Check aria-hidden />
             <span>Done</span>
           </Button>
@@ -249,7 +249,7 @@ export const PassportBackFace = React.memo(function PassportBackFace({
 
         {/* Action footer */}
         <div className="flex items-center justify-end gap-3 pt-2">
-          <Button type="button" variant="gray" onClick={handleDone}>
+          <Button type="button" variant="secondary" onClick={handleDone}>
             <RotateCcw aria-hidden />
             <span>Return to Passport</span>
           </Button>

@@ -200,7 +200,7 @@ export function DashboardSidebarLayout({
 
                 {!disableCollapse && variant !== "rail" && (
                   <Button
-                    variant="gray"
+                    variant="secondary"
                     size="sm"
                     onClick={handleToggleSidebar}
                     className="w-full"
@@ -218,7 +218,7 @@ export function DashboardSidebarLayout({
               {/* Floating Expand button shown only when collapsed in hide mode */}
               {isCollapsedNow && showFloatingExpand && variant !== "rail" && (
                 <Button
-                  variant="bordered"
+                  variant="outline"
                   size="icon"
                   onClick={handleToggleSidebar}
                   className="material-thin z-chrome shadow-floating fixed top-[calc(var(--shell-top-offset)+1rem)] left-[calc(var(--shell-sidebar-width)+1rem)] rounded-full"

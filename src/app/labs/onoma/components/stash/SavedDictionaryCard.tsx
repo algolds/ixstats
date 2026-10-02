@@ -175,7 +175,7 @@ export function SavedDictionaryCard({
           <div className="flex flex-wrap items-center gap-2">
             {/* Expand Button */}
             <Button
-              variant="gray"
+              variant="secondary"
               size="sm"
               onClick={onToggleExpand}
 
@@ -192,7 +192,7 @@ export function SavedDictionaryCard({
             {/* Load to Studio / Generate */}
             {onLoadToStudio && (
               <Button
-                variant="tinted"
+                variant="secondary"
                 size="sm"
                 onClick={() => onLoadToStudio(dict.values, dict.title)}
 
@@ -206,7 +206,7 @@ export function SavedDictionaryCard({
             {/* Quick Cross-System Actions */}
             {onNavigateExplore && (
               <Button
-                variant="tinted"
+                variant="secondary"
                 size="sm"
                 onClick={() => onNavigateExplore("phonology", dict.values, dict.title)}
                 title="Inspect IPA acoustics & compare profile"
@@ -218,7 +218,7 @@ export function SavedDictionaryCard({
 
             {onNavigateStudio && (
               <Button
-                variant="tinted"
+                variant="secondary"
                 size="sm"
                 onClick={() => onNavigateStudio("shifts", dict.values, dict.title)}
 
@@ -231,7 +231,7 @@ export function SavedDictionaryCard({
 
             {onNavigateExplore && (
               <Button
-                variant="tinted"
+                variant="secondary"
                 size="sm"
                 onClick={() => onNavigateExplore("writing", dict.values, dict.title)}
                 title="Typeset words in Writing Systems"
@@ -245,7 +245,7 @@ export function SavedDictionaryCard({
             <Popover open={isStashingThis} onOpenChange={setIsStashingThis}>
               <PopoverTrigger asChild>
                 <Button
-                  variant={isStashingThis ? "tinted" : "gray"}
+                  variant={isStashingThis ? "secondary" : "secondary"}
                   size="sm"
                   title="Move dictionary to another stash folder"
                 >
@@ -305,7 +305,7 @@ export function SavedDictionaryCard({
           <div className="flex items-center gap-2">
             {/* Edit (rename / re-tag) */}
             <Button
-              variant="gray"
+              variant="secondary"
               size="icon-sm"
               onClick={() => onEdit(dict)}
               aria-label="Edit dictionary"
@@ -334,7 +334,7 @@ export function SavedDictionaryCard({
 
             {/* Delete */}
             <Button
-              variant="gray"
+              variant="secondary"
               size="icon-sm"
               onClick={() => onDelete(dict.id)}
               aria-label="Delete dictionary"

@@ -139,7 +139,7 @@ export function InlineWikiArticlePreview({
       <WikiArticleActions
         title={cleanTitle}
         trailing={
-          <Button asChild variant="tinted" size="sm" className="rounded-full">
+          <Button asChild variant="secondary" size="sm" className="rounded-full">
             <Link href={wikiHref}>
               <span>Open in Wiki</span>
               <ExternalLink aria-hidden />

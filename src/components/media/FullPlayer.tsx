@@ -155,7 +155,7 @@ export function FullPlayer({ isOpen, onClose }: { isOpen: boolean; onClose: () =
         {/* Queue */}
         <div className="border-separator flex flex-col gap-3 border-t pt-4">
           <Button
-            variant="plain"
+            variant="ghost"
             size="sm"
             className="self-start"
             onClick={() => setShowQueue(!showQueue)}

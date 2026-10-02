@@ -169,7 +169,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
           <span className="text-label-secondary text-footnote tabular-nums">
             {timeAgo(new Date(activity.timestamp))}
           </span>
-          <Button asChild variant="tinted" size="sm" className="rounded-full">
+          <Button asChild variant="secondary" size="sm" className="rounded-full">
             <Link href={wikiHref}>
               <span>Open</span>
               <ExternalLink aria-hidden />
@@ -215,7 +215,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
         <div className="mt-3">
           <Button
             type="button"
-            variant="gray"
+            variant="secondary"
             size="sm"
             className="rounded-full"
             aria-expanded={isHistoryExpanded}

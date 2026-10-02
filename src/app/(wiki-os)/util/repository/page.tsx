@@ -466,7 +466,7 @@ export default function RepositoryPage() {
             </span>
             {STARTER_CATEGORIES.map((cat) => (
               <Button
-                variant="bordered"
+                variant="outline"
                 size="sm"
                 key={cat.category}
                 onClick={() => handleBrowseCategory(cat.category)}
@@ -483,7 +483,7 @@ export default function RepositoryPage() {
           <div className="wikios-commons-chips">
             {activeCategories.map((cat) => (
               <Button
-                variant="tinted"
+                variant="secondary"
                 size="sm"
                 aria-label={`Remove ${cat}`}
                 key={cat}

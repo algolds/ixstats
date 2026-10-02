@@ -100,12 +100,12 @@ export class AdminErrorBoundary extends Component<Props, State> {
                 Try Again
               </Button>
 
-              <Button variant="gray" onClick={this.handleReload} className="w-full">
+              <Button variant="secondary" onClick={this.handleReload} className="w-full">
                 <RefreshCw />
                 Reload Page
               </Button>
 
-              <Button variant="gray" onClick={this.handleGoHome} className="w-full">
+              <Button variant="secondary" onClick={this.handleGoHome} className="w-full">
                 <Home />
                 Go to Homepage
               </Button>

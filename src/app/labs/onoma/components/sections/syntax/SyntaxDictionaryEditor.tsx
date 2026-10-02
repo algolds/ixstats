@@ -52,7 +52,7 @@ export function SyntaxDictionaryEditor({
           onChange={(e) => setNewDictVal(e.target.value)}
           className="flex-1"
         />
-        <Button variant="filled" size="sm" onClick={handleAdd}>
+        <Button variant="default" size="sm" onClick={handleAdd}>
           <Plus className="h-3.5 w-3.5" /> Add
         </Button>
       </div>

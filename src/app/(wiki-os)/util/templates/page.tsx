@@ -226,7 +226,7 @@ export default function WikiTemplatesPage() {
                     ]}
                   />
 
-                  <Button variant="gray" size="sm" onClick={handleCopy} aria-label="Copy code">
+                  <Button variant="secondary" size="sm" onClick={handleCopy} aria-label="Copy code">
                     {copied ? (
                       <Check className="text-green size-3.5" />
                     ) : (

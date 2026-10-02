@@ -205,7 +205,7 @@ export function NotificationTestCard() {
               <span className="text-caption">Crisis Alert</span>
             </Button>
             <Button
-              variant="tinted"
+              variant="secondary"
               onClick={() => triggerPreset("achievement")}
               className="flex h-16 flex-col items-center justify-center gap-1"
             >
@@ -213,7 +213,7 @@ export function NotificationTestCard() {
               <span className="text-caption">Achievement</span>
             </Button>
             <Button
-              variant="tinted"
+              variant="secondary"
               onClick={() => triggerPreset("security")}
               className="flex h-16 flex-col items-center justify-center gap-1"
             >
@@ -221,7 +221,7 @@ export function NotificationTestCard() {
               <span className="text-caption">Security Intel</span>
             </Button>
             <Button
-              variant="tinted"
+              variant="secondary"
               onClick={() => triggerPreset("trade")}
               className="flex h-16 flex-col items-center justify-center gap-1"
             >

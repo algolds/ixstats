@@ -94,7 +94,7 @@ export function WikiSourceToolbar({
         setSummary={modal.setSummary}
         extraActions={
           <Button
-            variant={showPreview ? "tinted" : "bordered"}
+            variant={showPreview ? "secondary" : "outline"}
             size="icon-sm"
             aria-pressed={showPreview}
             className="rounded-full"
@@ -320,7 +320,7 @@ function FmtBtn({
 }) {
   return (
     <Button
-      variant={active ? "tinted" : "ghost"}
+      variant={active ? "secondary" : "ghost"}
       size="icon-sm"
       aria-pressed={active}
       className={cn(!active && "text-label-secondary")}

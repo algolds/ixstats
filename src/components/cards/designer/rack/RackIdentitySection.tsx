@@ -114,7 +114,7 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
               >
                 <PopoverTrigger asChild>
                   <Button
-                    variant={isSelected ? "tinted" : "bordered"}
+                    variant={isSelected ? "secondary" : "outline"}
                     aria-pressed={isSelected}
                     className={cn(
                       "rounded-row text-footnote h-auto w-full justify-between gap-1 p-2 text-left font-medium",
@@ -191,7 +191,7 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
                           const isSubSelected = state.subcategory === sub.label;
                           return (
                             <Button
-                              variant={isSubSelected ? "filled" : "bordered"}
+                              variant={isSubSelected ? "default" : "outline"}
                               size="sm"
                               aria-pressed={isSubSelected}
                               key={sub.id}

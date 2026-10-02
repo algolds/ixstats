@@ -256,7 +256,7 @@ export function OrthographySandbox({
           {/* Export & Copy Suite */}
           <div className="flex items-center gap-1">
             <Button
-              variant="bordered"
+              variant="outline"
               size="sm"
               type="button"
               onClick={handleCopySvg}
@@ -271,8 +271,8 @@ export function OrthographySandbox({
             </Button>
 
             <Button
-              variant="bordered"
-              size="md"
+              variant="outline"
+              size="default"
               type="button"
               onClick={handleDownloadSvg}
               title="Download SVG Vector File"
@@ -289,7 +289,7 @@ export function OrthographySandbox({
             <span className="text-label-secondary text-caption font-medium">Quick Phrases:</span>
             {SAMPLE_PHRASES.map((sample) => (
               <Button
-                variant="bordered"
+                variant="outline"
                 size="sm"
                 key={sample.label}
                 type="button"
@@ -426,7 +426,7 @@ export function OrthographySandbox({
             return (
               <Button
                 key={`chip-${tok.id}`}
-                variant="tinted"
+                variant="secondary"
                 size="sm"
                 onClick={() => {
                   setSelectedToken(tok);

@@ -139,7 +139,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
             />
             <Button
               size="sm"
-              variant="tinted"
+              variant="secondary"
               onClick={() => upgradeStadium.mutate({ teamId: team.id })}
               disabled={upgradeStadium.isPending}
             >
@@ -287,7 +287,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
                   {isExpanded && (
                     <Button
                       size="icon-sm"
-                      variant="plain"
+                      variant="ghost"
                       aria-label="Close"
                       className="text-label-secondary"
                       onClick={() => setActiveCard(null)}

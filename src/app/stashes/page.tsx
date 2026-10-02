@@ -332,7 +332,7 @@ export default function StashesPage() {
                     <h1 className="text-large-title text-label">Stash</h1>
                     <Button
                       type="button"
-                      variant="plain"
+                      variant="ghost"
                       size="icon-sm"
                       onClick={() => setWelcomeOpen(true)}
                       title="Stash Guide"
@@ -372,7 +372,7 @@ export default function StashesPage() {
                 </div>
                 <Button
                   type="button"
-                  variant="plain"
+                  variant="ghost"
                   size="icon-sm"
                   onClick={() => setError(null)}
                   aria-label="Dismiss error"

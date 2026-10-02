@@ -140,7 +140,7 @@ export function SplashIssuesTeaser() {
         >
           <Button
             type="button"
-            variant="bordered"
+            variant="outline"
             size="icon"
             aria-label="Previous issue"
             onClick={() => go(-1)}
@@ -150,7 +150,7 @@ export function SplashIssuesTeaser() {
           </Button>
           <Button
             type="button"
-            variant="bordered"
+            variant="outline"
             size="icon"
             aria-label="Next issue"
             onClick={() => go(1)}
@@ -165,7 +165,7 @@ export function SplashIssuesTeaser() {
             </span>
             <Button
               type="button"
-              variant="gray"
+              variant="secondary"
               size="icon-sm"
               className="rounded-full"
               aria-label={paused ? "Resume slideshow" : "Pause slideshow"}
@@ -234,7 +234,7 @@ export function SplashIssuesTeaser() {
           <div className="mt-4 flex justify-center gap-2 md:hidden">
             <Button
               type="button"
-              variant="bordered"
+              variant="outline"
               size="icon"
               className="rounded-full"
               aria-label="Previous issue"
@@ -244,7 +244,7 @@ export function SplashIssuesTeaser() {
             </Button>
             <Button
               type="button"
-              variant="bordered"
+              variant="outline"
               size="icon"
               className="rounded-full"
               aria-label="Next issue"

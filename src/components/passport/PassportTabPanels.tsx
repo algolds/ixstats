@@ -94,7 +94,7 @@ function HistoryPanel({ handle, enabled }: { handle: string; enabled: boolean })
         <div className="flex justify-center">
           <Button
             type="button"
-            variant="gray"
+            variant="secondary"
             onClick={() => void fetchNextPage()}
             disabled={isFetchingNextPage}
           >

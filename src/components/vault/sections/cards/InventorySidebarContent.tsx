@@ -260,7 +260,7 @@ export function InventorySidebarContent({
         filters.cardType !== "all" ||
         filters.season !== "all") && (
         <Button
-          variant="bordered"
+          variant="outline"
           size="sm"
           onClick={onResetFilters}
           className="text-label-secondary w-full"

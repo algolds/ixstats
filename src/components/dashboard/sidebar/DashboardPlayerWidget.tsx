@@ -257,7 +257,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
                 </div>
               )}
             </dl>
-            <Button variant="gray" size="sm" onClick={onHeroExpand} className="w-full">
+            <Button variant="secondary" size="sm" onClick={onHeroExpand} className="w-full">
               <ChevronUp className="rotate-180" />
               Expand
             </Button>

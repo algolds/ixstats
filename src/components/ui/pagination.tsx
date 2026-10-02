@@ -13,7 +13,7 @@ export function Pagination({ totalPages, currentPage, onPageChangeAction }: Pagi
   return (
     <nav aria-label="Pagination" className="flex items-center gap-1">
       <Button
-        variant="gray"
+        variant="secondary"
         size="sm"
         onClick={() => onPageChangeAction(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
@@ -23,7 +23,7 @@ export function Pagination({ totalPages, currentPage, onPageChangeAction }: Pagi
       {pages.map((p) => (
         <Button
           key={p}
-          variant={p === currentPage ? "tinted" : "ghost"}
+          variant={p === currentPage ? "secondary" : "ghost"}
           size="sm"
           className="tabular-nums"
           aria-current={p === currentPage ? "page" : undefined}
@@ -33,7 +33,7 @@ export function Pagination({ totalPages, currentPage, onPageChangeAction }: Pagi
         </Button>
       ))}
       <Button
-        variant="gray"
+        variant="secondary"
         size="sm"
         onClick={() => onPageChangeAction(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}

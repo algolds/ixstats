@@ -194,7 +194,7 @@ export function PassportLorewardsModal({
                 <div className="flex items-center gap-1">
                   <Button
                     type="button"
-                    variant="gray"
+                    variant="secondary"
                     size="icon-sm"
                     onClick={prevMonth}
                     title="Previous Month"
@@ -204,7 +204,7 @@ export function PassportLorewardsModal({
                   </Button>
                   <Button
                     type="button"
-                    variant="gray"
+                    variant="secondary"
                     size="icon-sm"
                     onClick={nextMonth}
                     disabled={isCurrentMonth}
@@ -382,7 +382,7 @@ export function PassportLorewardsModal({
             <span>View Wiki Contributions</span>
           </Link>
 
-          <Button type="button" variant="gray" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
             Close
           </Button>
         </SheetFooter>

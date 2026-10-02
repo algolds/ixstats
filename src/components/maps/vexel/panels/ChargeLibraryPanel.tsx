@@ -91,7 +91,7 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
                     <Button
                       key={item.id}
                       type="button"
-                      variant="bordered"
+                      variant="outline"
                       onClick={() => handleAddCharge(item.id)}
                       className="h-auto min-w-0 flex-col gap-1 p-3 whitespace-normal"
                     >
@@ -123,7 +123,7 @@ export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanel
                     <Button
                       key={item.id}
                       type="button"
-                      variant="bordered"
+                      variant="outline"
                       onClick={() => handleAddCharge(item.id)}
                       className="h-auto min-w-0 flex-col gap-1 p-3 whitespace-normal"
                     >

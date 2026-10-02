@@ -227,7 +227,7 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
             Recent activity
           </h3>
           {activityData && activityData.activities.length > 0 && (
-            <Button variant="plain" size="sm" onClick={viewActivity}>
+            <Button variant="ghost" size="sm" onClick={viewActivity}>
               View all
               <ArrowRight aria-hidden />
             </Button>
@@ -304,7 +304,7 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
               icon={<Activity />}
               title="No recent public activity"
               action={
-                <Button variant="plain" size="sm" onClick={viewActivity}>
+                <Button variant="ghost" size="sm" onClick={viewActivity}>
                   View activity tab
                   <ArrowRight aria-hidden />
                 </Button>

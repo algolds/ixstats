@@ -168,7 +168,7 @@ export function WorldCensusList({
       {hiddenCount > 0 ? (
         <Button
           type="button"
-          variant="plain"
+          variant="ghost"
           size="sm"
           aria-expanded={expanded}
           aria-controls={listId}

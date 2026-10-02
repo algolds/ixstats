@@ -124,7 +124,7 @@ export function LanguagePackCard({
         <div className="border-separator mt-1 flex w-full items-center gap-2 border-t pt-3">
           <Button
             type="button"
-            variant="gray"
+            variant="secondary"
             size="sm"
             onClick={(e) => {
               e.stopPropagation();

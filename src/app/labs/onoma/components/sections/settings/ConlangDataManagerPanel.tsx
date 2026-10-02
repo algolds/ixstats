@@ -179,7 +179,7 @@ export function ConlangDataManagerPanel({ onImportComplete }: ConlangDataManager
 
       <div className="grid gap-3 pt-1 sm:grid-cols-3">
         {/* Backup / Export */}
-        <Button variant="bordered" size="sm" onClick={handleExportData} className="justify-center">
+        <Button variant="outline" size="sm" onClick={handleExportData} className="justify-center">
           <Download className="text-tint h-3.5 w-3.5" /> Export Backup File
         </Button>
 
@@ -191,8 +191,8 @@ export function ConlangDataManagerPanel({ onImportComplete }: ConlangDataManager
 
         {/* Clear Actions */}
         <Button
-          variant="bordered"
-          size="md"
+          variant="outline"
+          size="default"
           onClick={() => {
             if (
               confirm(

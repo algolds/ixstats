@@ -224,7 +224,7 @@ export function CardPacksAdmin() {
       {/* Header + Filter */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <Button
-          variant="tinted"
+          variant="secondary"
           onClick={() => {
             resetForm();
             setIsAddDialogOpen(true);
@@ -542,7 +542,7 @@ export function CardPacksAdmin() {
               Cancel
             </Button>
             <Button
-              variant="tinted"
+              variant="secondary"
               onClick={editingPack ? handleUpdate : handleCreate}
               disabled={
                 !formData.name ||

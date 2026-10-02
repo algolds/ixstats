@@ -265,7 +265,7 @@ export function PostCard({
               >
                 {editMutation.isPending ? "Saving..." : "Save"}
               </Button>
-              <Button variant="gray" size="sm" onClick={() => setIsEditing(false)}>
+              <Button variant="secondary" size="sm" onClick={() => setIsEditing(false)}>
                 Cancel
               </Button>
             </div>

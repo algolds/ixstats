@@ -179,7 +179,7 @@ export function CommonsFlagImporterAdmin() {
               />
             </div>
             <Button
-              variant="tinted"
+              variant="secondary"
               onClick={handleParseCategory}
               disabled={commonsQuery.isFetching}
               className="h-10"
@@ -201,7 +201,7 @@ export function CommonsFlagImporterAdmin() {
             <span className="text-label-secondary text-caption">Quick Categories:</span>
             <Button
               size="sm"
-              variant="bordered"
+              variant="outline"
               onClick={() => {
                 const url =
                   "https://commons.wikimedia.org/wiki/Category:SVG_flags_of_fictional_countries";
@@ -214,7 +214,7 @@ export function CommonsFlagImporterAdmin() {
             </Button>
             <Button
               size="sm"
-              variant="bordered"
+              variant="outline"
               onClick={() => {
                 const url =
                   "https://commons.wikimedia.org/wiki/Category:SVG_special_or_fictional_flags";
@@ -353,7 +353,7 @@ export function CommonsFlagImporterAdmin() {
                 Import New ({unmintedItems.length})
               </Button>
               <Button
-                variant="tinted"
+                variant="secondary"
                 size="sm"
                 onClick={() => handleImportSelected()}
                 disabled={selectedItemUrls.size === 0 || importMutation.isPending}

@@ -173,7 +173,7 @@ export function GlassCanvasComposer({
               {isPostAsYourselfPending ? "Setting up..." : "Post as yourself"}
             </Button>
             {hasCountry && (
-              <Button size="sm" variant="bordered" onClick={onCreateAccount}>
+              <Button size="sm" variant="outline" onClick={onCreateAccount}>
                 Create Account
               </Button>
             )}
@@ -349,7 +349,7 @@ export function GlassCanvasComposer({
               <div className="flex shrink-0 items-center gap-2">
                 <Button
                   type="button"
-                  variant="tinted"
+                  variant="secondary"
                   size="sm"
                   onClick={() => setShowPollModal(true)}
                 >

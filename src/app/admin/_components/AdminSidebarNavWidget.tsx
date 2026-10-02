@@ -557,7 +557,7 @@ export function AdminSidebarNavWidget({
   // density), left-aligned, with tint selection for the current section.
   const rowClass = (active: boolean) =>
     cn(
-      buttonVariants({ variant: "ghost", size: "md" }),
+      buttonVariants({ variant: "ghost", size: "default" }),
       "group text-callout flex w-full justify-start gap-2 px-2 text-left font-normal",
       active
         ? "bg-tint-fill text-tint hover:bg-tint/20 font-medium"

@@ -167,7 +167,7 @@ const EligibleCountryCard = React.memo<EligibleCountryCardProps>(function Eligib
                   </Badge>
                   <Button
                     type="button"
-                    variant="plain"
+                    variant="ghost"
                     size="icon-sm"
                     className="rounded-full"
                     onClick={(e) => {
@@ -222,7 +222,7 @@ const EligibleCountryCard = React.memo<EligibleCountryCardProps>(function Eligib
                 <div className="flex items-center gap-2 pt-2">
                   <Button
                     type="button"
-                    variant="bordered"
+                    variant="outline"
                     size="sm"
                     className="flex-1"
                     onClick={(e) => {
@@ -370,7 +370,7 @@ export function EligibleCountryGrid({
               title="No countries match your criteria"
               action={
                 onClearFilters ? (
-                  <Button type="button" variant="plain" size="sm" onClick={onClearFilters}>
+                  <Button type="button" variant="ghost" size="sm" onClick={onClearFilters}>
                     Clear filters
                   </Button>
                 ) : undefined

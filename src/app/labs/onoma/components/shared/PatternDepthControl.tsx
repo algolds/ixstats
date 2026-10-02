@@ -151,7 +151,7 @@ export function PatternDepthControl({
         )}
         <div className="rounded-row border-separator bg-fill-4 shadow-card flex h-9 w-full items-center justify-between border p-1 select-none">
           <Button
-            variant="gray"
+            variant="secondary"
             size="icon-sm"
             type="button"
             onClick={() => onChange(Math.max(1, value - 1))}
@@ -174,7 +174,7 @@ export function PatternDepthControl({
             </span>
           </div>
           <Button
-            variant="gray"
+            variant="secondary"
             size="icon-sm"
             type="button"
             onClick={() => onChange(Math.min(4, value + 1))}

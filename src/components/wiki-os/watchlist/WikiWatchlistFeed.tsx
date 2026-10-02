@@ -87,7 +87,7 @@ export function WikiWatchlistFeed() {
           <div className="flex flex-wrap items-center gap-2">
             {unreadCount > 0 && (
               <Button
-                variant="gray"
+                variant="secondary"
                 size="sm"
                 onClick={() => markAllVisitedMutation.mutate()}
                 disabled={markAllVisitedMutation.isPending}
@@ -98,7 +98,7 @@ export function WikiWatchlistFeed() {
             )}
 
             <Button
-              variant="gray"
+              variant="secondary"
               size="icon"
               aria-label="Refresh Watchlist"
               onClick={() => void refetch()}
@@ -238,7 +238,7 @@ export function WikiWatchlistFeed() {
                   {/* Row Actions */}
                   <div className="flex items-center gap-2 self-end sm:self-center">
                     <Button
-                      variant={isExpanded ? "tinted" : "gray"}
+                      variant={isExpanded ? "secondary" : "secondary"}
                       size="sm"
                       aria-expanded={isExpanded}
                       onClick={() => setExpandedRevId(isExpanded ? null : item.id)}

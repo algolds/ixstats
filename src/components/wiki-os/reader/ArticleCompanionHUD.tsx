@@ -59,7 +59,7 @@ function IxWikiPageTools({
       {/* Backlinks & Revision History Mini-Grid */}
       <div className="grid grid-cols-2 gap-2 pt-0.5">
         <Button
-          variant="bordered"
+          variant="outline"
           size="sm"
           aria-label="What Links Here"
           onClick={() => {
@@ -73,7 +73,7 @@ function IxWikiPageTools({
         </Button>
 
         <Button
-          variant="bordered"
+          variant="outline"
           size="sm"
           aria-label="Revision History"
           onClick={() => {
@@ -356,7 +356,7 @@ export function ArticleCompanionHUD({
         {/* Listen / Voice Narrator Toggle */}
         {narrator && (
           <Button
-            variant="bordered"
+            variant="outline"
             aria-pressed={narrator.isPlaying}
             onClick={() => {
               if (narrator.isPlaying) {

@@ -197,13 +197,13 @@ export const CardDetailsModal = React.memo<CardDetailsModalProps>(
 
               <div className="flex items-center gap-2">
                 {onShare && (
-                  <Button size="sm" variant="gray" onClick={() => onShare(card)}>
+                  <Button size="sm" variant="secondary" onClick={() => onShare(card)}>
                     <Share2 className="h-3.5 w-3.5" />
                     Share
                   </Button>
                 )}
                 {onDownloadImage && (
-                  <Button size="sm" variant="gray" onClick={() => onDownloadImage(card)}>
+                  <Button size="sm" variant="secondary" onClick={() => onDownloadImage(card)}>
                     <Download className="h-3.5 w-3.5" />
                     Save Image
                   </Button>

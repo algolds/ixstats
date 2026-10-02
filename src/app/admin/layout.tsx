@@ -29,7 +29,7 @@ function AccessDeniedScreen() {
         </p>
         <div className="flex justify-center gap-3">
           <Button
-            variant="bordered"
+            variant="outline"
             onClick={() => {
               void signOut();
             }}

@@ -247,7 +247,7 @@ export function CountryGrid({
                 {filteredCountries.length === 1 ? "country" : "countries"}
               </Badge>
               {hasActiveFilters && (
-                <Button type="button" variant="plain" size="sm" onClick={onClearFilters}>
+                <Button type="button" variant="ghost" size="sm" onClick={onClearFilters}>
                   Reset
                 </Button>
               )}
@@ -311,7 +311,7 @@ export function CountryGrid({
                     <div className="bg-surface pointer-events-none absolute left-0 z-10 flex h-full items-center pr-1">
                       <Button
                         type="button"
-                        variant="bordered"
+                        variant="outline"
                         size="icon-sm"
                         onClick={() => scrollRail("left")}
                         aria-label="Scroll left"
@@ -357,7 +357,7 @@ export function CountryGrid({
                     <div className="bg-surface pointer-events-none absolute right-0 z-10 flex h-full items-center pl-1">
                       <Button
                         type="button"
-                        variant="bordered"
+                        variant="outline"
                         size="icon-sm"
                         onClick={() => scrollRail("right")}
                         aria-label="Scroll right"
@@ -385,7 +385,7 @@ export function CountryGrid({
               icon={<Globe />}
               title="No countries match your criteria"
               action={
-                <Button type="button" variant="plain" size="sm" onClick={onClearFilters}>
+                <Button type="button" variant="ghost" size="sm" onClick={onClearFilters}>
                   Clear filters
                 </Button>
               }

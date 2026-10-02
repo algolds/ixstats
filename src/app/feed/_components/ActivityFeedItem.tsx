@@ -154,7 +154,7 @@ export function ActivityFeedItem({ activity }: ActivityFeedItemProps) {
               {/* Expand Button */}
               {activity.content.description.length > 150 && (
                 <Button
-                  variant="plain"
+                  variant="ghost"
                   size="sm"
                   onClick={() => setExpanded(!expanded)}
                   className="mt-1 px-0"

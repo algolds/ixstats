@@ -389,7 +389,7 @@ export const BasicInfoForm = React.memo(
                   <Button
                     type="button"
                     size="sm"
-                    variant={isCustomOfficialName ? "tinted" : "plain"}
+                    variant={isCustomOfficialName ? "secondary" : "ghost"}
                     onClick={toggleCustomOfficialName}
                   >
                     {isCustomOfficialName ? (
@@ -486,7 +486,7 @@ export const BasicInfoForm = React.memo(
                           <Button
                             type="button"
                             size="sm"
-                            variant="plain"
+                            variant="ghost"
                             onClick={() => {
                               soundEffects.press();
                               setIsMapPickerOpen(true);

@@ -9,7 +9,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { PassportRealmsTab } from "~/components/passport/tabs/PassportRealmsTab";
 import { buttonVariants } from "~/components/ui/button";
 
-const LINK_CLASS = buttonVariants({ variant: "bordered", size: "sm" });
+const LINK_CLASS = buttonVariants({ variant: "outline", size: "sm" });
 
 /** Contextual passport (plan 188 §3): one identity's memberships inside one realm. */
 export default function RealmPassportPage({

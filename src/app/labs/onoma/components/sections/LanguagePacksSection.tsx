@@ -176,7 +176,7 @@ export function LanguagePacksSection({
         </Select>
 
         <Button
-          variant="bordered"
+          variant="outline"
           size="sm"
           type="button"
           onClick={() => refetch()}

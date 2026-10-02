@@ -97,7 +97,7 @@ export function CountrySelector({
               <Button
                 key={id}
                 size="sm"
-                variant="bordered"
+                variant="outline"
                 aria-label={`Remove ${c.name}`}
                 className="hover:bg-destructive/10 gap-1 rounded-full pr-2 pl-2"
                 onClick={() => toggle(id)}

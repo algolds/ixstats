@@ -266,7 +266,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                   })()}
               </div>
               <Button
-                variant="filled"
+                variant="default"
                 size="sm"
                 onClick={() => play(previewText, previewIpa)}
                 title="Play preview"
@@ -300,7 +300,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                       >
                         <PopoverTrigger asChild>
                           <Button
-                            variant={isOverridden ? "tinted" : "bordered"}
+                            variant={isOverridden ? "secondary" : "outline"}
                             onClick={() => {
                               if (isActive) {
                                 setActiveSegmentIndex(null);
@@ -333,7 +333,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                               </span>
                             </span>
                             <Button
-                              variant="plain"
+                              variant="ghost"
                               size="icon-sm"
                               onClick={() => setActiveSegmentIndex(null)}
                               aria-label="Close"
@@ -371,7 +371,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                               return (
                                 <Button
                                   key={sym}
-                                  variant="bordered"
+                                  variant="outline"
                                   size="sm"
                                   aria-pressed={isSelected}
                                   onClick={async () => {
@@ -404,7 +404,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                           {selectedSound && (
                             <div className="animate-in fade-in border-separator mt-4 flex items-center justify-between gap-2 border-t pt-2 duration-200">
                               <Button
-                                variant="plain"
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => playPhoneme(selectedSound)}
                                 title="Listen to selected sound again"
@@ -440,10 +440,10 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
             <div className="flex items-center justify-between">
               <h4 className="text-label text-subhead">{culture} grapheme → IPA overrides</h4>
               <div className="flex gap-2">
-                <Button variant="bordered" size="sm" onClick={resetRules}>
+                <Button variant="outline" size="sm" onClick={resetRules}>
                   <RotateCcw className="h-3 w-3" /> Reset
                 </Button>
-                <Button variant="filled" size="sm" onClick={saveRules}>
+                <Button variant="default" size="sm" onClick={saveRules}>
                   <Save className="h-3 w-3" /> Save rules
                 </Button>
               </div>

@@ -246,7 +246,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
         {!compact && expandedImage && (
           <div className="wikios-imgs-detail">
             <Button
-              variant="gray"
+              variant="secondary"
               size="icon-sm"
               aria-label="Close details"
               onClick={() => setExpandedImage(null)}
@@ -279,7 +279,7 @@ export function ImageSearchGrid({ onSelect, selectedImage, compact }: ImageSearc
                     </>
                   )}
                 </Button>
-                <Button asChild variant="gray" size="sm">
+                <Button asChild variant="secondary" size="sm">
                   <a href={expandedImage.url} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-3 w-3" /> View full size
                   </a>

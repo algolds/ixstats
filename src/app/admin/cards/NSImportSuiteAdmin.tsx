@@ -324,7 +324,7 @@ export function NSImportSuiteAdmin() {
                   <div className="flex shrink-0 gap-2">
                     {job.status === "IN_PROGRESS" && (
                       <Button
-                        variant="tinted"
+                        variant="secondary"
                         onClick={() => pauseJobMutation.mutate({ syncLogId: job.id })}
                         disabled={pauseJobMutation.isPending}
                         size="sm"
@@ -334,7 +334,7 @@ export function NSImportSuiteAdmin() {
                     )}
                     {job.status === "PAUSED" && (
                       <Button
-                        variant="tinted"
+                        variant="secondary"
                         onClick={() => resumeJobMutation.mutate({ syncLogId: job.id })}
                         disabled={resumeJobMutation.isPending}
                         size="sm"
@@ -381,7 +381,7 @@ export function NSImportSuiteAdmin() {
             />
             <div className="flex justify-end">
               <Button
-                variant="tinted"
+                variant="secondary"
                 onClick={() => setConfirmFetchRegions(regionNames)}
                 disabled={!regionNames.trim() || fetchRegionMutation.isPending}
               >
@@ -426,7 +426,7 @@ export function NSImportSuiteAdmin() {
               </SelectContent>
             </Select>
             <Button
-              variant="tinted"
+              variant="secondary"
               onClick={() => discoverRegionsMutation.mutate({ limit: 15, tag: discoveryTag })}
               disabled={discoverRegionsMutation.isPending}
             >
@@ -468,7 +468,7 @@ export function NSImportSuiteAdmin() {
                     </div>
                     <Button
                       size="sm"
-                      variant="tinted"
+                      variant="secondary"
                       onClick={() => setConfirmFetchRegions(region.id)}
                       disabled={fetchRegionMutation.isPending}
                     >
@@ -497,7 +497,7 @@ export function NSImportSuiteAdmin() {
           </div>
         </div>
         <Button
-          variant="tinted"
+          variant="secondary"
           onClick={() => filterCTENationsMutation.mutate()}
           disabled={filterCTENationsMutation.isPending}
         >

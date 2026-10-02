@@ -192,7 +192,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
               <Button
                 type="button"
                 onClick={handleGoToMyCountry}
-                variant="filled"
+                variant="default"
                 size="lg"
                 className={actionClass}
               >
@@ -213,7 +213,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                     type="button"
                     onClick={handleFollowToggle}
                     disabled={!viewerCountryId || isLoading}
-                    variant="bordered"
+                    variant="outline"
                     size="lg"
                     className={cn(actionClass, followStatus?.isFollowing && "text-destructive")}
                   >
@@ -231,7 +231,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                     type="button"
                     onClick={handleSendMessage}
                     disabled={!viewerCountryId}
-                    variant="bordered"
+                    variant="outline"
                     size="lg"
                     className={actionClass}
                   >
@@ -249,7 +249,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                     type="button"
                     onClick={handleEstablishEmbassy}
                     disabled={!viewerCountryId || isLoading}
-                    variant="bordered"
+                    variant="outline"
                     size="lg"
                     className={actionClass}
                   >
@@ -272,7 +272,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                       setSchedulerOpen(true);
                     }}
                     disabled={!viewerCountryId || isLoading}
-                    variant="bordered"
+                    variant="outline"
                     size="lg"
                     className={actionClass}
                   >
@@ -285,7 +285,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                       type="button"
                       onClick={(e) => handleForeignPolicy(e, "free_trade")}
                       disabled={!viewerCountryId || isLoading}
-                      variant="bordered"
+                      variant="outline"
                       size="lg"
                       className={actionClass}
                     >
@@ -297,7 +297,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                       type="button"
                       onClick={(e) => handleForeignPolicy(e, "military_alliance")}
                       disabled={!viewerCountryId || isLoading}
-                      variant="bordered"
+                      variant="outline"
                       size="lg"
                       className={actionClass}
                     >
@@ -316,7 +316,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                     type="button"
                     onClick={(e) => handleForeignPolicy(e, "sanction")}
                     disabled={!viewerCountryId || isLoading}
-                    variant="bordered"
+                    variant="outline"
                     size="lg"
                     className={cn(actionClass, "text-destructive")}
                   >
@@ -328,7 +328,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                     type="button"
                     onClick={(e) => handleForeignPolicy(e, "embargo")}
                     disabled={!viewerCountryId || isLoading}
-                    variant="bordered"
+                    variant="outline"
                     size="lg"
                     className={cn(actionClass, "text-destructive")}
                   >
@@ -341,7 +341,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
               {/* Quick Links */}
               <div className="space-y-2">
                 <Eyebrow className="block px-1">Quick Links</Eyebrow>
-                <Button asChild variant="bordered" size="lg" className={actionClass}>
+                <Button asChild variant="outline" size="lg" className={actionClass}>
                   <a
                     href={`/wiki/${encodeURIComponent(country.name.replace(/ /g, "_"))}`}
                     onClick={(e) => e.stopPropagation()}

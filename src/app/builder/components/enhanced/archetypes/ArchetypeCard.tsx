@@ -84,7 +84,7 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
               }
             }}
             disabled={isSelected}
-            variant={isSelected ? "tinted" : "filled"}
+            variant={isSelected ? "secondary" : "default"}
             className="flex-1"
             size="sm"
           >
@@ -94,7 +94,7 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
         )}
         <Button
           onClick={() => onOpenDetails(archetype)}
-          variant="bordered"
+          variant="outline"
           className="flex-1"
           size="sm"
         >

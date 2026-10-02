@@ -294,7 +294,7 @@ function GroupedSeriesCard({
             {isSecret && (
               <Button
                 type="button"
-                variant="gray"
+                variant="secondary"
                 size="icon-sm"
                 className="rounded-full"
                 onClick={(e) => {

@@ -253,7 +253,7 @@ export function ThinktankPapersTab({
                   {isPreviewMode ? "Edit Raw" : "Preview"}
                 </Button>
                 <Button
-                  variant="gray"
+                  variant="secondary"
                   size="sm"
                   onClick={() => {
                     setIsCreating(false);

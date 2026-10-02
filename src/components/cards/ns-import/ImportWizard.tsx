@@ -214,7 +214,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
               onClick={handleRequestVerification}
               disabled={requestVerificationMutation.isPending}
               size="lg"
-              variant="filled"
+              variant="default"
               className="w-full"
             >
               {requestVerificationMutation.isPending ? "Requesting..." : "Request Verification"}
@@ -245,7 +245,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
                 onClick={handleCheckVerification}
                 disabled={checkVerificationMutation.isPending}
                 size="lg"
-                variant="filled"
+                variant="default"
                 className="w-full"
               >
                 {checkVerificationMutation.isPending ? "Verifying..." : "Verify & Continue"}
@@ -253,7 +253,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
             </div>
           )}
 
-          <Button onClick={onCancel} size="lg" variant="plain" className="w-full">
+          <Button onClick={onCancel} size="lg" variant="ghost" className="w-full">
             Cancel
           </Button>
         </div>
@@ -300,12 +300,12 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
             <Button
               onClick={() => setCurrentStep("auth")}
               size="lg"
-              variant="plain"
+              variant="ghost"
               className="flex-1"
             >
               Back
             </Button>
-            <Button onClick={handleProceedToOptions} size="lg" variant="filled" className="flex-1">
+            <Button onClick={handleProceedToOptions} size="lg" variant="default" className="flex-1">
               Continue
             </Button>
           </div>
@@ -376,7 +376,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
             <Button
               onClick={() => setCurrentStep("preview")}
               size="lg"
-              variant="plain"
+              variant="ghost"
               className="flex-1"
             >
               Back
@@ -385,7 +385,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
               onClick={handleStartImport}
               disabled={!hasGrantedConsent || importDeckMutation.isPending}
               size="lg"
-              variant="filled"
+              variant="default"
               className="flex-1"
             >
               {importDeckMutation.isPending ? "Importing..." : "Start Import"}
@@ -432,7 +432,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
             </div>
           </div>
 
-          <Button onClick={handleComplete} size="lg" variant="filled" className="w-full">
+          <Button onClick={handleComplete} size="lg" variant="default" className="w-full">
             View My Collection
           </Button>
         </div>

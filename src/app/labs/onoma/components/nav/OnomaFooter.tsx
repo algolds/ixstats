@@ -122,7 +122,7 @@ export function OnomaFooter({
           </div>
 
           <Button
-            variant="gray"
+            variant="secondary"
             size="sm"
             onClick={scrollToTop}
             title="Scroll back to top"
@@ -138,7 +138,7 @@ export function OnomaFooter({
           {SITEMAP_PAGES.map((page) => (
             <Button
               key={page.id}
-              variant="gray"
+              variant="secondary"
               size="sm"
               onClick={() => {
                 page.onClick();

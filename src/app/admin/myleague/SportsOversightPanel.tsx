@@ -639,7 +639,7 @@ function AINarratorLab() {
                     </Button>
                     <Button
                       type="button"
-                      variant="filled"
+                      variant="default"
                       onClick={() => {
                         saveGlobalSettingsMutation.mutate(
                           {

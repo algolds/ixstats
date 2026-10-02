@@ -74,7 +74,7 @@ export function EditorChangeSummary({ changes, onNavigate }: EditorChangeSummary
                 <h3 className="text-label text-headline">{EDITOR_SECTION_LABELS[section]}</h3>
                 <Button
                   type="button"
-                  variant="plain"
+                  variant="ghost"
                   size="sm"
                   onClick={() => onNavigate(section)}
                   aria-label={`Edit ${EDITOR_SECTION_LABELS[section]}`}

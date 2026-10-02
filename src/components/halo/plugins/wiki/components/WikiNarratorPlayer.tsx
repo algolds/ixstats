@@ -397,7 +397,7 @@ export function WikiNarratorPlayer({
             <Button
               type="button"
               size="sm"
-              variant={activeTray === "voice" ? "tinted" : "gray"}
+              variant={activeTray === "voice" ? "secondary" : "secondary"}
               onClick={() => toggleTray("voice")}
               aria-expanded={activeTray === "voice"}
               title={`Voice: ${currentVoiceLabel}`}
@@ -418,7 +418,7 @@ export function WikiNarratorPlayer({
             <Button
               type="button"
               size="sm"
-              variant={activeTray === "speed" ? "tinted" : "gray"}
+              variant={activeTray === "speed" ? "secondary" : "secondary"}
               onClick={() => toggleTray("speed")}
               aria-expanded={activeTray === "speed"}
               title={`Speed: ${currentSpeed}×`}
@@ -432,7 +432,7 @@ export function WikiNarratorPlayer({
             <Button
               type="button"
               size="icon-sm"
-              variant={activeTray === "volume" ? "tinted" : "gray"}
+              variant={activeTray === "volume" ? "secondary" : "secondary"}
               onClick={() => toggleTray("volume")}
               aria-expanded={activeTray === "volume"}
               aria-label={`Volume: ${Math.round(currentVolume * 100)}%`}

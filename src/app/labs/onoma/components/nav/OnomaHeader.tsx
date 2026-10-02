@@ -97,7 +97,7 @@ export function OnomaHeader({
 
   const helpButton = (
     <Button
-      variant="gray"
+      variant="secondary"
       size="sm"
       onClick={onOpenHelp}
       title="Open contextual help and system reference"
@@ -180,7 +180,7 @@ export function OnomaHeader({
             <Link
               href="/labs/onoma/glyphs"
               title="Open the Onoma glyphs catalog (dev tools)"
-              className={buttonVariants({ variant: "gray", size: "sm" })}
+              className={buttonVariants({ variant: "secondary", size: "sm" })}
             >
               <Code className="text-tint" />
               <span className="hidden sm:inline">Glyphs</span>
@@ -200,7 +200,7 @@ export function OnomaHeader({
             onClick={() => onNavigate("bank")}
             aria-pressed={activeSection === "bank"}
             className={buttonVariants({
-              variant: activeSection === "bank" ? "tinted" : "gray",
+              variant: activeSection === "bank" ? "secondary" : "secondary",
               size: "sm",
             })}
           >
@@ -209,7 +209,7 @@ export function OnomaHeader({
           </motion.button>
 
           <Button
-            variant={activeSection === "settings" ? "tinted" : "gray"}
+            variant={activeSection === "settings" ? "secondary" : "secondary"}
             size="sm"
             onClick={() => onNavigate("settings")}
             aria-pressed={activeSection === "settings"}
@@ -232,7 +232,7 @@ export function OnomaHeader({
             >
               <div className="flex min-w-0 items-center gap-3">
                 <Button
-                  variant="gray"
+                  variant="secondary"
                   size="sm"
                   onClick={handleReturn}
                   title={`Return to ${returnLabel}`}

@@ -421,7 +421,7 @@ export function CountryActionsMenu({
                 <Link
                   href={titleToWikiOSPath(targetCountryName)}
                   className={cn(
-                    buttonVariants({ variant: "bordered", size: "lg" }),
+                    buttonVariants({ variant: "outline", size: "lg" }),
                     ACTION_ROW_CLASS
                   )}
                   onClick={onClose}
@@ -503,7 +503,7 @@ function ActionRow({
   return (
     <Button
       type="button"
-      variant="bordered"
+      variant="outline"
       size="lg"
       onClick={onClick}
       disabled={disabled}

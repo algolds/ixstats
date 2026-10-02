@@ -129,7 +129,7 @@ export default function AchievementsPage() {
                 </h1>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button asChild variant="gray" size="sm" className="rounded-full">
+                  <Button asChild variant="secondary" size="sm" className="rounded-full">
                     <Link href="/leaderboards">
                       <Award aria-hidden className="text-yellow" />
                       <span>Global leaderboards</span>

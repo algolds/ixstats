@@ -130,7 +130,7 @@ export function CardTakedownsAdmin() {
                     </span>
                     <Button
                       size="sm"
-                      variant="tinted"
+                      variant="secondary"
                       disabled={restoreNSCardMutation.isPending}
                       onClick={() =>
                         restoreNSCardMutation.mutate({

@@ -108,7 +108,7 @@ export function ArchetypeDetailsModal({
             <Button
               onClick={() => onApply(archetype)}
               disabled={isLoading || isGloballySelected}
-              variant={isGloballySelected ? "tinted" : "filled"}
+              variant={isGloballySelected ? "secondary" : "default"}
               size="lg"
               className="w-full shrink-0 sm:w-auto"
             >

@@ -112,7 +112,7 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
             <Button
               key={idx}
               type="button"
-              variant="gray"
+              variant="secondary"
               onClick={item.action}
               className={cn("w-full justify-start", isLast && "col-span-2")}
             >

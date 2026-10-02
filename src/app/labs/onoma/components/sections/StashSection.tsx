@@ -306,7 +306,7 @@ export function StashSection({
                             >
                               <PopoverTrigger asChild>
                                 <Button
-                                  variant={isStashingThis ? "tinted" : "plain"}
+                                  variant={isStashingThis ? "secondary" : "ghost"}
                                   size="icon-sm"
                                   onClick={(ev) => ev.stopPropagation()}
                                   title="Move to another stash folder"
@@ -372,7 +372,7 @@ export function StashSection({
 
                             {/* Delete */}
                             <Button
-                              variant="plain"
+                              variant="ghost"
                               size="icon-sm"
                               onClick={(ev) => {
                                 ev.stopPropagation();

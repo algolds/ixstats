@@ -55,24 +55,24 @@ export function QuickActions({
           className
         )}
       >
-        <Button variant="gray" size="sm" className={item} onClick={() => setCompareOpen(true)}>
+        <Button variant="secondary" size="sm" className={item} onClick={() => setCompareOpen(true)}>
           <StatsReport aria-hidden />
           Compare
         </Button>
-        <Button asChild variant="gray" size="sm" className={item}>
+        <Button asChild variant="secondary" size="sm" className={item}>
           <Link href={createUrl(`/countries/${slug}/factbook`)}>
             <Page aria-hidden />
             Factbook deep-dive
           </Link>
         </Button>
-        <Button asChild variant="gray" size="sm" className={item}>
+        <Button asChild variant="secondary" size="sm" className={item}>
           <Link href={createUrl(`/countries/${slug}/modeling`)}>
             <Calculator aria-hidden />
             Economic modeling
           </Link>
         </Button>
         {hasGeometry && (
-          <Button asChild variant="gray" size="sm" className={item}>
+          <Button asChild variant="secondary" size="sm" className={item}>
             <Link href={createUrl(`/maps?country=${encodeURIComponent(countryId)}`)}>
               <MapIcon aria-hidden />
               Open on map
@@ -80,7 +80,7 @@ export function QuickActions({
           </Button>
         )}
         {wikiHref && (
-          <Button asChild variant="gray" size="sm" className={item}>
+          <Button asChild variant="secondary" size="sm" className={item}>
             <Link href={createUrl(wikiHref)}>
               <OpenBook aria-hidden />
               Wiki article

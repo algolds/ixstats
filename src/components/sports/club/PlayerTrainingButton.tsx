@@ -38,7 +38,7 @@ export function PlayerTrainingButton({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className={cn(buttonVariants({ variant: "gray", size: "sm" }))}>
+      <PopoverTrigger className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}>
         <Dumbbell />
         Train
       </PopoverTrigger>

@@ -34,9 +34,9 @@ const VITALITY_RINGS = [
 ] as const;
 
 const BUTTON_STYLES: { label: string; variant: ButtonVariant }[] = [
-  { label: "Primary Action", variant: "filled" },
-  { label: "Secondary", variant: "tinted" },
-  { label: "Neutral", variant: "gray" },
+  { label: "Primary Action", variant: "default" },
+  { label: "Secondary", variant: "secondary" },
+  { label: "Neutral", variant: "secondary" },
   { label: "Danger", variant: "destructive" },
 ];
 
@@ -230,7 +230,7 @@ export function InteractiveActionTemplates({
           </div>
           <div className="relative z-10 flex items-center justify-center gap-3">
             <Button onClick={() => setButtonClickCount((c) => c + 1)}>Get Started</Button>
-            <Button variant="bordered">Learn More</Button>
+            <Button variant="outline">Learn More</Button>
           </div>
         </div>
       );

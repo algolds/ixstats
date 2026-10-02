@@ -156,7 +156,7 @@ export const GeographyForm = React.memo(
 
                 <Button
                   type="button"
-                  variant="tinted"
+                  variant="secondary"
                   size="sm"
                   onClick={handleSuggestCodes}
                   title="Fill codes from country name"
@@ -344,7 +344,7 @@ export const GeographyForm = React.memo(
                 {capitalCity?.coordinates && (
                   <Button
                     type="button"
-                    variant="tinted"
+                    variant="secondary"
                     size="sm"
                     onClick={handleSyncWithCapital}
                     title={`Use capital coordinates (${capitalCity.name || "Capital"})`}
@@ -357,7 +357,7 @@ export const GeographyForm = React.memo(
                 {countryId && (
                   <Button
                     type="button"
-                    variant="gray"
+                    variant="secondary"
                     size="sm"
                     onClick={() => {
                       soundEffects.press();

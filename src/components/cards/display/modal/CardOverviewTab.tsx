@@ -333,18 +333,18 @@ export function CardOverviewTab({
         {/* Quick actions */}
         <div className="grid grid-cols-2 gap-3">
           {onTrade && (
-            <Button variant="gray" size="lg" onClick={() => onTrade(card)}>
+            <Button variant="secondary" size="lg" onClick={() => onTrade(card)}>
               Trade
             </Button>
           )}
           {onList && (
-            <Button variant="gray" size="lg" onClick={() => onList(card)}>
+            <Button variant="secondary" size="lg" onClick={() => onList(card)}>
               List
             </Button>
           )}
           {onViewCollection && card.countryId && (
             <Button
-              variant="gray"
+              variant="secondary"
               size="lg"
               onClick={() => onViewCollection(card.countryId!)}
               className="col-span-2"

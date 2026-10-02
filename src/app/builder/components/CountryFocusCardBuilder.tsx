@@ -123,7 +123,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
                       </Badge>
                       <Button
                         type="button"
-                        variant="plain"
+                        variant="ghost"
                         size="icon-sm"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -167,7 +167,7 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
                     <div className="flex items-center gap-2 pt-2">
                       <Button
                         type="button"
-                        variant="bordered"
+                        variant="outline"
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();

@@ -89,7 +89,7 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
           </div>
           <Button
             type="button"
-            variant={isPickingLocation ? "tinted" : "plain"}
+            variant={isPickingLocation ? "secondary" : "ghost"}
             size="sm"
             aria-pressed={isPickingLocation}
             onClick={() => setIsPickingLocation?.(!isPickingLocation)}

@@ -161,7 +161,7 @@ export function ClubTransfersSection({
                             />
                             <Button
                               size="sm"
-                              variant="tinted"
+                              variant="secondary"
                               onClick={() => {
                                 const inputEl = document.getElementById(
                                   `search-bid-${p.id}`
@@ -230,7 +230,7 @@ export function ClubTransfersSection({
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
-                        variant="gray"
+                        variant="secondary"
                         onClick={() => setComparePlayer(l.player as unknown as ComparePlayerItem)}
                       >
                         Compare
@@ -244,7 +244,7 @@ export function ClubTransfersSection({
                       />
                       <Button
                         size="sm"
-                        variant="tinted"
+                        variant="secondary"
                         onClick={() => {
                           const inputVal = (
                             document.getElementById(`bid-amount-${l.id}`) as HTMLInputElement
@@ -281,7 +281,7 @@ export function ClubTransfersSection({
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-headline text-label">Comparison Detail</CardTitle>
-              <Button size="sm" variant="plain" onClick={() => setComparePlayer(null)}>
+              <Button size="sm" variant="ghost" onClick={() => setComparePlayer(null)}>
                 Clear
               </Button>
             </CardHeader>
@@ -339,7 +339,7 @@ export function ClubTransfersSection({
                   <div className="flex gap-2 pt-1">
                     <Button
                       size="sm"
-                      variant="tinted"
+                      variant="secondary"
                       className="flex-1"
                       onClick={() => respondToBid.mutate({ bidId: b.id, action: "accept" })}
                       disabled={respondToBid.isPending}
@@ -348,7 +348,7 @@ export function ClubTransfersSection({
                     </Button>
                     <Button
                       size="sm"
-                      variant="plain"
+                      variant="ghost"
                       className="text-destructive hover:bg-destructive/10 flex-1"
                       onClick={() => respondToBid.mutate({ bidId: b.id, action: "reject" })}
                       disabled={respondToBid.isPending}

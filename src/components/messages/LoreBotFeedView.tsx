@@ -224,7 +224,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                 : "Watch pages in WikiOS to receive personalized live dispatches right here."
             }
             action={
-              <Button asChild variant="tinted" size="sm">
+              <Button asChild variant="secondary" size="sm">
                 <Link href="/wikios">
                   <span>Explore WikiOS</span>
                   <ArrowUpRight aria-hidden="true" />
@@ -314,14 +314,14 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Button asChild variant="gray" size="sm">
+                    <Button asChild variant="secondary" size="sm">
                       <Link href={`${titleToWikiOSRoute(item.title)}?tab=history`}>
                         <History aria-hidden="true" />
                         <span>History</span>
                       </Link>
                     </Button>
 
-                    <Button asChild variant="tinted" size="sm">
+                    <Button asChild variant="secondary" size="sm">
                       <Link href={titleToWikiOSRoute(item.title)}>
                         <span>Read in WikiOS</span>
                         <ArrowUpRight aria-hidden="true" />

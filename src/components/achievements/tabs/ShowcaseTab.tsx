@@ -45,7 +45,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
 
           {(rarestAll?.length || 0) > 3 && (
             <Button
-              variant="gray"
+              variant="secondary"
               size="sm"
               className="rounded-full"
               aria-expanded={showAll}

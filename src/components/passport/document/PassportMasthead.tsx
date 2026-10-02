@@ -47,12 +47,12 @@ export const PassportMasthead = React.memo(function PassportMasthead({
 
       <div className="flex items-center gap-2">
         {isOwner ? (
-          <Button type="button" variant="filled" onClick={onEdit}>
+          <Button type="button" variant="default" onClick={onEdit}>
             <Settings aria-hidden />
             <span>Edit Passport</span>
           </Button>
         ) : (
-          <Button asChild variant="filled">
+          <Button asChild variant="default">
             <Link href={`/messages?user=${encodeURIComponent(cleanUsername)}`}>
               <Send aria-hidden />
               <span>Send Message</span>
@@ -60,7 +60,7 @@ export const PassportMasthead = React.memo(function PassportMasthead({
           </Button>
         )}
 
-        <Button type="button" variant="gray" onClick={handleShareLink}>
+        <Button type="button" variant="secondary" onClick={handleShareLink}>
           {copiedLink ? <Check aria-hidden className="text-success" /> : <Share2 aria-hidden />}
           <span>{copiedLink ? "Copied" : "Share"}</span>
         </Button>

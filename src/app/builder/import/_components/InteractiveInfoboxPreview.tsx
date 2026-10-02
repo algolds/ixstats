@@ -204,7 +204,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
             {onBack && (
               <Button
                 type="button"
-                variant="gray"
+                variant="secondary"
                 size="sm"
                 onClick={onBack}
                 className="mt-0.5 shrink-0"

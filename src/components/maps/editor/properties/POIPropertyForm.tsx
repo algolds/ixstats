@@ -123,7 +123,7 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
           </div>
           <Button
             type="button"
-            variant={isPickingLocation ? "tinted" : "plain"}
+            variant={isPickingLocation ? "secondary" : "ghost"}
             size="sm"
             aria-pressed={isPickingLocation}
             onClick={() => setIsPickingLocation?.(!isPickingLocation)}

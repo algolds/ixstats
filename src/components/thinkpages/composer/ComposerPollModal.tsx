@@ -184,7 +184,7 @@ export function ComposerPollModal({
           {pollDraft.options.length < 10 && (
             <Button
               type="button"
-              variant="bordered"
+              variant="outline"
               size="sm"
               onClick={() => {
                 setPollDraft({
@@ -203,7 +203,7 @@ export function ComposerPollModal({
         <DialogFooter className="border-separator border-t pt-4">
           <Button
             type="button"
-            variant="plain"
+            variant="ghost"
             onClick={() => {
               setPollDraft(null);
               setShowPollModal(false);

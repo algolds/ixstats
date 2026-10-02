@@ -310,15 +310,15 @@ export function TestSuitePanel() {
               <ShieldAlert className="mr-2 h-4 w-4" />
               Crisis Alert
             </Button>
-            <Button variant="tinted" onClick={() => triggerPreset("achievement")}>
+            <Button variant="secondary" onClick={() => triggerPreset("achievement")}>
               <Award className="mr-2 h-4 w-4" />
               Achievement
             </Button>
-            <Button variant="tinted" onClick={() => triggerPreset("security")}>
+            <Button variant="secondary" onClick={() => triggerPreset("security")}>
               <AlertTriangle className="mr-2 h-4 w-4" />
               Security Intel
             </Button>
-            <Button variant="tinted" onClick={() => triggerPreset("trade")}>
+            <Button variant="secondary" onClick={() => triggerPreset("trade")}>
               <Sparkles className="mr-2 h-4 w-4" />
               Trade Pact
             </Button>
@@ -346,21 +346,21 @@ export function TestSuitePanel() {
                 <div className="text-footnote opacity-70">Critical alert</div>
               </div>
             </Button>
-            <Button variant="tinted" onClick={testEconomic} className="h-auto">
+            <Button variant="secondary" onClick={testEconomic} className="h-auto">
               <DollarSign className="text-green mr-2 h-5 w-5" />
               <div className="text-left">
                 <div className="text-body font-medium">Economic</div>
                 <div className="text-footnote opacity-70">GDP update</div>
               </div>
             </Button>
-            <Button variant="tinted" onClick={testDiplomatic} className="h-auto">
+            <Button variant="secondary" onClick={testDiplomatic} className="h-auto">
               <Globe className="text-blue mr-2 h-5 w-5" />
               <div className="text-left">
                 <div className="text-body font-medium">Diplomatic</div>
                 <div className="text-footnote opacity-70">Treaty event</div>
               </div>
             </Button>
-            <Button variant="tinted" onClick={testAchievement} className="h-auto">
+            <Button variant="secondary" onClick={testAchievement} className="h-auto">
               <Trophy className="text-yellow mr-2 h-5 w-5" />
               <div className="text-left">
                 <div className="text-body font-medium">Achievement</div>

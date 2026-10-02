@@ -90,7 +90,7 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
                 </div>
                 <Button
                   size="sm"
-                  variant={isFollowed ? "gray" : "tinted"}
+                  variant={isFollowed ? "secondary" : "secondary"}
                   className="shrink-0"
                   disabled={!followerCountryId || followMutation.isPending}
                   onClick={() => {

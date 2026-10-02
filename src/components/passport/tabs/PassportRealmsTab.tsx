@@ -224,7 +224,7 @@ export const PassportRealmsTab = React.memo(function PassportRealmsTab({
                     </p>
 
                     <div className="pt-1">
-                      <Button asChild variant="tinted" size="sm">
+                      <Button asChild variant="secondary" size="sm">
                         {country ? (
                           <Link href={`/countries/${country.slug}`}>
                             <span>View Country</span>

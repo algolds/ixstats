@@ -162,7 +162,7 @@ export function NotificationRow({
             {n.href && (
               <Button
                 type="button"
-                variant="filled"
+                variant="default"
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -176,7 +176,7 @@ export function NotificationRow({
             )}
             <Button
               type="button"
-              variant="gray"
+              variant="secondary"
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();

@@ -25,7 +25,7 @@ export function TeamTrainingButton({ teamId, playerCount, onTrained }: TeamTrain
     <Button
       onClick={() => teamTraining.mutate({ teamId })}
       disabled={teamTraining.isPending || playerCount === 0}
-      variant="gray"
+      variant="secondary"
       className="w-full"
     >
       {teamTraining.isPending ? <Loader2 className="animate-spin" /> : <Dumbbell />}

@@ -474,7 +474,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       <div className="border-separator mt-3 flex justify-center border-t pt-2">
         <Button
           type="button"
-          variant="bordered"
+          variant="outline"
           size="icon-sm"
           onClick={() => {
             setSize(isUltra ? SIZE_PRESETS.TALL : SIZE_PRESETS.ULTRA);

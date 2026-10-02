@@ -167,7 +167,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
               issue.urgency <= 70 && (
                 <Button
                   type="button"
-                  variant="gray"
+                  variant="secondary"
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();

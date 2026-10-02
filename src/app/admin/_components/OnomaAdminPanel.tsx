@@ -319,7 +319,7 @@ export function OnomaAdminPanel() {
 
                   <Button
                     type="button"
-                    variant="tinted"
+                    variant="secondary"
                     size="sm"
                     onClick={handleWakeServer}
                     disabled={isWaking}

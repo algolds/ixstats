@@ -142,7 +142,7 @@ export function MatchCommentary({ matchId, autoExpand = false, className }: Matc
         <div className="mb-3 flex items-center justify-between">
           <h4 className="text-subhead text-label-secondary select-none">Live match feed</h4>
           {hasCommentary && !isGenerating && (
-            <Button size="sm" variant="plain" onClick={(e) => handleGenerate(e, true)}>
+            <Button size="sm" variant="ghost" onClick={(e) => handleGenerate(e, true)}>
               <Sparkles />
               Regenerate
             </Button>
@@ -175,7 +175,7 @@ export function MatchCommentary({ matchId, autoExpand = false, className }: Matc
                 title="No AI Commentary Generated"
                 message="Experience this match through the eyes of our premium AI sports broadcast team."
                 action={
-                  <Button size="sm" variant="tinted" onClick={handleGenerate}>
+                  <Button size="sm" variant="secondary" onClick={handleGenerate}>
                     <Sparkles />
                     Generate AI Commentary
                   </Button>

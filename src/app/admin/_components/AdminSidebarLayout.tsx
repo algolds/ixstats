@@ -51,7 +51,7 @@ export function AdminSidebarLayout({
       >
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
-            <Button variant="bordered" size="icon-sm">
+            <Button variant="outline" size="icon-sm">
               <Menu aria-hidden className="size-4" />
               <span className="sr-only">Toggle Admin Navigation</span>
             </Button>

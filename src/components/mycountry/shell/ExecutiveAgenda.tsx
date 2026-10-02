@@ -309,7 +309,7 @@ function ExecutiveAgendaComponent({
             <div className="flex flex-col gap-2">
               <Button
                 type="button"
-                variant="plain"
+                variant="ghost"
                 size="sm"
                 aria-expanded={showArchived}
                 aria-controls={archivedId}

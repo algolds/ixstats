@@ -518,7 +518,7 @@ export const CultureForm = React.memo(
                 </p>
               </div>
 
-              <Button type="button" variant="plain" size="sm" onClick={handleToggleShowAll}>
+              <Button type="button" variant="ghost" size="sm" onClick={handleToggleShowAll}>
                 <span>{showAllMotifs ? "Show Essentials" : "Show All 10 Emblems"}</span>
                 {showAllMotifs ? <ChevronUp aria-hidden /> : <ChevronDown aria-hidden />}
               </Button>
@@ -546,7 +546,7 @@ export const CultureForm = React.memo(
                       <Button
                         key={sym.key}
                         type="button"
-                        variant="gray"
+                        variant="secondary"
                         size="sm"
                         onClick={() => handleRevealMotif(sym.key)}
                       >

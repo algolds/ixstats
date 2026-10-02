@@ -916,7 +916,7 @@ export function VaultUserDirectory() {
                         ) : (
                           <Button
                             size="sm"
-                            variant="tinted"
+                            variant="secondary"
                             disabled={isPending}
                             onClick={() =>
                               grantItemMutation.mutate({

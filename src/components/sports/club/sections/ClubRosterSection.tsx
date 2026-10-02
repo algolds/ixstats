@@ -138,7 +138,7 @@ export function ClubRosterSection({
                   <div className="relative z-10 flex w-[320px] gap-2 px-2">
                     <Button
                       size="sm"
-                      variant="gray"
+                      variant="secondary"
                       className="flex-1"
                       onClick={() => onListPlayer(player)}
                     >

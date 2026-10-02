@@ -90,7 +90,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
               <Button
                 key={t.id}
                 size="sm"
-                variant={config.template === t.id ? "tinted" : "gray"}
+                variant={config.template === t.id ? "secondary" : "secondary"}
                 aria-pressed={config.template === t.id}
                 onClick={() => onChange({ template: t.id as TemplateType })}
                 className="h-auto min-h-(--control-height-sm) px-2 py-2 whitespace-normal"

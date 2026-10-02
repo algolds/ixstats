@@ -346,7 +346,7 @@ export default function SetupPage() {
                             <h2 className="text-title-2 text-label">Link Existing Country</h2>
                           </div>
                           <Button
-                            variant="plain"
+                            variant="ghost"
                             size="sm"
                             onClick={() => setCurrentStep("link-existing")}
                           >
@@ -374,7 +374,7 @@ export default function SetupPage() {
                   <motion.div key="link-existing" {...stepTransition}>
                     <div className="mb-8">
                       <Button
-                        variant="plain"
+                        variant="ghost"
                         onClick={() => setCurrentStep("welcome")}
                         className="mb-6"
                       >
@@ -484,7 +484,7 @@ export default function SetupPage() {
                   <motion.div key="create-new" data-app="mycountry" {...stepTransition}>
                     <div className="mb-8">
                       <Button
-                        variant="plain"
+                        variant="ghost"
                         onClick={() => setCurrentStep("welcome")}
                         className="mb-6"
                       >

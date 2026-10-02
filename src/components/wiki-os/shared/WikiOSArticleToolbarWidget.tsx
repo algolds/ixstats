@@ -69,7 +69,7 @@ export function WikiOSArticleToolbarWidget({
 
         {/* Margin */}
         <Button
-          variant="tinted"
+          variant="secondary"
           size="icon-lg"
           aria-pressed={isMarginOpen}
           aria-label="Margin"
@@ -87,7 +87,7 @@ export function WikiOSArticleToolbarWidget({
 
         {/* Media Theme Quick Cycle */}
         <Button
-          variant="tinted"
+          variant="secondary"
           size="icon-lg"
           aria-label={`Media theme: ${mediaThemeMode}`}
           onClick={cycleMediaThemeMode}

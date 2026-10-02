@@ -173,7 +173,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                             </span>
                             <Button
                               type="button"
-                              variant="tinted"
+                              variant="secondary"
                               size="sm"
                               onClick={() => handleResumeSession(session)}
                             >
@@ -288,7 +288,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                       {wikiUsername && (
                         <Button
                           type="button"
-                          variant="gray"
+                          variant="secondary"
                           onClick={() => {
                             onClose();
                             navigateWithBasePath(getWikiProfilePath(wikiUsername), router);
@@ -305,7 +305,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                       {userProfile?.countryId && (
                         <Button
                           type="button"
-                          variant="gray"
+                          variant="secondary"
                           onClick={() => setView("country-actions")}
                           className="w-full justify-between"
                         >
@@ -330,7 +330,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                         {recentArticles.slice(0, 3).map((page) => (
                           <Button
                             type="button"
-                            variant="gray"
+                            variant="secondary"
                             key={pageRefPath(page)}
                             onClick={() => {
                               onClose();
@@ -394,7 +394,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
             <div className="grid grid-cols-2 gap-3 py-1">
               <Button
                 type="button"
-                variant="gray"
+                variant="secondary"
                 onClick={() => {
                   onClose();
                   navigateWithBasePath("/mycountry", router);
@@ -407,7 +407,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
 
               <Button
                 type="button"
-                variant="gray"
+                variant="secondary"
                 onClick={() => {
                   onClose();
                   navigateWithBasePath("/mycountry/executive", router);
@@ -420,7 +420,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
 
               <Button
                 type="button"
-                variant="gray"
+                variant="secondary"
                 onClick={() => {
                   onClose();
                   navigateWithBasePath("/mycountry/diplomacy", router);
@@ -433,7 +433,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
 
               <Button
                 type="button"
-                variant="gray"
+                variant="secondary"
                 onClick={() => {
                   onClose();
                   navigateWithBasePath("/mycountry/editor", router);
@@ -446,7 +446,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
 
               <Button
                 type="button"
-                variant="gray"
+                variant="secondary"
                 onClick={() => {
                   onClose();
                   navigateWithBasePath("/vault", router);
@@ -459,7 +459,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
 
               <Button
                 type="button"
-                variant="gray"
+                variant="secondary"
                 onClick={() => {
                   onClose();
                   navigateWithBasePath("/mycountry/politics", router);

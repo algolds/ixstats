@@ -94,7 +94,7 @@ export default function MyClubPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Button variant="gray" onClick={() => router.push(withBasePath("/myleague"))}>
+            <Button variant="secondary" onClick={() => router.push(withBasePath("/myleague"))}>
               <Trophy />
               Browse Competitions
             </Button>
@@ -223,7 +223,7 @@ export default function MyClubPage() {
                     {/* Action Triggers */}
                     <div className="flex items-center gap-2 pt-2">
                       <Button
-                        variant="gray"
+                        variant="secondary"
                         className="flex-1"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -234,7 +234,7 @@ export default function MyClubPage() {
                         Roster
                       </Button>
                       <Button
-                        variant="tinted"
+                        variant="secondary"
                         className="flex-1"
                         onClick={(e) => {
                           e.stopPropagation();

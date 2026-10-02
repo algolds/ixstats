@@ -59,7 +59,7 @@ export function FoundationPathSelector({
           <span className="text-label-tertiary">•</span>
           <Button
             type="button"
-            variant="tinted"
+            variant="secondary"
             size="sm"
             onClick={onSkipBenchmark}
             className="group rounded-full"

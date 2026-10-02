@@ -394,7 +394,7 @@ export function LabSandbox({ config, onChange, generatedClassNames }: LabSandbox
 
       {/* Debug toggle */}
       <Button
-        variant={showDebug ? "tinted" : "gray"}
+        variant={showDebug ? "secondary" : "secondary"}
         size="sm"
         aria-pressed={showDebug}
         onClick={() => setShowDebug(!showDebug)}

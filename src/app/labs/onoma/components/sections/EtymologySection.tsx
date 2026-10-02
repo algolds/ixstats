@@ -390,7 +390,7 @@ export default function EtymologySection() {
                 />
               </div>
               <Button
-                variant="filled"
+                variant="default"
                 size="sm"
                 type="submit"
                 disabled={createRootMutation.isPending}
@@ -453,7 +453,7 @@ export default function EtymologySection() {
                     <GitFork className="text-indigo h-4 w-4" />
                     Derivation Tree Graph
                   </h4>
-                  <Button variant="tinted" size="sm" onClick={() => setAddingToParentId(null)}>
+                  <Button variant="secondary" size="sm" onClick={() => setAddingToParentId(null)}>
                     <Plus className="h-3.5 w-3.5" />
                     Add Direct Derivation
                   </Button>
@@ -590,7 +590,7 @@ export default function EtymologySection() {
                   <div className="flex justify-end gap-2">
                     {addingToParentId && (
                       <Button
-                        variant="bordered"
+                        variant="outline"
                         size="sm"
                         onClick={() => setAddingToParentId(null)}
                       >
@@ -598,7 +598,7 @@ export default function EtymologySection() {
                       </Button>
                     )}
                     <Button
-                      variant="filled"
+                      variant="default"
                       size="sm"
                       type="submit"
                       disabled={addDerivMutation.isPending}
@@ -625,7 +625,7 @@ export default function EtymologySection() {
                 </div>
                 {roots && roots.length > 0 && (
                   <Button
-                    variant="tinted"
+                    variant="secondary"
                     size="sm"
                     onClick={() => setSelectedRootId(roots[0].id)}
                     className="mt-2"

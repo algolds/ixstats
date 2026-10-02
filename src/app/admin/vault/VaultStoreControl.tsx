@@ -516,7 +516,7 @@ export function VaultStoreControl() {
                               <Button
                                 key={iconName}
                                 type="button"
-                                variant="gray"
+                                variant="secondary"
                                 size="icon"
                                 title={iconName}
                                 aria-label={iconName}

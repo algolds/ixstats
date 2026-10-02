@@ -440,7 +440,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              variant={pendingConfirm?.destructive ? "destructive" : "filled"}
+              variant={pendingConfirm?.destructive ? "destructive" : "default"}
               onClick={() => pendingConfirm?.onConfirm()}
             >
               {pendingConfirm?.actionLabel}

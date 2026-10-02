@@ -25,25 +25,25 @@ describe("Button", () => {
     const ghost = buttonVariants({ variant: "ghost" });
     expect(ghost).toContain("text-label");
     expect(ghost).not.toContain("text-tint");
-    expect(buttonVariants({ variant: "plain" })).toContain("text-tint");
+    expect(buttonVariants({ variant: "ghost" })).toContain("text-tint");
   });
 
   it("maps styles to Facet role tokens", () => {
     // Facet 3.1: the primary role (monochrome; gold in MyCountry/Builder), not the tint.
-    expect(buttonVariants({ variant: "filled" })).toContain("bg-primary-fill");
-    expect(buttonVariants({ variant: "filled" })).toContain("text-on-primary");
-    expect(buttonVariants({ variant: "filled" })).not.toContain("bg-tint");
-    expect(buttonVariants({ variant: "tinted" })).toContain("bg-tint-fill text-tint");
-    expect(buttonVariants({ variant: "gray" })).toContain("bg-fill-3");
-    expect(buttonVariants({ variant: "bordered" })).toContain("border-separator");
+    expect(buttonVariants({ variant: "default" })).toContain("bg-primary-fill");
+    expect(buttonVariants({ variant: "default" })).toContain("text-on-primary");
+    expect(buttonVariants({ variant: "default" })).not.toContain("bg-tint");
+    expect(buttonVariants({ variant: "secondary" })).toContain("bg-tint-fill text-tint");
+    expect(buttonVariants({ variant: "secondary" })).toContain("bg-fill-3");
+    expect(buttonVariants({ variant: "outline" })).toContain("border-separator");
     expect(buttonVariants({ variant: "destructive" })).toContain("bg-destructive");
   });
 
   it("sizes from the density-aware control heights; xs aliases sm; md is the default", () => {
     expect(buttonVariants({ size: "sm" })).toContain("h-(--control-height-sm)");
     expect(buttonVariants({ size: "xs" })).toBe(buttonVariants({ size: "sm" }));
-    expect(buttonVariants()).toBe(buttonVariants({ size: "md", variant: "filled" }));
-    expect(buttonVariants({ size: "default" })).toBe(buttonVariants({ size: "md" }));
+    expect(buttonVariants()).toBe(buttonVariants({ size: "default", variant: "default" }));
+    expect(buttonVariants({ size: "default" })).toBe(buttonVariants({ size: "default" }));
     expect(buttonVariants({ size: "lg" })).toContain("h-(--control-height-lg)");
     expect(buttonVariants({ size: "icon-sm" })).toContain("size-(--control-height-sm)");
   });

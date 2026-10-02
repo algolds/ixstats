@@ -108,7 +108,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
         category="Profile & Identity"
         description="Public passport presentation and connected community accounts."
         actions={
-          <Button asChild variant="tinted" size="sm">
+          <Button asChild variant="secondary" size="sm">
             <Link href={passportUrl}>
               <ExternalLink aria-hidden />
               <span>View public passport</span>
@@ -186,7 +186,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <Button type="button" variant="gray" size="sm" onClick={handleCopyPassport}>
+            <Button type="button" variant="secondary" size="sm" onClick={handleCopyPassport}>
               {copiedHandle ? (
                 <>
                   <Check aria-hidden className="text-success" />
@@ -219,7 +219,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
         action={
           <Button
             type="button"
-            variant="gray"
+            variant="secondary"
             size="sm"
             aria-pressed={showSensitive}
             onClick={() => setShowSensitive((prev) => !prev)}
@@ -275,7 +275,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
         >
           <Button
             type="button"
-            variant="gray"
+            variant="secondary"
             size="sm"
             aria-expanded={showLinkedAccounts}
             onClick={() => setShowLinkedAccounts((prev) => !prev)}
@@ -310,7 +310,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                   <Badge variant="success">Connected</Badge>
                   <Button
                     type="button"
-                    variant="plain"
+                    variant="ghost"
                     size="sm"
                     className="text-destructive"
                     onClick={() => unlinkForum.mutate()}
@@ -322,7 +322,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
               ) : (
                 <Button
                   type="button"
-                  variant="gray"
+                  variant="secondary"
                   size="sm"
                   aria-expanded={showForumInput}
                   onClick={() => setShowForumInput((prev) => !prev)}
@@ -372,7 +372,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                   <Badge variant="success">Connected</Badge>
                   <Button
                     type="button"
-                    variant="plain"
+                    variant="ghost"
                     size="sm"
                     className="text-destructive"
                     onClick={() => unlinkDiscord.mutate()}

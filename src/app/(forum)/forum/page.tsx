@@ -111,7 +111,7 @@ export default function ForumIndexPage() {
             href={withBasePath("/forum?sort=trending")}
             aria-current={viewMode === "trending" ? "page" : undefined}
             className={buttonVariants({
-              variant: viewMode === "trending" ? "tinted" : "ghost",
+              variant: viewMode === "trending" ? "secondary" : "ghost",
               size: "sm",
             })}
           >
@@ -122,7 +122,7 @@ export default function ForumIndexPage() {
             href={withBasePath("/forum?sort=new")}
             aria-current={viewMode === "new" ? "page" : undefined}
             className={buttonVariants({
-              variant: viewMode === "new" ? "tinted" : "ghost",
+              variant: viewMode === "new" ? "secondary" : "ghost",
               size: "sm",
             })}
           >

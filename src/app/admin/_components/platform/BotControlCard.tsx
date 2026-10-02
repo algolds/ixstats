@@ -560,7 +560,7 @@ export function BotControlCard({
                     Pause
                   </Button>
                   <Button
-                    variant="tinted"
+                    variant="secondary"
                     size="sm"
                     onClick={onResumeBot}
                     disabled={resumePending || !isAvailable}
@@ -595,7 +595,7 @@ export function BotControlCard({
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
-                    variant="tinted"
+                    variant="secondary"
                     size="sm"
                     onClick={onSyncFromBot}
                     disabled={autoSyncPending || !isAvailable}

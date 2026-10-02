@@ -40,7 +40,7 @@ export default function ForumStashesPage() {
           <Link
             href={withBasePath("/stashes")}
             prefetch={false}
-            className={buttonVariants({ variant: "gray", size: "sm" })}
+            className={buttonVariants({ variant: "secondary", size: "sm" })}
           >
             All stashes
             <ExternalLink />

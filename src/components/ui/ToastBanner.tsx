@@ -90,7 +90,7 @@ export function ToastBanner({ toast, onDismiss }: ToastBannerProps) {
               <Button
                 key={idx}
                 size="sm"
-                variant="bordered"
+                variant="outline"
                 onClick={() => {
                   action.onClick();
                   onDismiss();
@@ -106,7 +106,7 @@ export function ToastBanner({ toast, onDismiss }: ToastBannerProps) {
       {/* Dismiss button */}
       <Button
         type="button"
-        variant="plain"
+        variant="ghost"
         size="icon-sm"
         onClick={onDismiss}
         aria-label="Dismiss notification"

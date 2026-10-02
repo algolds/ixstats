@@ -336,7 +336,7 @@ function CommandBody({
               className="md:col-span-6 xl:col-span-5"
               action={
                 lore.prologue.length > 0 || loreChapters.length > 0 ? (
-                  <Button variant="tinted" size="sm" onClick={() => setStoryOpen(true)}>
+                  <Button variant="secondary" size="sm" onClick={() => setStoryOpen(true)}>
                     <OpenBook aria-hidden />
                     Read the story
                   </Button>
@@ -477,7 +477,7 @@ function CommandBody({
               className="md:col-span-6 xl:col-span-12"
               action={
                 chronicle.length > 6 ? (
-                  <Button variant="gray" size="sm" onClick={() => setChronicleOpen(true)}>
+                  <Button variant="secondary" size="sm" onClick={() => setChronicleOpen(true)}>
                     Full chronicle
                   </Button>
                 ) : undefined

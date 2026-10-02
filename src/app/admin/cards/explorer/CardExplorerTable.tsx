@@ -104,7 +104,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
           const proxiedUrl = rawUrl ? proxyCardArtwork(rawUrl) : null;
           return (
             <Button
-              variant="gray"
+              variant="secondary"
               size="sm"
               onClick={() => onOpen3DViewer(card)}
               title="Click to view interactive 3D card"
@@ -387,7 +387,7 @@ export const CardExplorerTable = React.memo(function CardExplorerTable({
         render: (_val: unknown, card: any) => (
           <Button
             size="sm"
-            variant="tinted"
+            variant="secondary"
             onClick={(e) => {
               e.stopPropagation();
               onOpenEditModal(card);

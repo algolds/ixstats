@@ -1532,7 +1532,7 @@ export function CountryInspector() {
 
           {/* Fullscreen Button */}
           <Button
-            variant="bordered"
+            variant="outline"
             onClick={() => {
               setIsFullscreen(!isFullscreen);
               setSidebarHidden(!sidebarHidden);
@@ -1649,7 +1649,7 @@ export function CountryInspector() {
                           </span>
                           <Button
                             size="sm"
-                            variant={isDisabled ? "tinted" : "plain"}
+                            variant={isDisabled ? "secondary" : "ghost"}
                             onClick={() => handleToggleDbEffect(eff.id)}
                             className={cn(!isDisabled && "text-destructive")}
                           >

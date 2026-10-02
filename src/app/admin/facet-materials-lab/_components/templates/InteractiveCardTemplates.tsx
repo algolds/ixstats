@@ -146,7 +146,7 @@ export function InteractiveCardTemplates({
             >
               {linking ? "Establishing..." : linkEstablished ? "Disconnect Link" : "Establish Link"}
             </Button>
-            <Button variant="gray" size="sm" onClick={() => setButtonClickCount((c) => c + 1)}>
+            <Button variant="secondary" size="sm" onClick={() => setButtonClickCount((c) => c + 1)}>
               Details {buttonClickCount > 0 && `(${buttonClickCount})`}
             </Button>
           </div>

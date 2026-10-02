@@ -220,7 +220,7 @@ export function LiveGameBanner({ onRefresh, isLoading, globalStats }: LiveGameBa
             </div>
             {/* Refresh Button with glass effect */}
             <div className="flex items-center gap-4">
-              <Button onClick={handleRefresh} disabled={isLoading} size="sm" variant="gray">
+              <Button onClick={handleRefresh} disabled={isLoading} size="sm" variant="secondary">
                 <RefreshCw aria-hidden className={isLoading ? "animate-spin" : ""} />
                 Refresh All
               </Button>

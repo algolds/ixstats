@@ -250,7 +250,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
               >
                 <Button
                   type="button"
-                  variant="plain"
+                  variant="ghost"
                   size="icon"
                   onClick={() => {
                     soundEffects.press();
@@ -264,7 +264,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
                 </Button>
                 <Button
                   type="button"
-                  variant="plain"
+                  variant="ghost"
                   size="icon"
                   onClick={() => {
                     soundEffects.press();
@@ -368,7 +368,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
         <div className="flex shrink-0 flex-wrap items-center gap-2 self-start sm:flex-nowrap lg:self-center">
           <Button
             type="button"
-            variant="bordered"
+            variant="outline"
             size="sm"
             onClick={() => {
               soundEffects.press();
@@ -381,7 +381,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
 
           <Button
             type="button"
-            variant="bordered"
+            variant="outline"
             size="sm"
             onClick={() => {
               soundEffects.press();

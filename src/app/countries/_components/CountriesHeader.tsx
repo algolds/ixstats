@@ -57,7 +57,7 @@ export const CountriesHeader: React.FC<CountriesHeaderProps> = ({
           {onImFeelingLucky && (
             <Button
               type="button"
-              variant="bordered"
+              variant="outline"
               size="sm"
               onClick={(e) => {
                 e.preventDefault();

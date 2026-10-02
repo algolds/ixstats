@@ -118,11 +118,11 @@ function AlertDialogDescription({
 
 function AlertDialogAction({
   className,
-  variant = "filled",
+  variant = "default",
   onClick,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Action> & {
-  /** Button style; `"destructive"` also plays the destructive-confirm cue (spec §7.3, §9). */
+  /** Button style; `"destructive"` also plays the destructive-confirm cue. */
   variant?: VariantProps<typeof buttonVariants>["variant"];
 }) {
   return (
@@ -148,7 +148,7 @@ function AlertDialogClose({
     <AlertDialogPrimitive.Cancel
       data-cuelume-press="droplet"
       data-slot="alert-dialog-close"
-      className={cn(buttonVariants({ variant: "gray" }), className)}
+      className={cn(buttonVariants({ variant: "secondary" }), className)}
       {...props}
     />
   );

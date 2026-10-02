@@ -259,7 +259,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
 
           {/* Footer */}
           <div className="border-separator flex items-center justify-end gap-3 border-t pt-4">
-            <Button variant="gray" onClick={onClose}>
+            <Button variant="secondary" onClick={onClose}>
               Cancel
             </Button>
             <Button onClick={handleInsertBusiness} disabled={!selectedBusiness}>
@@ -356,7 +356,7 @@ export function BusinessStatsModal({ isOpen, onClose, onInsert }: BaseModalProps
               )}
 
               <div className="flex items-center justify-end gap-3 pt-4">
-                <Button variant="gray" type="button" onClick={() => setActiveTab("search")}>
+                <Button variant="secondary" type="button" onClick={() => setActiveTab("search")}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={createPoiMutation.isPending}>

@@ -176,14 +176,14 @@ export function BatchResultsTable({
 
         <div className="flex items-center gap-2">
           {selectedNames.size > 0 && (
-            <Button variant="tinted" size="sm" onClick={onBulkSave}>
+            <Button variant="secondary" size="sm" onClick={onBulkSave}>
               <Bookmark className="h-3.5 w-3.5" /> Save Selected ({selectedNames.size})
             </Button>
           )}
-          <Button variant="bordered" size="sm" onClick={onExportCSV}>
+          <Button variant="outline" size="sm" onClick={onExportCSV}>
             <FileDown className="h-3.5 w-3.5" /> CSV
           </Button>
-          <Button variant="bordered" size="sm" onClick={onExportJSON}>
+          <Button variant="outline" size="sm" onClick={onExportJSON}>
             <FileDown className="h-3.5 w-3.5" /> JSON
           </Button>
         </div>

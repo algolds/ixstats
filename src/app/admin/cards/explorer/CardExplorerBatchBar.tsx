@@ -74,7 +74,7 @@ export const CardExplorerBatchBar = React.memo(function CardExplorerBatchBar({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="tinted" size="sm" onClick={() => setIsBulkModalOpen(true)}>
+          <Button variant="secondary" size="sm" onClick={() => setIsBulkModalOpen(true)}>
             <EyeOff className="mr-2 h-3.5 w-3.5" />
             Bulk Visibility Controls
           </Button>

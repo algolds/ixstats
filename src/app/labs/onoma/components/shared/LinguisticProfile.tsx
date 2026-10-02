@@ -281,7 +281,7 @@ export function LinguisticProfile({
               <div className="flex justify-end gap-2 pt-1">
                 {definition && (
                   <Button
-                    variant="bordered"
+                    variant="outline"
                     size="sm"
                     type="button"
                     onClick={() => setIsEditingDef(false)}

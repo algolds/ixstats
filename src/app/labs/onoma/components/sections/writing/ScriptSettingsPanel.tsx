@@ -78,7 +78,7 @@ export function ScriptSettingsPanel({
               <p className="text-label-secondary text-caption">Active & saved conlang scripts</p>
             </div>
           </div>
-          <Button variant="tinted" size="sm" onClick={() => onSelectSystem(null)}>
+          <Button variant="secondary" size="sm" onClick={() => onSelectSystem(null)}>
             <Plus className="h-3 w-3" />
             <span>New Script</span>
           </Button>

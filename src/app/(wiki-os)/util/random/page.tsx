@@ -32,7 +32,7 @@ export default function RandomPage() {
       ) : (
         <div className="wikios-error rounded-card border-separator bg-surface border p-6">
           <p className="text-body text-label-secondary">Could not fetch a random page.</p>
-          <Button variant="tinted" size="sm" onClick={() => refetch()} className="mt-3">
+          <Button variant="secondary" size="sm" onClick={() => refetch()} className="mt-3">
             Try again
           </Button>
         </div>

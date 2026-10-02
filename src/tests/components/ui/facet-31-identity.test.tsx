@@ -198,7 +198,7 @@ describe("primary actions", () => {
       expect(cls).toContain("shadow-(--primary-rim)");
       expect(cls).not.toMatch(/\bbg-tint\b/);
     }
-    expect(buttonVariants({ variant: "tinted" })).toContain("bg-tint-fill text-tint");
+    expect(buttonVariants({ variant: "secondary" })).toContain("bg-tint-fill text-tint");
   });
 
   it("a caller's colour override still merges over the primary role", () => {

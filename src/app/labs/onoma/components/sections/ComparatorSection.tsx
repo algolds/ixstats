@@ -397,8 +397,8 @@ export default function ComparatorSection({
             Linguistic Hybridization (Blend Preview)
           </h3>
           <Button
-            variant="filled"
-            size="md"
+            variant="default"
+            size="default"
             onClick={handleBlendPreview}
             className="justify-center"
           >

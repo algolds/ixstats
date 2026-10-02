@@ -284,7 +284,7 @@ export function DashboardHeroComponent({
 
               {/* v2 amber MyCountry pill: the tinted button in the MyCountry (gold) scope. */}
               <span data-app="mycountry" className="contents">
-                <Button asChild variant="tinted" size="sm" className="shrink-0 rounded-full">
+                <Button asChild variant="secondary" size="sm" className="shrink-0 rounded-full">
                   <Link href="/mycountry">
                     <span>MyCountry</span>
                     <ChevronRight />

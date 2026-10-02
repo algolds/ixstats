@@ -301,7 +301,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
 
               {!showMore && feed.length >= 15 && (
                 <div className="pt-3 text-center">
-                  <Button variant="plain" size="sm" onClick={() => setShowMore(true)}>
+                  <Button variant="ghost" size="sm" onClick={() => setShowMore(true)}>
                     <ChevronDown aria-hidden />
                     Load more activity
                   </Button>

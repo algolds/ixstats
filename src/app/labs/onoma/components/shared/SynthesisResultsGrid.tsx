@@ -233,7 +233,7 @@ export function SynthesisResultsGrid({
             {/* Right: Copy All and Save to Stash Actions */}
             <div className="flex items-center gap-2">
               <Button
-                variant="bordered"
+                variant="outline"
                 size="sm"
                 onClick={handleCopyBatch}
 
@@ -248,7 +248,7 @@ export function SynthesisResultsGrid({
               </Button>
 
               <Button
-                variant="bordered"
+                variant="outline"
                 size="sm"
                 onClick={() => setShowSaveDictForm(!showSaveDictForm)}
 

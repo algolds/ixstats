@@ -331,7 +331,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                 {/* Advanced toggler */}
                 <div className="border-separator border-t pt-2">
                   <Button
-                    variant="plain"
+                    variant="ghost"
                     size="sm"
                     onClick={() => setShowAdvanced(!showAdvanced)}
                     className="text-tint px-0 hover:bg-transparent"
@@ -515,7 +515,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               </div>
 
               <Button
-                size="md"
+                size="default"
                 onClick={() => generateNames()}
                 disabled={trainingWords.length === 0}
                 className="flex-1 justify-center"
