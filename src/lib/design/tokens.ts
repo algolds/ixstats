@@ -1,12 +1,10 @@
 /**
- * Facet 3 design tokens — TypeScript source of truth.
+ * Design tokens — TypeScript source of truth.
  *
  * `src/styles/facet/tokens.css` is the runtime token layer (Tailwind v4 `@theme`); this module
  * holds the same values so they can be checked (contrast, parity) and used from TS where a CSS
  * variable can't be (canvas, WebGL, chart libraries). `src/tests/architecture/token-contrast.test.ts`
- * fails if the two drift or if any pair drops below the WCAG thresholds in spec §2.3.
- *
- * Spec: docs/specs/2026-09-30-facet-3-design-system.md (§2 colour, §3 type, §4 shape, §5 depth).
+ * fails if the two drift or if any pair drops below the WCAG thresholds.
  */
 
 export type Appearance = "light" | "dark";
@@ -21,7 +19,7 @@ export const BACKGROUND_ROLES = [
 ] as const;
 export type BackgroundRole = (typeof BACKGROUND_ROLES)[number];
 
-/** §2.1 colour roles. Keys are the `--color-<role>` names in tokens.css. */
+/** Colour roles. Keys are the `--color-<role>` names in tokens.css. */
 export const COLOR_ROLES = {
   light: {
     label: "#09090b",
@@ -69,7 +67,7 @@ export const COLOR_ROLES = {
 
 export type ColorRole = keyof (typeof COLOR_ROLES)["light"];
 
-/** §2.3 Increase Contrast overrides (`data-contrast="more"` / `prefers-contrast: more`). */
+/** Increase Contrast overrides (`data-contrast="more"` / `prefers-contrast: more`). */
 export const COLOR_ROLES_MORE_CONTRAST = {
   light: {
     "label-secondary": "#3f3f46",
@@ -87,7 +85,7 @@ export const COLOR_ROLES_MORE_CONTRAST = {
   },
 } as const satisfies Record<Appearance, Partial<Record<ColorRole, string>>>;
 
-/** §2.1 system colours (status and data) with their `on-` pairs. */
+/** System colours (status and data) with their `on-` pairs. */
 export const SYSTEM_COLORS = {
   red: { light: "#dc2626", dark: "#f87171" },
   orange: { light: "#c2410c", dark: "#fb923c" },
@@ -125,7 +123,7 @@ export const STATUS_ALIASES = {
   info: "blue",
 } as const satisfies Record<string, SystemColor>;
 
-/** §2.4 categorical series order; `chart-1…8` in tokens.css follow it. */
+/** Categorical series order; `chart-1…8` in tokens.css follow it. */
 export const CHART_ORDER = [
   "blue",
   "orange",
@@ -137,7 +135,7 @@ export const CHART_ORDER = [
   "red",
 ] as const satisfies readonly SystemColor[];
 
-/** App ids accepted by `data-app` (§1). `default` is the unscoped shell tint. */
+/** App ids accepted by `data-app`. `default` is the unscoped shell tint. */
 export const APP_IDS = [
   "mycountry",
   "maps",
@@ -160,7 +158,7 @@ interface TintSet {
   onTint: string;
 }
 
-/** §2.2 app tints. `strong` = one Tailwind step darker (light) / lighter (dark). */
+/** App tints. `strong` = one Tailwind step darker (light) / lighter (dark). */
 export const APP_TINTS = {
   default: {
     light: { tint: "#4338ca", strong: "#3730a3", onTint: "#ffffff" },
@@ -203,7 +201,7 @@ export const APP_TINTS = {
 /** Admin uses the default (shell) tint. */
 export type TintedApp = keyof typeof APP_TINTS;
 
-/** §3 text styles: size / line height in px at a 16px root, before `--text-scale`. */
+/** Text styles: size / line height in px at a 16px root, before `--text-scale`. */
 export const TEXT_STYLES = {
   display: { size: 40, lineHeight: 44, weight: 700, tracking: "-0.015em" },
   "large-title": { size: 28, lineHeight: 34, weight: 700, tracking: "-0.015em" },
@@ -219,10 +217,10 @@ export const TEXT_STYLES = {
 } as const;
 export type TextStyle = keyof typeof TEXT_STYLES;
 
-/** `--text-scale` bounds (§10). */
+/** `--text-scale` bounds. */
 export const TEXT_SCALE = { min: 0.9, max: 1.3, default: 1 } as const;
 
-/** §4 concentric radius scale in px (`rounded-<name>`). */
+/** Concentric radius scale in px (`rounded-<name>`). */
 export const RADII = {
   sheet: 20,
   card: 16,
@@ -232,7 +230,7 @@ export const RADII = {
   "control-sm": 8,
 } as const;
 
-/** §5 z-index scale (`z-<name>`). */
+/** z-index scale (`z-<name>`). */
 export const Z_INDEX = {
   base: 0,
   raised: 10,

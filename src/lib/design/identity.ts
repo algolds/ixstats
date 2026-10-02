@@ -1,13 +1,12 @@
 /**
- * Facet 3.1 identity helpers (spec §16).
+ * Identity helpers.
  *
- * Shared by the primitives that switch figures into the data face (`font-data`: Azeret Mono,
- * tabular, slashed zero — the v2 `.font-mono`): `Badge`, `FacetRow` trailing values, `Table`
- * cells. Callers can always opt in explicitly (`numeric` props, or the `font-data` class).
+ * `DATA_FONT` / `isNumericText` are shared by the primitives that switch figures into the data
+ * face (`font-data`: Azeret Mono, tabular, slashed zero): `Badge`, `FacetRow` trailing values,
+ * `Table` cells. Callers can always opt in explicitly (`numeric` props, or the `font-data` class).
  *
- * Also the accent and rim vocabulary of the identity primitives (`FacetCard`, `CutoutCard`,
- * `CutoutCardHeader`, `FacetMaterial`): `FacetAccent`, `accentColor`, `facetAccentStyle`,
- * `FacetRim` (spec §16.8).
+ * Also the accent vocabulary of the card primitives (`FacetCard`, `CutoutCard`, `FacetMaterial`):
+ * `FacetAccent`, `accentColor`, `facetAccentStyle`.
  */
 
 import type { CSSProperties } from "react";
@@ -32,7 +31,7 @@ export function isNumericText(value: unknown): boolean {
 /** The data face for a figure: mono, tabular, slashed zero (use on stats, counts, IDs). */
 export const DATA_FONT = "font-data tabular-nums";
 
-// ─── Accents (Facet 3.1, spec §16.3 / §16.8) ─────────────────────────────────
+// ─── Accents ─────────────────────────────────────────────────────────────────
 
 export type { FacetAccent } from "./tokens";
 
@@ -59,9 +58,9 @@ export function accentColor(accent: FacetAccent): string {
 
 /**
  * The scoped accent for an element that is not a Facet primitive: sets `--facet-accent`, which the
- * identity paints (`material-hero` wash/border/shadow, `facet-glow`, `TintGlow`, `AcrylicGlow`,
- * `facet-tint-rim`, `bg-facet-accent-fill`, `text-facet-accent`) read before the app tint. It
- * does not change `--tint`; add the `facet-retint` class for that. Primitives take `accent`.
+ * identity paints (`material-hero` wash and glow, the achievement layers, `bg-facet-accent-fill`,
+ * `text-facet-accent`) read before the app tint. It does not change `--tint`. Primitives take
+ * `accent`.
  */
 export function facetAccentStyle(accent: FacetAccent | undefined): CSSProperties | undefined {
   if (!accent) return undefined;
@@ -69,8 +68,8 @@ export function facetAccentStyle(accent: FacetAccent | undefined): CSSProperties
 }
 
 /**
- * Class + style for a primitive's `accent` / `retint` props. `retint` (re-tint the subtree's
- * `--tint`, `--tint-hover`, `--tint-fill`, `--on-tint`) is a no-op for the tint accent.
+ * Class + style for a primitive's `accent` / `retint` props. No CSS backs `retint` or the rims
+ * below any more; delete them together with the primitives' `retint` and `rim` props.
  */
 export function accentProps(
   accent: FacetAccent | undefined,
@@ -88,12 +87,7 @@ export function accentProps(
   };
 }
 
-/**
- * Facet 3.1 rims (spec §16.8): `"gold"` — the v2 `.facet-mycountry` gold border and light-catching
- * top edge (`facet-gold-rim`); `"tint"` — the same rim in the card's accent (`facet-tint-rim`; the
- * app tint unless `accent` is set). They recolour the element's own border whatever else sets it
- * (`border-separator`, the glass material borders) and become ≥ 3:1 edges under Increase Contrast.
- */
+/** `rim` on the card primitives. */
 export type FacetRim = "gold" | "tint";
 
 export const RIM_CLASS: Record<FacetRim, string> = {

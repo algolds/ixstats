@@ -1,5 +1,5 @@
 /**
- * Facet 3 motion tokens (spec §8) for `motion/react`.
+ * Motion tokens for `motion/react`.
  *
  * CSS mirrors: `--spring-*-stiffness` / `--spring-*-damping`, `--duration-fast`, `--duration-exit`
  * and `--ease-out-facet` in `src/styles/facet/tokens.css` (utilities `duration-fast`,
@@ -52,6 +52,6 @@ export const tweenExit = {
 /** Reduce Motion: springs become 150ms cross-fades. */
 export const REDUCED_MOTION_FADE = tweenFast;
 
-/** Entrance start / press compression values (§8). */
+/** Entrance start / press compression values. */
 export const ENTER_SCALE = 0.96;
 export const PRESS_SCALE = 0.98;
