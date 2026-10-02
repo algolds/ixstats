@@ -24,8 +24,12 @@ import { useNameBank } from "~/hooks/useNameBank";
 import type { NameCategory, ExploreSubTab, StudioSubTab } from "~/lib/onoma/types";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { MenuButton } from "~/components/ui/menu-button";
-import { DropdownMenuItem } from "~/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Card } from "~/components/ui/card";
 
@@ -315,22 +319,28 @@ export function SavedDictionaryCard({
             </Button>
 
             {/* Export */}
-            <MenuButton
-              size="icon-sm"
-              label={<Download />}
-              aria-label="Export dictionary"
-              title="Export dictionary"
-              align="end"
-            >
-              {(["txt", "csv", "json"] as const).map((fmt) => (
-                <DropdownMenuItem
-                  key={fmt}
-                  onSelect={() => handleExport(dict.title, dict.values, fmt)}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon-sm"
+                  variant="secondary"
+                  aria-label="Export dictionary"
+                  title="Export dictionary"
                 >
-                  {fmt.toUpperCase()}
-                </DropdownMenuItem>
-              ))}
-            </MenuButton>
+                  <Download />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {(["txt", "csv", "json"] as const).map((fmt) => (
+                  <DropdownMenuItem
+                    key={fmt}
+                    onSelect={() => handleExport(dict.title, dict.values, fmt)}
+                  >
+                    {fmt.toUpperCase()}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Delete */}
             <Button

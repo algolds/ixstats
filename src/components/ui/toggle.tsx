@@ -1,21 +1,20 @@
 "use client";
 
 import * as React from "react";
+import * as TogglePrimitive from "@radix-ui/react-toggle";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "~/lib/utils/cn";
 import { focusRing, hitSlop } from "~/components/ui/button";
 
 /**
- * Toggle (spec §7.2): a two-state button (`aria-pressed`). Off is a plain label, on is the tint at
- * fill strength. Variants: `default` (no chrome) · `outline` (hairline) · `pill` (rounded filter
- * chip). Sizes follow the control heights (28/36/44).
+ * A two-state button (`aria-pressed`) on Radix Toggle. Off is a plain label, on is the tint at fill
+ * strength. Variants: `default` (no chrome), `outline` (hairline), `pill` (rounded filter chip).
  */
 const toggleVariants = cva(
   [
     "relative inline-flex cursor-pointer items-center justify-center gap-2 font-medium whitespace-nowrap select-none",
     "text-label-secondary hover:bg-fill-4 hover:text-label",
     "data-[state=on]:bg-tint-fill data-[state=on]:text-tint data-[state=on]:hover:bg-tint/20",
-    // Facet 3.1 press physics (scale .98, off under Reduce Motion) + the control transition.
     "facet-press",
     focusRing,
     hitSlop,
@@ -47,37 +46,13 @@ const toggleVariants = cva(
   }
 );
 
-interface ToggleProps
-  extends React.ComponentProps<"button">, VariantProps<typeof toggleVariants> {
-  pressed?: boolean;
-  defaultPressed?: boolean;
-  onPressedChange?: (pressed: boolean) => void;
-}
+type ToggleProps = React.ComponentProps<typeof TogglePrimitive.Root> &
+  VariantProps<typeof toggleVariants>;
 
-function Toggle({
-  className,
-  variant,
-  size,
-  pressed: controlledPressed,
-  defaultPressed = false,
-  onPressedChange,
-  onClick,
-  ...props
-}: ToggleProps) {
-  const [uncontrolledPressed, setUncontrolledPressed] = React.useState(defaultPressed);
-  const pressed = controlledPressed ?? uncontrolledPressed;
+function Toggle({ className, variant, size, ...props }: ToggleProps) {
   return (
-    <button
-      type="button"
+    <TogglePrimitive.Root
       data-slot="toggle"
-      data-state={pressed ? "on" : "off"}
-      aria-pressed={pressed}
-      onClick={(e) => {
-        onClick?.(e);
-        if (e.defaultPrevented) return;
-        if (controlledPressed === undefined) setUncontrolledPressed(!pressed);
-        onPressedChange?.(!pressed);
-      }}
       className={cn(toggleVariants({ variant, size, className }))}
       {...props}
     />

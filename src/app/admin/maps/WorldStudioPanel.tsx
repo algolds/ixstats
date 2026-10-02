@@ -1,14 +1,5 @@
 "use client";
 export const dynamic = "force-dynamic";
-
-/**
- * Admin Maps Page - World map management dashboard.
- *
- * Heavy tabs (MapLibre-dependent) are lazy-loaded with next/dynamic
- * to prevent OOM during dev compilation of the entire dependency tree.
- */
-
-import { FacetTabs } from "~/components/ui/facet";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
@@ -23,6 +14,7 @@ import nextDynamic from "next/dynamic";
 import { EditQueuePanel } from "./_components/EditQueuePanel";
 import { MapSettingsTab } from "./_components/MapSettingsTab";
 import { Card } from "~/components/ui/card";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 // Heavy tabs — lazy loaded (MapLibre dependent)
 const LazyLoading = () => (
@@ -39,10 +31,10 @@ const PipelineWizard = nextDynamic(
 
 type TabId = "pipeline" | "edits" | "settings";
 
-const TABS: { id: TabId; label: string }[] = [
-  { id: "settings", label: "Settings" },
-  { id: "pipeline", label: "Import Pipeline" },
-  { id: "edits", label: "Edit Queue" },
+const TABS: { value: TabId; label: string }[] = [
+  { value: "settings", label: "Settings" },
+  { value: "pipeline", label: "Import Pipeline" },
+  { value: "edits", label: "Edit Queue" },
 ];
 
 interface AdminMapsPageProps {
@@ -129,14 +121,13 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
       </div>
 
       {/* Tab navigation */}
-      <FacetTabs
-        tabs={TABS}
-        activeTab={activeTab}
-        onChange={(id) => setActiveTab(id as TabId)}
+      <SegmentedControl
+        options={TABS}
+        value={activeTab}
+        onValueChange={(id) => setActiveTab(id as TabId)}
         size="md"
-        tone="accent"
-        showTexture={false}
         className="w-full sm:w-fit"
+        asTabs
       />
 
       {/* Tab content */}

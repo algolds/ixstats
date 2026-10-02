@@ -4,15 +4,15 @@ import { Button } from "~/components/ui/button";
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import AchievementCard from "./AchievementCard";
-import { FacetTabs } from "~/components/ui/facet";
 import { Card } from "~/components/ui/card";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 const REGISTRY_TABS = [
-  { id: "ALL", label: "All" },
-  { id: "COUNTRY", label: "Country" },
-  { id: "DYNASTY", label: "Dynasty" },
-  { id: "INSTITUTION", label: "Institution" },
-  { id: "CHARACTER", label: "Character" },
+  { value: "ALL", label: "All" },
+  { value: "COUNTRY", label: "Country" },
+  { value: "DYNASTY", label: "Dynasty" },
+  { value: "INSTITUTION", label: "Institution" },
+  { value: "CHARACTER", label: "Character" },
 ] as const;
 
 export default function RegistryBrowser() {
@@ -47,16 +47,15 @@ export default function RegistryBrowser() {
       {/* Sub-navigation & search toolbar */}
       <Card className="flex flex-col justify-between gap-4 p-4 md:flex-row md:items-center">
         {/* Filter Tabs */}
-        <FacetTabs
-          tabs={[...REGISTRY_TABS]}
-          activeTab={activeTab}
-          onChange={(tab) => {
-            setActiveTab(tab as (typeof REGISTRY_TABS)[number]["id"]);
+        <SegmentedControl
+          options={[...REGISTRY_TABS]}
+          value={activeTab}
+          onValueChange={(tab) => {
+            setActiveTab(tab as (typeof REGISTRY_TABS)[number]["value"]);
             setLimit(16); // reset
           }}
           size="sm"
-          tone="neutral"
-          showTexture={false}
+          asTabs
         />
 
         {/* Search */}

@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetTabs } from "~/components/ui/facet";
 import {
   Package,
   Flash as Zap,
@@ -17,6 +16,7 @@ import { SelectedComponentsList } from "~/components/mycountry/domains/governmen
 import { ATOMIC_COMPONENTS, type AtomicGovernmentComponent } from "~/lib/government/atomic-data";
 import { getDirectivesForComponents } from "~/lib/government/spending-defaults";
 import type { ComponentType } from "~/lib/enums";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 type MetricTab = "components" | "interactions" | "effectiveness" | "costs";
 
@@ -117,18 +117,18 @@ export function GovernmentMetricModals({
             {TITLES[activeTab].label}
           </SheetTitle>
 
-          <FacetTabs
+          <SegmentedControl
             size="sm"
-            tone="mycountry"
             className="mt-3 w-full"
-            tabs={[
-              { id: "components", label: "Components", icon: Package },
-              { id: "interactions", label: "Interactions", icon: Zap },
-              { id: "effectiveness", label: "Effectiveness", icon: Target },
-              { id: "costs", label: "Costs", icon: DollarSign },
+            options={[
+              { value: "components", label: "Components", icon: <Package /> },
+              { value: "interactions", label: "Interactions", icon: <Zap /> },
+              { value: "effectiveness", label: "Effectiveness", icon: <Target /> },
+              { value: "costs", label: "Costs", icon: <DollarSign /> },
             ]}
-            activeTab={activeTab}
-            onChange={(id) => setActiveTab(id as MetricTab)}
+            value={activeTab}
+            onValueChange={(id) => setActiveTab(id as MetricTab)}
+            asTabs
           />
         </SheetHeader>
 

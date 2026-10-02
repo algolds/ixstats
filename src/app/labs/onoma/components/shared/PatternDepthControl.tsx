@@ -2,7 +2,7 @@
 
 // src/app/labs/onoma/components/shared/PatternDepthControl.tsx
 // Facet Tabs × Apple Design × Emil Kowalski Design Engineering UX for Pattern Depth
-// Features: FacetTabs with fluid spring physics, drag gestures, and dynamic proximity color interpolation
+// Features: a SegmentedControl of depth levels with chromatic thought-level dots
 // LLM Thought Levels Chromatic System:
 //   Level 1: Cyan (#06b6d4) — Fluid / High Variation
 //   Level 2: Azure (#0091ff) — Organic / Balanced (Recommended)
@@ -13,10 +13,10 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { HelpCircle, Xmark as X } from "iconoir-react";
-import { FacetTabs, type FacetTabItem } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Toggle } from "~/components/ui/toggle";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 export interface PatternDepthLevel {
   depth: number;
@@ -106,12 +106,12 @@ export function PatternDepthControl({
   const currentLevel =
     PATTERN_DEPTH_LEVELS.find((l) => l.depth === value) ?? PATTERN_DEPTH_LEVELS[1]!;
 
-  // Memoize FacetTabs items with chromatic thought level themes
-  const depthFacetTabs = useMemo<FacetTabItem[]>(() => {
+  // Memoize segment items with chromatic thought level themes
+  const depthFacetTabs = useMemo(() => {
     return PATTERN_DEPTH_LEVELS.map((level) => {
       const isSelected = level.depth === value;
       return {
-        id: String(level.depth),
+        value: String(level.depth),
         label: (
           <span className="flex items-center justify-center gap-2 leading-none">
             <span
@@ -124,8 +124,6 @@ export function PatternDepthControl({
             <span className="text-caption leading-none font-medium">{level.editorialTier}</span>
           </span>
         ),
-        themeColor: level.color,
-        activeTextClassName: cn(level.textClassName, "font-semibold"),
       };
     });
   }, [value]);
@@ -210,15 +208,13 @@ export function PatternDepthControl({
         </div>
       )}
 
-      {/* Seamless FacetTabs Glass Physics & Dynamic Proximity Color Blending */}
-      <FacetTabs
-        tabs={depthFacetTabs}
-        activeTab={String(value)}
-        onChange={(id) => onChange(parseInt(id, 10))}
+      <SegmentedControl
+        options={depthFacetTabs}
+        value={String(value)}
+        onValueChange={(id) => onChange(parseInt(id, 10))}
         size="sm"
-        springPreset="fluid"
-        tone="neutral"
         className="w-full"
+        asTabs
       />
 
       {/* Expandable Help / Info Card */}

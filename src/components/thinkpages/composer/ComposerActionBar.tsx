@@ -178,8 +178,7 @@ export function ComposerActionBar({
                 id="share-to-discord-toggle"
                 checked={postToDiscord}
                 onCheckedChange={setPostToDiscord}
-                tone="discord"
-                className="scale-90"
+                className="data-[state=checked]:bg-discord scale-90"
               />
               <label
                 htmlFor="share-to-discord-toggle"

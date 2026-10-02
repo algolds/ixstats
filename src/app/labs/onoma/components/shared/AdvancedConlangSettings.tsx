@@ -3,7 +3,7 @@
 // src/app/labs/onoma/components/shared/AdvancedConlangSettings.tsx
 // Onoma Custom Studio Workshop — Advanced Generator Settings Component
 
-import { AppleSwitch } from "~/components/ui/apple-switch";
+import { Switch } from "~/components/ui/switch";
 import { PatternDepthControl } from "./PatternDepthControl";
 import {
   Select,
@@ -58,7 +58,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
             Blend live database records (cities, leaders) into training seeds.
           </p>
         </div>
-        <AppleSwitch
+        <Switch
           checked={gen.includeWorldData}
           onCheckedChange={gen.setIncludeWorldData}
           size="sm"
@@ -332,7 +332,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
           {/* Must End With Vowel */}
           <div className="flex items-center justify-between">
             <span className="text-caption text-label font-medium">Must End With Vowel</span>
-            <AppleSwitch
+            <Switch
               checked={gen.options.mustEndWithVowel || false}
               onCheckedChange={(checked) =>
                 gen.setOptions({
@@ -348,7 +348,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
           {/* Must End With Consonant */}
           <div className="flex items-center justify-between">
             <span className="text-caption text-label font-medium">Must End With Consonant</span>
-            <AppleSwitch
+            <Switch
               checked={gen.options.mustEndWithConsonant || false}
               onCheckedChange={(checked) =>
                 gen.setOptions({
@@ -366,7 +366,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
             <span className="text-caption text-label font-medium">
               No Initial Clusters (e.g. "str-")
             </span>
-            <AppleSwitch
+            <Switch
               checked={gen.options.noInitialClusters || false}
               onCheckedChange={(checked) =>
                 gen.setOptions({
@@ -383,7 +383,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
             <span className="text-caption text-label font-medium">
               No Final Clusters (e.g. "-rts")
             </span>
-            <AppleSwitch
+            <Switch
               checked={gen.options.noFinalClusters || false}
               onCheckedChange={(checked) =>
                 gen.setOptions({

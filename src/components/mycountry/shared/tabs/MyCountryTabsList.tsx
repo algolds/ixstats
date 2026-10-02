@@ -10,13 +10,13 @@ import {
 } from "iconoir-react";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "motion/react";
-import { FacetTabs } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/utils";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 /**
  * The top-level tab strip (At a Glance / Economy / Labor / Government /
- * Geography) for the MyCountry tab system, using the shared FacetTabs
+ * Geography) for the MyCountry tab system, using the shared SegmentedControl
  * component to support Apple-Switch sliding animations, spring-physics
  * dragging, and relative sheens.
  *
@@ -56,63 +56,59 @@ export function MyCountryTabsList({
 
   const tabs = [
     {
-      id: "overview",
-      icon: BarChart3,
+      value: "overview",
+      icon: <BarChart3 />,
       label: (
         <>
           <span className="hidden sm:inline">At a Glance</span>
           <span className="sm:hidden">Glance</span>
         </>
       ),
-      badge: 0,
     },
     {
-      id: "economy",
-      icon: TrendingUp,
+      value: "economy",
+      icon: <TrendingUp />,
       label: (
         <>
           <span className="hidden sm:inline">Economy</span>
           <span className="sm:hidden">Econ</span>
         </>
       ),
-      badge: 0,
     },
     {
-      id: "labor",
-      icon: History,
+      value: "labor",
+      icon: <History />,
       label: (
         <>
           <span className="hidden sm:inline">Labor</span>
           <span className="sm:hidden">Labor</span>
         </>
       ),
-      badge: 0,
     },
     {
-      id: "government",
-      icon: Building,
+      value: "government",
+      icon: <Building />,
       label: (
         <>
           <span className="hidden sm:inline">Government</span>
           <span className="sm:hidden">Gov</span>
         </>
       ),
-      badge: govBadge,
+      badge: govBadge || undefined,
     },
     {
-      id: "geography",
-      icon: MapPin,
+      value: "geography",
+      icon: <MapPin />,
       label: (
         <>
           <span className="hidden sm:inline">Geography</span>
           <span className="sm:hidden">Geo</span>
         </>
       ),
-      badge: 0,
     },
   ];
 
-  const resolvedTabs = v2 ? tabs.filter((t) => t.id !== "overview") : tabs;
+  const resolvedTabs = v2 ? tabs.filter((t) => t.value !== "overview") : tabs;
 
   const handleChange = (value: string) => {
     if (baseHref) {
@@ -186,11 +182,10 @@ export function MyCountryTabsList({
 
   return (
     <div className="[scrollbar-width:none] overflow-x-auto p-0.5 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-      <FacetTabs
-        tabs={resolvedTabs}
-        activeTab={resolvedActiveTab}
-        onChange={handleChange}
-        tone="mycountry"
+      <SegmentedControl
+        options={resolvedTabs}
+        value={resolvedActiveTab}
+        onValueChange={handleChange}
         size="sm"
         className={cn(
           "rounded-row w-full min-w-fit p-1",
@@ -198,6 +193,7 @@ export function MyCountryTabsList({
             ? "bg-fill-3 border-0 shadow-none"
             : "bg-fill-3 border-separator border"
         )}
+        asTabs
       />
     </div>
   );

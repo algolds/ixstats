@@ -21,7 +21,6 @@ import type { RouterOutputs } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetTabs, type FacetTabItem } from "~/components/ui/facet";
 import {
   Table,
   TableBody,
@@ -31,6 +30,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Card } from "~/components/ui/card";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 // Derived from the tRPC output so the type can't drift from the actual data shape.
 type GeoProfileData = RouterOutputs["geoCore"]["getCountryGeoProfile"];
@@ -42,11 +42,11 @@ type SuperlativeItem = NonNullable<
 
 type ReportTab = "overview" | "climate-elevation" | "hydro-borders" | "superlatives";
 
-const REPORT_TABS: FacetTabItem[] = [
-  { id: "overview", label: "Overview", icon: Compass },
-  { id: "climate-elevation", label: "Climate & Elevation", icon: CloudSun },
-  { id: "hydro-borders", label: "Hydro & Borders", icon: Waves },
-  { id: "superlatives", label: "Superlatives", icon: Trophy },
+const REPORT_TABS = [
+  { value: "overview", label: "Overview", icon: <Compass /> },
+  { value: "climate-elevation", label: "Climate & Elevation", icon: <CloudSun /> },
+  { value: "hydro-borders", label: "Hydro & Borders", icon: <Waves /> },
+  { value: "superlatives", label: "Superlatives", icon: <Trophy /> },
 ];
 
 interface GeographyReportModalProps {
@@ -85,13 +85,13 @@ export function GeographyReportModal({
           </SheetDescription>
         </SheetHeader>
 
-        <FacetTabs
-          tabs={REPORT_TABS}
-          activeTab={activeTab}
-          onChange={(id) => setActiveTab(id as ReportTab)}
+        <SegmentedControl
+          options={REPORT_TABS}
+          value={activeTab}
+          onValueChange={(id) => setActiveTab(id as ReportTab)}
           size="sm"
-          tone="neutral"
           className="w-full"
+          asTabs
         />
 
         {/* Tab Body Container */}

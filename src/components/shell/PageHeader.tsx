@@ -35,7 +35,7 @@ export interface PageHeaderProps {
   subtitle?: React.ReactNode;
   /** Back button in the toolbar. */
   back?: { href: string; label?: string };
-  /** Trailing toolbar actions (buttons, a MenuButton). */
+  /** Trailing toolbar actions (buttons, a dropdown menu). */
   actions?: React.ReactNode;
   className?: string;
 }

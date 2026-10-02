@@ -21,7 +21,7 @@ import {
 } from "~/components/ui/select";
 import { useState } from "react";
 import { type StudioState } from "../../../hooks/useStudioState";
-import { AppleSwitch } from "~/components/ui/apple-switch";
+import { Switch } from "~/components/ui/switch";
 import { PatternDepthControl } from "../../shared/PatternDepthControl";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -412,7 +412,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                           <span className="text-label-secondary text-caption font-semibold">
                             Must End With Vowel
                           </span>
-                          <AppleSwitch
+                          <Switch
                             checked={options.mustEndWithVowel || false}
                             onCheckedChange={(checked) =>
                               setOptions({
@@ -432,7 +432,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                           <span className="text-label-secondary text-caption font-semibold">
                             Must End With Consonant
                           </span>
-                          <AppleSwitch
+                          <Switch
                             checked={options.mustEndWithConsonant || false}
                             onCheckedChange={(checked) =>
                               setOptions({
@@ -450,7 +450,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                           <span className="text-label-secondary text-caption font-semibold">
                             No Initial CC Clusters
                           </span>
-                          <AppleSwitch
+                          <Switch
                             checked={options.noInitialClusters || false}
                             onCheckedChange={(checked) =>
                               setOptions({
@@ -467,7 +467,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                           <span className="text-label-secondary text-caption font-semibold">
                             No Final CC Clusters
                           </span>
-                          <AppleSwitch
+                          <Switch
                             checked={options.noFinalClusters || false}
                             onCheckedChange={(checked) =>
                               setOptions({

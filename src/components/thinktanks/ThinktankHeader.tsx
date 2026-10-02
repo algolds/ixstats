@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { FacetTabs } from "~/components/ui/facet";
 import {
   Globe,
   Lock,
@@ -22,6 +21,7 @@ import { Button } from "~/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 export type ThinktankTab = "feed" | "roster" | "docs" | "chat";
 
@@ -244,17 +244,20 @@ export function ThinktankHeader({
       {/* ── Bottom Bar: section tabs (members only) ── */}
       {isMember && (
         <div className="border-separator relative z-10 border-t px-4 py-2 md:px-5">
-          <FacetTabs
+          <SegmentedControl
             size="sm"
-            tone="accent"
-            showTexture={false}
             aria-label="Group sections"
-            activeTab={activeTab}
-            onChange={(id) => {
+            value={activeTab}
+            onValueChange={(id) => {
               soundEffects.press();
               onTabChange(id as ThinktankTab);
             }}
-            tabs={tabs.map((tab) => ({ id: tab.id, label: tab.label, icon: tab.icon }))}
+            options={tabs.map(({ id, label, icon: Icon }) => ({
+              value: id,
+              label,
+              icon: <Icon />,
+            }))}
+            asTabs
           />
         </div>
       )}

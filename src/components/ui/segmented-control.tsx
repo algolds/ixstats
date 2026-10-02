@@ -1,26 +1,21 @@
 "use client";
 
 import * as React from "react";
+import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group";
+import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
 import { springSnappy } from "~/lib/design/motion";
+import { useControllableState } from "~/hooks/useControllableState";
 
 /**
- * SegmentedControl (spec §7.2): a single choice among 2–5 peer options — view switchers, periods,
- * filters. The selected segment is marked by a thumb that springs (`spring-snappy`) between
- * segments.
+ * A single choice among 2-5 peer options (view switchers, periods, filters), skinned over Radix
+ * ToggleGroup (`radiogroup`) or, with `asTabs`, Radix Tabs (`tablist`). The selected segment is
+ * marked by a thumb that springs between segments.
  *
- * More than five options (HIG: keep segments few and equal) scroll horizontally instead of
- * squeezing: the track becomes a scroller capped at its container's width, segments keep their
- * natural width, and the selected segment is scrolled into view. `scrollable` forces this on or
- * off; by default it is on above five options.
- *
- * Each option may carry a trailing `badge` (a count in a `font-data` pill) with a `badgeLabel` for
- * screen readers ("12 unread"); the badge is `aria-hidden` and its label joins the segment's name.
- *
- * ARIA: a `radiogroup` of `radio`s by default; with `asTabs` a `tablist` of `tab`s (pass
- * `getTabPanelId` to wire `aria-controls`). One roving tab stop; the arrow keys, Home and End move
- * the selection. Name the control with `aria-label` (or `aria-labelledby`).
+ * More than five options scroll horizontally instead of squeezing (`scrollable` overrides). An
+ * option may carry a trailing `badge` with a `badgeLabel` for screen readers ("12 unread").
+ * Name the control with `aria-label` (or `aria-labelledby`).
  *
  * ```tsx
  * <SegmentedControl
@@ -40,10 +35,7 @@ export interface SegmentedControlOption<T extends string = string> {
   disabled?: boolean;
   /** Accessible name when the label is icon-only or not plain text. */
   "aria-label"?: string;
-  /**
-   * Trailing count or short badge, e.g. `12` unread. Numbers render tabular in a small pill;
-   * nodes render as given. Hidden from assistive tech in favour of `badgeLabel`.
-   */
+  /** Trailing count or short badge, hidden from assistive tech in favour of `badgeLabel`. */
   badge?: React.ReactNode;
   /**
    * What the badge means to a screen reader, appended to the segment's name ("Inbox, 12 unread").
@@ -108,31 +100,27 @@ export function SegmentedControl<T extends string = string>({
   itemClassName,
   scrollable: scrollableProp,
   className,
-  onKeyDown,
   ...props
 }: SegmentedControlProps<T>) {
   const scrollable = scrollableProp ?? options.length > MAX_SEGMENTS;
-  const [uncontrolledValue, setUncontrolledValue] = React.useState<T | undefined>(defaultValue);
-  const isControlled = controlledValue !== undefined;
-  const value = isControlled ? controlledValue : uncontrolledValue;
+  const [value, setValue] = useControllableState<T | undefined>({
+    prop: controlledValue,
+    defaultProp: defaultValue,
+  });
   const thumbId = `${React.useId()}-segment-thumb`;
   const refs = React.useRef<(HTMLButtonElement | null)[]>([]);
   const metrics = sizes[size];
 
-  const select = (next: T) => {
-    if (next === value) return;
-    if (!isControlled) setUncontrolledValue(next);
-    onValueChange?.(next);
+  // A segmented control always has a choice: re-selecting the current segment is a no-op.
+  const select = (next: string) => {
+    if (!next || next === value) return;
+    setValue(next as T);
+    onValueChange?.(next as T);
   };
 
-  const enabled = options
-    .map((option, index) => ({ option, index }))
-    .filter(({ option }) => !disabled && !option.disabled);
-  const selectedIndex = options.findIndex((o) => o.value === value);
-
-  // Keep the selected segment visible when the track scrolls. Only the track scrolls (never the
-  // page), and only when the segment is clipped.
+  // Keep the selected segment visible when the track scrolls (the track only, never the page).
   const trackRef = React.useRef<HTMLDivElement>(null);
+  const selectedIndex = options.findIndex((o) => o.value === value);
   React.useEffect(() => {
     const track = trackRef.current;
     const item = refs.current[selectedIndex];
@@ -142,132 +130,126 @@ export function SegmentedControl<T extends string = string>({
     if (start < track.scrollLeft) track.scrollLeft = start;
     else if (end > track.scrollLeft + track.clientWidth) track.scrollLeft = end - track.clientWidth;
   }, [scrollable, selectedIndex]);
-  // Roving tab stop: the selected segment, else the first enabled one.
-  const tabStop =
-    selectedIndex !== -1 && enabled.some(({ index }) => index === selectedIndex)
-      ? selectedIndex
-      : (enabled[0]?.index ?? -1);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    onKeyDown?.(e);
-    if (e.defaultPrevented || enabled.length === 0) return;
-    const focused = refs.current.findIndex((el) => el === e.target);
-    const position = enabled.findIndex(({ index }) => index === focused);
-    if (position === -1) return;
-    let next: number | null = null;
-    if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (position + 1) % enabled.length;
-    else if (e.key === "ArrowLeft" || e.key === "ArrowUp")
-      next = (position - 1 + enabled.length) % enabled.length;
-    else if (e.key === "Home") next = 0;
-    else if (e.key === "End") next = enabled.length - 1;
-    if (next === null) return;
-    e.preventDefault();
-    const target = enabled[next]!;
-    refs.current[target.index]?.focus();
-    select(target.option.value);
-  };
+  const trackClassName = cn(
+    "bg-fill-3 relative items-stretch gap-0.5 p-0.5 select-none",
+    fullWidth ? "flex w-full" : "inline-flex",
+    scrollable &&
+      "max-w-full [scrollbar-width:none] overflow-x-auto overscroll-x-contain [&::-webkit-scrollbar]:hidden",
+    metrics.track,
+    disabled && "opacity-50",
+    className
+  );
 
+  const segments = options.map((option, index) => {
+    const selected = option.value === value;
+    const hasBadge = option.badge !== undefined && option.badge !== null && option.badge !== false;
+    const badgeLabel =
+      option.badgeLabel ??
+      (typeof option.badge === "number" || typeof option.badge === "string"
+        ? String(option.badge)
+        : undefined);
+    const segment = {
+      ref: (el: HTMLButtonElement | null) => {
+        refs.current[index] = el;
+      },
+      value: option.value,
+      disabled: disabled || option.disabled,
+      "aria-label":
+        option["aria-label"] && hasBadge && badgeLabel
+          ? `${option["aria-label"]}, ${badgeLabel}`
+          : option["aria-label"],
+      className: cn(
+        "relative inline-flex min-w-0 cursor-pointer items-center justify-center whitespace-nowrap",
+        "facet-press facet-press-sm",
+        "focus-visible:outline-tint outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        "[&_svg]:pointer-events-none [&_svg]:shrink-0",
+        // 44px tall hit area on touch without changing the visual height.
+        "pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:top-1/2 pointer-coarse:after:h-11 pointer-coarse:after:-translate-y-1/2",
+        fullWidth && "flex-1",
+        // In a scroller the focus ring is drawn inside so the track's overflow clip keeps it.
+        scrollable && "shrink-0 focus-visible:-outline-offset-2",
+        metrics.thumb,
+        metrics.item,
+        selected ? "text-label" : "text-label-secondary hover:text-label",
+        itemClassName
+      ),
+    };
+    const content = (
+      <>
+        {selected && (
+          <motion.span
+            layoutId={thumbId}
+            aria-hidden
+            transition={springSnappy}
+            className={cn("bg-control-thumb shadow-card absolute inset-0", metrics.thumb)}
+          />
+        )}
+        <span className="relative inline-flex min-w-0 items-center gap-[inherit]">
+          {option.icon}
+          {option.label}
+          {hasBadge && (
+            <span
+              aria-hidden
+              className={cn(
+                "text-caption inline-flex min-w-5 items-center justify-center rounded-full px-1 tabular-nums",
+                selected ? "bg-tint-fill text-tint" : "bg-fill-3 text-label-secondary"
+              )}
+            >
+              {option.badge}
+            </span>
+          )}
+          {hasBadge && badgeLabel && !option["aria-label"] && (
+            <span className="sr-only">, {badgeLabel}</span>
+          )}
+        </span>
+      </>
+    );
+    return asTabs ? (
+      <TabsPrimitive.Trigger
+        key={option.value}
+        {...segment}
+        data-slot="segmented-control-item"
+        aria-controls={getTabPanelId?.(option.value)}
+      >
+        {content}
+      </TabsPrimitive.Trigger>
+    ) : (
+      <ToggleGroupPrimitive.Item key={option.value} {...segment} data-slot="segmented-control-item">
+        {content}
+      </ToggleGroupPrimitive.Item>
+    );
+  });
+
+  if (asTabs) {
+    return (
+      <TabsPrimitive.Root value={value ?? ""} onValueChange={select}>
+        <TabsPrimitive.List
+          ref={trackRef}
+          data-slot="segmented-control"
+          aria-disabled={disabled || undefined}
+          className={trackClassName}
+          {...props}
+        >
+          {segments}
+        </TabsPrimitive.List>
+      </TabsPrimitive.Root>
+    );
+  }
   return (
-    <div
+    <ToggleGroupPrimitive.Root
       ref={trackRef}
-      role={asTabs ? "tablist" : "radiogroup"}
-      aria-disabled={disabled || undefined}
+      type="single"
+      role="radiogroup"
+      value={value ?? ""}
+      onValueChange={select}
+      disabled={disabled}
       data-slot="segmented-control"
-      data-size={size}
-      data-scrollable={scrollable || undefined}
-      className={cn(
-        "bg-fill-3 relative items-stretch gap-0.5 p-0.5 select-none",
-        fullWidth ? "flex w-full" : "inline-flex",
-        scrollable &&
-          "max-w-full [scrollbar-width:none] overflow-x-auto overscroll-x-contain [&::-webkit-scrollbar]:hidden",
-        metrics.track,
-        disabled && "opacity-50",
-        className
-      )}
-      onKeyDown={handleKeyDown}
+      className={trackClassName}
       {...props}
     >
-      {options.map((option, index) => {
-        const selected = option.value === value;
-        const isDisabled = disabled || option.disabled;
-        const hasBadge =
-          option.badge !== undefined && option.badge !== null && option.badge !== false;
-        const badgeLabel =
-          option.badgeLabel ??
-          (typeof option.badge === "number" || typeof option.badge === "string"
-            ? String(option.badge)
-            : undefined);
-        return (
-          <button
-            key={option.value}
-            ref={(el) => {
-              refs.current[index] = el;
-            }}
-            type="button"
-            role={asTabs ? "tab" : "radio"}
-            aria-checked={asTabs ? undefined : selected}
-            aria-selected={asTabs ? selected : undefined}
-            aria-controls={asTabs ? getTabPanelId?.(option.value) : undefined}
-            aria-label={
-              option["aria-label"] && hasBadge && badgeLabel
-                ? `${option["aria-label"]}, ${badgeLabel}`
-                : option["aria-label"]
-            }
-            tabIndex={index === tabStop ? 0 : -1}
-            disabled={isDisabled}
-            data-slot="segmented-control-item"
-            data-value={option.value}
-            data-state={selected ? "on" : "off"}
-            onClick={() => select(option.value)}
-            className={cn(
-              "relative inline-flex min-w-0 cursor-pointer items-center justify-center whitespace-nowrap",
-              // Facet 3.1 press physics (small-control scale .95, off under Reduce Motion).
-              "facet-press facet-press-sm",
-              "focus-visible:outline-tint outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid",
-              "disabled:cursor-not-allowed disabled:opacity-50",
-              "[&_svg]:pointer-events-none [&_svg]:shrink-0",
-              // 44px tall hit area on touch without changing the visual height.
-              "pointer-coarse:after:absolute pointer-coarse:after:inset-x-0 pointer-coarse:after:top-1/2 pointer-coarse:after:h-11 pointer-coarse:after:-translate-y-1/2",
-              fullWidth && "flex-1",
-              // In a scroller segments keep their natural width, and the focus ring is drawn
-              // inside so the track's overflow clip does not cut it off.
-              scrollable && "shrink-0 focus-visible:-outline-offset-2",
-              metrics.thumb,
-              metrics.item,
-              selected ? "text-label" : "text-label-secondary hover:text-label",
-              itemClassName
-            )}
-          >
-            {selected && (
-              <motion.span
-                layoutId={thumbId}
-                aria-hidden
-                transition={springSnappy}
-                className={cn("bg-control-thumb shadow-card absolute inset-0", metrics.thumb)}
-              />
-            )}
-            <span className="relative inline-flex min-w-0 items-center gap-[inherit]">
-              {option.icon}
-              {option.label}
-              {hasBadge && (
-                <span
-                  aria-hidden
-                  data-slot="segmented-control-badge"
-                  className={cn(
-                    "text-caption font-data inline-flex min-w-5 items-center justify-center rounded-full px-1 tabular-nums",
-                    selected ? "bg-tint-fill text-tint" : "bg-fill-3 text-label-secondary"
-                  )}
-                >
-                  {option.badge}
-                </span>
-              )}
-              {hasBadge && badgeLabel && !option["aria-label"] && (
-                <span className="sr-only">, {badgeLabel}</span>
-              )}
-            </span>
-          </button>
-        );
-      })}
-    </div>
+      {segments}
+    </ToggleGroupPrimitive.Root>
   );
 }

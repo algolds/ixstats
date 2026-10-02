@@ -1,12 +1,11 @@
 "use client";
-
-import { FacetTabs } from "~/components/ui/facet";
 import { useState } from "react";
 import { SystemRestart as Loader2, Palette, OpenNewWindow as ExternalLink } from "iconoir-react";
 import nextDynamic from "next/dynamic";
 import Link from "next/link";
 import { MapStatsDashboard } from "./MapStatsDashboard";
 import { Card } from "~/components/ui/card";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 const SvgUploadManager = nextDynamic(
   () => import("./SvgUploadManager").then((m) => m.SvgUploadManager),
@@ -23,10 +22,10 @@ const SvgUploadManager = nextDynamic(
 
 type SubTab = "statistics" | "upload" | "style";
 
-const SUB_TABS: { id: SubTab; label: string }[] = [
-  { id: "statistics", label: "Statistics" },
-  { id: "upload", label: "SVG Upload" },
-  { id: "style", label: "Style Editor" },
+const SUB_TABS: { value: SubTab; label: string }[] = [
+  { value: "statistics", label: "Statistics" },
+  { value: "upload", label: "SVG Upload" },
+  { value: "style", label: "Style Editor" },
 ];
 
 export function MapSettingsTab() {
@@ -34,14 +33,13 @@ export function MapSettingsTab() {
 
   return (
     <div className="space-y-4">
-      <FacetTabs
-        tabs={SUB_TABS}
-        activeTab={subTab}
-        onChange={(id) => setSubTab(id as SubTab)}
+      <SegmentedControl
+        options={SUB_TABS}
+        value={subTab}
+        onValueChange={(id) => setSubTab(id as SubTab)}
         size="md"
-        tone="accent"
-        showTexture={false}
         className="w-full sm:w-fit"
+        asTabs
       />
 
       {subTab === "statistics" && <MapStatsDashboard />}

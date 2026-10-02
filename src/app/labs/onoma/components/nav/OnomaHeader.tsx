@@ -9,7 +9,7 @@ import React from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { HelpCircle, Bookmark, Settings, SoundHigh, Code, ArrowLeft } from "iconoir-react";
-import { FacetTabs, FacetMaterial } from "~/components/ui/facet";
+import { FacetMaterial } from "~/components/ui/facet";
 import { Button, buttonVariants } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { tweenFast } from "~/lib/design/motion";
@@ -23,6 +23,11 @@ import type {
 import { ONOMA_TABS, ONOMA_PILLAR_TABS, getStudioTabs, getExploreTabs } from "./onoma-tabs";
 import { cn } from "~/lib/utils";
 import { ActionPill } from "~/components/ui/action-pill";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+
+const toOptions = (
+  tabs: readonly { id: string; label: string; icon: React.ComponentType<{ className?: string }> }[]
+) => tabs.map(({ id, label, icon: Icon }) => ({ value: id, label, icon: <Icon /> }));
 
 interface OnomaHeaderProps {
   activeSection: OnomaSection;
@@ -276,18 +281,18 @@ export function OnomaHeader({
               className="space-y-2"
             >
               {/* 1. Pillar tabs (Create · Studio · Explore) */}
-              <FacetTabs
-                tabs={ONOMA_PILLAR_TABS}
-                activeTab={activePillar}
-                onChange={(id) => {
+              <SegmentedControl
+                options={toOptions(ONOMA_PILLAR_TABS)}
+                value={activePillar}
+                onValueChange={(id) => {
                   if (id === "create") onNavigate(lastActiveTab || "overview");
                   else if (id === "studio") onNavigateStudio(activeSubTab || "workshop");
                   else if (id === "explore") onNavigateExplore(activeExploreSubTab || "phonology");
                 }}
-                tone="accent"
-                size="lg"
+                size="md"
                 aria-label="Onoma workspaces"
                 className="w-full"
+                asTabs
               />
 
               {/* 2. The active pillar's sections, with contextual help */}
@@ -298,22 +303,22 @@ export function OnomaHeader({
                   className="flex items-center gap-2"
                 >
                   <div className="min-w-0 flex-1">
-                    <FacetTabs
-                      tabs={
+                    <SegmentedControl
+                      options={toOptions(
                         activePillar === "studio"
                           ? studioTabs
                           : activePillar === "explore"
                             ? exploreTabs
                             : ONOMA_TABS
-                      }
-                      activeTab={
+                      )}
+                      value={
                         activePillar === "studio"
                           ? activeSubTab
                           : activePillar === "explore"
                             ? activeExploreSubTab
                             : activeSection
                       }
-                      onChange={(id) => {
+                      onValueChange={(id) => {
                         if (activePillar === "studio") {
                           onNavigateStudio(id as StudioSubTab);
                         } else if (activePillar === "explore") {
@@ -322,10 +327,10 @@ export function OnomaHeader({
                           onNavigate(id as OnomaSection);
                         }
                       }}
-                      tone="accent"
                       size="md"
                       aria-label="Sections"
                       className="w-full"
+                      asTabs
                     />
                   </div>
                   {helpButton}

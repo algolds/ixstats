@@ -1,10 +1,8 @@
-/**
- * Shared Facet UI Physics and Design Constants
- */
+/** Shared spring and drag constants for the swipeable and slider physics. */
 
 // ── Shared Spring Presets ──────────────────────────────────────────────────
 
-/** Tight, precise spring — matches the apple-switch thumb physics */
+/** Tight, precise spring */
 export const SPRING_TIGHT = { stiffness: 700, damping: 48, mass: 0.55 } as const;
 
 /** Bouncier spring — responsive and fluid feedback */
@@ -13,7 +11,7 @@ export const SPRING_BOUNCY = { stiffness: 350, damping: 28, mass: 0.8 } as const
 /** Slow, deliberate spring — for drag-heavy or large UI elements */
 export const SPRING_GENTLE = { stiffness: 200, damping: 30, mass: 1.0 } as const;
 
-/** Fluid, smooth spring — defaults for FacetTabs */
+/** Fluid, smooth spring */
 export const SPRING_FLUID = { stiffness: 500, damping: 38, mass: 0.5 } as const;
 
 export const SPRING_PRESETS = {
@@ -29,16 +27,3 @@ export type SpringPreset = keyof typeof SPRING_PRESETS;
 
 export const DRAG_ELASTICITY = 0.32;
 export const DRAG_DEAD_ZONE = 3;
-
-// ── Legacy glass styling (deprecated) ──────────────────────────────────────
-// Facet 3 has one glass: the `material-*` utilities (FacetMaterial), for floating chrome only.
-// These names are kept for imports and now resolve to roles.
-
-/** @deprecated Use `bg-fill-4` (a wash) or `FacetMaterial` (floating chrome). */
-export const GLASS_BACKING = "bg-fill-4";
-/** @deprecated Use `border-separator`. */
-export const GLASS_BORDER = "border-separator";
-/** @deprecated Use `material-regular` (FacetMaterial) on floating chrome only. */
-export const GLASS_BLUR = "material-regular";
-/** @deprecated Use `shadow-floating` (chrome) or `shadow-card` (content). */
-export const GLASS_SHADOW = "shadow-floating";

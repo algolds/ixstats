@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetTabs, type FacetTabItem } from "~/components/ui/facet";
 import {
   Package,
   Flash as Zap,
@@ -20,14 +19,15 @@ import {
   type EconomicComponentType,
 } from "~/lib/economy/atomic-data";
 import { Card } from "~/components/ui/card";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 type MetricTab = "components" | "interactions" | "effectiveness" | "costs";
 
-const METRIC_TABS: FacetTabItem[] = [
-  { id: "components", label: "Components", icon: Package },
-  { id: "interactions", label: "Interactions", icon: Zap },
-  { id: "effectiveness", label: "Effectiveness", icon: Target },
-  { id: "costs", label: "Costs", icon: DollarSign },
+const METRIC_TABS = [
+  { value: "components", label: "Components", icon: <Package /> },
+  { value: "interactions", label: "Interactions", icon: <Zap /> },
+  { value: "effectiveness", label: "Effectiveness", icon: <Target /> },
+  { value: "costs", label: "Costs", icon: <DollarSign /> },
 ];
 
 interface EconomicMetricModalsProps {
@@ -158,13 +158,13 @@ export function EconomicMetricModals({
             {getTabTitle()}
           </SheetTitle>
 
-          <FacetTabs
-            tabs={METRIC_TABS}
-            activeTab={activeTab}
-            onChange={(id) => setActiveTab(id as MetricTab)}
+          <SegmentedControl
+            options={METRIC_TABS}
+            value={activeTab}
+            onValueChange={(id) => setActiveTab(id as MetricTab)}
             size="sm"
-            tone="neutral"
             className="mt-3 w-full"
+            asTabs
           />
         </SheetHeader>
 

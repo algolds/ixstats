@@ -11,7 +11,6 @@ import {
   ClockRotateRight as FileClock,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { FacetTabs } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
@@ -24,6 +23,7 @@ import type { CommandNavMode } from "../CommandNavToggle";
 import { useDiplomacyInboxCount } from "~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox";
 import { InboxCountPill } from "~/components/mycountry/domains/diplomacy/inbox/InboxCountPill";
 import { Card } from "~/components/ui/card";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface UnifiedGlassCommandBarProps {
   mode: CommandNavMode;
@@ -215,25 +215,24 @@ export function UnifiedGlassCommandBar({
           aria-label="MyCountry sections"
           className="relative -mx-1 scrollbar-none overflow-x-auto px-1"
         >
-          <FacetTabs
+          <SegmentedControl
             size="md"
-            tone="mycountry"
             className="w-max min-w-full"
-            activeTab={activeTab}
+            value={activeTab}
             aria-label="MyCountry sections"
-            onChange={(id) => {
+            onValueChange={(id) => {
               if (isExecutiveMode) onChangeMode("home");
               onNavigate?.(id);
             }}
-            tabs={sectionTabs.map(({ id, title, icon }) => ({
-              id,
-              icon,
-              className: "flex-1 min-h-11 sm:min-h-9",
+            options={sectionTabs.map(({ id, title, icon: Icon }) => ({
+              value: id,
+              icon: <Icon />,
               label: title,
               ...(id === "diplomacy" && diplomacyInboxCount > 0
                 ? { badge: diplomacyInboxCount }
                 : {}),
             }))}
+            asTabs
           />
         </nav>
       )}

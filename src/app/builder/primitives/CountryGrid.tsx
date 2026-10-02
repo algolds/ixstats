@@ -6,13 +6,16 @@ import {
   NavArrowLeft as ChevronLeft,
   NavArrowRight as ChevronRight,
   Coins,
+  NavArrowDown,
 } from "iconoir-react";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { MenuButton } from "~/components/ui/menu-button";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import {
   CountryFocusCardBuilder,
@@ -270,35 +273,39 @@ export function CountryGrid({
               )}
 
               {/* Economic tier menu */}
-              <MenuButton
-                size="sm"
-                variant={activeEconTier ? "tinted" : "gray"}
-                icon={<Coins aria-hidden />}
-                label={
-                  <span className="whitespace-nowrap">
-                    {activeEconTier ? `${activeEconTier.label} Econ` : "Econ Tier"}
-                  </span>
-                }
-                className="shrink-0"
-                contentClassName="w-56"
-              >
-                <DropdownMenuLabel>Economic development tier</DropdownMenuLabel>
-                <DropdownMenuRadioGroup
-                  value={activeEconTier?.id ?? "all"}
-                  onValueChange={handleSelectEconTier}
-                >
-                  {ECONOMIC_TIERS.map((tier) => (
-                    <DropdownMenuRadioItem key={tier.id} value={tier.id}>
-                      <span className="flex flex-col gap-0.5">
-                        <span className="text-label font-medium">{tier.label}</span>
-                        <span className="text-footnote text-label-secondary">
-                          {tier.description}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant={activeEconTier ? "secondary" : "outline"}
+                    className="shrink-0"
+                  >
+                    <Coins aria-hidden />
+                    <span className="whitespace-nowrap">
+                      {activeEconTier ? `${activeEconTier.label} Econ` : "Econ Tier"}
+                    </span>
+                    <NavArrowDown aria-hidden className="-mr-1 size-3.5 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuLabel>Economic development tier</DropdownMenuLabel>
+                  <DropdownMenuRadioGroup
+                    value={activeEconTier?.id ?? "all"}
+                    onValueChange={handleSelectEconTier}
+                  >
+                    {ECONOMIC_TIERS.map((tier) => (
+                      <DropdownMenuRadioItem key={tier.id} value={tier.id}>
+                        <span className="flex flex-col gap-0.5">
+                          <span className="text-label font-medium">{tier.label}</span>
+                          <span className="text-footnote text-label-secondary">
+                            {tier.description}
+                          </span>
                         </span>
-                      </span>
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-              </MenuButton>
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               {/* Vertical Divider */}
               <div aria-hidden className="bg-separator-opaque hidden h-5 w-px shrink-0 sm:block" />

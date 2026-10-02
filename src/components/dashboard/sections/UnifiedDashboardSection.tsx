@@ -21,8 +21,6 @@ import {
 } from "~/components/mycountry/shared/primitives/tabs/TabMotionConfig";
 import { useUser } from "~/context/auth-context";
 import { api, type RouterOutputs } from "~/trpc/react";
-import { FacetTabs } from "~/components/ui/facet";
-
 type ThinkpagesAccountItem = RouterOutputs["thinkpages"]["getMyAccounts"][number];
 
 import dynamic from "next/dynamic";
@@ -61,16 +59,17 @@ import { TrendingFeedContent } from "./TrendingFeedContent";
 import { TrendingSectionWidget } from "./TrendingSectionWidget";
 import { BlurbSection } from "./BlurbSection";
 import { CountriesToExploreCard } from "./CountriesToExploreCard";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 
 // ─── Config ──────────────────────────────────────────────────────
 
 type FeedTab = "all" | "following" | "trending" | "community";
 
-const BASE_TABS: { id: FeedTab; label: string; icon: typeof Rss }[] = [
-  { id: "all", label: "All Activity", icon: Rss },
-  { id: "following", label: "Following", icon: Users },
-  { id: "trending", label: "Trending", icon: Flame },
-  { id: "community", label: "Community", icon: BookOpen },
+const BASE_TABS: { value: FeedTab; label: string; icon: React.ReactNode }[] = [
+  { value: "all", label: "All Activity", icon: <Rss /> },
+  { value: "following", label: "Following", icon: <Users /> },
+  { value: "trending", label: "Trending", icon: <Flame /> },
+  { value: "community", label: "Community", icon: <BookOpen /> },
 ];
 
 // ─── Props ───────────────────────────────────────────────────────
@@ -150,7 +149,7 @@ export function UnifiedDashboardSection({
 
   // Anyone signed in can follow ThinkPages accounts, so Following no longer needs a country.
   const TABS = useMemo(
-    () => (isSignedIn ? BASE_TABS : BASE_TABS.filter((t) => t.id !== "following")),
+    () => (isSignedIn ? BASE_TABS : BASE_TABS.filter((t) => t.value !== "following")),
     [isSignedIn]
   );
 
@@ -224,14 +223,13 @@ export function UnifiedDashboardSection({
           <div className="facet-layout-main-span-2 space-y-5">
             {/* Feed Tab Bar - ticks on change incl Community */}
             <motion.div variants={staggerItem} className="flex items-center gap-2">
-              <FacetTabs
-                tabs={TABS}
-                activeTab={activeTab}
-                onChange={(tabId) => setActiveTab(tabId as FeedTab)}
-                tone="accent"
+              <SegmentedControl
+                options={TABS}
+                value={activeTab}
+                onValueChange={(tabId) => setActiveTab(tabId as FeedTab)}
                 size="md"
                 className="flex-1"
-                indicatorClassName="rounded-row"
+                asTabs
               />
               {/* Settings gear */}
               {isSignedIn && (
