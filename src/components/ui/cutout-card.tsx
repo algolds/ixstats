@@ -264,7 +264,7 @@ export type CutoutCardImageProps = ComponentProps<typeof Image>;
 
 /**
  * Uses `fill` by default; parent `CutoutCardMedia` should be `relative` with a defined block size.
- * Zooms to 105% over 700ms while the card is hovered (v2); still under Reduce Motion.
+ * Zooms to 105% over 700ms while the card is hovered; still under Reduce Motion.
  */
 export function CutoutCardImage({
   className,
@@ -324,7 +324,7 @@ export function CutoutCardFooter({ className, ...props }: CutoutCardFooterProps)
 export type CutoutCardStaggerProps = ComponentProps<typeof motion.div>;
 
 /**
- * The v2 blur-in stagger container: its `CutoutCardStaggerItem` children rise and sharpen one after
+ * The blur-in stagger container: its `CutoutCardStaggerItem` children rise and sharpen one after
  * another when the card mounts (a fade under Reduce Motion). Pads like `CutoutCardContent`.
  */
 export function CutoutCardStagger({ className, ...props }: CutoutCardStaggerProps) {

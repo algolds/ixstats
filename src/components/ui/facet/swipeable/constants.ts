@@ -1,22 +1,8 @@
-/**
- * Glass SwipeableRow — Physics & Configuration Constants
- *
- * Spring presets are derived from the apple-switch component
- * (src/components/unlumen-ui/apple-switch.tsx) to maintain a consistent
- * interaction feel across the glass design system.
- */
+/** SwipeableRow physics and configuration constants. */
 
 // ── Spring Presets ──────────────────────────────────────────────────────
 
-import {
-  SPRING_TIGHT,
-  SPRING_BOUNCY,
-  SPRING_GENTLE,
-  SPRING_FLUID,
-  SPRING_PRESETS as SHARED_SPRING_PRESETS,
-} from "../shared/constants";
-
-export { SPRING_TIGHT, SPRING_BOUNCY, SPRING_GENTLE, SPRING_FLUID };
+import { SPRING_PRESETS as SHARED_SPRING_PRESETS } from "../shared/constants";
 
 export const SPRING_PRESETS = SHARED_SPRING_PRESETS;
 

@@ -96,7 +96,7 @@ export function VaultStatusPanel() {
           glyphClass="bg-muted/60 text-foreground"
         >
           <div className="flex items-center gap-3">
-            <span className="text-foreground text-base font-extrabold tracking-tight">
+            <span className="text-foreground text-base font-bold tracking-tight">
               {balanceLoading ? "..." : (balance ?? 0).toLocaleString()} IxC
             </span>
           </div>

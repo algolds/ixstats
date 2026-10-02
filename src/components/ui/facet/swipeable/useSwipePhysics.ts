@@ -10,7 +10,7 @@
  * - Derived transforms (opacity, scale, progress) for action trays
  * - RTL-aware direction flipping
  *
- * Based on the pointer-capture pattern from apple-switch.tsx:
+ * Pointer-capture pattern:
  * - onPointerDown  → record start position
  * - onPointerMove  → past the dead zone, capture the pointer; update motion value, track velocity
  * - onPointerUp    → evaluate snap point, spring to target

@@ -18,7 +18,7 @@ function Command({ className, ...props }: React.ComponentProps<typeof CommandPri
     <CommandPrimitive
       data-slot="command"
       className={cn(
-        "flex h-full w-full flex-col overflow-hidden rounded-row bg-surface-elevated text-label",
+        "rounded-row bg-surface-elevated text-label flex h-full w-full flex-col overflow-hidden",
         className
       )}
       {...props}
@@ -45,7 +45,7 @@ function CommandDialog({
         <DialogTitle>{title}</DialogTitle>
         <DialogDescription>{description}</DialogDescription>
       </DialogHeader>
-      {/* Keyboard-invoked, so it appears and leaves in 0ms (spec §7.3, §8). */}
+      {/* Keyboard-invoked, so it appears and leaves in 0ms . */}
       <DialogContent
         presentation="instant"
         className={cn("overflow-hidden p-0", className)}
@@ -66,13 +66,13 @@ function CommandInput({
   return (
     <div
       data-slot="command-input-wrapper"
-      className="flex h-9 items-center gap-2 border-b border-separator px-3"
+      className="border-separator flex h-9 items-center gap-2 border-b px-3"
     >
-      <SearchIcon className="size-4 shrink-0 text-label-secondary" />
+      <SearchIcon className="text-label-secondary size-4 shrink-0" />
       <CommandPrimitive.Input
         data-slot="command-input"
         className={cn(
-          "flex h-10 w-full bg-transparent py-3 text-body outline-hidden placeholder:text-label-tertiary disabled:cursor-not-allowed disabled:opacity-50",
+          "text-body placeholder:text-label-tertiary flex h-10 w-full bg-transparent py-3 outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
           className
         )}
         {...props}
@@ -95,7 +95,7 @@ function CommandEmpty({ ...props }: React.ComponentProps<typeof CommandPrimitive
   return (
     <CommandPrimitive.Empty
       data-slot="command-empty"
-      className="py-6 text-center text-callout text-label-secondary"
+      className="text-callout text-label-secondary py-6 text-center"
       {...props}
     />
   );
@@ -109,7 +109,7 @@ function CommandGroup({
     <CommandPrimitive.Group
       data-slot="command-group"
       className={cn(
-        "overflow-hidden p-1 text-label [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1 [&_[cmdk-group-heading]]:text-subhead [&_[cmdk-group-heading]]:text-label-secondary",
+        "text-label [&_[cmdk-group-heading]]:text-subhead [&_[cmdk-group-heading]]:text-label-secondary overflow-hidden p-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1",
         className
       )}
       {...props}
@@ -124,7 +124,7 @@ function CommandSeparator({
   return (
     <CommandPrimitive.Separator
       data-slot="command-separator"
-      className={cn("-mx-1 h-px bg-separator", className)}
+      className={cn("bg-separator -mx-1 h-px", className)}
       {...props}
     />
   );
@@ -135,7 +135,7 @@ function CommandItem({ className, ...props }: React.ComponentProps<typeof Comman
     <CommandPrimitive.Item
       data-slot="command-item"
       className={cn(
-        "relative flex cursor-default items-center gap-2 rounded-control-sm min-h-8 px-2 py-1 text-body outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-[selected=true]:bg-fill-3 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='text-'])]:text-label-secondary [:where(&)_svg]:size-4",
+        "rounded-control-sm text-body data-[selected=true]:bg-fill-3 [&_svg:not([class*='text-'])]:text-label-secondary relative flex min-h-8 cursor-default items-center gap-2 px-2 py-1 outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [:where(&)_svg]:size-4",
         className
       )}
       {...props}
@@ -147,7 +147,7 @@ function CommandShortcut({ className, ...props }: React.ComponentProps<"span">) 
   return (
     <span
       data-slot="command-shortcut"
-      className={cn("ml-auto text-footnote text-label-secondary", className)}
+      className={cn("text-footnote text-label-secondary ml-auto", className)}
       {...props}
     />
   );

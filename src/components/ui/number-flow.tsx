@@ -320,9 +320,6 @@ export function NumberFlowDisplay({
   );
 }
 
-// Legacy compatibility - alias AnimatedNumber to NumberFlowDisplay
-export const AnimatedNumber = NumberFlowDisplay;
-
 // Convenience exports for common formats
 export const CurrencyFlow = (props: Omit<NumberFlowDisplayProps, "format">) => (
   <NumberFlowDisplay {...props} format="currency" />

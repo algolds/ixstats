@@ -1,21 +1,15 @@
 import * as React from "react";
 import { ArrowDown, ArrowUp, Minus } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
-import { Eyebrow } from "./eyebrow";
 
 /**
- * Stat (Facet 3 §7.1): an `Eyebrow` data label, a value, an optional delta and hint. Facet 3.1: the
- * value and the delta are in the data face (`font-data` — Azeret Mono, tabular, slashed zero).
+ * A data label, a value, an optional delta and hint.
  *
  *   <Stat label="GDP" value="$1.2T" delta={{ value: "+2.4%", direction: "up" }} hint="vs. last year" />
  *
- * `icon` adds a 14px glyph to the label row (§6: 14px with caption-sized text), leading the label by
- * default like HIG summary tiles; `iconPlacement="trailing"` pins it to the row's end instead
- * (metric grids whose icon is a corner mark). The icon is decorative (`aria-hidden`) and
- * `label-secondary` unless the caller colours it, e.g. `icon={<Heart className="text-red" />}`.
- *
- * The delta always pairs its colour with an arrow icon and screen-reader text (colour never
- * carries meaning alone, §10). `sentiment` decides the colour when "up" is bad (e.g. debt).
+ * `icon` is a decorative 14px glyph in the label row (`iconPlacement="trailing"` pins it to the
+ * row's end). The delta pairs its colour with an arrow icon and screen-reader text; `sentiment`
+ * decides the colour when "up" is bad (e.g. debt).
  */
 export type StatDeltaDirection = "up" | "down" | "neutral";
 
@@ -57,10 +51,8 @@ export function StatDeltaBadge({ delta, className }: { delta: StatDelta; classNa
   return (
     <span
       data-slot="stat-delta"
-      data-direction={delta.direction}
-      data-sentiment={sentiment}
       className={cn(
-        "text-footnote font-data inline-flex items-center gap-1 font-medium tabular-nums",
+        "text-footnote inline-flex items-center gap-1 font-medium tabular-nums",
         SENTIMENT_CLASS[sentiment],
         className
       )}
@@ -96,7 +88,6 @@ export const Stat = React.forwardRef<HTMLDivElement, StatProps>(
       {icon != null && icon !== false ? (
         <span
           data-slot="stat-label-row"
-          data-icon-placement={iconPlacement}
           className={cn(
             "flex min-w-0 items-center gap-2",
             iconPlacement === "trailing" && "flex-row-reverse justify-between gap-2"
@@ -109,16 +100,18 @@ export const Stat = React.forwardRef<HTMLDivElement, StatProps>(
           >
             {icon}
           </span>
-          <Eyebrow className="block min-w-0 truncate">{label}</Eyebrow>
+          <span className="text-stat-label text-label-secondary block min-w-0 truncate">
+            {label}
+          </span>
         </span>
       ) : (
-        <Eyebrow className="block truncate">{label}</Eyebrow>
+        <span className="text-stat-label text-label-secondary block truncate">{label}</span>
       )}
       <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
         <span
           data-slot="stat-value"
           className={cn(
-            "text-label font-data min-w-0 truncate tabular-nums",
+            "text-label min-w-0 truncate tabular-nums",
             size === "sm" ? "text-headline" : "text-title-3"
           )}
         >

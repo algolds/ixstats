@@ -3,16 +3,16 @@
 // ── Shared Spring Presets ──────────────────────────────────────────────────
 
 /** Tight, precise spring */
-export const SPRING_TIGHT = { stiffness: 700, damping: 48, mass: 0.55 } as const;
+const SPRING_TIGHT = { stiffness: 700, damping: 48, mass: 0.55 } as const;
 
 /** Bouncier spring — responsive and fluid feedback */
-export const SPRING_BOUNCY = { stiffness: 350, damping: 28, mass: 0.8 } as const;
+const SPRING_BOUNCY = { stiffness: 350, damping: 28, mass: 0.8 } as const;
 
 /** Slow, deliberate spring — for drag-heavy or large UI elements */
-export const SPRING_GENTLE = { stiffness: 200, damping: 30, mass: 1.0 } as const;
+const SPRING_GENTLE = { stiffness: 200, damping: 30, mass: 1.0 } as const;
 
 /** Fluid, smooth spring */
-export const SPRING_FLUID = { stiffness: 500, damping: 38, mass: 0.5 } as const;
+const SPRING_FLUID = { stiffness: 500, damping: 38, mass: 0.5 } as const;
 
 export const SPRING_PRESETS = {
   tight: SPRING_TIGHT,

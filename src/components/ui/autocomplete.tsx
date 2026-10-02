@@ -18,7 +18,6 @@ export interface AutocompleteSuggestion {
 }
 
 export interface AutocompleteProps {
-  fieldName: string;
   value: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
@@ -30,14 +29,11 @@ export interface AutocompleteProps {
   isLoading?: boolean;
   disabled?: boolean;
   className?: string;
-  allowCustom?: boolean;
   /** Id for the text input, so a `<label htmlFor>` can name it. */
   id?: string;
 }
 
 export const Autocomplete = React.memo(function Autocomplete({
-  // oxlint-disable-next-line eslint/no-unused-vars
-  fieldName,
   value,
   onChange,
   onBlur,
@@ -50,8 +46,6 @@ export const Autocomplete = React.memo(function Autocomplete({
   isLoading = false,
   disabled = false,
   className,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  allowCustom = true,
 }: AutocompleteProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);

@@ -7,12 +7,12 @@ import { cn } from "~/lib/utils/cn";
 const STATUS_DESCRIPTION = "*:data-[slot=alert-description]:text-label";
 
 /**
- * Facet 3 Alert: an inline, opaque message block (not an overlay — use `AlertDialog` to confirm).
+ * An inline, opaque message block (not an overlay — use `AlertDialog` to confirm).
  *
  * Variants: `default` (surface + hairline) · status roles `destructive`, `warning`, `caution`,
  * `success`, `info` as the status `-ink` on a 15% fill of the colour (≥ 4.5:1 on every background
  * role, light/dark, Increase Contrast — token-contrast.test.ts). Pair the colour with an icon or
- * title (§10).
+ * title.
  *
  * Role: `alert` (assertive) for `default`, `destructive`, `warning` and `caution`; `status`
  * (polite) for `info` and `success`. Pass `role` to override (e.g. `role="note"` for static hints).

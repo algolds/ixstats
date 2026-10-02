@@ -7,17 +7,11 @@ import { NavArrowDown as ChevronDownIcon } from "iconoir-react";
 
 import { cn } from "~/lib/utils/cn";
 
-interface NavigationMenuProps extends React.ComponentProps<typeof NavigationMenuPrimitive.Root> {
-  /** Legacy prop from the prior Base UI implementation; accepted for compatibility. */
-  contentProps?: Record<string, unknown>;
-}
-
 function NavigationMenu({
   className,
   children,
-  contentProps: _contentProps,
   ...props
-}: NavigationMenuProps) {
+}: React.ComponentProps<typeof NavigationMenuPrimitive.Root>) {
   return (
     <NavigationMenuPrimitive.Root
       data-slot="navigation-menu"
@@ -108,7 +102,7 @@ function NavigationMenuLink({
     <NavigationMenuPrimitive.Link
       data-slot="navigation-menu-link"
       className={cn(
-        "flex flex-col gap-1 rounded-control-sm p-2 text-body text-label no-underline transition-colors duration-fast ease-out-facet outline-none hover:bg-fill-4 focus:bg-fill-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-tint data-[active=true]:bg-fill-3 [&_svg:not([class*='text-'])]:text-label-secondary [:where(&)_svg]:size-4",
+        "rounded-control-sm text-body text-label duration-fast ease-out-facet hover:bg-fill-4 focus:bg-fill-4 focus-visible:outline-tint data-[active=true]:bg-fill-3 [&_svg:not([class*='text-'])]:text-label-secondary flex flex-col gap-1 p-2 no-underline transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid [:where(&)_svg]:size-4",
         className
       )}
       {...props}
@@ -125,7 +119,7 @@ function NavigationMenuViewport({
       <NavigationMenuPrimitive.Viewport
         data-slot="navigation-menu-viewport"
         className={cn(
-          "relative mt-2 h-(--radix-navigation-menu-viewport-height) w-full origin-top overflow-hidden rounded-card border border-separator bg-surface-elevated text-label shadow-floating md:w-(--radix-navigation-menu-viewport-width)",
+          "rounded-card border-separator bg-surface-elevated text-label shadow-floating relative mt-2 h-(--radix-navigation-menu-viewport-height) w-full origin-top overflow-hidden border md:w-(--radix-navigation-menu-viewport-width)",
           "data-[state=open]:animate-facet-in data-[state=closed]:animate-facet-out",
           className
         )}
@@ -148,39 +142,19 @@ function NavigationMenuIndicator({
       )}
       {...props}
     >
-      <div className="relative top-[60%] size-2 rotate-45 rounded-tl-sm bg-separator-opaque" />
+      <div className="bg-separator-opaque relative top-[60%] size-2 rotate-45 rounded-tl-sm" />
     </NavigationMenuPrimitive.Indicator>
   );
 }
-
-// ── Compatibility shims (legacy export names; no remaining consumers) ──────────
-/** Legacy Base UI chevron icon slot. */
-function NavigationMenuIcon({ className }: { className?: string }) {
-  return <ChevronDownIcon className={cn("size-3.5", className)} aria-hidden="true" />;
-}
-/** Radix has no backdrop primitive for the navigation menu. */
-function NavigationMenuBackdrop() {
-  return null;
-}
-/** Radix renders content inline via the Viewport; Portal is a pass-through. */
-function NavigationMenuPortal({ children }: { children?: React.ReactNode }) {
-  return <>{children}</>;
-}
-/** Legacy submenu trigger alias. */
-const NavigationSubMenuTrigger = NavigationMenuTrigger;
 
 export {
   NavigationMenu,
   NavigationMenuList,
   NavigationMenuItem,
   NavigationMenuTrigger,
-  NavigationMenuIcon,
   NavigationMenuContent,
   NavigationMenuLink,
   NavigationMenuIndicator,
-  NavigationMenuBackdrop,
-  NavigationMenuPortal,
   NavigationMenuViewport,
   navigationMenuTriggerStyle,
-  NavigationSubMenuTrigger,
 };

@@ -52,7 +52,7 @@ export function FacetMobileCard<T extends Record<string, any>>({
     heroCols.length > 0 ? fieldCols : fieldCols.filter((c) => c !== effectiveHeroCols[0]);
 
   return (
-    // The opaque content card (§7.1); a pressable FacetCard (keyboard, focus ring) when onClick.
+    // The opaque content card; pressable (keyboard, focus ring) when onClick.
     <Card
       data-slot="facet-mobile-card"
       data-cuelume-press

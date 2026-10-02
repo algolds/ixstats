@@ -27,23 +27,7 @@ export interface CometCardProps {
   disableEffects?: boolean;
 }
 
-/**
- * CometCard - Premium 3D card component with holographic effects
- *
- * Features:
- * - 3D tilt effect with mouse tracking
- * - Holographic glare overlay
- * - Optional multi-layer holographic shimmer
- * - Glass physics integration
- * - Configurable depth and intensity
- *
- * @example
- * ```tsx
- * <CometCard holographic={true} glassDepth="child">
- *   <CardContent />
- * </CometCard>
- * ```
- */
+/** 3D tilt card with a holographic glare overlay and optional shimmer. */
 export const CometCard = ({
   rotateDepth = 17.5,
   translateDepth = 20,

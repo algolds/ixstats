@@ -1,36 +1,14 @@
 "use client";
 
 /**
- * SwipeableRow — iOS-style swipeable row with frosted glass action tray
+ * SwipeableRow: iOS-style swipeable row with an action tray. Compound API:
+ * `SwipeableRow.Leading` / `.Trailing` (swipe actions, optional `commit`), `.Content`,
+ * `.Expanded`; wrap several rows in `SwipeableGroup` to close the others on open.
  *
- * Compound component API:
- *   <SwipeableRow>
- *     <SwipeableRow.Leading commit={...}>
- *       <SwipeActionButton ... />
- *     </SwipeableRow.Leading>
- *     <SwipeableRow.Content>
- *       {children}
- *     </SwipeableRow.Content>
- *     <SwipeableRow.Trailing commit={...}>
- *       <SwipeActionButton ... />
- *     </SwipeableRow.Trailing>
- *     <SwipeableRow.Expanded>
- *       {expandedContent}
- *     </SwipeableRow.Expanded>
- *   </SwipeableRow>
- *
- * Wrap multiple rows in <SwipeableGroup> for auto-close coordination.
- *
- * Keyboard and assistive technology (swiping is pointer-only):
- * - The row adds no tab stop when its content has a focusable element (a FacetRow's button or
- *   link); Tab lands on that element and Enter/Space activate it as usual. A row whose content
- *   has nothing focusable is itself the tab stop: Enter/Space toggle `Expanded` (or open the
- *   actions menu), Delete/Backspace run the trailing commit, Escape closes.
- * - Shift+F10 or the ContextMenu key, from the row or anything inside it, opens an "Actions"
- *   menu listing the swipe actions (and commit actions without a matching button) by the same
- *   labels. Focus returns to where it was when the menu closes.
- * - Tray buttons stay in the accessibility tree (screen readers can activate them in browse
- *   mode) but are out of the tab order.
+ * Swiping is pointer-only. Keyboard and assistive technology: a row with no focusable content is
+ * itself the tab stop (Enter/Space toggle `Expanded` or open the actions menu, Delete/Backspace run
+ * the trailing commit, Escape closes); Shift+F10 or the ContextMenu key opens an "Actions" menu
+ * listing the swipe actions. Tray buttons stay in the accessibility tree but out of the tab order.
  */
 
 import React, {

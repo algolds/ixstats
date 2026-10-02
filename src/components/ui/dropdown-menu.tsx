@@ -7,7 +7,7 @@ import { Check, NavArrowRight as ChevronRightIcon, Circle } from "iconoir-react"
 import { cn } from "~/lib/utils/cn";
 import { presentMotionClassName } from "~/components/ui/dialog";
 
-/** Menu surface (spec §5): thick material, floating shadow, origin-aware pop. */
+/** Menu surface: thick material, floating shadow, origin-aware pop. */
 const menuSurface =
   "z-popover min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) rounded-row p-1 text-label material-thick shadow-floating";
 
@@ -79,7 +79,7 @@ function DropdownMenuItem({
       data-variant={variant}
       className={cn(
         menuRow,
-        "data-[inset]:pl-8 data-[variant=destructive]:text-destructive data-[variant=destructive]:data-[highlighted]:bg-destructive/12 data-[variant=destructive]:*:[svg]:text-destructive",
+        "data-[variant=destructive]:text-destructive data-[variant=destructive]:data-[highlighted]:bg-destructive/12 data-[variant=destructive]:*:[svg]:text-destructive data-[inset]:pl-8",
         className
       )}
       {...props}
@@ -103,7 +103,7 @@ function DropdownMenuSubTrigger({
     <DropdownMenuPrimitive.SubTrigger
       data-slot="dropdown-menu-sub-trigger"
       data-inset={inset}
-      className={cn(menuRow, "data-[inset]:pl-8 data-[state=open]:bg-fill-3", className)}
+      className={cn(menuRow, "data-[state=open]:bg-fill-3 data-[inset]:pl-8", className)}
       {...props}
     >
       {children}
@@ -119,12 +119,7 @@ function DropdownMenuSubContent({
   return (
     <DropdownMenuPrimitive.SubContent
       data-slot="dropdown-menu-sub-content"
-      className={cn(
-        menuSurface,
-        "overflow-hidden",
-        presentMotionClassName,
-        className
-      )}
+      className={cn(menuSurface, "overflow-hidden", presentMotionClassName, className)}
       {...props}
     />
   );
@@ -145,10 +140,7 @@ function DropdownMenuGroupLabel({ className, inset, ...props }: DropdownMenuGrou
     <DropdownMenuPrimitive.Label
       data-slot="dropdown-menu-group-label"
       data-inset={inset}
-      className={cn(
-        "px-2 py-1 text-footnote text-label-secondary data-[inset]:pl-8",
-        className
-      )}
+      className={cn("text-footnote text-label-secondary px-2 py-1 data-[inset]:pl-8", className)}
       {...props}
     />
   );
@@ -168,11 +160,7 @@ function DropdownMenuRadioItem({
   return (
     <DropdownMenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
-      className={cn(
-        menuRow,
-        "pr-2 pl-8",
-        className
-      )}
+      className={cn(menuRow, "pr-2 pl-8", className)}
       {...props}
     >
       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
@@ -193,11 +181,7 @@ function DropdownMenuCheckboxItem({
   return (
     <DropdownMenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
-      className={cn(
-        menuRow,
-        "pr-2 pl-8",
-        className
-      )}
+      className={cn(menuRow, "pr-2 pl-8", className)}
       {...props}
     >
       <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
@@ -217,7 +201,7 @@ function DropdownMenuSeparator({
   return (
     <DropdownMenuPrimitive.Separator
       data-slot="dropdown-menu-separator"
-      className={cn("-mx-1 my-1 h-px bg-separator", className)}
+      className={cn("bg-separator -mx-1 my-1 h-px", className)}
       {...props}
     />
   );
@@ -227,7 +211,7 @@ function DropdownMenuShortcut({ className, ...props }: React.ComponentProps<"spa
   return (
     <span
       data-slot="dropdown-menu-shortcut"
-      className={cn("ml-auto text-footnote text-label-secondary", className)}
+      className={cn("text-footnote text-label-secondary ml-auto", className)}
       {...props}
     />
   );

@@ -1,9 +1,4 @@
-/**
- * Glass SwipeableRow — TypeScript Interfaces
- *
- * Defines the complete type surface for the compound component API,
- * physics hook, and group coordination context.
- */
+/** SwipeableRow types: the compound API, physics hook and group context. */
 
 import type { ComponentType, ReactNode } from "react";
 

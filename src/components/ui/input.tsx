@@ -3,7 +3,7 @@ import * as React from "react";
 import { cn } from "~/lib/utils/cn";
 
 /**
- * Shared field styling (spec §7.2): `fill-3` background with a hairline, `rounded-control`, no blur
+ * Shared field styling: `fill-3` background with a hairline, `rounded-control`, no blur
  * or refraction; 2px tint focus ring; system red when `aria-invalid`. 16px text below `md` so iOS
  * does not zoom on focus, `text-body` above.
  */
@@ -24,8 +24,8 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       data-slot="input"
       className={cn(
         fieldStyles,
-        "flex h-(--control-height) w-full min-w-0 rounded-control px-3 py-1 text-base md:text-body",
-        "file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-body file:font-medium file:text-label",
+        "rounded-control md:text-body flex h-(--control-height) w-full min-w-0 px-3 py-1 text-base",
+        "file:text-body file:text-label file:inline-flex file:h-7 file:border-0 file:bg-transparent file:font-medium",
         className
       )}
       {...props}

@@ -114,7 +114,7 @@ export interface VirtualAnchorPopoverProps extends Omit<
 }
 
 /**
- * A non-modal `Popover` anchored to a `VirtualAnchor` (spec §7.3): text-selection toolbars, hover
+ * A non-modal `Popover` anchored to a `VirtualAnchor`: text-selection toolbars, hover
  * cards for links found by delegation, citation previews. Radix positions it (side/align/offset,
  * collision flip and shift, follows scroll), dismisses it on Escape/outside press, and animates it;
  * no `createPortal` or hand-computed coordinates in feature code.
@@ -202,7 +202,7 @@ function PopoverContent({
         sideOffset={sideOffset}
         className={cn(
           "z-popover rounded-card pointer-events-auto max-h-(--radix-popover-content-available-height) w-72 max-w-(--radix-popover-content-available-width) origin-(--radix-popover-content-transform-origin) overflow-x-hidden overflow-y-auto overscroll-contain p-4 outline-none",
-          // Floating chrome (spec §5): thick material + floating shadow. Anything inside uses
+          // Floating chrome: thick material + floating shadow. Anything inside uses
           // opaque roles — never another material.
           "material-thick text-label shadow-floating",
           // Origin-aware scale .96 + fade in, 120ms out.

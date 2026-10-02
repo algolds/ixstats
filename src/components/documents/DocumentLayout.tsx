@@ -160,7 +160,7 @@ export function DocumentLayout({ meta, sections, back, children }: DocumentLayou
               </div>
 
               <div>
-                <h1 className="text-foreground text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl">
+                <h1 className="text-foreground text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
                   {meta.title}
                 </h1>
                 <p className="text-muted-foreground mt-3 max-w-3xl text-sm leading-relaxed sm:text-base">
