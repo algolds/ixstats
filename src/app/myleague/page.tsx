@@ -37,10 +37,10 @@ import { LeagueCreator } from "~/components/sports/league/LeagueCreator";
 import { LeagueCover } from "~/components/sports/LeagueCover";
 import { withBasePath } from "~/lib/base-path";
 import { ShellPageHeader } from "~/components/shell/ShellPageHeader";
-import { FacetCard } from "~/components/ui/facet-container";
 import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
 import { type SportPresetKey } from "~/lib/sports/presets";
 import { SPORT_LABELS, ARCHETYPE_LABELS } from "~/lib/sports/theming";
+import { Card } from "~/components/ui/card";
 
 const MYLEAGUE_HELP_STEPS: HeroHelpStep[] = [
   {
@@ -133,7 +133,7 @@ export default function MyLeaguePage() {
       <LeagueCreator open={showCreator} onOpenChange={setShowCreator} />
 
       {/* ─── COMMAND STUDIO HEADER ─── v2 glass hero (no glow: sports stay flat) */}
-      <FacetCard variant="glass" padding="lg">
+      <Card variant="hero" padding="lg">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -164,7 +164,7 @@ export default function MyLeaguePage() {
             </Button>
           </div>
         </div>
-      </FacetCard>
+      </Card>
 
       {/* ─── FEATURED ASSOCIATION HERO ─── */}
       {featuredLeague && (
@@ -177,7 +177,7 @@ export default function MyLeaguePage() {
             Featured competition
           </h2>
 
-          <FacetCard variant="glass" className="overflow-hidden">
+          <Card variant="hero" className="overflow-hidden">
             <div className="flex flex-col md:flex-row">
               <div className="bg-fill-3 relative h-48 shrink-0 overflow-hidden md:h-auto md:w-80">
                 <LeagueCover
@@ -249,7 +249,7 @@ export default function MyLeaguePage() {
                 </Button>
               </div>
             </div>
-          </FacetCard>
+          </Card>
         </section>
       )}
 
@@ -303,14 +303,14 @@ export default function MyLeaguePage() {
         {isLoading ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <FacetCard key={i} className="overflow-hidden">
+              <Card key={i} className="overflow-hidden">
                 <Skeleton className="h-40 w-full rounded-none" />
                 <div className="space-y-3 p-5">
                   <Skeleton className="h-6 w-3/4" />
                   <Skeleton className="h-4 w-1/2" />
                   <Skeleton className="h-10 w-full" />
                 </div>
-              </FacetCard>
+              </Card>
             ))}
           </div>
         ) : filteredLeagues.length > 0 ? (
@@ -328,10 +328,11 @@ export default function MyLeaguePage() {
                     exit={{ opacity: 0, scale: 0.96 }}
                     transition={springSmooth}
                   >
-                    <FacetCard
+                    <Card
                       onClick={() => router.push(withBasePath(`/myleague/${league.id}`))}
                       aria-label={`Open ${league.name}`}
                       className="group flex h-full flex-col justify-between overflow-hidden"
+                      interactive
                     >
                       {/* Image Banner */}
                       <div className="bg-fill-3 relative h-40 overflow-hidden">
@@ -409,14 +410,14 @@ export default function MyLeaguePage() {
                           </Button>
                         </div>
                       </div>
-                    </FacetCard>
+                    </Card>
                   </motion.div>
                 );
               })}
             </AnimatePresence>
           </motion.div>
         ) : (
-          <FacetCard>
+          <Card>
             <EmptyState
               icon={<Trophy />}
               title="No Competitions Found"
@@ -428,7 +429,7 @@ export default function MyLeaguePage() {
                 </Button>
               }
             />
-          </FacetCard>
+          </Card>
         )}
       </section>
     </div>

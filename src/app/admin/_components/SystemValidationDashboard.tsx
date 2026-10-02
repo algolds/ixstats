@@ -34,7 +34,7 @@ export function SystemValidationDashboard() {
   return (
     <div className="space-y-6">
       {/* Controls */}
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardContent className="p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
@@ -79,7 +79,7 @@ export function SystemValidationDashboard() {
 
       {/* Error banner */}
       {errorList.length > 0 && (
-        <Card className="border-red/20 bg-red/5">
+        <Card className="border-red/20 bg-red/5 flex flex-col gap-6 py-6">
           <CardContent className="p-4">
             <div className="flex items-start gap-2">
               <XCircle className="text-red mt-0.5 h-5 w-5 shrink-0" />
@@ -105,7 +105,7 @@ export function SystemValidationDashboard() {
         </div>
       ) : (
         !isRunning && (
-          <Card>
+          <Card className="flex flex-col gap-6 py-6">
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
               <Clock className="text-label-tertiary mb-4 h-12 w-12" />
               <h3 className="text-label text-title-3 mb-1">No Audit Results</h3>
@@ -120,7 +120,7 @@ export function SystemValidationDashboard() {
 
       {/* Summary */}
       {summary && (
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardContent className="p-6">
             <div className="grid grid-cols-2 gap-6 sm:grid-cols-5">
               <div>

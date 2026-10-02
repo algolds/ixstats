@@ -27,7 +27,6 @@ import { useNotify } from "~/hooks/useNotify";
 import { Plus, EditPencil as Pencil, Trash as Trash2, Eye, Shield, Search } from "iconoir-react";
 import { AdminHeader } from "../_components/AdminHeader";
 import { Skeleton } from "~/components/ui/skeleton";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Table,
   TableHeader,
@@ -36,6 +35,7 @@ import {
   TableHead,
   TableCell,
 } from "~/components/ui/table";
+import { Card } from "~/components/ui/card";
 
 interface IntelligenceTemplate {
   id: string;
@@ -189,28 +189,28 @@ export function IntelligenceTemplatesPanel() {
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Templates</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{templates?.length || 0}</p>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Restricted Clearance</p>
           <p className="text-title-2 text-yellow mt-1 tabular-nums">
             {templates?.filter((t: any) => t.classification === "RESTRICTED").length || 0}
           </p>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Public Briefings</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">
             {templates?.filter((t: any) => t.classification === "PUBLIC").length || 0}
           </p>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Active Registry</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">
             {templates?.filter((t: any) => t.isActive).length || 0}
           </p>
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Filter & Action Rail */}
@@ -283,13 +283,13 @@ export function IntelligenceTemplatesPanel() {
           ))}
         </div>
       ) : filteredTemplates.length === 0 ? (
-        <FacetCard className="p-12 text-center">
+        <Card className="p-12 text-center">
           <p className="text-label-secondary text-footnote">
             No intelligence templates matching filters.
           </p>
-        </FacetCard>
+        </Card>
       ) : (
-        <FacetCard>
+        <Card>
           <Table>
             <TableHeader>
               <TableRow>
@@ -380,7 +380,7 @@ export function IntelligenceTemplatesPanel() {
               ))}
             </TableBody>
           </Table>
-        </FacetCard>
+        </Card>
       )}
 
       {/* Add/Edit Dialog */}

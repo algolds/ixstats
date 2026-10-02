@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Group as Users, Plus, ArrowRight } from "iconoir-react";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { shellPageTitleProps } from "~/components/shell/ShellPageHeader";
 import { useUser } from "~/context/auth-context";
@@ -13,6 +12,7 @@ import { AuthenticationGuard } from "~/components/mycountry/primitives";
 import { EnhancedAccountManager } from "./EnhancedAccountManager";
 import { AccountCreationModal } from "./AccountCreationModal";
 import { AccountSettingsModal } from "./AccountSettingsModal";
+import { Card } from "~/components/ui/card";
 
 interface ThinkPagesAccountHubProps {
   /** Country id resolved on the server, used until getProfile loads so the country query runs in parallel. */
@@ -64,7 +64,7 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
   if (!isCountryReady) {
     return (
       <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
-        <FacetCard>
+        <Card>
           <EmptyState
             icon={<Users />}
             title="Country Setup Required"
@@ -75,7 +75,7 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
               </Button>
             }
           />
-        </FacetCard>
+        </Card>
       </div>
     );
   }
@@ -83,7 +83,7 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
       {/* Feed redirect banner */}
-      <FacetCard padding="md" className="flex items-center justify-between gap-4">
+      <Card padding="md" className="flex items-center justify-between gap-4">
         <div>
           <p className="text-headline text-label">The social feed has moved to your Dashboard</p>
           <p className="text-footnote text-label-secondary">
@@ -96,7 +96,7 @@ function ThinkPagesAccountHubInner({ initialCountryId = "" }: ThinkPagesAccountH
             <ArrowRight aria-hidden="true" />
           </Link>
         </Button>
-      </FacetCard>
+      </Card>
 
       {/* Header */}
       <div className="flex items-center justify-between">

@@ -26,15 +26,10 @@ import {
   type HelpSectionIcon,
 } from "../_lib/help-sections";
 import { Button } from "~/components/ui/button";
-import {
-  FacetCard,
-  FacetCardContent,
-  FacetCardHeader,
-  FacetContainer,
-} from "~/components/ui/facet-container";
 import { Input } from "~/components/ui/input";
 import { Toggle } from "~/components/ui/toggle";
 import { cn } from "~/lib/utils";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 const SECTION_ICONS: Record<HelpSectionIcon, React.ElementType> = {
   sparkles: Compass,
@@ -153,14 +148,13 @@ export function HelpExplorer({ sections = helpSections }: { sections?: HelpSecti
             const Icon = SECTION_ICONS[section.icon];
             const isLead = section.id === "getting-started";
             return (
-              <FacetCard
+              <Card
                 key={section.id}
-                depth={2}
                 role="region"
                 aria-labelledby={`help-section-${section.id}`}
                 className={cn("rounded-2xl", isLead && "lg:col-span-2")}
               >
-                <FacetCardHeader className="flex-row items-start gap-3 p-5 pb-4">
+                <CardHeader className="flex-row items-start gap-3 p-5 pb-4">
                   <Icon
                     aria-hidden="true"
                     className="text-muted-foreground mt-0.5 h-5 w-5 shrink-0"
@@ -174,11 +168,9 @@ export function HelpExplorer({ sections = helpSections }: { sections?: HelpSecti
                     </h2>
                     <p className="text-muted-foreground text-sm">{section.description}</p>
                   </div>
-                </FacetCardHeader>
+                </CardHeader>
 
-                <FacetCardContent
-                  className={cn("grid gap-2 px-5 pb-5", isLead && "md:grid-cols-2")}
-                >
+                <CardContent className={cn("grid gap-2 px-5 pb-5", isLead && "md:grid-cols-2")}>
                   {section.articles.map((article) => (
                     <Link
                       key={article.id}
@@ -186,11 +178,7 @@ export function HelpExplorer({ sections = helpSections }: { sections?: HelpSecti
                       data-cuelume-press="tick"
                       className="group focus-visible:ring-ring rounded-lg focus-visible:ring-2 focus-visible:outline-none"
                     >
-                      <FacetContainer
-                        depth={3}
-                        surface="solid"
-                        className="group-hover:bg-accent flex min-h-11 items-center justify-between gap-3 rounded-lg p-3.5 transition-[background-color] duration-150"
-                      >
+                      <Card className="group-hover:bg-accent flex min-h-11 items-center justify-between gap-3 rounded-lg p-3.5 transition-[background-color] duration-150">
                         <div className="flex-1">
                           <h3 className="text-foreground text-sm font-semibold">{article.title}</h3>
                           <p className="text-muted-foreground text-sm">{article.description}</p>
@@ -199,11 +187,11 @@ export function HelpExplorer({ sections = helpSections }: { sections?: HelpSecti
                           aria-hidden="true"
                           className="text-muted-foreground group-hover:text-foreground h-5 w-5 shrink-0 transition-[color,transform] duration-150 group-hover:translate-x-0.5"
                         />
-                      </FacetContainer>
+                      </Card>
                     </Link>
                   ))}
-                </FacetCardContent>
-              </FacetCard>
+                </CardContent>
+              </Card>
             );
           })}
         </div>

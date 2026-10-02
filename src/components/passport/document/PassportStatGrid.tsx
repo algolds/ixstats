@@ -4,7 +4,6 @@ import React from "react";
 import Link from "next/link";
 import { ChatBubble as MessageSquare, Spark as Sparkles, Trophy } from "iconoir-react";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
-import { FACET_INSET_SURFACE } from "~/components/ui/facet-container";
 import { Stat } from "~/components/ui/stat";
 import { cn } from "~/lib/utils";
 import type { PassportPayload, PassportVault, PassportVisibility } from "../types";
@@ -19,7 +18,7 @@ interface PassportStatGridProps {
 }
 
 /** An inset panel (`FacetCard variant="inset"` styling on a button or link). */
-const STAT_CELL = cn(FACET_INSET_SURFACE, "w-full p-3");
+const STAT_CELL = cn("bg-surface-secondary text-label rounded-row", "w-full p-3");
 /** v2 cells: a rim in the cell's accent on hover and keyboard focus, and the press scale. */
 const STAT_CELL_INTERACTIVE =
   "hover:bg-fill-3 border border-transparent hover:border-yellow/30 focus-visible:border-yellow/30 facet-press focus-visible:outline-tint cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2";

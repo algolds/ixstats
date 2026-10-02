@@ -11,7 +11,6 @@ import {
   MailOpen,
   TriangleFlag,
 } from "iconoir-react";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import type { FacetRowSwipeActions } from "~/components/ui/facet-list";
 import { Badge } from "~/components/ui/badge";
@@ -40,6 +39,7 @@ import {
 } from "./agenda";
 import { STATUS_TEXT } from "./status-tone";
 import { HUE_BADGE, hueAccentStyle } from "./domain-hue";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 const MAILBOXES: AgendaMailbox[] = ["all", "action", "issues", "directives", "elections"];
 
@@ -163,13 +163,13 @@ function ExecutiveAgendaComponent({
 
   return (
     <>
-      <FacetCard
+      <Card
         id="executive-agenda"
         role="region"
         aria-labelledby="executive-agenda-title"
         className="rounded-card"
       >
-        <FacetCardHeader className="flex-row flex-wrap items-start justify-between gap-x-3 gap-y-2 p-4 pb-0 sm:p-5 sm:pb-0">
+        <CardHeader className="flex-row flex-wrap items-start justify-between gap-x-3 gap-y-2 p-4 pb-0 sm:p-5 sm:pb-0">
           {/* v2 header (c5c6b382): the calendar badge in the agenda's cyan */}
           <div className="flex min-w-0 items-center gap-3">
             <span
@@ -233,9 +233,9 @@ function ExecutiveAgendaComponent({
               </Button>
             ) : null}
           </div>
-        </FacetCardHeader>
+        </CardHeader>
 
-        <FacetCardContent className="flex flex-col gap-3 p-4 sm:p-5">
+        <CardContent className="flex flex-col gap-3 p-4 sm:p-5">
           {mailboxOptions.length > 1 ? (
             <div className="-mx-1 max-w-full scrollbar-none overflow-x-auto px-1">
               <SegmentedControl
@@ -334,8 +334,8 @@ function ExecutiveAgendaComponent({
               ) : null}
             </div>
           ) : null}
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
 
       <AgendaEventActionDialog
         selectedEvent={openView?.item ?? null}

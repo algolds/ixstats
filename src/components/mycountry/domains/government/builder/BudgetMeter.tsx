@@ -9,8 +9,8 @@ import React from "react";
 import type { BudgetSummary } from "~/lib/government/builder-validation";
 import { cn } from "~/lib/utils";
 import { WarningTriangle as AlertTriangle, CheckCircle, StatUp as TrendingUp } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Progress } from "~/components/ui/progress";
+import { Card } from "~/components/ui/card";
 
 export interface BudgetMeterProps {
   budgetSummary: BudgetSummary;
@@ -51,7 +51,7 @@ export const BudgetMeter = React.memo(function BudgetMeter({ budgetSummary }: Bu
   const StatusIcon = status.icon;
 
   return (
-    <FacetCard className={cn("p-5", status.border)}>
+    <Card className={cn("p-5", status.border)}>
       <div className="flex flex-col gap-4">
         <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
           <div className="flex items-center gap-2">
@@ -90,6 +90,6 @@ export const BudgetMeter = React.memo(function BudgetMeter({ budgetSummary }: Bu
           <span>{status.message}</span>
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 });

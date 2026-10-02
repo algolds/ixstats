@@ -4,8 +4,7 @@ import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React, { useState } from "react";
 import { useVexelEditor } from "../VexelEditorProvider";
-
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export default function BlazonPanel() {
   const { blazon } = useVexelEditor();
@@ -19,7 +18,7 @@ export default function BlazonPanel() {
   };
 
   return (
-    <FacetCard className="overflow-hidden">
+    <Card className="overflow-hidden">
       <div className="p-4">
         <div className="mb-2 flex items-center justify-between">
           <Eyebrow className="block">Heraldic Blazon Description</Eyebrow>
@@ -28,12 +27,12 @@ export default function BlazonPanel() {
           </Button>
         </div>
 
-        <FacetCard variant="inset" padding="none" className="p-3">
+        <Card variant="inset" padding="none" className="p-3">
           <p className="text-label-secondary text-body leading-relaxed italic">
             {blazon || "No composition loaded."}
           </p>
-        </FacetCard>
+        </Card>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

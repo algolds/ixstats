@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Globe, FloppyDisk as Save, RssFeed as Rss, Send } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export function ThinkPagesSettingsContent() {
   usePageTitle({ title: "Admin - ThinkPages Panel" });
@@ -108,7 +108,7 @@ function PlatformSettingsTab() {
     <div className="space-y-6">
       {/* Real Stats Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Social Posts</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -117,9 +117,9 @@ function PlatformSettingsTab() {
               {stats?.totalPosts.toLocaleString() ?? 0}
             </p>
           )}
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Registered Accounts</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -128,9 +128,9 @@ function PlatformSettingsTab() {
               {stats?.totalAccounts.toLocaleString() ?? 0}
             </p>
           )}
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Weekly Growth</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -140,11 +140,11 @@ function PlatformSettingsTab() {
               {stats?.weeklyGrowth ?? 0}%
             </p>
           )}
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Settings Form */}
-      <FacetCard className="space-y-5 p-5">
+      <Card className="space-y-5 p-5">
         <div className="border-separator flex items-center justify-between border-b pb-4">
           <div>
             <h3 className="text-label text-caption">ThinkPages Platform Settings</h3>
@@ -240,7 +240,7 @@ function PlatformSettingsTab() {
             />
           </div>
         </div>
-      </FacetCard>
+      </Card>
     </div>
   );
 }
@@ -268,7 +268,7 @@ function DiscordMirrorTab() {
   };
 
   return (
-    <FacetCard className="space-y-5 p-5">
+    <Card className="space-y-5 p-5">
       <div>
         <h3 className="text-label text-caption">Discord ThinkPages Mirror</h3>
         <p className="text-label-secondary text-footnote mt-0.5">
@@ -298,7 +298,7 @@ function DiscordMirrorTab() {
           {isSending ? "Sending Test..." : "Send Test Broadcast"}
         </Button>
       </div>
-    </FacetCard>
+    </Card>
   );
 }
 

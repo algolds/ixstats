@@ -41,7 +41,7 @@ export function DiplomaticScenarioCard({
     : 0;
 
   return (
-    <Card className="hover:border-yellow/50 flex flex-col justify-between p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
+    <Card className="hover:border-yellow/50 flex flex-col justify-between gap-6 p-4 py-6 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
       <div>
         {/* Header */}
         <div className="mb-3 flex items-start justify-between">

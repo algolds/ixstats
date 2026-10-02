@@ -22,13 +22,13 @@ import { formatCompact } from "~/lib/format/compact";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard } from "~/components/ui/facet-container";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
+import { Card } from "~/components/ui/card";
 
 interface AchievementEntry {
   countryId: string;
@@ -153,7 +153,7 @@ function PodiumCard({
   const Icon = podium.icon;
 
   return (
-    <FacetCard padding="md" className="space-y-4">
+    <Card padding="md" className="space-y-4">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Badge variant={podium.badge} className="tabular-nums">
@@ -172,7 +172,7 @@ function PodiumCard({
         <div className="text-label text-title-1 tabular-nums">{primary}</div>
         <div className="text-label-secondary text-footnote">{secondary}</div>
       </div>
-    </FacetCard>
+    </Card>
   );
 }
 
@@ -264,7 +264,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
         }));
 
   const mainContent = (
-    <FacetCard padding="lg" className="space-y-6">
+    <Card padding="lg" className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-label text-title-2">Global world leaderboards</h2>
@@ -401,7 +401,7 @@ export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardT
       ) : (
         <EmptyState compact title="No nation metrics found matching your criteria" />
       )}
-    </FacetCard>
+    </Card>
   );
 
   return mainContent;

@@ -1,15 +1,19 @@
 "use client";
 
+import { motion } from "motion/react";
+
 import React, { useState } from "react";
 import { Trophy, Sparks as Sparkles } from "iconoir-react";
 import { cn, createUrl } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard, MotionFacetCard } from "~/components/ui/facet-container";
 import { springSmooth } from "~/lib/design/motion";
 import { getRarityBadgeVariant, getAchievementGameIconPath, getCategoryTheme } from "../constants";
 import { JewelAchievementIcon, AchievementCardBackdrop } from "../AchievementDecorations";
+import { Card } from "~/components/ui/card";
+
+const MotionCard = motion.create(Card);
 
 interface ShowcaseTabProps {
   achievements: any[] | undefined;
@@ -80,15 +84,13 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
             }
 
             return (
-              <MotionFacetCard
+              <MotionCard
                 key={achievement.key}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ ...springSmooth, delay: Math.min(idx * 0.02, 0.2) }}
                 // v2 showcase: glass cabinet cards that lift on hover, with the full backdrop.
-                variant="glass"
-                accent={categoryTheme.accent}
-                interactive="hover"
+                variant="hero"
                 className={cn(
                   "flex flex-col justify-between overflow-hidden p-4",
                   categoryTheme.cardBorderHover
@@ -162,18 +164,18 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                     </span>
                   )}
                 </div>
-              </MotionFacetCard>
+              </MotionCard>
             );
           })}
         </div>
       ) : (
-        <FacetCard>
+        <Card>
           <EmptyState
             icon={<Trophy />}
             title="Showcase cabinet empty"
             message="Unlock the rarest achievements to fill your showcase shelf."
           />
-        </FacetCard>
+        </Card>
       )}
     </section>
   );

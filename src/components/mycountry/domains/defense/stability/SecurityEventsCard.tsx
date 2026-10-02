@@ -3,11 +3,11 @@
 
 import React from "react";
 import { WarningTriangle as AlertTriangle, CheckCircle } from "iconoir-react";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 interface SecurityEvent {
   id: string;
@@ -42,18 +42,18 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
   resolveEvent,
 }: SecurityEventsCardProps) {
   return (
-    <FacetCard>
-      <FacetCardHeader className="p-5 pb-3">
+    <Card>
+      <CardHeader className="p-5 pb-3">
         <h3 className="text-label text-title-3 flex items-center gap-2">
           <AlertTriangle aria-hidden="true" className="text-red h-4 w-4" />
           Active security events ({activeEvents.length})
         </h3>
-      </FacetCardHeader>
-      <FacetCardContent className="px-5 pb-5">
+      </CardHeader>
+      <CardContent className="px-5 pb-5">
         {activeEvents.length > 0 ? (
           <div className="space-y-3">
             {activeEvents.map((event) => (
-              <FacetCard variant="inset" key={event.id} className="p-3">
+              <Card variant="inset" key={event.id} className="p-3">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -120,7 +120,7 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
                     Resolve
                   </Button>
                 </div>
-              </FacetCard>
+              </Card>
             ))}
           </div>
         ) : (
@@ -130,7 +130,7 @@ export const SecurityEventsCard = React.memo(function SecurityEventsCard({
             <p className="text-body">No active security events at this time</p>
           </div>
         )}
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 });

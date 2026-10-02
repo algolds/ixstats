@@ -13,7 +13,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Folder as FolderHeart, FloppyDisk as Save } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
 import { api } from "~/trpc/react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export function StashSettingsContent() {
   usePageTitle({ title: "Admin - Stash Settings" });
@@ -68,7 +68,7 @@ export function StashSettingsContent() {
 
       {/* Real Stats Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Stashed Articles</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -77,9 +77,9 @@ export function StashSettingsContent() {
               {stats?.totalStashes.toLocaleString() ?? 0}
             </p>
           )}
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Text Highlight Marks</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -88,9 +88,9 @@ export function StashSettingsContent() {
               {stats?.totalHighlights.toLocaleString() ?? 0}
             </p>
           )}
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Cache Quota per User</p>
           {statsLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -99,11 +99,11 @@ export function StashSettingsContent() {
               {stats?.avgCacheSizeKb ?? 143} KB
             </p>
           )}
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Settings Form */}
-      <FacetCard className="space-y-5 p-5">
+      <Card className="space-y-5 p-5">
         <div className="border-separator flex items-center justify-between border-b pb-4">
           <div>
             <h3 className="text-label text-caption">Stash Configuration Parameters</h3>
@@ -181,7 +181,7 @@ export function StashSettingsContent() {
             />
           </div>
         </div>
-      </FacetCard>
+      </Card>
     </div>
   );
 }

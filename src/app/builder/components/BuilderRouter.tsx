@@ -7,7 +7,6 @@ import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { Lock, LockSlash as UnlockIcon, ArrowRight } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Button } from "~/components/ui/button";
 import { createUrl } from "~/lib/utils";
@@ -54,6 +53,7 @@ import {
 } from "../lib/builder-theme";
 import type { BuilderStep } from "./enhanced/builderConfig";
 import { withBasePath } from "~/lib/base-path";
+import { Card } from "~/components/ui/card";
 
 // ─── Section loading skeleton ───
 
@@ -493,7 +493,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
         >
-          <FacetCard className="rounded-card mx-auto max-w-md space-y-6 p-8 text-center">
+          <Card className="rounded-card mx-auto max-w-md space-y-6 p-8 text-center">
             <Lock aria-hidden="true" className="text-tint mx-auto h-10 w-10" />
             <div className="space-y-2">
               <h1 className="text-label text-title-1">Authentication Required</h1>
@@ -505,7 +505,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
               <UnlockIcon aria-hidden="true" className="h-4 w-4" />
               Sign In to Continue
             </Button>
-          </FacetCard>
+          </Card>
         </motion.div>
       </div>
     );
@@ -518,7 +518,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
   if (isEdit && countryLoadError) {
     return (
       <div className="flex w-full flex-1 items-start justify-center px-4 pt-24 sm:pt-28 lg:pt-32">
-        <FacetCard role="alert" className="rounded-card w-full max-w-md space-y-4 p-6 text-center">
+        <Card role="alert" className="rounded-card w-full max-w-md space-y-4 p-6 text-center">
           <WarningTriangle aria-hidden="true" className="text-destructive mx-auto h-6 w-6" />
           <div className="space-y-1">
             <h1 className="text-label text-title-3">Couldn't open your country</h1>
@@ -534,7 +534,7 @@ function BuilderRouterInner({ mode = "create", countryId }: BuilderRouterProps) 
               Try again
             </Button>
           </div>
-        </FacetCard>
+        </Card>
       </div>
     );
   }

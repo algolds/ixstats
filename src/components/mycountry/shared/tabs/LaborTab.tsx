@@ -12,7 +12,6 @@ import {
 } from "iconoir-react";
 import { NavArrowRight as ChevronRight } from "iconoir-react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import {
@@ -31,6 +30,7 @@ import type {
 } from "~/components/mycountry/shared/primitives/CountryDataProvider";
 import type { extractCountryImageData } from "~/lib/media";
 import type { MyCountryMetricView } from "~/hooks/useMyCountryMetrics";
+import { Card, CardContent } from "~/components/ui/card";
 
 export function LaborTab({
   country,
@@ -58,7 +58,7 @@ export function LaborTab({
   };
 
   return (
-    <FacetCard className="rounded-card relative overflow-hidden">
+    <Card className="rounded-card relative overflow-hidden">
       {/* Background wash system (desaturated flag wash + radial dot mesh) */}
       <MetricCardGrid
         metrics={[]} // empty metrics to just render background
@@ -76,7 +76,7 @@ export function LaborTab({
         className="pointer-events-none absolute inset-0 z-0"
       />
 
-      <FacetCardContent className="relative z-10 space-y-4 pt-4 pb-4">
+      <CardContent className="relative z-10 space-y-4 pt-4 pb-4">
         {/* ── Compact Header ── */}
         <div className="border-separator flex items-center justify-between border-b pb-3">
           <div>
@@ -106,7 +106,7 @@ export function LaborTab({
           <TooltipTrigger asChild>
             <div className="grid grid-cols-3 gap-2">
               {/* Metric 1: Workforce */}
-              <FacetCard
+              <Card
                 variant="inset"
                 padding="sm"
                 className="text-left"
@@ -116,6 +116,7 @@ export function LaborTab({
                     workforce: v.workforce === "participation" ? "count" : "participation",
                   }))
                 }
+                interactive
               >
                 <Eyebrow className="block">
                   {metricView.workforce === "participation"
@@ -149,10 +150,10 @@ export function LaborTab({
                     ? "Active workforce share"
                     : `${(economyData?.labor?.laborForceParticipationRate ?? 0).toFixed(1)}% participation`}
                 </p>
-              </FacetCard>
+              </Card>
 
               {/* Metric 2: Employment */}
-              <FacetCard
+              <Card
                 variant="inset"
                 padding="sm"
                 className="text-left"
@@ -162,6 +163,7 @@ export function LaborTab({
                     employment: v.employment === "employed" ? "unemployed" : "employed",
                   }))
                 }
+                interactive
               >
                 <Eyebrow className="block">
                   {metricView.employment === "employed" ? "Employment Rate" : "Unemployment Rate"}
@@ -206,10 +208,10 @@ export function LaborTab({
                     ? `Active employment share`
                     : `Seeking employment`}
                 </p>
-              </FacetCard>
+              </Card>
 
               {/* Metric 3: Compensation */}
-              <FacetCard
+              <Card
                 variant="inset"
                 padding="sm"
                 className="text-left"
@@ -219,6 +221,7 @@ export function LaborTab({
                     compensation: v.compensation === "minimum" ? "average" : "minimum",
                   }))
                 }
+                interactive
               >
                 <Eyebrow className="block">
                   {metricView.compensation === "minimum" ? "Minimum Wage" : "Average Wage"}
@@ -253,7 +256,7 @@ export function LaborTab({
                     ? `Per year (mandatory)`
                     : `Average annual salary`}
                 </p>
-              </FacetCard>
+              </Card>
             </div>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="text-footnote">
@@ -304,7 +307,7 @@ export function LaborTab({
                 className="pointer-events-none absolute inset-0 z-0"
               />
               <div className="relative z-10 space-y-4 p-4">
-                <FacetCard
+                <Card
                   variant="inset"
                   padding="none"
                   className="grid grid-cols-2 gap-4 p-3 md:grid-cols-4"
@@ -337,7 +340,7 @@ export function LaborTab({
                     </p>
                     <p className="text-label-secondary text-footnote mt-0.5">Actively seeking</p>
                   </div>
-                </FacetCard>
+                </Card>
 
                 <SectorBreakdownCard
                   title="Employment by Sector"
@@ -434,7 +437,7 @@ export function LaborTab({
                 className="pointer-events-none absolute inset-0 z-0"
               />
               <div className="relative z-10 space-y-4 p-4">
-                <FacetCard
+                <Card
                   variant="inset"
                   padding="none"
                   className="grid grid-cols-2 gap-4 p-3 md:grid-cols-4"
@@ -469,7 +472,7 @@ export function LaborTab({
                     </p>
                     <p className="text-label-secondary text-footnote mt-0.5">Output efficiency</p>
                   </div>
-                </FacetCard>
+                </Card>
 
                 <SectorBreakdownCard
                   title="Employment Types"
@@ -561,7 +564,7 @@ export function LaborTab({
                 className="pointer-events-none absolute inset-0 z-0"
               />
               <div className="relative z-10 space-y-4 p-4">
-                <FacetCard
+                <Card
                   variant="inset"
                   padding="none"
                   className="grid grid-cols-2 gap-4 p-3 md:grid-cols-4"
@@ -598,7 +601,7 @@ export function LaborTab({
                       Age 15-24 unemployed
                     </p>
                   </div>
-                </FacetCard>
+                </Card>
 
                 <SectorBreakdownCard
                   title="Skills & Capital Metrics"
@@ -643,7 +646,7 @@ export function LaborTab({
             </motion.div>
           </div>
         </div>
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 }

@@ -10,7 +10,7 @@ import { OnomaGlyph } from "../glyphs/OnomaGlyph";
 import type { OnomaSection, StudioSubTab, ExploreSubTab } from "~/lib/onoma/types";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface OnomaFooterProps {
   onNavigate: (section: OnomaSection) => void;
@@ -71,7 +71,7 @@ export function OnomaFooter({
 
   return (
     <footer>
-      <FacetCard padding="lg" className="relative space-y-5 overflow-hidden">
+      <Card padding="lg" className="relative space-y-5 overflow-hidden">
         {/* Identity watermark: a small corner Onoma symbol behind the content (no image wash). */}
         <div
           aria-hidden="true"
@@ -186,7 +186,7 @@ export function OnomaFooter({
             </Link>
           </div>
         </div>
-      </FacetCard>
+      </Card>
     </footer>
   );
 }

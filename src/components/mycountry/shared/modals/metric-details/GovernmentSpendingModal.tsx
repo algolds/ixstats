@@ -17,7 +17,6 @@ import {
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils/cn";
-import { FacetCard, FacetCardHeader, FacetCardContent } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
@@ -42,6 +41,7 @@ import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetails
 import { MetricModalLayout } from "./MetricModalLayout";
 import type { TimeRange, ChartType } from "./types";
 import { filterAndSortHistory } from "./hooks/useMetricHistoryFilter";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 interface GovernmentSpendingModalProps {
   isOpen: boolean;
@@ -190,8 +190,8 @@ export function GovernmentSpendingModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <FacetCard className="flex flex-1 flex-col justify-between p-6">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="flex flex-1 flex-col justify-between p-6">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <Landmark className="text-label-secondary h-5 w-5" />
                 Budget Summary
@@ -199,22 +199,22 @@ export function GovernmentSpendingModal({
               <p className="text-label-secondary text-body">
                 Government fiscal allocation and spending summary.
               </p>
-            </FacetCardHeader>
-            <FacetCardContent className="flex flex-1 flex-col justify-center p-0">
+            </CardHeader>
+            <CardContent className="flex flex-1 flex-col justify-center p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3">
                     ${((fiscal?.governmentRevenueTotal || 0) / 1e9).toFixed(1)}B
                   </div>
                   <Eyebrow className="mt-1 block">Tax Revenue</Eyebrow>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-title-3 text-green">
                     {(fiscal?.taxRevenueGDPPercent || 0).toFixed(1)}%
                   </div>
                   <Eyebrow className="mt-1 block">Revenue % GDP</Eyebrow>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3">
                     $
                     {(
@@ -225,16 +225,16 @@ export function GovernmentSpendingModal({
                     B
                   </div>
                   <Eyebrow className="mt-1 block">Public Debt</Eyebrow>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-destructive text-title-3">
                     {(fiscal?.totalDebtGDPRatio || 0).toFixed(1)}%
                   </div>
                   <Eyebrow className="mt-1 block">Debt to GDP</Eyebrow>
-                </FacetCard>
+                </Card>
               </div>
 
-              <FacetCard
+              <Card
                 variant="inset"
                 padding="none"
                 className="text-label-secondary text-footnote mt-6 flex items-start gap-3 p-4"
@@ -245,9 +245,9 @@ export function GovernmentSpendingModal({
                   collections. Stable surpluses build cash reserves, while persistent deficits
                   expand public debt limits and require careful interest rate servicing.
                 </p>
-              </FacetCard>
-            </FacetCardContent>
-          </FacetCard>
+              </Card>
+            </CardContent>
+          </Card>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
@@ -308,12 +308,12 @@ export function GovernmentSpendingModal({
 
     if (processedData.length === 0) {
       return (
-        <FacetCard>
-          <FacetCardContent className="py-12 text-center">
+        <Card>
+          <CardContent className="py-12 text-center">
             <LineChart className="text-label-secondary mx-auto mb-4 h-12 w-12 opacity-50" />
             <p className="text-label-secondary">No historical data available</p>
-          </FacetCardContent>
-        </FacetCard>
+          </CardContent>
+        </Card>
       );
     }
 
@@ -323,14 +323,14 @@ export function GovernmentSpendingModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <FacetCard className="p-6">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="p-6">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3">Government Spending Trends</h3>
               <p className="text-label-secondary text-body">
                 Historical budget and spending metrics
               </p>
-            </FacetCardHeader>
-            <FacetCardContent className="p-0">
+            </CardHeader>
+            <CardContent className="p-0">
               <ChartContainer config={chartConfig} className="h-[320px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <ChartComponent data={processedData}>
@@ -384,8 +384,8 @@ export function GovernmentSpendingModal({
                   </ChartComponent>
                 </ResponsiveContainer>
               </ChartContainer>
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
@@ -453,8 +453,8 @@ export function GovernmentSpendingModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <FacetCard className="flex-1 p-6">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="flex-1 p-6">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <Globe className="text-label-secondary h-5 w-5" />
                 Fiscal Health Benchmarks
@@ -462,8 +462,8 @@ export function GovernmentSpendingModal({
               <p className="text-label-secondary text-body">
                 Compare spending ratios against global baselines.
               </p>
-            </FacetCardHeader>
-            <FacetCardContent className="p-0">
+            </CardHeader>
+            <CardContent className="p-0">
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={compData}>
@@ -491,8 +491,8 @@ export function GovernmentSpendingModal({
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
@@ -565,26 +565,26 @@ export function GovernmentSpendingModal({
     // No recorded split (or a visitor: the allocation split is served to the owner only).
     if (categories.length === 0) {
       return (
-        <FacetCard>
-          <FacetCardContent className="py-12 text-center">
+        <Card>
+          <CardContent className="py-12 text-center">
             <PieChart className="text-label-secondary mx-auto mb-4 h-12 w-12 opacity-50" />
             <p className="text-label-secondary">No spending breakdown available</p>
-          </FacetCardContent>
-        </FacetCard>
+          </CardContent>
+        </Card>
       );
     }
 
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <FacetCard className="flex flex-1 flex-col justify-between p-6">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="flex flex-1 flex-col justify-between p-6">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3">Spending by Category</h3>
               <p className="text-label-secondary text-body">
                 Budget allocation across government sectors
               </p>
-            </FacetCardHeader>
-            <FacetCardContent className="flex flex-1 flex-col items-center gap-6 p-0 md:flex-row">
+            </CardHeader>
+            <CardContent className="flex flex-1 flex-col items-center gap-6 p-0 md:flex-row">
               {/* Pie Chart */}
               <div className="flex h-44 w-44 shrink-0 items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
@@ -634,27 +634,27 @@ export function GovernmentSpendingModal({
                   </div>
                 ))}
               </div>
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <FacetCard className="flex flex-1 flex-col justify-between p-4">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="flex flex-1 flex-col justify-between p-4">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 text-headline">Priority Spending</h3>
               <p className="text-label-secondary text-footnote">
                 Key budget policies and priorities
               </p>
-            </FacetCardHeader>
-            <FacetCardContent className="flex-1 p-0">
+            </CardHeader>
+            <CardContent className="flex-1 p-0">
               <div className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
                 {/* The government API has no priority-policy field, so this card only has an empty state. */}
                 <div className="py-8 text-center">
                   <p className="text-label-secondary text-footnote">No priority policies defined</p>
                 </div>
               </div>
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
         </MetricModalLayout.Sidebar>
       </MetricModalLayout>
     );

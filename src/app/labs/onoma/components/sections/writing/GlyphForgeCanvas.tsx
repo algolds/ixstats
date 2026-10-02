@@ -19,10 +19,10 @@ import { cn } from "~/lib/utils";
 import type { Glyph, CanvasGuideSettings, InkColorPreset } from "./types";
 import { SHAPE_STAMPS, QUICK_IPA_PHONEMES, type ShapeStamp } from "./glyph-primitives";
 import { Input } from "~/components/ui/input";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { Toggle } from "~/components/ui/toggle";
+import { Card } from "~/components/ui/card";
 
 const CANVAS_DRAFT_KEY = "onoma_glyph_canvas_draft_v2";
 
@@ -343,7 +343,7 @@ export function GlyphForgeCanvas({
   );
 
   return (
-    <FacetCard variant="inset" padding="none" className="relative flex flex-col space-y-3 p-4">
+    <Card variant="inset" padding="none" className="relative flex flex-col space-y-3 p-4">
       {/* 1. Apple-Style Header: Studio Badge & History Tools */}
       <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
         <div className="flex items-center gap-2">
@@ -868,6 +868,6 @@ export function GlyphForgeCanvas({
           )}
         </AnimatePresence>
       </form>
-    </FacetCard>
+    </Card>
   );
 }

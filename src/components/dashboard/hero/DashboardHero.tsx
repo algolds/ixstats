@@ -21,7 +21,6 @@ import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { assetUrl } from "~/lib/base-path";
 import { createVitalityRingsFromCountry } from "~/components/mycountry/primitives";
 import { SECTION_THEME_CLASSES } from "~/lib/themes";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -98,6 +97,7 @@ import { VitalityBreakdownModal } from "~/components/mycountry/shared/modals/Vit
 import { GdpDetailsModal } from "~/components/mycountry/shared/modals/metric-details/GdpDetailsModal";
 import { PopulationDetailsModal } from "~/components/mycountry/shared/modals/metric-details/PopulationDetailsModal";
 import { GovernmentSpendingModal } from "~/components/mycountry/shared/modals/metric-details/GovernmentSpendingModal";
+import { Card } from "~/components/ui/card";
 
 function normalizeGrowth(value: number | null | undefined): number {
   if (!value || !isFinite(value)) return 0;
@@ -197,13 +197,7 @@ export function DashboardHeroComponent({
   return (
     // v2 (c5c6b382) glass hero (white 5% frosted fill, 15% white border, xl shadow) with a
     // top refraction hairline, the 320px flag watermark that brightens on hover, and paper grain.
-    <FacetCard
-      variant="glass"
-      glow
-      className="overflow-hidden"
-      texture="paperGrain"
-      textureOpacity={0.07}
-    >
+    <Card variant="hero" className="overflow-hidden">
       <FlagWatermark src={flagUrl} />
 
       <NeonFrameOverlay neonFrame={neonFrame} className="rounded-card" />
@@ -336,7 +330,7 @@ export function DashboardHeroComponent({
           countryName={stats.countryName}
         />
       )}
-    </FacetCard>
+    </Card>
   );
 }
 

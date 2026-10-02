@@ -5,7 +5,6 @@ import { Trophy } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Stat } from "~/components/ui/stat";
 import { Skeleton } from "~/components/ui/skeleton";
 
@@ -36,13 +35,13 @@ export function ClubHistorySection({ teamId }: { teamId: string }) {
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="grid grid-cols-3 gap-3">
         {summary.map((item) => (
-          <FacetCard key={item.label} padding="md">
+          <Card key={item.label} padding="md">
             <Stat label={item.label} value={item.value} />
-          </FacetCard>
+          </Card>
         ))}
       </div>
 
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle>Season by Season</CardTitle>
         </CardHeader>

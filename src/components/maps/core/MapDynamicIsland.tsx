@@ -252,7 +252,6 @@ export function MapDynamicIsland({
   const mobilePill = (
     <FacetMaterial
       material="acrylic"
-      glow
       data-expanded={searchOpen ? "true" : undefined}
       className={islandClass}
     >

@@ -37,6 +37,7 @@ import {
   MediaImage as ImageIcon,
 } from "iconoir-react";
 import { PackHolographicCover } from "~/components/cards/pack-opening/PackHolographicCover";
+import { cn } from "~/lib/utils/cn";
 
 // ─── Pack types & rarity options ─────────────────────────────────
 
@@ -274,7 +275,7 @@ export function CardPacksAdmin() {
           },
           { label: "Total Cards", value: stats.totalCards, icon: Layers, color: "text-purple" },
         ].map((s) => (
-          <Card key={s.label} className="p-4">
+          <Card key={s.label} className="flex flex-col gap-6 p-4 py-6">
             <div className="flex items-center gap-2">
               <s.icon className={`h-4 w-4 ${s.color}`} />
               <p className="text-label-secondary text-body">{s.label}</p>
@@ -291,7 +292,7 @@ export function CardPacksAdmin() {
           <p className="text-label-secondary">Loading packs...</p>
         </div>
       ) : filteredPacks.length === 0 ? (
-        <Card className="p-12 text-center">
+        <Card className="flex flex-col gap-6 p-12 py-6 text-center">
           <Package className="text-label-tertiary mx-auto mb-3 h-10 w-10" />
           <p className="text-label-secondary">No packs found</p>
         </Card>
@@ -302,7 +303,10 @@ export function CardPacksAdmin() {
             return (
               <Card
                 key={pack.id}
-                className={`hover:border-yellow/50 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${!pack.isActive ? "opacity-60" : ""} ${colors.border}`}
+                className={cn(
+                  "flex flex-col gap-6 py-6",
+                  `hover:border-yellow/50 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${!pack.isActive ? "opacity-60" : ""} ${colors.border}`
+                )}
               >
                 <div className="mb-3 flex items-start justify-between">
                   <div className="flex min-w-0 flex-1 items-start gap-3">

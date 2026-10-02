@@ -13,7 +13,6 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { EmptyState } from "~/components/ui/empty-state";
 import { CutoutCard } from "~/components/ui/cutout-card";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Progress } from "~/components/ui/progress";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -32,6 +31,7 @@ import {
   getComplexityBadgeVariant,
   getArchetypeColorClass,
 } from "./foundationUtils";
+import { Card } from "~/components/ui/card";
 
 interface ArchetypeGridProps {
   transitionDirection: number;
@@ -205,8 +205,8 @@ export function ArchetypeGrid({
       {/* Active Benchmark Overview Card or Benchmark Skipped Banner */}
       {selectedTemplate ? (
         // v2: the benchmark banner sits on a gold wash (the glass hero in the builder tint).
-        <FacetCard
-          variant="glass"
+        <Card
+          variant="hero"
           className="flex flex-col items-start justify-between gap-4 p-4 sm:flex-row sm:items-center"
         >
           <div className="flex items-center gap-3">
@@ -246,9 +246,9 @@ export function ArchetypeGrid({
               Keep Real Baseline →
             </Button>
           </div>
-        </FacetCard>
+        </Card>
       ) : (
-        <FacetCard className="flex flex-col items-start justify-between gap-4 p-4 sm:flex-row sm:items-center">
+        <Card className="flex flex-col items-start justify-between gap-4 p-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
             <div className="border-tint/30 bg-tint/10 text-tint rounded-control flex size-10 shrink-0 items-center justify-center border">
               <Sparkles aria-hidden className="size-5" />
@@ -274,11 +274,11 @@ export function ArchetypeGrid({
               + Add Benchmark Country
             </Button>
           </div>
-        </FacetCard>
+        </Card>
       )}
 
       {/* Search & Complexity Filter Bar */}
-      <FacetCard className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
+      <Card className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
         <SearchField
           size="sm"
           containerClassName="flex-1"
@@ -307,7 +307,7 @@ export function ArchetypeGrid({
             {activeEra === "modern" ? "Modern" : "Historical"} Presets
           </div>
         </div>
-      </FacetCard>
+      </Card>
 
       {isLoadingArchetypes ? (
         <div className="flex flex-col items-center justify-center space-y-4 py-20">
@@ -315,7 +315,7 @@ export function ArchetypeGrid({
           <p className="text-body text-label-secondary">Decoding faction templates...</p>
         </div>
       ) : filteredArchetypes.length === 0 ? (
-        <FacetCard>
+        <Card>
           <EmptyState
             title="No matching archetypes found"
             message="Try adjusting your search query or complexity filter."
@@ -333,7 +333,7 @@ export function ArchetypeGrid({
               </Button>
             }
           />
-        </FacetCard>
+        </Card>
       ) : (
         <motion.div
           variants={containerVariants}
@@ -356,9 +356,6 @@ export function ArchetypeGrid({
                 <CutoutCard
                   variant="card"
                   interactive
-                  glow={isSelected}
-                  texture="dots"
-                  textureOpacity={isSelected ? 0.05 : 0.03}
                   className={cn(
                     "flex h-full flex-col justify-between gap-4 p-5",
                     isSelected && "border-tint ring-tint/50 ring-1"

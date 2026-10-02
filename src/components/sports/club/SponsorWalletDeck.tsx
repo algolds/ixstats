@@ -236,7 +236,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
   ];
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="flex flex-col gap-6 overflow-hidden py-6">
       <CardHeader>
         <CardTitle className="text-title-2 flex items-center gap-2">
           <Sparkles className="text-tint size-5" aria-hidden />

@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Percentage as Percent } from "iconoir-react";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { CurrencyFlow } from "~/components/ui/number-flow";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
@@ -22,6 +21,7 @@ import {
 } from "./fiscal";
 import { parseSectorBreakdown } from "~/lib/economy/sector-breakdown";
 import { economicRelationsOf, finiteOrNull } from "~/lib/economy/country-relations";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 export { TAX_CHANNELS, FiscalPolicyInsights };
 export type { TaxChannel };
@@ -133,8 +133,8 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
   return (
     <div className="space-y-4">
       {/* ── Section 1: Tax rate controls (opaque: it also renders inside the drill sheet) ── */}
-      <FacetCard className="rounded-card">
-        <FacetCardHeader className="flex-row flex-wrap items-center justify-between gap-3 p-4 pb-3">
+      <Card className="rounded-card">
+        <CardHeader className="flex-row flex-wrap items-center justify-between gap-3 p-4 pb-3">
           <div className="flex items-center gap-2">
             <Percent aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
             <h3 className="text-label text-headline">National Tax Rate Controls</h3>
@@ -152,9 +152,9 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
               )}
             </p>
           </div>
-        </FacetCardHeader>
+        </CardHeader>
 
-        <FacetCardContent className="space-y-3 px-4 pb-4">
+        <CardContent className="space-y-3 px-4 pb-4">
           {taxEfficiency == null && yields.total != null && (
             <p className="text-label-secondary text-footnote">
               No collection efficiency is recorded, so revenue is shown before collection losses.
@@ -175,8 +175,8 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
               />
             ))}
           </div>
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
 
       {/* ── Section 2: Revenue Yield Matrix ── */}
       <TaxRevenueProjections yields={yields} />

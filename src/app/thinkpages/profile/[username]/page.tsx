@@ -5,13 +5,13 @@ import Link from "next/link";
 import { ArrowLeft, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import { PersonaFollowButton } from "~/components/thinkpages/PersonaFollowButton";
 import { RelativeTimestamp } from "~/components/thinkpages/post/ThinkpagesPostUtils";
 import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
+import { Card } from "~/components/ui/card";
 
 interface ProfilePageProps {
   params: Promise<{ username: string }>;
@@ -39,7 +39,7 @@ export default function PersonaProfilePage({ params }: ProfilePageProps) {
   if (error || !profile) {
     return (
       <div className="container mx-auto max-w-2xl px-4 py-8">
-        <FacetCard>
+        <Card>
           <EmptyState
             title="Account not found"
             message="This account may have been deactivated or the link is incorrect."
@@ -52,7 +52,7 @@ export default function PersonaProfilePage({ params }: ProfilePageProps) {
               </Button>
             }
           />
-        </FacetCard>
+        </Card>
       </div>
     );
   }
@@ -73,7 +73,7 @@ export default function PersonaProfilePage({ params }: ProfilePageProps) {
         </Link>
       </Button>
 
-      <FacetCard padding="lg" className="space-y-4">
+      <Card padding="lg" className="space-y-4">
         <div className="flex items-start justify-between gap-4">
           <Avatar className="size-16">
             <AvatarImage src={profile.profileImageUrl ?? ""} />
@@ -130,7 +130,7 @@ export default function PersonaProfilePage({ params }: ProfilePageProps) {
             posts
           </span>
         </div>
-      </FacetCard>
+      </Card>
 
       <section className="space-y-3">
         <h2 className="text-subhead text-label-secondary">Recent posts</h2>
@@ -143,7 +143,7 @@ export default function PersonaProfilePage({ params }: ProfilePageProps) {
               href={withBasePath(`/thinkpages/post/${post.id}`)}
               className="rounded-card focus-visible:outline-tint block focus-visible:outline-2 focus-visible:outline-offset-2"
             >
-              <FacetCard padding="md" interactive="hover" className="space-y-2">
+              <Card padding="md" className="space-y-2">
                 <p className="text-body text-label line-clamp-4 whitespace-pre-line">
                   {post.content.replace(/\s*\[DiscordMsg:\d+\]\s*$/, "")}
                 </p>
@@ -154,7 +154,7 @@ export default function PersonaProfilePage({ params }: ProfilePageProps) {
                   <span>{post.repostCount} reposts</span>
                   {post.pinned && <span>Pinned</span>}
                 </div>
-              </FacetCard>
+              </Card>
             </Link>
           ))
         )}

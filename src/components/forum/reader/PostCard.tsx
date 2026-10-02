@@ -23,7 +23,6 @@ import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { sanitizeHtml } from "~/lib/utils";
 import { Textarea } from "~/components/ui/textarea";
 import { Button } from "~/components/ui/button";
-import { FACET_CARD_SURFACE } from "~/components/ui/facet-container";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -175,7 +174,7 @@ export function PostCard({
   return (
     <article
       className={cn(
-        FACET_CARD_SURFACE,
+        "bg-surface text-label border-separator rounded-card shadow-card border",
         "forum-post-card",
         isFirstPost && "border-t-tint border-t-2"
       )}

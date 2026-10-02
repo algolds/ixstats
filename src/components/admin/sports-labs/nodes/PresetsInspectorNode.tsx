@@ -48,7 +48,7 @@ export const PresetsInspectorNode = React.memo(function PresetsInspectorNode({
           </Select>
         </div>
 
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader className="pb-2">
             <CardTitle className="text-headline flex items-center gap-2">
               <Trophy className="text-yellow h-4 w-4" />

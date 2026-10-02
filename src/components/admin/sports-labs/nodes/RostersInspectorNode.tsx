@@ -207,7 +207,7 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
           </div>
 
           {isOwner && (
-            <Card className="border-yellow/20 bg-yellow/5">
+            <Card className="border-yellow/20 bg-yellow/5 flex flex-col gap-6 py-6">
               <CardContent className="space-y-2 p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-eyebrow text-yellow">Patron Saint Ritual (Cost: ₷100)</p>

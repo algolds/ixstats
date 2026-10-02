@@ -3,8 +3,8 @@
 import React from "react";
 import { cn } from "~/lib/utils";
 import { type TextureType } from "~/components/ui/texture-overlay";
-import { FacetCard } from "~/components/ui/facet-container";
 import { FACET_ACCENT, type MyCountryAccent } from "./accents";
+import { Card } from "~/components/ui/card";
 
 interface GlassPanelProps {
   /** Section accent: re-tints the glass wash, border and shadow (Facet 3.1 `accent`). */
@@ -36,16 +36,13 @@ export function GlassPanel({
   const clickable = interactive || Boolean(onClick);
 
   return (
-    <FacetCard
-      variant="glass"
-      accent={FACET_ACCENT[accent]}
-      interactive={clickable ? "hover" : "none"}
+    <Card
+      variant="hero"
+      interactive={clickable}
       onClick={onClick}
-      texture={texture === "none" ? undefined : texture}
-      textureOpacity={textureOpacity}
       className={cn("text-label rounded-row overflow-hidden", className)}
     >
       <div className="relative z-10">{children}</div>
-    </FacetCard>
+    </Card>
   );
 }

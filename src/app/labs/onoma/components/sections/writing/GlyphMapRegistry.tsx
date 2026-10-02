@@ -9,9 +9,9 @@ import { cn } from "~/lib/utils";
 import type { Glyph } from "./types";
 import { STARTER_SCRIPT_PACKS, type StarterScriptPack } from "./glyph-primitives";
 import { Input } from "~/components/ui/input";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Toggle } from "~/components/ui/toggle";
+import { Card } from "~/components/ui/card";
 
 interface GlyphMapRegistryProps {
   glyphs: Glyph[];
@@ -55,7 +55,7 @@ export function GlyphMapRegistry({
   };
 
   return (
-    <FacetCard variant="inset" padding="none" className="flex h-full flex-col space-y-3 p-4">
+    <Card variant="inset" padding="none" className="flex h-full flex-col space-y-3 p-4">
       {/* Header Bar with Search & Starter Pack Button (Single line, aligned with Canvas header) */}
       <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
         <div className="flex items-center gap-2">
@@ -253,6 +253,6 @@ export function GlyphMapRegistry({
           </AnimatePresence>
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }

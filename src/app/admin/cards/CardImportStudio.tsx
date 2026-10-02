@@ -7,11 +7,11 @@ import { useSearchParams } from "next/navigation";
 import { OpenBook as BookOpen, Globe, WhiteFlag as Flag, Component as Layers } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { LoreCardBatchAdmin } from "./LoreCardBatchAdmin";
 import { NSImportSuiteAdmin } from "./NSImportSuiteAdmin";
 import { CommonsFlagImporterAdmin } from "./CommonsFlagImporterAdmin";
+import { Card } from "~/components/ui/card";
 
 export type ImportSubtab = "wiki" | "ns" | "flags";
 
@@ -90,7 +90,7 @@ export function CardImportStudio({
   return (
     <div className="space-y-6">
       {/* ─── Import Studio Subnavigation Header ───────────────────── */}
-      <FacetCard className="p-4">
+      <Card className="p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-tint-fill text-tint rounded-row flex size-10 items-center justify-center">
@@ -131,7 +131,7 @@ export function CardImportStudio({
             })}
           />
         </div>
-      </FacetCard>
+      </Card>
 
       {/* ─── Active Subtab Content ───────────────────────────────── */}
       <div className="duration-fast transition-opacity">

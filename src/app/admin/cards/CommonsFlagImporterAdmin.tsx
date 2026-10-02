@@ -6,7 +6,6 @@ import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { useNotify } from "~/hooks/useNotify";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Globe,
   Download,
@@ -29,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Card } from "~/components/ui/card";
 
 function cleanCategoryTitle(input: string): string {
   let cleaned = input.trim();
@@ -140,7 +140,7 @@ export function CommonsFlagImporterAdmin() {
   };
 
   return (
-    <FacetCard className="space-y-6 p-6">
+    <Card className="space-y-6 p-6">
       {/* Header */}
       <div className="border-separator flex flex-col gap-2 border-b pb-4">
         <div className="flex items-center gap-3">
@@ -160,7 +160,7 @@ export function CommonsFlagImporterAdmin() {
       </div>
 
       {/* Category URL/Title Parser Control Panel */}
-      <FacetCard className="space-y-4 p-4">
+      <Card className="space-y-4 p-4">
         <div className="space-y-3">
           <label className="text-label text-caption block">
             Wikimedia Commons Category URL or Category Title
@@ -285,7 +285,7 @@ export function CommonsFlagImporterAdmin() {
             </Select>
           </div>
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Results Browser */}
       {commonsQuery.isLoading || commonsQuery.isFetching ? (
@@ -433,6 +433,6 @@ export function CommonsFlagImporterAdmin() {
           </div>
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }

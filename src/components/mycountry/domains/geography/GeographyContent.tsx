@@ -19,12 +19,12 @@ import { PopulateFromWikiButton } from "~/components/mycountry/shell/PopulateFro
 import { GeoCompliancePanel } from "./GeoCompliancePanel";
 import { GeographyReportModal } from "./GeographyReportModal";
 import { TransitMobilityCard } from "./TransitMobilityCard";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 /**
  * Geography attribute editor — MyCountry P-C.
@@ -81,16 +81,16 @@ export function GeographyContent() {
   if (!bundle.geometry) {
     return (
       <div className="space-y-4">
-        <FacetCard className="rounded-card">
-          <FacetCardContent className="flex flex-col items-center justify-center p-8 text-center">
+        <Card className="rounded-card">
+          <CardContent className="flex flex-col items-center justify-center p-8 text-center">
             <MapPin aria-hidden="true" className="text-label-secondary mb-3 h-8 w-8" />
             <h3 className="text-label text-title-3 mb-2">Map integration required</h3>
             <p className="text-label-secondary text-footnote max-w-md leading-relaxed">
               This nation has not yet established map coordinates. Map feature linkage is required
               to define cities, subdivisions, and points of interest.
             </p>
-          </FacetCardContent>
-        </FacetCard>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -118,24 +118,24 @@ export function GeographyContent() {
             { label: "POIs", icon: Pin, value: pois.length },
           ] as const
         ).map(({ label, icon: Icon, value }) => (
-          <FacetCard key={label} className="rounded-card p-3">
+          <Card key={label} className="rounded-card p-3">
             <div className="flex items-center gap-2">
               <Icon aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
               <Eyebrow>{label}</Eyebrow>
             </div>
             <p className="text-label text-title-3 mt-1 tabular-nums">{value}</p>
-          </FacetCard>
+          </Card>
         ))}
       </div>
 
       {/* Geographic profile summary */}
       {geoProfile && (
-        <FacetCard className="rounded-card">
-          <FacetCardHeader className="flex-row flex-wrap items-center justify-between gap-2 p-4 pb-3">
+        <Card className="rounded-card">
+          <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 p-4 pb-3">
             <h3 className="text-label text-headline">Geographic profile</h3>
             <GeographyReportModal countryName={country?.name ?? ""} geoProfile={geoProfile} />
-          </FacetCardHeader>
-          <FacetCardContent className="grid grid-cols-2 gap-3 px-4 pb-4 sm:grid-cols-4">
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-3 px-4 pb-4 sm:grid-cols-4">
             <ProfileStat
               label="Land area"
               value={`${geoProfile.area.areaKm2.toLocaleString()} km²`}
@@ -155,8 +155,8 @@ export function GeographyContent() {
               label="Hydrology"
               value={`${geoProfile.hydro.riverCount} rivers / ${geoProfile.hydro.lakeCount} lakes`}
             />
-          </FacetCardContent>
-        </FacetCard>
+          </CardContent>
+        </Card>
       )}
 
       {/* Compliance guard — surfaces population/GDP rollup inconsistencies,
@@ -247,7 +247,7 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
   };
 
   return (
-    <FacetCard className="p-3">
+    <Card className="p-3">
       <div className="mb-2 flex items-center justify-between">
         <div>
           <div className="text-label text-caption font-semibold">{city.name}</div>
@@ -350,7 +350,7 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
           )}
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }
 
@@ -388,7 +388,7 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
   };
 
   return (
-    <FacetCard className="p-3">
+    <Card className="p-3">
       <div className="mb-2 flex items-center justify-between">
         <div>
           <div className="text-label text-caption font-semibold">{subdivision.name}</div>
@@ -492,7 +492,7 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
           )}
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }
 
@@ -507,7 +507,7 @@ function PoiCard({
 }) {
   const { isPublicReadOnly } = useCountryData();
   return (
-    <FacetCard className="p-3">
+    <Card className="p-3">
       <div className="mb-1 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Tag aria-hidden="true" className="text-label-secondary h-3 w-3" />
@@ -533,7 +533,7 @@ function PoiCard({
       {poi.description && (
         <p className="text-label-secondary text-footnote leading-snug">{poi.description}</p>
       )}
-    </FacetCard>
+    </Card>
   );
 }
 
@@ -574,7 +574,7 @@ function ProfileStat({
   mono?: boolean;
 }) {
   return (
-    <FacetCard className="p-2">
+    <Card className="p-2">
       <Eyebrow className="block">{label}</Eyebrow>
       <p
         className={cn(
@@ -585,6 +585,6 @@ function ProfileStat({
       >
         {value}
       </p>
-    </FacetCard>
+    </Card>
   );
 }

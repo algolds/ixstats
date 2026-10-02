@@ -11,7 +11,7 @@ import { AtomicComponentStats } from "./AtomicComponentStats";
 import { AtomicComponentCard } from "./AtomicComponentCard";
 import { EconomicTemplateDialog } from "~/components/admin/economic-components/EconomicTemplateDialog";
 import { Skeleton } from "~/components/ui/skeleton";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface AtomicComponentManagerProps {
   domain: "economy" | "government";
@@ -64,11 +64,11 @@ export function AtomicComponentManager({ domain }: AtomicComponentManagerProps) 
       />
 
       {catalog.filteredComponents.length === 0 ? (
-        <FacetCard className="p-12 text-center">
+        <Card className="p-12 text-center">
           <p className="text-label-secondary text-body">
             No {label} components match the current filters.
           </p>
-        </FacetCard>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {catalog.filteredComponents.map((component) => (

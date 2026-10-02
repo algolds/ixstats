@@ -6,7 +6,6 @@ import React from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Sheet,
   SheetContent,
@@ -14,6 +13,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "~/components/ui/sheet";
+import { Card } from "~/components/ui/card";
 
 export interface ResponseOption {
   id?: string;
@@ -63,12 +63,12 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
           </SheetHeader>
 
           <div className="space-y-6">
-            <FacetCard variant="inset" className="p-5">
+            <Card variant="inset" className="p-5">
               <h4 className="text-label text-title-3 mb-3">{scenario.title}</h4>
               <p className="text-label-secondary text-body whitespace-pre-line">
                 {scenario.narrative}
               </p>
-            </FacetCard>
+            </Card>
 
             {scenario.responseOptions && scenario.responseOptions.length > 0 && (
               <div className="space-y-3">
@@ -77,7 +77,7 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
                   const outcome = option.predictedOutcomes?.immediate;
                   const signed = (n: number) => `${n > 0 ? "+" : ""}${n}`;
                   return (
-                    <FacetCard variant="inset" key={option.id || index} className="p-4">
+                    <Card variant="inset" key={option.id || index} className="p-4">
                       <div className="mb-3 flex items-start justify-between gap-3">
                         <div>
                           <h6 className="text-label text-body font-medium">{option.label}</h6>
@@ -120,7 +120,7 @@ export const ScenarioModal = React.memo<ScenarioModalProps>(
                           ))}
                         </dl>
                       )}
-                    </FacetCard>
+                    </Card>
                   );
                 })}
               </div>

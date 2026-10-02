@@ -12,7 +12,6 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { FacetCard } from "~/components/ui/facet-container";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
@@ -43,6 +42,7 @@ import { useDiplomacyInboxCount } from "./inbox/useDiplomacyInbox";
 import { EmbassyCreatorSheet } from "./EmbassyCreatorSheet";
 import { EmbassyDetailSheet } from "./EmbassyDetailSheet";
 import { AllianceCreatorSheet } from "./AllianceCreatorSheet";
+import { Card } from "~/components/ui/card";
 
 interface EmbassiesAndRelationsPanelProps {
   countryId: string;
@@ -268,12 +268,12 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
           </div>
 
           {!alliances || alliances.length === 0 ? (
-            <FacetCard className="rounded-card p-6 text-center">
+            <Card className="rounded-card p-6 text-center">
               <Users className="text-label-secondary mx-auto mb-3 h-6 w-6" />
               <p className="text-label-secondary text-body">
                 Not a member of any alliances. Create one or wait for an invitation.
               </p>
-            </FacetCard>
+            </Card>
           ) : (
             <div className="space-y-3">
               {alliances.map((alliance) => (

@@ -361,7 +361,7 @@ export function UnifiedDashboardSection({
             {/* Economic Tier Distribution */}
             {(globalStats as any)?.economicTierDistribution && (
               // v2 (c5c6b382): a CutoutCard with the emerald cutout tab header.
-              <CutoutCard variant="card" accent="green" retint trackPointerHover={false}>
+              <CutoutCard variant="card" trackPointerHover={false}>
                 <CutoutCardHeader icon={<Globe />} as="h2">
                   Economic tiers
                 </CutoutCardHeader>

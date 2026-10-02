@@ -9,7 +9,6 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Input } from "~/components/ui/input";
@@ -48,6 +47,7 @@ import { ClubTacticsSection } from "~/components/sports/club/sections/ClubTactic
 import { ClubTransfersSection } from "~/components/sports/club/sections/ClubTransfersSection";
 import { ClubManagementSection } from "~/components/sports/club/sections/ClubManagementSection";
 import { ClubHistorySection } from "~/components/sports/club/sections/ClubHistorySection";
+import { Card } from "~/components/ui/card";
 
 export interface ClubRouterProps {
   teamId: string;
@@ -183,7 +183,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
 
     return (
       <div className="container mx-auto max-w-2xl px-4 py-16">
-        <FacetCard padding="lg" className="text-center">
+        <Card padding="lg" className="text-center">
           <div
             className="border-separator bg-surface-secondary rounded-card text-large-title mx-auto mb-4 flex size-20 items-center justify-center overflow-hidden border"
             style={teamPublic.color ? { borderColor: teamPublic.color } : undefined}
@@ -234,7 +234,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
               </p>
             </div>
           )}
-        </FacetCard>
+        </Card>
       </div>
     );
   }
@@ -242,7 +242,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
   if (!overview) {
     return (
       <div className="container mx-auto max-w-lg px-4 py-16">
-        <FacetCard>
+        <Card>
           <EmptyState
             icon={<Trophy />}
             title="Club not found"
@@ -254,7 +254,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
               </Button>
             }
           />
-        </FacetCard>
+        </Card>
       </div>
     );
   }
@@ -273,7 +273,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
 
   // v2 club header: the glass hero card (no glow: sports stay flat).
   const heroSection = (
-    <FacetCard variant="glass" className="overflow-hidden">
+    <Card variant="hero" className="overflow-hidden">
       {team.coverImage && (
         <div className="bg-fill-3 h-28 overflow-hidden">
           <img src={withBasePath(team.coverImage)} alt="" className="h-full w-full object-cover" />
@@ -324,7 +324,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
           </Button>
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 
   const renderSectionContent = () => {

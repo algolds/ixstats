@@ -1,8 +1,8 @@
 import React from "react";
 import { ArrowDown, ArrowUp, Minus } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { TONE_CLASSES } from "./directive-model";
+import { Card } from "~/components/ui/card";
 
 export interface EffectItem {
   key: string;
@@ -21,7 +21,7 @@ export interface EffectItem {
  */
 export function EffectList({ items, className }: { items: EffectItem[]; className?: string }) {
   return (
-    <FacetCard variant="inset" padding="none" className={className}>
+    <Card variant="inset" padding="none" className={className}>
       <ul className="divide-separator divide-y">
         {items.map((item) => {
           const tone =
@@ -53,6 +53,6 @@ export function EffectList({ items, className }: { items: EffectItem[]; classNam
           );
         })}
       </ul>
-    </FacetCard>
+    </Card>
   );
 }

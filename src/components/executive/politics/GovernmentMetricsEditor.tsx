@@ -87,7 +87,7 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
   };
 
   return (
-    <Card className="">
+    <Card className="flex flex-col gap-6 py-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <BarChart2 className="text-indigo h-4 w-4" />

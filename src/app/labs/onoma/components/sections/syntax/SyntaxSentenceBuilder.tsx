@@ -6,7 +6,6 @@
 import React from "react";
 import { Cpu, ArrowRight } from "iconoir-react";
 import { Input } from "~/components/ui/input";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Select,
   SelectContent,
@@ -15,6 +14,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Checkbox } from "~/components/ui/checkbox";
+import { Card } from "~/components/ui/card";
 
 interface SyntaxSentenceBuilderProps {
   wordOrder: string;
@@ -155,7 +155,7 @@ export function SyntaxSentenceBuilder({
   const englishSentence = `${engSubjArt} ${engSubjAdj}${engSubjNoun} ${engVerb} ${engObjArt} ${engObjAdj}${engObjNoun}.`;
 
   return (
-    <FacetCard variant="inset" padding="none" className="space-y-4 p-5 text-left">
+    <Card variant="inset" padding="none" className="space-y-4 p-5 text-left">
       <h4 className="text-label text-subhead flex items-center gap-2">
         <Cpu className="text-indigo h-4 w-4" /> Live Sentence Generator
       </h4>
@@ -266,6 +266,6 @@ export function SyntaxSentenceBuilder({
           </div>
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

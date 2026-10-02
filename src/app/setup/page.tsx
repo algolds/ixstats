@@ -28,7 +28,6 @@ import {
 import { IntroDisclosure } from "~/components/ui/intro-disclosure";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { SearchField } from "~/components/ui/search-field";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -37,6 +36,7 @@ import { springSmooth, tweenExit } from "~/lib/design/motion";
 import { InteractiveGridPattern } from "~/components/ui/magicui/interactive-grid-pattern";
 import { IxStatsLogo } from "~/components/ui/ixstats-logo";
 import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
+import { Card } from "~/components/ui/card";
 
 type SetupStep = "welcome" | "link-existing" | "create-new" | "complete";
 
@@ -308,9 +308,10 @@ export default function SetupPage() {
 
                     {/* Primary Option - Create New Country */}
                     <div data-app="mycountry" className="mx-auto mb-6 max-w-3xl">
-                      <FacetCard
+                      <Card
                         onClick={() => setCurrentStep("create-new")}
                         className="relative overflow-hidden p-6 text-left md:p-8"
+                        interactive
                       >
                         <TintHairline />
                         <div className="mb-6 flex items-center gap-5">
@@ -332,12 +333,12 @@ export default function SetupPage() {
                           <span>Get Started with MyCountry© Builder</span>
                           <ArrowRight aria-hidden className="size-5" />
                         </div>
-                      </FacetCard>
+                      </Card>
                     </div>
 
                     {/* Secondary Option - Link Existing Country */}
                     <div className="mx-auto max-w-3xl">
-                      <FacetCard className="p-6 text-left">
+                      <Card className="p-6 text-left">
                         <div className="mb-4 flex items-center justify-between gap-4">
                           <div className="flex items-center gap-3">
                             <div className="bg-blue/10 rounded-row p-3">
@@ -364,7 +365,7 @@ export default function SetupPage() {
                             ⚠️ Only choose this if told to do so
                           </p>
                         </div>
-                      </FacetCard>
+                      </Card>
                     </div>
                   </motion.div>
                 )}
@@ -389,7 +390,7 @@ export default function SetupPage() {
                       </p>
                     </div>
 
-                    <FacetCard className="p-6 md:p-8">
+                    <Card className="p-6 md:p-8">
                       <div className="mb-6">
                         <h2 className="text-title-2 text-label mb-1 flex items-center gap-3">
                           <Search aria-hidden className="text-blue size-5" />
@@ -475,7 +476,7 @@ export default function SetupPage() {
                           </div>
                         )}
                       </div>
-                    </FacetCard>
+                    </Card>
                   </motion.div>
                 )}
 
@@ -495,7 +496,7 @@ export default function SetupPage() {
                       <h1 className="text-large-title text-label">Create New Country</h1>
                     </div>
 
-                    <FacetCard className="space-y-6 p-6 md:p-8">
+                    <Card className="space-y-6 p-6 md:p-8">
                       <div>
                         <h2 className="text-title-2 text-label mb-2 flex items-center gap-3">
                           <Building2 aria-hidden className="text-tint size-5" />
@@ -627,7 +628,7 @@ export default function SetupPage() {
                           </>
                         )}
                       </Button>
-                    </FacetCard>
+                    </Card>
                   </motion.div>
                 )}
 
@@ -667,12 +668,12 @@ export default function SetupPage() {
 
       <SignedOut>
         <div className="bg-grouped flex min-h-screen flex-col items-center justify-center px-4">
-          <FacetCard className="p-12 text-center">
+          <Card className="p-12 text-center">
             <IxStatsLogo size="lg" animated={true} className="mx-auto mb-6" />
             <h1 className="text-large-title text-label mb-2">Welcome to IxStats</h1>
             <p className="text-body text-label-secondary mb-8">Please sign in to continue</p>
             <SignInButton mode="modal" />
-          </FacetCard>
+          </Card>
         </div>
       </SignedOut>
     </>

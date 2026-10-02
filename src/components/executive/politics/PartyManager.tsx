@@ -147,7 +147,7 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
     IDEOLOGY_OPTIONS.find((o) => o.value === ideology)?.label ?? ideology;
 
   return (
-    <Card className="">
+    <Card className="flex flex-col gap-6 py-6">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span className="flex items-center gap-2">

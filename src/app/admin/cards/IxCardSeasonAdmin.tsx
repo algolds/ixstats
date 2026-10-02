@@ -7,7 +7,6 @@ import { Component as Layers, Refresh as RefreshCw, FloppyDisk as Save } from "i
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Select,
   SelectContent,
@@ -15,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Card } from "~/components/ui/card";
 
 export function IxCardSeasonAdmin() {
   const notify = useNotify();
@@ -45,7 +45,7 @@ export function IxCardSeasonAdmin() {
 
   return (
     <div className="space-y-6">
-      <FacetCard className="p-6">
+      <Card className="p-6">
         <div className="flex items-center gap-3">
           <div className="border-tint/20 bg-tint-fill rounded-row border p-3">
             <Layers className="text-tint h-6 w-6" />
@@ -93,9 +93,9 @@ export function IxCardSeasonAdmin() {
             </Button>
           </div>
         </div>
-      </FacetCard>
+      </Card>
 
-      <FacetCard className="p-6">
+      <Card className="p-6">
         <div className="flex items-center gap-3">
           <div className="rounded-row border-yellow/20 bg-yellow/10 border p-3">
             <Layers className="text-yellow h-6 w-6" />
@@ -122,7 +122,7 @@ export function IxCardSeasonAdmin() {
             </ul>
           </div>
         </div>
-      </FacetCard>
+      </Card>
     </div>
   );
 }

@@ -8,9 +8,9 @@
 
 import React from "react";
 import { Button } from "~/components/ui/button";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Page as FileText } from "iconoir-react";
 import type { EconomicTemplate } from "~/lib/economy/atomic-data";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 export interface TemplateSelectorProps {
   templates: EconomicTemplate[];
@@ -27,12 +27,12 @@ function TemplateSelectorComponent({
   disabled = false,
 }: TemplateSelectorProps) {
   return (
-    <FacetCard className="rounded-card">
-      <FacetCardHeader className="flex-row items-center gap-2 p-4 pb-3">
+    <Card className="rounded-card">
+      <CardHeader className="flex-row items-center gap-2 p-4 pb-3">
         <FileText aria-hidden="true" className="text-label-secondary h-4 w-4" />
         <h3 className="text-label text-headline">Quick start templates</h3>
-      </FacetCardHeader>
-      <FacetCardContent className="px-4 pb-4">
+      </CardHeader>
+      <CardContent className="px-4 pb-4">
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6">
           {templates.map((template) => {
             const Icon = template.icon;
@@ -57,8 +57,8 @@ function TemplateSelectorComponent({
             );
           })}
         </div>
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 }
 

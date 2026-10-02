@@ -102,7 +102,7 @@ export function ClubTransfersSection({
     <div className="grid gap-6 lg:grid-cols-3">
       {/* Left Column: search and active listings */}
       <div className="space-y-6 lg:col-span-2">
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle>Transfer Marketplace Search</CardTitle>
             <CardDescription className="text-label-secondary">
@@ -198,7 +198,7 @@ export function ClubTransfersSection({
         </Card>
 
         {/* Active Marketplace Listings */}
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle>Active Transfer Listings</CardTitle>
             <CardDescription className="text-label-secondary">
@@ -278,7 +278,7 @@ export function ClubTransfersSection({
       {/* Right Column: Inbound/Outbound bid list & Comparison */}
       <div className="space-y-6">
         {comparePlayer && squadComparePlayer && (
-          <Card>
+          <Card className="flex flex-col gap-6 py-6">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-headline text-label">Comparison Detail</CardTitle>
               <Button size="sm" variant="ghost" onClick={() => setComparePlayer(null)}>
@@ -314,7 +314,7 @@ export function ClubTransfersSection({
         )}
 
         {/* Inbound Bids */}
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ArrowLeftRight className="text-green h-4 w-4" />
@@ -367,7 +367,7 @@ export function ClubTransfersSection({
         </Card>
 
         {/* Outbound Bids */}
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ArrowLeftRight className="text-teal h-4 w-4" />

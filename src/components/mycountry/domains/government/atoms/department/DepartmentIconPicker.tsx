@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { ColorPickerInput } from "~/components/ui/color-picker";
 import { MediaSearchModal } from "~/components/wiki-os/media-search/MediaSearchModal";
@@ -11,6 +10,7 @@ import {
   categoryIcons,
 } from "./department-constants";
 import type { DepartmentInput } from "~/types/government";
+import { Card } from "~/components/ui/card";
 
 interface DepartmentIconPickerProps {
   data: DepartmentInput;
@@ -30,7 +30,7 @@ export const DepartmentIconPicker = React.memo(function DepartmentIconPicker({
   const FallbackIcon = categoryIcons[data.category] || categoryIcons.Other!;
 
   return (
-    <FacetCard variant="inset" className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2">
+    <Card variant="inset" className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2">
       {/* Icon Display and Media Modal */}
       <div className="space-y-2">
         <Eyebrow className="block">Department emblem / icon</Eyebrow>
@@ -84,6 +84,6 @@ export const DepartmentIconPicker = React.memo(function DepartmentIconPicker({
           disabled={isReadOnly}
         />
       </div>
-    </FacetCard>
+    </Card>
   );
 });

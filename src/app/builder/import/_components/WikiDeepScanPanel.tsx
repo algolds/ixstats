@@ -44,7 +44,7 @@ export function WikiDeepScanPanel({
 
   if (isLoading) {
     return (
-      <Card className="border-green/20 bg-green/5 border-2">
+      <Card className="border-green/20 bg-green/5 flex flex-col gap-6 border-2 py-6">
         <CardContent className="p-8 text-center">
           <motion.div
             animate={{ rotate: 360 }}
@@ -65,7 +65,7 @@ export function WikiDeepScanPanel({
 
   if (error || !data) {
     return (
-      <Card className="border-tint/20 bg-tint-fill border-2">
+      <Card className="border-tint/20 bg-tint-fill flex flex-col gap-6 border-2 py-6">
         <CardContent className="p-8 text-center">
           <div className="bg-tint/20 text-tint mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
             <Settings2 className="h-6 w-6" />
@@ -90,7 +90,7 @@ export function WikiDeepScanPanel({
 
   if (!hasGov && !hasEcon && !hasDemo) {
     return (
-      <Card className="border-green/20 bg-green/5 border-2">
+      <Card className="border-green/20 bg-green/5 flex flex-col gap-6 border-2 py-6">
         <CardContent className="p-8 text-center">
           <div className="bg-green/20 text-green mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
             <CheckCircle2 className="h-6 w-6" />
@@ -112,7 +112,7 @@ export function WikiDeepScanPanel({
   }
 
   return (
-    <Card className="border-green/30 shadow-floating border-2">
+    <Card className="border-green/30 shadow-floating flex flex-col gap-6 border-2 py-6">
       <CardContent className="p-6">
         <div className="mb-6 flex items-center gap-4">
           <div className="rounded-row bg-green/20 text-green flex h-12 w-12 items-center justify-center">

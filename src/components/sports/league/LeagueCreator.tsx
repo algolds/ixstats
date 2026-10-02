@@ -650,7 +650,7 @@ export function LeagueCreator({
       >
         <DialogDescription>Review your league configuration before creating it.</DialogDescription>
 
-        <Card className="overflow-hidden">
+        <Card className="flex flex-col gap-6 overflow-hidden py-6">
           {coverImage && (
             <div className="relative h-36 w-full overflow-hidden">
               <img

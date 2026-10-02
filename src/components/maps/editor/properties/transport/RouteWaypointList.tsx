@@ -1,6 +1,4 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React, { memo, useMemo } from "react";
@@ -15,6 +13,7 @@ import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/maps/map-config";
 import { polylineLengthKm } from "~/lib/maps/geo-math";
 import { calculateRouteTravelTime } from "~/lib/economy/travel-time";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { Card } from "~/components/ui/card";
 
 interface RouteWaypointListProps {
   routeWaypoints: [number, number][];
@@ -133,7 +132,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
             Click on the map or snap to settlements to place path nodes.
           </div>
         ) : (
-          <FacetCard className="max-h-48 space-y-1 overflow-y-auto p-2">
+          <Card className="max-h-48 space-y-1 overflow-y-auto p-2">
             {routeWaypoints.map((pt, idx) => (
               <div
                 key={idx}
@@ -148,7 +147,7 @@ export const RouteWaypointList = memo(function RouteWaypointList({
                 </span>
               </div>
             ))}
-          </FacetCard>
+          </Card>
         )}
       </div>
 

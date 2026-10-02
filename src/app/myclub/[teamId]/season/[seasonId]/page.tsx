@@ -7,7 +7,6 @@ import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { MatchCommentary } from "~/components/sports/MatchCommentary";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Stat } from "~/components/ui/stat";
 import {
@@ -36,6 +35,7 @@ import {
   StatsReport as BarChart3,
   Group as Users,
 } from "iconoir-react";
+import { Card } from "~/components/ui/card";
 
 const SPORT_EMOJIS: Record<string, string> = {
   soccer: "\u26BD",
@@ -115,10 +115,11 @@ function MatchCard({
       transition={{ ...springSmooth, delay: Math.min(index, 10) * 0.03 }}
       layout
     >
-      <FacetCard
+      <Card
         onClick={onToggleExpand}
         aria-expanded={isExpanded}
         className={cn("overflow-hidden", won && "border-green/30", lost && "border-red/30")}
+        interactive
       >
         <div className="flex flex-col gap-0 px-5 py-4">
           <div className="flex w-full items-center gap-4">
@@ -172,7 +173,7 @@ function MatchCard({
             </motion.div>
           )}
         </div>
-      </FacetCard>
+      </Card>
     </motion.div>
   );
 }
@@ -207,13 +208,13 @@ export default function MyClubSeasonDetailPage() {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Team
         </Button>
-        <FacetCard>
+        <Card>
           <EmptyState
             icon={<Trophy />}
             title="Season not found"
             message="This season may not exist or could not be loaded."
           />
-        </FacetCard>
+        </Card>
       </div>
     );
   }
@@ -260,7 +261,7 @@ export default function MyClubSeasonDetailPage() {
         Back to Team
       </Button>
 
-      <FacetCard padding="lg" className="mb-6">
+      <Card padding="lg" className="mb-6">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-large-title" aria-hidden>
             {emoji}
@@ -290,7 +291,7 @@ export default function MyClubSeasonDetailPage() {
             {season.endIxTime && ` \u2014 Ended ${new Date(season.endIxTime).toLocaleDateString()}`}
           </p>
         )}
-      </FacetCard>
+      </Card>
 
       {season.champion?.id === teamId && isCompleted && (
         <motion.div
@@ -308,7 +309,7 @@ export default function MyClubSeasonDetailPage() {
       )}
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <FacetCard padding="md">
+        <Card padding="md">
           <Stat
             label="Record"
             value={
@@ -317,17 +318,17 @@ export default function MyClubSeasonDetailPage() {
                 : "-"
             }
           />
-        </FacetCard>
-        <FacetCard padding="md">
+        </Card>
+        <Card padding="md">
           <Stat label="Points" value={teamStanding?.points ?? "-"} />
-        </FacetCard>
-        <FacetCard padding="md">
+        </Card>
+        <Card padding="md">
           <Stat
             label="PF / PA"
             value={teamStanding ? `${teamStanding.pointsFor} / ${teamStanding.pointsAgainst}` : "-"}
           />
-        </FacetCard>
-        <FacetCard padding="md">
+        </Card>
+        <Card padding="md">
           <Stat
             label="Position"
             value={
@@ -344,7 +345,7 @@ export default function MyClubSeasonDetailPage() {
             }
             hint={`of ${season.standings?.length ?? 0} teams`}
           />
-        </FacetCard>
+        </Card>
       </div>
 
       <Tabs defaultValue="matches">
@@ -392,20 +393,20 @@ export default function MyClubSeasonDetailPage() {
                 ))}
               </div>
             ) : (
-              <FacetCard>
+              <Card>
                 <EmptyState
                   icon={<Calendar />}
                   title="No Matches Yet"
                   message="Match results will appear here once games are scheduled and played."
                 />
-              </FacetCard>
+              </Card>
             )}
           </div>
         </TabsContent>
 
         {season.standings && season.standings.length > 0 && (
           <TabsContent value="standings">
-            <FacetCard padding="md">
+            <Card padding="md">
               <h2 className="text-title-3 text-label mb-4 flex items-center gap-2">
                 <Trophy className="text-label-secondary size-5" aria-hidden />
                 Full Standings
@@ -454,13 +455,13 @@ export default function MyClubSeasonDetailPage() {
                   ))}
                 </TableBody>
               </Table>
-            </FacetCard>
+            </Card>
           </TabsContent>
         )}
 
         {seasonHistoryEntry && (
           <TabsContent value="stats">
-            <FacetCard padding="md">
+            <Card padding="md">
               <h2 className="text-title-3 text-label flex items-center gap-2">
                 <Users className="text-label-secondary size-5" aria-hidden />
                 Season Stats
@@ -500,7 +501,7 @@ export default function MyClubSeasonDetailPage() {
                   )}
                 </div>
               )}
-            </FacetCard>
+            </Card>
           </TabsContent>
         )}
       </Tabs>

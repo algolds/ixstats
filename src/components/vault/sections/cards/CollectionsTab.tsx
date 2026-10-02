@@ -76,7 +76,7 @@ export function CollectionsTab({
           ))}
         </div>
       ) : !collections || collections.length === 0 ? (
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardContent className="flex flex-col items-center justify-center py-8">
             <Folder className="text-label-tertiary mb-3 h-10 w-10" />
             <p className="text-label text-headline mb-1">No Collections</p>

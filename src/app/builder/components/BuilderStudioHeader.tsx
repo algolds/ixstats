@@ -21,7 +21,6 @@ import {
 import { cn, createUrl } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button, focusRing, hitSlop } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { soundEffects } from "~/lib/sound/cuelume";
 import {
@@ -36,6 +35,7 @@ import { useBuilderFilter } from "./builder-filter-context";
 import { useBuilderGuide } from "./builder-guide-context";
 import { BuilderModeToggle } from "./BuilderModeToggle";
 import { Eyebrow } from "~/components/ui/eyebrow";
+import { Card } from "~/components/ui/card";
 
 const SECTION_ICONS: Record<
   BuilderSection,
@@ -135,14 +135,11 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
       <header className="relative w-full pb-3">
         {/* The page title: the bar shows the step only in the stepper, so the h1 is for assistive
             tech (one h1 per page; step content starts at h2). */}
-        <h1 className="sr-only">
-          {SECTION_LABELS[activeSection]} · MyCountry Builder
-        </h1>
+        <h1 className="sr-only">{SECTION_LABELS[activeSection]} · MyCountry Builder</h1>
         <div className="mx-auto w-full max-w-6xl px-4">
           {/* v2 studio bar (c5c6b382): a gold-rimmed glass bar over the builder canvas */}
-          <FacetCard
-            variant="glass"
-            rim="gold"
+          <Card
+            variant="hero"
             className="flex flex-wrap items-center justify-between gap-2 p-2 sm:flex-nowrap sm:p-3"
           >
             {/* Left Group: Back Button & Step Context */}
@@ -343,7 +340,7 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
                 </Button>
               )}
             </div>
-          </FacetCard>
+          </Card>
         </div>
       </header>
     </TooltipProvider>

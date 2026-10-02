@@ -6,8 +6,8 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Globe, CheckCircle, InfoCircle as Info } from "iconoir-react";
 import type { EconomicArchetype } from "~/lib/economy/archetypes/types";
-import { FacetCard } from "~/components/ui/facet-container";
 import { getComplexityBadgeVariant, getArchetypeIcon, getArchetypeColors } from "./archetypeTheme";
+import { Card } from "~/components/ui/card";
 
 interface ArchetypeCardProps {
   archetype: EconomicArchetype;
@@ -30,11 +30,7 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
   return (
     // v2 (c5c6b382): emerald selection — border, ring and glow — with a hover lift and accent rim.
     // Selected, the card's accent is green and re-tints its subtree (the "Selected" button).
-    <FacetCard
-      lift
-      glow={isSelected ? "shadow" : false}
-      accent={isSelected ? "green" : undefined}
-      retint={isSelected}
+    <Card
       className={cn(
         "flex h-full flex-col justify-between gap-4 p-5",
         isSelected ? "ring-green/60 ring-2" : "hover:border-green/30"
@@ -102,6 +98,6 @@ export const ArchetypeCard = React.memo(function ArchetypeCard({
           Details
         </Button>
       </div>
-    </FacetCard>
+    </Card>
   );
 });

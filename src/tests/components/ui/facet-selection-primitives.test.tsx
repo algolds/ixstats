@@ -228,7 +228,7 @@ describe("Table (Facet 3)", () => {
 
   it("drops its own surface inside a card (the card is the surface)", () => {
     const { container } = render(
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <Example />
       </Card>
     );

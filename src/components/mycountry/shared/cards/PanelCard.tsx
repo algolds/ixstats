@@ -3,8 +3,8 @@
 import React from "react";
 import { cn } from "~/lib/utils";
 import { type TextureType } from "~/components/ui/texture-overlay";
-import { FacetCard } from "~/components/ui/facet-container";
 import { FACET_ACCENT, type MyCountryAccent } from "./accents";
+import { Card } from "~/components/ui/card";
 
 interface PanelCardProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Section accent; defaults to neutral (plain themed card). */
@@ -37,15 +37,12 @@ export function PanelCard({
   // The accent paints only the hairline and the optional wash; text stays on label roles.
   const facetAccent = FACET_ACCENT[accent];
   return (
-    <FacetCard
-      accent={facetAccent}
+    <Card
       className={cn(
         "text-label rounded-row overflow-hidden",
         facetAccent && "border-facet-accent/20",
         className
       )}
-      texture={texture === "none" ? undefined : texture}
-      textureOpacity={textureOpacity}
       {...props}
     >
       {tinted && facetAccent ? (
@@ -55,6 +52,6 @@ export function PanelCard({
         />
       ) : null}
       <div className="relative z-10">{children}</div>
-    </FacetCard>
+    </Card>
   );
 }

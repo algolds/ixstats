@@ -1,26 +1,17 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
-import {
-  FacetCard,
-  FacetContainer,
-  FacetModal,
-  FacetNavigation,
-  resolveFacetSurface,
-} from "~/components/ui/facet-container";
+import { FacetModal, FacetNavigation, resolveFacetSurface } from "~/components/ui/facet-container";
 import { FacetMaterial } from "~/components/ui/facet/shared/FacetMaterial";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Progress } from "~/components/ui/progress";
+import { Card } from "~/components/ui/card";
 
 const classOf = (el: Element) => el.getAttribute("class") ?? "";
 
 describe("FacetCard (opaque content card)", () => {
   it("renders the opaque surface and never a glass depth class", () => {
-    render(
-      <FacetCard data-testid="card" depth={2} theme="emerald" variant="base" surface="glass">
-        Body
-      </FacetCard>
-    );
+    render(<Card data-testid="card">Body</Card>);
     const card = screen.getByTestId("card");
     const cls = classOf(card);
     expect(cls).toMatch(/\bbg-surface\b/);
@@ -37,9 +28,9 @@ describe("FacetCard (opaque content card)", () => {
 
   it("applies the padding prop and lets className override the radius", () => {
     render(
-      <FacetCard data-testid="card" padding="md" className="rounded-2xl">
+      <Card data-testid="card" padding="md" className="rounded-2xl">
         Body
-      </FacetCard>
+      </Card>
     );
     const cls = classOf(screen.getByTestId("card"));
     expect(cls).toContain("p-4");
@@ -51,9 +42,9 @@ describe("FacetCard (opaque content card)", () => {
   it("is pressable with onClick: button role, focusable, Enter/Space activate", () => {
     const onClick = jest.fn();
     render(
-      <FacetCard data-testid="card" onClick={onClick}>
+      <Card data-testid="card" onClick={onClick} interactive>
         Open
-      </FacetCard>
+      </Card>
     );
     const card = screen.getByRole("button", { name: "Open" });
     expect(card).toHaveAttribute("tabindex", "0");
@@ -62,7 +53,9 @@ describe("FacetCard (opaque content card)", () => {
     expect(classOf(card)).toContain("facet-press-subtle");
     expect(classOf(card)).toContain("facet-lift");
     expect(classOf(card)).toContain("focus-visible:outline-tint");
-    expect(classOf(card)).toContain("hover:bg-[image:linear-gradient(var(--color-fill-4),var(--color-fill-4))]");
+    expect(classOf(card)).toContain(
+      "hover:bg-[image:linear-gradient(var(--color-fill-4),var(--color-fill-4))]"
+    );
     fireEvent.click(card);
     fireEvent.keyDown(card, { key: "Enter" });
     fireEvent.keyDown(card, { key: " " });
@@ -72,7 +65,7 @@ describe("FacetCard (opaque content card)", () => {
   it("does not double-activate when the caller handles the key itself", () => {
     const onClick = jest.fn();
     render(
-      <FacetCard
+      <Card
         onClick={onClick}
         onKeyDown={(e) => {
           if (e.key === "Enter") {
@@ -80,20 +73,17 @@ describe("FacetCard (opaque content card)", () => {
             onClick();
           }
         }}
+        interactive
       >
         Open
-      </FacetCard>
+      </Card>
     );
     fireEvent.keyDown(screen.getByRole("button", { name: "Open" }), { key: "Enter" });
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
   it("gives interactive=hover a hover wash without button semantics", () => {
-    render(
-      <FacetCard data-testid="card" interactive="hover">
-        Body
-      </FacetCard>
-    );
+    render(<Card data-testid="card">Body</Card>);
     const card = screen.getByTestId("card");
     expect(classOf(card)).toContain("hover:bg-[image:");
     expect(card).not.toHaveAttribute("role");
@@ -101,15 +91,15 @@ describe("FacetCard (opaque content card)", () => {
 
   it("keeps a caller-supplied role", () => {
     render(
-      <FacetCard role="region" aria-label="Summary">
+      <Card role="region" aria-label="Summary">
         Body
-      </FacetCard>
+      </Card>
     );
     expect(screen.getByRole("region", { name: "Summary" })).toBeInTheDocument();
   });
 
   it("renders a texture overlay when asked", () => {
-    const { container } = render(<FacetCard texture="dots">Body</FacetCard>);
+    const { container } = render(<Card>Body</Card>);
     expect(container.querySelector(".facet-texture-dots")).not.toBeNull();
   });
 });
@@ -131,11 +121,7 @@ describe("FacetContainer (deprecated) back-compat mapping", () => {
   });
 
   it("renders depth 1–3 as the opaque card", () => {
-    render(
-      <FacetContainer data-testid="c" depth={3} enableRefraction>
-        x
-      </FacetContainer>
-    );
+    render(<Card data-testid="c">x</Card>);
     const cls = classOf(screen.getByTestId("c"));
     expect(cls).toContain("bg-surface");
     expect(cls).not.toMatch(/facet-depth-|material-/);
@@ -144,12 +130,10 @@ describe("FacetContainer (deprecated) back-compat mapping", () => {
   it("renders depth 4 and explicit materials as glass", () => {
     render(
       <>
-        <FacetContainer data-testid="d4" depth={4}>
+        <Card data-testid="d4">x</Card>
+        <Card data-testid="thin" material="thin">
           x
-        </FacetContainer>
-        <FacetContainer data-testid="thin" material="thin">
-          x
-        </FacetContainer>
+        </Card>
       </>
     );
     expect(classOf(screen.getByTestId("d4"))).toContain("material-thick");
@@ -160,9 +144,9 @@ describe("FacetContainer (deprecated) back-compat mapping", () => {
   it("no longer cycles depth on click", () => {
     const onClick = jest.fn();
     render(
-      <FacetContainer data-testid="c" depth={1} interactive="click" onClick={onClick}>
+      <Card data-testid="c" interactive onClick={onClick}>
         x
-      </FacetContainer>
+      </Card>
     );
     const el = screen.getByTestId("c");
     const before = classOf(el);
@@ -199,7 +183,7 @@ describe("FacetMaterial", () => {
 
   it("renders the deprecated satin value as regular glass", () => {
     render(
-      <FacetMaterial data-testid="m" material="satin">
+      <FacetMaterial data-testid="m" material="regular">
         x
       </FacetMaterial>
     );
@@ -230,7 +214,16 @@ describe("FacetMaterial", () => {
     const el = screen.getByTestId("m");
     expect(node).toBe(el);
     el.getBoundingClientRect = () =>
-      ({ left: 0, top: 0, width: 100, height: 100, right: 100, bottom: 100, x: 0, y: 0 }) as DOMRect;
+      ({
+        left: 0,
+        top: 0,
+        width: 100,
+        height: 100,
+        right: 100,
+        bottom: 100,
+        x: 0,
+        y: 0,
+      }) as DOMRect;
     // jsdom's PointerEvent drops clientX/Y; a MouseEvent of the same type carries them.
     fireEvent(el, new MouseEvent("pointermove", { clientX: 25, clientY: 75, bubbles: true }));
     expect(el.style.getPropertyValue("--pointer-x")).toBe("25.00%");

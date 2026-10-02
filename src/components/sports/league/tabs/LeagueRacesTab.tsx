@@ -5,7 +5,7 @@ import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { MapPin } from "iconoir-react";
 import { RaceResults } from "~/components/sports/league/RaceResults";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export interface LeagueRacesTabProps {
   leagueId: string;
@@ -28,35 +28,35 @@ export function LeagueRacesTab({
 
   if (!seasonId) {
     return (
-      <FacetCard className="space-y-3 p-12 text-center">
+      <Card className="space-y-3 p-12 text-center">
         <MapPin className="text-label-tertiary mx-auto h-12 w-12" />
         <h4 className="text-headline text-label">No Season Initialized</h4>
         <p className="text-footnote text-label-secondary">
           Start a season in the Command overview to generate the circuit schedule.
         </p>
-      </FacetCard>
+      </Card>
     );
   }
 
   if (isLoading) {
     return (
-      <FacetCard className="space-y-4 p-8">
+      <Card className="space-y-4 p-8">
         {Array.from({ length: 3 }).map((_, i) => (
           <Skeleton key={i} className="rounded-card h-24 w-full" />
         ))}
-      </FacetCard>
+      </Card>
     );
   }
 
   if (!races || races.length === 0) {
     return (
-      <FacetCard className="space-y-3 p-12 text-center">
+      <Card className="space-y-3 p-12 text-center">
         <MapPin className="text-label-tertiary mx-auto h-12 w-12" />
         <h4 className="text-headline text-label">No Grand Prix Results</h4>
         <p className="text-footnote text-label-secondary">
           Race classifications will appear once events are contested.
         </p>
-      </FacetCard>
+      </Card>
     );
   }
   const mappedRaces = races.map((r) => ({

@@ -13,13 +13,13 @@ import {
   Trophy,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { FacetCard, FACET_INSET_SURFACE } from "~/components/ui/facet-container";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Stat } from "~/components/ui/stat";
 import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { PassportShowcase } from "../showcase/PassportShowcase";
 import type { PassportPayload } from "../types";
+import { Card } from "~/components/ui/card";
 
 interface PassportOverviewTabProps {
   data: PassportPayload;
@@ -125,7 +125,7 @@ function StatCell({ label, value, sub }: { label: string; value: string; sub: st
       label={label}
       value={value}
       hint={sub}
-      className={cn(FACET_INSET_SURFACE, "p-3")}
+      className={cn("bg-surface-secondary text-label rounded-row", "p-3")}
     />
   );
 }
@@ -200,9 +200,9 @@ export const PassportOverviewTab = React.memo(function PassportOverviewTab({
           <Crown aria-hidden className="size-4" />
           <span>Featured realm</span>
         </h2>
-        <FacetCard variant="inset">
+        <Card variant="inset">
           <FeaturedRealm data={data} cleanUsername={cleanUsername} />
-        </FacetCard>
+        </Card>
       </section>
 
       <PassportShowcase data={data} cleanUsername={cleanUsername} onOpenVault={onOpenVault} />

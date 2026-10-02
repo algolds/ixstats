@@ -24,7 +24,10 @@ interface PolicyDistributionChartProps {
 export const PolicyDistributionChart = React.memo<PolicyDistributionChartProps>(
   ({ data, formatPercent, GlassTooltip, onExportCSV, onExportPDF }) => {
     return (
-      <Card className="facet-hierarchy-child" id="policy-distribution-chart">
+      <Card
+        className="facet-hierarchy-child flex flex-col gap-6 py-6"
+        id="policy-distribution-chart"
+      >
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">

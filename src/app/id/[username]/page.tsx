@@ -11,8 +11,8 @@ import { useUser } from "~/context/auth-context";
 import { MidRibbonPassportDocument } from "~/components/passport/MidRibbonPassportDocument";
 import { DEFAULT_PASSPORT_TAB, parsePassportTab } from "~/components/passport/passport-tabs";
 import type { PassportTabType } from "~/components/passport/types";
-import { FacetCard } from "~/components/ui/facet-container";
 import { EmptyState } from "~/components/ui/empty-state";
+import { Card } from "~/components/ui/card";
 
 export default function UnifiedIxnayIdProfilePage({
   params,
@@ -100,13 +100,13 @@ function IxnayIdPassportCanvas({ cleanUsername }: { cleanUsername: string }) {
     return (
       <DashboardSidebarLayout disableCollapse={true}>
         <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6">
-          <FacetCard>
+          <Card>
             <EmptyState
               icon={<AlertTriangle className="text-caution" />}
               title="Identity Not Found"
               message={`Could not resolve a public passport or registered identity for @${cleanUsername}.`}
             />
-          </FacetCard>
+          </Card>
         </div>
       </DashboardSidebarLayout>
     );

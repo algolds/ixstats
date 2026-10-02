@@ -4,11 +4,11 @@ import React from "react";
 import { GitFork, Lock, WarningCircle, WarningTriangle, Xmark } from "iconoir-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { formatIxCountdown } from "~/lib/statecraft/calendar";
 import { TONE_CLASSES } from "~/components/mycountry/directives/directive-model";
+import { Card } from "~/components/ui/card";
 
 export interface DeclarePanelProps {
   goal: string;
@@ -105,7 +105,7 @@ export function DeclarePanel({
       </dl>
 
       {followUpOf && (
-        <FacetCard
+        <Card
           variant="inset"
           padding="none"
           className="text-footnote flex items-center gap-2 py-1 pr-1 pl-3"
@@ -125,7 +125,7 @@ export function DeclarePanel({
               <Xmark />
             </Button>
           )}
-        </FacetCard>
+        </Card>
       )}
 
       {goesOver && !blockedReason && (

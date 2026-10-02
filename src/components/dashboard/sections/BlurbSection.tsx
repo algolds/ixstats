@@ -15,7 +15,6 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Badge } from "~/components/ui/badge";
 import { Button, buttonVariants } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -24,6 +23,7 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { cn, createUrl } from "~/lib/utils";
 import { timeAgo as formatRelativeTime } from "~/lib/format/compact";
+import { Card } from "~/components/ui/card";
 
 export function BlurbSection() {
   const [modalOpen, setModalOpen] = useState(false);
@@ -34,7 +34,7 @@ export function BlurbSection() {
 
   if (isLoading) {
     return (
-      <FacetCard className="no-wiki-tooltip space-y-3 p-4">
+      <Card className="no-wiki-tooltip space-y-3 p-4">
         <div className="flex items-center justify-between">
           <Skeleton className="rounded-control-sm h-4 w-28" />
           <Skeleton className="h-4 w-16 rounded-full" />
@@ -47,7 +47,7 @@ export function BlurbSection() {
           <Skeleton className="rounded-control-sm h-3 w-20" />
           <Skeleton className="h-7 w-20 rounded-full" />
         </div>
-      </FacetCard>
+      </Card>
     );
   }
 
@@ -61,8 +61,6 @@ export function BlurbSection() {
           is the button (Facet 3.1 HIG: no nested controls), so "Respond" is its visual label. */}
       <CutoutCard
         variant="card"
-        accent="indigo"
-        retint
         onClick={() => setModalOpen(true)}
         aria-label="Open blurb of the day"
         aria-describedby={questionId}

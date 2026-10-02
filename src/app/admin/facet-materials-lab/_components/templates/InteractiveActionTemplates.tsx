@@ -12,11 +12,11 @@ import {
   NavArrowRight as ChevronRight,
 } from "iconoir-react";
 import { Button, type ButtonVariant } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { HealthRing } from "~/components/ui/health-ring";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Stat } from "~/components/ui/stat";
 import { type LabConfig } from "../types";
+import { Card } from "~/components/ui/card";
 
 /*
  * Lab-only *frames* (the configurator's `facet-material-*` from `styles/facet/lab.css`) around
@@ -262,7 +262,7 @@ export function InteractiveActionTemplates({
             ].map((metric) => {
               const Icon = metric.icon;
               return (
-                <FacetCard key={metric.label} variant="inset" className="p-3">
+                <Card key={metric.label} variant="inset" className="p-3">
                   <Stat
                     label={metric.label}
                     value={metric.value}
@@ -270,7 +270,7 @@ export function InteractiveActionTemplates({
                     size="sm"
                     icon={<Icon aria-hidden className="text-tint" />}
                   />
-                </FacetCard>
+                </Card>
               );
             })}
           </div>

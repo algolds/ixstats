@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   PieChart,
   Pie,
@@ -19,6 +18,7 @@ import {
 } from "recharts";
 import type { DepartmentChartItem, RevenueChartItem, BudgetTrendItem } from "./budgetTypes";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Card } from "~/components/ui/card";
 
 interface BudgetOverviewChartsProps {
   overviewChartMode: "allocation" | "trend";
@@ -40,7 +40,7 @@ export function BudgetOverviewCharts({
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       {/* Togglable Budget Allocation vs Historical Trend Chart */}
-      <FacetCard className="space-y-3 p-4">
+      <Card className="space-y-3 p-4">
         <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-b pb-3">
           <h4 className="text-label text-headline">
             {overviewChartMode === "allocation"
@@ -117,10 +117,10 @@ export function BudgetOverviewCharts({
             </ResponsiveContainer>
           )}
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Revenue Sources Chart */}
-      <FacetCard className="space-y-3 p-4">
+      <Card className="space-y-3 p-4">
         <div className="border-separator border-b pb-3">
           <h4 className="text-label text-headline">Revenue sources</h4>
         </div>
@@ -143,7 +143,7 @@ export function BudgetOverviewCharts({
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </FacetCard>
+      </Card>
     </div>
   );
 }

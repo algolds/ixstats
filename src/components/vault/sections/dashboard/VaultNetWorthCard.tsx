@@ -5,8 +5,8 @@ import { Wallet, Component as Layers, Package, ShoppingBag } from "iconoir-react
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import NumberFlow from "~/components/ui/number-flow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
+import { Card } from "~/components/ui/card";
 
 export interface VaultNetWorthCardProps {
   vaultLevel: number;
@@ -31,7 +31,7 @@ export function VaultNetWorthCard({
 }: VaultNetWorthCardProps) {
   return (
     // v2 (c5c6b382): the balance hero — glass, gold/copper accents, hover lift.
-    <FacetCard variant="glass" glow interactive="hover" padding="lg" className="overflow-hidden">
+    <Card variant="hero" padding="lg" className="overflow-hidden">
       <div className="flex h-full flex-col justify-between">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -101,6 +101,6 @@ export function VaultNetWorthCard({
           </div>
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

@@ -1,6 +1,4 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React, { useState } from "react";
@@ -15,6 +13,7 @@ import {
   Maximize,
 } from "iconoir-react";
 import type { EditorFeature } from "~/hooks/useMapEditor";
+import { Card } from "~/components/ui/card";
 
 interface GeometryActionsBarProps {
   feature: EditorFeature;
@@ -171,7 +170,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
 
       {/* Region Pathfinder Operations */}
       {isRegion && onPathfinderOperation && (
-        <FacetCard className="space-y-2 p-2">
+        <Card className="space-y-2 p-2">
           <Eyebrow>Combine regions</Eyebrow>
           <div className="grid grid-cols-3 gap-1">
             <Button
@@ -202,7 +201,7 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
               Intersect
             </Button>
           </div>
-        </FacetCard>
+        </Card>
       )}
     </div>
   );

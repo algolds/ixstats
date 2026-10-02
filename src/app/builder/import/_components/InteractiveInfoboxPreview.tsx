@@ -193,7 +193,7 @@ export const InteractiveInfoboxPreview: React.FC<InteractiveInfoboxPreviewProps>
   const fieldCount = sections.reduce((sum, s) => sum + s.fields.length, 0);
 
   return (
-    <Card className="relative overflow-hidden">
+    <Card className="relative flex flex-col gap-6 overflow-hidden py-6">
       <FlagWatermark src={data.flagUrl} />
 
       {/* Header */}

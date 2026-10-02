@@ -2,9 +2,9 @@
 
 import React, { useMemo } from "react";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { SPORTS_ABBREVIATIONS } from "~/lib/sports/presets";
+import { Card } from "~/components/ui/card";
 
 export interface LineupPlayer {
   id: string;
@@ -96,8 +96,7 @@ export function TeamLineup({
   }, [players]);
 
   return (
-    <FacetCard
-      interactive="hover"
+    <Card
       className={cn(
         "border-separator bg-surface rounded-sheet shadow-floating mx-auto w-full max-w-[550px] overflow-hidden border p-6",
         className
@@ -192,7 +191,7 @@ export function TeamLineup({
           })}
         </TooltipProvider>
       </div>
-    </FacetCard>
+    </Card>
   );
 }
 

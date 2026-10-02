@@ -10,7 +10,6 @@ import {
 } from "~/components/ui/sheet";
 import { HealthRing } from "~/components/ui/health-ring";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils/cn";
 import {
   Activity,
@@ -22,6 +21,7 @@ import {
 } from "iconoir-react";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import type { VitalityRing } from "~/components/mycountry/shared/primitives/tabs/VitalityRingsDisplay";
+import { Card } from "~/components/ui/card";
 
 interface VitalityBreakdownModalProps {
   isOpen: boolean;
@@ -142,11 +142,7 @@ export function VitalityBreakdownModal({
               const pillarStatus = getPillarStatus(ring.value);
 
               return (
-                <FacetCard
-                  variant="inset"
-                  key={ring.id}
-                  className="flex flex-col justify-between p-4"
-                >
+                <Card variant="inset" key={ring.id} className="flex flex-col justify-between p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <Icon className="text-label-secondary h-4 w-4 shrink-0" />
@@ -183,7 +179,7 @@ export function VitalityBreakdownModal({
                       ))}
                     </ul>
                   </div>
-                </FacetCard>
+                </Card>
               );
             })}
           </div>

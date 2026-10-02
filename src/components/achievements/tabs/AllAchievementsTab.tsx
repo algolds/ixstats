@@ -21,7 +21,6 @@ import { cn, createUrl } from "~/lib/utils";
 import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard, MotionFacetCard } from "~/components/ui/facet-container";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
@@ -36,6 +35,9 @@ import {
   type GroupedAchievementItem,
 } from "../constants";
 import { JewelAchievementIcon, AchievementCardBackdrop } from "../AchievementDecorations";
+import { Card } from "~/components/ui/card";
+
+const MotionCard = motion.create(Card);
 
 interface AllAchievementsTabProps {
   achievements: any[] | undefined;
@@ -131,13 +133,12 @@ function GroupedSeriesCard({
   return (
     // v2 (c5c6b382): unlocked achievements are glass cards that lift on hover, decorated with the
     // aurora / radiance / foil / ghost-heraldry backdrop; locked ones stay a dashed opaque slot.
-    <MotionFacetCard
+    <MotionCard
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={springSmooth}
-      variant={isUnlocked ? "glass" : undefined}
-      accent={categoryTheme.accent}
-      interactive={isUnlocked ? "hover" : undefined}
+      variant={isUnlocked ? "hero" : undefined}
+      interactive={isUnlocked}
       className={cn(
         "flex flex-col justify-between overflow-hidden p-5",
         isUnlocked
@@ -334,7 +335,7 @@ function GroupedSeriesCard({
           </div>
         </div>
       </div>
-    </MotionFacetCard>
+    </MotionCard>
   );
 }
 
@@ -396,7 +397,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
         Achievement catalogue
       </h2>
       {/* Search and filters */}
-      <FacetCard
+      <Card
         padding="sm"
         className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
       >
@@ -444,7 +445,7 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
             ]}
           />
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Catalogue */}
       {filteredGroupedItems.length > 0 ? (
@@ -467,13 +468,13 @@ export function AllAchievementsTab({ achievements }: AllAchievementsTabProps) {
           ))}
         </div>
       ) : (
-        <FacetCard>
+        <Card>
           <EmptyState
             icon={<Award />}
             title="No matching series"
             message="Try adjusting your search query or rarity filter."
           />
-        </FacetCard>
+        </Card>
       )}
     </section>
   );

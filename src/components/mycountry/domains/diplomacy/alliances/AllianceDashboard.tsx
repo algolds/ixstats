@@ -13,7 +13,6 @@ import {
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +31,7 @@ import {
 import { api } from "~/trpc/react";
 import { formatCurrency, formatNumber } from "~/lib/utils/format-utils";
 import { CollectiveActionsPanel } from "./CollectiveActionsPanel";
+import { Card } from "~/components/ui/card";
 
 interface AllianceDashboardProps {
   allianceId: string;
@@ -100,7 +100,7 @@ export function AllianceDashboard({
     : [];
 
   return (
-    <FacetCard className="rounded-card space-y-4 p-4">
+    <Card className="rounded-card space-y-4 p-4">
       {/* Alliance header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
@@ -234,6 +234,6 @@ export function AllianceDashboard({
           {alliance.documents.length} documents
         </span>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

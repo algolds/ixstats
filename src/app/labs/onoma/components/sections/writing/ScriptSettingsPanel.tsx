@@ -12,12 +12,12 @@ import {
 } from "iconoir-react";
 import type { ScriptTypology, ScriptDirection, Glyph } from "./types";
 import { Input } from "~/components/ui/input";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Card } from "~/components/ui/card";
 
 interface ScriptSettingsPanelProps {
   systems: any[] | undefined;
@@ -67,7 +67,7 @@ export function ScriptSettingsPanel({
   return (
     <div className="space-y-4">
       {/* Script Directory */}
-      <FacetCard variant="inset" padding="none" className="space-y-3 p-4">
+      <Card variant="inset" padding="none" className="space-y-3 p-4">
         <div className="border-separator flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
             <div className="bg-tint/10 text-tint rounded-row flex h-7 w-7 items-center justify-center">
@@ -116,10 +116,10 @@ export function ScriptSettingsPanel({
             })}
           </FacetListSection>
         )}
-      </FacetCard>
+      </Card>
 
       {/* Script Typology & Configuration Form */}
-      <FacetCard variant="inset" padding="none" className="space-y-4 p-4">
+      <Card variant="inset" padding="none" className="space-y-4 p-4">
         <div className="border-separator flex items-center justify-between border-b pb-2">
           <div className="flex items-center gap-2">
             <div className="bg-fill-3 text-label rounded-row flex h-7 w-7 items-center justify-center">
@@ -221,7 +221,7 @@ export function ScriptSettingsPanel({
             <span>{isSaving ? "Saving System..." : "Save Writing System"}</span>
           </Button>
         </div>
-      </FacetCard>
+      </Card>
     </div>
   );
 }

@@ -30,7 +30,7 @@ import { useAbility, Can } from "~/components/providers/AbilityProvider";
 import { AdminHeader } from "../_components/AdminHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 const SYSTEM_ROLES = [
   {
@@ -145,7 +145,7 @@ export function UserRolesPanel() {
         </TabsList>
 
         <TabsContent value="roles" className="mt-4 space-y-4 focus-visible:outline-none">
-          <FacetCard className="space-y-4 p-5">
+          <Card className="space-y-4 p-5">
             <div className="border-separator flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-label text-caption">Configured System Roles</h3>
@@ -263,7 +263,7 @@ export function UserRolesPanel() {
                 </div>
               ))}
             </div>
-          </FacetCard>
+          </Card>
         </TabsContent>
 
         <TabsContent value="memberships" className="mt-4 space-y-4 focus-visible:outline-none">
@@ -287,12 +287,12 @@ export function UserRolesPanel() {
                 ))}
               </div>
             ) : !filteredUsers || filteredUsers.length === 0 ? (
-              <FacetCard className="p-8 text-center">
+              <Card className="p-8 text-center">
                 <p className="text-label-secondary text-footnote">No accounts found.</p>
-              </FacetCard>
+              </Card>
             ) : (
               filteredUsers?.map((user) => (
-                <FacetCard
+                <Card
                   key={user.id}
                   className="hover:border-separator flex items-center justify-between p-4 transition-colors"
                 >
@@ -335,7 +335,7 @@ export function UserRolesPanel() {
                       className="scale-90"
                     />
                   </div>
-                </FacetCard>
+                </Card>
               ))
             )}
           </div>

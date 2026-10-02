@@ -6,10 +6,10 @@ import { FireFlame as Flame } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
-import { FacetCard } from "~/components/ui/facet-container";
 import { EmptyState } from "~/components/ui/empty-state";
 import { springSmooth } from "~/lib/design/motion";
 import { FeedItemSkeleton } from "./UnifiedFeedItem";
+import { Card } from "~/components/ui/card";
 
 /**
  * Trending tab: posts the thinkpages-trending cron job flagged (engagement from other users over
@@ -79,13 +79,13 @@ export function TrendingFeedContent({
           ))}
         </div>
       ) : posts.length === 0 ? (
-        <FacetCard>
+        <Card>
           <EmptyState
             icon={<Flame />}
             title="Nothing is trending right now"
             message="Posts trend when other people react to, reply to or repost them within the last few days."
           />
-        </FacetCard>
+        </Card>
       ) : (
         <div className="space-y-2">
           {posts.map((post: any) => (

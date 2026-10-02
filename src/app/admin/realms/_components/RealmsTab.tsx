@@ -26,7 +26,6 @@ import {
   Eye,
   Plus,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Table,
   TableHeader,
@@ -35,6 +34,7 @@ import {
   TableHead,
   TableCell,
 } from "~/components/ui/table";
+import { Card } from "~/components/ui/card";
 
 const STATUS_COLORS: Record<string, string> = {
   active: "bg-green/10 text-green border-green/20",
@@ -259,7 +259,7 @@ export function RealmsTab() {
   return (
     <div className="space-y-4">
       <NewRealmForm />
-      <FacetCard>
+      <Card>
         <Table>
           <TableHeader>
             <TableRow>
@@ -397,7 +397,7 @@ export function RealmsTab() {
             })}
           </TableBody>
         </Table>
-      </FacetCard>
+      </Card>
     </div>
   );
 }

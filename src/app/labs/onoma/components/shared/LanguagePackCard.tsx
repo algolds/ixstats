@@ -6,10 +6,10 @@ import { BookmarkBook, GitFork, Star, Translate } from "iconoir-react";
 // Onoma Lab — Language pack card: an inset panel inside the workspace card (Facet 3).
 
 import React from "react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
+import { Card } from "~/components/ui/card";
 
 export interface LanguagePack {
   id: string;
@@ -59,7 +59,7 @@ export function LanguagePackCard({
 
   return (
     <div className="flex w-full flex-col">
-      <FacetCard
+      <Card
         variant="inset"
         padding="lg"
         onClick={() => onSelect?.(pack)}
@@ -68,6 +68,7 @@ export function LanguagePackCard({
           "flex h-full min-h-[300px] w-full flex-col justify-between",
           isSelected && "ring-tint ring-2"
         )}
+        interactive
       >
         {/* Card Header: Category Badge + Rating */}
         <div className="flex items-center justify-between gap-2">
@@ -150,7 +151,7 @@ export function LanguagePackCard({
             <span>Fork pack</span>
           </Button>
         </div>
-      </FacetCard>
+      </Card>
     </div>
   );
 }

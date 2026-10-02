@@ -30,7 +30,6 @@ import {
   SheetTitle,
   SheetDescription,
 } from "~/components/ui/sheet";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
@@ -42,6 +41,7 @@ import { STATUS_TEXT } from "./status-tone";
 import { HUE_BADGE, hueAccentStyle, hueOf } from "./domain-hue";
 import { ThinkPagesShareModal } from "~/components/mycountry/shared/modals/ThinkPagesShareModal";
 import { IssueDetailBrief } from "~/components/mycountry/shared/headers/IssueDetailBrief";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 const PoliticsDrillDown = dynamic(
   () => import("./PoliticsDrillDown").then((m) => ({ default: m.PoliticsDrillDown })),
@@ -131,17 +131,17 @@ function SheetSection({
   children: React.ReactNode;
 }) {
   return (
-    <FacetCard className={cn("rounded-card", className)}>
-      <FacetCardHeader className="flex-row items-center justify-between gap-2 p-4 pb-3">
+    <Card className={cn("rounded-card", className)}>
+      <CardHeader className="flex-row items-center justify-between gap-2 p-4 pb-3">
         <div className="flex min-w-0 items-center gap-2">
           {/* v2: section glyphs in the MyCountry gold */}
           <Icon aria-hidden="true" className="text-tint h-4 w-4 shrink-0" />
           <h3 className="text-label text-headline">{title}</h3>
         </div>
         {accessory}
-      </FacetCardHeader>
-      <FacetCardContent className="px-4 pb-4">{children}</FacetCardContent>
-    </FacetCard>
+      </CardHeader>
+      <CardContent className="px-4 pb-4">{children}</CardContent>
+    </Card>
   );
 }
 
@@ -278,7 +278,7 @@ function IntentDetail({
   return (
     <div className="space-y-4 pb-4">
       {/* Directive header */}
-      <FacetCard className="rounded-card flex flex-col gap-3 p-5">
+      <Card className="rounded-card flex flex-col gap-3 p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <Badge
@@ -370,7 +370,7 @@ function IntentDetail({
             </Button>
           </div>
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Quick Confirmation Modal for ThinkPages Publishing */}
       <ThinkPagesShareModal
@@ -467,7 +467,7 @@ function IntentDetail({
       <IntentBranchingTree countryId={countryId} currentIntentId={intent.id} />
 
       {/* Aligned power broker */}
-      <FacetCard className="rounded-card flex items-center justify-between gap-3 p-4">
+      <Card className="rounded-card flex items-center justify-between gap-3 p-4">
         <div className="flex min-w-0 items-center gap-3">
           <BrokerIcon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
           <div className="min-w-0">
@@ -478,7 +478,7 @@ function IntentDetail({
         <Badge variant="green" className="shrink-0">
           Cabinet aligned
         </Badge>
-      </FacetCard>
+      </Card>
 
       {/* Applied policy line-items */}
       {parsedChanges.length > 0 && (

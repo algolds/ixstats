@@ -21,7 +21,6 @@ import { DepartmentList } from "~/components/mycountry/domains/government/builde
 import { BudgetAllocationList } from "~/components/mycountry/domains/government/builder/BudgetAllocationList";
 import type { EconomicInputs, RealCountryData } from "~/app/builder/lib/economy-data-service";
 import { ComponentType } from "@prisma/client";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { BuilderTabCard, type TabDefinition } from "../../../primitives/BuilderTabCard";
 import { AtomicGovernmentComponents } from "~/components/mycountry/domains/government/atoms/AtomicGovernmentComponents";
 import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
@@ -31,6 +30,7 @@ import { computeGovernmentWarnings } from "../government-preview/governmentWarni
 import { useBuilderFilter } from "~/app/builder/components/builder-filter-context";
 import { useBuilderContextOptional } from "../context/BuilderStateContext";
 import type { GovernmentBuilderState, GovernmentType } from "~/types/government";
+import { Card, CardContent } from "~/components/ui/card";
 
 interface GovernmentStepProps {
   economicInputs: EconomicInputs;
@@ -348,13 +348,8 @@ export function GovernmentStep({
       >
         {activeTab === "components" && (
           <div className="space-y-6">
-            <FacetCard
-              texture="chevron"
-              textureOpacity={0.04}
-              className="border-tint/20"
-              interactive="none"
-            >
-              <FacetCardContent className="p-6">
+            <Card className="border-tint/20">
+              <CardContent className="p-6">
                 {/* Standalone hides the component's own h2 header; name the tab panel so its
                     "Available components" h3 and the h4 cards don't skip a level. */}
                 <h2 className="sr-only">Government components</h2>
@@ -366,22 +361,22 @@ export function GovernmentStep({
                   standalone={true}
                   hideSelectedList={true}
                 />
-              </FacetCardContent>
-            </FacetCard>
+              </CardContent>
+            </Card>
           </div>
         )}
 
         {activeTab === "structure" && (
           <div className="space-y-6">
             {/* Departments list */}
-            <FacetCard texture="chevron" textureOpacity={0.04}>
+            <Card>
               <div className="border-separator border-b px-6 py-4">
                 <h2 className="text-label text-headline flex items-center gap-2">
                   <Users className="text-tint h-5 w-5" />
                   Government Departments
                 </h2>
               </div>
-              <FacetCardContent className="p-6">
+              <CardContent className="p-6">
                 <DepartmentList
                   departments={governmentStructure.departments}
                   onAddDepartment={() => {
@@ -429,18 +424,18 @@ export function GovernmentStep({
                   governmentComponents={governmentComponents}
                   onGovernmentComponentsChange={onGovernmentComponentsChange}
                 />
-              </FacetCardContent>
-            </FacetCard>
+              </CardContent>
+            </Card>
 
             {/* Budget Allocations list */}
-            <FacetCard texture="chevron" textureOpacity={0.04}>
+            <Card>
               <div className="border-separator border-b px-6 py-4">
                 <h2 className="text-label text-headline flex items-center gap-2">
                   <DollarSign className="text-tint h-5 w-5" />
                   Budget Allocations
                 </h2>
               </div>
-              <FacetCardContent className="p-6">
+              <CardContent className="p-6">
                 <BudgetAllocationList
                   departments={governmentStructure.departments}
                   budgetAllocations={governmentStructure.budgetAllocations}
@@ -486,8 +481,8 @@ export function GovernmentStep({
                   onExpandAll={handleExpandAll}
                   onCollapseAll={handleCollapseAll}
                 />
-              </FacetCardContent>
-            </FacetCard>
+              </CardContent>
+            </Card>
           </div>
         )}
 

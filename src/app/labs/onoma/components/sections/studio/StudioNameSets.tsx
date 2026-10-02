@@ -12,7 +12,6 @@ import {
   Group as Users,
   HelpCircle,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { NameResultCard } from "../../shared/NameResultCard";
 import { useNameBank } from "~/hooks/useNameBank";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
@@ -37,6 +36,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
+import { Card } from "~/components/ui/card";
 
 interface TaggedDict {
   values: string[];
@@ -244,7 +244,7 @@ export function StudioNameSets() {
     <div className="grid items-start gap-6 lg:grid-cols-12">
       {/* Left: set + template config */}
       <div className="space-y-4 lg:col-span-5">
-        <FacetCard variant="inset" padding="none" className="space-y-4 p-4">
+        <Card variant="inset" padding="none" className="space-y-4 p-4">
           <div className="space-y-2">
             <label className="text-label-secondary text-footnote flex items-center gap-1 font-semibold">
               <Users className="h-3.5 w-3.5" /> Name Set
@@ -562,13 +562,13 @@ export function StudioNameSets() {
               </div>
             </>
           )}
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Right: results */}
       <div className="space-y-4 lg:col-span-7">
         {names.length > 0 ? (
-          <FacetCard
+          <Card
             variant="inset"
             padding="none"
             className="animate-in fade-in space-y-4 p-4 duration-300"
@@ -596,9 +596,9 @@ export function StudioNameSets() {
                 />
               ))}
             </div>
-          </FacetCard>
+          </Card>
         ) : (
-          <FacetCard
+          <Card
             variant="inset"
             padding="none"
             className="text-label-secondary text-body border-dashed p-8 text-center"
@@ -608,7 +608,7 @@ export function StudioNameSets() {
             <p className="text-label-secondary text-footnote mt-1">
               Pick a Name Set, arrange the template (e.g. Given + Surname), and generate.
             </p>
-          </FacetCard>
+          </Card>
         )}
       </div>
     </div>

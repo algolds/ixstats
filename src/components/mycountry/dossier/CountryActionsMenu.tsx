@@ -47,7 +47,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface CountryActionsMenuProps {
   targetCountryId: string;
@@ -317,7 +317,7 @@ export function CountryActionsMenu({
                   />
 
                   {recentAchievements && recentAchievements.length > 0 && (
-                    <FacetCard
+                    <Card
                       variant="inset"
                       padding="none"
                       className="flex flex-wrap items-center gap-2 p-2 pl-4"
@@ -349,7 +349,7 @@ export function CountryActionsMenu({
                       >
                         {congratulateMutation.isPending ? "Sending…" : "Congratulate"}
                       </Button>
-                    </FacetCard>
+                    </Card>
                   )}
                 </ActionGroup>
 

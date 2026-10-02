@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { getSportCssVars } from "~/lib/sports/theming";
 import { SportsSidebarNav, type SportsNavSection, type SportsNavItem } from "./SportsSidebarNav";
 import { useSportsFocus } from "./SportsFocusProvider";
 import { SportsFocusPanel, SportsFocusSheet } from "./SportsFocusPanel";
+import { Card } from "~/components/ui/card";
 
 export interface SportsShellProps {
   children: React.ReactNode;
@@ -84,7 +84,7 @@ export function SportsShell({
 
           {/* Main Content Workspace */}
           <main className="w-full min-w-0 flex-1">
-            <FacetCard className="p-4 sm:p-6">{children}</FacetCard>
+            <Card className="p-4 sm:p-6">{children}</Card>
           </main>
 
           {/* Desktop Right Rail: Contextual Focus Panel */}

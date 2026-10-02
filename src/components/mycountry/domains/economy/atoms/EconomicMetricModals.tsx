@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { FacetTabs, type FacetTabItem } from "~/components/ui/facet";
 import {
   Package,
@@ -20,6 +19,7 @@ import {
   type AtomicEconomicComponent,
   type EconomicComponentType,
 } from "~/lib/economy/atomic-data";
+import { Card } from "~/components/ui/card";
 
 type MetricTab = "components" | "interactions" | "effectiveness" | "costs";
 
@@ -196,7 +196,7 @@ export function EconomicMetricModals({
                       const component2 = ATOMIC_ECONOMIC_COMPONENTS[synergy.component2];
                       if (!component1 || !component2) return null;
                       return (
-                        <FacetCard
+                        <Card
                           variant="inset"
                           key={`${synergy.component1}-${synergy.component2}-${index}`}
                           className="p-3"
@@ -214,7 +214,7 @@ export function EconomicMetricModals({
                               +{synergy.bonus}%
                             </Badge>
                           </div>
-                        </FacetCard>
+                        </Card>
                       );
                     })}
                   </div>
@@ -236,7 +236,7 @@ export function EconomicMetricModals({
                       const component2 = ATOMIC_ECONOMIC_COMPONENTS[conflict.component2];
                       if (!component1 || !component2) return null;
                       return (
-                        <FacetCard
+                        <Card
                           variant="inset"
                           key={`${conflict.component1}-${conflict.component2}-${index}`}
                           className="p-3"
@@ -257,7 +257,7 @@ export function EconomicMetricModals({
                               -{conflict.penalty}%
                             </Badge>
                           </div>
-                        </FacetCard>
+                        </Card>
                       );
                     })}
                   </div>
@@ -269,7 +269,7 @@ export function EconomicMetricModals({
           {/* Tab 3: Effectiveness */}
           {activeTab === "effectiveness" && (
             <div className="space-y-6">
-              <FacetCard variant="inset" className="grid grid-cols-2 gap-4 p-4 text-center">
+              <Card variant="inset" className="grid grid-cols-2 gap-4 p-4 text-center">
                 <div className="space-y-1">
                   <Eyebrow className="block">Base score</Eyebrow>
                   <p className="text-label text-title-2 tabular-nums">
@@ -294,7 +294,7 @@ export function EconomicMetricModals({
                     {effectiveness.totalEffectiveness.toFixed(1)}%
                   </p>
                 </div>
-              </FacetCard>
+              </Card>
 
               <div className="space-y-3">
                 <Eyebrow className="block">Component contributions</Eyebrow>
@@ -324,7 +324,7 @@ export function EconomicMetricModals({
           {/* Tab 4: Costs */}
           {activeTab === "costs" && (
             <div className="space-y-6">
-              <FacetCard variant="inset" className="grid grid-cols-2 gap-4 p-4 text-center">
+              <Card variant="inset" className="grid grid-cols-2 gap-4 p-4 text-center">
                 <div className="space-y-1">
                   <Eyebrow className="block">Implementation</Eyebrow>
                   <p className="text-label text-title-2 tabular-nums">
@@ -337,7 +337,7 @@ export function EconomicMetricModals({
                     ${maintenanceCost.toLocaleString()}/yr
                   </p>
                 </div>
-              </FacetCard>
+              </Card>
 
               <div className="space-y-3">
                 <Eyebrow className="block">Expenditure by component</Eyebrow>

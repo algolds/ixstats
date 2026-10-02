@@ -26,7 +26,7 @@ import {
   NavArrowDown as ChevronDown,
   NavArrowUp as ChevronUp,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface LiveAdminDashboardProps {
   onNavigate?: (section: string) => void;
@@ -176,7 +176,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
 
         <TooltipProvider delayDuration={150}>
           {quickActionsCollapsed ? (
-            <FacetCard className="flex flex-wrap items-center gap-2 p-3">
+            <Card className="flex flex-wrap items-center gap-2 p-3">
               {QUICK_ACTIONS.map((action) => (
                 <Tooltip key={action.label}>
                   <TooltipTrigger asChild>
@@ -196,7 +196,7 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
                   </TooltipContent>
                 </Tooltip>
               ))}
-            </FacetCard>
+            </Card>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {QUICK_ACTIONS.map((action) => (

@@ -23,7 +23,6 @@ import {
   Wallet,
   Trophy,
 } from "iconoir-react";
-import { FacetCard, type FacetAccent } from "~/components/ui/facet-container";
 import { FacetMaterial } from "~/components/ui/facet/shared/FacetMaterial";
 import { FlagWatermark } from "~/components/ui/facet";
 import {
@@ -44,6 +43,7 @@ import { Progress } from "~/components/ui/progress";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { SearchField } from "~/components/ui/search-field";
+import { Card } from "~/components/ui/card";
 
 const APP_TINTS = [
   { value: "admin", label: "Default" },
@@ -114,7 +114,7 @@ export function Facet3Showcase() {
   return (
     // The tint scope: every primitive below inherits --tint from the nearest data-app.
     <div data-app={tint} className="space-y-8">
-      <FacetCard padding="md" className="space-y-3">
+      <Card padding="md" className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-title-3 text-label">App tint</h3>
@@ -133,7 +133,7 @@ export function Facet3Showcase() {
           onValueChange={setTint}
           options={APP_TINTS.map((app) => ({ value: app.value, label: app.label }))}
         />
-      </FacetCard>
+      </Card>
 
       <Facet31Identity />
 
@@ -143,7 +143,7 @@ export function Facet3Showcase() {
           description="Dense content is opaque (FacetCard on the grouped background); glass is for floating chrome and, since 3.1, hero/feature cards. Glass never nests."
         />
         <div className="grid gap-4 lg:grid-cols-2">
-          <FacetCard padding="md" className="space-y-3">
+          <Card padding="md" className="space-y-3">
             <Eyebrow>FacetCard</Eyebrow>
             <p className="text-body text-label">
               Opaque <code className="font-mono">surface</code> with a hairline and{" "}
@@ -152,7 +152,7 @@ export function Facet3Showcase() {
             <div className="bg-surface-secondary rounded-row text-callout text-label-secondary p-3">
               Insets inside a card use <code className="font-mono">surface-secondary</code>.
             </div>
-          </FacetCard>
+          </Card>
 
           {/* A busy backdrop so the glass has something to blur. */}
           <div className="bg-grouped rounded-card relative isolate overflow-hidden p-4">
@@ -190,7 +190,7 @@ export function Facet3Showcase() {
         />
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="grid grid-cols-2 gap-3">
-            <FacetCard padding="sm">
+            <Card padding="sm">
               <Stat
                 size="sm"
                 label="Countries"
@@ -198,8 +198,8 @@ export function Facet3Showcase() {
                 value="1,284"
                 delta={{ value: "+12", direction: "up" }}
               />
-            </FacetCard>
-            <FacetCard padding="sm">
+            </Card>
+            <Card padding="sm">
               <Stat
                 size="sm"
                 label="Failed jobs"
@@ -207,14 +207,14 @@ export function Facet3Showcase() {
                 value="3"
                 delta={{ value: "+2", direction: "up", sentiment: "negative" }}
               />
-            </FacetCard>
-            <FacetCard padding="sm" className="col-span-2 space-y-2">
+            </Card>
+            <Card padding="sm" className="col-span-2 space-y-2">
               <div className="text-footnote text-label-secondary flex justify-between tabular-nums">
                 <span>Storage</span>
                 <span>64%</span>
               </div>
               <Progress value={64} aria-label="Storage used" />
-            </FacetCard>
+            </Card>
           </div>
 
           <FacetList>
@@ -247,7 +247,7 @@ export function Facet3Showcase() {
           title="Controls"
           description="Button styles, a segmented control for 2–5 peer choices, toggle groups for filters."
         />
-        <FacetCard padding="md" className="space-y-4">
+        <Card padding="md" className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="default">Filled</Button>
             <Button variant="secondary">Tinted</Button>
@@ -295,7 +295,7 @@ export function Facet3Showcase() {
             <Badge variant="destructive">Destructive</Badge>
             <Badge variant="info">Info</Badge>
           </div>
-        </FacetCard>
+        </Card>
       </section>
 
       <section>
@@ -304,15 +304,15 @@ export function Facet3Showcase() {
           description="HIG text styles at desktop density (nothing below 12px) and the system colours for status and data."
         />
         <div className="grid gap-4 lg:grid-cols-2">
-          <FacetCard padding="md" className="space-y-2">
+          <Card padding="md" className="space-y-2">
             {TEXT_STYLES.map(([style, label]) => (
               <p key={style} className={`${style} text-label truncate`}>
                 {label}
               </p>
             ))}
             <Eyebrow>Eyebrow — data labels only</Eyebrow>
-          </FacetCard>
-          <FacetCard padding="md" className="space-y-4">
+          </Card>
+          <Card padding="md" className="space-y-4">
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
               {SYSTEM_COLOURS.map((colour) => (
                 <div key={colour} className="space-y-1">
@@ -333,7 +333,7 @@ export function Facet3Showcase() {
                 </Button>
               }
             />
-          </FacetCard>
+          </Card>
         </div>
       </section>
     </div>
@@ -357,12 +357,7 @@ function Facet31Identity() {
 
         <div className="grid gap-4 lg:grid-cols-3">
           {/* (a) Hero glass card: variant="glass" + glow + flag watermark + heavy heading + mono stats */}
-          <FacetCard
-            variant="glass"
-            glow
-            padding="lg"
-            className="group overflow-hidden lg:col-span-2"
-          >
+          <Card variant="hero" padding="lg" className="group overflow-hidden lg:col-span-2">
             <FlagWatermark src={assetUrl("/placeholder-flag.svg")} />
             <div className="relative space-y-4">
               <div>
@@ -383,16 +378,10 @@ function Facet31Identity() {
                 <Button variant="outline">Bordered</Button>
               </div>
             </div>
-          </FacetCard>
+          </Card>
 
           {/* (d) Gold actions: data-app="mycountry" scope, with the v2 gold rim (rim="gold") */}
-          <FacetCard
-            variant="glass"
-            rim="gold"
-            padding="lg"
-            className="space-y-3"
-            data-app="mycountry"
-          >
+          <Card variant="hero" padding="lg" className="space-y-3" data-app="mycountry">
             <Eyebrow>MyCountry gold</Eyebrow>
             <h3 className="text-title-2 text-label">Declare a directive</h3>
             <p className="text-callout text-label-secondary">
@@ -406,18 +395,11 @@ function Facet31Identity() {
               </Button>
               <Button variant="secondary">Draft</Button>
             </div>
-          </FacetCard>
+          </Card>
 
           {/* (b) Feature / media CutoutCard — accent re-tints the header strip, glow and (retint)
               the badges; the header title is a real h3. */}
-          <CutoutCard
-            variant="card"
-            onClick={() => {}}
-            aria-label="Open the Vault"
-            glow
-            accent="orange"
-            retint
-          >
+          <CutoutCard variant="card" onClick={() => {}} aria-label="Open the Vault">
             <CutoutCardHeader
               as="h3"
               icon={<Wallet />}
@@ -440,7 +422,6 @@ function Facet31Identity() {
           {/* Acrylic chrome (Halo / navigation) */}
           <FacetMaterial
             material="acrylic"
-            glow
             className="flex items-center justify-between rounded-full px-5 py-3"
           >
             <span className="text-headline text-label">material-acrylic</span>
@@ -449,27 +430,18 @@ function Facet31Identity() {
 
           {/* Accents and rims (HIG pass): accent re-tints the glow, wash, tinted border and rim */}
           <div className="grid gap-3 sm:grid-cols-3 lg:col-span-3">
-            {(["green", "cyan", "gold"] as const satisfies readonly FacetAccent[]).map((accent) => (
-              <FacetCard
-                key={accent}
-                variant="glass"
-                glow
-                accent={accent}
-                rim="tint"
-                padding="md"
-                className="overflow-hidden"
-              >
+            {(["green", "cyan", "gold"] as const satisfies readonly string[]).map((accent) => (
+              <Card key={accent} variant="hero" padding="md" className="overflow-hidden">
                 <Eyebrow>accent=&quot;{accent}&quot;</Eyebrow>
                 <p className="text-headline text-label">Glow, wash and rim</p>
                 <p className="text-footnote text-facet-accent-ink">text-facet-accent-ink</p>
-              </FacetCard>
+              </Card>
             ))}
           </div>
 
           {/* Achievement aurora / radiance / foil / ghost heraldry */}
-          <FacetCard
+          <Card
             padding="md"
-            accent="green"
             className="group isolate overflow-hidden"
             style={{ "--facet-accent-2": "var(--color-yellow)" } as React.CSSProperties}
           >
@@ -491,7 +463,7 @@ function Facet31Identity() {
                 <p className="text-footnote text-label-secondary">Aurora, radiance and foil</p>
               </div>
             </div>
-          </FacetCard>
+          </Card>
         </div>
       </div>
     </section>

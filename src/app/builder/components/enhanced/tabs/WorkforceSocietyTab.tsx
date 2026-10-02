@@ -3,12 +3,12 @@
 import React, { useState } from "react";
 import { Group as Users, Globe } from "iconoir-react";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { LaborEmploymentTab } from "./LaborEmploymentTab";
 import { DemographicsPopulationTab } from "./DemographicsPopulationTab";
 import type { EconomyBuilderState } from "~/types/economy-builder";
 import type { EconomicComponentType } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
+import { Card, CardContent } from "~/components/ui/card";
 
 export interface WorkforceSocietyTabProps {
   economyBuilder: EconomyBuilderState;
@@ -27,7 +27,7 @@ export function WorkforceSocietyTab({
 
   return (
     <div className="space-y-6">
-      <FacetCard>
+      <Card>
         <div className="border-separator bg-surface flex flex-col gap-4 border-b px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             {subTab === "labor" ? (
@@ -59,7 +59,7 @@ export function WorkforceSocietyTab({
           />
         </div>
 
-        <FacetCardContent className="p-6">
+        <CardContent className="p-6">
           {subTab === "labor" ? (
             <LaborEmploymentTab
               economyBuilder={economyBuilder}
@@ -75,8 +75,8 @@ export function WorkforceSocietyTab({
               showAdvanced={showAdvanced}
             />
           )}
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
     </div>
   );
 }

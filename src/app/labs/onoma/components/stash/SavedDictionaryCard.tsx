@@ -19,7 +19,6 @@ import {
   GitFork,
   Sparks as Sparkles,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { api } from "~/trpc/react";
 import { useNameBank } from "~/hooks/useNameBank";
 import type { NameCategory, ExploreSubTab, StudioSubTab } from "~/lib/onoma/types";
@@ -28,6 +27,7 @@ import { Badge } from "~/components/ui/badge";
 import { MenuButton } from "~/components/ui/menu-button";
 import { DropdownMenuItem } from "~/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import { Card } from "~/components/ui/card";
 
 interface SavedDictionaryCardProps {
   dict: {
@@ -104,7 +104,7 @@ export function SavedDictionaryCard({
   const previewWords = dict.values.slice(0, 12).join(", ");
 
   return (
-    <FacetCard
+    <Card
       variant="inset"
       padding="none"
       className="p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
@@ -355,7 +355,7 @@ export function SavedDictionaryCard({
           </p>
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }
 

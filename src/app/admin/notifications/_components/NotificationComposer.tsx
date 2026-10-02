@@ -283,7 +283,7 @@ export function NotificationComposer() {
       {/* Compose form */}
       <div className="space-y-6 lg:col-span-2">
         {/* Mode Selector */}
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-headline flex items-center gap-2">
               <Sparkles className="text-yellow h-4 w-4" />
@@ -323,7 +323,7 @@ export function NotificationComposer() {
         </Card>
 
         {/* Templates */}
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader className="pb-2">
             <CardTitle className="text-caption flex items-center gap-2">
               <Plus className="h-3.5 w-3.5" />
@@ -348,7 +348,7 @@ export function NotificationComposer() {
         </Card>
 
         {/* Main form */}
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="text-headline flex items-center gap-2">
               <Send className="h-4 w-4" />
@@ -561,7 +561,7 @@ export function NotificationComposer() {
 
       {/* Sidebar Live Preview */}
       <div className="space-y-4">
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-headline flex items-center gap-2">
               <Sparkles className="text-indigo h-4 w-4" />

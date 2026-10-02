@@ -14,8 +14,8 @@ import {
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { FacetCard } from "~/components/ui/facet-container";
 import { NationStatesAttribution } from "~/components/cards/display/NationStatesAttribution";
+import { Card } from "~/components/ui/card";
 
 export interface ImportNationStepProps {
   nationName: string;
@@ -88,7 +88,7 @@ export function ImportNationStep({
             color: "indigo",
           },
         ].map((item) => (
-          <FacetCard key={item.step} padding="md" className="flex items-start gap-3">
+          <Card key={item.step} padding="md" className="flex items-start gap-3">
             <div
               className={cn(
                 "bg-tint-fill text-tint rounded-control text-footnote flex size-8 shrink-0 items-center justify-center font-semibold tabular-nums"
@@ -100,12 +100,12 @@ export function ImportNationStep({
               <p className="text-label text-headline">{item.title}</p>
               <p className="text-label-secondary text-footnote">{item.desc}</p>
             </div>
-          </FacetCard>
+          </Card>
         ))}
       </div>
 
       {/* Safety Disclaimer */}
-      <FacetCard className="text-label-secondary rounded-row text-footnote flex items-start gap-2 p-4 select-none">
+      <Card className="text-label-secondary rounded-row text-footnote flex items-start gap-2 p-4 select-none">
         <ShieldCheck className="text-blue mt-0.5 h-4 w-4 shrink-0" />
         <div className="space-y-0.5">
           <p className="text-label font-semibold">Important</p>
@@ -124,7 +124,7 @@ export function ImportNationStep({
           </p>
           <NationStatesAttribution className="pt-1" />
         </div>
-      </FacetCard>
+      </Card>
 
       <AnimatePresence mode="wait">
         {!showNameInput ? (
@@ -152,7 +152,7 @@ export function ImportNationStep({
             exit={{ opacity: 0, y: -15 }}
             transition={springSmooth}
           >
-            <FacetCard className="rounded-row space-y-3 p-5">
+            <Card className="rounded-row space-y-3 p-5">
               <div className="flex items-center justify-between">
                 <label className="text-label text-headline">Your Nation Name</label>
                 <Button
@@ -195,7 +195,7 @@ export function ImportNationStep({
                 )}
                 Start Verification
               </Button>
-            </FacetCard>
+            </Card>
           </motion.div>
         )}
       </AnimatePresence>

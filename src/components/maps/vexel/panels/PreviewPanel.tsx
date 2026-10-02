@@ -5,8 +5,7 @@ import React, { useState, useEffect } from "react";
 import { useVexelEditor } from "../VexelEditorProvider";
 import ShieldRenderer from "../renderer/ShieldRenderer";
 import { api } from "~/trpc/react";
-
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 function ChargeSvgLoader({
   chargeId,
@@ -47,7 +46,7 @@ export default function PreviewPanel() {
   );
 
   return (
-    <FacetCard className="h-[450px] overflow-hidden">
+    <Card className="h-[450px] overflow-hidden">
       <div className="flex h-full flex-col p-4">
         <h2 className="border-separator text-label text-headline mb-4 border-b pb-2">
           Live Render
@@ -59,7 +58,7 @@ export default function PreviewPanel() {
         ))}
 
         {/* Canvas */}
-        <FacetCard
+        <Card
           variant="inset"
           padding="none"
           className="relative flex flex-1 items-center justify-center overflow-hidden p-6"
@@ -93,8 +92,8 @@ export default function PreviewPanel() {
               </div>
             )}
           </div>
-        </FacetCard>
+        </Card>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

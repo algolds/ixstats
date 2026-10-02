@@ -3,7 +3,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { Globe, Plus } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { CulturalExchangeWizard } from "./CulturalExchangeWizard";
@@ -21,6 +20,7 @@ import { ArtifactUploadModal } from "./ArtifactUploadModal";
 import type { ArtifactUploadData } from "./ArtifactUploadForm";
 import { uploadImageFile } from "~/lib/media/upload-image";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
+import { Card } from "~/components/ui/card";
 
 const isExchangeStatus = (value: string): value is keyof typeof STATUS_STYLES =>
   value in STATUS_STYLES;
@@ -580,7 +580,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
 
       {/* Empty State */}
       {filteredExchanges.length === 0 && !exchangesLoading && (
-        <FacetCard className="rounded-card px-6 py-12 text-center">
+        <Card className="rounded-card px-6 py-12 text-center">
           <Globe className="text-label-secondary mx-auto mb-3 h-6 w-6" />
           <h4 className="text-label text-title-3 mb-1">No cultural exchanges found</h4>
           <p className="text-label-secondary text-body mb-5">
@@ -592,7 +592,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
             <Plus className="h-4 w-4" />
             Create Your First Exchange
           </Button>
-        </FacetCard>
+        </Card>
       )}
 
       {/* Create Exchange Modal (Wizard) */}

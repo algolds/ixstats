@@ -37,7 +37,6 @@ import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
-import { FacetCard } from "~/components/ui/facet-container";
 import { FacetMaterial } from "~/components/ui/facet";
 import { Skeleton } from "~/components/ui/skeleton";
 import { getRouteFamily } from "~/lib/economy/transport-costs";
@@ -47,6 +46,7 @@ import {
   KMH_PER_KNOT,
   type LngLat,
 } from "~/lib/economy/travel-time";
+import { Card } from "~/components/ui/card";
 
 interface RouteInfoPanelProps {
   routeId: string;
@@ -541,10 +541,10 @@ export const RouteInfoPanel = memo(function RouteInfoPanel({
             <span className="text-label font-medium capitalize">{modalFamily} Logistics</span>
           </div>
           {intermodalBadge && (
-            <FacetCard variant="inset" className="text-footnote px-3 py-2">
+            <Card variant="inset" className="text-footnote px-3 py-2">
               <span className="text-label font-semibold">{intermodalBadge.title}</span>
               <p className="text-label-secondary text-footnote mt-0.5">{intermodalBadge.detail}</p>
-            </FacetCard>
+            </Card>
           )}
         </div>
 

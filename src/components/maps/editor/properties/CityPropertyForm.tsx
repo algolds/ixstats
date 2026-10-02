@@ -1,6 +1,4 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import React from "react";
 import type { CityFormData, EditorFeature } from "~/hooks/useMapEditor";
@@ -10,6 +8,7 @@ import { MapPin, ModernTv as Mountain, SystemRestart as Loader2 } from "iconoir-
 import { api } from "~/trpc/react";
 import { Checkbox } from "~/components/ui/checkbox";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { Card } from "~/components/ui/card";
 
 const CITY_TYPES = ["capital", "city", "town", "village", "hamlet", "port", "fortress"];
 
@@ -76,7 +75,7 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
 
       {/* Coordinate Picker Block */}
       {countryId && (
-        <FacetCard className="text-footnote flex items-center justify-between px-3 py-2">
+        <Card className="text-footnote flex items-center justify-between px-3 py-2">
           <div className="text-label-secondary text-left font-medium">
             Coordinates:{" "}
             {activeCoords ? (
@@ -98,7 +97,7 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
             <MapPin className="size-3.5" aria-hidden />
             <span>{isPickingLocation ? "Click on Map..." : "Pick on Map"}</span>
           </Button>
-        </FacetCard>
+        </Card>
       )}
 
       <input

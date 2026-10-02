@@ -3,7 +3,7 @@
 import React from "react";
 import type { ImageContext } from "~/lib/media";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 /** Accent colour names → the icon's accent (the only place the accent shows). */
 const ACCENT_ICON: Record<string, string> = {
@@ -47,7 +47,7 @@ export const TabHeroBanner = React.memo(function TabHeroBanner({
   const iconClass = (accentColor && ACCENT_ICON[accentColor]) ?? "text-label-secondary";
 
   return (
-    <FacetCard
+    <Card
       className={cn("rounded-card mb-4 flex items-center px-4 sm:px-6", heightClass, className)}
     >
       {Icon && <Icon className={cn("mr-3 h-5 w-5 shrink-0", iconClass)} />}
@@ -57,6 +57,6 @@ export const TabHeroBanner = React.memo(function TabHeroBanner({
           <p className="text-label-secondary text-footnote sm:text-body mt-0.5">{subtitle}</p>
         )}
       </div>
-    </FacetCard>
+    </Card>
   );
 });

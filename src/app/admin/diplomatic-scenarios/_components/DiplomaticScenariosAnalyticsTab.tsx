@@ -8,7 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 
 import { api } from "~/trpc/react";
 import { StatsReport as BarChart3, Reports as PieChartIcon } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export function DiplomaticScenariosAnalyticsTab() {
   const {
@@ -84,27 +84,27 @@ export function DiplomaticScenariosAnalyticsTab() {
     <div className="space-y-5">
       {/* KPI Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Generations</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{usageStats.totalGenerations}</p>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Active Scenarios</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">{completionStats.active}</p>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Completion Rate</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">{usageStats.completionRate}%</p>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Scenario Types</p>
           <p className="text-title-2 text-purple mt-1 tabular-nums">{usageStats.byType.length}</p>
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <FacetCard className="space-y-4 p-5">
+        <Card className="space-y-4 p-5">
           <h3 className="text-label text-caption flex items-center gap-2">
             <BarChart3 className="text-teal h-4 w-4" />
             Top Generated Scenarios by Type
@@ -126,9 +126,9 @@ export function DiplomaticScenariosAnalyticsTab() {
               </BarChart>
             </ChartContainer>
           </div>
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="space-y-4 p-5">
+        <Card className="space-y-4 p-5">
           <h3 className="text-label text-caption flex items-center gap-2">
             <PieChartIcon className="text-purple h-4 w-4" />
             Distribution by Scenario Status
@@ -156,7 +156,7 @@ export function DiplomaticScenariosAnalyticsTab() {
               </PieChart>
             </ChartContainer>
           </div>
-        </FacetCard>
+        </Card>
       </div>
     </div>
   );

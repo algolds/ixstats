@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { TrendIndicator as TrendIndicatorUI } from "~/components/ui/trend-indicator";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 export interface MetricCardProps {
   title: string;
@@ -65,7 +65,7 @@ export function MetricCard({
   // `theme` is kept for API compatibility; metric cards render as neutral Facet surfaces and
   // only the status edge carries colour.
   return (
-    <FacetCard
+    <Card
       onClick={onClick}
       onKeyDown={
         onClick
@@ -79,8 +79,9 @@ export function MetricCard({
           : undefined
       }
       className={cn("rounded-row", statusColors[status], className)}
+      interactive
     >
-      <FacetCardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 p-4 pb-1">
+      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 p-4 pb-1">
         <div className="flex min-w-0 flex-1 items-center gap-2">
           {Icon && <Icon className="text-label-secondary h-4 w-4 shrink-0" />}
           <div className="min-w-0 flex-1">
@@ -97,8 +98,8 @@ export function MetricCard({
           {badge && <Badge variant={badge.variant || "default"}>{badge.label}</Badge>}
           {actions}
         </div>
-      </FacetCardHeader>
-      <FacetCardContent className="px-4 pb-4">
+      </CardHeader>
+      <CardContent className="px-4 pb-4">
         {loading ? (
           <div className="space-y-2" role="status" aria-label={`Loading ${title}`}>
             <Skeleton className="h-8" />
@@ -113,8 +114,8 @@ export function MetricCard({
             {footer && <div className="border-separator mt-2 border-t pt-2">{footer}</div>}
           </>
         )}
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 }
 

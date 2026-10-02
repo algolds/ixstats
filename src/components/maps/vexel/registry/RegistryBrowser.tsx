@@ -1,12 +1,11 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { SearchField } from "~/components/ui/search-field";
 import { Button } from "~/components/ui/button";
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import AchievementCard from "./AchievementCard";
 import { FacetTabs } from "~/components/ui/facet";
+import { Card } from "~/components/ui/card";
 
 const REGISTRY_TABS = [
   { id: "ALL", label: "All" },
@@ -46,7 +45,7 @@ export default function RegistryBrowser() {
   return (
     <div className="space-y-6">
       {/* Sub-navigation & search toolbar */}
-      <FacetCard className="flex flex-col justify-between gap-4 p-4 md:flex-row md:items-center">
+      <Card className="flex flex-col justify-between gap-4 p-4 md:flex-row md:items-center">
         {/* Filter Tabs */}
         <FacetTabs
           tabs={[...REGISTRY_TABS]}
@@ -70,7 +69,7 @@ export default function RegistryBrowser() {
             onClear={() => setSearch("")}
           />
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Grid List */}
       {isLoading ? (

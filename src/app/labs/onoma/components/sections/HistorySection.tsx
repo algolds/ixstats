@@ -19,7 +19,6 @@ import { useOnomaHistory } from "~/hooks/useOnomaHistory";
 import { useNameBank } from "~/hooks/useNameBank";
 import { useNotify } from "~/hooks/useNotify";
 import { Input } from "~/components/ui/input";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Toggle } from "~/components/ui/toggle";
 import {
@@ -29,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Card } from "~/components/ui/card";
 
 type HistoryEvent = {
   id: string;
@@ -155,7 +155,7 @@ export default function HistorySection({
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <FacetCard variant="inset" padding="none" className="p-4">
+            <Card variant="inset" padding="none" className="p-4">
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <div className="text-center">
                   <p className="text-title-1 text-yellow font-bold">
@@ -200,7 +200,7 @@ export default function HistorySection({
                   </div>
                 </div>
               )}
-            </FacetCard>
+            </Card>
           </motion.div>
         )}
       </AnimatePresence>
@@ -256,7 +256,7 @@ export default function HistorySection({
 
       {/* Timeline */}
       {filteredEvents.length === 0 ? (
-        <FacetCard variant="inset" padding="none">
+        <Card variant="inset" padding="none">
           <div className="flex flex-col items-center justify-center space-y-2 p-8 text-center">
             <Clock className="text-label-secondary mb-1 h-10 w-10 opacity-40" />
             <p className="text-label-secondary text-body max-w-sm">
@@ -267,7 +267,7 @@ export default function HistorySection({
                   : "No generation history yet. Generate some names and they'll appear here."}
             </p>
           </div>
-        </FacetCard>
+        </Card>
       ) : (
         <div className="space-y-6">
           {Array.from(grouped.entries()).map(([dateKey, dayEvents]) => (
@@ -280,7 +280,7 @@ export default function HistorySection({
                   const favoriteNames = new Set((event.favorites ?? []).map((f) => f.name));
 
                   return (
-                    <FacetCard
+                    <Card
                       variant="inset"
                       padding="none"
                       key={event.id}
@@ -469,7 +469,7 @@ export default function HistorySection({
                           </motion.div>
                         )}
                       </AnimatePresence>
-                    </FacetCard>
+                    </Card>
                   );
                 })}
               </div>

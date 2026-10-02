@@ -109,7 +109,7 @@ export function TimeControlCard({
   };
 
   return (
-    <Card>
+    <Card className="flex flex-col gap-6 py-6">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">

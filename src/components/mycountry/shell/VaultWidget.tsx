@@ -32,11 +32,11 @@ import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { PreText } from "~/components/ui/pretext";
 import { useTheme } from "~/context/theme-context";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 
 import { DailyBonusWidget } from "~/components/vault/DailyBonusWidget";
 import { Eyebrow } from "~/components/ui/eyebrow";
+import { Card } from "~/components/ui/card";
 
 export function VaultWidget() {
   const { userId } = useAuth();
@@ -96,8 +96,6 @@ export function VaultWidget() {
     <CutoutCard
       className={cn(cutoutCardSurfaceClassName, "rounded-card w-48 overflow-hidden")}
       trackPointerHover={false}
-      texture="dots"
-      textureOpacity={0.05}
     >
       {/* Header: plain glyph in the Vault accent and a sentence-case title */}
       <div className="border-separator flex items-center gap-2 border-b px-3 py-2">
@@ -177,7 +175,7 @@ export function VaultWidget() {
 
               {/* Treasury Revenue Projection */}
               {showPassiveIncome && passiveIncomeData && passiveIncomeData.dailyDividend > 0 && (
-                <FacetCard
+                <Card
                   variant="inset"
                   className="animate-in fade-in slide-in-from-top-1 p-2 duration-200"
                 >
@@ -230,7 +228,7 @@ export function VaultWidget() {
                       </div>
                     </div>
                   )}
-                </FacetCard>
+                </Card>
               )}
             </>
           )}

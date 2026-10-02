@@ -1,6 +1,4 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { useMemo } from "react";
 import {
@@ -12,6 +10,7 @@ import {
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import { polylineLengthKm, polylineLengthMi, bearing, compassDirection } from "~/lib/maps/geo-math";
 import { api } from "~/trpc/react";
+import { Card } from "~/components/ui/card";
 
 interface RiverHydrologySectionProps {
   feature: EditorFeature;
@@ -106,7 +105,7 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
     <div className="space-y-2">
       {/* Primary River Metrics */}
       <div className="grid grid-cols-2 gap-2">
-        <FacetCard className="min-w-0 p-2">
+        <Card className="min-w-0 p-2">
           <Eyebrow className="block truncate">Course length</Eyebrow>
           <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
             <span className="text-label text-headline truncate tabular-nums">
@@ -123,9 +122,9 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
               ~{Math.round(lengthMi).toLocaleString()} mi
             </span>
           )}
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="min-w-0 p-2">
+        <Card className="min-w-0 p-2">
           <Eyebrow className="block truncate">Course geometry</Eyebrow>
           <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
             <span className="text-label text-headline truncate tabular-nums">
@@ -141,11 +140,11 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
               <span className="truncate">{courseDirection}</span>
             </div>
           )}
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Headwaters & Mouth Limnology */}
-      <FacetCard className="space-y-2 p-2">
+      <Card className="space-y-2 p-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Waves className="text-cyan h-3.5 w-3.5" />
@@ -212,7 +211,7 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
             </div>
           )}
         </div>
-      </FacetCard>
+      </Card>
     </div>
   );
 });

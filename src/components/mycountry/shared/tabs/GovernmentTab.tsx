@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { Building, Crown } from "iconoir-react";
 import { NavArrowRight as ChevronRight } from "iconoir-react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import {
@@ -31,6 +30,7 @@ import type { MyCountryMetricView } from "~/hooks/useMyCountryMetrics";
 import type { RouterOutputs } from "~/trpc/react";
 import { GovernmentSpendingSection } from "./GovernmentSpendingSection";
 import { GovernmentFiscalSection } from "./GovernmentFiscalSection";
+import { Card, CardContent } from "~/components/ui/card";
 
 export function GovernmentTab({
   country,
@@ -61,7 +61,7 @@ export function GovernmentTab({
   };
 
   return (
-    <FacetCard className="rounded-card relative overflow-hidden">
+    <Card className="rounded-card relative overflow-hidden">
       {/* Background wash system (desaturated flag wash + radial dot mesh) */}
       <MetricCardGrid
         metrics={[]} // empty metrics to just render background
@@ -79,7 +79,7 @@ export function GovernmentTab({
         className="pointer-events-none absolute inset-0 z-0"
       />
 
-      <FacetCardContent className="relative z-10 space-y-4 pt-4 pb-4">
+      <CardContent className="relative z-10 space-y-4 pt-4 pb-4">
         {/* ── Compact Header ── */}
         <div className="border-separator flex items-center justify-between border-b pb-3">
           <div>
@@ -297,7 +297,7 @@ export function GovernmentTab({
                 className="pointer-events-none absolute inset-0 z-0"
               />
               <div className="relative z-10 space-y-4 p-4">
-                <FacetCard
+                <Card
                   variant="inset"
                   padding="none"
                   className="grid grid-cols-2 gap-4 p-3 md:grid-cols-4"
@@ -336,7 +336,7 @@ export function GovernmentTab({
                       Separation of powers
                     </p>
                   </div>
-                </FacetCard>
+                </Card>
 
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                   <SectorBreakdownCard
@@ -465,7 +465,7 @@ export function GovernmentTab({
             currency={currency}
           />
         </div>
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 }

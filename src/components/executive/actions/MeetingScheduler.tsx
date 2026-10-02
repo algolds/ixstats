@@ -33,7 +33,7 @@ import type { AgendaItem, MeetingSchedulerProps } from "./meeting-scheduler-type
 import { AGENDA_CATEGORIES, INTENT_TEMPLATES } from "./meeting-scheduler-intents";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export function MeetingScheduler({
   countryId,
@@ -585,7 +585,7 @@ export function MeetingScheduler({
                   />
 
                   {timePreset === "custom" && (
-                    <FacetCard variant="inset" padding="none" className="mt-2 space-y-2 p-3">
+                    <Card variant="inset" padding="none" className="mt-2 space-y-2 p-3">
                       <Label htmlFor="custom-date" className="text-label-secondary text-eyebrow">
                         Select Date
                       </Label>
@@ -619,7 +619,7 @@ export function MeetingScheduler({
                           (09:00)
                         </span>
                       </div>
-                    </FacetCard>
+                    </Card>
                   )}
                 </div>
 

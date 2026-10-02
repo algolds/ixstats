@@ -3,7 +3,6 @@
 import React, { useMemo } from "react";
 import { formatCompactCurrency, formatPopulation } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { GlassPanel, PanelCard } from "~/components/mycountry/cards";
 import type { MyCountryAccent } from "~/components/mycountry/shared/cards/accents";
 import { Badge } from "~/components/ui/badge";
@@ -14,6 +13,7 @@ import { staggerContainer, staggerItem } from "./TabMotionConfig";
 import { useCountryImage } from "~/hooks/useCountryImage";
 import { useCountryData } from "../CountryDataProvider";
 import { extractCountryImageData, type ImageContext } from "~/lib/media";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 export interface SectorData {
   id: string;
@@ -215,11 +215,11 @@ export function SectorBreakdownCard({
 
   const cardInner = (
     <>
-      <FacetCardHeader className="p-4 pb-2">
+      <CardHeader className="p-4 pb-2">
         <h3 className="text-label text-headline">{title}</h3>
         {subtitle && <p className="text-label-secondary text-footnote">{subtitle}</p>}
-      </FacetCardHeader>
-      <FacetCardContent className="px-4 pb-4">
+      </CardHeader>
+      <CardContent className="px-4 pb-4">
         <Wrapper
           className={cn(
             layout === "grid" ? "grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4" : "space-y-2"
@@ -352,7 +352,7 @@ export function SectorBreakdownCard({
             </span>
           </div>
         )}
-      </FacetCardContent>
+      </CardContent>
     </>
   );
 
@@ -372,7 +372,7 @@ export function SectorBreakdownCard({
     );
   }
 
-  return <FacetCard className={cn("rounded-card", className)}>{cardInner}</FacetCard>;
+  return <Card className={cn("rounded-card", className)}>{cardInner}</Card>;
 }
 
 /**

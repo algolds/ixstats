@@ -7,6 +7,7 @@ import { Badge } from "~/components/ui/badge";
 import type { ValidationCategory as ValidationCategoryType } from "~/lib/system/system-validation";
 import { getStatusBgColor } from "~/lib/system/system-validation";
 import { ValidationResult } from "./ValidationResult";
+import { cn } from "~/lib/utils/cn";
 
 export const ValidationCategory = React.memo(function ValidationCategory({
   category,
@@ -23,7 +24,10 @@ export const ValidationCategory = React.memo(function ValidationCategory({
 
   return (
     <Card
-      className={`border ${getStatusBgColor(overallStatus)} transition-[color,background-color,border-color,box-shadow,opacity,transform]`}
+      className={cn(
+        "flex flex-col gap-6 py-6",
+        `border ${getStatusBgColor(overallStatus)} transition-[color,background-color,border-color,box-shadow,opacity,transform]`
+      )}
     >
       <CardHeader
         className="cursor-pointer pb-3 select-none"

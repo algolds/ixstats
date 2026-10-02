@@ -11,7 +11,6 @@
 
 import React, { useMemo } from "react";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   FloppyDisk as Save,
   Undo as RotateCcw,
@@ -35,6 +34,7 @@ import { ComponentType } from "~/lib/enums";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { GovernmentMetricModals } from "./GovernmentMetricModals";
+import { Card } from "~/components/ui/card";
 
 export interface AtomicGovernmentComponentsProps {
   /** Currently selected components */
@@ -274,7 +274,7 @@ export function AtomicGovernmentComponents({
 
         {/* Header Section */}
         {!standalone && (
-          <FacetCard className="p-5">
+          <Card className="p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 items-center gap-3">
                 <Blocks aria-hidden="true" className="text-yellow h-6 w-6 shrink-0" />
@@ -316,7 +316,7 @@ export function AtomicGovernmentComponents({
                 </div>
               )}
             </div>
-          </FacetCard>
+          </Card>
         )}
 
         {/* Info Alert */}
@@ -377,7 +377,7 @@ export function AtomicGovernmentComponents({
         />
 
         {/* Main Workspace */}
-        {standalone ? workspaceContent : <FacetCard className="p-6">{workspaceContent}</FacetCard>}
+        {standalone ? workspaceContent : <Card className="p-6">{workspaceContent}</Card>}
 
         {/* Save Button (Bottom) */}
         {!isReadOnly && !standalone && (

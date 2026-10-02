@@ -9,7 +9,6 @@
  */
 
 import React, { useState, useMemo, useCallback } from "react";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -49,6 +48,7 @@ import {
   MetricsPanel,
   SynergyDisplay,
 } from "~/components/mycountry/domains/economy/atomic";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 // ============================================================================
 // Type Definitions
@@ -268,9 +268,9 @@ export function AtomicEconomicComponentSelector({
         {standalone ? (
           workspaceContent
         ) : (
-          <FacetCard className="rounded-card">
-            <FacetCardContent className="space-y-6 p-6">{workspaceContent}</FacetCardContent>
-          </FacetCard>
+          <Card className="rounded-card">
+            <CardContent className="space-y-6 p-6">{workspaceContent}</CardContent>
+          </Card>
         )}
       </div>
     </TooltipProvider>
@@ -337,8 +337,8 @@ export function AtomicEconomicBuilder({
   return (
     <div className="atomic-economic-builder space-y-6">
       {/* Header */}
-      <FacetCard className="rounded-card">
-        <FacetCardHeader className="flex-row flex-wrap items-center justify-between gap-3 pb-3">
+      <Card className="rounded-card">
+        <CardHeader className="flex-row flex-wrap items-center justify-between gap-3 pb-3">
           <h2 className="text-label text-title-3 flex items-center gap-2">
             <DollarSign aria-hidden="true" className="text-label-secondary h-5 w-5" />
             Atomic economic system builder
@@ -367,14 +367,14 @@ export function AtomicEconomicBuilder({
               </>
             )}
           </div>
-        </FacetCardHeader>
-        <FacetCardContent className="px-6 pb-6">
+        </CardHeader>
+        <CardContent className="px-6 pb-6">
           <p className="text-label-secondary text-body">
             Build your economy by selecting complementary components. Discover synergies and avoid
             conflicts to maximize effectiveness.
           </p>
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
 
       {/* Validation Alerts */}
       {!builder.validation.valid && (
@@ -414,8 +414,8 @@ export function AtomicEconomicBuilder({
       )}
 
       {/* Filter and Search */}
-      <FacetCard className="rounded-card">
-        <FacetCardContent className="space-y-4 p-6">
+      <Card className="rounded-card">
+        <CardContent className="space-y-4 p-6">
           <AtomicFilterBar
             searchQuery={builder.search.query}
             onSearchChange={builder.search.setQuery}
@@ -429,8 +429,8 @@ export function AtomicEconomicBuilder({
             onTemplateSelect={builder.templates.load}
             searchPlaceholder="Search economic components..."
           />
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
 
       {/* Main Content Area */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -465,8 +465,8 @@ export function AtomicEconomicBuilder({
 
       {/* Action Buttons (Bottom) */}
       {!isReadOnly && (
-        <FacetCard className="rounded-card">
-          <FacetCardContent className="p-6">
+        <Card className="rounded-card">
+          <CardContent className="p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="text-label-secondary text-body tabular-nums">
                 {builder.selectedComponents.length} / {maxComponents} components selected
@@ -483,8 +483,8 @@ export function AtomicEconomicBuilder({
                 </Button>
               </div>
             </div>
-          </FacetCardContent>
-        </FacetCard>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

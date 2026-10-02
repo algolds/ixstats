@@ -1,9 +1,9 @@
 import React from "react";
 import { Globe as Globe2, DeliveryTruck as Ship, Percentage as Percent } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { cn } from "~/lib/utils";
 import { formatCompact } from "./trade-commerce-types";
+import { Card } from "~/components/ui/card";
 
 interface TradeImpactSummaryProps {
   /** Planned tariff yield from the (unsaved) tariff planner; null when imports aren't recorded. */
@@ -104,13 +104,13 @@ function ImpactTile({
   note: React.ReactNode;
 }) {
   return (
-    <FacetCard className="rounded-card space-y-1 p-4">
+    <Card className="rounded-card space-y-1 p-4">
       <div className="flex items-center justify-between gap-2">
         <Eyebrow>{label}</Eyebrow>
         <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
       </div>
       <p className={cn("text-title-2 tabular-nums", valueClassName ?? "text-label")}>{value}</p>
       <p className="text-label-secondary text-footnote">{note}</p>
-    </FacetCard>
+    </Card>
   );
 }

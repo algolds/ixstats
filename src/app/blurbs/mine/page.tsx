@@ -29,7 +29,7 @@ function MyBlurbsList() {
 
   if (responses.length === 0) {
     return (
-      <Card className="facet-hierarchy-child">
+      <Card className="facet-hierarchy-child flex flex-col gap-6 py-6">
         <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
           <BookOpen className="text-muted-foreground h-10 w-10" />
           <h3 className="text-base font-semibold">No blurbs yet</h3>
@@ -117,7 +117,7 @@ export default function MyBlurbsPage() {
         {isSignedIn ? (
           <MyBlurbsList />
         ) : (
-          <Card className="facet-hierarchy-child">
+          <Card className="facet-hierarchy-child flex flex-col gap-6 py-6">
             <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
               <User className="text-muted-foreground h-10 w-10" />
               <h3 className="text-base font-semibold">Sign In Required</h3>

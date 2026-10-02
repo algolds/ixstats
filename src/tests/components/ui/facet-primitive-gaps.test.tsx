@@ -1,3 +1,4 @@
+import { motion } from "motion/react";
 /**
  * Facet 3 primitive gaps closed after the Phase 4 conversions: FacetCard inset + MotionFacetCard,
  * Stat icon slot, Badge system colours, ActionPill, SegmentedControl overflow, ToggleGroup
@@ -5,12 +6,7 @@
  */
 import React, { useState } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
-import {
-  FACET_CARD_SURFACE,
-  FACET_INSET_SURFACE,
-  FacetCard,
-  MotionFacetCard,
-} from "~/components/ui/facet-container";
+import { FACET_CARD_SURFACE, FACET_INSET_SURFACE } from "~/components/ui/facet-container";
 import { Stat } from "~/components/ui/stat";
 import { Badge, SYSTEM_TINTED, badgeVariants } from "~/components/ui/badge";
 import { ActionPill } from "~/components/ui/action-pill";
@@ -20,15 +16,18 @@ import { Popover, PopoverAnchor, PopoverContent } from "~/components/ui/popover"
 import * as LegacyWatermark from "~/components/mycountry/shell/FlagWatermark";
 import * as FacetIdentity from "~/components/ui/facet/identity/FlagWatermark";
 import { SYSTEM_COLORS } from "~/lib/design/tokens";
+import { Card } from "~/components/ui/card";
+
+const MotionCard = motion.create(Card);
 
 const classOf = (el: Element) => el.getAttribute("class") ?? "";
 
 describe('FacetCard variant="inset"', () => {
   it("is a surface-secondary rounded-row panel with 16px padding and no hairline or shadow", () => {
     render(
-      <FacetCard data-testid="inset" variant="inset">
+      <Card data-testid="inset" variant="inset">
         Panel
-      </FacetCard>
+      </Card>
     );
     const el = screen.getByTestId("inset");
     const cls = classOf(el);
@@ -45,8 +44,8 @@ describe('FacetCard variant="inset"', () => {
   it("takes the padding scale and caller classes", () => {
     render(
       <>
-        <FacetCard data-testid="none" variant="inset" padding="none" />
-        <FacetCard data-testid="sm" variant="inset" padding="sm" className="space-y-2" />
+        <Card data-testid="none" variant="inset" padding="none" />
+        <Card data-testid="sm" variant="inset" padding="sm" className="space-y-2" />
       </>
     );
     expect(classOf(screen.getByTestId("none"))).not.toMatch(/(^|\s)p-\d/);
@@ -57,9 +56,9 @@ describe('FacetCard variant="inset"', () => {
   it("stays pressable with onClick", () => {
     const onClick = jest.fn();
     render(
-      <FacetCard variant="inset" onClick={onClick}>
+      <Card variant="inset" onClick={onClick} interactive>
         Open
-      </FacetCard>
+      </Card>
     );
     const panel = screen.getByRole("button", { name: "Open" });
     fireEvent.keyDown(panel, { key: "Enter" });
@@ -69,10 +68,8 @@ describe('FacetCard variant="inset"', () => {
   it("leaves the default card and legacy variant names unchanged", () => {
     render(
       <>
-        <FacetCard data-testid="default">x</FacetCard>
-        <FacetCard data-testid="legacy" variant="frosted">
-          x
-        </FacetCard>
+        <Card data-testid="default">x</Card>
+        <Card data-testid="legacy">x</Card>
       </>
     );
     for (const id of ["default", "legacy"]) {
@@ -93,7 +90,7 @@ describe('FacetCard variant="inset"', () => {
 describe("MotionFacetCard", () => {
   it("renders the FacetCard surface and keeps motion props off the DOM", () => {
     render(
-      <MotionFacetCard
+      <MotionCard
         data-testid="m"
         padding="md"
         initial={{ opacity: 0, y: 12 }}
@@ -101,7 +98,7 @@ describe("MotionFacetCard", () => {
         className="overflow-hidden"
       >
         Body
-      </MotionFacetCard>
+      </MotionCard>
     );
     const el = screen.getByTestId("m");
     const cls = classOf(el);
@@ -117,9 +114,9 @@ describe("MotionFacetCard", () => {
   it("supports the inset variant and forwards its ref", () => {
     const ref = React.createRef<HTMLDivElement>();
     render(
-      <MotionFacetCard ref={ref} variant="inset" data-testid="m">
+      <MotionCard ref={ref} variant="inset" data-testid="m">
         x
-      </MotionFacetCard>
+      </MotionCard>
     );
     expect(ref.current).toBe(screen.getByTestId("m"));
     expect(classOf(ref.current!)).toContain("bg-surface-secondary");

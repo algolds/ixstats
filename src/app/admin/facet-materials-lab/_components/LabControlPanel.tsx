@@ -2,7 +2,6 @@ import * as React from "react";
 import { type TextureType } from "~/components/ui/texture-overlay";
 import { Slider } from "~/components/ui/slider";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Switch } from "~/components/ui/switch";
 import {
   Select,
@@ -26,6 +25,7 @@ import {
   type TemplateType,
   type BgStyleType,
 } from "./types";
+import { Card } from "~/components/ui/card";
 
 interface LabControlPanelProps {
   config: LabConfig;
@@ -52,7 +52,7 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
   }, [config.material, onChange]);
 
   return (
-    <FacetCard className="p-6">
+    <Card className="p-6">
       <div className="border-separator mb-6 flex items-center gap-2 border-b pb-3">
         <Sliders className="text-tint h-4 w-4" />
         <h3 className="text-headline">Simulation controls</h3>
@@ -463,6 +463,6 @@ export function LabControlPanel({ config, onChange }: LabControlPanelProps) {
           </div>
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

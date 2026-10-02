@@ -13,7 +13,6 @@ import {
   WarningCircle as AlertCircle,
   Xmark as X,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
@@ -25,6 +24,7 @@ import { type StatusTone } from "./status-tone";
 import { HUE_ACCENT, HUE_BADGE, type DomainHue } from "./domain-hue";
 import { FlagWatermark, WatermarkGlyph } from "~/components/ui/facet/identity/FlagWatermark";
 import { assetUrl } from "~/lib/base-path";
+import { Card } from "~/components/ui/card";
 
 interface Opportunity {
   id: string;
@@ -326,7 +326,7 @@ function ExecutiveOpportunityHeroComponent({
             card's accent — the glass wash, border, glow and badge (v2 `borderCls`/`badgeCls`) —
             the country's flag bleeds off the top-right corner and the priority's glyph sits as a
             fine watermark. */}
-        <FacetCard variant="glass" glow accent={accent} className="group p-5 sm:p-6">
+        <Card variant="hero" className="group p-5 sm:p-6">
           <FlagWatermark src={flagUrl} />
           <WatermarkGlyph icon={Icon} className="text-facet-accent opacity-[0.06]" />
           <Button
@@ -407,7 +407,7 @@ function ExecutiveOpportunityHeroComponent({
               )}
             </div>
           </div>
-        </FacetCard>
+        </Card>
       </motion.section>
     </AnimatePresence>
   );

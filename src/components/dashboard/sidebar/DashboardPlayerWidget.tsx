@@ -103,7 +103,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
 
   if (profileLoading) {
     return (
-      <CutoutCard variant="card" accent="indigo" retint className="w-48" trackPointerHover={false}>
+      <CutoutCard variant="card" className="w-48" trackPointerHover={false}>
         <div className="bg-facet-accent-fill relative flex min-h-[90px] flex-col items-center justify-center px-3 pt-3 pb-6">
           <Skeleton className="h-4 w-24 rounded-full" />
           <CutoutCorner className="text-surface absolute -bottom-px left-0" size={16} />
@@ -137,14 +137,7 @@ export function DashboardPlayerWidget({ heroCollapsed, onHeroExpand }: Dashboard
   return (
     // v2 (c5c6b382): a CutoutCard whose cutout tab header is the nation's flag (zooming on hover)
     // under a dark scrim, with the inverted-corner notches, dot texture and coloured action tiles.
-    <CutoutCard
-      variant="card"
-      accent="indigo"
-      retint
-      className="group w-48"
-      trackPointerHover={false}
-      texture="dots"
-    >
+    <CutoutCard variant="card" className="group w-48" trackPointerHover={false}>
       {/* Neon Frame Overlay */}
       <NeonFrameOverlay neonFrame={neonFrame} className="rounded-cutout" />
       {/* Identity header: the flag behind an image scrim, avatar and nation name */}

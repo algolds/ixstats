@@ -7,7 +7,6 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { WarningTriangle, Group as Users } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -27,6 +26,7 @@ import { CountryTabs } from "../_components/CountryTabs";
 import { ProfileShellProvider, type ProfileShellValue } from "../_components/ProfileShellContext";
 import { useCountryPageState } from "../_hooks/useCountryPageState";
 import { toCountrySlug } from "../_types";
+import { Card } from "~/components/ui/card";
 
 /** Breadcrumb labels for the deep-dive routes (the profile itself is the country's name). */
 const SEGMENT_LABEL: Record<string, string> = {
@@ -132,7 +132,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
   if (error || !country || !shell) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <FacetCard>
+        <Card>
           <EmptyState
             icon={<WarningTriangle />}
             title={error ? "This country could not be loaded" : "Country not found"}
@@ -143,7 +143,7 @@ function CountryProfileShell({ slug, children }: { slug: string; children: React
               </Button>
             }
           />
-        </FacetCard>
+        </Card>
       </div>
     );
   }

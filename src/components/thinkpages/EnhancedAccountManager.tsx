@@ -18,7 +18,6 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Stat } from "~/components/ui/stat";
 import { springGentle } from "~/lib/design/motion";
 import { Badge } from "~/components/ui/badge";
@@ -33,6 +32,7 @@ import {
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { PreText } from "~/components/ui/pretext";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 interface EnhancedAccountManagerProps {
   countryId: string;
@@ -345,8 +345,8 @@ export function EnhancedAccountManager({
   }
 
   return (
-    <FacetCard>
-      <FacetCardHeader className="pb-3">
+    <Card>
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <h3 className="text-title-3 text-label">Account Manager</h3>
           <Badge variant="outline" className="tabular-nums">
@@ -356,11 +356,11 @@ export function EnhancedAccountManager({
         <PreText className="text-body text-label-secondary">
           Manage your Thinkpages personas
         </PreText>
-      </FacetCardHeader>
+      </CardHeader>
 
-      <FacetCardContent className="space-y-4 px-4 pb-4 sm:space-y-5 md:px-5 md:pb-5">
+      <CardContent className="space-y-4 px-4 pb-4 sm:space-y-5 md:px-5 md:pb-5">
         {innerContent}
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 }

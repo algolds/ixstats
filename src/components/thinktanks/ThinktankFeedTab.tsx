@@ -18,7 +18,6 @@ import {
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import {
@@ -35,6 +34,7 @@ import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
+import { Card } from "~/components/ui/card";
 
 interface ThinktankFeedTabProps {
   groupId: string;
@@ -302,13 +302,13 @@ export function ThinktankFeedTab({
               <p className="text-footnote text-label-secondary">Loading group timeline...</p>
             </div>
           ) : posts.length === 0 ? (
-            <FacetCard>
+            <Card>
               <EmptyState
                 icon={<RssFeed />}
                 title="No Notes or Updates Yet"
                 message="Be the first to share an idea, note to self, or update in this group."
               />
-            </FacetCard>
+            </Card>
           ) : (
             posts.map((post: any) => {
               const personaAccount = post.account;

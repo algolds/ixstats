@@ -3,7 +3,7 @@
 // Universal Card renderer for Atomic Simulation Components (Economic & Government)
 
 import { Industry as Factory, City as Building2, Network } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface AtomicComponentCardProps {
   component: {
@@ -27,7 +27,7 @@ export function AtomicComponentCard({ component, domain }: AtomicComponentCardPr
       : "bg-teal/10 text-teal border-teal/20";
 
   return (
-    <FacetCard className="group hover:border-separator relative p-4 transition-colors">
+    <Card className="group hover:border-separator relative p-4 transition-colors">
       {/* Header */}
       <div className="mb-3 flex items-start justify-between">
         <div className="flex-1 pr-2">
@@ -78,6 +78,6 @@ export function AtomicComponentCard({ component, domain }: AtomicComponentCardPr
           {component.synergies.length} synergies
         </span>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

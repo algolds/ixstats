@@ -3,9 +3,9 @@
 import { cn } from "~/lib/utils";
 import React from "react";
 import { useIxMediaActions, useIxMediaState } from "./MediaContext";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Play, Trash as Trash2, XmarkCircle as XCircle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 
 export function QueuePanel() {
   const { queue, currentIndex } = useIxMediaState();
@@ -45,7 +45,7 @@ export function QueuePanel() {
             const isActive = idx === currentIndex;
 
             return (
-              <FacetCard
+              <Card
                 key={`${track.id}-${idx}`}
                 className={cn(
                   "flex items-center justify-between gap-3 border p-3",
@@ -104,7 +104,7 @@ export function QueuePanel() {
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
-              </FacetCard>
+              </Card>
             );
           })}
         </div>

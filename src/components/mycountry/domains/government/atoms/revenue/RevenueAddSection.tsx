@@ -6,7 +6,6 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Select,
   SelectContent,
@@ -22,6 +21,7 @@ import {
   getCollectionMethodIcon,
   getCollectionMethodsForCategory,
 } from "./revenueConstants";
+import { Card } from "~/components/ui/card";
 
 interface RevenueAddSectionProps {
   onAddCustom: (newRevenue: RevenueSourceInput) => void;
@@ -107,7 +107,7 @@ export function RevenueAddSection({
   }
 
   return (
-    <FacetCard variant="inset" className="space-y-4 p-4">
+    <Card variant="inset" className="space-y-4 p-4">
       <h3 className="text-label text-headline">Configure custom revenue channel</h3>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-3">
@@ -261,6 +261,6 @@ export function RevenueAddSection({
           Cancel
         </Button>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

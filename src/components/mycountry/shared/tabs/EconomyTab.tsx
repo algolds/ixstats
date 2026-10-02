@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { StatUp as TrendingUp, StatDown as TrendingDown, Building } from "iconoir-react";
 import { NavArrowRight as ChevronRight } from "iconoir-react";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import {
@@ -29,6 +28,7 @@ import type { MyCountryMetricView } from "~/hooks/useMyCountryMetrics";
 import type { MetricType } from "~/hooks/useMetricDetailsModal";
 import { EconomyTradeSection } from "./EconomyTradeSection";
 import { EconomyBusinessSection } from "./EconomyBusinessSection";
+import { Card, CardContent } from "~/components/ui/card";
 
 export function EconomyTab({
   country,
@@ -56,7 +56,7 @@ export function EconomyTab({
   };
 
   return (
-    <FacetCard className="rounded-card relative overflow-hidden">
+    <Card className="rounded-card relative overflow-hidden">
       {/* Background wash system (desaturated flag wash + radial dot mesh) */}
       <MetricCardGrid
         metrics={[]} // empty metrics to just render background
@@ -75,7 +75,7 @@ export function EconomyTab({
         className="pointer-events-none absolute inset-0 z-0"
       />
 
-      <FacetCardContent className="relative z-10 space-y-4 pt-4 pb-4">
+      <CardContent className="relative z-10 space-y-4 pt-4 pb-4">
         {/* ── Compact Header ── */}
         <div className="border-separator flex items-center justify-between border-b pb-3">
           <div>
@@ -395,7 +395,7 @@ export function EconomyTab({
             onToggle={() => toggleSection("business")}
           />
         </div>
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 }

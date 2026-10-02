@@ -308,7 +308,7 @@ export function LorewardsBotSection() {
   return (
     <div className="space-y-6">
       {/* PM2 Controls */}
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="text-title-3 flex items-center gap-2">
             <Sliders className="text-indigo h-5 w-5" />
@@ -397,7 +397,7 @@ export function LorewardsBotSection() {
       </Card>
 
       {/* Bot Logs Console */}
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -459,7 +459,7 @@ export function LorewardsBotSection() {
       </Card>
 
       {/* Loreward Run Console */}
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="text-title-3 flex items-center gap-2">
             <Award className="text-yellow h-5 w-5" />
@@ -579,7 +579,7 @@ export function LorewardsBotSection() {
       </Card>
 
       {/* Sync & Cross-Validation Diagnostics */}
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="text-title-3 flex items-center gap-2">
             <Database className="text-blue h-5 w-5" />
@@ -721,7 +721,7 @@ export function LorewardsBotSection() {
       </Card>
 
       {/* Silent Blacklist Manager */}
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="text-title-3 flex items-center gap-2">
             <Ban className="text-red h-5 w-5" />
@@ -900,7 +900,7 @@ export function LorewardsBotSection() {
       </Card>
 
       {/* Manual Winner Override Tool */}
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="text-title-3 flex items-center gap-2">
             <Sliders className="text-yellow h-5 w-5" />

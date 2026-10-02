@@ -51,7 +51,7 @@ export const PolicySection = React.memo<PolicySectionProps>(
             onExportPDF={() => exportToPDF("policy-distribution-chart", "Policy Distribution")}
           />
 
-          <Card className="facet-hierarchy-child">
+          <Card className="facet-hierarchy-child flex flex-col gap-6 py-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-green-600" />
@@ -128,7 +128,7 @@ export const PolicySection = React.memo<PolicySectionProps>(
         />
 
         {/* Cost-Benefit Analysis */}
-        <Card className="facet-hierarchy-child">
+        <Card className="facet-hierarchy-child flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">Cost-Benefit Analysis</CardTitle>
           </CardHeader>

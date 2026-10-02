@@ -4,10 +4,10 @@ import React from "react";
 import { DiceSix as Dices, Globe } from "iconoir-react";
 import { TIER_FILTER_OPTIONS, type TierFilter } from "~/lib/economic-tier-filter";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { shellPageTitleProps } from "~/components/shell/ShellPageHeader";
+import { Card } from "~/components/ui/card";
 
 interface CountriesHeaderProps {
   searchInput?: string;
@@ -28,12 +28,7 @@ export const CountriesHeader: React.FC<CountriesHeaderProps> = ({
 }) => {
   return (
     <div className="bg-background z-sticky sticky top-0 mb-6 pt-2 pb-3">
-      <FacetCard
-        variant="glass"
-        texture="dots"
-        textureOpacity={0.04}
-        className="overflow-hidden p-4 md:p-5"
-      >
+      <Card variant="hero" className="overflow-hidden p-4 md:p-5">
         {/* v2 (c5c6b382): the hero card over a fine dot grid — now the glass hero tier. */}
         {/* Header Title (phones under the new shell get the ShellPageHeader title instead) */}
         <div {...shellPageTitleProps} className="mb-3">
@@ -86,7 +81,7 @@ export const CountriesHeader: React.FC<CountriesHeaderProps> = ({
 
         {/* Stat cards rendered inside the unified sticky container */}
         {children && <div>{children}</div>}
-      </FacetCard>
+      </Card>
     </div>
   );
 };

@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import { HealthRing } from "~/components/ui/health-ring";
 import { Skeleton } from "~/components/ui/skeleton";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -28,6 +27,7 @@ import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { useFactbookMetrics } from "~/components/mycountry/shared/headers/FactbookMetricsProvider";
 import type { VitalityData } from "../_types";
+import { Card } from "~/components/ui/card";
 
 const CountryMapEmbed = dynamic(
   () =>
@@ -152,7 +152,7 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
   return (
     <div className="space-y-6">
       {/* National vitality */}
-      <FacetCard padding="sm" aria-label="National vitality">
+      <Card padding="sm" aria-label="National vitality">
         <div className="grid grid-cols-2 gap-2">
           {vitalityRings.map((ring) => {
             const known = ring.value !== null;
@@ -191,11 +191,11 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
             );
           })}
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Geography map */}
       {!mapLoading && hasGeometry && (
-        <FacetCard className="overflow-hidden">
+        <Card className="overflow-hidden">
           <CountryMapEmbed
             countryId={country.id}
             height="h-56"
@@ -216,11 +216,11 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
               Open full map →
             </a>
           </div>
-        </FacetCard>
+        </Card>
       )}
 
       {/* Recent activity */}
-      <FacetCard>
+      <Card>
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
           <h3 className="text-headline text-label flex items-center gap-2">
             <Activity aria-hidden className="text-label-secondary size-4" />
@@ -312,7 +312,7 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
             />
           )}
         </div>
-      </FacetCard>
+      </Card>
     </div>
   );
 }

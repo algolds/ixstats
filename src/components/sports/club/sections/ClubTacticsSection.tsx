@@ -135,7 +135,7 @@ export function ClubTacticsSection({
     <div className="grid gap-6 lg:grid-cols-3">
       {/* Tactical Shapes / Presets */}
       <div className="lg:col-span-2">
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle>Team Tactics & Strategy</CardTitle>
             <CardDescription className="text-label-secondary">
@@ -181,7 +181,7 @@ export function ClubTacticsSection({
 
       {/* Strategic Weighting & Sliders */}
       <div>
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle>Strategic Weighting</CardTitle>
           </CardHeader>

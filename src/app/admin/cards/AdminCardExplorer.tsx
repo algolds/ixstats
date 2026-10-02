@@ -3,7 +3,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { FacetCard } from "~/components/ui/facet-container";
 import type { CardRarity } from "@prisma/client";
 import { CardDetailsModal } from "~/components/cards/display/CardDetailsModal";
 import { LoreCategory, ArtworkSource } from "~/lib/cards/category-enums";
@@ -17,6 +16,7 @@ import {
 import { CardExplorerBatchBar } from "./explorer/CardExplorerBatchBar";
 import { CardExplorerTable } from "./explorer/CardExplorerTable";
 import { CardEditDialog } from "./explorer/CardEditDialog";
+import { Card } from "~/components/ui/card";
 
 const PAGE_SIZE = 25;
 
@@ -259,7 +259,7 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
   };
 
   return (
-    <FacetCard className="space-y-6 p-6">
+    <Card className="space-y-6 p-6">
       <CardExplorerBatchBar
         total={total}
         loadedCount={cards.length}
@@ -344,6 +344,6 @@ export function AdminCardExplorer({ initialCategory = "all" }: AdminCardExplorer
         open={Boolean(selectedCardForViewer)}
         onClose={() => setSelectedCardForViewer(null)}
       />
-    </FacetCard>
+    </Card>
   );
 }

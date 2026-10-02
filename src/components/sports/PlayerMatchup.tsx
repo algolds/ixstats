@@ -2,9 +2,9 @@
 
 import React from "react";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
 import { getPlayerPhotoUrl } from "~/lib/sports/photos";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
+import { Card } from "~/components/ui/card";
 
 export interface MatchupPlayer {
   id: string;
@@ -43,10 +43,7 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
   }
 
   return (
-    <FacetCard
-      padding="lg"
-      className={cn("mx-auto w-full max-w-[550px] overflow-hidden", className)}
-    >
+    <Card padding="lg" className={cn("mx-auto w-full max-w-[550px] overflow-hidden", className)}>
       {/* Title / Header */}
       <div className="mb-6 text-center">
         <h3 className="text-label-secondary text-headline">Head to Head Comparison</h3>
@@ -175,7 +172,7 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
           );
         })}
       </div>
-    </FacetCard>
+    </Card>
   );
 }
 

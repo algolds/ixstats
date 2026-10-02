@@ -18,7 +18,6 @@ import {
   Trophy,
 } from "iconoir-react";
 import type { RouterOutputs } from "~/trpc/react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
@@ -31,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
+import { Card } from "~/components/ui/card";
 
 // Derived from the tRPC output so the type can't drift from the actual data shape.
 type GeoProfileData = RouterOutputs["geoCore"]["getCountryGeoProfile"];
@@ -99,7 +99,7 @@ export function GeographyReportModal({
           {activeTab === "overview" && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <FacetCard variant="inset" padding="sm" className="space-y-1">
+                <Card variant="inset" padding="sm" className="space-y-1">
                   <Eyebrow className="block">Spatial Metrics</Eyebrow>
                   <div className="text-footnote grid grid-cols-2 gap-2">
                     <div>
@@ -127,9 +127,9 @@ export function GeographyReportModal({
                       </div>
                     </div>
                   </div>
-                </FacetCard>
+                </Card>
 
-                <FacetCard variant="inset" padding="sm" className="space-y-1">
+                <Card variant="inset" padding="sm" className="space-y-1">
                   <Eyebrow className="block">Biogeographic Overview</Eyebrow>
                   <div className="text-footnote grid grid-cols-2 gap-2">
                     <div>
@@ -160,10 +160,10 @@ export function GeographyReportModal({
                       </div>
                     </div>
                   </div>
-                </FacetCard>
+                </Card>
               </div>
 
-              <FacetCard variant="inset" className="space-y-2 p-3">
+              <Card variant="inset" className="space-y-2 p-3">
                 <div className="flex items-center gap-2">
                   <Globe2 aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
                   <Eyebrow>Geographic classification</Eyebrow>
@@ -186,7 +186,7 @@ export function GeographyReportModal({
                     Lakes
                   </Badge>
                 </div>
-              </FacetCard>
+              </Card>
             </div>
           )}
 
@@ -278,7 +278,7 @@ export function GeographyReportModal({
             <div className="space-y-4">
               {/* Hydrography Summary Card */}
               <div className="grid grid-cols-2 gap-4">
-                <FacetCard variant="inset" padding="sm" className="space-y-1">
+                <Card variant="inset" padding="sm" className="space-y-1">
                   <Eyebrow className="block">River Networks</Eyebrow>
                   <div className="text-footnote space-y-2">
                     <div className="flex justify-between">
@@ -294,9 +294,9 @@ export function GeographyReportModal({
                       </span>
                     </div>
                   </div>
-                </FacetCard>
+                </Card>
 
-                <FacetCard variant="inset" padding="sm" className="space-y-1">
+                <Card variant="inset" padding="sm" className="space-y-1">
                   <Eyebrow className="block">Lakes & Reservoirs</Eyebrow>
                   <div className="text-footnote space-y-2">
                     <div className="flex justify-between">
@@ -310,7 +310,7 @@ export function GeographyReportModal({
                       </span>
                     </div>
                   </div>
-                </FacetCard>
+                </Card>
               </div>
 
               {/* Neighbors border table */}
@@ -430,7 +430,7 @@ function SuperlativeCard({
   fallbackMsg,
 }: SuperlativeCardProps) {
   return (
-    <FacetCard variant="inset" padding="sm" className="space-y-1">
+    <Card variant="inset" padding="sm" className="space-y-1">
       <div className="flex items-center justify-between">
         <Eyebrow>{title}</Eyebrow>
       </div>
@@ -452,6 +452,6 @@ function SuperlativeCard({
       ) : (
         <div className="text-label-secondary text-footnote py-1 italic">{fallbackMsg}</div>
       )}
-    </FacetCard>
+    </Card>
   );
 }

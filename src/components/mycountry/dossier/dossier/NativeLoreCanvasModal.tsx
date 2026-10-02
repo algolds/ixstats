@@ -8,7 +8,7 @@ import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { WikiVisualEditor } from "~/components/wiki-os/editor/WikiVisualEditor";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export type LoreClearance = "PUBLIC" | "ALLIANCE" | "PRIVATE";
 
@@ -104,7 +104,7 @@ export function NativeLoreCanvasModal({
           {/* WikiOS Visual Canvas Editor */}
           <div>
             <Eyebrow className="mb-1 block">Canvas lore content</Eyebrow>
-            <FacetCard variant="inset" padding="none" className="min-h-[360px] p-2">
+            <Card variant="inset" padding="none" className="min-h-[360px] p-2">
               <WikiVisualEditor
                 initialHtml={content}
                 title={title || "Untitled Lore Document"}
@@ -112,7 +112,7 @@ export function NativeLoreCanvasModal({
                 onCancel={onClose}
                 onSwitchToSource={(_dirty, currentHtml) => setContent(currentHtml)}
               />
-            </FacetCard>
+            </Card>
           </div>
         </div>
       </DialogContent>

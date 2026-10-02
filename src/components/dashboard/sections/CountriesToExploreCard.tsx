@@ -42,7 +42,7 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
 
   return (
     // v2 (c5c6b382): a CutoutCard with the blue cutout tab header and flag-backed rows.
-    <CutoutCard variant="card" accent="blue" retint trackPointerHover={false}>
+    <CutoutCard variant="card" trackPointerHover={false}>
       <CutoutCardHeader icon={<Users />} as="h2">
         Countries to explore
       </CutoutCardHeader>

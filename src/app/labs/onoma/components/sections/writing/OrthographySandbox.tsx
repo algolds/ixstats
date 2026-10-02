@@ -11,10 +11,10 @@ import { useNameBank } from "~/hooks/useNameBank";
 import { CorpusSelector } from "../../shared/CorpusSelector";
 import { resolveCorpusWords } from "~/lib/onoma/data-bridge";
 import { Input } from "~/components/ui/input";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Slider } from "~/components/ui/slider";
+import { Card } from "~/components/ui/card";
 
 interface OrthographySandboxProps {
   glyphs: Glyph[];
@@ -198,7 +198,7 @@ export function OrthographySandbox({
   };
 
   return (
-    <FacetCard variant="inset" padding="none" className="flex flex-col space-y-4 p-4">
+    <Card variant="inset" padding="none" className="flex flex-col space-y-4 p-4">
       {/* Header Bar with Direction Segmented Control */}
       <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-3">
         <div className="flex items-center gap-2">
@@ -519,6 +519,6 @@ export function OrthographySandbox({
           />
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

@@ -9,7 +9,6 @@ import {
   ScaleFrameEnlarge as Scale,
   Flash as Zap,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button, focusRing } from "~/components/ui/button";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { HealthRing } from "~/components/ui/health-ring";
@@ -24,6 +23,7 @@ import { formatCompact } from "~/lib/format/compact";
 import { cn } from "~/lib/utils";
 import { assetUrl } from "~/lib/base-path";
 import { FlagWatermark } from "~/components/ui/facet/identity/FlagWatermark";
+import { Card } from "~/components/ui/card";
 
 type RatingLabel = "Optimal" | "Strong" | "Moderate" | "Strained";
 
@@ -194,10 +194,8 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
       {/* The v2 National Standing rail card (c5c6b382) on the Facet 3.1 glass hero: the flag
           watermark at v2 strength, the country chip and the vitality pill, one opaque telemetry
           panel (population/GDP, approval/stability/CivCap) and the 2×2 vitality rings. */}
-      <FacetCard
-        variant="glass"
-        glow="shadow"
-        rim="gold"
+      <Card
+        variant="hero"
         className="group flex flex-col gap-3 p-4"
         aria-labelledby="national-standing-title"
         role="region"
@@ -245,7 +243,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
 
         {/* One opaque telemetry panel (v2 "unified telemetry"): glass never nests */}
         {country && (
-          <FacetCard variant="inset" padding="none" className="relative flex flex-col gap-2 p-3">
+          <Card variant="inset" padding="none" className="relative flex flex-col gap-2 p-3">
             <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
               <button
                 type="button"
@@ -316,7 +314,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
                 )}
               </div>
             </div>
-          </FacetCard>
+          </Card>
         )}
 
         {/* The four vitality rings (2×2, v2) */}
@@ -368,7 +366,7 @@ function StandingBandsComponent({ countryId }: StandingBandsProps): React.JSX.El
             );
           })}
         </div>
-      </FacetCard>
+      </Card>
 
       <VitalityBreakdownModal
         isOpen={isBreakdownOpen}

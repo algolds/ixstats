@@ -10,8 +10,8 @@ import {
 import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
+import { Card } from "~/components/ui/card";
 
 export interface VaultYieldProjectionsCardProps {
   loading: boolean;
@@ -48,7 +48,7 @@ export function VaultYieldProjectionsCard({
 }: VaultYieldProjectionsCardProps) {
   return (
     // v2 (c5c6b382): a glass feature card that lifts on hover.
-    <FacetCard variant="glass" interactive="hover" padding="lg" className="overflow-hidden">
+    <Card variant="hero" padding="lg" className="overflow-hidden">
       <div className="border-separator mb-5 flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-2">
           <div className="rounded-row border-blue/30 bg-blue/15 text-blue shadow-card flex h-8 w-8 items-center justify-center border">
@@ -228,6 +228,6 @@ export function VaultYieldProjectionsCard({
           </div>
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }

@@ -25,7 +25,6 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Progress } from "~/components/ui/progress";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Sheet,
   SheetContent,
@@ -33,6 +32,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "~/components/ui/sheet";
+import { Card } from "~/components/ui/card";
 
 interface CulturalExchange {
   id: string;
@@ -142,13 +142,13 @@ function DetailSection({
   children: React.ReactNode;
 }) {
   return (
-    <FacetCard className="p-4">
+    <Card className="p-4">
       <h6 className="text-label text-headline mb-3 flex items-center gap-2">
         <Icon className="text-label-secondary h-4 w-4" />
         {title}
       </h6>
       {children}
-    </FacetCard>
+    </Card>
   );
 }
 
@@ -296,7 +296,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                   <div className="max-h-64 space-y-2 overflow-y-auto">
                     {npcResponses && npcResponses.length > 0
                       ? npcResponses.map((response) => (
-                          <FacetCard variant="inset" key={response.countryId} className="p-3">
+                          <Card variant="inset" key={response.countryId} className="p-3">
                             <div className="mb-2 flex items-center gap-2">
                               {response.flagUrl && (
                                 <img
@@ -371,10 +371,10 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                                 </div>
                               )}
                             </div>
-                          </FacetCard>
+                          </Card>
                         ))
                       : exchange.participatingCountries.map((country) => (
-                          <FacetCard variant="inset" key={country.id} className="p-3">
+                          <Card variant="inset" key={country.id} className="p-3">
                             <div className="mb-2 flex items-center gap-2">
                               {country.flagUrl && (
                                 <img
@@ -393,7 +393,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>(
                             <p className="text-label-secondary text-footnote italic">
                               Analyzing response…
                             </p>
-                          </FacetCard>
+                          </Card>
                         ))}
                   </div>
                 </div>

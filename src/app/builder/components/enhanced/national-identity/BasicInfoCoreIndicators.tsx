@@ -3,12 +3,12 @@
 import React from "react";
 import { Group as Users, StatsReport as BarChart3, Dollar as DollarSign } from "iconoir-react";
 import { SliderWithDirectInput } from "../../../primitives/enhanced";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { getPopulationTierFromPopulation } from "~/types/ixstats";
 import type { EconomicInputs, RealCountryData } from "~/app/builder/lib/economy-data-service";
 import { getEconomicTier } from "~/app/builder/lib/economy-data-service";
+import { Card, CardContent } from "~/components/ui/card";
 
 interface BasicInfoCoreIndicatorsProps {
   inputs: EconomicInputs;
@@ -64,14 +64,14 @@ export const BasicInfoCoreIndicators = React.memo(function BasicInfoCoreIndicato
   const estimatedBaseRevenue = computedGDP * (defaultTaxRate / 100);
 
   return (
-    <FacetCard texture="chevron" textureOpacity={0.04}>
+    <Card>
       <div className="border-separator border-b px-6 py-4">
         <h3 className="text-label text-headline flex items-center gap-2">
           <BarChart3 className="text-green h-5 w-5" />
           Core Stats
         </h3>
       </div>
-      <FacetCardContent className="space-y-6 p-6">
+      <CardContent className="space-y-6 p-6">
         {/* 1. Starting Population */}
         <div className="space-y-2">
           <SliderWithDirectInput
@@ -207,7 +207,7 @@ export const BasicInfoCoreIndicators = React.memo(function BasicInfoCoreIndicato
             </div>
           </div>
         </div>
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 });

@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { KeyCommand as Command, ClockRotateRight as FileClock, Clock } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { focusRing } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
@@ -23,6 +22,7 @@ import {
 import { ExecutiveRecordFeed } from "./ExecutiveRecordFeed";
 import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 export {
   ExecutiveActionCards,
@@ -194,16 +194,16 @@ export function ExecutiveHomeComponent({
             onOpenDrill={onOpenDrill}
           />
 
-          <FacetCard role="region" aria-labelledby="recent-activity-title" className="rounded-card">
-            <FacetCardHeader className="gap-0.5 p-4 pb-0 sm:p-5 sm:pb-0">
+          <Card role="region" aria-labelledby="recent-activity-title" className="rounded-card">
+            <CardHeader className="gap-0.5 p-4 pb-0 sm:p-5 sm:pb-0">
               <h2 id="recent-activity-title" className="text-label text-title-3">
                 Recent activity
               </h2>
               <p className="text-label-secondary text-footnote">
                 Changes recorded in your national ledger
               </p>
-            </FacetCardHeader>
-            <FacetCardContent className="p-4 sm:p-5">
+            </CardHeader>
+            <CardContent className="p-4 sm:p-5">
               {feed.isLoading ? (
                 <div className="space-y-2" aria-busy="true" aria-label="Loading recent activity">
                   {[0, 1, 2, 3].map((i) => (
@@ -219,8 +219,8 @@ export function ExecutiveHomeComponent({
               ) : (
                 <ExecutiveRecordFeed items={items} onOpenDrill={onOpenDrill} />
               )}
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Rail: national standing, rank among peers, the directive trigger and the territory */}

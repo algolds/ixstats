@@ -3,10 +3,10 @@ import { Slider } from "~/components/ui/slider";
 import { PercentageFlow } from "~/components/ui/number-flow";
 import { Lock, LockSlash as Unlock, Undo as RotateCcw } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import type { CustomSector } from "./trade-commerce-types";
 import { ACCENT_BG } from "./trade-commerce-types";
+import { Card } from "~/components/ui/card";
 
 interface TariffSectorSliderCardProps {
   sector: CustomSector;
@@ -28,7 +28,7 @@ export const TariffSectorSliderCard = React.memo(function TariffSectorSliderCard
   const isModified = Math.abs(currentTariff - sector.defaultTariff) > 0.01;
 
   return (
-    <FacetCard className="rounded-card space-y-3 p-4">
+    <Card className="rounded-card space-y-3 p-4">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <span
@@ -89,6 +89,6 @@ export const TariffSectorSliderCard = React.memo(function TariffSectorSliderCard
         aria-label={`${sector.label} tariff`}
         className="py-1"
       />
-    </FacetCard>
+    </Card>
   );
 });

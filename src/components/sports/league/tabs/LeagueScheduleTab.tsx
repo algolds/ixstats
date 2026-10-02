@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { getSportColors, type SportPresetKey } from "~/lib/sports/presets";
-import { FacetCard } from "~/components/ui/facet-container";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -25,6 +24,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import { soundCues } from "~/lib/sound/cuelume";
+import { Card } from "~/components/ui/card";
 
 export interface LeagueScheduleTabProps {
   leagueId: string;
@@ -132,13 +132,13 @@ export function LeagueScheduleTab({
 
   if (!seasonId) {
     return (
-      <FacetCard>
+      <Card>
         <EmptyState
           icon={<Calendar />}
           title="No Schedule Available"
           message="Start a season to generate fixtures."
         />
-      </FacetCard>
+      </Card>
     );
   }
 
@@ -157,9 +157,9 @@ export function LeagueScheduleTab({
 
   if (!season || !schedule) {
     return (
-      <FacetCard padding="lg" className="text-center">
+      <Card padding="lg" className="text-center">
         <p className="text-footnote text-label-secondary">Unable to load competition fixtures.</p>
-      </FacetCard>
+      </Card>
     );
   }
 
@@ -171,7 +171,7 @@ export function LeagueScheduleTab({
   return (
     <div className="space-y-6">
       {/* ─── 1. TIMELINE SCRUBBER RIBBON ─── */}
-      <FacetCard padding="md" className="space-y-4">
+      <Card padding="md" className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
@@ -185,7 +185,11 @@ export function LeagueScheduleTab({
 
           <div className="flex items-center gap-2">
             {initialActiveRound !== selectedRound && (
-              <Button size="sm" variant="secondary" onClick={() => setSelectedRound(initialActiveRound)}>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setSelectedRound(initialActiveRound)}
+              >
                 Jump to Active (R{initialActiveRound})
               </Button>
             )}
@@ -240,7 +244,7 @@ export function LeagueScheduleTab({
             };
           })}
         />
-      </FacetCard>
+      </Card>
 
       {/* ─── 2. MATCHDAY FIXTURE CARDS GRID ─── */}
       <div className="grid gap-4 sm:grid-cols-2">
@@ -259,10 +263,11 @@ export function LeagueScheduleTab({
                 exit={{ opacity: 0, scale: 0.97 }}
                 transition={springSmooth}
               >
-                <FacetCard
+                <Card
                   padding="md"
                   onClick={() => onMatchClick?.(m.id)}
                   className="group flex flex-col justify-between overflow-hidden"
+                  interactive
                 >
                   {/* Top Bar: Match status & Rivalry Tag */}
                   <div className="border-separator flex items-center justify-between border-b pb-3">
@@ -392,7 +397,7 @@ export function LeagueScheduleTab({
                       />
                     </div>
                   </div>
-                </FacetCard>
+                </Card>
               </motion.div>
             );
           })}

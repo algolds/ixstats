@@ -230,8 +230,6 @@ export function AppSidebar({
     >
       <FacetMaterial
         material="acrylic"
-        glow
-        glowOrientation="vertical"
         data-slot="app-sidebar-panel"
         className="facet-acrylic-brand flex min-h-0 flex-1 flex-col"
       >

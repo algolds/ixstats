@@ -23,7 +23,6 @@ import { useNotify } from "~/hooks/useNotify";
 import { translateToIPA } from "~/lib/onoma/phonology";
 import { ipaToKokoroPhonemes } from "~/lib/onoma/kokoro-phonemes";
 import { withBasePath } from "~/lib/base-path";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Select,
   SelectContent,
@@ -31,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Card } from "~/components/ui/card";
 
 const CULTURES = [
   "latin",
@@ -248,7 +248,7 @@ export function OnomaAdminPanel() {
       {isLoadingKokoro ? (
         <p className="text-label-secondary text-footnote">Loading configuration…</p>
       ) : (
-        <FacetCard className="space-y-4 p-5">
+        <Card className="space-y-4 p-5">
           <div className="border-separator border-b pb-3">
             <div className="flex items-center gap-2">
               <Mic className="text-tint h-4 w-4" />
@@ -606,7 +606,7 @@ export function OnomaAdminPanel() {
               </Button>
             </div>
           </div>
-        </FacetCard>
+        </Card>
       )}
     </div>
   );

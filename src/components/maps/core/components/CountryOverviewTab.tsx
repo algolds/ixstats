@@ -16,7 +16,6 @@ import {
 import { StatCard } from "~/components/maps/core/components/StatCard";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { SOVEREIGNTY_TYPE_MAP } from "~/lib/maps/map-config";
 import { sanitizeWikiContent } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
@@ -28,6 +27,7 @@ import {
   formatGdpPerCapita,
   formatArea,
 } from "~/components/maps/core/hooks/useCountryInfoPanelState";
+import { Card } from "~/components/ui/card";
 
 interface CountryOverviewTabProps {
   country: SelectedCountry;
@@ -175,7 +175,7 @@ export function CountryOverviewTab({
             <Swords className="h-3 w-3" />
             Sovereignty
           </Eyebrow>
-          <FacetCard className="mt-2 p-2">
+          <Card className="mt-2 p-2">
             <div className="text-label-secondary text-footnote">
               {SOVEREIGNTY_TYPE_MAP[
                 sovereignty.sovereign.relationshipType as keyof typeof SOVEREIGNTY_TYPE_MAP
@@ -222,7 +222,7 @@ export function CountryOverviewTab({
                 Est. {sovereignty.sovereign.establishedDate}
               </div>
             )}
-          </FacetCard>
+          </Card>
         </div>
       )}
 

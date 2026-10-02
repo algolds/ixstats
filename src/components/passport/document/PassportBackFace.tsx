@@ -1,5 +1,7 @@
 "use client";
 
+import { motion } from "motion/react";
+
 import React, { useState } from "react";
 import { Check, EditPencil as Edit3, Pin, RotateCameraLeft as RotateCcw } from "iconoir-react";
 import { api } from "~/trpc/react";
@@ -7,7 +9,6 @@ import { cn } from "~/lib/utils";
 import { Switch } from "~/components/ui/switch";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { FacetCard, MotionFacetCard } from "~/components/ui/facet-container";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { tweenFast } from "~/lib/design/motion";
 import { TooltipProvider } from "~/components/ui/tooltip";
@@ -15,6 +16,9 @@ import { RibbonBar } from "~/components/achievements/FloatingRibbonRack";
 import { GuillochePattern } from "../cards/GuillochePattern";
 import { IxnayPassportSeal } from "../cards/IxnayPassportSeal";
 import type { PassportVisibility } from "../types";
+import { Card } from "~/components/ui/card";
+
+const MotionCard = motion.create(Card);
 
 const VISIBILITY_TOGGLES: Array<{ key: keyof PassportVisibility; title: string; hint: string }> = [
   {
@@ -96,9 +100,9 @@ export const PassportBackFace = React.memo(function PassportBackFace({
   };
 
   return (
-    <MotionFacetCard
+    <MotionCard
       // v2: the back of the document is the same translucent glass page as the front.
-      variant="glass"
+      variant="hero"
       className={cn(
         "absolute inset-0 min-h-full w-full space-y-6 overflow-y-auto p-6 [backface-visibility:hidden] sm:p-8",
         !isFlipped ? "pointer-events-none" : ""
@@ -143,7 +147,7 @@ export const PassportBackFace = React.memo(function PassportBackFace({
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Editable signature */}
-          <FacetCard variant="inset" className="space-y-3">
+          <Card variant="inset" className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-subhead text-label flex items-center gap-2">
                 <Edit3 aria-hidden className="text-label-secondary size-4" />
@@ -169,7 +173,7 @@ export const PassportBackFace = React.memo(function PassportBackFace({
                 </span>
               </div>
             </div>
-          </FacetCard>
+          </Card>
 
           {/* Persisted visibility toggles */}
           <FacetList>
@@ -199,7 +203,7 @@ export const PassportBackFace = React.memo(function PassportBackFace({
         </div>
 
         {/* Signature ribbon shelf picker */}
-        <FacetCard variant="inset" className="space-y-3">
+        <Card variant="inset" className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-subhead text-label flex items-center gap-2">
               <Pin aria-hidden className="text-label-secondary size-4" />
@@ -245,7 +249,7 @@ export const PassportBackFace = React.memo(function PassportBackFace({
               </ul>
             </TooltipProvider>
           )}
-        </FacetCard>
+        </Card>
 
         {/* Action footer */}
         <div className="flex items-center justify-end gap-3 pt-2">
@@ -255,6 +259,6 @@ export const PassportBackFace = React.memo(function PassportBackFace({
           </Button>
         </div>
       </div>
-    </MotionFacetCard>
+    </MotionCard>
   );
 });

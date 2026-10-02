@@ -3,9 +3,9 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Plus, Xmark as X } from "iconoir-react";
 import type { DepartmentInput } from "~/types/government";
+import { Card } from "~/components/ui/card";
 
 interface DepartmentFunctionsManagerProps {
   data: DepartmentInput;
@@ -32,7 +32,7 @@ export const DepartmentFunctionsManager = React.memo(function DepartmentFunction
   };
 
   return (
-    <FacetCard variant="inset" className="space-y-3 p-4">
+    <Card variant="inset" className="space-y-3 p-4">
       <div className="flex items-center justify-between">
         <Label htmlFor="dept-new-function" className="text-label text-headline">
           Core operational functions
@@ -98,6 +98,6 @@ export const DepartmentFunctionsManager = React.memo(function DepartmentFunction
           </p>
         )}
       </div>
-    </FacetCard>
+    </Card>
   );
 });

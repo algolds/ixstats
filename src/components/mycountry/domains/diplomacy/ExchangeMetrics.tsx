@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
+import { Card } from "~/components/ui/card";
 
 interface ExchangeMetricsProps {
   metrics: {
@@ -23,7 +23,7 @@ export const ExchangeMetrics = React.memo<ExchangeMetricsProps>(({ metrics }) =>
     { label: "Cultural impact", value: `${metrics.avgCulturalImpact}%` },
   ];
   return (
-    <FacetCard className="rounded-card p-4">
+    <Card className="rounded-card p-4">
       <dl className="grid grid-cols-2 gap-4 md:grid-cols-5">
         {items.map((item) => (
           <div key={item.label} className="space-y-1">
@@ -34,7 +34,7 @@ export const ExchangeMetrics = React.memo<ExchangeMetricsProps>(({ metrics }) =>
           </div>
         ))}
       </dl>
-    </FacetCard>
+    </Card>
   );
 });
 

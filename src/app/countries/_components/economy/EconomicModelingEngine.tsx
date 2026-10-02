@@ -322,7 +322,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <Card>
+          <Card className="flex flex-col gap-6 py-6">
             <CardContent className="p-4">
               <div className="space-y-1 text-center">
                 <div className="text-title-1 text-green">
@@ -333,7 +333,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="flex flex-col gap-6 py-6">
             <CardContent className="p-4">
               <div className="space-y-1 text-center">
                 <div className="text-title-1 text-blue">
@@ -344,7 +344,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="flex flex-col gap-6 py-6">
             <CardContent className="p-4">
               <div className="space-y-1 text-center">
                 <div className="text-title-1 text-orange">
@@ -355,7 +355,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="flex flex-col gap-6 py-6">
             <CardContent className="p-4">
               <div className="space-y-1 text-center">
                 <div className="text-title-1 text-purple">{model.parameters.projectionYears}</div>
@@ -374,7 +374,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
           </TabsList>
 
           <TabsContent value="parameters" className="space-y-4">
-            <Card>
+            <Card className="flex flex-col gap-6 py-6">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="h-5 w-5" />
@@ -443,7 +443,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
           </TabsContent>
 
           <TabsContent value="sectors" className="space-y-4">
-            <Card>
+            <Card className="flex flex-col gap-6 py-6">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
@@ -552,7 +552,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
           </TabsContent>
 
           <TabsContent value="policies" className="space-y-4">
-            <Card>
+            <Card className="flex flex-col gap-6 py-6">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Zap className="h-5 w-5" />
@@ -566,7 +566,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
                 {model.policyEffects.map((policy, index) => (
                   <Card
                     key={policy.id ? `policy-${policy.id}` : `policy-fallback-${index}`}
-                    className="p-4"
+                    className="flex flex-col gap-6 p-4 py-6"
                   >
                     <div className="mb-4 flex items-center justify-between">
                       <Input
@@ -682,7 +682,7 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
           </TabsContent>
 
           <TabsContent value="projections" className="space-y-4">
-            <Card>
+            <Card className="flex flex-col gap-6 py-6">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5" />

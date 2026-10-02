@@ -37,9 +37,9 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { FACET_PROSE } from "~/components/maps/shared/facet-prose";
 import { cn } from "~/lib/utils/cn";
+import { Card } from "~/components/ui/card";
 
 const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
 
@@ -170,7 +170,7 @@ export const StoryPinModal = memo(function StoryPinModal({
 
                 {/* Wiki integration section */}
                 {wikiEnrichment?.intro && (
-                  <FacetCard variant="inset" className="p-4">
+                  <Card variant="inset" className="p-4">
                     <Eyebrow className="mb-2 flex items-center gap-2">
                       <BookOpen className="h-3.5 w-3.5" aria-hidden />
                       From IxWiki
@@ -194,7 +194,7 @@ export const StoryPinModal = memo(function StoryPinModal({
                           </a>
                         </Button>
                       ))}
-                  </FacetCard>
+                  </Card>
                 )}
 
                 {/* Image gallery */}

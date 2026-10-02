@@ -2,13 +2,13 @@
 
 import React from "react";
 import { EditPencil as Edit, Trash as Trash2, MediaImage as Image } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
 import { STATUS_CONFIG, type Asset } from "./asset-config";
+import { Card } from "~/components/ui/card";
 
 interface AssetCardProps {
   asset: Asset;
@@ -125,7 +125,7 @@ export const AssetCard = React.memo(function AssetCard({
   onDelete,
 }: AssetCardProps) {
   return (
-    <FacetCard>
+    <Card>
       <div
         className={cn("flex items-start justify-between p-3", asset.imageUrl && "cursor-pointer")}
         onClick={(e) => {
@@ -167,6 +167,6 @@ export const AssetCard = React.memo(function AssetCard({
           </Button>
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 });

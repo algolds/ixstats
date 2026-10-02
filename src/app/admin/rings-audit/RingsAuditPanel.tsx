@@ -10,7 +10,7 @@ import { AdminHeader } from "../_components/AdminHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { Activity, StatsReport as BarChart3, Heart, Shield } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 const RING_META = [
   { key: "economicVitality", label: "Economic", color: "var(--color-chart-3)", icon: BarChart3 },
@@ -60,7 +60,7 @@ function CountryRingsCard({
   const loading = loadingA || loadingD;
 
   return (
-    <FacetCard className="overflow-hidden">
+    <Card className="overflow-hidden">
       <div className="border-separator bg-fill-4 flex items-center gap-3 border-b px-4 py-3">
         {flagUrl && (
           <img src={flagUrl} alt="" className="rounded-control-sm h-6 w-10 object-cover" />
@@ -130,7 +130,7 @@ function CountryRingsCard({
           })}
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }
 

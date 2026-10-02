@@ -1,6 +1,4 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React, { useState } from "react";
@@ -17,6 +15,7 @@ import type { Polygon, MultiPolygon } from "geojson";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import type { EditorFeatureDetails, PropertiesPanelCountry } from "../types/editor-state";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { Card } from "~/components/ui/card";
 
 interface WorldCountryProfileProps {
   mapSelectedCountry: SelectedCountry;
@@ -112,7 +111,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
         <Eyebrow>{isUnclaimed ? "Unclaimed Territory" : "Country Profile"}</Eyebrow>
         <div className="flex min-w-0 items-center gap-2">
           {!isUnclaimed && (
-            <FacetCard className="relative h-4 w-6 shrink-0 overflow-hidden rounded-xs">
+            <Card className="relative h-4 w-6 shrink-0 overflow-hidden rounded-xs">
               <UnifiedCountryFlag
                 countryName={
                   selectedCountryName ||
@@ -123,7 +122,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
                 objectFit="cover"
                 className="h-full w-full"
               />
-            </FacetCard>
+            </Card>
           )}
           <span
             className={`text-caption rounded-control-sm truncate border px-2 py-0.5 ${
@@ -136,7 +135,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
       </div>
 
       {/* Settings (editable display name & linkage) */}
-      <FacetCard className="space-y-3 p-3">
+      <Card className="space-y-3 p-3">
         <Eyebrow className="block">Details</Eyebrow>
         <div className="space-y-2">
           <div className="space-y-1">
@@ -192,10 +191,10 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
             </Button>
           )}
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Feature data card */}
-      <FacetCard className="space-y-2 p-3">
+      <Card className="space-y-2 p-3">
         <Eyebrow className="block">Feature Data</Eyebrow>
         <div className="space-y-1">
           <div className="text-footnote flex justify-between">
@@ -226,11 +225,11 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
             </span>
           </div>
         </div>
-      </FacetCard>
+      </Card>
 
       {/* DB feature details card */}
       {featureDetails && (
-        <FacetCard className="space-y-2 p-3">
+        <Card className="space-y-2 p-3">
           <Eyebrow className="block">Database Record</Eyebrow>
           <div className="space-y-1">
             {featureDetails.flagUrl && (
@@ -255,11 +254,11 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
               </div>
             )}
           </div>
-        </FacetCard>
+        </Card>
       )}
 
       {/* Full feature properties JSON viewer */}
-      <FacetCard className="p-3">
+      <Card className="p-3">
         <div className="mb-2 flex items-center justify-between">
           <Eyebrow className="block">Properties JSON</Eyebrow>
           <Button
@@ -296,7 +295,7 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
         ) : (
           <JsonViewer data={parsedProperties} />
         )}
-      </FacetCard>
+      </Card>
 
       {/* Unclaimed territory actions */}
       {isUnclaimed && (
@@ -451,13 +450,13 @@ export const WorldCountryProfile = React.memo(function WorldCountryProfile({
         )}
       </div>
       {showGenerator && (
-        <FacetCard>
+        <Card>
           <ProvinceGeneratorPanel
             countryGeometry={countryGeometry ?? null}
             countryId={countryId ?? ""}
             onClose={() => setShowGenerator(false)}
           />
-        </FacetCard>
+        </Card>
       )}
     </div>
   );

@@ -18,7 +18,7 @@ import { Tabs, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Plus, Search, Check, Xmark as X, Filter, Rocket } from "iconoir-react";
 import { CATEGORIES, SUBCATEGORIES, ERAS, CATEGORY_ICONS } from "~/lib/military/catalog-utils";
 import { EquipmentCard } from "./EquipmentCard";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface CatalogTabProps {
   selectedCategory: string;
@@ -210,24 +210,24 @@ export function CatalogTab({
 
       {/* Stats Bar */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Systems</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{equipmentData?.length || 0}</p>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Active Registry</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">
             {equipmentData?.filter((e: { isActive: boolean }) => e.isActive).length || 0}
           </p>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Filtered Results</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">{filteredEquipment.length}</p>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Manufacturers</p>
           <p className="text-title-2 text-indigo mt-1 tabular-nums">{manufacturers?.length || 0}</p>
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Equipment Grid */}
@@ -237,7 +237,7 @@ export function CatalogTab({
           <p className="text-label-secondary text-footnote">Loading equipment catalog...</p>
         </div>
       ) : filteredEquipment.length === 0 ? (
-        <FacetCard className="p-12 text-center">
+        <Card className="p-12 text-center">
           <Filter className="text-label-secondary mx-auto mb-3 h-8 w-8" />
           <p className="text-label-secondary text-footnote">
             No defense equipment matching current filters.
@@ -246,7 +246,7 @@ export function CatalogTab({
             <Plus className="mr-2 h-3.5 w-3.5" />
             Add First Equipment
           </Button>
-        </FacetCard>
+        </Card>
       ) : (
         <>
           {/* Select All Checkbox */}

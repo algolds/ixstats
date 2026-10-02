@@ -11,8 +11,8 @@ import {
 import { ProgressiveBlur } from "~/components/ui/magicui/progressive-blur";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Card } from "~/components/ui/card";
 
 interface CountriesFocusGridModularProps {
   countries: CountryCardData[];
@@ -120,11 +120,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
           <ProgressiveBlur>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <FacetCard
-                  key={i}
-                  depth={2}
-                  className="rounded-card flex h-60 flex-col justify-end p-5 md:h-96"
-                >
+                <Card key={i} className="rounded-card flex h-60 flex-col justify-end p-5 md:h-96">
                   <div className="space-y-3">
                     <Skeleton className="h-6 w-3/4" />
                     <Skeleton className="h-4 w-1/2" />
@@ -133,7 +129,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
                       <Skeleton className="h-3.5 w-4/5" />
                     </div>
                   </div>
-                </FacetCard>
+                </Card>
               ))}
             </div>
           </ProgressiveBlur>
@@ -161,7 +157,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
       {/* Empty State */}
       {countries.length === 0 && !isLoading && (
         <div className="mt-12 text-center">
-          <FacetCard depth={2} className="rounded-card mx-auto max-w-md p-12">
+          <Card className="rounded-card mx-auto max-w-md p-12">
             <Globe aria-hidden="true" className="text-label-secondary mx-auto mb-4 h-12 w-12" />
             <h3 className="text-label text-title-2 mb-2">No Countries Found</h3>
             <p className="text-label-secondary text-body mb-6">
@@ -170,7 +166,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
             <Button type="button" onClick={onClearFilters}>
               Clear Filters
             </Button>
-          </FacetCard>
+          </Card>
         </div>
       )}
     </div>

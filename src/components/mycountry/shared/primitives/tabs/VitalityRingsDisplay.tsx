@@ -3,13 +3,13 @@
 import React, { useState } from "react";
 import { motion } from "motion/react";
 import { HealthRing } from "~/components/ui/health-ring";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Activity, Dollar as DollarSign, Group as Users, Globe, Building } from "iconoir-react";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
 import { cn } from "~/lib/utils";
 
 import { VitalityBreakdownModal } from "~/components/mycountry/shared/modals/VitalityBreakdownModal";
 import { Button } from "~/components/ui/button";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 export interface VitalityRing {
   id: string;
@@ -138,9 +138,9 @@ export function VitalityRingsDisplay({
   const itemProps = animate ? { variants: staggerItem } : {};
 
   return (
-    <FacetCard className={cn("rounded-card", className)}>
+    <Card className={cn("rounded-card", className)}>
       {(title || subtitle) && (
-        <FacetCardHeader className="p-5 pb-2">
+        <CardHeader className="p-5 pb-2">
           {title && (
             <h3 className="text-label text-title-3 flex items-center gap-2">
               <Activity className="text-label-secondary h-4 w-4" />
@@ -148,9 +148,9 @@ export function VitalityRingsDisplay({
             </h3>
           )}
           {subtitle && <p className="text-label-secondary text-body">{subtitle}</p>}
-        </FacetCardHeader>
+        </CardHeader>
       )}
-      <FacetCardContent className="px-5 pt-2 pb-5">
+      <CardContent className="px-5 pt-2 pb-5">
         <Wrapper className={cn(layoutClass, gap, "justify-center")} {...wrapperProps}>
           {rings.map((ring) => {
             const IconComponent = ring.icon;
@@ -227,8 +227,8 @@ export function VitalityRingsDisplay({
             </div>
           </motion.div>
         )}
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 }
 

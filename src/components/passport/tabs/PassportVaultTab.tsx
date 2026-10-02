@@ -6,13 +6,13 @@ import { useReducedMotion } from "motion/react";
 import { Crown, ArrowRight, Trophy, Dollar as Coins } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Progress } from "~/components/ui/progress";
 import { Stat } from "~/components/ui/stat";
 import { CardDisplay } from "~/components/cards/display/CardDisplay";
 import { CardDetailsModal } from "~/components/cards/display/CardDetailsModal";
 import type { CardInstance } from "~/types/cards-display";
 import type { PassportVault } from "../types";
+import { Card } from "~/components/ui/card";
 
 interface PassportVaultTabProps {
   vault: PassportVault;
@@ -42,7 +42,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
 
   if (totalCards === 0) {
     return (
-      <FacetCard variant="inset" padding="none" className="border-separator border">
+      <Card variant="inset" padding="none" className="border-separator border">
         <EmptyState
           icon={<Crown />}
           title="No Vault Collection"
@@ -56,7 +56,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
             </Button>
           }
         />
-      </FacetCard>
+      </Card>
     );
   }
 
@@ -79,7 +79,7 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
       </div>
 
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-        <FacetCard variant="inset" className="space-y-2">
+        <Card variant="inset" className="space-y-2">
           <Stat
             label="Collector level"
             value={`Lv. ${level}`}
@@ -92,16 +92,16 @@ export const PassportVaultTab = React.memo(function PassportVaultTab({
               {xp.toLocaleString()} / {nextLevelXp.toLocaleString()} XP
             </p>
           </div>
-        </FacetCard>
+        </Card>
 
-        <FacetCard variant="inset">
+        <Card variant="inset">
           <Stat
             label="Deck value"
             value={formatDeckValue(deckValue)}
             icon={<Coins />}
             iconPlacement="trailing"
           />
-        </FacetCard>
+        </Card>
       </div>
 
       {topCards.length > 0 && (

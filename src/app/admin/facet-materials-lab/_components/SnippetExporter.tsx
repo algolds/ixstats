@@ -1,8 +1,8 @@
 import * as React from "react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Code, Check, Copy } from "iconoir-react";
 import { type LabConfig } from "./types";
+import { Card } from "~/components/ui/card";
 
 interface SnippetExporterProps {
   config: LabConfig;
@@ -60,7 +60,7 @@ export default function CustomFacetWidget() {
   };
 
   return (
-    <FacetCard className="flex flex-col gap-4 p-6">
+    <Card className="flex flex-col gap-4 p-6">
       <div className="border-separator flex items-center justify-between border-b pb-3">
         <div className="flex items-center gap-2">
           <Code className="text-tint h-4 w-4" />
@@ -77,6 +77,6 @@ export default function CustomFacetWidget() {
           <code>{getSnippetCode()}</code>
         </pre>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

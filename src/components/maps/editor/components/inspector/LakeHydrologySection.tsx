@@ -1,6 +1,4 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { Droplet, SeaWaves as Waves } from "iconoir-react";
@@ -9,6 +7,7 @@ import { geometryAreaSqKm, geometryAreaSqMi, ringPerimeterKm } from "~/lib/maps/
 import { calculateSimpleCentroid } from "~/lib/maps/map-utils";
 import { api } from "~/trpc/react";
 import type { Geometry } from "geojson";
+import { Card } from "~/components/ui/card";
 
 interface LakeHydrologySectionProps {
   feature: EditorFeature;
@@ -123,7 +122,7 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
     <div className="space-y-2">
       {/* Primary Lake Surface Metrics */}
       <div className="grid grid-cols-2 gap-2">
-        <FacetCard className="min-w-0 p-2">
+        <Card className="min-w-0 p-2">
           <Eyebrow className="block truncate">Surface area</Eyebrow>
           <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
             <span className="text-label text-headline truncate tabular-nums">
@@ -140,9 +139,9 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
               ~{Math.round(areaSqMi).toLocaleString()} sq mi
             </span>
           )}
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="min-w-0 p-2">
+        <Card className="min-w-0 p-2">
           <Eyebrow className="block truncate">Shoreline perimeter</Eyebrow>
           <div className="mt-0.5 flex min-w-0 items-baseline gap-1">
             <span className="text-label text-headline truncate tabular-nums">
@@ -159,11 +158,11 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
               SDI: {sdi.toFixed(2)}
             </span>
           )}
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Limnology & Bathymetry */}
-      <FacetCard className="space-y-2 p-2">
+      <Card className="space-y-2 p-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Droplet className="text-blue h-3.5 w-3.5" />
@@ -224,7 +223,7 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
             </div>
           )}
         </div>
-      </FacetCard>
+      </Card>
     </div>
   );
 });

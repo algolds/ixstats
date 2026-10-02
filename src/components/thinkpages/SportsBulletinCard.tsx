@@ -6,10 +6,10 @@ import { Trophy, NavArrowRight as ChevronRight, Shield, Flash as Zap } from "ico
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { cn } from "~/lib/utils";
 import type { SportsBulletinData } from "~/lib/sports/feed-bulletins";
+import { Card } from "~/components/ui/card";
 
 interface SportsBulletinCardProps {
   data: SportsBulletinData;
@@ -49,7 +49,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
   ];
 
   return (
-    <FacetCard className={cn("group my-3 overflow-hidden", className)}>
+    <Card className={cn("group my-3 overflow-hidden", className)}>
       {/* Header */}
       <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
         <div className="flex items-center gap-3">
@@ -211,7 +211,7 @@ export function SportsBulletinCard({ data, author: _author, className }: SportsB
           </Button>
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }
 

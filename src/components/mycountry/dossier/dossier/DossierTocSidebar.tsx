@@ -15,12 +15,12 @@ import {
   Globe,
   OpenNewWindow as ExternalLink,
 } from "iconoir-react";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import type { CountryInfobox } from "~/types/dossier";
 import type { WikiSource } from "~/lib/wiki-os/config";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 export interface TocItem {
   id: string;
@@ -244,8 +244,8 @@ export function DossierTocSidebar({
   return (
     <div className="space-y-4 lg:sticky lg:top-(--shell-top-offset)">
       {/* Searchable Dynamic Dossier Table of Contents */}
-      <FacetCard className="rounded-card overflow-hidden">
-        <FacetCardHeader className="border-separator gap-0 border-b px-4 py-3 pb-2">
+      <Card className="rounded-card overflow-hidden">
+        <CardHeader className="border-separator gap-0 border-b px-4 py-3 pb-2">
           <div className="flex items-center justify-between">
             <h3 className="text-label text-headline flex items-center gap-2">
               <Layers className="text-label-secondary h-4 w-4" />
@@ -283,9 +283,9 @@ export function DossierTocSidebar({
               { value: "native", label: "Canvas" },
             ]}
           />
-        </FacetCardHeader>
+        </CardHeader>
 
-        <FacetCardContent className="max-h-96 space-y-2 overflow-y-auto p-2">
+        <CardContent className="max-h-96 space-y-2 overflow-y-auto p-2">
           {Object.keys(groupedFolders).length === 0 ? (
             <div className="text-label-secondary text-footnote p-4 text-center">
               No dossier folders or pages found.
@@ -370,8 +370,8 @@ export function DossierTocSidebar({
               );
             })
           )}
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
     </div>
   );
 }

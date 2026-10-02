@@ -21,7 +21,6 @@ import { getSportTheme } from "~/lib/sports/theming";
 import { MatchSurface } from "~/components/sports/surfaces/MatchSurface";
 import { MatchPredictionPanel } from "~/components/sports/match/MatchPredictionPanel";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Stat } from "~/components/ui/stat";
@@ -31,6 +30,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { generateMatchAnalysisFacts, type MatchAnalysisFacts } from "~/lib/sports/analysis";
 import { cn } from "~/lib/utils";
+import { Card } from "~/components/ui/card";
 
 export interface MatchCenterProps {
   matchId: string;
@@ -251,7 +251,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
       </div>
 
       {/* ─── Scoreboard HUD ─── */}
-      <FacetCard padding="lg" className="overflow-hidden">
+      <Card padding="lg" className="overflow-hidden">
         <div className="grid grid-cols-3 items-center gap-4 text-center">
           {/* Home Team */}
           <Button
@@ -322,7 +322,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
             <span className="text-footnote text-label-secondary">Away</span>
           </Button>
         </div>
-      </FacetCard>
+      </Card>
 
       {/* ─── Prediction market (scheduled matches only) ─── */}
       {match.status === "scheduled" && (
@@ -351,7 +351,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
 
         {/* 1. Vector Sport Surface View */}
         <TabsContent value="surface" className="space-y-4 pt-2">
-          <FacetCard padding="md" className="relative overflow-hidden">
+          <Card padding="md" className="relative overflow-hidden">
             <MatchSurface sportPreset={effectiveSportPreset}>
               {/* Event Markers Overlay */}
               {trace.slice(0, 8).map((evt, idx) => (
@@ -368,19 +368,19 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
                 </div>
               ))}
             </MatchSurface>
-          </FacetCard>
+          </Card>
         </TabsContent>
 
         {/* 2. Chronological Timeline */}
         <TabsContent value="timeline" className="space-y-3 pt-2">
           {trace.length === 0 ? (
-            <FacetCard>
+            <Card>
               <EmptyState
                 compact
                 icon={<Clock />}
                 title="No recorded events for this fixture yet."
               />
-            </FacetCard>
+            </Card>
           ) : (
             <div className="bg-surface border-separator divide-separator rounded-row divide-y overflow-hidden border">
               {trace.map((event, idx) => (
@@ -414,19 +414,19 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
         {/* 3. Deterministic Match Analysis */}
         <TabsContent value="analysis" className="space-y-4 pt-2">
           {!analysisFacts ? (
-            <FacetCard>
+            <Card>
               <EmptyState
                 compact
                 icon={<Activity />}
                 title="Simulate this match to generate deterministic analysis facts."
               />
-            </FacetCard>
+            </Card>
           ) : (
             <div className="space-y-4">
               {/* Tactical Keynotes */}
               {Array.isArray(analysisFacts.tacticalKeynotes) &&
                 analysisFacts.tacticalKeynotes.length > 0 && (
-                  <FacetCard padding="md" className="space-y-2">
+                  <Card padding="md" className="space-y-2">
                     <h4 className="text-subhead text-label-secondary">
                       Tactical breakdown & key insights
                     </h4>
@@ -438,12 +438,12 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
                         </p>
                       ))}
                     </div>
-                  </FacetCard>
+                  </Card>
                 )}
 
               {/* Conversion & Advantage Metrics */}
               <div className="grid grid-cols-2 gap-3">
-                <FacetCard padding="md">
+                <Card padding="md">
                   <Stat
                     label="Possession Delta"
                     value={
@@ -452,9 +452,9 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
                         : `${analysisFacts.possessionDeltaPct ?? 0}%`
                     }
                   />
-                </FacetCard>
+                </Card>
 
-                <FacetCard padding="md">
+                <Card padding="md">
                   <Stat
                     label="Dominant Phase"
                     value={
@@ -463,12 +463,12 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
                       </span>
                     }
                   />
-                </FacetCard>
+                </Card>
               </div>
 
               {/* Key Performer */}
               {analysisFacts.keyPerformer && (
-                <FacetCard padding="md" className="flex items-center justify-between">
+                <Card padding="md" className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Trophy className="text-yellow size-6 shrink-0" aria-hidden />
                     <div>
@@ -486,7 +486,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
                   <Badge variant="caution" className="tabular-nums">
                     Impact: {analysisFacts.keyPerformer.impactScore}
                   </Badge>
-                </FacetCard>
+                </Card>
               )}
             </div>
           )}

@@ -6,7 +6,6 @@
 
 import React from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { tweenFast } from "~/lib/design/motion";
 import { useOnomaRouter } from "../hooks/useOnomaRouter";
 
@@ -15,6 +14,7 @@ import { OnomaFooter } from "./nav/OnomaFooter";
 import { PhysicsPullFooter } from "./nav/PhysicsPullFooter";
 import { OnomaSectionRenderer } from "./OnomaSectionRenderer";
 import OnomaHelpModal from "./shared/OnomaHelpModal";
+import { Card } from "~/components/ui/card";
 
 export function OnomaRouter() {
   const {
@@ -67,7 +67,7 @@ export function OnomaRouter() {
 
         {/* Workspace canvas: the v2 satin canvas as the glass hero tier (Onoma azure wash and
             border from the scoped tint); sections inside stay opaque (surface-secondary insets). */}
-        <FacetCard variant="glass" padding="lg" className="relative overflow-hidden">
+        <Card variant="hero" padding="lg" className="relative overflow-hidden">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={`${activeSection}-${activeSection === "studio" ? activeSubTab : activeSection === "explore" ? activeExploreSubTab : ""}`}
@@ -91,7 +91,7 @@ export function OnomaRouter() {
               />
             </motion.div>
           </AnimatePresence>
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Physics-Based Elastic Pull Footer */}

@@ -4,7 +4,6 @@ import React, { useState, useMemo } from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
-import { FacetCard } from "~/components/ui/facet-container";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { EmptyState } from "~/components/ui/empty-state";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
@@ -27,6 +26,7 @@ import { formatDistanceToNow, isValid } from "date-fns";
 import { WikiLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { cn, escapeHtml, sanitizeUserContent } from "~/lib/utils";
 import type { ActivityFilter, ActivityTimeRange, CountryActivityItem } from "../_types";
+import { Card } from "~/components/ui/card";
 
 /**
  * Render text that may contain Discord custom emoji markup.
@@ -182,7 +182,7 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
         {/* Main feed */}
         <div className="space-y-4 lg:col-span-3">
           {/* Header */}
-          <FacetCard padding="md" className="space-y-4">
+          <Card padding="md" className="space-y-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-title-3 text-label flex items-center gap-2">
@@ -215,16 +215,11 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                 return { value: opt.value, label: opt.label, icon: <Icon aria-hidden /> };
               })}
             />
-          </FacetCard>
+          </Card>
 
           {/* Feed items */}
           {isLoading ? (
-            <FacetCard
-              padding="md"
-              className="space-y-4"
-              role="status"
-              aria-label="Loading activity"
-            >
+            <Card padding="md" className="space-y-4" role="status" aria-label="Loading activity">
               {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="flex items-start gap-3">
                   <Skeleton className="mt-2 size-2 shrink-0 rounded-full" />
@@ -235,9 +230,9 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                   </div>
                 </div>
               ))}
-            </FacetCard>
+            </Card>
           ) : feed.length > 0 ? (
-            <FacetCard padding="md">
+            <Card padding="md">
               <ul className="divide-separator divide-y">
                 {feed.map((item) => (
                   <li key={item.id} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
@@ -307,15 +302,15 @@ export function CountryActivityPanel({ countryId, countryName }: CountryActivity
                   </Button>
                 </div>
               )}
-            </FacetCard>
+            </Card>
           ) : (
-            <FacetCard>
+            <Card>
               <EmptyState
                 icon={<Activity />}
                 title="No activity found for this time period."
                 message="Try expanding the time range or removing filters."
               />
-            </FacetCard>
+            </Card>
           )}
         </div>
 

@@ -1,16 +1,4 @@
 "use client";
-
-/**
- * AutosaveMonitoringDashboard Component
- *
- * Admin dashboard for monitoring autosave system health and performance.
- * Provides real-time metrics, time-series visualizations, failure analysis,
- * and active user monitoring.
- *
- * @module AutosaveMonitoringDashboard
- */
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Stat } from "~/components/ui/stat";
 import { useState } from "react";
 import { api } from "~/trpc/react";
@@ -162,7 +150,7 @@ export function AutosaveMonitoringDashboard() {
       </div>
 
       {/* System Health Badge */}
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardContent className="pt-6">
           <div className="flex items-center gap-4">
             <div
@@ -232,7 +220,7 @@ export function AutosaveMonitoringDashboard() {
       {/* Charts Section */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Time Series Chart */}
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle>Autosave Activity</CardTitle>
             <CardDescription>Autosaves over time</CardDescription>
@@ -243,7 +231,7 @@ export function AutosaveMonitoringDashboard() {
         </Card>
 
         {/* Section Breakdown */}
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle>Section Breakdown</CardTitle>
             <CardDescription>Autosaves by builder section</CardDescription>
@@ -265,7 +253,7 @@ export function AutosaveMonitoringDashboard() {
 
       {/* Failure Analysis */}
       {failureAnalysis && failureAnalysis.errorTypes.length > 0 && (
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="text-yellow h-5 w-5" />
@@ -298,7 +286,7 @@ export function AutosaveMonitoringDashboard() {
       )}
 
       {/* Active Users Table */}
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle>Active Users</CardTitle>
           <CardDescription>Users with recent autosave activity</CardDescription>
@@ -346,7 +334,7 @@ function StatsCard({ title, value, icon, color = "blue", trend }: StatsCardProps
   }[color];
 
   return (
-    <FacetCard padding="md">
+    <Card padding="md">
       <Stat
         label={title}
         value={value}
@@ -368,7 +356,7 @@ function StatsCard({ title, value, icon, color = "blue", trend }: StatsCardProps
           ) : undefined
         }
       />
-    </FacetCard>
+    </Card>
   );
 }
 

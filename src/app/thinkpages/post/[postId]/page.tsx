@@ -6,12 +6,12 @@ import { ArrowLeft, SystemRestart as Loader2, ArrowUp } from "iconoir-react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { extractHashtags, extractMentions } from "~/lib/utils";
+import { Card } from "~/components/ui/card";
 
 interface PostPageProps {
   params: Promise<{
@@ -93,7 +93,7 @@ export default function PostPage({ params }: PostPageProps) {
   if (error || !post) {
     return (
       <div className="container mx-auto max-w-2xl px-4 py-8">
-        <FacetCard>
+        <Card>
           <EmptyState
             title="Post Not Found"
             message="This post may have been deleted or the link is incorrect."
@@ -106,7 +106,7 @@ export default function PostPage({ params }: PostPageProps) {
               </Button>
             }
           />
-        </FacetCard>
+        </Card>
       </div>
     );
   }

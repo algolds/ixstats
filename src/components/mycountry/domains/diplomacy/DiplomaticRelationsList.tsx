@@ -7,7 +7,6 @@ import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Select,
   SelectContent,
@@ -27,6 +26,7 @@ import { useScrollToFocus } from "~/hooks/useScrollToFocus";
 import { getStrengthLabel } from "~/lib/statecraft/diplo-intel";
 import { useUser } from "~/context/auth-context";
 import { formatExactCurrency } from "~/lib/utils/format-utils";
+import { Card } from "~/components/ui/card";
 
 interface DiplomaticRelationsListProps {
   countryId: string;
@@ -186,14 +186,14 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
   if (allRelations.length === 0) {
     return (
-      <FacetCard className="rounded-card flex min-h-[200px] flex-col items-center justify-center p-6 text-center">
+      <Card className="rounded-card flex min-h-[200px] flex-col items-center justify-center p-6 text-center">
         <Globe className="text-label-secondary mb-3 h-6 w-6" />
         <h4 className="text-label text-headline">No diplomatic relations</h4>
         <p className="text-label-secondary text-footnote mt-1 max-w-sm">
           You haven't established diplomatic relationships with other nations yet. Create an embassy
           to start building ties.
         </p>
-      </FacetCard>
+      </Card>
     );
   }
 
@@ -214,7 +214,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
         );
 
         return (
-          <FacetCard
+          <Card
             key={rel.id}
             data-focus-id={rel.targetCountryId ?? rel.id}
             className="rounded-card flex flex-col justify-between p-4"
@@ -350,7 +350,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
                 <span className="text-label font-semibold">{formatDate(rel.lastContact)}</span>
               </div>
             </div>
-          </FacetCard>
+          </Card>
         );
       })}
     </div>

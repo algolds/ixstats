@@ -320,7 +320,7 @@ export function BotControlCard({
   const isAvailable = botStatus?.botHealth?.available;
 
   return (
-    <Card className="flex h-full flex-col">
+    <Card className="flex h-full flex-col gap-6 py-6">
       <CardHeader className="shrink-0 pb-3">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">

@@ -19,7 +19,6 @@ import {
   Xmark as X,
   CalendarRotate as CalendarClock,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
@@ -29,6 +28,7 @@ import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { useNotify } from "~/hooks/useNotify";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
+import { Card } from "~/components/ui/card";
 
 const DOMAIN_CONFIG: Record<string, { icon: typeof TrendingUp; label: string }> = {
   economic: { icon: TrendingUp, label: "Economic" },
@@ -229,7 +229,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
   return (
     <div className="space-y-5 pb-4">
       {/* Issue Hero */}
-      <FacetCard className="flex flex-col gap-3 p-5">
+      <Card className="flex flex-col gap-3 p-5">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="outline">
             <DomainIcon />
@@ -262,11 +262,11 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
             {issue.longDescription}
           </div>
         )}
-      </FacetCard>
+      </Card>
 
       {/* Outcome Display (after response) */}
       {(isResolved || showOutcome) && (issue.consequenceLog || options.length > 0) && (
-        <FacetCard className="flex flex-col gap-2 p-4">
+        <Card className="flex flex-col gap-2 p-4">
           <div className="flex flex-wrap items-center gap-2">
             <CheckCircle className="text-green h-4 w-4" />
             <span className="text-label text-headline">
@@ -300,12 +300,12 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
               <ArrowUpRight className="h-4 w-4" />
             </Button>
           )}
-        </FacetCard>
+        </Card>
       )}
 
       {/* Statecraft Recon */}
       {!isResolved && !showOutcome && reconQuery.data && reconQuery.data.status !== "disabled" && (
-        <FacetCard className="flex flex-col gap-2 p-4">
+        <Card className="flex flex-col gap-2 p-4">
           <h3 className="text-label text-headline flex items-center gap-2">
             <Sliders className="text-label-secondary h-4 w-4" />
             Cabinet Research
@@ -392,14 +392,14 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
               </p>
             </div>
           )}
-        </FacetCard>
+        </Card>
       )}
 
       {/* Response Options & 4-Choice Resolution Lifecycle Hub */}
       {!isResolved && !showOutcome && (
         <div className="space-y-3">
           {/* Unified 4-Branch Lifecycle Action Strip */}
-          <FacetCard className="space-y-3 p-4">
+          <Card className="space-y-3 p-4">
             <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
               <Eyebrow className="flex items-center gap-2">
                 <AlertTriangle className="text-yellow h-3.5 w-3.5" />
@@ -443,13 +443,13 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                 }}
               />
             </div>
-          </FacetCard>
+          </Card>
 
           <div id="issue-brief-options" className="space-y-2 pt-1">
             {options.map((option: ResponseOption) => {
               const isConfirming = confirmingOptionId === option.id;
               return (
-                <FacetCard
+                <Card
                   key={option.id}
                   className={cn(
                     "rounded-row flex items-start justify-between gap-3 p-4 transition-[border-color,box-shadow] duration-150",
@@ -556,7 +556,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                       </Button>
                     )}
                   </div>
-                </FacetCard>
+                </Card>
               );
             })}
           </div>

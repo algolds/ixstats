@@ -209,7 +209,7 @@ export function SplashFold() {
                   return (
                     <Card
                       key={`${component.id}-${idx}`}
-                      className="bg-surface-secondary hover:bg-fill-4 w-80 shrink-0 transition-colors"
+                      className="bg-surface-secondary hover:bg-fill-4 flex w-80 shrink-0 flex-col gap-6 py-6 transition-colors"
                     >
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">

@@ -30,7 +30,6 @@ import { Input } from "~/components/ui/input";
 import { useNotify } from "~/hooks/useNotify";
 import { useVisibleRefetch } from "~/hooks/useVisibleRefetch";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -52,6 +51,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Card } from "~/components/ui/card";
 
 /** Badge variant for a sync job status (colour paired with the status text). */
 function statusBadgeVariant(status: string) {
@@ -283,7 +283,7 @@ export function NSImportSuiteAdmin() {
     <div className="space-y-6">
       {/* ─── Active & Paused Background Sync Jobs ───────────────── */}
       {activeJobs && activeJobs.length > 0 && (
-        <FacetCard className="border-blue/30 bg-blue/5 space-y-4 p-6">
+        <Card className="border-blue/30 bg-blue/5 space-y-4 p-6">
           <h2 className="text-label text-title-3 flex items-center gap-2">
             <RefreshCw className="text-blue h-5 w-5 animate-spin" />
             Active / Paused Sync Jobs ({activeJobs.length})
@@ -295,7 +295,7 @@ export function NSImportSuiteAdmin() {
                   ? Math.min(100, Math.round((job.cardsProcessed / job.totalCards) * 100))
                   : 0;
               return (
-                <FacetCard
+                <Card
                   key={job.id}
                   className="rounded-row flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between"
                 >
@@ -350,17 +350,17 @@ export function NSImportSuiteAdmin() {
                       <Square className="mr-1 h-3.5 w-3.5" /> Stop
                     </Button>
                   </div>
-                </FacetCard>
+                </Card>
               );
             })}
           </div>
-        </FacetCard>
+        </Card>
       )}
 
       {/* ─── Bulk Region Import & Discovery Grid ───────────────── */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Region Fetch Card */}
-        <FacetCard className="space-y-4 p-6">
+        <Card className="space-y-4 p-6">
           <div className="flex items-center gap-2">
             <div className="rounded-row border-green/30 bg-green/20 border p-2">
               <MapPin className="text-green h-5 w-5" />
@@ -394,10 +394,10 @@ export function NSImportSuiteAdmin() {
               </Button>
             </div>
           </div>
-        </FacetCard>
+        </Card>
 
         {/* Discover Top Regions Card */}
-        <FacetCard className="space-y-4 p-6">
+        <Card className="space-y-4 p-6">
           <div className="flex items-center gap-2">
             <div className="rounded-row border-purple/30 bg-purple/20 border p-2">
               <Search className="text-purple h-5 w-5" />
@@ -440,7 +440,7 @@ export function NSImportSuiteAdmin() {
           </div>
 
           {discoveredRegions && (
-            <FacetCard className="rounded-row overflow-hidden">
+            <Card className="rounded-row overflow-hidden">
               <div className="border-separator text-label-secondary text-eyebrow flex items-center justify-between border-b px-4 py-2">
                 <span>Top {discoveredRegions.length} Regions</span>
                 <span>
@@ -477,13 +477,13 @@ export function NSImportSuiteAdmin() {
                   </div>
                 ))}
               </div>
-            </FacetCard>
+            </Card>
           )}
-        </FacetCard>
+        </Card>
       </div>
 
       {/* ─── Filter CTE Nations Section ────────────────────────── */}
-      <FacetCard className="border-yellow/20 bg-yellow/5 space-y-4 p-6">
+      <Card className="border-yellow/20 bg-yellow/5 space-y-4 p-6">
         <div className="flex items-center gap-2">
           <div className="rounded-row border-yellow/30 bg-yellow/20 border p-2">
             <RefreshCw className="text-yellow h-5 w-5" />
@@ -508,10 +508,10 @@ export function NSImportSuiteAdmin() {
           )}
           {filterCTENationsMutation.isPending ? "Filtering..." : "Run CTE Filter"}
         </Button>
-      </FacetCard>
+      </Card>
 
       {/* ─── Sync Operations Log & Import Filter Explorer ──────────────── */}
-      <FacetCard className="space-y-6 p-6">
+      <Card className="space-y-6 p-6">
         {/* Header toolbar */}
         <div className="border-separator flex flex-col gap-3 border-b pb-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -588,7 +588,7 @@ export function NSImportSuiteAdmin() {
 
         {/* Selected Import Run Drill-Down Header Banner */}
         {selectedSyncLog ? (
-          <FacetCard className="rounded-row border-blue/30 bg-blue/5 space-y-3 p-4">
+          <Card className="rounded-row border-blue/30 bg-blue/5 space-y-3 p-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-label text-headline flex items-center gap-2">
@@ -728,7 +728,7 @@ export function NSImportSuiteAdmin() {
                 )}
               </div>
             )}
-          </FacetCard>
+          </Card>
         ) : (
           /* Recent Import Runs Quick Filter Table */
           rawLogsData &&
@@ -741,7 +741,7 @@ export function NSImportSuiteAdmin() {
                 </span>
                 <span className="text-footnote tabular-nums">{rawLogsData.length} records</span>
               </div>
-              <FacetCard className="rounded-row overflow-hidden">
+              <Card className="rounded-row overflow-hidden">
                 <div className="divide-separator max-h-56 divide-y overflow-y-auto">
                   {rawLogsData.map((log) => {
                     const typeLabel = log.syncType
@@ -792,7 +792,7 @@ export function NSImportSuiteAdmin() {
                     );
                   })}
                 </div>
-              </FacetCard>
+              </Card>
             </div>
           )
         )}
@@ -835,9 +835,8 @@ export function NSImportSuiteAdmin() {
                     "/images/cards/lore-placeholder.svg";
                   const region = (card.stats as any)?.region || syncLogCardsData.regionName;
                   return (
-                    <FacetCard
+                    <Card
                       key={card.id}
-                      interactive="hover"
                       className="group hover:border-tint/40 rounded-row flex flex-col justify-between space-y-2 p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                     >
                       <div className="space-y-2">
@@ -882,7 +881,7 @@ export function NSImportSuiteAdmin() {
                           {card.marketValue ? `${card.marketValue.toFixed(1)} IxC` : "0.0 IxC"}
                         </span>
                       </div>
-                    </FacetCard>
+                    </Card>
                   );
                 })}
               </div>
@@ -903,7 +902,7 @@ export function NSImportSuiteAdmin() {
             className="border-separator rounded-row border"
           />
         )}
-      </FacetCard>
+      </Card>
 
       {/* ─── Confirm Region Fetch Modal ────────────────────────── */}
       <AlertDialog open={!!confirmFetchRegions} onOpenChange={() => setConfirmFetchRegions(null)}>

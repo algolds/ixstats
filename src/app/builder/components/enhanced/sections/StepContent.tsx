@@ -15,7 +15,7 @@ interface StepContentProps {
 export const StepContent = memo(function StepContent({ children }: StepContentProps) {
   return (
     <div className="mx-auto w-full max-w-6xl">
-      <CutoutCard variant="card" texture="dots" textureOpacity={0.03} trackPointerHover={false}>
+      <CutoutCard variant="card" trackPointerHover={false}>
         <CutoutCardContent className="relative p-6 sm:p-8">{children}</CutoutCardContent>
       </CutoutCard>
     </div>

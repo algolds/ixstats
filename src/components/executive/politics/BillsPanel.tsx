@@ -20,7 +20,7 @@ import {
   SheetTitle,
 } from "~/components/ui/sheet";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface BillsPanelProps {
   countryId: string;
@@ -182,7 +182,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
             </div>
 
             {showForm && canManage && (
-              <FacetCard variant="inset" padding="none" className="space-y-2 p-3">
+              <Card variant="inset" padding="none" className="space-y-2 p-3">
                 <input
                   className="bg-surface border-separator rounded-control-sm text-body focus:ring-indigo w-full border px-2 py-2 focus:ring-1 focus:outline-none"
                   placeholder="Bill name (e.g. Healthcare Reform Act)"
@@ -233,7 +233,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                 >
                   {propose.isPending ? "Submitting…" : "Submit to Committee"}
                 </Button>
-              </FacetCard>
+              </Card>
             )}
 
             {bills && bills.length > 0 ? (
@@ -291,7 +291,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                           )}
                           {bill.status === "in_committee" && <WhipCount billId={bill.id} />}
                           {result && (
-                            <FacetCard variant="inset" padding="none" className="space-y-1 p-2">
+                            <Card variant="inset" padding="none" className="space-y-1 p-2">
                               <p className="text-label text-caption mb-1">Floor Vote Breakdown</p>
                               {result.breakdown.map((pv) => (
                                 <div
@@ -309,7 +309,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                                   </span>
                                 </div>
                               ))}
-                            </FacetCard>
+                            </Card>
                           )}
                         </div>
                       )}

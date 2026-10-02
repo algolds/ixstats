@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import ShieldRenderer from "../renderer/ShieldRenderer";
 import type { HeraldryComposition } from "~/lib/heraldry";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface AchievementCardProps {
   achievement: {
@@ -36,7 +36,7 @@ export default function AchievementCard({ achievement }: AchievementCardProps) {
   };
 
   return (
-    <FacetCard interactive="hover" className="group block overflow-hidden">
+    <Card className="group block overflow-hidden">
       <Link href={`/labs/vexel/registry/${achievement.id}`} className="block">
         <div className="flex flex-col items-center gap-4 p-4">
           {/* Thumbnail */}
@@ -70,6 +70,6 @@ export default function AchievementCard({ achievement }: AchievementCardProps) {
           </div>
         </div>
       </Link>
-    </FacetCard>
+    </Card>
   );
 }

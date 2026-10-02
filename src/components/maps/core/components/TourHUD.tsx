@@ -13,7 +13,6 @@ import {
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { FacetMaterial } from "~/components/ui/facet";
 import { Skeleton } from "~/components/ui/skeleton";
 import type { TourStep, TourState } from "../hooks/useMapTour";
@@ -32,6 +31,7 @@ interface TourHUDProps {
 }
 
 import { formatPopulation, formatCurrency } from "~/lib/utils/format-utils";
+import { Card } from "~/components/ui/card";
 
 export function TourHUD({
   tourState,
@@ -151,7 +151,7 @@ export function TourHUD({
             {/* Quick stats */}
             <dl className="border-separator grid grid-cols-3 gap-2 border-t pt-3">
               {quickStats.map(({ icon: Icon, label, value }) => (
-                <FacetCard variant="inset" key={label} className="space-y-1 p-2 text-center">
+                <Card variant="inset" key={label} className="space-y-1 p-2 text-center">
                   <dt>
                     <Eyebrow className="flex items-center justify-center gap-1">
                       <Icon className="h-3 w-3" aria-hidden />
@@ -165,7 +165,7 @@ export function TourHUD({
                       <p className="text-label text-caption truncate font-semibold">{value}</p>
                     )}
                   </dd>
-                </FacetCard>
+                </Card>
               ))}
             </dl>
           </div>

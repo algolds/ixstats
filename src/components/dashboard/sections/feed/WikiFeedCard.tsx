@@ -17,10 +17,10 @@ import {
 } from "~/lib/wiki-os/transformers/image-url";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { WikiAuthorPopover } from "../WikiAuthorPopover";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { WikiArticleActions } from "./WikiArticleActions";
+import { Card } from "~/components/ui/card";
 
 export function WikiFeedCard({ activity }: { activity: any }) {
   const isGrouped = !!activity._grouped;
@@ -112,7 +112,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
   const descHtml = descText ? formatThinkpagesContentForDisplay(descText) : "";
 
   return (
-    <FacetCard padding="md" className="group">
+    <Card padding="md" className="group">
       {/* ── 1. Header row ── */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -264,6 +264,6 @@ export function WikiFeedCard({ activity }: { activity: any }) {
 
       {/* ── 4. Action toolbar, margin composer, repost ── */}
       <WikiArticleActions title={cleanTitle} />
-    </FacetCard>
+    </Card>
   );
 }

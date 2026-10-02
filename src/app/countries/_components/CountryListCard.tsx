@@ -16,13 +16,13 @@ import {
 } from "iconoir-react";
 import { formatPopulation, formatCurrency } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import { FacetCard, FacetCardContent, FacetCardFooter } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
 import { useRef } from "react";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/utils";
+import { Card, CardContent, CardFooter } from "~/components/ui/card";
 
 export interface CountryData {
   id: string;
@@ -102,9 +102,7 @@ export function CountryListCard({
     // A pressable card holds no other control (spec §16.8), so the card is a stretched link on the
     // name (its ::after covers the card) and the IxWiki button sits above it; the card draws the
     // focus ring when the link has keyboard focus.
-    <FacetCard
-      depth={2}
-      interactive="hover"
+    <Card
       className={cn(
         "group hover:border-label-tertiary rounded-card relative isolate flex h-full flex-col overflow-hidden",
         "has-[a[data-card-link]:focus-visible]:outline-tint has-[a[data-card-link]:focus-visible]:outline-2 has-[a[data-card-link]:focus-visible]:outline-offset-2",
@@ -126,7 +124,7 @@ export function CountryListCard({
           }}
         />
       )}
-      <FacetCardContent className="min-h-0 grow p-3">
+      <CardContent className="min-h-0 grow p-3">
         <div className="mb-2 flex items-start justify-between gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <div className="relative h-6 w-8 shrink-0">
@@ -216,12 +214,12 @@ export function CountryListCard({
             </span>
           </div>
         </div>
-      </FacetCardContent>
+      </CardContent>
 
-      <FacetCardFooter className="flex min-h-0 items-center justify-between gap-2 px-3 pt-0 pb-3">
+      <CardFooter className="flex min-h-0 items-center justify-between gap-2 px-3 pt-0 pb-3">
         <Badge variant="secondary">{country.economicTier ?? "—"}</Badge>
         <Badge variant="outline">{country.populationTier ?? "—"}</Badge>
-      </FacetCardFooter>
-    </FacetCard>
+      </CardFooter>
+    </Card>
   );
 }

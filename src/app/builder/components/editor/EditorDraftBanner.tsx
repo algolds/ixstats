@@ -2,8 +2,8 @@
 
 import { ClockRotateRight } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { timeAgo } from "~/lib/format/compact";
+import { Card } from "~/components/ui/card";
 
 interface EditorDraftBannerProps {
   changeCount: number;
@@ -20,7 +20,7 @@ export function EditorDraftBanner({
   onDismiss,
 }: EditorDraftBannerProps) {
   return (
-    <FacetCard
+    <Card
       role="region"
       aria-label="Unsaved edits found"
       className="rounded-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center"
@@ -43,6 +43,6 @@ export function EditorDraftBanner({
           Restore
         </Button>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

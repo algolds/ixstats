@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Progress } from "~/components/ui/progress";
 import type { GovernmentDepartment, BudgetAllocation } from "~/types/government";
 import { Eyebrow } from "~/components/ui/eyebrow";
+import { Card } from "~/components/ui/card";
 
 interface BudgetDepartmentItem {
   department: GovernmentDepartment;
@@ -27,7 +27,7 @@ export function BudgetDepartmentList({ departments, formatNumber }: BudgetDepart
         const utilizationRate = allocatedAmount > 0 ? (spentAmount / allocatedAmount) * 100 : 0;
 
         return (
-          <FacetCard key={department.id} className="space-y-3 p-4">
+          <Card key={department.id} className="space-y-3 p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 {/* The department's own colour (user data) identifies it across the charts. */}
@@ -81,7 +81,7 @@ export function BudgetDepartmentList({ departments, formatNumber }: BudgetDepart
                 ))}
               </dl>
             </div>
-          </FacetCard>
+          </Card>
         );
       })}
     </div>

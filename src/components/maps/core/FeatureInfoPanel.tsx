@@ -28,9 +28,9 @@ import { formatPopulation } from "~/lib/utils/format-utils";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { FacetMaterial } from "~/components/ui/facet";
 import { Stat } from "~/components/ui/stat";
+import { Card } from "~/components/ui/card";
 
 interface FeatureInfoPanelProps {
   feature: SelectedFeature;
@@ -153,22 +153,22 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
 
         {/* City population */}
         {isCity && feature.population != null && (
-          <FacetCard className="mb-3 px-3 py-2">
+          <Card className="mb-3 px-3 py-2">
             <Stat
               size="sm"
               label="Population"
               value={formatPopulation(feature.population)}
               icon={<Users className="size-3.5" />}
             />
-          </FacetCard>
+          </Card>
         )}
 
         {/* POI description */}
         {!isCity && !isStoryPin && feature.description && (
-          <FacetCard className="mb-3 px-3 py-2">
+          <Card className="mb-3 px-3 py-2">
             <Eyebrow className="block">Description</Eyebrow>
             <p className="text-label text-footnote mt-0.5 leading-relaxed">{feature.description}</p>
-          </FacetCard>
+          </Card>
         )}
 
         {/* Story Pin details */}

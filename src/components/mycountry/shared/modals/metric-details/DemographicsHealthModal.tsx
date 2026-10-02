@@ -15,7 +15,6 @@ import {
 } from "iconoir-react";
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
-import { FacetCard, FacetCardHeader, FacetCardContent } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
@@ -38,6 +37,7 @@ import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetails
 import { MetricModalLayout } from "./MetricModalLayout";
 import type { TimeRange, ChartType } from "./types";
 import { filterAndSortHistory } from "./hooks/useMetricHistoryFilter";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 interface DemographicsHealthModalProps {
   isOpen: boolean;
@@ -209,8 +209,8 @@ export function DemographicsHealthModal({
     return (
       <MetricModalLayout variant="demographics">
         <MetricModalLayout.MainArea>
-          <FacetCard className="flex flex-1 flex-col justify-between p-6">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="flex flex-1 flex-col justify-between p-6">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <Activity className="text-label-secondary h-5 w-5" />
                 Health & Vitality
@@ -218,37 +218,37 @@ export function DemographicsHealthModal({
               <p className="text-label-secondary text-body">
                 Population health indicators and quality of life metrics.
               </p>
-            </FacetCardHeader>
-            <FacetCardContent className="flex flex-1 flex-col justify-center p-0">
+            </CardHeader>
+            <CardContent className="flex flex-1 flex-col justify-center p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-destructive text-title-3 tabular-nums">
                     {(demographics?.deathRate || 0).toFixed(1)}/1k
                   </div>
                   <Eyebrow className="mt-1 block">Death Rate</Eyebrow>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-title-3 text-green tabular-nums">
                     {((demographics?.birthRate || 0) - (demographics?.deathRate || 0)).toFixed(1)}
                     /1k
                   </div>
                   <Eyebrow className="mt-1 block">Natural Growth</Eyebrow>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3 tabular-nums">
                     {(demographics?.migrationRate || 0).toFixed(1)}/1k
                   </div>
                   <Eyebrow className="mt-1 block">Migration Rate</Eyebrow>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3 tabular-nums">
                     {(demographics?.dependencyRatio || 50).toFixed(0)}%
                   </div>
                   <Eyebrow className="mt-1 block">Dependency Ratio</Eyebrow>
-                </FacetCard>
+                </Card>
               </div>
 
-              <FacetCard
+              <Card
                 variant="inset"
                 padding="none"
                 className="text-label-secondary text-footnote mt-6 flex items-start gap-3 p-4"
@@ -259,9 +259,9 @@ export function DemographicsHealthModal({
                   median age supports stable labor pipelines, while natural population growth
                   sustains resource-consumption curves and tax bases.
                 </p>
-              </FacetCard>
-            </FacetCardContent>
-          </FacetCard>
+              </Card>
+            </CardContent>
+          </Card>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
@@ -327,12 +327,12 @@ export function DemographicsHealthModal({
 
     if (processedData.length === 0) {
       return (
-        <FacetCard>
-          <FacetCardContent className="py-12 text-center">
+        <Card>
+          <CardContent className="py-12 text-center">
             <LineChart className="text-label-secondary mx-auto mb-4 h-12 w-12 opacity-50" />
             <p className="text-label-secondary">No historical data available</p>
-          </FacetCardContent>
-        </FacetCard>
+          </CardContent>
+        </Card>
       );
     }
 
@@ -342,14 +342,14 @@ export function DemographicsHealthModal({
     return (
       <MetricModalLayout variant="demographics">
         <MetricModalLayout.MainArea>
-          <FacetCard className="p-6">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="p-6">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3">Demographics Trends</h3>
               <p className="text-label-secondary text-body">
                 Historical population and vital statistics
               </p>
-            </FacetCardHeader>
-            <FacetCardContent className="p-0">
+            </CardHeader>
+            <CardContent className="p-0">
               <ChartContainer config={chartConfig} className="h-[320px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <ChartComponent data={processedData}>
@@ -407,8 +407,8 @@ export function DemographicsHealthModal({
                   </ChartComponent>
                 </ResponsiveContainer>
               </ChartContainer>
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
@@ -476,8 +476,8 @@ export function DemographicsHealthModal({
     return (
       <MetricModalLayout variant="demographics">
         <MetricModalLayout.MainArea>
-          <FacetCard className="flex-1 p-6">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="flex-1 p-6">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <Globe className="text-label-secondary h-5 w-5" />
                 Global Health Benchmark
@@ -485,8 +485,8 @@ export function DemographicsHealthModal({
               <p className="text-label-secondary text-body">
                 Compare demographic vitality indicators against standard global indexes.
               </p>
-            </FacetCardHeader>
-            <FacetCardContent className="p-0">
+            </CardHeader>
+            <CardContent className="p-0">
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={compData}>
@@ -510,8 +510,8 @@ export function DemographicsHealthModal({
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
@@ -592,31 +592,31 @@ export function DemographicsHealthModal({
     return (
       <MetricModalLayout variant="demographics">
         <MetricModalLayout.MainArea>
-          <FacetCard className="flex flex-1 flex-col justify-between p-6">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="flex flex-1 flex-col justify-between p-6">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3">Age Distribution</h3>
               <p className="text-label-secondary text-body">Population breakdown by age group</p>
-            </FacetCardHeader>
-            <FacetCardContent className="flex-1 p-0">
+            </CardHeader>
+            <CardContent className="flex-1 p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3">{youthPct.toFixed(0)}%</div>
                   <div className="text-label-secondary text-footnote mt-1">0-14 Years</div>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-title-3 text-green">{workingPct.toFixed(0)}%</div>
                   <div className="text-label-secondary text-footnote mt-1">15-64 Years</div>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3">{elderlyPct.toFixed(0)}%</div>
                   <div className="text-label-secondary text-footnote mt-1">65+ Years</div>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3">
                     {(demographics?.dependencyRatio || 50).toFixed(0)}%
                   </div>
                   <div className="text-label-secondary text-footnote mt-1">Dependency Ratio</div>
-                </FacetCard>
+                </Card>
               </div>
 
               {demographics?.educationLevels &&
@@ -653,41 +653,41 @@ export function DemographicsHealthModal({
                     </div>
                   </div>
                 )}
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <FacetCard className="flex flex-1 flex-col justify-between p-4">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="flex flex-1 flex-col justify-between p-4">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 text-headline">Societal Structure</h3>
               <p className="text-label-secondary text-footnote">
                 Education & Urbanization benchmarks
               </p>
-            </FacetCardHeader>
-            <FacetCardContent className="space-y-4 p-0">
-              <FacetCard variant="inset" padding="none" className="p-3">
+            </CardHeader>
+            <CardContent className="space-y-4 p-0">
+              <Card variant="inset" padding="none" className="p-3">
                 <Eyebrow>Literacy Rate</Eyebrow>
                 <div className="text-title-3 text-green mt-1">
                   {(demographics?.literacyRate || 95).toFixed(1)}%
                 </div>
-              </FacetCard>
+              </Card>
 
-              <FacetCard variant="inset" padding="none" className="p-3">
+              <Card variant="inset" padding="none" className="p-3">
                 <Eyebrow>Urban Population</Eyebrow>
                 <div className="text-label text-title-3 mt-1">
                   {(demographics?.urbanRuralSplit?.urban || 60).toFixed(1)}%
                 </div>
-              </FacetCard>
+              </Card>
 
-              <FacetCard variant="inset" padding="none" className="p-3">
+              <Card variant="inset" padding="none" className="p-3">
                 <Eyebrow>Rural Population</Eyebrow>
                 <div className="text-title-3 text-green mt-1">
                   {(demographics?.urbanRuralSplit?.rural || 40).toFixed(1)}%
                 </div>
-              </FacetCard>
-            </FacetCardContent>
-          </FacetCard>
+              </Card>
+            </CardContent>
+          </Card>
         </MetricModalLayout.Sidebar>
       </MetricModalLayout>
     );

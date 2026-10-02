@@ -12,11 +12,11 @@ import {
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Stat } from "~/components/ui/stat";
 import { Switch } from "~/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { type LabConfig } from "../types";
+import { Card } from "~/components/ui/card";
 
 /*
  * Lab-only *frames*: each template's outer element carries the configurator's lab materials
@@ -175,7 +175,7 @@ export function InteractiveCardTemplates({
             <h4 className="text-headline leading-tight">System Core Hub</h4>
           </div>
 
-          <FacetCard variant="inset" className="relative z-10 flex flex-col gap-3">
+          <Card variant="inset" className="relative z-10 flex flex-col gap-3">
             <div className="pointer-events-none">
               <span className="text-label-secondary text-eyebrow mb-0.5 block">
                 Opaque inset (content)
@@ -198,7 +198,7 @@ export function InteractiveCardTemplates({
               <ToggleGroupItem value="1">Node Admin 1</ToggleGroupItem>
               <ToggleGroupItem value="2">Node Admin 2</ToggleGroupItem>
             </ToggleGroup>
-          </FacetCard>
+          </Card>
         </div>
       );
 

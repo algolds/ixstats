@@ -11,8 +11,8 @@ import {
 } from "iconoir-react";
 import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
 import { Skeleton } from "~/components/ui/skeleton";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
+import { Card } from "~/components/ui/card";
 
 const CabinetPanel = dynamic(
   () =>
@@ -90,7 +90,7 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
   return (
     <div className="space-y-4">
       {/* Player fiat notice */}
-      <FacetCard className="rounded-card flex items-start justify-between gap-3 p-3">
+      <Card className="rounded-card flex items-start justify-between gap-3 p-3">
         <div className="flex min-w-0 items-start gap-2">
           <Crown aria-hidden="true" className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
           <div className="min-w-0">
@@ -104,7 +104,7 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
         <Badge variant="secondary" className="shrink-0">
           Player fiat
         </Badge>
-      </FacetCard>
+      </Card>
 
       {/* Election lifecycle: first election date, results, seated chamber (MC-2) */}
       <ElectionStatusCard countryId={countryId} />

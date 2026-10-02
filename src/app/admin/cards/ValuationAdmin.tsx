@@ -6,7 +6,7 @@ import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
 import { Input } from "~/components/ui/input";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 // Field metadata drives the whole form — add a config key here and it shows up.
 const FIELDS: { key: string; label: string; hint: string }[] = [
@@ -56,7 +56,7 @@ export function ValuationAdmin() {
   const busy = saveMutation.isPending || recomputeMutation.isPending;
 
   return (
-    <FacetCard className="space-y-5 p-5">
+    <Card className="space-y-5 p-5">
       <div className="border-separator border-b pb-4">
         <div className="flex items-center gap-2">
           <Coins className="text-yellow h-4 w-4" />
@@ -121,6 +121,6 @@ export function ValuationAdmin() {
           </div>
         </>
       )}
-    </FacetCard>
+    </Card>
   );
 }

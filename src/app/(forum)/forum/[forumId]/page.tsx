@@ -15,9 +15,9 @@ import { withBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { Button, buttonVariants } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard } from "~/components/ui/facet-container";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Card } from "~/components/ui/card";
 
 type SortOrder = "last_post_date" | "post_date" | "reply_count" | "view_count";
 
@@ -105,7 +105,7 @@ export default function ForumThreadListPage() {
           ))}
         </div>
       ) : (
-        <FacetCard className="overflow-hidden">
+        <Card className="overflow-hidden">
           {/* Sticky threads */}
           {stickyThreads.map((thread: any) => (
             <ThreadListItem key={thread.threadId} {...thread} />
@@ -128,7 +128,7 @@ export default function ForumThreadListPage() {
               message="Be the first to start a discussion."
             />
           )}
-        </FacetCard>
+        </Card>
       )}
 
       {/* Pagination */}

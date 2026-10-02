@@ -12,7 +12,7 @@ interface StructureOverviewProps {
 
 export function StructureOverview({ structure, getGovernmentTypeIcon }: StructureOverviewProps) {
   return (
-    <Card>
+    <Card className="flex flex-col gap-6 py-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Crown className="h-5 w-5" />

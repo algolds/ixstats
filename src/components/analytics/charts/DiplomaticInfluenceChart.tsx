@@ -32,7 +32,10 @@ interface DiplomaticInfluenceChartProps {
 export const DiplomaticInfluenceChart = React.memo<DiplomaticInfluenceChartProps>(
   ({ data, GlassTooltip, onExportCSV, onExportPDF }) => {
     return (
-      <Card className="facet-hierarchy-child" id="diplomatic-influence-chart">
+      <Card
+        className="facet-hierarchy-child flex flex-col gap-6 py-6"
+        id="diplomatic-influence-chart"
+      >
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">

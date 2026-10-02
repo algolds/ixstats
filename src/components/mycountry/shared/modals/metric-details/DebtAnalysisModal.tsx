@@ -17,7 +17,6 @@ import {
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils/cn";
-import { FacetCard, FacetCardHeader, FacetCardContent } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
@@ -39,6 +38,7 @@ import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetails
 import { MetricModalLayout } from "./MetricModalLayout";
 import type { TimeRange, ChartType } from "./types";
 import { filterAndSortHistory } from "./hooks/useMetricHistoryFilter";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 interface DebtAnalysisModalProps {
   isOpen: boolean;
@@ -211,8 +211,8 @@ export function DebtAnalysisModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <FacetCard className="flex flex-1 flex-col justify-between p-6">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="flex flex-1 flex-col justify-between p-6">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <Scale className="text-label-secondary h-5 w-5" />
                 Fiscal Position
@@ -220,16 +220,16 @@ export function DebtAnalysisModal({
               <p className="text-label-secondary text-body">
                 Debt sustainability and interest burden indicators.
               </p>
-            </FacetCardHeader>
-            <FacetCardContent className="flex flex-1 flex-col justify-center p-0">
+            </CardHeader>
+            <CardContent className="flex flex-1 flex-col justify-center p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3">
                     ${((fiscal?.debtServiceCosts || 0) / 1e9).toFixed(1)}B
                   </div>
                   <Eyebrow className="mt-1 block">Annual Interest</Eyebrow>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3">
                     {(
                       ((fiscal?.debtServiceCosts || 0) / (countryData?.currentTotalGdp || 1)) *
@@ -238,8 +238,8 @@ export function DebtAnalysisModal({
                     %
                   </div>
                   <Eyebrow className="mt-1 block">Interest/GDP</Eyebrow>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-title-3 text-green">
                     {(
                       ((fiscal?.debtServiceCosts || 0) / (fiscal?.governmentRevenueTotal || 1)) *
@@ -248,14 +248,14 @@ export function DebtAnalysisModal({
                     %
                   </div>
                   <Eyebrow className="mt-1 block">Interest/Rev</Eyebrow>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className={cn("text-title-3", riskLevel.color)}>{riskLevel.label}</div>
                   <Eyebrow className="mt-1 block">Assessment</Eyebrow>
-                </FacetCard>
+                </Card>
               </div>
 
-              <FacetCard
+              <Card
                 variant="inset"
                 padding="none"
                 className="text-label-secondary text-footnote mt-6 flex items-start gap-3 p-4"
@@ -267,9 +267,9 @@ export function DebtAnalysisModal({
                   investment through interest service fees, while low debt reserves can limit
                   stimulus capability during crises.
                 </p>
-              </FacetCard>
-            </FacetCardContent>
-          </FacetCard>
+              </Card>
+            </CardContent>
+          </Card>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
@@ -336,12 +336,12 @@ export function DebtAnalysisModal({
 
     if (processedData.length === 0) {
       return (
-        <FacetCard>
-          <FacetCardContent className="py-12 text-center">
+        <Card>
+          <CardContent className="py-12 text-center">
             <LineChart className="text-label-secondary mx-auto mb-4 h-12 w-12 opacity-50" />
             <p className="text-label-secondary">No historical data available</p>
-          </FacetCardContent>
-        </FacetCard>
+          </CardContent>
+        </Card>
       );
     }
 
@@ -351,14 +351,14 @@ export function DebtAnalysisModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <FacetCard className="p-6">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="p-6">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3">Debt Trends</h3>
               <p className="text-label-secondary text-body">
                 Historical public debt and debt-to-GDP ratio
               </p>
-            </FacetCardHeader>
-            <FacetCardContent className="p-0">
+            </CardHeader>
+            <CardContent className="p-0">
               <ChartContainer config={chartConfig} className="h-[320px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <ChartComponent data={processedData}>
@@ -412,8 +412,8 @@ export function DebtAnalysisModal({
                   </ChartComponent>
                 </ResponsiveContainer>
               </ChartContainer>
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
@@ -471,8 +471,8 @@ export function DebtAnalysisModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <FacetCard className="flex-1 p-6">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="flex-1 p-6">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <Globe className="text-label-secondary h-5 w-5" />
                 Global Fiscal Benchmark
@@ -480,8 +480,8 @@ export function DebtAnalysisModal({
               <p className="text-label-secondary text-body">
                 Compare public debt accumulation levels against global baselines.
               </p>
-            </FacetCardHeader>
-            <FacetCardContent className="p-0">
+            </CardHeader>
+            <CardContent className="p-0">
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={compData}>
@@ -509,8 +509,8 @@ export function DebtAnalysisModal({
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
@@ -590,32 +590,32 @@ export function DebtAnalysisModal({
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <FacetCard className="flex flex-1 flex-col justify-between p-6">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="flex flex-1 flex-col justify-between p-6">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3">Debt Composition</h3>
               <p className="text-label-secondary text-body">Breakdown of public debt by category</p>
-            </FacetCardHeader>
-            <FacetCardContent className="flex-1 p-0">
+            </CardHeader>
+            <CardContent className="flex-1 p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3">{domesticShare.toFixed(0)}%</div>
                   <div className="text-label-secondary text-footnote mt-1">Domestic Debt</div>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3">{externalShare.toFixed(0)}%</div>
                   <div className="text-label-secondary text-footnote mt-1">External Debt</div>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-title-3 text-green">25%</div>
                   <div className="text-label-secondary text-footnote mt-1">Short-Term</div>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3">75%</div>
                   <div className="text-label-secondary text-footnote mt-1">Long-Term</div>
-                </FacetCard>
+                </Card>
               </div>
 
-              <FacetCard
+              <Card
                 variant="inset"
                 padding="none"
                 className="text-label-secondary text-footnote mt-6 p-4"
@@ -626,40 +626,40 @@ export function DebtAnalysisModal({
                   global capital markets and exposes the nation to foreign exchange and trade
                   vulnerability.
                 </p>
-              </FacetCard>
-            </FacetCardContent>
-          </FacetCard>
+              </Card>
+            </CardContent>
+          </Card>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
-          <FacetCard className="flex flex-1 flex-col justify-between p-4">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="flex flex-1 flex-col justify-between p-4">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 text-headline">Debt Servicing</h3>
               <p className="text-label-secondary text-footnote">
                 Annual interest costs and durations
               </p>
-            </FacetCardHeader>
-            <FacetCardContent className="space-y-4 p-0">
-              <FacetCard variant="inset" padding="none" className="p-3">
+            </CardHeader>
+            <CardContent className="space-y-4 p-0">
+              <Card variant="inset" padding="none" className="p-3">
                 <Eyebrow>Annual Interest</Eyebrow>
                 <div className="text-destructive text-title-3 mt-1">
                   ${((fiscal?.debtServiceCosts || 0) / 1e9).toFixed(1)}B
                 </div>
-              </FacetCard>
+              </Card>
 
-              <FacetCard variant="inset" padding="none" className="p-3">
+              <Card variant="inset" padding="none" className="p-3">
                 <Eyebrow>Average Interest Rate</Eyebrow>
                 <div className="text-label text-title-3 mt-1">
                   {(fiscal?.interestRates || 3.5).toFixed(2)}%
                 </div>
-              </FacetCard>
+              </Card>
 
-              <FacetCard variant="inset" padding="none" className="p-3">
+              <Card variant="inset" padding="none" className="p-3">
                 <Eyebrow>Average Maturity</Eyebrow>
                 <div className="text-label text-title-3 mt-1">8.5 Years</div>
-              </FacetCard>
-            </FacetCardContent>
-          </FacetCard>
+              </Card>
+            </CardContent>
+          </Card>
         </MetricModalLayout.Sidebar>
       </MetricModalLayout>
     );

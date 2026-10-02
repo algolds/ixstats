@@ -1,12 +1,12 @@
 import { Activity } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Stat } from "~/components/ui/stat";
 import { cn } from "~/lib/utils/cn";
 import type { ProfileVitals } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
 import { formatPercent, formatRate } from "~/app/countries/[slug]/_utils/profileLayer";
 import { pulseStatus, type PulseTone } from "./derive";
+import { Card } from "~/components/ui/card";
 
 const DOT: Record<PulseTone, string> = {
   success: "bg-success",
@@ -56,10 +56,9 @@ export function PulseBanner({
 
   return (
     // Concept banner: glass with the ambient tint glow bleeding off the top-right corner.
-    <FacetCard
+    <Card
       role="region"
-      variant="glass"
-      glow
+      variant="hero"
       padding="md"
       aria-label={`National pulse: ${status.label}`}
       className={cn(
@@ -102,6 +101,6 @@ export function PulseBanner({
           ))}
         </dl>
       )}
-    </FacetCard>
+    </Card>
   );
 }

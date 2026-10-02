@@ -14,7 +14,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Shield, StatsReport as BarChart3 } from "iconoir-react";
 import { AdminHeader } from "../_components/AdminHeader";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export function DiplomaticScenariosPanel() {
   usePageTitle({ title: "Admin - Diplomatic Scenarios" });
@@ -88,11 +88,11 @@ export function DiplomaticScenariosPanel() {
               ))}
             </div>
           ) : admin.filteredScenarios.length === 0 ? (
-            <FacetCard className="p-12 text-center">
+            <Card className="p-12 text-center">
               <p className="text-label-secondary text-footnote">
                 No scenarios found matching your filters
               </p>
-            </FacetCard>
+            </Card>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {admin.filteredScenarios.map((scenario: any) => (

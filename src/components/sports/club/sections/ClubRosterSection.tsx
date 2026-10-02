@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import { EmptyState } from "~/components/ui/empty-state";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { PlayerCard } from "~/components/sports/PlayerCard";
@@ -12,6 +11,7 @@ import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
 import { SquadRosterTable } from "~/components/sports/club/SquadRosterTable";
 import type { PlayerRatings } from "~/lib/sports/types";
 import { cn } from "~/lib/utils";
+import { Card } from "~/components/ui/card";
 
 const CAREER_STAGE_STYLES: Record<string, { label: string; className: string }> = {
   rookie: { label: "Rookie", className: "border-blue/30 bg-blue/10 text-blue" },
@@ -109,9 +109,9 @@ export function ClubRosterSection({
         </div>
 
         {players.length === 0 ? (
-          <FacetCard>
+          <Card>
             <EmptyState compact title="No athletes currently on the active roster." />
-          </FacetCard>
+          </Card>
         ) : viewMode === "table" ? (
           <SquadRosterTable
             players={players}
@@ -173,7 +173,7 @@ export function ClubRosterSection({
               const stageStyle =
                 CAREER_STAGE_STYLES[coach.careerStage] ?? CAREER_STAGE_STYLES.prime;
               return (
-                <FacetCard key={coach.id} padding="md">
+                <Card key={coach.id} padding="md">
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="text-label text-headline">
@@ -187,7 +187,7 @@ export function ClubRosterSection({
                       {stageStyle?.label ?? coach.careerStage}
                     </Badge>
                   </div>
-                </FacetCard>
+                </Card>
               );
             })}
           </div>

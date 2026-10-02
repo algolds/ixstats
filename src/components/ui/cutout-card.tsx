@@ -1,13 +1,9 @@
 "use client";
 
 /**
- * CutoutCard — the v2 feature/media card, restored for Facet 3.1 (spec §16; c5c6b382
- * `cutout-card.tsx`): a 28px card (`rounded-cutout`) with the inverted-corner SVG notch
- * (`CutoutCorner`, `CutoutCardHeader`), media that zooms on hover, a blur-in stagger for its text,
- * and a hover-revealed action region.
- *
- * Use it for feature, hero and media cards — dashboard widgets, vault, thinktanks, messages.
- * Dense UI (lists, tables, forms) keeps the concentric `FacetCard`/`FacetList` radii.
+ * CutoutCard: the feature/media card (28px, `rounded-cutout`) with the inverted-corner notch
+ * (`CutoutCorner`, `CutoutCardHeader`), media that zooms on hover, a blur-in stagger for its text
+ * and a hover-revealed action region. Dense UI (lists, tables, forms) uses `Card`.
  *
  * ```tsx
  * <CutoutCard variant="card" onClick={open} aria-label="Open the Vault">
@@ -15,21 +11,10 @@
  *   <CutoutCardMedia className="aspect-video">
  *     <CutoutCardImage src={cover} alt="" />
  *   </CutoutCardMedia>
- *   <CutoutCardStagger>
- *     <CutoutCardStaggerItem><h3 className="text-title-3">Pack drop</h3></CutoutCardStaggerItem>
- *   </CutoutCardStagger>
  * </CutoutCard>
  * ```
  *
- * Modernised from v2: roles instead of palette/`dark:`, motion from `~/lib/design/motion`, Reduce
- * Motion safe (no zoom, lift, press or blur — the stagger becomes a fade), keyboard accessible when
- * pressable (`onClick` → `role="button"`, Tab, Enter/Space, a focus ring outside the clip, a 44pt
- * minimum height on touch screens).
- *
- * Facet 3.1 HIG pass (spec §16.8): `accent` re-tints the card's glow, rim, glass wash and its
- * `CutoutCardHeader` strip and icon (scoped `--facet-accent`; `retint` also re-tints the subtree's
- * `--tint`), `rim` paints the v2 gold / accent rim, `CutoutCardHeader as="h3"` makes the title a
- * real heading, and a glass cutout inside another glass surface renders the opaque card.
+ * Reduce Motion safe; with `onClick` it is a keyboard-operable button.
  */
 
 import {
@@ -48,33 +33,20 @@ import { useControllableState } from "~/hooks/useControllableState";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 
 import { cn } from "~/lib/utils/cn";
-import { accentProps, RIM_CLASS, type FacetAccent, type FacetRim } from "~/lib/design/identity";
 import { EASE_OUT_FACET, springGentle, tweenFast } from "~/lib/design/motion";
-import { TextureOverlay, type TextureType } from "~/components/ui/texture-overlay";
-import { TintGlow, type TintGlowPosition } from "~/components/ui/facet/identity/Glow";
-import {
-  GlassSurfaceContext,
-  useInsideGlass,
-  warnNestedGlass,
-} from "~/components/ui/facet/shared/nesting";
 
 // ============================================================================
 // Tokens — the card chrome
 // ============================================================================
 
-/**
- * The v2 cutout elevation (`--cutout-shadow` → `--cutout-shadow-hover`) with a `separator` hairline.
- */
 export const cutoutCardSurfaceShadowClassName =
   "border border-separator shadow-(--cutout-shadow) hover:shadow-(--cutout-shadow-hover) [--facet-lift-shadow:var(--cutout-shadow-hover)]";
 
-/** The opaque cutout surface (28px, `surface`) with the hover group the parts react to. */
 export const cutoutCardSurfaceClassName = cn(
   "group/cutout bg-surface text-label rounded-cutout relative overflow-hidden",
   cutoutCardSurfaceShadowClassName
 );
 
-/** The glass cutout surface (Facet 3.1 hero tier) for hero/feature media cards. */
 export const cutoutCardGlassClassName =
   "group/cutout material-hero text-label rounded-cutout relative overflow-hidden";
 
@@ -85,11 +57,7 @@ const VARIANT_CLASS: Record<CutoutCardVariant, string> = {
   glass: cutoutCardGlassClassName,
 };
 
-/**
- * Staggered text/footer entrance — the v2 blur-in (12px rise + 5px blur → sharp, gentle spring).
- * Under Reduce Motion: a 150ms cross-fade, no movement or blur. Prefer `CutoutCardStagger` /
- * `CutoutCardStaggerItem`, which use these.
- */
+/** Blur-in rise for staggered text; a 150ms cross-fade under Reduce Motion. */
 export function useCutoutContentStaggerVariants() {
   const reduceMotion = useReducedMotion();
 
@@ -150,39 +118,13 @@ export function useOptionalCutoutCard() {
 // ============================================================================
 
 export type CutoutCardProps = Omit<ComponentProps<typeof motion.div>, "defaultValue"> & {
-  /**
-   * The card chrome. `"card"` — opaque `surface`, 28px, separator hairline, the v2 cutout shadow
-   * stack; `"glass"` — the Facet 3.1 glass hero tier. Omit to style it yourself (legacy callers pass
-   * `cutoutCardSurfaceClassName`).
-   */
+  /** `card` is the opaque cutout surface, `glass` the hero glass. Omit to style it yourself. */
   variant?: CutoutCardVariant;
   /**
-   * Hover lift (translate up 2px + deeper shadow). Default: on when the card is pressable
-   * (`onClick`) or `interactive`.
-   */
-  lift?: boolean;
-  /**
-   * The card is interactive without being a button (e.g. it contains a stretched link): it lifts
-   * on hover. A card with `onClick` is a button (focusable, Enter/Space) and also presses.
+   * Interactive without being a button (e.g. it holds a stretched link): lifts on hover. A card with
+   * `onClick` is a button (focusable, Enter/Space) and also presses.
    */
   interactive?: boolean;
-  /** Facet 3.1 domain glow blob in the app tint (or `accent`) behind the content. */
-  glow?: boolean;
-  /**
-   * Facet 3.1 accent: a system colour role, `"tint"` or `"gold"`. Re-tints this card's glow, rim,
-   * glass wash and `CutoutCardHeader` strip/icon through the scoped `--facet-accent` (the v2
-   * per-widget hue) without changing `--tint` for the content; `retint` does that too.
-   */
-  accent?: FacetAccent;
-  /**
-   * With `accent`: also re-tint the subtree's `--tint` (links, `text-tint`, tinted badges, focus
-   * rings) — what the dashboard's `widgetAccent` style did. @default false
-   */
-  retint?: boolean;
-  /** The v2 rim over the card's border: `"gold"` or `"tint"` (the accent). */
-  rim?: FacetRim;
-  /** Where the glow blob sits. @default "top-right" */
-  glowPosition?: TintGlowPosition;
   /** When set, hover state is controlled by the parent. */
   hovered?: boolean;
   /** Initial hover state when uncontrolled. */
@@ -194,24 +136,13 @@ export type CutoutCardProps = Omit<ComponentProps<typeof motion.div>, "defaultVa
    * within reveals hover-only actions). Set false if you only drive hover programmatically.
    */
   trackPointerHover?: boolean;
-  /** Tactile texture overlay to render inside the card. */
-  texture?: TextureType;
-  /** Opacity override for the texture overlay. */
-  textureOpacity?: number;
   children?: ReactNode;
 };
 
 export function CutoutCard({
   className,
   variant,
-  lift,
   interactive = false,
-  glow = false,
-  glowPosition,
-  accent,
-  retint = false,
-  rim,
-  style,
   hovered: hoveredProp,
   defaultHovered = false,
   onHoveredChange,
@@ -222,8 +153,6 @@ export function CutoutCard({
   onBlur,
   onClick,
   onKeyDown,
-  texture,
-  textureOpacity,
   children,
   ...props
 }: CutoutCardProps) {
@@ -250,13 +179,7 @@ export function CutoutCard({
   );
 
   const pressable = Boolean(onClick);
-  const lifts = lift ?? (pressable || interactive);
-  const insideGlass = useInsideGlass();
-  const nestedGlass = variant === "glass" && insideGlass;
-  if (nestedGlass) warnNestedGlass("CutoutCard");
-  // Glass never nests: a glass cutout inside another glass surface renders the opaque card.
-  const surface: CutoutCardVariant | undefined = nestedGlass ? "card" : variant;
-  const accented = accentProps(accent, retint);
+  const lifts = pressable || interactive;
 
   const handleMouseEnter: MouseEventHandler<HTMLDivElement> = (e) => {
     onMouseEnter?.(e);
@@ -290,27 +213,19 @@ export function CutoutCard({
     }
   };
 
-  const card = (
+  return (
     <CutoutCardContext.Provider value={ctx}>
       <motion.div
         animate={{ opacity: 1 }}
         className={cn(
           "relative",
-          surface && VARIANT_CLASS[surface],
-          glow && "isolate overflow-hidden",
+          variant && VARIANT_CLASS[variant],
           lifts && "facet-lift",
           pressable &&
-            "facet-press facet-press-subtle focus-visible:outline-tint cursor-pointer select-none focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11",
-          rim && RIM_CLASS[rim],
-          accented.className,
+            "facet-press focus-visible:outline-tint cursor-pointer select-none focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11",
           className
         )}
-        style={accented.style ? { ...accented.style, ...style } : style}
         data-slot="cutout-card"
-        data-variant={surface}
-        data-nested-glass={nestedGlass || undefined}
-        data-accent={accented["data-accent"]}
-        data-rim={rim}
         data-state={ctx.hovered ? "hovered" : "idle"}
         initial={{ opacity: 0 }}
         onMouseEnter={handleMouseEnter}
@@ -323,18 +238,9 @@ export function CutoutCard({
         transition={reduceMotion ? tweenFast : { duration: 0.36, ease: EASE_OUT_FACET }}
         {...props}
       >
-        {glow && <TintGlow position={glowPosition} className="-z-10" />}
-        {texture && texture !== "none" && (
-          <TextureOverlay texture={texture} opacity={textureOpacity ?? 0.05} />
-        )}
         {children}
       </motion.div>
     </CutoutCardContext.Provider>
-  );
-  return surface === "glass" ? (
-    <GlassSurfaceContext.Provider value={true}>{card}</GlassSurfaceContext.Provider>
-  ) : (
-    card
   );
 }
 
@@ -482,7 +388,7 @@ export function CutoutCorner({
 export type CutoutCardHeaderTitleElement = "span" | "div" | "h2" | "h3" | "h4";
 
 export interface CutoutCardHeaderProps extends HTMLAttributes<HTMLDivElement> {
-  /** Leading glyph, coloured by the accent (the app tint unless `accent` is set), 16px. */
+  /** Leading glyph in the app tint, 16px. */
   icon?: ReactNode;
   /** Trailing content (a count `Badge`, a link). Never inside the heading. */
   trailing?: ReactNode;
@@ -494,46 +400,31 @@ export interface CutoutCardHeaderProps extends HTMLAttributes<HTMLDivElement> {
    * `trailing` stay outside the heading. @default "span"
    */
   as?: CutoutCardHeaderTitleElement;
-  /**
-   * Accent for this header only (strip fill and icon); by default it follows the card's `accent`
-   * (or the app tint).
-   */
-  accent?: FacetAccent;
 }
 
 /**
- * The v2 cutout tab header: a tinted strip (the accent fill — the app tint's `tint-fill` unless the
- * card or header sets `accent`) whose bottom corners curve into the card body with `CutoutCorner`
- * notches in the card's surface colour — the CutoutCard signature (v2 dashboard widgets, vault
- * sections). Use on `variant="card"` cards; the title is sentence case `text-headline` in `label`
- * (≥ 4.5:1 on every accent fill, token-contrast.test.ts) and `as="h3"` makes it a heading.
+ * The cutout tab header: a tinted strip whose bottom corners curve into the card body with
+ * `CutoutCorner` notches in the card's surface colour. Use on `variant="card"` cards; `as="h3"`
+ * makes the title a heading.
  */
 export function CutoutCardHeader({
   icon,
   trailing,
   cornerSize = 20,
   as: Title = "span",
-  accent,
   className,
-  style,
   children,
   ...props
 }: CutoutCardHeaderProps) {
-  const accented = accentProps(accent);
   return (
     <div
       data-slot="cutout-card-header"
-      data-accent={accented["data-accent"]}
-      className={cn("bg-facet-accent-fill relative px-4 pt-3 pb-5", className)}
-      style={accented.style ? { ...accented.style, ...style } : style}
+      className={cn("bg-tint-fill relative px-4 pt-3 pb-5", className)}
       {...props}
     >
       <div className="text-headline text-label flex items-center gap-2">
         {icon != null && (
-          <span
-            aria-hidden
-            className="text-facet-accent inline-flex shrink-0 [:where(&)_svg]:size-4"
-          >
+          <span aria-hidden className="text-tint inline-flex shrink-0 [:where(&)_svg]:size-4">
             {icon}
           </span>
         )}

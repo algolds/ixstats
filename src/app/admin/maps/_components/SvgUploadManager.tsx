@@ -1,16 +1,4 @@
 "use client";
-
-/**
- * SvgUploadManager - Admin tab for uploading and managing SVG map layers.
- *
- * Features:
- * - Layer type selector
- * - Drag-and-drop SVG file upload
- * - Upload history table with status badges
- * - Process, preview, commit, rollback actions
- */
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { useState, useRef, useCallback } from "react";
 import { api } from "~/trpc/react";
 import { notifyFromStore } from "~/hooks/useNotify";
@@ -46,6 +34,7 @@ import {
   TableHead,
   TableCell,
 } from "~/components/ui/table";
+import { Card } from "~/components/ui/card";
 
 const LAYER_TYPES = [
   { value: "political", label: "Political" },
@@ -205,13 +194,13 @@ export function SvgUploadManager() {
             </SelectContent>
           </Select>
 
-          <FacetCard className="text-label-secondary rounded-control text-footnote p-3">
+          <Card className="text-label-secondary rounded-control text-footnote p-3">
             <p className="text-label font-medium">Upload an Inkscape SVG</p>
             <p className="mt-1">
               The SVG should contain a layer group matching the selected type. Features are
               extracted from <code>&lt;path&gt;</code> elements within the layer.
             </p>
-          </FacetCard>
+          </Card>
         </div>
 
         {/* Right: Upload zone */}
@@ -275,9 +264,9 @@ export function SvgUploadManager() {
             ))}
           </div>
         ) : !history || history.length === 0 ? (
-          <FacetCard className="text-label-secondary rounded-control text-body p-8 text-center">
+          <Card className="text-label-secondary rounded-control text-body p-8 text-center">
             No uploads yet for this layer type.
-          </FacetCard>
+          </Card>
         ) : (
           <Table>
             <TableHeader>

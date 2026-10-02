@@ -4,7 +4,6 @@ import React, { useMemo } from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
-import { FacetCard } from "~/components/ui/facet-container";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import {
@@ -25,6 +24,7 @@ import { StandingsTable, type StandingsRow } from "~/components/sports/Standings
 import type { SportsNavSection } from "~/components/sports/core/SportsSidebarNav";
 import { cn } from "~/lib/utils";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { Card } from "~/components/ui/card";
 
 interface StandingLeader {
   teamId: string;
@@ -147,24 +147,24 @@ export function LeagueOverviewTab({
           </div>
 
           {standingsLoading ? (
-            <FacetCard padding="lg" className="space-y-2">
+            <Card padding="lg" className="space-y-2">
               <Skeleton className="rounded-row h-8 w-full" />
               <Skeleton className="rounded-row h-8 w-full" />
               <Skeleton className="rounded-row h-8 w-full" />
               <Skeleton className="rounded-row h-8 w-full" />
               <Skeleton className="rounded-row h-8 w-full" />
-            </FacetCard>
+            </Card>
           ) : (
-            <FacetCard className="overflow-hidden">
+            <Card className="overflow-hidden">
               <StandingsTable standings={standingsRows.slice(0, 8)} onTeamClick={onTeamClick} />
-            </FacetCard>
+            </Card>
           )}
         </div>
 
         {/* Right 1/3 Column: Next Round & Top Teams */}
         <div className="space-y-6">
           {/* Next Up / Simulation Card */}
-          <FacetCard padding="md" className="space-y-4">
+          <Card padding="md" className="space-y-4">
             <div className="flex items-center justify-between">
               <Eyebrow>Next Round</Eyebrow>
               <Badge variant={activeSeason ? "success" : "neutral"}>
@@ -259,11 +259,11 @@ export function LeagueOverviewTab({
                 )}
               </div>
             )}
-          </FacetCard>
+          </Card>
 
           {/* Top Teams */}
           {topContenders.length > 0 && (
-            <FacetCard padding="md" className="space-y-3">
+            <Card padding="md" className="space-y-3">
               <h3 className="text-subhead text-label-secondary flex items-center gap-2">
                 <Flame className="text-orange size-4" aria-hidden />
                 Top Teams
@@ -316,7 +316,7 @@ export function LeagueOverviewTab({
                   );
                 })}
               </FacetListSection>
-            </FacetCard>
+            </Card>
           )}
         </div>
       </div>
@@ -341,14 +341,14 @@ export function LeagueOverviewTab({
             onMatchClick={onMatchClick}
           />
         ) : (
-          <FacetCard>
+          <Card>
             <EmptyState
               compact
               icon={<Calendar />}
               title="No Matches Played Yet"
               message="Simulate a round above to view match results."
             />
-          </FacetCard>
+          </Card>
         )}
       </section>
     </div>

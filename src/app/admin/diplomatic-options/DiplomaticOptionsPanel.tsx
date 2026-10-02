@@ -40,7 +40,6 @@ import {
 } from "iconoir-react";
 import { AdminHeader } from "../_components/AdminHeader";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Table,
   TableHeader,
@@ -49,6 +48,7 @@ import {
   TableHead,
   TableCell,
 } from "~/components/ui/table";
+import { Card } from "~/components/ui/card";
 
 type DiplomaticOptionType = "strategic_priority" | "partnership_goal" | "key_achievement";
 
@@ -257,24 +257,24 @@ export function DiplomaticOptionsPanel() {
 
       {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Options</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{options?.length || 0}</p>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Active Registry</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">
             {options?.filter((o) => o.isActive).length || 0}
           </p>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Filtered Results</p>
           <p className="text-title-2 text-teal mt-1 tabular-nums">{filteredOptions.length}</p>
-        </FacetCard>
-        <FacetCard className="p-4">
+        </Card>
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Selected</p>
           <p className="text-title-2 text-purple mt-1 tabular-nums">{selectedIds.size}</p>
-        </FacetCard>
+        </Card>
       </div>
 
       <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full">
@@ -386,7 +386,7 @@ export function DiplomaticOptionsPanel() {
               ))}
             </div>
           ) : filteredOptions.length === 0 ? (
-            <FacetCard className="p-12 text-center">
+            <Card className="p-12 text-center">
               <Filter className="text-label-secondary mx-auto mb-3 h-8 w-8" />
               <p className="text-label-secondary text-footnote">
                 No diplomatic options matching criteria.
@@ -395,9 +395,9 @@ export function DiplomaticOptionsPanel() {
                 <Plus className="mr-2 h-3.5 w-3.5" />
                 Add First Option
               </Button>
-            </FacetCard>
+            </Card>
           ) : (
-            <FacetCard>
+            <Card>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -486,7 +486,7 @@ export function DiplomaticOptionsPanel() {
                   ))}
                 </TableBody>
               </Table>
-            </FacetCard>
+            </Card>
           )}
         </TabsContent>
 

@@ -23,7 +23,6 @@ import {
 import { Input } from "~/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Stat } from "~/components/ui/stat";
 import { Skeleton } from "~/components/ui/skeleton";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
@@ -35,6 +34,7 @@ import { vaultNotify } from "~/lib/vault/vault-notifications";
 import { AuctionCardItem } from "./auctions/AuctionCardItem";
 import { CreateAuctionModal } from "./auctions/CreateAuctionModal";
 import type { MarketAuctionItem } from "./auctions/types";
+import { Card } from "~/components/ui/card";
 
 interface AuctionFilters {
   rarity: string;
@@ -198,10 +198,10 @@ export function VaultAuctionsTab() {
             icon: History,
           },
         ].map((stat) => (
-          <FacetCard key={stat.label} padding="sm" className="flex items-center gap-3">
+          <Card key={stat.label} padding="sm" className="flex items-center gap-3">
             <stat.icon className={cn("size-4 shrink-0", stat.color)} aria-hidden />
             <Stat size="sm" label={stat.label} value={stat.value} className="min-w-0 flex-1" />
-          </FacetCard>
+          </Card>
         ))}
       </div>
 
@@ -289,7 +289,7 @@ export function VaultAuctionsTab() {
       </div>
 
       {/* Tabs */}
-      <FacetCard padding="md">
+      <Card padding="md">
         <Tabs value={selectedTab} onValueChange={handleTabChange}>
           <TabsList className="mb-4">
             <TabsTrigger value="browse">
@@ -627,7 +627,7 @@ export function VaultAuctionsTab() {
             )}
           </TabsContent>
         </Tabs>
-      </FacetCard>
+      </Card>
 
       <CardDetailsModal
         card={detailCard}

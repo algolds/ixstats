@@ -2,8 +2,8 @@
 
 import React from "react";
 import { cn } from "~/lib/utils/cn";
-import { FacetCard } from "~/components/ui/facet-container";
 import type { FacetColumn } from "./types";
+import { Card } from "~/components/ui/card";
 
 interface FacetMobileCardProps<T> {
   row: T;
@@ -53,11 +53,12 @@ export function FacetMobileCard<T extends Record<string, any>>({
 
   return (
     // The opaque content card (§7.1); a pressable FacetCard (keyboard, focus ring) when onClick.
-    <FacetCard
+    <Card
       data-slot="facet-mobile-card"
       data-cuelume-press
       onClick={onClick ? () => onClick(row) : undefined}
       className={cn("flex flex-col gap-3 p-4", className)}
+      interactive
     >
       {/* ─── Header: Hero + Badges + Actions ─────────────────────── */}
       <div className="flex items-start justify-between gap-2">
@@ -124,6 +125,6 @@ export function FacetMobileCard<T extends Record<string, any>>({
           ))}
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }

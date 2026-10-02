@@ -173,7 +173,7 @@ export function AlertRulesPanel() {
         </Badge>
       </div>
 
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardContent className="p-0">
           <Table containerClassName="max-h-[600px]">
             <TableHeader sticky>

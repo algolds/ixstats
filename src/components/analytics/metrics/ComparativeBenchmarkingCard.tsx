@@ -19,7 +19,7 @@ interface ComparativeBenchmarkingCardProps {
 export const ComparativeBenchmarkingCard = React.memo<ComparativeBenchmarkingCardProps>(
   ({ data }) => {
     return (
-      <Card className="facet-hierarchy-child">
+      <Card className="facet-hierarchy-child flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-indigo-600" />

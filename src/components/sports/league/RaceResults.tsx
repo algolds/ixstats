@@ -24,7 +24,7 @@ import {
 } from "iconoir-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { CircuitMap } from "~/components/sports/surfaces";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface RaceResultsProps {
   races: Array<{
@@ -98,7 +98,7 @@ function DriverStandingsTable({ races }: { races: RaceResultsProps["races"] }) {
   if (sorted.length === 0) return null;
 
   return (
-    <FacetCard padding="lg" className="space-y-4 overflow-hidden">
+    <Card padding="lg" className="space-y-4 overflow-hidden">
       <div className="border-separator flex items-center justify-between border-b pb-3">
         <div className="flex items-center gap-2">
           <div className="rounded-row border-separator bg-surface-secondary shadow-card flex h-8 w-8 items-center justify-center border">
@@ -151,7 +151,7 @@ function DriverStandingsTable({ races }: { races: RaceResultsProps["races"] }) {
           ))}
         </TableBody>
       </Table>
-    </FacetCard>
+    </Card>
   );
 }
 
@@ -168,7 +168,7 @@ export function RaceResults({ races, className }: RaceResultsProps) {
 
       <div className="space-y-6">
         {sortedRaces.map((race) => (
-          <FacetCard key={race.id} className="relative space-y-6 overflow-hidden p-6 md:p-8">
+          <Card key={race.id} className="relative space-y-6 overflow-hidden p-6 md:p-8">
             <div className="border-separator flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className="rounded-row border-separator bg-surface-secondary shadow-card flex h-9 w-9 items-center justify-center border">
@@ -286,7 +286,7 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                 </div>
               )}
             </div>
-          </FacetCard>
+          </Card>
         ))}
       </div>
     </div>

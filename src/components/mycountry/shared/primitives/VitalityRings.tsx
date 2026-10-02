@@ -213,7 +213,7 @@ export function VitalityRings({
   }
 
   return (
-    <Card className="px-3 py-2">
+    <Card className="flex flex-col gap-6 px-3 py-2 py-6">
       <div className="mb-2 flex items-center gap-1">
         <Activity className="text-blue h-3.5 w-3.5" />
         <span className="text-caption font-semibold">{title}</span>

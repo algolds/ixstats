@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Reports as PieChart, StatsReport as BarChart3, Flash as Zap } from "iconoir-react";
 import { GlassBarChart, GlassPieChart } from "~/components/shared/charts/RechartsIntegration";
 import { getColorsFromData } from "~/lib/themes";
 import { SECTOR_TEMPLATES } from "../utils/sectorCalculations";
 import type { SectorConfiguration } from "~/types/economy-builder";
+import { Card, CardContent } from "~/components/ui/card";
 
 interface SectorVisualizationsProps {
   sectors: SectorConfiguration[];
@@ -42,8 +42,8 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
   return (
     <div className="space-y-6">
       {/* GDP Composition */}
-      <FacetCard>
-        <FacetCardContent className="p-6">
+      <Card>
+        <CardContent className="p-6">
           <h3 className="text-headline text-green mb-4 flex items-center gap-2">
             <PieChart className="h-5 w-5" />
             <span>GDP Composition</span>
@@ -61,12 +61,12 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
               colors={getColorsFromData(sectorChartData)}
             />
           )}
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
 
       {/* Employment Distribution */}
-      <FacetCard>
-        <FacetCardContent className="p-6">
+      <Card>
+        <CardContent className="p-6">
           <h3 className="text-headline text-green mb-4 flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
             <span>Employment Distribution</span>
@@ -85,12 +85,12 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
               colors={getColorsFromData(employmentChartData)}
             />
           )}
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
 
       {/* Component Impact Summary */}
-      <FacetCard>
-        <FacetCardContent className="p-6">
+      <Card>
+        <CardContent className="p-6">
           <h3 className="text-headline text-green mb-4 flex items-center gap-2">
             <Zap className="h-5 w-5" />
             <span>Atomic Component Impact</span>
@@ -117,8 +117,8 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
               );
             })}
           </div>
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
     </div>
   );
 }

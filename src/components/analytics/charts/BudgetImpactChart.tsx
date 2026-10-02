@@ -33,7 +33,7 @@ interface BudgetImpactChartProps {
 export const BudgetImpactChart = React.memo<BudgetImpactChartProps>(
   ({ data, GlassTooltip, onExportCSV, onExportPDF }) => {
     return (
-      <Card className="facet-hierarchy-child" id="budget-impact-chart">
+      <Card className="facet-hierarchy-child flex flex-col gap-6 py-6" id="budget-impact-chart">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">

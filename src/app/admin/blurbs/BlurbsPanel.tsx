@@ -42,7 +42,7 @@ import {
   Search,
 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export function BlurbsPanel() {
   usePageTitle({ title: "Admin - Blurbs & Prompts" });
@@ -101,7 +101,7 @@ function BlurbStatsSummary() {
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-      <FacetCard className="p-4">
+      <Card className="p-4">
         <p className="text-label-secondary text-eyebrow">Total Responses</p>
         {countLoading ? (
           <Skeleton className="mt-1 h-7 w-16" />
@@ -110,25 +110,25 @@ function BlurbStatsSummary() {
             {(blurbCount ?? 0).toLocaleString()}
           </p>
         )}
-      </FacetCard>
+      </Card>
 
-      <FacetCard className="p-4">
+      <Card className="p-4">
         <p className="text-label-secondary text-eyebrow">Active Prompts</p>
         {activeLoading ? (
           <Skeleton className="mt-1 h-7 w-16" />
         ) : (
           <p className="text-title-2 text-green mt-1 tabular-nums">{activePrompts?.length ?? 0}</p>
         )}
-      </FacetCard>
+      </Card>
 
-      <FacetCard className="p-4">
+      <Card className="p-4">
         <p className="text-label-secondary text-eyebrow">All Prompts Catalog</p>
         {allLoading ? (
           <Skeleton className="mt-1 h-7 w-16" />
         ) : (
           <p className="text-title-2 text-teal mt-1 tabular-nums">{allPrompts?.length ?? 0}</p>
         )}
-      </FacetCard>
+      </Card>
     </div>
   );
 }
@@ -342,15 +342,15 @@ function PromptManagementSection() {
             ))}
           </div>
         ) : !filteredPrompts || filteredPrompts.length === 0 ? (
-          <FacetCard className="p-8 text-center">
+          <Card className="p-8 text-center">
             <p className="text-label-secondary text-footnote">No prompts found matching query.</p>
-          </FacetCard>
+          </Card>
         ) : (
           filteredPrompts.map((prompt) => {
             const config = STATUS_CONFIG[prompt.status];
             const StatusIcon = config.icon;
             return (
-              <FacetCard
+              <Card
                 key={prompt.id}
                 className="hover:border-separator flex flex-col justify-between gap-3 p-4 transition-colors sm:flex-row sm:items-center"
               >
@@ -432,7 +432,7 @@ function PromptManagementSection() {
                     )}
                   </div>
                 </div>
-              </FacetCard>
+              </Card>
             );
           })
         )}
@@ -477,7 +477,7 @@ function ResponseModerationSection() {
   const responses = responsesData?.pages.flatMap((p) => p.responses) ?? [];
 
   return (
-    <FacetCard className="space-y-4 p-5">
+    <Card className="space-y-4 p-5">
       <div className="border-separator max-w-md space-y-2 border-b pb-4">
         <Label className="text-label-secondary text-subhead">Select Discussion Prompt</Label>
         <Select value={selectedPromptId} onValueChange={setSelectedPromptId}>
@@ -563,7 +563,7 @@ function ResponseModerationSection() {
           )}
         </div>
       )}
-    </FacetCard>
+    </Card>
   );
 }
 

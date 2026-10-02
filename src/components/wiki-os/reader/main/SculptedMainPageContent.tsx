@@ -30,7 +30,6 @@ import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
 import type { MainPageContentProps } from "./types";
-import { Refraction } from "~/components/ui/facet";
 
 function ActivityItemThumbnail({ src, title }: { src?: string | null; title?: string | null }) {
   const [hasError, setHasError] = useState(false);
@@ -141,7 +140,6 @@ export function SculptedMainPageContent({
 
             {/* Bottom: Structured World Almanac Spotlight Card */}
             <div className="group material-hero text-label relative isolate flex flex-1 flex-col justify-between overflow-hidden rounded-2xl p-4 sm:rounded-3xl sm:p-5">
-              <Refraction />
               <TextureOverlay texture="paperGrain" opacity={0.05} />
 
               {/* Eyebrow Header: Badge + Byline + Category Link */}

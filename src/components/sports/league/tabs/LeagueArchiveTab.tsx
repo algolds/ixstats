@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Eyebrow } from "~/components/ui/eyebrow";
@@ -12,6 +11,7 @@ import { Trophy, Sparks as Sparkles, Activity, Calendar } from "iconoir-react";
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
+import { Card } from "~/components/ui/card";
 
 export interface LeagueArchiveTabProps {
   leagueId: string;
@@ -49,13 +49,13 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
 
   if (!archive || archive.length === 0) {
     return (
-      <FacetCard>
+      <Card>
         <EmptyState
           icon={<Trophy />}
           title="No Historical Archive Yet"
           message="Complete the active season to crown a champion and begin the historical roll-of-honor."
         />
-      </FacetCard>
+      </Card>
     );
   }
 
@@ -137,9 +137,9 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
             })}
           </RadioCardGroup>
         ) : (
-          <FacetCard padding="lg" className="text-footnote text-label-secondary text-center">
+          <Card padding="lg" className="text-footnote text-label-secondary text-center">
             No completed seasons yet. The title will be engraved here upon season finish.
-          </FacetCard>
+          </Card>
         )}
       </section>
 
@@ -158,7 +158,7 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
             </span>
           </div>
 
-          <FacetCard padding="md" className="overflow-hidden">
+          <Card padding="md" className="overflow-hidden">
             <div className="overflow-x-auto">
               <table className="text-footnote w-full text-left tabular-nums">
                 <thead>
@@ -223,7 +223,7 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
                 </tbody>
               </table>
             </div>
-          </FacetCard>
+          </Card>
         </section>
       )}
 
@@ -237,7 +237,7 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* Top Champions Leaderboard */}
-            <FacetCard padding="md" className="space-y-3">
+            <Card padding="md" className="space-y-3">
               <div className="border-separator flex items-center justify-between border-b pb-2">
                 <h4 className="text-subhead text-label-secondary">Championship leaderboard</h4>
                 <Trophy className="text-yellow size-4" aria-hidden />
@@ -276,10 +276,10 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
               ) : (
                 <p className="text-footnote text-label-secondary py-2">No champions crowned yet.</p>
               )}
-            </FacetCard>
+            </Card>
 
             {/* Highest Scoring Match Fact Card */}
-            <FacetCard padding="md" className="flex flex-col justify-between">
+            <Card padding="md" className="flex flex-col justify-between">
               <div className="border-separator flex items-center justify-between border-b pb-2">
                 <h4 className="text-subhead text-label-secondary">Highest-scoring fixture</h4>
                 <Sparkles className="text-tint size-4" aria-hidden />
@@ -311,7 +311,7 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
               <div className="border-separator text-footnote text-label-secondary border-t pt-2">
                 Canonical archive verified by IxStates Sports Engine
               </div>
-            </FacetCard>
+            </Card>
           </div>
         </section>
       )}

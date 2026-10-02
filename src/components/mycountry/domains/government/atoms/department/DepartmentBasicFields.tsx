@@ -2,7 +2,6 @@ import React from "react";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Textarea } from "~/components/ui/textarea";
 import { Slider } from "~/components/ui/slider";
 import {
@@ -18,6 +17,7 @@ import {
   organizationalLevels,
   getPriorityDetails,
 } from "./department-constants";
+import { Card } from "~/components/ui/card";
 
 interface DepartmentBasicFieldsProps {
   data: DepartmentInput;
@@ -129,7 +129,7 @@ export const DepartmentBasicFields = React.memo(function DepartmentBasicFields({
       </div>
 
       {/* Priority Level Slider */}
-      <FacetCard variant="inset" className="space-y-2 p-4">
+      <Card variant="inset" className="space-y-2 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h4 className="text-label text-headline">Operational priority</h4>
           <Badge variant="outline" className={priorityDetails.color}>
@@ -146,7 +146,7 @@ export const DepartmentBasicFields = React.memo(function DepartmentBasicFields({
           className="py-2"
         />
         <p className="text-label-secondary text-footnote">{priorityDetails.desc}</p>
-      </FacetCard>
+      </Card>
     </div>
   );
 });

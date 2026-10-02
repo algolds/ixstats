@@ -23,7 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 const STORAGE_KEY = "ixworld-editor-welcome-seen";
 
@@ -182,7 +182,7 @@ export function MapEditorWelcomeModal({
                 {TIPS.map((tip) => {
                   const Icon = tip.icon;
                   return (
-                    <FacetCard variant="inset" key={tip.title} className="flex flex-col gap-1 p-2">
+                    <Card variant="inset" key={tip.title} className="flex flex-col gap-1 p-2">
                       <div className="flex items-center gap-2">
                         <Icon className="text-blue h-4 w-4" aria-hidden />
                         <h3 className="text-label text-headline">{tip.title}</h3>
@@ -190,7 +190,7 @@ export function MapEditorWelcomeModal({
                       <p className="text-label-secondary text-footnote leading-relaxed">
                         {tip.description}
                       </p>
-                    </FacetCard>
+                    </Card>
                   );
                 })}
               </motion.div>
@@ -240,7 +240,7 @@ export function MapEditorWelcomeModal({
                 </h3>
                 <div className="max-h-[260px] scrollbar-thin space-y-2 overflow-y-auto pr-1">
                   {CHANGELOG.map((item) => (
-                    <FacetCard
+                    <Card
                       variant="inset"
                       key={item.title}
                       className="flex flex-col gap-0.5 p-2 text-left"
@@ -254,7 +254,7 @@ export function MapEditorWelcomeModal({
                       <p className="text-label-secondary text-footnote leading-relaxed">
                         {item.desc}
                       </p>
-                    </FacetCard>
+                    </Card>
                   ))}
                 </div>
               </motion.div>

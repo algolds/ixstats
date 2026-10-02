@@ -1,3 +1,4 @@
+import { motion } from "motion/react";
 /**
  * Facet 3.1 — HIG pass over the restored identity (docs/specs/2026-09-30-facet-3-design-system.md
  * §16.8). The primitive APIs that replace the app workarounds (`accent`, `retint`, `rim`,
@@ -14,8 +15,7 @@ import { AchievementCardBackdrop } from "~/components/achievements/AchievementDe
 import { getCategoryTheme } from "~/components/achievements/constants";
 import { Badge } from "~/components/ui/badge";
 import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
-import { FacetCard, MotionFacetCard } from "~/components/ui/facet-container";
-import { FacetMaterial, TintGlow } from "~/components/ui/facet";
+import { FacetMaterial } from "~/components/ui/facet";
 import {
   SANCTIONED_TEXTURES,
   TEXTURE_MAX_OPACITY,
@@ -31,6 +31,9 @@ import {
 import { DURATION_FAST } from "~/lib/design/motion";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { SYSTEM_COLORS, TEXT_STYLES } from "~/lib/design/tokens";
+import { Card } from "~/components/ui/card";
+
+const MotionCard = motion.create(Card);
 
 const classOf = (el: Element) => el.getAttribute("class") ?? "";
 const styleVar = (el: Element, name: string) => (el as HTMLElement).style.getPropertyValue(name);
@@ -69,9 +72,9 @@ describe("accent vocabulary", () => {
 describe("FacetCard accent / retint / rim", () => {
   it("accent scopes --facet-accent on the card (not --tint) and keeps the caller's style", () => {
     render(
-      <FacetCard data-testid="c" variant="glass" glow accent="green" style={{ minHeight: 10 }}>
+      <Card data-testid="c" variant="hero" style={{ minHeight: 10 }}>
         x
-      </FacetCard>
+      </Card>
     );
     const card = screen.getByTestId("c");
     expect(card).toHaveAttribute("data-accent", "green");
@@ -84,24 +87,12 @@ describe("FacetCard accent / retint / rim", () => {
   });
 
   it("retint re-tints the subtree only with a real accent", () => {
-    const { rerender } = render(
-      <FacetCard data-testid="c" accent="orange" retint>
-        x
-      </FacetCard>
-    );
+    const { rerender } = render(<Card data-testid="c">x</Card>);
     expect(classOf(screen.getByTestId("c"))).toMatch(/\bfacet-retint\b/);
-    rerender(
-      <FacetCard data-testid="c" accent="tint" retint>
-        x
-      </FacetCard>
-    );
+    rerender(<Card data-testid="c">x</Card>);
     // `--tint: var(--facet-accent)` with `--facet-accent: var(--tint)` would be a cycle.
     expect(classOf(screen.getByTestId("c"))).not.toMatch(/\bfacet-retint\b/);
-    rerender(
-      <FacetCard data-testid="c" retint>
-        x
-      </FacetCard>
-    );
+    rerender(<Card data-testid="c">x</Card>);
     expect(classOf(screen.getByTestId("c"))).not.toMatch(/\bfacet-retint\b/);
   });
 
@@ -109,26 +100,22 @@ describe("FacetCard accent / retint / rim", () => {
     ["gold", "facet-gold-rim"],
     ["tint", "facet-tint-rim"],
   ] as const)("rim=%s paints %s over the card's own border", (rim, cls) => {
-    const { rerender } = render(
-      <FacetCard data-testid="c" rim={rim}>
-        x
-      </FacetCard>
-    );
+    const { rerender } = render(<Card data-testid="c">x</Card>);
     expect(classOf(screen.getByTestId("c"))).toMatch(new RegExp(`\\b${cls}\\b`));
     expect(classOf(screen.getByTestId("c"))).toMatch(/\bborder-separator\b/);
     expect(screen.getByTestId("c")).toHaveAttribute("data-rim", rim);
     rerender(
-      <FacetCard data-testid="c" variant="glass" rim={rim}>
+      <Card data-testid="c" variant="hero">
         x
-      </FacetCard>
+      </Card>
     );
     expect(classOf(screen.getByTestId("c"))).toMatch(/\bmaterial-hero\b/);
     expect(classOf(screen.getByTestId("c"))).toMatch(new RegExp(`\\b${cls}\\b`));
     // An inset panel gets a border for the rim to recolour.
     rerender(
-      <FacetCard data-testid="c" variant="inset" rim={rim}>
+      <Card data-testid="c" variant="inset">
         x
-      </FacetCard>
+      </Card>
     );
     expect(classOf(screen.getByTestId("c"))).toMatch(/(^|\s)border(\s|$)/);
     expect(RIM_CLASS[rim]).toBe(cls);
@@ -136,9 +123,9 @@ describe("FacetCard accent / retint / rim", () => {
 
   it("MotionFacetCard takes accent and rim", () => {
     render(
-      <MotionFacetCard data-testid="m" accent="pink" rim="tint" initial={false}>
+      <MotionCard data-testid="m" initial={false}>
         x
-      </MotionFacetCard>
+      </MotionCard>
     );
     expect(styleVar(screen.getByTestId("m"), "--facet-accent")).toBe("var(--color-pink)");
     expect(classOf(screen.getByTestId("m"))).toMatch(/\bfacet-tint-rim\b/);
@@ -148,7 +135,7 @@ describe("FacetCard accent / retint / rim", () => {
 describe("CutoutCard accent and header", () => {
   it("accent re-tints the card and its header strip/icon through --facet-accent", () => {
     const { container } = render(
-      <CutoutCard data-testid="cut" variant="card" accent="orange" glow rim="tint">
+      <CutoutCard data-testid="cut" variant="card">
         <CutoutCardHeader icon={<svg data-testid="icon" />}>Trending</CutoutCardHeader>
       </CutoutCard>
     );
@@ -164,7 +151,7 @@ describe("CutoutCard accent and header", () => {
 
   it("retint is the widgetAccent replacement (subtree --tint follows the accent)", () => {
     render(
-      <CutoutCard data-testid="cut" variant="card" accent="indigo" retint>
+      <CutoutCard data-testid="cut" variant="card">
         <Badge variant="tinted">3</Badge>
       </CutoutCard>
     );
@@ -173,8 +160,8 @@ describe("CutoutCard accent and header", () => {
 
   it("the header accent overrides the card's for the strip only", () => {
     const { container } = render(
-      <CutoutCard variant="card" accent="blue">
-        <CutoutCardHeader accent="gold">Gold tab</CutoutCardHeader>
+      <CutoutCard variant="card">
+        <CutoutCardHeader>Gold tab</CutoutCardHeader>
       </CutoutCard>
     );
     const header = container.querySelector('[data-slot="cutout-card-header"]')!;
@@ -216,7 +203,7 @@ describe("CutoutCard accent and header", () => {
 describe("FacetMaterial accent", () => {
   it("scopes the accent for the hero wash and the glow", () => {
     render(
-      <FacetMaterial data-testid="m" material="acrylic" glow accent="cyan">
+      <FacetMaterial data-testid="m" material="acrylic">
         x
       </FacetMaterial>
     );
@@ -226,7 +213,7 @@ describe("FacetMaterial accent", () => {
   });
 
   it("TintGlow still takes an explicit colour over the accent", () => {
-    const { container } = render(<TintGlow color="var(--color-red)" />);
+    const { container } = render();
     expect(styleVar(container.querySelector('[data-slot="tint-glow"]')!, "--glow-color")).toBe(
       "var(--color-red)"
     );
@@ -242,13 +229,13 @@ describe("glass never nests (HIG materials)", () => {
 
   it("a glass FacetCard inside a glass FacetCard renders the opaque card", () => {
     render(
-      <FacetCard data-testid="outer" variant="glass">
-        <FacetCard variant="inset">
-          <FacetCard data-testid="inner" variant="glass">
+      <Card data-testid="outer" variant="hero">
+        <Card variant="inset">
+          <Card data-testid="inner" variant="hero">
             x
-          </FacetCard>
-        </FacetCard>
-      </FacetCard>
+          </Card>
+        </Card>
+      </Card>
     );
     const outer = screen.getByTestId("outer");
     const inner = screen.getByTestId("inner");
@@ -278,10 +265,10 @@ describe("glass never nests (HIG materials)", () => {
   it("siblings and chrome glass are not nesting", () => {
     render(
       <>
-        <FacetCard data-testid="a" variant="glass" />
-        <FacetCard data-testid="b" variant="glass" />
+        <Card data-testid="a" variant="hero" />
+        <Card data-testid="b" variant="hero" />
         <FacetMaterial material="thick">
-          <FacetCard data-testid="in-chrome" variant="glass" />
+          <Card data-testid="in-chrome" variant="hero" />
         </FacetMaterial>
       </>
     );
@@ -298,10 +285,10 @@ describe("touch targets, focus and keyboard (HIG)", () => {
     const onCutout = jest.fn();
     render(
       <>
-        <FacetCard variant="glass" glow onClick={onCard}>
+        <Card variant="hero" onClick={onCard} interactive>
           Open nation
-        </FacetCard>
-        <CutoutCard variant="card" glow onClick={onCutout} aria-label="Open vault" />
+        </Card>
+        <CutoutCard variant="card" onClick={onCutout} aria-label="Open vault" />
       </>
     );
     for (const [name, handler] of [
@@ -325,7 +312,7 @@ describe("touch targets, focus and keyboard (HIG)", () => {
   });
 
   it("static cards are not focusable and have no min height", () => {
-    render(<FacetCard data-testid="s">x</FacetCard>);
+    render(<Card data-testid="s">x</Card>);
     expect(screen.getByTestId("s")).not.toHaveAttribute("tabindex");
     expect(classOf(screen.getByTestId("s"))).not.toContain("min-h-11");
   });
@@ -455,9 +442,9 @@ describe("achievement aurora / radiance follow the card's accent", () => {
   it("AchievementCardBackdrop sets only the aurora's second hue; the card's accent drives the rest", () => {
     const theme = getCategoryTheme("Economic");
     const { container } = render(
-      <FacetCard accent={theme.accent} data-testid="card">
+      <Card data-testid="card">
         <AchievementCardBackdrop iconPath="/x.svg" categoryTheme={theme} isUnlocked />
-      </FacetCard>
+      </Card>
     );
     const card = screen.getByTestId("card");
     expect(styleVar(card, "--facet-accent")).toBe(accentColor(theme.accent));

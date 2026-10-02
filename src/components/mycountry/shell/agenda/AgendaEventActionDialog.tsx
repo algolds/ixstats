@@ -20,11 +20,11 @@ import {
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { STATUS_TEXT } from "../status-tone";
 import type { AgendaItem, ExecutiveAgendaProps } from "./agendaTypes";
 import { formatInboxTime } from "./deriveAgendaItems";
 import { SNOOZE_DAY_MS, SNOOZE_WEEK_MS, type InboxPlacement } from "./inboxState";
+import { Card } from "~/components/ui/card";
 
 interface AgendaEventActionDialogProps {
   selectedEvent: AgendaItem | null;
@@ -99,7 +99,7 @@ export function AgendaEventActionDialog({
           </DialogHeader>
 
           {/* Suggested directive: an opaque panel inside the dialog (no stacked blur) */}
-          <FacetCard variant="inset" className="space-y-1 p-4">
+          <Card variant="inset" className="space-y-1 p-4">
             <Eyebrow className="flex items-center gap-2">
               <Command aria-hidden="true" className="size-3.5" />
               Suggested directive
@@ -107,7 +107,7 @@ export function AgendaEventActionDialog({
             <p className="text-label text-body leading-snug">
               &ldquo;{selectedEvent.directiveGoal}&rdquo;
             </p>
-          </FacetCard>
+          </Card>
 
           <div className={cn("flex flex-col gap-2", isIssue && "flex-col-reverse")}>
             <Button

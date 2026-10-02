@@ -31,8 +31,6 @@ export function CutoutPanel({
 }: CutoutPanelProps) {
   return (
     <CutoutCard
-      texture={texture}
-      textureOpacity={textureOpacity}
       trackPointerHover={trackPointerHover}
       className={cn(
         "bg-surface text-label border-separator rounded-card relative overflow-hidden border",

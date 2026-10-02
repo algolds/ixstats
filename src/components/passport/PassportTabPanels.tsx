@@ -6,7 +6,6 @@ import { EyeClosed } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetCard } from "~/components/ui/facet-container";
 import { NationSwitcher } from "~/components/navigation/NationSwitcher";
 import { PassportHistoryTab } from "./tabs/PassportHistoryTab";
 import { PassportOverviewTab } from "./tabs/PassportOverviewTab";
@@ -14,6 +13,7 @@ import { PassportRealmsTab } from "./tabs/PassportRealmsTab";
 import { PassportVaultTab } from "./tabs/PassportVaultTab";
 import { PassportWorkTab } from "./tabs/PassportWorkTab";
 import type { PassportPayload, PassportTabType, PassportWiki } from "./types";
+import { Card } from "~/components/ui/card";
 
 const HISTORY_PAGE_SIZE = 50;
 
@@ -37,7 +37,7 @@ export function HiddenSection({
   isOwner: boolean;
 }) {
   return (
-    <FacetCard variant="inset" padding="none">
+    <Card variant="inset" padding="none">
       <EmptyState
         compact
         icon={<EyeClosed />}
@@ -48,7 +48,7 @@ export function HiddenSection({
             : `@${handle} keeps their ${what} private.`
         }
       />
-    </FacetCard>
+    </Card>
   );
 }
 

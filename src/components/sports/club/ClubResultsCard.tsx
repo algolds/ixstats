@@ -3,8 +3,8 @@
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { withBasePath } from "~/lib/base-path";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Card } from "~/components/ui/card";
 
 function TeamCrest({
   name,
@@ -75,18 +75,18 @@ export function ClubResultsCard({ teamId }: { teamId: string }) {
 
   if (isLoading) {
     return (
-      <FacetCard padding="lg" className="space-y-3" aria-busy="true" aria-label="Loading results">
+      <Card padding="lg" className="space-y-3" aria-busy="true" aria-label="Loading results">
         <Skeleton className="h-5 w-32" />
         <Skeleton className="rounded-row h-24 w-full" />
         <Skeleton className="h-4 w-2/3" />
-      </FacetCard>
+      </Card>
     );
   }
   if (!data || data.recent.length === 0) {
     return (
-      <FacetCard padding="lg" className="text-label-secondary text-body text-center">
+      <Card padding="lg" className="text-label-secondary text-body text-center">
         No completed matches yet. Results appear here once the season gets underway.
-      </FacetCard>
+      </Card>
     );
   }
 
@@ -94,7 +94,7 @@ export function ClubResultsCard({ teamId }: { teamId: string }) {
   const fmt = (ix: number | null) => (ix ? IxTime.formatIxTime(ix) : "—");
 
   return (
-    <FacetCard padding="lg" className="space-y-6 overflow-hidden">
+    <Card padding="lg" className="space-y-6 overflow-hidden">
       {/* ── Match Overview (latest result) ───────────────────────── */}
       {lastMatch && (
         <div className="space-y-4">
@@ -196,6 +196,6 @@ export function ClubResultsCard({ teamId }: { teamId: string }) {
           ))}
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

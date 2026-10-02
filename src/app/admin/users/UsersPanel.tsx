@@ -43,7 +43,6 @@ import {
 import { useNotify } from "~/hooks/useNotify";
 import { AdminHeader } from "../_components/AdminHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Table,
   TableHeader,
@@ -52,6 +51,7 @@ import {
   TableHead,
   TableCell,
 } from "~/components/ui/table";
+import { Card } from "~/components/ui/card";
 
 export function UsersPanel() {
   usePageTitle({ title: "Admin - User Identity & Accounts Hub" });
@@ -349,7 +349,7 @@ export function UsersPanel() {
         {/* TAB 1: MASTER IDENTITY MATRIX */}
         {/* ================================================================= */}
         <TabsContent value="identities" className="mt-4 space-y-4">
-          <FacetCard className="p-4">
+          <Card className="p-4">
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <h3 className="text-label text-headline">Registered User Identities</h3>
@@ -521,14 +521,14 @@ export function UsersPanel() {
                 </TableBody>
               </Table>
             )}
-          </FacetCard>
+          </Card>
         </TabsContent>
 
         {/* ================================================================= */}
         {/* TAB 2: WIKI RECONCILIATION & ALTS */}
         {/* ================================================================= */}
         <TabsContent value="wiki-reconciliation" className="mt-4 space-y-4">
-          <FacetCard className="p-4">
+          <Card className="p-4">
             <div className="mb-4">
               <h3 className="text-label text-headline">
                 MediaWiki ↔ IxnayID Reconciliation Ledger
@@ -665,14 +665,14 @@ export function UsersPanel() {
                 </TableBody>
               </Table>
             )}
-          </FacetCard>
+          </Card>
         </TabsContent>
 
         {/* ================================================================= */}
         {/* TAB 3: DISCORD BOT MEMBER SYNC */}
         {/* ================================================================= */}
         <TabsContent value="discord-sync" className="mt-4 space-y-4">
-          <FacetCard className="p-4">
+          <Card className="p-4">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-label text-headline">Discord Server Member Discovery</h3>
@@ -760,14 +760,14 @@ export function UsersPanel() {
                 </div>
               </div>
             )}
-          </FacetCard>
+          </Card>
         </TabsContent>
 
         {/* ================================================================= */}
         {/* TAB 4: COUNTRY CLAIMS & TIERS */}
         {/* ================================================================= */}
         <TabsContent value="country-claims" className="mt-4 space-y-4">
-          <FacetCard className="p-4">
+          <Card className="p-4">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h3 className="text-label text-headline">Country Claims & Player Overrides</h3>
@@ -843,7 +843,7 @@ export function UsersPanel() {
                 ))}
               </TableBody>
             </Table>
-          </FacetCard>
+          </Card>
         </TabsContent>
       </Tabs>
 

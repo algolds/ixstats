@@ -10,9 +10,9 @@
 
 import React, { useMemo } from "react";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Bank as Landmark, Flash as Zap } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { Card } from "~/components/ui/card";
 
 export interface InstitutionalFoundationRibbonProps {
   /** Array of active Government component keys or names from Step 3 */
@@ -106,7 +106,7 @@ export const InstitutionalFoundationRibbon = React.memo(function InstitutionalFo
   }
 
   return (
-    <FacetCard className={cn("rounded-card p-4", className)}>
+    <Card className={cn("rounded-card p-4", className)}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Left: institutional foundations from Step 3 */}
         <div className="flex min-w-0 items-start gap-3">
@@ -155,6 +155,6 @@ export const InstitutionalFoundationRibbon = React.memo(function InstitutionalFo
           )}
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 });

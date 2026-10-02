@@ -11,11 +11,11 @@
 import React from "react";
 import { Badge, badgeVariants, type SystemTintedColor } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Plus, Check, Flash as Zap, WarningTriangle as AlertTriangle } from "iconoir-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { cn, formatCurrency } from "~/lib/utils";
 import type { BaseAtomicComponent, InteractionInfo } from "./types";
+import { Card } from "~/components/ui/card";
 
 export interface AtomicCardProps<TType extends string = string> {
   component: BaseAtomicComponent<TType>;
@@ -87,8 +87,7 @@ function AtomicCardComponent<TType extends string = string>({
   };
 
   return (
-    <FacetCard
-      accent={hue}
+    <Card
       data-state={isSelected ? "selected" : undefined}
       className={cn(
         "group rounded-row flex flex-col justify-between p-4 text-left transition-[border-color,box-shadow,opacity] duration-150 select-none",
@@ -208,7 +207,7 @@ function AtomicCardComponent<TType extends string = string>({
         <span>Cost: {currencyFormatter(component.implementationCost)}</span>
         <span>Maint: {currencyFormatter(component.maintenanceCost)}/yr</span>
       </div>
-    </FacetCard>
+    </Card>
   );
 }
 

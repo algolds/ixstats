@@ -86,7 +86,7 @@ export function NavigationSettings() {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Navigation className="h-5 w-5" />
@@ -103,7 +103,7 @@ export function NavigationSettings() {
   }
 
   return (
-    <Card>
+    <Card className="flex flex-col gap-6 py-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Navigation className="h-5 w-5" />

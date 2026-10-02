@@ -10,8 +10,9 @@ import {
   SelectContent,
   SelectItem,
 } from "~/components/ui/select";
-import { FacetCard } from "~/components/ui/facet-container";
 import { TIER_FILTER_OPTIONS, isTierFilter, type TierFilter } from "~/lib/economic-tier-filter";
+import { Card } from "~/components/ui/card";
+
 // import { Slider } from '~/components/ui/slider'; // Uncomment if you have a slider component
 
 export default function CountriesFilterSidebar({
@@ -28,7 +29,6 @@ export default function CountriesFilterSidebar({
   availableContinents,
   availableRegions,
   onClearAll,
-  surface = "glass",
 }: {
   searchTerm: string;
   onSearchChange: (term: string) => void;
@@ -43,8 +43,6 @@ export default function CountriesFilterSidebar({
   availableContinents: string[];
   availableRegions: string[];
   onClearAll: () => void;
-  /** "solid" when rendered inside another glass surface (the mobile filter sheet). */
-  surface?: "glass" | "solid";
 }) {
   const hasFilters =
     searchTerm !== "" ||
@@ -55,7 +53,7 @@ export default function CountriesFilterSidebar({
     populationRange.max !== undefined;
 
   return (
-    <FacetCard depth={2} surface={surface} className="rounded-card space-y-4 p-4">
+    <Card className="rounded-card space-y-4 p-4">
       {hasFilters && (
         <div className="mb-2 flex flex-wrap gap-1">
           {searchTerm && <Badge variant="secondary">Search: {searchTerm}</Badge>}
@@ -179,6 +177,6 @@ export default function CountriesFilterSidebar({
         <Slider ... />
         */}
       </div>
-    </FacetCard>
+    </Card>
   );
 }

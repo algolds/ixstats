@@ -10,7 +10,6 @@ import {
   User,
   ClockRotateRight as FileClock,
 } from "iconoir-react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { FacetTabs } from "~/components/ui/facet";
 import { cn } from "~/lib/utils";
@@ -24,6 +23,7 @@ import { CooldownTimer } from "../ExecutiveHome";
 import type { CommandNavMode } from "../CommandNavToggle";
 import { useDiplomacyInboxCount } from "~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox";
 import { InboxCountPill } from "~/components/mycountry/domains/diplomacy/inbox/InboxCountPill";
+import { Card } from "~/components/ui/card";
 
 interface UnifiedGlassCommandBarProps {
   mode: CommandNavMode;
@@ -112,12 +112,7 @@ export function UnifiedGlassCommandBar({
   const activeTab = isExecutiveMode ? "" : activeSection;
 
   return (
-    <FacetCard
-      variant="glass"
-      glow
-      rim="gold"
-      className="flex w-full flex-col gap-4 p-4 sm:gap-5 sm:p-5"
-    >
+    <Card variant="hero" className="flex w-full flex-col gap-4 p-4 sm:gap-5 sm:p-5">
       {/* Top row (v2): the MyCountry logo, then the tools and the one gold primary action */}
       <div className="relative flex flex-wrap items-center justify-between gap-3">
         <MyCountryLogo size="md" variant="full" animated />
@@ -242,6 +237,6 @@ export function UnifiedGlassCommandBar({
           />
         </nav>
       )}
-    </FacetCard>
+    </Card>
   );
 }

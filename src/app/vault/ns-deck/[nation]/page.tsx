@@ -63,7 +63,7 @@ export default function NSDeckPage() {
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-label-secondary text-body font-medium">
               Total Cards
@@ -75,7 +75,7 @@ export default function NSDeckPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-label-secondary text-body font-medium">
               Unique Cards
@@ -87,7 +87,7 @@ export default function NSDeckPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-label-secondary text-body font-medium">Deck Value</CardTitle>
           </CardHeader>
@@ -100,7 +100,7 @@ export default function NSDeckPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="flex flex-col gap-6 py-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-label-secondary text-body font-medium">Showing</CardTitle>
           </CardHeader>
@@ -120,7 +120,7 @@ export default function NSDeckPage() {
             const hasImageFailed = failedImages.has(cardKey);
 
             return (
-              <Card key={cardKey} className="overflow-hidden">
+              <Card key={cardKey} className="flex flex-col gap-6 overflow-hidden py-6">
                 <CardHeader className="p-0">
                   <div className="bg-fill-3 relative aspect-[3/4] w-full">
                     {card.flag && !hasImageFailed ? (
@@ -198,7 +198,7 @@ export default function NSDeckPage() {
       </div>
 
       {/* Info Card */}
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle>About This Deck</CardTitle>
           <CardDescription>Data pulled from NationStates public API</CardDescription>

@@ -77,7 +77,7 @@ export default function CollectionDetailPage() {
   if (!collection) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-        <Card className="max-w-md">
+        <Card className="flex max-w-md flex-col gap-6 py-6">
           <CardContent className="p-8 text-center">
             <p className="text-title-3 text-label mb-4 font-semibold">Collection not found</p>
             <Button onClick={() => router.push("/vault/collections")}>Back to Collections</Button>
@@ -227,7 +227,7 @@ export default function CollectionDetailPage() {
               </div>
             </div>
 
-            <Card>
+            <Card className="flex flex-col gap-6 py-6">
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Grid3x3 className="text-label-tertiary mb-4 h-16 w-16" />
                 <p className="text-title-3 text-label mb-2 font-semibold">CardGrid Component</p>

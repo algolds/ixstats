@@ -6,8 +6,7 @@ import { Button } from "~/components/ui/button";
 import React from "react";
 import { useVexelEditor } from "../VexelEditorProvider";
 import { DIVISIONS, ORDINARIES } from "~/lib/heraldry";
-
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export default function LayerPanel() {
   const { composition, selectedLayerPath, selectLayer, addOrdinary, removeOrdinary, removeCharge } =
@@ -20,7 +19,7 @@ export default function LayerPanel() {
   const activeDivision = DIVISIONS.find((d) => d.value === composition.shield.field.division);
 
   return (
-    <FacetCard className="h-full overflow-hidden">
+    <Card className="h-full overflow-hidden">
       <div className="flex h-full flex-col p-4">
         <h2 className="border-separator text-label text-headline mb-4 border-b pb-2">Layer Tree</h2>
 
@@ -171,6 +170,6 @@ export default function LayerPanel() {
           </div>
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

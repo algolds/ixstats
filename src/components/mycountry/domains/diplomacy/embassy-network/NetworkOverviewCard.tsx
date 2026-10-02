@@ -1,11 +1,11 @@
 "use client";
 
 import React from "react";
-import { FacetCard, FacetCardHeader, FacetCardContent } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Progress } from "~/components/ui/progress";
 import { Globe } from "iconoir-react";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 /**
  * Network metrics for the embassy network
@@ -61,8 +61,8 @@ export const NetworkOverviewCard = React.memo(function NetworkOverviewCard({
   ];
 
   return (
-    <FacetCard className="rounded-card">
-      <FacetCardHeader className="p-4 pb-2">
+    <Card className="rounded-card">
+      <CardHeader className="p-4 pb-2">
         <h3 className="text-label text-headline flex items-center gap-2">
           <Globe className="text-cyan h-4 w-4" />
           Embassy Network Power
@@ -71,8 +71,8 @@ export const NetworkOverviewCard = React.memo(function NetworkOverviewCard({
             content="Your total diplomatic influence calculated from active embassies and atomic government synergies. Shared atomic components between nations amplify economic, diplomatic, and cultural benefits."
           />
         </h3>
-      </FacetCardHeader>
-      <FacetCardContent className="space-y-3 px-4 pb-4">
+      </CardHeader>
+      <CardContent className="space-y-3 px-4 pb-4">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {kpis.map((k) => (
             <div key={k.label} className="space-y-0.5">
@@ -95,7 +95,7 @@ export const NetworkOverviewCard = React.memo(function NetworkOverviewCard({
             </div>
           ))}
         </div>
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 });

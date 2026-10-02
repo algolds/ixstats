@@ -4,7 +4,6 @@ import React from "react";
 import { City, Coins, Journal, Page, WarningTriangle } from "iconoir-react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils";
 import { EffectList } from "~/components/mycountry/directives/EffectList";
 import {
@@ -15,6 +14,7 @@ import {
   tierMaySpawnResistance,
   type IntentPackageView,
 } from "~/components/mycountry/directives/directive-model";
+import { Card } from "~/components/ui/card";
 
 const CHANGE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   budget: Coins,
@@ -83,7 +83,7 @@ export function ImpactPreview({ pkg, broker }: ImpactPreviewProps) {
 
       <div>
         <SubHeading>Stakeholders</SubHeading>
-        <FacetCard variant="inset" padding="none">
+        <Card variant="inset" padding="none">
           <dl className="divide-separator text-body divide-y">
             <div className="flex items-center justify-between gap-3 px-3 py-2">
               <dt className="text-label-secondary">Acceptance</dt>
@@ -107,7 +107,7 @@ export function ImpactPreview({ pkg, broker }: ImpactPreviewProps) {
               </div>
             )}
           </dl>
-        </FacetCard>
+        </Card>
         {tierMaySpawnResistance(pkg.tier) && (
           <Alert role="note" className="border-yellow/30 text-yellow mt-3">
             <WarningTriangle aria-hidden />

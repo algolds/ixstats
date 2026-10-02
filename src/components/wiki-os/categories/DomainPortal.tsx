@@ -7,7 +7,6 @@ import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Page as FileText, Folder, ArrowLeft } from "iconoir-react";
-import { Refraction } from "~/components/ui/facet";
 
 interface CategoryMember {
   title: string;
@@ -46,7 +45,6 @@ export function DomainPortal({ domain, domainMeta, subcategories, pages }: Domai
         transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
         className="material-hero text-label relative isolate overflow-hidden rounded-3xl p-6 sm:p-8"
       >
-        <Refraction />
         <TextureOverlay texture="paperGrain" opacity={0.05} />
 
         <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">

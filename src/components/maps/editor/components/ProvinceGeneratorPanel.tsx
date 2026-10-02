@@ -1,6 +1,4 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React, { useState, useCallback } from "react";
@@ -16,6 +14,7 @@ import { generateProvinces } from "~/lib/maps/province-generator";
 import { api } from "~/trpc/react";
 import type { Polygon, MultiPolygon } from "geojson";
 import { Slider } from "~/components/ui/slider";
+import { Card } from "~/components/ui/card";
 
 interface ProvinceGeneratorPanelProps {
   countryGeometry: Polygon | MultiPolygon | null;
@@ -160,7 +159,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
       {/* Generated cells preview */}
       {cells && (
         <>
-          <FacetCard className="space-y-1 p-2">
+          <Card className="space-y-1 p-2">
             <div className="flex items-center justify-between">
               <Eyebrow className="flex items-center gap-1">
                 <Grid3X3 className="h-3 w-3" />
@@ -184,7 +183,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
                 </div>
               ))}
             </div>
-          </FacetCard>
+          </Card>
 
           <div className="flex gap-2">
             <Button

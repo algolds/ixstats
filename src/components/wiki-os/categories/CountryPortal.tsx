@@ -44,7 +44,6 @@ interface CountryPortalProps {
 }
 
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
-import { Refraction } from "~/components/ui/facet";
 
 export function CountryPortal({ country, subcategories, pages }: CountryPortalProps) {
   const { data: summary } = api.mycountry.getNationalSummary.useQuery(
@@ -67,7 +66,6 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
     <div className="mx-auto w-full max-w-6xl space-y-8 pb-16 select-none">
       {/* ── Apple-Grade Masthead Card ── */}
       <div className="material-hero text-label relative isolate overflow-hidden rounded-3xl p-6 sm:p-8">
-        <Refraction />
         <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
           <div className="flex items-start gap-5 sm:items-center">
             {country.flagUrl ? (

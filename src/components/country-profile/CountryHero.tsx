@@ -6,7 +6,6 @@ import { Camera, MediaImage, Sparks, WhiteFlag, Xmark } from "iconoir-react";
 import { CountryOwnerRibbonRack } from "~/components/achievements/FloatingRibbonRack";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { FacetMaterial, FlagWatermark } from "~/components/ui/facet";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
@@ -16,6 +15,7 @@ import { cn } from "~/lib/utils/cn";
 import type { BannerMode } from "~/app/countries/[slug]/_types";
 import { CountryIdentityStrip, type CountryIdentityStripProps } from "./CountryIdentityStrip";
 import type { VitalStat } from "./vitals";
+import { Card } from "~/components/ui/card";
 
 const MediaSearchModal = dynamic(
   () =>
@@ -195,7 +195,7 @@ export function CountryHero({
   return (
     // Facet 3.1 glass hero (spec §16.1): the v2 hero glass with the tint glow and the v2-strength
     // flag watermark, which brightens and grows while the hero is hovered.
-    <FacetCard id={id} variant="glass" glow className={cn("overflow-hidden", className)}>
+    <Card id={id} variant="hero" className={cn("overflow-hidden", className)}>
       {showCover && (
         <div className="bg-surface-secondary relative h-32 sm:h-44 lg:h-52">
           {/* oxlint-disable-next-line nextjs/no-img-element -- remote cover photo */}
@@ -270,6 +270,6 @@ export function CountryHero({
           {children}
         </div>
       </div>
-    </FacetCard>
+    </Card>
   );
 }

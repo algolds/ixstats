@@ -284,13 +284,7 @@ export function TrendingSectionWidget() {
 
   return (
     // v2 (c5c6b382): a CutoutCard with the amber cutout tab header.
-    <CutoutCard
-      variant="card"
-      accent="orange"
-      retint
-      className="no-wiki-tooltip"
-      trackPointerHover={false}
-    >
+    <CutoutCard variant="card" className="no-wiki-tooltip" trackPointerHover={false}>
       <CutoutCardHeader icon={<Flame />} as="h2">
         Trending topics
       </CutoutCardHeader>

@@ -20,7 +20,6 @@ import { AlphabetIndexBar } from "./_components/AlphabetIndexBar";
 import { SovereignNationsGrid } from "./_components/SovereignNationsGrid";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { Refraction } from "~/components/ui/facet";
 
 export default function CategoriesIndexPage() {
   const reduceMotion = useReducedMotion();
@@ -97,7 +96,6 @@ export default function CategoriesIndexPage() {
           transition={{ duration: 0.35 }}
           className="material-hero text-label relative isolate overflow-hidden rounded-3xl p-6 sm:p-8"
         >
-          <Refraction />
           <TextureOverlay texture="paperGrain" opacity={0.05} />
 
           <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">

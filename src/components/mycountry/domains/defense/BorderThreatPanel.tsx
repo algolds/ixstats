@@ -10,12 +10,12 @@ import {
   ArrowSeparate as ArrowRightLeft,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Eyebrow } from "~/components/ui/eyebrow";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 interface BorderThreatPanelProps {
   countryId: string;
@@ -220,8 +220,8 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
 
       <div className="grid gap-4 md:grid-cols-2">
         {/* Border Security Overview */}
-        <FacetCard>
-          <FacetCardHeader className="p-5 pb-3">
+        <Card>
+          <CardHeader className="p-5 pb-3">
             <h4 className="text-label text-headline flex items-center gap-2">
               <Shield aria-hidden="true" className="text-red h-4 w-4" />
               Border Security Overview
@@ -229,8 +229,8 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
             <p className="text-label-secondary text-footnote">
               Current frontier posture and coverage
             </p>
-          </FacetCardHeader>
-          <FacetCardContent className="space-y-4 px-5 pb-5">
+          </CardHeader>
+          <CardContent className="space-y-4 px-5 pb-5">
             <div className="border-separator flex items-center justify-between border-b pb-4">
               <Eyebrow>Security level</Eyebrow>
               <div className="text-right">
@@ -265,12 +265,12 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
                 icon={Crosshair}
               />
             </div>
-          </FacetCardContent>
-        </FacetCard>
+          </CardContent>
+        </Card>
 
         {/* Neighbor Threats */}
-        <FacetCard>
-          <FacetCardHeader className="p-5 pb-3">
+        <Card>
+          <CardHeader className="p-5 pb-3">
             <h4 className="text-label text-headline flex items-center gap-2">
               <AlertTriangle aria-hidden="true" className="text-red h-4 w-4" />
               Neighbor Threats
@@ -280,8 +280,8 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
                 ? "No assessments recorded"
                 : `${threats.length} neighbor${threats.length === 1 ? "" : "s"} assessed`}
             </p>
-          </FacetCardHeader>
-          <FacetCardContent className="px-5 pb-5">
+          </CardHeader>
+          <CardContent className="px-5 pb-5">
             {threats.length === 0 ? (
               <div className="border-separator rounded-control flex flex-col items-center justify-center border border-dashed py-10 text-center">
                 <Globe aria-hidden="true" className="text-label-secondary mb-2 h-8 w-8" />
@@ -302,8 +302,8 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
                 </div>
               </ScrollArea>
             )}
-          </FacetCardContent>
-        </FacetCard>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -13,7 +13,6 @@ import {
   StatDown,
   Minus,
 } from "iconoir-react";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Progress } from "~/components/ui/progress";
@@ -21,6 +20,7 @@ import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
 import { getTrendDirection } from "~/hooks/useInternalStability";
 import { StabilityHelpDialog } from "./StabilityHelpDialog";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 interface StabilityMetrics {
   stabilityScore: number;
@@ -114,8 +114,8 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
   const score = metrics?.stabilityScore ?? 75;
 
   return (
-    <FacetCard>
-      <FacetCardHeader className="p-5 pb-3">
+    <Card>
+      <CardHeader className="p-5 pb-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-label text-title-3 flex items-center gap-2">
             <Users aria-hidden="true" className="text-red h-4 w-4" />
@@ -130,8 +130,8 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
             </Badge>
           </div>
         </div>
-      </FacetCardHeader>
-      <FacetCardContent className="space-y-4 px-5 pb-5">
+      </CardHeader>
+      <CardContent className="space-y-4 px-5 pb-5">
         {/* Stability Score */}
         <div>
           <div className="mb-2 flex items-end justify-between">
@@ -219,7 +219,7 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
             <PercentMetric label="Fear of Crime" value={metrics?.fearOfCrime ?? 35} />
           </div>
         </MetricSection>
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 });

@@ -25,7 +25,7 @@ export const SummaryMetricsCard = React.memo<SummaryMetricsCardProps>(({ metric,
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
     >
-      <Card className="facet-hierarchy-child">
+      <Card className="facet-hierarchy-child flex flex-col gap-6 py-6">
         <CardContent className="p-6">
           <div className="mb-2 flex items-center justify-between">
             <div className={cn("rounded-lg p-2", metric.bg)}>

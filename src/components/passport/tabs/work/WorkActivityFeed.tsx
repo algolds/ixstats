@@ -14,7 +14,6 @@ import {
 } from "iconoir-react";
 import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FACET_INSET_SURFACE } from "~/components/ui/facet-container";
 import { cn } from "~/lib/utils/cn";
 import type { WorkPayload } from "../../types";
 
@@ -82,7 +81,7 @@ export const WorkActivityFeed = React.memo(function WorkActivityFeed({
             <li
               key={`${item.id}-${idx}`}
               className={cn(
-                FACET_INSET_SURFACE,
+                "bg-surface-secondary text-label rounded-row",
                 "flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center"
               )}
             >

@@ -15,10 +15,10 @@ import { ActivityFilters } from "./ActivityFilters";
 import { TrendingTopics } from "./TrendingTopics";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Stat } from "~/components/ui/stat";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Switch } from "~/components/ui/switch";
+import { Card } from "~/components/ui/card";
 
 type ActivityFilter = "all" | "achievements" | "diplomatic" | "economic" | "social" | "meta";
 type ActivityCategory = "all" | "game" | "platform" | "social";
@@ -105,13 +105,13 @@ export function ActivityFeedContainer() {
               ["Shares", stats.totalShares],
               ["Views", `${(stats.totalViews / 1000).toFixed(1)}k`],
             ].map(([label, value], i) => (
-              <FacetCard
+              <Card
                 key={String(label)}
                 padding="sm"
                 className={i === 4 ? "col-span-2 sm:col-span-1" : undefined}
               >
                 <Stat label={String(label)} value={value} />
-              </FacetCard>
+              </Card>
             ))}
           </div>
         )}
@@ -173,13 +173,13 @@ export function ActivityFeedContainer() {
               ))
             ) : activities.length === 0 ? (
               // Empty state
-              <FacetCard>
+              <Card>
                 <EmptyState
                   icon={<Activity />}
                   title="No activities yet"
                   message="Check back soon for updates from the IxStats community"
                 />
-              </FacetCard>
+              </Card>
             ) : (
               // Activity items
               activities.map((activity, index) => (
@@ -210,7 +210,7 @@ export function ActivityFeedContainer() {
           <TrendingTopics />
 
           {/* Auto-Refresh Toggle */}
-          <FacetCard padding="md">
+          <Card padding="md">
             <div className="mb-2 flex items-center justify-between">
               <label htmlFor="feed-auto-refresh" className="text-headline text-label">
                 Auto-Refresh
@@ -224,10 +224,10 @@ export function ActivityFeedContainer() {
             <p className="text-label-secondary text-footnote">
               Automatically refresh every 30 seconds
             </p>
-          </FacetCard>
+          </Card>
 
           {/* Quick Stats */}
-          <FacetCard padding="md">
+          <Card padding="md">
             <div className="mb-3 flex items-center gap-2">
               <Zap aria-hidden className="text-tint h-5 w-5" />
               <h3 className="text-headline text-label">Platform Pulse</h3>
@@ -250,7 +250,7 @@ export function ActivityFeedContainer() {
                 </span>
               </div>
             </div>
-          </FacetCard>
+          </Card>
         </div>
       </div>
     </div>

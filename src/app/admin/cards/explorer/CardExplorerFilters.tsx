@@ -1,7 +1,6 @@
 import React from "react";
 import { Search } from "iconoir-react";
 import { Input } from "~/components/ui/input";
-import { FacetCard } from "~/components/ui/facet-container";
 import { LoreCategory } from "~/lib/cards/category-enums";
 import { getCategoryLabel } from "~/lib/cards/category-theme";
 import type { CardRarity } from "@prisma/client";
@@ -12,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Card } from "~/components/ui/card";
 
 export type CardTypeFilter = "all" | "NS_IMPORT" | "USER_CUSTOM" | "LORE_BATCH" | "COMMONS_IMPORT";
 export type SortByOption = "recent" | "marketValue" | "marketValue_asc" | "name" | "rarity";
@@ -56,7 +56,7 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
   setOffset,
 }: CardExplorerFiltersProps) {
   return (
-    <FacetCard className="flex flex-wrap items-center gap-2 p-4">
+    <Card className="flex flex-wrap items-center gap-2 p-4">
       {/* Search Input */}
       <div className="relative max-w-md min-w-[220px] flex-1">
         <Search className="text-label-secondary pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
@@ -213,6 +213,6 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
           <SelectItem value="rarity">Sort: Rarity Tier</SelectItem>
         </SelectContent>
       </Select>
-    </FacetCard>
+    </Card>
   );
 });

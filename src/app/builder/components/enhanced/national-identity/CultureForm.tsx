@@ -29,12 +29,12 @@ import { Button, focusRing } from "~/components/ui/button";
 import { IdentityAutocomplete } from "./IdentityAutocomplete";
 import { CurrencyAutocomplete } from "./CurrencyAutocomplete";
 import { CurrencyIcon } from "./CurrencyIcon";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { soundEffects } from "~/lib/sound/cuelume";
 import type { NationalIdentityData } from "~/app/builder/lib/economy-data-service";
 import { cn, getCurrencyInfo } from "~/lib/utils";
 import { POPULAR_LANGUAGES } from "./identityUtils";
 import { IMAGE_SCRIM_LIGHT, IMAGE_SCRIM_TOUCH_BAND } from "~/app/builder/lib/image-scrim";
+import { Card, CardContent } from "~/components/ui/card";
 
 const MediaSearchModal = dynamic(
   () =>
@@ -298,14 +298,14 @@ export const CultureForm = React.memo(
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-6 text-left lg:grid-cols-2">
           {/* Aspirations & Expressions Card */}
-          <FacetCard texture="chevron" textureOpacity={0.04}>
+          <Card>
             <div className="border-separator border-b px-6 py-4">
               <h3 className="text-label text-headline flex items-center gap-2">
                 <Sparkles className="text-tint h-5 w-5" />
                 National Motto & Expressions
               </h3>
             </div>
-            <FacetCardContent className="space-y-4 p-6">
+            <CardContent className="space-y-4 p-6">
               {/* National Motto (Primary) */}
               <div className="space-y-2">
                 <label
@@ -417,11 +417,11 @@ export const CultureForm = React.memo(
                   />
                 </div>
               </div>
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
 
           {/* Languages & Currency Card */}
-          <FacetCard texture="chevron" textureOpacity={0.04} className="overflow-visible">
+          <Card className="overflow-visible">
             <div className="border-separator border-b px-6 py-4">
               <h3 className="text-label text-headline flex items-center gap-2">
                 <Languages className="text-indigo h-5 w-5" />
@@ -431,7 +431,7 @@ export const CultureForm = React.memo(
                 Official languages, lingua franca, and national currency.
               </p>
             </div>
-            <FacetCardContent className="space-y-4 p-6">
+            <CardContent className="space-y-4 p-6">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <IdentityAutocomplete
                   fieldName="officialLanguages"
@@ -500,12 +500,12 @@ export const CultureForm = React.memo(
                   </div>
                 )}
               </div>
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Heritage Symbols Progressive Disclosure Card */}
-        <FacetCard texture="chevron" textureOpacity={0.04}>
+        <Card>
           <div className="border-separator border-b px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
@@ -524,7 +524,7 @@ export const CultureForm = React.memo(
               </Button>
             </div>
           </div>
-          <FacetCardContent className="space-y-4 p-6">
+          <CardContent className="space-y-4 p-6">
             {/* Core 4 Symbols Grid */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {CORE_HERITAGE_SYMBOLS.map(renderSymbolCard)}
@@ -559,8 +559,8 @@ export const CultureForm = React.memo(
                 </div>
               </div>
             )}
-          </FacetCardContent>
-        </FacetCard>
+          </CardContent>
+        </Card>
 
         {/* Media Search Modal */}
         {imagePickerField && (

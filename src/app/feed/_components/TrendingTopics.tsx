@@ -7,15 +7,15 @@ import { FireFlame as Flame, StatUp as TrendingUp, Minus } from "iconoir-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
 import { withBasePath } from "~/lib/base-path";
-import { FacetCard } from "~/components/ui/facet-container";
 import { EmptyState } from "~/components/ui/empty-state";
+import { Card } from "~/components/ui/card";
 
 export function TrendingTopics() {
   // Hashtags ranked by the thinkpages-trending cron job (TrendingTopic).
   const { data: topics, isLoading } = api.activities.getTrendingTopics.useQuery({ limit: 5 });
 
   return (
-    <FacetCard padding="md">
+    <Card padding="md">
       <div className="mb-4 flex items-center gap-2">
         <Flame aria-hidden className="text-orange h-5 w-5" />
         <h3 className="text-headline text-label">Trending Now</h3>
@@ -66,6 +66,6 @@ export function TrendingTopics() {
           />
         )}
       </div>
-    </FacetCard>
+    </Card>
   );
 }

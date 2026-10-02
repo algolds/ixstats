@@ -2,10 +2,10 @@ import React from "react";
 import Link from "next/link";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { Community as Handshake } from "iconoir-react";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { formatCompact } from "./trade-commerce-types";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 interface TradePartnerItem {
   countryId: string;
@@ -29,18 +29,18 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
 }: TradePartnersManagerProps) {
   if (partners.length === 0) {
     return (
-      <FacetCard className="rounded-card border-dashed px-4 py-8 text-center">
+      <Card className="rounded-card border-dashed px-4 py-8 text-center">
         <p className="text-label-secondary text-footnote">
           No active bilateral trade partners found. Establish diplomatic embassies to negotiate
           trade pacts.
         </p>
-      </FacetCard>
+      </Card>
     );
   }
 
   return (
-    <FacetCard className="rounded-card">
-      <FacetCardHeader className="gap-1 p-4 pb-3">
+    <Card className="rounded-card">
+      <CardHeader className="gap-1 p-4 pb-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <Handshake aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
@@ -54,11 +54,11 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
           Agreement status comes from your recorded treaties. To sign a free trade agreement,
           propose one from the partner&apos;s country page (Country Actions).
         </p>
-      </FacetCardHeader>
+      </CardHeader>
 
-      <FacetCardContent className="grid grid-cols-1 gap-2 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-3">
+      <CardContent className="grid grid-cols-1 gap-2 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-3">
         {partners.map((partner) => (
-          <FacetCard
+          <Card
             variant="inset"
             key={partner.countryId}
             className="flex items-center justify-between gap-2 p-2"
@@ -98,9 +98,9 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
                 </Link>
               </Button>
             )}
-          </FacetCard>
+          </Card>
         ))}
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 });

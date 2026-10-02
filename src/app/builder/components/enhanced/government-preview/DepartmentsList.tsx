@@ -54,7 +54,7 @@ export function DepartmentsList({
 
   return (
     <Collapsible open={isOpen} onOpenChange={onOpenChange}>
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CollapsibleTrigger asChild>
           <CardHeader className="hover:bg-fill-3 cursor-pointer transition-colors">
             <CardTitle className="flex items-center justify-between">

@@ -15,6 +15,7 @@ import {
 } from "iconoir-react";
 import { CATEGORY_ICONS } from "~/lib/military/catalog-utils";
 import { Badge } from "~/components/ui/badge";
+import { cn } from "~/lib/utils/cn";
 
 interface EquipmentCardProps {
   equipment: any;
@@ -37,7 +38,10 @@ export function EquipmentCard({
 
   return (
     <Card
-      className={`hover:border-red/50 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${isSelected ? "ring-red ring-2" : ""}`}
+      className={cn(
+        "flex flex-col gap-6 py-6",
+        `hover:border-red/50 p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${isSelected ? "ring-red ring-2" : ""}`
+      )}
     >
       {/* Selection & Image */}
       <div className="mb-3 flex items-start justify-between">

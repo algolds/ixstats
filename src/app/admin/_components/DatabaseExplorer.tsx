@@ -12,7 +12,7 @@ export function DatabaseExplorer() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

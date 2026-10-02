@@ -22,7 +22,6 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Plus,
   EditPencil as Pencil,
@@ -43,6 +42,7 @@ import {
   type SortField,
   type SortDirection,
 } from "~/lib/military/manufacturer-utils";
+import { Card } from "~/components/ui/card";
 
 /** A sortable column header: the label is a `ghost` button and the cell carries `aria-sort`. */
 function SortableHead({
@@ -190,7 +190,7 @@ export function ManufacturersTab({
       </div>
 
       {/* Table */}
-      <FacetCard className="p-6">
+      <Card className="p-6">
         {manufacturersLoading ? (
           <div className="py-12 text-center">
             <div className="border-tint mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2"></div>
@@ -322,7 +322,7 @@ export function ManufacturersTab({
             </TableBody>
           </Table>
         )}
-      </FacetCard>
+      </Card>
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">

@@ -9,7 +9,6 @@ export const dynamic = "force-dynamic";
  */
 
 import { FacetTabs } from "~/components/ui/facet";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
@@ -23,6 +22,7 @@ import nextDynamic from "next/dynamic";
 // Light tabs — static imports (small bundles, no MapLibre)
 import { EditQueuePanel } from "./_components/EditQueuePanel";
 import { MapSettingsTab } from "./_components/MapSettingsTab";
+import { Card } from "~/components/ui/card";
 
 // Heavy tabs — lazy loaded (MapLibre dependent)
 const LazyLoading = () => (
@@ -83,7 +83,7 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
 
       {/* Summary stats */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <Eyebrow className="block">Total Features</Eyebrow>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -92,9 +92,9 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
               {stats?.totalFeatures?.toLocaleString() ?? "—"}
             </p>
           )}
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <Eyebrow className="block">Political Regions</Eyebrow>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -103,9 +103,9 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
               {stats?.politicalFeatures?.toLocaleString() ?? "—"}
             </p>
           )}
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <Eyebrow className="block">Linked Countries</Eyebrow>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -114,9 +114,9 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
               {stats ? `${stats.linkedFeatures} / ${stats.totalCountries}` : "—"}
             </p>
           )}
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <Eyebrow className="block">Linkage Rate</Eyebrow>
           {isLoading ? (
             <Skeleton className="mt-1 h-7 w-20" />
@@ -125,7 +125,7 @@ export default function AdminMapsPage({ initialTab = "settings" }: AdminMapsPage
               {stats ? `${stats.linkageRate}%` : "—"}
             </p>
           )}
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Tab navigation */}

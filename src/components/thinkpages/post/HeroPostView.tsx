@@ -34,7 +34,6 @@ import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { cn } from "~/lib/utils";
 
 import { ACCOUNT_TYPE_ICONS, ACCOUNT_TYPE_COLORS } from "./ThinkpagesPostUtils";
-import { Refraction } from "~/components/ui/facet";
 
 export interface HeroPostViewProps {
   post: any;
@@ -111,7 +110,7 @@ export function HeroPostView({
       className="group material-hero text-label relative isolate space-y-4 overflow-hidden rounded-2xl p-5"
     >
       {/* v2 hero post: the glass card (Facet 3.1 glass hero tier) with its refraction hairline. */}
-      <Refraction />
+
       {/* Header section */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

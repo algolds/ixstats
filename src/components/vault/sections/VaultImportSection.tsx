@@ -95,7 +95,7 @@ function ImportDeckTab() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <Card className="relative overflow-hidden">
+        <Card className="relative flex flex-col gap-6 overflow-hidden py-6">
           {/* NS Header Banner */}
           <div
             style={{

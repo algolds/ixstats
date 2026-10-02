@@ -14,10 +14,10 @@ import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { CutoutCard, CutoutCorner } from "~/components/ui/cutout-card";
+import { Card } from "~/components/ui/card";
 
 /** The console's live status: IxTime, bot connection and system health. */
 function useSystemStatus() {
@@ -82,7 +82,7 @@ function formatLastRecalc(timestamp: string | number | Date | undefined | null) 
 export function SystemStatusStrip({ className }: { className?: string }) {
   const s = useSystemStatus();
   return (
-    <FacetCard
+    <Card
       role="status"
       aria-label="System console"
       className={cn(
@@ -134,7 +134,7 @@ export function SystemStatusStrip({ className }: { className?: string }) {
       ) : (
         <Badge variant="success">Healthy</Badge>
       )}
-    </FacetCard>
+    </Card>
   );
 }
 

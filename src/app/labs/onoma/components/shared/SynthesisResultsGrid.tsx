@@ -15,7 +15,6 @@ import {
   Table,
 } from "iconoir-react";
 import { OnomaGlyph } from "../glyphs/OnomaGlyph";
-import { FacetCard } from "~/components/ui/facet-container";
 import { NameResultCard } from "./NameResultCard";
 import { BatchResultsTable } from "../sections/batch/BatchResultsTable";
 import type { BatchNameResult } from "../sections/batch/batch-constants";
@@ -29,6 +28,7 @@ import { cn } from "~/lib/utils";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Card } from "~/components/ui/card";
 
 interface SynthesisResultsGridProps {
   generatedNames: string[];
@@ -356,7 +356,7 @@ export function SynthesisResultsGrid({
           )}
         </div>
       ) : (
-        <FacetCard
+        <Card
           variant="inset"
           padding="none"
           className="flex min-h-[260px] flex-col items-center justify-center p-8 text-center"
@@ -370,7 +370,7 @@ export function SynthesisResultsGrid({
             <span className="text-tint font-semibold">Generate Names</span> to produce vocabulary
             for this category.
           </p>
-        </FacetCard>
+        </Card>
       )}
     </div>
   );

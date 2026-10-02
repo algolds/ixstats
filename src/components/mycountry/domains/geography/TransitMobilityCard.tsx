@@ -15,10 +15,10 @@ import {
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 interface TransitMobilityCardProps {
   countryId: string;
@@ -79,14 +79,14 @@ function TransitStat({
   footer: React.ReactNode;
 }) {
   return (
-    <FacetCard className="flex flex-col justify-between p-4">
+    <Card className="flex flex-col justify-between p-4">
       <div className="flex items-center gap-2">
         {Icon && <Icon aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />}
         <Eyebrow>{label}</Eyebrow>
       </div>
       <div className="my-2 flex items-baseline gap-2">{children}</div>
       <div className="text-footnote flex items-center justify-between gap-2">{footer}</div>
-    </FacetCard>
+    </Card>
   );
 }
 
@@ -105,21 +105,21 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
 
   if (!profile || profile.totalOperationalKm === 0) {
     return (
-      <FacetCard className="rounded-card">
-        <FacetCardHeader className="flex-row items-center justify-between gap-2 p-4 pb-2">
+      <Card className="rounded-card">
+        <CardHeader className="flex-row items-center justify-between gap-2 p-4 pb-2">
           <div className="flex min-w-0 items-center gap-2">
             <RouteIcon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
             <h3 className="text-label text-headline">National transit and mobility</h3>
           </div>
           <MapEditorLink label="Open Map Editor" />
-        </FacetCardHeader>
-        <FacetCardContent className="px-4 pb-4">
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
           <p className="text-label-secondary text-footnote leading-relaxed">
             No operational transport routes mapped. Build highways, railways, or shipping lanes in
             the Map Editor to establish national transit connectivity and unlock GDP dividends.
           </p>
-        </FacetCardContent>
-      </FacetCard>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -129,9 +129,9 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
     CONDITION_TEXT_THEMES[degradation.condition] ?? CONDITION_TEXT_THEMES.adequate;
 
   return (
-    <FacetCard className="rounded-card">
+    <Card className="rounded-card">
       {/* Header */}
-      <FacetCardHeader className="flex-row flex-wrap items-center justify-between gap-2 p-4 pb-3">
+      <CardHeader className="flex-row flex-wrap items-center justify-between gap-2 p-4 pb-3">
         <div className="flex min-w-0 items-center gap-2">
           <RouteIcon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
           <div className="min-w-0">
@@ -142,9 +142,9 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
           </div>
         </div>
         <MapEditorLink label="Map Editor transit" />
-      </FacetCardHeader>
+      </CardHeader>
 
-      <FacetCardContent className="space-y-4 px-4 pb-4">
+      <CardContent className="space-y-4 px-4 pb-4">
         {/* TAMI score + core metrics */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <TransitStat
@@ -207,7 +207,7 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
               {Object.entries(modalSummary.modalGroups).map(([key, group]) => {
                 const Icon = MODAL_ICONS[key] ?? RouteIcon;
                 return (
-                  <FacetCard
+                  <Card
                     variant="inset"
                     key={key}
                     className="text-footnote flex items-center justify-between gap-2 px-3 py-2"
@@ -228,7 +228,7 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
                     <span className="text-label shrink-0 font-medium tabular-nums">
                       {group.avgSpeedKmh} <span className="text-label-secondary">km/h</span>
                     </span>
-                  </FacetCard>
+                  </Card>
                 );
               })}
             </div>
@@ -239,7 +239,7 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
         {topCorridors.length > 0 && (
           <div className="space-y-2">
             <Eyebrow className="block">Primary intercity travel corridors</Eyebrow>
-            <FacetCard variant="inset" padding="none" className="max-h-48 overflow-y-auto">
+            <Card variant="inset" padding="none" className="max-h-48 overflow-y-auto">
               <ul className="divide-separator divide-y">
                 {topCorridors.map((c) => (
                   <li
@@ -263,10 +263,10 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
                   </li>
                 ))}
               </ul>
-            </FacetCard>
+            </Card>
           </div>
         )}
-      </FacetCardContent>
-    </FacetCard>
+      </CardContent>
+    </Card>
   );
 });

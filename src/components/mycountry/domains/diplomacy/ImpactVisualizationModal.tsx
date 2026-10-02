@@ -5,7 +5,6 @@ import { ArrowRight, ArrowUp, StatsReport, Check } from "iconoir-react";
 import React from "react";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Progress } from "~/components/ui/progress";
-import { FacetCard } from "~/components/ui/facet-container";
 import {
   Sheet,
   SheetContent,
@@ -14,6 +13,7 @@ import {
   SheetDescription,
 } from "~/components/ui/sheet";
 import { Stat } from "~/components/ui/stat";
+import { Card } from "~/components/ui/card";
 
 interface LongTermEffects {
   culturalTiesStrength?: number;
@@ -60,7 +60,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
           </SheetHeader>
 
           <div className="space-y-4">
-            <FacetCard variant="inset" className="p-5">
+            <Card variant="inset" className="p-5">
               <h4 className="text-label text-headline mb-4">Relationship State Evolution</h4>
               <div className="flex items-center justify-center gap-4">
                 <div className="text-center">
@@ -84,25 +84,25 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
                   {Math.round((impact.transitionProbability || 0) * 100)}% probability)
                 </p>
               )}
-            </FacetCard>
+            </Card>
 
             <div className="grid grid-cols-2 gap-4">
               {[
                 { label: "Cultural bonus", value: impact.culturalBonusDelta || 0 },
                 { label: "Diplomatic bonus", value: impact.diplomaticBonusDelta || 0 },
               ].map((m) => (
-                <FacetCard variant="inset" key={m.label} className="p-4">
+                <Card variant="inset" key={m.label} className="p-4">
                   <Stat
                     label={m.label}
                     value={<>+{m.value}</>}
                     icon={<ArrowUp className="size-3.5" />}
                   />
-                </FacetCard>
+                </Card>
               ))}
             </div>
 
             {impact.longTermEffects && (
-              <FacetCard variant="inset" className="p-5">
+              <Card variant="inset" className="p-5">
                 <h4 className="text-label text-headline mb-4">Long-term Effects</h4>
                 <div className="space-y-4">
                   {[
@@ -129,11 +129,11 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
                       </div>
                     ))}
                 </div>
-              </FacetCard>
+              </Card>
             )}
 
             {impact.reasoning && Array.isArray(impact.reasoning) && impact.reasoning.length > 0 && (
-              <FacetCard variant="inset" className="p-5">
+              <Card variant="inset" className="p-5">
                 <h4 className="text-label text-headline mb-4">Impact Analysis</h4>
                 <ul className="space-y-2">
                   {impact.reasoning.map((reason, idx) => (
@@ -143,7 +143,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
                     </li>
                   ))}
                 </ul>
-              </FacetCard>
+              </Card>
             )}
           </div>
         </SheetContent>

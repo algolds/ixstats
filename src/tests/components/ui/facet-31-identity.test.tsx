@@ -1,3 +1,4 @@
+import { motion } from "motion/react";
 /**
  * Facet 3.1 — identity restored (docs/specs/2026-09-30-facet-3-design-system.md §16).
  *
@@ -23,15 +24,8 @@ import {
   CutoutCorner,
   cutoutCardSurfaceClassName,
 } from "~/components/ui/cutout-card";
-import { FacetCard, MotionFacetCard } from "~/components/ui/facet-container";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
-import {
-  AcrylicGlow,
-  FacetMaterial,
-  FlagWatermark,
-  Refraction,
-  TintGlow,
-} from "~/components/ui/facet";
+import { FacetMaterial, FlagWatermark } from "~/components/ui/facet";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Stat } from "~/components/ui/stat";
 import {
@@ -46,6 +40,9 @@ import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { DynamicIslandEffects } from "~/components/halo/DynamicIslandEffects";
 import { isNumericText } from "~/lib/design/identity";
 import { TEXT_STYLES } from "~/lib/design/tokens";
+import { Card } from "~/components/ui/card";
+
+const MotionCard = motion.create(Card);
 
 const classOf = (el: Element) => el.getAttribute("class") ?? "";
 const ROOT = path.resolve(__dirname, "../../../..");
@@ -55,9 +52,9 @@ const tokensCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/tokens.css")
 describe("glass hero tier", () => {
   it("FacetCard variant=glass is the hero material with a refraction hairline", () => {
     render(
-      <FacetCard data-testid="hero" variant="glass">
+      <Card data-testid="hero" variant="hero">
         Nation
-      </FacetCard>
+      </Card>
     );
     const hero = screen.getByTestId("hero");
     expect(hero).toHaveAttribute("data-variant", "glass");
@@ -72,24 +69,20 @@ describe("glass hero tier", () => {
 
   it("refraction can be turned off on glass and on for the opaque card", () => {
     const { rerender } = render(
-      <FacetCard data-testid="c" variant="glass" refraction={false}>
+      <Card data-testid="c" variant="hero">
         x
-      </FacetCard>
+      </Card>
     );
     expect(screen.getByTestId("c").querySelector('[data-slot="refraction"]')).toBeNull();
-    rerender(
-      <FacetCard data-testid="c" refraction>
-        x
-      </FacetCard>
-    );
+    rerender(<Card data-testid="c">x</Card>);
     expect(screen.getByTestId("c").querySelector('[data-slot="refraction"]')).not.toBeNull();
   });
 
   it("glass skips the opaque hover wash; pressable glass lifts and presses", () => {
     render(
-      <FacetCard variant="glass" onClick={() => undefined}>
+      <Card variant="hero" onClick={() => undefined} interactive>
         Open
-      </FacetCard>
+      </Card>
     );
     const card = screen.getByRole("button", { name: "Open" });
     expect(classOf(card)).not.toContain("hover:bg-[image:");
@@ -99,9 +92,9 @@ describe("glass hero tier", () => {
 
   it("MotionFacetCard takes the glass variant and glow", () => {
     render(
-      <MotionFacetCard data-testid="m" variant="glass" glow initial={false}>
+      <MotionCard data-testid="m" variant="hero" initial={false}>
         x
-      </MotionFacetCard>
+      </MotionCard>
     );
     const card = screen.getByTestId("m");
     expect(classOf(card)).toMatch(/\bmaterial-hero\b/);
@@ -115,11 +108,7 @@ describe("glow", () => {
     ["blob", "blob", true, false],
     ["shadow", "shadow", false, true],
   ] as const)("glow=%s renders %s", (glow, kind, blob, shadow) => {
-    render(
-      <FacetCard data-testid="g" glow={glow}>
-        x
-      </FacetCard>
-    );
+    render(<Card data-testid="g">x</Card>);
     const card = screen.getByTestId("g");
     expect(card).toHaveAttribute("data-glow", kind);
     expect(card.querySelector('[data-slot="tint-glow"]') !== null).toBe(blob);
@@ -137,7 +126,7 @@ describe("glow", () => {
   });
 
   it("TintGlow is a decorative tint disc placed by position", () => {
-    const { container } = render(<TintGlow position="bottom-left" color="var(--color-green)" />);
+    const { container } = render();
     const glow = container.querySelector('[data-slot="tint-glow"]')!;
     expect(glow).toHaveAttribute("aria-hidden", "true");
     expect(classOf(glow)).toContain("facet-tint-glow");
@@ -150,7 +139,7 @@ describe("glow", () => {
 describe("acrylic and hero materials", () => {
   it("FacetMaterial acrylic: material-acrylic, four refraction edges, optional glow underlay", () => {
     render(
-      <FacetMaterial data-testid="island" material="acrylic" glow>
+      <FacetMaterial data-testid="island" material="acrylic">
         Halo
       </FacetMaterial>
     );
@@ -171,7 +160,7 @@ describe("acrylic and hero materials", () => {
   });
 
   it("Refraction edges=all draws the four Dynamic Island edges", () => {
-    const { container } = render(<Refraction edges="all" />);
+    const { container } = render();
     const edges = [...container.querySelectorAll('[data-slot="refraction"]')].map((el) =>
       el.getAttribute("data-edge")
     );
@@ -179,7 +168,7 @@ describe("acrylic and hero materials", () => {
   });
 
   it("AcrylicGlow and DynamicIslandEffects render the three v2 glow layers, no shimmer loop", () => {
-    const { container, rerender } = render(<AcrylicGlow orientation="vertical" />);
+    const { container, rerender } = render();
     expect(container.querySelectorAll(".facet-acrylic-glow")).toHaveLength(3);
     rerender(<DynamicIslandEffects showShimmer />);
     expect(container.querySelectorAll(".facet-acrylic-glow")).toHaveLength(3);
@@ -476,7 +465,7 @@ describe("CutoutCard", () => {
   });
 
   it("glow renders a clipped tint blob", () => {
-    render(<CutoutCard data-testid="cut" variant="card" glow />);
+    render(<CutoutCard data-testid="cut" variant="card" />);
     const card = screen.getByTestId("cut");
     expect(card.querySelector('[data-slot="tint-glow"]')).not.toBeNull();
     expect(classOf(card)).toMatch(/\bisolate\b/);

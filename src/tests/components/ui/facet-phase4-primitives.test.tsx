@@ -16,7 +16,7 @@ import {
   shellPageTitleProps,
 } from "~/components/shell/ShellPageHeader";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { FACET_CARD_SURFACE, FacetCard } from "~/components/ui/facet-container";
+import { FACET_CARD_SURFACE } from "~/components/ui/facet-container";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
   PopoverVirtualAnchor,
@@ -209,9 +209,9 @@ describe("FacetCard as", () => {
       const Wrapper = as === "li" ? "ul" : React.Fragment;
       render(
         <Wrapper>
-          <FacetCard as={as} ref={ref} data-testid="card" aria-label="Card">
+          <Card as={as} ref={ref} data-testid="card" aria-label="Card">
             Body
-          </FacetCard>
+          </Card>
         </Wrapper>
       );
       const el = screen.getByTestId("card");
@@ -226,8 +226,8 @@ describe("FacetCard as", () => {
     const onClick = jest.fn();
     render(
       <>
-        <FacetCard data-testid="div" />
-        <FacetCard as="article" data-testid="press" onClick={onClick} />
+        <Card data-testid="div" />
+        <Card as="article" data-testid="press" onClick={onClick} interactive />
       </>
     );
     expect(screen.getByTestId("div").tagName).toBe("DIV");
@@ -241,7 +241,7 @@ describe("FacetCard as", () => {
 describe("Card (deprecated)", () => {
   it("renders FacetCard's surface and keeps its parts", () => {
     render(
-      <Card data-testid="card">
+      <Card data-testid="card" className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle>Title</CardTitle>
         </CardHeader>

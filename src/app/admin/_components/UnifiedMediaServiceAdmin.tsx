@@ -12,7 +12,7 @@ import {
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 interface CacheStats {
   totalRequests: number;
@@ -107,33 +107,33 @@ export function UnifiedMediaServiceAdmin() {
     <div className="space-y-5">
       {/* Stats Overview */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Cached Items</p>
           <p className="text-label text-title-2 mt-1 tabular-nums">{stats?.cacheSize ?? 0}</p>
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Hit Rate</p>
           <p className="text-title-2 text-green mt-1 tabular-nums">{hitRate}%</p>
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Flag Requests</p>
           <p className="text-title-2 text-yellow mt-1 tabular-nums">
             {stats?.serviceStats?.flagRequests ?? 0}
           </p>
-        </FacetCard>
+        </Card>
 
-        <FacetCard className="p-4">
+        <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Total Requests</p>
           <p className="text-title-2 text-purple mt-1 tabular-nums">
             {stats?.serviceStats?.totalRequests ?? 0}
           </p>
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Main Controls Card */}
-      <FacetCard className="space-y-5 p-5">
+      <Card className="space-y-5 p-5">
         <div className="border-separator flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <Database className="text-blue h-4 w-4" />
@@ -258,7 +258,7 @@ export function UnifiedMediaServiceAdmin() {
             </div>
           </div>
         )}
-      </FacetCard>
+      </Card>
     </div>
   );
 }

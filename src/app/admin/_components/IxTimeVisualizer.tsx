@@ -255,7 +255,7 @@ export function IxTimeVisualizer() {
   }
 
   return (
-    <Card>
+    <Card className="flex flex-col gap-6 py-6">
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <CardTitle className="text-headline flex items-center gap-2">

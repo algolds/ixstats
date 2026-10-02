@@ -16,7 +16,7 @@ interface CalculationLogsCardProps {
 
 export function CalculationLogsCard({ logs, isLoading, error }: CalculationLogsCardProps) {
   return (
-    <Card>
+    <Card className="flex flex-col gap-6 py-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Database className="text-indigo h-5 w-5" />

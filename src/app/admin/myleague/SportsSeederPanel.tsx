@@ -182,7 +182,7 @@ export default function SportsSeederPanel() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Seeding Configuration Panel (Left) */}
         <div className="space-y-6 lg:col-span-8">
-          <Card className="relative overflow-hidden">
+          <Card className="relative flex flex-col gap-6 overflow-hidden py-6">
             <CardHeader className="pb-2">
               <CardTitle className="text-body flex items-center gap-2">
                 <RefreshCw className="text-indigo h-4 w-4" />
@@ -286,7 +286,7 @@ export default function SportsSeederPanel() {
         {/* Global Admin Diagnostics & Cache Controls (Right) */}
         <div className="space-y-6 lg:col-span-4">
           {/* Cache Controls */}
-          <Card>
+          <Card className="flex flex-col gap-6 py-6">
             <CardHeader className="pb-2">
               <CardTitle className="text-headline flex items-center gap-2">
                 <Layers className="text-yellow h-4 w-4" />
@@ -324,7 +324,7 @@ export default function SportsSeederPanel() {
           </Card>
 
           {/* System Diagnostics */}
-          <Card>
+          <Card className="flex flex-col gap-6 py-6">
             <CardHeader className="pb-2">
               <CardTitle className="text-headline flex items-center gap-2">
                 <Activity className="text-green h-4 w-4" />

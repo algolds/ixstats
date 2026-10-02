@@ -1,7 +1,6 @@
 "use client";
 
 import { Badge } from "~/components/ui/badge";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React, { memo, useState, useEffect, useMemo, useCallback } from "react";
@@ -23,6 +22,7 @@ import { api } from "~/trpc/react";
 import { calculateRouteTravelTime, resolveRouteBaseSpeed } from "~/lib/economy/travel-time";
 import { Checkbox } from "~/components/ui/checkbox";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
+import { Card } from "~/components/ui/card";
 
 interface RouteNodeInspectorProps {
   routeId: string;
@@ -325,7 +325,7 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
 
       {/* Metrics Banner */}
       <div className="grid grid-cols-2 gap-2">
-        <FacetCard className="text-footnote flex items-center justify-between px-3 py-2">
+        <Card className="text-footnote flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
             <RouteIcon className="text-tint h-3.5 w-3.5" />
             <span className="text-label-secondary text-footnote">Distance</span>
@@ -333,8 +333,8 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
           <span className="text-label text-caption font-semibold tabular-nums">
             {liveLengthKm.toFixed(1)} km
           </span>
-        </FacetCard>
-        <FacetCard className="text-footnote flex items-center justify-between px-3 py-2">
+        </Card>
+        <Card className="text-footnote flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
             <Clock className="text-tint h-3.5 w-3.5" />
             <span className="text-label-secondary text-footnote">Est. Time</span>
@@ -342,7 +342,7 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
           <span className="text-label text-caption font-semibold tabular-nums">
             {travelTime.formattedTime}
           </span>
-        </FacetCard>
+        </Card>
       </div>
 
       {/* Path Nodes List */}
@@ -359,7 +359,7 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
             No vertices recorded for this route.
           </div>
         ) : (
-          <FacetCard className="max-h-48 space-y-1 overflow-y-auto p-2">
+          <Card className="max-h-48 space-y-1 overflow-y-auto p-2">
             {currentVertices.map((coord, idx) => {
               const isStart = idx === 0;
               const isEnd = idx === currentVertices.length - 1;
@@ -413,7 +413,7 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
                 </div>
               );
             })}
-          </FacetCard>
+          </Card>
         )}
 
         <div className="bg-fill-4 text-label-secondary text-footnote rounded-control-sm px-2 py-2 leading-relaxed">

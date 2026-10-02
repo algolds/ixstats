@@ -31,9 +31,9 @@ import { ForumAccountVerify } from "~/components/settings/ForumAccountVerify";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { formatMembershipTier } from "~/lib/tier-utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
+import { Card } from "~/components/ui/card";
 
 interface AccountIdentityPanelProps {
   user: UserResource | null | undefined;
@@ -118,7 +118,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
       />
 
       {/* Identity card: v2's glass passport card with the tint wash (Facet 3.1 glass hero) */}
-      <FacetCard variant="glass" glow="shadow" padding="md">
+      <Card variant="hero" padding="md">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <div className="border-separator bg-fill-3 rounded-row relative size-14 shrink-0 overflow-hidden border">
@@ -210,7 +210,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
             </div>
           </div>
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Account credentials & linked accounts */}
       <SettingsGroup

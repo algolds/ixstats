@@ -11,11 +11,11 @@ import React, { useMemo } from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Xmark as X, Package } from "iconoir-react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { formatCurrency } from "~/lib/utils";
 import type { BaseAtomicComponent } from "./types";
+import { Card } from "~/components/ui/card";
 
 export interface AtomicSelectedListProps<TType extends string = string> {
   selectedComponents: BaseAtomicComponent<TType>[];
@@ -53,11 +53,11 @@ function AtomicSelectedListComponent<TType extends string = string>({
 
   if (selectedComponents.length === 0) {
     return (
-      <FacetCard className="flex flex-col items-center justify-center border-dashed px-4 py-10 text-center">
+      <Card className="flex flex-col items-center justify-center border-dashed px-4 py-10 text-center">
         <Package aria-hidden="true" className="text-label-secondary mb-2 h-6 w-6" />
         <p className="text-label text-headline">{emptyTitle}</p>
         <p className="text-label-secondary text-footnote mt-0.5 max-w-[220px]">{emptySubtitle}</p>
-      </FacetCard>
+      </Card>
     );
   }
 
@@ -88,7 +88,7 @@ function AtomicSelectedListComponent<TType extends string = string>({
                 exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95 }}
                 transition={{ duration: 0.15, ease: "easeOut" }}
               >
-                <FacetCard className="flex items-center justify-between gap-2 p-2">
+                <Card className="flex items-center justify-between gap-2 p-2">
                   <div className="flex min-w-0 flex-1 items-center gap-2">
                     <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
                     <div className="min-w-0 flex-1">
@@ -121,7 +121,7 @@ function AtomicSelectedListComponent<TType extends string = string>({
                       <X className="h-3.5 w-3.5" />
                     </Button>
                   )}
-                </FacetCard>
+                </Card>
               </motion.div>
             );
           })}
@@ -129,7 +129,7 @@ function AtomicSelectedListComponent<TType extends string = string>({
       </div>
 
       {/* Totals */}
-      <FacetCard className="text-footnote space-y-1 p-2">
+      <Card className="text-footnote space-y-1 p-2">
         <div className="text-label-secondary flex items-center justify-between">
           <span>Total implementation</span>
           <span className="text-label font-semibold tabular-nums">
@@ -142,7 +142,7 @@ function AtomicSelectedListComponent<TType extends string = string>({
             {currencyFormatter(totals.maint)}/yr
           </span>
         </div>
-      </FacetCard>
+      </Card>
     </div>
   );
 }

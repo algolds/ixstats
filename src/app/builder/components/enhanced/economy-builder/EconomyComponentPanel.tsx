@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
-import { FacetCard, FacetCardContent } from "~/components/ui/facet-container";
 import { BuilderErrorBoundary } from "../../../components/BuilderErrorBoundary";
 import {
   AtomicEconomicComponentSelector,
   type EconomicComponentType,
 } from "~/components/mycountry/domains/economy/atoms/AtomicEconomicComponents";
 import type { ComponentType } from "~/lib/enums";
+import { Card, CardContent } from "~/components/ui/card";
 
 interface EconomyComponentPanelProps {
   selectedComponents: EconomicComponentType[];
@@ -23,13 +23,8 @@ export function EconomyComponentPanel({
   return (
     <div className="space-y-6">
       <BuilderErrorBoundary>
-        <FacetCard
-          texture="chevron"
-          textureOpacity={0.04}
-          className="border-green/20"
-          interactive="none"
-        >
-          <FacetCardContent className="space-y-6 p-6">
+        <Card className="border-green/20">
+          <CardContent className="space-y-6 p-6">
             {/* Standalone hides the selector's own h2 header; name the tab panel (h3 list, h4 cards). */}
             <h2 className="sr-only">Economic components</h2>
             <AtomicEconomicComponentSelector
@@ -40,8 +35,8 @@ export function EconomyComponentPanel({
               hideSelectedList={true}
               standalone={true}
             />
-          </FacetCardContent>
-        </FacetCard>
+          </CardContent>
+        </Card>
       </BuilderErrorBoundary>
     </div>
   );

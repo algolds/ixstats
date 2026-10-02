@@ -1,12 +1,11 @@
 "use client";
-
-import { FacetCard } from "~/components/ui/facet-container";
 import React, { memo } from "react";
 import { SystemRestart as Loader2, NetworkLeft, CheckCircle as CheckCircle2 } from "iconoir-react";
 import { ROUTE_STYLES } from "~/lib/maps/map-config";
 import { Checkbox } from "~/components/ui/checkbox";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 
 const GENERATABLE_ROUTE_TYPES = [
   // Rail
@@ -67,7 +66,7 @@ export const ProceduralRouteGenerator = memo(function ProceduralRouteGenerator({
 
   return (
     <div className="space-y-4">
-      <FacetCard className="space-y-2 p-3">
+      <Card className="space-y-2 p-3">
         <div className="text-label text-caption flex items-center gap-2 font-semibold">
           <NetworkLeft className="text-label-secondary h-3.5 w-3.5" aria-hidden />
           <span>Procedural Network Generation</span>
@@ -76,7 +75,7 @@ export const ProceduralRouteGenerator = memo(function ProceduralRouteGenerator({
           Generate realistic national transit corridors connecting cities, ports, and industrial
           nodes using topographic friction routing and cost-distance pathfinding.
         </p>
-      </FacetCard>
+      </Card>
 
       <div className="space-y-2">
         <span id="route-generator-types" className="text-label-secondary text-caption">

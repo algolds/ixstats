@@ -11,7 +11,6 @@ import { useNotify } from "~/hooks/useNotify";
 import { SyntaxSentenceBuilder } from "./syntax/SyntaxSentenceBuilder";
 import { SyntaxDictionaryEditor } from "./syntax/SyntaxDictionaryEditor";
 import { Input } from "~/components/ui/input";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Button } from "~/components/ui/button";
 import {
   Select,
@@ -20,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Card } from "~/components/ui/card";
 
 const INITIAL_DICTIONARY = {
   dog: "koba",
@@ -179,7 +179,7 @@ export default function SyntaxSection() {
   return (
     <div className="space-y-6">
       {/* Grammar Rules Formulation Card */}
-      <FacetCard variant="inset" padding="none" className="space-y-4 p-5 text-left">
+      <Card variant="inset" padding="none" className="space-y-4 p-5 text-left">
         <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-3">
           <div className="flex items-center gap-2">
             <Input
@@ -284,7 +284,7 @@ export default function SyntaxSection() {
             />
           </div>
         </div>
-      </FacetCard>
+      </Card>
 
       {/* Live Sentence Builder */}
       <SyntaxSentenceBuilder

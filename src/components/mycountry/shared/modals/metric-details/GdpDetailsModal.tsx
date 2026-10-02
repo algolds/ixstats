@@ -14,7 +14,6 @@ import {
   InfoCircle as Info,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { FacetCard, FacetCardHeader, FacetCardContent } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
 // oxlint-disable-next-line eslint/no-unused-vars
@@ -38,6 +37,7 @@ import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetails
 import type { TimeRange, ChartType } from "./types";
 import { MetricModalLayout } from "./MetricModalLayout";
 import { filterAndSortHistory } from "./hooks/useMetricHistoryFilter";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 interface GdpDetailsModalProps {
   isOpen: boolean;
@@ -249,8 +249,8 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <FacetCard className="flex flex-1 flex-col justify-between p-6">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="flex flex-1 flex-col justify-between p-6">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <BarChart3 className="text-label-secondary h-5 w-5" />
                 GDP Performance Summary
@@ -259,48 +259,48 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                 Key performance indicators and historical volatility metrics. Volatility /
                 Peak-Trough / Total Growth merged from former Details tab.
               </p>
-            </FacetCardHeader>
-            <FacetCardContent className="flex flex-1 flex-col justify-center p-0">
+            </CardHeader>
+            <CardContent className="flex flex-1 flex-col justify-center p-0">
               <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3">
                     {gdpStats?.avgGrowth ? `${gdpStats.avgGrowth.toFixed(2)}%` : "N/A"}
                   </div>
                   <div className="text-label-secondary text-footnote mt-1">Avg Annual Growth</div>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3">
                     {gdpStats?.volatility ? `${gdpStats.volatility.toFixed(2)}%` : "N/A"}
                   </div>
                   <div className="text-label-secondary text-footnote mt-1">GDP Volatility</div>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-title-3 text-green">
                     {formatCurrency((gdpStats?.maxGdp || 0) * 1e12)}
                   </div>
                   <div className="text-label-secondary text-footnote mt-1">Peak GDP</div>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-title-3 text-green">
                     {gdpStats?.totalGrowth ? `${gdpStats.totalGrowth.toFixed(1)}%` : "N/A"}
                   </div>
                   <div className="text-label-secondary text-footnote mt-1">Total Growth</div>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3">
                     {gdpStats
                       ? `${(((gdpStats.maxGdp - gdpStats.minGdp) / gdpStats.maxGdp) * 100).toFixed(1)}%`
                       : "N/A"}
                   </div>
                   <div className="text-label-secondary text-footnote mt-1">Peak-to-Trough</div>
-                </FacetCard>
-                <FacetCard variant="inset" padding="none" className="p-4 text-center">
+                </Card>
+                <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3">{gdpStats?.dataPoints || 0}</div>
                   <div className="text-label-secondary text-footnote mt-1">Data Points</div>
-                </FacetCard>
+                </Card>
               </div>
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
@@ -367,29 +367,29 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
 
     if (processedData.length === 0) {
       return (
-        <FacetCard>
-          <FacetCardContent className="py-12 text-center">
+        <Card>
+          <CardContent className="py-12 text-center">
             <LineChart className="text-label-secondary mx-auto mb-4 h-12 w-12 opacity-50" />
             <p className="text-label-secondary">No historical data available</p>
             <p className="text-label-secondary text-body">
               Data points will appear as the economic system generates history
             </p>
-          </FacetCardContent>
-        </FacetCard>
+          </CardContent>
+        </Card>
       );
     }
 
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <FacetCard className="p-6">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="p-6">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3">GDP Historical Trends</h3>
               <p className="text-label-secondary text-body">
                 GDP development over time with {processedData.length} data points
               </p>
-            </FacetCardHeader>
-            <FacetCardContent className="p-0">
+            </CardHeader>
+            <CardContent className="p-0">
               <ChartContainer config={chartConfig} className="h-[350px] w-full">
                 {chartType === "line" && (
                   <RechartsLineChart data={processedData}>
@@ -491,8 +491,8 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                   </ComposedChart>
                 )}
               </ChartContainer>
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>
@@ -538,8 +538,8 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
     return (
       <MetricModalLayout variant="economy">
         <MetricModalLayout.MainArea>
-          <FacetCard className="p-6">
-            <FacetCardHeader className="mb-4 p-0">
+          <Card className="p-6">
+            <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <Info className="text-label-secondary h-5 w-5" />
                 Economic Tier Analysis
@@ -547,12 +547,12 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
               <p className="text-label-secondary text-body">
                 Understanding your economic classification and growth potential
               </p>
-            </FacetCardHeader>
-            <FacetCardContent className="p-0">
+            </CardHeader>
+            <CardContent className="p-0">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-3">
                   <h4 className="text-headline">Current Economic Tier</h4>
-                  <FacetCard variant="inset" padding="none" className="p-4">
+                  <Card variant="inset" padding="none" className="p-4">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-title-3">{countryData?.economicTier}</span>
                       <Badge className={tierInfo?.currentTier?.color}>
@@ -572,11 +572,11 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                           }`
                         : "N/A"}
                     </p>
-                  </FacetCard>
+                  </Card>
                 </div>
                 <div className="space-y-3">
                   <h4 className="text-headline">Next Tier Target</h4>
-                  <FacetCard
+                  <Card
                     variant="inset"
                     padding="none"
                     className="flex min-h-[106px] flex-col justify-center p-4"
@@ -619,11 +619,11 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                           }
                         })()
                       : "N/A"}
-                  </FacetCard>
+                  </Card>
                 </div>
               </div>
-            </FacetCardContent>
-          </FacetCard>
+            </CardContent>
+          </Card>
         </MetricModalLayout.MainArea>
 
         <MetricModalLayout.Sidebar>

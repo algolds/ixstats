@@ -14,7 +14,6 @@
  */
 
 import React, { useState, useMemo, useEffect } from "react";
-import { FacetCard, FacetCardContent, FacetCardHeader } from "~/components/ui/facet-container";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
@@ -52,6 +51,7 @@ import {
 } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 /** Fields this hub reads from a scenario's `responseOptions` (stored as untyped JSON). */
 interface ScenarioResponseOption {
@@ -324,7 +324,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
   return (
     <div className="space-y-6">
       {/* Header Stats */}
-      <FacetCard className="rounded-card p-4">
+      <Card className="rounded-card p-4">
         <dl className="grid grid-cols-3 gap-4">
           {[
             { label: "Active events", value: activeScenarios?.length || 0, icon: FileText },
@@ -350,7 +350,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
             </div>
           ))}
         </dl>
-      </FacetCard>
+      </Card>
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -376,8 +376,8 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                 };
 
                 return (
-                  <FacetCard key={event.id} className="rounded-card">
-                    <FacetCardHeader className="p-5 pb-3">
+                  <Card key={event.id} className="rounded-card">
+                    <CardHeader className="p-5 pb-3">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <div className="mb-2 flex items-center gap-2">
@@ -395,8 +395,8 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                           )}
                         </div>
                       </div>
-                    </FacetCardHeader>
-                    <FacetCardContent className="px-5 pb-5">
+                    </CardHeader>
+                    <CardContent className="px-5 pb-5">
                       <p className="text-label-secondary text-body mb-4 line-clamp-3">
                         {event.narrative}
                       </p>
@@ -427,13 +427,13 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                           View & Respond
                         </Button>
                       </div>
-                    </FacetCardContent>
-                  </FacetCard>
+                    </CardContent>
+                  </Card>
                 );
               })}
             </div>
           ) : (
-            <FacetCard className="rounded-card flex min-h-[240px] items-center justify-center p-6">
+            <Card className="rounded-card flex min-h-[240px] items-center justify-center p-6">
               <div className="space-y-3 text-center">
                 <CheckCircle className="text-label-secondary mx-auto h-6 w-6" />
                 <div>
@@ -443,7 +443,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                   </p>
                 </div>
               </div>
-            </FacetCard>
+            </Card>
           )}
         </TabsContent>
 
@@ -483,7 +483,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                 };
 
                 return (
-                  <FacetCard key={event.id} className="rounded-card p-4">
+                  <Card key={event.id} className="rounded-card p-4">
                     <div className="flex items-start gap-4">
                       <div className="flex-1">
                         <div className="mb-2 flex items-center gap-2">
@@ -506,17 +506,17 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                         {new Date(event.resolvedAt ?? event.createdAt).toLocaleDateString()}
                       </div>
                     </div>
-                  </FacetCard>
+                  </Card>
                 );
               })}
             </div>
           ) : (
-            <FacetCard className="rounded-card flex min-h-[200px] items-center justify-center p-6">
+            <Card className="rounded-card flex min-h-[200px] items-center justify-center p-6">
               <div className="space-y-2 text-center">
                 <History className="text-label-secondary mx-auto h-6 w-6" />
                 <p className="text-label-secondary text-body">No event history found</p>
               </div>
-            </FacetCard>
+            </Card>
           )}
         </TabsContent>
       </Tabs>
@@ -548,7 +548,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                   <h4 className="text-label text-headline mb-3">Response Options</h4>
                   <div className="space-y-3">
                     {selectedEvent.responseOptions.map((option, idx) => (
-                      <FacetCard variant="inset" key={idx} className="p-4">
+                      <Card variant="inset" key={idx} className="p-4">
                         <div className="mb-2 flex items-start justify-between">
                           <h5 className="text-label text-body font-medium">
                             {option.label || `Option ${idx + 1}`}
@@ -567,7 +567,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
                             cultural: option.culturalImpact,
                           }}
                         />
-                      </FacetCard>
+                      </Card>
                     ))}
                   </div>
                 </div>

@@ -165,7 +165,7 @@ export function InventoryTab({
             exit={{ opacity: 0, height: 0 }}
             transition={springSmooth}
           >
-            <Card className="facet-tint-rim">
+            <Card className="facet-tint-rim flex flex-col gap-6 py-6">
               <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
                 <div className="flex items-center gap-2">
                   <CheckSquare className="text-tint h-5 w-5" />
@@ -253,7 +253,7 @@ export function InventoryTab({
             ))}
           </div>
         ) : filteredCards.length === 0 ? (
-          <Card>
+          <Card className="flex flex-col gap-6 py-6">
             <CardContent className="flex flex-col items-center justify-center py-8">
               <AlertCircle className="text-label-tertiary mb-3 h-10 w-10" />
               <p className="text-label text-headline mb-1">No cards found</p>

@@ -24,11 +24,11 @@ import {
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetCard, FACET_INSET_SURFACE } from "~/components/ui/facet-container";
 import { Stat } from "~/components/ui/stat";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import type { PassportWiki } from "../types";
+import { Card } from "~/components/ui/card";
 
 interface PassportLorewardsModalProps {
   open: boolean;
@@ -178,7 +178,10 @@ export function PassportLorewardsModal({
             {/* Streak calendar */}
             <section
               aria-labelledby="lorewards-calendar-title"
-              className={cn(FACET_INSET_SURFACE, "space-y-3 p-4 md:col-span-5")}
+              className={cn(
+                "bg-surface-secondary text-label rounded-row",
+                "space-y-3 p-4 md:col-span-5"
+              )}
             >
               <div className="border-separator flex items-center justify-between border-b pb-2">
                 <h4
@@ -285,7 +288,10 @@ export function PassportLorewardsModal({
             {/* Laurels ledger */}
             <section
               aria-labelledby="lorewards-history-title"
-              className={cn(FACET_INSET_SURFACE, "space-y-3 p-4 md:col-span-7")}
+              className={cn(
+                "bg-surface-secondary text-label rounded-row",
+                "space-y-3 p-4 md:col-span-7"
+              )}
             >
               <div className="border-separator flex items-center justify-between border-b pb-2">
                 <h4
@@ -403,8 +409,8 @@ function MetricCard({
   subtext?: string;
 }) {
   return (
-    <FacetCard variant="inset" padding="sm">
+    <Card variant="inset" padding="sm">
       <Stat label={label} value={value} hint={subtext} icon={icon} iconPlacement="trailing" />
-    </FacetCard>
+    </Card>
   );
 }

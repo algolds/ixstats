@@ -2,13 +2,13 @@
 // src/app/admin/_components/ErrorBoundary.tsx
 
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import React, { Component, type ErrorInfo, type ReactNode } from "react";
 import {
   WarningTriangle as AlertTriangle,
   Refresh as RefreshCw,
   HomeSimple as Home,
 } from "iconoir-react";
+import { Card } from "~/components/ui/card";
 
 interface Props {
   children: ReactNode;
@@ -66,7 +66,7 @@ export class AdminErrorBoundary extends Component<Props, State> {
 
       return (
         <div className="bg-grouped flex min-h-screen items-center justify-center p-4">
-          <FacetCard padding="lg" className="w-full max-w-md text-center">
+          <Card padding="lg" className="w-full max-w-md text-center">
             <div className="mb-4">
               <AlertTriangle aria-hidden className="text-destructive mx-auto mb-4 size-12" />
               <h1 className="text-label text-title-1 mb-2">Admin Dashboard Error</h1>
@@ -116,7 +116,7 @@ export class AdminErrorBoundary extends Component<Props, State> {
                 If this problem persists, please contact your system administrator.
               </p>
             </div>
-          </FacetCard>
+          </Card>
         </div>
       );
     }

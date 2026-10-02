@@ -16,7 +16,7 @@ import {
 } from "~/components/ui/select";
 import { Crown, User, Check, WarningCircle as AlertCircle } from "iconoir-react";
 import { AdminHeader } from "../_components/AdminHeader";
-import { FacetCard } from "~/components/ui/facet-container";
+import { Card } from "~/components/ui/card";
 
 export function MembershipPanel() {
   const { user } = useUser();
@@ -62,7 +62,7 @@ export function MembershipPanel() {
       />
 
       <div className="mx-auto max-w-xl">
-        <FacetCard className="space-y-5 p-5">
+        <Card className="space-y-5 p-5">
           {user && (
             <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-3">
               <div className="flex items-center gap-3">
@@ -131,7 +131,7 @@ export function MembershipPanel() {
               {updateMembershipMutation.isPending ? "Updating Tier..." : "Apply Membership Tier"}
             </Button>
           </div>
-        </FacetCard>
+        </Card>
       </div>
     </div>
   );

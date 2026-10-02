@@ -5,7 +5,6 @@ import { Archive, KeyCommand, Page, Plus } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Toggle } from "~/components/ui/toggle";
@@ -20,6 +19,7 @@ import {
 import { DirectiveStatusStrip } from "./DirectiveStatusStrip";
 import { DirectiveCard } from "./DirectiveCard";
 import { directiveTimeline, type IntentRow } from "./directive-model";
+import { Card } from "~/components/ui/card";
 
 export type DirectivesView = "new" | "active" | "history";
 type HistoryFilter = "all" | "completed" | "abandoned";
@@ -53,12 +53,12 @@ function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <FacetCard className="rounded-card flex flex-col items-center px-6 py-12 text-center">
+    <Card className="rounded-card flex flex-col items-center px-6 py-12 text-center">
       <Icon className="text-label-secondary h-6 w-6" aria-hidden />
       <p className="text-label text-title-3 mt-4">{title}</p>
       <p className="text-label-secondary text-body mt-1 max-w-sm">{body}</p>
       {action && <div className="mt-6">{action}</div>}
-    </FacetCard>
+    </Card>
   );
 }
 
@@ -185,7 +185,7 @@ export function DirectivesWorkspace({
   };
 
   return (
-    <FacetCard className="rounded-card space-y-6 p-4 sm:p-6">
+    <Card className="rounded-card space-y-6 p-4 sm:p-6">
       {/* Page header */}
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -400,6 +400,6 @@ export function DirectivesWorkspace({
           countryId={countryId}
         />
       )}
-    </FacetCard>
+    </Card>
   );
 }

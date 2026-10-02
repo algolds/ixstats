@@ -3,7 +3,6 @@
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Stat } from "~/components/ui/stat";
@@ -14,6 +13,7 @@ import { cn } from "~/lib/utils";
 import { Trophy, Group as Users, ArrowRight, Shield } from "iconoir-react";
 import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
 import { SPORT_EMOJIS, type SportPresetKey } from "~/lib/sports/presets";
+import { Card } from "~/components/ui/card";
 
 const MYCLUB_HELP_STEPS: HeroHelpStep[] = [
   {
@@ -36,7 +36,7 @@ const MYCLUB_HELP_STEPS: HeroHelpStep[] = [
 
 function ClubCardSkeleton() {
   return (
-    <FacetCard padding="md" className="space-y-4">
+    <Card padding="md" className="space-y-4">
       <div className="flex items-center gap-3">
         <Skeleton className="rounded-row size-12" />
         <div className="flex-1 space-y-2">
@@ -46,7 +46,7 @@ function ClubCardSkeleton() {
       </div>
       <Skeleton className="rounded-row h-16 w-full" />
       <Skeleton className="h-9 w-full" />
-    </FacetCard>
+    </Card>
   );
 }
 
@@ -73,7 +73,7 @@ export default function MyClubPage() {
   return (
     <div className="container mx-auto max-w-7xl space-y-8 px-4 py-8">
       {/* ─── FRANCHISE SUITE HEADER ─── v2 glass hero (no glow: sports stay flat) */}
-      <FacetCard variant="glass" padding="lg">
+      <Card variant="hero" padding="lg">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -100,7 +100,7 @@ export default function MyClubPage() {
             </Button>
           </div>
         </div>
-      </FacetCard>
+      </Card>
 
       {/* ─── FRANCHISE ROSTER / GRID ─── */}
       <section className="space-y-4" aria-labelledby="managed-clubs">
@@ -119,7 +119,7 @@ export default function MyClubPage() {
             ))}
           </div>
         ) : !clubs || clubs.length === 0 ? (
-          <FacetCard>
+          <Card>
             <EmptyState
               icon={<Shield />}
               title="No Franchises Claimed Yet"
@@ -131,7 +131,7 @@ export default function MyClubPage() {
                 </Button>
               }
             />
-          </FacetCard>
+          </Card>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {clubs.map((team) => {
@@ -141,11 +141,12 @@ export default function MyClubPage() {
               const form = (team as unknown as { form?: string[] }).form ?? [];
 
               return (
-                <FacetCard
+                <Card
                   key={team.id}
                   onClick={() => router.push(withBasePath(`/myclub/${team.id}`))}
                   aria-label={`Open ${team.name}`}
                   className="group flex flex-col justify-between overflow-hidden"
+                  interactive
                 >
                   {/* Club colour hairline (data colour) */}
                   {team.color && (
@@ -245,7 +246,7 @@ export default function MyClubPage() {
                       </Button>
                     </div>
                   </div>
-                </FacetCard>
+                </Card>
               );
             })}
           </div>

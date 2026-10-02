@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import { FacetCard } from "~/components/ui/facet-container";
 import { Badge } from "~/components/ui/badge";
 import { Trophy } from "iconoir-react";
 import { DraftPicksView, type DraftPick } from "~/components/sports/league/DraftPicksView";
+import { Card } from "~/components/ui/card";
 
 export interface LeagueDraftTabProps {
   picks: DraftPick[];
@@ -17,7 +17,7 @@ export function LeagueDraftTab({ picks, sportPreset, onTeamClick }: LeagueDraftT
   const title = isSoccer ? "Transfers" : "Draft Board";
 
   return (
-    <FacetCard className="relative space-y-6 overflow-hidden p-6 md:p-8">
+    <Card className="relative space-y-6 overflow-hidden p-6 md:p-8">
       <div className="border-separator flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="rounded-row border-separator bg-surface-secondary text-label shadow-card flex h-9 w-9 items-center justify-center border">
@@ -39,7 +39,7 @@ export function LeagueDraftTab({ picks, sportPreset, onTeamClick }: LeagueDraftT
       </div>
 
       <DraftPicksView picks={picks} isSoccer={isSoccer} onTeamClick={onTeamClick} />
-    </FacetCard>
+    </Card>
   );
 }
 
