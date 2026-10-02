@@ -244,7 +244,7 @@ export function MapDynamicIsland({
 
   /** The island is Halo's acrylic over the map; `data-expanded` while searching. */
   const islandClass = cn(
-    "facet-acrylic-brand overflow-hidden rounded-full transition-[outline-color,background-color,border-color,box-shadow,backdrop-filter] duration-300",
+    "overflow-hidden rounded-full transition-[outline-color,background-color,border-color,box-shadow,backdrop-filter] duration-300",
     "outline-2 outline-transparent outline-solid",
     isFlashing && "outline-red/70"
   );

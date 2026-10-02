@@ -241,6 +241,7 @@
 
   /* Motion (§8). Springs are for motion/react — see src/lib/design/motion.ts. */
   --duration-fast: 150ms; /* colour and opacity changes */
+  --duration-slow: 300ms; /* glass and chrome state changes */
   --duration-exit: 120ms; /* exits, always faster than entrances */
   --ease-out-facet: cubic-bezier(0.23, 1, 0.32, 1);
   --spring-snappy-stiffness: 520; /* controls */
@@ -252,8 +253,9 @@
 }
 
 @theme inline static {
-  /* `duration-fast` / `duration-exit` utilities */
+  /* `duration-fast` / `duration-slow` / `duration-exit` utilities */
   --transition-duration-fast: var(--duration-fast);
+  --transition-duration-slow: var(--duration-slow);
   --transition-duration-exit: var(--duration-exit);
 }
 
@@ -449,7 +451,8 @@
 }
 
 /* ─── §5 Materials (floating chrome only; never nested) ──────────────────── */
-/* No position / z-index / radius / margin — those belong to the component. */
+/* No position / z-index / radius / margin — those belong to the component. Reduce Transparency
+   makes them opaque. */
 
 @utility material-thin {
   --material-blur: 12px;
@@ -466,17 +469,7 @@
   @media (max-width: 768px) {
     --material-blur: 8px;
   }
-  @media (hover: hover) {
-    &:hover {
-      --material-highlight: var(--material-highlight-hover);
-    }
-  }
-  @media (prefers-reduced-transparency: reduce) {
-    background-color: var(--color-surface);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-  &:where([data-transparency="reduced"] *) {
+  @variant transparency-reduced {
     background-color: var(--color-surface);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -497,17 +490,7 @@
   @media (max-width: 768px) {
     --material-blur: 12px;
   }
-  @media (hover: hover) {
-    &:hover {
-      --material-highlight: var(--material-highlight-hover);
-    }
-  }
-  @media (prefers-reduced-transparency: reduce) {
-    background-color: var(--color-surface);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-  &:where([data-transparency="reduced"] *) {
+  @variant transparency-reduced {
     background-color: var(--color-surface);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -528,17 +511,7 @@
   @media (max-width: 768px) {
     --material-blur: 20px;
   }
-  @media (hover: hover) {
-    &:hover {
-      --material-highlight: var(--material-highlight-hover);
-    }
-  }
-  @media (prefers-reduced-transparency: reduce) {
-    background-color: var(--color-surface-elevated);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-  &:where([data-transparency="reduced"] *) {
+  @variant transparency-reduced {
     background-color: var(--color-surface-elevated);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -553,7 +526,6 @@
     --text-scale: 1;
     --shadow-strength: 1;
     --material-highlight: rgba(255, 255, 255, 0.2);
-    --material-highlight-hover: rgba(255, 255, 255, 0.4);
 
     /* Density (§4): component padding/gap multiplier and control heights 28/36/44 */
     --density: 1;
@@ -591,7 +563,6 @@
     color-scheme: dark;
     --shadow-strength: 0.5;
     --material-highlight: rgba(255, 255, 255, 0.08);
-    --material-highlight-hover: rgba(255, 255, 255, 0.15);
 
     --color-label: #e4e4e7;
     --color-label-secondary: #a1a1aa;
@@ -745,53 +716,36 @@
     --tint-fill: color-mix(in srgb, var(--tint) 18%, transparent);
   }
 
-  /* §2.3 Increase Contrast: separators .20/.24, labels and tints one step stronger */
-  :root[data-contrast="more"] {
-    --color-label-secondary: #3f3f46;
-    --color-label-tertiary: #71717a;
-    --color-label-vibrant-secondary: #3f3f46;
-    --color-separator: rgba(0, 0, 0, 0.2);
-    --color-separator-opaque: #a1a1aa;
-  }
-  :root[data-contrast="more"],
-  :root[data-contrast="more"] [data-app] {
-    --tint: var(--tint-light-strong);
-    --tint-hover: color-mix(in srgb, var(--tint-light-strong) 85%, black);
-  }
-  :root[data-theme="dark"][data-contrast="more"] {
-    --color-label-secondary: #d4d4d8;
-    --color-label-tertiary: #a1a1aa;
-    --color-label-vibrant-secondary: #d4d4d8;
-    --color-separator: rgba(255, 255, 255, 0.24);
-    --color-separator-opaque: #52525b;
-  }
-  :root[data-theme="dark"][data-contrast="more"],
-  :root[data-theme="dark"][data-contrast="more"] [data-app] {
-    --tint: var(--tint-dark-strong);
-    --tint-hover: color-mix(in srgb, var(--tint-dark-strong) 85%, white);
-  }
-  @media (prefers-contrast: more) {
-    :root:not([data-theme="dark"]) {
+  /* Increase Contrast: separators .20/.24, labels and tints one step stronger. The dark rules come
+     second and are more specific, so they win in the dark theme. */
+  :root {
+    @variant contrast-more {
       --color-label-secondary: #3f3f46;
       --color-label-tertiary: #71717a;
       --color-label-vibrant-secondary: #3f3f46;
       --color-separator: rgba(0, 0, 0, 0.2);
       --color-separator-opaque: #a1a1aa;
     }
-    :root:not([data-theme="dark"]),
-    :root:not([data-theme="dark"]) [data-app] {
+  }
+  :root,
+  [data-app] {
+    @variant contrast-more {
       --tint: var(--tint-light-strong);
       --tint-hover: color-mix(in srgb, var(--tint-light-strong) 85%, black);
     }
-    :root[data-theme="dark"] {
+  }
+  :root[data-theme="dark"] {
+    @variant contrast-more {
       --color-label-secondary: #d4d4d8;
       --color-label-tertiary: #a1a1aa;
       --color-label-vibrant-secondary: #d4d4d8;
       --color-separator: rgba(255, 255, 255, 0.24);
       --color-separator-opaque: #52525b;
     }
-    :root[data-theme="dark"],
-    :root[data-theme="dark"] [data-app] {
+  }
+  :root[data-theme="dark"],
+  :root[data-theme="dark"] [data-app] {
+    @variant contrast-more {
       --tint: var(--tint-dark-strong);
       --tint-hover: color-mix(in srgb, var(--tint-dark-strong) 85%, white);
     }
@@ -818,125 +772,44 @@
   }
 }
 
-/* ─── Facet 3.1 — identity (spec §16) ────────────────────────────────────── */
-/* The v2 identity restored on tokens. Scalars only: everything that mixes the app tint
-   (`--tint`) is composed at the element by the utilities/classes in styles/facet/identity.css,
-   because a custom property that reads `var(--tint)` on :root would bake the root tint into every
-   `[data-app]` subtree. Mirrored in src/lib/design/tokens.ts (`IDENTITY`) and checked by
-   token-contrast.test.ts (monochrome and gold primaries, glass hero legibility). */
+/* ─── Identity: glass, glow, primary ─────────────────────────────────────── */
+/* Scalars only. Anything that mixes the app tint (`--tint`) is composed at the element in
+   styles/facet/identity.css: a custom property that reads `var(--tint)` on :root would bake the
+   root tint into every `[data-app]` subtree. */
 
 @theme static {
-  /* CutoutCard (v2 `rounded-[28px]`) */
   --radius-cutout: 1.75rem;
 }
 
 @layer base {
   :root {
-    /* Glass hero tier (`material-hero`, `FacetCard variant="glass"`) — v2 `.facet-hierarchy-parent`
-       light glass (white 90% → 70% at 135°) with the `.facet-depth-1` blur. */
-    --glass-hero-fill-from: 90%;
-    --glass-hero-fill-to: 70%;
-    --glass-hero-blur: 16px;
-    --glass-hero-blur-compact: 12px;
-    --glass-hero-saturate: 150%;
-    --glass-hero-rim: rgb(255 255 255 / 0.9);
-    --glass-hero-border-tint: 30%;
-    /* v2 `.facet-{domain}` wash: tint @ --refraction-medium (.15) → .05 at 50% → transparent. */
-    --glass-hero-wash-from: 15%;
-    --glass-hero-wash-mid: 5%;
-    --glass-hero-shadow: 0 2px 8px rgb(0 0 0 / 0.04), 0 4px 16px rgb(0 0 0 / 0.08);
-    --glass-hero-shadow-tint: 12%;
-    --glass-hero-shadow-hover: 0 2px 8px rgb(0 0 0 / 0.05), 0 4px 16px rgb(0 0 0 / 0.1);
-    --glass-hero-shadow-hover-tint: 18%;
-
-    /* Acrylic (`material-acrylic`: Halo, sidebar, tab bar) — v2 `.dynamic-island-shell`. */
+    /* Hero glass (`material-hero`) and the Halo acrylic (`material-acrylic`) */
+    --glass-fill: 85%;
+    --glass-blur: 16px;
+    --glass-hairline: color-mix(in srgb, var(--color-label) 10%, transparent);
+    --glass-wash: 12%;
+    --glow-alpha: 18%;
+    --glow-size: 28px;
     --acrylic-fill: rgb(255 255 255 / 0.85);
-    --acrylic-fill-active: rgb(255 255 255 / 0.9);
-    --acrylic-border: rgb(0 0 0 / 0.08);
-    --acrylic-border-active: rgb(0 0 0 / 0.11);
-    --acrylic-blur: 28px;
-    --acrylic-blur-active: 32px;
-    --acrylic-saturate: 190%;
-    --acrylic-saturate-active: 200%;
-    --acrylic-rim: inset 0 1px 0 rgb(255 255 255 / 0.95), inset 0 -1px 0 rgb(0 0 0 / 0.03);
-    --acrylic-rim-active: inset 0 1px 0 rgb(255 255 255 / 1), inset 0 -1px 0 rgb(0 0 0 / 0.04);
-    --acrylic-shadow: 0 16px 36px -8px rgb(0 0 0 / 0.12), 0 4px 12px -2px rgb(0 0 0 / 0.04);
-    --acrylic-shadow-active: 0 20px 44px -8px rgb(0 0 0 / 0.14), 0 6px 14px -2px rgb(0 0 0 / 0.05);
-    /* Expanded sheet (`data-expanded="true"`) — v2 `.dynamic-island-shell[data-expanded]`. */
-    --acrylic-fill-expanded-from: rgb(255 255 255 / 0.94);
-    --acrylic-fill-expanded-to: rgb(250 250 253 / 0.89);
-    --acrylic-border-expanded: rgb(0 0 0 / 0.1);
-    --acrylic-blur-expanded: 40px;
-    --acrylic-saturate-expanded: 210%;
-    --acrylic-brightness-expanded: 102%;
-    --acrylic-rim-expanded:
-      inset 0 1.5px 1px rgb(255 255 255 / 1), inset 0 0 0 1px rgb(255 255 255 / 0.65),
-      inset 0 -1px 0 rgb(0 0 0 / 0.03);
-    --acrylic-shadow-expanded:
-      0 32px 64px -12px rgb(0 0 0 / 0.18), 0 12px 28px -4px rgb(0 0 0 / 0.08);
 
-    /* Refraction hairline (`<Refraction />`): v2 `.facet-refraction::after` stops. */
-    --refraction-peak: rgb(255 255 255 / 0.35);
-    --refraction-soft: rgb(255 255 255 / 0.2);
-    --refraction-opacity: 0.8;
-    --refraction-opacity-hover: 1;
-
-    /* Domain glow: v2 blob (`size-40 opacity-15 blur-3xl bg-<domain>`) and v2
-       `.dashboard-section-*` tinted shadow (tint 15% / 10%, hover 25% / 15%). */
-    --glow-opacity: 0.15;
-    --glow-blur: 64px;
-    --glow-shadow-tint: 15%;
-    --glow-shadow-tint-near: 10%;
-    --glow-shadow-tint-hover: 25%;
-    --glow-shadow-tint-near-hover: 15%;
-
-    /* Flag watermark: v2 DashboardHero (.14 light / .18 dark → .25 on hover, luminosity in light). */
-    --flag-watermark-opacity: 0.14;
-    --flag-watermark-opacity-hover: 0.25;
-    --flag-watermark-blend: luminosity;
-    /* HIG (spec §16.8): caps the flag's extremes so labels stay ≥ 4.5:1 over any flag. */
-    --flag-watermark-tone: contrast(0.7);
-
-    /* Physics: v2 press (`active:scale-[0.98]`, small controls `active:scale-95`) and lift
-       (`hover:-translate-y-0.5` + the `.facet-interactive` hover shadow). Reduce Motion drops the
-       transforms in the utilities themselves (identity.css). */
+    /* Press and lift (`facet-press`, `facet-lift`) */
     --facet-press-scale: 0.98;
     --facet-lift-y: -2px;
     --facet-lift-shadow: 0 8px 24px rgb(0 0 0 / 0.08), 0 3px 8px rgb(0 0 0 / 0.04);
 
-    /* Monochrome primary (`Button variant="filled"`): v2 `--primary: text-primary`. */
-    --primary-fill-mono: #18181b;
-    --primary-fill-mono-hover: #3f3f46;
+    /* Primary action: monochrome, flat gold inside MyCountry and the Builder */
+    --primary-mono: #18181b;
+    --primary-mono-hover: #3f3f46;
     --on-primary-mono: #fafafa;
-
-    /* MyCountry / Builder gold: v2 BUILDER_GOLD `from-amber-500 to-yellow-600`. Hover brightens
-       (amber-400 → yellow-500) instead of v2's darker stops, which fail AA with the dark label. */
-    --gold-from: #f59e0b;
-    --gold-to: #ca8a04;
-    --gold-from-hover: #fbbf24;
-    --gold-to-hover: #eab308;
+    --gold: #f59e0b;
+    --gold-hover: #fbbf24;
     --on-gold: #1c1917;
-    /* Gold rim: a light-catching top edge, a 1px edge that holds 3:1 against light surfaces
-       (amber-700), and the v2 `.dashboard-section-mycountry` glow (rgba(202,138,4,.1)). */
-    --gold-rim-edge: #b45309;
-    --gold-rim:
-      inset 0 1px 0 rgb(255 255 255 / 0.35), inset 0 0 0 1px var(--gold-rim-edge),
-      0 4px 12px rgb(202 138 4 / 0.1);
-    --gold-rim-hover:
-      inset 0 1px 0 rgb(255 255 255 / 0.45), inset 0 0 0 1px var(--gold-rim-edge),
-      0 8px 24px rgb(202 138 4 / 0.12);
-    /* `facet-gold-rim` / `rim="gold"`: the v2 `.facet-mycountry` border and top edge. Under
-       Increase Contrast the border becomes `--gold-rim-edge` (≥ 3:1). */
-    --gold-rim-border: rgb(202 138 4 / 0.3);
-    --gold-rim-highlight: rgb(255 215 0 / 0.3);
-    /* `accent="gold"`: amber-700 in light (the gold stops are < 3:1 on white), amber-500 in dark. */
+    /* `accent="gold"`: amber-700 on light surfaces (the fill is under 3:1 there), amber-500 in dark */
     --gold-accent: #b45309;
 
-    /* Accent fill (`bg-facet-accent-fill`, the CutoutCard header strip): the accent at the
-       `tint-fill` strength. */
+    /* `bg-facet-accent-fill`: the accent at the `tint-fill` strength */
     --accent-fill-mix: 14%;
 
-    /* CutoutCard elevation: the v2 `--facet-shadow-cutout` stack on the label colour. */
     --cutout-shadow:
       0 1px 2px -1px color-mix(in oklab, var(--color-label) 8%, transparent),
       0 4px 8px -2px color-mix(in oklab, var(--color-label) 6%, transparent),
@@ -945,103 +818,64 @@
       0 2px 4px -1px color-mix(in oklab, var(--color-label) 10%, transparent),
       0 8px 16px -4px color-mix(in oklab, var(--color-label) 8%, transparent),
       0 16px 32px -8px color-mix(in oklab, var(--color-label) 6%, transparent);
-
-    /* Achievement aurora / foil / ghost heraldry (v2 AchievementCardBackdrop). */
-    --aurora-opacity: 0.4;
-    --aurora-opacity-hover: 0.75;
-    --radiance-opacity: 0.45;
-    --radiance-opacity-hover: 0.7;
-    --foil-opacity: 0.6;
-    --heraldry-opacity: 0.065;
   }
 
-  /* Dark: the more polished, glass-forward theme (deeper blur and saturation, brighter rim). */
   :root[data-theme="dark"] {
-    --glass-hero-fill-from: 62%;
-    --glass-hero-fill-to: 72%;
-    --glass-hero-blur: 24px;
-    --glass-hero-blur-compact: 16px;
-    --glass-hero-saturate: 180%;
-    --glass-hero-rim: rgb(255 255 255 / 0.12);
-    --glass-hero-border-tint: 25%;
-    --glass-hero-wash-from: 10.5%;
-    --glass-hero-wash-mid: 2.5%;
-    --glass-hero-shadow: 0 4px 20px rgb(0 0 0 / 0.3);
-    --glass-hero-shadow-tint: 12%;
-    --glass-hero-shadow-hover: 0 12px 32px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.2);
-    --glass-hero-shadow-hover-tint: 20%;
-
+    --glass-fill: 65%;
+    --glass-wash: 10%;
     --acrylic-fill: rgb(15 17 24 / 0.88);
-    --acrylic-fill-active: rgb(18 20 28 / 0.92);
-    --acrylic-border: rgb(255 255 255 / 0.12);
-    --acrylic-border-active: rgb(255 255 255 / 0.16);
-    --acrylic-rim: inset 0 1px 0 rgb(255 255 255 / 0.15), inset 0 -1px 0 rgb(0 0 0 / 0.4);
-    --acrylic-rim-active: inset 0 1px 0 rgb(255 255 255 / 0.2), inset 0 -1px 0 rgb(0 0 0 / 0.5);
-    --acrylic-shadow: 0 20px 48px -10px rgb(0 0 0 / 0.65), 0 8px 20px -4px rgb(0 0 0 / 0.45);
-    --acrylic-shadow-active: 0 24px 54px -10px rgb(0 0 0 / 0.72), 0 10px 24px -4px rgb(0 0 0 / 0.5);
-    --acrylic-fill-expanded-from: rgb(24 28 40 / 0.94);
-    --acrylic-fill-expanded-to: rgb(13 15 22 / 0.96);
-    --acrylic-border-expanded: rgb(255 255 255 / 0.15);
-    --acrylic-brightness-expanded: 104%;
-    --acrylic-rim-expanded:
-      inset 0 1px 1px rgb(255 255 255 / 0.28), inset 0 0 0 1px rgb(255 255 255 / 0.06),
-      inset 0 -1px 0 rgb(0 0 0 / 0.6);
-    --acrylic-shadow-expanded:
-      0 36px 72px -16px rgb(0 0 0 / 0.88), 0 16px 32px -6px rgb(0 0 0 / 0.6);
-
-    --refraction-peak: rgb(255 255 255 / 0.3);
-    --refraction-soft: rgb(255 255 255 / 0.12);
-
-    --flag-watermark-opacity: 0.18;
-    --flag-watermark-blend: normal;
-    --flag-watermark-tone: brightness(0.6);
-
     --facet-lift-shadow: 0 12px 32px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.2);
-
-    --primary-fill-mono: #f4f4f5;
-    --primary-fill-mono-hover: #d4d4d8;
-    --on-primary-mono: #0b0c0f;
-
-    --gold-rim-edge: rgb(252 211 77 / 0.5);
+    --primary-mono: #e4e4e7;
+    --primary-mono-hover: #d4d4d8;
+    --on-primary-mono: #0f1114;
     --gold-accent: #f59e0b;
     --accent-fill-mix: 18%;
-
-    --heraldry-opacity: 0.095;
   }
 
-  /* The primary role: monochrome everywhere, gold inside MyCountry and the Builder. Declared on
-     each scope so a nested app (intel inside MyCountry) resets to monochrome. */
+  /* Declared on every scope so a nested app (intel inside MyCountry) resets to monochrome. */
   :root,
   [data-app] {
-    --primary-fill: var(--primary-fill-mono);
-    --primary-fill-hover: var(--primary-fill-mono-hover);
-    --primary-fill-image: none;
-    --primary-fill-image-hover: none;
+    --primary-fill: var(--primary-mono);
+    --primary-fill-hover: var(--primary-mono-hover);
     --on-primary: var(--on-primary-mono);
-    --primary-rim: 0 0 #0000;
-    --primary-rim-hover: 0 0 #0000;
   }
-  [data-app="mycountry"] {
-    --primary-fill: var(--gold-to);
-    --primary-fill-hover: var(--gold-to-hover);
-    --primary-fill-image: linear-gradient(to right, var(--gold-from), var(--gold-to));
-    --primary-fill-image-hover: linear-gradient(to right, var(--gold-from-hover), var(--gold-to-hover));
+  [data-app="mycountry"],
+  [data-app="builder"] {
+    --primary-fill: var(--gold);
+    --primary-fill-hover: var(--gold-hover);
     --on-primary: var(--on-gold);
-    --primary-rim: var(--gold-rim);
-    --primary-rim-hover: var(--gold-rim-hover);
+  }
+
+  @media (max-width: 768px) {
+    :root {
+      --glass-blur: 12px;
+    }
+  }
+  /* Reduce Transparency and Increase Contrast turn the glass materials into opaque cards. */
+  :root[data-theme] {
+    @variant transparency-reduced {
+      --glass-fill: 100%;
+      --glass-wash: 0%;
+      --glass-blur: 0px;
+      --acrylic-fill: var(--color-surface-elevated);
+    }
+    @variant contrast-more {
+      --glass-fill: 100%;
+      --glass-wash: 0%;
+      --glass-blur: 0px;
+      --glass-hairline: var(--color-separator-opaque);
+      --acrylic-fill: var(--color-surface-elevated);
+    }
   }
 }
 
 @theme inline static {
-  /* `bg-primary-fill`, `text-on-primary` (the monochrome/gold primary role) */
+  /* `bg-primary-fill`, `text-on-primary` */
   --color-primary-fill: var(--primary-fill);
   --color-primary-fill-hover: var(--primary-fill-hover);
   --color-on-primary: var(--on-primary);
 
-  /* Facet 3.1 accents (`accent` on FacetCard / CutoutCard / FacetMaterial, spec §16.3): the scoped
-     `--facet-accent`, or the app tint where no accent is set. `text-facet-accent` (icons),
-     `text-facet-accent-ink` (text on its fill), `bg-facet-accent-fill` (the header strip),
-     `border-facet-accent/30`… */
+  /* `accent` on cards: the scoped `--facet-accent`, or the app tint where none is set */
   --color-facet-accent: var(--facet-accent, var(--tint));
   --color-facet-accent-ink: color-mix(in srgb, var(--facet-accent, var(--tint)) 80%, var(--color-label));
   --color-facet-accent-fill: color-mix(

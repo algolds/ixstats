@@ -195,7 +195,7 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
     iconFill: "bg-green",
     accent: "green",
     accent2: "yellow",
-    jewel: ["var(--gold-from)", pale("var(--color-yellow)"), "var(--gold-to)"],
+    jewel: ["var(--gold)", pale("var(--color-yellow)"), "var(--gold)"],
   },
   Military: {
     name: "Military",
@@ -260,7 +260,7 @@ export const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
     iconFill: "bg-yellow",
     accent: "yellow",
     accent2: "orange",
-    jewel: ["var(--gold-from)", pale("var(--color-yellow)"), "var(--gold-to)"],
+    jewel: ["var(--gold)", pale("var(--color-yellow)"), "var(--gold)"],
   },
 };
 

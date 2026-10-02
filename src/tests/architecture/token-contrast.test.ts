@@ -1,5 +1,5 @@
 /**
- * Facet 3 token guard (spec §2.3).
+ * Token guard.
  *
  * Parses src/styles/facet/tokens.css, checks it matches the TS source of truth
  * (src/lib/design/tokens.ts), and computes WCAG contrast for every required pair from the CSS
@@ -20,7 +20,6 @@ import {
   CUTOUT_RADIUS,
   FLAG_WATERMARK,
   GLASS_HERO,
-  GLOW,
   GOLD,
   ON_SYSTEM_COLOR,
   PHYSICS,
@@ -99,8 +98,8 @@ const lightRoles = blocks.find(
   (b) => b.stack.length === 1 && b.stack[0] === "@theme static" && b.decls.has("--color-label")
 )!;
 const darkRoles = block("@layer base", ':root[data-theme="dark"]');
-const moreLight = block("@layer base", ':root[data-contrast="more"]');
-const moreDark = block("@layer base", ':root[data-theme="dark"][data-contrast="more"]');
+const moreLight = block("@layer base", ":root", "@variant contrast-more");
+const moreDark = block("@layer base", ':root[data-theme="dark"]', "@variant contrast-more");
 
 const roleBlock = { light: lightRoles, dark: darkRoles } as const;
 const moreBlock = { light: moreLight, dark: moreDark } as const;
@@ -153,7 +152,7 @@ const AA_UI = 3;
 
 // ─── Tests ─────────────────────────────────────────────────────────────────
 
-describe("Facet 3 tokens: CSS matches src/lib/design/tokens.ts", () => {
+describe("tokens: CSS matches src/lib/design/tokens.ts", () => {
   it.each(APPEARANCES)("colour roles (%s)", (appearance) => {
     for (const [name, value] of Object.entries(COLOR_ROLES[appearance])) {
       expect([name, role(appearance, name)]).toEqual([name, value]);
@@ -276,7 +275,7 @@ describe("Facet 3 tokens: CSS matches src/lib/design/tokens.ts", () => {
   });
 });
 
-describe("Facet 3 tokens: contrast (spec §2.3)", () => {
+describe("tokens: contrast", () => {
   describe.each(APPEARANCES)("%s", (appearance) => {
     describe.each([false, true])("increase contrast: %s", (more) => {
       it.each(["label", "label-secondary"])("%s ≥ 4.5:1 on every background role", (label) => {
@@ -369,28 +368,37 @@ describe("Facet 3 tokens: contrast (spec §2.3)", () => {
   });
 });
 
-// ─── Facet 3.1 — identity (spec §16) ─────────────────────────────────────────
+// ─── Identity ────────────────────────────────────────────────────────────────
 
-/** The identity scalars: the `@layer base › :root` / dark blocks that declare `--primary-fill-mono`. */
+/** The identity scalars: the `@layer base › :root` / dark blocks that declare `--primary-mono`. */
 const identity = {
   light: blocks.find(
     (b) =>
       b.stack.length === 2 &&
       b.stack[0] === "@layer base" &&
       b.stack[1] === ":root" &&
-      b.decls.has("--primary-fill-mono")
+      b.decls.has("--primary-mono")
   )!,
   dark: blocks.find(
     (b) =>
       b.stack.length === 2 &&
       b.stack[0] === "@layer base" &&
       b.stack[1] === ':root[data-theme="dark"]' &&
-      b.decls.has("--primary-fill-mono")
+      b.decls.has("--primary-mono")
   )!,
 } as const;
 const pct = (value: number) => `${+(value * 100).toFixed(1)}%`;
+const identityCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/identity.css"), "utf8");
 
-describe("Facet 3.1 identity tokens: CSS matches src/lib/design/tokens.ts", () => {
+/** Every accent a card takes, as the colour it resolves to per appearance. */
+const ACCENTS: [string, Record<Appearance, string>][] = [
+  ...Object.entries(SYSTEM_COLORS).map(
+    ([name, value]) => [name, value] as [string, Record<Appearance, string>]
+  ),
+  ["gold", GOLD.accent],
+];
+
+describe("identity tokens: CSS matches src/lib/design/tokens.ts", () => {
   it("declares the identity blocks for both appearances", () => {
     expect(identity.light).toBeDefined();
     expect(identity.dark).toBeDefined();
@@ -398,81 +406,76 @@ describe("Facet 3.1 identity tokens: CSS matches src/lib/design/tokens.ts", () =
 
   it.each(APPEARANCES)("monochrome primary (%s)", (appearance) => {
     const b = identity[appearance];
-    expect(decl(b, "--primary-fill-mono")).toBe(PRIMARY_MONO[appearance].fill);
-    expect(decl(b, "--primary-fill-mono-hover")).toBe(PRIMARY_MONO[appearance].hover);
+    expect(decl(b, "--primary-mono")).toBe(PRIMARY_MONO[appearance].fill);
+    expect(decl(b, "--primary-mono-hover")).toBe(PRIMARY_MONO[appearance].hover);
     expect(decl(b, "--on-primary-mono")).toBe(PRIMARY_MONO[appearance].on);
   });
 
-  it("gold primary (MyCountry / Builder)", () => {
+  it("flat gold primary inside MyCountry and the Builder, monochrome in every other scope", () => {
     const b = identity.light;
-    expect(decl(b, "--gold-from")).toBe(GOLD.from);
-    expect(decl(b, "--gold-to")).toBe(GOLD.to);
-    expect(decl(b, "--gold-from-hover")).toBe(GOLD.fromHover);
-    expect(decl(b, "--gold-to-hover")).toBe(GOLD.toHover);
+    expect(decl(b, "--gold")).toBe(GOLD.fill);
+    expect(decl(b, "--gold-hover")).toBe(GOLD.hover);
     expect(decl(b, "--on-gold")).toBe(GOLD.on);
-    expect(decl(b, "--gold-rim-edge")).toBe(GOLD.rimEdgeLight);
-    const scope = block("@layer base", '[data-app="mycountry"]');
-    // The scope that sets the tint palette is the first match; the primary lives in the second.
-    const primary = blocks.find(
-      (x) =>
-        x.stack.length === 2 &&
-        x.stack[1] === '[data-app="mycountry"]' &&
-        x.decls.has("--primary-fill-image")
-    )!;
-    expect(scope).toBeDefined();
-    expect(decl(primary, "--primary-fill-image")).toBe(
-      "linear-gradient(to right, var(--gold-from), var(--gold-to))"
-    );
-    expect(decl(primary, "--on-primary")).toBe("var(--on-gold)");
-    expect(decl(primary, "--primary-rim")).toBe("var(--gold-rim)");
-    // Every other scope resets to monochrome (a nested `intel` inside MyCountry is not gold).
+    const gold = block("@layer base", '[data-app="mycountry"], [data-app="builder"]');
+    expect([...gold.decls.entries()]).toEqual([
+      ["--primary-fill", "var(--gold)"],
+      ["--primary-fill-hover", "var(--gold-hover)"],
+      ["--on-primary", "var(--on-gold)"],
+    ]);
     const reset = blocks.find(
       (x) => x.stack[1] === ":root, [data-app]" && x.decls.has("--primary-fill")
     )!;
-    expect(decl(reset, "--primary-fill")).toBe("var(--primary-fill-mono)");
-    expect(decl(reset, "--primary-fill-image")).toBe("none");
+    expect(decl(reset, "--primary-fill")).toBe("var(--primary-mono)");
     expect(decl(reset, "--on-primary")).toBe("var(--on-primary-mono)");
+    expect(css).not.toContain("--primary-fill-image");
   });
 
-  it.each(APPEARANCES)("glass hero tier (%s)", (appearance) => {
+  it.each(APPEARANCES)("hero glass (%s)", (appearance) => {
     const b = identity[appearance];
-    const g = GLASS_HERO[appearance];
-    expect(decl(b, "--glass-hero-fill-from")).toBe(pct(g.fillFrom));
-    expect(decl(b, "--glass-hero-fill-to")).toBe(pct(g.fillTo));
-    expect(decl(b, "--glass-hero-blur")).toBe(`${g.blur}px`);
-    expect(decl(b, "--glass-hero-saturate")).toBe(`${g.saturate}%`);
-    expect(decl(b, "--glass-hero-wash-from")).toBe(pct(g.washFrom));
-    expect(decl(b, "--glass-hero-wash-mid")).toBe(pct(g.washMid));
-    // v2 glass: 16–24px blur, 150–180% saturation (spec §16.2).
-    expect(g.blur).toBeGreaterThanOrEqual(16);
-    expect(g.blur).toBeLessThanOrEqual(24);
-    expect(g.saturate).toBeGreaterThanOrEqual(150);
-    expect(g.saturate).toBeLessThanOrEqual(180);
+    expect(decl(b, "--glass-fill")).toBe(pct(GLASS_HERO[appearance].fill));
+    expect(decl(b, "--glass-wash")).toBe(pct(GLASS_HERO[appearance].wash));
+    expect(decl(b, "--acrylic-fill")).toBe(ACRYLIC[appearance].fill);
+    expect(decl(identity.light, "--glow-alpha")).toBe(pct(GLASS_HERO.glow));
   });
 
-  it("glow, flag watermark and physics", () => {
-    expect(decl(identity.light, "--glow-opacity")).toBe(String(GLOW.opacity));
-    expect(decl(identity.light, "--glow-blur")).toBe(`${GLOW.blur}px`);
-    for (const appearance of APPEARANCES) {
-      const wm = FLAG_WATERMARK[appearance];
-      const b = identity[appearance];
-      expect(
-        b.decls.get("--flag-watermark-opacity") ?? decl(identity.light, "--flag-watermark-opacity")
-      ).toBe(String(wm.opacity));
-      expect(
-        b.decls.get("--flag-watermark-blend") ?? decl(identity.light, "--flag-watermark-blend")
-      ).toBe(wm.blend);
+  it("Reduce Transparency and Increase Contrast make the glass opaque", () => {
+    for (const variant of ["@variant transparency-reduced", "@variant contrast-more"]) {
+      const b = block("@layer base", ":root[data-theme]", variant);
+      expect(decl(b, "--glass-fill")).toBe("100%");
+      expect(decl(b, "--glass-wash")).toBe("0%");
+      expect(decl(b, "--acrylic-fill")).toBe("var(--color-surface-elevated)");
     }
-    expect(decl(identity.light, "--flag-watermark-opacity-hover")).toBe(
-      String(FLAG_WATERMARK.light.hover)
-    );
+  });
+
+  it("accent gold, accent fill, press, lift and the cutout radius", () => {
+    for (const appearance of APPEARANCES) {
+      const b = identity[appearance];
+      expect(b.decls.get("--gold-accent") ?? decl(identity.light, "--gold-accent")).toBe(
+        GOLD.accent[appearance]
+      );
+      expect(decl(b, "--accent-fill-mix")).toBe(pct(ACCENT_FILL[appearance]));
+    }
     expect(decl(identity.light, "--facet-press-scale")).toBe(String(PHYSICS.pressScale));
     expect(decl(identity.light, "--facet-lift-y")).toBe(`${PHYSICS.liftY}px`);
     expect(css).toContain(`--radius-cutout: ${CUTOUT_RADIUS / 16}rem;`);
+    expect(css).toContain(
+      `--tint-fill: color-mix(in srgb, var(--tint) ${pct(ACCENT_FILL.light)}, transparent);`
+    );
+    expect(css).toContain(
+      `--tint-fill: color-mix(in srgb, var(--tint) ${pct(ACCENT_FILL.dark)}, transparent);`
+    );
+  });
+
+  it("flag watermark opacities and tone", () => {
+    expect(identityCss).toContain(`--watermark-opacity: ${FLAG_WATERMARK.light.opacity};`);
+    expect(identityCss).toContain(`--watermark-opacity: ${FLAG_WATERMARK.dark.opacity};`);
+    expect(identityCss).toContain(`opacity: ${FLAG_WATERMARK.light.hover};`);
+    expect(identityCss).toContain(`contrast(${FLAG_WATERMARK.light.toneContrast})`);
+    expect(identityCss).toContain(`brightness(${FLAG_WATERMARK.dark.toneBrightness})`);
   });
 });
 
-describe("Facet 3.1 identity: contrast", () => {
+describe("identity: contrast", () => {
   describe.each(APPEARANCES)("%s", (appearance) => {
     it("on-primary on the monochrome primary (rest and hover) ≥ 4.5:1", () => {
       const { fill, hover, on } = PRIMARY_MONO[appearance];
@@ -494,122 +497,43 @@ describe("Facet 3.1 identity: contrast", () => {
       }
     });
 
-    it("glass hero: labels stay ≥ 4.5:1 over the thinnest fill, the full tint wash and the glow core", () => {
+    it("hero glass: labels stay ≥ 4.5:1 over the thinnest fill and the full tint wash", () => {
       const g = GLASS_HERO[appearance];
-      const surface = role(appearance, "surface");
-      const page = role(appearance, "background-grouped");
-      // Worst case: the most transparent fill stop over the grouped page, then the wash at its
-      // strongest stop, then a glow blob's centre (opacity × the post-blur peak).
-      const glass = mix(surface, page, Math.min(g.fillFrom, g.fillTo));
-      for (const [app, sets] of Object.entries(APP_TINTS)) {
-        const tint = sets[appearance].tint;
-        const washed = mix(tint, glass, g.washFrom);
-        const glowed = mix(tint, washed, GLOW.opacity * GLOW.blurPeak);
+      const glass = mix(
+        role(appearance, "surface"),
+        role(appearance, "background-grouped"),
+        g.fill
+      );
+      for (const [name, color] of [
+        ...Object.entries(APP_TINTS).map(([app, sets]) => [app, sets[appearance].tint] as const),
+        ...ACCENTS.map(([name, value]) => [name, value[appearance]] as const),
+      ]) {
+        const washed = mix(color, glass, g.wash);
         for (const label of ["label", "label-secondary"]) {
-          for (const bg of [glass, washed, glowed]) {
-            const ratio = contrast(role(appearance, label), bg);
-            expect({ app, label, bg, ok: ratio >= AA_TEXT, ratio }).toMatchObject({ ok: true });
-          }
-        }
-      }
-    });
-  });
-
-  it("dark label on every gold stop (rest and hover) ≥ 4.5:1", () => {
-    for (const stop of [GOLD.from, GOLD.to, GOLD.fromHover, GOLD.toHover]) {
-      const ratio = contrast(GOLD.on, stop);
-      expect({ stop, ok: ratio >= AA_TEXT, ratio }).toMatchObject({ ok: true });
-    }
-  });
-
-  it("the gold rim edge is a ≥ 3:1 boundary on light backgrounds", () => {
-    for (const more of [false, true]) {
-      for (const bg of BACKGROUND_ROLES) {
-        const ratio = contrast(GOLD.rimEdgeLight, role("light", bg, more));
-        expect({ bg, more, ok: ratio >= AA_UI, ratio }).toMatchObject({ ok: true });
-      }
-    }
-  });
-
-  it("gold stops are a ≥ 3:1 boundary on every dark background role", () => {
-    for (const stop of [GOLD.from, GOLD.to]) {
-      for (const bg of BACKGROUND_ROLES) {
-        const ratio = contrast(stop, role("dark", bg));
-        expect({ stop, bg, ok: ratio >= AA_UI, ratio }).toMatchObject({ ok: true });
-      }
-    }
-  });
-});
-
-// ─── Facet 3.1 HIG pass (spec §16.8) ─────────────────────────────────────────
-
-/** Every accent a primitive takes, as the colour it resolves to per appearance. */
-const ACCENTS: [string, Record<Appearance, string>][] = [
-  ...Object.entries(SYSTEM_COLORS).map(
-    ([name, value]) => [name, value] as [string, Record<Appearance, string>]
-  ),
-  ["gold", GOLD.accent],
-];
-
-/** A CSS `contrast(k)` / `brightness(b)` filter on an opaque #rrggbb colour. */
-function filterColor(hex: string, tone: { contrast?: number; brightness?: number }): string {
-  return `#${[1, 3, 5]
-    .map((i) => {
-      let c = parseInt(hex.slice(i, i + 2), 16) / 255;
-      if (tone.contrast !== undefined) c = (c - 0.5) * tone.contrast + 0.5;
-      if (tone.brightness !== undefined) c = c * tone.brightness;
-      return Math.round(Math.min(1, Math.max(0, c)) * 255)
-        .toString(16)
-        .padStart(2, "0");
-    })
-    .join("")}`;
-}
-
-describe("Facet 3.1 HIG pass: tokens match src/lib/design/tokens.ts", () => {
-  it.each(APPEARANCES)("accent gold, accent fill and the watermark tone (%s)", (appearance) => {
-    const b = identity[appearance];
-    expect(decl(b, "--gold-accent")).toBe(GOLD.accent[appearance]);
-    expect(decl(b, "--accent-fill-mix")).toBe(pct(ACCENT_FILL[appearance]));
-    expect(decl(b, "--flag-watermark-tone")).toBe(FLAG_WATERMARK[appearance].tone);
-  });
-
-  it("gold rim border and highlight (v2 .facet-mycountry)", () => {
-    expect(decl(identity.light, "--gold-rim-border")).toBe(GOLD.rimBorder);
-    expect(decl(identity.light, "--gold-rim-highlight")).toBe(GOLD.rimHighlight);
-  });
-
-  it("the accent fill matches the tint-fill strength", () => {
-    expect(css).toContain(
-      `--tint-fill: color-mix(in srgb, var(--tint) ${pct(ACCENT_FILL.light)}, transparent);`
-    );
-    expect(css).toContain(
-      `--tint-fill: color-mix(in srgb, var(--tint) ${pct(ACCENT_FILL.dark)}, transparent);`
-    );
-  });
-});
-
-describe("Facet 3.1 HIG pass: accent contrast", () => {
-  describe.each(APPEARANCES)("%s", (appearance) => {
-    it.each(ACCENTS.map(([name]) => name))(
-      "glass hero accented %s: labels ≥ 4.5:1 over the thinnest fill, the full wash and the glow core",
-      (name) => {
-        const color = ACCENTS.find(([n]) => n === name)![1][appearance];
-        const g = GLASS_HERO[appearance];
-        const glass = mix(
-          role(appearance, "surface"),
-          role(appearance, "background-grouped"),
-          Math.min(g.fillFrom, g.fillTo)
-        );
-        const washed = mix(color, glass, g.washFrom);
-        const glowed = mix(color, washed, GLOW.opacity * GLOW.blurPeak);
-        for (const label of ["label", "label-secondary"]) {
-          for (const bg of [washed, glowed]) {
+          for (const bg of [glass, washed]) {
             const ratio = contrast(role(appearance, label), bg);
             expect({ name, label, bg, ok: ratio >= AA_TEXT, ratio }).toMatchObject({ ok: true });
           }
         }
       }
-    );
+    });
+
+    it("gold: on-gold ≥ 4.5:1 on the fill and hover; as accent text ≥ 4.5:1 and as an edge ≥ 3:1", () => {
+      for (const bg of [GOLD.fill, GOLD.hover]) {
+        const ratio = contrast(GOLD.on, bg);
+        expect({ bg, ok: ratio >= AA_TEXT, ratio }).toMatchObject({ ok: true });
+      }
+      for (const more of [false, true]) {
+        const color = GOLD.accent[appearance];
+        expect(contrast(color, role(appearance, "background", more))).toBeGreaterThanOrEqual(
+          AA_TEXT
+        );
+        for (const bg of BACKGROUND_ROLES) {
+          const ratio = contrast(color, role(appearance, bg, more));
+          expect({ bg, more, ok: ratio >= AA_UI, ratio }).toMatchObject({ ok: true });
+        }
+      }
+    });
 
     describe.each([false, true])("increase contrast: %s", (more) => {
       it.each([
@@ -624,8 +548,7 @@ describe("Facet 3.1 HIG pass: accent contrast", () => {
           const ink = mix(color, role(appearance, "label", more), 0.8);
           const checks: [string, number, number][] = [
             ["label", contrast(role(appearance, "label", more), fill), AA_TEXT],
-            // Secondary copy in the strip (a trailing count, a subtitle) sits on the card's
-            // `surface` (CutoutCard variant="card", whose notches are `text-surface`).
+            // Secondary copy in the strip sits on the card's `surface`.
             ...(bg === "surface"
               ? ([
                   [
@@ -645,26 +568,10 @@ describe("Facet 3.1 HIG pass: accent contrast", () => {
       });
     });
 
-    it("accent gold: ≥ 4.5:1 as text on the page and ≥ 3:1 as an edge on every background role", () => {
-      for (const more of [false, true]) {
-        const color = GOLD.accent[appearance];
-        expect(contrast(color, role(appearance, "background", more))).toBeGreaterThanOrEqual(
-          AA_TEXT
-        );
-        for (const bg of BACKGROUND_ROLES) {
-          const ratio = contrast(color, role(appearance, bg, more));
-          expect({ bg, more, ok: ratio >= AA_UI, ratio }).toMatchObject({ ok: true });
-        }
-        // `retint` puts `on-system` text on an accent-filled control.
-        const on = contrast(ON_SYSTEM_COLOR[appearance], color);
-        expect({ on, ok: on >= AA_TEXT }).toMatchObject({ ok: true });
-      }
-    });
-
     it("the flag watermark never drops labels below 4.5:1 (any flag, rest and hover)", () => {
       const wm = FLAG_WATERMARK[appearance];
       // Worst-case flag colour for dark text on a light card is black, for light text on a dark
-      // card white; the HIG tone filter caps it first (luminosity/normal blend of a grey = grey).
+      // card white; the tone filter caps it first (luminosity/normal blend of a grey = grey).
       const worst =
         appearance === "light"
           ? filterColor("#000000", { contrast: FLAG_WATERMARK.light.toneContrast })
@@ -672,10 +579,10 @@ describe("Facet 3.1 HIG pass: accent contrast", () => {
       const g = GLASS_HERO[appearance];
       for (const more of [false, true]) {
         const surfaces = {
-          "glass hero": mix(
+          "hero glass": mix(
             role(appearance, "surface", more),
             role(appearance, "background-grouped", more),
-            Math.min(g.fillFrom, g.fillTo)
+            g.fill
           ),
           surface: role(appearance, "surface", more),
         };
@@ -702,45 +609,28 @@ describe("Facet 3.1 HIG pass: accent contrast", () => {
     });
   });
 
-  describe.each(APPEARANCES)("retint (%s)", (appearance) => {
-    // `facet-retint`: --tint = the accent's ink (80% toward the label), --tint-fill = the accent
-    // at the fill strength, --on-tint = on-system. Tinted badges / `text-tint` / links / filled
-    // tint controls / focus rings in an accented subtree.
-    it.each(ACCENTS.map(([name]) => name))("%s", (name) => {
-      const color = ACCENTS.find(([n]) => n === name)![1][appearance];
-      for (const more of [false, true]) {
-        const ink = mix(color, role(appearance, "label", more), 0.8);
-        const checks: [string, number, number][] = [
-          ["ink on background", contrast(ink, role(appearance, "background", more)), AA_TEXT],
-          [
-            "ink on background-grouped",
-            contrast(ink, role(appearance, "background-grouped", more)),
-            AA_TEXT,
-          ],
-          ["on-tint on ink", contrast(ON_SYSTEM_COLOR[appearance], ink), AA_TEXT],
-          ...BACKGROUND_ROLES.flatMap((bg) => {
-            const fill = mix(color, role(appearance, bg, more), ACCENT_FILL[appearance]);
-            return [
-              [`ink edge on ${bg}`, contrast(ink, role(appearance, bg, more)), AA_UI],
-              [`tinted badge on ${bg}`, contrast(ink, fill), AA_TEXT],
-            ] as [string, number, number][];
-          }),
-        ];
-        for (const [pair, ratio, min] of checks) {
-          expect({ name, more, pair, ok: ratio >= min, ratio }).toMatchObject({ ok: true });
-        }
-      }
-    });
-  });
-
-  it("the v2 opacities are kept (the tone, not a dimmer watermark, makes it AA)", () => {
+  it("the v2 flag opacities are kept (the tone, not a dimmer watermark, makes it AA)", () => {
     expect(FLAG_WATERMARK.light.opacity).toBe(0.14);
     expect(FLAG_WATERMARK.dark.opacity).toBe(0.18);
     expect(FLAG_WATERMARK.light.hover).toBe(0.25);
   });
 });
 
-// ─── Facet 3.1 HIG: vibrant labels on acrylic, tinted badges (spec §16.8) ────
+/** A CSS `contrast(k)` / `brightness(b)` filter on an opaque #rrggbb colour. */
+function filterColor(hex: string, tone: { contrast?: number; brightness?: number }): string {
+  return `#${[1, 3, 5]
+    .map((i) => {
+      let c = parseInt(hex.slice(i, i + 2), 16) / 255;
+      if (tone.contrast !== undefined) c = (c - 0.5) * tone.contrast + 0.5;
+      if (tone.brightness !== undefined) c = c * tone.brightness;
+      return Math.round(Math.min(1, Math.max(0, c)) * 255)
+        .toString(16)
+        .padStart(2, "0");
+    })
+    .join("")}`;
+}
+
+// ─── Vibrant labels on the Halo acrylic ──────────────────────────────────────
 
 /** `rgb(r g b / a)` → [#rrggbb, a]. */
 function parseRgba(value: string): [string, number] {
@@ -752,115 +642,31 @@ function parseRgba(value: string): [string, number] {
   return [hex, Number(match[4])];
 }
 
-describe("Facet 3.1 HIG: acrylic tokens match src/lib/design/tokens.ts", () => {
-  it.each(APPEARANCES)("acrylic fills (%s)", (appearance) => {
-    const b = blocks.find(
-      (x) =>
-        x.stack.length === 2 &&
-        x.stack[0] === "@layer base" &&
-        x.stack[1] === (appearance === "light" ? ":root" : ':root[data-theme="dark"]') &&
-        x.decls.has("--acrylic-fill")
-    )!;
-    expect(b).toBeDefined();
-    for (const [name, value] of Object.entries(ACRYLIC[appearance].fills)) {
-      expect([name, decl(b, name)]).toEqual([name, value]);
-    }
-  });
-
-  it("the AcrylicGlow underlay strength and layers", () => {
-    const glow = fs.readFileSync(
-      path.join(ROOT, "src/components/ui/facet/identity/Glow.tsx"),
-      "utf8"
-    );
-    expect(glow).toContain(`opacity = ${ACRYLIC.glow.opacity},`);
-    const identityCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/identity.css"), "utf8");
-    const [l1, l2, l3] = ACRYLIC.glow.layers.map((a) => `${a * 100}%, transparent)`);
-    expect(identityCss).toContain(l1);
-    expect(identityCss).toContain(l2);
-    expect(identityCss).toContain(l3);
-    expect(identityCss).toContain(`${(1 - ACRYLIC.glow.layer3TowardWhite) * 100}%, white)`);
-  });
-
+describe("acrylic: vibrant labels over any content", () => {
   it("material-acrylic resolves secondary labels to the vibrant role", () => {
-    const identityCss = fs.readFileSync(path.join(ROOT, "src/styles/facet/identity.css"), "utf8");
     const body = identityCss.slice(identityCss.indexOf("@utility material-acrylic {"));
     expect(body.slice(0, body.indexOf("background-color"))).toContain(
       "--color-label-secondary: var(--color-label-vibrant-secondary);"
     );
   });
-});
 
-describe("Facet 3.1 HIG: vibrant labels on acrylic over any content", () => {
   describe.each(APPEARANCES)("%s", (appearance) => {
     // Chrome floats over arbitrary content: the worst backdrop for dark text is black, for light
-    // text white (saturate() leaves both unchanged). The glow is composited at full strength in
-    // the most damaging hue — the v2 brand blue / indigo / cyan stops (Halo, AppSidebar, TabBar,
-    // map island) and, for `FacetMaterial material="acrylic" glow` without the brand, every
-    // accent and app tint — at each gradient stop.
+    // text white (saturate() leaves both unchanged).
     const backdrop = appearance === "light" ? "#000000" : "#ffffff";
-    const { opacity, layers, layer3TowardWhite } = ACRYLIC.glow;
-    const brand = ["blue", "indigo", "cyan"].map((n) => role(appearance, n)) as [
-      string,
-      string,
-      string,
-    ];
-
-    function glowed(base: string, [a, b, c]: [string, string, string]): string[] {
-      const l1 = [a, b, a];
-      const l2 = [c, b, a];
-      const l3 = [a, b, c].map((h) => mix(h, "#ffffff", 1 - layer3TowardWhite));
-      return [0, 1, 2].map((i) => {
-        let bg = mix(l1[i]!, base, layers[0]! * opacity);
-        bg = mix(l2[i]!, bg, layers[1]! * opacity);
-        return mix(l3[i]!, bg, layers[2]! * opacity);
-      });
-    }
 
     it.each([false, true])("increase contrast: %s", (more) => {
-      const hues: [string, [string, string, string]][] = [
-        ["brand", brand],
-        ...ACCENTS.map(
-          ([name, v]) =>
-            [name, [v[appearance], v[appearance], v[appearance]]] as [
-              string,
-              [string, string, string],
-            ]
-        ),
-        ...Object.entries(APP_TINTS).map(([app, sets]) => {
-          const t = more ? sets[appearance].strong : sets[appearance].tint;
-          return [`${app} tint`, [t, t, t]] as [string, [string, string, string]];
-        }),
-      ];
-      const results: { fill: string; hue: string; label: string; ratio: number }[] = [];
-      for (const [fillName, value] of Object.entries(ACRYLIC[appearance].fills)) {
-        const [rgb, alpha] = parseRgba(value);
-        const base = mix(rgb, backdrop, alpha);
-        for (const [hue, stops] of hues) {
-          for (const bg of [base, ...glowed(base, stops)]) {
-            for (const label of ["label", "label-vibrant-secondary"]) {
-              results.push({
-                fill: fillName,
-                hue,
-                label,
-                ratio: contrast(role(appearance, label, more), bg),
-              });
-            }
-          }
-        }
-      }
-      // Reduce Transparency / Increase Contrast: the opaque `surface-elevated`.
-      for (const label of ["label", "label-vibrant-secondary"]) {
-        results.push({
-          fill: "surface-elevated (opaque)",
-          hue: "none",
-          label,
-          ratio: contrast(
-            role(appearance, label, more),
-            role(appearance, "surface-elevated", more)
-          ),
-        });
-      }
-      const failures = results.filter((r) => r.ratio < AA_TEXT);
+      const [rgb, alpha] = parseRgba(ACRYLIC[appearance].fill);
+      const fills = {
+        acrylic: mix(rgb, backdrop, alpha),
+        // Reduce Transparency / Increase Contrast: the opaque `surface-elevated`.
+        "surface-elevated": role(appearance, "surface-elevated", more),
+      };
+      const failures = Object.entries(fills).flatMap(([fill, bg]) =>
+        ["label", "label-vibrant-secondary"]
+          .map((label) => ({ fill, label, ratio: contrast(role(appearance, label, more), bg) }))
+          .filter((r) => r.ratio < AA_TEXT)
+      );
       expect(failures).toEqual([]);
       // The vibrant role is never weaker than the plain secondary label on the opaque surfaces.
       for (const bg of BACKGROUND_ROLES) {
@@ -874,7 +680,7 @@ describe("Facet 3.1 HIG: vibrant labels on acrylic over any content", () => {
   });
 });
 
-describe('Facet 3.1 HIG: Badge variant="tinted" (tint-ink on tint-fill)', () => {
+describe('Badge variant="tinted" (tint-ink on tint-fill)', () => {
   it("the tinted Badge uses the tint's ink, never the bare tint, on its fill", () => {
     const badge = fs.readFileSync(path.join(ROOT, "src/components/ui/badge.tsx"), "utf8");
     expect(badge).toContain('const tinted = "bg-tint-fill text-tint-ink');

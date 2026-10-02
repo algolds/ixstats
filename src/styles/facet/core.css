@@ -21,10 +21,6 @@
     --blur-prominent: 24px;
     --blur-intense: 32px;
 
-    /* Edge refraction sheen coefficients */
-    --refraction-medium: 0.15;
-    --refraction-intense: 0.35;
-
     /* Texture pattern foreground colour */
     --facet-texture-color: rgba(0, 0, 0, 0.25);
 

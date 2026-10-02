@@ -146,21 +146,16 @@ const DARK_OVERRIDE_ALLOWED = new Set([
 ]);
 
 /**
- * Facet 3.1 (spec §16.5): gradients come from sanctioned classes, not ad-hoc palette stops. The
- * identity sheet (styles/facet/identity.css) owns the gold, glass wash, glow, aurora/foil/radiance,
- * jewel, acrylic glow and refraction paints; card art owns `card-art-linear-*` (styles/card-art.css);
- * raw gradient utilities are only image scrims on role/black/white/transparent stops.
+ * Gradients come from sanctioned classes, not ad-hoc palette stops. The identity sheet
+ * (styles/facet/identity.css) owns the glass wash, aurora/foil/radiance and jewel paints; card art
+ * owns `card-art-linear-*` (styles/card-art.css); raw gradient utilities are only image scrims on
+ * role/black/white/transparent stops.
  */
 const SANCTIONED_GRADIENT_CLASSES = [
   "material-hero",
-  // The expanded Halo sheet (`data-expanded="true"`) paints the v2 top-to-bottom acrylic fill.
   "material-acrylic",
   "facet-primary",
   "facet-gold",
-  "facet-glow",
-  "facet-tint-glow",
-  "facet-acrylic-glow",
-  "facet-refraction-line",
   "facet-aurora",
   "facet-radiance",
   "facet-foil",

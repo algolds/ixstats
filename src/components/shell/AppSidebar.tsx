@@ -233,7 +233,7 @@ export function AppSidebar({
         glow
         glowOrientation="vertical"
         data-slot="app-sidebar-panel"
-        className="facet-acrylic-brand flex min-h-0 flex-1 flex-col"
+        className="flex min-h-0 flex-1 flex-col"
       >
         <div className="p-2">
           <AppSwitcher apps={switcherApps} current={current} collapsed={collapsed} />

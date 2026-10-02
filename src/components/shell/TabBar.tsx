@@ -105,7 +105,7 @@ export function TabBar({ pathname, searchParams, apps, className }: TabBarProps)
           material="acrylic"
           glow
           data-slot="tab-bar-panel"
-          className="facet-acrylic-brand rounded-sheet mx-auto max-w-lg"
+          className="rounded-sheet mx-auto max-w-lg"
         >
           <ul className="relative flex h-14 items-stretch gap-1 px-1">
             {primary.map((app) => {

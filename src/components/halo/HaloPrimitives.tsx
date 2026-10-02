@@ -342,7 +342,7 @@ export const DynamicIslandContent = ({
         // over the v2 blue / indigo / cyan glow underlay with the four refraction edges. Content
         // inside stays on opaque roles.
         className={cn(
-          "material-acrylic facet-acrylic-brand relative mx-auto items-center justify-center text-center",
+          "material-acrylic relative mx-auto items-center justify-center text-center",
           isImpersonating && "ring-destructive ring-2"
         )}
         initial={{
@@ -432,7 +432,7 @@ export const Halo = ({ children, id, ...props }: { children: ReactNode; id: stri
   if (!mounted) {
     return (
       <HaloOuterWrapper>
-        <div className="material-acrylic facet-acrylic-brand relative isolate mx-auto h-11 items-center justify-center rounded-full px-4 text-center">
+        <div className="material-acrylic relative isolate mx-auto h-11 items-center justify-center rounded-full px-4 text-center">
           <DynamicIslandEffects />
           {children}
         </div>
