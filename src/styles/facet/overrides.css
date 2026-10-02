@@ -1,12 +1,10 @@
 /* ==========================================================================
-   FACET DESIGN SYSTEM — USER-PREFERENCE OVERRIDES
+   USER-PREFERENCE OVERRIDES
 
-   The one first-party file allowed to use `!important` (see
-   src/tests/architecture/css-layering.test.ts). Every rule here is a user
-   preference kill switch that must beat Tailwind utilities *and* inline styles
-   written by Framer Motion / pointer handlers. Important declarations in an
-   earlier layer beat later layers and unlayered/inline styles, which is exactly
-   the precedence a preference needs. Nothing decorative belongs in this file.
+   Allowed to use `!important` (see src/tests/architecture/css-layering.test.ts). Every rule
+   here is a user preference kill switch that must beat Tailwind utilities *and* inline styles
+   written by Framer Motion / pointer handlers: important declarations in an earlier layer beat
+   later layers and inline styles. Nothing decorative belongs in this file.
    ========================================================================== */
 
 @layer components {
@@ -48,38 +46,34 @@
     animation: none !important;
   }
 
-  /* ─── Low fidelity (Settings → data-low-fidelity): no blur/shadow/filter ─ */
+  /* ─── Reduce Transparency: no backdrop blur on the legacy glass classes ──
+     The `material-*` utilities handle themselves (tokens.css). */
 
-  html[data-low-fidelity="true"] .facet-surface,
-  html[data-low-fidelity="true"] .facet-base,
-  html[data-low-fidelity="true"] .facet-floating,
-  html[data-low-fidelity="true"] .facet-overlay,
-  html[data-low-fidelity="true"] .facet-depth-1,
-  html[data-low-fidelity="true"] .facet-depth-2,
-  html[data-low-fidelity="true"] .facet-depth-3,
-  html[data-low-fidelity="true"] .facet-depth-4,
-  html[data-low-fidelity="true"] .facet-hierarchy-parent,
-  html[data-low-fidelity="true"] .facet-hierarchy-child,
-  html[data-low-fidelity="true"] .facet-hierarchy-interactive,
-  html[data-low-fidelity="true"] .facet-material,
-  html[data-low-fidelity="true"] .facet-refraction,
-  html[data-low-fidelity="true"] .facet-modal {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
-    filter: none !important;
-  }
-
-  html[data-low-fidelity="true"] .facet-refraction::before,
-  html[data-low-fidelity="true"] .facet-refraction::after {
-    display: none !important;
+  :is(
+      .facet-surface,
+      .facet-base,
+      .facet-floating,
+      .facet-overlay,
+      .facet-depth-1,
+      .facet-depth-2,
+      .facet-depth-3,
+      .facet-depth-4,
+      .facet-hierarchy-parent,
+      .facet-hierarchy-child,
+      .facet-hierarchy-interactive,
+      .facet-material,
+      .facet-refraction,
+      .facet-modal
+    ) {
+    @variant transparency-reduced {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
   }
 
   /* ─── Textures toggle (Settings → data-enable-textures) ───────────────── */
 
-  html[data-enable-textures="false"] .texture-overlay,
-  html[data-low-fidelity="true"] .texture-overlay {
+  html[data-enable-textures="false"] .texture-overlay {
     display: none !important;
   }
 

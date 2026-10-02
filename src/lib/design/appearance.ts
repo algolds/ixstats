@@ -1,5 +1,5 @@
 /**
- * Facet 3 appearance & accessibility preferences on <html> (spec §1, §10).
+ * Appearance & accessibility preferences on <html>.
  *
  * One code path for both writers:
  *  - the blocking inline script in `src/app/layout.tsx` (`APPEARANCE_INIT_SCRIPT`), which runs
@@ -9,8 +9,8 @@
  * Attributes written: `data-theme` (+ legacy `.light`/`.dark` class), `data-density`
  * (+ legacy `.compact-mode` / `data-compact`), `data-motion="reduced"` (+ legacy
  * `.reduce-animations` / `data-reduce-animations`), `data-contrast="more"`,
- * `data-transparency="reduced"`, `data-sound="off"`, `--text-scale`, plus the existing
- * `data-typography`, `data-low-fidelity`, `data-enable-textures`, `data-interactive-hover`.
+ * `data-transparency="reduced"`, `data-sound="off"`, `--text-scale`, `data-enable-textures` and
+ * `data-interactive-hover`.
  *
  * `applyAppearance` and `initAppearanceFromStorage` are serialised with Function#toString into
  * the inline script, so they must stay self-contained: no imports, no outer references, ES5-ish.
@@ -18,10 +18,8 @@
 
 export const APPEARANCE_STORAGE_KEYS = {
   theme: "ixstats-theme",
-  typography: "ixstats-typography",
   compactMode: "ixstats-compact-mode",
   reduceAnimations: "ixstats-reduce-animations",
-  lowFidelity: "ixstats-low-fidelity",
   enableTextures: "ixstats-enable-textures",
   interactiveHover: "ixstats-interactive-hover",
   increaseContrast: "ixstats-increase-contrast",
@@ -36,10 +34,8 @@ export type AppearanceStorageKeys = typeof APPEARANCE_STORAGE_KEYS;
 export interface AppearanceState {
   /** Effective (resolved) theme. */
   theme: "light" | "dark";
-  typography: string;
   compact: boolean;
   reduceMotion: boolean;
-  lowFidelity: boolean;
   enableTextures: boolean;
   interactiveHover: boolean;
   increaseContrast: boolean;
@@ -83,9 +79,6 @@ export function applyAppearance(root: HTMLElement, s: AppearanceState): void {
   if (s.textScale !== 1) root.style.setProperty("--text-scale", String(s.textScale));
   else root.style.removeProperty("--text-scale");
 
-  root.setAttribute("data-typography", s.typography);
-  root.setAttribute("data-low-fidelity", String(s.lowFidelity));
-  root.classList.toggle("low-fidelity", s.lowFidelity);
   root.setAttribute("data-enable-textures", String(s.enableTextures));
   root.setAttribute("data-interactive-hover", String(s.interactiveHover));
 }
@@ -117,20 +110,11 @@ export function initAppearanceFromStorage(
       : window.matchMedia("(prefers-color-scheme: light)").matches
         ? "light"
         : "dark";
-  const typography = read(keys.typography);
   const scale = parseFloat(read(keys.textScale) ?? "");
   apply(document.documentElement, {
     theme,
-    typography:
-      typography === "sovereign" ||
-      typography === "national" ||
-      typography === "swiss" ||
-      typography === "apple"
-        ? typography
-        : "swiss",
     compact: bool(keys.compactMode, false),
     reduceMotion: bool(keys.reduceAnimations, false),
-    lowFidelity: bool(keys.lowFidelity, false),
     enableTextures: bool(keys.enableTextures, true),
     interactiveHover: bool(keys.interactiveHover, true),
     increaseContrast: bool(keys.increaseContrast, false),
@@ -140,7 +124,7 @@ export function initAppearanceFromStorage(
   });
 }
 
-/* ─── Navigation shell (Facet 3 spec §7.4, Phase 3) ──────────────────────────────────────────── */
+/* ─── Navigation shell ───────────────────────────────────────────────────────────────────────── */
 
 /**
  * Storage keys for the navigation shell. Kept apart from `APPEARANCE_STORAGE_KEYS` because

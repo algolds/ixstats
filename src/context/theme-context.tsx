@@ -9,24 +9,18 @@ import {
 } from "~/lib/design/appearance";
 
 export type Theme = "light" | "dark" | "system";
-export type TypographyPreset = "sovereign" | "national" | "swiss" | "apple";
 
 interface ThemeContextType {
   theme: Theme;
   effectiveTheme: "light" | "dark";
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
-  typographyPreset: TypographyPreset;
-  setTypographyPreset: (preset: TypographyPreset) => void;
   compactMode: boolean;
   setCompactMode: (compact: boolean) => void;
   toggleCompactMode: () => void;
   reduceAnimations: boolean;
   setReduceAnimations: (reduce: boolean) => void;
   toggleReduceAnimations: () => void;
-  lowFidelityMode: boolean;
-  setLowFidelityMode: (lowFidelity: boolean) => void;
-  toggleLowFidelityMode: () => void;
   enableTextures: boolean;
   setEnableTextures: (enable: boolean) => void;
   toggleEnableTextures: () => void;
@@ -66,11 +60,9 @@ export function ThemeProvider({
   const [systemTheme, setSystemTheme] = useState<"light" | "dark">("dark");
   const [compactMode, setCompactModeState] = useState<boolean>(false);
   const [reduceAnimations, setReduceAnimationsState] = useState<boolean>(false);
-  const [lowFidelityMode, setLowFidelityModeState] = useState<boolean>(false);
   const [enableTextures, setEnableTexturesState] = useState<boolean>(true);
   const [interactiveHover, setInteractiveHoverState] = useState<boolean>(true);
   const [showNsImporter, setShowNsImporterState] = useState<boolean>(false);
-  const [typographyPreset, setTypographyPresetState] = useState<TypographyPreset>("swiss");
   const [increaseContrast, setIncreaseContrastState] = useState<boolean>(false);
   const [reduceTransparency, setReduceTransparencyState] = useState<boolean>(false);
   const [textScale, setTextScaleState] = useState<number>(1);
@@ -91,22 +83,11 @@ export function ThemeProvider({
         setThemeState(storedTheme);
       }
 
-      const storedTypography = localStorage.getItem(
-        APPEARANCE_STORAGE_KEYS.typography
-      ) as TypographyPreset | null;
-      if (storedTypography && ["sovereign", "national", "swiss", "apple"].includes(storedTypography)) {
-        setTypographyPresetState(storedTypography);
-      } else {
-        setTypographyPresetState("swiss");
-      }
-
       const k = APPEARANCE_STORAGE_KEYS;
       const compact = readBool(k.compactMode);
       if (compact !== null) setCompactModeState(compact);
       const reduce = readBool(k.reduceAnimations);
       if (reduce !== null) setReduceAnimationsState(reduce);
-      const lowFidelity = readBool(k.lowFidelity);
-      if (lowFidelity !== null) setLowFidelityModeState(lowFidelity);
       const textures = readBool(k.enableTextures);
       if (textures !== null) setEnableTexturesState(textures);
       const hover = readBool(k.interactiveHover);
@@ -154,10 +135,8 @@ export function ThemeProvider({
     if (!loaded) return;
     applyAppearance(document.documentElement, {
       theme: effectiveTheme,
-      typography: typographyPreset,
       compact: compactMode,
       reduceMotion: reduceAnimations,
-      lowFidelity: lowFidelityMode,
       enableTextures,
       interactiveHover,
       increaseContrast,
@@ -174,10 +153,8 @@ export function ThemeProvider({
   }, [
     loaded,
     effectiveTheme,
-    typographyPreset,
     compactMode,
     reduceAnimations,
-    lowFidelityMode,
     enableTextures,
     interactiveHover,
     increaseContrast,
@@ -239,20 +216,6 @@ export function ThemeProvider({
     setReduceAnimations(!reduceAnimations);
   }, [reduceAnimations, setReduceAnimations]);
 
-  const setLowFidelityMode = useCallback((lowFidelity: boolean) => {
-    try {
-      localStorage.setItem(APPEARANCE_STORAGE_KEYS.lowFidelity, lowFidelity.toString());
-      setLowFidelityModeState(lowFidelity);
-    } catch (error) {
-      console.warn("Failed to save low fidelity to localStorage:", error);
-      setLowFidelityModeState(lowFidelity);
-    }
-  }, []);
-
-  const toggleLowFidelityMode = useCallback(() => {
-    setLowFidelityMode(!lowFidelityMode);
-  }, [lowFidelityMode, setLowFidelityMode]);
-
   const setEnableTextures = useCallback((enable: boolean) => {
     try {
       localStorage.setItem(APPEARANCE_STORAGE_KEYS.enableTextures, enable.toString());
@@ -288,16 +251,6 @@ export function ThemeProvider({
     } catch (error) {
       console.warn("Failed to save show NS importer to localStorage:", error);
       setShowNsImporterState(show);
-    }
-  }, []);
-
-  const setTypographyPreset = useCallback((preset: TypographyPreset) => {
-    try {
-      localStorage.setItem(APPEARANCE_STORAGE_KEYS.typography, preset);
-      setTypographyPresetState(preset);
-    } catch (error) {
-      console.warn("Failed to save typography preset to localStorage:", error);
-      setTypographyPresetState(preset);
     }
   }, []);
 
@@ -340,17 +293,12 @@ export function ThemeProvider({
       effectiveTheme,
       setTheme,
       toggleTheme,
-      typographyPreset,
-      setTypographyPreset,
       compactMode,
       setCompactMode,
       toggleCompactMode,
       reduceAnimations,
       setReduceAnimations,
       toggleReduceAnimations,
-      lowFidelityMode,
-      setLowFidelityMode,
-      toggleLowFidelityMode,
       enableTextures,
       setEnableTextures,
       toggleEnableTextures,
@@ -372,17 +320,12 @@ export function ThemeProvider({
       effectiveTheme,
       setTheme,
       toggleTheme,
-      typographyPreset,
-      setTypographyPreset,
       compactMode,
       setCompactMode,
       toggleCompactMode,
       reduceAnimations,
       setReduceAnimations,
       toggleReduceAnimations,
-      lowFidelityMode,
-      setLowFidelityMode,
-      toggleLowFidelityMode,
       enableTextures,
       setEnableTextures,
       toggleEnableTextures,

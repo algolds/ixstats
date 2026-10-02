@@ -44,7 +44,8 @@ describe("appearance pre-paint script", () => {
     expect(root.hasAttribute("data-contrast")).toBe(false);
     expect(root.hasAttribute("data-transparency")).toBe(false);
     expect(root.hasAttribute("data-sound")).toBe(false);
-    expect(root.getAttribute("data-typography")).toBe("swiss");
+    expect(root.hasAttribute("data-typography")).toBe(false);
+    expect(root.hasAttribute("data-low-fidelity")).toBe(false);
     expect(root.style.getPropertyValue("--text-scale")).toBe("");
   });
 

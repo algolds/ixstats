@@ -17,8 +17,6 @@ const mockTheme = {
   setReduceAnimations: jest.fn(),
   enableTextures: true,
   setEnableTextures: jest.fn(),
-  lowFidelityMode: false,
-  setLowFidelityMode: jest.fn(),
   interactiveHover: true,
   setInteractiveHover: jest.fn(),
 };

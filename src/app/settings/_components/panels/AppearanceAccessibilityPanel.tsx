@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Settings › Appearance & accessibility (Facet 3 spec §1, §9, §10).
+ * Settings › Appearance & accessibility.
  *
  * Every control writes through ThemeProvider (`~/context/theme-context`) or the Cuelume mute toggle
  * (`useSoundSettings`), so changes apply to `<html>` immediately and persist under the same
@@ -88,8 +88,6 @@ export function AppearanceAccessibilityPanel() {
     setReduceAnimations,
     enableTextures,
     setEnableTextures,
-    lowFidelityMode,
-    setLowFidelityMode,
     interactiveHover,
     setInteractiveHover,
   } = useTheme();
@@ -215,7 +213,11 @@ export function AppearanceAccessibilityPanel() {
           <FacetRow
             leading={<ViewGrid className="size-5" />}
             title="Reduce transparency"
-            subtitle={followSystem(reduceTransparency)}
+            subtitle={
+              reduceTransparency
+                ? "On — solid surfaces instead of blurred glass"
+                : "Follows your system setting"
+            }
             trailing={
               <PreferenceSwitch
                 label="Reduce transparency"
@@ -299,18 +301,6 @@ export function AppearanceAccessibilityPanel() {
                 label="Texture overlays"
                 checked={enableTextures}
                 onCheckedChange={setEnableTextures}
-              />
-            }
-          />
-          <FacetRow
-            leading={<Flash className="size-5" />}
-            title="Low fidelity mode"
-            subtitle="Turns off backdrop blur for maximum browser performance"
-            trailing={
-              <PreferenceSwitch
-                label="Low fidelity mode"
-                checked={lowFidelityMode}
-                onCheckedChange={setLowFidelityMode}
               />
             }
           />

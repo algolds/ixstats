@@ -822,10 +822,15 @@
     }
   }
 
-  html[data-low-fidelity="true"] .facet-mycountry,
-  html[data-low-fidelity="true"] .facet-global,
-  html[data-low-fidelity="true"] .facet-builder,
-  html[data-low-fidelity="true"] .facet-forum {
+  @media (prefers-reduced-transparency: reduce) {
+    :is(.facet-mycountry, .facet-global, .facet-builder, .facet-forum) {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      box-shadow: none;
+    }
+  }
+  html[data-transparency="reduced"]
+    :is(.facet-mycountry, .facet-global, .facet-builder, .facet-forum) {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     box-shadow: none;
