@@ -91,7 +91,8 @@ export function applyAppearance(root: HTMLElement, s: AppearanceState): void {
 }
 
 /**
- * Reads stored preferences (falling back to the OS for "system" theme) and applies them.
+ * Reads stored preferences and applies them. With no stored theme it follows the OS and falls
+ * back to dark when the OS states no light preference.
  * Self-contained (serialised into the pre-paint script).
  */
 export function initAppearanceFromStorage(
@@ -113,9 +114,9 @@ export function initAppearanceFromStorage(
   const theme: "light" | "dark" =
     stored === "light" || stored === "dark"
       ? stored
-      : window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
+      : window.matchMedia("(prefers-color-scheme: light)").matches
+        ? "light"
+        : "dark";
   const typography = read(keys.typography);
   const scale = parseFloat(read(keys.textScale) ?? "");
   apply(document.documentElement, {

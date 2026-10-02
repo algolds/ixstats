@@ -128,10 +128,10 @@ export function ThemeProvider({
 
   // Follow the OS appearance (used when theme === "system")
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    setSystemTheme(mediaQuery.matches ? "dark" : "light");
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
+    setSystemTheme(mediaQuery.matches ? "light" : "dark");
     const handleChange = (e: MediaQueryListEvent) => {
-      setSystemTheme(e.matches ? "dark" : "light");
+      setSystemTheme(e.matches ? "light" : "dark");
     };
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
@@ -169,7 +169,7 @@ export function ThemeProvider({
     // Update meta theme-color for mobile browsers
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      metaThemeColor.setAttribute("content", effectiveTheme === "dark" ? "#0b0c0f" : "#f2f3f6");
+      metaThemeColor.setAttribute("content", effectiveTheme === "dark" ? "#0f1114" : "#f2f3f6");
     }
   }, [
     loaded,

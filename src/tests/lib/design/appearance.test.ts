@@ -12,7 +12,7 @@ import {
 function mockColorScheme(dark: boolean) {
   // setupTests defines matchMedia as writable (non-configurable), so assign rather than redefine.
   window.matchMedia = ((query: string) => ({
-    matches: query.includes("dark") ? dark : false,
+    matches: query.includes("light") ? !dark : false,
     media: query,
     addEventListener: () => undefined,
     removeEventListener: () => undefined,

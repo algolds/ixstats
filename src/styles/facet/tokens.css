@@ -593,17 +593,17 @@
     --material-highlight: rgba(255, 255, 255, 0.08);
     --material-highlight-hover: rgba(255, 255, 255, 0.15);
 
-    --color-label: #f4f4f5;
+    --color-label: #e4e4e7;
     --color-label-secondary: #a1a1aa;
     --color-label-tertiary: #71717a;
     --color-label-quaternary: #52525b;
     --color-label-vibrant-secondary: #bebec6;
 
-    --color-background: #0b0c0f;
-    --color-background-grouped: #0b0c0f;
+    --color-background: #0f1114;
+    --color-background-grouped: #0f1114;
     --color-surface: #16181d;
     --color-surface-secondary: #1e2028;
-    --color-surface-elevated: #22252d;
+    --color-surface-elevated: #1e2028;
 
     --color-fill: rgba(244, 244, 245, 0.24);
     --color-fill-2: rgba(244, 244, 245, 0.18);
@@ -613,7 +613,7 @@
     --color-control-thumb: rgba(244, 244, 245, 0.24);
     --color-scrim: rgba(0, 0, 0, 0.4);
 
-    --color-separator: rgba(255, 255, 255, 0.1);
+    --color-separator: rgba(255, 255, 255, 0.08);
     --color-separator-opaque: #2a2d35;
 
     --color-red: #f87171;

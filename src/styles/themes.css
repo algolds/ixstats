@@ -20,7 +20,7 @@
   --color-bg-secondary: var(--color-surface);
   --color-bg-tertiary: var(--color-surface-secondary);
   --color-bg-surface: var(--color-surface);
-  --background-rgb: 11, 12, 15; /* background-grouped (dark) for rgba() glass */
+  --background-rgb: 15, 17, 20; /* background-grouped (dark) for rgba() glass */
   --color-bg-accent: #282a33;
   --color-bg-hover: #32343e;
 
