@@ -1,20 +1,15 @@
 /* ===================================
-   LEGACY THEME VARIABLES (pre-Facet 3)
+   LEGACY VARIABLE NAMES
 
-   Facet 3 roles, tints, radius, elevation, z-index and motion live in
-   styles/facet/tokens.css (the single token source). This file keeps the
-   older variable names that existing CSS/TSX still read with var(), mapped
-   onto roles where one exists. Migrate call sites to roles/utilities; do not
-   add new variables here.
+   Roles, tints, radius, elevation, z-index and motion live in styles/facet/tokens.css (the
+   single token source). This file keeps the older variable names that existing CSS/TSX still
+   read with var(), mapped onto roles where one exists. Do not add new variables here.
 
-   Appearance: roles switch on html[data-theme]; the remaining literal values
-   below are dark by default with `.light` overrides (the class is kept in
-   sync with data-theme by the pre-paint script).
+   Roles switch on html[data-theme]; the remaining literal values below are dark by default
+   with `.light` overrides.
    =================================== */
 
 :root {
-  /* Font stacks are owned by @theme in styles/facet/tokens.css (Facet 3 §3). */
-
   /* Backgrounds → roles */
   --color-bg-primary: var(--color-background-grouped);
   --color-bg-secondary: var(--color-surface);
@@ -120,7 +115,7 @@
   --bg-gradient-government-start: rgba(30, 25, 40, 0.8);
   --bg-gradient-government-end: rgba(16, 12, 24, 0.96);
 
-  /* Volumetric Facet v2 depth surfaces - dark satin glass */
+  /* Depth surfaces - dark satin glass */
   --facet-bg-1: rgba(22, 24, 29, 0.75);
   --facet-bg-2: rgba(22, 24, 29, 0.82);
   --facet-bg-3: rgba(30, 32, 40, 0.88);
@@ -188,7 +183,7 @@
   --bg-gradient-government-start: rgba(237, 233, 254, 0.45);
   --bg-gradient-government-end: rgba(244, 241, 255, 0.65);
 
-  /* Volumetric Facet v2 depth surfaces - light frosted glass */
+  /* Depth surfaces - light frosted glass */
   --facet-bg-1: rgba(255, 255, 255, 0.75);
   --facet-bg-2: rgba(255, 255, 255, 0.85);
   --facet-bg-3: rgba(255, 255, 255, 0.92);

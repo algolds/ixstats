@@ -6,7 +6,7 @@
    the `bg-margin-*` utilities registered in facet/tokens.css), so their
    definitions cannot live in the route-scoped wiki-os.css bundle.
 
-   Facet 3 §12 (Phase 4): every WikiOS chrome token is an alias of a Facet role —
+   Every WikiOS chrome token is an alias of a Facet role —
    surfaces are opaque (`surface`, `surface-elevated`), borders are separators,
    text is the label ramp, the accent is the Wiki tint (ink indigo, set by
    `data-app="wiki"`), status colours are the system colours and the UI face is
@@ -43,7 +43,7 @@
     --wikios-amber: var(--color-orange);
     --wikios-purple: var(--color-purple);
 
-    /* Cards and popovers — opaque content, elevated floating layers (spec §5) */
+    /* Cards and popovers — opaque content, elevated floating layers */
     --wikios-card-bg: var(--color-surface);
     --wikios-card-border: var(--color-separator);
     --wikios-card-shadow: var(--shadow-card);
@@ -82,10 +82,8 @@
     --wikios-body-link-hover: #8ab4f8;
   }
 
-  /* Facet 3.1 (spec §16): the v2 IxWiki brand blue — the laurel mark, the wordmark's "Ix" and
-     the mark's soft glow (c5c6b382 SculptedEmblemHero / WikiOSBrandLockup: `text-wiki`
-     #1d4e89, blue-400 in dark, `drop-shadow 0 4px 20px` at 20% / 38%). Brand marks only; the
-     app tint stays the Wiki tint for links, selection and focus. */
+  /* The IxWiki brand blue: the laurel mark, the wordmark's "Ix" and the mark's soft glow. Brand
+     marks only; the app tint stays the Wiki tint for links, selection and focus. */
   :root {
     --wikios-brand: #1d4e89;
     --wikios-brand-ix: #2563eb;

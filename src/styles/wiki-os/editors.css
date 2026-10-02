@@ -1,8 +1,5 @@
-/* Layered in `@layer components` (Facet 3 §1). `!important` declarations
-   that override Parsoid/VisualEditor HTML and CodeMirror moved to
-   wiki-os/mediawiki.css; app chrome here has none. Deleted 2026-09-30: 40
-   classes with no callers (.wikios-template-block-*, .wikios-imgs-hero-*,
-   .wikios-editor-toolbar-*, .wikios-segmented-*, …). MediaWiki classes
+/* Layered in `@layer components`. `!important` declarations that override Parsoid/VisualEditor
+   HTML and CodeMirror live in wiki-os/mediawiki.css; app chrome here has none. MediaWiki classes
    (tleft/tright/tcenter/gallerybox/infobox-full-data) are kept. */
 
 /* ===========================================================================

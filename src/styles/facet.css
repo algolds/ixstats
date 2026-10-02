@@ -1,12 +1,9 @@
 /* ==========================================================================
-   FACET DESIGN SYSTEM — ENTRYPOINT INDEX
+   FACET — ENTRYPOINT INDEX
 
-   All Facet CSS is layered (`@layer base` for tokens, `@layer components` for
-   classes) so Tailwind utilities always win. The former nested-modal and
-   paper-modal overrides (forced `!important` backgrounds on `[data-slot=card]`,
-   `.bg-muted/50`, `.bg-black/20`, tabs) were removed: they only existed to beat
-   utilities and unlayered rules. Lab-only materials live in `facet/lab.css`,
-   imported by the lab routes, not here.
+   All Facet CSS is layered (`@layer base` for tokens, `@layer components` for classes) so
+   Tailwind utilities always win. Lab-only materials live in `facet/lab.css`, imported by the lab
+   routes, not here.
    ========================================================================== */
 
 @import "./facet/core.css";

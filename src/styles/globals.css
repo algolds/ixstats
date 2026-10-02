@@ -1,8 +1,7 @@
 @import "tailwindcss";
 @source "../**/*.{ts,tsx,js,jsx}";
 
-/* Facet 3 tokens: colour roles, app tints, type, radius, materials, elevation, z, motion.
-   The single token source — see docs/specs/2026-09-30-facet-3-design-system.md. */
+/* Tokens: colour roles, app tints, type, radius, materials, elevation, z, motion. */
 @import "./facet/tokens.css";
 
 /* Import modular CSS files */

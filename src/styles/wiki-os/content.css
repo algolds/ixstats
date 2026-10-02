@@ -36,7 +36,7 @@
     overflow: hidden;
     font-size: 13px;
     line-height: 1.4;
-    /* Opaque content surface (spec §5); colours inside come from the infobox data. */
+    /* Opaque content surface; colours inside come from the infobox data. */
     background: var(--color-surface);
     border: 1px solid var(--wikios-border);
     box-shadow: var(--shadow-card);
@@ -1138,8 +1138,6 @@
   .wikios-error {
     margin: 32px 0;
   }
-
-  /* (Search overlay removed — search now handled by Dynamic Island) */
 
   /* ---------------------------------------------------------------------------
      Link Preview Popup

@@ -1,10 +1,7 @@
 /* ==========================================================================
    SHARED COMPONENT CLASSES
 
-   Layered in `@layer components`; no `!important`. Deleted 2026-09-30 (no
-   callers): .btn-*, .form-*, .nav-link, .modal-*, .stat-*, .country-card*,
-   .focus-card, .medallion-glow (its undefined --transition-standard went with
-   it), .dashboard-section-*.
+   Layered in `@layer components`; no `!important`.
    ========================================================================== */
 
 @layer components {

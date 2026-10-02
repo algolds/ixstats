@@ -3,23 +3,17 @@
 
    Token definitions moved to wiki-os/tokens.css (always loaded from
    globals.css) because navigation, stashes and blurbs read them outside /wiki.
-   Deleted 2026-09-30 (no callers): .wikios-card(-interactive),
-   .wikios-focus-ring, .wikios-section-header/-title, .wikios-h2-anchor, the
-   unused rail glow colours (teal, cyan, gold, pink, purple, indigo) and
-   .rail-animate-rotate.
 
    Layering: rules are in `@layer components`, except the rail icon-box and
    rail-glow modifiers, which are explicit opt-in state classes applied next
    to base utilities (`border-*`, `bg-*`, `text-*`, `transition-*`) they are
    meant to override on hover. They live in `@layer utilities` and win by
-   specificity/order there instead of the old `!important`.
+   specificity/order there, with no `!important`.
    =========================================================================== */
 
 @layer components {
   /* ─── Media theme & adaptive image inversion ─────────────────────────── */
-  /* Dark is `.dark` / [data-theme="dark"] on <html>; nothing here matches in
-     light mode, so the old `[data-theme="light"] … { filter: none !important }`
-     resets are unnecessary. */
+  /* Dark is `.dark` / [data-theme="dark"] on <html>; nothing here matches in light mode. */
 
   .wikios-article-content img,
   .wikios-infobox img,
@@ -162,10 +156,8 @@
     animation: loreward-badge-celebrate 1.5s cubic-bezier(0.25, 1, 0.5, 1);
   }
 
-  /* Reduced motion: target the classes that actually animate (the old guard
-     named the keyframes rail-bounce/-wiggle/-spin/-pulse as if they were
-     classes, so it never matched; the rail guard is in the utilities layer
-     below, next to the rules it cancels). */
+  /* Reduced motion: target the classes that actually animate (the rail guard is in the
+     utilities layer below, next to the rules it cancels). */
   @media (prefers-reduced-motion: reduce) {
     .wikios-article-content img,
     .wikios-infobox img {

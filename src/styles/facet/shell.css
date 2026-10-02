@@ -1,12 +1,12 @@
 /* ==========================================================================
-   FACET 3 — NAVIGATION SHELL (spec §7.4, Phase 3)
+   NAVIGATION SHELL
 
    The `facet-nav` flag lives on <html> as `data-nav="facet"` and the
    sidebar's collapsed state as `data-sidebar="collapsed"`; both are written
    before first paint by the inline script in src/app/layout.tsx
    (src/lib/design/appearance.ts). Everything here keys off those attributes,
    so the server HTML (which contains both shells) and the first paint agree
-   and nothing flashes. See docs/reference/facet-design-system.md §Navigation.
+   and nothing flashes.
 
    Shell variables (read them; don't redefine them in feature code):
    --shell-sidebar-width   Width the AppSidebar takes at ≥1024px (0 / 16rem / 4rem collapsed).

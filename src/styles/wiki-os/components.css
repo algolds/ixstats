@@ -1,8 +1,4 @@
-/* Layered in `@layer components` (Facet 3 §1); no `!important`. Theme
-   selectors use the single model. Deleted 2026-09-30: 344 classes with no
-   callers (Lorewards page .wikios-lw-* and .lwh-*, profile, stashes page,
-   watchlist, tree explorer, template inserter .wikios-ti-*, commons sidebar,
-   streak calendar, award banners, …). */
+/* Layered in `@layer components`; no `!important`. Theme selectors use the single model. */
 
 /* ===========================================================================
    WikiOS Margin & Gutter Pins (Block Heading Anchors)
@@ -1402,13 +1398,12 @@
 }
 
 /* ===========================================================================
-   Facet 3.1 (spec §16.1 #6) — IxWiki brand mark and the reader hero modes
-   v2 source: c5c6b382 reader/hero/FeaturedImageRefraction.tsx, SculptedEmblemHero.tsx.
-   Paint only; the components place the layers. Pointer tilt / sheen stay retired.
+   IxWiki brand mark and the reader hero modes
+   Paint only; the components place the layers.
    =========================================================================== */
 
 @layer components {
-  /* The laurel mark in the v2 brand blue with its soft glow (brand tokens: wiki-os/tokens.css). */
+  /* The laurel mark in the brand blue with its soft glow (brand tokens: wiki-os/tokens.css). */
   .wikios-brand-mark {
     color: var(--wikios-brand);
     filter: drop-shadow(0 4px 20px var(--wikios-brand-glow));
@@ -1418,8 +1413,7 @@
   }
 
   /* Harmonic Under-Glow: a blurred, saturated copy of the lead image bleeding out behind the
-     glass card (v2: opacity .6 / .75 dark → .9 / .95 on hover; image .85 / .95, blur-xl → 2xl,
-     contrast 1.15, saturate 1.85). The component masks the halo's edge (radial mask). */
+     glass card. The component masks the halo's edge (radial mask). */
   .wikios-hero-underglow {
     opacity: 0.6;
     transition: opacity 300ms var(--ease-out-facet);
@@ -1449,8 +1443,7 @@
   }
 
   /* Facet Crystal Lens: the lead image as an internal colour tint, held under a surface scrim
-     for text contrast, with the precision chamfered double rim (v2: image .16 / .22 → .24 / .32,
-     blur-3xl, saturate 1.5, luminosity blend in light, lighten in dark). */
+     for text contrast, with the precision chamfered double rim. */
   .wikios-hero-lens-art {
     opacity: 0.16;
     filter: blur(64px) saturate(1.5);
@@ -1478,8 +1471,7 @@
     );
   }
   /* Dark: the light end of the scrim held at 55% — a white region of the artwork under `lighten`
-     (.32 on hover) otherwise takes `label-secondary` under 4.5:1 where the title and summary sit
-     (spec §16.8: labels on the glass hero stay AA in both appearances). */
+     (.32 on hover) otherwise takes `label-secondary` under 4.5:1 where the title and summary sit. */
   :root[data-theme="dark"] .wikios-hero-lens-scrim {
     background-image: linear-gradient(
       to right,

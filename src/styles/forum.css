@@ -4,7 +4,7 @@
 @layer theme, base, components, utilities;
 
 /* ===================================
-   FORUM — Facet 3 (spec §12)
+   FORUM
    `--forum-*` are aliases of the Facet roles plus the Forum tint (orange, from
    `data-app="forum"`). Surfaces are opaque (FacetCard / FacetList in the
    components); only the mobile pill bar and the reply composer are chrome
@@ -114,7 +114,7 @@
   }
 
   /* ---------------------------------------------------------------------------
-     Page transition — a short fade + lift (spec §8: opacity and transform only)
+     Page transition — a short fade + lift (opacity and transform only)
      --------------------------------------------------------------------------- */
 
   .forum-page-enter {

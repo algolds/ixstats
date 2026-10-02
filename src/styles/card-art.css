@@ -1,4 +1,4 @@
-/* Trading-card art (Facet 3 §14 Phase 4, Vault). Imported by the card-art components.
+/* Trading-card art. Imported by the card-art components.
    Card faces, backs, pack covers, holographic layers and cosmetic frames are content
    artwork, not chrome: they keep their own palette and light effects. Their gradients live
    here instead of `bg-gradient-to-*` utilities so the app's decorative-gradient ceiling

@@ -1,11 +1,7 @@
 /* ==========================================================================
    THEMING ENGINE — DYNAMIC NATION FLAG PALETTES
 
-   Layered in `@layer components`. The former MyCountry tab/sub-tab/unified/
-   executive/command/themed-* blocks, the `--tab-*`, `--mycountry-gold*`,
-   `--font-size-exec-*`, `--space-glass-*` tokens and the `.bg-gradient-{tab}`
-   helpers had no callers (only the unused getTabThemeClasses() helper named
-   some of them) and were deleted on 2026-09-30 (Facet 3 Phase 1).
+   Layered in `@layer components`.
    ========================================================================== */
 
 @layer components {
@@ -50,8 +46,7 @@
   }
 
   /* Aurora background (LiveGameBanner). Decorative only: it never sets
-     position/z-index — the caller positions it. (The old rule referenced an
-     undefined `aurora-simple` keyframe, so it never animated.) */
+     position/z-index — the caller positions it. */
   .aurora-bg {
     background: linear-gradient(
       45deg,

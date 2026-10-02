@@ -1,15 +1,9 @@
 /* ==========================================================================
    UTILITIES — TIER BADGES, COMPACT MODE, SHARED KEYFRAMES
 
-   Layered: element defaults in `@layer base`, classes in `@layer components`,
-   single-class helpers as `@utility`. Removed 2026-09-30: the global
-   `.focus\:ring-2:focus` hijack (it restyled every `focus:ring-2` utility),
-   the `@keyframes spin` redefinition (Tailwind owns `spin`), the dead
-   status/loading/perf/marquee helpers, the unread compact-mode `--spacing-*`/
-   `--font-size-*` variables and the prefers-contrast block (it redefined
-   theme colours on `.light/.dark`, which themes.css already overrode, so it
-   never applied — Increase Contrast lives in facet/tokens.css).
-   Print rules moved to facet/overrides.css.
+   Layered: element defaults in `@layer base`, classes in `@layer components`, single-class
+   helpers as `@utility`. Increase Contrast lives in facet/tokens.css and print rules in
+   facet/overrides.css.
    ========================================================================== */
 
 @layer base {
@@ -50,7 +44,7 @@
     border-color: rgba(245, 158, 11, 0.2);
   }
 
-  /* ─── Compact density (class on <html>; Facet 3 uses data-density) ────── */
+  /* ─── Compact density ─────────────────────────────────────────────────── */
 
   html.compact-mode .navigation-bar,
   [data-density="compact"] .navigation-bar {

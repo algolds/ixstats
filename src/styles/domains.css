@@ -1,11 +1,7 @@
 /* ==========================================================================
    DOMAINS — ONOMA CONLANG LAB & IXVAULT TOKENS
 
-   Tokens only, in `@layer base`. Deleted 2026-09-30 (no callers): the
-   .chart-* helpers, .onoma-glow/.onoma-accent-glow, every .vault-* class, the
-   vault keyframes (vault-shimmer, vault-security-scan, vault-holographic-spin,
-   vault-legendary-pulse) and the reduced-motion guard that named those
-   keyframes as if they were classes, plus the unread --vault-* palette.
+   Tokens only, in `@layer base`.
    ========================================================================== */
 
 @layer base {

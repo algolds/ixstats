@@ -1,10 +1,9 @@
 /* ==========================================================================
-   FACET DESIGN SYSTEM — PRODUCTION MATERIALS, REFRACTION & TEXTURES
+   FACET — PRODUCTION MATERIALS, REFRACTION & TEXTURES
 
-   Layered in `@layer components`; no `!important` (utilities on an element win).
-   Lab-only materials (rubber, metal, glass, carbon, wood), lab-only textures and
-   the magnetic/glow interaction profiles live in `facet/lab.css`, loaded only
-   by lab routes. User-preference kill switches live in `facet/overrides.css`.
+   Layered in `@layer components`; no `!important` (utilities on an element win). Lab-only
+   materials, textures and the magnetic/glow interaction profiles live in `facet/lab.css`,
+   loaded only by lab routes. User-preference kill switches live in `facet/overrides.css`.
    ========================================================================== */
 
 @layer base {
@@ -301,10 +300,7 @@
   }
 
   /* ─── 5. Production textures (TextureOverlay) ────────────────────────── */
-  /* In use: dots, grid, noise, crosshatch, diagonal, halftone, triangular,
-     chevron, paper-grain, horizontal-lines, waves, diamonds, shimmer
-     (CardBack uses crosshatch/waves/shimmer). Phase 2 reduces these to
-     dots, grid and paper-grain. */
+  /* CardBack uses crosshatch/waves/shimmer. */
 
   .facet-texture-dots {
     background-image: radial-gradient(

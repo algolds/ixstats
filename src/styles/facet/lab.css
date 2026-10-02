@@ -2,10 +2,10 @@
    FACET LAB — LAB-ONLY MATERIALS, TEXTURES & INTERACTION PROFILES
 
    Imported only by lab routes (the Facet materials lab panel and /labs/*),
-   never by globals.css. Facet 3 §2/§12: production uses glass + dots/grid/
-   paper-grain; everything here is for experimentation.
+   never by globals.css. Production uses glass + dots/grid/paper-grain; everything
+   here is for experimentation.
 
-   Contents (each verified to have no production callers on 2026-09-30):
+   Contents:
    - materials: rubber, metal, glass, carbon, wood
    - textures: scattered-dots, vertical-lines, zigzag, woven, brick, herringbone
    - interaction profiles: .facet-magnetic-3d, .facet-glow-accent

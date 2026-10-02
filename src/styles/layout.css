@@ -1,20 +1,7 @@
 /* ==========================================================================
    LAYOUT — NAVIGATION OFFSETS & SCROLLBARS
 
-   Layered (`@layer base` for element defaults, `@layer components` for
-   classes). Removed 2026-09-30:
-   - `.navigation-bar { position: fixed !important; z-index: 50 }` — the nav's
-     own `fixed … z-(--z-navigation)` utilities now win (it sits at the nav
-     tier again instead of 50).
-   - `.sticky.top-6 { top: 80px !important }` — hijacked every `sticky top-6`;
-     callers that must clear the nav use `top-(--nav-height-desktop)` etc.
-   - `[data-radix-dialog-content|alert-dialog-content|portal|dialog-overlay]`
-     rules — Radix no longer emits these attributes (verified in
-     node_modules/@radix-ui); primitives set their own z tokens.
-   - `.extend-under-nav` and `.wikios-icon-rail` offsets (no callers); the
-     forum rail's compact offset moved to forum.css.
-   - `body.compact-mode …` selectors — the class lands on <html>, so they never
-     matched; now `html.compact-mode` / `[data-density="compact"]`.
+   Layered: `@layer base` for element defaults, `@layer components` for classes.
    ========================================================================== */
 
 @layer base {
