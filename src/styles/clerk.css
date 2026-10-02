@@ -12,7 +12,7 @@
 
 /* Universal Clerk Root & Containers */
 .cl-rootBox {
-  font-family: var(--font-geist-sans), var(--font-sans), system-ui, sans-serif !important;
+  font-family: var(--font-sans), system-ui, sans-serif !important;
   color: var(--color-text-primary) !important;
 }
 

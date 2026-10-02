@@ -1,7 +1,5 @@
-/* ==========================================================================
-   IxStates Typography System — National, Modernist Swiss, WikiOS & Onoma
-   Calibrated with Optical x-Height, Cap-Height & Baseline Overrides
-   ========================================================================== */
+/* Font faces and the wiki / Onoma / IPA stacks. The UI stacks (`--font-sans/-mono/-serif/-display`)
+   live in `@theme` in facet/tokens.css. */
 
 /* --- 1. National (Klim Type Foundry / Kris Sowersby) --- */
 @font-face {
@@ -172,53 +170,7 @@
   line-gap-override: 0%;
 }
 
-/* --- 3. DINPro (FontFont / German Industrial Standard) --- */
-@font-face {
-  font-family: "DINPro";
-  src: url("/fonts/DINPro-Light.otf") format("opentype");
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-  size-adjust: 90%;
-  ascent-override: 88%;
-  descent-override: 22%;
-  line-gap-override: 0%;
-}
-@font-face {
-  font-family: "DINPro";
-  src: url("/fonts/DINPro-Regular.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-  size-adjust: 90%;
-  ascent-override: 88%;
-  descent-override: 22%;
-  line-gap-override: 0%;
-}
-@font-face {
-  font-family: "DINPro";
-  src: url("/fonts/DINPro-Medium.otf") format("opentype");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-  size-adjust: 90%;
-  ascent-override: 88%;
-  descent-override: 22%;
-  line-gap-override: 0%;
-}
-@font-face {
-  font-family: "DINPro";
-  src: url("/fonts/DINPro-Bold.otf") format("opentype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-  size-adjust: 90%;
-  ascent-override: 88%;
-  descent-override: 22%;
-  line-gap-override: 0%;
-}
-
-/* --- 4. Akzidenz-Grotesk (Berthold Foundry) --- */
+/* --- 3. Akzidenz-Grotesk (Berthold Foundry) --- */
 @font-face {
   font-family: "Akzidenz-Grotesk";
   src: url("/fonts/AkzidGroStdReg.otf") format("opentype");
@@ -264,7 +216,18 @@
   line-gap-override: 0%;
 }
 
-/* --- 5. Schibsted Grotesk --- */
+/* --- 4. Schibsted Grotesk --- */
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/Schibsted Grotesk-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 98%;
+  ascent-override: 96%;
+  descent-override: 24%;
+  line-gap-override: 0%;
+}
 @font-face {
   font-family: "Schibsted Grotesk";
   src: url("/fonts/Schibsted Grotesk-500.ttf") format("truetype");
@@ -298,7 +261,6 @@
   descent-override: 24%;
   line-gap-override: 0%;
 }
-/* 800/900 back the Facet 3.1 heavy headings (OFL, Google Fonts); until the files are in public/fonts the browser falls back to 700. */
 @font-face {
   font-family: "Schibsted Grotesk";
   src: url("/fonts/Schibsted Grotesk-800.ttf") format("truetype");
@@ -310,30 +272,8 @@
   descent-override: 24%;
   line-gap-override: 0%;
 }
-@font-face {
-  font-family: "Schibsted Grotesk";
-  src: url("/fonts/Schibsted Grotesk-900.ttf") format("truetype");
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-  size-adjust: 98%;
-  ascent-override: 96%;
-  descent-override: 24%;
-  line-gap-override: 0%;
-}
 
-/* --- 6. Azeret Mono --- */
-@font-face {
-  font-family: "Azeret Mono";
-  src: url("/fonts/Azeret Mono-400.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-  size-adjust: 91%;
-  ascent-override: 90%;
-  descent-override: 22%;
-  line-gap-override: 0%;
-}
+/* --- 5. Azeret Mono --- */
 @font-face {
   font-family: "Azeret Mono";
   src: url("/fonts/Azeret Mono-500.ttf") format("truetype");
@@ -368,39 +308,10 @@
   line-gap-override: 0%;
 }
 
-/* ==========================================================================
-   Typography presets & fallback chains
-
-   Layered in `@layer base`. Facet 3 §3: letter-spacing lives in the text
-   styles, never in `.font-*` classes, so this file no longer redefines
-   Tailwind's `.font-sans/.font-mono/.font-serif` or `.tabular-nums`, and the
-   unused named scale (`text-display-hero` … `text-map-label`) and
-   `.font-display/.font-wiki-sans/.font-onoma/.font-ipa` were deleted.
-
-   Font stacks: `--font-sans/-mono/-serif/-display` are owned by `@theme` in
-   styles/facet/tokens.css (Facet 3 §3). This file keeps the @font-face faces,
-   the wiki/Onoma/IPA stacks and the legacy `national`/`sovereign` preset
-   override, which stays while src/lib/design/appearance.ts still writes
-   `data-typography` (Facet 3 removes presets in Phase 4 settings work).
-   ========================================================================== */
-
 @layer base {
-  /* Swiss (the default): the sans/mono/serif/display stacks come from @theme (tokens.css). */
   :root {
     --font-wiki-sans: "Host Grotesk", "Schibsted Grotesk", ui-sans-serif, sans-serif;
     --font-onoma: "Schibsted Grotesk", ui-sans-serif, sans-serif;
-    --font-ipa: "Charis SIL", "Gentium Plus", "Doulos SIL", "Lucida Sans Unicode", ui-serif, serif;
-  }
-
-  /* Blueprint 1: Klim National (Sovereign Editorial Modernism) */
-  [data-typography="national"],
-  [data-typography="sovereign"] {
-    --font-sans: "National", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    --font-display: "Neutraface 2", "Neutraface Text", ui-sans-serif, sans-serif;
-    --font-mono: "DINPro", ui-monospace, monospace;
-    --font-serif: "Baskerville 10 Pro", "Baskerville", ui-serif, Georgia, serif;
-    --font-wiki-sans: "Host Grotesk", "National", ui-sans-serif, sans-serif;
-    --font-onoma: "National", ui-sans-serif, sans-serif;
     --font-ipa: "Charis SIL", "Gentium Plus", "Doulos SIL", "Lucida Sans Unicode", ui-serif, serif;
   }
 

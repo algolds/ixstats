@@ -317,7 +317,7 @@ export function VaultWidget() {
                           className={cn("size-3.5 shrink-0", item.isActive && "text-yellow")}
                         />
                         <PreText
-                          font="12px Geist, -apple-system, sans-serif"
+                          font="12px Schibsted Grotesk, sans-serif"
                           lineHeight={14}
                           className="text-caption flex-1 truncate leading-tight select-none"
                         >

@@ -57,7 +57,7 @@
     --wikios-toc-width: 200px;
 
     /* Typography: Swiss UI face; the Reading style is the one sanctioned content style */
-    --wikios-font-reading: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+    --wikios-font-reading: var(--font-sans);
     --wikios-font-ui: var(--font-sans);
     --wikios-font-brand: var(--font-host-grotesk), "Host Grotesk", sans-serif;
     --wikios-font-mono: var(--font-mono);

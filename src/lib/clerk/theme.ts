@@ -15,7 +15,7 @@ export const facetClerkAppearance: Appearance = {
     colorInputBackground: "var(--color-input-bg, #1e2028)",
     colorInputText: "var(--color-text-primary, #e4e4e7)",
     borderRadius: "1rem", // 16px Apple squircle
-    fontFamily: "var(--font-geist-sans), var(--font-sans), system-ui, sans-serif",
+    fontFamily: "var(--font-sans), system-ui, sans-serif",
   },
   elements: {
     rootBox: "font-sans",

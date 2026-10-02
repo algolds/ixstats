@@ -2,7 +2,6 @@
 import "~/styles/globals.css";
 
 import { type Metadata } from "next";
-import { Geist, Playfair_Display } from "next/font/google";
 
 import { ClerkProvider } from "@clerk/nextjs";
 import { facetClerkAppearance } from "~/lib/clerk/theme";
@@ -50,16 +49,6 @@ export const metadata: Metadata = {
   description: "Statistics and simulation game",
   icons: [{ rel: "icon", url: withBasePath("/favicon.ico") }],
 };
-
-const geist = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist-sans",
-});
-
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
-});
 
 const ICON_DEFAULTS = { strokeWidth: 2 } as const;
 
@@ -137,7 +126,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       // (data-theme, data-density, data-contrast, data-transparency, data-motion, data-sound,
       // --text-scale, and the navigation shell's data-nav / data-sidebar) from storage / the OS
       // before first paint, hence suppressHydrationWarning.
-      className={`dark ${geist.variable} ${playfair.variable}`}
+      className="dark"
       data-theme="dark"
       data-nav={FACET_NAV_DEFAULT ? "facet" : undefined}
       suppressHydrationWarning

@@ -5,7 +5,7 @@ import { cn } from "~/lib/utils/cn";
 
 /**
  * The wiki Reading style (Facet 3 §3: "the one sanctioned content style"): the WikiOS reading
- * face (`--wikios-font-reading`, Geist Sans — the same token `.wikios-article-content` reads) at
+ * face (`--wikios-font-reading`, the same token `.wikios-article-content` reads) at
  * a reading size with comfortable leading. Shared by every block of lore prose.
  */
 export const READING_STYLE =
