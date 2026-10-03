@@ -31,6 +31,14 @@ import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
 type DetectedLink =
   { kind: "wiki"; title: string; wiki: "ixwiki" | "iiwiki" } | { kind: "forum"; threadId: number };
 
+/** Namespaces and special pages that have no useful preview. */
+const NO_PREVIEW_TITLE = /^(?:(?:special|file|category)[:/]|(?:template|help|user|talk|wiki):)/i;
+
+function wikiLink(match: RegExpMatchArray, wiki: "ixwiki" | "iiwiki"): DetectedLink | null {
+  const title = decodeURIComponent(match[1]!).replace(/_/g, " ");
+  return NO_PREVIEW_TITLE.test(title) ? null : { kind: "wiki", title, wiki };
+}
+
 /** Parse a link href and return detection info, or null if not a recognized link */
 function detectLink(href: string): DetectedLink | null {
   // Wiki links: ixwiki.com/wiki/Title, /wiki/Title (relative), or /wiki/Title (WikiOS)
@@ -38,59 +46,15 @@ function detectLink(href: string): DetectedLink | null {
     href.match(/(?:https?:\/\/)?ixwiki\.com\/wiki\/([^#?]+)/) ??
     href.match(/^(?:\/[^/]+)?\/wiki\/([^#?]+)/) ??
     href.match(/^(?:\/[^/]+)?\/w\/([^#?]+)/);
-  if (ixMatch) {
-    const title = decodeURIComponent(ixMatch[1]!).replace(/_/g, " ");
-    const lowerTitle = title.toLowerCase();
-    // Skip special pages that won't have useful previews
-    if (
-      lowerTitle.startsWith("special:") ||
-      lowerTitle.startsWith("special/") ||
-      lowerTitle.startsWith("file:") ||
-      lowerTitle.startsWith("file/") ||
-      lowerTitle.startsWith("category:") ||
-      lowerTitle.startsWith("category/") ||
-      lowerTitle.startsWith("template:") ||
-      lowerTitle.startsWith("help:") ||
-      lowerTitle.startsWith("user:") ||
-      lowerTitle.startsWith("talk:") ||
-      lowerTitle.startsWith("wiki:")
-    )
-      return null;
-    return { kind: "wiki", title, wiki: "ixwiki" };
-  }
+  if (ixMatch) return wikiLink(ixMatch, "ixwiki");
 
-  // IIWiki links
   const iiMatch = href.match(/(?:https?:\/\/)?iiwiki\.(?:com|us)\/wiki\/([^#?]+)/);
-  if (iiMatch) {
-    const title = decodeURIComponent(iiMatch[1]!).replace(/_/g, " ");
-    const lowerTitle = title.toLowerCase();
-    if (
-      lowerTitle.startsWith("special:") ||
-      lowerTitle.startsWith("special/") ||
-      lowerTitle.startsWith("file:") ||
-      lowerTitle.startsWith("file/") ||
-      lowerTitle.startsWith("category:") ||
-      lowerTitle.startsWith("category/") ||
-      lowerTitle.startsWith("template:") ||
-      lowerTitle.startsWith("help:") ||
-      lowerTitle.startsWith("user:") ||
-      lowerTitle.startsWith("talk:") ||
-      lowerTitle.startsWith("wiki:")
-    )
-      return null;
-    return { kind: "wiki", title, wiki: "iiwiki" };
-  }
+  if (iiMatch) return wikiLink(iiMatch, "iiwiki");
 
   // Forum thread links: forum.ixwiki.com/threads/title.123/ or /threads/123/
   const forumMatch = href.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
-  if (forumMatch) {
-    const threadId = parseInt(forumMatch[1]!, 10);
-    if (!isNaN(threadId) && threadId > 0) {
-      return { kind: "forum", threadId };
-    }
-  }
-
-  return null;
+  const threadId = forumMatch ? parseInt(forumMatch[1]!, 10) : 0;
+  return threadId > 0 ? { kind: "forum", threadId } : null;
 }
 
 export function GlobalLinkTooltips() {
@@ -103,8 +67,8 @@ export function GlobalLinkTooltips() {
   const activeElementRef = useRef<HTMLElement | null>(null);
 
   const show = useCallback((link: DetectedLink, el: HTMLElement) => {
-    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
-    if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
+    clearTimeout(hideTimeoutRef.current);
+    clearTimeout(showTimeoutRef.current);
     activeElementRef.current = el;
     showTimeoutRef.current = setTimeout(() => {
       setActive({ link, el });
@@ -113,17 +77,15 @@ export function GlobalLinkTooltips() {
   }, []);
 
   const hide = useCallback(() => {
-    if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
-    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    clearTimeout(showTimeoutRef.current);
+    clearTimeout(hideTimeoutRef.current);
     hideTimeoutRef.current = setTimeout(() => {
       setOpen(false);
       activeElementRef.current = null;
     }, 200);
   }, []);
 
-  const keepOpen = useCallback(() => {
-    if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
-  }, []);
+  const keepOpen = useCallback(() => clearTimeout(hideTimeoutRef.current), []);
 
   useEffect(() => {
     const handleMouseOver = (e: MouseEvent) => {
@@ -132,10 +94,8 @@ export function GlobalLinkTooltips() {
       if (!link) return;
 
       // Don't show tooltip for links inside another tooltip, the wiki sidebar, or WikiOS shells
-      if (link.closest(".global-link-tooltip")) return;
-      if (link.closest(".no-wiki-tooltip")) return;
-      if (link.closest(".wikios-root")) return;
-      if (link.closest(".wikios-shell")) return;
+      if (link.closest(".global-link-tooltip, .no-wiki-tooltip, .wikios-root, .wikios-shell"))
+        return;
 
       const href = link.getAttribute("href") ?? "";
       if (!href) return;
@@ -169,8 +129,8 @@ export function GlobalLinkTooltips() {
     return () => {
       document.removeEventListener("mouseover", handleMouseOver);
       document.removeEventListener("mouseout", handleMouseOut);
-      if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
-      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+      clearTimeout(showTimeoutRef.current);
+      clearTimeout(hideTimeoutRef.current);
     };
   }, [show, hide, keepOpen]);
 
