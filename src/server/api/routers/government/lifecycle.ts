@@ -51,7 +51,7 @@ async function writeGovernmentChildren(
 
     // Fetch created departments to build ID map (ordered by creation)
     const createdDepartments = await tx.governmentDepartment.findMany({
-      where: { governmentStructureId: governmentStructureId },
+      where: { governmentStructureId },
       orderBy: { createdAt: "asc" },
       select: { id: true, name: true },
     });
