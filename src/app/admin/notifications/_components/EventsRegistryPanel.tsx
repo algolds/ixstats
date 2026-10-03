@@ -40,9 +40,6 @@ const CATEGORY_COLORS: Record<string, string> = {
   diplomatic: "border-blue/30 bg-blue/10",
   governance: "border-purple/30 bg-purple/10",
   social: "border-pink/30 bg-pink/10",
-  security: "border-red/30 bg-red/10",
-  intelligence: "border-teal/30 bg-teal/10",
-  crisis: "border-orange/30 bg-orange/10",
   achievement: "border-yellow/30 bg-yellow/10",
   system: "border-separator bg-fill-3",
 };
@@ -52,9 +49,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   diplomatic: "Diplomatic",
   governance: "Governance",
   social: "Social",
-  security: "Security",
-  intelligence: "Intelligence",
-  crisis: "Crisis",
   achievement: "Achievement",
   system: "System",
 };

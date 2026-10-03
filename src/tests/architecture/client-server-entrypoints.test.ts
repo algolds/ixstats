@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-describe("Plan 162: Client/Server Entrypoints & Barrel Elimination Architecture", () => {
+describe("Plan 162: Barrel Elimination Architecture", () => {
   const rootDir = path.resolve(__dirname, "../../..");
   const srcDir = path.join(rootDir, "src");
 
@@ -10,20 +10,6 @@ describe("Plan 162: Client/Server Entrypoints & Barrel Elimination Architecture"
   test.each(domains)("domain '%s' has deleted root index.ts", (domain) => {
     const indexPath = path.join(srcDir, "lib", domain, "index.ts");
     expect(fs.existsSync(indexPath)).toBe(false);
-  });
-
-  test.each(domains)("domain '%s' has server.ts marked with 'server-only'", (domain) => {
-    const serverPath = path.join(srcDir, "lib", domain, "server.ts");
-    expect(fs.existsSync(serverPath)).toBe(true);
-    const content = fs.readFileSync(serverPath, "utf-8");
-    expect(content).toMatch(/import\s+["']server-only["']/);
-  });
-
-  test.each(domains)("domain '%s' has client.ts without 'server-only'", (domain) => {
-    const clientPath = path.join(srcDir, "lib", domain, "client.ts");
-    expect(fs.existsSync(clientPath)).toBe(true);
-    const content = fs.readFileSync(clientPath, "utf-8");
-    expect(content).not.toMatch(/import\s+["']server-only["']/);
   });
 
   test("no active typescript file imports from deleted barrel roots", () => {

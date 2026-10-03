@@ -12,7 +12,9 @@ export const notificationsEventsRouter = createTRPCRouter({
   getAllEvents: adminProcedure.query(async ({ ctx }) => {
     const { db } = ctx;
 
+    // Only registered events: rows seeded for events that no longer exist are not shown as live.
     const configs = await db.notificationEventConfig.findMany({
+      where: { eventKey: { in: NOTIFICATION_EVENTS.map((e) => e.eventKey) } },
       orderBy: [{ category: "asc" }, { name: "asc" }],
     });
 
