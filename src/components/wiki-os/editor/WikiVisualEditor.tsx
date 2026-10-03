@@ -278,7 +278,6 @@ export function WikiVisualEditor({
           repulsionProgress={repulsionProgress}
           onSwitchToSource={handleSwitchToSource}
           onCancel={onCancel}
-          onSave={handleSave}
           handleSaveDraft={handleSaveDraft}
           activeFormats={fmt.activeFormats}
           exec={fmt.exec}

@@ -16,7 +16,6 @@ interface VisualInfoboxPreviewCardProps {
   templateName: string;
   variantId?: string;
   variantLabel?: string;
-  category?: string;
   params: InfoboxParam[];
   customValues?: Record<string, string>;
   className?: string;

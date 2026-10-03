@@ -260,7 +260,6 @@ export function WikiOSUnifiedSidebar({
         key={id}
         mouseY={mouseY}
         isExpanded={isRowExpanded}
-        title={title}
         index={index}
         onHover={setHoveredIndex}
       >
@@ -295,7 +294,6 @@ export function WikiOSUnifiedSidebar({
             <FisheyeRailItem
               mouseY={mouseY}
               isExpanded={isExpanded || isProfileHovered}
-              title="Wiki profile"
               index={profileIndex}
               onHover={setHoveredIndex}
             >
@@ -464,7 +462,6 @@ export function WikiOSUnifiedSidebar({
                 <FisheyeRailItem
                   mouseY={mouseY}
                   isExpanded={isMoreExpanded}
-                  title="More page tools"
                   index={moreToolsIndex}
                   onHover={setHoveredIndex}
                 >
@@ -586,7 +583,6 @@ export function WikiOSUnifiedSidebar({
                   <FisheyeRailItem
                     mouseY={mouseY}
                     isExpanded={isExpanded || isCountryHovered}
-                    title={countryData?.name || "Active Country"}
                     index={currentCountryIndex}
                     onHover={setHoveredIndex}
                   >

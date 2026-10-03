@@ -45,7 +45,6 @@ interface WikiSourceToolbarProps {
   setShowPreview: (show: boolean) => void;
   onSwitchToVisual?: () => void;
   onCancel: () => void;
-  onSave: () => void;
   handleSaveDraft: () => void;
 
   handleUndo: () => void;

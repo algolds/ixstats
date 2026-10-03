@@ -40,7 +40,6 @@ interface WikiVisualToolbarProps {
   repulsionProgress: number;
   onSwitchToSource?: () => void;
   onCancel: () => void;
-  onSave: () => void;
   handleSaveDraft: () => void;
   activeFormats: Set<string>;
   exec: (cmd: string, val?: string) => void;

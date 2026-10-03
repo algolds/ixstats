@@ -272,7 +272,6 @@ export default function WikiTemplatesPage() {
                       templateName={selectedTemplateName}
                       variantId={selectedVariantId}
                       variantLabel={activeVariant?.label}
-                      category={templateData?.category || presetMatch?.category}
                       params={previewParams}
                     />
                   </div>

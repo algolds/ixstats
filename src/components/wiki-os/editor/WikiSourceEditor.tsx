@@ -413,7 +413,6 @@ export function WikiSourceEditor({
             onSwitchToVisual?.(state.isDirty, currentWikitext);
           }}
           onCancel={onCancel}
-          onSave={handleSave}
           handleSaveDraft={handleSaveDraft}
           handleUndo={handleUndo}
           handleRedo={handleRedo}
