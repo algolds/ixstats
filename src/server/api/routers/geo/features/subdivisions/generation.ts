@@ -6,7 +6,7 @@ import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clipAndValidatePolygon } from "~/lib/maps/geo-validation";
 import { generateProvinces } from "~/lib/maps/province-generator";
 import { syncGeographicDemographics } from "~/lib/country-geo/sync";
-import { assertOwnCountry } from "../../_owner";
+import { assertOwnCountry } from "../../core/shared";
 
 export const geoFeaturesSubdivisionsGenerationRouter = createTRPCRouter({
   /**

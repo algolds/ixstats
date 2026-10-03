@@ -12,7 +12,7 @@ import { upsertCity } from "~/lib/country-geo";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "~/server/shared/layer-cache";
-import { assertOwnCountry } from "../_owner";
+import { assertOwnCountry } from "../core/shared";
 
 // ── Shared schema ─────────────────────────────────────────────────────────────
 

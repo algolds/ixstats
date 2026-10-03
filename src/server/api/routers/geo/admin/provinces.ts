@@ -10,7 +10,7 @@ import { buildProvinceMergePlan } from "~/lib/maps/province-importer/merge-plan"
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { clearLayerCache } from "~/server/shared/layer-cache";
-import { assertOwnCountry } from "../_owner";
+import { assertOwnCountry } from "../core/shared";
 
 /** SVG markup or base64 PNG for the import, from the upload record or the direct input. */
 async function resolveImportContent(

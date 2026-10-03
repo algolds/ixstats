@@ -4,13 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { upsertPeak, upsertNamedRiver, upsertNamedLake } from "~/lib/country-geo/named-features";
-import { assertOwnCountry } from "../_owner";
-
-const coordinatesSchema = z
-  .tuple([z.number(), z.number()])
-  .refine(([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90, {
-    message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",
-  });
+import { assertOwnCountry, coordinatesSchema } from "../core/shared";
 
 export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
   // ─── Peak CRUD ───

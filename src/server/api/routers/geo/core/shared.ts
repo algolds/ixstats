@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 
 /** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
 export const coordinatesSchema = z
@@ -6,6 +7,21 @@ export const coordinatesSchema = z
   .refine(([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90, {
     message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",
   });
+
+/**
+ * Country owners may only act on their own country; admins (no `ctx.country`) may act on any.
+ * `action` completes "You can only ... your own country".
+ */
+export function assertOwnCountry(
+  ctx: { country?: object | null },
+  countryId: string,
+  action = "edit"
+) {
+  const owned = ctx.country as { id: string } | null | undefined;
+  if (owned && owned.id !== countryId) {
+    throw new TRPCError({ code: "FORBIDDEN", message: `You can only ${action} your own country` });
+  }
+}
 
 /**
  * Climate color map: maps fill colors to human-readable Trewartha climate names.

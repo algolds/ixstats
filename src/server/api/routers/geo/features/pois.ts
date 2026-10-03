@@ -10,15 +10,8 @@ import {
   checkNameUniqueness,
 } from "~/lib/maps/geo-validation";
 
-/** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
-const coordinatesSchema = z
-  .tuple([z.number(), z.number()])
-  .refine(([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90, {
-    message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",
-  });
-
 import { syncResourcePoolModifiers } from "~/server/shared/geo-resource-sync";
-import { assertOwnCountry } from "../_owner";
+import { assertOwnCountry, coordinatesSchema } from "../core/shared";
 
 export const geoFeaturesPoisRouter = createTRPCRouter({
   /**

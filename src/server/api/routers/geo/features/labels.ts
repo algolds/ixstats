@@ -9,14 +9,7 @@ import { TRPCError } from "@trpc/server";
 import { GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { validatePointContainment } from "~/lib/maps/geo-validation";
-import { assertOwnCountry } from "../_owner";
-
-/** Reusable Zod schema for WGS84 coordinate pair [lng, lat] with bounds checking. */
-const coordinatesSchema = z
-  .tuple([z.number(), z.number()])
-  .refine(([lng, lat]) => lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90, {
-    message: "Coordinates must be valid WGS84 (lng: -180 to 180, lat: -90 to 90)",
-  });
+import { assertOwnCountry, coordinatesSchema } from "../core/shared";
 
 export const geoFeaturesLabelsRouter = createTRPCRouter({
   createMapLabel: standardMutationCountryOwnerProcedure
