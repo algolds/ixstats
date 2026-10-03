@@ -2,6 +2,7 @@
 // UPDATED: Added rate limiting to all mutation endpoints (v1.1.1)
 
 import { z } from "zod";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import {
   createTRPCRouter,
   publicProcedure,
@@ -39,6 +40,64 @@ const NotificationCategory = z.enum([
   "military",
 ]);
 
+type NotificationDb = Pick<PrismaClient, "user" | "notification">;
+
+/** Notifications a user can see: their own, global ones, and their country's. */
+async function visibleNotificationFilters(db: NotificationDb, userId: string) {
+  const userProfile = await db.user.findFirst({
+    where: { clerkUserId: userId },
+    select: { countryId: true },
+  });
+  const filters: Prisma.NotificationWhereInput[] = [
+    { userId },
+    { AND: [{ userId: null }, { countryId: null }] },
+  ];
+  if (userProfile?.countryId) filters.push({ countryId: userProfile.countryId });
+  return filters;
+}
+
+/** Like visibleNotificationFilters, but matching the user by either id form (internal or Clerk). */
+async function visibleNotificationFiltersById(db: NotificationDb, userId: string) {
+  const userProfile = await db.user.findFirst({
+    where: { OR: [{ clerkUserId: userId }, { id: userId }] },
+    select: { id: true, clerkUserId: true, countryId: true },
+  });
+  const filters: Prisma.NotificationWhereInput[] = [
+    { userId: userProfile?.id ?? userId },
+    { userId: userProfile?.clerkUserId ?? userId },
+    { AND: [{ userId: null }, { countryId: null }] },
+  ];
+  if (userProfile?.countryId) filters.push({ countryId: userProfile.countryId });
+  return filters;
+}
+
+/** Update a notification the user can see; unauthenticated callers and foreign notifications are rejected. */
+async function updateVisibleNotification(
+  db: NotificationDb,
+  userId: string | undefined,
+  notificationId: string,
+  data: Prisma.NotificationUpdateInput
+) {
+  if (!userId) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "User ID required",
+    });
+  }
+
+  const notification = await db.notification.findFirst({
+    where: { id: notificationId, OR: await visibleNotificationFilters(db, userId) },
+  });
+  if (!notification) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Notification not found or no access",
+    });
+  }
+
+  return db.notification.update({ where: { id: notificationId }, data });
+}
+
 export const notificationsUserRouter = createTRPCRouter({
   // Get notifications for current user (using auth context)
   getUserNotifications: publicProcedure
@@ -66,24 +125,7 @@ export const notificationsUserRouter = createTRPCRouter({
         };
       }
 
-      // Get user profile to find their country
-      const userProfile = await db.user.findFirst({
-        where: { clerkUserId: userId },
-        select: { id: true, clerkUserId: true, countryId: true },
-      });
-
-      // Build OR conditions - only include countryId if user has a country
-      const orConditions: any[] = [
-        { userId }, // Direct user notifications
-        {
-          AND: [{ userId: null }, { countryId: null }],
-        }, // Global notifications
-      ];
-
-      // Only add country-wide notifications if user has a country
-      if (userProfile?.countryId) {
-        orConditions.push({ countryId: userProfile.countryId });
-      }
+      const orConditions = await visibleNotificationFilters(db, userId);
 
       const whereConditions = {
         AND: [
@@ -129,54 +171,11 @@ export const notificationsUserRouter = createTRPCRouter({
         userId: z.string().optional(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
-      const { db } = ctx;
-
-      const userId = input.userId || ctx.auth?.userId;
-
-      if (!userId) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "User ID required",
-        });
-      }
-
-      // Get user profile to find their country
-      const userProfile = await db.user.findFirst({
-        where: { clerkUserId: userId },
-        select: { id: true, clerkUserId: true, countryId: true },
-      });
-
-      // Build OR conditions - only include countryId if user has a country
-      const orConditions: any[] = [
-        { userId: userId },
-        { userId: null, countryId: null }, // Global notifications
-      ];
-
-      if (userProfile?.countryId) {
-        orConditions.push({ countryId: userProfile.countryId });
-      }
-
-      // Verify the notification belongs to the user
-      const notification = await db.notification.findFirst({
-        where: {
-          id: input.notificationId,
-          OR: orConditions,
-        },
-      });
-
-      if (!notification) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Notification not found or no access",
-        });
-      }
-
-      return await db.notification.update({
-        where: { id: input.notificationId },
-        data: { read: true },
-      });
-    }),
+    .mutation(async ({ ctx, input }) =>
+      updateVisibleNotification(ctx.db, input.userId || ctx.auth?.userId, input.notificationId, {
+        read: true,
+      })
+    ),
 
   // Dismiss notification (hides it from view)
   // RATE LIMITED: Light mutation (100 req/min) - simple toggle operation
@@ -187,54 +186,12 @@ export const notificationsUserRouter = createTRPCRouter({
         userId: z.string().optional(),
       })
     )
-    .mutation(async ({ ctx, input }) => {
-      const { db } = ctx;
-
-      const userId = input.userId || ctx.auth?.userId;
-
-      if (!userId) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "User ID required",
-        });
-      }
-
-      // Get user profile to find their country
-      const userProfile = await db.user.findFirst({
-        where: { clerkUserId: userId },
-        select: { id: true, clerkUserId: true, countryId: true },
-      });
-
-      // Build OR conditions - only include countryId if user has a country
-      const orConditions: any[] = [
-        { userId: userId },
-        { userId: null, countryId: null }, // Global notifications
-      ];
-
-      if (userProfile?.countryId) {
-        orConditions.push({ countryId: userProfile.countryId });
-      }
-
-      // Verify the notification belongs to the user
-      const notification = await db.notification.findFirst({
-        where: {
-          id: input.notificationId,
-          OR: orConditions,
-        },
-      });
-
-      if (!notification) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Notification not found or no access",
-        });
-      }
-
-      return await db.notification.update({
-        where: { id: input.notificationId },
-        data: { dismissed: true, read: true },
-      });
-    }),
+    .mutation(async ({ ctx, input }) =>
+      updateVisibleNotification(ctx.db, input.userId || ctx.auth?.userId, input.notificationId, {
+        dismissed: true,
+        read: true,
+      })
+    ),
 
   // Mark all notifications as read
   // RATE LIMITED: Light mutation (100 req/min) - batch operation but lightweight
@@ -250,29 +207,7 @@ export const notificationsUserRouter = createTRPCRouter({
 
       if (!userId) return { success: true };
 
-      // Get user profile to find their country
-      const userProfile = await db.user.findFirst({
-        where: {
-          OR: [{ clerkUserId: userId }, { id: userId }],
-        },
-        select: { id: true, clerkUserId: true, countryId: true },
-      });
-
-      const matchedUserId = userProfile?.id ?? userId;
-      const matchedClerkId = userProfile?.clerkUserId ?? userId;
-
-      // Build OR conditions - include all user id variations and countryId
-      const orConditions: any[] = [
-        { userId: matchedUserId },
-        { userId: matchedClerkId },
-        {
-          AND: [{ userId: null }, { countryId: null }],
-        },
-      ];
-
-      if (userProfile?.countryId) {
-        orConditions.push({ countryId: userProfile.countryId });
-      }
+      const orConditions = await visibleNotificationFiltersById(db, userId);
 
       await db.notification.updateMany({
         where: {
@@ -360,29 +295,7 @@ export const notificationsUserRouter = createTRPCRouter({
       return { count: 0 };
     }
 
-    // Get user profile to find their country
-    const userProfile = await db.user.findFirst({
-      where: {
-        OR: [{ clerkUserId: userId }, { id: userId }],
-      },
-      select: { id: true, clerkUserId: true, countryId: true },
-    });
-
-    const matchedUserId = userProfile?.id ?? userId;
-    const matchedClerkId = userProfile?.clerkUserId ?? userId;
-
-    // Build OR conditions - include all user id variations and countryId
-    const orConditions: any[] = [
-      { userId: matchedUserId },
-      { userId: matchedClerkId },
-      {
-        AND: [{ userId: null }, { countryId: null }],
-      },
-    ];
-
-    if (userProfile?.countryId) {
-      orConditions.push({ countryId: userProfile.countryId });
-    }
+    const orConditions = await visibleNotificationFiltersById(db, userId);
 
     const count = await db.notification.count({
       where: {
