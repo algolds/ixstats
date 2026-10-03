@@ -312,7 +312,7 @@ function CityEditor({ city, countryId, onSaved }: CityEditorProps) {
         </div>
         <EditorActions
           editing={editing && !isPublicReadOnly}
-          readOnly={isPublicReadOnly}
+          readOnly={!!isPublicReadOnly}
           isPending={upsert.isPending}
           onSave={handleSave}
           onCancel={() => setEditing(false)}
@@ -419,7 +419,7 @@ function SubdivisionEditor({ subdivision, countryId, onSaved }: SubdivisionEdito
         </div>
         <EditorActions
           editing={editing && !isPublicReadOnly}
-          readOnly={isPublicReadOnly}
+          readOnly={!!isPublicReadOnly}
           isPending={upsert.isPending}
           onSave={handleSave}
           onCancel={() => setEditing(false)}

@@ -36,8 +36,8 @@ function TaxRateCardComponent({
     yieldValue != null && totalYield != null && totalYield > 0
       ? (yieldValue / totalYield) * 100
       : 0;
-  // Unset taxes start the slider at the channel default so there's somewhere to begin.
-  const sliderValue = rate ?? channel.defaultRate;
+  // An unset tax shows "Not set"; its slider starts at the channel minimum.
+  const sliderValue = rate ?? channel.min;
 
   const handleToggleLock = () => {
     if (bracketed) return;

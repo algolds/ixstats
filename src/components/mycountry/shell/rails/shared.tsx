@@ -5,6 +5,7 @@ import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import type { MyCountryDomain } from "../domain-meta";
 import { timeAgo } from "~/lib/format/compact";
+import { STATUS_TEXT as SHELL_STATUS_TEXT } from "../status-tone";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 /**
  * Status colours for the domain rails: the shell's shared `status-tone` mapping (destructive,

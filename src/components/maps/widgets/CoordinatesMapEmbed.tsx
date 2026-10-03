@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
-import { buildBaseStyle } from "~/lib/maps/map-config";
+import { buildBaseStyle, MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
 import { api } from "~/trpc/react";
 import { MapPin, SystemRestart as Loader2 } from "iconoir-react";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";

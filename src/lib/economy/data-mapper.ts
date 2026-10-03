@@ -464,7 +464,7 @@ export function mapCountryToEconomyData(
   base.demographics.urbanRuralSplit =
     country.urbanPopulationPercent != null && country.ruralPopulationPercent != null
       ? { urban: country.urbanPopulationPercent, rural: country.ruralPopulationPercent }
-      : { urban: 60, rural: 40 };
+      : { urban: 0, rural: 0 }; // 0 = not recorded, as in factory.ts
 
   // 3. Wire DB relations (typed helpers)
   applyFiscalSystemPatches(base, country.fiscalSystem);
