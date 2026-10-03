@@ -14,7 +14,7 @@
  */
 
 import type { Position, Polygon, MultiPolygon } from "geojson";
-import { boxDistanceSq, distanceDeg } from "./planar";
+import { boxDistanceSq, distanceDeg } from "../planar";
 import type {
   AffineMatrix,
   ReferencePoint,

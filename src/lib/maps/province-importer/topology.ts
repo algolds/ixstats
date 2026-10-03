@@ -18,7 +18,7 @@ import { kinks } from "@turf/kinks";
 import { union } from "@turf/union";
 import type { Feature, Polygon, MultiPolygon, Position } from "geojson";
 import type { ProvinceFeature, TopologyReport, GapReport, OverlapReport } from "./types";
-import { boxDistanceSq, distanceDeg } from "./planar";
+import { boxDistanceSq, distanceDeg } from "../planar";
 
 /**
  * Validate the topology of imported provinces against a country border.

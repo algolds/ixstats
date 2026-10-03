@@ -10,6 +10,7 @@
 
 import type { Position, Polygon, MultiPolygon } from "geojson";
 import { getAllRings } from "./border-editor";
+import { distanceDeg } from "./planar";
 import { type TopologyRef } from "./topology-engine";
 
 type FeatureVertexRef = TopologyRef;
@@ -20,8 +21,22 @@ export interface SharedVertexData {
   featureRefs: FeatureVertexRef[];
 }
 
+interface Vertex {
+  ref: FeatureVertexRef;
+  coord: Position;
+}
+
 /** Tolerance in degrees for matching vertices (~111m at equator) */
 const DEFAULT_TOLERANCE = 0.001;
+
+/** Ring length without the closing duplicate vertex. */
+function openRingLength(ring: Position[]): number {
+  const first = ring[0];
+  const last = ring[ring.length - 1];
+  return ring.length > 1 && first![0] === last![0] && first![1] === last![1]
+    ? ring.length - 1
+    : ring.length;
+}
 
 /**
  * Build shared vertex index from political features.
@@ -34,143 +49,60 @@ export function buildSharedVertexIndex(
   }>,
   tolerance: number = DEFAULT_TOLERANCE
 ): SharedVertexData[] {
+  const vertices: Vertex[] = features.flatMap(({ featureId, geometry }) =>
+    getAllRings(geometry).flatMap((ring, ringIndex) =>
+      ring
+        .slice(0, openRingLength(ring))
+        .map((coord, vertexIndex) => ({ ref: { featureId, ringIndex, vertexIndex }, coord }))
+    )
+  );
+
   // Spatial hash grid for efficient proximity search
   const gridSize = tolerance * 2;
-  const grid = new Map<string, FeatureVertexRef[]>();
-
-  function gridKey(lng: number, lat: number): string {
-    const gx = Math.floor(lng / gridSize);
-    const gy = Math.floor(lat / gridSize);
-    return `${gx},${gy}`;
+  const cellKey = (gx: number, gy: number) => `${gx},${gy}`;
+  const cellOf = ([lng, lat]: Position): [number, number] => [
+    Math.floor(lng / gridSize),
+    Math.floor(lat / gridSize),
+  ];
+  const grid = new Map<string, Vertex[]>();
+  for (const vertex of vertices) {
+    const key = cellKey(...cellOf(vertex.coord));
+    const cell = grid.get(key) ?? [];
+    cell.push(vertex);
+    grid.set(key, cell);
   }
 
-  // Extract all vertices and insert into spatial hash
-  for (const feature of features) {
-    const rings = getAllRings(feature.geometry);
-    for (let ri = 0; ri < rings.length; ri++) {
-      const ring = rings[ri]!;
-      // Skip ring-closing duplicate
-      const len =
-        ring.length > 1 &&
-        ring[0]![0] === ring[ring.length - 1]![0] &&
-        ring[0]![1] === ring[ring.length - 1]![1]
-          ? ring.length - 1
-          : ring.length;
+  /** Vertices in the 3x3 block of grid cells around `coord`. */
+  const candidatesNear = (coord: Position): Vertex[] => {
+    const [gx, gy] = cellOf(coord);
+    return [-1, 0, 1].flatMap((dx) =>
+      [-1, 0, 1].flatMap((dy) => grid.get(cellKey(gx + dx, gy + dy)) ?? [])
+    );
+  };
 
-      for (let vi = 0; vi < len; vi++) {
-        const coord = ring[vi]!;
-        const key = gridKey(coord[0], coord[1]);
-        const ref: FeatureVertexRef = {
-          featureId: feature.featureId,
-          ringIndex: ri,
-          vertexIndex: vi,
-        };
-
-        if (!grid.has(key)) grid.set(key, []);
-        grid.get(key)!.push(ref);
-      }
-    }
-  }
-
-  // Now group vertices within tolerance across features
-  const featureCoords = new Map<string, Map<string, Position>>();
-  for (const feature of features) {
-    const coordMap = new Map<string, Position>();
-    const rings = getAllRings(feature.geometry);
-    for (let ri = 0; ri < rings.length; ri++) {
-      const ring = rings[ri]!;
-      const len =
-        ring.length > 1 &&
-        ring[0]![0] === ring[ring.length - 1]![0] &&
-        ring[0]![1] === ring[ring.length - 1]![1]
-          ? ring.length - 1
-          : ring.length;
-      for (let vi = 0; vi < len; vi++) {
-        coordMap.set(`${ri}-${vi}`, ring[vi]!);
-      }
-    }
-    featureCoords.set(feature.featureId, coordMap);
-  }
-
-  // Group matching vertices
-  const processed = new Set<string>();
+  const processed = new Set<Vertex>();
   const sharedVertices: SharedVertexData[] = [];
 
-  for (const feature of features) {
-    const coordMap = featureCoords.get(feature.featureId)!;
-    const rings = getAllRings(feature.geometry);
+  for (const vertex of vertices) {
+    if (processed.has(vertex)) continue;
+    processed.add(vertex);
 
-    for (let ri = 0; ri < rings.length; ri++) {
-      const ring = rings[ri]!;
-      const len =
-        ring.length > 1 &&
-        ring[0]![0] === ring[ring.length - 1]![0] &&
-        ring[0]![1] === ring[ring.length - 1]![1]
-          ? ring.length - 1
-          : ring.length;
-
-      for (let vi = 0; vi < len; vi++) {
-        const refKey = `${feature.featureId}:${ri}:${vi}`;
-        if (processed.has(refKey)) continue;
-
-        const coord = coordMap.get(`${ri}-${vi}`)!;
-        const matchedRefs: FeatureVertexRef[] = [
-          { featureId: feature.featureId, ringIndex: ri, vertexIndex: vi },
-        ];
-        processed.add(refKey);
-
-        // Search neighboring grid cells
-        const gx = Math.floor(coord[0] / gridSize);
-        const gy = Math.floor(coord[1] / gridSize);
-
-        for (let dx = -1; dx <= 1; dx++) {
-          for (let dy = -1; dy <= 1; dy++) {
-            const neighborKey = `${gx + dx},${gy + dy}`;
-            const candidates = grid.get(neighborKey) || [];
-
-            for (const cand of candidates) {
-              if (cand.featureId === feature.featureId) continue;
-              const candKey = `${cand.featureId}:${cand.ringIndex}:${cand.vertexIndex}`;
-              if (processed.has(candKey)) continue;
-
-              const candCoords = featureCoords.get(cand.featureId);
-              if (!candCoords) continue;
-              const candCoord = candCoords.get(`${cand.ringIndex}-${cand.vertexIndex}`);
-              if (!candCoord) continue;
-
-              const dLng = coord[0] - candCoord[0];
-              const dLat = coord[1] - candCoord[1];
-              const dist = Math.sqrt(dLng * dLng + dLat * dLat);
-
-              if (dist <= tolerance) {
-                matchedRefs.push(cand);
-                processed.add(candKey);
-              }
-            }
-          }
-        }
-
-        // Only save if shared by 2+ different features
-        const uniqueFeatures = new Set(matchedRefs.map((r) => r.featureId));
-        if (uniqueFeatures.size >= 2) {
-          // Average the coordinates of matched vertices
-          let avgLng = 0;
-          let avgLat = 0;
-          for (const ref of matchedRefs) {
-            const c = featureCoords.get(ref.featureId)!.get(`${ref.ringIndex}-${ref.vertexIndex}`)!;
-            avgLng += c[0];
-            avgLat += c[1];
-          }
-          avgLng /= matchedRefs.length;
-          avgLat /= matchedRefs.length;
-
-          sharedVertices.push({
-            lng: Math.round(avgLng * 100000) / 100000,
-            lat: Math.round(avgLat * 100000) / 100000,
-            featureRefs: matchedRefs,
-          });
-        }
+    const matches = [vertex];
+    for (const cand of candidatesNear(vertex.coord)) {
+      if (cand.ref.featureId === vertex.ref.featureId || processed.has(cand)) continue;
+      if (distanceDeg(vertex.coord, cand.coord) <= tolerance) {
+        matches.push(cand);
+        processed.add(cand);
       }
+    }
+
+    // Only save if shared by 2+ different features
+    if (new Set(matches.map((m) => m.ref.featureId)).size >= 2) {
+      const mean = (axis: 0 | 1) =>
+        Math.round(
+          (matches.reduce((sum, m) => sum + m.coord[axis]!, 0) / matches.length) * 100000
+        ) / 100000;
+      sharedVertices.push({ lng: mean(0), lat: mean(1), featureRefs: matches.map((m) => m.ref) });
     }
   }
 
