@@ -21,7 +21,9 @@ interface UpdateComponentInput {
   notes?: string;
 }
 
-interface BulkComponentItem<T> extends CreateComponentInput<T> {
+interface BulkComponentItem<T> extends Omit<CreateComponentInput<T>, "countryId"> {
+  /** Defaults to the bulk call's country. */
+  countryId?: string;
   isActive?: boolean;
 }
 
