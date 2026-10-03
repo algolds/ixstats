@@ -9,7 +9,7 @@ import { formatIxCountdown } from "~/lib/statecraft/calendar";
 import { TONE_CLASSES } from "./directive-model";
 import { Card } from "~/components/ui/card";
 
-export interface DirectiveStatusStripProps {
+interface DirectiveStatusStripProps {
   countryId: string;
   nowIxTime: number;
   activeCount: number | null;

@@ -16,7 +16,7 @@ import {
   User,
 } from "iconoir-react";
 
-export interface CulturalExchangeMetrics {
+interface CulturalExchangeMetrics {
   participants: number;
   culturalImpact: number;
   diplomaticValue: number;

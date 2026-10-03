@@ -10,7 +10,7 @@ import React from "react";
 import { formatCurrency } from "~/lib/economy/atomic-utils";
 import { AtomicMetricsBar, type AtomicMetrics } from "~/components/shared/atomic-picker";
 
-export interface MetricsPanelProps {
+interface MetricsPanelProps {
   metrics: AtomicMetrics;
   onComponentsClick?: () => void;
   onEffectivenessClick?: () => void;

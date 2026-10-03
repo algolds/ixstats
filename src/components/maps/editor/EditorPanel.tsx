@@ -14,7 +14,6 @@ import {
   Component as Layers,
   List,
   OpenBook as BookOpen,
-  Search,
   Globe,
   Link as LinkIcon,
   ViewGrid as Layout,
@@ -612,26 +611,5 @@ function CollapseToggle({
         <ChevronRight className="h-3 w-3" />
       )}
     </Button>
-  );
-}
-
-export function FeatureSearchFilter({
-  value,
-  onChangeAction,
-}: {
-  value: string;
-  onChangeAction: (value: string) => void;
-}) {
-  return (
-    <div className="relative mb-2">
-      <Search className="text-label-secondary absolute top-1/2 left-2 h-3 w-3 -translate-y-1/2" />
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChangeAction(e.target.value)}
-        placeholder="Filter features..."
-        className="border-separator bg-surface focus:ring-tint rounded-control-sm text-footnote w-full border py-1 pr-2 pl-7 outline-none focus:ring-1"
-      />
-    </div>
   );
 }

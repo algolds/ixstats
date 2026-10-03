@@ -23,8 +23,6 @@ import { CustomSectorDialog } from "./trade-commerce/CustomSectorDialog";
 import { RailCard, RailCount, RailRow } from "./rails/shared";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
-export { type CustomSector, type AccentColor } from "./trade-commerce/trade-commerce-types";
-
 /**
  * Trade & Commerce tab.
  *
@@ -122,7 +120,6 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
       countryId: rel.targetCountryId || rel.id,
       countryName: rel.targetCountryName || rel.targetCountry || "Diplomatic Partner",
       flagUrl: rel.targetCountryFlag ?? rel.flagUrl ?? null,
-      status: rel.relationship || rel.status || "Formal",
       tradeAgreement: rel.treaties?.some((t) => t.toLowerCase().includes("trade")) ?? false,
       tradeVolume: rel.tradeVolume ?? 0,
     }));

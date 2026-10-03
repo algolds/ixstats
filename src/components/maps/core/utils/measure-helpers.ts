@@ -75,7 +75,7 @@ export function interpolateGreatCircle(
   return points;
 }
 
-export type LineGeometry =
+type LineGeometry =
   | { type: "LineString"; coordinates: [number, number][] }
   | { type: "MultiLineString"; coordinates: [number, number][][] };
 

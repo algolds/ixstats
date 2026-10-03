@@ -641,14 +641,10 @@ export default function MapEditorOverlay({
               {/* Region stats tooltip */}
               <RegionHoverTooltip features={editor.allFeatures} editorMode={editor.mode} />
 
-              {/* Hypsometric Cross-Section Elevation HUD */}
+              {/* Live terrain readout while measuring */}
               {(editor.mode === "ruler" ||
                 (editor.rulerPoints && editor.rulerPoints.length > 0)) && (
-                <HypsometricElevationHUD
-                  rulerPoints={editor.rulerPoints}
-                  totalDistanceKm={rulerDistance}
-                  onClose={editor.clearRuler}
-                />
+                <HypsometricElevationHUD onClose={editor.clearRuler} />
               )}
 
               {/* Province import preview overlay */}

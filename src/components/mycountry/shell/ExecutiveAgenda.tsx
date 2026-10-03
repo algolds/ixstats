@@ -220,4 +220,3 @@ function AgendaRow({
 }
 
 export const ExecutiveAgenda = React.memo(ExecutiveAgendaComponent);
-export type { ExecutiveAgendaProps } from "./agenda";

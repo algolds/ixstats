@@ -13,11 +13,6 @@ import { countGeometryVertices } from "~/components/maps/editor/utils/editor-ove
 import { useTransientMapStore } from "~/components/maps/editor/utils/transientStore";
 import type { EditorFeature } from "~/components/maps/editor/types/editor-state";
 
-export interface HoveredFeatureInfo {
-  feature: EditorFeature;
-  screenPos: { x: number; y: number };
-}
-
 interface RegionHoverTooltipProps {
   /** Editor features; the tooltip shows only for regions (subdivisions). */
   features: EditorFeature[];

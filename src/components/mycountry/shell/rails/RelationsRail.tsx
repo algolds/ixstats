@@ -3,8 +3,6 @@
 import React, { useMemo } from "react";
 import {
   City as Building2,
-  Community as Handshake,
-  StatUp as TrendingUp,
   ScaleFrameEnlarge as Scale,
   Globe as Globe2,
   Group as Users,
@@ -22,6 +20,7 @@ import {
   RailCount,
   RailEmpty,
   RailRow,
+  pushRecorded,
   STATUS_TEXT,
   type Kpi,
   type ActivityEntry,
@@ -102,7 +101,7 @@ export function RelationsRail({ countryId }: { countryId: string }) {
       id: string;
       targetName: string;
       targetFlag: string | null;
-      strength: number;
+      strength: number | null;
       stance: string;
     }> = [];
     const seenTargets = new Set<string>();
@@ -125,8 +124,8 @@ export function RelationsRail({ countryId }: { countryId: string }) {
         id: r.id,
         targetName: name,
         targetFlag: flag,
-        strength: r.strength ?? 50,
-        stance: getStrengthLabel(r.strength ?? 50),
+        strength: r.strength ?? null,
+        stance: r.strength != null ? getStrengthLabel(r.strength) : "Unrated",
       });
     });
 
@@ -143,14 +142,14 @@ export function RelationsRail({ countryId }: { countryId: string }) {
 
       if (partnerId && !seenTargets.has(partnerId)) {
         seenTargets.add(partnerId);
-        const strength = e.strength ?? 65;
+        const strength = e.strength ?? null;
 
         list.push({
           id: `embassy-rel-${e.id}`,
           targetName: partnerName,
           targetFlag: partnerFlag ?? null,
           strength,
-          stance: getStrengthLabel(strength),
+          stance: strength != null ? getStrengthLabel(strength) : "Unrated",
         });
       }
     });
@@ -175,48 +174,47 @@ export function RelationsRail({ countryId }: { countryId: string }) {
       const countryObjName = typeof e.country === "object" ? e.country?.name : e.country;
       const resolvedName = countryObjName ?? guestName ?? hostName ?? "Partner Nation";
 
-      entries.push({
-        id: `embassy-${e.id}`,
-        icon: Building2,
-        iconColor: STATUS_TEXT.neutral,
-        text: `Embassy with ${resolvedName}`,
-        time: new Date(e.establishedAt ?? e.createdAt ?? Date.now()),
-      });
-    });
-
-    liveRelations.forEach((r) => {
-      const strength = r.strength ?? 0;
-      entries.push({
-        id: `relation-${r.id}`,
-        icon: strength >= 70 ? TrendingUp : Handshake,
-        iconColor: strength >= 70 ? STATUS_TEXT.success : STATUS_TEXT.neutral,
-        text: `${r.targetName} — ${r.stance}`,
-        time: new Date(),
-      });
+      pushRecorded(
+        entries,
+        {
+          id: `embassy-${e.id}`,
+          icon: Building2,
+          iconColor: STATUS_TEXT.neutral,
+          text: `Embassy with ${resolvedName}`,
+        },
+        e.establishedAt,
+        e.createdAt
+      );
     });
 
     alliances.forEach((a) => {
-      entries.push({
-        id: `alliance-${a.id}`,
-        icon: Users,
-        iconColor: STATUS_TEXT.neutral,
-        text: `Alliance: ${a.name ?? "Diplomatic Pact"} (${a.memberCount ?? a.members?.length ?? 1} members)`,
-        time: new Date(a.createdAt ?? Date.now()),
-      });
+      pushRecorded(
+        entries,
+        {
+          id: `alliance-${a.id}`,
+          icon: Users,
+          iconColor: STATUS_TEXT.neutral,
+          text: `Alliance: ${a.name ?? "Diplomatic Pact"} (${a.memberCount ?? a.members?.length ?? 1} members)`,
+        },
+        a.createdAt
+      );
     });
 
     ((foreignPolicies ?? []) as ForeignPolicyItem[]).forEach((fp) => {
       if (fp.status === "active") {
-        entries.push({
-          id: `fp-${fp.id}`,
-          icon: Scale,
-          iconColor:
-            fp.actionType === "free_trade" || fp.actionType === "military_alliance"
-              ? STATUS_TEXT.success
-              : STATUS_TEXT.critical,
-          text: `${fp.actionType?.replace(/_/g, " ")} → ${fp.target?.name ?? "Partner"}`,
-          time: new Date(fp.createdAt ?? Date.now()),
-        });
+        pushRecorded(
+          entries,
+          {
+            id: `fp-${fp.id}`,
+            icon: Scale,
+            iconColor:
+              fp.actionType === "free_trade" || fp.actionType === "military_alliance"
+                ? STATUS_TEXT.success
+                : STATUS_TEXT.critical,
+            text: `${fp.actionType?.replace(/_/g, " ")} → ${fp.target?.name ?? "Partner"}`,
+          },
+          fp.createdAt
+        );
       }
     });
 
@@ -304,9 +302,11 @@ export function RelationsRail({ countryId }: { countryId: string }) {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-label truncate font-medium">{rel.targetName}</span>
-                    <span className="text-label shrink-0 tabular-nums">{rel.strength}%</span>
+                    <span className="text-label shrink-0 tabular-nums">
+                      {rel.strength != null ? `${rel.strength}%` : "—"}
+                    </span>
                   </div>
-                  <RailBar value={rel.strength} />
+                  {rel.strength != null && <RailBar value={rel.strength} />}
                 </div>
                 <span className="text-label-secondary shrink-0">{rel.stance}</span>
               </RailRow>

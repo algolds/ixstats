@@ -19,7 +19,7 @@ import type { CountryImageData } from "~/lib/media";
 import { cn } from "~/lib/utils";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
-export interface MetricGridItem {
+interface MetricGridItem {
   id: string;
   title: string;
   value: string | number;
@@ -40,7 +40,7 @@ export interface MetricGridItem {
   tooltip?: string;
 }
 
-export interface MetricCardGridProps {
+interface MetricCardGridProps {
   metrics: MetricGridItem[];
   columns?: 2 | 3 | 4;
   animate?: boolean;

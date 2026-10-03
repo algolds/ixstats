@@ -12,7 +12,7 @@ import React from "react";
  */
 
 // Mobile-specific CSS injected as a component
-export function MobileOptimizationStyles() {
+function MobileOptimizationStyles() {
   React.useEffect(() => {
     // Inject mobile-specific styles
     const styleSheet = document.createElement("style");
@@ -63,7 +63,7 @@ export function MobileOptimizationStyles() {
 }
 
 // Touch gesture detection hook
-export function useTouchGestures() {
+function useTouchGestures() {
   const [touchState, setTouchState] = React.useState({
     isTouch: false,
     swipeDirection: null as "left" | "right" | "up" | "down" | null,
@@ -150,7 +150,7 @@ interface NavigatorWithCapabilities {
 }
 
 // Performance optimization hook for mobile
-export function useMobilePerformance() {
+function useMobilePerformance() {
   const [performanceState, setPerformanceState] = React.useState({
     reducedMotion: false,
     lowBattery: false,

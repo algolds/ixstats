@@ -15,7 +15,7 @@ export interface ToolbarItem {
   order?: number;
 }
 
-export interface SidebarTab {
+interface SidebarTab {
   id: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -23,12 +23,7 @@ export interface SidebarTab {
 }
 
 export type PluginStateValue =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: PluginStateValue }
-  | PluginStateValue[];
+  string | number | boolean | null | { [key: string]: PluginStateValue } | PluginStateValue[];
 
 export type MapEditorOverlayStateReturnType = ReturnType<typeof useMapEditorOverlayState>;
 

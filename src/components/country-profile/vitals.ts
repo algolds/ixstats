@@ -17,7 +17,7 @@ function rateDelta(rate: number | null, label: string): StatDelta | undefined {
 }
 
 /** The readings `headlineVitals` needs (the Factbook header passes just these). */
-export type HeadlineInputs = Pick<
+type HeadlineInputs = Pick<
   ProfileVitals,
   | "population"
   | "populationGrowth"

@@ -16,6 +16,31 @@ interface EditorWorkspaceLayoutProps {
   children: React.ReactNode;
 }
 
+/** Drags a panel divider along one axis, keeping the split ratio between 15% and 85%. */
+function startSplitDrag(
+  e: React.MouseEvent,
+  axis: "x" | "y",
+  startRatio: number,
+  containerSize: number,
+  setRatio: (ratio: number) => void
+) {
+  e.preventDefault();
+  const start = axis === "x" ? e.clientX : e.clientY;
+
+  const onMouseMove = (moveEvent: MouseEvent) => {
+    const delta = (axis === "x" ? moveEvent.clientX : moveEvent.clientY) - start;
+    setRatio(Math.min(0.85, Math.max(0.15, startRatio + delta / containerSize)));
+  };
+
+  const onMouseUp = () => {
+    document.removeEventListener("mousemove", onMouseMove);
+    document.removeEventListener("mouseup", onMouseUp);
+  };
+
+  document.addEventListener("mousemove", onMouseMove);
+  document.addEventListener("mouseup", onMouseUp);
+}
+
 export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
   panelConfigs,
   panelsLocked,
@@ -34,53 +59,25 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
   const bottomDockRef = useRef<HTMLDivElement>(null);
 
   const handleVerticalSplitResize = (side: "left" | "right") => (e: React.MouseEvent) => {
-    e.preventDefault();
-    const startY = e.clientY;
-    const startRatio = side === "left" ? leftSplitRatio : rightSplitRatio;
-    const ref = side === "left" ? leftSidebarRef : rightSidebarRef;
-    const containerHeight = ref.current?.getBoundingClientRect().height || 500;
-
-    const onMouseMove = (moveEvent: MouseEvent) => {
-      const deltaY = moveEvent.clientY - startY;
-      const deltaRatio = deltaY / containerHeight;
-      const newRatio = Math.min(0.85, Math.max(0.15, startRatio + deltaRatio));
-      if (side === "left") {
-        setLeftSplitRatio(newRatio);
-      } else {
-        setRightSplitRatio(newRatio);
-      }
-    };
-
-    const onMouseUp = () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-    };
-
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
+    const isLeft = side === "left";
+    const ref = isLeft ? leftSidebarRef : rightSidebarRef;
+    startSplitDrag(
+      e,
+      "y",
+      isLeft ? leftSplitRatio : rightSplitRatio,
+      ref.current?.getBoundingClientRect().height || 500,
+      isLeft ? setLeftSplitRatio : setRightSplitRatio
+    );
   };
 
-  const handleHorizontalSplitResize = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startRatio = bottomSplitRatio;
-    const containerWidth = bottomDockRef.current?.getBoundingClientRect().width || 800;
-
-    const onMouseMove = (moveEvent: MouseEvent) => {
-      const deltaX = moveEvent.clientX - startX;
-      const deltaRatio = deltaX / containerWidth;
-      const newRatio = Math.min(0.85, Math.max(0.15, startRatio + deltaRatio));
-      setBottomSplitRatio(newRatio);
-    };
-
-    const onMouseUp = () => {
-      document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseup", onMouseUp);
-    };
-
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-  };
+  const handleHorizontalSplitResize = (e: React.MouseEvent) =>
+    startSplitDrag(
+      e,
+      "x",
+      bottomSplitRatio,
+      bottomDockRef.current?.getBoundingClientRect().width || 800,
+      setBottomSplitRatio
+    );
 
   const renderSidePanelContent = (side: "left" | "right") => {
     const isSideA = panelConfigs.panelA.placement === side;

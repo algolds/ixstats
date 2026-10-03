@@ -13,7 +13,7 @@ import { ATOMIC_ECONOMIC_COMPONENTS, type EconomicComponentType } from "~/lib/ec
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { InfoCircle as Info } from "iconoir-react";
 
-export interface ComponentLibraryProps {
+interface ComponentLibraryProps {
   components: EconomicComponentType[];
   onSelect: (component: EconomicComponentType) => void;
   selectedIds: Set<string>;

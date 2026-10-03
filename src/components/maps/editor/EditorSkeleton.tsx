@@ -25,19 +25,6 @@ export function FeatureListSkeleton() {
   );
 }
 
-export function PropertyFormSkeleton() {
-  return (
-    <div className="space-y-4 p-3" aria-busy="true" aria-label="Loading properties">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="space-y-2">
-          <Skeleton className="h-2.5 rounded-xs" style={{ width: `${30 + ((i * 11) % 20)}%` }} />
-          <Skeleton className="h-8 w-full" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function LayerPanelSkeleton() {
   return (
     <div className="space-y-2 p-3" aria-busy="true" aria-label="Loading layers">

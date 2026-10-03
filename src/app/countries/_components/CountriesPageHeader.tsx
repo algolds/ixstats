@@ -77,5 +77,3 @@ export function CountriesPageHeader({
     </header>
   );
 }
-
-export default CountriesPageHeader;

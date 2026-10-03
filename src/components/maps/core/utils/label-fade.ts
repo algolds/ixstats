@@ -1,7 +1,7 @@
 import type { Feature, FeatureCollection } from "geojson";
 import { DEMOTED_COUNTRY_NAMES } from "~/lib/maps/map-config";
 
-export interface LabelFadeView {
+interface LabelFadeView {
   center: { lng: number; lat: number };
   zoom: number;
   /** Half the diagonal of the visible bounds, in degrees. */

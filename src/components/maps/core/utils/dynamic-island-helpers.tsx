@@ -11,16 +11,6 @@ export const getGreeting = (ixTime: number): string => {
   if (hour >= 17 && hour < 21) return "Good evening";
   return "Good night";
 };
-
-export const getTimeDisplay = (ixTime: number): string => {
-  const date = new Date(ixTime);
-  const hours = date.getUTCHours();
-  const minutes = date.getUTCMinutes().toString().padStart(2, "0");
-  const ampm = hours >= 12 ? "PM" : "AM";
-  const displayHours = hours % 12 || 12;
-  return `${displayHours}:${minutes} ${ampm}`;
-};
-
 export const TYPE_META: Record<string, { icon: typeof Globe; label: string }> = {
   country: { icon: Globe, label: "Countries" },
   city: { icon: MapPin, label: "Cities" },

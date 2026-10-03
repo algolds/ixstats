@@ -52,7 +52,7 @@ import { Card, CardContent, CardHeader } from "~/components/ui/card";
 // Type Definitions
 // ============================================================================
 
-export interface AtomicEconomicComponentSelectorProps {
+interface AtomicEconomicComponentSelectorProps {
   selectedComponents: EconomicComponentType[];
   onComponentChange: (components: EconomicComponentType[]) => void;
   maxComponents?: number;
@@ -276,7 +276,7 @@ export function AtomicEconomicComponentSelector({
 // Main Component - Custom Builder Version
 // ============================================================================
 
-export interface AtomicEconomicBuilderProps {
+interface AtomicEconomicBuilderProps {
   countryId?: string;
   initialSelection?: EconomicComponentType[];
   maxComponents?: number;
@@ -290,7 +290,7 @@ export interface AtomicEconomicBuilderProps {
  *
  * Custom builder with interactive MetricsPanel.
  */
-export function AtomicEconomicBuilder({
+function AtomicEconomicBuilder({
   countryId,
   initialSelection = [],
   maxComponents = 15,
@@ -489,9 +489,4 @@ export function AtomicEconomicBuilder({
 // Exports
 // ============================================================================
 
-export {
-  formatComponentName,
-  EconomicComponentType,
-  EconomicCategory,
-} from "~/lib/economy/atomic-data";
-export default AtomicEconomicBuilder;
+export { EconomicComponentType } from "~/lib/economy/atomic-data";

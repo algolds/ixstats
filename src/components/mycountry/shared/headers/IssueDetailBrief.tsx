@@ -77,7 +77,7 @@ interface ResponseOption {
  * A national issue brief. Renders inside the drill sheet with recon, respond and dismiss, and a
  * post-resolve "Declare Directive" button that pre-fills the composer.
  */
-export interface IssueDetailBriefProps {
+interface IssueDetailBriefProps {
   issueId: string;
   onDeclare?: (prefilledGoal?: string) => void;
   onClose?: () => void;

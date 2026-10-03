@@ -27,7 +27,7 @@ import { distanceKm } from "~/lib/maps/geo-math";
 
 // ── Types ───────────────────────────────────────────────────────────
 
-export interface TransportNodeInput {
+interface TransportNodeInput {
   id: string;
   name?: string | null;
   nodeType?: string;
@@ -415,7 +415,8 @@ export function DeckTransportOverlay({
         const deltaSec = lastTickRef.current === 0 ? 0.024 : elapsedMs / 1000;
         lastTickRef.current = now;
 
-        currentTimeRef.current = (currentTimeRef.current + deltaSec * speedMultiplier) % loopDuration;
+        currentTimeRef.current =
+          (currentTimeRef.current + deltaSec * speedMultiplier) % loopDuration;
 
         const layers = buildDeckLayersRef.current(currentTimeRef.current);
         adapterRef.current?.setProps({ layers });

@@ -30,7 +30,7 @@ const FEED_FILTERS: ReadonlyArray<{ id: FeedFilter; label: string }> = [
   { id: "political", label: "Politics" },
 ];
 
-export interface CanonFeedItem {
+interface CanonFeedItem {
   id: string;
   title: string;
   category?: string;

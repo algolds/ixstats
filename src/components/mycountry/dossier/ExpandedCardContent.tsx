@@ -2,7 +2,6 @@
 
 import React, { useCallback, useState } from "react";
 import { FadeIn } from "~/components/ui/text-reveal";
-import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useRouter } from "next/navigation";
 import { cn, createUrl } from "~/lib/utils";
@@ -26,6 +25,7 @@ import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";
 import { type CountryCardData } from "./CountryFocusCard";
+import { useCountryDiplomacyActions, type ForeignPolicyType } from "./useCountryDiplomacyActions";
 
 interface ExpandedCardContentProps {
   country: CountryCardData;
@@ -33,8 +33,6 @@ interface ExpandedCardContentProps {
   isOwnCountry: boolean;
   onCountryClick?: (countryId: string, countryName: string) => void;
 }
-
-type ForeignPolicyType = "free_trade" | "military_alliance" | "sanction" | "embargo";
 
 export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
   ({ country, viewerCountryId, isOwnCountry }) => {
@@ -44,76 +42,19 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
     const targetCountryName = country.name;
     const [schedulerOpen, setSchedulerOpen] = useState(false);
 
-    // Follow status query - only when viewer has a country and it's not their own
-    const { data: followStatus, refetch: refetchFollowStatus } =
-      api.diplomaticCore.getFollowStatus.useQuery(
-        {
-          viewerCountryId: viewerCountryId || "",
-          targetCountryId,
-        },
-        {
-          enabled: !!viewerCountryId && !isOwnCountry,
-        }
-      );
-
-    const followMutation = api.diplomaticCore.followCountry.useMutation({
-      onSuccess: () => {
-        notify.success(`Now following ${targetCountryName}`);
-        void refetchFollowStatus();
-      },
-      onError: (error) => notify.error(`Failed to follow: ${error.message}`),
-    });
-
-    const unfollowMutation = api.diplomaticCore.unfollowCountry.useMutation({
-      onSuccess: () => {
-        notify.success(`Unfollowed ${targetCountryName}`);
-        void refetchFollowStatus();
-      },
-      onError: (error) => notify.error(`Failed to unfollow: ${error.message}`),
-    });
-
-    const establishEmbassyMutation = api.diplomaticEmbassies.establishEmbassy.useMutation({
-      onSuccess: () => {
-        notify.success(`Embassy construction initiated with ${targetCountryName}`);
-      },
-      onError: (error) => notify.error(`Failed to establish embassy: ${error.message}`),
-    });
-
-    const foreignPolicyMutation = api.diplomaticPolicies.proposeForeignPolicyAction.useMutation({
-      onSuccess: (_, variables) => {
-        const labels: Record<string, string> = {
-          free_trade: "Free trade agreement",
-          military_alliance: "Military alliance",
-          sanction: "Sanctions",
-          embargo: "Trade embargo",
-        };
-        notify.success(
-          `${labels[variables.actionType] ?? "Action"} proposed to ${targetCountryName}`
-        );
-      },
-      onError: (error) => notify.error(`Failed: ${error.message}`),
+    const diplomacy = useCountryDiplomacyActions({
+      viewerCountryId,
+      targetCountryId,
+      targetCountryName,
+      followStatusEnabled: !!viewerCountryId && !isOwnCountry,
     });
 
     const handleFollowToggle = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!viewerCountryId) {
-          notify.error("You must be logged in to follow countries");
-          return;
-        }
-        if (followStatus?.isFollowing) {
-          unfollowMutation.mutate({
-            followerCountryId: viewerCountryId,
-            followedCountryId: targetCountryId,
-          });
-        } else {
-          followMutation.mutate({
-            followerCountryId: viewerCountryId,
-            followedCountryId: targetCountryId,
-          });
-        }
+        diplomacy.toggleFollow();
       },
-      [viewerCountryId, followStatus, targetCountryId, followMutation, unfollowMutation, notify]
+      [diplomacy.toggleFollow]
     );
 
     const handleSendMessage = useCallback(
@@ -127,34 +68,17 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
     const handleEstablishEmbassy = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!viewerCountryId) {
-          notify.error("You must be logged in to establish embassies");
-          return;
-        }
-        establishEmbassyMutation.mutate({
-          hostCountryId: targetCountryId,
-          guestCountryId: viewerCountryId,
-          name: `Embassy in ${targetCountryName}`,
-          location: "Capital District",
-        });
+        diplomacy.establishEmbassy();
       },
-      [viewerCountryId, targetCountryId, targetCountryName, establishEmbassyMutation, notify]
+      [diplomacy.establishEmbassy]
     );
 
     const handleForeignPolicy = useCallback(
       (e: React.MouseEvent, actionType: ForeignPolicyType) => {
         e.stopPropagation();
-        if (!viewerCountryId) {
-          notify.error("You must be logged in to propose foreign policy");
-          return;
-        }
-        foreignPolicyMutation.mutate({
-          targetId: targetCountryId,
-          actionType,
-          severity: "moderate",
-        });
+        diplomacy.proposeForeignPolicy(actionType);
       },
-      [viewerCountryId, targetCountryId, foreignPolicyMutation, notify]
+      [diplomacy.proposeForeignPolicy]
     );
 
     const handleGoToMyCountry = useCallback(
@@ -165,11 +89,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
       [router]
     );
 
-    const isLoading =
-      followMutation.isPending ||
-      unfollowMutation.isPending ||
-      establishEmbassyMutation.isPending ||
-      foreignPolicyMutation.isPending;
+    const isLoading = diplomacy.isPending;
 
     // Action rows: Facet `Button`s at the large (44px) size, label-aligned.
     const actionClass = "w-full justify-start";
@@ -215,16 +135,16 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                     disabled={!viewerCountryId || isLoading}
                     variant="outline"
                     size="lg"
-                    className={cn(actionClass, followStatus?.isFollowing && "text-destructive")}
+                    className={cn(actionClass, diplomacy.isFollowing && "text-destructive")}
                   >
-                    {followMutation.isPending || unfollowMutation.isPending ? (
+                    {diplomacy.isFollowPending ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : followStatus?.isFollowing ? (
+                    ) : diplomacy.isFollowing ? (
                       <UserMinus className="text-destructive h-3.5 w-3.5" />
                     ) : (
                       <UserPlus className="text-label-secondary h-3.5 w-3.5" />
                     )}
-                    {followStatus?.isFollowing ? "Unfollow" : "Follow"}
+                    {diplomacy.isFollowing ? "Unfollow" : "Follow"}
                   </Button>
 
                   <Button
@@ -253,7 +173,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                     size="lg"
                     className={actionClass}
                   >
-                    {establishEmbassyMutation.isPending ? (
+                    {diplomacy.isEmbassyPending ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Building2 className="text-label-secondary h-3.5 w-3.5" />

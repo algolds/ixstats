@@ -7,7 +7,7 @@
 
 import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 
-export type GeoJSONMutation =
+type GeoJSONMutation =
   | {
       type: "UPDATE_FEATURE";
       featureId: string;

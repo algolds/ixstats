@@ -7,17 +7,10 @@ import { api } from "~/trpc/react";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { parseWikitextToHtml } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
-import {
-  normalizeWikiImageUrl,
-  extractLeadImageFromWikitext,
-  extractLeadImageFromHtml,
-  isNoticeOrUtilityIcon,
-} from "~/lib/wiki-os/transformers/image-url";
 import { Button } from "~/components/ui/button";
 import { WikiArticleActions } from "./WikiArticleActions";
+import { useWikiLeadImage } from "./useWikiLeadImage";
 import { Card } from "~/components/ui/card";
-
-export { parseWikitextToHtml };
 
 export function InlineWikiArticlePreview({
   title,
@@ -41,63 +34,13 @@ export function InlineWikiArticlePreview({
     { enabled: !!cleanTitle, staleTime: 30 * 60_000 }
   );
 
-  // Eligible article images
-  const { data: pageImages } = api.wikios.getPageImages.useQuery(
-    { title: cleanTitle },
-    { enabled: !!cleanTitle, staleTime: 30 * 60_000 }
-  );
-
   const formattedHtml = useMemo(() => {
     const raw = intro?.text || intro?.intro || "";
     if (!raw) return "";
     return parseWikitextToHtml(raw, wiki);
   }, [intro?.text, intro?.intro, wiki]);
 
-  const leadImage = useMemo(() => {
-    // 1. Check pageImages from API query
-    if (pageImages && Array.isArray(pageImages) && pageImages.length > 0) {
-      const eligible =
-        pageImages.find(
-          (img: any) =>
-            img &&
-            (img.thumbUrl || img.url) &&
-            !isNoticeOrUtilityIcon(img.title || img.url || img.thumbUrl) &&
-            !img.title?.toLowerCase().endsWith(".svg") &&
-            !img.title?.toLowerCase().includes("flag") &&
-            !img.title?.toLowerCase().includes("icon")
-        ) ||
-        pageImages.find(
-          (img: any) =>
-            img &&
-            (img.thumbUrl || img.url) &&
-            !isNoticeOrUtilityIcon(img.title || img.url || img.thumbUrl)
-        ) ||
-        pageImages[0];
-
-      const rawUrl = eligible?.thumbUrl || eligible?.url || null;
-      if (rawUrl) {
-        const normalized = normalizeWikiImageUrl(rawUrl);
-        if (normalized) return normalized;
-      }
-    }
-
-    // 2. Fallback: extract genuine lead image from raw wikitext / intro text
-    const rawText = intro?.text || intro?.intro || "";
-    if (rawText) {
-      const fromWikitext = extractLeadImageFromWikitext(rawText);
-      if (fromWikitext) {
-        const normalized = normalizeWikiImageUrl(fromWikitext);
-        if (normalized) return normalized;
-      }
-      const fromHtml = extractLeadImageFromHtml(rawText);
-      if (fromHtml) {
-        const normalized = normalizeWikiImageUrl(fromHtml);
-        if (normalized) return normalized;
-      }
-    }
-
-    return null;
-  }, [pageImages, intro?.text, intro?.intro]);
+  const leadImage = useWikiLeadImage(cleanTitle, intro?.text || intro?.intro || "");
 
   if (!formattedHtml && !leadImage) return null;
 

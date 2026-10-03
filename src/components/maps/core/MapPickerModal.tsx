@@ -14,7 +14,7 @@ import { booleanPointInPolygon } from "@turf/boolean-point-in-polygon";
 import { point } from "@turf/helpers";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
 
-export interface MapPickerModalProps {
+interface MapPickerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (coordinates: [number, number]) => void;

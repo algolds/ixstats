@@ -27,7 +27,7 @@ import {
 } from "~/components/ui/alert-dialog";
 import { buttonVariants } from "~/components/ui/button";
 
-export interface EditorConfirmOptions {
+interface EditorConfirmOptions {
   title: string;
   description?: string;
   confirmLabel?: string;

@@ -110,7 +110,7 @@ export function BlurbSection() {
   );
 }
 
-export function BlurbResponseModal({
+function BlurbResponseModal({
   open,
   onCloseAction,
   prompt,

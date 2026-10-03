@@ -7,14 +7,11 @@
  */
 
 import React, { useMemo } from "react";
-import {
-  ATOMIC_ECONOMIC_COMPONENTS,
-  type EconomicComponentType,
-} from "~/lib/economy/atomic-data";
+import { ATOMIC_ECONOMIC_COMPONENTS, type EconomicComponentType } from "~/lib/economy/atomic-data";
 import { formatCurrency } from "~/lib/economy/atomic-utils";
 import { AtomicSelectedList } from "~/components/shared/atomic-picker";
 
-export interface SelectedComponentsListProps {
+interface SelectedComponentsListProps {
   selectedComponents: EconomicComponentType[];
   onDeselect: (component: EconomicComponentType) => void;
   maxComponents?: number;

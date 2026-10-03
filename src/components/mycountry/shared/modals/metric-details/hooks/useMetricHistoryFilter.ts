@@ -4,7 +4,7 @@ import { IxTime } from "~/lib/ixtime";
 import { getIxCutoff } from "~/lib/ixtime/range";
 import type { TimeRange } from "../types";
 
-export interface MetricHistoryPoint {
+interface MetricHistoryPoint {
   id?: string;
   countryId?: string;
   ixTimeTimestamp?: string | number | Date;
@@ -24,7 +24,7 @@ export interface MetricHistoryPoint {
 /**
  * Calculates historical cutoff date from a TimeRange enum
  */
-export function getCutoffDate(timeRange: TimeRange, now: Date = new Date()): Date {
+function getCutoffDate(timeRange: TimeRange, now: Date = new Date()): Date {
   const rangeMap: Record<TimeRange, number> = {
     "3m": 3,
     "6m": 6,
@@ -75,8 +75,12 @@ export function filterAndSortHistory<T extends MetricHistoryPoint, R>(
     .sort((a, b) => {
       const objA = a as Record<string, unknown>;
       const objB = b as Record<string, unknown>;
-      const timeA = new Date((objA.timestamp ?? objA.date ?? 0) as string | number | Date).getTime();
-      const timeB = new Date((objB.timestamp ?? objB.date ?? 0) as string | number | Date).getTime();
+      const timeA = new Date(
+        (objA.timestamp ?? objA.date ?? 0) as string | number | Date
+      ).getTime();
+      const timeB = new Date(
+        (objB.timestamp ?? objB.date ?? 0) as string | number | Date
+      ).getTime();
       return timeA - timeB;
     });
 }

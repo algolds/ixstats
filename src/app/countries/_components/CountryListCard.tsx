@@ -24,7 +24,7 @@ import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/utils";
 import { Card, CardContent, CardFooter } from "~/components/ui/card";
 
-export interface CountryData {
+interface CountryData {
   id: string;
   name: string;
   slug?: string | null;

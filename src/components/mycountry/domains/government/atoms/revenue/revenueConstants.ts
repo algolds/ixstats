@@ -37,19 +37,6 @@ export const revenueCategoryIcons: Record<
   "Fees and Fines": FileText,
   Other: MoreHorizontal,
 };
-
-/**
- * Categories are told apart by icon and label, not hue, so every category shares the quiet
- * foreground tone. Kept as a map for callers that index it by category.
- */
-export const revenueCategoryColors: Record<RevenueCategory, string> = {
-  "Direct Tax": "var(--color-label-secondary)",
-  "Indirect Tax": "var(--color-label-secondary)",
-  "Non-Tax Revenue": "var(--color-label-secondary)",
-  "Fees and Fines": "var(--color-label-secondary)",
-  Other: "var(--color-label-secondary)",
-};
-
 export const commonRevenueSources: Record<RevenueCategory, string[]> = {
   "Direct Tax": [
     "Personal Income Tax",

@@ -52,7 +52,7 @@ const GOVERNMENT_TIPS: DomainTip[] = [
   },
 ];
 
-export interface AtomicWelcomeModalProps {
+interface AtomicWelcomeModalProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }

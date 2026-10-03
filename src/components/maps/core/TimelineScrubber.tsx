@@ -18,7 +18,7 @@ import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { FacetMaterial } from "~/components/ui/facet";
 
-export interface TimelineScrubberProps {
+interface TimelineScrubberProps {
   /** Current scrubber value (epoch ms). `null` = at "now", show live data. */
   value: number | null;
   /** Notify host of new scrub position. `null` means "now". */

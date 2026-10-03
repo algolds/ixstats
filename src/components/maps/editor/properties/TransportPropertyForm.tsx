@@ -31,17 +31,6 @@ interface TransportPropertyFormProps {
   onFlyToCoords?: (coord: [number, number]) => void;
 }
 
-export type RouteType =
-  | "rail"
-  | "highway"
-  | "road"
-  | "shipping_lane"
-  | "canal"
-  | "air_corridor"
-  | "ferry"
-  | "pipeline"
-  | "power_grid";
-
 export const TransportPropertyForm = React.memo(function TransportPropertyForm({
   countryId,
   onCancel,

@@ -13,8 +13,6 @@ import {
 import { TIER_FILTER_OPTIONS, isTierFilter, type TierFilter } from "~/lib/economic-tier-filter";
 import { Card } from "~/components/ui/card";
 
-// import { Slider } from '~/components/ui/slider'; // Uncomment if you have a slider component
-
 export default function CountriesFilterSidebar({
   searchTerm,
   onSearchChange,

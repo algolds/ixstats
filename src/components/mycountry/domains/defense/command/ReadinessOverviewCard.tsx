@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/co
 import { cn } from "~/lib/utils";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
-export interface DefconLevelInfo {
+interface DefconLevelInfo {
   level: number;
   label: string;
   status: string;
@@ -22,7 +22,7 @@ export interface DefconLevelInfo {
 }
 
 /** `cls` is the status colour for the level's badge: calm → critical, semantic only. */
-export const DEFCON_LEVELS: DefconLevelInfo[] = [
+const DEFCON_LEVELS: DefconLevelInfo[] = [
   {
     level: 5,
     label: "DEFCON 5",
@@ -65,7 +65,7 @@ export const DEFCON_LEVELS: DefconLevelInfo[] = [
   },
 ];
 
-export const PROJECTION_GOALS = [
+const PROJECTION_GOALS = [
   { id: "territorial", label: "Territorial defense", desc: "Homeland borders" },
   { id: "regional", label: "Regional deterrence", desc: "Frontier & littoral zones" },
   { id: "expeditionary", label: "Expeditionary", desc: "Deploy task forces abroad" },

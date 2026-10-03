@@ -1,15 +1,11 @@
 import type { Polygon, MultiPolygon, Position, Feature } from "geojson";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import type { MapLayerData } from "~/components/maps/core/IxWorldMap";
-import {
-  getAllRings,
-  clampToGeometry,
-  snapPointToGeometries,
-} from "~/lib/maps/border-editor";
+import { getAllRings, clampToGeometry, snapPointToGeometries } from "~/lib/maps/border-editor";
 import { withoutDisabledSnapLayers } from "~/lib/maps/editor-prefs";
 import { snapToLayerFeatures } from "../utils/map-helpers";
 
-export interface CalculateSnapTargetOptions {
+interface CalculateSnapTargetOptions {
   coords: [number, number];
   snapEnabled: boolean;
   snapTolerance: number;
@@ -21,7 +17,7 @@ export interface CalculateSnapTargetOptions {
   snapPointGuide?: (coords: [number, number]) => [number, number];
 }
 
-export interface SnapTargetResult {
+interface SnapTargetResult {
   target: Position;
   didSnap: boolean;
   origTarget: Position;

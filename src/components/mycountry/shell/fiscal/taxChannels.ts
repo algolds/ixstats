@@ -4,8 +4,6 @@ export interface TaxChannel {
   shortLabel: string;
   /** DB field on FiscalSystem (if direct Float), or JSON key inside a serialised field */
   dbField: string;
-  /** Fallback if DB has no data */
-  defaultRate: number;
   min: number;
   max: number;
   step: number;
@@ -21,7 +19,6 @@ export const TAX_CHANNELS: TaxChannel[] = [
     label: "Corporate tax",
     shortLabel: "Corp",
     dbField: "corporateTaxRates",
-    defaultRate: 21,
     min: 0,
     max: 50,
     step: 0.5,
@@ -34,7 +31,6 @@ export const TAX_CHANNELS: TaxChannel[] = [
     label: "Income tax",
     shortLabel: "Income",
     dbField: "personalIncomeTaxRates",
-    defaultRate: 24,
     min: 0,
     max: 60,
     step: 0.5,
@@ -47,7 +43,6 @@ export const TAX_CHANNELS: TaxChannel[] = [
     label: "VAT / Sales Tax",
     shortLabel: "VAT",
     dbField: "salesTaxRate",
-    defaultRate: 15,
     min: 0,
     max: 30,
     step: 0.5,
@@ -60,7 +55,6 @@ export const TAX_CHANNELS: TaxChannel[] = [
     label: "Tariff rate",
     shortLabel: "Tariff",
     dbField: "exciseTaxRates",
-    defaultRate: 4.5,
     min: 0,
     max: 25,
     step: 0.5,
@@ -73,7 +67,6 @@ export const TAX_CHANNELS: TaxChannel[] = [
     label: "Wealth tax",
     shortLabel: "Wealth",
     dbField: "wealthTaxRate",
-    defaultRate: 1.5,
     min: 0,
     max: 10,
     step: 0.1,
@@ -86,7 +79,6 @@ export const TAX_CHANNELS: TaxChannel[] = [
     label: "Capital gains tax",
     shortLabel: "Cap Gains",
     dbField: "capitalGainsTax",
-    defaultRate: 15,
     min: 0,
     max: 40,
     step: 0.5,
@@ -108,7 +100,7 @@ export const ACCENT_BG: Record<string, string> = {
   rose: "bg-red",
 };
 
-export interface FiscalRatesRow {
+interface FiscalRatesRow {
   corporateTaxRates?: string | null;
   personalIncomeTaxRates?: string | null;
   salesTaxRate?: number | null;
@@ -116,7 +108,7 @@ export interface FiscalRatesRow {
   wealthTaxRate?: number | null;
 }
 
-export interface SavedRate {
+interface SavedRate {
   /** The saved rate, or null when the nation has none for this tax. */
   rate: number | null;
   /**

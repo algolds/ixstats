@@ -16,9 +16,9 @@
 
 import type { Map as MapLibreMap, PointLike, MapGeoJSONFeature } from "maplibre-gl";
 
-export type HitLayerKind = "point" | "label" | "polygon" | "gap";
+type HitLayerKind = "point" | "label" | "polygon" | "gap";
 
-export interface HitResult {
+interface HitResult {
   layerId: string;
   featureId: string | undefined;
   kind: HitLayerKind;
@@ -27,7 +27,7 @@ export interface HitResult {
   feature: MapGeoJSONFeature;
 }
 
-export interface HitTestOptions {
+interface HitTestOptions {
   /** Grab tolerance for point layers (px). Default 8. */
   pointTolerance?: number;
   /** Grab tolerance for label layers (px). Default 6. */
@@ -42,7 +42,7 @@ export interface HitTestOptions {
   excludeLayers?: string[];
 }
 
-export interface HitTestResult {
+interface HitTestResult {
   /** Best selectable hit (never on an excluded layer), or null. */
   hit: HitResult | null;
   /** True when the cursor is over an excluded (locked) layer feature. */

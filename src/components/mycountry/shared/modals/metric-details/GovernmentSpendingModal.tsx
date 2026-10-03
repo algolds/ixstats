@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import {
   Building,
   Dollar as DollarSign,
   StatsReport as BarChart3,
-  GraphUp as LineChart,
-  Globe,
   Reports as PieChart,
   Wallet,
   ScaleFrameEnlarge as Scale,
@@ -15,31 +13,9 @@ import {
 } from "iconoir-react";
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
-import { cn } from "~/lib/utils/cn";
-import { Skeleton } from "~/components/ui/skeleton";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { NumberFlowDisplay } from "~/components/ui/number-flow";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
-import {
-  LineChart as RechartsLineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
+import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { BaseMetricDetailsModal, type MetricModalTab } from "./BaseMetricDetailsModal";
 import { MetricModalLayout } from "./MetricModalLayout";
-import type { TimeRange, ChartType } from "./types";
-import { filterAndSortHistory } from "./hooks/useMetricHistoryFilter";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 interface GovernmentSpendingModalProps {
@@ -51,8 +27,6 @@ interface GovernmentSpendingModalProps {
 
 const TABS: MetricModalTab[] = [
   { id: "overview", label: "Overview", icon: BarChart3 },
-  { id: "trends", label: "Trends", icon: LineChart },
-  { id: "comparison", label: "Comparison", icon: Globe },
   { id: "breakdown", label: "Breakdown", icon: PieChart },
 ];
 
@@ -76,7 +50,6 @@ export function GovernmentSpendingModal({
     countryData,
     economyData,
     isLoading: countryLoading,
-    refetch,
   } = useCountryEconomicData(countryId, isOpen);
 
   // Fetch government structure
@@ -85,76 +58,12 @@ export function GovernmentSpendingModal({
     { enabled: !!countryId && isOpen }
   );
 
-  // Fetch historical data
-  const { data: historicalData, isLoading: historicalLoading } =
-    api.historical.getCountryHistory.useQuery({ countryId }, { enabled: !!countryId && isOpen });
+  const isLoading = countryLoading || govLoading;
 
-  // Fetch global stats for comparison
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { data: globalStats, isLoading: globalLoading } = api.countries.getGlobalStats.useQuery(
-    undefined,
-    { enabled: isOpen }
-  );
-
-  const isLoading = countryLoading || govLoading || historicalLoading || globalLoading;
-
-  // Process historical data for charts
-  const processHistoricalData = (timeRange: TimeRange) => {
-    if (!historicalData || historicalData.length === 0) return [];
-
-    const spending = economyData?.spending;
-    const fiscal = economyData?.fiscal;
-    const currentSpendingPct =
-      spending?.spendingGDPPercent || fiscal?.governmentBudgetGDPPercent || 30;
-    const currentRevenuePct = fiscal?.taxRevenueGDPPercent || 25;
-
-    return filterAndSortHistory(historicalData, timeRange, (point, formattedDate, timestamp) => {
-      const gdp = point.totalGdp || 0;
-      const totalSpending = gdp * (currentSpendingPct / 100);
-      const totalRevenue = gdp * (currentRevenuePct / 100);
-      return {
-        date: formattedDate,
-        timestamp,
-        totalSpending: totalSpending / 1e9,
-        spendingGdpPercent: currentSpendingPct,
-        budgetBalance: (totalRevenue - totalSpending) / 1e9,
-      };
-    });
-  };
-
-  const chartConfig = {
-    totalSpending: { label: "Total Spending (B)", color: "var(--color-amber-500)" },
-    spendingGdpPercent: { label: "% of GDP", color: "var(--color-blue-500)" },
-    budgetBalance: { label: "Budget Balance (B)", color: "var(--chart-3)" },
-  };
-
-  // Derive stats for Sidebar
-  const defaultProcessedData = useMemo(
-    // oxlint-disable-next-line
-    () => processHistoricalData("1y"),
-    // oxlint-disable-next-line
-    [historicalData, economyData]
-  );
-  const spendStats = useMemo(() => {
-    if (!defaultProcessedData || defaultProcessedData.length === 0) return null;
-    const spends = defaultProcessedData.map((p) => p.totalSpending);
-    const balances = defaultProcessedData.map((p) => p.budgetBalance);
-
-    return {
-      maxSpending: Math.max(...spends),
-      avgBalance: balances.reduce((acc, v) => acc + v, 0) / balances.length,
-      dataPoints: defaultProcessedData.length,
-    };
-  }, [defaultProcessedData]);
-
-  const renderTabContent = (activeTab: string, timeRange: TimeRange, chartType: ChartType) => {
+  const renderTabContent = (activeTab: string) => {
     switch (activeTab) {
       case "overview":
         return renderOverviewTab();
-      case "trends":
-        return renderTrendsTab(timeRange, chartType);
-      case "comparison":
-        return renderComparisonTab();
       case "breakdown":
         return renderBreakdownTab();
       default:
@@ -164,19 +73,7 @@ export function GovernmentSpendingModal({
 
   const renderOverviewTab = () => {
     if (isLoading) {
-      return (
-        <MetricModalLayout variant="economy">
-          <MetricModalLayout.MainArea>
-            <Skeleton className="h-[300px] w-full" />
-          </MetricModalLayout.MainArea>
-          <MetricModalLayout.Sidebar>
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-          </MetricModalLayout.Sidebar>
-        </MetricModalLayout>
-      );
+      return <MetricModalLayout.Loading variant="economy" mainHeight={300} sidebarCards={4} />;
     }
 
     const fiscal = economyData?.fiscal;
@@ -297,271 +194,9 @@ export function GovernmentSpendingModal({
     );
   };
 
-  const renderTrendsTab = (timeRange: TimeRange, chartType: ChartType) => {
-    const processedData = processHistoricalData(timeRange);
-
-    if (historicalLoading) {
-      return (
-        <MetricModalLayout variant="economy">
-          <MetricModalLayout.MainArea>
-            <Skeleton className="h-[350px] w-full" />
-          </MetricModalLayout.MainArea>
-          <MetricModalLayout.Sidebar>
-            <Skeleton className="h-full w-full" />
-          </MetricModalLayout.Sidebar>
-        </MetricModalLayout>
-      );
-    }
-
-    if (processedData.length === 0) {
-      return (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <LineChart className="text-label-secondary mx-auto mb-4 h-12 w-12 opacity-50" />
-            <p className="text-label-secondary">No historical data available</p>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    const ChartComponent =
-      chartType === "area" ? AreaChart : chartType === "bar" ? BarChart : RechartsLineChart;
-
-    return (
-      <MetricModalLayout variant="economy">
-        <MetricModalLayout.MainArea>
-          <Card className="p-6">
-            <CardHeader className="mb-4 p-0">
-              <h3 className="text-label text-title-3">Government spending trends</h3>
-              <p className="text-label-secondary text-body">
-                Historical budget and spending metrics
-              </p>
-            </CardHeader>
-            <CardContent className="p-0">
-              <ChartContainer config={chartConfig} className="h-[320px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ChartComponent data={processedData}>
-                    <defs>
-                      <linearGradient id="spendGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--color-amber-500)" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="var(--color-amber-500)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-separator)" />
-                    <XAxis dataKey="date" stroke="var(--color-label-secondary)" tickLine={false} />
-                    <YAxis stroke="var(--color-label-secondary)" tickLine={false} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    {chartType === "area" ? (
-                      <Area
-                        type="monotone"
-                        dataKey="totalSpending"
-                        stroke="var(--color-amber-500)"
-                        fillOpacity={1}
-                        fill="url(#spendGrad)"
-                        strokeWidth={2}
-                        name="Total Spending (B)"
-                      />
-                    ) : chartType === "bar" ? (
-                      <Bar
-                        dataKey="totalSpending"
-                        fill="var(--color-amber-500)"
-                        name="Total Spending (B)"
-                        radius={[4, 4, 0, 0]}
-                      />
-                    ) : (
-                      <>
-                        <Line
-                          type="monotone"
-                          dataKey="totalSpending"
-                          stroke="var(--color-amber-500)"
-                          strokeWidth={2}
-                          dot={false}
-                          name="Total Spending (B)"
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="spendingGdpPercent"
-                          stroke="var(--color-blue-500)"
-                          strokeWidth={2}
-                          dot={false}
-                          name="% of GDP"
-                        />
-                      </>
-                    )}
-                  </ChartComponent>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </MetricModalLayout.MainArea>
-
-        <MetricModalLayout.Sidebar>
-          <div className="flex flex-1 flex-col gap-4">
-            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <span className="text-stat-label text-label-secondary mb-1 block">
-                Peak Spending (B)
-              </span>
-              <span className="text-label text-title-2">
-                {spendStats?.maxSpending ? `$${spendStats.maxSpending.toFixed(1)}B` : "N/A"}
-              </span>
-            </div>
-            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <span className="text-stat-label text-label-secondary mb-1 block">
-                Avg budget balance
-              </span>
-              <span className="text-title-2 text-green">
-                {spendStats?.avgBalance ? `$${spendStats.avgBalance.toFixed(1)}B` : "N/A"}
-              </span>
-            </div>
-            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <span className="text-stat-label text-label-secondary mb-1 block">Data points</span>
-              <span className="text-label text-title-2">{spendStats?.dataPoints || 0}</span>
-            </div>
-          </div>
-        </MetricModalLayout.Sidebar>
-      </MetricModalLayout>
-    );
-  };
-
-  const renderComparisonTab = () => {
-    if (isLoading) {
-      return (
-        <MetricModalLayout variant="economy">
-          <MetricModalLayout.MainArea>
-            <Skeleton className="h-[350px] w-full" />
-          </MetricModalLayout.MainArea>
-          <MetricModalLayout.Sidebar>
-            <Skeleton className="h-full w-full" />
-          </MetricModalLayout.Sidebar>
-        </MetricModalLayout>
-      );
-    }
-
-    const fiscal = economyData?.fiscal;
-    const spending = economyData?.spending;
-    const spendingGdpPercent =
-      spending?.spendingGDPPercent ||
-      ((governmentData?.totalBudget || spending?.totalSpending || 0) /
-        (countryData?.currentTotalGdp || 1)) *
-        100;
-    const globalAvgSpending = 35.0;
-    const debtToGdp = fiscal?.totalDebtGDPRatio || 0;
-    const budgetBalance = fiscal?.budgetDeficitSurplus || 0;
-
-    const compData = [
-      {
-        name: "Spending % GDP",
-        "Your Country": spendingGdpPercent,
-        "Global Avg": globalAvgSpending,
-      },
-      {
-        name: "Tax Revenue % GDP",
-        "Your Country": fiscal?.taxRevenueGDPPercent || 0,
-        "Global Avg": 30.0,
-      },
-    ];
-
-    return (
-      <MetricModalLayout variant="economy">
-        <MetricModalLayout.MainArea>
-          <Card className="flex-1 p-6">
-            <CardHeader className="mb-4 p-0">
-              <h3 className="text-label text-title-3 flex items-center gap-2">
-                <Globe className="text-label-secondary h-5 w-5" />
-                Fiscal health benchmarks
-              </h3>
-              <p className="text-label-secondary text-body">
-                Compare spending ratios against global baselines.
-              </p>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={compData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-separator)" />
-                    <XAxis dataKey="name" stroke="var(--color-label-secondary)" tickLine={false} />
-                    <YAxis stroke="var(--color-label-secondary)" tickLine={false} unit="%" />
-                    <Tooltip
-                      contentStyle={{
-                        background: "var(--color-surface-elevated)",
-                        color: "var(--color-label)",
-                        borderColor: "var(--color-separator)",
-                        borderRadius: "8px",
-                      }}
-                    />
-                    <Bar
-                      dataKey="Your Country"
-                      fill="var(--color-amber-500)"
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="Global Avg"
-                      fill="var(--color-label-secondary)"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </MetricModalLayout.MainArea>
-
-        <MetricModalLayout.Sidebar>
-          <div className="flex h-full flex-col justify-between gap-4">
-            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <span className="text-stat-label text-label-secondary mb-1 block">
-                Global allocation
-              </span>
-              <span className="text-label text-title-2">
-                {spendingGdpPercent <= globalAvgSpending ? "Efficient" : "Above Avg"}
-              </span>
-              <span className="text-label-secondary text-footnote mt-1">
-                Spending: {spendingGdpPercent.toFixed(1)}% vs {globalAvgSpending}% global avg
-              </span>
-            </div>
-            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <span className="text-stat-label text-label-secondary mb-1 block">
-                Fiscal stability
-              </span>
-              <span className="text-title-2 text-green">
-                {debtToGdp < 60 ? "Healthy" : debtToGdp < 100 ? "Moderate" : "High"}
-              </span>
-              <span className="text-label-secondary text-footnote mt-1">
-                Public Debt: {debtToGdp.toFixed(1)}% of GDP
-              </span>
-            </div>
-            <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <span className="text-stat-label text-label-secondary mb-1 block">Budget status</span>
-              <span
-                className={cn(
-                  "text-title-2",
-                  budgetBalance >= 0 ? "text-green" : "text-destructive"
-                )}
-              >
-                {budgetBalance >= 0 ? "Surplus" : "Deficit"}
-              </span>
-              <span className="text-label-secondary text-footnote mt-1">
-                Annual Balance: {(budgetBalance / 1e9).toFixed(1)}B
-              </span>
-            </div>
-          </div>
-        </MetricModalLayout.Sidebar>
-      </MetricModalLayout>
-    );
-  };
-
   const renderBreakdownTab = () => {
     if (isLoading) {
-      return (
-        <MetricModalLayout variant="economy">
-          <MetricModalLayout.MainArea>
-            <Skeleton className="h-[350px] w-full" />
-          </MetricModalLayout.MainArea>
-          <MetricModalLayout.Sidebar>
-            <Skeleton className="h-full w-full" />
-          </MetricModalLayout.Sidebar>
-        </MetricModalLayout>
-      );
+      return <MetricModalLayout.Loading variant="economy" mainHeight={350} sidebarCards={0} />;
     }
 
     const spending = economyData?.spending;
@@ -652,25 +287,6 @@ export function GovernmentSpendingModal({
             </CardContent>
           </Card>
         </MetricModalLayout.MainArea>
-
-        <MetricModalLayout.Sidebar>
-          <Card className="flex flex-1 flex-col justify-between p-4">
-            <CardHeader className="mb-4 p-0">
-              <h3 className="text-label text-title-3 text-headline">Priority spending</h3>
-              <p className="text-label-secondary text-footnote">
-                Key budget policies and priorities
-              </p>
-            </CardHeader>
-            <CardContent className="flex-1 p-0">
-              <div className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
-                {/* The government API has no priority-policy field, so this card only has an empty state. */}
-                <div className="py-8 text-center">
-                  <p className="text-label-secondary text-footnote">No priority policies defined</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </MetricModalLayout.Sidebar>
       </MetricModalLayout>
     );
   };
@@ -687,12 +303,9 @@ export function GovernmentSpendingModal({
       iconColor="text-yellow"
       tabs={TABS}
       isLoading={isLoading}
-      onRefresh={() => refetch()}
       variant="economy"
     >
       {renderTabContent}
     </BaseMetricDetailsModal>
   );
 }
-
-export default GovernmentSpendingModal;

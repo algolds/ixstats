@@ -432,7 +432,7 @@ export function useSubdivisionVertexEdit({
       neighborGeometriesRef.current = new Map(
         subdivisionFeatures
           .filter((f) => f.id !== selectedFeature.id)
-          .map((f) => [f.id, JSON.parse(JSON.stringify(f.geometry))])
+          .map((f) => [f.id, structuredClone(f.geometry) as Polygon | MultiPolygon] as const)
       );
 
       changedNeighborIdsRef.current = new Set();

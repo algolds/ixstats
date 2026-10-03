@@ -17,14 +17,14 @@ import type { PublicDirective, PublicIssueOutcome } from "~/lib/country/public-r
 
 // ─── Wiki lore ──────────────────────────────────────────────────────────────
 
-export interface WikiSection {
+interface WikiSection {
   title: string;
   level: number;
   /** Raw wikitext of the section, including its subsections. */
   body: string;
 }
 
-export interface SplitWikiArticle {
+interface SplitWikiArticle {
   /** Wikitext before the first heading (the lead), infobox included. */
   lead: string;
   /** Level-2 sections in article order; each body includes its level-3+ subsections. */
@@ -223,8 +223,6 @@ export function redirectTarget(wikitext: string | null | undefined): string | nu
 // The public-record rules live in `~/lib/country/public-record` so the server
 // (`countries.getPublicRecord`, `intent.getTree` for visitors) and the profile share them.
 export {
-  PUBLIC_DIRECTIVE_STATUSES,
-  PUBLIC_ISSUE_STATUSES,
   toPublicDirectives,
   toPublicIssueOutcomes,
   type IntentLike,
@@ -278,7 +276,7 @@ const MONTHS = [
 ];
 
 /** IxTime ms → fractional in-game year. IxTime is a UTC timestamp on the in-game calendar. */
-export function ixTimeToYear(ixTime: number): number {
+function ixTimeToYear(ixTime: number): number {
   const d = new Date(ixTime);
   const start = Date.UTC(d.getUTCFullYear(), 0, 1);
   return d.getUTCFullYear() + (ixTime - start) / MS_PER_YEAR;
@@ -308,7 +306,7 @@ export interface FoundingEvent {
   date: string;
 }
 
-export interface StoryPinLike {
+interface StoryPinLike {
   id: string;
   title: string;
   content?: string | null;
@@ -317,14 +315,14 @@ export interface StoryPinLike {
   eraLabel?: string | null;
 }
 
-export interface CanonEventLike {
+interface CanonEventLike {
   id: string;
   title: string;
   /** In-game time (callers convert real-world timestamps with `IxTime.convertToIxTime`). */
   ixTime: number;
 }
 
-export interface ChronicleSources {
+interface ChronicleSources {
   founding?: readonly FoundingEvent[];
   storyPins?: readonly StoryPinLike[];
   directives?: readonly PublicDirective[];

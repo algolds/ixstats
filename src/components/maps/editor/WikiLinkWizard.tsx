@@ -28,7 +28,7 @@ import { api } from "~/trpc/react";
 import { distanceKm } from "~/lib/maps/geo-math";
 import { Card } from "~/components/ui/card";
 
-export interface WikiImportableFields {
+interface WikiImportableFields {
   population?: number;
   coordinates?: [number, number];
   capital?: string;

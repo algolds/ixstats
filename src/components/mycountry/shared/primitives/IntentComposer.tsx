@@ -49,7 +49,7 @@ export interface DirectiveRef {
   goal: string;
 }
 
-export interface IntentComposerProps {
+interface IntentComposerProps {
   countryId: string;
   /** Prefilled goal (e.g. from an issue brief). A value ending in ":" is left in the field to finish. */
   initialGoal?: string;

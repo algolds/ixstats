@@ -9,7 +9,7 @@
 import React from "react";
 import { AtomicMetricsBar, type AtomicMetrics } from "~/components/shared/atomic-picker";
 
-export interface MetricsPanelProps {
+interface MetricsPanelProps {
   metrics: AtomicMetrics;
   onComponentsClick?: () => void;
   onEffectivenessClick?: () => void;

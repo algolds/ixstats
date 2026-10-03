@@ -8,7 +8,7 @@ import { formatDistance } from "./utils/measure-helpers";
 import { Button } from "~/components/ui/button";
 import { FacetMaterial } from "~/components/ui/facet";
 
-export interface MeasureToolRef {
+interface MeasureToolRef {
   toggle: () => void;
 }
 

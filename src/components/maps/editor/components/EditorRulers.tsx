@@ -13,7 +13,7 @@
 import React, { memo, useEffect, useRef, useState } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 
-export interface EditorGuide {
+interface EditorGuide {
   id: string;
   type: "h" | "v";
   value: number;
@@ -121,7 +121,7 @@ export const EditorRulers = memo(function EditorRulers({
       const current = activeRef.current;
       if (current && setGuides) {
         const newGuide: EditorGuide = {
-          id: `guide-${Date.now()}-${crypto.randomUUID()}`,
+          id: `guide-${crypto.randomUUID()}`,
           type: current.type,
           value: current.currentVal,
         };

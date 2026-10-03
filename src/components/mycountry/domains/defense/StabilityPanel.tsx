@@ -7,7 +7,7 @@ import {
   SecurityEventsCard,
 } from "~/components/mycountry/domains/defense/stability";
 
-export interface StabilityPanelProps {
+interface StabilityPanelProps {
   countryId: string;
 }
 

@@ -24,6 +24,7 @@ import {
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { useCountryDiplomacyActions } from "./useCountryDiplomacyActions";
 import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
@@ -58,8 +59,6 @@ interface CountryActionsMenuProps {
   isOwnCountry?: boolean;
 }
 
-type ForeignPolicyType = "free_trade" | "military_alliance" | "sanction" | "embargo";
-
 export function CountryActionsMenu({
   targetCountryId,
   targetCountryName,
@@ -74,56 +73,18 @@ export function CountryActionsMenu({
   const [copiedLink, setCopiedLink] = useState(false);
   const [schedulerOpen, setSchedulerOpen] = useState(false);
 
-  const { data: followStatus, refetch: refetchFollowStatus } =
-    api.diplomaticCore.getFollowStatus.useQuery(
-      { viewerCountryId: viewerCountryId || "", targetCountryId },
-      { enabled: !!viewerCountryId }
-    );
+  const diplomacy = useCountryDiplomacyActions({
+    viewerCountryId,
+    targetCountryId,
+    targetCountryName,
+    followStatusEnabled: !!viewerCountryId,
+    onProposed: onClose,
+  });
 
   const { data: recentAchievements } = api.achievements.getRecentByCountry.useQuery(
     { countryId: targetCountryId, limit: 5 },
     { enabled: isOpen }
   );
-
-  const followMutation = api.diplomaticCore.followCountry.useMutation({
-    onSuccess: () => {
-      notify.success(`Now following ${targetCountryName}`);
-      void refetchFollowStatus();
-    },
-    onError: (error) => notify.error(`Failed to follow: ${error.message}`),
-  });
-
-  const unfollowMutation = api.diplomaticCore.unfollowCountry.useMutation({
-    onSuccess: () => {
-      notify.success(`Unfollowed ${targetCountryName}`);
-      void refetchFollowStatus();
-    },
-    onError: (error) => notify.error(`Failed to unfollow: ${error.message}`),
-  });
-
-  const establishEmbassyMutation = api.diplomaticEmbassies.establishEmbassy.useMutation({
-    onSuccess: () => {
-      notify.success(`Embassy construction initiated with ${targetCountryName}`);
-      onClose();
-    },
-    onError: (error) => notify.error(`Failed to establish embassy: ${error.message}`),
-  });
-
-  const foreignPolicyMutation = api.diplomaticPolicies.proposeForeignPolicyAction.useMutation({
-    onSuccess: (_, variables) => {
-      const labels: Record<string, string> = {
-        free_trade: "Free trade agreement",
-        military_alliance: "Military alliance",
-        sanction: "Sanctions",
-        embargo: "Trade embargo",
-      };
-      notify.success(
-        `${labels[variables.actionType] ?? "Action"} proposed to ${targetCountryName}`
-      );
-      onClose();
-    },
-    onError: (error) => notify.error(`Failed: ${error.message}`),
-  });
 
   const congratulateMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
@@ -134,52 +95,10 @@ export function CountryActionsMenu({
     onError: (error) => notify.error(`Failed to send congratulations: ${error.message}`),
   });
 
-  const handleFollowToggle = useCallback(() => {
-    if (!viewerCountryId) {
-      notify.error("You must be logged in to follow countries");
-      return;
-    }
-    if (followStatus?.isFollowing) {
-      unfollowMutation.mutate({
-        followerCountryId: viewerCountryId,
-        followedCountryId: targetCountryId,
-      });
-    } else {
-      followMutation.mutate({
-        followerCountryId: viewerCountryId,
-        followedCountryId: targetCountryId,
-      });
-    }
-  }, [viewerCountryId, followStatus, targetCountryId, followMutation, unfollowMutation, notify]);
-
   const handleDiplomaticMessage = useCallback(() => {
     router.push(createUrl(`/messages?country=${targetCountryId}`));
     onClose();
   }, [router, targetCountryId, onClose]);
-
-  const handleEstablishEmbassy = useCallback(() => {
-    if (!viewerCountryId) {
-      notify.error("You must be logged in to establish embassies");
-      return;
-    }
-    establishEmbassyMutation.mutate({
-      hostCountryId: targetCountryId,
-      guestCountryId: viewerCountryId,
-      name: `Embassy in ${targetCountryName}`,
-      location: "Capital District",
-    });
-  }, [viewerCountryId, targetCountryId, targetCountryName, establishEmbassyMutation, notify]);
-
-  const handleForeignPolicy = useCallback(
-    (actionType: ForeignPolicyType) => {
-      if (!viewerCountryId) {
-        notify.error("You must be logged in to propose foreign policy");
-        return;
-      }
-      foreignPolicyMutation.mutate({ targetId: targetCountryId, actionType, severity: "moderate" });
-    },
-    [viewerCountryId, targetCountryId, foreignPolicyMutation, notify]
-  );
 
   const handleCongratulate = useCallback(() => {
     if (!viewerCountryId) {
@@ -221,12 +140,7 @@ export function CountryActionsMenu({
     });
   }, [targetCountryName, notify]);
 
-  const isLoading =
-    followMutation.isPending ||
-    unfollowMutation.isPending ||
-    establishEmbassyMutation.isPending ||
-    congratulateMutation.isPending ||
-    foreignPolicyMutation.isPending;
+  const isLoading = diplomacy.isPending || congratulateMutation.isPending;
 
   return (
     <>
@@ -297,17 +211,17 @@ export function CountryActionsMenu({
               <>
                 <ActionGroup label="Social">
                   <ActionRow
-                    icon={followStatus?.isFollowing ? UserMinus : UserPlus}
+                    icon={diplomacy.isFollowing ? UserMinus : UserPlus}
                     label={
-                      followMutation.isPending || unfollowMutation.isPending
-                        ? followStatus?.isFollowing
+                      diplomacy.isFollowPending
+                        ? diplomacy.isFollowing
                           ? "Unfollowing…"
                           : "Following…"
-                        : followStatus?.isFollowing
+                        : diplomacy.isFollowing
                           ? "Unfollow Nation"
                           : "Follow Nation"
                     }
-                    onClick={handleFollowToggle}
+                    onClick={diplomacy.toggleFollow}
                     disabled={!viewerCountryId || isLoading}
                   />
                   <ActionRow
@@ -357,10 +271,8 @@ export function CountryActionsMenu({
                 <ActionGroup label="Diplomacy">
                   <ActionRow
                     icon={Building2}
-                    label={
-                      establishEmbassyMutation.isPending ? "Constructing…" : "Construct Embassy"
-                    }
-                    onClick={handleEstablishEmbassy}
+                    label={diplomacy.isEmbassyPending ? "Constructing…" : "Construct Embassy"}
+                    onClick={diplomacy.establishEmbassy}
                     disabled={!viewerCountryId || isLoading}
                   />
                   <ActionRow
@@ -378,13 +290,13 @@ export function CountryActionsMenu({
                   <ActionRow
                     icon={Handshake}
                     label="Propose free trade"
-                    onClick={() => handleForeignPolicy("free_trade")}
+                    onClick={() => diplomacy.proposeForeignPolicy("free_trade")}
                     disabled={!viewerCountryId || isLoading}
                   />
                   <ActionRow
                     icon={Shield}
                     label="Propose military alliance"
-                    onClick={() => handleForeignPolicy("military_alliance")}
+                    onClick={() => diplomacy.proposeForeignPolicy("military_alliance")}
                     disabled={!viewerCountryId || isLoading}
                   />
                 </ActionGroup>
@@ -393,14 +305,14 @@ export function CountryActionsMenu({
                   <ActionRow
                     icon={Scale}
                     label="Impose sanctions"
-                    onClick={() => handleForeignPolicy("sanction")}
+                    onClick={() => diplomacy.proposeForeignPolicy("sanction")}
                     disabled={!viewerCountryId || isLoading}
                     destructive
                   />
                   <ActionRow
                     icon={Swords}
                     label="Declare embargo"
-                    onClick={() => handleForeignPolicy("embargo")}
+                    onClick={() => diplomacy.proposeForeignPolicy("embargo")}
                     disabled={!viewerCountryId || isLoading}
                     destructive
                   />

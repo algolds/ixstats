@@ -16,14 +16,12 @@ import {
   computeTaxYields,
   deriveSectorWeights,
   type FiscalRateUpdate,
-  type TaxChannel,
 } from "./fiscal";
 import { parseSectorBreakdown } from "~/lib/economy/sector-breakdown";
 import { economicRelationsOf, finiteOrNull } from "~/lib/economy/country-relations";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
-export { TAX_CHANNELS, FiscalPolicyInsights };
-export type { TaxChannel };
+export { FiscalPolicyInsights };
 
 /**
  * Fiscal Policy tab — national tax rate sliders.

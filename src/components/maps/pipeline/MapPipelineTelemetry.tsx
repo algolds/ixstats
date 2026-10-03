@@ -10,7 +10,7 @@ import type {
   ResourcePlacementPayload,
 } from "~/lib/maps/pipeline/enrichment-pipeline";
 
-export interface MapPipelineTelemetryProps {
+interface MapPipelineTelemetryProps {
   stats: {
     generationTimeMs: number;
     cellCount: number;

@@ -5,34 +5,9 @@ import { City as Building2 } from "iconoir-react";
 import type { GovernmentStructureInput } from "~/types/government";
 import { BudgetConfigurationSection } from "./BudgetConfigurationSection";
 import { GovernmentStructureFields } from "./GovernmentStructureFields";
-import {
-  governmentTypes,
-  validStances,
-  validAudits,
-  validReserves,
-  validDebts,
-  stanceDetails,
-  auditDetails,
-  reserveDetails,
-  debtDetails,
-} from "./governmentStructureConstants";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
-export {
-  governmentTypes,
-  validStances,
-  validAudits,
-  validReserves,
-  validDebts,
-  stanceDetails,
-  auditDetails,
-  reserveDetails,
-  debtDetails,
-  BudgetConfigurationSection,
-  GovernmentStructureFields,
-};
-
-export interface GovernmentStructureFormProps {
+interface GovernmentStructureFormProps {
   data: GovernmentStructureInput;
   onChange: (data: GovernmentStructureInput) => void;
   isReadOnly?: boolean;

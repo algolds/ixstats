@@ -55,7 +55,7 @@ interface CountryIntentItem {
   category?: string | null;
 }
 
-export interface ExecutiveOpportunityHeroProps {
+interface ExecutiveOpportunityHeroProps {
   countryId: string;
   onOpenDrill?: (drill: Exclude<DrillSheetKind, { kind: "intent" } | null>) => void;
   onOpenIntent?: (intentId: string) => void;

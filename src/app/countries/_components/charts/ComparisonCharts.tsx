@@ -62,13 +62,6 @@ interface ComparisonCountry {
 interface ComparisonChartsProps {
   countries: ComparisonCountry[];
   onCountriesChangeAction: (countries: ComparisonCountry[]) => void;
-  availableCountries: Array<{
-    id: string;
-    name: string;
-    continent?: string | null;
-    economicTier: string;
-  }>;
-  currentIxTime: number;
   isLoading?: boolean;
 }
 
@@ -77,8 +70,6 @@ type ComparisonChartType = "population" | "gdp" | "growth" | "scatter" | "radar"
 export function ComparisonCharts({
   countries,
   onCountriesChangeAction,
-  availableCountries,
-  currentIxTime,
   isLoading = false,
 }: ComparisonChartsProps) {
   const [selectedChartType, setSelectedChartType] = useState<ComparisonChartType>("population");

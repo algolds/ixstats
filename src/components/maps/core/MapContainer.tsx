@@ -55,7 +55,7 @@ const MapEditorOverlay = dynamic(() => import("~/components/maps/editor/MapEdito
 
 const BETA_DISMISS_KEY = "ixmaps:beta-notice-dismissed";
 
-export interface MapContainerProps {
+interface MapContainerProps {
   className?: string;
   showControls?: boolean;
   showTools?: boolean; // Search + measure tools

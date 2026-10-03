@@ -30,7 +30,7 @@ import type { EditorFeature } from "./types/editor-state";
 import { Slider } from "~/components/ui/slider";
 import { Button } from "~/components/ui/button";
 
-export interface LayerState {
+interface LayerState {
   id: string;
   name: string;
   icon: React.ElementType;

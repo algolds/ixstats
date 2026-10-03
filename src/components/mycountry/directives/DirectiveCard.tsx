@@ -44,7 +44,7 @@ const ISSUE_STATUS_LABEL: Record<string, string> = {
   expired: "Expired",
 };
 
-export interface DirectiveCardProps {
+interface DirectiveCardProps {
   intent: IntentRow;
   parentGoal?: string | null;
   nowIxTime: number;

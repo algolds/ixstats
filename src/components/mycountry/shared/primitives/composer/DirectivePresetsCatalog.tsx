@@ -23,7 +23,7 @@ import {
 } from "./directive-presets";
 import { Card } from "~/components/ui/card";
 
-export const DOMAIN_ICONS: Record<DirectiveDomain, React.ComponentType<{ className?: string }>> = {
+const DOMAIN_ICONS: Record<DirectiveDomain, React.ComponentType<{ className?: string }>> = {
   Economy: GraphUp,
   Fiscal: Coins,
   Social: Heart,
@@ -34,7 +34,7 @@ export const DOMAIN_ICONS: Record<DirectiveDomain, React.ComponentType<{ classNa
   Governance: Bank,
 };
 
-export interface DirectivePresetsCatalogProps {
+interface DirectivePresetsCatalogProps {
   /** Free-text filter from the goal field. */
   query: string;
   onSelectGoal: (goal: string) => void;

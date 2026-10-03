@@ -28,9 +28,6 @@ import type {
   LayerStateRecord,
   EditorFeature,
 } from "../types/editor-state";
-
-export type { PanelPlacement, PanelConfig, LayerStateRecord };
-
 export type MapEditorOverlayReturnState = ReturnType<typeof useMapEditorOverlayState>;
 
 interface MapEditorSidebarPanelsProps {

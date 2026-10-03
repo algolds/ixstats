@@ -14,7 +14,7 @@ import { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 import { ComponentType } from "~/lib/enums";
 import { checkGovernmentSynergy, checkGovernmentConflict } from "~/lib/government/atomic-utils";
 
-export interface ComponentLibraryProps {
+interface ComponentLibraryProps {
   components: Partial<Record<ComponentType, AtomicGovernmentComponent>>;
   selectedIds: ComponentType[];
   onSelect: (componentType: ComponentType) => void;

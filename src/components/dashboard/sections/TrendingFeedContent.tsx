@@ -1,48 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
 import { FireFlame as Flame } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
-import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
 import { EmptyState } from "~/components/ui/empty-state";
-import { springSmooth } from "~/lib/design/motion";
 import { FeedItemSkeleton } from "./UnifiedFeedItem";
 import { Card } from "~/components/ui/card";
+import { FeedList, type FeedHandlers } from "./UnifiedFeedContent";
 
 /**
  * Trending tab: posts the thinkpages-trending cron job flagged (engagement from other users over
  * the last few days, with time decay), best first, plus the trending hashtags. Shows an honest
  * empty state when nothing qualifies; there is no recency fallback.
  */
-export function TrendingFeedContent({
-  currentUserAccountId,
-  accounts,
-  countryId,
-  isOwner,
-  onAccountSelectAction,
-  onAccountSettingsAction,
-  onCreateAccountAction,
-  onLikeAction,
-  onRepostAction,
-  onReactionAction,
-  onReplyAction,
-  onShareAction,
-}: {
-  currentUserAccountId: string;
-  accounts: any[];
-  countryId: string;
-  isOwner: boolean;
-  onAccountSelectAction: (a: any) => void;
-  onAccountSettingsAction: (a: any) => void;
-  onCreateAccountAction: () => void;
-  onLikeAction: (id: string) => void;
-  onRepostAction: (post: any) => void;
-  onReactionAction: (id: string, type: string) => void;
-  onReplyAction: (id: string) => void;
-  onShareAction: (id: string) => void;
-}) {
+export function TrendingFeedContent(handlers: FeedHandlers) {
   const { data: feed, isLoading } = api.thinkpages.getFeed.useQuery(
     { filter: "trending", limit: 25 },
     { refetchInterval: 5 * 60_000, staleTime: 60_000 }
@@ -87,34 +59,10 @@ export function TrendingFeedContent({
           />
         </Card>
       ) : (
-        <div className="space-y-2">
-          {posts.map((post: any) => (
-            <motion.div
-              key={post.id}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={springSmooth}
-            >
-              <ThinkpagesPost
-                post={post}
-                currentUserAccountId={currentUserAccountId}
-                accounts={accounts}
-                countryId={countryId}
-                isOwner={isOwner}
-                onAccountSelect={onAccountSelectAction}
-                onAccountSettings={onAccountSettingsAction}
-                onCreateAccount={onCreateAccountAction}
-                onLike={onLikeAction}
-                onRepost={() => onRepostAction(post)}
-                onReaction={onReactionAction}
-                onReply={onReplyAction}
-                onShare={onShareAction}
-                onAccountClick={() => {}}
-                showThread={true}
-              />
-            </motion.div>
-          ))}
-        </div>
+        <FeedList
+          items={posts.map((post: any) => ({ id: post.id, source: "thinkpages", rawPost: post }))}
+          {...handlers}
+        />
       )}
     </div>
   );

@@ -9,7 +9,7 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 
-export interface SearchableListProps<T> {
+interface SearchableListProps<T> {
   /** Section title shown in the header (e.g. "Cities"). */
   title: string;
   /** Optional icon shown next to the title. */

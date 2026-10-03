@@ -22,7 +22,7 @@ const CHANGE_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
   statement: Journal,
 };
 
-export interface ImpactPreviewProps {
+interface ImpactPreviewProps {
   pkg: IntentPackageView;
   broker: { name: string; unlocked: boolean; satisfied: boolean } | null;
 }

@@ -139,7 +139,7 @@ function CoverPicker({
   );
 }
 
-export interface CountryHeroProps {
+interface CountryHeroProps {
   name: string;
   officialName?: string | null;
   flagUrl: string | null;

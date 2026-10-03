@@ -21,12 +21,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
-import {
-  normalizeWikiImageUrl,
-  extractLeadImageFromWikitext,
-  extractLeadImageFromHtml,
-  isNoticeOrUtilityIcon,
-} from "~/lib/wiki-os/transformers/image-url";
+import { useWikiLeadImage } from "./feed/useWikiLeadImage";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 
 const TRENDING_DEFAULT_LIMIT = 4;
@@ -76,56 +71,10 @@ const TRENDING_SOURCE: Record<
   },
 };
 
-export function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
+function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwiki" | "iiwiki" }) {
   const { data: intro } = api.wikios.getIntro.useQuery({ title, wiki }, { staleTime: 30 * 60_000 });
-  const { data: pageImages } = api.wikios.getPageImages.useQuery(
-    { title },
-    { enabled: !!title, staleTime: 30 * 60_000 }
-  );
 
-  const leadImage = useMemo(() => {
-    if (pageImages && Array.isArray(pageImages) && pageImages.length > 0) {
-      const eligible =
-        pageImages.find(
-          (img: any) =>
-            img &&
-            (img.thumbUrl || img.url) &&
-            !isNoticeOrUtilityIcon(img.title || img.url || img.thumbUrl) &&
-            !img.title?.toLowerCase().endsWith(".svg") &&
-            !img.title?.toLowerCase().includes("flag") &&
-            !img.title?.toLowerCase().includes("icon")
-        ) ||
-        pageImages.find(
-          (img: any) =>
-            img &&
-            (img.thumbUrl || img.url) &&
-            !isNoticeOrUtilityIcon(img.title || img.url || img.thumbUrl)
-        ) ||
-        pageImages[0];
-
-      const rawUrl = eligible?.thumbUrl || eligible?.url || null;
-      if (rawUrl) {
-        const normalized = normalizeWikiImageUrl(rawUrl);
-        if (normalized) return normalized;
-      }
-    }
-
-    const rawText = intro?.text || intro?.intro || "";
-    if (rawText) {
-      const fromWikitext = extractLeadImageFromWikitext(rawText);
-      if (fromWikitext) {
-        const normalized = normalizeWikiImageUrl(fromWikitext);
-        if (normalized) return normalized;
-      }
-      const fromHtml = extractLeadImageFromHtml(rawText);
-      if (fromHtml) {
-        const normalized = normalizeWikiImageUrl(fromHtml);
-        if (normalized) return normalized;
-      }
-    }
-
-    return null;
-  }, [pageImages, intro?.text, intro?.intro]);
+  const leadImage = useWikiLeadImage(title, intro?.text || intro?.intro || "");
 
   return (
     <div className="space-y-2">
@@ -157,7 +106,7 @@ export function WikiPreviewContent({ title, wiki }: { title: string; wiki: "ixwi
   );
 }
 
-export function ForumPreviewContent({ threadId }: { threadId: number }) {
+function ForumPreviewContent({ threadId }: { threadId: number }) {
   const { data: thread } = api.wikios.getForumThreadPreview.useQuery(
     { threadId },
     { staleTime: 10 * 60_000 }

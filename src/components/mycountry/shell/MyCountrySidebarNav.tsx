@@ -46,7 +46,7 @@ export type MyCountrySection =
   | "politics"
   | "map-editor";
 
-export const NAV_ITEMS: {
+const NAV_ITEMS: {
   id: MyCountrySection;
   href: string;
   icon: typeof Crown;

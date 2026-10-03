@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
-import { HealthRing } from "~/components/ui/health-ring";
 
 import {
   Accordion,
@@ -42,12 +41,6 @@ export function ExpandableStatCard({
   formattedValue,
 }: ExpandableStatCardProps) {
   const [expanded, setExpanded] = useState(false);
-
-  // GDP Health calculation (simple: >$1T = 90, >$100B = 70, else 50)
-  const gdpHealth =
-    type === "gdp" && topCountries.length > 0 && topCountries[0]
-      ? Math.min(100, Math.max(30, Math.round(topCountries[0].currentTotalGdp / 1e10)))
-      : 70;
 
   // Default values for extraStats
   const { countryCount = 0, avgGdpPerCapita = 0, avgPopulationDensity = 0 } = extraStats || {};
@@ -114,12 +107,6 @@ export function ExpandableStatCard({
                       </li>
                     ))}
                   </ol>
-                  <div className="mt-2 flex items-center gap-2">
-                    <HealthRing value={gdpHealth} size={48} label="GDP Health" />
-                    <span className="text-label-secondary text-footnote">
-                      Based on the largest GDP
-                    </span>
-                  </div>
                   <div className="text-label text-title-3 mt-2 tabular-nums">
                     {typeof value === "number" ? (
                       <NumberFlowDisplay

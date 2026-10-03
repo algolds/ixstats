@@ -6,7 +6,7 @@ import { timeAgo } from "~/lib/format/compact";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 
-export interface FeedGroupedDrawerProps {
+interface FeedGroupedDrawerProps {
   subEdits: any[];
   isWiki: boolean;
   className?: string;

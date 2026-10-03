@@ -22,7 +22,7 @@ import { Eyebrow } from "~/components/ui/eyebrow";
 import { Progress } from "~/components/ui/progress";
 import { cn } from "~/lib/utils";
 
-export interface GeoRollups {
+interface GeoRollups {
   cityPopulationSum: number;
   subdivisionPopulationSum: number;
   cityGdpContributionSum: number;

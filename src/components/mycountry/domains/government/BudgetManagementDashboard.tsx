@@ -231,7 +231,9 @@ export function BudgetManagementDashboard({
             {governmentStructure?.governmentName ?? "National"} Fiscal Budget
           </h2>
           <p className="text-label-secondary text-footnote mt-0.5">
-            {toTitleCase(governmentStructure?.governmentType ?? "Democratic Republic")} •{" "}
+            {governmentStructure?.governmentType
+              ? `${toTitleCase(governmentStructure.governmentType)} • `
+              : ""}
             {selectedYear} {governmentStructure?.fiscalYear ?? "FY"}
           </p>
         </div>

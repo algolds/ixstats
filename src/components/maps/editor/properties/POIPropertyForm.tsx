@@ -2,11 +2,9 @@
 import React from "react";
 import type { POIFormData, EditorFeature } from "~/hooks/useMapEditor";
 import { WikiLinkWizard } from "../WikiLinkWizard";
+import { CoordinatePicker } from "./CoordinatePicker";
 
-import { MapPin } from "iconoir-react";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
-import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
 
 const POI_CATEGORIES = [
   "landmark",
@@ -107,31 +105,12 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
         ]}
       />
 
-      {/* Coordinate Picker Block */}
       {countryId && (
-        <Card className="text-footnote flex items-center justify-between px-3 py-2">
-          <div className="text-label-secondary text-left font-medium">
-            Coordinates:{" "}
-            {activeCoords ? (
-              <span className="text-label font-semibold tabular-nums">
-                {activeCoords[1].toFixed(4)}&deg; N, {activeCoords[0].toFixed(4)}&deg; E
-              </span>
-            ) : (
-              <span className="italic">Not placed yet</span>
-            )}
-          </div>
-          <Button
-            type="button"
-            variant={isPickingLocation ? "secondary" : "ghost"}
-            size="sm"
-            aria-pressed={isPickingLocation}
-            onClick={() => setIsPickingLocation?.(!isPickingLocation)}
-            className="shrink-0"
-          >
-            <MapPin className="size-3.5" aria-hidden />
-            <span>{isPickingLocation ? "Click on Map..." : "Pick on Map"}</span>
-          </Button>
-        </Card>
+        <CoordinatePicker
+          coordinates={activeCoords}
+          isPickingLocation={isPickingLocation}
+          setIsPickingLocation={setIsPickingLocation}
+        />
       )}
       <textarea
         placeholder="Description (optional)"

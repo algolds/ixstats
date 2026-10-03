@@ -58,11 +58,14 @@ function getCircleCoords(center: [number, number], radiusKm: number): number[][]
   return coords;
 }
 
-export interface UseBorderEditorLayersProps {
+interface UseBorderEditorLayersProps {
   map: MapLibreMap | null;
   isActive: boolean;
   geometry: Polygon | MultiPolygon | null;
-  neighborGeometries?: Array<{ featureId: string; geometry: Polygon | MultiPolygon | null | undefined }>;
+  neighborGeometries?: Array<{
+    featureId: string;
+    geometry: Polygon | MultiPolygon | null | undefined;
+  }>;
   mode: string;
   splitLine: Position[];
   mergeTargets: string[];

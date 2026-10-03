@@ -16,7 +16,12 @@
  */
 
 import { useEffect, useRef, useCallback, useMemo } from "react";
-import type { Map as MapLibreMap, GeoJSONSource, MapLayerMouseEvent, ExpressionSpecification } from "maplibre-gl";
+import type {
+  Map as MapLibreMap,
+  GeoJSONSource,
+  MapLayerMouseEvent,
+  ExpressionSpecification,
+} from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 import { ROUTE_STYLES, ROUTE_COLORS } from "~/lib/maps/map-config";
 import { LazyDeckTransportOverlay } from "~/components/maps/overlays/LazyDeckTransportOverlay";
@@ -26,8 +31,6 @@ import {
   calculateNetworkAverageEconomicCoefficient,
   type GeoJSONCollectionLike,
 } from "~/lib/maps/transport-vehicle-sim";
-export { ROUTE_COLORS };
-
 // ── Layer / Source IDs ──────────────────────────────────────────────
 
 const ROUTES_SOURCE = "transport-routes-source";
@@ -42,10 +45,6 @@ const ROUTES_FLOW_LAYER = "transport-routes-flow";
 const ROUTES_ARROWS_LAYER = "transport-routes-arrows";
 const HUBS_SOURCE = "transport-hubs-source";
 const HUBS_LAYER = "transport-hubs-circle";
-
-/** Primary route layer for backwards-compatibility queries */
-export const ROUTES_LAYER = ROUTES_SOLID_TIER0;
-
 const ALL_ROUTE_LAYERS = [
   ROUTES_SOLID_TIER0,
   ROUTES_SOLID_TIER4,
@@ -79,7 +78,14 @@ const HUB_COLORS: Record<string, string> = {
 
 const TIER0_TYPES = ["rail", "high_speed_rail", "highway", "motorway", "shipping_lane"];
 const TIER4_TYPES = ["road", "trunk", "canal", "military_supply", "military_naval"];
-const TIER6_TYPES = ["secondary", "pipeline", "power_grid", "fiber", "freight_rail", "commuter_rail"];
+const TIER6_TYPES = [
+  "secondary",
+  "pipeline",
+  "power_grid",
+  "fiber",
+  "freight_rail",
+  "commuter_rail",
+];
 
 const STATUS_OPACITY: Record<string, number> = {
   planned: 0.4,
@@ -91,7 +97,10 @@ const STATUS_OPACITY: Record<string, number> = {
 // ── MapLibre Expressions ────────────────────────────────────────────
 
 function buildColorExpression(): ExpressionSpecification {
-  const arms: (string | number | boolean | ExpressionSpecification)[] = ["match", ["get", "routeType"]];
+  const arms: (string | number | boolean | ExpressionSpecification)[] = [
+    "match",
+    ["get", "routeType"],
+  ];
   for (const [type, color] of Object.entries(ROUTE_COLORS)) {
     arms.push(type, color);
   }
@@ -100,7 +109,10 @@ function buildColorExpression(): ExpressionSpecification {
 }
 
 function buildTypeWidthExpression(): ExpressionSpecification {
-  const arms: (string | number | boolean | ExpressionSpecification)[] = ["match", ["get", "routeType"]];
+  const arms: (string | number | boolean | ExpressionSpecification)[] = [
+    "match",
+    ["get", "routeType"],
+  ];
   for (const [type, width] of Object.entries(ROUTE_WIDTHS)) {
     arms.push(type, width);
   }
@@ -109,10 +121,17 @@ function buildTypeWidthExpression(): ExpressionSpecification {
 }
 
 function buildWidthExpression(selectedRouteId: string | null | undefined): ExpressionSpecification {
-  return ["case", ["==", ["get", "id"], selectedRouteId ?? ""], 6, buildTypeWidthExpression()] as ExpressionSpecification;
+  return [
+    "case",
+    ["==", ["get", "id"], selectedRouteId ?? ""],
+    6,
+    buildTypeWidthExpression(),
+  ] as ExpressionSpecification;
 }
 
-function buildOpacityExpression(selectedRouteId: string | null | undefined): ExpressionSpecification {
+function buildOpacityExpression(
+  selectedRouteId: string | null | undefined
+): ExpressionSpecification {
   return [
     "case",
     ["==", ["get", "id"], selectedRouteId ?? ""],
@@ -121,26 +140,37 @@ function buildOpacityExpression(selectedRouteId: string | null | undefined): Exp
       ? [
           "match",
           ["get", "status"],
-          "planned", 0.2,
-          "under_construction", 0.35,
-          "operational", 0.35,
-          "abandoned", 0.15,
+          "planned",
+          0.2,
+          "under_construction",
+          0.35,
+          "operational",
+          0.35,
+          "abandoned",
+          0.15,
           0.35,
         ]
       : [
           "match",
           ["get", "status"],
-          "planned", STATUS_OPACITY.planned!,
-          "under_construction", STATUS_OPACITY.under_construction!,
-          "operational", STATUS_OPACITY.operational!,
-          "abandoned", STATUS_OPACITY.abandoned!,
+          "planned",
+          STATUS_OPACITY.planned!,
+          "under_construction",
+          STATUS_OPACITY.under_construction!,
+          "operational",
+          STATUS_OPACITY.operational!,
+          "abandoned",
+          STATUS_OPACITY.abandoned!,
           0.8,
         ],
   ] as ExpressionSpecification;
 }
 
 function buildHubColorExpression(): ExpressionSpecification {
-  const arms: (string | number | boolean | ExpressionSpecification)[] = ["match", ["get", "hubType"]];
+  const arms: (string | number | boolean | ExpressionSpecification)[] = [
+    "match",
+    ["get", "hubType"],
+  ];
   for (const [type, color] of Object.entries(HUB_COLORS)) {
     arms.push(type, color);
   }
@@ -181,16 +211,38 @@ interface RouteLayerConfig {
 }
 
 const ROUTE_LAYER_CONFIGS: RouteLayerConfig[] = [
-  { id: ROUTES_SOLID_TIER0, minzoom: 0, filter: ["in", ["get", "routeType"], ["literal", TIER0_TYPES]] },
-  { id: ROUTES_SOLID_TIER4, minzoom: 4, filter: ["in", ["get", "routeType"], ["literal", TIER4_TYPES]] },
-  { id: ROUTES_SOLID_TIER6, minzoom: 6, filter: ["in", ["get", "routeType"], ["literal", TIER6_TYPES]] },
-  { id: ROUTES_DASHED_AIR, minzoom: 0, filter: ["==", ["get", "routeType"], "air_corridor"], dash: [6, 4] },
-  { id: ROUTES_DASHED_FERRY, minzoom: 4, filter: ["==", ["get", "routeType"], "ferry"], dash: [4, 3] },
+  {
+    id: ROUTES_SOLID_TIER0,
+    minzoom: 0,
+    filter: ["in", ["get", "routeType"], ["literal", TIER0_TYPES]],
+  },
+  {
+    id: ROUTES_SOLID_TIER4,
+    minzoom: 4,
+    filter: ["in", ["get", "routeType"], ["literal", TIER4_TYPES]],
+  },
+  {
+    id: ROUTES_SOLID_TIER6,
+    minzoom: 6,
+    filter: ["in", ["get", "routeType"], ["literal", TIER6_TYPES]],
+  },
+  {
+    id: ROUTES_DASHED_AIR,
+    minzoom: 0,
+    filter: ["==", ["get", "routeType"], "air_corridor"],
+    dash: [6, 4],
+  },
+  {
+    id: ROUTES_DASHED_FERRY,
+    minzoom: 4,
+    filter: ["==", ["get", "routeType"], "ferry"],
+    dash: [4, 3],
+  },
 ];
 
 // ── Component ───────────────────────────────────────────────────────
 
-export interface TransportOverlayProps {
+interface TransportOverlayProps {
   map: MapLibreMap | null;
   routeData: FeatureCollection;
   hubData?: FeatureCollection;
@@ -415,7 +467,11 @@ export function TransportOverlay({
               "line-opacity": 0.4,
               "line-blur": 1.5,
             },
-            layout: { "line-cap": "round", "line-join": "round", visibility: visibleRef.current ? "visible" : "none" },
+            layout: {
+              "line-cap": "round",
+              "line-join": "round",
+              visibility: visibleRef.current ? "visible" : "none",
+            },
           });
         }
 
@@ -426,8 +482,17 @@ export function TransportOverlay({
             type: "line",
             source: ROUTES_SOURCE,
             filter: ["==", ["get", "id"], selectedRouteIdRef.current ?? ""],
-            paint: { "line-color": buildColorExpression(), "line-width": 12, "line-blur": 6, "line-opacity": 0.35 },
-            layout: { "line-cap": "round", "line-join": "round", visibility: visibleRef.current && selectedRouteIdRef.current ? "visible" : "none" },
+            paint: {
+              "line-color": buildColorExpression(),
+              "line-width": 12,
+              "line-blur": 6,
+              "line-opacity": 0.35,
+            },
+            layout: {
+              "line-cap": "round",
+              "line-join": "round",
+              visibility: visibleRef.current && selectedRouteIdRef.current ? "visible" : "none",
+            },
           });
         }
 
@@ -446,7 +511,11 @@ export function TransportOverlay({
               source: ROUTES_SOURCE,
               minzoom: cfg.minzoom,
               filter: cfg.filter,
-              layout: { "line-cap": "round", "line-join": "round", visibility: visibleRef.current ? "visible" : "none" },
+              layout: {
+                "line-cap": "round",
+                "line-join": "round",
+                visibility: visibleRef.current ? "visible" : "none",
+              },
               paint: paint as Record<string, ExpressionSpecification | number[]>,
             });
           }
@@ -492,7 +561,14 @@ export function TransportOverlay({
             },
             paint: {
               "icon-color": buildColorExpression(),
-              "icon-opacity": ["case", ["==", ["get", "status"], "abandoned"], 0.2, ["==", ["get", "status"], "planned"], 0.3, 0.6],
+              "icon-opacity": [
+                "case",
+                ["==", ["get", "status"], "abandoned"],
+                0.2,
+                ["==", ["get", "status"], "planned"],
+                0.3,
+                0.6,
+              ],
             },
           });
         }
@@ -515,7 +591,13 @@ export function TransportOverlay({
 
         // 8. Ordering
         let beforeId: string | undefined = undefined;
-        for (const id of ["editor-points-capital", "editor-points-city", "editor-points-poi", "editor-points-labels", "editor-pending-point-layer"]) {
+        for (const id of [
+          "editor-points-capital",
+          "editor-points-city",
+          "editor-points-poi",
+          "editor-points-labels",
+          "editor-pending-point-layer",
+        ]) {
           if (map.getLayer(id)) {
             beforeId = id;
             break;
@@ -626,9 +708,17 @@ export function TransportOverlay({
       for (const layerId of ALL_TRANSPORT_LAYERS) {
         if (!map.getLayer(layerId)) continue;
         if (layerId === ROUTES_GLOW_LAYER) {
-          map.setLayoutProperty(layerId, "visibility", visible && selectedRouteId ? "visible" : "none");
+          map.setLayoutProperty(
+            layerId,
+            "visibility",
+            visible && selectedRouteId ? "visible" : "none"
+          );
         } else if (layerId === ROUTES_FLOW_LAYER) {
-          map.setLayoutProperty(layerId, "visibility", visible && animateFlows ? "visible" : "none");
+          map.setLayoutProperty(
+            layerId,
+            "visibility",
+            visible && animateFlows ? "visible" : "none"
+          );
         } else {
           map.setLayoutProperty(layerId, "visibility", vis);
         }

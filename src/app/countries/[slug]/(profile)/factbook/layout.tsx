@@ -7,8 +7,8 @@ import { FactbookMetricsProvider } from "~/components/mycountry/shared/headers/F
 import { FactbookModals } from "~/components/mycountry/shared/modals/FactbookModals";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { FactbookSidebar } from "../../_components/FactbookSidebar";
-import { calculateVitalityData } from "../../_utils/countryDataTransformers";
 import { sectionFromPathname } from "~/lib/country/factbook-routes";
+import type { VitalityData } from "../../_types";
 
 /**
  * FactbookLayout — persistent shell for all five factbook sections
@@ -26,21 +26,21 @@ export default function FactbookLayout({
   const { slug } = use(params);
   const pathname = usePathname();
   const section = sectionFromPathname(pathname);
-  const { country, activityRingsData } = useCountryData();
-  const diplomaticStanding = activityRingsData?.diplomaticStanding ?? null;
+  const { activityRingsData } = useCountryData();
 
-  const vitalityData = useMemo(() => {
-    if (!country) return null;
-    return calculateVitalityData(
-      {
-        economicTier: country.economicTier,
-        adjustedGdpGrowth: country.adjustedGdpGrowth,
-        populationGrowthRate: country.populationGrowthRate,
-        populationDensity: country.populationDensity ?? null,
-      },
-      diplomaticStanding
-    );
-  }, [country, diplomaticStanding]);
+  // The rings are the server's own scores (`countries.getActivityRingsData`); none is estimated here.
+  const vitalityData = useMemo<VitalityData | null>(
+    () =>
+      activityRingsData
+        ? {
+            economicVitality: activityRingsData.economicVitality,
+            populationWellbeing: activityRingsData.populationWellbeing,
+            diplomaticStanding: activityRingsData.diplomaticStanding,
+            governmentalEfficiency: activityRingsData.governmentalEfficiency,
+          }
+        : null,
+    [activityRingsData]
+  );
 
   return (
     <FactbookMetricsProvider section={section}>

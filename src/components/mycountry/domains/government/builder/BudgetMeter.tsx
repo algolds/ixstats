@@ -12,7 +12,7 @@ import { WarningTriangle as AlertTriangle, CheckCircle, StatUp as TrendingUp } f
 import { Progress } from "~/components/ui/progress";
 import { Card } from "~/components/ui/card";
 
-export interface BudgetMeterProps {
+interface BudgetMeterProps {
   budgetSummary: BudgetSummary;
 }
 

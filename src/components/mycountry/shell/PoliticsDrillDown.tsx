@@ -62,7 +62,7 @@ const PowerBrokersPanel = dynamic(
   { loading: () => <Skeleton className="rounded-card h-64" /> }
 );
 
-export interface PoliticsDrillDownProps {
+interface PoliticsDrillDownProps {
   countryId: string;
 }
 

@@ -30,7 +30,7 @@ export const OFFERED_TIERS: readonly OfferedTier[] = [
   "broker_unlocked",
 ];
 
-export type Tone = "positive" | "caution" | "negative" | "info" | "neutral";
+type Tone = "positive" | "caution" | "negative" | "info" | "neutral";
 
 /**
  * Status colour classes: the only place this page reaches past the neutral theme tokens.
@@ -71,7 +71,7 @@ export const TONE_CLASSES: Record<Tone, { dot: string; text: string; badge: stri
     },
   };
 
-export const TIER_META: Record<string, { label: string; summary: string; tone: Tone }> = {
+const TIER_META: Record<string, { label: string; summary: string; tone: Tone }> = {
   measured: {
     label: "Measured",
     summary: "A small, low-friction step. Easiest for stakeholders to accept.",
@@ -113,7 +113,7 @@ export const ACCEPTANCE_META: Record<Acceptance, { label: string; tone: Tone }> 
 };
 
 /** Engine category (lib/intent/assemble.ts) → the name players see. */
-export const CATEGORY_LABELS: Record<Category, string> = {
+const CATEGORY_LABELS: Record<Category, string> = {
   defense: "Defense",
   fiscal: "Fiscal",
   economy: "Economy",
@@ -149,7 +149,7 @@ export function parseChangeLines(changesJson: string | null | undefined): Change
   }
 }
 
-export type DirectivePhase = "draft" | "executing" | "in_force" | "completed" | "abandoned";
+type DirectivePhase = "draft" | "executing" | "in_force" | "completed" | "abandoned";
 
 export const PHASE_META: Record<DirectivePhase, { label: string; tone: Tone; hint: string }> = {
   draft: { label: "Draft", tone: "neutral", hint: "Saved but not declared." },
@@ -167,7 +167,7 @@ export const PHASE_META: Record<DirectivePhase, { label: string; tone: Tone; hin
   abandoned: { label: "Abandoned", tone: "negative", hint: "Withdrawn before completion." },
 };
 
-export interface DirectiveTimeline {
+interface DirectiveTimeline {
   phase: DirectivePhase;
   /** 0-1 through the execution week (1 once it is over or closed). */
   executionProgress: number;

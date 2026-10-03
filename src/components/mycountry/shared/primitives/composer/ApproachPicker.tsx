@@ -13,7 +13,7 @@ import {
 } from "~/components/mycountry/directives/directive-model";
 import { Card } from "~/components/ui/card";
 
-export interface ApproachPickerProps {
+interface ApproachPickerProps {
   packages: IntentPackageView[];
   selected: OfferedTier;
   onSelect: (tier: OfferedTier) => void;

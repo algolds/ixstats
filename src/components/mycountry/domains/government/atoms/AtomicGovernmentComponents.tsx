@@ -36,7 +36,7 @@ import { TooltipProvider } from "~/components/ui/tooltip";
 import { GovernmentMetricModals } from "./GovernmentMetricModals";
 import { Card } from "~/components/ui/card";
 
-export interface AtomicGovernmentComponentsProps {
+interface AtomicGovernmentComponentsProps {
   /** Currently selected components */
   initialComponents?: ComponentType[];
   /** Maximum allowed components */
@@ -403,13 +403,5 @@ export function AtomicGovernmentComponents({
 
 // Re-export types and utilities for convenience
 export { ComponentType } from "~/lib/enums";
-export { ATOMIC_COMPONENTS, GOVERNMENT_TEMPLATES } from "~/lib/government/atomic-data";
-export type { AtomicGovernmentComponent } from "~/lib/government/atomic-data";
-export {
-  calculateGovernmentEffectiveness,
-  checkGovernmentSynergy,
-  checkGovernmentConflict,
-} from "~/lib/government/atomic-utils";
-
+export { ATOMIC_COMPONENTS } from "~/lib/government/atomic-data";
 // Export alias for backward compatibility
-export { AtomicGovernmentComponents as AtomicComponentSelector };

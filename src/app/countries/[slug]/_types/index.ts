@@ -3,16 +3,12 @@
  */
 
 /** Generic Branded Type helper to prevent primitive obsession */
-export type Brand<T, B extends string> = T & { readonly __brand: B };
+type Brand<T, B extends string> = T & { readonly __brand: B };
 
 /** Branded domain types */
-export type CountrySlug = Brand<string, "CountrySlug">;
-export type CountryId = Brand<string, "CountryId">;
-
+type CountrySlug = Brand<string, "CountrySlug">;
 /** Type helpers for creating branded values safely */
 export const toCountrySlug = (slug: string): CountrySlug => slug as CountrySlug;
-export const toCountryId = (id: string): CountryId => id as CountryId;
-
 /** Banner Mode options */
 export type BannerMode = "dynamic" | "flag" | "gradient" | "custom";
 
@@ -39,25 +35,12 @@ export interface BaseCountryData {
   populationGrowthRate?: number | null;
 }
 
-/** Vitality telemetry scores calculated from country stats */
+/** Vitality telemetry scores as computed by the server; null when there is no record (shown as "—"). */
 export interface VitalityData {
   economicVitality: number;
   populationWellbeing: number;
-  /** From the country's diplomatic record; null when it has none (shown as "—"). */
   diplomaticStanding: number | null;
-  governmentalEfficiency: number;
-}
-
-/** Metric card format used in country metrics display grids */
-export interface MetricCardData {
-  label: string;
-  value: string;
-  subtext: string;
-  colorClass: string;
-  tooltip: {
-    title: string;
-    details: string[];
-  };
+  governmentalEfficiency: number | null;
 }
 
 /** Activity Feed Item shape */

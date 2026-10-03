@@ -39,7 +39,7 @@ const CONDITION_THEMES = {
   },
 } as const;
 
-export interface InfrastructureMaintenanceCardProps {
+interface InfrastructureMaintenanceCardProps {
   countryId: string;
   onDeclareDirective?: (directiveGoal: string) => void;
 }

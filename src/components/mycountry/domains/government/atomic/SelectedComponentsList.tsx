@@ -11,7 +11,7 @@ import type { AtomicGovernmentComponent } from "~/lib/government/atomic-data";
 import { ComponentType } from "~/lib/enums";
 import { AtomicSelectedList } from "~/components/shared/atomic-picker";
 
-export interface SelectedComponentsListProps {
+interface SelectedComponentsListProps {
   selectedComponents: AtomicGovernmentComponent[];
   onDeselect: (componentType: ComponentType) => void;
   isReadOnly?: boolean;

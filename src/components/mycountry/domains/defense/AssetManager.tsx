@@ -32,7 +32,7 @@ import {
 import { useNotify } from "~/hooks/useNotify";
 import { ASSET_TYPE_CONFIG, AssetCard, AssetDialog, type Asset } from "./assets";
 
-export interface AssetManagerProps {
+interface AssetManagerProps {
   countryId?: string;
   branchId?: string;
   branchType?: string;
@@ -237,5 +237,3 @@ export function AssetManager({
     </div>
   );
 }
-
-export default AssetManager;

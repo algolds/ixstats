@@ -556,14 +556,12 @@ function IntentDetail({
   );
 }
 
-export interface DrillSheetsProps {
+interface DrillSheetsProps {
   drill: DrillSheetKind;
   onClose: () => void;
   countryId: string;
   onDeclare?: (prefilledGoal?: string) => void;
 }
-
-export type DrillSheetKindSheetsProps = DrillSheetsProps;
 
 function DrillSheetsComponent({
   drill,
@@ -650,4 +648,3 @@ function DrillSheetsComponent({
 }
 
 export const DrillSheets = React.memo(DrillSheetsComponent);
-export const DrillSheetKindSheets = DrillSheets;

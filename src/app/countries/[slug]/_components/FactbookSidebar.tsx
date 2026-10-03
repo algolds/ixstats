@@ -113,14 +113,14 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
         label: "Economic health",
         subtitle: "GDP and growth",
         icon: DollarSign,
-        value: vitalityData?.economicVitality ?? 0,
+        value: vitalityData?.economicVitality ?? null,
       },
       {
         key: "populationWellbeing",
         label: "Population wellbeing",
         subtitle: "Demographics",
         icon: Users,
-        value: vitalityData?.populationWellbeing ?? 0,
+        value: vitalityData?.populationWellbeing ?? null,
       },
       {
         key: "diplomaticStanding",
@@ -134,7 +134,7 @@ export function FactbookSidebar({ vitalityData, countrySlug }: FactbookSidebarPr
         label: "Government efficiency",
         subtitle: "Administration",
         icon: Building,
-        value: vitalityData?.governmentalEfficiency ?? 0,
+        value: vitalityData?.governmentalEfficiency ?? null,
       },
     ],
     [vitalityData]

@@ -767,5 +767,3 @@ export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModel
     </TooltipProvider>
   );
 }
-
-export default EconomicModelingEngine;

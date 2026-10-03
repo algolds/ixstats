@@ -8,7 +8,7 @@ import { cn } from "~/lib/utils/cn";
  * face (`--wikios-font-reading`, the same token `.wikios-article-content` reads) at
  * a reading size with comfortable leading. Shared by every block of lore prose.
  */
-export const READING_STYLE =
+const READING_STYLE =
   "font-(family-name:--wikios-font-reading) text-label text-[calc(1.0625rem*var(--text-scale,1))] leading-[1.7] text-pretty";
 
 /** Drop cap: the first letter in the National display face, tinted. */
@@ -20,7 +20,7 @@ const DROP_CAP =
  * leading, and a drop cap on the opening paragraph. Data never sits inside this block; weave it
  * around the prose.
  */
-export interface LoreProseProps {
+interface LoreProseProps {
   paragraphs: readonly string[];
   /** Drop cap on the first paragraph (chapter openers). */
   dropCap?: boolean;
