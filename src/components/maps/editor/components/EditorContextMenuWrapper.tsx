@@ -8,7 +8,6 @@ import type {
   EditorContextMenuData,
   MapEditorInstance,
   EditorFeature,
-  FeatureType,
 } from "../types/editor-state";
 
 interface EditorContextMenuWrapperProps {

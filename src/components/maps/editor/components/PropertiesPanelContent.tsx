@@ -6,7 +6,7 @@ import { BorderEditorPanel } from "~/components/maps/editor/BorderEditorPanel";
 import { FeaturePropertyPanel } from "~/components/maps/editor/FeaturePropertyPanel";
 import { FeatureInspector, type FeaturePropertyUpdates } from "./inspector/FeatureInspector";
 import { DocumentInspector } from "./inspector/DocumentInspector";
-import { WorldCountryProfile } from "./WorldCountryProfile";
+import { WorldCountryProfile, type WorldCountryProfileProps } from "./WorldCountryProfile";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { api, type RouterOutputs } from "~/trpc/react";
 
@@ -19,12 +19,41 @@ import type {
   MapEditorInstance,
   EditorFeature,
   EditorFeatureDetails,
-  PropertiesPanelCountry,
   FeatureType,
 } from "../types/editor-state";
 import { Card } from "~/components/ui/card";
 
-interface PropertiesPanelContentProps {
+/** Props the world-mode country profile receives unchanged. */
+type ProfilePassthroughProps = Pick<
+  WorldCountryProfileProps,
+  | "isUnclaimed"
+  | "selectedCountryName"
+  | "editableFeatureName"
+  | "setEditableFeatureName"
+  | "editableCountryLinkageId"
+  | "setEditableCountryLinkageId"
+  | "countries"
+  | "wikiPageTitle"
+  | "setWikiPageTitle"
+  | "handleSaveFeatureProperties"
+  | "isEditingJson"
+  | "setIsEditingJson"
+  | "propertiesJsonString"
+  | "setPropertiesJsonString"
+  | "jsonError"
+  | "setJsonError"
+  | "parsedProperties"
+  | "assignCountryId"
+  | "setAssignCountryId"
+  | "handleAssignLink"
+  | "assignMutation"
+  | "availableCountries"
+  | "createCountryFromShapeAction"
+  | "createCountryFromShapePending"
+  | "enterBorderEdit"
+>;
+
+interface PropertiesPanelContentProps extends ProfilePassthroughProps {
   isWorldMode: boolean;
   activeEditorMode: "view" | "border_edit";
   activeCountryId: string | null;
@@ -32,16 +61,8 @@ interface PropertiesPanelContentProps {
   borderState: BorderEditorState;
   borderActions: BorderEditorActions;
   editor: MapEditorInstance;
-  selectedCountryName: string;
   countryInfo?: { name?: string; flag?: string | null; flagUrl?: string | null } | null;
   featureDetails?: EditorFeatureDetails | null;
-  wikiPageTitle: string;
-  setWikiPageTitle: (title: string) => void;
-  handleLinkFeature?: (
-    featureId: string,
-    featureType: string,
-    wikiTitle: string
-  ) => Promise<void> | void;
   updatePropertiesMutation: {
     isPending: boolean;
     mutateAsync: (args: {
@@ -53,38 +74,11 @@ interface PropertiesPanelContentProps {
       realm?: string;
     }) => Promise<{ ok?: boolean; success?: boolean } | void>;
   };
-  isEditingJson: boolean;
-  setIsEditingJson: (editing: boolean) => void;
-  propertiesJsonString: string;
-  setPropertiesJsonString: (str: string) => void;
-  jsonError: string | null;
-  setJsonError: (err: string | null) => void;
-  parsedProperties: Record<string, string | number | boolean | null> | null;
-  handleSaveFeatureProperties: (props?: Record<string, string | number | boolean | null>) => void;
   selectedRouteId: string | null;
   setSelectedRouteId: (id: string | null) => void;
   handleSubmit: () => void;
-  enterBorderEdit?: (
-    initialMode?: "select" | "vertex_edit" | "split" | "merge" | "trace" | "brush"
-  ) => void;
-  isUnclaimed?: boolean;
-  createCountryFromShapeAction?: (name: string) => void;
-  createCountryFromShapePending?: boolean;
-  assignCountryId?: string;
-  setAssignCountryId?: (id: string) => void;
-  handleAssignLink?: (featureId: string) => void;
-  assignMutation?: {
-    isPending: boolean;
-    mutateAsync: (args: { countryId: string; featureId: string }) => Promise<object | void>;
-  };
-  availableCountries?: PropertiesPanelCountry[];
   brushTargetId?: string | null;
   setBrushTargetId?: (id: string | null) => void;
-  editableFeatureName: string;
-  setEditableFeatureName: (name: string) => void;
-  editableCountryLinkageId: string;
-  setEditableCountryLinkageId: (id: string) => void;
-  countries?: PropertiesPanelCountry[];
   onEditRoute?: (routeId: string) => void;
   handleEditRoute?: (routeId: string) => void;
   /** Confirming delete from the editor state (falls back to an immediate delete). */
