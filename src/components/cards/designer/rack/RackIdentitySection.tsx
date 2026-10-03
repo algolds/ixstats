@@ -49,7 +49,7 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
       >
         <div className="flex items-center gap-2">
           <Search className="text-tint h-4 w-4" />
-          <span>Scan & Import Lore Archive</span>
+          <span>Scan & import lore archive</span>
         </div>
         <div className="text-label-secondary text-footnote flex items-center gap-1">
           <span>LoreScanner</span>
@@ -61,7 +61,7 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="text-label-secondary text-footnote mb-1 block font-medium">
-            Card Title
+            Card title
           </label>
           <Input
             value={state.title}
@@ -86,7 +86,7 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
       {/* Category Selector Grid */}
       <div>
         <label className="text-label-secondary text-footnote mb-2 block font-medium">
-          Lore Category & Subcategory
+          Lore category & subcategory
         </label>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {BROWSABLE_CATEGORIES.map((cat: LoreCategory, index: number) => {
@@ -228,7 +228,7 @@ export const RackIdentitySection = React.memo(function RackIdentitySection({
 
       {/* Season Selector */}
       <div className="flex items-center justify-between">
-        <label className="text-label-secondary text-footnote font-medium">Card Season</label>
+        <label className="text-label-secondary text-footnote font-medium">Card season</label>
         <div className="flex items-center gap-2">
           {showSeasonDropdown ? (
             <Select

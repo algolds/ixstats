@@ -19,8 +19,6 @@ export interface VaultShowcaseGridProps {
   userCountryId?: string;
   totalCards: number;
   creditsBalance: number;
-  getRarityGlow: (rarity?: string | null) => string;
-  getRarityBorder: (rarity?: string | null) => string;
 }
 
 export function VaultShowcaseGrid({
@@ -35,8 +33,6 @@ export function VaultShowcaseGrid({
   userCountryId,
   totalCards,
   creditsBalance,
-  getRarityGlow,
-  getRarityBorder,
 }: VaultShowcaseGridProps) {
   return (
     <div className="facet-layout-sidebar-span-1 space-y-6">
@@ -94,8 +90,6 @@ export function VaultShowcaseGrid({
         featuredCards={featuredCards}
         topCardsLoading={topCardsLoading}
         onNavigate={onNavigate}
-        getRarityGlow={getRarityGlow}
-        getRarityBorder={getRarityBorder}
       />
 
       {/* 2. Achievements & Vault Milestones */}

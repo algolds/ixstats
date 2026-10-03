@@ -163,7 +163,7 @@ export function VaultAuctionsTab() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ShoppingCart className="text-tint h-4.5 w-4.5" />
-          <h3 className="text-label-secondary text-eyebrow">Auction House</h3>
+          <h3 className="text-label-secondary text-eyebrow">Auction house</h3>
         </div>
         <Button size="sm" onClick={() => setCreateAuctionOpen(true)}>
           <Plus className="mr-2 h-3.5 w-3.5" /> Sell Card
@@ -174,25 +174,25 @@ export function VaultAuctionsTab() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           {
-            label: "Active Auctions",
+            label: "Active auctions",
             value: activeAuctions.length,
             color: "text-yellow",
             icon: Gavel,
           },
           {
-            label: "My Listings",
+            label: "My listings",
             value: myListings.length,
             color: "text-blue",
             icon: Store,
           },
           {
-            label: "My Bids",
+            label: "My bids",
             value: myBids.length,
             color: "text-indigo",
             icon: TrendingUp,
           },
           {
-            label: "My History",
+            label: "My history",
             value: myHistory.length,
             color: "text-green",
             icon: History,
@@ -219,7 +219,7 @@ export function VaultAuctionsTab() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Rarities</SelectItem>
+            <SelectItem value="all">All rarities</SelectItem>
             <SelectItem value="COMMON">Common</SelectItem>
             <SelectItem value="UNCOMMON">Uncommon</SelectItem>
             <SelectItem value="RARE">Rare</SelectItem>
@@ -239,10 +239,10 @@ export function VaultAuctionsTab() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="all">All types</SelectItem>
             <SelectItem value="NATION">Nation</SelectItem>
             <SelectItem value="LORE">Lore</SelectItem>
-            <SelectItem value="NS_IMPORT">NS Import</SelectItem>
+            <SelectItem value="NS_IMPORT">NS import</SelectItem>
             <SelectItem value="SPECIAL">Special</SelectItem>
           </SelectContent>
         </Select>
@@ -280,7 +280,7 @@ export function VaultAuctionsTab() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ending_soon">Ending Soon</SelectItem>
+            <SelectItem value="ending_soon">Ending soon</SelectItem>
             <SelectItem value="newest">Newest</SelectItem>
             <SelectItem value="price_low">Price Low-High</SelectItem>
             <SelectItem value="price_high">Price High-Low</SelectItem>
@@ -335,9 +335,9 @@ export function VaultAuctionsTab() {
             ) : activeAuctions.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10">
                 <ShoppingCart className="text-label-tertiary mb-3 h-10 w-10" />
-                <p className="text-label text-footnote font-semibold">No Active Auctions</p>
+                <p className="text-label text-footnote font-semibold">No active auctions</p>
                 <p className="text-label-secondary text-footnote mt-0.5 mb-3">
-                  Be the first to list a card for sale!
+                  No cards are listed for sale.
                 </p>
                 <Button
                   size="sm"
@@ -371,7 +371,7 @@ export function VaultAuctionsTab() {
                   onClick={handleLoadMore}
                   className="bg-transparent"
                 >
-                  Load More Auctions
+                  Load more auctions
                 </Button>
               </div>
             )}
@@ -388,8 +388,10 @@ export function VaultAuctionsTab() {
             ) : endingSoon.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10">
                 <Clock className="text-label-tertiary mb-3 h-10 w-10" />
-                <p className="text-label text-footnote font-semibold">No Auctions Ending Soon</p>
-                <p className="text-label-secondary text-footnote mt-0.5">Check back later!</p>
+                <p className="text-label text-footnote font-semibold">No auctions ending soon</p>
+                <p className="text-label-secondary text-footnote mt-0.5">
+                  No auctions are ending soon.
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-3">
@@ -419,7 +421,7 @@ export function VaultAuctionsTab() {
             ) : myListings.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10">
                 <Store className="text-label-tertiary mb-3 h-10 w-10" />
-                <p className="text-label text-footnote font-semibold">No Active Listings</p>
+                <p className="text-label text-footnote font-semibold">No active listings</p>
                 <p className="text-label-secondary text-footnote mt-0.5 mb-3">
                   Sell your card duplicate holdings on the market
                 </p>
@@ -492,7 +494,7 @@ export function VaultAuctionsTab() {
             ) : myBids.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10">
                 <Gavel className="text-label-tertiary mb-3 h-10 w-10" />
-                <p className="text-label text-footnote font-semibold">No Active Bids</p>
+                <p className="text-label text-footnote font-semibold">No active bids</p>
                 <p className="text-label-secondary text-footnote mt-0.5">
                   Browse the auction items and start bidding
                 </p>
@@ -550,9 +552,9 @@ export function VaultAuctionsTab() {
             ) : myHistory.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10">
                 <History className="text-label-tertiary mb-3 h-10 w-10" />
-                <p className="text-label text-footnote font-semibold">No Auction History</p>
+                <p className="text-label text-footnote font-semibold">No auction history</p>
                 <p className="text-label-secondary text-footnote mt-0.5">
-                  Past auctions you listed or bid on will appear here
+                  You have not listed or bid on any auctions yet
                 </p>
               </div>
             ) : (
@@ -621,7 +623,7 @@ export function VaultAuctionsTab() {
                   onClick={handleHistoryLoadMore}
                   className="bg-transparent"
                 >
-                  Load More History
+                  Load more history
                 </Button>
               </div>
             )}

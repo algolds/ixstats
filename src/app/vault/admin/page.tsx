@@ -25,7 +25,7 @@ export default function VaultAdminPage() {
         <Card className="mx-auto flex max-w-md flex-col gap-6 py-6">
           <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
             <Shield className="text-label-secondary h-10 w-10" />
-            <h2 className="text-title-3 font-semibold">Admin Access Required</h2>
+            <h2 className="text-title-3 font-semibold">Admin access required</h2>
             <p className="text-label-secondary text-body">
               You need admin permissions to access the vault admin panel.
             </p>
@@ -45,7 +45,7 @@ export default function VaultAdminPage() {
       <Card className="mx-auto flex max-w-md flex-col gap-6 py-6">
         <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
           <Shield className="text-yellow h-10 w-10" />
-          <h2 className="text-title-3 font-semibold">Vault Admin</h2>
+          <h2 className="text-title-3 font-semibold">Vault admin</h2>
           <p className="text-label-secondary text-body">
             The vault admin panel has moved to the admin section.
           </p>

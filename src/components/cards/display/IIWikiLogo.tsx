@@ -45,7 +45,7 @@ export function IIWikiBadge({
         "border-green/30 bg-green/15 text-footnote text-green shadow-card inline-flex items-center justify-center gap-1 rounded-full border px-2 py-0.5 font-semibold",
         className
       )}
-      title="IIWiki Card"
+      title="IIWiki card"
     >
       <IIWikiLogo size={size} />
       {showText && <span>IIWiki</span>}

@@ -21,7 +21,7 @@ export function CardStatsTab({ card, stats }: CardStatsTabProps) {
     >
       <h3 className="text-label text-title-3 mb-2 flex items-center gap-2 font-semibold">
         <Star className="h-5 w-5" />
-        Detailed Statistics
+        Detailed statistics
       </h3>
       {card.level > 1 && (
         <p className="text-label-tertiary text-footnote mb-6">
@@ -72,7 +72,7 @@ export function CardStatsTab({ card, stats }: CardStatsTabProps) {
         <div className="mt-8 space-y-4">
           <h4 className="text-label text-headline flex items-center gap-2">
             <Zap className="text-yellow h-4 w-4" />
-            Special Stats
+            Special stats
           </h4>
           <div className="space-y-4">
             {stats.specials.map((special) => (

@@ -33,7 +33,7 @@ export function ImportVerifyStep({
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-label text-title-2">Verify Ownership</h2>
+        <h2 className="text-label text-title-2">Verify ownership</h2>
         <p className="text-label-secondary text-body mt-1">
           Prove you own <span className="text-yellow font-semibold">{nationName}</span> via
           NationStates login verification
@@ -74,10 +74,10 @@ export function ImportVerifyStep({
           href={verificationUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-row border-blue/30 bg-blue/10 text-headline text-blue hover:bg-blue/20 flex items-center justify-center gap-2 border px-5 py-4 transition-colors active:scale-[0.98]"
+          className="rounded-row border-blue/30 bg-blue/10 text-headline text-blue hover:bg-blue/20 flex items-center justify-center gap-2 border px-5 py-4 transition-colors"
         >
           <ExternalLink className="h-4 w-4" />
-          Open NationStates Verification Page
+          Open NationStates verification page
         </a>
       )}
 
@@ -110,7 +110,7 @@ export function ImportVerifyStep({
           ) : (
             <ShieldCheck className="mr-2 h-4 w-4" />
           )}
-          Verify Ownership
+          Verify ownership
         </Button>
       </div>
     </div>

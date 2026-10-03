@@ -68,7 +68,7 @@ export const DesignerControlRack = React.memo<DesignerControlRackProps>(
           >
             <div className="flex items-center gap-2">
               <BookOpen className="text-tint h-4 w-4" />
-              <span>Overview & Basic Info</span>
+              <span>Overview & basic info</span>
             </div>
             <ChevronDown
               className={cn(
@@ -100,7 +100,7 @@ export const DesignerControlRack = React.memo<DesignerControlRackProps>(
           >
             <div className="flex items-center gap-2">
               <Gem className="text-tint h-4 w-4" />
-              <span>Appearance & Artwork</span>
+              <span>Appearance & artwork</span>
             </div>
             <ChevronDown
               className={cn(
@@ -132,7 +132,7 @@ export const DesignerControlRack = React.memo<DesignerControlRackProps>(
           >
             <div className="flex items-center gap-2">
               <Coins className="text-tint h-4 w-4" />
-              <span>Economy & Print Supply</span>
+              <span>Economy & print supply</span>
             </div>
             <ChevronDown
               className={cn(
@@ -160,7 +160,7 @@ export const DesignerControlRack = React.memo<DesignerControlRackProps>(
           >
             <div className="flex items-center gap-2">
               <FolderOpen className="text-tint h-4 w-4" />
-              <span>Saved Design Presets</span>
+              <span>Saved design presets</span>
             </div>
             <ChevronDown
               className={cn(

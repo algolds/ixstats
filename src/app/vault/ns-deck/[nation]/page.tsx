@@ -58,7 +58,7 @@ export default function NSDeckPage() {
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-large-title capitalize">{data.nation}'s Deck</h1>
-        <p className="text-label-secondary">NationStates Trading Cards Collection</p>
+        <p className="text-label-secondary">NationStates trading cards collection</p>
       </div>
 
       {/* Stats */}
@@ -66,7 +66,7 @@ export default function NSDeckPage() {
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-label-secondary text-body font-medium">
-              Total Cards
+              Total cards
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -78,7 +78,7 @@ export default function NSDeckPage() {
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-label-secondary text-body font-medium">
-              Unique Cards
+              Unique cards
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -89,7 +89,7 @@ export default function NSDeckPage() {
 
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader className="pb-3">
-            <CardTitle className="text-label-secondary text-body font-medium">Deck Value</CardTitle>
+            <CardTitle className="text-label-secondary text-body font-medium">Deck value</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
@@ -135,7 +135,7 @@ export default function NSDeckPage() {
                     ) : (
                       <div className="text-label-secondary flex h-full flex-col items-center justify-center gap-2">
                         <ImageOff className="h-8 w-8" />
-                        <span className="text-footnote">Image Unavailable</span>
+                        <span className="text-footnote">Image unavailable</span>
                       </div>
                     )}
                     <div className="absolute top-2 right-2 flex flex-col items-end gap-2">
@@ -200,7 +200,7 @@ export default function NSDeckPage() {
       {/* Info Card */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
-          <CardTitle>About This Deck</CardTitle>
+          <CardTitle>About this deck</CardTitle>
           <CardDescription>Data pulled from NationStates public API</CardDescription>
         </CardHeader>
         <CardContent className="text-body space-y-2">

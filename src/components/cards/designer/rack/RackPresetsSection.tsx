@@ -77,7 +77,7 @@ export const RackPresetsSection = React.memo(function RackPresetsSection({
         </div>
       ) : (
         <div className="text-label-secondary text-footnote py-1 italic">
-          No saved presets yet. Type a name and save your layout!
+          No saved presets yet. Type a name and save your layout.
         </div>
       )}
     </div>

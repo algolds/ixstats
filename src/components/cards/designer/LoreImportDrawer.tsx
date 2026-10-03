@@ -68,12 +68,12 @@ const SOURCE_CONFIGS: Record<
   },
   iiwiki: {
     name: "IIWiki",
-    label: "IIWiki Lore",
+    label: "IIWiki lore",
     icon: Library,
   },
   stash: {
     name: "My Stash",
-    label: "Saved Stashes",
+    label: "Saved stashes",
     icon: FolderOpen,
   },
 };
@@ -270,10 +270,10 @@ export function LoreImportDrawer({
               onValueChange={(v) => setSelectedStashId(v === "all" ? undefined : v)}
             >
               <SelectTrigger className="text-footnote h-9 w-[180px]">
-                <SelectValue placeholder="All Stashes" />
+                <SelectValue placeholder="All stashes" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Stash Folders</SelectItem>
+                <SelectItem value="all">All stash folders</SelectItem>
                 {searchResults.stashes.map((s) => (
                   <SelectItem key={s.id} value={s.id}>
                     {s.name} ({s.count})
@@ -403,7 +403,7 @@ export function LoreImportDrawer({
                       <div className="flex items-center gap-2">
                         <Coins className="text-label-secondary h-3.5 w-3.5 shrink-0" />
                         <div>
-                          <div className="text-label-secondary text-footnote">Catalog Value</div>
+                          <div className="text-label-secondary text-footnote">Catalog value</div>
                           <div className="text-label flex items-center gap-1 font-medium tabular-nums">
                             <IxCreditsSymbol className="h-3 w-3 shrink-0" />
                             {activeMetadata.marketValue.toLocaleString()}
@@ -439,7 +439,7 @@ export function LoreImportDrawer({
 
                       <div className="min-w-0 flex-1">
                         <div className="text-label text-footnote flex items-center gap-2 font-semibold">
-                          <span>Wiki Article Image Detected</span>
+                          <span>Wiki article image detected</span>
                           <Badge variant="default" className="text-footnote px-2 py-0">
                             Auto-Import
                           </Badge>
@@ -456,9 +456,9 @@ export function LoreImportDrawer({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-label-secondary text-footnote font-medium">
-                        Wikitext Excerpt
+                        Wikitext excerpt
                       </label>
-                      <span className="text-label-secondary text-footnote">MediaWiki Parser</span>
+                      <span className="text-label-secondary text-footnote">MediaWiki parser</span>
                     </div>
 
                     <div className="border-separator bg-surface text-label rounded-control text-footnote max-h-52 overflow-y-auto border p-4 leading-relaxed">
@@ -486,7 +486,7 @@ export function LoreImportDrawer({
                     onClick={() => handleApplyImport(false)}
                     className="text-label-secondary text-footnote"
                   >
-                    Import Text Only
+                    Import text only
                   </Button>
 
                   <div className="flex items-center gap-2">
@@ -499,7 +499,7 @@ export function LoreImportDrawer({
                       className="text-footnote gap-2"
                     >
                       <Check className="h-3.5 w-3.5" />
-                      Import to Card
+                      Import to card
                     </Button>
                   </div>
                 </div>

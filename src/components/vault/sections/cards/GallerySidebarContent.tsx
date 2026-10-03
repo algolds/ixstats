@@ -120,7 +120,7 @@ export function GallerySidebarContent({
           <SelectValue placeholder="Season" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Seasons</SelectItem>
+          <SelectItem value="all">All seasons</SelectItem>
           <SelectItem value="1">Season 1</SelectItem>
           <SelectItem value="2">Season 2</SelectItem>
           <SelectItem value="3">Season 3</SelectItem>
@@ -139,11 +139,11 @@ export function GallerySidebarContent({
           <SelectValue placeholder="Rarity" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">All Rarities</SelectItem>
+          <SelectItem value="all">All rarities</SelectItem>
           <SelectItem value="COMMON">Common</SelectItem>
           <SelectItem value="UNCOMMON">Uncommon</SelectItem>
           <SelectItem value="RARE">Rare</SelectItem>
-          <SelectItem value="ULTRA_RARE">Ultra Rare</SelectItem>
+          <SelectItem value="ULTRA_RARE">Ultra rare</SelectItem>
           <SelectItem value="EPIC">Epic</SelectItem>
           <SelectItem value="LEGENDARY">Legendary</SelectItem>
         </SelectContent>
@@ -161,26 +161,26 @@ export function GallerySidebarContent({
               cteFilter && cteFilter !== "all" && "bg-tint-fill text-tint font-medium"
             )}
           >
-            <SelectValue placeholder="Nation Status" />
+            <SelectValue placeholder="Nation status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Nations</SelectItem>
-            <SelectItem value="cte_only">CTE Nations Only</SelectItem>
-            <SelectItem value="active_only">Active Nations Only</SelectItem>
+            <SelectItem value="all">All nations</SelectItem>
+            <SelectItem value="cte_only">CTE nations only</SelectItem>
+            <SelectItem value="active_only">Active nations only</SelectItem>
           </SelectContent>
         </Select>
       )}
 
       {/* Sort */}
       <div>
-        <p className="text-label-secondary text-eyebrow mb-1">Sort By</p>
+        <p className="text-label-secondary text-eyebrow mb-1">Sort by</p>
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="text-footnote h-7 w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="rarity">Rarity</SelectItem>
-            <SelectItem value="marketValue">Market Value</SelectItem>
+            <SelectItem value="marketValue">Market value</SelectItem>
             <SelectItem value="recent">Recent</SelectItem>
             <SelectItem value="name">Name</SelectItem>
           </SelectContent>

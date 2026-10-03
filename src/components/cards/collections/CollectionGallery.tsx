@@ -151,9 +151,9 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="newest">Newest</SelectItem>
-                <SelectItem value="mostValuable">Most Valuable</SelectItem>
-                <SelectItem value="mostCards">Most Cards</SelectItem>
-                <SelectItem value="topRated">Top Rated</SelectItem>
+                <SelectItem value="mostValuable">Most valuable</SelectItem>
+                <SelectItem value="mostCards">Most cards</SelectItem>
+                <SelectItem value="topRated">Top rated</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -170,7 +170,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-title-2 text-label flex items-center gap-2">
               <Trophy className="text-yellow h-5 w-5" />
-              Top Collections
+              Top collections
             </h2>
             <SegmentedControl
               size="sm"
@@ -227,9 +227,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
           <Grid3x3 className="text-label-tertiary mx-auto mb-4 h-16 w-16" />
           <h3 className="text-title-3 text-label mb-2 font-semibold">No collections found</h3>
           <p className="text-body text-label-secondary">
-            {searchQuery
-              ? "Try adjusting your search query"
-              : "Be the first to create a public collection!"}
+            {searchQuery ? "Try adjusting your search query" : "No public collections yet."}
           </p>
         </div>
       ) : (
@@ -287,7 +285,7 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                       {/* View link */}
                       <div className="text-footnote text-label-secondary hover:text-label flex items-center justify-center pt-2 transition-colors">
                         <Eye className="mr-1 h-3 w-3" />
-                        View Collection
+                        View collection
                       </div>
                     </CardContent>
                   </Card>

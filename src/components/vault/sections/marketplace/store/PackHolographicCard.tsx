@@ -132,8 +132,8 @@ export function PackHolographicCard({
             onClick={(e) => {
               e.stopPropagation();
             }}
-            className="absolute top-3 right-3 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white/80 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/85 active:scale-95"
-            title="View Pack Details"
+            className="absolute top-3 right-3 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white/80 transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:bg-black/85"
+            title="View pack details"
           >
             <Info className="h-3.5 w-3.5" />
           </DialogTrigger>
@@ -150,12 +150,12 @@ export function PackHolographicCard({
                 <span className="text-yellow font-semibold">{pack.priceCredits} Credits</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-label-secondary">Cards Included</span>
+                <span className="text-label-secondary">Cards included</span>
                 <span className="font-semibold">{pack.cardCount} cards</span>
               </div>
               {pack.guaranteedRarity && (
                 <div className="flex justify-between">
-                  <span className="text-label-secondary">Guaranteed Rarity</span>
+                  <span className="text-label-secondary">Guaranteed rarity</span>
                   <span className="text-purple font-semibold">
                     {pack.guaranteedRarity.replace("_", " ")}
                   </span>
@@ -169,7 +169,7 @@ export function PackHolographicCard({
               )}
               {pack.cardType && (
                 <div className="flex justify-between">
-                  <span className="text-label-secondary">Card Type</span>
+                  <span className="text-label-secondary">Card type</span>
                   <span className="font-semibold">{pack.cardType}</span>
                 </div>
               )}

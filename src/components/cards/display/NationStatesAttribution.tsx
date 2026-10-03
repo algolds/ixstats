@@ -46,7 +46,7 @@ export function NationStatesAttribution({
             className="text-red h-auto shrink-0 gap-1 px-0"
           >
             <ShieldAlert className="h-3 w-3 shrink-0" />
-            <span>Verify & Request Takedown</span>
+            <span>Verify & request takedown</span>
           </Button>
         </>
       )}

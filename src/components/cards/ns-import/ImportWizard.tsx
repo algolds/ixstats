@@ -199,7 +199,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
           </p>
 
           <div>
-            <label className="text-subhead text-label-secondary mb-2 block">Nation Name</label>
+            <label className="text-subhead text-label-secondary mb-2 block">Nation name</label>
             <Input
               type="text"
               value={nationName}
@@ -230,7 +230,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
 
               <div>
                 <label className="text-subhead text-label-secondary mb-2 block">
-                  Verification Code
+                  Verification code
                 </label>
                 <Input
                   type="text"
@@ -266,15 +266,15 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-surface-secondary rounded-row p-4">
-              <div className="text-body text-label-secondary">Total Cards</div>
+              <div className="text-body text-label-secondary">Total cards</div>
               <div className="text-title-1 text-label">{deckData.totalCards}</div>
             </div>
             <div className="bg-surface-secondary rounded-row p-4">
-              <div className="text-body text-label-secondary">Unique Cards</div>
+              <div className="text-body text-label-secondary">Unique cards</div>
               <div className="text-title-1 text-label">{deckData.uniqueCards}</div>
             </div>
             <div className="bg-fill-3 rounded-control col-span-2 p-4">
-              <div className="text-body text-label-secondary">Deck Value</div>
+              <div className="text-body text-label-secondary">Deck value</div>
               <div className="text-tint text-title-1">{deckData.deckValue.toFixed(2)} Bank</div>
             </div>
           </div>
@@ -328,7 +328,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
                 className="accent-tint mt-1"
               />
               <div>
-                <div className="text-label font-semibold">Skip Duplicates</div>
+                <div className="text-label font-semibold">Skip duplicates</div>
                 <div className="text-body text-label-secondary">
                   Don't import cards you already own. Faster and cleaner.
                 </div>
@@ -345,7 +345,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
                 className="accent-tint mt-1"
               />
               <div>
-                <div className="text-label font-semibold">Merge Duplicates</div>
+                <div className="text-label font-semibold">Merge duplicates</div>
                 <div className="text-body text-label-secondary">
                   Update existing cards with latest NS data. Recommended for syncing.
                 </div>
@@ -411,20 +411,20 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
 
       {currentStep === "summary" && importResults && (
         <div className="space-y-6">
-          <h2 className="text-title-1 text-label">Step 5: Import Complete!</h2>
+          <h2 className="text-title-1 text-label">Step 5: Import complete</h2>
           <p className="text-label">Your NationStates deck has been successfully imported.</p>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-surface-secondary rounded-row p-4">
-              <div className="text-body text-label-secondary">Cards Imported</div>
+              <div className="text-body text-label-secondary">Cards imported</div>
               <div className="text-title-1 text-green">{importResults.cardsImported}</div>
             </div>
             <div className="bg-surface-secondary rounded-row p-4">
-              <div className="text-body text-label-secondary">Cards Skipped</div>
+              <div className="text-body text-label-secondary">Cards skipped</div>
               <div className="text-title-1 text-label-secondary">{importResults.cardsSkipped}</div>
             </div>
             <div className="bg-fill-3 rounded-control col-span-2 p-4">
-              <div className="text-body text-label-secondary">Bonus Credits Earned</div>
+              <div className="text-body text-label-secondary">Bonus credits earned</div>
               <div className="text-tint text-title-1 flex items-center gap-1">
                 <IxCreditsSymbol className="text-yellow h-6 w-6 shrink-0" />
                 {importResults.bonusCredits}
@@ -433,7 +433,7 @@ export function ImportWizard({ onComplete, onCancel }: ImportWizardProps) {
           </div>
 
           <Button onClick={handleComplete} size="lg" variant="default" className="w-full">
-            View My Collection
+            View my collection
           </Button>
         </div>
       )}

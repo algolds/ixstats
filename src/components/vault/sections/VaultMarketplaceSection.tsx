@@ -16,7 +16,7 @@ import { VaultTradingTab } from "./marketplace/VaultTradingTab";
 type SubTab = "store" | "auctions" | "trading";
 
 const SUB_TABS = [
-  { id: "store" as SubTab, label: "Vault Shop", icon: Store },
+  { id: "store" as SubTab, label: "Vault shop", icon: Store },
   { id: "auctions" as SubTab, label: "Auctions", icon: ShoppingCart },
   { id: "trading" as SubTab, label: "Trading", icon: ArrowRightLeft },
 ];
@@ -51,7 +51,6 @@ export function VaultMarketplaceSection({ initialTab }: VaultMarketplaceSectionP
         activeTab={activeTab}
         onTabChange={handleTabChange}
         maxWidthClass="w-full"
-        layoutId="marketplace-tab-indicator"
       />
 
       {/* Tabs Content */}

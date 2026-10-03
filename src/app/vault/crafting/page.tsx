@@ -50,7 +50,7 @@ export default function VaultCraftingPage() {
     <div className="space-y-4">
       {/* Recipe list */}
       <div className="bg-surface-secondary border-separator rounded-row space-y-2 border p-4">
-        <h3 className="text-headline text-label">Select Crafting Recipe</h3>
+        <h3 className="text-headline text-label">Select crafting recipe</h3>
         <ToggleGroup
           type="single"
           disallowEmpty

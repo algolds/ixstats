@@ -129,7 +129,7 @@ export function StoreItemCard({
               variant="outline"
               className="border-green/35 bg-green/20 text-eyebrow text-green px-1 py-0"
             >
-              {maxPurchases > 1 ? "Maxed Out" : "Owned"}
+              {maxPurchases > 1 ? "Maxed out" : "Owned"}
             </Badge>
           ) : (
             purchaseCount > 0 && (

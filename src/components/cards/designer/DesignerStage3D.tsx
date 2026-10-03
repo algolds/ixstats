@@ -119,7 +119,7 @@ export const DesignerStage3D = React.memo<DesignerStage3DProps>(({ state, classN
       <div className="border-separator bg-surface rounded-card text-footnote shadow-card flex w-full shrink-0 items-center justify-between border p-3">
         <div className="text-label text-footnote flex items-center gap-2 font-semibold">
           <SlidersHorizontal className="text-tint h-3.5 w-3.5" />
-          <span>Card Controls</span>
+          <span>Card controls</span>
         </div>
 
         <div className="flex items-center gap-2">

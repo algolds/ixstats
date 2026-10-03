@@ -40,7 +40,7 @@ export function CollectionCarouselTab({
           <p className="text-label-secondary mb-2">No cards in this collection yet</p>
           <Button size="sm" className="mt-4 text-black">
             <Plus className="mr-2 h-4 w-4" />
-            Add Your First Card
+            Add your first card
           </Button>
         </div>
       ) : (

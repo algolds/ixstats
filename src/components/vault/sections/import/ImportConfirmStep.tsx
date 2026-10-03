@@ -53,7 +53,7 @@ export function ImportConfirmStep({
         >
           <CheckCircle className="text-green h-8 w-8" />
         </motion.div>
-        <h2 className="text-label text-title-1">Nation Verified</h2>
+        <h2 className="text-label text-title-1">Nation verified</h2>
         <p className="text-label-secondary text-body mt-2">
           <span className="text-green font-semibold">{nationName}</span> is confirmed as yours
         </p>
@@ -127,7 +127,7 @@ export function ImportCompleteStep({
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          Import Complete!
+          Import complete
         </motion.h2>
         <motion.p
           className="text-label-secondary text-body mt-1"
@@ -152,7 +152,7 @@ export function ImportCompleteStep({
           <p className="text-large-title text-indigo tabular-nums">
             <NumberFlow value={importResult.cardsImported} />
           </p>
-          <p className="text-label-secondary text-footnote font-semibold">Cards Imported</p>
+          <p className="text-label-secondary text-footnote font-semibold">Cards imported</p>
         </div>
         <div className="bg-tint-fill rounded-row p-5 text-center">
           <Coins className="text-yellow mx-auto mb-2 h-6 w-6" />
@@ -171,7 +171,7 @@ export function ImportCompleteStep({
           transition={{ delay: 0.55 }}
           className="space-y-2"
         >
-          <p className="text-label-secondary text-footnote font-semibold">Your Cards</p>
+          <p className="text-label-secondary text-footnote font-semibold">Your cards</p>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
             {importResult.cards.slice(0, 12).map((card, idx) => (
               <motion.div

@@ -35,7 +35,7 @@ export function StorePurchaseDialog({
       <DialogContent className="border-separator bg-surface rounded-sheet shadow-card max-w-sm p-6">
         <DialogHeader>
           <DialogTitle className="text-label text-title-3 text-center">
-            Confirm Purchase
+            Confirm purchase
           </DialogTitle>
           <DialogDescription className="text-label-secondary text-footnote text-center">
             Are you sure you want to purchase{" "}

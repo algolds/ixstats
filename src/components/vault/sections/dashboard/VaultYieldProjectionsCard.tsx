@@ -47,8 +47,7 @@ export function VaultYieldProjectionsCard({
   socialCapData,
 }: VaultYieldProjectionsCardProps) {
   return (
-    // v2 (c5c6b382): a glass feature card that lifts on hover.
-    <Card variant="hero" padding="lg" className="overflow-hidden">
+    <Card padding="lg" className="overflow-hidden">
       <div className="border-separator mb-5 flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-2">
           <div className="rounded-row border-blue/30 bg-blue/15 text-blue shadow-card flex h-8 w-8 items-center justify-center border">
@@ -94,7 +93,7 @@ export function VaultYieldProjectionsCard({
               <div className="space-y-2">
                 <div className="text-footnote flex items-center justify-between">
                   <span className="text-label-secondary font-medium">Daily treasury yield</span>
-                  <span className="text-blue-ink font-data flex items-center gap-0.5 font-semibold tabular-nums">
+                  <span className="text-blue-ink flex items-center gap-0.5 font-semibold tabular-nums">
                     +<IxCreditsSymbol aria-hidden className="h-3 w-3 shrink-0" />
                     {passiveIncomeData?.dailyDividend
                       ? Math.round(passiveIncomeData.dailyDividend).toLocaleString()
@@ -103,7 +102,7 @@ export function VaultYieldProjectionsCard({
                 </div>
                 <div className="text-footnote flex items-center justify-between">
                   <span className="text-label-secondary font-medium">Weekly treasury yield</span>
-                  <span className="text-label font-data flex items-center gap-0.5 font-semibold tabular-nums">
+                  <span className="text-label flex items-center gap-0.5 font-semibold tabular-nums">
                     ~<IxCreditsSymbol aria-hidden className="h-3 w-3 shrink-0" />
                     {passiveIncomeData?.weeklyDividend
                       ? Math.round(passiveIncomeData.weeklyDividend).toLocaleString()
@@ -112,7 +111,7 @@ export function VaultYieldProjectionsCard({
                 </div>
                 <div className="text-footnote flex items-center justify-between">
                   <span className="text-label-secondary font-medium">Monthly treasury yield</span>
-                  <span className="text-label font-data flex items-center gap-0.5 font-semibold tabular-nums">
+                  <span className="text-label flex items-center gap-0.5 font-semibold tabular-nums">
                     ~<IxCreditsSymbol aria-hidden className="h-3 w-3 shrink-0" />
                     {passiveIncomeData?.monthlyDividend
                       ? Math.round(passiveIncomeData.monthlyDividend).toLocaleString()
@@ -134,14 +133,14 @@ export function VaultYieldProjectionsCard({
                     streak
                   </span>
                   <span className="text-orange-ink font-semibold">
-                    <span className="font-data tabular-nums">{loginStreak}</span> days
+                    <span className="tabular-nums">{loginStreak}</span> days
                   </span>
                 </div>
                 <div className="text-footnote flex items-center justify-between">
                   <span className="text-label-secondary font-medium">Budget multiplier</span>
                   <span
                     className={cn(
-                      "font-data font-semibold tabular-nums",
+                      "font-semibold tabular-nums",
                       budgetMultiplierPercent > 0
                         ? "text-green-ink"
                         : budgetMultiplierPercent < 0
@@ -155,7 +154,7 @@ export function VaultYieldProjectionsCard({
                 </div>
                 <div className="text-footnote flex items-center justify-between">
                   <span className="text-label-secondary font-medium">Tier bonus</span>
-                  <span className="text-yellow-ink font-data font-semibold tabular-nums">
+                  <span className="text-yellow-ink font-semibold tabular-nums">
                     1.{vaultLevel * 5}x
                   </span>
                 </div>
@@ -173,7 +172,7 @@ export function VaultYieldProjectionsCard({
               <div className="space-y-2">
                 <div className="text-footnote flex justify-between font-semibold">
                   <span className="text-label-secondary">Active gameplay</span>
-                  <span className="text-label text-footnote font-data flex items-center gap-0.5 font-semibold tabular-nums">
+                  <span className="text-label text-footnote flex items-center gap-0.5 font-semibold tabular-nums">
                     {activeCapLoading ? (
                       "..."
                     ) : (
@@ -201,7 +200,7 @@ export function VaultYieldProjectionsCard({
               <div className="space-y-2">
                 <div className="text-footnote flex justify-between font-semibold">
                   <span className="text-label-secondary">Social engagement</span>
-                  <span className="text-label text-footnote font-data flex items-center gap-0.5 font-semibold tabular-nums">
+                  <span className="text-label text-footnote flex items-center gap-0.5 font-semibold tabular-nums">
                     {socialCapLoading ? (
                       "..."
                     ) : (

@@ -99,11 +99,11 @@ export function CollectionHeaderStats({
       <CardContent>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="bg-surface-secondary border-separator rounded-control border p-3 sm:p-4">
-            <p className="text-footnote text-label-secondary mb-1">Card Count</p>
+            <p className="text-footnote text-label-secondary mb-1">Card count</p>
             <p className="text-title-2 text-label sm:text-title-1">{stats.cardCount}</p>
           </div>
           <div className="bg-surface-secondary border-separator rounded-control border p-3 sm:p-4">
-            <p className="text-footnote text-label-secondary mb-1">Total Value</p>
+            <p className="text-footnote text-label-secondary mb-1">Total value</p>
             <p className="text-title-2 text-yellow sm:text-title-1 flex items-center gap-1">
               <IxCreditsSymbol className="h-5 w-5 shrink-0" />
               {stats.totalValue.toLocaleString()}

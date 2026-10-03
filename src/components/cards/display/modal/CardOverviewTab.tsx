@@ -142,7 +142,7 @@ export function CardOverviewTab({
           <div className="bg-surface-secondary border-separator rounded-control border p-3">
             <div className="text-label-secondary text-footnote flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
-              Market Value
+              Market value
             </div>
             <div className={cn("text-title-2 mt-1 flex items-baseline gap-1", rarityConfig.color)}>
               <IxCreditsSymbol size="1em" variant="ic" />
@@ -192,7 +192,7 @@ export function CardOverviewTab({
           <div className="bg-surface-secondary border-separator rounded-control border p-3">
             <div className="text-label-secondary text-footnote flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
-              Last Sale
+              Last sale
             </div>
             <div className="text-label text-headline mt-1 flex items-baseline gap-1">
               <IxCreditsSymbol size="0.8em" variant="ic" />
@@ -218,7 +218,7 @@ export function CardOverviewTab({
           <div className="rounded-control border-yellow/20 bg-yellow/5 shadow-card border p-4">
             <div className="text-eyebrow text-yellow mb-2 flex items-center gap-2">
               <ScrollText className="h-4 w-4" />
-              Card Inscription
+              Card inscription
             </div>
             <p className="text-label border-yellow/40 bg-yellow/[0.02] text-body border-l-2 py-1 pl-3 font-medium italic">
               "{card.inscription}"
@@ -274,7 +274,7 @@ export function CardOverviewTab({
             <div className="bg-surface-secondary border-separator rounded-row space-y-3 border p-4">
               <h3 className="text-label text-label-secondary text-eyebrow mb-2 flex items-center gap-2">
                 <Layers className="text-tint h-3.5 w-3.5" />
-                Card Specifications
+                Card specifications
               </h3>
 
               <div className="divide-separator text-footnote space-y-2 divide-y">
@@ -294,7 +294,7 @@ export function CardOverviewTab({
                 )}
 
                 <div className="flex items-center justify-between pt-2">
-                  <span className="text-label-secondary font-medium">Tier & Season</span>
+                  <span className="text-label-secondary font-medium">Tier & season</span>
                   <div className="inline-flex items-center gap-2">
                     <RarityBadge rarity={card.rarity} size="small" />
                     <span className="text-label font-semibold">Season {card.season}</span>
@@ -303,7 +303,7 @@ export function CardOverviewTab({
 
                 {isLoreCard && (
                   <div className="flex items-center justify-between pt-2">
-                    <span className="text-label-secondary font-medium">Wiki Archive</span>
+                    <span className="text-label-secondary font-medium">Wiki archive</span>
                     {isIIWiki ? (
                       <IIWikiBadge size="sm" />
                     ) : (
@@ -316,7 +316,7 @@ export function CardOverviewTab({
 
                 {wikiAuthor && (
                   <div className="flex items-center justify-between pt-2">
-                    <span className="text-label-secondary font-medium">Wiki Author</span>
+                    <span className="text-label-secondary font-medium">Wiki author</span>
                     <span
                       className="text-label max-w-[200px] truncate font-semibold"
                       title={wikiAuthor}
@@ -349,7 +349,7 @@ export function CardOverviewTab({
               onClick={() => onViewCollection(card.countryId!)}
               className="col-span-2"
             >
-              View Collection
+              View collection
             </Button>
           )}
         </div>

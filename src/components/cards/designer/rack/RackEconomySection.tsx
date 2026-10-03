@@ -34,7 +34,7 @@ export const RackEconomySection = React.memo(function RackEconomySection({
       <div className="flex items-center justify-between pt-1">
         <div>
           <span className="text-label text-footnote block font-medium">
-            Limited Supply Print Run
+            Limited supply print run
           </span>
           <span className="text-label-secondary text-footnote">
             Cap total prints in circulation
@@ -57,7 +57,7 @@ export const RackEconomySection = React.memo(function RackEconomySection({
       {state.isLimitedSupply && (
         <div>
           <label className="text-label-secondary text-footnote mb-1 block font-medium">
-            Total Supply Cap
+            Total supply cap
           </label>
           <Input
             type="number"

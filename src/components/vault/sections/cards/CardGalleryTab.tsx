@@ -223,12 +223,12 @@ export function CardGalleryTab({
         <Card className="flex flex-col gap-6 py-6">
           <CardContent className="flex flex-col items-center justify-center py-8">
             <Globe className="text-label-tertiary mb-3 h-10 w-10" />
-            <p className="text-label text-headline mb-1">No Cards Found</p>
+            <p className="text-label text-headline mb-1">No cards found</p>
             <p className="text-label-secondary text-footnote max-w-md text-center">
               {search || rarity !== "all" || season !== "all"
                 ? "Try adjusting your filters"
                 : source === "lore"
-                  ? "No lore cards yet. Request one from a wiki article!"
+                  ? "No lore cards yet. Request one from a wiki article."
                   : "No cards in the gallery yet."}
             </p>
           </CardContent>
@@ -266,7 +266,7 @@ export function CardGalleryTab({
                 ) : (
                   <ChevronDown className="mr-2 h-3.5 w-3.5" />
                 )}
-                Load More
+                Load more
               </Button>
             )}
           </div>

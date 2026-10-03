@@ -4,10 +4,6 @@ import { useRecentActivity } from "~/hooks/vault/useRecentActivity";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
-import {
-  getRarityGlowRgba as getRarityGlow,
-  getRarityBorderRgba as getRarityBorder,
-} from "~/lib/cards/display-utils";
 import { VaultParticleExplosionModal } from "~/components/vault/VaultParticleExplosionModal";
 import type { CardInstance } from "~/types/cards-display";
 import { VaultNetWorthCard } from "./dashboard/VaultNetWorthCard";
@@ -214,15 +210,13 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
           userCountryId={userData?.countryId}
           totalCards={stats?.totalCards ?? 0}
           creditsBalance={balanceData?.credits ?? 0}
-          getRarityGlow={getRarityGlow}
-          getRarityBorder={getRarityBorder}
         />
       </div>
 
       <VaultParticleExplosionModal
         open={showCoinExplosion}
-        title="Daily Bonus Claimed!"
-        subtitle="Added to Vault Balance"
+        title="Daily bonus claimed"
+        subtitle="Added to Vault balance"
         amount={claimedBonusAmount}
         icon={<div className="text-large-title animate-bounce">🎁</div>}
       />
