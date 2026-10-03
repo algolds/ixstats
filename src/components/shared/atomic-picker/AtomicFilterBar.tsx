@@ -51,188 +51,83 @@ import {
 } from "~/components/ui/select";
 import type { AtomicTemplate } from "./types";
 
-const DEFAULT_CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  // Government categories (exact strings from ATOMIC_COMPONENTS)
-  administration: Building,
-  crisis: ShieldAlert,
-  cultural: Palette,
-  culture: Palette,
-  diplomacy: Globe,
-  economic: BarChart3,
-  environment: Leaf,
-  general: Grid,
-  governance: Crown,
-  innovation: Lightbulb,
-  legal: Scale,
-  legitimacy: ShieldCheck,
-  planning: Strategy,
-  process: Cpu,
-  security: Shield,
-  social: Users,
-  technology: ModernTv,
+type CategoryIcon = React.ComponentType<{ className?: string }>;
 
-  // Government categories (exact strings from COMPONENT_CATEGORIES)
-  "power distribution": Crown,
-  "decision process": Cpu,
-  "legitimacy sources": ShieldCheck,
-  institutions: Landmark,
-  "control mechanisms": Key,
-  "administrative efficiency": Building,
-  "social policy": Users,
-  "international relations": Globe,
-  "innovation & development": Lightbulb,
-  "crisis management": ShieldAlert,
+/** Exact category names (government, economic, tax and common aliases) per icon. */
+const ICON_CATEGORIES: Array<[CategoryIcon, string[]]> = [
+  [Building, ["administration", "administrative efficiency", "infrastructure"]],
+  [ShieldAlert, ["crisis", "crisis management"]],
+  [Palette, ["cultural", "culture"]],
+  [Globe, ["diplomacy", "international relations", "trade policy", "foreign"]],
+  [BarChart3, ["economic", "economic model", "revenue strategies"]],
+  [Leaf, ["environment", "resource management"]],
+  [Grid, ["general"]],
+  [Crown, ["governance", "power distribution"]],
+  [Lightbulb, ["innovation", "innovation & development"]],
+  [Scale, ["legal", "judiciary", "justice", "law", "courts"]],
+  [ShieldCheck, ["legitimacy", "legitimacy sources", "compliance systems"]],
+  [Strategy, ["planning"]],
+  [Cpu, ["process", "decision process"]],
+  [Shield, ["security", "defense", "military"]],
+  [Users, ["social", "social policy", "labor system", "welfare"]],
+  [ModernTv, ["technology", "digital"]],
+  [Landmark, ["institutions", "fiscal policy", "finance", "financial"]],
+  [Key, ["control mechanisms"]],
+  [Factory, ["sector focus"]],
+  [Coins, ["monetary policy", "collection methods", "taxes", "tax", "taxation"]],
+  [Sparks, ["incentive structures"]],
+  [Heart, ["health", "healthcare"]],
+  [GraduationCap, ["education"]],
+  [Zap, ["energy"]],
+];
 
-  // Economic categories (exact strings from COMPONENT_CATEGORIES & types)
-  "economic model": BarChart3,
-  "sector focus": Factory,
-  "labor system": Users,
-  "trade policy": Globe,
-  "resource management": Leaf,
-  "monetary policy": Coins,
-  "fiscal policy": Landmark,
+const DEFAULT_CATEGORY_ICONS: Record<string, CategoryIcon> = Object.fromEntries(
+  ICON_CATEGORIES.flatMap(([icon, names]) => names.map((name) => [name, icon]))
+);
 
-  // Tax categories (exact strings from ATOMIC_TAX_COMPONENTS)
-  "collection methods": Coins,
-  "revenue strategies": BarChart3,
-  "compliance systems": ShieldCheck,
-  "incentive structures": Sparks,
-
-  // Common variations and aliases
-  defense: Shield,
-  military: Shield,
-  judiciary: Scale,
-  justice: Scale,
-  law: Scale,
-  courts: Scale,
-  health: Heart,
-  healthcare: Heart,
-  education: GraduationCap,
-  energy: Zap,
-  finance: Landmark,
-  financial: Landmark,
-  taxes: Coins,
-  tax: Coins,
-  taxation: Coins,
-  infrastructure: Building,
-  welfare: Users,
-  digital: ModernTv,
-  foreign: Globe,
-};
+/** Fallback by substring, first match wins. */
+const KEYWORD_ICONS: Array<[CategoryIcon, string[]]> = [
+  [Coins, ["tax", "coin", "currenc", "monet"]],
+  [BarChart3, ["econ", "financ", "fiscal", "revenu"]],
+  [Crown, ["gov", "crown", "power"]],
+  [Building, ["admin", "bureau", "infrastruct"]],
+  [ShieldAlert, ["crisis", "emergenc", "alert", "disast"]],
+  [Shield, ["secur", "defen", "milit"]],
+  [Scale, ["legal", "law", "justic", "judic", "court"]],
+  [ShieldCheck, ["legitim", "complian", "verif"]],
+  [Key, ["control", "key", "lock"]],
+  [Users, ["social", "labor", "worker", "peopl", "welfar"]],
+  [Globe, ["diplo", "relat", "foreign", "globe", "trade"]],
+  [Lightbulb, ["innov", "develop", "research", "scienc"]],
+  [ModernTv, ["tech", "digit", "cyber", "comput"]],
+  [Palette, ["cultur", "art", "herit"]],
+  [Strategy, ["plan", "strat", "goal", "target"]],
+  [Leaf, ["resourc", "environ", "ecolog", "green"]],
+  [Factory, ["sector", "indust", "manufact"]],
+  [Cpu, ["process", "system", "decis"]],
+  [Heart, ["health", "medic"]],
+  [GraduationCap, ["educat", "school"]],
+  [Sparks, ["incent", "bonus", "spark"]],
+  [Landmark, ["institut", "bank"]],
+];
 
 /**
- * Resolves an icon for any category string.
- * Supports caller overrides, exact matching, punctuation-tolerant lookup,
- * semantic keyword heuristic, and guaranteed contextual fallback.
+ * Resolves an icon for any category string: caller overrides, exact name, punctuation-tolerant
+ * name, then a keyword heuristic, with a guaranteed fallback so no pill renders without an icon.
  */
 function resolveCategoryIcon(
   category: string,
-  customIcons?: Record<string, React.ComponentType<{ className?: string }>>
-): React.ComponentType<{ className?: string }> {
-  if (customIcons?.[category]) return customIcons[category];
-
+  customIcons?: Record<string, CategoryIcon>
+): CategoryIcon {
   const lower = category.toLowerCase().trim();
-  if (customIcons?.[lower]) return customIcons[lower];
-
-  // Exact match
-  if (DEFAULT_CATEGORY_ICONS[lower]) return DEFAULT_CATEGORY_ICONS[lower];
-
-  // Normalized punctuation
-  const cleanKey = lower.replace(/[^a-z0-9\s]/g, "").trim();
-  if (DEFAULT_CATEGORY_ICONS[cleanKey]) return DEFAULT_CATEGORY_ICONS[cleanKey];
-
-  // Semantic keyword heuristics
-  if (
-    lower.includes("tax") ||
-    lower.includes("coin") ||
-    lower.includes("currenc") ||
-    lower.includes("monet")
-  )
-    return Coins;
-  if (
-    lower.includes("econ") ||
-    lower.includes("financ") ||
-    lower.includes("fiscal") ||
-    lower.includes("revenu")
-  )
-    return BarChart3;
-  if (lower.includes("gov") || lower.includes("crown") || lower.includes("power")) return Crown;
-  if (lower.includes("admin") || lower.includes("bureau") || lower.includes("infrastruct"))
-    return Building;
-  if (
-    lower.includes("crisis") ||
-    lower.includes("emergenc") ||
-    lower.includes("alert") ||
-    lower.includes("disast")
-  )
-    return ShieldAlert;
-  if (lower.includes("secur") || lower.includes("defen") || lower.includes("milit")) return Shield;
-  if (
-    lower.includes("legal") ||
-    lower.includes("law") ||
-    lower.includes("justic") ||
-    lower.includes("judic") ||
-    lower.includes("court")
-  )
-    return Scale;
-  if (lower.includes("legitim") || lower.includes("complian") || lower.includes("verif"))
-    return ShieldCheck;
-  if (lower.includes("control") || lower.includes("key") || lower.includes("lock")) return Key;
-  if (
-    lower.includes("social") ||
-    lower.includes("labor") ||
-    lower.includes("worker") ||
-    lower.includes("peopl") ||
-    lower.includes("welfar")
-  )
-    return Users;
-  if (
-    lower.includes("diplo") ||
-    lower.includes("relat") ||
-    lower.includes("foreign") ||
-    lower.includes("globe") ||
-    lower.includes("trade")
-  )
-    return Globe;
-  if (
-    lower.includes("innov") ||
-    lower.includes("develop") ||
-    lower.includes("research") ||
-    lower.includes("scienc")
-  )
-    return Lightbulb;
-  if (
-    lower.includes("tech") ||
-    lower.includes("digit") ||
-    lower.includes("cyber") ||
-    lower.includes("comput")
-  )
-    return ModernTv;
-  if (lower.includes("cultur") || lower.includes("art") || lower.includes("herit")) return Palette;
-  if (
-    lower.includes("plan") ||
-    lower.includes("strat") ||
-    lower.includes("goal") ||
-    lower.includes("target")
-  )
-    return Strategy;
-  if (
-    lower.includes("resourc") ||
-    lower.includes("environ") ||
-    lower.includes("ecolog") ||
-    lower.includes("green")
-  )
-    return Leaf;
-  if (lower.includes("sector") || lower.includes("indust") || lower.includes("manufact"))
-    return Factory;
-  if (lower.includes("process") || lower.includes("system") || lower.includes("decis")) return Cpu;
-  if (lower.includes("health") || lower.includes("medic")) return Heart;
-  if (lower.includes("educat") || lower.includes("school")) return GraduationCap;
-  if (lower.includes("incent") || lower.includes("bonus") || lower.includes("spark")) return Sparks;
-  if (lower.includes("institut") || lower.includes("bank")) return Landmark;
-
-  // Ultimate fallback guarantees no pill renders without an icon
-  return Tag;
+  return (
+    customIcons?.[category] ??
+    customIcons?.[lower] ??
+    DEFAULT_CATEGORY_ICONS[lower] ??
+    DEFAULT_CATEGORY_ICONS[lower.replace(/[^a-z0-9\s]/g, "").trim()] ??
+    KEYWORD_ICONS.find(([, keywords]) => keywords.some((k) => lower.includes(k)))?.[0] ??
+    Tag
+  );
 }
 
 interface AtomicFilterBarProps<TType extends string = string> {
@@ -242,7 +137,7 @@ interface AtomicFilterBarProps<TType extends string = string> {
   selectedCategory: string | null;
   onCategoryChange: (category: string | null) => void;
   categoryCounts?: Record<string, number>;
-  categoryIcons?: Record<string, React.ComponentType<{ className?: string }>>;
+  categoryIcons?: Record<string, CategoryIcon>;
   templates?: AtomicTemplate<TType>[];
   onTemplateSelect?: (templateId: string) => void;
   searchPlaceholder?: string;
@@ -268,7 +163,7 @@ export const AtomicFilterBar = React.memo(function AtomicFilterBar<TType extends
     key: string,
     value: string | null,
     label: string,
-    Icon: React.ComponentType<{ className?: string }>,
+    Icon: CategoryIcon,
     count: number
   ) => (
     <Toggle
