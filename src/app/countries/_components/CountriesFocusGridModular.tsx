@@ -45,26 +45,6 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
 }) => {
   const visibleCountries = countries.slice(0, visibleCount);
 
-  const loadMore = React.useCallback(() => {
-    if (onLoadMore) {
-      onLoadMore();
-    }
-  }, [onLoadMore]);
-
-  const handleHoverToggle = React.useCallback(
-    (index: number | null) => {
-      setHovered(index);
-    },
-    [setHovered]
-  );
-
-  const handleExpandToggle = React.useCallback(
-    (index: number | null) => {
-      setExpanded(index);
-    },
-    [setExpanded]
-  );
-
   const isAnyHovered = hovered !== null;
   const isAnyExpanded = expanded !== null;
 
@@ -99,8 +79,8 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
                 isExpanded={isExpanded}
                 isOtherHovered={isOtherHovered}
                 isOtherExpanded={isOtherExpanded}
-                onHoverToggle={handleHoverToggle}
-                onExpandToggle={handleExpandToggle}
+                onHoverToggle={setHovered}
+                onExpandToggle={setExpanded}
                 onCountryClick={onCountryClick}
                 viewerCountryId={viewerCountryId}
               />
@@ -109,7 +89,6 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
         })}
       </div>
 
-      {/* Loading placeholders */}
       {(isLoading || visibleCount < countries.length) && (
         <div className="mt-12">
           <ProgressiveBlur>
@@ -133,7 +112,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
 
       {!isLoading && visibleCount < countries.length && (
         <div className="mt-12 text-center">
-          <Button type="button" size="lg" onClick={loadMore}>
+          <Button type="button" size="lg" onClick={onLoadMore}>
             Load more countries
           </Button>
         </div>

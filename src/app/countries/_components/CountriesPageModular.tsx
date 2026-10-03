@@ -18,12 +18,6 @@ interface CountriesPageModularProps {
   viewerCountryId?: string;
 }
 
-const SORT_OPTIONS = ["random", "name", "population", "gdp", "gdpPerCapita", "tier"] as const;
-type SortOption = (typeof SORT_OPTIONS)[number];
-
-const FILTER_OPTIONS = ["all", "developed", "developing", "superpower"] as const;
-type FilterOption = (typeof FILTER_OPTIONS)[number];
-
 export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   countries,
   isLoading = false,
@@ -35,11 +29,9 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
 }) => {
   const [hovered, setHovered] = useState<number | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
-  const [sortBy] = useState<SortOption>("random");
-  const [filterBy, setFilterBy] = useState<FilterOption>("all");
   const [visibleCount, setVisibleCount] = useState(12);
   const [searchInput, setSearchInput] = useState(searchQuery);
-  const [randomSeed] = useState(Date.now());
+  const [randomSeed] = useState(Date.now);
   const [continentFilter, setContinentFilter] = useState<string | null>(null);
   const [tierFilter, setTierFilter] = useState<TierFilter>("all");
 
@@ -57,98 +49,30 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
     window.location.href = createAbsoluteUrl(`/countries/${slug}`);
   }, []);
 
-  // Filter and sort countries (cloning to prevent prop array mutation)
+  // Filtered and shuffled by a per-visit seed (filter returns a new array, so props are not mutated).
   const processedCountries = useMemo(() => {
-    let result = [...countries];
+    const query = searchQuery.toLowerCase();
+    const seededHash = (id: string) =>
+      (id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) + randomSeed) % 10000;
 
-    // Apply continent filter
-    if (continentFilter) {
-      result = result.filter((c) => (c.continent || "Unknown") === continentFilter);
-    }
-
-    // Apply economic tier filter
-    if (tierFilter !== "all") {
-      result = result.filter((c) => matchesTierFilter(c.economicTier, tierFilter));
-    }
-
-    // Apply filters
-    if (filterBy !== "all") {
-      result = result.filter((country) => {
-        switch (filterBy) {
-          case "developed":
-            return ["Developed", "Healthy", "Strong", "Very Strong", "Extravagant"].includes(
-              country.economicTier
-            );
-          case "developing":
-            return ["Impoverished", "Developing"].includes(country.economicTier);
-          case "superpower":
-            return country.currentTotalGdp > 5e12; // $5T+ GDP
-          default:
-            return true;
-        }
-      });
-    }
-
-    // Apply search filter
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (country) =>
-          country.name.toLowerCase().includes(q) ||
-          country.economicTier.toLowerCase().includes(q) ||
-          (country.continent && country.continent.toLowerCase().includes(q)) ||
-          (country.region && country.region.toLowerCase().includes(q))
-      );
-    }
-
-    // Apply sorting
-    if (sortBy === "random") {
-      result.sort((a, b) => {
-        const aHash =
-          (a.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) + randomSeed) % 10000;
-        const bHash =
-          (b.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) + randomSeed) % 10000;
-        return aHash - bHash;
-      });
-    } else {
-      const tierOrder: readonly string[] = [
-        "Extravagant",
-        "Very Strong",
-        "Strong",
-        "Healthy",
-        "Developed",
-        "Developing",
-        "Impoverished",
-      ];
-      result.sort((a, b) => {
-        switch (sortBy) {
-          case "population":
-            return b.currentPopulation - a.currentPopulation;
-          case "gdp":
-            return b.currentTotalGdp - a.currentTotalGdp;
-          case "gdpPerCapita":
-            return b.currentGdpPerCapita - a.currentGdpPerCapita;
-          case "tier":
-            return tierOrder.indexOf(a.economicTier) - tierOrder.indexOf(b.economicTier);
-          default:
-            return a.name.localeCompare(b.name);
-        }
-      });
-    }
-
-    return result;
-  }, [countries, continentFilter, tierFilter, filterBy, searchQuery, sortBy, randomSeed]);
+    return countries
+      .filter((c) => !continentFilter || (c.continent || "Unknown") === continentFilter)
+      .filter((c) => tierFilter === "all" || matchesTierFilter(c.economicTier, tierFilter))
+      .filter(
+        (c) =>
+          !query ||
+          [c.name, c.economicTier, c.continent, c.region].some((field) =>
+            field?.toLowerCase().includes(query)
+          )
+      )
+      .sort((a, b) => seededHash(a.id) - seededHash(b.id));
+  }, [countries, continentFilter, tierFilter, searchQuery, randomSeed]);
 
   // Feeling lucky: open a random country from the current results
-  const handleImFeelingLucky = useCallback(() => {
-    if (processedCountries.length > 0) {
-      const randomIndex = Math.floor(Math.random() * processedCountries.length);
-      const randomCountry = processedCountries[randomIndex];
-      if (randomCountry) {
-        handleCountryClick(randomCountry.id, randomCountry.name);
-      }
-    }
-  }, [processedCountries, handleCountryClick]);
+  const handleImFeelingLucky = () => {
+    const pick = processedCountries[Math.floor(Math.random() * processedCountries.length)];
+    if (pick) handleCountryClick(pick.id, pick.name);
+  };
 
   // Key handler and clickaway for expanded cards
   useEffect(() => {
@@ -197,7 +121,6 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
 
   const handleClearFilters = useCallback(() => {
     setSearchInput("");
-    setFilterBy("all");
     setContinentFilter(null);
     setTierFilter("all");
   }, []);
