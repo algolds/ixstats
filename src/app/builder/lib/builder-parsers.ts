@@ -2,6 +2,17 @@
  * Parser and normalization utilities for the Atomic Country Builder.
  */
 
+import { cleanWikiValue } from "~/lib/wiki-os/transformers/infobox-parser";
+
+/** The first infobox value that still has text once wiki markup and HTML are stripped. */
+export function firstPlainText(...values: Array<string | null | undefined>): string {
+  for (const value of values) {
+    const text = value ? cleanWikiValue(value) : "";
+    if (text) return text;
+  }
+  return "";
+}
+
 /** Parse numeric values like "$1.2 trillion", "€45,000", "10 million", "1234567" */
 export function parseWikiNumericValue(
   value: string | number | null | undefined

@@ -144,13 +144,15 @@ export function cleanWikiValue(raw: string): string {
   s = s.replace(/'{2,3}/g, "");
   // Strip remaining templates (but keep their first arg for simple ones)
   s = s.replace(/\{\{[^}]*\}\}/g, "");
-  // HTML tags
+  // Line breaks separate values; other HTML tags carry no text
+  s = s.replace(/<br\s*\/?>/gi, ", ");
   s = s.replace(/<[^>]+>/g, "");
   // &nbsp; etc
   s = s.replace(/&\w+;/g, " ");
   // Collapse whitespace
   s = s.replace(/\s+/g, " ").trim();
-  return s;
+  // Adjacent or trailing breaks leave dangling separators
+  return s.replace(/\s*,(?:\s*,)+/g, ",").replace(/^(?:,\s*)+|(?:\s*,)+$/g, "");
 }
 
 /** Known field names and their semantic types */

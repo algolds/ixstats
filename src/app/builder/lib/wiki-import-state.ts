@@ -4,7 +4,7 @@ import type { NationalIdentityData } from "~/types/builder";
 import type { ComponentType } from "~/lib/enums";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import type { BuilderState } from "../hooks/builderStateTypes";
-import { normalizeGovernmentType, parseWikiNumericValue } from "./builder-parsers";
+import { firstPlainText, normalizeGovernmentType, parseWikiNumericValue } from "./builder-parsers";
 import { STARTING_EMPLOYMENT_TYPE, STARTING_SECTOR_DISTRIBUTION } from "./default-labor-market";
 import { createDefaultEconomicInputs } from "./economy-data-service";
 
@@ -122,7 +122,7 @@ const economicTierFor = (gdpPerCapita: number): EconomyBuilderState["structure"]
 function buildIdentity(wiki: WikiImportPayload): NationalIdentityData {
   const identity = { ...BLANK_IDENTITY };
   for (const [field, ...keys] of IDENTITY_SOURCES) {
-    const value = keys.map((key) => wiki[key]).find(Boolean);
+    const value = firstPlainText(...keys.map((key) => wiki[key]));
     if (value) Reflect.set(identity, field, value);
   }
   if (wiki.government_type) identity.governmentType = normalizeGovernmentType(wiki.government_type);
@@ -227,9 +227,9 @@ function buildGovernmentStructure(
       governmentType: (wiki.government_type
         ? normalizeGovernmentType(wiki.government_type)
         : "Other") as GovernmentType,
-      headOfState: wiki.head_of_state || "",
-      headOfGovernment: wiki.head_of_government || "",
-      legislatureName: wiki.legislature || wiki.upper_house || "",
+      headOfState: firstPlainText(wiki.head_of_state),
+      headOfGovernment: firstPlainText(wiki.head_of_government),
+      legislatureName: firstPlainText(wiki.legislature, wiki.upper_house),
       executiveName: "",
       judicialName: "",
       totalBudget: nominalGDP * 0.35,
