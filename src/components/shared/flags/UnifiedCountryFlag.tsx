@@ -151,8 +151,7 @@ export function UnifiedCountryFlag({
   }
 
   // Success state - show the flag
-  // oxlint-disable-next-line
-  const FlagImage = () => (
+  const flagImage = (
     <img
       src={flagUrl}
       alt={`Flag of ${countryName}`}
@@ -180,7 +179,7 @@ export function UnifiedCountryFlag({
         aria-label={`Flag of ${countryName}`}
         className={cn("relative", fitContainer && "h-full w-full")}
       >
-        <FlagImage />
+        {flagImage}
         {/* Visual indicator for local files */}
         {isLocal && size !== "xs" && (
           <div
@@ -192,7 +191,7 @@ export function UnifiedCountryFlag({
     );
   }
 
-  return <FlagImage />;
+  return flagImage;
 }
 
 // Convenience components for common use cases
