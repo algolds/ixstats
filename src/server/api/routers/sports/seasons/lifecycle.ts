@@ -34,7 +34,69 @@ function uncollectedMatches(
   });
 }
 
-// ─── Router ───────────────────────────────────────────────────────────────────
+const TEAM_BADGE = {
+  select: { id: true, name: true, shortName: true, color: true, logo: true, wikiSlug: true },
+} as const;
+
+type TraceEvent = { actorId?: string; actorName?: string; type?: string; description?: unknown };
+
+/** Rebuild per-player goals/assists/shots from a match trace when no stored player stats exist. */
+async function playerStatsFromTrace(db: PrismaClient, matchId: string, trace: TraceEvent[]) {
+  const playerMap = new Map<string, { goals: number; assists: number; shots: number }>();
+  const actorNames = new Map<string, string>();
+
+  for (const event of trace) {
+    const actorId = event.actorId;
+    if (!actorId) continue;
+
+    if (event.actorName) actorNames.set(actorId, event.actorName);
+    const pStat = playerMap.get(actorId) ?? { goals: 0, assists: 0, shots: 0 };
+    playerMap.set(actorId, pStat);
+
+    if (event.type === "goal") {
+      pStat.goals++;
+    } else if (
+      event.type === "tactic_shift" &&
+      typeof event.description === "string" &&
+      event.description.toLowerCase().includes("shot")
+    ) {
+      pStat.shots++;
+    }
+  }
+
+  // Assign assists to teammates
+  trace.forEach((event, i) => {
+    if (event.type !== "goal" || !event.actorId) return;
+    const candidates = Array.from(playerMap.keys()).filter((id) => id !== event.actorId);
+    if (candidates.length > 0) {
+      playerMap.get(candidates[(i * 7) % candidates.length]!)!.assists++;
+    }
+  });
+
+  const playerIds = Array.from(playerMap.keys());
+  const dbPlayers = await db.sportPlayer.findMany({
+    where: { id: { in: playerIds } },
+    select: { id: true, firstName: true, lastName: true, position: true },
+  });
+  const dbPlayersMap = new Map(dbPlayers.map((p) => [p.id, p]));
+
+  return playerIds.map((id) => {
+    const dbPlayer = dbPlayersMap.get(id);
+    const parts = (actorNames.get(id) || "Player").split(" ");
+    return {
+      id: `temp-${id}`,
+      matchId,
+      playerId: id,
+      stats: playerMap.get(id) || { goals: 0, assists: 0, shots: 0 },
+      createdAt: new Date(),
+      player: {
+        firstName: dbPlayer?.firstName || parts[0] || "Unknown",
+        lastName: dbPlayer?.lastName || parts.slice(1).join(" ") || "Player",
+        position: dbPlayer?.position || "MID",
+      },
+    } as any;
+  });
+}
 
 export const sportsSeasonsLifecycleRouter = createTRPCRouter({
   // ═══ Team Management ═════════════════════════════════════════════════════════
@@ -207,41 +269,14 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
           },
           standings: {
             include: {
-              team: {
-                select: {
-                  id: true,
-                  name: true,
-                  shortName: true,
-                  color: true,
-                  logo: true,
-                  wikiSlug: true,
-                },
-              },
+              team: TEAM_BADGE,
             },
             orderBy: [{ points: "desc" }, { pointsFor: "desc" }],
           },
           matches: {
             include: {
-              homeTeam: {
-                select: {
-                  id: true,
-                  name: true,
-                  shortName: true,
-                  color: true,
-                  logo: true,
-                  wikiSlug: true,
-                },
-              },
-              awayTeam: {
-                select: {
-                  id: true,
-                  name: true,
-                  shortName: true,
-                  color: true,
-                  logo: true,
-                  wikiSlug: true,
-                },
-              },
+              homeTeam: TEAM_BADGE,
+              awayTeam: TEAM_BADGE,
             },
             orderBy: [{ matchDay: "asc" }, { scheduledIxTime: "asc" }],
           },
@@ -276,26 +311,8 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
         const match = await ctx.db.sportMatch.findUnique({
           where: { id: input.matchId },
           include: {
-            homeTeam: {
-              select: {
-                id: true,
-                name: true,
-                shortName: true,
-                logo: true,
-                color: true,
-                wikiSlug: true,
-              },
-            },
-            awayTeam: {
-              select: {
-                id: true,
-                name: true,
-                shortName: true,
-                logo: true,
-                color: true,
-                wikiSlug: true,
-              },
-            },
+            homeTeam: TEAM_BADGE,
+            awayTeam: TEAM_BADGE,
             season: {
               select: {
                 id: true,
@@ -330,78 +347,7 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
         const trace = stats?.trace as any[];
 
         if (playerStats.length === 0 && Array.isArray(trace) && trace.length > 0) {
-          const playerMap = new Map<string, { goals: number; assists: number; shots: number }>();
-          const actorNames = new Map<string, string>();
-
-          for (let i = 0; i < trace.length; i++) {
-            const event = trace[i];
-            const actorId = event.actorId;
-            if (!actorId) continue;
-
-            if (event.actorName) {
-              actorNames.set(actorId, event.actorName);
-            }
-
-            if (!playerMap.has(actorId)) {
-              playerMap.set(actorId, { goals: 0, assists: 0, shots: 0 });
-            }
-
-            const pStat = playerMap.get(actorId)!;
-
-            if (event.type === "goal") {
-              pStat.goals++;
-            } else if (
-              event.type === "tactic_shift" &&
-              typeof event.description === "string" &&
-              event.description.toLowerCase().includes("shot")
-            ) {
-              pStat.shots++;
-            }
-          }
-
-          // Assign assists to teammates
-          for (let i = 0; i < trace.length; i++) {
-            const event = trace[i];
-            if (event.type === "goal" && event.actorId) {
-              const scorerId = event.actorId;
-              const candidates = Array.from(playerMap.keys()).filter((id) => id !== scorerId);
-              if (candidates.length > 0) {
-                const idx = (i * 7) % candidates.length;
-                const candidateId = candidates[idx];
-                playerMap.get(candidateId)!.assists++;
-              }
-            }
-          }
-
-          const playerIds = Array.from(playerMap.keys());
-          const dbPlayers = await ctx.db.sportPlayer.findMany({
-            where: { id: { in: playerIds } },
-            select: { id: true, firstName: true, lastName: true, position: true },
-          });
-
-          const dbPlayersMap = new Map(dbPlayers.map((p) => [p.id, p]));
-
-          playerStats = playerIds.map((id) => {
-            const dbPlayer = dbPlayersMap.get(id);
-            const fullName = actorNames.get(id) || "Player";
-            const parts = fullName.split(" ");
-            const firstName = dbPlayer?.firstName || parts[0] || "Unknown";
-            const lastName = dbPlayer?.lastName || parts.slice(1).join(" ") || "Player";
-            const position = dbPlayer?.position || "MID";
-
-            return {
-              id: `temp-${id}`,
-              matchId: input.matchId,
-              playerId: id,
-              stats: playerMap.get(id) || { goals: 0, assists: 0, shots: 0 },
-              createdAt: new Date(),
-              player: {
-                firstName,
-                lastName,
-                position,
-              },
-            } as any;
-          });
+          playerStats = await playerStatsFromTrace(ctx.db, input.matchId, trace);
         }
 
         return {
