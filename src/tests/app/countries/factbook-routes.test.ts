@@ -6,7 +6,6 @@ import {
   factbookSectionHref,
   hashToFactbookRoute,
 } from "~/lib/country/factbook-routes";
-import { calculateVitalityData } from "~/app/countries/[slug]/_utils/countryDataTransformers";
 
 describe("Factbook Routing Utilities", () => {
   it("defines exactly 5 canonical factbook sections", () => {
@@ -46,47 +45,5 @@ describe("Factbook Routing Utilities", () => {
     expect(hashToFactbookRoute("#dossier")).toBe("/dossier");
     expect(hashToFactbookRoute("#activity")).toBe("/activity");
     expect(hashToFactbookRoute("#unknown")).toBe("/factbook");
-  });
-});
-
-describe("Country Vitality Calculation", () => {
-  it("calculates vitality metrics for high-tier nation", () => {
-    const result = calculateVitalityData({
-      economicTier: "Extravagant",
-      adjustedGdpGrowth: 0.05,
-      populationGrowthRate: 0.02,
-      populationDensity: 120,
-    });
-
-    expect(result.economicVitality).toBeGreaterThanOrEqual(95);
-    expect(result.populationWellbeing).toBeGreaterThan(50);
-    // No made-up figure: without a diplomatic record the standing is unknown.
-    expect(result.diplomaticStanding).toBeNull();
-    expect(result.governmentalEfficiency).toBeCloseTo(76, 0);
-  });
-
-  it("passes through the server-computed diplomatic standing, clamped to 0-100", () => {
-    const base = {
-      economicTier: "Healthy",
-      adjustedGdpGrowth: 0.02,
-      populationGrowthRate: 0.01,
-      populationDensity: 100,
-    };
-    expect(calculateVitalityData(base, 72).diplomaticStanding).toBe(72);
-    expect(calculateVitalityData(base, 140).diplomaticStanding).toBe(100);
-    expect(calculateVitalityData(base, null).diplomaticStanding).toBeNull();
-  });
-
-  it("calculates vitality metrics with negative growth safely bounded", () => {
-    const result = calculateVitalityData({
-      economicTier: "Developing",
-      adjustedGdpGrowth: -0.1,
-      populationGrowthRate: -0.01,
-      populationDensity: 800,
-    });
-
-    expect(result.economicVitality).toBeGreaterThanOrEqual(0);
-    expect(result.economicVitality).toBeLessThanOrEqual(100);
-    expect(result.populationWellbeing).toBeGreaterThanOrEqual(0);
   });
 });

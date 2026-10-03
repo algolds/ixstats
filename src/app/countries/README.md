@@ -109,7 +109,6 @@ countries/
     ├── _hooks/useCountryPageState.ts # Country Actions + cover banner state
     ├── _hooks/useCountryProfileLayer.ts # The profile's data layer
     ├── _types/                       # Domain types for profile pages
-    ├── _utils/countryDataTransformers.ts # Telemetry vitality calculation
     └── _utils/profileLayer.ts        # Pure helpers: wiki lore, chronicle, formatters (re-exports the public-record rules)
 ```
 

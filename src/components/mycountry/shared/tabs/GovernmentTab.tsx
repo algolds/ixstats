@@ -2,7 +2,8 @@
 
 import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
-import { formatCompactCurrency, formatExactCurrency } from "~/lib/utils";
+import { CollapsibleSection } from "./CollapsibleSection";
+import { formatCompactCurrency } from "~/lib/utils";
 import { toTitleCase } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { Building, Crown } from "iconoir-react";
@@ -254,190 +255,157 @@ export function GovernmentTab({
         {/* ── Sub-Tabs Content (Folder Dossier Accordion Stack) ── */}
         <div className="border-separator space-y-3 border-t pt-3">
           {/* Dossier Section 1: Structure */}
-          <div className="flex flex-col">
-            <div className="flex">
+          <CollapsibleSection
+            icon={Crown}
+            title="State structure"
+            isExpanded={expandedSection === "structure"}
+            onToggle={() => toggleSection("structure")}
+          >
+            <Card
+              variant="inset"
+              padding="none"
+              className="grid grid-cols-2 gap-4 p-3 md:grid-cols-4"
+            >
+              <div className="min-w-0">
+                <Eyebrow className="block">Government type</Eyebrow>
+                <p className="text-label text-caption mt-0.5 truncate font-semibold">
+                  {toTitleCase(
+                    governmentStructure?.governmentType ||
+                      country.nationalIdentity?.governmentType ||
+                      "N/A"
+                  )}
+                </p>
+                <p className="text-label-secondary text-footnote mt-0.5">Constitution base</p>
+              </div>
+              <div className="min-w-0">
+                <Eyebrow className="block">Capital city</Eyebrow>
+                <p className="text-label text-caption mt-0.5 truncate font-semibold">
+                  {country.nationalIdentity?.capitalCity || "N/A"}
+                </p>
+                <p className="text-label-secondary text-footnote mt-0.5">Seat of power</p>
+              </div>
+              <div className="min-w-0">
+                <Eyebrow className="block">Official currency</Eyebrow>
+                <p className="text-label text-caption mt-0.5 truncate font-semibold">
+                  {country.nationalIdentity?.currency || "N/A"}
+                </p>
+                <p className="text-label-secondary text-footnote mt-0.5">Legal tender</p>
+              </div>
+              <div className="min-w-0">
+                <Eyebrow className="block">Branches</Eyebrow>
+                <p className="text-label text-caption mt-0.5 font-semibold">
+                  {governmentStructure?.branches?.length
+                    ? `${governmentStructure.branches.length} Branches`
+                    : "Not recorded"}
+                </p>
+                <p className="text-label-secondary text-footnote mt-0.5">Separation of powers</p>
+              </div>
+            </Card>
+
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <SectorBreakdownCard
+                title="Government leadership"
+                subtitle="Offices and officeholder names"
+                layout="list"
+                showProgressBars={false}
+                sectors={[
+                  {
+                    id: "hos",
+                    name: "Head of State",
+                    value: 0,
+                    percentage: 100,
+                    color: "amber",
+                    description: governmentStructure?.headOfState || "Not recorded",
+                  },
+                  {
+                    id: "hog",
+                    name: "Head of Government",
+                    value: 0,
+                    percentage: 100,
+                    color: "blue",
+                    description: governmentStructure?.headOfGovernment || "Not recorded",
+                  },
+                ]}
+              />
+              <SectorBreakdownCard
+                title="Legislative & judicial"
+                subtitle="Legislative chambers and high court"
+                layout="list"
+                showProgressBars={false}
+                sectors={[
+                  {
+                    id: "leg",
+                    name: "Legislature",
+                    value: 0,
+                    percentage: 100,
+                    color: "indigo",
+                    description: governmentStructure?.legislatureName || "Not recorded",
+                  },
+                  {
+                    id: "jud",
+                    name: "Judiciary",
+                    value: 0,
+                    percentage: 100,
+                    color: "cyan",
+                    description: governmentStructure?.judicialName || "Not recorded",
+                  },
+                  // Lore-first: append any branches beyond the standard three (e.g.
+                  // Faneria's Audit + Fiscal "Quaternalist" branches) so non-tripartite
+                  // governments show truthfully. See plans/mycountry-lore-alignment*.md
+                  ...(governmentStructure?.branches ?? [])
+                    .filter(
+                      (b) =>
+                        !["executive", "legislative", "judicial"].includes(String(b.branchType))
+                    )
+                    .map((b) => ({
+                      id: `branch-${b.id}`,
+                      name: b.name,
+                      value: 0,
+                      percentage: 100,
+                      color: "emerald",
+                      description: b.description || toTitleCase(b.branchType || "Branch"),
+                    })),
+                ]}
+              />
+            </div>
+
+            {/* Cabinet staffing panel (collapsible) */}
+            <div className="bg-fill-3 rounded-row">
               <button
-                onClick={() => toggleSection("structure")}
-                aria-expanded={expandedSection === "structure"}
-                className={`focus-visible:ring-tint rounded-t-row text-headline relative z-10 flex min-h-9 cursor-pointer items-center gap-2 border-x border-t px-4 py-2 transition-[color,background-color,border-color] duration-150 outline-none focus-visible:ring-2 ${
-                  expandedSection === "structure"
-                    ? "text-label border-separator bg-surface"
-                    : "text-label-secondary hover:text-label border-transparent bg-transparent"
-                }`}
+                type="button"
+                onClick={() => setCabinetOpen((v) => !v)}
+                aria-expanded={cabinetOpen}
+                className="text-label-secondary hover:text-label focus-visible:ring-tint rounded-row text-headline flex min-h-9 w-full items-center gap-2 px-3 py-2 transition-colors outline-none focus-visible:ring-2"
               >
                 <Crown
-                  className={`h-3.5 w-3.5 ${expandedSection === "structure" ? "text-label" : "text-label-secondary"}`}
+                  className={`h-3.5 w-3.5 ${cabinetOpen ? "text-label" : "text-label-secondary"}`}
                 />
-                <span>State structure</span>
+                <span>Cabinet</span>
                 <motion.div
-                  animate={{ rotate: expandedSection === "structure" ? 90 : 0 }}
+                  animate={{ rotate: cabinetOpen ? 90 : 0 }}
                   transition={{ type: "spring", bounce: 0, duration: 0.25 }}
                   className="ml-1"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
                 </motion.div>
               </button>
-            </div>
-            <motion.div
-              initial={false}
-              animate={{ height: expandedSection === "structure" ? "auto" : 0 }}
-              transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-              className={`bg-surface rounded-tr-row rounded-b-row relative overflow-hidden transition-colors duration-200 ${
-                expandedSection === "structure"
-                  ? "border-separator border"
-                  : "border border-transparent"
-              }`}
-            >
-              <div className="relative z-10 space-y-4 p-4">
-                <Card
-                  variant="inset"
-                  padding="none"
-                  className="grid grid-cols-2 gap-4 p-3 md:grid-cols-4"
-                >
-                  <div className="min-w-0">
-                    <Eyebrow className="block">Government type</Eyebrow>
-                    <p className="text-label text-caption mt-0.5 truncate font-semibold">
-                      {toTitleCase(
-                        governmentStructure?.governmentType ||
-                          country.nationalIdentity?.governmentType ||
-                          "N/A"
-                      )}
-                    </p>
-                    <p className="text-label-secondary text-footnote mt-0.5">Constitution base</p>
-                  </div>
-                  <div className="min-w-0">
-                    <Eyebrow className="block">Capital city</Eyebrow>
-                    <p className="text-label text-caption mt-0.5 truncate font-semibold">
-                      {country.nationalIdentity?.capitalCity || "N/A"}
-                    </p>
-                    <p className="text-label-secondary text-footnote mt-0.5">Seat of power</p>
-                  </div>
-                  <div className="min-w-0">
-                    <Eyebrow className="block">Official currency</Eyebrow>
-                    <p className="text-label text-caption mt-0.5 truncate font-semibold">
-                      {country.nationalIdentity?.currency || "N/A"}
-                    </p>
-                    <p className="text-label-secondary text-footnote mt-0.5">Legal tender</p>
-                  </div>
-                  <div className="min-w-0">
-                    <Eyebrow className="block">Branches</Eyebrow>
-                    <p className="text-label text-caption mt-0.5 font-semibold">
-                      {governmentStructure?.branches?.length
-                        ? `${governmentStructure.branches.length} Branches`
-                        : "Not recorded"}
-                    </p>
-                    <p className="text-label-secondary text-footnote mt-0.5">
-                      Separation of powers
-                    </p>
-                  </div>
-                </Card>
-
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <SectorBreakdownCard
-                    title="Government leadership"
-                    subtitle="Offices and officeholder names"
-                    layout="list"
-                    showProgressBars={false}
-                    sectors={[
-                      {
-                        id: "hos",
-                        name: "Head of State",
-                        value: 0,
-                        percentage: 100,
-                        color: "amber",
-                        description: governmentStructure?.headOfState || "Not recorded",
-                      },
-                      {
-                        id: "hog",
-                        name: "Head of Government",
-                        value: 0,
-                        percentage: 100,
-                        color: "blue",
-                        description: governmentStructure?.headOfGovernment || "Not recorded",
-                      },
-                    ]}
-                  />
-                  <SectorBreakdownCard
-                    title="Legislative & judicial"
-                    subtitle="Legislative chambers and high court"
-                    layout="list"
-                    showProgressBars={false}
-                    sectors={[
-                      {
-                        id: "leg",
-                        name: "Legislature",
-                        value: 0,
-                        percentage: 100,
-                        color: "indigo",
-                        description: governmentStructure?.legislatureName || "Not recorded",
-                      },
-                      {
-                        id: "jud",
-                        name: "Judiciary",
-                        value: 0,
-                        percentage: 100,
-                        color: "cyan",
-                        description: governmentStructure?.judicialName || "Not recorded",
-                      },
-                      // Lore-first: append any branches beyond the standard three (e.g.
-                      // Faneria's Audit + Fiscal "Quaternalist" branches) so non-tripartite
-                      // governments show truthfully. See plans/mycountry-lore-alignment*.md
-                      ...(governmentStructure?.branches ?? [])
-                        .filter(
-                          (b) =>
-                            !["executive", "legislative", "judicial"].includes(String(b.branchType))
-                        )
-                        .map((b) => ({
-                          id: `branch-${b.id}`,
-                          name: b.name,
-                          value: 0,
-                          percentage: 100,
-                          color: "emerald",
-                          description: b.description || toTitleCase(b.branchType || "Branch"),
-                        })),
-                    ]}
-                  />
-                </div>
-
-                {/* Cabinet staffing panel (collapsible) */}
-                <div className="bg-fill-3 rounded-row">
-                  <button
-                    type="button"
-                    onClick={() => setCabinetOpen((v) => !v)}
-                    aria-expanded={cabinetOpen}
-                    className="text-label-secondary hover:text-label focus-visible:ring-tint rounded-row text-headline flex min-h-9 w-full items-center gap-2 px-3 py-2 transition-colors outline-none focus-visible:ring-2"
+              <AnimatePresence initial={false}>
+                {cabinetOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ type: "spring", bounce: 0, duration: 0.25 }}
+                    className="overflow-hidden"
                   >
-                    <Crown
-                      className={`h-3.5 w-3.5 ${cabinetOpen ? "text-label" : "text-label-secondary"}`}
-                    />
-                    <span>Cabinet</span>
-                    <motion.div
-                      animate={{ rotate: cabinetOpen ? 90 : 0 }}
-                      transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                      className="ml-1"
-                    >
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </motion.div>
-                  </button>
-                  <AnimatePresence initial={false}>
-                    {cabinetOpen && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="p-3 pt-0">
-                          <CabinetPanel countryId={country.id} />
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-            </motion.div>
-          </div>
+                    <div className="p-3 pt-0">
+                      <CabinetPanel countryId={country.id} />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </CollapsibleSection>
 
           {/* Dossier Section 2: Budget/Spending */}
           <GovernmentSpendingSection

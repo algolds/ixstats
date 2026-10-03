@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
+import { CollapsibleSection } from "./CollapsibleSection";
 import { formatCompactCurrency, formatExactCurrency } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { StatUp as TrendingUp, StatDown as TrendingDown, Building } from "iconoir-react";
-import { NavArrowRight as ChevronRight } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import {
@@ -284,66 +284,35 @@ export function EconomyTab({
         {/* ── Sub-Tabs Content (Folder Dossier Accordion Stack) ── */}
         <div className="border-separator space-y-3 border-t pt-3">
           {/* Dossier Section 1: Sectors */}
-          <div className="flex flex-col">
-            <div className="flex">
-              <button
-                onClick={() => toggleSection("sectors")}
-                aria-expanded={expandedSection === "sectors"}
-                className={`focus-visible:ring-tint rounded-t-row text-headline relative z-10 flex min-h-9 cursor-pointer items-center gap-2 border-x border-t px-4 py-2 transition-[color,background-color,border-color] duration-150 outline-none focus-visible:ring-2 ${
-                  expandedSection === "sectors"
-                    ? "text-label border-separator bg-surface"
-                    : "text-label-secondary hover:text-label border-transparent bg-transparent"
-                }`}
-              >
-                <Building
-                  className={`h-3.5 w-3.5 ${expandedSection === "sectors" ? "text-label" : "text-label-secondary"}`}
-                />
-                <span>Sectors & distribution</span>
-                <motion.div
-                  animate={{ rotate: expandedSection === "sectors" ? 90 : 0 }}
-                  transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-                  className="ml-1"
-                >
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </motion.div>
-              </button>
-            </div>
-            <motion.div
-              initial={false}
-              animate={{ height: expandedSection === "sectors" ? "auto" : 0 }}
-              transition={{ type: "spring", bounce: 0, duration: 0.25 }}
-              className={`bg-surface rounded-tr-row rounded-b-row relative overflow-hidden transition-colors duration-200 ${
-                expandedSection === "sectors"
-                  ? "border-separator border"
-                  : "border border-transparent"
-              }`}
-            >
-              <div className="relative z-10 space-y-4 p-4">
-                {sectors.length > 0 ? (
-                  <SectorBreakdownCard
-                    title="Economic structure"
-                    subtitle="Recorded share of GDP by sector"
-                    layout="grid"
-                    showTrends={false}
-                    sectors={sectors.map((sector, i) => ({
-                      id: sector.name,
-                      name: sector.name,
-                      value: (gdp * sector.share) / 100,
-                      percentage: sector.share,
-                      color: SECTOR_COLORS[i % SECTOR_COLORS.length]!,
-                    }))}
-                    totalValue={gdp}
-                  />
-                ) : (
-                  <EmptyState
-                    compact
-                    title="No sector breakdown recorded"
-                    message="This nation has not recorded how its GDP splits across sectors."
-                  />
-                )}
-              </div>
-            </motion.div>
-          </div>
+          <CollapsibleSection
+            icon={Building}
+            title="Sectors & distribution"
+            isExpanded={expandedSection === "sectors"}
+            onToggle={() => toggleSection("sectors")}
+          >
+            {sectors.length > 0 ? (
+              <SectorBreakdownCard
+                title="Economic structure"
+                subtitle="Recorded share of GDP by sector"
+                layout="grid"
+                showTrends={false}
+                sectors={sectors.map((sector, i) => ({
+                  id: sector.name,
+                  name: sector.name,
+                  value: (gdp * sector.share) / 100,
+                  percentage: sector.share,
+                  color: SECTOR_COLORS[i % SECTOR_COLORS.length]!,
+                }))}
+                totalValue={gdp}
+              />
+            ) : (
+              <EmptyState
+                compact
+                title="No sector breakdown recorded"
+                message="This nation has not recorded how its GDP splits across sectors."
+              />
+            )}
+          </CollapsibleSection>
 
           {/* Dossier Section 2: Trade */}
           <EconomyTradeSection

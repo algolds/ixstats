@@ -39,13 +39,12 @@ export interface BaseCountryData {
   populationGrowthRate?: number | null;
 }
 
-/** Vitality telemetry scores calculated from country stats */
+/** Vitality telemetry scores as computed by the server; null when there is no record (shown as "—"). */
 export interface VitalityData {
   economicVitality: number;
   populationWellbeing: number;
-  /** From the country's diplomatic record; null when it has none (shown as "—"). */
   diplomaticStanding: number | null;
-  governmentalEfficiency: number;
+  governmentalEfficiency: number | null;
 }
 
 /** Metric card format used in country metrics display grids */

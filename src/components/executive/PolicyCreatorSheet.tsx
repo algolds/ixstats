@@ -201,10 +201,8 @@ export function PolicyCreatorSheet({
 
   const isPending = createPolicyMutation.isPending;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const createPolicy = () => {
     if (!formTitle.trim() || !formDescription.trim()) return;
-
     createPolicyMutation.mutate({
       countryId,
       userId: user?.id || "",
@@ -221,22 +219,9 @@ export function PolicyCreatorSheet({
     });
   };
 
-  const handleCreateAndLaunch = () => {
-    if (!formTitle.trim() || !formDescription.trim()) return;
-    createPolicyMutation.mutate({
-      countryId,
-      userId: user?.id || "",
-      name: formTitle.trim(),
-      description: formDescription.trim(),
-      policyType: formType,
-      category: formCategory,
-      priority: formPriority,
-      implementationCost: parseFloat(formImplCost) || 0,
-      maintenanceCost: parseFloat(formMaintCost) || 0,
-      targetMetrics: targetMetrics.length > 0 ? JSON.stringify(targetMetrics) : undefined,
-      decretalKey: selectedTemplateKey !== "custom" ? selectedTemplateKey : undefined,
-      settings: selectedTemplateKey !== "custom" ? sliderSettings : undefined,
-    });
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createPolicy();
   };
 
   return (
@@ -499,7 +484,7 @@ export function PolicyCreatorSheet({
               variant="default"
               size="sm"
               disabled={isPending || !formTitle.trim() || !formDescription.trim() || !hasDepartment}
-              onClick={handleCreateAndLaunch}
+              onClick={createPolicy}
             >
               {isPending ? "Launching" : "Create and launch"}
             </Button>
