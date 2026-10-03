@@ -52,7 +52,7 @@ const WikiContentModal: React.FC<WikiContentModalProps> = ({
               <Button size="sm" variant="outline" asChild className="text-footnote h-8 gap-2">
                 <Link href={titleToWikiOSPath(section.title)}>
                   <ExternalLink className="h-3.5 w-3.5" />
-                  WikiOS Source
+                  WikiOS source
                 </Link>
               </Button>
             )}

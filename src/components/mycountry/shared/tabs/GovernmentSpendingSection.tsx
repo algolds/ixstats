@@ -1,10 +1,8 @@
 "use client";
 
-import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import { motion } from "motion/react";
 import { Dollar as DollarSign, NavArrowRight as ChevronRight } from "iconoir-react";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { SectorBreakdownCard } from "~/components/mycountry/shared/primitives";
 import { formatCompactCurrency, formatExactCurrency } from "~/lib/utils";
 import type { MappedEconomyData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
@@ -45,7 +43,7 @@ export function GovernmentSpendingSection({
           <DollarSign
             className={`h-3.5 w-3.5 ${isExpanded ? "text-label" : "text-label-secondary"}`}
           />
-          <span>Public Budget</span>
+          <span>Public budget</span>
           <motion.div
             animate={{ rotate: isExpanded ? 90 : 0 }}
             transition={{ type: "spring", bounce: 0, duration: 0.25 }}
@@ -63,36 +61,33 @@ export function GovernmentSpendingSection({
           isExpanded ? "border-separator border" : "border border-transparent"
         }`}
       >
-        <TextureOverlay
-          texture="paperGrain"
-          opacity={0.06}
-          className="pointer-events-none absolute inset-0 z-0"
-        />
         <div className="relative z-10 space-y-4 p-4">
           <div className="bg-fill-3 rounded-row grid grid-cols-2 gap-4 p-3 md:grid-cols-4">
             <div className="min-w-0">
-              <Eyebrow className="block">Total Spending</Eyebrow>
+              <span className="text-stat-label text-label-secondary block">Total spending</span>
               <p className="text-label text-headline mt-0.5">
                 {formatCompactCurrency(economyData?.spending?.totalSpending ?? 0, "N/A", currency)}
               </p>
               <p className="text-label-secondary text-footnote mt-0.5">Annual expenditure</p>
             </div>
             <div className="min-w-0">
-              <Eyebrow className="block">Spending % GDP</Eyebrow>
+              <span className="text-stat-label text-label-secondary block">Spending % GDP</span>
               <p className="text-label text-headline mt-0.5">
                 {`${(economyData?.spending?.spendingGDPPercent ?? 0).toFixed(1)}%`}
               </p>
               <p className="text-label-secondary text-footnote mt-0.5">GDP share percentage</p>
             </div>
             <div className="min-w-0">
-              <Eyebrow className="block">Spending per Capita</Eyebrow>
+              <span className="text-stat-label text-label-secondary block">
+                Spending per capita
+              </span>
               <p className="text-label text-headline mt-0.5">
                 {formatExactCurrency(economyData?.spending?.spendingPerCapita ?? 0, currency)}
               </p>
               <p className="text-label-secondary text-footnote mt-0.5">Per citizen share</p>
             </div>
             <div className="min-w-0">
-              <Eyebrow className="block">Budget Balance</Eyebrow>
+              <span className="text-stat-label text-label-secondary block">Budget balance</span>
               <p
                 className={(() => {
                   const balance = economyData?.spending?.deficitSurplus ?? 0;
@@ -112,12 +107,10 @@ export function GovernmentSpendingSection({
           {/* The allocation split is served to the nation's owner only. */}
           {spendingCats.length > 0 && (
             <SectorBreakdownCard
-              title="National Budget Allocations"
+              title="National budget allocations"
               subtitle="Major functional expenditure areas"
               layout="list"
               showProgressBars={true}
-              cardWrapper="panel"
-              accent="amber"
               currency={currency}
               sectors={[
                 {
@@ -136,14 +129,14 @@ export function GovernmentSpendingSection({
                 },
                 {
                   id: "welfare",
-                  name: "Social Welfare",
+                  name: "Social welfare",
                   value: economyData?.spending?.socialSafety ?? 0,
                   percentage: ((economyData?.spending?.socialSafety ?? 0) / totalSpending) * 100,
                   color: "indigo",
                 },
                 {
                   id: "defense",
-                  name: "Military & Defense",
+                  name: "Military & defense",
                   value: defenseAmount,
                   percentage: (defenseAmount / totalSpending) * 100,
                   color: "red",

@@ -10,7 +10,6 @@ import {
   Group as Users,
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { getStrengthLabel } from "~/lib/statecraft/diplo-intel";
@@ -236,7 +235,7 @@ export function RelationsRail({ countryId }: { countryId: string }) {
         {/* 1. Embassy network */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Eyebrow>Active embassies</Eyebrow>
+            <span className="text-stat-label text-label-secondary">Active embassies</span>
             <span className="text-label-secondary text-footnote tabular-nums">
               {activeEmbassies.length} total
             </span>
@@ -286,7 +285,7 @@ export function RelationsRail({ countryId }: { countryId: string }) {
         {/* 2. Bilateral relations */}
         <div className="border-separator space-y-2 border-t pt-3">
           <div className="flex items-center justify-between">
-            <Eyebrow>Bilateral relationships</Eyebrow>
+            <span className="text-stat-label text-label-secondary">Bilateral relationships</span>
             <span className="text-label-secondary text-footnote tabular-nums">
               {liveRelations.length} partners
             </span>

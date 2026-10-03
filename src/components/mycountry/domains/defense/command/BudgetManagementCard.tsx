@@ -80,19 +80,19 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
                   <SheetHeader>
                     <SheetTitle className="flex items-center gap-2">
                       <Info aria-hidden="true" className="text-label-secondary h-5 w-5" />
-                      Defense Budget Guide
+                      Defense budget guide
                     </SheetTitle>
                   </SheetHeader>
                   <div className="text-body space-y-4">
                     <div>
-                      <h4 className="mb-2 font-semibold">Budget Allocation</h4>
+                      <h4 className="mb-2 font-semibold">Budget allocation</h4>
                       <p className="text-label-secondary">
                         Your defense budget should total 100% allocated across all categories. The
                         system will warn you if you're over or under budget.
                       </p>
                     </div>
                     <div>
-                      <h4 className="mb-2 font-semibold">Budget Categories Explained</h4>
+                      <h4 className="mb-2 font-semibold">Budget categories explained</h4>
                       <ul className="text-label-secondary list-inside list-disc space-y-1">
                         <li>
                           <strong>Personnel (typically 35-45%):</strong> Salaries, benefits,
@@ -117,7 +117,7 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
                       </ul>
                     </div>
                     <div>
-                      <h4 className="mb-2 font-semibold">GDP Percentage</h4>
+                      <h4 className="mb-2 font-semibold">GDP percentage</h4>
                       <p className="text-label-secondary">
                         Typical defense spending ranges from 1-4% of GDP. Higher percentages
                         indicate a strong military focus, while lower percentages suggest
@@ -154,13 +154,13 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
               </Button>
               <Button size="sm" onClick={handleSaveBudget}>
                 <Save className="mr-2 h-4 w-4" />
-                Save Budget
+                Save budget
               </Button>
             </div>
           ) : (
             <Button size="sm" variant="outline" onClick={() => setEditingBudget(true)}>
               <Edit className="mr-2 h-4 w-4" />
-              Edit Budget
+              Edit budget
             </Button>
           )}
         </div>
@@ -186,7 +186,7 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
               )}
             </div>
             <div>
-              <Eyebrow className="block">% of GDP</Eyebrow>
+              <span className="text-stat-label text-label-secondary block">% of GDP</span>
               <div className="text-title-1 mt-1 tabular-nums">
                 <NumberFlowDisplay
                   value={budgetData.gdpPercent}
@@ -201,7 +201,7 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
         {/* Budget Allocation Progress */}
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <Label className="text-body">Budget Allocation</Label>
+            <Label className="text-body">Budget allocation</Label>
             <span
               className={cn(
                 "text-body font-medium",

@@ -11,17 +11,7 @@ export {
   cardEntrance,
   counterConfig,
 } from "./TabMotionConfig";
-export {
-  MetricCardGrid,
-  EconomyMetricGrid,
-  LaborMetricGrid,
-  GovernmentMetricGrid,
-  DemographicsMetricGrid,
-  AnalyticsMetricGrid,
-  type MetricGridItem,
-  type MetricCardGridProps,
-  type MetricTheme,
-} from "./MetricCardGrid";
+export { MetricCardGrid, type MetricGridItem, type MetricCardGridProps } from "./MetricCardGrid";
 export {
   VitalityRingsDisplay,
   QuickVitalityRings,

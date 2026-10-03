@@ -205,8 +205,8 @@ export function MyCountrySidebarNav({
           >
             <Link
               href="/mycountry/editor"
-              title="Edit Country Profile"
-              aria-label="Edit Country Profile"
+              title="Edit country profile"
+              aria-label="Edit country profile"
             >
               <Edit2 aria-hidden="true" className="size-3.5" />
             </Link>
@@ -253,8 +253,8 @@ export function MyCountrySidebarNav({
             <Button asChild variant="ghost" size="icon" className="text-label-secondary size-8">
               <Link
                 href="/mycountry/editor"
-                title="Edit Country Profile"
-                aria-label="Edit Country Profile"
+                title="Edit country profile"
+                aria-label="Edit country profile"
               >
                 <Edit2 aria-hidden="true" className="size-3.5" />
               </Link>
@@ -305,7 +305,7 @@ export function MyCountrySidebarNav({
         </Tooltip>
         <Tooltip content="Edit Profile" side="right">
           <Button asChild variant="ghost" size="icon" className="text-label-secondary">
-            <Link href="/mycountry/editor" aria-label="Edit Country Profile">
+            <Link href="/mycountry/editor" aria-label="Edit country profile">
               <Edit2 aria-hidden="true" />
             </Link>
           </Button>

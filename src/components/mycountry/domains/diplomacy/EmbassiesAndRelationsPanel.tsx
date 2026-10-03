@@ -159,24 +159,24 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
             : []),
           {
             id: "embassies",
-            label: "Embassy Network",
+            label: "Embassy network",
             icon: Building2,
             badge: stats.activeEmbassies,
           },
           {
             id: "relations",
-            label: "Bilateral Relations",
+            label: "Bilateral relations",
             icon: Handshake,
             badge: stats.totalRelations,
           },
           {
             id: "alliances",
-            label: "Alliances & Blocs",
+            label: "Alliances & blocs",
             icon: Users,
             badge: stats.allianceCount,
           },
-          { id: "exchanges", label: "Cultural Exchanges", icon: Palette },
-          { id: "events", label: "Diplomatic Events", icon: FileText },
+          { id: "exchanges", label: "Cultural exchanges", icon: Palette },
+          { id: "events", label: "Diplomatic events", icon: FileText },
         ]}
         activeTab={activeTab}
         onChange={setActiveTab}
@@ -188,9 +188,9 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <MailIn className="text-label-secondary h-4 w-4" />
-            <h3 className="text-label text-headline">Diplomatic Inbox</h3>
+            <h3 className="text-label text-headline">Diplomatic inbox</h3>
             <SectionHelpIcon
-              title="Diplomatic Inbox"
+              title="Diplomatic inbox"
               content="Free trade and military alliance proposals and alliance invitations need the other nation's consent. Answer incoming ones here, or withdraw your own while they are pending. Unanswered items expire after 14 days."
             />
           </div>
@@ -203,9 +203,9 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Building2 className="text-label-secondary h-4 w-4" />
-              <h3 className="text-label text-headline">Embassy Network</h3>
+              <h3 className="text-label text-headline">Embassy network</h3>
               <SectionHelpIcon
-                title="Embassy Network"
+                title="Embassy network"
                 content="Manage your diplomatic embassies. Embassies provide synergy bonuses based on shared government components and improve bilateral relations with host nations."
               />
             </div>
@@ -217,7 +217,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
                 onClick={() => setShowEmbassyCreator(true)}
               >
                 <Plus className="h-3.5 w-3.5" />
-                Establish Embassy
+                Establish embassy
               </Button>
             )}
           </div>
@@ -239,7 +239,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <Handshake className="text-label-secondary h-4 w-4" />
-            <h3 className="text-label text-headline">Diplomatic Relations</h3>
+            <h3 className="text-label text-headline">Diplomatic relations</h3>
           </div>
           <DiplomaticRelationsList countryId={countryId} />
         </section>
@@ -250,10 +250,10 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="text-label-secondary h-4 w-4" />
-              <h3 className="text-label text-headline">Alliances & Blocs</h3>
+              <h3 className="text-label text-headline">Alliances & blocs</h3>
               <SectionHelpIcon
-                title="Alliances & Blocs"
-                content="Form and manage alliances with other nations. Alliances provide mutual defense benefits, trade advantages, and diplomatic leverage."
+                title="Alliances & blocs"
+                content="Form and manage alliances with other nations. Alliances give mutual defense, trade advantages and diplomatic standing."
               />
             </div>
             <Button
@@ -263,7 +263,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
               onClick={() => setShowAllianceCreator(true)}
             >
               <Plus className="h-3.5 w-3.5" />
-              Create Alliance
+              Create alliance
             </Button>
           </div>
 
@@ -294,7 +294,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <Palette className="text-label-secondary h-4 w-4" />
-            <h3 className="text-label text-headline">Cultural Exchanges</h3>
+            <h3 className="text-label text-headline">Cultural exchanges</h3>
           </div>
           <CulturalExchangeProgram primaryCountry={{ id: countryId, name: countryName }} />
         </section>
@@ -304,7 +304,7 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <FileText className="text-label-secondary h-4 w-4" />
-            <h3 className="text-label text-headline">Diplomatic Events</h3>
+            <h3 className="text-label text-headline">Diplomatic events</h3>
           </div>
           <DiplomaticEventsHub countryId={countryId} countryName={countryName} />
         </section>

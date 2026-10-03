@@ -16,9 +16,7 @@ export function MobileOptimizationStyles() {
   React.useEffect(() => {
     // Inject mobile-specific styles
     const styleSheet = document.createElement("style");
-    // Facet 3: only touch ergonomics live here. Layout, motion (FacetMotionConfig honours Reduce
-    // Motion), materials and selection are left to the utilities and primitives — no utility
-    // hijacks or !important overrides.
+    // Only touch ergonomics live here; layout, motion and materials come from the primitives.
     styleSheet.textContent = `
       .mobile-optimized {
         -webkit-tap-highlight-color: transparent;

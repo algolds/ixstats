@@ -119,7 +119,7 @@ export function BudgetConfigurationSection({
         {/* Total Budget */}
         <div className="space-y-2">
           <EnhancedNumberInput
-            label="Total Budget Limit"
+            label="Total budget limit"
             value={data.totalBudget}
             onChange={(val) =>
               onChange("totalBudget", typeof val === "string" ? parseFloat(val) || 0 : val)
@@ -155,10 +155,10 @@ export function BudgetConfigurationSection({
             htmlFor="fiscalStance"
             className="text-label text-headline flex items-center gap-2"
           >
-            Fiscal Stance & Strategy
+            Fiscal stance & strategy
             <FieldHelpTooltip
               content="Determines the overriding objective of the government's annual budget plan, impacting public savings, economic growth, and austerity directives."
-              title="Fiscal Stance & Strategy"
+              title="Fiscal stance & strategy"
             />
           </Label>
           <Select
@@ -194,10 +194,10 @@ export function BudgetConfigurationSection({
               htmlFor="auditLevel"
               className="text-label text-headline flex items-center gap-2"
             >
-              Auditing & Transparency
+              Auditing & transparency
               <FieldHelpTooltip
                 content="Defines the degree of access and oversight of national accounts, balancing anti-corruption measures against covert and strategic intelligence flexibility."
-                title="Auditing & Transparency"
+                title="Auditing & transparency"
               />
             </Label>
             <Select
@@ -224,10 +224,10 @@ export function BudgetConfigurationSection({
               htmlFor="reserveTarget"
               className="text-label text-headline flex items-center gap-2"
             >
-              Emergency Reserve Target
+              Emergency reserve target
               <FieldHelpTooltip
                 content="The portion of annual revenues systematically allocated to sovereign wealth or contingency reserve accounts to mitigate economic shocks."
-                title="Emergency Reserve Target"
+                title="Emergency reserve target"
               />
             </Label>
             <Select
@@ -251,10 +251,10 @@ export function BudgetConfigurationSection({
           {/* Debt Financing Limit */}
           <div className="space-y-2">
             <Label htmlFor="debtLimit" className="text-label text-headline flex items-center gap-2">
-              Debt Financing Limit
+              Debt financing limit
               <FieldHelpTooltip
                 content="The statutory maximum limit for annual borrowing to finance capital projects or deficits, expressed as a percent of the total budget."
-                title="Debt Financing Limit"
+                title="Debt financing limit"
               />
             </Label>
             <Select
@@ -285,7 +285,7 @@ export function BudgetConfigurationSection({
         <CardHeader className="border-separator border-b px-6 py-4">
           <h2 className="text-label text-title-3 flex items-center gap-2">
             <Building2 aria-hidden="true" className="text-label-secondary h-5 w-5" />
-            Budget Configuration
+            Budget configuration
           </h2>
         </CardHeader>
         <CardContent className="p-6">{content}</CardContent>
@@ -295,7 +295,7 @@ export function BudgetConfigurationSection({
 
   return (
     <div className="border-separator rounded-control space-y-4 border p-4">
-      <h4 className="text-label text-title-3 mb-3">Budget Configuration</h4>
+      <h4 className="text-label text-title-3 mb-3">Budget configuration</h4>
       {content}
     </div>
   );

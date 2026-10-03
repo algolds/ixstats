@@ -231,7 +231,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                     <div className="text-caption flex items-center justify-between text-white/90">
                       <div className="flex items-center gap-2">
                         <Coins className="h-3.5 w-3.5 text-white/70" />
-                        <span>GDP per Capita</span>
+                        <span>GDP per capita</span>
                       </div>
                       <NumberFlowDisplay
                         value={country.currentGdpPerCapita}
@@ -257,7 +257,7 @@ export const CountryFocusCard = React.memo<CountryFocusCardProps>(
                       <div className="text-caption flex items-center justify-between text-white/90">
                         <div className="flex items-center gap-2">
                           <TrendingUp className="h-3.5 w-3.5 text-white/70" />
-                          <span>Growth Rate</span>
+                          <span>Growth rate</span>
                         </div>
                         <NumberFlowDisplay
                           value={country.adjustedGdpGrowth * 100}

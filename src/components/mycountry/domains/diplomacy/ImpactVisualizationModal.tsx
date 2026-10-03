@@ -52,7 +52,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <StatsReport className="text-label-secondary h-5 w-5" />
-              Exchange Impact Analysis
+              Exchange impact analysis
             </SheetTitle>
             <SheetDescription>
               Detailed breakdown of cultural and diplomatic impact
@@ -61,13 +61,13 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
 
           <div className="space-y-4">
             <Card variant="inset" className="p-5">
-              <h4 className="text-label text-headline mb-4">Relationship State Evolution</h4>
+              <h4 className="text-label text-headline mb-4">Relationship state evolution</h4>
               <div className="flex items-center justify-center gap-4">
                 <div className="text-center">
                   <div className="text-label text-title-1 mb-1">
                     {impact.currentState || "Neutral"}
                   </div>
-                  <Eyebrow>Before</Eyebrow>
+                  <span className="text-stat-label text-label-secondary">Before</span>
                 </div>
                 <ArrowRight className="text-label-secondary h-6 w-6" />
                 <div className="text-center">
@@ -103,16 +103,16 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
 
             {impact.longTermEffects && (
               <Card variant="inset" className="p-5">
-                <h4 className="text-label text-headline mb-4">Long-term Effects</h4>
+                <h4 className="text-label text-headline mb-4">Long-term effects</h4>
                 <div className="space-y-4">
                   {[
                     {
-                      label: "Cultural Ties Strength",
+                      label: "Cultural ties strength",
                       value: impact.longTermEffects.culturalTiesStrength,
                     },
-                    { label: "Soft Power Gain", value: impact.longTermEffects.softPowerGain },
+                    { label: "Soft power gain", value: impact.longTermEffects.softPowerGain },
                     {
-                      label: "People-to-People Bonds",
+                      label: "People-to-People bonds",
                       value: impact.longTermEffects.peopleTopeopleBonds,
                     },
                   ]
@@ -134,7 +134,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
 
             {impact.reasoning && Array.isArray(impact.reasoning) && impact.reasoning.length > 0 && (
               <Card variant="inset" className="p-5">
-                <h4 className="text-label text-headline mb-4">Impact Analysis</h4>
+                <h4 className="text-label text-headline mb-4">Impact analysis</h4>
                 <ul className="space-y-2">
                   {impact.reasoning.map((reason, idx) => (
                     <li key={idx} className="text-label-secondary text-body flex items-start gap-2">

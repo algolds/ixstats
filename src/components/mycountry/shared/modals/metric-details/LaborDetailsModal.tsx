@@ -1,6 +1,5 @@
 "use client";
 
-import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { useMemo } from "react";
 import {
   Group as Users,
@@ -112,7 +111,7 @@ export function LaborDetailsModal({
   };
 
   const chartConfig = {
-    laborForce: { label: "Labor Force", color: "var(--color-blue-500)" },
+    laborForce: { label: "Labor force", color: "var(--color-blue-500)" },
     employmentRate: { label: "Employment Rate %", color: "var(--chart-3)" },
     unemploymentRate: { label: "Unemployment Rate %", color: "var(--color-destructive)" },
     participationRate: { label: "Participation Rate %", color: "var(--chart-1)" },
@@ -180,7 +179,7 @@ export function LaborDetailsModal({
             <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <Briefcase className="text-label-secondary h-5 w-5" />
-                Labor Force Composition
+                Labor force composition
               </h3>
               <p className="text-label-secondary text-body">
                 Workforce composition and national employment statistics.
@@ -196,7 +195,9 @@ export function LaborDetailsModal({
                     ).toFixed(1)}
                     %
                   </div>
-                  <Eyebrow className="mt-1 block">Of Population</Eyebrow>
+                  <span className="text-stat-label text-label-secondary mt-1 block">
+                    Of population
+                  </span>
                 </Card>
                 <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-title-3 text-green">
@@ -205,7 +206,7 @@ export function LaborDetailsModal({
                       100
                     ).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </div>
-                  <Eyebrow className="mt-1 block">Employed</Eyebrow>
+                  <span className="text-stat-label text-label-secondary mt-1 block">Employed</span>
                 </Card>
                 <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-destructive text-title-3">
@@ -214,13 +215,17 @@ export function LaborDetailsModal({
                       100
                     ).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </div>
-                  <Eyebrow className="mt-1 block">Unemployed</Eyebrow>
+                  <span className="text-stat-label text-label-secondary mt-1 block">
+                    Unemployed
+                  </span>
                 </Card>
                 <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-title-3 text-green">
                     ${(labor?.averageAnnualIncome || 0).toLocaleString()}
                   </div>
-                  <Eyebrow className="mt-1 block">Avg. Income</Eyebrow>
+                  <span className="text-stat-label text-label-secondary mt-1 block">
+                    Avg. Income
+                  </span>
                 </Card>
               </div>
 
@@ -243,14 +248,14 @@ export function LaborDetailsModal({
 
         <MetricModalLayout.Sidebar>
           <MetricModalLayout.StatCard
-            label="Total Workforce"
+            label="Total workforce"
             value={labor?.totalWorkforce || 0}
             decimalPlaces={0}
             icon={Users}
             variant="labor"
           />
           <MetricModalLayout.StatCard
-            label="Participation Rate"
+            label="Participation rate"
             value={labor?.laborForceParticipationRate || 0}
             suffix="%"
             decimalPlaces={1}
@@ -258,7 +263,7 @@ export function LaborDetailsModal({
             variant="labor"
           />
           <MetricModalLayout.StatCard
-            label="Employment Rate"
+            label="Employment rate"
             value={labor?.employmentRate || 0}
             suffix="%"
             decimalPlaces={1}
@@ -266,7 +271,7 @@ export function LaborDetailsModal({
             variant="labor"
           />
           <MetricModalLayout.StatCard
-            label="Unemployment Rate"
+            label="Unemployment rate"
             value={labor?.unemploymentRate || 0}
             suffix="%"
             decimalPlaces={1}
@@ -313,7 +318,7 @@ export function LaborDetailsModal({
         <MetricModalLayout.MainArea>
           <Card className="p-6">
             <CardHeader className="mb-4 p-0">
-              <h3 className="text-label text-title-3">Labor Force Trends</h3>
+              <h3 className="text-label text-title-3">Labor force trends</h3>
               <p className="text-label-secondary text-body">
                 Historical employment and participation metrics
               </p>
@@ -410,19 +415,25 @@ export function LaborDetailsModal({
         <MetricModalLayout.Sidebar>
           <div className="flex flex-1 flex-col gap-4">
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Max Employment Rate</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Max employment rate
+              </span>
               <span className="text-title-2 text-green">
                 {laborStats?.maxEmployment ? `${laborStats.maxEmployment.toFixed(1)}%` : "N/A"}
               </span>
             </div>
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Min Unemployment Rate</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Min unemployment rate
+              </span>
               <span className="text-destructive text-title-2">
                 {laborStats?.minUnemployment ? `${laborStats.minUnemployment.toFixed(1)}%` : "N/A"}
               </span>
             </div>
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Avg Participation</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Avg participation
+              </span>
               <span className="text-label text-title-2">
                 {laborStats?.avgParticipation
                   ? `${laborStats.avgParticipation.toFixed(1)}%`
@@ -430,7 +441,9 @@ export function LaborDetailsModal({
               </span>
             </div>
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Data Points Analyzed</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Data points analyzed
+              </span>
               <span className="text-label text-title-2">{laborStats?.dataPoints || 0}</span>
             </div>
           </div>
@@ -482,7 +495,7 @@ export function LaborDetailsModal({
             <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <Globe className="text-label-secondary h-5 w-5" />
-                Benchmark Analysis
+                Benchmark analysis
               </h3>
               <p className="text-label-secondary text-body">
                 Comparison of national labor indicators against global benchmark rates.
@@ -523,7 +536,9 @@ export function LaborDetailsModal({
         <MetricModalLayout.Sidebar>
           <div className="flex h-full flex-col justify-between gap-4">
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Global Comparison</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Global comparison
+              </span>
               <span className="text-label text-title-2">
                 {employmentRate >= globalAvgEmployment ? "Above Average" : "Below Average"}
               </span>
@@ -532,7 +547,9 @@ export function LaborDetailsModal({
               </span>
             </div>
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Workforce Activity</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Workforce activity
+              </span>
               <span className="text-title-2 text-green">
                 {(labor?.laborForceParticipationRate || 0) >= 60 ? "Strong" : "Low"}
               </span>
@@ -541,7 +558,9 @@ export function LaborDetailsModal({
               </span>
             </div>
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Job Market Health</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Job market health
+              </span>
               <span className="text-title-2 text-green">
                 {(labor?.unemploymentRate || 0) < 5
                   ? "Healthy"
@@ -589,7 +608,7 @@ export function LaborDetailsModal({
         <MetricModalLayout.MainArea>
           <Card className="flex flex-1 flex-col justify-between p-6">
             <CardHeader className="mb-4 p-0">
-              <h3 className="text-label text-title-3">Employment by Sector</h3>
+              <h3 className="text-label text-title-3">Employment by sector</h3>
               <p className="text-label-secondary text-body">
                 Workforce distribution across key industrial sectors
               </p>
@@ -639,12 +658,12 @@ export function LaborDetailsModal({
         <MetricModalLayout.Sidebar>
           <Card className="flex flex-1 flex-col justify-between p-4">
             <CardHeader className="mb-4 p-0">
-              <h3 className="text-label text-title-3 text-headline">Productivity Metrics</h3>
+              <h3 className="text-label text-title-3 text-headline">Productivity metrics</h3>
               <p className="text-label-secondary text-footnote">Workforce efficiency and output</p>
             </CardHeader>
             <CardContent className="space-y-4 p-0">
               <Card variant="inset" padding="none" className="p-3">
-                <Eyebrow>GDP per Worker</Eyebrow>
+                <span className="text-stat-label text-label-secondary">GDP per worker</span>
                 <div className="text-label text-title-3 mt-1">
                   $
                   {(
@@ -654,14 +673,14 @@ export function LaborDetailsModal({
               </Card>
 
               <Card variant="inset" padding="none" className="p-3">
-                <Eyebrow>Productivity Index</Eyebrow>
+                <span className="text-stat-label text-label-secondary">Productivity index</span>
                 <div className="text-title-3 text-green mt-1">
                   {labor?.skillsAndProductivity?.laborProductivityIndex?.toFixed(2) || "1.00"}
                 </div>
               </Card>
 
               <Card variant="inset" padding="none" className="p-3">
-                <Eyebrow>Avg. Education</Eyebrow>
+                <span className="text-stat-label text-label-secondary">Avg. Education</span>
                 <div className="text-label text-title-3 mt-1">
                   {labor?.skillsAndProductivity?.averageEducationYears?.toFixed(1) || "12.0"} Years
                 </div>
@@ -679,7 +698,7 @@ export function LaborDetailsModal({
       onClose={onClose}
       countryId={countryId}
       countryName={countryName}
-      title="Labor Force Analysis"
+      title="Labor force analysis"
       description="Detailed workforce and employment metrics"
       icon={Users}
       iconColor="text-label-secondary"

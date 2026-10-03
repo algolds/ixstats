@@ -14,7 +14,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { timeAgo } from "~/lib/format/compact";
 import { consequenceFieldLabel } from "~/lib/intent/consequence-labels";
-import type { V2Drill } from "~/components/mycountry/shell/DrillSheets";
+import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import { CATEGORY_STYLE } from "./ExecutiveActionCards";
 import { STATUS_TEXT } from "./status-tone";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -183,7 +183,7 @@ export function ExecutiveRecordFeed({
 }: {
   items: CanonFeedItem[];
   countrySlug?: string;
-  onOpenDrill?: (drill: Exclude<V2Drill, { kind: "intent" } | null>) => void;
+  onOpenDrill?: (drill: Exclude<DrillSheetKind, { kind: "intent" } | null>) => void;
 }) {
   const [visibleCount, setVisibleCount] = useState(5);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -217,7 +217,7 @@ export function ExecutiveRecordFeed({
     }
   };
 
-  const getDrillForCategory = (cat: string): Exclude<V2Drill, { kind: "intent" } | null> => {
+  const getDrillForCategory = (cat: string): Exclude<DrillSheetKind, { kind: "intent" } | null> => {
     if (cat === "diplomatic" || cat === "diplomacy") return { kind: "relations" };
     if (cat === "military" || cat === "defense" || cat === "security") return { kind: "defense" };
     if (cat === "economic" || cat === "ledger") return { kind: "economy" };

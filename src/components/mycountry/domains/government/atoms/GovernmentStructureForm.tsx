@@ -113,7 +113,7 @@ export function GovernmentStructureForm({
       <CardHeader className="pb-4">
         <h3 className="text-label text-title-3 flex items-center gap-2">
           <Building2 aria-hidden="true" className="text-label-secondary h-5 w-5" />
-          Government Structure
+          Government structure
         </h3>
       </CardHeader>
       <CardContent className="space-y-6 px-6 pb-6">{fieldsContent}</CardContent>

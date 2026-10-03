@@ -59,7 +59,7 @@ export function GovernmentStructureFields({
       {hideGovernmentType ? (
         <div className="space-y-2">
           <Label htmlFor="governmentName" className="text-label-secondary text-body font-medium">
-            Government Name
+            Government name
           </Label>
           <Input
             id="governmentName"
@@ -74,7 +74,7 @@ export function GovernmentStructureFields({
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="governmentName" className="text-label-secondary text-body font-medium">
-              Government Name
+              Government name
             </Label>
             <Input
               id="governmentName"
@@ -88,7 +88,7 @@ export function GovernmentStructureFields({
 
           <div className="space-y-2">
             <Label htmlFor="governmentType" className="text-label-secondary text-body font-medium">
-              Government Type
+              Government type
             </Label>
             <Input
               id="governmentType"
@@ -117,7 +117,7 @@ export function GovernmentStructureFields({
               className="text-label-secondary text-body flex items-center font-medium"
             >
               <Crown className="mr-1 h-4 w-4" />
-              Head of State
+              Head of state
             </Label>
             <Button
               type="button"
@@ -163,7 +163,7 @@ export function GovernmentStructureFields({
             className="text-label-secondary text-body flex items-center font-medium"
           >
             <Briefcase className="mr-1 h-4 w-4" />
-            Head of Government
+            Head of government
           </Label>
           <Input
             id="headOfGovernment"

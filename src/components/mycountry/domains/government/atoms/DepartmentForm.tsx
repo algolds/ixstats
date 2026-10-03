@@ -79,7 +79,7 @@ export const DepartmentForm = React.memo(function DepartmentForm({
         <div className="flex justify-end pt-2">
           <Button type="button" variant="destructive" size="sm" onClick={onDelete}>
             <Trash2 className="h-3.5 w-3.5" />
-            Delete Department
+            Delete department
           </Button>
         </div>
       )}

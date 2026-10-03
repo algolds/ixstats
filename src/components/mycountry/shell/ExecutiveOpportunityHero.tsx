@@ -16,7 +16,7 @@ import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
-import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/DrillSheets";
+import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import { formatGrowthPeek } from "./ExecutiveActionCards";
 import { type StatusTone, STATUS_TEXT } from "./status-tone";
 import { FlagWatermark } from "~/components/ui/facet/identity/FlagWatermark";
@@ -34,7 +34,7 @@ interface Opportunity {
   icon: typeof Shield;
   tone: StatusTone;
   intentId?: string;
-  drillKind?: Exclude<V2Drill, { kind: "intent" } | null>;
+  drillKind?: Exclude<DrillSheetKind, { kind: "intent" } | null>;
 }
 
 interface CountryIssueItem {

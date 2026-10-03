@@ -55,7 +55,7 @@ const parseAmount = (raw: string) => parseFloat(raw) || 0;
 function EquipmentImageField({ formData, onChange }: AssetFormFieldsProps) {
   return (
     <div className="space-y-2">
-      <Label>Equipment Image</Label>
+      <Label>Equipment image</Label>
       {formData.imageUrl ? (
         <div className="border-separator rounded-control overflow-hidden border">
           <img
@@ -80,7 +80,7 @@ function EquipmentImageField({ formData, onChange }: AssetFormFieldsProps) {
               }}
             >
               <Edit className="mr-2 h-4 w-4" />
-              Change Image
+              Change image
             </Button>
             <Button
               type="button"
@@ -111,7 +111,7 @@ function EquipmentImageField({ formData, onChange }: AssetFormFieldsProps) {
         >
           <div className="flex flex-col items-center gap-2">
             <Image aria-hidden="true" className="text-label-secondary h-8 w-8" />
-            <span className="text-body font-medium">Add Equipment Image</span>
+            <span className="text-body font-medium">Add equipment image</span>
             <span className="text-label-secondary text-footnote">Click to enter image URL</span>
           </div>
         </Button>
@@ -133,7 +133,7 @@ export const AssetFormFields = React.memo(function AssetFormFields({
     <>
       {/* Asset Type */}
       <div className="space-y-2">
-        <Label>Asset Type</Label>
+        <Label>Asset type</Label>
         <Select
           value={formData.assetType}
           onValueChange={(value) => {
@@ -176,7 +176,7 @@ export const AssetFormFields = React.memo(function AssetFormFields({
       {/* Quantity */}
       <div className="grid grid-cols-2 gap-3">
         <NumberField
-          label="Total Quantity"
+          label="Total quantity"
           value={formData.quantity}
           onValueChange={(quantity) => onChange({ ...formData, quantity })}
           parse={parseCount}
@@ -241,7 +241,7 @@ export const AssetFormFields = React.memo(function AssetFormFields({
       {/* Modernization Level */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label>Modernization Level</Label>
+          <Label>Modernization level</Label>
           <span className="text-body font-medium tabular-nums">{formData.modernizationLevel}%</span>
         </div>
         <Slider

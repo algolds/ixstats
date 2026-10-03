@@ -1,12 +1,10 @@
 "use client";
 
-import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import { formatCompactCurrency, formatExactCurrency } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
 import { StatUp as TrendingUp, StatDown as TrendingDown, Building } from "iconoir-react";
 import { NavArrowRight as ChevronRight } from "iconoir-react";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import {
@@ -60,7 +58,6 @@ export function EconomyTab({
       {/* Background wash system (desaturated flag wash + radial dot mesh) */}
       <MetricCardGrid
         metrics={[]} // empty metrics to just render background
-        theme="economy"
         backgroundImage={{
           countryId: country.id,
           cardType: "economic_indicators",
@@ -71,7 +68,6 @@ export function EconomyTab({
           countryImageData: countryImageData ?? undefined,
           countryName: country.name,
         }}
-        cardWrapper="card"
         className="pointer-events-none absolute inset-0 z-0"
       />
 
@@ -80,9 +76,9 @@ export function EconomyTab({
         <div className="border-separator flex items-center justify-between border-b pb-3">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-label text-headline">Economic Overview</h3>
+              <h3 className="text-label text-headline">Economic overview</h3>
               <InlineHelpIcon
-                title="Economic Overview"
+                title="Economic overview"
                 content="View key economic indicators, sectors, trade balances, and business environments. Toggles allow you to view detailed stats per capita or in totals."
               />
             </div>
@@ -94,7 +90,7 @@ export function EconomyTab({
             <Link href={createUrl("/mycountry/editor")}>
               <Button size="sm" variant="outline" className="text-footnote h-8 gap-2">
                 <TrendingUp className="h-3.5 w-3.5" />
-                <span>Open Editor</span>
+                <span>Open editor</span>
               </Button>
             </Link>
           )}
@@ -117,9 +113,9 @@ export function EconomyTab({
                 }
                 className="h-auto flex-col justify-between gap-1 p-2 whitespace-normal"
               >
-                <Eyebrow className="block">
+                <span className="text-stat-label text-label-secondary block">
                   {metricView.economyGdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
-                </Eyebrow>
+                </span>
                 <div
                   className="flex items-center gap-2"
                   onClick={(e) => {
@@ -184,9 +180,9 @@ export function EconomyTab({
                 }
                 className="h-auto flex-col justify-between gap-1 p-2 whitespace-normal"
               >
-                <Eyebrow className="block">
+                <span className="text-stat-label text-label-secondary block">
                   {metricView.fiscal === "balance" ? "Budget Balance" : "Tax Revenue"}
-                </Eyebrow>
+                </span>
                 <div
                   className="mt-0.5 flex items-center gap-2"
                   onClick={(e) => {
@@ -235,9 +231,9 @@ export function EconomyTab({
                 }
                 className="h-auto flex-col justify-between gap-1 p-2 whitespace-normal"
               >
-                <Eyebrow className="block">
+                <span className="text-stat-label text-label-secondary block">
                   {metricView.trade === "imports" ? "Total Imports" : "Total Exports"}
-                </Eyebrow>
+                </span>
                 <div
                   className="mt-0.5 flex items-center gap-2"
                   onClick={(e) => {
@@ -296,7 +292,7 @@ export function EconomyTab({
                 <Building
                   className={`h-3.5 w-3.5 ${expandedSection === "sectors" ? "text-label" : "text-label-secondary"}`}
                 />
-                <span>Sectors & Distribution</span>
+                <span>Sectors & distribution</span>
                 <motion.div
                   animate={{ rotate: expandedSection === "sectors" ? 90 : 0 }}
                   transition={{ type: "spring", bounce: 0, duration: 0.25 }}
@@ -316,24 +312,17 @@ export function EconomyTab({
                   : "border border-transparent"
               }`}
             >
-              <TextureOverlay
-                texture="paperGrain"
-                opacity={0.06}
-                className="pointer-events-none absolute inset-0 z-0"
-              />
               <div className="relative z-10 space-y-4 p-4">
                 <SectorBreakdownCard
-                  title="Economic Structure"
+                  title="Economic structure"
                   subtitle="GDP distribution across major economic sectors"
                   layout="grid"
                   showTrends={true}
                   showSectorImages={true}
-                  cardWrapper="panel"
-                  accent="emerald"
                   sectors={[
                     {
                       id: "primary",
-                      name: "Primary Sector",
+                      name: "Primary sector",
                       value: (economyData?.core.nominalGDP ?? 0) * 0.05,
                       percentage: 5.0,
                       color: "green",
@@ -343,7 +332,7 @@ export function EconomyTab({
                     },
                     {
                       id: "secondary",
-                      name: "Secondary Sector",
+                      name: "Secondary sector",
                       value: (economyData?.core.nominalGDP ?? 0) * 0.25,
                       percentage: 25.0,
                       color: "blue",
@@ -354,7 +343,7 @@ export function EconomyTab({
                     },
                     {
                       id: "tertiary",
-                      name: "Tertiary Sector",
+                      name: "Tertiary sector",
                       value: (economyData?.core.nominalGDP ?? 0) * 0.55,
                       percentage: 55.0,
                       color: "purple",
@@ -365,7 +354,7 @@ export function EconomyTab({
                     },
                     {
                       id: "quaternary",
-                      name: "Quaternary Sector",
+                      name: "Quaternary sector",
                       value: (economyData?.core.nominalGDP ?? 0) * 0.15,
                       percentage: 15.0,
                       color: "cyan",

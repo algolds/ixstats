@@ -101,7 +101,7 @@ export function CulturalExchangeWizard({
       {/* Header */}
       <div className="border-separator flex shrink-0 items-center justify-between border-b p-4 pr-12">
         <div>
-          <h2 className="text-label text-title-3">Create Cultural Exchange</h2>
+          <h2 className="text-label text-title-3">Create cultural exchange</h2>
           <p className="text-label-secondary text-footnote mt-1">
             Step {currentStep} of {WIZARD_STEP_COUNT}
           </p>

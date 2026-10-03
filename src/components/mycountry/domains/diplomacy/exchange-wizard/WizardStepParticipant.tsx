@@ -79,7 +79,7 @@ export const WizardStepParticipant = React.memo(function WizardStepParticipant({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-label text-title-3 mb-2">Select Participant Country</h3>
+        <h3 className="text-label text-title-3 mb-2">Select participant country</h3>
         <p className="text-label-secondary text-body">
           Choose the country that will participate in this exchange.
         </p>

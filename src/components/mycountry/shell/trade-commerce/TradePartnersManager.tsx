@@ -44,7 +44,7 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <Handshake aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
-            <h3 className="text-label text-headline">Bilateral Trade Agreements & Partners</h3>
+            <h3 className="text-label text-headline">Bilateral trade agreements & partners</h3>
           </div>
           <Badge variant="default" className="shrink-0 tabular-nums">
             {partners.length} connected

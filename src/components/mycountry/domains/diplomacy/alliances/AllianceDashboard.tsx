@@ -12,7 +12,6 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import {
   Dialog,
   DialogContent,
@@ -132,7 +131,7 @@ export function AllianceDashboard({
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Invite Nation</DialogTitle>
+                  <DialogTitle>Invite nation</DialogTitle>
                   <DialogDescription>Invite a country to join {alliance.name}.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -189,7 +188,7 @@ export function AllianceDashboard({
           <div key={stat.label} className="bg-fill-3 rounded-row p-2">
             <dd className="text-label text-title-3 tabular-nums">{stat.value}</dd>
             <dt>
-              <Eyebrow>{stat.label}</Eyebrow>
+              <span className="text-stat-label text-label-secondary">{stat.label}</span>
             </dt>
           </div>
         ))}

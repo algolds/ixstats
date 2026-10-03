@@ -42,12 +42,11 @@ export function MyCountryComplianceModal({
         <div className="flex h-full min-h-0 flex-col">
           <SheetHeader className="shrink-0 px-4 pt-4 text-left sm:px-6 sm:pt-6">
             <SheetTitle className="text-title-2 sm:text-title-1 flex items-center gap-2">
-              <ClipboardList className="text-tint h-5 w-5 sm:h-6 sm:w-6" />
-              Complete Your MyCountry Profile
+              <ClipboardList aria-hidden="true" className="h-5 w-5 sm:h-6 sm:w-6" />
+              Complete your MyCountry profile
             </SheetTitle>
             <SheetDescription className="text-label-secondary text-body sm:text-body">
-              Ensure your nation is fully onboarded. Completing the sections below unlocks executive
-              dashboards, accuracy scoring, and compliance automation.
+              Some profile sections are incomplete. Finish them to keep your national data accurate.
             </SheetDescription>
           </SheetHeader>
 
@@ -102,7 +101,7 @@ export function MyCountryComplianceModal({
                     Remind me later
                   </Button>
                   <Button onClick={onReview} className="text-body w-full sm:w-fit">
-                    Open MyCountry Editor
+                    Open MyCountry editor
                   </Button>
                 </>
               ) : (

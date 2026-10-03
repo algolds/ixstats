@@ -36,7 +36,7 @@ import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { DOMAIN_META, type V2Domain } from "./domain-meta";
+import { DOMAIN_META, type MyCountryDomain } from "./domain-meta";
 import { STATUS_TEXT } from "./status-tone";
 import { ThinkPagesShareModal } from "~/components/mycountry/shared/modals/ThinkPagesShareModal";
 import { IssueDetailBrief } from "~/components/mycountry/shared/headers/IssueDetailBrief";
@@ -68,7 +68,7 @@ const DefenseCommandPanel = dynamic(
   { loading: () => <Skeleton className="rounded-card h-64" /> }
 );
 
-/** A v2 drill-down surface. Phase 3 connects deep domain panels directly inside right-side sheets. */
+/** What a drill sheet shows. */
 export type DrillSheetKind =
   | { kind: "intent"; intentId: string }
   | { kind: "issue"; issueId: string }
@@ -77,8 +77,6 @@ export type DrillSheetKind =
   | { kind: "politics" }
   | { kind: "economy" }
   | null;
-
-export type V2Drill = DrillSheetKind;
 
 /** Directive tier → semantic text tone (measured is calm, extreme is a warning sign). */
 const TIER_TONE: Record<string, string> = {
@@ -133,8 +131,7 @@ function SheetSection({
     <Card className={cn("rounded-card", className)}>
       <CardHeader className="flex-row items-center justify-between gap-2 p-4 pb-3">
         <div className="flex min-w-0 items-center gap-2">
-          {/* v2: section glyphs in the MyCountry gold */}
-          <Icon aria-hidden="true" className="text-tint h-4 w-4 shrink-0" />
+          <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
           <h3 className="text-label text-headline">{title}</h3>
         </div>
         {accessory}
@@ -493,7 +490,7 @@ function IntentDetail({
                 className="text-footnote flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0"
               >
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="border-tint/20 bg-tint/10 text-tint flex size-6 shrink-0 items-center justify-center rounded-lg border font-semibold tabular-nums">
+                  <span className="bg-fill-3 text-label-secondary flex size-6 shrink-0 items-center justify-center rounded-lg font-semibold tabular-nums">
                     {idx + 1}
                   </span>
                   <span className="text-label font-medium">{change.label}</span>
@@ -566,7 +563,7 @@ export interface DrillSheetsProps {
   onDeclare?: (prefilledGoal?: string) => void;
 }
 
-export type V2DrillSheetsProps = DrillSheetsProps;
+export type DrillSheetKindSheetsProps = DrillSheetsProps;
 
 function DrillSheetsComponent({
   drill,
@@ -578,7 +575,7 @@ function DrillSheetsComponent({
 
   const kindKind = drill === null ? "relations" : drill.kind;
   const meta =
-    kindKind === "intent" || kindKind === "issue" ? null : DOMAIN_META[kindKind as V2Domain];
+    kindKind === "intent" || kindKind === "issue" ? null : DOMAIN_META[kindKind as MyCountryDomain];
 
   const title =
     drill === null
@@ -653,4 +650,4 @@ function DrillSheetsComponent({
 }
 
 export const DrillSheets = React.memo(DrillSheetsComponent);
-export const V2DrillSheets = DrillSheets;
+export const DrillSheetKindSheets = DrillSheets;

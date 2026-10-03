@@ -3,7 +3,6 @@
 import React from "react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { formatIxCountdown } from "~/lib/statecraft/calendar";
@@ -33,7 +32,7 @@ function Tile({
 }) {
   const body = (
     <>
-      <Eyebrow className="block">{label}</Eyebrow>
+      <span className="text-stat-label text-label-secondary block">{label}</span>
       <span
         className={cn(
           "text-label text-title-1 mt-1 block leading-8 tabular-nums",

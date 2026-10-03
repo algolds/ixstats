@@ -70,9 +70,9 @@ export function OverviewTab({
                 }
                 interactive
               >
-                <Eyebrow className="block">
+                <span className="text-stat-label text-label-secondary block">
                   {metricView.gdp === "perCapita" ? "GDP per Capita" : "Total GDP"}
-                </Eyebrow>
+                </span>
                 <div className="mt-0.5 flex items-center gap-2">
                   <p className="text-label text-title-3">
                     $
@@ -124,9 +124,9 @@ export function OverviewTab({
                 }
                 interactive
               >
-                <Eyebrow className="block">
+                <span className="text-stat-label text-label-secondary block">
                   {metricView.population === "total" ? "Population" : "Pop. Density"}
-                </Eyebrow>
+                </span>
                 <div className="mt-0.5 flex items-center gap-2">
                   <p className="text-label text-title-3">
                     {metricView.population === "total"
@@ -179,7 +179,7 @@ export function OverviewTab({
                 }
                 interactive
               >
-                <Eyebrow className="block">Land Area</Eyebrow>
+                <span className="text-stat-label text-label-secondary block">Land area</span>
                 <p className="text-label text-title-3 mt-0.5">
                   {metricView.area === "km"
                     ? country.landArea

@@ -44,8 +44,8 @@ type ReportTab = "overview" | "climate-elevation" | "hydro-borders" | "superlati
 
 const REPORT_TABS = [
   { value: "overview", label: "Overview", icon: <Compass /> },
-  { value: "climate-elevation", label: "Climate & Elevation", icon: <CloudSun /> },
-  { value: "hydro-borders", label: "Hydro & Borders", icon: <Waves /> },
+  { value: "climate-elevation", label: "Climate & elevation", icon: <CloudSun /> },
+  { value: "hydro-borders", label: "Hydro & borders", icon: <Waves /> },
   { value: "superlatives", label: "Superlatives", icon: <Trophy /> },
 ];
 
@@ -77,11 +77,10 @@ export function GeographyReportModal({
         <SheetHeader className="border-separator border-b pb-3">
           <SheetTitle className="text-label text-title-3 flex items-center gap-2">
             <Compass aria-hidden="true" className="text-label-secondary h-5 w-5" />
-            Geographic Profile Analysis &mdash; {countryName}
+            Geographic profile: {countryName}
           </SheetTitle>
           <SheetDescription className="text-label-secondary text-footnote">
-            Comprehensive geographical breakdown including terrain elevation, macroclimate models,
-            hydrography bounds, and regional borders.
+            Terrain, climate, hydrography and borders.
           </SheetDescription>
         </SheetHeader>
 
@@ -100,28 +99,28 @@ export function GeographyReportModal({
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <Card variant="inset" padding="sm" className="space-y-1">
-                  <Eyebrow className="block">Spatial Metrics</Eyebrow>
+                  <Eyebrow className="block">Spatial metrics</Eyebrow>
                   <div className="text-footnote grid grid-cols-2 gap-2">
                     <div>
-                      <span className="text-label-secondary text-footnote">Total Area</span>
+                      <span className="text-label-secondary text-footnote">Total area</span>
                       <div className="text-label font-semibold">
                         {geoProfile.area.areaKm2.toLocaleString()} km²
                       </div>
                     </div>
                     <div>
-                      <span className="text-label-secondary text-footnote">Border Perimeter</span>
+                      <span className="text-label-secondary text-footnote">Border perimeter</span>
                       <div className="text-label font-semibold">
                         {geoProfile.area.perimeterKm.toLocaleString()} km
                       </div>
                     </div>
                     <div>
-                      <span className="text-label-secondary text-footnote">North-South Span</span>
+                      <span className="text-label-secondary text-footnote">North-South span</span>
                       <div className="text-label font-semibold">
                         {geoProfile.area.nsSpanKm.toLocaleString()} km
                       </div>
                     </div>
                     <div>
-                      <span className="text-label-secondary text-footnote">East-West Span</span>
+                      <span className="text-label-secondary text-footnote">East-West span</span>
                       <div className="text-label font-semibold">
                         {geoProfile.area.ewSpanKm.toLocaleString()} km
                       </div>
@@ -130,10 +129,10 @@ export function GeographyReportModal({
                 </Card>
 
                 <Card variant="inset" padding="sm" className="space-y-1">
-                  <Eyebrow className="block">Biogeographic Overview</Eyebrow>
+                  <Eyebrow className="block">Biogeographic overview</Eyebrow>
                   <div className="text-footnote grid grid-cols-2 gap-2">
                     <div>
-                      <span className="text-label-secondary text-footnote">Dominant Climate</span>
+                      <span className="text-label-secondary text-footnote">Dominant climate</span>
                       <div
                         className="text-label truncate font-semibold"
                         title={geoProfile.climate.dominant ?? undefined}
@@ -142,19 +141,19 @@ export function GeographyReportModal({
                       </div>
                     </div>
                     <div>
-                      <span className="text-label-secondary text-footnote">Mean Elevation</span>
+                      <span className="text-label-secondary text-footnote">Mean elevation</span>
                       <div className="text-label font-semibold">
                         {Math.round(geoProfile.elevation.meanElev).toLocaleString()} m
                       </div>
                     </div>
                     <div>
-                      <span className="text-label-secondary text-footnote">Arable Land</span>
+                      <span className="text-label-secondary text-footnote">Arable land</span>
                       <div className="text-label font-semibold">
                         {geoProfile.derived.arableLandPercent.toFixed(1)}%
                       </div>
                     </div>
                     <div>
-                      <span className="text-label-secondary text-footnote">Terrain Class</span>
+                      <span className="text-label-secondary text-footnote">Terrain class</span>
                       <div className="text-label truncate font-semibold">
                         {geoProfile.elevation.terrainRoughness}
                       </div>
@@ -170,9 +169,9 @@ export function GeographyReportModal({
                 </div>
                 <div className="text-footnote flex flex-wrap gap-2">
                   {geoProfile.derived.isLandlocked && (
-                    <Badge variant="outline">Landlocked State</Badge>
+                    <Badge variant="outline">Landlocked state</Badge>
                   )}
-                  {geoProfile.derived.isIsland && <Badge variant="outline">Island Nation</Badge>}
+                  {geoProfile.derived.isIsland && <Badge variant="outline">Island nation</Badge>}
                   {geoProfile.derived.coastlineKm > 0 && (
                     <Badge variant="outline">
                       Coastline: {Math.round(geoProfile.derived.coastlineKm).toLocaleString()} km
@@ -196,15 +195,15 @@ export function GeographyReportModal({
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <CloudSun aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
-                  <Eyebrow>Climate Zone Distribution</Eyebrow>
+                  <Eyebrow>Climate zone distribution</Eyebrow>
                 </div>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Climate Category</TableHead>
+                      <TableHead>Climate category</TableHead>
                       <TableHead className="text-right">Coverage %</TableHead>
                       <TableHead className="text-right">Area (km²)</TableHead>
-                      <TableHead className="text-right">Agri Weight</TableHead>
+                      <TableHead className="text-right">Agri weight</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -238,12 +237,12 @@ export function GeographyReportModal({
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <TrendingUp aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
-                  <Eyebrow>Altitude Profile Breakdown</Eyebrow>
+                  <Eyebrow>Altitude profile breakdown</Eyebrow>
                 </div>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Elevation Tier</TableHead>
+                      <TableHead>Elevation tier</TableHead>
                       <TableHead className="text-right">Coverage %</TableHead>
                       <TableHead className="text-right">Area (km²)</TableHead>
                     </TableRow>
@@ -279,16 +278,16 @@ export function GeographyReportModal({
               {/* Hydrography Summary Card */}
               <div className="grid grid-cols-2 gap-4">
                 <Card variant="inset" padding="sm" className="space-y-1">
-                  <Eyebrow className="block">River Networks</Eyebrow>
+                  <Eyebrow className="block">River networks</Eyebrow>
                   <div className="text-footnote space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-label-secondary">Unique Rivers</span>
+                      <span className="text-label-secondary">Unique rivers</span>
                       <span className="text-label font-semibold">
                         {geoProfile.hydro.riverCount}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-label-secondary">Clipped Length</span>
+                      <span className="text-label-secondary">Clipped length</span>
                       <span className="text-label font-semibold">
                         {geoProfile.hydro.totalRiverLengthKm.toLocaleString()} km
                       </span>
@@ -297,14 +296,14 @@ export function GeographyReportModal({
                 </Card>
 
                 <Card variant="inset" padding="sm" className="space-y-1">
-                  <Eyebrow className="block">Lakes & Reservoirs</Eyebrow>
+                  <Eyebrow className="block">Lakes & reservoirs</Eyebrow>
                   <div className="text-footnote space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-label-secondary">Unique Lakes</span>
+                      <span className="text-label-secondary">Unique lakes</span>
                       <span className="text-label font-semibold">{geoProfile.hydro.lakeCount}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-label-secondary">Clipped Area</span>
+                      <span className="text-label-secondary">Clipped area</span>
                       <span className="text-label font-semibold">
                         {geoProfile.hydro.totalLakeAreaSqKm.toLocaleString()} km²
                       </span>
@@ -317,12 +316,12 @@ export function GeographyReportModal({
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Globe2 aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
-                  <Eyebrow>International Border Adjacency</Eyebrow>
+                  <Eyebrow>International border adjacency</Eyebrow>
                 </div>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Bordering Country</TableHead>
+                      <TableHead>Bordering country</TableHead>
                       <TableHead className="text-right">Shared Frontier (km)</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -357,7 +356,7 @@ export function GeographyReportModal({
               {/* Superlative cards */}
               <div className="space-y-3">
                 <SuperlativeCard
-                  title="Tallest Peak"
+                  title="Tallest peak"
                   item={geoProfile.superlatives.tallestPeak}
                   metricLabel="Elevation"
                   metricVal={
@@ -374,7 +373,7 @@ export function GeographyReportModal({
                 />
 
                 <SuperlativeCard
-                  title="Longest River"
+                  title="Longest river"
                   item={geoProfile.superlatives.longestRiver}
                   metricLabel="Length"
                   metricVal={
@@ -386,7 +385,7 @@ export function GeographyReportModal({
                 />
 
                 <SuperlativeCard
-                  title="Largest Lake"
+                  title="Largest lake"
                   item={geoProfile.superlatives.largestLake}
                   metricLabel="Surface Area"
                   metricVal={
@@ -445,7 +444,7 @@ function SuperlativeCard({
             </div>
           </div>
           <div className="text-right">
-            <Eyebrow className="block">{metricLabel}</Eyebrow>
+            <span className="text-stat-label text-label-secondary block">{metricLabel}</span>
             <span className="text-label text-headline tabular-nums">{metricVal}</span>
           </div>
         </div>

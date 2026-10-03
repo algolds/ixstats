@@ -111,12 +111,12 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
             <RouteIcon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
             <h3 className="text-label text-headline">National transit and mobility</h3>
           </div>
-          <MapEditorLink label="Open Map Editor" />
+          <MapEditorLink label="Open map editor" />
         </CardHeader>
         <CardContent className="px-4 pb-4">
           <p className="text-label-secondary text-footnote leading-relaxed">
-            No operational transport routes mapped. Build highways, railways, or shipping lanes in
-            the Map Editor to establish national transit connectivity and unlock GDP dividends.
+            No transport routes are mapped. Build highways, railways or shipping lanes in the map
+            editor to connect the country and raise GDP.
           </p>
         </CardContent>
       </Card>
@@ -141,7 +141,7 @@ export const TransitMobilityCard = memo(function TransitMobilityCard({
             </p>
           </div>
         </div>
-        <MapEditorLink label="Map Editor transit" />
+        <MapEditorLink label="Map editor transit" />
       </CardHeader>
 
       <CardContent className="space-y-4 px-4 pb-4">

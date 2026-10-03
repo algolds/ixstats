@@ -1,6 +1,5 @@
 "use client";
 
-import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { useMemo } from "react";
 import {
   Building,
@@ -194,7 +193,7 @@ export function GovernmentSpendingModal({
             <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <Landmark className="text-label-secondary h-5 w-5" />
-                Budget Summary
+                Budget summary
               </h3>
               <p className="text-label-secondary text-body">
                 Government fiscal allocation and spending summary.
@@ -206,13 +205,17 @@ export function GovernmentSpendingModal({
                   <div className="text-label text-title-3">
                     ${((fiscal?.governmentRevenueTotal || 0) / 1e9).toFixed(1)}B
                   </div>
-                  <Eyebrow className="mt-1 block">Tax Revenue</Eyebrow>
+                  <span className="text-stat-label text-label-secondary mt-1 block">
+                    Tax revenue
+                  </span>
                 </Card>
                 <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-title-3 text-green">
                     {(fiscal?.taxRevenueGDPPercent || 0).toFixed(1)}%
                   </div>
-                  <Eyebrow className="mt-1 block">Revenue % GDP</Eyebrow>
+                  <span className="text-stat-label text-label-secondary mt-1 block">
+                    Revenue % GDP
+                  </span>
                 </Card>
                 <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-label text-title-3">
@@ -224,13 +227,17 @@ export function GovernmentSpendingModal({
                     ).toFixed(1)}
                     B
                   </div>
-                  <Eyebrow className="mt-1 block">Public Debt</Eyebrow>
+                  <span className="text-stat-label text-label-secondary mt-1 block">
+                    Public debt
+                  </span>
                 </Card>
                 <Card variant="inset" padding="none" className="p-4 text-center">
                   <div className="text-destructive text-title-3">
                     {(fiscal?.totalDebtGDPRatio || 0).toFixed(1)}%
                   </div>
-                  <Eyebrow className="mt-1 block">Debt to GDP</Eyebrow>
+                  <span className="text-stat-label text-label-secondary mt-1 block">
+                    Debt to GDP
+                  </span>
                 </Card>
               </div>
 
@@ -252,7 +259,7 @@ export function GovernmentSpendingModal({
 
         <MetricModalLayout.Sidebar>
           <MetricModalLayout.StatCard
-            label="Total Budget"
+            label="Total budget"
             value={totalBudget / 1e9}
             prefix="$"
             suffix="B"
@@ -269,7 +276,7 @@ export function GovernmentSpendingModal({
             variant="economy"
           />
           <MetricModalLayout.StatCard
-            label="Budget Balance"
+            label="Budget balance"
             value={budgetBalance / 1e9}
             prefix="$"
             suffix="B"
@@ -278,7 +285,7 @@ export function GovernmentSpendingModal({
             variant="economy"
           />
           <MetricModalLayout.StatCard
-            label="Per Capita Spending"
+            label="Per capita spending"
             value={totalBudget / (countryData?.currentPopulation || 1)}
             prefix="$"
             decimalPlaces={0}
@@ -325,7 +332,7 @@ export function GovernmentSpendingModal({
         <MetricModalLayout.MainArea>
           <Card className="p-6">
             <CardHeader className="mb-4 p-0">
-              <h3 className="text-label text-title-3">Government Spending Trends</h3>
+              <h3 className="text-label text-title-3">Government spending trends</h3>
               <p className="text-label-secondary text-body">
                 Historical budget and spending metrics
               </p>
@@ -391,19 +398,23 @@ export function GovernmentSpendingModal({
         <MetricModalLayout.Sidebar>
           <div className="flex flex-1 flex-col gap-4">
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Peak Spending (B)</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Peak Spending (B)
+              </span>
               <span className="text-label text-title-2">
                 {spendStats?.maxSpending ? `$${spendStats.maxSpending.toFixed(1)}B` : "N/A"}
               </span>
             </div>
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Avg Budget Balance</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Avg budget balance
+              </span>
               <span className="text-title-2 text-green">
                 {spendStats?.avgBalance ? `$${spendStats.avgBalance.toFixed(1)}B` : "N/A"}
               </span>
             </div>
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Data Points</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">Data points</span>
               <span className="text-label text-title-2">{spendStats?.dataPoints || 0}</span>
             </div>
           </div>
@@ -457,7 +468,7 @@ export function GovernmentSpendingModal({
             <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <Globe className="text-label-secondary h-5 w-5" />
-                Fiscal Health Benchmarks
+                Fiscal health benchmarks
               </h3>
               <p className="text-label-secondary text-body">
                 Compare spending ratios against global baselines.
@@ -498,7 +509,9 @@ export function GovernmentSpendingModal({
         <MetricModalLayout.Sidebar>
           <div className="flex h-full flex-col justify-between gap-4">
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Global Allocation</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Global allocation
+              </span>
               <span className="text-label text-title-2">
                 {spendingGdpPercent <= globalAvgSpending ? "Efficient" : "Above Avg"}
               </span>
@@ -507,7 +520,9 @@ export function GovernmentSpendingModal({
               </span>
             </div>
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Fiscal Stability</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Fiscal stability
+              </span>
               <span className="text-title-2 text-green">
                 {debtToGdp < 60 ? "Healthy" : debtToGdp < 100 ? "Moderate" : "High"}
               </span>
@@ -516,7 +531,7 @@ export function GovernmentSpendingModal({
               </span>
             </div>
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Budget Status</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">Budget status</span>
               <span
                 className={cn(
                   "text-title-2",
@@ -579,7 +594,7 @@ export function GovernmentSpendingModal({
         <MetricModalLayout.MainArea>
           <Card className="flex flex-1 flex-col justify-between p-6">
             <CardHeader className="mb-4 p-0">
-              <h3 className="text-label text-title-3">Spending by Category</h3>
+              <h3 className="text-label text-title-3">Spending by category</h3>
               <p className="text-label-secondary text-body">
                 Budget allocation across government sectors
               </p>
@@ -641,7 +656,7 @@ export function GovernmentSpendingModal({
         <MetricModalLayout.Sidebar>
           <Card className="flex flex-1 flex-col justify-between p-4">
             <CardHeader className="mb-4 p-0">
-              <h3 className="text-label text-title-3 text-headline">Priority Spending</h3>
+              <h3 className="text-label text-title-3 text-headline">Priority spending</h3>
               <p className="text-label-secondary text-footnote">
                 Key budget policies and priorities
               </p>
@@ -666,7 +681,7 @@ export function GovernmentSpendingModal({
       onClose={onClose}
       countryId={countryId}
       countryName={countryName}
-      title="Government Spending Analysis"
+      title="Government spending analysis"
       description="Budget allocation and fiscal metrics"
       icon={Building}
       iconColor="text-yellow"

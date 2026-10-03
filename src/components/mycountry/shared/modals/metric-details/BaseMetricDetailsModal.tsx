@@ -102,7 +102,7 @@ const DEFAULT_TABS: MetricModalTab[] = [
  *   onClose={onClose}
  *   countryId={countryId}
  *   countryName="United States"
- *   title="Labor Force Analysis"
+ *   title="Labor force analysis"
  *   icon={Users}
  *   iconColor="text-blue-500"
  * >

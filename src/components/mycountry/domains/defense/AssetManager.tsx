@@ -130,7 +130,7 @@ export function AssetManager({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="all">All types</SelectItem>
               {Object.entries(ASSET_TYPE_CONFIG).map(([key, config]) => (
                 <SelectItem key={key} value={key}>
                   {config.label}
@@ -141,7 +141,7 @@ export function AssetManager({
         </div>
         <Button size="sm" onClick={handleCreate}>
           <Plus className="h-4 w-4" />
-          Add Asset
+          Add asset
         </Button>
       </div>
 

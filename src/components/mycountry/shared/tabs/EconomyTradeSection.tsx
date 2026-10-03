@@ -1,10 +1,8 @@
 "use client";
 
-import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import { motion } from "motion/react";
 import { Globe, NavArrowRight as ChevronRight } from "iconoir-react";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { SectorBreakdownCard } from "~/components/mycountry/shared/primitives";
 import { formatCompactCurrency } from "~/lib/utils";
 import type { MappedEconomyData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
@@ -36,7 +34,7 @@ export function EconomyTradeSection({
           }`}
         >
           <Globe className={`h-3.5 w-3.5 ${isExpanded ? "text-label" : "text-label-secondary"}`} />
-          <span>Trade Flows & Balance</span>
+          <span>Trade flows & balance</span>
           <motion.div
             animate={{ rotate: isExpanded ? 90 : 0 }}
             transition={{ type: "spring", bounce: 0, duration: 0.25 }}
@@ -54,29 +52,24 @@ export function EconomyTradeSection({
           isExpanded ? "border-separator border" : "border border-transparent"
         }`}
       >
-        <TextureOverlay
-          texture="paperGrain"
-          opacity={0.06}
-          className="pointer-events-none absolute inset-0 z-0"
-        />
         <div className="relative z-10 space-y-4 p-4">
           <div className="bg-fill-3 rounded-row grid grid-cols-3 gap-4 p-3">
             <div className="min-w-0">
-              <Eyebrow className="block">Total Exports</Eyebrow>
+              <span className="text-stat-label text-label-secondary block">Total exports</span>
               <p className="text-label text-headline mt-0.5">
                 {formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.35, "N/A", currency)}
               </p>
               <p className="text-label-secondary text-footnote mt-0.5">35.0% of GDP</p>
             </div>
             <div className="min-w-0">
-              <Eyebrow className="block">Total Imports</Eyebrow>
+              <span className="text-stat-label text-label-secondary block">Total imports</span>
               <p className="text-label text-headline mt-0.5">
                 {formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.32, "N/A", currency)}
               </p>
               <p className="text-label-secondary text-footnote mt-0.5">32.0% of GDP</p>
             </div>
             <div className="min-w-0">
-              <Eyebrow className="block">Trade Balance</Eyebrow>
+              <span className="text-stat-label text-label-secondary block">Trade balance</span>
               <p className="text-headline text-green mt-0.5">
                 {formatCompactCurrency((economyData?.core.nominalGDP ?? 0) * 0.03, "N/A", currency)}
               </p>
@@ -86,17 +79,15 @@ export function EconomyTradeSection({
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <SectorBreakdownCard
-              title="Export Composition"
+              title="Export composition"
               subtitle="Distribution of goods and services exported"
               layout="list"
               showProgressBars={true}
-              cardWrapper="panel"
-              accent="emerald"
               currency={currency}
               sectors={[
                 {
                   id: "manufactured",
-                  name: "Manufactured Goods",
+                  name: "Manufactured goods",
                   value: 0,
                   percentage: 45,
                   color: "blue",
@@ -105,7 +96,7 @@ export function EconomyTradeSection({
                 },
                 {
                   id: "tech",
-                  name: "Technology Products",
+                  name: "Technology products",
                   value: 0,
                   percentage: 25,
                   color: "cyan",
@@ -122,7 +113,7 @@ export function EconomyTradeSection({
                 },
                 {
                   id: "agri",
-                  name: "Agricultural Products",
+                  name: "Agricultural products",
                   value: 0,
                   percentage: 10,
                   color: "green",
@@ -131,7 +122,7 @@ export function EconomyTradeSection({
                 },
                 {
                   id: "raw",
-                  name: "Raw Materials",
+                  name: "Raw materials",
                   value: 0,
                   percentage: 5,
                   color: "amber",
@@ -140,17 +131,15 @@ export function EconomyTradeSection({
               ]}
             />
             <SectorBreakdownCard
-              title="Import Composition"
+              title="Import composition"
               subtitle="Distribution of goods and services imported"
               layout="list"
               showProgressBars={true}
-              cardWrapper="panel"
-              accent="emerald"
               currency={currency}
               sectors={[
                 {
                   id: "energy",
-                  name: "Energy & Fuels",
+                  name: "Energy & fuels",
                   value: (economyData?.core.nominalGDP ?? 0) * 0.32 * 0.3,
                   percentage: 30,
                   color: "red",
@@ -159,7 +148,7 @@ export function EconomyTradeSection({
                 },
                 {
                   id: "manufactured",
-                  name: "Manufactured Goods",
+                  name: "Manufactured goods",
                   value: 0,
                   percentage: 25,
                   color: "blue",
@@ -167,7 +156,7 @@ export function EconomyTradeSection({
                 },
                 {
                   id: "tech",
-                  name: "Technology Products",
+                  name: "Technology products",
                   value: 0,
                   percentage: 20,
                   color: "cyan",
@@ -176,7 +165,7 @@ export function EconomyTradeSection({
                 },
                 {
                   id: "raw",
-                  name: "Raw Materials",
+                  name: "Raw materials",
                   value: 0,
                   percentage: 15,
                   color: "amber",
@@ -184,7 +173,7 @@ export function EconomyTradeSection({
                 },
                 {
                   id: "food",
-                  name: "Food & Agricultural",
+                  name: "Food & agricultural",
                   value: 0,
                   percentage: 10,
                   color: "green",

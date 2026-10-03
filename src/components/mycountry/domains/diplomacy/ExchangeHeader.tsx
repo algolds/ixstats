@@ -41,7 +41,7 @@ export const ExchangeHeader = React.memo<ExchangeHeaderProps>(
             aria-busy={isLoading || undefined}
           >
             <Globe className="text-label-secondary h-4 w-4 shrink-0" />
-            <span>Cultural Exchange Program</span>
+            <span>Cultural exchange program</span>
             <span className="text-label-secondary text-footnote font-normal tabular-nums">
               {isLoading ? "Loading…" : `${filteredExchangesCount} exchanges`}
             </span>

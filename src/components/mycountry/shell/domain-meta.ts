@@ -1,10 +1,10 @@
 import { Globe as Globe2, Shield, Bank as Landmark, StatUp as TrendingUp } from "iconoir-react";
 
 /** The four domain drill-downs, shared by the drill sheets and the full-page domain surfaces. */
-export type V2Domain = "relations" | "defense" | "politics" | "economy";
+export type MyCountryDomain = "relations" | "defense" | "politics" | "economy";
 
 export const DOMAIN_META: Record<
-  V2Domain,
+  MyCountryDomain,
   {
     title: string;
     sheetTitle: string;
@@ -17,7 +17,7 @@ export const DOMAIN_META: Record<
 > = {
   relations: {
     title: "Diplomacy",
-    sheetTitle: "Foreign Relations",
+    sheetTitle: "Foreign relations",
     icon: Globe2,
     blurb: "Relations, embassies, alliances and trade agreements.",
     section: "diplomacy",
@@ -26,7 +26,7 @@ export const DOMAIN_META: Record<
   },
   defense: {
     title: "Defense",
-    sheetTitle: "National Security",
+    sheetTitle: "National security",
     icon: Shield,
     blurb: "Forces, readiness and regional threats.",
     section: "defense",
@@ -35,7 +35,7 @@ export const DOMAIN_META: Record<
   },
   politics: {
     title: "Politics",
-    sheetTitle: "Governance Configuration",
+    sheetTitle: "Governance configuration",
     icon: Landmark,
     blurb: "Legislation, factions, governance and elections.",
     section: "politics",
@@ -43,8 +43,8 @@ export const DOMAIN_META: Record<
     prefilledGoal: "Reform domestic governance and political institutions",
   },
   economy: {
-    title: "Economy & Budget",
-    sheetTitle: "Economy & Budget",
+    title: "Economy & budget",
+    sheetTitle: "Economy & budget",
     icon: TrendingUp,
     blurb: "Budget, taxes, trade and growth.",
     section: "economy",

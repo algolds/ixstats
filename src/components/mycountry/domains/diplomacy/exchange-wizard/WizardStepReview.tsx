@@ -65,7 +65,7 @@ export const WizardStepReview = React.memo(function WizardStepReview({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-label text-title-3 mb-2">Review & Submit</h3>
+        <h3 className="text-label text-title-3 mb-2">Review & submit</h3>
         <p className="text-label-secondary text-body">
           Review your exchange details before creating it.
         </p>
@@ -88,7 +88,7 @@ export const WizardStepReview = React.memo(function WizardStepReview({
 
         {/* Countries */}
         <div className="border-separator bg-surface rounded-row border p-4">
-          <h5 className="text-label-secondary text-headline mb-3">Participating Countries</h5>
+          <h5 className="text-label-secondary text-headline mb-3">Participating countries</h5>
           <div className="flex flex-col gap-3">
             <ReviewCountry
               name={hostCountry.name}
@@ -128,11 +128,11 @@ export const WizardStepReview = React.memo(function WizardStepReview({
           <h5 className="text-label-secondary text-headline mb-3">Details</h5>
           <div className="grid grid-cols-2 gap-4">
             <ReviewDetail
-              label="Start Date"
+              label="Start date"
               value={new Date(data.startDate).toLocaleDateString()}
             />
-            <ReviewDetail label="End Date" value={new Date(data.endDate).toLocaleDateString()} />
-            <ReviewDetail label="Max Participants" value={data.maxParticipants} />
+            <ReviewDetail label="End date" value={new Date(data.endDate).toLocaleDateString()} />
+            <ReviewDetail label="Max participants" value={data.maxParticipants} />
             <ReviewDetail label="Visibility" value={data.isPublic ? "Public" : "Private"} />
           </div>
         </div>

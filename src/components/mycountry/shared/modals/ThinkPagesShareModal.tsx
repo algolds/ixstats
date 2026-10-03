@@ -110,11 +110,11 @@ export function ThinkPagesShareModal({
           <div className="flex items-center gap-2">
             <Badge variant="default">
               <ShieldCheck />
-              Official Government Account
+              Official government account
             </Badge>
           </div>
           <DialogTitle className="text-label text-title-3">
-            Share Directive Summation to ThinkPages
+            Share Directive summation to ThinkPages
           </DialogTitle>
           <DialogDescription className="text-label-secondary text-footnote">
             Confirm or tweak your executive post before publishing directly to the ThinkPages feed.
@@ -140,7 +140,7 @@ export function ThinkPagesShareModal({
               </Button>
               <Button size="sm" onClick={() => window.open("/thinkpages", "_blank")}>
                 <Globe className="h-3.5 w-3.5" />
-                View ThinkPages Feed
+                View ThinkPages feed
               </Button>
             </div>
           </div>
@@ -169,7 +169,7 @@ export function ThinkPagesShareModal({
                   onClick={() => handlePublish("draft")}
                 >
                   <FileText className="h-3.5 w-3.5" />
-                  Save as Draft
+                  Save as draft
                 </Button>
                 <Button
                   size="sm"
@@ -177,7 +177,7 @@ export function ThinkPagesShareModal({
                   onClick={() => handlePublish("public")}
                 >
                   <Send className="h-3.5 w-3.5" />
-                  Publish Now Live
+                  Publish now live
                 </Button>
               </div>
             </DialogFooter>

@@ -66,10 +66,10 @@ export const DEFCON_LEVELS: DefconLevelInfo[] = [
 ];
 
 export const PROJECTION_GOALS = [
-  { id: "territorial", label: "Territorial Defense", desc: "Homeland borders" },
-  { id: "regional", label: "Regional Deterrence", desc: "Frontier & littoral zones" },
+  { id: "territorial", label: "Territorial defense", desc: "Homeland borders" },
+  { id: "regional", label: "Regional deterrence", desc: "Frontier & littoral zones" },
   { id: "expeditionary", label: "Expeditionary", desc: "Deploy task forces abroad" },
-  { id: "global", label: "Global Reach", desc: "Sustained global theater presence" },
+  { id: "global", label: "Global reach", desc: "Sustained global theater presence" },
 ];
 
 interface Branch {
@@ -106,9 +106,9 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
   const activeDefcon = DEFCON_LEVELS.find((d) => d.level === defcon) || DEFCON_LEVELS[1]!;
 
   const metrics = [
-    { label: "Readiness", title: "Overall Readiness", value: averageReadiness },
-    { label: "Technology", title: "Technology Level", value: averageTechnology },
-    { label: "Morale", title: "Force Morale", value: averageMorale },
+    { label: "Readiness", title: "Overall readiness", value: averageReadiness },
+    { label: "Technology", title: "Technology level", value: averageTechnology },
+    { label: "Morale", title: "Force morale", value: averageMorale },
   ];
 
   return (
@@ -132,12 +132,12 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
               <SheetHeader>
                 <SheetTitle className="flex items-center gap-2">
                   <Info aria-hidden="true" className="text-label-secondary h-5 w-5" />
-                  Strategic Readiness Metrics
+                  Strategic readiness metrics
                 </SheetTitle>
               </SheetHeader>
               <div className="text-body space-y-4">
                 <div>
-                  <h4 className="mb-2 font-semibold">Overall Readiness</h4>
+                  <h4 className="mb-2 font-semibold">Overall readiness</h4>
                   <p className="text-label-secondary">
                     Measures the ability of your forces to deploy and conduct operations
                     immediately. Factors include equipment availability, personnel training, and
@@ -145,7 +145,7 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
                   </p>
                 </div>
                 <div>
-                  <h4 className="mb-2 font-semibold">Technology Level</h4>
+                  <h4 className="mb-2 font-semibold">Technology level</h4>
                   <p className="text-label-secondary">
                     Reflects the sophistication of your military equipment and systems. Higher
                     technology levels provide tactical advantages but require more maintenance and
@@ -153,14 +153,14 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
                   </p>
                 </div>
                 <div>
-                  <h4 className="mb-2 font-semibold">Force Morale</h4>
+                  <h4 className="mb-2 font-semibold">Force morale</h4>
                   <p className="text-label-secondary">
                     Indicates the motivation and esprit de corps of your military personnel. High
                     morale improves combat effectiveness and reduces desertion rates.
                   </p>
                 </div>
                 <div>
-                  <h4 className="mb-2 font-semibold">Improving Readiness</h4>
+                  <h4 className="mb-2 font-semibold">Improving readiness</h4>
                   <ul className="text-label-secondary list-inside list-disc space-y-1">
                     <li>Increase operations & maintenance budget for better equipment upkeep</li>
                     <li>Invest in training programs to improve personnel competency</li>
@@ -183,9 +183,12 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
             const pct = toPercent(m.value);
             return (
               <div key={m.label} className="min-w-0 space-y-2">
-                <Eyebrow className="block truncate" title={m.title}>
+                <span
+                  className="text-stat-label text-label-secondary block truncate"
+                  title={m.title}
+                >
                   {m.label}
-                </Eyebrow>
+                </span>
                 <div className="text-label text-title-3 tabular-nums">
                   {Math.min(100, Math.max(0, Math.round(pct)))}%
                 </div>
@@ -199,7 +202,9 @@ export const ReadinessOverviewCard = React.memo(function ReadinessOverviewCard({
         <div className="border-separator space-y-4 border-t pt-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-1">
-              <Eyebrow id={defconLabelId}>DEFCON alert status</Eyebrow>
+              <span id={defconLabelId} className="text-stat-label text-label-secondary">
+                DEFCON alert status
+              </span>
               <Badge variant="outline" className={cn("tabular-nums", activeDefcon.cls)}>
                 {activeDefcon.status} · {activeDefcon.readinessMod} · {activeDefcon.costMod}
               </Badge>

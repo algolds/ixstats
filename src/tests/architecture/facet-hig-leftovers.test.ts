@@ -3,7 +3,7 @@
  * Facet 3.1 HIG pass leftovers (docs/specs/2026-09-30-facet-3-design-system.md §16.8): pins the
  * closed items so they cannot regrow — touch-visible builder image actions, the builder heading
  * outline, the passport ribbon's tabs pattern, the always-present achievements h1, the map island
- * popovers' inset focus rings and GlassPanel's hero card.
+ * popovers' inset focus rings.
  */
 import fs from "fs";
 import path from "path";
@@ -80,10 +80,5 @@ describe("Facet 3.1 HIG leftovers", () => {
       expect([rel, /focus-visible:ring/.test(source)]).toEqual([rel, false]);
       expect([rel, /focus-visible:-outline-offset-2/.test(source)]).toEqual([rel, true]);
     }
-  });
-
-  it("renders GlassPanel on the hero card", () => {
-    const panel = read("components/mycountry/shared/cards/GlassPanel.tsx");
-    expect(panel).toContain('variant="hero"');
   });
 });

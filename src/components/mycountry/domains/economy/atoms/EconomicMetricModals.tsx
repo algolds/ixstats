@@ -271,25 +271,27 @@ export function EconomicMetricModals({
             <div className="space-y-6">
               <Card variant="inset" className="grid grid-cols-2 gap-4 p-4 text-center">
                 <div className="space-y-1">
-                  <Eyebrow className="block">Base score</Eyebrow>
+                  <span className="text-stat-label text-label-secondary block">Base score</span>
                   <p className="text-label text-title-2 tabular-nums">
                     {effectiveness.baseEffectiveness.toFixed(1)}%
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <Eyebrow className="block">Synergy bonus</Eyebrow>
+                  <span className="text-stat-label text-label-secondary block">Synergy bonus</span>
                   <p className="text-title-2 text-green tabular-nums">
                     +{effectiveness.synergyBonus.toFixed(1)}%
                   </p>
                 </div>
                 <div className="mt-2 space-y-1">
-                  <Eyebrow className="block">Conflict penalty</Eyebrow>
+                  <span className="text-stat-label text-label-secondary block">
+                    Conflict penalty
+                  </span>
                   <p className="text-destructive text-title-2 tabular-nums">
                     -{effectiveness.conflictPenalty.toFixed(1)}%
                   </p>
                 </div>
                 <div className="mt-2 space-y-1">
-                  <Eyebrow className="block">Total score</Eyebrow>
+                  <span className="text-stat-label text-label-secondary block">Total score</span>
                   <p className="text-label text-title-2 tabular-nums">
                     {effectiveness.totalEffectiveness.toFixed(1)}%
                   </p>
@@ -326,13 +328,15 @@ export function EconomicMetricModals({
             <div className="space-y-6">
               <Card variant="inset" className="grid grid-cols-2 gap-4 p-4 text-center">
                 <div className="space-y-1">
-                  <Eyebrow className="block">Implementation</Eyebrow>
+                  <span className="text-stat-label text-label-secondary block">Implementation</span>
                   <p className="text-label text-title-2 tabular-nums">
                     ${implementationCost.toLocaleString()}
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <Eyebrow className="block">Annual maintenance</Eyebrow>
+                  <span className="text-stat-label text-label-secondary block">
+                    Annual maintenance
+                  </span>
                   <p className="text-label text-title-2 tabular-nums">
                     ${maintenanceCost.toLocaleString()}/yr
                   </p>

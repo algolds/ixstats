@@ -4,7 +4,6 @@ import { useState } from "react";
 import { api } from "~/trpc/react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
   Check,
@@ -36,7 +35,7 @@ function Stat({ label, value, icon, valueClassName }: StatProps) {
   return (
     <div className="flex items-center justify-between p-4">
       <div className="space-y-1">
-        <Eyebrow className="block">{label}</Eyebrow>
+        <span className="text-stat-label text-label-secondary block">{label}</span>
         <p className={cn("text-label text-title-1 tabular-nums", valueClassName)}>
           {value !== null && value !== undefined ? value : "-"}
         </p>
@@ -184,7 +183,7 @@ export function AutosaveHistoryPanel({
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <FileText aria-hidden="true" className="text-label-secondary h-5 w-5" />
-            Autosave History
+            Autosave history
           </SheetTitle>
         </SheetHeader>
 
@@ -227,7 +226,7 @@ export function AutosaveHistoryPanel({
               ].map((item) => (
                 <div key={item.label} className="p-3">
                   <dt>
-                    <Eyebrow>{item.label}</Eyebrow>
+                    <span className="text-stat-label text-label-secondary">{item.label}</span>
                   </dt>
                   <dd className="text-label text-title-3 tabular-nums">{item.value}</dd>
                 </div>

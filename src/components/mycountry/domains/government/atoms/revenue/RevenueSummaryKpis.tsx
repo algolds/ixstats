@@ -3,7 +3,6 @@
 import React from "react";
 import type { RevenueSourceInput } from "~/types/government";
 import { formatNumber } from "~/lib/utils/format-utils";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { revenueCategories, revenueCategoryIcons } from "./revenueConstants";
 
 interface RevenueSummaryKpisProps {
@@ -39,7 +38,7 @@ export function RevenueSummaryKpis({ data, totalCalculated }: RevenueSummaryKpis
           <div key={kpi.label} className="p-4 text-center">
             <dd className="text-label text-title-2 tabular-nums">{kpi.value}</dd>
             <dt className="mt-1">
-              <Eyebrow>{kpi.label}</Eyebrow>
+              <span className="text-stat-label text-label-secondary">{kpi.label}</span>
             </dt>
           </div>
         ))}

@@ -14,15 +14,12 @@ import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
-import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
-import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountry-logo";
-import { assetUrl } from "~/lib/base-path";
 import { DOMAIN_TILES, DomainTileButton } from "../ExecutiveActionCards";
 import { CooldownTimer } from "../ExecutiveHome";
-import type { CommandNavMode } from "../CommandNavToggle";
+import type { CommandNavMode } from "../command-nav-mode";
 import { useDiplomacyInboxCount } from "~/components/mycountry/domains/diplomacy/inbox/useDiplomacyInbox";
 import { InboxCountPill } from "~/components/mycountry/domains/diplomacy/inbox/InboxCountPill";
-import { Card } from "~/components/ui/card";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface UnifiedGlassCommandBarProps {
@@ -73,8 +70,8 @@ function DirectiveStatusLine({ countryId }: { countryId?: string }) {
 }
 
 /**
- * The MyCountry header: logo, a quiet toolbar (Profile, Editor) with the one Declare Directive
- * button, the country's name, then the domain tiles (overview) or a section switcher (domain
+ * The MyCountry page header: the country's name and identity, a toolbar (Profile, Editor) with the
+ * one Declare Directive button, then the domain tiles (overview) or a section switcher (domain
  * pages and the Directives page).
  */
 export function UnifiedGlassCommandBar({
@@ -90,7 +87,6 @@ export function UnifiedGlassCommandBar({
   const { count: diplomacyInboxCount } = useDiplomacyInboxCount(country?.id);
 
   const profileHref = country?.slug ? `/countries/${country.slug}` : "/countries";
-  const flagUrl = assetUrl(country?.flagUrl || country?.flag);
 
   const isExecutiveMode = mode === "executive";
   const isOverview = !isExecutiveMode && (activeSection === "overview" || !activeSection);
@@ -109,18 +105,21 @@ export function UnifiedGlassCommandBar({
   // In the directive console no section is current, so no tab is selected.
   const activeTab = isExecutiveMode ? "" : activeSection;
 
-  return (
-    <Card className="flex w-full flex-col gap-4 p-4 sm:gap-5 sm:p-5">
-      <div className="relative flex flex-wrap items-center justify-between gap-3">
-        <MyCountryLogo size="md" variant="full" animated />
+  const identity = [subtitle, realmName].filter(Boolean).join(" · ");
 
-        <div className="flex flex-1 flex-col items-stretch gap-2 sm:flex-none sm:items-end">
-          <div className="flex items-center gap-1">
-            <Button
-              asChild
-              variant="ghost"
-              className="text-label-secondary h-11 min-w-11 px-3 sm:h-9 sm:min-w-9"
-            >
+  return (
+    <div className="flex w-full flex-col gap-4">
+      <PageHeader
+        title={country?.name ?? "MyCountry"}
+        subtitle={
+          <>
+            {identity ? <p>{identity}</p> : null}
+            <DirectiveStatusLine countryId={country?.id} />
+          </>
+        }
+        actions={
+          <>
+            <Button asChild variant="ghost" className="text-label-secondary">
               <Link href={profileHref} aria-label="Open public profile" title="Open public profile">
                 <User aria-hidden="true" />
                 <span className="hidden md:inline">Profile</span>
@@ -130,7 +129,7 @@ export function UnifiedGlassCommandBar({
               type="button"
               variant="ghost"
               onClick={() => router.push("/mycountry/editor")}
-              className="text-label-secondary h-11 min-w-11 px-3 sm:h-9 sm:min-w-9"
+              className="text-label-secondary"
               aria-label="Edit country"
               title="Edit country and territory"
             >
@@ -145,48 +144,21 @@ export function UnifiedGlassCommandBar({
                 else onChangeMode("executive");
               }}
               className={cn(
-                "ml-1 h-11 flex-1 font-semibold sm:h-9 sm:flex-none",
                 isExecutiveMode && "ring-offset-surface ring-tint/40 ring-2 ring-offset-2"
               )}
             >
               <Command aria-hidden="true" />
               <span>Declare Directive</span>
             </Button>
-          </div>
-          <div className="text-center sm:text-right">
-            <DirectiveStatusLine countryId={country?.id} />
-          </div>
-        </div>
-      </div>
-
-      {country?.name ? (
-        <header className="relative flex min-w-0 items-center gap-4">
-          <span className="border-separator bg-fill-3 rounded-row shadow-card flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden border sm:h-14 sm:w-20">
-            <UnifiedCountryFlag
-              countryName={country.name}
-              flagUrl={flagUrl}
-              fitContainer
-              objectFit="cover"
-              rounded={false}
-              showTooltip={false}
-            />
-          </span>
-          <div className="min-w-0">
-            <h1 className="text-label text-title-1 sm:text-large-title truncate">{country.name}</h1>
-            {subtitle || realmName ? (
-              <p className="text-label-secondary text-body mt-0.5 truncate">
-                {[subtitle, realmName].filter(Boolean).join(" · ")}
-              </p>
-            ) : null}
-          </div>
-        </header>
-      ) : null}
+          </>
+        }
+      />
 
       {isOverview ? (
         <nav
           aria-label="MyCountry domains"
           data-app-subnav
-          className="relative grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
+          className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4"
         >
           {DOMAIN_TILES.map((tile) => (
             <DomainTileButton
@@ -205,11 +177,10 @@ export function UnifiedGlassCommandBar({
           ))}
         </nav>
       ) : (
-        /* Section switcher */
         <nav
           aria-label="MyCountry sections"
           data-app-subnav
-          className="relative -mx-1 scrollbar-none overflow-x-auto px-1"
+          className="-mx-1 scrollbar-none overflow-x-auto px-1"
         >
           <SegmentedControl
             size="md"
@@ -232,6 +203,6 @@ export function UnifiedGlassCommandBar({
           />
         </nav>
       )}
-    </Card>
+    </div>
   );
 }

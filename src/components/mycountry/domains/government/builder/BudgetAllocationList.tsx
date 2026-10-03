@@ -70,7 +70,7 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-label text-title-2">Budget Allocation</h3>
+          <h3 className="text-label text-title-2">Budget allocation</h3>
         </div>
         <Alert>
           <AlertTriangle className="text-yellow h-4 w-4" />
@@ -86,7 +86,7 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-label text-title-2">Budget Allocation</h3>
+          <h3 className="text-label text-title-2">Budget allocation</h3>
           <p className="text-label-secondary text-footnote mt-1">
             Distribute funding across active ministries and manage fiscal limits
           </p>
@@ -94,16 +94,16 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
         <div className="flex items-center gap-2 self-end sm:self-auto">
           <Button variant="outline" size="sm" onClick={onExpandAll}>
             <ChevronDown className="h-3.5 w-3.5" />
-            Expand All
+            Expand all
           </Button>
           <Button variant="outline" size="sm" onClick={onCollapseAll}>
             <ChevronRight className="h-3.5 w-3.5" />
-            Collapse All
+            Collapse all
           </Button>
           {!isReadOnly && (
             <Button variant="outline" size="sm" onClick={onFixAllocations}>
               <CheckCircle className="text-yellow h-3.5 w-3.5" />
-              Fix Allocations
+              Fix allocations
             </Button>
           )}
         </div>

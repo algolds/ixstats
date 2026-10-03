@@ -12,7 +12,6 @@ import {
   ScaleFrameEnlarge as Scale,
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
@@ -115,7 +114,7 @@ function StatTile({
 }) {
   return (
     <Card className={cn("rounded-row p-2", className)}>
-      <Eyebrow className="block">{label}</Eyebrow>
+      <span className="text-stat-label text-label-secondary block">{label}</span>
       <p className="text-label text-title-3 mt-0.5 tabular-nums">{value}</p>
       {note && <p className="text-label-secondary text-footnote mt-0.5">{note}</p>}
     </Card>
@@ -139,10 +138,7 @@ export interface EconomyDrillDownProps {
   countryId: string;
 }
 
-/**
- * Economy drill-down — 5-Pillar IRL-Grade Ministry of Finance & Planning Suite.
- * Shared between the v2 right-side drill sheet and the full-page economy surface.
- */
+/** Economy drill-down: macro, fiscal, monetary and trade tabs. Shared between the drill sheet and the full-page economy surface. */
 function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<"macro" | "fiscal" | "monetary" | "trade">("macro");
 
@@ -188,10 +184,10 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
 
   const tabs = useMemo(
     () => [
-      { id: "macro" as const, label: "Economic Report", icon: TrendingUp },
-      { id: "fiscal" as const, label: "National Budget", icon: Landmark },
-      { id: "monetary" as const, label: "Fiscal Policy", icon: Coins },
-      { id: "trade" as const, label: "Trade & Commerce", icon: Globe2 },
+      { id: "macro" as const, label: "Economic report", icon: TrendingUp },
+      { id: "fiscal" as const, label: "National budget", icon: Landmark },
+      { id: "monetary" as const, label: "Fiscal policy", icon: Coins },
+      { id: "trade" as const, label: "Trade & commerce", icon: Globe2 },
     ],
     []
   );
@@ -204,7 +200,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
         sub: "Gross Domestic Product",
       },
       {
-        label: "GDP Growth",
+        label: "GDP growth",
         value:
           country?.realGdpGrowthRate != null
             ? `${(country.realGdpGrowthRate * 100).toFixed(2)}%`
@@ -212,12 +208,12 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
         sub: "Annual real rate",
       },
       {
-        label: "Economic Vitality",
+        label: "Economic vitality",
         value: dashboard?.economicVitality != null ? `${dashboard.economicVitality}/100` : "—",
         sub: "National vitality band",
       },
       {
-        label: "Government Efficiency",
+        label: "Government efficiency",
         value:
           dashboard?.governmentalEfficiency != null
             ? `${dashboard.governmentalEfficiency}/100`
@@ -243,7 +239,7 @@ function EconomyDrillDownComponent({ countryId }: EconomyDrillDownProps): React.
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {metrics.map(({ label, value, sub }) => (
               <Card key={label} className="rounded-card p-4">
-                <Eyebrow className="block">{label}</Eyebrow>
+                <span className="text-stat-label text-label-secondary block">{label}</span>
                 <p className="text-label text-title-3 mt-1 tabular-nums">{value}</p>
                 <p className="text-label-secondary text-footnote mt-0.5">{sub}</p>
               </Card>

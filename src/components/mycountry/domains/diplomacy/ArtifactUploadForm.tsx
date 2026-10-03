@@ -74,7 +74,7 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
         <div className="flex items-center justify-between gap-3 pr-8">
           <h3 className="text-label text-title-3 flex items-center gap-2">
             <Camera className="text-label-secondary h-5 w-5" />
-            Upload Cultural Artifact
+            Upload cultural artifact
           </h3>
           <Button
             type="button"
@@ -105,7 +105,7 @@ export const ArtifactUploadForm = React.memo<ArtifactUploadFormProps>(
         </div>
 
         <div className="space-y-2">
-          <Label id="artifact-type-label">Artifact Type</Label>
+          <Label id="artifact-type-label">Artifact type</Label>
           <div
             className="grid grid-cols-3 gap-2"
             role="group"

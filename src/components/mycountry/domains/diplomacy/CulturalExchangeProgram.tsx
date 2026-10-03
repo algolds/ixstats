@@ -590,7 +590,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
           </p>
           <Button variant="outline" onClick={() => setShowCreateModal(true)}>
             <Plus className="h-4 w-4" />
-            Create Your First Exchange
+            Create your first exchange
           </Button>
         </Card>
       )}
@@ -599,7 +599,7 @@ const CulturalExchangeProgramComponent: React.FC<CulturalExchangeProgramProps> =
       <Sheet open={showCreateModal} onOpenChange={setShowCreateModal}>
         <SheetContent size="wide" className="flex flex-col overflow-hidden p-0">
           <SheetHeader className="sr-only">
-            <SheetTitle>Create Cultural Exchange</SheetTitle>
+            <SheetTitle>Create cultural exchange</SheetTitle>
           </SheetHeader>
           <CulturalExchangeWizard
             hostCountry={primaryCountry}

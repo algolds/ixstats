@@ -44,13 +44,13 @@ export function getBudgetHealthStatus(
     return {
       status: "moderate",
       color: "border-yellow/30 text-yellow",
-      label: "Moderate Deficit",
+      label: "Moderate deficit",
     };
   }
   return {
     status: "deficit",
     color: "border-destructive/30 text-destructive",
-    label: "High Deficit",
+    label: "High deficit",
   };
 }
 

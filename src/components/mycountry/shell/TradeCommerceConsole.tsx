@@ -4,7 +4,6 @@ import React, { useState, useMemo, useCallback } from "react";
 import { Button } from "~/components/ui/button";
 import { Plus, InfoCircle, Globe } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -147,7 +146,7 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
         <CardHeader className="flex-row flex-wrap items-start justify-between gap-3 p-4 pb-3">
           <div className="min-w-0 space-y-0.5">
             <h3 className="text-label text-headline flex flex-wrap items-center gap-2">
-              Sector Tariff Planner
+              Sector tariff planner
               <Badge variant="warning">Not saved</Badge>
             </h3>
             <p className="text-label-secondary text-footnote">
@@ -234,17 +233,17 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
 
   return (
     <RailCard
-      title="Trade & Commerce"
+      title="Trade & commerce"
       icon={Globe}
       accessory={<RailCount>{partnerCount} partners</RailCount>}
     >
       <div className="grid grid-cols-2 gap-2">
         <RailRow className="p-2">
-          <Eyebrow className="block">Free trade pacts</Eyebrow>
+          <span className="text-stat-label text-label-secondary block">Free trade pacts</span>
           <p className="text-label text-title-3 mt-0.5 tabular-nums">{ftaCount}</p>
         </RailRow>
         <RailRow className="p-2">
-          <Eyebrow className="block">Recorded sectors</Eyebrow>
+          <span className="text-stat-label text-label-secondary block">Recorded sectors</span>
           <p className="text-label text-title-3 mt-0.5 tabular-nums">
             {recordedSectorCount > 0 ? recordedSectorCount : "—"}
           </p>

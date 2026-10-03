@@ -7,7 +7,6 @@ import { CurrencyFlow, PercentageFlow } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { type TaxChannel, ACCENT_BG } from "./taxChannels";
 import { Card } from "~/components/ui/card";
 
@@ -73,8 +72,8 @@ function TaxRateCardComponent({
               bracketed
                 ? "Set by tax brackets in the Country Editor"
                 : isLocked
-                  ? "Locked — click to edit rate"
-                  : "Editing — click to save & lock rate"
+                  ? "Locked. Click to edit the rate"
+                  : "Editing. Click to save and lock the rate"
             }
             className={cn(
               "h-11 w-11 shrink-0 sm:h-7 sm:w-7",
@@ -91,7 +90,7 @@ function TaxRateCardComponent({
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          {!isLocked && <Eyebrow className="text-tint">Editing</Eyebrow>}
+          {!isLocked && <span className="text-stat-label text-tint">Editing</span>}
           {rate != null ? (
             <span className="text-label text-title-3 tabular-nums">
               {bracketed && <span className="text-label-secondary text-footnote mr-1">Top</span>}

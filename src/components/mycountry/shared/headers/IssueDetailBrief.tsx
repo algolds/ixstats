@@ -74,17 +74,14 @@ interface ResponseOption {
 }
 
 /**
- * v2 issue drill — the modern twin of the legacy IssueDetailModal. Renders inside
- * the right-side drill sheet with recon / respond / dismiss, and a post-resolve
- * "Declare follow-up Directive" CTA wired to the composer pre-fill conduit.
+ * A national issue brief. Renders inside the drill sheet with recon, respond and dismiss, and a
+ * post-resolve "Declare Directive" button that pre-fills the composer.
  */
 export interface IssueDetailBriefProps {
   issueId: string;
   onDeclare?: (prefilledGoal?: string) => void;
   onClose?: () => void;
 }
-
-export type V2IssueDetailProps = IssueDetailBriefProps;
 
 export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBriefProps) {
   const notify = useNotify();
@@ -130,7 +127,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
   const commissionRecon = api.nationalIssues.commissionRecon.useMutation({
     onSuccess: () => {
       void reconQuery.refetch();
-      notify.success("Cabinet research commissioned — findings will land shortly.");
+      notify.success("Cabinet research commissioned.");
     },
     onError: (e: { message?: string }) => notify.error("Could not commission research", e?.message),
   });
@@ -205,7 +202,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
       userId: issue.countryId,
       meeting: {
         title: `Cabinet Meeting: ${issue.title}`,
-        description: `Scheduled cabinet deliberation to address national issue '${issue.title}'. High-information analysis unlocked.`,
+        description: `Cabinet meeting to address the national issue '${issue.title}'.`,
         scheduledDate: nextWeekDate,
         duration: 60,
         agendaItems: [
@@ -296,7 +293,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
               className="mt-1"
             >
               <Command aria-hidden="true" className="h-4 w-4" />
-              Declare follow-up Directive
+              Declare Directive
               <ArrowUpRight className="h-4 w-4" />
             </Button>
           )}
@@ -308,7 +305,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
         <Card className="flex flex-col gap-2 p-4">
           <h3 className="text-label text-headline flex items-center gap-2">
             <Sliders className="text-label-secondary h-4 w-4" />
-            Cabinet Research
+            Cabinet research
           </h3>
           {reconQuery.data.status === "none" && (
             <div className="flex items-center justify-between gap-3">
@@ -331,7 +328,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
           {reconQuery.data.status === "pending" && (
             <p className="text-label-secondary text-footnote flex items-center gap-2">
               <Clock className="h-3.5 w-3.5" />
-              Your team is researching — findings land in{" "}
+              Your team is researching. Findings arrive in{" "}
               {Math.max(
                 1,
                 Math.ceil(
@@ -418,7 +415,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
               />
               <PathwayButton
                 icon={Sliders}
-                label="Resolve Brief"
+                label="Resolve brief"
                 sub="Base 3 Options"
                 onClick={() => {
                   const el = document.getElementById("issue-brief-options");
@@ -514,7 +511,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                     {option.isRisky && (
                       <p className="text-destructive text-footnote mt-2 flex items-start gap-2 leading-snug">
                         <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                        Risky choice — carries risk of negative outcomes or stability backlash.
+                        Risky choice: it may backfire or hurt stability.
                       </p>
                     )}
                   </div>
@@ -645,5 +642,3 @@ function EffectBadge({
 
   return null;
 }
-
-export const V2IssueDetail = IssueDetailBrief;

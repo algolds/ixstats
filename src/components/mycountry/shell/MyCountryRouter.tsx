@@ -179,7 +179,7 @@ function MyCountryRouterInner() {
   );
 }
 
-export function MyCountryRouter({ v2: _v2 }: { v2?: boolean } = {}) {
+export function MyCountryRouter() {
   const { user } = useUser();
 
   return (

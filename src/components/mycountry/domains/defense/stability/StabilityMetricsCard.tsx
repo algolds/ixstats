@@ -14,7 +14,6 @@ import {
   Minus,
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Progress } from "~/components/ui/progress";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
@@ -135,7 +134,7 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
         {/* Stability Score */}
         <div>
           <div className="mb-2 flex items-end justify-between">
-            <Eyebrow>Overall stability score</Eyebrow>
+            <span className="text-stat-label text-label-secondary">Overall stability score</span>
             <span
               className={cn(
                 "text-title-1 tabular-nums",
@@ -153,7 +152,7 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <div className="text-body flex items-center justify-between">
-                <span className="text-label-secondary">Overall Crime Rate</span>
+                <span className="text-label-secondary">Overall crime rate</span>
                 <span className="text-label font-medium tabular-nums">
                   <NumberFlowDisplay
                     value={metrics?.crimeRate ?? 5}
@@ -164,25 +163,25 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
                 </span>
               </div>
               <div className="text-label-secondary text-footnote flex items-center justify-between">
-                <span>Violent Crime</span>
+                <span>Violent crime</span>
                 <span className="tabular-nums">
                   <NumberFlowDisplay value={metrics?.violentCrimeRate ?? 2} />
                 </span>
               </div>
               <div className="text-label-secondary text-footnote flex items-center justify-between">
-                <span>Property Crime</span>
+                <span>Property crime</span>
                 <span className="tabular-nums">
                   <NumberFlowDisplay value={metrics?.propertyCrimeRate ?? 10} />
                 </span>
               </div>
             </div>
-            <PercentMetric label="Organized Crime" value={metrics?.organizedCrimeLevel ?? 3} />
+            <PercentMetric label="Organized crime" value={metrics?.organizedCrimeLevel ?? 3} />
             <PercentMetric
-              label="Policing Effectiveness"
+              label="Policing effectiveness"
               value={metrics?.policingEffectiveness ?? 60}
             />
             <PercentMetric
-              label="Justice System Efficiency"
+              label="Justice system efficiency"
               value={metrics?.justiceSystemEfficiency ?? 50}
             />
           </div>
@@ -191,22 +190,22 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
         <MetricSection title="Public order" icon={Activity}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="text-body flex items-center justify-between gap-2">
-              <span className="text-label-secondary">Protest Frequency</span>
+              <span className="text-label-secondary">Protest frequency</span>
               <span className="text-label font-medium tabular-nums">
                 <NumberFlowDisplay value={metrics?.protestFrequency ?? 5} /> /year
               </span>
             </div>
-            <PercentMetric label="Riot Risk" value={metrics?.riotRisk ?? 10} />
-            <PercentMetric label="Civil Disobedience" value={metrics?.civilDisobedience ?? 5} />
+            <PercentMetric label="Riot risk" value={metrics?.riotRisk ?? 10} />
+            <PercentMetric label="Civil disobedience" value={metrics?.civilDisobedience ?? 5} />
           </div>
         </MetricSection>
 
         <MetricSection title="Social cohesion" icon={Heart}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <PercentMetric label="Social Cohesion" value={metrics?.socialCohesion ?? 70} />
-            <PercentMetric label="Ethnic Tension" value={metrics?.ethnicTension ?? 20} />
+            <PercentMetric label="Social cohesion" value={metrics?.socialCohesion ?? 70} />
+            <PercentMetric label="Ethnic tension" value={metrics?.ethnicTension ?? 20} />
             <PercentMetric
-              label="Political Polarization"
+              label="Political polarization"
               value={metrics?.politicalPolarization ?? 40}
             />
           </div>
@@ -214,9 +213,9 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
 
         <MetricSection title="Public confidence" icon={Eye}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <PercentMetric label="Trust in Government" value={metrics?.trustInGovernment ?? 50} />
-            <PercentMetric label="Trust in Police" value={metrics?.trustInPolice ?? 55} />
-            <PercentMetric label="Fear of Crime" value={metrics?.fearOfCrime ?? 35} />
+            <PercentMetric label="Trust in government" value={metrics?.trustInGovernment ?? 50} />
+            <PercentMetric label="Trust in police" value={metrics?.trustInPolice ?? 55} />
+            <PercentMetric label="Fear of crime" value={metrics?.fearOfCrime ?? 35} />
           </div>
         </MetricSection>
       </CardContent>

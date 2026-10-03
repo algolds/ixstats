@@ -2,15 +2,14 @@
 
 import React from "react";
 import { Badge } from "~/components/ui/badge";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { cn } from "~/lib/utils";
-import type { V2Domain } from "../domain-meta";
+import type { MyCountryDomain } from "../domain-meta";
 import { timeAgo } from "~/lib/format/compact";
 import { STATUS_TEXT as SHELL_STATUS_TEXT } from "../status-tone";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 /** Legacy per-domain text accent (re-exported by DomainContextRail; not used by the rails). */
-export const DOMAIN_ACCENT: Record<V2Domain, string> = {
+export const DOMAIN_ACCENT: Record<MyCountryDomain, string> = {
   relations: "text-cyan",
   defense: "text-red",
   politics: "text-indigo",
@@ -126,7 +125,7 @@ export function DomainKpiGrid({ items }: { items: Kpi[] }) {
     <div className="grid grid-cols-3 gap-2">
       {items.map((item) => (
         <Card key={item.label} className="p-2">
-          <Eyebrow className="block truncate">{item.label}</Eyebrow>
+          <span className="text-stat-label text-label-secondary block truncate">{item.label}</span>
           <p className="text-label text-title-3 mt-0.5 tabular-nums">{item.value}</p>
           {item.sub && <p className="text-label-secondary text-footnote mt-0.5">{item.sub}</p>}
         </Card>
@@ -142,7 +141,7 @@ export function DomainActivityCard({
   entries,
   emptyMessage,
 }: {
-  domain: V2Domain;
+  domain: MyCountryDomain;
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   entries: ActivityEntry[];
@@ -182,7 +181,7 @@ export function DomainWidget({
   entries,
   emptyMessage,
 }: {
-  domain: V2Domain;
+  domain: MyCountryDomain;
   title: string;
   kpis: Kpi[];
   activityTitle: string;

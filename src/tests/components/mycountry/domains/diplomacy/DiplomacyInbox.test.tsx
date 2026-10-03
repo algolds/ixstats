@@ -159,7 +159,7 @@ describe("DiplomacyInbox", () => {
     queries.getOutgoingAllianceInvites = { data: [] };
     render(<DiplomacyInbox countryId="A" />);
     expect(
-      within(section("Incoming")).getByText(/Nothing awaiting your answer/)
+      within(section("Incoming")).getByText(/No proposals or invitations are waiting/)
     ).toBeInTheDocument();
     expect(
       within(section("Outgoing")).getByText(/No pending proposals or invitations/)
@@ -172,7 +172,7 @@ describe("DiplomacyInbox", () => {
     queries.getOutgoingAllianceInvites = { error: { message: "boom" } };
     render(<DiplomacyInbox countryId="A" />);
     expect(screen.getByRole("status", { name: "Loading incoming" })).toBeInTheDocument();
-    expect(screen.queryByText(/Nothing awaiting your answer/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/No proposals or invitations are waiting/)).not.toBeInTheDocument();
 
     const alert = within(section("Outgoing")).getByRole("alert");
     expect(alert).toHaveTextContent("boom");

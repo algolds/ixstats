@@ -1,10 +1,8 @@
 "use client";
 
-import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import { motion } from "motion/react";
 import { City as Building, NavArrowRight as ChevronRight } from "iconoir-react";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { SectorBreakdownCard } from "~/components/mycountry/shared/primitives";
 import { formatCompactCurrency } from "~/lib/utils";
 import type { MappedEconomyData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
@@ -38,7 +36,7 @@ export function GovernmentFiscalSection({
           <Building
             className={`h-3.5 w-3.5 ${isExpanded ? "text-label" : "text-label-secondary"}`}
           />
-          <span>Fiscal Policy</span>
+          <span>Fiscal policy</span>
           <motion.div
             animate={{ rotate: isExpanded ? 90 : 0 }}
             transition={{ type: "spring", bounce: 0, duration: 0.25 }}
@@ -56,22 +54,17 @@ export function GovernmentFiscalSection({
           isExpanded ? "border-separator border" : "border border-transparent"
         }`}
       >
-        <TextureOverlay
-          texture="paperGrain"
-          opacity={0.06}
-          className="pointer-events-none absolute inset-0 z-0"
-        />
         <div className="relative z-10 space-y-4 p-4">
           <div className="bg-fill-3 rounded-row grid grid-cols-2 gap-4 p-3 md:grid-cols-4">
             <div className="min-w-0">
-              <Eyebrow className="block">Tax Revenue % GDP</Eyebrow>
+              <span className="text-stat-label text-label-secondary block">Tax Revenue % GDP</span>
               <p className="text-label text-headline mt-0.5">
                 {`${(economyData?.fiscal?.taxRevenueGDPPercent ?? 0).toFixed(1)}%`}
               </p>
               <p className="text-label-secondary text-footnote mt-0.5">Tax burden ratio</p>
             </div>
             <div className="min-w-0">
-              <Eyebrow className="block">Total Debt</Eyebrow>
+              <span className="text-stat-label text-label-secondary block">Total debt</span>
               <p className="text-label text-headline mt-0.5">
                 {formatCompactCurrency(
                   (economyData?.core.nominalGDP ?? 0) *
@@ -83,30 +76,28 @@ export function GovernmentFiscalSection({
               <p className="text-label-secondary text-footnote mt-0.5">Outstanding national debt</p>
             </div>
             <div className="min-w-0">
-              <Eyebrow className="block">Debt to GDP Ratio</Eyebrow>
+              <span className="text-stat-label text-label-secondary block">Debt to GDP ratio</span>
               <p className="text-label text-headline mt-0.5">
                 {`${(economyData?.fiscal?.totalDebtGDPRatio ?? 0).toFixed(1)}%`}
               </p>
               <p className="text-label-secondary text-footnote mt-0.5">Relative to economic size</p>
             </div>
             <div className="min-w-0">
-              <Eyebrow className="block">Sovereign Rating</Eyebrow>
+              <span className="text-stat-label text-label-secondary block">Sovereign rating</span>
               <p className="text-headline text-green mt-0.5">AAA</p>
               <p className="text-label-secondary text-footnote mt-0.5">Credit worthiness rating</p>
             </div>
           </div>
 
           <SectorBreakdownCard
-            title="Fiscal Conditions & Policy"
+            title="Fiscal conditions & policy"
             subtitle="National fiscal policy indicators"
             layout="list"
             showProgressBars={true}
-            cardWrapper="panel"
-            accent="amber"
             sectors={[
               {
                 id: "tax-compliance",
-                name: "Tax Compliance Rate",
+                name: "Tax compliance rate",
                 value: 0,
                 percentage:
                   economyData?.fiscal?.taxEfficiency != null
@@ -116,14 +107,14 @@ export function GovernmentFiscalSection({
               },
               {
                 id: "inflation",
-                name: "Annual Inflation Rate",
+                name: "Annual inflation rate",
                 value: 0,
                 percentage: economyData?.core?.inflationRate ?? 2.4,
                 color: "blue",
               },
               {
                 id: "interest",
-                name: "Central Bank Interest Rate",
+                name: "Central bank interest rate",
                 value: 0,
                 percentage: economyData?.fiscal?.interestRates ?? 4.25,
                 color: "indigo",

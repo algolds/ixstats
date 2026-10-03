@@ -40,14 +40,14 @@ const DOMAIN_CONFIG: Record<
   }
 > = {
   economic: {
-    title: "Economic Vitality",
+    title: "Economic vitality",
     description:
       "Measures GDP growth rate, labor market health, fiscal balance, and inflation stability.",
     drivers: ["Real GDP Growth", "Employment & Wages", "Fiscal System & Tax Yield"],
     icon: DollarSign,
   },
   population: {
-    title: "Population Wellbeing",
+    title: "Population wellbeing",
     description: "Assesses public health, education, demographic growth, and societal welfare.",
     drivers: [
       "Public Healthcare Access",
@@ -57,7 +57,7 @@ const DOMAIN_CONFIG: Record<
     icon: Users,
   },
   diplomatic: {
-    title: "Diplomatic Standing",
+    title: "Diplomatic standing",
     description:
       "Evaluates embassy networks, international treaty standing, and regional soft power.",
     drivers: [
@@ -68,7 +68,7 @@ const DOMAIN_CONFIG: Record<
     icon: Globe,
   },
   government: {
-    title: "Government Efficiency",
+    title: "Government efficiency",
     description:
       "Tracks civil service capacity utilization, legislative throughput, and bureaucracy health.",
     drivers: [
@@ -90,10 +90,10 @@ export function VitalityBreakdownModal({
     rings.length > 0 ? Math.round(rings.reduce((sum, r) => sum + r.value, 0) / rings.length) : 0;
 
   const getOverallRating = (score: number) => {
-    if (score >= 85) return { label: "Optimal Standing", cls: "text-green" };
-    if (score >= 70) return { label: "Strong Standing", cls: "text-label" };
-    if (score >= 50) return { label: "Moderate Standing", cls: "text-yellow" };
-    return { label: "Strained Standing", cls: "text-destructive" };
+    if (score >= 85) return { label: "Optimal standing", cls: "text-green" };
+    if (score >= 70) return { label: "Strong standing", cls: "text-label" };
+    if (score >= 50) return { label: "Moderate standing", cls: "text-yellow" };
+    return { label: "Strained standing", cls: "text-destructive" };
   };
 
   const rating = getOverallRating(avgScore);
@@ -107,7 +107,7 @@ export function VitalityBreakdownModal({
               <Activity className="text-label-secondary h-5 w-5" />
               <div>
                 <SheetTitle className="text-title-3">
-                  National Vitality Breakdown {countryName ? `— ${countryName}` : ""}
+                  National vitality{countryName ? `: ${countryName}` : ""}
                 </SheetTitle>
                 <SheetDescription className="text-label-secondary text-footnote">
                   Real-time diagnostic analysis across the 4 key national vitality pillars.

@@ -67,9 +67,9 @@ export interface PoliticsDrillDownProps {
 }
 
 /**
- * Politics drill-down — cabinet / parties / legislature / bills / power brokers (player fiat).
- * Shared between the v2 right-side drill sheet and the full-page politics surface.
- * (v2 Design Bible §6: Politics is 100% player fiat; sim informs but never overrides)
+ * Politics drill-down: cabinet, parties, legislature, bills and power brokers. Shared between the
+ * drill sheet and the full-page politics surface. Politics is player-decided; the sim informs but
+ * never overrides.
  */
 function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<
@@ -81,8 +81,8 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
       { id: "cabinet" as const, label: "Cabinet", icon: Users },
       { id: "parties" as const, label: "Parties", icon: Scale },
       { id: "legislature" as const, label: "Legislature", icon: Building2 },
-      { id: "bills" as const, label: "Bills & Reforms", icon: FileText },
-      { id: "power" as const, label: "Power Brokers", icon: Crown },
+      { id: "bills" as const, label: "Bills & reforms", icon: FileText },
+      { id: "power" as const, label: "Power brokers", icon: Crown },
     ],
     []
   );

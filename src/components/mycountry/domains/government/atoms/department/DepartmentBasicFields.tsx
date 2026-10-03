@@ -83,7 +83,7 @@ export const DepartmentBasicFields = React.memo(function DepartmentBasicFields({
         </div>
 
         <div className="space-y-2">
-          <Label>Organizational Level</Label>
+          <Label>Organizational level</Label>
           <Select
             value={data.organizationalLevel || "Department"}
             onValueChange={(val) =>
@@ -106,7 +106,7 @@ export const DepartmentBasicFields = React.memo(function DepartmentBasicFields({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="minister-title">Minister Title</Label>
+        <Label htmlFor="minister-title">Minister title</Label>
         <Input
           id="minister-title"
           value={data.ministerTitle || ""}

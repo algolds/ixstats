@@ -89,7 +89,7 @@ export const indicatorVariants: Variants = {
   },
 };
 
-// Press feedback for interactive elements (Facet: tactile compression, no hover growth)
+// Press feedback for interactive elements: compression, no hover growth
 export const hoverScale = {
   whileTap: { scale: 0.98 },
   transition: { type: "spring", stiffness: 400, damping: 28 },

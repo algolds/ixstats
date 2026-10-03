@@ -1,6 +1,5 @@
 import React from "react";
 import { Globe as Globe2, DeliveryTruck as Ship, Percentage as Percent } from "iconoir-react";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { cn } from "~/lib/utils";
 import { formatCompact } from "./trade-commerce-types";
 import { Card } from "~/components/ui/card";
@@ -106,7 +105,7 @@ function ImpactTile({
   return (
     <Card className="rounded-card space-y-1 p-4">
       <div className="flex items-center justify-between gap-2">
-        <Eyebrow>{label}</Eyebrow>
+        <span className="text-stat-label text-label-secondary">{label}</span>
         <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
       </div>
       <p className={cn("text-title-2 tabular-nums", valueClassName ?? "text-label")}>{value}</p>

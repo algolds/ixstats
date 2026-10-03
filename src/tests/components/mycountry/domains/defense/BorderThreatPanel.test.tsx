@@ -96,8 +96,8 @@ describe("BorderThreatPanel", () => {
 
     const { container } = renderPanel();
 
-    expect(screen.getByText("Border Security Overview")).toBeInTheDocument();
-    expect(screen.getByText("Neighbor Threats")).toBeInTheDocument();
+    expect(screen.getByText("Border security overview")).toBeInTheDocument();
+    expect(screen.getByText("Neighbor threats")).toBeInTheDocument();
     expect(container.textContent).toContain("72/100");
     expect(screen.getByText("strong")).toBeInTheDocument();
     expect(screen.getByText("2,840 km")).toBeInTheDocument();

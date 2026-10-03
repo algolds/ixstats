@@ -87,11 +87,11 @@ export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
   >("branches");
 
   const tabs = [
-    { id: "branches" as const, label: "Branches & Readiness", icon: Shield },
-    { id: "threats" as const, label: "Threat Vectors", icon: Target },
-    { id: "assets" as const, label: "Forces & Arsenal", icon: Swords },
-    { id: "operations" as const, label: "Special Operations", icon: Flame },
-    { id: "stability" as const, label: "Internal Stability", icon: Users },
+    { id: "branches" as const, label: "Branches & readiness", icon: Shield },
+    { id: "threats" as const, label: "Threat vectors", icon: Target },
+    { id: "assets" as const, label: "Forces & arsenal", icon: Swords },
+    { id: "operations" as const, label: "Special operations", icon: Flame },
+    { id: "stability" as const, label: "Internal stability", icon: Users },
   ];
 
   return (

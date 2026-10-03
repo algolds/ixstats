@@ -50,7 +50,6 @@ export const TerritoryMapWidget = React.memo(function TerritoryMapWidget({
             className="text-label-secondary size-11 sm:size-9"
           >
             <Link href="/maps" aria-label="Open world maps" title="Open world maps">
-              {/* v2: the map tools carry the emerald territory glyphs */}
               <MapIcon aria-hidden="true" className="text-green" />
             </Link>
           </Button>

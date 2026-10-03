@@ -22,8 +22,8 @@ export const WikiHeader: React.FC<WikiHeaderProps> = ({
   flagImageUrl,
 }) => {
   const navTabs = [
-    { id: "sections", label: "Wiki Synced", icon: BookOpen },
-    { id: "native_lore", label: "Native Canvas Lore", icon: FileText },
+    { id: "sections", label: "Wiki synced", icon: BookOpen },
+    { id: "native_lore", label: "Native canvas lore", icon: FileText },
   ] as const;
 
   return (
@@ -68,9 +68,9 @@ export const WikiHeader: React.FC<WikiHeaderProps> = ({
           {/* Centralized WikiOS Settings Link */}
           <Link
             href="/settings?tab=wikios"
-            title="WikiOS Settings & Lore Scanner"
+            title="WikiOS settings & lore scanner"
             aria-label="WikiOS settings"
-            className="text-label-secondary hover:text-label hover:bg-fill-3 focus-visible:ring-tint rounded-control flex h-8 w-8 items-center justify-center transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]"
+            className="text-label-secondary hover:text-label hover:bg-fill-3 focus-visible:ring-tint rounded-control flex h-8 w-8 items-center justify-center transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2"
           >
             <Settings className="h-4 w-4" />
           </Link>

@@ -5,7 +5,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { BuilderRouter } from "~/app/builder/components/BuilderRouter";
 
 export default function CreateCountryBuilder() {
-  usePageTitle({ title: "MyCountry Builder" });
+  usePageTitle({ title: "MyCountry builder" });
 
   return <BuilderRouter mode="create" />;
 }

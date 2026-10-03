@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Progress } from "~/components/ui/progress";
 import { Globe } from "iconoir-react";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
@@ -65,9 +64,9 @@ export const NetworkOverviewCard = React.memo(function NetworkOverviewCard({
       <CardHeader className="p-4 pb-2">
         <h3 className="text-label text-headline flex items-center gap-2">
           <Globe className="text-cyan h-4 w-4" />
-          Embassy Network Power
+          Embassy network power
           <InlineHelpIcon
-            title="Embassy Network"
+            title="Embassy network"
             content="Your total diplomatic influence calculated from active embassies and atomic government synergies. Shared atomic components between nations amplify economic, diplomatic, and cultural benefits."
           />
         </h3>
@@ -77,7 +76,7 @@ export const NetworkOverviewCard = React.memo(function NetworkOverviewCard({
           {kpis.map((k) => (
             <div key={k.label} className="space-y-0.5">
               <div className="text-label text-title-3 tabular-nums">{k.value}</div>
-              <Eyebrow>{k.label}</Eyebrow>
+              <span className="text-stat-label text-label-secondary">{k.label}</span>
             </div>
           ))}
         </div>

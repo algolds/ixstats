@@ -30,7 +30,6 @@ import {
 } from "~/components/ui/select";
 import { Slider } from "~/components/ui/slider";
 import { Toggle } from "~/components/ui/toggle";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useCanEdit } from "~/context/MyCountryEditModeContext";
@@ -50,25 +49,25 @@ const OP_TYPES = [
   },
   {
     value: "defense_pact",
-    label: "Defense Pact",
+    label: "Defense pact",
     icon: Crosshair,
     description: "Deploy forces to defend an ally",
   },
   {
     value: "blockade",
-    label: "Naval Blockade",
+    label: "Naval blockade",
     icon: Anchor,
     description: "Block enemy ports, high cost",
   },
   {
     value: "intervention",
-    label: "Military Intervention",
+    label: "Military intervention",
     icon: Swords,
     description: "Direct military action",
   },
   {
     value: "training",
-    label: "Training Exercise",
+    label: "Training exercise",
     icon: GraduationCap,
     description: "Improve readiness",
   },
@@ -169,11 +168,11 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button size="sm">Deploy Forces</Button>
+        <Button size="sm">Deploy forces</Button>
       </SheetTrigger>
       <SheetContent size="wide" className="overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Deploy Military Forces</SheetTitle>
+          <SheetTitle>Deploy military forces</SheetTitle>
           <SheetDescription>
             Create a military operation and assign units and assets.
           </SheetDescription>
@@ -183,7 +182,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
           {/* Operation name and type */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>Operation Name</Label>
+              <Label>Operation name</Label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -303,11 +302,11 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
             </div>
             <div className="text-body grid grid-cols-2 gap-3">
               <div>
-                <Eyebrow className="block">Daily cost</Eyebrow>
+                <span className="text-stat-label text-label-secondary block">Daily cost</span>
                 <p className="font-medium tabular-nums">{formatCurrency(estimatedDailyCost)}</p>
               </div>
               <div>
-                <Eyebrow className="block">Annual cost</Eyebrow>
+                <span className="text-stat-label text-label-secondary block">Annual cost</span>
                 <p className="font-medium tabular-nums">{formatCurrency(estimatedAnnualCost)}</p>
               </div>
             </div>

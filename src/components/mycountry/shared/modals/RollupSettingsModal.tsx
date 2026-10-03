@@ -83,7 +83,7 @@ export function RollupSettingsModal({
             <div className="flex items-center gap-2">
               <BarChart3 className="text-label-secondary h-4 w-4" />
               <div>
-                <div className="text-label text-caption font-semibold">Geographic Rollups</div>
+                <div className="text-label text-caption font-semibold">Geographic rollups</div>
                 <div className="text-label-secondary text-footnote">
                   Mode: {geoRollupMode} · Pop {popPct}% · GDP {gdpPct}%
                 </div>
@@ -104,7 +104,7 @@ export function RollupSettingsModal({
         <DialogHeader>
           <DialogTitle className="text-body flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
-            Geographic Rollups & Reconciliation
+            Geographic rollups & reconciliation
           </DialogTitle>
           <DialogDescription className="text-footnote">
             Choose how city + subdivision data should reconcile against national totals.
@@ -231,7 +231,7 @@ function RollupBody({
               className={cn(
                 "rounded-control-sm size-5",
                 cn(
-                  "focus-visible:ring-tint rounded-control-sm text-caption min-h-8 flex-1 px-2 py-2 capitalize transition-[color,background-color,box-shadow,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]",
+                  "focus-visible:ring-tint rounded-control-sm text-caption min-h-8 flex-1 px-2 py-2 capitalize transition-[color,background-color,box-shadow,transform] duration-150 outline-none focus-visible:ring-2",
                   mode === m ? "bg-surface text-label" : "text-label-secondary hover:text-label"
                 )
               )}
@@ -269,7 +269,7 @@ function RollupBody({
       <div className="border-separator my-2 space-y-3 border-t pt-3">
         <div className="text-label text-caption flex items-center gap-1 font-semibold">
           <Settings className="h-3.5 w-3.5" />
-          Demographic Redistribution
+          Demographic redistribution
         </div>
         <p className="text-label-tertiary text-footnote">
           Auto-assign populations and GDP to cities within each subdivision based on their

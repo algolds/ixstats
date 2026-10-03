@@ -38,7 +38,7 @@ export interface VitalityRingsDisplayProps {
 export const defaultVitalityRings: VitalityRing[] = [
   {
     id: "economic",
-    label: "Economic Vitality",
+    label: "Economic vitality",
     value: 0,
     color: "var(--color-amber-500)",
     icon: DollarSign,
@@ -46,7 +46,7 @@ export const defaultVitalityRings: VitalityRing[] = [
   },
   {
     id: "population",
-    label: "Population Wellbeing",
+    label: "Population wellbeing",
     value: 0,
     color: "var(--color-cyan-500)",
     icon: Users,
@@ -54,7 +54,7 @@ export const defaultVitalityRings: VitalityRing[] = [
   },
   {
     id: "diplomatic",
-    label: "Diplomatic Standing",
+    label: "Diplomatic standing",
     value: 0,
     color: "var(--color-violet-500)",
     icon: Globe,
@@ -62,7 +62,7 @@ export const defaultVitalityRings: VitalityRing[] = [
   },
   {
     id: "government",
-    label: "Government Efficiency",
+    label: "Government efficiency",
     value: 0,
     color: "var(--color-red-500)",
     icon: Building,
@@ -209,7 +209,7 @@ export function VitalityRingsDisplay({
           >
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-label text-headline">Overall National Health</h4>
+                <h4 className="text-label text-headline">Overall national health</h4>
                 <p className="text-label-secondary text-footnote">
                   Average of all vitality indicators
                 </p>
@@ -256,12 +256,12 @@ export function QuickVitalityRings({
         variant="ghost"
         size="icon-sm"
         onClick={() => setIsOpen(true)}
-        title="Click for Vitality Index Breakdown"
+        title="Click for vitality index breakdown"
         aria-label="Open vitality index breakdown"
         className={cn(
           "rounded-control-sm size-5",
           cn(
-            "hover:bg-fill-3 focus-visible:ring-tint rounded-row flex cursor-pointer items-center gap-2 p-1 transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]",
+            "hover:bg-fill-3 focus-visible:ring-tint rounded-row flex cursor-pointer items-center gap-2 p-1 transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2",
             className
           )
         )}
@@ -273,7 +273,7 @@ export function QuickVitalityRings({
             size={ringSize}
             color={ring.color}
             label={ring.label}
-            tooltip={`${ring.label}: ${ring.value}/100 — Click for breakdown`}
+            tooltip={`${ring.label}: ${ring.value}/100. Click for breakdown`}
           />
         ))}
       </Button>

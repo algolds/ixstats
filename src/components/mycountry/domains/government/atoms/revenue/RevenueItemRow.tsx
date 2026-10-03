@@ -110,7 +110,7 @@ export function RevenueItemRow({
         {/* Column 2: Financial Details */}
         <div className="space-y-3">
           <div className="space-y-2">
-            <Label className="text-label-secondary text-caption">Annual Yield Amount</Label>
+            <Label className="text-label-secondary text-caption">Annual yield amount</Label>
             <div className="relative">
               <span className="text-label-secondary text-footnote absolute top-1/2 left-3 -translate-y-1/2">
                 $
@@ -156,7 +156,7 @@ export function RevenueItemRow({
         {/* Column 3: Administration */}
         <div className="space-y-3">
           <div className="space-y-2">
-            <Label className="text-label-secondary text-caption">Collection Channel</Label>
+            <Label className="text-label-secondary text-caption">Collection channel</Label>
             <Select
               value={item.collectionMethod || ""}
               onValueChange={(value) => onUpdate(index, "collectionMethod", value)}
@@ -187,7 +187,7 @@ export function RevenueItemRow({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-label-secondary text-caption">Administrative Authority</Label>
+            <Label className="text-label-secondary text-caption">Administrative authority</Label>
             {availableDepartments.length > 0 ? (
               <Select
                 value={item.administeredBy || ""}
@@ -211,7 +211,7 @@ export function RevenueItemRow({
               <Input
                 value={item.administeredBy || ""}
                 onChange={(e) => onUpdate(index, "administeredBy", e.target.value)}
-                placeholder="Ministry or Agency Name"
+                placeholder="Ministry or agency name"
                 disabled={isReadOnly}
                 className="h-8"
               />

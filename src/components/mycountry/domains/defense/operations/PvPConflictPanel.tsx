@@ -124,12 +124,12 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
           <Dialog open={strikeOpen} onOpenChange={handleStrikeOpenChange}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm">
-                PvNPC Strike
+                PvNPC strike
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>PvNPC Military Strike</DialogTitle>
+                <DialogTitle>PvNPC military strike</DialogTitle>
                 <DialogDescription>
                   Automatically resolve a military engagement against an NPC nation. Outcome is
                   calculated based on relative military strength.
@@ -137,7 +137,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label>Target NPC Nation</Label>
+                  <Label>Target NPC nation</Label>
                   <Select value={targetId} onValueChange={setTargetId}>
                     <SelectTrigger>
                       <SelectValue
@@ -202,19 +202,19 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
           <Dialog open={challengeOpen} onOpenChange={setChallengeOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm">
-                PvP Challenge
+                PvP challenge
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Challenge Player Nation</DialogTitle>
+                <DialogTitle>Challenge player nation</DialogTitle>
                 <DialogDescription>
                   Both sides must agree to rules before combat begins. This prevents metagaming.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label>Target Nation</Label>
+                  <Label>Target nation</Label>
                   <Select value={targetId} onValueChange={setTargetId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select target..." />

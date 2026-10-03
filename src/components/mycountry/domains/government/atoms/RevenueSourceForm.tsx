@@ -128,7 +128,7 @@ export function RevenueSourceForm({
       <CardHeader className="border-separator flex-row flex-wrap items-center justify-between gap-2 border-b px-6 py-4">
         <h2 className="text-label text-title-3 flex items-center gap-2">
           <Coins aria-hidden="true" className="text-label-secondary h-5 w-5" />
-          Revenue Channels
+          Revenue channels
         </h2>
         <div className="flex items-center gap-2">
           <Badge variant={totalPercent > 100 ? "destructive" : "outline"}>

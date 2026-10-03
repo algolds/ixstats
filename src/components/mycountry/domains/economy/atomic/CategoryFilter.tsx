@@ -37,7 +37,7 @@ function CategoryFilterComponent({
           variant={category === null ? "default" : "outline"}
           onClick={() => setCategory(null)}
         >
-          All Components
+          All components
         </Button>
         {categories.map((cat) => {
           const Icon = cat.icon;

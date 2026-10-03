@@ -3,8 +3,6 @@
 import React, { useMemo } from "react";
 import { formatCompactCurrency, formatPopulation } from "~/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
-import { GlassPanel, PanelCard } from "~/components/mycountry/cards";
-import type { MyCountryAccent } from "~/components/mycountry/shared/cards/accents";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 
@@ -44,8 +42,6 @@ export interface SectorBreakdownCardProps {
   showSectorImages?: boolean;
   /** Format values as people counts (no decimals, no currency symbol) instead of currency */
   valueAsPeople?: boolean;
-  accent?: MyCountryAccent;
-  cardWrapper?: "glass" | "panel" | "card";
 }
 
 // Format currency value with null safety
@@ -168,8 +164,6 @@ export function SectorBreakdownCard({
   className = "",
   showSectorImages = false,
   valueAsPeople = false,
-  accent = "neutral",
-  cardWrapper = "card",
 }: SectorBreakdownCardProps) {
   const Wrapper = animate ? motion.div : "div";
   const ItemWrapper = animate ? motion.div : "div";
@@ -355,22 +349,6 @@ export function SectorBreakdownCard({
       </CardContent>
     </>
   );
-
-  if (cardWrapper === "glass") {
-    return (
-      <GlassPanel accent={accent} className={cn("relative overflow-hidden", className)}>
-        {cardInner}
-      </GlassPanel>
-    );
-  }
-
-  if (cardWrapper === "panel") {
-    return (
-      <PanelCard accent={accent} className={cn("relative overflow-hidden", className)}>
-        {cardInner}
-      </PanelCard>
-    );
-  }
 
   return <Card className={cn("rounded-card", className)}>{cardInner}</Card>;
 }

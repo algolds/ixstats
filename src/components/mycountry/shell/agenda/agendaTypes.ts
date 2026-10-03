@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import type { DrillSheetKind, V2Drill } from "~/components/mycountry/shell/DrillSheets";
+import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import type { StatusTone } from "../status-tone";
 
 /** Where an agenda item comes from. */
@@ -30,7 +30,7 @@ export interface AgendaItem {
   urgency: AgendaUrgency | null;
   /** Urgent: shown with a flag. */
   flagged: boolean;
-  drillKind?: Exclude<V2Drill, { kind: "intent" } | null>;
+  drillKind?: Exclude<DrillSheetKind, { kind: "intent" } | null>;
   intentId?: string;
 }
 

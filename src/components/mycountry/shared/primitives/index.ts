@@ -17,14 +17,8 @@ export {
   cardEntrance,
   // Metric card grid components
   MetricCardGrid,
-  EconomyMetricGrid,
-  LaborMetricGrid,
-  GovernmentMetricGrid,
-  DemographicsMetricGrid,
-  AnalyticsMetricGrid,
   type MetricGridItem,
   type MetricCardGridProps,
-  type MetricTheme,
   // Vitality rings components
   VitalityRingsDisplay,
   QuickVitalityRings,
@@ -47,16 +41,7 @@ export {
   type DistributionBarProps,
 } from "./tabs";
 
-// Tab hero banner
-export { TabHeroBanner } from "./TabHeroBanner";
-
 // Refactor primitives
-export {
-  SectionContextWidget,
-  type ContextStat,
-  type ContextActivityEntry,
-} from "./SectionContextWidget";
-export { InlineWiki } from "./InlineWiki";
 export { PremiumPreviewFrame } from "./PremiumPreviewFrame";
 export { SearchableList, type SearchableListProps } from "./SearchableList";
 

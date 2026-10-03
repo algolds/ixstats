@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { motion } from "motion/react";
 
 import { MetricCard } from "./MetricCard";
 import { staggerContainer, staggerItem } from "./TabMotionConfig";
-import { GlassPanel, PanelCard } from "~/components/mycountry/cards";
-import type { MyCountryAccent } from "~/components/mycountry/shared/cards/accents";
 import { Button } from "~/components/ui/button";
 import {
   EditPencil as Edit2,
@@ -20,48 +18,6 @@ import { useFlag } from "~/hooks/useUnifiedFlags";
 import type { CountryImageData } from "~/lib/media";
 import { cn } from "~/lib/utils";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
-
-// Theme color configurations
-const themeColors = {
-  economy: {
-    primary: "from-green to-green",
-    secondary: "from-green/10 to-green/10",
-    accent: "rgb(16, 185, 129)",
-    bg: "rgba(16, 185, 129, 0.05)",
-  },
-  labor: {
-    primary: "from-red to-red",
-    secondary: "from-red/10 to-red/10",
-    accent: "rgb(239, 68, 68)",
-    bg: "rgba(239, 68, 68, 0.05)",
-  },
-  government: {
-    primary: "from-indigo to-indigo",
-    secondary: "from-indigo/10 to-indigo/10",
-    accent: "rgb(99, 102, 241)",
-    bg: "rgba(99, 102, 241, 0.05)",
-  },
-  demographics: {
-    primary: "from-cyan to-cyan",
-    secondary: "from-cyan/10 to-cyan/10",
-    accent: "rgb(6, 182, 212)",
-    bg: "rgba(6, 182, 212, 0.05)",
-  },
-  analytics: {
-    primary: "from-blue to-blue",
-    secondary: "from-blue/10 to-blue/10",
-    accent: "rgb(59, 130, 246)",
-    bg: "rgba(59, 130, 246, 0.05)",
-  },
-  overview: {
-    primary: "from-yellow to-yellow",
-    secondary: "from-yellow/10 to-yellow/10",
-    accent: "rgb(245, 158, 11)",
-    bg: "rgba(245, 158, 11, 0.05)",
-  },
-} as const;
-
-export type MetricTheme = keyof typeof themeColors;
 
 export interface MetricGridItem {
   id: string;
@@ -86,7 +42,6 @@ export interface MetricGridItem {
 
 export interface MetricCardGridProps {
   metrics: MetricGridItem[];
-  theme?: MetricTheme;
   columns?: 2 | 3 | 4;
   animate?: boolean;
   className?: string;
@@ -107,11 +62,10 @@ export interface MetricCardGridProps {
     countryImageData?: CountryImageData;
     countryName?: string;
   };
-  cardWrapper?: "glass" | "panel" | "card";
 }
 
 /**
- * MetricCardGrid - A themed grid of metric cards with staggered animations
+ * MetricCardGrid - A grid of metric cards with staggered animations
  *
  * Displays metrics in a responsive grid layout with consistent theming
  * and entrance animations. Uses the MetricCard component under the hood.
@@ -121,7 +75,6 @@ export interface MetricCardGridProps {
  */
 export function MetricCardGrid({
   metrics,
-  theme = "overview",
   columns = 4,
   animate = true,
   className = "",
@@ -129,18 +82,7 @@ export function MetricCardGrid({
   subtitle,
   cardFooter,
   backgroundImage,
-  cardWrapper = "card",
 }: MetricCardGridProps) {
-  const themeConfig = themeColors[theme];
-  const accent = useMemo((): MyCountryAccent => {
-    if (theme === "economy") return "emerald";
-    if (theme === "labor") return "red";
-    if (theme === "government") return "amber";
-    if (theme === "overview") return "amber";
-    if (theme === "demographics") return "cyan";
-    if (theme === "analytics") return "indigo";
-    return "neutral";
-  }, [theme]);
   const [_imageLoaded, _setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -196,7 +138,6 @@ export function MetricCardGrid({
             trend={metric.trend}
             status={metric.status}
             badge={metric.badge}
-            theme={themeConfig}
             onClick={metric.onClick}
             footer={metric.footer}
             tooltip={metric.tooltip}
@@ -281,44 +222,7 @@ export function MetricCardGrid({
     </>
   );
 
-  if (cardWrapper === "glass") {
-    return (
-      <GlassPanel accent={accent} className={cn("relative overflow-hidden", className)}>
-        {cardContent}
-      </GlassPanel>
-    );
-  }
-
-  if (cardWrapper === "panel") {
-    return (
-      <PanelCard accent={accent} className={cn("relative overflow-hidden", className)}>
-        {cardContent}
-      </PanelCard>
-    );
-  }
-
   return (
     <Card className={cn("rounded-card relative overflow-hidden", className)}>{cardContent}</Card>
   );
-}
-
-// Convenience components for specific themes
-export function EconomyMetricGrid(props: Omit<MetricCardGridProps, "theme">) {
-  return <MetricCardGrid {...props} theme="economy" />;
-}
-
-export function LaborMetricGrid(props: Omit<MetricCardGridProps, "theme">) {
-  return <MetricCardGrid {...props} theme="labor" />;
-}
-
-export function GovernmentMetricGrid(props: Omit<MetricCardGridProps, "theme">) {
-  return <MetricCardGrid {...props} theme="government" />;
-}
-
-export function DemographicsMetricGrid(props: Omit<MetricCardGridProps, "theme">) {
-  return <MetricCardGrid {...props} theme="demographics" />;
-}
-
-export function AnalyticsMetricGrid(props: Omit<MetricCardGridProps, "theme">) {
-  return <MetricCardGrid {...props} theme="analytics" />;
 }

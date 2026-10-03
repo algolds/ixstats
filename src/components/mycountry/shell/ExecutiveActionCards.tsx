@@ -16,7 +16,7 @@ import {
 } from "iconoir-react";
 import { focusRing } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
-import type { V2Drill } from "~/components/mycountry/shell/DrillSheets";
+import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import type { MyCountrySection } from "~/components/mycountry/shell/MyCountrySidebarNav";
 import type { StatusTone } from "./status-tone";
 
@@ -64,7 +64,7 @@ export function formatGrowthPeek(country: CountryPeekData | null | undefined): s
 export const DOMAIN_TILES: {
   id: MyCountrySection;
   title: string;
-  drillKind: Exclude<V2Drill, { kind: "intent" } | null>;
+  drillKind: Exclude<DrillSheetKind, { kind: "intent" } | null>;
   icon: React.ComponentType<{ className?: string }>;
   getPeek: (country: CountryPeekData | null | undefined) => string;
 }[] = [
@@ -96,7 +96,7 @@ export const DOMAIN_TILES: {
   },
   {
     id: "economy",
-    title: "Economy & Budget",
+    title: "Economy & budget",
     drillKind: { kind: "economy" },
     icon: TrendingUp,
     getPeek: (c) => {

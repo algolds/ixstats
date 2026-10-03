@@ -25,13 +25,13 @@ export function BudgetRevenueAnalysis({
 
   const split = [
     {
-      label: "Tax Revenue",
+      label: "Tax revenue",
       sub: "Direct & Indirect Taxes",
       value: revenueSummary.totalTaxRevenue,
       percent: taxPercent,
     },
     {
-      label: "Non-Tax Revenue",
+      label: "Non-Tax revenue",
       sub: "Fees, Fines & Other Sources",
       value: revenueSummary.totalNonTaxRevenue,
       percent: nonTaxPercent,

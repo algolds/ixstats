@@ -10,7 +10,7 @@ import { PremiumPreviewFrame } from "~/components/mycountry/shared/primitives";
 import { PoliticsDrillDown } from "./PoliticsDrillDown";
 import { EconomyDrillDown } from "./EconomyDrillDown";
 import { DomainContextRail } from "./DomainContextRail";
-import { DOMAIN_META, type V2Domain } from "./domain-meta";
+import { DOMAIN_META, type MyCountryDomain } from "./domain-meta";
 
 const EmbassiesAndRelationsPanel = dynamic(
   () =>
@@ -31,7 +31,7 @@ const DefenseCommandPanel = dynamic(
   { loading: () => <Skeleton className="rounded-card h-64" /> }
 );
 
-const SECTION_TO_DOMAIN: Record<string, V2Domain> = {
+const SECTION_TO_DOMAIN: Record<string, MyCountryDomain> = {
   diplomacy: "relations",
   defense: "defense",
   politics: "politics",

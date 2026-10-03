@@ -23,12 +23,6 @@ export interface MetricCardProps {
     label: string;
     variant?: "default" | "secondary" | "destructive" | "outline";
   };
-  theme?: {
-    primary: string;
-    secondary: string;
-    accent: string;
-    bg: string;
-  };
   className?: string;
   onClick?: () => void;
   loading?: boolean;
@@ -54,7 +48,6 @@ export function MetricCard({
   trend,
   status = "neutral",
   badge,
-  theme: _theme,
   className,
   onClick,
   loading = false,
@@ -62,8 +55,7 @@ export function MetricCard({
   footer,
   tooltip,
 }: MetricCardProps) {
-  // `theme` is kept for API compatibility; metric cards render as neutral Facet surfaces and
-  // only the status edge carries colour.
+  // Neutral surface; only the status edge carries colour.
   return (
     <Card
       onClick={onClick}
@@ -116,62 +108,5 @@ export function MetricCard({
         )}
       </CardContent>
     </Card>
-  );
-}
-
-// Specialized metric card variants
-export function EconomicMetricCard(props: Omit<MetricCardProps, "theme">) {
-  return (
-    <MetricCard
-      {...props}
-      theme={{
-        primary: "from-green to-green",
-        secondary: "from-green/10 to-green/10",
-        accent: "rgb(16, 185, 129)",
-        bg: "rgba(16, 185, 129, 0.05)",
-      }}
-    />
-  );
-}
-
-export function PopulationMetricCard(props: Omit<MetricCardProps, "theme">) {
-  return (
-    <MetricCard
-      {...props}
-      theme={{
-        primary: "from-blue to-blue",
-        secondary: "from-blue/10 to-blue/10",
-        accent: "rgb(59, 130, 246)",
-        bg: "rgba(59, 130, 246, 0.05)",
-      }}
-    />
-  );
-}
-
-export function GovernmentMetricCard(props: Omit<MetricCardProps, "theme">) {
-  return (
-    <MetricCard
-      {...props}
-      theme={{
-        primary: "from-indigo to-indigo",
-        secondary: "from-indigo/10 to-indigo/10",
-        accent: "rgb(99, 102, 241)",
-        bg: "rgba(99, 102, 241, 0.05)",
-      }}
-    />
-  );
-}
-
-export function DiplomaticMetricCard(props: Omit<MetricCardProps, "theme">) {
-  return (
-    <MetricCard
-      {...props}
-      theme={{
-        primary: "from-cyan to-cyan",
-        secondary: "from-cyan/10 to-cyan/10",
-        accent: "rgb(6, 182, 212)",
-        bg: "rgba(6, 182, 212, 0.05)",
-      }}
-    />
   );
 }

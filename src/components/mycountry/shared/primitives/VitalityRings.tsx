@@ -37,28 +37,28 @@ interface VitalityRingsProps {
 const DEFAULT_RING_CONFIG = [
   {
     key: "economicVitality" as keyof VitalityRingData,
-    label: "Economic Health",
-    subtitle: "GDP & Growth",
+    label: "Economic health",
+    subtitle: "GDP & growth",
     color: "var(--color-green-500)",
     icon: DollarSign,
   },
   {
     key: "populationWellbeing" as keyof VitalityRingData,
-    label: "Population Wellbeing",
+    label: "Population wellbeing",
     subtitle: "Demographics",
     color: "var(--color-blue-500)",
     icon: Users,
   },
   {
     key: "diplomaticStanding" as keyof VitalityRingData,
-    label: "Diplomatic Standing",
+    label: "Diplomatic standing",
     subtitle: "International",
     color: "var(--color-purple-500)",
     icon: Shield,
   },
   {
     key: "governmentalEfficiency" as keyof VitalityRingData,
-    label: "Government Efficiency",
+    label: "Government efficiency",
     subtitle: "Administration",
     color: "var(--color-orange-500)",
     icon: Building,
@@ -68,7 +68,7 @@ const DEFAULT_RING_CONFIG = [
 export function VitalityRings({
   data,
   rings,
-  title = "National Vitality",
+  title = "National vitality",
   variant = "sidebar",
   collapsed = false,
 }: VitalityRingsProps) {
@@ -99,7 +99,7 @@ export function VitalityRings({
       return (
         <div
           key={ring.key ?? index}
-          className="hover:bg-fill-3 focus-visible:ring-tint rounded-control flex cursor-pointer items-center gap-3 p-3 transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]"
+          className="hover:bg-fill-3 focus-visible:ring-tint rounded-control flex cursor-pointer items-center gap-3 p-3 transition-[background-color,transform] duration-150 outline-none focus-visible:ring-2"
           onClick={ring.onClick}
           role={isClickable ? "button" : undefined}
           tabIndex={isClickable ? 0 : undefined}

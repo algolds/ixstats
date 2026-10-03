@@ -65,7 +65,7 @@ export const EditExchangeModal = React.memo<EditExchangeModalProps>(
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <EditPencil className="text-label-secondary h-5 w-5" />
-              Edit Cultural Exchange
+              Edit cultural exchange
             </DialogTitle>
             <DialogDescription>
               Update the title and description of your cultural exchange program
@@ -84,7 +84,7 @@ export const EditExchangeModal = React.memo<EditExchangeModalProps>(
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-exchange-title">Exchange Title</Label>
+                <Label htmlFor="edit-exchange-title">Exchange title</Label>
                 <Input
                   id="edit-exchange-title"
                   type="text"

@@ -398,7 +398,7 @@ export function PopulationDetailsModal({
               <CardHeader className="mb-4 p-0">
                 <h3 className="text-label text-title-3 flex items-center gap-2">
                   <BarChart3 className="text-label-secondary h-5 w-5" />
-                  Demographics Performance Summary
+                  Demographics performance summary
                 </h3>
                 <p className="text-label-secondary text-body">
                   Key growth metrics and global ranking statistics.
@@ -440,7 +440,9 @@ export function PopulationDetailsModal({
                     padding="none"
                     className="flex flex-col justify-center p-4 text-center"
                   >
-                    <Eyebrow className="mb-1 block">vs Global Average</Eyebrow>
+                    <span className="text-stat-label text-label-secondary mb-1 block">
+                      vs Global Average
+                    </span>
                     <span
                       className={`text-title-2 ${
                         performanceMetrics.globalComparison > 0 ? "text-green" : "text-destructive"
@@ -459,7 +461,9 @@ export function PopulationDetailsModal({
                     padding="none"
                     className="flex flex-col justify-center p-4 text-center"
                   >
-                    <Eyebrow className="mb-1 block">World Ranking</Eyebrow>
+                    <span className="text-stat-label text-label-secondary mb-1 block">
+                      World ranking
+                    </span>
                     <span className="text-label text-title-2">#{performanceMetrics.rank}</span>
                     <span className="text-label-secondary text-footnote mt-0.5">
                       of {performanceMetrics.totalCountries} countries
@@ -473,7 +477,7 @@ export function PopulationDetailsModal({
 
         <MetricModalLayout.Sidebar>
           <MetricModalLayout.StatCard
-            label="Current Population"
+            label="Current population"
             value={economicData.currentPopulation}
             suffix=""
             decimalPlaces={0}
@@ -482,7 +486,7 @@ export function PopulationDetailsModal({
           />
 
           <MetricModalLayout.StatCard
-            label="Growth Rate"
+            label="Growth rate"
             value={economicData.populationGrowthRate * 100}
             suffix="%"
             decimalPlaces={3}
@@ -491,7 +495,7 @@ export function PopulationDetailsModal({
           />
 
           <MetricModalLayout.StatCard
-            label="Population Density"
+            label="Population density"
             value={performanceMetrics?.density ? Math.round(performanceMetrics.density) : 0}
             suffix="/km²"
             icon={MapPin}
@@ -501,7 +505,7 @@ export function PopulationDetailsModal({
           <div className="bg-fill-3 rounded-row relative flex min-h-[100px] flex-1 flex-col justify-between overflow-hidden p-4">
             <div>
               <div className="flex items-center justify-between">
-                <Eyebrow>Demographics Classification</Eyebrow>
+                <Eyebrow>Demographics classification</Eyebrow>
                 {populationTierInfo && (
                   <HoverCard>
                     <HoverCardTrigger asChild>
@@ -516,7 +520,7 @@ export function PopulationDetailsModal({
                       </Button>
                     </HoverCardTrigger>
                     <HoverCardContent side="top" align="end" className="w-72 p-3">
-                      <h4 className="text-label text-headline mb-2">Population Tier System</h4>
+                      <h4 className="text-label text-headline mb-2">Population tier system</h4>
                       <div className="space-y-2">
                         {populationTierInfo.allTiers.map((tier, idx) => (
                           <div
@@ -849,7 +853,9 @@ export function PopulationDetailsModal({
         <MetricModalLayout.Sidebar>
           <div className="flex flex-1 flex-col gap-4">
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Peak Population</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">
+                Peak population
+              </span>
               <span className="text-label text-title-2">
                 {chartData.length > 0
                   ? formatPopulation(Math.max(...chartData.map((d) => d.population)))
@@ -857,7 +863,7 @@ export function PopulationDetailsModal({
               </span>
             </div>
             <div className="bg-fill-3 rounded-row flex flex-1 flex-col justify-center p-4">
-              <Eyebrow className="mb-1 block">Recent Growth</Eyebrow>
+              <span className="text-stat-label text-label-secondary mb-1 block">Recent growth</span>
               <span className="text-title-2 text-green">
                 {performanceMetrics?.growth ? `${performanceMetrics.growth.toFixed(3)}%` : "N/A"}
               </span>
@@ -876,7 +882,7 @@ export function PopulationDetailsModal({
             <CardHeader className="mb-4 p-0">
               <h3 className="text-label text-title-3 flex items-center gap-2">
                 <Globe className="text-label-secondary h-5 w-5" />
-                Global Population Rankings
+                Global population rankings
               </h3>
             </CardHeader>
             <CardContent className="flex flex-1 flex-col justify-center p-0">
@@ -927,7 +933,7 @@ export function PopulationDetailsModal({
         <MetricModalLayout.Sidebar>
           <Card className="flex flex-1 flex-col justify-between p-4">
             <CardHeader className="mb-3 p-0">
-              <h3 className="text-label text-title-3 text-headline">Demographics Breakdown</h3>
+              <h3 className="text-label text-title-3 text-headline">Demographics breakdown</h3>
             </CardHeader>
             <CardContent className="space-y-3 p-0">
               <div className="flex h-44 w-full items-center justify-center">
@@ -991,8 +997,8 @@ export function PopulationDetailsModal({
       onClose={onClose}
       countryId={countryId}
       countryName={countryName}
-      title="Population Analysis"
-      description="Comprehensive population demographics, growth trends, and comparative analysis"
+      title="Population analysis"
+      description="Demographics, growth trends and comparisons"
       icon={Users}
       iconColor="text-label-secondary"
       tabs={TABS}

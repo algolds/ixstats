@@ -60,7 +60,7 @@ export const DepartmentIconPicker = React.memo(function DepartmentIconPicker({
               size="sm"
               onClick={() => setMediaModalOpen(true)}
             >
-              Choose Custom Image
+              Choose custom image
             </Button>
           )}
         </div>
