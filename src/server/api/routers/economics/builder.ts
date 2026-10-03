@@ -1,7 +1,7 @@
 // SECURITY: All mutation endpoints validate country ownership
 
 import { z } from "zod";
-import { parseSectorBreakdown, type SectorRow } from "./_shared";
+import { ECONOMY_INCLUDE, parseSectorBreakdown, type SectorRow } from "./_shared";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 
@@ -69,16 +69,7 @@ const economicsBuilderRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const country = await ctx.db.country.findUnique({
         where: { id: input.countryId },
-        include: {
-          economicProfile: true,
-          laborMarket: true,
-          fiscalSystem: true,
-          incomeDistribution: true,
-          demographics: true,
-          economicModel: true,
-          nationalIdentity: true,
-          economicComponents: true,
-        },
+        include: { ...ECONOMY_INCLUDE, demographics: true, economicComponents: true },
       });
 
       if (!country) {

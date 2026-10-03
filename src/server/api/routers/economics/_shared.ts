@@ -1,3 +1,15 @@
+import type { Prisma } from "@prisma/client";
+
+/** The economic relations both builder loaders read. */
+export const ECONOMY_INCLUDE = {
+  economicProfile: true,
+  laborMarket: true,
+  fiscalSystem: true,
+  incomeDistribution: true,
+  economicModel: true,
+  nationalIdentity: true,
+} satisfies Prisma.CountryInclude;
+
 export type SectorRow = Record<string, any>;
 
 /** The stored sector breakdown JSON as rows; empty when absent or unparseable. */

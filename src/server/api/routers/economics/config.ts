@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { parseSectorBreakdown } from "./_shared";
+import { ECONOMY_INCLUDE, parseSectorBreakdown } from "./_shared";
 
 const economicsConfigRouter = createTRPCRouter({
   // Get complete economy configuration
@@ -13,14 +13,7 @@ const economicsConfigRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const country = await ctx.db.country.findUnique({
         where: { id: input.countryId },
-        include: {
-          economicProfile: true,
-          laborMarket: true,
-          fiscalSystem: true,
-          incomeDistribution: true,
-          economicModel: true,
-          nationalIdentity: true,
-        },
+        include: ECONOMY_INCLUDE,
       });
 
       if (!country) {
