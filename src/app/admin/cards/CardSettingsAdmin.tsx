@@ -4,101 +4,21 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  ControlSlider as Sliders,
-  Package,
-  Calendar,
-  Coins,
-  ShieldAlert,
-  Hammer as Gavel,
-} from "iconoir-react";
+import { ControlSlider as Sliders, Package, Calendar, Coins, ShieldAlert } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { Button } from "~/components/ui/button";
-import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import {
-  AlertDialog,
-  AlertDialogClose,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "~/components/ui/alert-dialog";
 import { CardGeneralSettingsAdmin } from "./CardGeneralSettingsAdmin";
 import { CardPacksAdmin } from "./CardPacksAdmin";
 import { IxCardSeasonAdmin } from "./IxCardSeasonAdmin";
 import { ValuationAdmin } from "./ValuationAdmin";
 import { CardTakedownsAdmin } from "./CardTakedownsAdmin";
-import { Card } from "~/components/ui/card";
 
 export type SettingsSubtab = "general" | "packs" | "seasons" | "valuation" | "takedowns";
 
 interface CardSettingsAdminProps {
   initialSubtab?: SettingsSubtab;
   onSubtabChange?: (subtab: SettingsSubtab) => void;
-}
-
-function SeedDemoAuctionsButton() {
-  const notify = useNotify();
-  const [confirmOpen, setConfirmOpen] = useState(false);
-
-  const seedMutation = api.cardMarket.seedDemoAuctions.useMutation({
-    onSuccess: (data: { message: string }) => {
-      notify.success("Demo Auctions Seeded", data.message);
-      setConfirmOpen(false);
-    },
-    onError: (error: { message: string }) => {
-      notify.error("Seeding Failed", error.message);
-      setConfirmOpen(false);
-    },
-  });
-
-  return (
-    <>
-      <Card className="border-yellow/20 bg-yellow/5 flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="rounded-row border-yellow/30 bg-yellow/20 border p-3">
-            <Gavel className="text-yellow h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-label text-headline">Demo marketplace auctions</p>
-            <p className="text-label-secondary text-footnote mt-0.5">
-              Seed synthetic market auctions with active bidding for test environments.
-            </p>
-          </div>
-        </div>
-        <Button
-          variant="secondary"
-          onClick={() => setConfirmOpen(true)}
-          disabled={seedMutation.isPending}
-        >
-          {seedMutation.isPending ? "Seeding..." : "Seed Demo Auctions"}
-        </Button>
-      </Card>
-
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Gavel className="text-yellow h-5 w-5" />
-              Seed Demo Card Auctions?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This will create test auctions in the card marketplace using sample cards.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogClose onClick={() => setConfirmOpen(false)}>Cancel</AlertDialogClose>
-            <Button onClick={() => seedMutation.mutate()} disabled={seedMutation.isPending}>
-              {seedMutation.isPending ? "Seeding..." : "Confirm Seed"}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  );
 }
 
 export function CardSettingsAdmin({
@@ -216,7 +136,6 @@ export function CardSettingsAdmin({
       {activeSubtab === "general" && (
         <div className="space-y-6">
           <CardGeneralSettingsAdmin />
-          <SeedDemoAuctionsButton />
         </div>
       )}
 
