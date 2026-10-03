@@ -396,7 +396,7 @@ export function useSubdivisionVertexEdit({
     if (!map || !isLoaded) return;
 
     if (mode === "edit-subdivision" && selectedFeature?.geometry) {
-      let geo = JSON.parse(JSON.stringify(selectedFeature.geometry)) as Polygon | MultiPolygon;
+      let geo = structuredClone(selectedFeature.geometry) as Polygon | MultiPolygon;
 
       const border = countryGeometryRef.current;
       if (border) {
@@ -432,7 +432,7 @@ export function useSubdivisionVertexEdit({
       neighborGeometriesRef.current = new Map(
         subdivisionFeatures
           .filter((f) => f.id !== selectedFeature.id)
-          .map((f) => [f.id, JSON.parse(JSON.stringify(f.geometry))])
+          .map((f) => [f.id, structuredClone(f.geometry) as Polygon | MultiPolygon] as const)
       );
 
       changedNeighborIdsRef.current = new Set();
@@ -477,7 +477,7 @@ export function useSubdivisionVertexEdit({
         vertexIndex: vi,
         coord,
         originalCoord: [...coord] as Position,
-        initialGeometry: JSON.parse(JSON.stringify(vertexEditRef.current.currentGeometry)) as
+        initialGeometry: structuredClone(vertexEditRef.current.currentGeometry) as
           Polygon | MultiPolygon,
         startScreenPoint: { x: e.point.x, y: e.point.y },
         committed: false,
@@ -719,7 +719,7 @@ export function useSubdivisionVertexEdit({
           vertexIndex: vi,
           coord,
           originalCoord: [...coord] as Position,
-          initialGeometry: JSON.parse(JSON.stringify(vertexEditRef.current.currentGeometry)) as
+          initialGeometry: structuredClone(vertexEditRef.current.currentGeometry) as
             Polygon | MultiPolygon,
           startScreenPoint: { x, y },
           committed: true, // Touch commits immediately upon hit

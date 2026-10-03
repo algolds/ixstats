@@ -20,8 +20,6 @@ interface MobileEditorSheetProps {
   children: React.ReactNode;
   onClose: () => void;
   title?: string;
-  /** @deprecated The sheet sizes itself with detents. */
-  maxHeight?: string;
   /** Content for the features tab */
   featureListContent?: React.ReactNode;
   /** Content for the wiki tab */
