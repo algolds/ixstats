@@ -2,6 +2,7 @@ import type { Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
 import { getFeatureCoords } from "../utils/map-helpers";
 
 export type EditorMouseEvent = MapLayerMouseEvent & { routeClicked?: boolean };
+type MouseListener = (e: EditorMouseEvent) => void;
 
 /** True when the transport overlay already handled this click. */
 export const isRouteClick = (e: EditorMouseEvent) =>
@@ -23,23 +24,25 @@ export function createListeners(map: MapLibreMap) {
     onLayer(
       type: "mousedown" | "click" | "mouseenter" | "mouseleave",
       layerId: string,
-      listener: (e: MapLayerMouseEvent) => void
+      listener: MouseListener
     ) {
-      map.on(type as "click", layerId, listener);
+      const bound = listener as (e: MapLayerMouseEvent) => void;
+      map.on(type as "click", layerId, bound);
       undo.push(() => {
         try {
-          map.off(type as "click", layerId, listener);
+          map.off(type as "click", layerId, bound);
         } catch {
           // map already torn down
         }
       });
     },
     onMap(
-      type: "mousemove" | "mouseup" | "contextmenu",
-      listener: (e: MapLayerMouseEvent) => void
+      type: "mousemove" | "mouseup" | "mousedown" | "click" | "contextmenu",
+      listener: MouseListener
     ) {
-      map.on(type as "mousemove", listener);
-      undo.push(() => map.off(type as "mousemove", listener));
+      const bound = listener as (e: MapLayerMouseEvent) => void;
+      map.on(type as "mousemove", bound);
+      undo.push(() => map.off(type as "mousemove", bound));
     },
     onDom,
     /** touchstart/touchmove are non-passive so handlers can cancel page scrolling. */

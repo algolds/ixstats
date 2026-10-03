@@ -76,6 +76,12 @@ class TransientStore {
     this.emitChange();
   };
 
+  public setTerrainInfo = (info: LiveTerrainInfo | null): void => {
+    if (this.state.terrainInfo === info) return;
+    this.state = { ...this.state, terrainInfo: info };
+    this.emitChange();
+  };
+
   public setZoom = (zoom: number | null): void => {
     if (this.state.zoom === zoom) return;
     this.state = { ...this.state, zoom };
