@@ -83,6 +83,289 @@ function Meter({
   );
 }
 
+function TapButton({ className, ...props }: React.ComponentProps<typeof Button>) {
+  return <Button className={cn("max-sm:h-11", className)} {...props} />;
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <h4 className="mb-2">
+        <Eyebrow>{title}</Eyebrow>
+      </h4>
+      {children}
+    </section>
+  );
+}
+
+type LinkedIssues = NonNullable<ReturnType<typeof api.intent.getLinkedIssues.useQuery>["data"]>;
+
+function ResistanceList({
+  issues,
+  onOpenIssue,
+}: {
+  issues: LinkedIssues["issues"];
+  onOpenIssue?: (issueId: string) => void;
+}) {
+  return (
+    <Card variant="inset" padding="none">
+      <ul className="divide-separator divide-y">
+        {issues.map((issue) => {
+          const resolved = RESOLVED_ISSUE.has(issue.status);
+          return (
+            <li key={issue.id} className="flex items-center gap-3 px-3 py-2">
+              <span
+                className={cn(
+                  "h-2 w-2 shrink-0 rounded-full",
+                  TONE_CLASSES[resolved ? "positive" : "negative"].dot
+                )}
+                aria-hidden
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-label text-body truncate">{issue.title}</p>
+                <p className="text-label-secondary text-footnote">
+                  {ISSUE_STATUS_LABEL[issue.status] ?? issue.status}
+                  {issue.chosenOptionLabel ? ` · ${issue.chosenOptionLabel}` : ""}
+                </p>
+              </div>
+              {!resolved && onOpenIssue && (
+                <TapButton variant="outline" size="sm" onClick={() => onOpenIssue(issue.id)}>
+                  Respond
+                </TapButton>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </Card>
+  );
+}
+
+function AbandonDialog({
+  goal,
+  disabled,
+  onConfirm,
+}: {
+  goal: string;
+  disabled: boolean;
+  onConfirm: () => void;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <TapButton variant="outline" disabled={disabled}>
+          <Undo /> Abandon
+        </TapButton>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Abandon this directive?</AlertDialogTitle>
+          <AlertDialogDescription>
+            &ldquo;{goal}&rdquo; will stop executing and release any CivCap it holds. Effects
+            already applied stay in place.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Keep it</AlertDialogCancel>
+          <AlertDialogAction
+            className={buttonVariants({ variant: "destructive" })}
+            onClick={onConfirm}
+          >
+            Abandon directive
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+const plural = (n: number) => `${n} open resistance issue${n === 1 ? "" : "s"}`;
+
+function resistanceSummary(data: LinkedIssues | undefined) {
+  const total = data?.totalCount ?? 0;
+  const resolved = data?.resolvedCount ?? 0;
+  if (!data) return { value: 0, detail: "Checking…" };
+  if (total === 0) return { value: 1, detail: "None raised" };
+  return { value: resolved / total, detail: `${resolved} of ${total} resolved` };
+}
+
+function ProgressMeters({
+  timeline,
+  nowIxTime,
+  linked,
+  openResistance,
+}: {
+  timeline: ReturnType<typeof directiveTimeline>;
+  nowIxTime: number;
+  linked: LinkedIssues | undefined;
+  openResistance: number;
+}) {
+  const resistance = resistanceSummary(linked);
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <Meter
+        label="Execution week"
+        value={timeline.executionProgress}
+        detail={
+          timeline.releasesAt
+            ? `${timeline.heldCivCap} CivCap held · ${formatIxCountdown(timeline.releasesAt, nowIxTime)} left`
+            : "Done · CivCap released"
+        }
+        barClass={TONE_CLASSES[timeline.releasesAt ? "caution" : "info"].bar}
+      />
+      <Meter
+        label="Resistance"
+        value={resistance.value}
+        detail={resistance.detail}
+        barClass={TONE_CLASSES[openResistance > 0 ? "negative" : "positive"].bar}
+      />
+    </div>
+  );
+}
+
+function DirectiveDetails({
+  id,
+  intent,
+  linked,
+  onOpenIssue,
+}: {
+  id: string;
+  intent: IntentRow;
+  linked: { isLoading: boolean; data: LinkedIssues | undefined };
+  onOpenIssue?: (issueId: string) => void;
+}) {
+  const changes = parseChangeLines(intent.changesJson);
+  const issues = linked.data?.issues ?? [];
+  return (
+    <div id={id} className="border-separator space-y-6 border-t p-4 sm:p-5">
+      <Section title="Recorded effects">
+        <DirectiveOutcome intentId={intent.id} />
+      </Section>
+
+      {changes.length > 0 && (
+        <Section title="Levers pulled">
+          <ul className="space-y-2">
+            {changes.map((c, i) => (
+              <li key={i} className="text-body">
+                <span className="text-label first-letter:uppercase">{c.label}</span>
+                {c.detail && <span className="text-label-secondary"> — {c.detail}</span>}
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+
+      <Section title="Resistance">
+        {linked.isLoading ? (
+          <p className="text-label-secondary text-body">Loading…</p>
+        ) : issues.length === 0 ? (
+          <p className="text-label-secondary text-body">No resistance issues were raised.</p>
+        ) : (
+          <ResistanceList issues={issues} onOpenIssue={onOpenIssue} />
+        )}
+      </Section>
+
+      {intent.summary && (
+        <Section title="Summary">
+          <p className="text-label-secondary text-body leading-relaxed">{intent.summary}</p>
+        </Section>
+      )}
+    </div>
+  );
+}
+
+function DirectiveActions({
+  intent,
+  isOpen,
+  readOnly,
+  expanded,
+  panelId,
+  onToggle,
+  pending,
+  linkedReady,
+  openResistance,
+  setStatus,
+  handlers: { onFollowUp, onReuseGoal, onOpenIntent },
+}: {
+  intent: IntentRow;
+  isOpen: boolean;
+  readOnly?: boolean;
+  expanded: boolean;
+  panelId: string;
+  onToggle: () => void;
+  pending: boolean;
+  linkedReady: boolean;
+  openResistance: number;
+  setStatus: (status: "completed" | "abandoned") => void;
+  handlers: Pick<DirectiveCardProps, "onFollowUp" | "onReuseGoal" | "onOpenIntent">;
+}) {
+  const canAct = isOpen && !readOnly;
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-2">
+        <TapButton
+          variant="ghost"
+          aria-expanded={expanded}
+          aria-controls={panelId}
+          onClick={() => onToggle()}
+          className="-ml-3"
+        >
+          <NavArrowDown
+            className={cn(
+              "transition-transform duration-150",
+              expanded ? "rotate-180" : "rotate-0"
+            )}
+          />
+          {expanded ? "Hide effects" : "Effects & resistance"}
+        </TapButton>
+
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          {onOpenIntent && (
+            <TapButton variant="ghost" onClick={() => onOpenIntent(intent.id)}>
+              <OpenNewWindow /> Record
+            </TapButton>
+          )}
+          {!isOpen && onReuseGoal && !readOnly && (
+            <TapButton variant="outline" onClick={() => onReuseGoal(intent.goal)}>
+              <Refresh /> Declare again
+            </TapButton>
+          )}
+          {canAct && onFollowUp && (
+            <TapButton
+              variant="outline"
+              onClick={() => onFollowUp({ id: intent.id, goal: intent.goal })}
+            >
+              <GitFork /> Follow up
+            </TapButton>
+          )}
+          {canAct && (
+            <>
+              <AbandonDialog
+                goal={intent.goal}
+                disabled={pending}
+                onConfirm={() => setStatus("abandoned")}
+              />
+              <TapButton
+                variant="outline"
+                disabled={pending || !linkedReady || openResistance > 0}
+                title={openResistance > 0 ? `Resolve ${plural(openResistance)} first` : undefined}
+                onClick={() => setStatus("completed")}
+              >
+                <CheckCircle className={TONE_CLASSES.positive.text} /> Complete
+              </TapButton>
+            </>
+          )}
+        </div>
+      </div>
+      {canAct && openResistance > 0 && (
+        <p className="text-label-secondary text-footnote -mt-2">
+          Resolve {plural(openResistance)} before completing.
+        </p>
+      )}
+    </>
+  );
+}
+
 /**
  * One directive: status, progress and actions up front; recorded effects on expand.
  * A depth-3 Facet row (solid: it sits inside the workspace's glass shell).
@@ -104,9 +387,8 @@ export function DirectiveCard({
 
   const timeline = directiveTimeline(intent, nowIxTime);
   const phase = PHASE_META[timeline.phase];
+  const tone = TONE_CLASSES[phase.tone];
   const isOpen = timeline.phase === "executing" || timeline.phase === "in_force";
-  const meta = tierMeta(intent.tier);
-  const changes = parseChangeLines(intent.changesJson);
 
   const linked = api.intent.getLinkedIssues.useQuery(
     { intentId: intent.id },
@@ -129,34 +411,31 @@ export function DirectiveCard({
     },
     onError: (e) => notify.error("Could not update directive", e.message),
   });
-
-  const resistanceDetail = !linked.data
-    ? "Checking…"
-    : linked.data.totalCount === 0
-      ? "None raised"
-      : `${linked.data.resolvedCount} of ${linked.data.totalCount} resolved`;
+  const setStatus = (status: "completed" | "abandoned") => update.mutate({ id: intent.id, status });
 
   return (
     <Card className="rounded-card">
       <article>
         <div className="space-y-4 p-4 sm:p-5">
           <div className="text-footnote flex flex-wrap items-center gap-x-3 gap-y-1">
-            <Badge variant="outline" className={TONE_CLASSES[phase.tone].badge} title={phase.hint}>
-              <span
-                className={cn("h-1.5 w-1.5 rounded-full", TONE_CLASSES[phase.tone].dot)}
-                aria-hidden
-              />
+            <Badge variant="outline" className={tone.badge} title={phase.hint}>
+              <span className={cn("h-1.5 w-1.5 rounded-full", tone.dot)} aria-hidden />
               {phase.label}
             </Badge>
-            <span className="text-label-secondary">{categoryLabel(intent.category)}</span>
-            <span className="text-label-secondary" aria-hidden>
-              ·
-            </span>
-            <span className="text-label-secondary">{meta.label}</span>
-            <span className="text-label-secondary" aria-hidden>
-              ·
-            </span>
-            <span className="text-label-secondary">{formatIxDate(intent.createdIxTime)}</span>
+            {[
+              categoryLabel(intent.category),
+              tierMeta(intent.tier).label,
+              formatIxDate(intent.createdIxTime),
+            ].map((text, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && (
+                  <span className="text-label-secondary" aria-hidden>
+                    ·
+                  </span>
+                )}
+                <span className="text-label-secondary">{text}</span>
+              </React.Fragment>
+            ))}
           </div>
 
           <div>
@@ -170,210 +449,36 @@ export function DirectiveCard({
           </div>
 
           {isOpen && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Meter
-                label="Execution week"
-                value={timeline.executionProgress}
-                detail={
-                  timeline.releasesAt
-                    ? `${timeline.heldCivCap} CivCap held · ${formatIxCountdown(timeline.releasesAt, nowIxTime)} left`
-                    : "Done · CivCap released"
-                }
-                barClass={TONE_CLASSES[timeline.releasesAt ? "caution" : "info"].bar}
-              />
-              <Meter
-                label="Resistance"
-                value={
-                  linked.data && linked.data.totalCount > 0
-                    ? linked.data.resolvedCount / linked.data.totalCount
-                    : linked.data
-                      ? 1
-                      : 0
-                }
-                detail={resistanceDetail}
-                barClass={TONE_CLASSES[openResistance > 0 ? "negative" : "positive"].bar}
-              />
-            </div>
+            <ProgressMeters
+              timeline={timeline}
+              nowIxTime={nowIxTime}
+              linked={linked.data}
+              openResistance={openResistance}
+            />
           )}
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="ghost"
-              aria-expanded={expanded}
-              aria-controls={panelId}
-              onClick={() => setExpanded((v) => !v)}
-              className="-ml-3 max-sm:h-11"
-            >
-              <NavArrowDown
-                className={cn(
-                  "transition-transform duration-150",
-                  expanded ? "rotate-180" : "rotate-0"
-                )}
-              />
-              {expanded ? "Hide effects" : "Effects & resistance"}
-            </Button>
-
-            <div className="ml-auto flex flex-wrap items-center gap-2">
-              {onOpenIntent && (
-                <Button
-                  variant="ghost"
-                  className="max-sm:h-11"
-                  onClick={() => onOpenIntent(intent.id)}
-                >
-                  <OpenNewWindow /> Record
-                </Button>
-              )}
-              {!isOpen && onReuseGoal && !readOnly && (
-                <Button
-                  variant="outline"
-                  className="max-sm:h-11"
-                  onClick={() => onReuseGoal(intent.goal)}
-                >
-                  <Refresh /> Declare again
-                </Button>
-              )}
-              {isOpen && onFollowUp && !readOnly && (
-                <Button
-                  variant="outline"
-                  className="max-sm:h-11"
-                  onClick={() => onFollowUp({ id: intent.id, goal: intent.goal })}
-                >
-                  <GitFork /> Follow up
-                </Button>
-              )}
-              {isOpen && !readOnly && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" className="max-sm:h-11" disabled={update.isPending}>
-                      <Undo /> Abandon
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Abandon this directive?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        &ldquo;{intent.goal}&rdquo; will stop executing and release any CivCap it
-                        holds. Effects already applied stay in place.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Keep it</AlertDialogCancel>
-                      <AlertDialogAction
-                        className={buttonVariants({ variant: "destructive" })}
-                        onClick={() => update.mutate({ id: intent.id, status: "abandoned" })}
-                      >
-                        Abandon directive
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
-              {isOpen && !readOnly && (
-                <Button
-                  variant="outline"
-                  className="max-sm:h-11"
-                  disabled={update.isPending || !linked.data || openResistance > 0}
-                  title={
-                    openResistance > 0
-                      ? `Resolve ${openResistance} open resistance issue${openResistance === 1 ? "" : "s"} first`
-                      : undefined
-                  }
-                  onClick={() => update.mutate({ id: intent.id, status: "completed" })}
-                >
-                  <CheckCircle className={TONE_CLASSES.positive.text} /> Complete
-                </Button>
-              )}
-            </div>
-          </div>
-          {isOpen && openResistance > 0 && !readOnly && (
-            <p className="text-label-secondary text-footnote -mt-2">
-              Resolve {openResistance} open resistance issue{openResistance === 1 ? "" : "s"} before
-              completing.
-            </p>
-          )}
+          <DirectiveActions
+            intent={intent}
+            isOpen={isOpen}
+            readOnly={readOnly}
+            expanded={expanded}
+            panelId={panelId}
+            onToggle={() => setExpanded((v) => !v)}
+            pending={update.isPending}
+            linkedReady={!!linked.data}
+            openResistance={openResistance}
+            setStatus={setStatus}
+            handlers={{ onFollowUp, onReuseGoal, onOpenIntent }}
+          />
         </div>
 
         {expanded && (
-          <div id={panelId} className="border-separator space-y-6 border-t p-4 sm:p-5">
-            <section>
-              <h4 className="mb-2">
-                <Eyebrow>Recorded effects</Eyebrow>
-              </h4>
-              <DirectiveOutcome intentId={intent.id} />
-            </section>
-
-            {changes.length > 0 && (
-              <section>
-                <h4 className="mb-2">
-                  <Eyebrow>Levers pulled</Eyebrow>
-                </h4>
-                <ul className="space-y-2">
-                  {changes.map((c, i) => (
-                    <li key={i} className="text-body">
-                      <span className="text-label first-letter:uppercase">{c.label}</span>
-                      {c.detail && <span className="text-label-secondary"> — {c.detail}</span>}
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            <section>
-              <h4 className="mb-2">
-                <Eyebrow>Resistance</Eyebrow>
-              </h4>
-              {linked.isLoading ? (
-                <p className="text-label-secondary text-body">Loading…</p>
-              ) : (linked.data?.issues.length ?? 0) === 0 ? (
-                <p className="text-label-secondary text-body">No resistance issues were raised.</p>
-              ) : (
-                <Card variant="inset" padding="none">
-                  <ul className="divide-separator divide-y">
-                    {linked.data!.issues.map((issue) => {
-                      const resolved = RESOLVED_ISSUE.has(issue.status);
-                      return (
-                        <li key={issue.id} className="flex items-center gap-3 px-3 py-2">
-                          <span
-                            className={cn(
-                              "h-2 w-2 shrink-0 rounded-full",
-                              TONE_CLASSES[resolved ? "positive" : "negative"].dot
-                            )}
-                            aria-hidden
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-label text-body truncate">{issue.title}</p>
-                            <p className="text-label-secondary text-footnote">
-                              {ISSUE_STATUS_LABEL[issue.status] ?? issue.status}
-                              {issue.chosenOptionLabel ? ` · ${issue.chosenOptionLabel}` : ""}
-                            </p>
-                          </div>
-                          {!resolved && onOpenIssue && !readOnly && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="max-sm:h-11"
-                              onClick={() => onOpenIssue(issue.id)}
-                            >
-                              Respond
-                            </Button>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </Card>
-              )}
-            </section>
-
-            {intent.summary && (
-              <section>
-                <h4 className="mb-2">
-                  <Eyebrow>Summary</Eyebrow>
-                </h4>
-                <p className="text-label-secondary text-body leading-relaxed">{intent.summary}</p>
-              </section>
-            )}
-          </div>
+          <DirectiveDetails
+            id={panelId}
+            intent={intent}
+            linked={linked}
+            onOpenIssue={readOnly ? undefined : onOpenIssue}
+          />
         )}
       </article>
     </Card>
