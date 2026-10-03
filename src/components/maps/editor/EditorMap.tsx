@@ -228,7 +228,6 @@ const EditorMap = memo(
       onDrawComplete,
       worldMapLayers,
       editorVisibleLayers,
-      guides,
       snapEnabled,
       snapTolerance,
       snapPoint,

@@ -158,7 +158,7 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
         {importer.step === "align" && <AlignmentStep importer={importer} />}
         {importer.step === "snap" && <SnapPreviewStep importer={importer} />}
         {importer.step === "validate" && <ValidationStep importer={importer} />}
-        {importer.step === "commit" && <CommitStep importer={importer} onCommit={handleCommit} />}
+        {importer.step === "commit" && <CommitStep importer={importer} />}
       </div>
 
       <WizardFooter importer={importer} onCommit={handleCommit} />

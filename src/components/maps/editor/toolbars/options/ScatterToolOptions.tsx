@@ -16,6 +16,62 @@ const CITY_TYPES = [
   { value: "port", label: "Port city" },
 ];
 
+interface SliderRowProps {
+  label: string;
+  ariaLabel?: string;
+  min: number;
+  max: number;
+  step?: number;
+  value: number;
+  onChange: (value: number) => void;
+  /** Value readout beside the slider. */
+  valueText?: string;
+  onApply?: () => void;
+  applyVariant?: "secondary";
+  /** Readout under the slider. */
+  note?: string;
+}
+
+function SliderRow({
+  label,
+  ariaLabel = label,
+  min,
+  max,
+  step,
+  value,
+  onChange,
+  valueText,
+  onApply,
+  applyVariant,
+  note,
+}: SliderRowProps) {
+  return (
+    <div className="space-y-1">
+      <Eyebrow className="block">{label}</Eyebrow>
+      <div className="flex items-center gap-2">
+        <Slider
+          aria-label={ariaLabel}
+          min={min}
+          max={max}
+          step={step}
+          value={[value]}
+          onValueChange={([v]) => v !== undefined && onChange(v)}
+          className="flex-1 py-2"
+        />
+        {valueText && (
+          <span className="text-caption w-8 text-right font-semibold">{valueText}</span>
+        )}
+        {onApply && (
+          <Button size="xs" variant={applyVariant} type="button" onClick={onApply}>
+            Apply
+          </Button>
+        )}
+      </div>
+      {note && <div className="text-label-secondary text-footnote">{note}</div>}
+    </div>
+  );
+}
+
 export function CityScatterPopover({
   onScatter,
   defaultPrefix = "City",
@@ -29,20 +85,14 @@ export function CityScatterPopover({
 
   return (
     <PopoverContent className="w-64 space-y-3 p-3">
-      <div className="space-y-1">
-        <Eyebrow className="block">Scatter count</Eyebrow>
-        <div className="flex items-center gap-2">
-          <Slider
-            aria-label="Scatter count"
-            min={1}
-            max={50}
-            value={[count]}
-            onValueChange={([v]) => v !== undefined && setCount(v)}
-            className="flex-1 py-2"
-          />
-          <span className="text-caption w-8 text-right font-semibold">{count}</span>
-        </div>
-      </div>
+      <SliderRow
+        label="Scatter count"
+        min={1}
+        max={50}
+        value={count}
+        onChange={setCount}
+        valueText={String(count)}
+      />
       <div className="space-y-1">
         <Eyebrow className="block">City type</Eyebrow>
         <OptionSelect
@@ -86,28 +136,16 @@ export function TransformGeometryPopover({
 
   return (
     <PopoverContent className="w-64 space-y-4 p-3">
-      <div className="space-y-1">
-        <Eyebrow className="block">Simplify tolerance</Eyebrow>
-        <div className="flex items-center gap-2">
-          <Slider
-            aria-label="Simplify tolerance"
-            min={0.0001}
-            max={0.01}
-            step={0.0001}
-            value={[simplifyVal]}
-            onValueChange={([v]) => v !== undefined && setSimplifyVal(v)}
-            className="flex-1 py-2"
-          />
-          <Button
-            variant="secondary"
-            size="xs"
-            type="button"
-            onClick={() => onApply("simplify", simplifyVal)}
-          >
-            Apply
-          </Button>
-        </div>
-      </div>
+      <SliderRow
+        label="Simplify tolerance"
+        min={0.0001}
+        max={0.01}
+        step={0.0001}
+        value={simplifyVal}
+        onChange={setSimplifyVal}
+        onApply={() => onApply("simplify", simplifyVal)}
+        applyVariant="secondary"
+      />
       <div className="space-y-1">
         <Eyebrow className="block">Smooth geometry</Eyebrow>
         <Button
@@ -120,51 +158,27 @@ export function TransformGeometryPopover({
           Smooth Path (Chaikin)
         </Button>
       </div>
-      <div className="space-y-1">
-        <Eyebrow className="block">Rotate (° degrees)</Eyebrow>
-        <div className="flex items-center gap-2">
-          <Slider
-            aria-label="Rotate (° degrees)"
-            min={-180}
-            max={180}
-            value={[rotateVal]}
-            onValueChange={([v]) => v !== undefined && setRotateVal(v)}
-            className="flex-1 py-2"
-          />
-          <span className="text-caption w-8 text-right font-semibold">{rotateVal}°</span>
-          <Button
-            variant="secondary"
-            size="xs"
-            type="button"
-            onClick={() => onApply("rotate", rotateVal)}
-          >
-            Apply
-          </Button>
-        </div>
-      </div>
-      <div className="space-y-1">
-        <Eyebrow className="block">Scale factor</Eyebrow>
-        <div className="flex items-center gap-2">
-          <Slider
-            aria-label="Scale factor"
-            min={0.1}
-            max={3.0}
-            step={0.1}
-            value={[scaleVal]}
-            onValueChange={([v]) => v !== undefined && setScaleVal(v)}
-            className="flex-1 py-2"
-          />
-          <span className="text-caption w-8 text-right font-semibold">{scaleVal}x</span>
-          <Button
-            variant="secondary"
-            size="xs"
-            type="button"
-            onClick={() => onApply("scale", scaleVal)}
-          >
-            Apply
-          </Button>
-        </div>
-      </div>
+      <SliderRow
+        label="Rotate (° degrees)"
+        min={-180}
+        max={180}
+        value={rotateVal}
+        onChange={setRotateVal}
+        valueText={`${rotateVal}°`}
+        onApply={() => onApply("rotate", rotateVal)}
+        applyVariant="secondary"
+      />
+      <SliderRow
+        label="Scale factor"
+        min={0.1}
+        max={3.0}
+        step={0.1}
+        value={scaleVal}
+        onChange={setScaleVal}
+        valueText={`${scaleVal}x`}
+        onApply={() => onApply("scale", scaleVal)}
+        applyVariant="secondary"
+      />
     </PopoverContent>
   );
 }
@@ -183,43 +197,28 @@ export function CityTransformationsPopover({
 
   return (
     <PopoverContent className="w-64 space-y-4 p-3">
-      <div className="space-y-1">
-        <Eyebrow className="block">Scale population</Eyebrow>
-        <div className="flex items-center gap-2">
-          <Slider
-            aria-label="Scale population"
-            min={0.5}
-            max={2.0}
-            step={0.1}
-            value={[scaleVal]}
-            onValueChange={([v]) => v !== undefined && setScaleVal(v)}
-            className="flex-1 py-2"
-          />
-          <Button size="xs" type="button" onClick={() => onScalePopulation(scaleVal)}>
-            Apply
-          </Button>
-        </div>
-        <div className="text-label-secondary text-footnote">Factor: {scaleVal.toFixed(1)}x</div>
-      </div>
+      <SliderRow
+        label="Scale population"
+        min={0.5}
+        max={2.0}
+        step={0.1}
+        value={scaleVal}
+        onChange={setScaleVal}
+        onApply={() => onScalePopulation(scaleVal)}
+        note={`Factor: ${scaleVal.toFixed(1)}x`}
+      />
 
       {selectedCitiesCount > 1 && (
-        <div className="space-y-1">
-          <Eyebrow className="block">Rotate Group (Degrees)</Eyebrow>
-          <div className="flex items-center gap-2">
-            <Slider
-              aria-label="Rotate group (degrees)"
-              min={-180}
-              max={180}
-              value={[rotateVal]}
-              onValueChange={([v]) => v !== undefined && setRotateVal(v)}
-              className="flex-1 py-2"
-            />
-            <Button size="xs" type="button" onClick={() => onRotateCities(rotateVal)}>
-              Apply
-            </Button>
-          </div>
-          <div className="text-label-secondary text-footnote">Angle: {rotateVal}°</div>
-        </div>
+        <SliderRow
+          label="Rotate Group (Degrees)"
+          ariaLabel="Rotate group (degrees)"
+          min={-180}
+          max={180}
+          value={rotateVal}
+          onChange={setRotateVal}
+          onApply={() => onRotateCities(rotateVal)}
+          note={`Angle: ${rotateVal}°`}
+        />
       )}
     </PopoverContent>
   );

@@ -82,7 +82,6 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
         </p>
       </div>
 
-      {/* Scope picker */}
       <div className="space-y-2">
         <Eyebrow className="block">Import scope</Eyebrow>
         <SegmentedControl
@@ -145,7 +144,6 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
         )}
       </div>
 
-      {/* Existing subdivisions info */}
       {importer.existingSubdivisions.length > 0 && (
         <div className="border-separator rounded-control text-footnote text-yellow border px-3 py-2">
           This country has {importer.existingSubdivisions.length} existing subdivision

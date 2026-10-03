@@ -52,7 +52,6 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
         </div>
       ) : (
         <>
-          {/* Overall status */}
           <div
             className={`rounded-control text-caption flex items-center gap-2 px-3 py-2 ${
               report.valid
@@ -68,7 +67,6 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
             {report.valid ? "Topology is valid" : "Issues detected"}
           </div>
 
-          {/* Coverage */}
           <div className="border-separator rounded-control border p-3">
             <div className="text-footnote mb-2 flex items-center justify-between">
               <span className="text-label-secondary">Coverage</span>
@@ -92,7 +90,6 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
             </div>
           </div>
 
-          {/* Gaps */}
           {report.gaps.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -127,7 +124,6 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
             </div>
           )}
 
-          {/* Overlaps */}
           {report.overlaps.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -152,7 +148,6 @@ export const ValidationStep = memo(function ValidationStep({ importer }: Validat
             </div>
           )}
 
-          {/* Feature issues */}
           {report.featureIssues.length > 0 && (
             <div className="space-y-2">
               <span className="text-caption text-yellow flex items-center gap-2">

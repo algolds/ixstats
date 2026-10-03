@@ -11,7 +11,6 @@ import {
   setLayerOpacity,
   upsertGeoJSONLayers,
 } from "../utils/map-helpers";
-import { geoJSONPatcher } from "../utils/geoJsonPatcher";
 import {
   COUNTRY_BOUNDARY_LAYERS,
   COUNTRY_MASK_LAYERS,
@@ -249,7 +248,6 @@ export function useMapLayers({
     });
 
     const pointFeatures = buildPointFeatures(visibleFeatures);
-    geoJSONPatcher.cacheSourceFeatures("editor-points", pointFeatures);
     if (!map.getSource("editor-points")) {
       upsertGeoJSONLayers(map, "editor-points-ghost", EMPTY_FC, POINT_GHOST_LAYERS);
     }

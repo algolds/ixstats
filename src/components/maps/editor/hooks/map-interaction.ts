@@ -10,6 +10,15 @@ export const isRouteClick = (e: EditorMouseEvent) =>
 /** Collects event bindings so an effect can undo all of them with one `dispose()`. */
 export function createListeners(map: MapLibreMap) {
   const undo: Array<() => void> = [];
+  function onDom<E extends Event>(
+    target: EventTarget,
+    type: string,
+    listener: (e: E) => void,
+    options?: AddEventListenerOptions
+  ) {
+    target.addEventListener(type, listener as EventListener, options);
+    undo.push(() => target.removeEventListener(type, listener as EventListener));
+  }
   return {
     onLayer(
       type: "mousedown" | "click" | "mouseenter" | "mouseleave",
@@ -32,14 +41,15 @@ export function createListeners(map: MapLibreMap) {
       map.on(type as "mousemove", listener);
       undo.push(() => map.off(type as "mousemove", listener));
     },
-    onDom<E extends Event>(
+    onDom,
+    /** touchstart/touchmove are non-passive so handlers can cancel page scrolling. */
+    onTouch(
       target: EventTarget,
-      type: string,
-      listener: (e: E) => void,
-      options?: AddEventListenerOptions
+      handlers: { start: (e: TouchEvent) => void; move: (e: TouchEvent) => void; end: () => void }
     ) {
-      target.addEventListener(type, listener as EventListener, options);
-      undo.push(() => target.removeEventListener(type, listener as EventListener));
+      onDom(target, "touchstart", handlers.start, { passive: false });
+      onDom(target, "touchmove", handlers.move, { passive: false });
+      onDom(target, "touchend", handlers.end);
     },
     dispose() {
       for (const unbind of undo) unbind();
@@ -69,9 +79,41 @@ export function canvasPoint(canvas: HTMLElement, clientX: number, clientY: numbe
   return { x: clientX - rect.left, y: clientY - rect.top };
 }
 
-export const LONG_PRESS_MS = 500;
+const LONG_PRESS_MS = 500;
 /** A touch that travels further than this (px) is a drag, not a long press. */
-export const LONG_PRESS_MOVE_PX = 8;
+const LONG_PRESS_MOVE_PX = 8;
+
+/** Long-press detection for touch: `begin` on touchstart, `arm` on a hit, `move`/`end` follow the touch. */
+export function createLongPress() {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let origin: { x: number; y: number } | null = null;
+  const cancel = () => {
+    if (timer) clearTimeout(timer);
+    timer = null;
+  };
+  return {
+    begin(point: { x: number; y: number }) {
+      origin = point;
+    },
+    arm(onLongPress: () => void) {
+      timer = setTimeout(onLongPress, LONG_PRESS_MS);
+    },
+    move(point: { x: number; y: number }) {
+      if (
+        timer &&
+        origin &&
+        Math.hypot(point.x - origin.x, point.y - origin.y) > LONG_PRESS_MOVE_PX
+      ) {
+        cancel();
+      }
+    },
+    end() {
+      cancel();
+      origin = null;
+    },
+    cancel,
+  };
+}
 
 const MARKER_LAYERS = ["editor-points-capital", "editor-points-city", "editor-points-poi"];
 

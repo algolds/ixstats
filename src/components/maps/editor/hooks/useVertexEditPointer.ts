@@ -16,13 +16,7 @@ import {
   type ScreenPoint,
 } from "./drag-utils";
 import { calculateSnapTarget } from "./vertex-edit-geometry";
-import {
-  LONG_PRESS_MOVE_PX,
-  LONG_PRESS_MS,
-  canvasPoint,
-  createListeners,
-  queryNear,
-} from "./map-interaction";
+import { canvasPoint, createListeners, createLongPress, queryNear } from "./map-interaction";
 
 const VERTEX_LAYER = "editor-vedit-vertices-layer";
 const MIDPOINT_LAYER = "editor-vedit-midpoints-layer";
@@ -277,29 +271,25 @@ export function useVertexEditPointer({
     };
 
     // Touch: dragging moves a vertex, a long press removes it.
-    let longPressTimer: ReturnType<typeof setTimeout> | null = null;
-    let touchStartPoint: ScreenPoint | null = null;
-    const cancelLongPress = () => {
-      if (longPressTimer) clearTimeout(longPressTimer);
-      longPressTimer = null;
-    };
+    const longPress = createLongPress();
 
     const onTouchStart = (e: TouchEvent) => {
       const touch = e.touches[0];
       if (!st.edit || !touch) return;
-      touchStartPoint = canvasPoint(canvas, touch.clientX, touch.clientY);
-      const hit = queryNear(map, touchStartPoint, 20, [VERTEX_LAYER])[0];
+      const start = canvasPoint(canvas, touch.clientX, touch.clientY);
+      longPress.begin(start);
+      const hit = queryNear(map, start, 20, [VERTEX_LAYER])[0];
       if (!hit) return;
 
       const vertex = toVertexRef(hit);
-      beginDrag(vertex, touchStartPoint, true);
+      beginDrag(vertex, start, true);
       map.dragPan.disable();
-      longPressTimer = setTimeout(() => {
+      longPress.arm(() => {
         if (!st.edit) return;
         st.drag = null;
         map.dragPan.enable();
         removeVertexAt(vertex);
-      }, LONG_PRESS_MS);
+      });
     };
 
     const onTouchMove = (e: TouchEvent) => {
@@ -307,10 +297,7 @@ export function useVertexEditPointer({
       if (!st.drag || !st.edit || !touch) return;
 
       const point = canvasPoint(canvas, touch.clientX, touch.clientY);
-      if (longPressTimer && touchStartPoint) {
-        const moved = Math.hypot(point.x - touchStartPoint.x, point.y - touchStartPoint.y);
-        if (moved > LONG_PRESS_MOVE_PX) cancelLongPress();
-      }
+      longPress.move(point);
 
       const lngLat = map.unproject([point.x, point.y]);
       const { target } = snapDragTarget(st, latest.current, [lngLat.lng, lngLat.lat]);
@@ -321,8 +308,7 @@ export function useVertexEditPointer({
     };
 
     const onTouchEnd = () => {
-      cancelLongPress();
-      touchStartPoint = null;
+      longPress.end();
       if (st.drag) {
         st.drag = null;
         map.dragPan.enable();
@@ -354,12 +340,10 @@ export function useVertexEditPointer({
     // Window-scoped so a release or Escape outside the canvas still ends the drag.
     listeners.onDom(window, "mouseup", onMouseUp);
     listeners.onDom(window, "keydown", onKeyDown);
-    listeners.onDom(canvas, "touchstart", onTouchStart, { passive: false });
-    listeners.onDom(canvas, "touchmove", onTouchMove, { passive: false });
-    listeners.onDom(canvas, "touchend", onTouchEnd);
+    listeners.onTouch(canvas, { start: onTouchStart, move: onTouchMove, end: onTouchEnd });
 
     return () => {
-      cancelLongPress();
+      longPress.cancel();
       listeners.dispose();
     };
   }, [

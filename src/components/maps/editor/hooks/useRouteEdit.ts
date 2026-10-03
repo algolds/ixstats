@@ -19,10 +19,9 @@ import {
   type ScreenPoint,
 } from "./drag-utils";
 import {
-  LONG_PRESS_MOVE_PX,
-  LONG_PRESS_MS,
   canvasPoint,
   createListeners,
+  createLongPress,
   nearbyMarker,
   queryNear,
 } from "./map-interaction";
@@ -247,19 +246,15 @@ export function useRouteEdit({
     };
 
     // Touch: a long press on a vertex deletes it, dragging moves it.
-    let longPressTimer: ReturnType<typeof setTimeout> | null = null;
-    let touchStartPoint: { x: number; y: number } | null = null;
-    const cancelLongPress = () => {
-      if (longPressTimer) clearTimeout(longPressTimer);
-      longPressTimer = null;
-    };
+    const longPress = createLongPress();
 
     const onTouchStart = (e: TouchEvent) => {
       const touch = e.touches[0];
       if (!editing() || !touch) return;
-      touchStartPoint = canvasPoint(canvas, touch.clientX, touch.clientY);
+      const start = canvasPoint(canvas, touch.clientX, touch.clientY);
+      longPress.begin(start);
 
-      const index = hitVertexIndex(touchStartPoint, 20);
+      const index = hitVertexIndex(start, 20);
       if (index === undefined) return;
       dragRef.current = {
         index,
@@ -272,12 +267,12 @@ export function useRouteEdit({
       };
       map.dragPan.disable();
 
-      longPressTimer = setTimeout(() => {
+      longPress.arm(() => {
         if (!editing()) return;
         dragRef.current = null;
         map.dragPan.enable();
         deleteVertex(index);
-      }, LONG_PRESS_MS);
+      });
     };
 
     const onTouchMove = (e: TouchEvent) => {
@@ -286,10 +281,7 @@ export function useRouteEdit({
       if (!drag || !editing() || !touch) return;
 
       const point = canvasPoint(canvas, touch.clientX, touch.clientY);
-      if (longPressTimer && touchStartPoint) {
-        const moved = Math.hypot(point.x - touchStartPoint.x, point.y - touchStartPoint.y);
-        if (moved > LONG_PRESS_MOVE_PX) cancelLongPress();
-      }
+      longPress.move(point);
 
       const lngLat = map.unproject([point.x, point.y]);
       const target = nearbyMarker(map, point) ?? [lngLat.lng, lngLat.lat];
@@ -301,8 +293,7 @@ export function useRouteEdit({
     };
 
     const onTouchEnd = () => {
-      cancelLongPress();
-      touchStartPoint = null;
+      longPress.end();
       if (dragRef.current) {
         dragRef.current = null;
         map.dragPan.enable();
@@ -326,12 +317,10 @@ export function useRouteEdit({
     });
     listeners.onDom(window, "mouseup", onMouseUp);
     listeners.onDom(window, "keydown", onKeyDown);
-    listeners.onDom(canvas, "touchstart", onTouchStart, { passive: false });
-    listeners.onDom(canvas, "touchmove", onTouchMove, { passive: false });
-    listeners.onDom(canvas, "touchend", onTouchEnd);
+    listeners.onTouch(canvas, { start: onTouchStart, move: onTouchMove, end: onTouchEnd });
 
     return () => {
-      cancelLongPress();
+      longPress.cancel();
       listeners.dispose();
     };
   }, [map, isLoaded, mode, updateRouteEditVis]);

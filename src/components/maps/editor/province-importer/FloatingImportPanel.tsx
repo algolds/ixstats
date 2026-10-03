@@ -144,7 +144,6 @@ export const FloatingImportPanel = memo(function FloatingImportPanel({
         material="regular"
         className="rounded-row flex h-full flex-col overflow-hidden"
       >
-        {/* Drag handle — top bar area */}
         <div
           onPointerDown={onDragStart}
           onPointerMove={onDragMove}
@@ -156,10 +155,8 @@ export const FloatingImportPanel = memo(function FloatingImportPanel({
           <GripVertical className="text-label-tertiary h-3 w-3 rotate-90" />
         </div>
 
-        {/* Content */}
         <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
 
-        {/* Resize handle — bottom-right corner */}
         <div
           onPointerDown={onResizeStart}
           onPointerMove={onResizeMove}
