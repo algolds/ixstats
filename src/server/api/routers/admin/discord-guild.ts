@@ -1,13 +1,13 @@
 const DISCORD_API = "https://discord.com/api/v10";
 
-export interface DiscordMember {
+interface DiscordMember {
   id: string;
   username: string;
   nick?: string;
   globalName?: string;
 }
 
-export interface DiscordSuggestion {
+interface DiscordSuggestion {
   discordUserId: string;
   discordUsername: string;
   discordNick?: string;
