@@ -8,7 +8,7 @@ import { FeatureInspector, type FeaturePropertyUpdates } from "./inspector/Featu
 import { DocumentInspector } from "./inspector/DocumentInspector";
 import { WorldCountryProfile, type WorldCountryProfileProps } from "./WorldCountryProfile";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
-import { api, type RouterOutputs } from "~/trpc/react";
+import { api, type RouterInputs, type RouterOutputs } from "~/trpc/react";
 
 import type { Polygon, MultiPolygon } from "geojson";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
@@ -122,7 +122,9 @@ function toPointInfo(raw: PendingPointInfoSource) {
   };
 }
 
-type RouteMutation = ReturnType<typeof api.transport.updateRoute.useMutation>;
+type RouteMutation = {
+  mutateAsync: (input: RouterInputs["transport"]["updateRoute"]) => Promise<unknown>;
+};
 
 /** Persists an inspector edit through the editor's per-type submit functions (or the route mutation). */
 async function applyFeatureUpdate(
