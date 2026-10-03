@@ -1,10 +1,3 @@
-/**
- * wikios.ts — WikiOS tRPC router.
- *
- * Provides endpoints for WikiOS article rendering, editing, history, search,
- * template registry, watchlist, advanced search, and category tree.
- */
-
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { getWikiAuth } from "~/lib/wiki-os/auth";
@@ -17,6 +10,15 @@ import {
 import { db } from "~/server/db";
 import { LinkGraphService } from "~/lib/wiki-os/core";
 import { toRevisionRef } from "~/lib/wiki-os/core/domain-types";
+
+const NO_LORE_STATS = {
+  totalScore: 0,
+  currentStreak: 0,
+  longestStreak: 0,
+  dailyWins: 0,
+  weeklyWins: 0,
+  monthlyWins: 0,
+};
 
 export const wikiosUserTalkRouter = createTRPCRouter({
   /**
@@ -32,19 +34,13 @@ export const wikiosUserTalkRouter = createTRPCRouter({
         .optional()
     )
     .query(async ({ ctx, input }) => {
-      let wikiName = input?.username?.trim() || null;
-      let internalUser = ctx.user;
+      const wikiName =
+        input?.username?.trim() || (ctx.auth?.userId ? getWikiAuth(ctx).wikiUsername : null);
+      if (!wikiName) return null;
 
-      if (!wikiName && ctx.auth?.userId) {
-        wikiName = getWikiAuth(ctx).wikiUsername;
-      }
-
-      if (!wikiName) {
-        return null;
-      }
-
-      const userPromise = !internalUser?.id
-        ? db.user.findFirst({
+      const userPromise = ctx.user?.id
+        ? Promise.resolve(ctx.user)
+        : db.user.findFirst({
             where: {
               OR: [{ wikiUsername: wikiName }, { clerkUserId: ctx.auth?.userId ?? undefined }],
             },
@@ -61,32 +57,20 @@ export const wikiosUserTalkRouter = createTRPCRouter({
               country: { select: { id: true, name: true, flag: true } },
               role: { select: { id: true, name: true, level: true } },
             },
-          })
-        : Promise.resolve(internalUser);
+          });
 
       // Parallel fetch User + Action API user info + Loreward stats
-      const [resolvedUser, mwInfo, loreStatsRecord] = await Promise.all([
+      const [internalUser, mwInfo, loreStats] = await Promise.all([
         userPromise,
         getUserInfo(wikiName),
-        db.lorewardUserStats.findUnique({
-          where: { username: wikiName },
-        }),
+        db.lorewardUserStats.findUnique({ where: { username: wikiName } }),
       ]);
-      internalUser = resolvedUser;
 
-      // Calculate rank if loreStatsRecord exists
-      let rank: number | null = null;
-      if (loreStatsRecord && loreStatsRecord.totalScore > 0) {
-        const higherCount = await db.lorewardUserStats.count({
-          where: { totalScore: { gt: loreStatsRecord.totalScore } },
-        });
-        rank = higherCount + 1;
-      }
-
-      const totalWins =
-        (loreStatsRecord?.dailyWins ?? 0) +
-        (loreStatsRecord?.weeklyWins ?? 0) +
-        (loreStatsRecord?.monthlyWins ?? 0);
+      const lore = loreStats ?? NO_LORE_STATS;
+      const rank =
+        lore.totalScore > 0
+          ? (await db.lorewardUserStats.count({ where: { totalScore: { gt: lore.totalScore } } })) + 1
+          : null;
 
       return {
         username: wikiName,
@@ -95,10 +79,10 @@ export const wikiosUserTalkRouter = createTRPCRouter({
         editCount: mwInfo?.user_editcount ?? 0,
         registration: mwInfo?.user_registration ?? null,
         groups: [] as string[],
-        loreScore: loreStatsRecord?.totalScore ?? 0,
-        loreStreak: loreStatsRecord?.currentStreak ?? 0,
-        longestStreak: loreStatsRecord?.longestStreak ?? 0,
-        totalWins,
+        loreScore: lore.totalScore,
+        loreStreak: lore.currentStreak,
+        longestStreak: lore.longestStreak,
+        totalWins: lore.dailyWins + lore.weeklyWins + lore.monthlyWins,
         rank,
         country: internalUser?.country ?? null,
         role: internalUser?.role ?? null,
