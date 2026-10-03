@@ -9,7 +9,7 @@
  */
 
 import { db } from "~/server/db";
-import { getXfApiKey, getXfApiUrl, xfPost } from "./xenforo-service";
+import { xfFetch, xfPost } from "./xenforo-service";
 
 const SYNC_DEBOUNCE_MS = 5 * 60 * 1000; // 5 minutes
 const lastSyncTimes = new Map<string, number>();
@@ -21,51 +21,15 @@ const lastSyncTimes = new Map<string, number>();
 export async function lookupForumUser(
   username: string
 ): Promise<{ userId: number; username: string } | null> {
-  const apiKey = getXfApiKey();
-  if (!apiKey) return null;
+  const data = await xfFetch<{
+    exact?: { user_id: number; username: string };
+    recommendations?: Array<{ user_id: number; username: string }>;
+  }>(`/users/find-name?username=${encodeURIComponent(username)}`);
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-  try {
-    const url = `${getXfApiUrl()}/users/find-name?username=${encodeURIComponent(username)}`;
-    const response = await fetch(url, {
-      headers: {
-        "XF-Api-Key": apiKey,
-        Accept: "application/json",
-      },
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      console.error(`[XF Sync] User lookup failed: HTTP ${response.status}`);
-      return null;
-    }
-
-    const data = (await response.json()) as {
-      exact?: { user_id: number; username: string };
-      recommendations?: Array<{ user_id: number; username: string }>;
-    };
-
-    if (data.exact) {
-      return { userId: data.exact.user_id, username: data.exact.username };
-    }
-
-    // Try exact match in recommendations
-    const exactMatch = data.recommendations?.find(
-      (u) => u.username.toLowerCase() === username.toLowerCase()
-    );
-    if (exactMatch) {
-      return { userId: exactMatch.user_id, username: exactMatch.username };
-    }
-
-    return null;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    console.error("[XF Sync] User lookup error:", error);
-    return null;
-  }
+  const match =
+    data?.exact ??
+    data?.recommendations?.find((u) => u.username.toLowerCase() === username.toLowerCase());
+  return match ? { userId: match.user_id, username: match.username } : null;
 }
 
 /**
@@ -75,10 +39,9 @@ async function updateForumProfile(
   xfUserId: number,
   fields: Record<string, string>
 ): Promise<boolean> {
-  const body: Record<string, string> = {};
-  for (const [key, value] of Object.entries(fields)) {
-    body[`custom_fields[${key}]`] = value;
-  }
+  const body = Object.fromEntries(
+    Object.entries(fields).map(([key, value]) => [`custom_fields[${key}]`, value])
+  );
 
   const result = await xfPost(`/users/${xfUserId}/`, body);
   return result !== null;
