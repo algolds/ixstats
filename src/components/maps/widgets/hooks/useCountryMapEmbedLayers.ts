@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useCallback } from "react";
-import type { Map as MapLibreMap } from "maplibre-gl";
 import { buildBaseStyle } from "~/lib/maps/map-config";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
 import { populateEmbedMap, type EmbedLayerOptions } from "../embed-map-layers";
@@ -33,12 +32,11 @@ export function useCountryMapEmbedLayers({
 
     let released = false;
 
-    const mod = await loadMaplibre();
-    const maplibregl = ("Map" in mod ? mod : (mod as any).default) as any;
+    const maplibregl = await loadMaplibre();
     if (released || !state.containerRef.current) return () => {};
 
     // Each embed owns its own standalone MapLibre instance.
-    const map: MapLibreMap = new maplibregl.Map({
+    const map = new maplibregl.Map({
       container: state.containerRef.current,
       style: buildBaseStyle("standard", "mercator") as any,
       center: initialCenter,
