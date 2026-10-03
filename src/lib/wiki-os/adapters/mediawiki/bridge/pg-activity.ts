@@ -8,11 +8,7 @@ import { db } from "~/server/db";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
 import { cleanExcerpt, calculateRawTextBytes } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { fetchIxwikiLive, fetchMediaWikiPageAuthorsAndRevisions } from "./http-reader";
-import type { WikiRecentChange } from "./types";
-
-function warnDev(err: unknown): void {
-  if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
-}
+import { warnDev, type WikiRecentChange } from "./types";
 
 const BOT_AUTHORS = ["LorewardsBot", "Maintenance script", "Robot"];
 const UNKNOWN_EDITOR = "MediaWiki Editor";

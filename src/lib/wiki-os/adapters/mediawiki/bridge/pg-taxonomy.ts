@@ -7,11 +7,7 @@
 import { db } from "~/server/db";
 import { LinkGraphService, CategoryService } from "~/lib/wiki-os/core";
 import { toArticleSlug } from "~/lib/wiki-os/core/domain-types";
-import type { WikiCategoryMembers } from "./types";
-
-// ---------------------------------------------------------------------------
-// Taxonomy, Links & Categories
-// ---------------------------------------------------------------------------
+import { warnDev, type WikiCategoryMembers } from "./types";
 
 export async function ixwikiGetBacklinks(
   title: string,
@@ -66,7 +62,7 @@ export async function ixwikiGetCategoryMembers(
       }
     }
   } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    warnDev(err);
   }
 
   return result;
@@ -111,7 +107,7 @@ export async function ixwikiGetCategoryInfo(category: string): Promise<{
       subcategories,
     };
   } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    warnDev(err);
     return {
       title: cleanCat,
       totalPages: 0,

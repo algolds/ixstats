@@ -35,7 +35,7 @@ import {
   ixwikiGetCurrentRevMeta,
   ixwikiFullTextSearch,
   ixwikiGetParentCategories,
-  ixwikiGetImageMeta
+  ixwikiGetImageMeta,
 } from "./pg-reader";
 import {
   iiwikiGetWikitext,
@@ -428,10 +428,6 @@ export async function getPageImages(
 ) {
   return httpGetPageImages(title, opts);
 }
-
-// ──────────────────────────────────────────────
-// Wikitext Processing Helpers
-// ──────────────────────────────────────────────
 
 import { cleanExcerpt, cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";
 export { cleanWikiMarkup };

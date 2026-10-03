@@ -8,19 +8,61 @@
  */
 
 import { db } from "~/server/db";
-import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { toArticleSlug, parseRevisionRef } from "~/lib/wiki-os/core/domain-types";
-import type { WikiArticle } from "./types";
+import { fetchIxwikiLive } from "./http-reader";
+import { warnDev, type WikiArticle } from "./types";
 
 export * from "./pg-search";
 export * from "./pg-activity";
 export * from "./pg-taxonomy";
 export * from "./pg-site";
 
-// ---------------------------------------------------------------------------
-// Article & Wikitext
-// ---------------------------------------------------------------------------
+function warnDev(err: unknown): void {
+  warnDev(err);
+}
+
+/** Wikitext of one page from the live MediaWiki API; null when it is missing or the call failed. */
+async function fetchLiveWikitext(
+  title: string
+): Promise<{ title: string; wikitext: string; pageId: number } | null> {
+  try {
+    const data = await fetchIxwikiLive<{
+      query?: {
+        pages?: Record<
+          string,
+          {
+            title?: string;
+            revisions?: Array<{ slots?: { main?: { "*"?: string } }; "*"?: string }>;
+          }
+        >;
+      };
+    }>(
+      {
+        action: "query",
+        prop: "revisions",
+        rvprop: "content",
+        rvslots: "main",
+        titles: title,
+      },
+      6000
+    );
+    const pages = data?.query?.pages || {};
+    const pageId = Object.keys(pages)[0];
+    if (!pageId || pageId === "-1") return null;
+
+    const page = pages[pageId];
+    const rev = page?.revisions?.[0];
+    return {
+      title: page?.title || title,
+      wikitext: rev?.slots?.main?.["*"] ?? rev?.["*"] ?? "",
+      pageId: Number(pageId),
+    };
+  } catch (err) {
+    warnDev(err);
+    return null;
+  }
+}
 
 export async function ixwikiGetWikitext(title: string): Promise<WikiArticle | null> {
   const native = await ArticleRepository.getArticleBySlug(title, "ixwiki");
@@ -33,45 +75,8 @@ export async function ixwikiGetWikitext(title: string): Promise<WikiArticle | nu
     };
   }
 
-  // Live HTTP Fallback
-  try {
-    const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-    const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
-    const params = new URLSearchParams({
-      action: "query",
-      prop: "revisions",
-      rvprop: "content",
-      rvslots: "main",
-      titles: title,
-      format: "json",
-    });
-
-    const res = await fetch(`${apiEndpoint}?${params.toString()}`, {
-      headers: { "User-Agent": DEFAULT_USER_AGENT },
-      signal: AbortSignal.timeout(6000),
-    });
-
-    if (res.ok) {
-      const data = (await res.json()) as any;
-      const pages = data?.query?.pages || {};
-      const pageId = Object.keys(pages)[0];
-      if (pageId && pageId !== "-1") {
-        const p = pages[pageId];
-        const rev = p?.revisions?.[0];
-        const wikitext = rev?.slots?.main?.["*"] ?? rev?.["*"] ?? "";
-        return {
-          title: p.title || title,
-          wikitext,
-          pageId: Number(pageId),
-          length: wikitext.length,
-        };
-      }
-    }
-  } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
-  }
-
-  return null;
+  const live = await fetchLiveWikitext(title);
+  return live && { ...live, length: live.wikitext.length };
 }
 
 interface RevisionContent {
@@ -97,7 +102,7 @@ export async function ixwikiGetRevisionWikitext(ref: string): Promise<RevisionCo
       };
     }
   } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    warnDev(err);
   }
   return null;
 }
@@ -117,7 +122,7 @@ export async function ixwikiGetCurrentRevMeta(
       };
     }
   } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    warnDev(err);
   }
   return null;
 }
@@ -148,50 +153,13 @@ export async function ixwikiGetNamespacedWikitext(
       };
     }
   } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
+    warnDev(err);
   }
 
-  // Live HTTP Fallback
-  try {
-    const wikiUrl = process.env.NEXT_PUBLIC_MEDIAWIKI_URL || "https://ixwiki.com";
-    const apiEndpoint = `${wikiUrl.replace(/\/+$/, "")}/api.php`;
-    const fullTitle =
-      namespace === 3 ? `User talk:${title}` : namespace === 2 ? `User:${title}` : title;
-    const params = new URLSearchParams({
-      action: "query",
-      prop: "revisions",
-      rvprop: "content",
-      rvslots: "main",
-      titles: fullTitle,
-      format: "json",
-    });
-
-    const res = await fetch(`${apiEndpoint}?${params.toString()}`, {
-      headers: { "User-Agent": DEFAULT_USER_AGENT },
-      signal: AbortSignal.timeout(6000),
-    });
-
-    if (res.ok) {
-      const data = (await res.json()) as any;
-      const pages = data?.query?.pages || {};
-      const pageId = Object.keys(pages)[0];
-      if (pageId && pageId !== "-1") {
-        const p = pages[pageId];
-        const rev = p?.revisions?.[0];
-        const wikitext = rev?.slots?.main?.["*"] ?? rev?.["*"] ?? "";
-        return {
-          title: p.title || fullTitle,
-          wikitext,
-          pageId: Number(pageId),
-          namespace,
-        };
-      }
-    }
-  } catch (err) {
-    if (process.env.NODE_ENV === "development") console.warn("[WikiOS:pg-reader]", err);
-  }
-
-  return null;
+  const fullTitle =
+    namespace === 3 ? `User talk:${title}` : namespace === 2 ? `User:${title}` : title;
+  const live = await fetchLiveWikitext(fullTitle);
+  return live && { title: live.title, wikitext: live.wikitext, pageId: live.pageId, namespace };
 }
 
 export async function ixwikiResolveRedirect(title: string): Promise<string> {
