@@ -35,8 +35,6 @@ import { isValidLoreCategory, type LoreCategory } from "~/lib/cards/category-enu
 
 import type { ResolvedCardDesignMetadata } from "~/lib/cards/card-metadata-resolver";
 
-// ─── Types ──────────────────────────────────────────────────────
-
 interface CardHolographicCoverProps {
   cardType?: string;
   category?: LoreCategory | string | null;
@@ -49,7 +47,7 @@ interface CardHolographicCoverProps {
   className?: string;
 }
 
-// ─── Card-type themes ───────────────────────────────────────────
+// Card-type themes
 
 interface CardTypeTheme {
   base: string;
@@ -109,8 +107,6 @@ const DEFAULT_THEME: CardTypeTheme = {
   sublabel: "Trading Card",
   motifSymbol: "🎴",
 };
-
-// ─── Component ──────────────────────────────────────────────────
 
 export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
   ({

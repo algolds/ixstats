@@ -14,9 +14,7 @@ import { Delaunay } from "d3-delaunay";
 import { makeRng } from "./helpers/rng";
 import { createEmptyWorldGraph, type WorldGraph } from "./types";
 
-// ──────────────────────────────────────────────
 // Public API
-// ──────────────────────────────────────────────
 
 /**
  * Create a high-resolution Voronoi mesh spanning WGS84 [-180,180]×[-90,90].
@@ -130,9 +128,7 @@ export function createMesh(
   return graph;
 }
 
-// ──────────────────────────────────────────────
 // Utility: Cell Accessors
-// ──────────────────────────────────────────────
 
 /** Get the longitude of cell i. */
 export function cellLng(graph: WorldGraph, i: number): number {
@@ -166,9 +162,7 @@ export function cellAreaKm2(graph: WorldGraph, i: number): number {
   return Math.abs(area / 2);
 }
 
-// ──────────────────────────────────────────────
 // Internal: Jittered Grid Generation
-// ──────────────────────────────────────────────
 
 /**
  * Generate jittered grid points with latitude-aware density.

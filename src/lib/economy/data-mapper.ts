@@ -1,10 +1,8 @@
 // src/lib/economy/data-mapper.ts
-// ═══════════════════════════════════════════════════════════════════════════
 // MAPPER — Patch system: starts from schema-valid base, applies DB patches.
 // ❌ Never imports generateCountryEconomicData or templates.
 // ❌ No (x as any) casts — uses typed helper functions.
 // ✅ Always returns EconomyDataSchema.parse() validated data.
-// ═══════════════════════════════════════════════════════════════════════════
 
 import { createEmptyEconomyData } from "./factory";
 import {
@@ -14,9 +12,7 @@ import {
   type DemographicsData,
 } from "~/types/economics";
 
-// ===============================
 // Types for DB relations
-// ===============================
 
 /** Shape of a country row with economic relations included */
 interface CountryWithEconomicRelations {
@@ -63,9 +59,7 @@ interface CountryWithEconomicRelations {
   demographics?: Record<string, unknown> | null;
 }
 
-// ===============================
 // Safe JSON parsing helper
-// ===============================
 
 function safeJsonParse(value: unknown): unknown {
   if (value == null) return null;
@@ -87,9 +81,7 @@ function readNumber(obj: Record<string, unknown>, field: string): number | null 
   return Number.isFinite(num) ? num : null;
 }
 
-// ===============================
 // Relation patch helpers
-// ===============================
 
 function applyFiscalSystemPatches(
   base: EconomyData,
@@ -386,9 +378,7 @@ function applyDemographicsPatches(
   if (migrationRate != null) (base.demographics as any).migrationRate = migrationRate;
 }
 
-// ===============================
 // MAIN MAPPER
-// ===============================
 
 /**
  * Maps raw country data (from tRPC) to the structured EconomyData format.

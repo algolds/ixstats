@@ -9,8 +9,6 @@
  * generates the same queries — enabling consistent caching.
  */
 
-// ── Types ────────────────────────────────────────────────────────────────
-
 export type ImageContext =
   | "hero"
   | "executive"
@@ -97,7 +95,7 @@ interface ImageKeywordResult {
   orientation: "landscape" | "squarish";
 }
 
-// ── Deterministic Hash ───────────────────────────────────────────────────
+// Deterministic Hash
 
 function simpleHash(str: string): number {
   let hash = 0;
@@ -112,7 +110,7 @@ function pickDeterministic<T>(arr: T[], seed: string): T {
   return arr[simpleHash(seed) % arr.length]!;
 }
 
-// ── Keyword Layers ───────────────────────────────────────────────────────
+// Keyword Layers
 
 const GEOGRAPHIC_KEYWORDS: Record<string, string[]> = {
   Africa: [
@@ -251,7 +249,7 @@ const CONTEXT_KEYWORDS: Record<ImageContext, string[]> = {
   ],
 };
 
-// ── Layer Functions ──────────────────────────────────────────────────────
+// Layer Functions
 
 function getGeographicKeyword(data: CountryImageData): string | null {
   const continent = data.continent;
@@ -347,7 +345,7 @@ function getContextKeyword(context: ImageContext, data: CountryImageData): strin
   );
 }
 
-// ── Query Builder ────────────────────────────────────────────────────────
+// Query Builder
 
 function buildQuery(
   context: ImageContext,
@@ -387,7 +385,7 @@ function buildQuery(
   return specialty ? `${contextKw} ${specialty}` : contextKw;
 }
 
-// ── Main Export ──────────────────────────────────────────────────────────
+// Main Export
 
 export function generateImageKeywords(
   countryData: CountryImageData,
@@ -413,7 +411,7 @@ export function generateImageKeywords(
   };
 }
 
-// ── Extract helper ───────────────────────────────────────────────────────
+// Extract helper
 
 /**
  * Extract the minimal CountryImageData from the full country object

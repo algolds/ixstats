@@ -11,8 +11,6 @@
  * - Reputation is built through actions, not words
  */
 
-// ==================== TYPES ====================
-
 export interface DiplomaticChoice {
   id: string;
   countryId: string;
@@ -78,7 +76,7 @@ export interface CumulativeEffects {
   };
 }
 
-// ==================== TRACKER CLASS ====================
+// TRACKER CLASS
 
 export class DiplomaticChoiceTracker {
   /**
@@ -205,7 +203,7 @@ export class DiplomaticChoiceTracker {
     };
   }
 
-  // ==================== HELPER METHODS ====================
+  // HELPER METHODS
 
   private static calculateImmediateEffects(choice: DiplomaticChoice): Effect[] {
     // Simplified version - full implementation would be more comprehensive

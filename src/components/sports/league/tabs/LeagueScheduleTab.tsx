@@ -140,7 +140,7 @@ export function LeagueScheduleTab({
 
   return (
     <div className="space-y-6">
-      {/* ─── 1. TIMELINE SCRUBBER RIBBON ─── */}
+      {/* 1. TIMELINE SCRUBBER RIBBON */}
       <Card padding="md" className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -213,7 +213,7 @@ export function LeagueScheduleTab({
         />
       </Card>
 
-      {/* ─── 2. MATCHDAY FIXTURE CARDS GRID ─── */}
+      {/* 2. MATCHDAY FIXTURE CARDS GRID */}
       <div className="grid gap-4 sm:grid-cols-2">
         <AnimatePresence mode="popLayout">
           {selectedRoundMatches.map((m) => {

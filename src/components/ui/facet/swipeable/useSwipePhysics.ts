@@ -29,14 +29,10 @@ import {
 } from "./constants";
 import type { SpringPreset, SwipeState, SwipeSide, SwipeThresholds } from "./types";
 
-// ── Helpers ─────────────────────────────────────────────────────────────
-
 function getDocDir(): "ltr" | "rtl" {
   if (typeof document === "undefined") return "ltr";
   return (document.documentElement.dir as "ltr" | "rtl") || "ltr";
 }
-
-// ── Hook ────────────────────────────────────────────────────────────────
 
 interface UseSwipePhysicsOptions {
   /** Container width in px (must be kept in sync via ResizeObserver) */
@@ -126,7 +122,7 @@ export function useSwipePhysics({
     isRtl.current = getDocDir() === "rtl";
   });
 
-  // ── Motion values ─────────────────────────────────────────────────────
+  // Motion values
 
   const rawX = useMotionValue(0);
   const springX = useSpring(rawX, spring);
@@ -163,7 +159,7 @@ export function useSwipePhysics({
     [0.8, 1.0, 1.2]
   );
 
-  // ── Refs for drag tracking ────────────────────────────────────────────
+  // Refs for drag tracking
 
   const swipeState = useRef<SwipeState>("closed");
   const activeSide = useRef<SwipeSide>(null);
@@ -179,7 +175,7 @@ export function useSwipePhysics({
   // oxlint-disable-next-line
   onStateChangeRef.current = onStateChange;
 
-  // ── State transition helper ───────────────────────────────────────────
+  // State transition helper
 
   const setState = useCallback((next: SwipeState) => {
     if (swipeState.current !== next) {
@@ -188,7 +184,7 @@ export function useSwipePhysics({
     }
   }, []);
 
-  // ── Settle & Reset ────────────────────────────────────────────────────
+  // Settle & Reset
 
   const settle = useCallback(
     (targetX: number) => {
@@ -203,7 +199,7 @@ export function useSwipePhysics({
     activeSide.current = null;
   }, [rawX, setState]);
 
-  // ── Pointer Handlers ──────────────────────────────────────────────────
+  // Pointer Handlers
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -411,7 +407,7 @@ export function useSwipePhysics({
     [settle, setState]
   );
 
-  // ── Cleanup on unmount ────────────────────────────────────────────────
+  // Cleanup on unmount
 
   useEffect(() => {
     const cleanup = () => {

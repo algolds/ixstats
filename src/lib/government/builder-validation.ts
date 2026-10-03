@@ -1,5 +1,3 @@
-// ==================== TYPES ====================
-
 export interface ValidationErrors {
   structure?: string[];
   departments?: Record<number, string[]>;
@@ -15,4 +13,3 @@ export interface BudgetSummary {
   isOverBudget: boolean;
   isUnderBudget: boolean;
 }
-

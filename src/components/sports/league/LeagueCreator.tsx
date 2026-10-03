@@ -44,8 +44,6 @@ const archetypeLabels: Record<ArchetypeType, string> = {
   circuit: "Circuit",
 };
 
-// ─── Types ──────────────────────────────────────────────────────────────────
-
 interface LeagueCreatorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -53,7 +51,7 @@ interface LeagueCreatorProps {
   isCanonical?: boolean;
 }
 
-// ─── Animation variants ─────────────────────────────────────────────────────
+// Animation variants
 
 const stepVariants = {
   enter: { opacity: 0, x: 40, scale: 0.98 },
@@ -77,8 +75,6 @@ const SPORT_COMMONS_CATEGORIES: Record<string, string> = {
   boxing: "Boxing matches",
 };
 
-// ─── Component ──────────────────────────────────────────────────────────────
-
 export function LeagueCreator({
   open,
   onOpenChange,
@@ -87,16 +83,16 @@ export function LeagueCreator({
 }: LeagueCreatorProps) {
   const notify = useNotify();
 
-  // ── Presets query ───────────────────────────────────────────────────────
+  // Presets query
   const { data: presets, isLoading: presetsLoading } = api.sports.getSportPresets.useQuery(
     undefined,
     { enabled: open }
   );
 
-  // ── Create league mutation ──────────────────────────────────────────────
+  // Create league mutation
   const createMutation = api.sports.createLeague.useMutation();
 
-  // ── Wizard state ────────────────────────────────────────────────────────
+  // Wizard state
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedPresetKey, setSelectedPresetKey] = useState<string | null>(null);
   const [createdLeagueId, setCreatedLeagueId] = useState<string | null>(null);
@@ -171,7 +167,7 @@ export function LeagueCreator({
     setCoverImage(null);
   }, []);
 
-  // ── Derived ─────────────────────────────────────────────────────────────
+  // Derived
   const selectedPreset = useMemo(() => {
     if (!presets || !selectedPresetKey) return null;
     return presets.find((p) => p.key === selectedPresetKey) ?? null;
@@ -191,7 +187,6 @@ export function LeagueCreator({
   const canNextStep2 =
     leagueName.trim().length > 0 && teamCount >= (selectedPreset?.minTeamCount ?? 2);
 
-  // ── Handlers ────────────────────────────────────────────────────────────
   const handleSportSelect = useCallback(
     (key: string) => {
       setSelectedPresetKey(key);
@@ -300,7 +295,7 @@ export function LeagueCreator({
     [onOpenChange, resetForm]
   );
 
-  // ── Step indicator ──────────────────────────────────────────────────────
+  // Step indicator
   const totalSteps = 4;
 
   const stepIndicator = (
@@ -335,7 +330,7 @@ export function LeagueCreator({
     </div>
   );
 
-  // ── Step 1: Pick Sport ─────────────────────────────────────────────────
+  // Step 1: Pick Sport
   const renderStep1 = () => (
     <motion.div
       key="step-1"
@@ -396,7 +391,7 @@ export function LeagueCreator({
     </motion.div>
   );
 
-  // ── Step 2: Configure League ────────────────────────────────────────────
+  // Step 2: Configure League
   const renderStep2 = () => (
     <motion.div
       key="step-2"
@@ -629,7 +624,7 @@ export function LeagueCreator({
     </motion.div>
   );
 
-  // ── Step 3: Review & Create ─────────────────────────────────────────────
+  // Step 3: Review & Create
   const renderStep3 = () => {
     const weightClasses = isBoxing
       ? weightClassesRaw
@@ -747,7 +742,7 @@ export function LeagueCreator({
     );
   };
 
-  // ── Step 4: Created! ───────────────────────────────────────────────────
+  // Step 4: Created!
   const renderStep4 = () => (
     <motion.div
       key="step-4"
@@ -789,7 +784,6 @@ export function LeagueCreator({
     </motion.div>
   );
 
-  // ── Render ──────────────────────────────────────────────────────────────
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>

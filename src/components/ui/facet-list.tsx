@@ -23,7 +23,7 @@ import { cn } from "~/lib/utils/cn";
 import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable/SwipeableRow";
 import type { SwipeAction, SwipeCommitAction } from "~/components/ui/facet/swipeable/types";
 
-// ─── List & section ─────────────────────────────────────────────────────────
+// List & section
 
 /**
  * `"inset"` (default): each section is an opaque rounded group — for grouped pages and sheets.
@@ -133,7 +133,7 @@ export const FacetListSection = React.forwardRef<HTMLElement, FacetListSectionPr
 );
 FacetListSection.displayName = "FacetListSection";
 
-// ─── Row ────────────────────────────────────────────────────────────────────
+// Row
 
 type FacetRowAccessory = "chevron" | "check" | "none" | React.ReactNode;
 

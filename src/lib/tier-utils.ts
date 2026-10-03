@@ -45,7 +45,7 @@ export function formatMembershipTier(tier?: string | null): TierInfo {
   };
 }
 
-// ─── Economic & Population Tier Mappings ───────────────────────────────────
+// Economic & Population Tier Mappings
 
 export const ECONOMIC_TIER_INFO: Record<
   EconomicTier,
@@ -71,7 +71,7 @@ const POPULATION_TIER_INFO: Record<PopulationTier, { min: number; max: number }>
   X: { min: 500_000_000, max: Infinity },
 };
 
-// ─── Deterministic Tier Calculation Functions ───────────────────────────────
+// Deterministic Tier Calculation Functions
 
 export function getEconomicTierFromGdpPerCapita(gdpPerCapita: number): EconomicTier {
   for (const [tier, info] of Object.entries(ECONOMIC_TIER_INFO)) {

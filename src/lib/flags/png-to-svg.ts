@@ -298,9 +298,7 @@ export async function convertPngToSvg(
   };
 }
 
-// ──────────────────────────────────────────────
 // Direct PNG → ProvinceFeature[] Pipeline
-// ──────────────────────────────────────────────
 
 interface PngProvinceResult {
   provinces: Array<{
@@ -357,7 +355,7 @@ export async function extractProvincesFromPng(
   const simplifyTol = config.simplifyTolerance ?? 1.5;
   const erosionPasses = config.erosionPasses ?? 2;
 
-  // ── Step 1: Decode ──
+  // Step 1: Decode
   const { data, info } = await sharp(pngBuffer)
     .removeAlpha()
     .raw()
@@ -367,7 +365,7 @@ export async function extractProvincesFromPng(
   const N = W * H;
   log.push(`PNG decoded: ${W}×${H} (${N} pixels)`);
 
-  // ── Step 2: Classify pixels ──
+  // Step 2: Classify pixels
   // 1 = land, 0 = boundary or ocean
   const mask = new Uint8Array(N);
   let nLand = 0,
@@ -405,7 +403,7 @@ export async function extractProvincesFromPng(
   }
   log.push(`Classified: ${nLand} land, ${nBound} boundary, ${nOcean} ocean`);
 
-  // ── Step 3: Erode land mask ──
+  // Step 3: Erode land mask
   // Removes anti-aliased fringe pixels that blur boundary lines.
   // Each pass removes 1px of land adjacent to any non-land pixel.
   for (let pass = 0; pass < erosionPasses; pass++) {
@@ -432,7 +430,7 @@ export async function extractProvincesFromPng(
     log.push(`After ${erosionPasses} erosion passes: ${remaining} land pixels remaining`);
   }
 
-  // ── Step 4: Connected component labeling ──
+  // Step 4: Connected component labeling
   const labels = new Int32Array(N);
   let nextLabel = 1;
   const sizes = new Map<number, number>();
@@ -484,7 +482,7 @@ export async function extractProvincesFromPng(
     `Found ${nextLabel - 1} components, ${validLabels.length} above ${minRegion}px threshold`
   );
 
-  // ── Step 5 & 6: Trace contour + simplify for each component ──
+  // Step 5 & 6: Trace contour + simplify for each component
   const palette = generatePalette(validLabels.length);
   const provinces: PngProvinceResult["provinces"] = [];
 
@@ -554,9 +552,7 @@ export async function extractProvincesFromPng(
   return { provinces, width: W, height: H, log };
 }
 
-// ──────────────────────────────────────────────
 // Shared Geometry Utilities
-// ──────────────────────────────────────────────
 
 /** Moore neighborhood contour tracing */
 function traceContour(mask: Uint8Array, width: number, height: number): [number, number][] {

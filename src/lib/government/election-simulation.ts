@@ -8,7 +8,7 @@ import type { PrismaClient } from "@prisma/client";
 import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import { notificationAPI } from "~/lib/notifications";
 
-// ── Seat-allocation helpers (single source of truth) ──
+// Seat-allocation helpers (single source of truth)
 
 /** D'Hondt method for proportional seat allocation. */
 function dHondtAllocation(

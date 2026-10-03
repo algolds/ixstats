@@ -295,7 +295,6 @@ export interface ImportAnalysis {
 // UI State types
 // oxlint-disable-next-line typescript/no-unused-vars
 // Theme types
-// Utility types
 // Database model types (matching Prisma schema)
 export interface Country {
   id: string;

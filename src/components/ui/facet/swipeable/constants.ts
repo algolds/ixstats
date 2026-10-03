@@ -1,12 +1,12 @@
 /** SwipeableRow physics and configuration constants. */
 
-// ── Spring Presets ──────────────────────────────────────────────────────
+// Spring Presets
 
 import { SPRING_PRESETS as SHARED_SPRING_PRESETS } from "../shared/constants";
 
 export const SPRING_PRESETS = SHARED_SPRING_PRESETS;
 
-// ── Default Snap Thresholds (percentage of container width, 0-1) ────────
+// Default Snap Thresholds (percentage of container width, 0-1)
 
 export const DEFAULT_THRESHOLDS = {
   /** Swipe 20% to reveal action buttons */
@@ -17,7 +17,7 @@ export const DEFAULT_THRESHOLDS = {
   commit: 0.85,
 } as const;
 
-// ── Velocity Thresholds (px/s) ──────────────────────────────────────────
+// Velocity Thresholds (px/s)
 
 /** Fast flick velocity that auto-commits the full-swipe action */
 export const VELOCITY_COMMIT = 800;
@@ -25,10 +25,10 @@ export const VELOCITY_COMMIT = 800;
 /** Fast flick velocity that reveals the action tray */
 export const VELOCITY_REVEAL = 300;
 
-// ── Visual Haptic Constants ─────────────────────────────────────────────
+// Visual Haptic Constants
 /** Scale during the gulp commit animation before height collapse */
 export const GULP_SCALE = 0.96;
-// ── Drag Thresholds ─────────────────────────────────────────────────────
+// Drag Thresholds
 
 import {
   DRAG_DEAD_ZONE as SHARED_DRAG_DEAD_ZONE,

@@ -60,9 +60,7 @@ export function OnomaBrandLogo({
   const [isSelfHovered, setIsSelfHovered] = useState(false);
   const isWinking = isHovered || isSelfHovered;
 
-  // --------------------------------------------------------------------------
   // Variant: Standalone Symbol (with Interactive Wink)
-  // --------------------------------------------------------------------------
   if (variant === "symbol") {
     return (
       <svg
@@ -104,9 +102,7 @@ export function OnomaBrandLogo({
     );
   }
 
-  // --------------------------------------------------------------------------
   // Variant: Bracketed Wordmark (⟨ ONOMA ⟩)
-  // --------------------------------------------------------------------------
   if (variant === "wordmark") {
     return (
       <svg
@@ -151,9 +147,7 @@ export function OnomaBrandLogo({
     );
   }
 
-  // --------------------------------------------------------------------------
   // Variant: Logomark Lockup (ONOMA + Signature Seal with Wink)
-  // --------------------------------------------------------------------------
   if (variant === "lockup") {
     return (
       <svg
@@ -218,9 +212,7 @@ export function OnomaBrandLogo({
     );
   }
 
-  // --------------------------------------------------------------------------
   // Variant: Glassmorphic App Icon
-  // --------------------------------------------------------------------------
   return (
     <div
       className={cn(

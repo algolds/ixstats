@@ -20,9 +20,7 @@ import {
   type EconomicCategory,
 } from "./atomic-data";
 
-// ============================================================================
 // Synergy and Conflict Detection
-// ============================================================================
 
 /**
  * Check if two economic components have synergy
@@ -145,9 +143,7 @@ export function detectEconomicConflicts(selectedComponents: EconomicComponentTyp
   return conflicts;
 }
 
-// ============================================================================
 // Component Filtering and Searching
-// ============================================================================
 
 /**
  * Filter economic components by category
@@ -210,9 +206,7 @@ export function filterAndSearchComponents(
   return filtered;
 }
 
-// ============================================================================
 // Economic Calculations
-// ============================================================================
 
 /**
  * Economic Effectiveness Result
@@ -404,9 +398,7 @@ export function getEconomicMetrics(selectedComponents: EconomicComponentType[]):
   };
 }
 
-// ============================================================================
 // Validation
-// ============================================================================
 
 /**
  * Validation Result
@@ -460,14 +452,10 @@ export function validateEconomicSelection(
   };
 }
 
-// ============================================================================
 // Color and Formatting Utilities
-// ============================================================================
 export { formatCurrency } from "~/lib/utils/format-utils";
 
-// ============================================================================
 // Component Utility Functions
-// ============================================================================
 
 /**
  * Get all available component types

@@ -60,7 +60,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  // ─── Data sources ──────────────────────────────────────────────────────
+  // Data sources
 
   const enhancedNotifications = useNotificationStore((s) => s.notifications);
   const enhancedStats = useNotificationStore((s) => s.stats);
@@ -128,7 +128,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   // Default active tab to whichever has unread, defaulting to alerts
   const [activeTab, setActiveTab] = useState<NotificationTab>("alerts");
 
-  // ─── Merge & group ─────────────────────────────────────────────────────
+  // Merge & group
 
   // oxlint-disable-next-line eslint/no-unused-vars
   const { allAlerts, groups } = useMemo(() => {
@@ -194,7 +194,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     );
   }, [messagesData?.conversations, locallyDismissedIds]);
 
-  // ─── Actions ───────────────────────────────────────────────────────────
+  // Actions
 
   const handleMarkRead = (n: NotificationItem) => {
     if (n.source === "enhanced") {
@@ -266,11 +266,8 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     { id: "messages", label: "Messages", icon: MessageCircle, unread: messageUnreadCount },
   ];
 
-  // ─── Render ────────────────────────────────────────────────────────────
-
   return (
     <div className="p-4">
-      {/* Header */}
       <div className="mb-3 flex items-center justify-between">
         <div className="text-label text-headline flex items-center gap-2">
           <BellRing className="text-yellow h-4 w-4" />

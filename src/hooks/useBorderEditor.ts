@@ -33,10 +33,6 @@ import type { SharedVertexData } from "~/lib/maps/shared-vertex-builder";
 import { traceAlongLayer } from "~/lib/maps/border-trace";
 import type { TraceFeature } from "~/lib/maps/border-trace";
 
-// ──────────────────────────────────────────────
-// Types
-// ──────────────────────────────────────────────
-
 export type BorderEditMode =
   "select" | "vertex_edit" | "freehand" | "split" | "merge" | "trace" | "brush";
 
@@ -105,10 +101,6 @@ export interface BorderEditorActions {
   ) => boolean;
 }
 
-// ──────────────────────────────────────────────
-// Hook
-// ──────────────────────────────────────────────
-
 const INITIAL_STATE: BorderEditorState = {
   mode: "select",
   featureId: null,
@@ -146,7 +138,7 @@ export function useBorderEditor(): [BorderEditorState, BorderEditorActions] {
   const utils = api.useUtils();
   const dragStartGeom = useRef<Polygon | MultiPolygon | null>(null);
 
-  // ── Trace mode state (mutable refs) ──
+  // Trace mode state (mutable refs)
   /** River/coast layer data updated externally via setTraceLayerSource. */
   const traceLayersRef = useRef<
     Array<{ type: string; data: { features: TraceFeature[] } }> | undefined

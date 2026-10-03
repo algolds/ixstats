@@ -69,7 +69,6 @@ export function useCountryMapEmbed(countryId: string | null | undefined) {
       // World political layer for greyed-out neighbor rendering
       worldPolitical,
 
-      // State
       isLoading: bundleLoading,
       hasGeometry: !!bundle?.geometry,
     };

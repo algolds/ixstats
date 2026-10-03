@@ -99,7 +99,7 @@ function CommandPaletteContent({
   const prevNavRef = useRef(diPathname);
   const sectionInfo = getSectionForPath(diPathname || "/");
 
-  // ── Plugin system: read active plugin ──
+  // Plugin system: read active plugin
   const activePlugin = useActiveDIPlugin();
   const pluginAccentColor = activePlugin?.accentColor ?? sectionInfo.accent;
   const isWikiActive = activePlugin?.id === "wiki";

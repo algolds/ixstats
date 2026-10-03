@@ -197,7 +197,6 @@ export function LoreImportDrawer({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="border-separator bg-background flex h-[85vh] max-h-[750px] max-w-4xl flex-col gap-0 overflow-hidden p-0">
-        {/* Header */}
         <DialogHeader className="border-separator bg-surface border-b p-5 pb-4">
           <div className="flex items-center gap-3">
             <div className="bg-tint-fill text-tint rounded-control p-2">

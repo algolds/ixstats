@@ -23,7 +23,7 @@
 import type { DiplomaticChoice, CumulativeEffects } from "./choice-tracker";
 import type { RelationshipState as MarkovRelationshipState } from "./markov-engine";
 
-// ==================== PERSONALITY TRAITS ====================
+// PERSONALITY TRAITS
 
 /**
  * 8 core personality traits that define NPC country behavior
@@ -134,7 +134,7 @@ export interface NPCPersonality {
   };
 }
 
-// ==================== OBSERVABLE DATA TYPES ====================
+// OBSERVABLE DATA TYPES
 
 /**
  * Observable data from database for personality calculation
@@ -197,7 +197,7 @@ export interface ObservableData {
   };
 }
 
-// ==================== BEHAVIORAL RESPONSE TYPES ====================
+// BEHAVIORAL RESPONSE TYPES
 
 /**
  * Scenario types for behavioral prediction
@@ -234,7 +234,7 @@ interface BehavioralResponse {
   opportunitySignals?: string[];
 }
 
-// ==================== NPC PERSONALITY SYSTEM ====================
+// NPC PERSONALITY SYSTEM
 
 export class NPCPersonalitySystem {
   /**
@@ -505,7 +505,7 @@ export class NPCPersonalitySystem {
     return { confidence, dataQuality };
   }
 
-  // ==================== BEHAVIORAL PREDICTION ====================
+  // BEHAVIORAL PREDICTION
 
   /**
    * Predict how NPC will respond to a diplomatic scenario
@@ -920,8 +920,8 @@ export class NPCPersonalitySystem {
     };
   }
 
-  // ==================== RELATIONSHIP PREFERENCES ====================
-  // ==================== EVENT MODIFIERS ====================
-  // ==================== PROPOSAL DECISION-MAKING ====================
-  // ==================== PERSONALITY DRIFT ====================
+  // RELATIONSHIP PREFERENCES
+  // EVENT MODIFIERS
+  // PROPOSAL DECISION-MAKING
+  // PERSONALITY DRIFT
 }

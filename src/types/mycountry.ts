@@ -112,7 +112,6 @@ export interface NationalSummary {
   recentAchievements?: Achievement[];
 }
 
-// Utility types
 // Form validation schemas (for use with zod)
 
 /**

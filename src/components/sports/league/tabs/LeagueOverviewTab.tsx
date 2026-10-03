@@ -120,7 +120,7 @@ export function LeagueOverviewTab({
 
   return (
     <div className="space-y-8">
-      {/* ─── SPLIT COCKPIT (OPTION A) ─── */}
+      {/* SPLIT COCKPIT (OPTION A) */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left 2/3 Column: Standings Table */}
         <div className="space-y-4 lg:col-span-2">
@@ -310,7 +310,7 @@ export function LeagueOverviewTab({
         </div>
       </div>
 
-      {/* ─── Recent Results ─── */}
+      {/* Recent Results */}
       <section className="border-separator space-y-4 border-t pt-6">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-subhead text-label-secondary flex items-center gap-2">

@@ -9,9 +9,7 @@
 import { db } from "~/server/db";
 import { isSystemOwner } from "~/lib/auth";
 
-// ---------------------------------------------------------------------------
 // Public API
-// ---------------------------------------------------------------------------
 
 /**
  * Extract Discord user info from Clerk's external accounts.

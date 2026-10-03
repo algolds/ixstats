@@ -182,7 +182,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
 
   return (
     <div className={cn("space-y-6", className)}>
-      {/* ─── Top Control & Status Bar ─── */}
+      {/* Top Control & Status Bar */}
       <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-4">
         <div className="flex items-center gap-3">
           {onClose && (
@@ -238,7 +238,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
         </div>
       </div>
 
-      {/* ─── Scoreboard HUD ─── */}
+      {/* Scoreboard HUD */}
       <Card padding="lg" className="overflow-hidden">
         <div className="grid grid-cols-3 items-center gap-4 text-center">
           {/* Home Team */}
@@ -312,7 +312,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
         </div>
       </Card>
 
-      {/* ─── Prediction market (scheduled matches only) ─── */}
+      {/* Prediction market (scheduled matches only) */}
       {match.status === "scheduled" && (
         <MatchPredictionPanel
           matchId={matchId}
@@ -321,7 +321,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
         />
       )}
 
-      {/* ─── Match Surface & Event Tabs ─── */}
+      {/* Match Surface & Event Tabs */}
       <Tabs
         value={activeTab}
         onValueChange={(v) => {

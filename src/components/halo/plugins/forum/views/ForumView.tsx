@@ -25,7 +25,7 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
 
 interface ForumViewProps extends DIViewProps {}
 
-// ─── Section label ───────────────────────────────────────────────────────────
+// Section label
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -35,7 +35,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ─── Reusable forum row item ─────────────────────────────────────────────────
+// Reusable forum row item
 
 function ForumRow({
   icon,
@@ -85,8 +85,6 @@ function ForumRow({
     </Component>
   );
 }
-
-// ─── Header ──────────────────────────────────────────────────────────────────
 
 function ForumHeader({
   onClose,
@@ -174,8 +172,6 @@ function ForumHeader({
   );
 }
 
-// ─── Main Component ──────────────────────────────────────────────────────────
-
 export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
   const router = useRouter();
   const { currentThread, currentForum, recentThreads, unreadAlerts } = useForumContext();
@@ -218,7 +214,7 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
       />
 
       <div className="space-y-1">
-        {/* ── Current context ─────────────────────────────────────────── */}
+        {/* Current context */}
         {(currentThread || currentForum) && (
           <>
             <SectionLabel>Current context</SectionLabel>
@@ -242,7 +238,7 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
           </>
         )}
 
-        {/* ── Quick actions ───────────────────────────────────────────── */}
+        {/* Quick actions */}
         <SectionLabel>Actions</SectionLabel>
 
         <ForumRow
@@ -279,7 +275,7 @@ export function ForumView({ onClose, onSwitchMode }: ForumViewProps) {
           }
         />
 
-        {/* ── Discussions ────────────────────────────────────────────── */}
+        {/* Discussions */}
         <div className="flex items-center justify-between px-1 pt-2 pb-1">
           <SectionLabel>Discussions</SectionLabel>
 

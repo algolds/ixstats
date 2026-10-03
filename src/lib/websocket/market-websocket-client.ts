@@ -215,7 +215,7 @@ class MarketWebSocketClient {
     };
   }
 
-  // ============ Private Methods ============
+  // Private Methods
 
   private handleOpen(): void {
     console.log("[MarketWS] Connected successfully");

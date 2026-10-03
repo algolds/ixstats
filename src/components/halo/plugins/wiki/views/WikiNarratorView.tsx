@@ -82,7 +82,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
 
   return (
     <div className="animate-in fade-in zoom-in-95 flex w-full flex-col gap-2 p-3 duration-150 select-none">
-      {/* ── Top Header with Quick Action to Switch to Wiki Workspace ── */}
+      {/* Top Header with Quick Action to Switch to Wiki Workspace */}
       <div className="flex items-center justify-between gap-2 px-1 pb-1">
         <div className="flex min-w-0 items-center gap-2">
           <div
@@ -139,7 +139,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
         </div>
       </div>
 
-      {/* ── Seamless Full-Feature Audio-UI Player (No Inner Card) ── */}
+      {/* Seamless Full-Feature Audio-UI Player (No Inner Card) */}
       <div className="w-full">
         <WikiNarratorPlayer
           visibleToc={visibleToc}

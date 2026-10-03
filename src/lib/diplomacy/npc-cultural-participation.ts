@@ -13,9 +13,6 @@
  */
 
 import { type NPCPersonality } from "./npc-personality";
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
 
 export interface NPCParticipationContext {
   npcCountryId: string;
@@ -54,9 +51,7 @@ interface NPCParticipationDecision {
   responseTimeline: "immediate" | "short_term" | "long_term"; // How quickly NPC responds
 }
 
-// ============================================================================
 // NPC CULTURAL PARTICIPATION CLASS
-// ============================================================================
 
 export class NPCCulturalParticipation {
   /**
@@ -170,9 +165,7 @@ export class NPCCulturalParticipation {
     };
   }
 
-  // ============================================================================
   // PRIVATE HELPER METHODS
-  // ============================================================================
 
   private static getArchetypeModifiers(
     archetype: string,

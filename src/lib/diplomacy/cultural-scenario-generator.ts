@@ -15,10 +15,6 @@
 import type { RelationshipState } from "./markov-engine";
 import type { DiplomaticChoice, CumulativeEffects } from "./choice-tracker";
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
-
 export type CulturalScenarioType =
   | "festival_collaboration"
   | "artifact_repatriation"
@@ -121,9 +117,7 @@ export interface CulturalScenario {
   metadata: CulturalScenarioMetadata;
 }
 
-// ============================================================================
 // SCENARIO TEMPLATES
-// ============================================================================
 
 export const CULTURAL_SCENARIO_TEMPLATES: Record<CulturalScenarioType, CulturalScenarioTemplate> = {
   festival_collaboration: {
@@ -239,9 +233,7 @@ export const CULTURAL_SCENARIO_TEMPLATES: Record<CulturalScenarioType, CulturalS
   },
 };
 
-// ============================================================================
 // SCENARIO GENERATOR CLASS
-// ============================================================================
 
 export class CulturalScenarioGenerator {
   /**

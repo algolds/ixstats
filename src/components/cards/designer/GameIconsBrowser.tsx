@@ -142,7 +142,6 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
     return (
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="border-separator bg-background flex h-[88vh] max-h-[800px] max-w-5xl flex-col gap-0 overflow-hidden p-0">
-          {/* Header */}
           <DialogHeader className="border-separator bg-surface border-b p-5 pb-4">
             <div className="flex items-center gap-3">
               <div className="bg-tint-fill text-tint rounded-control p-2">
@@ -307,7 +306,6 @@ export const GameIconsBrowser = React.memo<GameIconsBrowserProps>(
             )}
           </div>
 
-          {/* Footer */}
           <div className="border-separator bg-surface text-label-secondary text-footnote flex items-center justify-between border-t p-3 px-5">
             <span>
               Icons by Lorc, Delapouite & contributors,{" "}

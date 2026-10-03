@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useRef, useSyncExternalStore } from "react";
 import type { DIPlugin } from "./types";
 
-// ── Plugin Registry (external store for React 19 concurrency safety) ──
+// Plugin Registry (external store for React 19 concurrency safety)
 
 type Listener = () => void;
 
@@ -44,7 +44,7 @@ class DIPluginRegistry {
   }
 }
 
-// ── Context ──
+// Context
 
 interface DIPluginContextValue {
   registry: DIPluginRegistry;
@@ -52,7 +52,7 @@ interface DIPluginContextValue {
 
 const DIPluginContext = createContext<DIPluginContextValue | null>(null);
 
-// ── Provider ──
+// Provider
 
 export function DIPluginProvider({ children }: { children: React.ReactNode }) {
   const registryRef = useRef<DIPluginRegistry | null>(null);
@@ -64,8 +64,6 @@ export function DIPluginProvider({ children }: { children: React.ReactNode }) {
   // oxlint-disable-next-line
   return <DIPluginContext value={{ registry: registryRef.current }}>{children}</DIPluginContext>;
 }
-
-// ── Hooks ──
 
 const EMPTY_PLUGINS_MAP: Map<string, DIPlugin> = new Map();
 const DUMMY_SUBSCRIBE = () => () => {};

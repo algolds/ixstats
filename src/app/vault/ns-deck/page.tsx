@@ -35,7 +35,6 @@ export default function NSImportPage() {
   return (
     <div className="min-h-screen p-6">
       <div className="mx-auto max-w-4xl">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-large-title text-label mb-2">NationStates deck import</h1>
           <p className="text-label-secondary">

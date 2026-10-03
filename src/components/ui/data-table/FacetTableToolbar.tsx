@@ -43,7 +43,7 @@ export function FacetTableToolbar({
         className
       )}
     >
-      {/* ─── Title & Description ──────────────────────────────────── */}
+      {/* Title & Description */}
       {(title || description) && (
         <div className="min-w-0 flex-1">
           {title && <h3 className="text-title-3 text-label truncate">{title}</h3>}
@@ -53,7 +53,7 @@ export function FacetTableToolbar({
         </div>
       )}
 
-      {/* ─── Actions, Search & Export Controls ─────────────────────── */}
+      {/* Actions, Search & Export Controls */}
       <div className="flex flex-wrap items-center gap-2 sm:justify-end">
         {searchable && (
           <SearchField

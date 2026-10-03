@@ -2,7 +2,7 @@
 
 import React from "react";
 
-// ==================== CORE INTERFACES ====================
+// CORE INTERFACES
 
 export interface UnifiedAtomicComponent {
   id: string;
@@ -43,7 +43,7 @@ export interface EffectivenessMetrics {
   conflictCount: number;
 }
 
-// ==================== COMPONENT SELECTOR PROPS ====================
+// COMPONENT SELECTOR PROPS
 
 export interface UnifiedAtomicComponentSelectorProps<T extends string> {
   // Data
@@ -52,7 +52,6 @@ export interface UnifiedAtomicComponentSelectorProps<T extends string> {
   selectedComponents: T[];
   onComponentChange: (components: T[]) => void;
 
-  // Configuration
   maxComponents?: number;
   isReadOnly?: boolean;
 
@@ -67,7 +66,7 @@ export interface UnifiedAtomicComponentSelectorProps<T extends string> {
   checkConflict: (comp1: string, comp2: string) => boolean;
 }
 
-// ==================== COMPONENT CARD PROPS ====================
+// COMPONENT CARD PROPS
 
 export interface UnifiedAtomicCardProps {
   component: UnifiedAtomicComponent;
@@ -79,6 +78,3 @@ export interface UnifiedAtomicCardProps {
   theme: AtomicComponentTheme;
   className?: string;
 }
-
-// ==================== UTILITY TYPES ====================
-// ==================== THEME UTILITIES ====================

@@ -90,7 +90,7 @@ export default function MyClubPage() {
         }
       />
 
-      {/* ─── CLUB GRID ─── */}
+      {/* CLUB GRID */}
       <section className="space-y-4" aria-labelledby="managed-clubs">
         <h2
           id="managed-clubs"
@@ -141,7 +141,6 @@ export default function MyClubPage() {
                     <div aria-hidden className="h-1" style={{ backgroundColor: team.color }} />
                   )}
 
-                  {/* Header */}
                   <div className="flex items-center gap-3 p-5 pb-0">
                     <div className="border-separator bg-surface-secondary rounded-row flex size-12 shrink-0 items-center justify-center overflow-hidden border">
                       {team.logo ? (

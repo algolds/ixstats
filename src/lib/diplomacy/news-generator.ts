@@ -11,9 +11,7 @@
 
 import type { PrismaClient } from "@prisma/client";
 
-// ============================================================
 // Event types and templates
-// ============================================================
 
 export type NewsEventType =
   | "embassy_established"
@@ -136,9 +134,7 @@ const NEWS_TEMPLATES: Record<
   }),
 };
 
-// ============================================================
 // Main generator function
-// ============================================================
 
 /**
  * Generate a diplomatic news post on ThinkPages.
@@ -220,9 +216,7 @@ export async function generateDiplomaticNews(
   return newsGenerator.generateDiplomaticNews(db, countryId, eventType, context);
 }
 
-// ============================================================
 // Wiki Lore Update News — makes wiki editing a social activity
-// ============================================================
 
 /**
  * Generate a ThinkPages post when a player updates their wiki article.
@@ -284,9 +278,7 @@ async function generateWikiUpdateNews(
   }
 }
 
-// ============================================================
 // Story Pin News — announces major/legendary story pins
-// ============================================================
 
 /**
  * Generate a ThinkPages post when a Major or Legendary story pin is created.

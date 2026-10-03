@@ -20,7 +20,7 @@ export type ViewMode = BuiltinViewMode | PluginViewMode;
 
 export type SearchFilter = "all" | "countries" | "commands" | "features" | "wiki";
 
-// ── Plugin System Types ─────────────────────────────────────────────
+// Plugin System Types
 
 /** Props passed to plugin-provided expanded views */
 export interface DIViewProps<F = unknown, C = unknown> {

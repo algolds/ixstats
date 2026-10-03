@@ -501,7 +501,6 @@ export const useNotificationStore = create<NotificationStore>()(
   }))
 );
 
-// Helper functions
 function calculateStats(notifications: UnifiedNotification[]): NotificationStats {
   const stats: NotificationStats = {
     total: notifications.length,

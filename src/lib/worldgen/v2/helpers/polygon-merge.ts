@@ -134,9 +134,7 @@ export function mergeCellsToMultiPolygon(
   };
 }
 
-// ──────────────────────────────────────────────
 // Internal: Directed Edge Chaining
-// ──────────────────────────────────────────────
 
 /**
  * Chain directed boundary edges into closed rings.

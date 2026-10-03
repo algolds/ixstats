@@ -39,7 +39,6 @@ interface UseAtomicGovernmentBuilderProps {
 }
 
 interface UseAtomicGovernmentBuilderReturn {
-  // State
   selectedComponents: ComponentType[];
   categoryFilter: string | null;
   searchQuery: string;
@@ -62,7 +61,6 @@ interface UseAtomicGovernmentBuilderReturn {
   setCategoryFilter: (category: string | null) => void;
   setSearchQuery: (query: string) => void;
 
-  // Utilities
   isSelected: (componentType: ComponentType) => boolean;
   canSelectMore: boolean;
   categories: typeof COMPONENT_CATEGORIES;
@@ -138,7 +136,6 @@ export function useAtomicGovernmentBuilder({
   );
 
   return {
-    // State
     selectedComponents,
     categoryFilter: activeCategory,
     searchQuery,
@@ -161,7 +158,6 @@ export function useAtomicGovernmentBuilder({
     setCategoryFilter: state.setActiveCategory,
     setSearchQuery: state.setSearchQuery,
 
-    // Utilities
     isSelected: state.isSelected,
     canSelectMore: state.canSelectMore,
     categories: COMPONENT_CATEGORIES,

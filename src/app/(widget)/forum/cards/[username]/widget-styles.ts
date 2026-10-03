@@ -7,7 +7,7 @@
 import type { CSSProperties } from "react";
 
 export const styles = {
-  // ─── Layout ────────────────────────────────────────────────
+  // Layout
   container: {
     maxWidth: 960,
     margin: "0 auto",
@@ -65,7 +65,7 @@ export const styles = {
     color: "#d1d5db",
   } satisfies CSSProperties,
 
-  // ─── Card Grid ─────────────────────────────────────────────
+  // Card Grid
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
@@ -84,7 +84,7 @@ export const styles = {
     gap: 10,
   } satisfies CSSProperties,
 
-  // ─── Card ──────────────────────────────────────────────────
+  // Card
   card: {
     position: "relative",
     borderRadius: 8,
@@ -138,7 +138,7 @@ export const styles = {
     flexShrink: 0,
   } satisfies CSSProperties,
 
-  // ─── Rarity Bar ────────────────────────────────────────────
+  // Rarity Bar
   rarityBar: {
     display: "flex",
     height: 6,
@@ -148,7 +148,6 @@ export const styles = {
     background: "rgba(255,255,255,0.05)",
   } satisfies CSSProperties,
 
-  // ─── Footer ────────────────────────────────────────────────
   footer: {
     marginTop: 16,
     paddingTop: 12,
@@ -166,7 +165,7 @@ export const styles = {
     fontWeight: 500,
   } satisfies CSSProperties,
 
-  // ─── Empty / Error States ──────────────────────────────────
+  // Empty / Error States
   empty: {
     textAlign: "center",
     padding: "40px 20px",

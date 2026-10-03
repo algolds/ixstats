@@ -73,7 +73,7 @@ export function LeagueMasthead({
         className
       )}
     >
-      {/* ─── Breadcrumbs & Utilities ─── */}
+      {/* Breadcrumbs & Utilities */}
       <div className="border-separator mb-5 flex flex-wrap items-center justify-between gap-3 border-b pb-4">
         <div className="text-footnote text-label-secondary flex items-center gap-2 font-semibold">
           <Link
@@ -99,7 +99,7 @@ export function LeagueMasthead({
         )}
       </div>
 
-      {/* ─── Masthead Main Identity Row ─── */}
+      {/* Masthead Main Identity Row */}
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         {/* Left: League Crest & Identity */}
         <div className="flex items-center gap-4">

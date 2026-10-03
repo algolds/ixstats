@@ -122,7 +122,7 @@ export function LeagueControlDeck({
         className
       )}
     >
-      {/* ─── 1. Header: Commissioner Identity ─── */}
+      {/* 1. Header: Commissioner Identity */}
       <div className="border-separator flex items-center justify-between border-b pb-3">
         <div className="flex items-center gap-2">
           <div className="rounded-control border-tint/30 bg-tint-fill text-tint flex h-7 w-7 items-center justify-center border">
@@ -139,7 +139,7 @@ export function LeagueControlDeck({
         </Badge>
       </div>
 
-      {/* ─── 2. Live Lobby Featured Toggle ─── */}
+      {/* 2. Live Lobby Featured Toggle */}
       <div className="rounded-row border-separator bg-fill-4 flex items-center justify-between border p-3">
         <div className="space-y-0.5">
           <span className="text-footnote text-label block font-semibold">
@@ -158,7 +158,7 @@ export function LeagueControlDeck({
         />
       </div>
 
-      {/* ─── 3. Simulation & Season Runtime ─── */}
+      {/* 3. Simulation & Season Runtime */}
       <div className="border-separator space-y-2 border-t pt-1">
         <span className="text-eyebrow text-label-secondary block">Season controls</span>
 
@@ -263,7 +263,7 @@ export function LeagueControlDeck({
         )}
       </div>
 
-      {/* ─── 4. Administration & Utilities ─── */}
+      {/* 4. Administration & Utilities */}
       <div className="border-separator space-y-2 border-t pt-1">
         <span className="text-eyebrow text-label-secondary block">League settings</span>
 

@@ -86,9 +86,7 @@ export function validateAndRepair(graph: WorldGraph, params: WorldGenParams): Qu
   };
 }
 
-// ──────────────────────────────────────────────
 // Check 1: Continent Count
-// ──────────────────────────────────────────────
 
 function checkContinentCount(graph: WorldGraph, params: WorldGenParams): QualityCheckResult {
   const continents = graph.features.filter((f) => f.type === "continent");
@@ -162,9 +160,7 @@ function mergeContinentInPlace(graph: WorldGraph, continentId: number): void {
   }
 }
 
-// ──────────────────────────────────────────────
 // Check 2: Continent Shape Diversity
-// ──────────────────────────────────────────────
 
 function checkContinentShapeDiversity(
   graph: WorldGraph,
@@ -224,9 +220,7 @@ function checkContinentShapeDiversity(
   };
 }
 
-// ──────────────────────────────────────────────
 // Check 3: Mountain Placement Realism
-// ──────────────────────────────────────────────
 
 function checkMountainPlacement(graph: WorldGraph): QualityCheckResult {
   const { cells } = graph;
@@ -274,9 +268,7 @@ function checkMountainPlacement(graph: WorldGraph): QualityCheckResult {
   };
 }
 
-// ──────────────────────────────────────────────
 // Check 4: River Drainage Quality
-// ──────────────────────────────────────────────
 
 function checkRiverDrainage(graph: WorldGraph): QualityCheckResult {
   const { cells, rivers } = graph;
@@ -334,9 +326,7 @@ function checkRiverDrainage(graph: WorldGraph): QualityCheckResult {
   };
 }
 
-// ──────────────────────────────────────────────
 // Check 5: Climate Zone Coherence
-// ──────────────────────────────────────────────
 
 function checkClimateCoherence(graph: WorldGraph): QualityCheckResult {
   const { cells } = graph;
@@ -391,9 +381,7 @@ function checkClimateCoherence(graph: WorldGraph): QualityCheckResult {
   };
 }
 
-// ──────────────────────────────────────────────
 // Check 6: Lake Placement
-// ──────────────────────────────────────────────
 
 function checkLakePlacement(graph: WorldGraph): QualityCheckResult {
   const lakes = graph.features.filter((f) => f.type === "lake");
@@ -409,9 +397,7 @@ function checkLakePlacement(graph: WorldGraph): QualityCheckResult {
   };
 }
 
-// ──────────────────────────────────────────────
 // Check 7: Coastline Complexity
-// ──────────────────────────────────────────────
 
 function checkCoastlineComplexity(graph: WorldGraph, _params: WorldGenParams): QualityCheckResult {
   // Count coastal land cells
@@ -434,9 +420,7 @@ function checkCoastlineComplexity(graph: WorldGraph, _params: WorldGenParams): Q
   };
 }
 
-// ──────────────────────────────────────────────
 // Check 8: Land/Ocean Ratio
-// ──────────────────────────────────────────────
 
 function checkLandOceanRatio(graph: WorldGraph, params: WorldGenParams): QualityCheckResult {
   let landCount = 0;
@@ -478,9 +462,7 @@ function checkLandOceanRatio(graph: WorldGraph, params: WorldGenParams): Quality
   };
 }
 
-// ──────────────────────────────────────────────
 // Check 9: Elevation Zone Coverage
-// ──────────────────────────────────────────────
 
 function checkElevationZoneCoverage(graph: WorldGraph): QualityCheckResult {
   const zonesPresent = new Set<number>();

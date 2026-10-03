@@ -57,7 +57,6 @@ export function useNameBank() {
     },
   });
 
-  // Handlers
   const saveEntry = async (params: {
     id?: string;
     type: "dictionary" | "saved-name";

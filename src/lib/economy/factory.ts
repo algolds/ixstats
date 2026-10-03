@@ -1,9 +1,7 @@
 // src/lib/economy-factory.ts
-// ═══════════════════════════════════════════════════════════════════════════
 // FACTORY — Creates schema-valid EconomyData objects.
 // ❌ Never construct EconomyData from scratch outside this file.
 // ✅ Always start from createEmptyEconomyData() and apply patches.
-// ═══════════════════════════════════════════════════════════════════════════
 
 import {
   EconomyDataSchema,
@@ -11,9 +9,7 @@ import {
   type GovernmentSpendingData,
 } from "~/types/economics";
 
-// ===============================
 // Policy flags default (all false)
-// ===============================
 
 export const DEFAULT_POLICY_FLAGS: Pick<
   GovernmentSpendingData,
@@ -150,9 +146,7 @@ export const DEFAULT_POLICY_FLAGS: Pick<
   publicServiceReform: false,
 };
 
-// ===============================
 // FACTORY: Empty (all zeroed defaults)
-// ===============================
 
 /**
  * Creates a schema-valid EconomyData object with all required fields zeroed out

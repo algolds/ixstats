@@ -43,7 +43,7 @@ function sendVaultNotification({
   });
 }
 
-// ─── Convenience helpers for common vault events ────────────────────
+// Convenience helpers for common vault events
 
 export const vaultNotify = {
   packPurchased: () =>

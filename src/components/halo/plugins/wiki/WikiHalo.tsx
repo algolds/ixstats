@@ -81,7 +81,7 @@ function WikiBreadcrumb() {
 
   const accentColor = themeColors?.primary || "#3b82f6";
 
-  // ── Narrator Active in Breadcrumb: Clean, tactile, zero clutter ──
+  // Narrator Active in Breadcrumb: Clean, tactile, zero clutter
   if (isNarratorActive && narratorActions) {
     return (
       <div className="flex max-w-[170px] min-w-0 items-center gap-2 select-none sm:max-w-[220px]">
@@ -128,7 +128,7 @@ function WikiBreadcrumb() {
     );
   }
 
-  // ── Default Reading / Profile Breadcrumb ──
+  // Default Reading / Profile Breadcrumb
   return (
     <div className="flex max-w-[160px] min-w-0 items-center gap-2 sm:max-w-[200px]">
       {/* Title or Personalized Greeting */}

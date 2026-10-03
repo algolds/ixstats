@@ -18,9 +18,6 @@ import {
   type TransitionContext,
 } from "./markov-engine";
 import type { CulturalScenarioType } from "./cultural-scenario-generator";
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
 
 interface CulturalExchangeData {
   id: string;
@@ -72,9 +69,7 @@ interface CulturalExchangeHistory {
   scenarioOutcomes: Record<string, { successes: number; failures: number }>;
 }
 
-// ============================================================================
 // CULTURAL IMPACT CALCULATOR CLASS
-// ============================================================================
 
 export class CulturalImpactCalculator {
   /**

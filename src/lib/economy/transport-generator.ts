@@ -68,7 +68,7 @@ export interface GenerationInput {
   neighborCities?: CityNode[]; // cities in neighboring countries (for international routes)
 }
 
-// ── Terrain cost functions ─────────────────────────────────────────
+// Terrain cost functions
 
 const ROUTE_CONFIGS: Record<
   RouteType,
@@ -201,11 +201,11 @@ const ROUTE_CONFIGS: Record<
     baseSpeed: 40,
   },
 };
-// ── Haversine distance ─────────────────────────────────────────────
+// Haversine distance
 
 import { distanceKm as haversineKm } from "~/lib/maps/geo-math";
 
-// ── Route line generation ──────────────────────────────────────────
+// Route line generation
 
 /**
  * Generate a direct great-circle route between two cities,
@@ -277,7 +277,7 @@ function deflectForTerrain(
   return deflected;
 }
 
-// ── Minimum Spanning Tree (Prim's) ─────────────────────────────────
+// Minimum Spanning Tree (Prim's)
 
 interface Edge {
   from: number;
@@ -329,7 +329,7 @@ function buildMST(cities: CityNode[]): Edge[] {
   return edges;
 }
 
-// ── Main generator ─────────────────────────────────────────────────
+// Main generator
 
 const ROUTE_LABELS: Partial<Record<RouteType, string>> = {
   rail: "Railway",

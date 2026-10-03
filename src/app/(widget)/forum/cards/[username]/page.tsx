@@ -86,7 +86,6 @@ export default async function ForumCardsPage({
 
   return (
     <div style={styles.container}>
-      {/* Header */}
       <div style={styles.header}>
         <div style={styles.headerLeft}>
           {user.country?.flag && (
@@ -115,7 +114,6 @@ export default async function ForumCardsPage({
         ))}
       </div>
 
-      {/* Footer */}
       <div style={styles.footer}>
         <span>
           Powered by{" "}

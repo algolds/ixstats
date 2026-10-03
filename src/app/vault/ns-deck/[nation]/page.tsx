@@ -55,7 +55,6 @@ export default function NSDeckPage() {
 
   return (
     <div className="container mx-auto max-w-7xl space-y-6 py-8">
-      {/* Header */}
       <div className="space-y-2">
         <h1 className="text-large-title capitalize">{data.nation}'s Deck</h1>
         <p className="text-label-secondary">NationStates trading cards collection</p>

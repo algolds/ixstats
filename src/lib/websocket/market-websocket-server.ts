@@ -222,7 +222,7 @@ class MarketWebSocketServerInstance {
   }
 }
 
-// ─── Singleton & factory ─────────────────────────────────────────────────────
+// Singleton & factory
 
 let instance: MarketWebSocketServerInstance | null = null;
 

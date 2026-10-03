@@ -71,7 +71,6 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
       )}
       onClick={isDisabled ? undefined : onToggle}
     >
-      {/* Header */}
       <div className="mb-1 flex items-start justify-between">
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <div

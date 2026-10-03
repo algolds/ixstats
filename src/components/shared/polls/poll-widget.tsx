@@ -45,10 +45,6 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 
-// ============================================================================
-// Types
-// ============================================================================
-
 interface PollOption {
   /** Unique identifier for the option */
   id: string;
@@ -105,9 +101,7 @@ interface PollWidgetRootProps extends Omit<PropsWithChildren, "children"> {
   children: ReactNode;
 }
 
-// ============================================================================
 // Context
-// ============================================================================
 
 interface PollWidgetContextValue {
   question: string;
@@ -165,9 +159,7 @@ function usePollWidgetOptionContext() {
   return context;
 }
 
-// ============================================================================
 // Variants
-// ============================================================================
 
 const optionVariants = cva(
   [
@@ -233,9 +225,7 @@ const progressVariants = cva(
   }
 );
 
-// ============================================================================
 // Root Component
-// ============================================================================
 
 /**
  * Root component for PollWidget. Provides context for all child components.
@@ -461,9 +451,7 @@ function PollWidgetRoot({
   );
 }
 
-// ============================================================================
 // Trigger Component
-// ============================================================================
 
 type PollWidgetTriggerProps = ComponentProps<typeof Button> & {
   /** Custom label for the trigger button */
@@ -516,9 +504,7 @@ function PollWidgetTrigger({ className, label, children, ...props }: PollWidgetT
   return <PopoverTrigger asChild>{button}</PopoverTrigger>;
 }
 
-// ============================================================================
 // Content Component
-// ============================================================================
 
 type PollWidgetContentProps = HTMLAttributes<HTMLDivElement>;
 
@@ -606,9 +592,7 @@ function PollWidgetContent({ className, children, ...props }: PollWidgetContentP
   );
 }
 
-// ============================================================================
 // Success Component
-// ============================================================================
 
 type PollWidgetSuccessProps = HTMLAttributes<HTMLDivElement> & {
   /** Custom title override */
@@ -694,9 +678,7 @@ function PollWidgetSuccess({ title, description, className, ...props }: PollWidg
   );
 }
 
-// ============================================================================
 // Question Component
-// ============================================================================
 
 type PollWidgetQuestionProps = HTMLAttributes<HTMLDivElement>;
 
@@ -737,9 +719,7 @@ function PollWidgetQuestion({ className, children, ...props }: PollWidgetQuestio
   );
 }
 
-// ============================================================================
 // Options Component
-// ============================================================================
 
 type PollWidgetOptionsProps = HTMLAttributes<HTMLDivElement>;
 
@@ -805,9 +785,7 @@ function PollWidgetOptions({ className, children, ...props }: PollWidgetOptionsP
   );
 }
 
-// ============================================================================
 // Option Component
-// ============================================================================
 
 type PollWidgetOptionProps = Omit<ComponentProps<"button">, "value"> & {
   /** Unique identifier for this option */
@@ -932,9 +910,7 @@ function PollWidgetOption({
   );
 }
 
-// ============================================================================
 // Indicator Component
-// ============================================================================
 
 type PollWidgetIndicatorProps = HTMLAttributes<HTMLSpanElement>;
 
@@ -978,9 +954,7 @@ function PollWidgetIndicator({ className, children, ...props }: PollWidgetIndica
   );
 }
 
-// ============================================================================
 // Label Component
-// ============================================================================
 
 type PollWidgetLabelProps = HTMLAttributes<HTMLSpanElement>;
 
@@ -997,9 +971,7 @@ function PollWidgetLabel({ className, ...props }: PollWidgetLabelProps) {
   );
 }
 
-// ============================================================================
 // Percentage Component
-// ============================================================================
 
 type PollWidgetPercentageProps = HTMLAttributes<HTMLSpanElement>;
 
@@ -1028,9 +1000,7 @@ function PollWidgetPercentage({ children, className, ...props }: PollWidgetPerce
   );
 }
 
-// ============================================================================
 // Results Component
-// ============================================================================
 
 type PollWidgetResultsProps = HTMLAttributes<HTMLDivElement>;
 
@@ -1064,9 +1034,7 @@ function PollWidgetResults({ children, className, ...props }: PollWidgetResultsP
   );
 }
 
-// ============================================================================
 // Submit Component
-// ============================================================================
 
 type PollWidgetSubmitProps = ComponentProps<typeof Button> & {
   /** Text to show while submitting */
@@ -1176,9 +1144,7 @@ function PollWidgetSubmit({
   );
 }
 
-// ============================================================================
 // Dialog Component (for dialog mode wrapper)
-// ============================================================================
 
 type PollWidgetDialogProps = ComponentProps<typeof DialogContent>;
 
@@ -1198,9 +1164,7 @@ function PollWidgetDialog({ className, children, ...props }: PollWidgetDialogPro
   );
 }
 
-// ============================================================================
 // Compound Export
-// ============================================================================
 
 export const PollWidget = Object.assign(PollWidgetRoot, {
   Trigger: PollWidgetTrigger,

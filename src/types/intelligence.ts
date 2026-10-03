@@ -9,7 +9,7 @@ import type { BaseIntelligence, StandardPriority, StandardTrend } from "./base";
 
 export type { Country } from "./ixstats";
 type TrendDirection = StandardTrend;
-// ─── 1. Intelligence Metrics & Base Items ───────────────────────────────────
+// 1. Intelligence Metrics & Base Items
 
 interface IntelligenceMetric {
   id: string;
@@ -51,6 +51,6 @@ export interface IntelligenceItem extends BaseIntelligence {
   isActive?: boolean;
 }
 
-// ─── 2. Critical Alerts & Insights ──────────────────────────────────────────
-// ─── 3. Vitality Intelligence & Forward Predictions ─────────────────────────
-// ─── 4. Domain Specific Alert Sub-types ──────────────────────────────────────
+// 2. Critical Alerts & Insights
+// 3. Vitality Intelligence & Forward Predictions
+// 4. Domain Specific Alert Sub-types

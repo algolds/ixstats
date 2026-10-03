@@ -91,7 +91,6 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
       exit={{ opacity: 0, y: -4 }}
       transition={springSnappy}
     >
-      {/* Header */}
       <div className="flex items-center justify-between px-4 pt-3 pb-2">
         <div className="flex items-center gap-2">
           {user && (
@@ -166,7 +165,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
 
       {setupStatus === "complete" && userProfile?.country ? (
         <div>
-          {/* ── Your Country ─────────────────────────────────── */}
+          {/* Your Country */}
           <div className="border-separator border-b px-4 pb-3">
             <div className="mb-2 flex w-full items-center justify-between">
               <div className="text-label text-caption flex items-center gap-2 font-semibold">
@@ -339,7 +338,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
             </div>
           </div>
 
-          {/* ── Country actions Grid ──────────────────────────── */}
+          {/* Country actions Grid */}
           <div className="px-3 py-2">
             <p className="text-subhead text-label-secondary px-1 pb-2">Country actions</p>
             <div className="grid grid-cols-2 gap-2">
@@ -410,7 +409,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
             </div>
           </div>
 
-          {/* ── Bottom Actions (Sign Out & View profile) ────── */}
+          {/* Bottom Actions (Sign Out & View profile) */}
           <div className="border-separator flex items-center justify-between border-t px-3 py-2">
             <SignOutButton>
               <Button

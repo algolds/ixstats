@@ -250,7 +250,7 @@ export function classifyGoal(goal: string): { category: Category } {
   return { category };
 }
 
-// ── category recipe: one budget line, one policy, and which fields move ─────
+// category recipe: one budget line, one policy, and which fields move
 interface Recipe {
   budgetLine: string;
   policyName: string;
@@ -502,4 +502,4 @@ export function assemblePackages(goal: string): {
   return { category, packages };
 }
 
-// ── self-check ──────────────────────────────────────────────────────────────
+// self-check

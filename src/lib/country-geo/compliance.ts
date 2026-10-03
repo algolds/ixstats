@@ -95,7 +95,7 @@ export function checkGeoCompliance(input: ComplianceInput): ComplianceIssue[] {
   const nationalGdp = country.currentTotalGdp ?? 0;
   const currentYear = new Date().getUTCFullYear();
 
-  // ── Population guards ────────────────────────────────────────────
+  // Population guards
   if (nationalPop > 0) {
     for (const city of cities) {
       if (city.population != null && city.population > nationalPop) {
@@ -149,7 +149,7 @@ export function checkGeoCompliance(input: ComplianceInput): ComplianceIssue[] {
     }
   }
 
-  // ── GDP guards ───────────────────────────────────────────────────
+  // GDP guards
   if (nationalGdp > 0) {
     for (const city of cities) {
       if (city.gdpContribution != null && city.gdpContribution > nationalGdp) {
@@ -191,7 +191,7 @@ export function checkGeoCompliance(input: ComplianceInput): ComplianceIssue[] {
     }
   }
 
-  // ── Capital uniqueness ───────────────────────────────────────────
+  // Capital uniqueness
   const capitals = cities.filter((c) => c.isNationalCapital);
   if (capitals.length === 0) {
     issues.push({
@@ -210,7 +210,7 @@ export function checkGeoCompliance(input: ComplianceInput): ComplianceIssue[] {
     });
   }
 
-  // ── Subdivision capital integrity ────────────────────────────────
+  // Subdivision capital integrity
   const cityNamesLower = new Set(cities.map((c) => c.name.toLowerCase()));
   for (const sub of subdivisions) {
     if (sub.capital && sub.capital.trim().length > 0) {
@@ -226,7 +226,7 @@ export function checkGeoCompliance(input: ComplianceInput): ComplianceIssue[] {
     }
   }
 
-  // ── Founded year sanity ──────────────────────────────────────────
+  // Founded year sanity
   for (const city of cities) {
     if (city.foundedYear != null) {
       if (city.foundedYear < 0) {
@@ -249,7 +249,7 @@ export function checkGeoCompliance(input: ComplianceInput): ComplianceIssue[] {
     }
   }
 
-  // ── Coordinate bounds ────────────────────────────────────────────
+  // Coordinate bounds
   if (boundingBox) {
     const [minLng, minLat, maxLng, maxLat] = boundingBox;
     const checkCoords = (
@@ -283,7 +283,7 @@ export function checkGeoCompliance(input: ComplianceInput): ComplianceIssue[] {
     for (const poi of input.pois) checkCoords(poi.id, poi.name, "poi", poi.coordinates);
   }
 
-  // ── Coverage warning (bottom-up mode) ────────────────────────────
+  // Coverage warning (bottom-up mode)
   if (rollups && country.geoRollupMode === "bottom-up") {
     if (rollups.populationCoverage < 0.5) {
       issues.push({

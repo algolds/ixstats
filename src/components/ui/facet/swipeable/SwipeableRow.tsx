@@ -77,7 +77,7 @@ import type {
   SwipeCommitAction,
 } from "./types";
 
-// ── Focus helpers ───────────────────────────────────────────────────────
+// Focus helpers
 
 /** Elements that take keyboard focus on their own. */
 const FOCUSABLE_SELECTOR = [
@@ -110,7 +110,7 @@ function isTextEntry(target: EventTarget | null): boolean {
   return false;
 }
 
-// ── Actions menu model ──────────────────────────────────────────────────
+// Actions menu model
 
 interface RowMenuAction {
   key: string;
@@ -164,7 +164,7 @@ function collectMenuActions(
   return actions;
 }
 
-// ── Group Context ───────────────────────────────────────────────────────
+// Group Context
 
 const SwipeableGroupContext = createContext<SwipeableGroupContextValue | null>(null);
 
@@ -207,7 +207,7 @@ export function SwipeableGroup({ children }: { children: React.ReactNode }) {
   return <SwipeableGroupContext.Provider value={value}>{children}</SwipeableGroupContext.Provider>;
 }
 
-// ── Row Internal Context ────────────────────────────────────────────────
+// Row Internal Context
 
 interface RowInternalContextValue {
   springX: ReturnType<typeof useSwipePhysics>["springX"];
@@ -244,7 +244,7 @@ function useRowInternal() {
   return ctx;
 }
 
-// ── SwipeableRow (Root) ─────────────────────────────────────────────────
+// SwipeableRow (Root)
 
 function SwipeableRowRoot({
   id: externalId,
@@ -377,7 +377,7 @@ function SwipeableRowRoot({
     }
   });
 
-  // ── Keyboard & assistive-technology access ──────────────────────────
+  // Keyboard & assistive-technology access
 
   const menuActions = collectMenuActions(
     [
@@ -628,7 +628,7 @@ function SwipeableRowRoot({
   );
 }
 
-// ── SwipeableRow.Leading ────────────────────────────────────────────────
+// SwipeableRow.Leading
 
 function SwipeableRowLeading({ children, commit: _commit, className }: SwipeableRowLeadingProps) {
   const { springX, leadingTrayOpacity, containerWidth } = useRowInternal();
@@ -676,7 +676,7 @@ function SwipeableRowLeading({ children, commit: _commit, className }: Swipeable
   );
 }
 
-// ── SwipeableRow.Trailing ───────────────────────────────────────────────
+// SwipeableRow.Trailing
 
 function SwipeableRowTrailing({ children, commit: _commit, className }: SwipeableRowTrailingProps) {
   const { springX, trailingTrayOpacity, containerWidth } = useRowInternal();
@@ -724,7 +724,7 @@ function SwipeableRowTrailing({ children, commit: _commit, className }: Swipeabl
   );
 }
 
-// ── SwipeableRow.Content ────────────────────────────────────────────────
+// SwipeableRow.Content
 
 function SwipeableRowContent({ children, className }: SwipeableRowContentProps) {
   const {
@@ -837,7 +837,7 @@ function SwipeableRowContent({ children, className }: SwipeableRowContentProps) 
   );
 }
 
-// ── SwipeableRow.Expanded ───────────────────────────────────────────────
+// SwipeableRow.Expanded
 
 function SwipeableRowExpanded({ children, className }: SwipeableRowExpandedProps) {
   const { isExpanded, springPreset } = useRowInternal();
@@ -862,7 +862,7 @@ function SwipeableRowExpanded({ children, className }: SwipeableRowExpandedProps
   );
 }
 
-// ── SwipeActionButton ───────────────────────────────────────────────────
+// SwipeActionButton
 
 // Helper mapping Tailwind colors to tinted swipe-action styles
 /**
@@ -904,7 +904,7 @@ function swipeTone(color: string): string {
   return SWIPE_TONES[SWIPE_TONE_ALIASES[color] ?? color] ?? SWIPE_TONES.gray!;
 }
 
-// ── SwipeActionButton ───────────────────────────────────────────────────
+// SwipeActionButton
 
 export function SwipeActionButton({
   id,
@@ -1057,7 +1057,7 @@ export function SwipeActionButton({
   );
 }
 
-// ── Compound Component Assembly ─────────────────────────────────────────
+// Compound Component Assembly
 
 // Attach sub-components to the root
 const SwipeableRow = Object.assign(SwipeableRowRoot, {
@@ -1069,7 +1069,7 @@ const SwipeableRow = Object.assign(SwipeableRowRoot, {
 
 export { SwipeableRow };
 
-// ── Internal Utilities ──────────────────────────────────────────────────
+// Internal Utilities
 
 /**
  * Find a specific compound child element by its component type.

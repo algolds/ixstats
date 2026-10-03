@@ -30,7 +30,7 @@ const MORALE_SWING = 5;
 type Db = Prisma.TransactionClient;
 type EffectsMap = Map<string, StorytellerEffect[]>;
 
-// ─── Inputs (a Prisma SportMatch loaded with SIM_MATCH_INCLUDE satisfies these) ───
+// Inputs (a Prisma SportMatch loaded with SIM_MATCH_INCLUDE satisfies these)
 
 type SimPlayer = {
   id: string;
@@ -80,7 +80,7 @@ export const SIM_MATCH_INCLUDE = {
   awayTeam: TEAM_WITH_ROSTER,
 } satisfies Prisma.SportMatchInclude;
 
-// ─── Snapshot contract (stored at SportMatch.matchStats.simulationSnapshot) ───
+// Snapshot contract (stored at SportMatch.matchStats.simulationSnapshot)
 
 type RatingSnapshot = {
   overall: number;
@@ -122,7 +122,7 @@ type SimulationSnapshot = {
   capturedIxTime: number;
 };
 
-// ─── Pure helpers ───
+// Pure helpers
 
 /** One seed per match, independent of which path (button / full season / cron) runs it. */
 export function matchSeed(match: { id: string; seasonId: string; matchDay: number }): number {
@@ -313,13 +313,10 @@ function simulateFromSnapshot(snapshot: SimulationSnapshot, homeName: string, aw
   return { result, analysisFacts, matchStats: toMatchStats(result, snapshot, analysisFacts) };
 }
 
-// ─── DB steps ───
+// DB steps
 
 /** Active storyteller effects for these nations, keyed by nationId (one query). */
-export async function loadEffectsMap(
-  db: Db,
-  nationIds: Array<string | null>
-): Promise<EffectsMap> {
+export async function loadEffectsMap(db: Db, nationIds: Array<string | null>): Promise<EffectsMap> {
   const ids = Array.from(new Set(nationIds.filter((id): id is string => !!id)));
   const map: EffectsMap = new Map();
   if (ids.length === 0) return map;
@@ -485,7 +482,11 @@ export async function simulateAndPersistMatch(
   const playerStats = tallyPlayerStats(result.trace, home.roster, away.roster, snapshot.seed);
   if (playerStats.length > 0) {
     await db.sportMatchStat.createMany({
-      data: playerStats.map((ps) => ({ matchId: match.id, playerId: ps.playerId, stats: ps.stats })),
+      data: playerStats.map((ps) => ({
+        matchId: match.id,
+        playerId: ps.playerId,
+        stats: ps.stats,
+      })),
     });
   }
 
@@ -499,7 +500,7 @@ export async function simulateAndPersistMatch(
   };
 }
 
-// ─── Knockout bouts (SportBracket rows) ───
+// Knockout bouts (SportBracket rows)
 
 type SimBout = {
   id: string;

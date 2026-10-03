@@ -153,7 +153,7 @@ export default function MyLeaguePage() {
       />
       <LeagueCreator open={showCreator} onOpenChange={setShowCreator} />
 
-      {/* ─── FEATURED ASSOCIATION HERO ─── */}
+      {/* FEATURED ASSOCIATION HERO */}
       {featuredLeague && (
         <section className="space-y-3" aria-labelledby="featured-competition">
           <h2
@@ -239,7 +239,7 @@ export default function MyLeaguePage() {
         </section>
       )}
 
-      {/* ─── SPORT FILTER CHIPS & SEARCH ─── */}
+      {/* SPORT FILTER CHIPS & SEARCH */}
       <section className="space-y-6">
         <div className="border-separator flex flex-col gap-4 border-b pb-4 lg:flex-row lg:items-center lg:justify-between">
           {/* Sport Preset Filter Chips */}
@@ -285,7 +285,7 @@ export default function MyLeaguePage() {
           </div>
         </div>
 
-        {/* ─── LEAGUE GRID CONTENT ─── */}
+        {/* LEAGUE GRID CONTENT */}
         {isLoading ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (

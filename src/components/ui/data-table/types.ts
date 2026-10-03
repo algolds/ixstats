@@ -29,7 +29,7 @@ export interface FacetColumn<T> {
   /** Desktop table cell render function */
   render?: (value: any, row: T, index: number) => React.ReactNode;
 
-  // ── AdaptTable Mobile Card Properties ──────────────────────────────
+  // AdaptTable Mobile Card Properties
   /** Categorizes role in the responsive mobile card layout (default: "field") */
   mobileRole?: MobileRole;
   /** Label override when displayed in the mobile card key-value matrix */

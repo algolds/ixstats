@@ -70,7 +70,6 @@ export function GlassChart({
         className
       )}
     >
-      {/* Header */}
       {(title || description || actions) && (
         <div className="border-b border-[var(--color-border-primary)]/50 p-4">
           <div className="flex items-start justify-between">

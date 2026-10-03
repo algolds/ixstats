@@ -27,19 +27,19 @@ export function computeHydroClimate(graph: WorldGraph, params: WorldGenParams): 
   const { cells } = graph;
   const n = cells.n;
 
-  // ── Pass 1: Base Temperature & Altitude Lapse Rate ──
+  // Pass 1: Base Temperature & Altitude Lapse Rate
   computeTemperature(graph);
 
-  // ── Pass 2: Wind Patterns (Coriolis) & Wind Shadows ──
+  // Pass 2: Wind Patterns (Coriolis) & Wind Shadows
   computeWindPatterns(graph);
 
-  // ── Pass 3: Ocean Currents & Thermal Influence ──
+  // Pass 3: Ocean Currents & Thermal Influence
   computeOceanCurrents(graph);
 
-  // ── Pass 4: Precipitation, Orographic Rain Shadows & Aridity ──
+  // Pass 4: Precipitation, Orographic Rain Shadows & Aridity
   computePrecipitationAndRainShadows(graph);
 
-  // ── Pass 5: Depression Filling & Downstream Routing ──
+  // Pass 5: Depression Filling & Downstream Routing
   const depressionDepths = fillDepressionsAndRouteFlow(graph);
 
   // Recalibrate elevation zones to match post-hydraulic filled heightmap
@@ -50,23 +50,21 @@ export function computeHydroClimate(graph: WorldGraph, params: WorldGenParams): 
     cells.elevZone[i] = isLand ? getElevationZone(hMeters) : 0;
   }
 
-  // ── Pass 6: Flux Accumulation & River Network Detection ──
+  // Pass 6: Flux Accumulation & River Network Detection
   if (params.hasRivers ?? true) {
     generateRiverNetworks(graph, params, rng);
   }
 
-  // ── Pass 7: Lake Formation (Land Depressions & River Sinks) ──
+  // Pass 7: Lake Formation (Land Depressions & River Sinks)
   if (params.hasLakes ?? true) {
     generateLakes(graph, depressionDepths);
   }
 
-  // ── Pass 8: Trewartha Biome Classification ──
+  // Pass 8: Trewartha Biome Classification
   classifyBiomes(graph);
 }
 
-// ──────────────────────────────────────────────
 // Pass 1: Temperature
-// ──────────────────────────────────────────────
 
 function computeTemperature(graph: WorldGraph): void {
   const { cells } = graph;
@@ -98,9 +96,7 @@ function computeTemperature(graph: WorldGraph): void {
   }
 }
 
-// ──────────────────────────────────────────────
 // Pass 2: Wind Patterns (Coriolis)
-// ──────────────────────────────────────────────
 
 function computeWindPatterns(graph: WorldGraph): void {
   const { cells } = graph;
@@ -152,9 +148,7 @@ function computeWindPatterns(graph: WorldGraph): void {
   }
 }
 
-// ──────────────────────────────────────────────
 // Pass 3: Ocean Currents
-// ──────────────────────────────────────────────
 
 function computeOceanCurrents(graph: WorldGraph): void {
   const { cells } = graph;
@@ -197,9 +191,7 @@ function computeOceanCurrents(graph: WorldGraph): void {
   }
 }
 
-// ──────────────────────────────────────────────
 // Pass 4: Precipitation & Rain Shadows
-// ──────────────────────────────────────────────
 
 function computePrecipitationAndRainShadows(graph: WorldGraph): void {
   const { cells } = graph;
@@ -285,9 +277,7 @@ function computePrecipitationAndRainShadows(graph: WorldGraph): void {
   }
 }
 
-// ──────────────────────────────────────────────
 // Pass 5: Depression Filling & Flow Routing
-// ──────────────────────────────────────────────
 
 function fillDepressionsAndRouteFlow(graph: WorldGraph): Float32Array {
   const { cells } = graph;
@@ -367,9 +357,7 @@ function fillDepressionsAndRouteFlow(graph: WorldGraph): Float32Array {
   return depressionDepths;
 }
 
-// ──────────────────────────────────────────────
 // Pass 6: Rivers & Flux Accumulation
-// ──────────────────────────────────────────────
 
 // oxlint-disable-next-line typescript/no-unused-vars
 function generateRiverNetworks(graph: WorldGraph, params: WorldGenParams, rng: () => number): void {
@@ -489,9 +477,7 @@ function generateRiverNetworks(graph: WorldGraph, params: WorldGenParams, rng: (
   }
 }
 
-// ──────────────────────────────────────────────
 // Pass 7: Lakes (Land Depressions & Sinks)
-// ──────────────────────────────────────────────
 
 function generateLakes(graph: WorldGraph, depressionDepths: Float32Array): void {
   const { cells, features } = graph;
@@ -560,9 +546,7 @@ function generateLakes(graph: WorldGraph, depressionDepths: Float32Array): void 
   }
 }
 
-// ──────────────────────────────────────────────
 // Pass 8: Biomes (Trewartha)
-// ──────────────────────────────────────────────
 
 function classifyBiomes(graph: WorldGraph): void {
   const { cells } = graph;

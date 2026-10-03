@@ -19,7 +19,7 @@ import { springSmooth, tweenExit } from "~/lib/design/motion";
 import { FacetMaterial } from "~/components/ui/facet";
 import { focusRing } from "~/components/ui/button";
 
-// ─── Section color mapping ─────────────────────
+// Section color mapping
 const SECTION_COLORS: Record<string, { accent: string; bg: string; label: string }> = {
   "/dashboard": { accent: "var(--color-green)", bg: "bg-green/15", label: "Dashboard" },
   "/mycountry": { accent: "var(--color-yellow)", bg: "bg-yellow/15", label: "MyCountry" },
@@ -48,7 +48,7 @@ export function getSectionForPath(pathname: string): { accent: string; bg: strin
   return match;
 }
 
-// ─── Primary nav items for the tray ──────────────────────────────────────────
+// Primary nav items for the tray
 
 interface NavTrayItem {
   name: string;
@@ -72,7 +72,7 @@ const SECONDARY_NAV: { name: string; href: string }[] = [
   { name: "Help", href: "/help" },
 ];
 
-// ─── NavTray Component ───────────────────────────────────────────────────────
+// NavTray Component
 
 interface NavTrayProps {
   isOpen: boolean;

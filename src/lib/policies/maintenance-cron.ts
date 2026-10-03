@@ -90,7 +90,7 @@ async function spawnVolatileIssues(): Promise<SpawnVolatileIssuesResult> {
   };
 
   try {
-    // ── 1. Policy risk rolls ──────────────────────────────────────────────
+    // 1. Policy risk rolls
     const volatilePolicies = await db.policy.findMany({
       where: { status: "active", riskRating: { in: ["volatile", "high-risk"] } },
       select: {
@@ -134,7 +134,7 @@ async function spawnVolatileIssues(): Promise<SpawnVolatileIssuesResult> {
       }
     }
 
-    // ── 2. Intent risk rolls (probability mode only) ─────────────────────
+    // 2. Intent risk rolls (probability mode only)
     const config = getNationalIssuesConfig();
     if (config.spawnMode === "probability") {
       const volatileIntents = await db.intent.findMany({

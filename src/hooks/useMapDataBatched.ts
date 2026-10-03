@@ -108,7 +108,7 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
     if (missing.length > 0) setRequestedExtraLayers((prev) => [...prev, ...missing]);
   }, [visibleLayers, requestedExtraLayers]);
 
-  // ── Phase 1: Critical layers + overlays + capitals (fast) ──
+  // Phase 1: Critical layers + overlays + capitals (fast)
   const {
     data: criticalBundle,
     isLoading: criticalLoading,
@@ -126,7 +126,7 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
     }
   );
 
-  // ── Phase 2: Decorative / extra layers (deferred, one request per layer) ──
+  // Phase 2: Decorative / extra layers (deferred, one request per layer)
   // One query per layer so turning on a second extra layer fetches only that layer instead of
   // re-downloading the first one under a new combined cache key. No zoom in the key, so
   // zooming never re-fetches them.

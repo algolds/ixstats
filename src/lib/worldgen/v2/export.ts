@@ -39,9 +39,7 @@ export function exportToGeoJSON(graph: WorldGraph): Record<string, FeatureCollec
   return layers;
 }
 
-// ──────────────────────────────────────────────
 // Layer Exporters
-// ──────────────────────────────────────────────
 
 function exportBackground(graph: WorldGraph): FeatureCollection {
   const { cells, features } = graph;
@@ -320,10 +318,6 @@ function exportIcecaps(graph: WorldGraph): FeatureCollection {
 
   return { type: "FeatureCollection", features: geoFeatures };
 }
-
-// ──────────────────────────────────────────────
-// Helpers
-// ──────────────────────────────────────────────
 
 function processVectorRing(ring: [number, number][], passes: number): [number, number][] {
   // 1. Fine decimation of collinear/duplicate points (0.001° ≈ 100m)

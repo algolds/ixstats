@@ -5,8 +5,6 @@ import { create } from "zustand";
 import { toast as sonnerToast } from "sonner";
 import type { NotificationCategory } from "~/types/unified-notifications";
 
-// ─── Types ────────────────────────────────────────────────────────────
-
 export type ToastType = "success" | "error" | "warning" | "info";
 export type ToastPriority = "critical" | "high" | "medium" | "low";
 
@@ -62,7 +60,7 @@ export function registerToastRenderer(renderer: ToastCustomRenderer) {
   toastRenderer = renderer;
 }
 
-// ─── Duration defaults by priority ───────────────────────────────────
+// Duration defaults by priority
 
 const DURATION_BY_PRIORITY: Record<ToastPriority, number> = {
   critical: 10000,
@@ -71,7 +69,7 @@ const DURATION_BY_PRIORITY: Record<ToastPriority, number> = {
   low: 3000,
 };
 
-// ─── Store ────────────────────────────────────────────────────────────
+// Store
 
 let idCounter = 0;
 

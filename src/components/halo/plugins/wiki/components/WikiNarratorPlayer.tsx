@@ -224,7 +224,7 @@ export function WikiNarratorPlayer({
 
   return (
     <div className="relative w-full space-y-2">
-      {/* ── Ambient Background Audio Waveform (Apple Design Subtlety) ── */}
+      {/* Ambient Background Audio Waveform (Apple Design Subtlety) */}
       <div
         className="rounded-row pointer-events-none absolute inset-0 -z-10 flex items-center justify-between gap-1 overflow-hidden px-3 py-2 select-none"
         aria-hidden="true"
@@ -254,7 +254,7 @@ export function WikiNarratorPlayer({
         className="relative z-10 w-full space-y-2 border-0 bg-transparent p-0 shadow-none before:hidden hover:bg-transparent"
         data-slot="wiki-narrator-player"
       >
-        {/* ── 1. Top HUD Bar (Section Title + Reading Progress) ── */}
+        {/* 1. Top HUD Bar (Section Title + Reading Progress) */}
         {showHeader && (
           <div className="text-footnote flex items-center justify-between gap-2 px-1">
             <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -277,7 +277,7 @@ export function WikiNarratorPlayer({
           </div>
         )}
 
-        {/* ── 2. audio-ui Section Scrubber (Transport with Chapter Milestone Markers) ── */}
+        {/* 2. audio-ui Section Scrubber (Transport with Chapter Milestone Markers) */}
         <div className="relative w-full px-1 py-1">
           <Transport
             aria-label="Section timeline"
@@ -335,7 +335,7 @@ export function WikiNarratorPlayer({
           </div>
         </div>
 
-        {/* ── 3. Primary Audio-UI Controls Bar ── */}
+        {/* 3. Primary Audio-UI Controls Bar */}
         <AudioPlayerControlBar
           variant="compact"
           className="w-full items-center justify-between gap-2 px-0 py-0.5"
@@ -448,7 +448,7 @@ export function WikiNarratorPlayer({
           </div>
         </AudioPlayerControlBar>
 
-        {/* ── 4. INLINE EXPANDABLE TRAYS (Guaranteed 0% clipping behind Halo) ── */}
+        {/* 4. INLINE EXPANDABLE TRAYS (Guaranteed 0% clipping behind Halo) */}
 
         {/* 4A. Inline Voice Picker Tray */}
         {activeTray === "voice" && (

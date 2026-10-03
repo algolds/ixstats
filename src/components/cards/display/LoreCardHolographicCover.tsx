@@ -29,8 +29,6 @@ import {
   useHoverMousePos,
 } from "./holo-helpers";
 
-// ─── Types ──────────────────────────────────────────────────────
-
 interface LoreCardHolographicCoverProps {
   rarity: string;
   wikiSource?: string | null;
@@ -39,7 +37,7 @@ interface LoreCardHolographicCoverProps {
   className?: string;
 }
 
-// ─── Wiki-source themes ─────────────────────────────────────────
+// Wiki-source themes
 
 interface LoreTheme {
   base: string;
@@ -72,8 +70,6 @@ const LORE_THEMES: Record<string, LoreTheme> = {
     label: "Archive",
   },
 };
-
-// ─── Component ──────────────────────────────────────────────────
 
 export const LoreCardHolographicCover = React.memo<LoreCardHolographicCoverProps>(
   ({ rarity: rarityStr, wikiSource, title: _title, isHovered = false, className }) => {

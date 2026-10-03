@@ -8,9 +8,7 @@
 
 import type { EconomicComponentType } from "~/lib/economy/atomic-data";
 
-// ============================================
 // ECONOMY BUILDER STATE
-// ============================================
 
 export interface EconomyBuilderState {
   structure: EconomyStructure;
@@ -50,9 +48,7 @@ interface EconomyBuilderErrors {
   validation?: string[];
 }
 
-// ============================================
 // SECTOR CONFIGURATION
-// ============================================
 
 export interface SectorConfiguration {
   id: string;
@@ -73,9 +69,7 @@ export interface SectorConfiguration {
   competitiveness: number; // global competitiveness score 0-100
 }
 
-// ============================================
 // LABOR CONFIGURATION
-// ============================================
 
 export interface LaborConfiguration {
   // Workforce Structure
@@ -146,9 +140,7 @@ export interface LaborConfiguration {
   };
 }
 
-// ============================================
 // DEMOGRAPHICS CONFIGURATION
-// ============================================
 
 export interface DemographicsConfiguration {
   totalPopulation: number;
@@ -191,21 +183,11 @@ export interface RegionDistribution {
   developmentLevel: "Underdeveloped" | "Developing" | "Developed" | "Advanced";
 }
 
-// ============================================
 // INCOME & WEALTH CONFIGURATION
-// ============================================
-// ============================================
 // TRADE CONFIGURATION
-// ============================================
-// ============================================
 // PRODUCTIVITY CONFIGURATION
-// ============================================
-// ============================================
 // BUSINESS ENVIRONMENT
-// ============================================
-// ============================================
 // ECONOMIC HEALTH METRICS
-// ============================================
 
 export interface EconomicHealthMetrics {
   economicHealthScore: number; // 0-100
@@ -232,19 +214,8 @@ export interface EconomicHealthMetrics {
   systemicRisk: number; // 0-100
 }
 
-// ============================================
 // ATOMIC COMPONENT IMPACT
-// ============================================
-// ============================================
 // CROSS-BUILDER INTEGRATION
-// ============================================
-// ============================================
 // VALIDATION & CONSTRAINTS
-// ============================================
-// ============================================
 // ARCHETYPE TEMPLATES
-// ============================================
-// ============================================
-// UTILITY TYPES
-// ============================================
 export type { EconomicInputs } from "~/app/builder/lib/economy-data-service";

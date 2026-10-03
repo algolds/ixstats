@@ -2,10 +2,6 @@
 // Internal stability calculation formulas
 // Converts economic, demographic, and policy data into security metrics
 
-// ====================================
-// TYPE DEFINITIONS
-// ====================================
-
 export interface EconomicData {
   gdpGrowth: number; // Percentage growth rate
   unemploymentRate: number; // Percentage
@@ -80,9 +76,7 @@ export interface StabilityMetrics {
   stabilityTrend: "improving" | "stable" | "declining" | "critical";
 }
 
-// ====================================
 // CORE CALCULATION FUNCTIONS
-// ====================================
 
 /**
  * Calculate overall crime rate based on economic and social factors
@@ -379,9 +373,7 @@ function calculateFearOfCrime(
   return Math.max(5, Math.min(85, fear));
 }
 
-// ====================================
 // MAIN AGGREGATION FUNCTION
-// ====================================
 
 /**
  * Calculate comprehensive stability metrics

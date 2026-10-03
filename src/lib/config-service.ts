@@ -204,9 +204,7 @@ export const CONFIG_CONSTANTS = {
   SUSPICIOUS_GROWTH_THRESHOLD: 0.2, // 20% - log warning
   EXTREME_GROWTH_THRESHOLD: 0.5, // 50% - cap value
 } as const;
-// ============================================================================
 // DB-backed configuration reader (live wiring)
-// ============================================================================
 
 /** All SystemConfig keys used for economic configuration */
 const ALL_ECONOMIC_CONFIG_KEYS = [

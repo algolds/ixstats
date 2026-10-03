@@ -26,9 +26,8 @@ import { CountryEventSpine } from "~/lib/activity";
 import { ensureInternalStabilityMetrics } from "~/lib/statecraft/stability-store";
 import { isProjectionConsequence, issueConsequenceToEffect } from "./projection-effects";
 
-// ==================== FIELD BOUNDS ====================
-// ==================== MODEL FIELD MAPPING ====================
-// ==================== TYPES ====================
+// FIELD BOUNDS
+// MODEL FIELD MAPPING
 
 interface AppliedConsequence {
   targetModel: string;
@@ -50,7 +49,7 @@ interface ResolveResult {
   error?: string;
 }
 
-// ==================== CONSEQUENCE APPLICATOR ====================
+// CONSEQUENCE APPLICATOR
 
 export class NationalIssuesConsequences {
   /**

@@ -1,4 +1,4 @@
-// ─── Folder System ───────────────────────────────────────────────
+// Folder System
 
 export type MessageFolder = "conversations";
 
@@ -16,7 +16,7 @@ export interface MessageFolderConfig {
   emptyDescription: string;
 }
 
-// ─── Identity Resolution ─────────────────────────────────────────
+// Identity Resolution
 
 export interface ResolvedIdentity {
   displayName: string;
@@ -27,6 +27,6 @@ export interface ResolvedIdentity {
   sourceLabel?: string;
 }
 
-// ─── Message Source (Phase 2 prep) ───────────────────────────────
-// ─── Folder Classification ──────────────────────────────────────
-// ─── Router State ────────────────────────────────────────────────
+// Message Source (Phase 2 prep)
+// Folder Classification
+// Router State

@@ -649,7 +649,7 @@ export const CardBack = React.memo<CardBackProps>(
           />
         </div>
 
-        {/* ─── VARIANT 1: GUILLOCHE ICON LATTICE GRID (DEFAULT) ─── */}
+        {/* VARIANT 1: GUILLOCHE ICON LATTICE GRID (DEFAULT) */}
         {variant === "lattice" && (
           <div className="relative z-10 flex h-full w-full flex-col items-center justify-between p-2">
             <CardBackHeader
@@ -694,7 +694,7 @@ export const CardBack = React.memo<CardBackProps>(
           </div>
         )}
 
-        {/* ─── VARIANT 2: ZODIAC RING & SWIRL CREST ─── */}
+        {/* VARIANT 2: ZODIAC RING & SWIRL CREST */}
         {variant === "zodiac" && (
           <div className="relative z-10 flex h-full w-full flex-col items-center justify-between p-2">
             <CardBackHeader
@@ -760,7 +760,7 @@ export const CardBack = React.memo<CardBackProps>(
           </div>
         )}
 
-        {/* ─── VARIANT 3: TWIN CATEGORY RUNE COLUMNS ─── */}
+        {/* VARIANT 3: TWIN CATEGORY RUNE COLUMNS */}
         {variant === "runes" && (
           <div className="relative z-10 flex h-full w-full flex-col items-center justify-between p-2">
             <CardBackHeader

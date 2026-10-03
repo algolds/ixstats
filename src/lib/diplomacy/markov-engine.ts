@@ -19,7 +19,7 @@
 
 import type { DiplomaticChoice } from "./choice-tracker";
 
-// ==================== RELATIONSHIP STATES ====================
+// RELATIONSHIP STATES
 
 /**
  * Five-state Markov model for diplomatic relationships
@@ -38,7 +38,7 @@ const STATE_RANK: Record<RelationshipState, number> = {
   friendly: 3,
   allied: 4,
 };
-// ==================== CONTEXT FACTORS ====================
+// CONTEXT FACTORS
 
 /**
  * Context factors that influence transition probabilities
@@ -85,7 +85,7 @@ export interface TransitionContext {
   };
 }
 
-// ==================== MARKOV DIPLOMACY ENGINE ====================
+// MARKOV DIPLOMACY ENGINE
 
 export class MarkovDiplomacyEngine {
   /**
@@ -186,7 +186,7 @@ export class MarkovDiplomacyEngine {
     return Math.max(0, Math.min(1, adjustedProbability));
   }
 
-  // ==================== PRIVATE HELPER METHODS ====================
+  // PRIVATE HELPER METHODS
 
   /**
    * Calculate action weight based on recent diplomatic actions

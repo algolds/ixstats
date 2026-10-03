@@ -52,7 +52,7 @@ import {
 export type { ComparisonOp, TriggerCondition, ResponseOptionTemplate, TemplateCandidate };
 export type { CountrySnapshot, ConsequenceDefinition, EvaluationResult };
 
-// ==================== ENGINE ====================
+// ENGINE
 
 export class NationalIssuesEngine {
   /**

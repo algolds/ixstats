@@ -2,8 +2,7 @@
 
 import type { AtomicComponentTheme } from "./types";
 
-// ==================== THEME PRESETS ====================
-// ==================== THEME UTILITIES ====================
+// THEME PRESETS
 
 /** Theme palette names (legacy Tailwind hues) → Facet system colours. */
 const SYSTEM_COLOR: Record<string, string> = {
@@ -71,7 +70,7 @@ export function getThemeColorClasses(
   };
 }
 
-// ==================== COMPLEXITY COLORS ====================
+// COMPLEXITY COLORS
 
 export function getComplexityColor(complexity: "Low" | "Medium" | "High"): string {
   switch (complexity) {
@@ -99,7 +98,7 @@ export function getComplexityBgColor(complexity: "Low" | "Medium" | "High"): str
   }
 }
 
-// ==================== EFFECTIVENESS COLORS ====================
+// EFFECTIVENESS COLORS
 
 export function getEffectivenessBgColor(effectiveness: number): string {
   if (effectiveness >= 85) return "bg-green/10";

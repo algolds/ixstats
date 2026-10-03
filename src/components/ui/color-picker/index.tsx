@@ -27,11 +27,11 @@ import {
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { cn } from "~/lib/utils/cn";
 
-// ─── Color Math Helpers (Canonical ~/lib/color) ────────────────────────────────
+// Color Math Helpers (Canonical ~/lib/color)
 import { hslToRgb, rgbToHsl, hslToHex, parseColorToHsl } from "~/lib/color";
 export { hslToRgb, rgbToHsl, hslToHex, parseColorToHsl };
 
-// ─── ColorPicker Context & Components ─────────────────────────────────────────
+// ColorPicker Context & Components
 
 type ColorPickerContextValue = {
   hue: number;

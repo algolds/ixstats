@@ -25,8 +25,6 @@ import type { CardRarity } from "@prisma/client";
 import { getFoilStampConfig, getEmbossedTextShadow } from "~/lib/themes";
 import { getEffectiveRarity, getHoloGradient } from "~/components/cards/display/holo-helpers";
 
-// ─── Types ──────────────────────────────────────────────────────
-
 interface PackHolographicCoverProps {
   packType: string;
   guaranteedRarity?: string | null;
@@ -37,7 +35,7 @@ interface PackHolographicCoverProps {
   size?: "sm" | "md" | "lg";
 }
 
-// ─── Pack-type base themes ──────────────────────────────────────
+// Pack-type base themes
 
 interface PackTheme {
   base: string;
@@ -79,7 +77,7 @@ const PACK_THEMES: Record<string, PackTheme> = {
   },
 };
 
-// ─── Rarity helpers ─────────────────────────────────────────────
+// Rarity helpers
 
 function getSweepSpeed(rarity: CardRarity): number {
   const speeds: Record<CardRarity, number> = {
@@ -105,7 +103,7 @@ function getHoloOpacity(rarity: CardRarity): number {
   return map[rarity] ?? 0.15;
 }
 
-// ─── Size presets ───────────────────────────────────────────────
+// Size presets
 
 const SIZE_CLASSES = { sm: "h-20", md: "h-40", lg: "h-full min-h-[320px]" } as const;
 const LABEL_SIZES = { sm: "text-footnote", md: "text-footnote", lg: "text-body" } as const;
@@ -114,8 +112,6 @@ const STAMP_SIZES = {
   md: "text-title-3 h-8 w-8",
   lg: "text-large-title h-14 w-14",
 } as const;
-
-// ─── Component ──────────────────────────────────────────────────
 
 export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
   ({ packType, guaranteedRarity, packName, packArtwork, className, size = "sm" }) => {
