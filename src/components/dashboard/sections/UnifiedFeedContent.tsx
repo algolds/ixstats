@@ -270,7 +270,7 @@ export function UnifiedFeedContent({
         <EmptyState
           icon={<Rss />}
           title={`No recent ${label}`}
-          message="Check back later for updates."
+          message="Nothing has been posted here recently."
         />
       </Card>
     );

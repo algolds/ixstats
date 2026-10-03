@@ -28,21 +28,17 @@ The former `/dashboard/world`, `/dashboard/diplomacy`, `/dashboard/feed`, and
   the GDP / population / government-spending / vitality breakdown modals), and
   an executive telemetry micro-bar. The hero is collapsible and starts collapsed
   when the nation has no linked map territory (`countries.getMapLinkStatus`).
-  The old per-section nav pills (`HERO_NAV`) are defined but not rendered.
 - **Unified feed** (`UnifiedDashboardSection`): tabbed activity stream — All
-  Activity, Following (country owners only), Community — with an inline
+  activity, Following (country owners only), Community — with an inline
   ThinkPages composer (`GlassCanvasComposer`) and account switching.
 - **Community sidebar**: Trending Now (`TrendingSectionWidget`), Countries to
   Explore (`CountriesToExploreCard`), and Economic Tier Distribution.
 - **Left rail widgets**: player/nation widget with Mail / Issues / Actions
   quick-actions and active-crisis banner, `VaultWidget`, and quick links.
 - `NewVersionNotice` alert banner; `BlurbSection` daily-prompt widget.
-- **Widget identity (Facet 3.1)**: each sidebar widget is a `CutoutCard` in its v2
-  hue — Trending orange, Blurb indigo, Countries blue, Economic tiers green, Quick
-  links cyan, player indigo — via `accent="…" retint` (the player's quick-action
-  tiles use `facetAccentStyle` + `facet-retint`). Widget titles are
-  `CutoutCardHeader as="h2"` under the page's visually hidden `h1` ("Dashboard");
-  the pressable Blurb card is itself the button, so its "Respond" pill is visual.
+- **Widgets**: sidebar and community widgets are plain `Card`s with an `h2` title under
+  the page's visually hidden `h1` ("Dashboard"). The pressable Blurb card is itself the
+  button, so its "Respond" pill is visual. Only the hero keeps the glass material.
 
 ## Architecture
 
@@ -83,9 +79,8 @@ Verified `api.*` (tRPC) calls used across the dashboard tree:
   `countries.getActivityRingsData`, `countries.getMapLinkStatus`,
   `mycountry.getRankings`, `mycountry.getCountryDashboard`
 - **Vault**: `vault.getBalance` (via `VaultWidget`), `achievements.getAllWithStatus`
-- **Executive / sim**: `policies.getPolicies`, `meetings.getMeetings`,
-  `nationalIssues.getPendingCount`, `crisisEvents.getActive`,
-  `crisisEvents.getStatistics`
+- **Executive / sim**: `meetings.getMeetings`,
+  `nationalIssues.getPendingCount`, `crisisEvents.getStatistics`
 - **Social feed**: `activities.getGlobalFeed`, `activities.getFollowingFeed`,
   `activities.getUnifiedTrending`, `activities.followCountry`,
   `thinkpages.getMyAccounts`, `blurbs.*`

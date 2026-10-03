@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { OpenBook as BookOpen, Bookmark, Group as Users, Compass } from "iconoir-react";
+import { OpenBook as BookOpen, Bookmark, Group as Users } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { StatusIndicator } from "~/components/ui/status-indicator";
 import {
@@ -14,7 +14,7 @@ import {
 } from "~/lib/buildVersion";
 import { Dialog, DialogContent, DialogTrigger } from "~/components/ui/dialog";
 import { FeedbackModal } from "~/components/dashboard/sidebar/FeedbackModal";
-import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
+import { Card } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
@@ -24,19 +24,16 @@ const EXTERNAL_LINKS = [
     label: "Getting started",
     href: "/help/getting-started/welcome",
     icon: BookOpen,
-    color: "text-yellow",
   },
   {
     label: "Stashes",
     href: "/stashes",
     icon: Bookmark,
-    color: "text-blue",
   },
   {
     label: "ThinkTanks",
     href: "/thinktanks",
     icon: Users,
-    color: "text-green",
   },
 ] as const;
 
@@ -74,15 +71,12 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
     )?.length ?? 0);
 
   return (
-    // v2 (c5c6b382): a CutoutCard with the cyan header strip, dot texture and coloured link glyphs.
-    <CutoutCard variant="card" className="w-48" trackPointerHover={false}>
-      <CutoutCardHeader icon={<Compass />} as="h2" cornerSize={16} className="px-3">
-        Quick links
-      </CutoutCardHeader>
-      <div className="relative space-y-2 p-3 pt-1">
+    <Card className="w-48">
+      <h2 className="text-headline text-label px-3 pt-3">Quick links</h2>
+      <div className="space-y-2 p-3 pt-2">
         {/* Links */}
         <div className="space-y-1 pt-0.5">
-          {/* Discord badge — server-rendered, passed through props */}
+          {/* Server-rendered Discord badge, passed through props */}
           {discordBadge}
 
           {EXTERNAL_LINKS.map((link) => {
@@ -99,16 +93,10 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
                 key={link.label}
                 href={link.href}
                 {...extraProps}
-                className="group text-label-secondary hover:text-label focus-visible:text-label hover:bg-fill-4 active:bg-fill-3 rounded-row text-footnote facet-press focus-visible:outline-tint flex items-center justify-between gap-2 px-2 py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="text-label-secondary hover:text-label focus-visible:text-label hover:bg-fill-4 active:bg-fill-3 rounded-row text-footnote focus-visible:outline-tint flex items-center justify-between gap-2 px-2 py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 <div className="flex min-w-0 items-center gap-2">
-                  <Icon
-                    aria-hidden
-                    className={cn(
-                      "ease-out-facet duration-fast size-3.5 shrink-0 transition-[scale] group-hover:scale-110 group-focus-visible:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100 motion-reduce:group-focus-visible:scale-100",
-                      link.color
-                    )}
-                  />
+                  <Icon aria-hidden className="size-3.5 shrink-0" />
                   <span className="truncate">{link.label}</span>
                 </div>
 
@@ -126,8 +114,8 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
         <div className="border-separator space-y-2 border-t pt-2">
           <Link
             href="/changelog"
-            className="group rounded-control facet-press focus-visible:outline-tint block focus-visible:outline-2 focus-visible:outline-offset-2"
-            title="View Release Notes & Changelog"
+            className="group rounded-control focus-visible:outline-tint block focus-visible:outline-2 focus-visible:outline-offset-2"
+            title="View changelog"
           >
             <StatusIndicator
               status={getChannelStatus(CHANNEL)}
@@ -172,6 +160,6 @@ export function DashboardQuickLinks({ discordBadge }: DashboardQuickLinksProps) 
           </div>
         </div>
       </div>
-    </CutoutCard>
+    </Card>
   );
 }

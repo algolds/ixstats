@@ -8,10 +8,9 @@ import {
   RssFeed as Rss,
   OpenBook as BookOpen,
   Settings,
-  Globe,
   FireFlame as Flame,
 } from "iconoir-react";
-import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
+import { Card } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -66,7 +65,7 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
 type FeedTab = "all" | "following" | "trending" | "community";
 
 const BASE_TABS: { value: FeedTab; label: string; icon: React.ReactNode }[] = [
-  { value: "all", label: "All Activity", icon: <Rss /> },
+  { value: "all", label: "All activity", icon: <Rss /> },
   { value: "following", label: "Following", icon: <Users /> },
   { value: "trending", label: "Trending", icon: <Flame /> },
   { value: "community", label: "Community", icon: <BookOpen /> },
@@ -166,10 +165,10 @@ export function UnifiedDashboardSection({
           setRepostingPost(post);
           setIsRepostModalOpen(true);
         } else {
-          notify.error("Unable to find the original post to repost.");
+          notify.error("Could not find the original post.");
         }
       } else {
-        notify.error("Please select an account first");
+        notify.error("Select an account first");
       }
     },
     [selectedAccount, notify]
@@ -183,7 +182,7 @@ export function UnifiedDashboardSection({
         } else {
           setIsAccountModalOpen(true);
         }
-        notify.error("Please select or create an account first to reply");
+        notify.error("Select or create an account to reply");
       }
     },
     [selectedAccount, accounts.length, isCountryDataReady, notify]
@@ -194,12 +193,12 @@ export function UnifiedDashboardSection({
       if (typeof navigator !== "undefined" && navigator.share) {
         navigator.share({
           title: "ThinkPages Post",
-          text: "Check out this post on ThinkPages",
+          text: "A post on ThinkPages",
           url: window.location.href,
         });
       } else {
         navigator.clipboard.writeText(window.location.href);
-        notify.success("Link copied to clipboard!");
+        notify.success("Link copied");
       }
     },
     [notify]
@@ -257,7 +256,7 @@ export function UnifiedDashboardSection({
                     utils.activities.getGlobalFeed.refetch();
                     utils.activities.getFollowingFeed.refetch();
                   }}
-                  placeholder="What's happening?"
+                  placeholder="Write a post"
                   countryId={userProfile?.countryId ?? ""}
                   accounts={accounts}
                   isOwner={hasCountry}
@@ -267,7 +266,7 @@ export function UnifiedDashboardSection({
                 />
                 {hasCountry && accounts.length > 1 && selectedAccount && (
                   <div className="text-footnote flex items-center gap-2 px-1">
-                    <span className="text-label-secondary">Posting as:</span>
+                    <span className="text-label-secondary">Posting as</span>
                     <div className="text-label flex items-center gap-2 font-medium">
                       <span>@{selectedAccount.username}</span>
                       <span className="text-label-secondary text-footnote font-normal">
@@ -347,7 +346,7 @@ export function UnifiedDashboardSection({
 
           {/* Sidebar (right 1/3): Community widgets */}
           <div className="facet-layout-sidebar-span-1 space-y-4 md:sticky md:top-(--shell-top-offset) md:self-start">
-            {/* Trending Now — Compact */}
+            {/* Trending now */}
             <TrendingSectionWidget />
 
             {/* Blurb of the Day Widget */}
@@ -358,22 +357,19 @@ export function UnifiedDashboardSection({
 
             {/* Economic Tier Distribution */}
             {(globalStats as any)?.economicTierDistribution && (
-              // v2 (c5c6b382): a CutoutCard with the emerald cutout tab header.
-              <CutoutCard variant="card" trackPointerHover={false}>
-                <CutoutCardHeader icon={<Globe />} as="h2">
-                  Economic tiers
-                </CutoutCardHeader>
-                <div className="flex flex-wrap items-center gap-1 px-4 pb-4">
+              <Card padding="md">
+                <h2 className="text-headline text-label mb-3">Economic tiers</h2>
+                <div className="flex flex-wrap items-center gap-1">
                   {Object.entries((globalStats as any).economicTierDistribution).map(
                     ([tier, count]) => (
                       <Badge key={tier} variant="default">
                         <span>{tier}</span>
-                        <span className="text-label font-data tabular-nums">{count as number}</span>
+                        <span className="text-label tabular-nums">{count as number}</span>
                       </Badge>
                     )
                   )}
                 </div>
-              </CutoutCard>
+              </Card>
             )}
           </div>
         </div>

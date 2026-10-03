@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import {
-  ChatBubble as MessageSquare,
   NavArrowDown as ChevronDown,
   NavArrowUp as ChevronUp,
   Terminal,
@@ -51,21 +50,18 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
 
   const submitMutation = api.userLogging.submitFeedback.useMutation({
     onSuccess: () => {
-      notify.success("Feedback Submitted", "Thank you for helping us improve IxStats!");
+      notify.success("Feedback sent", "Thanks for the feedback.");
       onClose();
     },
     onError: (err) => {
-      notify.error(
-        "Submission Failed",
-        err.message || "Failed to submit feedback. Please try again."
-      );
+      notify.error("Could not send feedback", err.message || "Try again in a moment.");
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) {
-      notify.error("Validation Error", "Please enter your feedback message.");
+      notify.error("Message required", "Enter a message before sending.");
       return;
     }
 
@@ -85,13 +81,9 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <DialogHeader className="text-left">
-        <DialogTitle className="flex items-center gap-2">
-          <MessageSquare aria-hidden className="text-tint size-5 shrink-0" />
-          Send feedback
-        </DialogTitle>
+        <DialogTitle>Send feedback</DialogTitle>
         <DialogDescription>
-          Have a suggestion, bug report, or query? Fill out the form below. Diagnostic logs and
-          route metadata are attached automatically to help developers debug.
+          Console logs and the current page URL are attached to help us debug.
         </DialogDescription>
       </DialogHeader>
 
@@ -128,7 +120,7 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
             id="message"
             value={message}
             onChange={(e) => setMessage(e.target.value.slice(0, 1000))}
-            placeholder="What's on your mind? Please describe any bugs or suggestions in detail..."
+            placeholder="Describe the bug, suggestion or question"
             className="min-h-[100px] resize-none"
             required
           />
@@ -144,7 +136,7 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
           >
             <span className="text-label-secondary text-caption flex items-center gap-2">
               <Terminal aria-hidden className="size-3.5" />
-              <span>Diagnostic metadata preview ({logs.length} logs)</span>
+              <span>Attached diagnostics ({logs.length} logs)</span>
             </span>
             {showDiagnostics ? (
               <ChevronUp aria-hidden className="text-label-secondary size-3.5" />
@@ -157,28 +149,28 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
             <div className="border-separator bg-surface-secondary text-footnote max-h-[220px] space-y-2 overflow-y-auto border-t p-3">
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <div className="bg-surface rounded-control-sm flex flex-col gap-0.5 p-2">
-                  <span className="text-label-secondary text-eyebrow flex items-center gap-1">
+                  <span className="text-label-secondary text-footnote flex items-center gap-1">
                     <Globe aria-hidden className="size-3" />
                     Active URL
                   </span>
                   <span className="text-label text-footnote truncate font-mono" title={url}>
-                    {url || "Retrieving..."}
+                    {url || "Loading"}
                   </span>
                 </div>
                 <div className="bg-surface rounded-control-sm flex flex-col gap-0.5 p-2">
-                  <span className="text-label-secondary text-eyebrow flex items-center gap-1">
+                  <span className="text-label-secondary text-footnote flex items-center gap-1">
                     <Cpu aria-hidden className="size-3" />
                     Browser agent
                   </span>
                   <span className="text-label text-footnote truncate font-mono" title={userAgent}>
-                    {userAgent || "Retrieving..."}
+                    {userAgent || "Loading"}
                   </span>
                 </div>
               </div>
 
               <div className="space-y-1">
                 <span className="text-label-secondary text-subhead block">
-                  Console log stream (last 50 events)
+                  Console log (last 50 events)
                 </span>
                 {logs.length === 0 ? (
                   <div className="bg-surface rounded-control-sm flex items-center gap-1 p-2">
@@ -235,7 +227,7 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
           {submitMutation.isPending ? (
             <>
               <Loader2 aria-hidden className="animate-spin" />
-              Submitting...
+              Sending
             </>
           ) : (
             "Submit feedback"

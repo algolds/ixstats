@@ -40,13 +40,11 @@ export function NewVersionNotice() {
       <div className="flex items-center gap-2">
         <Spark aria-hidden className="text-tint size-4 shrink-0" />
         <p className="text-label text-body">
-          New version: the system has been updated to{" "}
+          IxStats updated to{" "}
           <Link href="/changelog" className="text-tint font-medium hover:underline">
             v{APP_VERSION}
           </Link>{" "}
-          <span className="text-label-secondary text-footnote font-data tabular-nums">
-            ({BUILD_VERSION})
-          </span>
+          <span className="text-label-secondary text-footnote tabular-nums">({BUILD_VERSION})</span>
           .
         </p>
       </div>

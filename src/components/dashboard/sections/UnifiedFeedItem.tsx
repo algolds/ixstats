@@ -181,13 +181,13 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
   }
 
   return (
-    <Card padding="md" className="group">
+    <Card padding="md">
       <div className="flex items-start gap-3">
-        {/* Source icon — wiki uses the W logo; v2 domain-tinted chip that grows on card hover */}
+        {/* Source icon; wiki uses the W logo */}
         <div
           aria-hidden
           className={cn(
-            "rounded-row border-separator ease-out-facet mt-0.5 flex size-9 shrink-0 items-center justify-center border transition-[scale] duration-200 group-focus-within:scale-105 group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-focus-within:scale-100 motion-reduce:group-hover:scale-100",
+            "rounded-row border-separator mt-0.5 flex size-9 shrink-0 items-center justify-center border",
             resolvedConfig.bg
           )}
         >
@@ -218,9 +218,7 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
             {isGrouped ? (
               isWiki ? (
                 <span>
-                  <span className="text-label font-data font-medium tabular-nums">
-                    {activity._editCount}
-                  </span>{" "}
+                  <span className="text-label font-medium tabular-nums">{activity._editCount}</span>{" "}
                   edits by{" "}
                   {activity._editors.map((editor: string, idx: number) => (
                     <span key={editor}>
@@ -231,9 +229,7 @@ export const UnifiedFeedItem = memo(function UnifiedFeedItem({
                 </span>
               ) : (
                 <span>
-                  <span className="text-label font-data font-medium tabular-nums">
-                    {activity._editCount}
-                  </span>{" "}
+                  <span className="text-label font-medium tabular-nums">{activity._editCount}</span>{" "}
                   updates by{" "}
                   <span className="text-label font-medium">
                     {activity._editors?.[0] ?? "unknown"}

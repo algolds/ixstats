@@ -112,7 +112,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
   const descHtml = descText ? formatThinkpagesContentForDisplay(descText) : "";
 
   return (
-    <Card padding="md" className="group">
+    <Card padding="md">
       {/* ── 1. Header row ── */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-start gap-3">
