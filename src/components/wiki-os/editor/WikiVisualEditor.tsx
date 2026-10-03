@@ -21,7 +21,7 @@ import { serializePlateToWikitext } from "./plate/wiki-wikitext";
 import { fixEditorImageUrls } from "~/lib/wiki-os/transformers/fix-editor-images";
 import type { TSlateEditor } from "platejs";
 
-export interface WikiVisualEditorProps {
+interface WikiVisualEditorProps {
   initialHtml?: string;
   initialWikitext?: string;
   title: string;
@@ -291,7 +291,6 @@ export function WikiVisualEditor({
           insertTable={fmt.insertTable}
           insertRef={fmt.insertRef}
           clearFormatting={fmt.clearFormatting}
-          insertHtmlAtCursor={fmt.insertHtmlAtCursor}
           handleInsertStashedImage={handleInsertStashedImage}
         />
 

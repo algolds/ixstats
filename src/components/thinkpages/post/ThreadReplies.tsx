@@ -4,7 +4,7 @@ import React from "react";
 import { SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 
-export interface ThreadRepliesProps {
+interface ThreadRepliesProps {
   post: any;
   showThread?: boolean;
   showReplies: boolean;

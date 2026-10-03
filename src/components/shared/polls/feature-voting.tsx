@@ -16,9 +16,9 @@ import { useControllableState } from "~/hooks/useControllableState";
  * Types
  * -------------------------------------------------------------------------- */
 
-export type FeatureVotingValue = Record<string, number>;
+type FeatureVotingValue = Record<string, number>;
 
-export interface FeatureVotingRootProps extends Omit<ComponentProps<"ul">, "defaultValue"> {
+interface FeatureVotingRootProps extends Omit<ComponentProps<"ul">, "defaultValue"> {
   /** Current vote counts (controlled) */
   value?: FeatureVotingValue;
   /** Initial vote counts (uncontrolled) */
@@ -35,22 +35,22 @@ export interface FeatureVotingRootProps extends Omit<ComponentProps<"ul">, "defa
   disabled?: boolean;
 }
 
-export interface FeatureVotingItemProps extends ComponentProps<"li"> {
+interface FeatureVotingItemProps extends ComponentProps<"li"> {
   /** Unique identifier for this feature */
   value: string;
   /** Whether this specific item is disabled */
   disabled?: boolean;
 }
 
-export type FeatureVotingTriggerProps = ComponentProps<"button">;
+type FeatureVotingTriggerProps = ComponentProps<"button">;
 
-export type FeatureVotingCountProps = ComponentProps<"span">;
+type FeatureVotingCountProps = ComponentProps<"span">;
 
-export type FeatureVotingTitleProps = ComponentProps<"span">;
+type FeatureVotingTitleProps = ComponentProps<"span">;
 
-export type FeatureVotingDescriptionProps = ComponentProps<"span">;
+type FeatureVotingDescriptionProps = ComponentProps<"span">;
 
-export interface FeatureVotingGroupProps extends ComponentProps<"div"> {
+interface FeatureVotingGroupProps extends ComponentProps<"div"> {
   /** Sort items by vote count */
   sortBy?: "votes-asc" | "votes-desc" | "none";
 }
@@ -340,11 +340,6 @@ function FeatureVotingDescription({ children, ...props }: FeatureVotingDescripti
 /* -----------------------------------------------------------------------------
  * Hook for external access
  * -------------------------------------------------------------------------- */
-
-export function useFeatureVoting() {
-  return useFeatureVotingContext();
-}
-
 /* -----------------------------------------------------------------------------
  * Export
  * -------------------------------------------------------------------------- */
@@ -357,14 +352,4 @@ export const FeatureVoting = {
   Count: FeatureVotingCount,
   Title: FeatureVotingTitle,
   Description: FeatureVotingDescription,
-};
-
-export {
-  FeatureVotingRoot,
-  FeatureVotingGroup,
-  FeatureVotingItem,
-  FeatureVotingTrigger,
-  FeatureVotingCount,
-  FeatureVotingTitle,
-  FeatureVotingDescription,
 };

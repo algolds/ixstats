@@ -3,7 +3,7 @@
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 
-export interface NationSwitcherProps {
+interface NationSwitcherProps {
   /** Called after a successful switch (e.g. to close the menu the switcher sits in). */
   onSwitched?: () => void;
   className?: string;

@@ -60,7 +60,7 @@ export function LineupBuilder({
         lastName: p.lastName,
         position: p.position,
         number: p.number,
-        overallRating: (p.ratings as Record<string, number> | undefined)?.overall ?? 50,
+        overallRating: (p.ratings as Record<string, number> | undefined)?.overall,
       }));
   }, [players, starters]);
 
@@ -149,7 +149,7 @@ export function LineupBuilder({
               .map((player) => {
                 const isStarter = starters.includes(player.id);
                 const isCaptain = captainId === player.id;
-                const ovr = player.ratings?.overall ?? 50;
+                const ovr = player.ratings?.overall;
 
                 return (
                   <div
@@ -190,14 +190,14 @@ export function LineupBuilder({
                           <span
                             className={cn(
                               "text-footnote font-semibold tabular-nums",
-                              ovr >= 80
+                              ovr !== undefined && ovr >= 80
                                 ? "text-yellow"
-                                : ovr >= 70
+                                : ovr !== undefined && ovr >= 70
                                   ? "text-green"
                                   : "text-label-secondary"
                             )}
                           >
-                            {ovr}
+                            {ovr ?? <span aria-label="Not recorded">—</span>}
                           </span>
                         </div>
                       </div>

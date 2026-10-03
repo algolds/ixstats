@@ -24,7 +24,7 @@ import { format } from "date-fns";
 /**
  * TradeHistory component props
  */
-export interface TradeHistoryProps {
+interface TradeHistoryProps {
   /** Optional filter by status */
   filterStatus?: "ACCEPTED" | "REJECTED" | "CANCELLED" | "EXPIRED";
   /** Optional callback when trade is clicked */

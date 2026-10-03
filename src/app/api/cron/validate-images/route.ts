@@ -26,7 +26,7 @@ import {
   validateEquipmentImagesJob,
   getValidationStats,
 } from "~/server/cron/validate-equipment-images";
-import { bearerMatches } from "~/lib/security/safe-equal";
+import { cronAuthError } from "../cron-auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -34,26 +34,8 @@ export const maxDuration = 300; // 5 minutes max
 
 export async function GET(request: NextRequest) {
   try {
-    // SECURITY: Verify authorization - REQUIRED in production
-    const authHeader = request.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET;
-    const isProduction = process.env.NODE_ENV === "production";
-
-    // In production, CRON_SECRET is mandatory
-    if (isProduction && !cronSecret) {
-      console.error("[SECURITY] CRON_SECRET not configured in production - cron endpoint disabled");
-      return NextResponse.json({ error: "Cron endpoint not configured" }, { status: 503 });
-    }
-
-    // Require valid Bearer token if CRON_SECRET is set
-    if (cronSecret) {
-      if (!bearerMatches(authHeader, cronSecret)) {
-        console.warn(
-          `[SECURITY] Unauthorized cron access attempt from ${request.headers.get("x-forwarded-for") || "unknown"}`
-        );
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
-    }
+    const authError = cronAuthError(request);
+    if (authError) return authError;
 
     // Check if this is a status check
     const url = new URL(request.url);

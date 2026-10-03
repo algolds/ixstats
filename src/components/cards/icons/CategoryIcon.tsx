@@ -29,10 +29,10 @@ import { getCategoryIconDef } from "./icon-paths";
 
 // ─── Types ──────────────────────────────────────────────────────
 
-export type IconTreatment = "watermark" | "emblem" | "seal";
-export type IconSize = "xs" | "sm" | "md" | "lg" | "xl";
+type IconTreatment = "watermark" | "emblem" | "seal";
+type IconSize = "xs" | "sm" | "md" | "lg" | "xl";
 
-export interface CategoryIconProps {
+interface CategoryIconProps {
   /** Which category icon to render */
   category: LoreCategory;
   /** Rendering treatment — controls size, opacity, and styling */

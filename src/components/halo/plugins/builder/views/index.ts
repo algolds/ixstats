@@ -1,2 +1,2 @@
-export { BuilderView, type BuilderViewProps, BuilderDIView } from "./BuilderView";
-export { BuilderProgressView, type BuilderProgressViewProps } from "./BuilderProgressView";
+export { BuilderView } from "./BuilderView";
+export { BuilderProgressView } from "./BuilderProgressView";

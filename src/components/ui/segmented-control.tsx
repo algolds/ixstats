@@ -27,7 +27,7 @@ import { useControllableState } from "~/hooks/useControllableState";
  * ```
  */
 
-export interface SegmentedControlOption<T extends string = string> {
+interface SegmentedControlOption<T extends string = string> {
   value: T;
   label: React.ReactNode;
   /** Leading icon element, e.g. `<ViewGrid />`. */
@@ -44,7 +44,7 @@ export interface SegmentedControlOption<T extends string = string> {
   badgeLabel?: string;
 }
 
-export interface SegmentedControlProps<T extends string = string> extends Omit<
+interface SegmentedControlProps<T extends string = string> extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
   "onChange" | "defaultValue" | "role" | "dir"
 > {

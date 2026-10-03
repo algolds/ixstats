@@ -14,7 +14,7 @@ import { withBasePath } from "~/lib/base-path";
 import { PersonaFollowButton } from "./PersonaFollowButton";
 import { Skeleton } from "~/components/ui/skeleton";
 
-export interface PersonaAuthorCardProps {
+interface PersonaAuthorCardProps {
   username: string;
   children: React.ReactNode;
 }

@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "~/compone
 import { springGentle } from "~/lib/design/motion";
 import { getSportTheme } from "~/lib/sports/theming";
 
-export interface ChampionshipRevealOverlayProps {
+interface ChampionshipRevealOverlayProps {
   isOpen: boolean;
   championName: string;
   championLogo?: string | null;

@@ -11,7 +11,7 @@ import { cn } from "~/lib/utils/cn";
  * row's end). The delta pairs its colour with an arrow icon and screen-reader text; `sentiment`
  * decides the colour when "up" is bad (e.g. debt).
  */
-export type StatDeltaDirection = "up" | "down" | "neutral";
+type StatDeltaDirection = "up" | "down" | "neutral";
 
 export interface StatDelta {
   /** Display text, e.g. "+2.4%" or "−120". */
@@ -45,7 +45,7 @@ const SENTIMENT_CLASS = {
   neutral: "text-label-secondary",
 } as const;
 
-export function StatDeltaBadge({ delta, className }: { delta: StatDelta; className?: string }) {
+function StatDeltaBadge({ delta, className }: { delta: StatDelta; className?: string }) {
   const Icon = DIRECTION_ICON[delta.direction];
   const sentiment = delta.sentiment ?? DEFAULT_SENTIMENT[delta.direction];
   return (

@@ -6,19 +6,19 @@ import { getPlayerPhotoUrl } from "~/lib/sports/photos";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
 import { Card } from "~/components/ui/card";
 
-export interface MatchupPlayer {
+interface MatchupPlayer {
   id: string;
   firstName: string;
   lastName: string;
   position: string;
   imageUrl?: string | null;
-  overallRating: number;
+  overallRating?: number;
   teamColor: string;
   teamLogo?: string | null;
   ratings: Record<string, number | undefined>;
 }
 
-export interface PlayerMatchupProps {
+interface PlayerMatchupProps {
   playerA: MatchupPlayer;
   playerB: MatchupPlayer;
   className?: string;
@@ -36,11 +36,6 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
   )
     .filter((k) => k !== "overall" && k !== "form" && k !== "injuredUntil")
     .slice(0, 5);
-
-  if (statKeys.length === 0) {
-    // Fallback comparison keys
-    statKeys.push("offense", "defense", "stamina", "speed");
-  }
 
   return (
     <Card padding="lg" className={cn("mx-auto w-full max-w-[550px] overflow-hidden", className)}>
@@ -70,7 +65,7 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
               className="border-separator text-footnote shadow-card absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full border font-semibold text-white tabular-nums"
               style={{ backgroundColor: colorA }}
             >
-              {playerA.overallRating}
+              {playerA.overallRating ?? "—"}
             </div>
           </div>
           <h4 className="text-label text-headline leading-tight">
@@ -108,7 +103,7 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
               className="border-separator text-footnote shadow-card absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full border font-semibold text-white tabular-nums"
               style={{ backgroundColor: colorB }}
             >
-              {playerB.overallRating}
+              {playerB.overallRating ?? "—"}
             </div>
           </div>
           <h4 className="text-label text-headline leading-tight">
@@ -125,10 +120,11 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
       {/* Comparison Sliders / Bars */}
       <div className="space-y-4">
         {statKeys.map((key) => {
-          const valA = Number(playerA.ratings[key] ?? 50);
-          const valB = Number(playerB.ratings[key] ?? 50);
-          const total = valA + valB;
-          const pctA = total > 0 ? (valA / total) * 100 : 50;
+          const valA = playerA.ratings[key];
+          const valB = playerB.ratings[key];
+          const total = (valA ?? 0) + (valB ?? 0);
+          const pctA =
+            valA !== undefined && valB !== undefined && total > 0 ? (valA / total) * 100 : 50;
 
           return (
             <div key={key} className="space-y-2">
@@ -136,19 +132,19 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
                 <span
                   className={cn(
                     "tabular-nums",
-                    valA > valB ? "text-label font-semibold" : "text-label-secondary"
+                    (valA ?? 0) > (valB ?? 0) ? "text-label font-semibold" : "text-label-secondary"
                   )}
                 >
-                  {valA}
+                  {valA ?? "—"}
                 </span>
                 <span className="text-label-secondary text-eyebrow">{key}</span>
                 <span
                   className={cn(
                     "tabular-nums",
-                    valB > valA ? "text-label font-semibold" : "text-label-secondary"
+                    (valB ?? 0) > (valA ?? 0) ? "text-label font-semibold" : "text-label-secondary"
                   )}
                 >
-                  {valB}
+                  {valB ?? "—"}
                 </span>
               </div>
 
@@ -175,5 +171,3 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
     </Card>
   );
 }
-
-export default PlayerMatchup;

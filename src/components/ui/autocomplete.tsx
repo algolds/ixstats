@@ -10,14 +10,14 @@ import { cn } from "~/lib/utils/cn";
 import { Command, CommandGroup, CommandItem, CommandList } from "~/components/ui/command";
 import { Badge } from "~/components/ui/badge";
 
-export interface AutocompleteSuggestion {
+interface AutocompleteSuggestion {
   id: string;
   value: string;
   usageCount?: number;
   isGlobal?: boolean;
 }
 
-export interface AutocompleteProps {
+interface AutocompleteProps {
   value: string;
   onChange: (value: string) => void;
   onBlur?: () => void;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "~/lib/utils";
-import { DynamicContainer } from "../HaloPrimitives";
+import { HaloContainer } from "../HaloPrimitives";
 import { Button } from "~/components/ui/button";
 
 import { useToastQueueStore } from "~/stores/toastQueueStore";
@@ -169,7 +169,7 @@ function CompactViewComponent({
         }}
       >
         <div className="h-full w-full">
-          <DynamicContainer
+          <HaloContainer
             className={`flex w-full items-center justify-center gap-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
               isSticky ? "px-3 py-2" : "px-4 py-2"
             } ${isFlashing ? "animate-flash-notification" : ""}`}
@@ -493,7 +493,7 @@ function CompactViewComponent({
                 </div>
               )}
             </div>
-          </DynamicContainer>
+          </HaloContainer>
         </div>
       </div>
     </TooltipProvider>

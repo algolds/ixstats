@@ -1,6 +1,5 @@
 "use client";
 
-import { cn } from "~/lib/utils";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Map as MapIcon, SystemRestart as Loader2, Compass } from "iconoir-react";
 import { api } from "~/trpc/react";

@@ -28,7 +28,7 @@ import {
 /**
  * HolographicOverlay component props
  */
-export interface HolographicOverlayProps {
+interface HolographicOverlayProps {
   /** Card rarity (determines effect intensity) */
   rarity: CardRarity;
   /** Enable mouse tracking for light refraction (default: true) */

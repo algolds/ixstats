@@ -39,7 +39,7 @@ const MediaSearchModal = dynamic(
   { ssr: false }
 );
 
-export interface PostComposersProps {
+interface PostComposersProps {
   post: any;
   showEditComposer: boolean;
   setShowEditComposer: (val: boolean) => void;

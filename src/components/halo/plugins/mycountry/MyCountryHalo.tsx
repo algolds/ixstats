@@ -45,4 +45,3 @@ export function MyCountryHalo() {
 }
 
 // Backwards compatibility alias
-export const MyCountryDIPlugin = MyCountryHalo;

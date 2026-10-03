@@ -13,7 +13,7 @@ import {
 import { VirtualAnchorPopover } from "~/components/ui/popover";
 import { useNotify } from "~/hooks/useNotify";
 
-export const HIGHLIGHT_PALETTE = [
+const HIGHLIGHT_PALETTE = [
   { color: "#fef036", label: "Yellow (Purpose)" },
   { color: "#4ade80", label: "Green (Geography)" },
   { color: "#38bdf8", label: "Blue (History)" },

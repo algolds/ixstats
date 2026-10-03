@@ -81,13 +81,6 @@ export const LORE_DIMENSIONS = [
   },
 ];
 
-export const THREAD_CATEGORIES = LORE_DIMENSIONS.map((d) => ({
-  id: d.id,
-  label: d.short,
-  emoji: d.emoji,
-  color: d.color,
-}));
-
 interface ThreadItem {
   id: string;
   articleTitle: string;

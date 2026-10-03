@@ -10,9 +10,8 @@ import { useSportsFocus } from "./SportsFocusProvider";
 import { getSportTheme } from "~/lib/sports/theming";
 import { cn } from "~/lib/utils";
 
-export interface SportsCommandBarProps {
+interface SportsCommandBarProps {
   title: string;
-  subtitle?: string;
   lobbyHref: string;
   lobbyLabel: string;
   activeSectionLabel?: string;
@@ -26,7 +25,6 @@ export interface SportsCommandBarProps {
 
 export function SportsCommandBar({
   title,
-  subtitle,
   lobbyHref,
   lobbyLabel,
   activeSectionLabel,

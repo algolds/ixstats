@@ -2,21 +2,14 @@
 
 import React from "react";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Trophy,
-  Play,
-  Settings,
-  SystemRestart as Loader2,
-  Calendar,
-} from "iconoir-react";
+import { ArrowLeft, Trophy, Play, Settings, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { withBasePath } from "~/lib/base-path";
 import type { SportThemeConfig as SportTheme } from "~/lib/sports/theming";
 import { cn } from "~/lib/utils";
 
-export interface LeagueMastheadProps {
+interface LeagueMastheadProps {
   league: {
     id: string;
     name: string;
@@ -192,5 +185,3 @@ export function LeagueMasthead({
     </header>
   );
 }
-
-export default LeagueMasthead;

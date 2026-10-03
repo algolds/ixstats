@@ -24,7 +24,7 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
 
   const rarestAll = achievements
     ?.filter((a) => a.isUnlocked)
-    .sort((a, b) => (a.globalUnlockPercent || 100) - (b.globalUnlockPercent || 100));
+    .sort((a, b) => (a.globalUnlockPercent ?? 100) - (b.globalUnlockPercent ?? 100));
 
   const rarestShowcase = rarestAll?.slice(0, showAll ? 9 : 3);
 

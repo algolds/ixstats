@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { formatThinkpagesContentForDisplay } from "~/lib/utils";
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 
-export interface RepostCardProps {
+interface RepostCardProps {
   post: any;
   cleanRepostContent: string;
   repostMediaAttachments?: any[];

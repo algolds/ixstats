@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Component as Layers, ArrowRight, Download } from "iconoir-react";
-import { cn } from "~/lib/utils";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
 import { CardDisplay } from "~/components/cards/display/CardDisplay";
@@ -10,7 +9,7 @@ import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import type { CardInstance } from "~/types/cards-display";
 import { Card } from "~/components/ui/card";
 
-export interface VaultCardHoldingsCardProps {
+interface VaultCardHoldingsCardProps {
   featuredCards: CardInstance[];
   topCardsLoading: boolean;
   onNavigate?: (section: string) => void;

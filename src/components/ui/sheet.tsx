@@ -30,9 +30,9 @@ import {
  */
 
 type SheetSide = "top" | "right" | "bottom" | "left";
-export type SheetDetent = "medium" | "large";
+type SheetDetent = "medium" | "large";
 /** Side-sheet width: `default` 3/4 up to 24rem · `wide` up to 48rem (two-column details). */
-export type SheetSize = "default" | "wide";
+type SheetSize = "default" | "wide";
 
 /** Width classes for left/right sheets per size (applied after the side classes). */
 const sheetSideSizeClassNames: Record<SheetSize, string> = {
@@ -41,7 +41,7 @@ const sheetSideSizeClassNames: Record<SheetSize, string> = {
 };
 
 /** Fraction of the viewport height each detent shows. */
-export const SHEET_DETENT_HEIGHT: Record<SheetDetent, number> = { medium: 0.5, large: 0.92 };
+const SHEET_DETENT_HEIGHT: Record<SheetDetent, number> = { medium: 0.5, large: 0.92 };
 
 const DEFAULT_DETENTS: readonly SheetDetent[] = ["medium", "large"];
 
@@ -460,14 +460,10 @@ SheetDescription.displayName = SheetPrimitive.Description.displayName;
 
 export {
   Sheet,
-  SheetPortal,
-  SheetOverlay,
   SheetTrigger,
-  SheetClose,
   SheetContent,
   SheetHeader,
   SheetFooter,
   SheetTitle,
   SheetDescription,
-  sheetVariants,
 };

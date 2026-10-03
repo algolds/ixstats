@@ -134,5 +134,3 @@ export const HealthRing: React.FC<HealthRingProps> = ({
 
   return ringContent;
 };
-
-export default HealthRing;

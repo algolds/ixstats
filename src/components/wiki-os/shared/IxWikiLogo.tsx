@@ -3,7 +3,7 @@
 import React from "react";
 import { cn } from "~/lib/utils";
 
-export interface IxWikiLogoProps extends React.SVGProps<SVGSVGElement> {
+interface IxWikiLogoProps extends React.SVGProps<SVGSVGElement> {
   className?: string;
   size?: number | string;
 }

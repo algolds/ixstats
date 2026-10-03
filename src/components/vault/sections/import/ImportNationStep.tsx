@@ -17,7 +17,7 @@ import { Input } from "~/components/ui/input";
 import { NationStatesAttribution } from "~/components/cards/display/NationStatesAttribution";
 import { Card } from "~/components/ui/card";
 
-export interface ImportNationStepProps {
+interface ImportNationStepProps {
   nationName: string;
   setNationName: (name: string) => void;
   showNameInput: boolean;

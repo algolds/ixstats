@@ -9,7 +9,7 @@ import { clearDraft, saveDraft } from "~/lib/wiki-os/editor/draft-store";
 import type { StashEntity, StashItemEntity, WikimediaImageMeta, SaveActionType } from "../types";
 import type { EditorModalState } from "../context/EditorModalContext";
 
-export interface UseWikiEditorStateProps {
+interface UseWikiEditorStateProps {
   title: string;
   onSave?: (
     content: string,

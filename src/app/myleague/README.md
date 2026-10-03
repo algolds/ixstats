@@ -81,7 +81,7 @@ Page components are thin; the workspace is `LeagueRouter` in `src/components/spo
 |-----------|------|
 | `LeagueCreator` | Multi-step create-league dialog |
 | `SportsShell` / `SportsSidebarNav` / `SportsCommandBar` (`src/components/sports/core/`) | Shared workspace shell + section nav (also used by MyClub) |
-| `SportsFocusProvider` / `SportsFocusOverlay` / `SportsFocusPanel` | URL-reflected Focus panel for teams, athletes, and matches |
+| `SportsFocusProvider` / `SportsFocusPanel` | URL-reflected Focus panel for teams, athletes, and matches |
 | `LeagueMasthead`, `LeagueBrandWidgets`, `LeagueControlDeck`, `MatchdayTape`, `NextMatchCountdown` | Header, brand/champion widgets, simulation controls |
 | `tabs/League*Tab.tsx` (`BracketView`, `RaceResults`, `DraftPicksView`) | Tab content views |
 | `MatchTickerSim`, `MatchDetailModal`, `match/MatchCenter` | Live match replay, per-match detail, COMPETE match center |

@@ -17,7 +17,7 @@ const sizes = {
   },
 } as const;
 
-export interface SwitchProps extends React.ComponentProps<typeof SwitchPrimitive.Root> {
+interface SwitchProps extends React.ComponentProps<typeof SwitchPrimitive.Root> {
   /** @default "sm" */
   size?: keyof typeof sizes;
 }

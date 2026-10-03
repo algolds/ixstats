@@ -17,7 +17,7 @@ import { Switch } from "~/components/ui/switch";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { GifPicker } from "../GifPicker";
 
-export interface ComposerActionBarProps {
+interface ComposerActionBarProps {
   showActionBar: boolean;
   remainingChars: number;
   showVisualizationPanel: boolean;

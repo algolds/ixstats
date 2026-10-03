@@ -172,4 +172,3 @@ export function SportsLiveHalo() {
 }
 
 // Backwards compatibility alias
-export const SportsLiveDIPlugin = SportsLiveHalo;

@@ -4,23 +4,13 @@ import "~/styles/card-art.css";
 // src/components/cards/pack-opening/Stage4_QuickActions.tsx
 // Stage 4: Post-reveal quick actions for cards
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { CardInstance, QuickActionType, QuickActionEvent } from "~/types/pack-opening";
 import { getPackOpeningService } from "~/lib/cards/pack-opening-service";
 import { CardHolographicCover } from "../display/CardHolographicCover";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 import { Button } from "~/components/ui/button";
-
-/** Placeholder quick-sell estimate per rarity, in IxCredits. */
-const RARITY_ESTIMATED_VALUE: Record<string, number> = {
-  COMMON: 10,
-  UNCOMMON: 25,
-  RARE: 75,
-  ULTRA_RARE: 200,
-  EPIC: 500,
-  LEGENDARY: 1500,
-};
 
 interface Stage4_QuickActionsProps {
   cards: CardInstance[];
@@ -44,13 +34,6 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
     const [bulkMode, setBulkMode] = useState(false);
     const [cardActions, setCardActions] = useState<Map<string, QuickActionType>>(new Map());
     const service = getPackOpeningService();
-
-    // Calculate estimated value
-    const estimatedValue = useMemo(() => {
-      return cards.reduce((total, card) => {
-        return total + (RARITY_ESTIMATED_VALUE[card.rarity] ?? 10);
-      }, 0);
-    }, [cards]);
 
     // Handle individual card action
     const handleCardAction = (cardId: string, action: QuickActionType) => {
@@ -120,11 +103,6 @@ export const Stage4_QuickActions = React.memo<Stage4_QuickActionsProps>(
               <p className="text-body text-label-secondary mt-1">
                 {cards.length} card{cards.length !== 1 ? "s" : ""}
               </p>
-            </div>
-
-            <div className="text-right">
-              <div className="text-body text-label-secondary">Estimated value</div>
-              <div className="text-title-1 text-yellow">{estimatedValue.toLocaleString()} IC</div>
             </div>
           </div>
 
@@ -244,8 +222,6 @@ interface CardActionItemProps {
 const CardActionItem = React.memo<CardActionItemProps>(
   ({ card, index, isSelected, bulkMode, action, onToggleSelect, onAction, service }) => {
     const rarityColor = service.getRarityColor(card.rarity);
-
-    const estimatedValue = RARITY_ESTIMATED_VALUE[card.rarity] ?? 10;
 
     return (
       <motion.div
@@ -381,11 +357,6 @@ const CardActionItem = React.memo<CardActionItemProps>(
             </Button>
           </motion.div>
         )}
-
-        {/* Estimated value */}
-        <div className="text-footnote text-label-secondary mt-1 text-center">
-          ~{estimatedValue} IC
-        </div>
       </motion.div>
     );
   }

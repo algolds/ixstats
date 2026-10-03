@@ -26,7 +26,7 @@ import { CardHolographicCover } from "../display/CardHolographicCover";
 /**
  * TradeNegotiation component props
  */
-export interface TradeNegotiationProps {
+interface TradeNegotiationProps {
   /** Trade offer ID */
   tradeId: string;
   /** Is current user the recipient? */
@@ -56,6 +56,72 @@ export interface TradeNegotiationProps {
  * />
  * ```
  */
+/** One side of a trade: its cards, any credits, and the total value. */
+function TradeSideCard({
+  title,
+  titleClassName,
+  cards,
+  credits,
+  value,
+}: {
+  title: string;
+  titleClassName: string;
+  cards: any[];
+  credits: number;
+  value: number;
+}) {
+  return (
+    <div className="bg-surface-secondary border-separator rounded-control border p-4">
+      <h4 className={cn("text-headline mb-3", titleClassName)}>{title}</h4>
+
+      {/* Cards */}
+      <div className="mb-4 space-y-3">
+        {cards.map((ownership: any) => (
+          <div key={ownership.id} className="bg-fill-3 rounded-control flex items-center gap-3 p-2">
+            <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded">
+              <CardHolographicCover
+                cardType={ownership.cards.cardType || "NATION"}
+                rarity={ownership.cards.rarity || "COMMON"}
+                title={ownership.cards.title}
+              />
+              <Image
+                src={ownership.cards.artwork || "/images/cards/placeholder-nation.png"}
+                alt={ownership.cards.title}
+                fill
+                className="object-cover"
+                unoptimized
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-body text-label truncate font-medium">{ownership.cards.title}</p>
+              <p className="text-footnote text-label-secondary">
+                {ownership.cards.rarity} • {ownership.cards.marketValue?.toLocaleString()} credits
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Credits */}
+      {credits > 0 && (
+        <div className="bg-fill-3 rounded-control mb-3 flex items-center gap-2 p-3">
+          <Coins className="text-yellow h-5 w-5" />
+          <span className="text-label font-semibold">+{credits.toLocaleString()} IxCredits</span>
+        </div>
+      )}
+
+      {/* Total value */}
+      <div className="border-separator border-t pt-3">
+        <p className="text-body text-label-secondary">Total value</p>
+        <p className="text-title-2 text-label">{value.toLocaleString()} credits</p>
+      </div>
+    </div>
+  );
+}
+
 export const TradeNegotiation = React.memo<TradeNegotiationProps>(
   ({ tradeId, isRecipient, onRefresh }) => {
     // Fetch trade details
@@ -164,125 +230,20 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
 
         {/* Trade display */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* Your side */}
-          <div className="bg-surface-secondary border-separator rounded-control border p-4">
-            <h4 className="text-headline text-blue mb-3">
-              You {isRecipient ? "Receive" : "Offer"}
-            </h4>
-
-            {/* Cards */}
-            <div className="mb-4 space-y-3">
-              {yourCards.map((ownership: any) => (
-                <div
-                  key={ownership.id}
-                  className="bg-fill-3 rounded-control flex items-center gap-3 p-2"
-                >
-                  <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded">
-                    <CardHolographicCover
-                      cardType={ownership.cards.cardType || "NATION"}
-                      rarity={ownership.cards.rarity || "COMMON"}
-                      title={ownership.cards.title}
-                    />
-                    <Image
-                      src={ownership.cards.artwork || "/images/cards/placeholder-nation.png"}
-                      alt={ownership.cards.title}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-body text-label truncate font-medium">
-                      {ownership.cards.title}
-                    </p>
-                    <p className="text-footnote text-label-secondary">
-                      {ownership.cards.rarity} • {ownership.cards.marketValue?.toLocaleString()}{" "}
-                      credits
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Credits */}
-            {yourCredits > 0 && (
-              <div className="bg-fill-3 rounded-control mb-3 flex items-center gap-2 p-3">
-                <Coins className="text-yellow h-5 w-5" />
-                <span className="text-label font-semibold">
-                  +{yourCredits.toLocaleString()} IxCredits
-                </span>
-              </div>
-            )}
-
-            {/* Total value */}
-            <div className="border-separator border-t pt-3">
-              <p className="text-body text-label-secondary">Total value</p>
-              <p className="text-title-2 text-label">{yourValue.toLocaleString()} credits</p>
-            </div>
-          </div>
-
-          {/* Their side */}
-          <div className="bg-surface-secondary border-separator rounded-control border p-4">
-            <h4 className="text-headline text-green mb-3">
-              They {isRecipient ? "Offer" : "Receive"}
-            </h4>
-
-            {/* Cards */}
-            <div className="mb-4 space-y-3">
-              {theirCards.map((ownership: any) => (
-                <div
-                  key={ownership.id}
-                  className="bg-fill-3 rounded-control flex items-center gap-3 p-2"
-                >
-                  <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded">
-                    <CardHolographicCover
-                      cardType={ownership.cards.cardType || "NATION"}
-                      rarity={ownership.cards.rarity || "COMMON"}
-                      title={ownership.cards.title}
-                    />
-                    <Image
-                      src={ownership.cards.artwork || "/images/cards/placeholder-nation.png"}
-                      alt={ownership.cards.title}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-body text-label truncate font-medium">
-                      {ownership.cards.title}
-                    </p>
-                    <p className="text-footnote text-label-secondary">
-                      {ownership.cards.rarity} • {ownership.cards.marketValue?.toLocaleString()}{" "}
-                      credits
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Credits */}
-            {theirCredits > 0 && (
-              <div className="bg-fill-3 rounded-control mb-3 flex items-center gap-2 p-3">
-                <Coins className="text-yellow h-5 w-5" />
-                <span className="text-label font-semibold">
-                  +{theirCredits.toLocaleString()} IxCredits
-                </span>
-              </div>
-            )}
-
-            {/* Total value */}
-            <div className="border-separator border-t pt-3">
-              <p className="text-body text-label-secondary">Total value</p>
-              <p className="text-title-2 text-label">{theirValue.toLocaleString()} credits</p>
-            </div>
-          </div>
+          <TradeSideCard
+            title={`You ${isRecipient ? "Receive" : "Offer"}`}
+            titleClassName="text-blue"
+            cards={yourCards}
+            credits={yourCredits}
+            value={yourValue}
+          />
+          <TradeSideCard
+            title={`They ${isRecipient ? "Offer" : "Receive"}`}
+            titleClassName="text-green"
+            cards={theirCards}
+            credits={theirCredits}
+            value={theirValue}
+          />
         </div>
 
         {/* Actions */}

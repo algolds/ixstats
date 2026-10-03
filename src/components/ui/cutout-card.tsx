@@ -28,7 +28,6 @@ import {
   type MouseEventHandler,
   type ReactNode,
 } from "react";
-import Image from "next/image";
 import { useControllableState } from "~/hooks/useControllableState";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 
@@ -39,7 +38,7 @@ import { EASE_OUT_FACET, springGentle, tweenFast } from "~/lib/design/motion";
 // Tokens — the card chrome
 // ============================================================================
 
-export const cutoutCardSurfaceShadowClassName =
+const cutoutCardSurfaceShadowClassName =
   "border border-separator shadow-(--cutout-shadow) hover:shadow-(--cutout-shadow-hover) [--facet-lift-shadow:var(--cutout-shadow-hover)]";
 
 export const cutoutCardSurfaceClassName = cn(
@@ -47,10 +46,10 @@ export const cutoutCardSurfaceClassName = cn(
   cutoutCardSurfaceShadowClassName
 );
 
-export const cutoutCardGlassClassName =
+const cutoutCardGlassClassName =
   "group/cutout material-hero text-label rounded-cutout relative overflow-hidden";
 
-export type CutoutCardVariant = "card" | "glass";
+type CutoutCardVariant = "card" | "glass";
 
 const VARIANT_CLASS: Record<CutoutCardVariant, string> = {
   card: cutoutCardSurfaceClassName,
@@ -58,7 +57,7 @@ const VARIANT_CLASS: Record<CutoutCardVariant, string> = {
 };
 
 /** Blur-in rise for staggered text; a 150ms cross-fade under Reduce Motion. */
-export function useCutoutContentStaggerVariants() {
+function useCutoutContentStaggerVariants() {
   const reduceMotion = useReducedMotion();
 
   return useMemo(() => {
@@ -94,14 +93,14 @@ const CORNER_PATH = "M0 200C155.996 199.961 200.029 156.308 200 0V200H0Z";
 // Context
 // ============================================================================
 
-export interface CutoutCardContextValue {
+interface CutoutCardContextValue {
   hovered: boolean;
   setHovered: (next: boolean) => void;
 }
 
 const CutoutCardContext = createContext<CutoutCardContextValue | null>(null);
 
-export function useCutoutCard() {
+function useCutoutCard() {
   const ctx = useContext(CutoutCardContext);
   if (!ctx) {
     throw new Error("useCutoutCard must be used within <CutoutCard>");
@@ -109,15 +108,11 @@ export function useCutoutCard() {
   return ctx;
 }
 
-export function useOptionalCutoutCard() {
-  return useContext(CutoutCardContext);
-}
-
 // ============================================================================
 // Root
 // ============================================================================
 
-export type CutoutCardProps = Omit<ComponentProps<typeof motion.div>, "defaultValue"> & {
+type CutoutCardProps = Omit<ComponentProps<typeof motion.div>, "defaultValue"> & {
   /** `card` is the opaque cutout surface, `glass` the hero glass. Omit to style it yourself. */
   variant?: CutoutCardVariant;
   /**
@@ -248,60 +243,7 @@ export function CutoutCard({
 // Layout primitives
 // ============================================================================
 
-export type CutoutCardMediaProps = HTMLAttributes<HTMLDivElement>;
-
-export function CutoutCardMedia({ className, ...props }: CutoutCardMediaProps) {
-  return (
-    <div
-      className={cn("relative overflow-hidden", className)}
-      data-slot="cutout-card-media"
-      {...props}
-    />
-  );
-}
-
-export type CutoutCardImageProps = ComponentProps<typeof Image>;
-
-/**
- * Uses `fill` by default; parent `CutoutCardMedia` should be `relative` with a defined block size.
- * Zooms to 105% over 700ms while the card is hovered; still under Reduce Motion.
- */
-export function CutoutCardImage({
-  className,
-  alt = "",
-  fill = true,
-  sizes = "(max-width: 768px) 100vw, 28rem",
-  ...props
-}: CutoutCardImageProps) {
-  return (
-    <Image
-      alt={alt}
-      className={cn(
-        "ease-out-facet object-cover transition-[scale] duration-700 group-hover/cutout:scale-105 motion-reduce:transition-none motion-reduce:group-hover/cutout:scale-100",
-        fill && "h-full w-full",
-        className
-      )}
-      data-slot="cutout-card-image"
-      {...props}
-      fill={fill}
-      sizes={fill ? sizes : undefined}
-    />
-  );
-}
-
-export type CutoutCardOverlayProps = HTMLAttributes<HTMLDivElement>;
-
-export function CutoutCardOverlay({ className, ...props }: CutoutCardOverlayProps) {
-  return (
-    <div
-      className={cn("bg-fill-4 pointer-events-none absolute inset-0", className)}
-      data-slot="cutout-card-overlay"
-      {...props}
-    />
-  );
-}
-
-export type CutoutCardContentProps = HTMLAttributes<HTMLDivElement>;
+type CutoutCardContentProps = HTMLAttributes<HTMLDivElement>;
 
 export function CutoutCardContent({ className, ...props }: CutoutCardContentProps) {
   return (
@@ -309,19 +251,7 @@ export function CutoutCardContent({ className, ...props }: CutoutCardContentProp
   );
 }
 
-export type CutoutCardFooterProps = HTMLAttributes<HTMLDivElement>;
-
-export function CutoutCardFooter({ className, ...props }: CutoutCardFooterProps) {
-  return (
-    <div
-      className={cn("relative flex items-center justify-between", className)}
-      data-slot="cutout-card-footer"
-      {...props}
-    />
-  );
-}
-
-export type CutoutCardStaggerProps = ComponentProps<typeof motion.div>;
+type CutoutCardStaggerProps = ComponentProps<typeof motion.div>;
 
 /**
  * The blur-in stagger container: its `CutoutCardStaggerItem` children rise and sharpen one after
@@ -341,7 +271,7 @@ export function CutoutCardStagger({ className, ...props }: CutoutCardStaggerProp
   );
 }
 
-export type CutoutCardStaggerItemProps = ComponentProps<typeof motion.div>;
+type CutoutCardStaggerItemProps = ComponentProps<typeof motion.div>;
 
 export function CutoutCardStaggerItem(props: CutoutCardStaggerItemProps) {
   const variants = useCutoutContentStaggerVariants();
@@ -352,7 +282,7 @@ export function CutoutCardStaggerItem(props: CutoutCardStaggerItemProps) {
 // Cutout geometry
 // ============================================================================
 
-export type CutoutCornerProps = ComponentProps<"svg"> & {
+type CutoutCornerProps = ComponentProps<"svg"> & {
   /** Pixel width/height of the SVG viewBox (square). */
   size?: number;
 };
@@ -385,9 +315,9 @@ export function CutoutCorner({
 }
 
 /** Elements the `CutoutCardHeader` title can render as. */
-export type CutoutCardHeaderTitleElement = "span" | "div" | "h2" | "h3" | "h4";
+type CutoutCardHeaderTitleElement = "span" | "div" | "h2" | "h3" | "h4";
 
-export interface CutoutCardHeaderProps extends HTMLAttributes<HTMLDivElement> {
+interface CutoutCardHeaderProps extends HTMLAttributes<HTMLDivElement> {
   /** Leading glyph in the app tint, 16px. */
   icon?: ReactNode;
   /** Trailing content (a count `Badge`, a link). Never inside the heading. */
@@ -442,27 +372,11 @@ export function CutoutCardHeader({
   );
 }
 
-export type CutoutCardInsetLabelProps = HTMLAttributes<HTMLDivElement>;
-
-/** Absolutely positioned strip (e.g. bottom-left “Featured”); add corners as siblings inside. Static (no entrance motion) to avoid compositing seams next to the media edge. */
-export function CutoutCardInsetLabel({ className, ...props }: CutoutCardInsetLabelProps) {
-  return (
-    <div className={cn("absolute", className)} data-slot="cutout-card-inset-label" {...props} />
-  );
-}
-
-export type CutoutCardPinProps = HTMLAttributes<HTMLDivElement>;
-
-/** Corner badge shell (e.g. top-right “New”); add corners as siblings inside. Static (no entrance motion). */
-export function CutoutCardPin({ className, ...props }: CutoutCardPinProps) {
-  return <div className={cn("absolute", className)} data-slot="cutout-card-pin" {...props} />;
-}
-
 // ============================================================================
 // Context-sensitive action region
 // ============================================================================
 
-export type CutoutCardActionProps = ComponentProps<typeof motion.div> & {
+type CutoutCardActionProps = ComponentProps<typeof motion.div> & {
   /**
    * When true (default), visibility follows card hover (or focus within) from context.
    * Set false to always show the region.

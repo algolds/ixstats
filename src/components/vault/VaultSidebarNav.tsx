@@ -19,7 +19,7 @@ export type VaultSection =
 
 const ACTIVE_ROW = "bg-tint-fill border-separator text-label font-semibold";
 
-export const VAULT_NAV_ITEMS: {
+const VAULT_NAV_ITEMS: {
   id: VaultSection;
   href: string;
   icon: typeof Home;

@@ -11,7 +11,6 @@ import {
   ViewGrid as Grid3x3,
   List,
   Expand as Maximize2,
-  Copy,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
@@ -81,10 +80,6 @@ export function InventorySidebarContent({
             <span className="text-yellow font-semibold">
               <NumberFlow value={totalValue} />
             </span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Copy className="text-indigo h-3 w-3 shrink-0" />
-            <span className="text-indigo font-semibold">0</span>
           </div>
         </div>
       </Card>

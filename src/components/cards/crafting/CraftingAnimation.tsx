@@ -16,7 +16,7 @@ import { CardDisplay } from "../display/CardDisplay";
 /**
  * CraftingAnimation props
  */
-export interface CraftingAnimationProps {
+interface CraftingAnimationProps {
   /** Whether crafting was successful */
   success: boolean;
   /** Result card (if successful) */

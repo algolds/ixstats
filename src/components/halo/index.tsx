@@ -4,13 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { stripBasePath } from "~/lib/base-path";
 import { motion, AnimatePresence, type PanInfo } from "motion/react";
-import {
-  DynamicIsland,
-  useDynamicIslandSize,
-  SIZE_PRESETS,
-  DynamicIslandProvider,
-  type SizePresets,
-} from "./HaloPrimitives";
+import { Halo, useHaloSize, SIZE_PRESETS, HaloProvider, type SizePresets } from "./HaloPrimitives";
 import { CompactView, ExpandedView, NavTray } from "./views";
 import { getSectionForPath } from "./views/NavTray";
 import { useDynamicIslandState } from "./hooks";
@@ -23,29 +17,6 @@ import { HaloTourProvider, useHaloTour } from "./HaloTourContext";
 import { HaloTourTooltip } from "./HaloTourTooltip";
 import { springSnappy } from "~/lib/design/motion";
 import { cn } from "~/lib/utils";
-
-// Re-export original dynamic island components for backward compatibility
-export {
-  DynamicIsland,
-  DynamicContainer,
-  useDynamicIslandSize,
-  SIZE_PRESETS,
-  DynamicIslandProvider,
-  Halo,
-  HaloContainer,
-  useHaloSize,
-  HaloProvider,
-} from "./HaloPrimitives";
-
-// Re-export plugin system for page-level consumption
-export {
-  useDIPlugin,
-  useActiveDIPlugin,
-  useAllDIPlugins,
-  useDIPluginView,
-  DIPluginProvider,
-} from "./plugin-context";
-export type { DIPlugin, DIAction, DIViewProps, DIBadge } from "./types";
 
 interface CommandPaletteProps {
   className?: string;
@@ -64,7 +35,7 @@ function CommandPaletteContent({
   diState: ReturnType<typeof useDynamicIslandState>;
   isTourActive?: boolean;
 }) {
-  const { state: diSizeState, setSize } = useDynamicIslandSize();
+  const { state: diSizeState, setSize } = useHaloSize();
   const [mounted, setMounted] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [diPulseClass, setDiPulseClass] = useState("");
@@ -327,7 +298,7 @@ function CommandPaletteContent({
           onDragEnd={handleDragEnd}
           style={{ touchAction: "none" }}
         >
-          <DynamicIsland id="command-palette">
+          <Halo id="command-palette">
             {isNavLoading ? (
               <div
                 key="loading"
@@ -368,7 +339,7 @@ function CommandPaletteContent({
                 />
               </div>
             )}
-          </DynamicIsland>
+          </Halo>
 
           {/* Section accent line — visible when sticky */}
           {activeIsSticky && (
@@ -401,9 +372,9 @@ export function CommandPalette({ className, isSticky, scrollY }: CommandPaletteP
 
   return (
     <HaloTourProvider>
-      <DynamicIslandProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
+      <HaloProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
         <CommandPaletteWrapper className={className} isSticky={isSticky} scrollY={scrollY} />
-      </DynamicIslandProvider>
+      </HaloProvider>
     </HaloTourProvider>
   );
 }

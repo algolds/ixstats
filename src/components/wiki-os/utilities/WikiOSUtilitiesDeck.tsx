@@ -10,7 +10,7 @@ import { GovernanceSection } from "./domain/GovernanceSection";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 
-export type UtilityDomain = "all" | "discovery" | "editorial" | "diagnostics" | "governance";
+type UtilityDomain = "all" | "discovery" | "editorial" | "diagnostics" | "governance";
 
 interface WikiOSUtilitiesDeckProps {
   embedded?: boolean;

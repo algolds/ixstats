@@ -6,7 +6,7 @@ import { Trophy } from "iconoir-react";
 import { DraftPicksView, type DraftPick } from "~/components/sports/league/DraftPicksView";
 import { Card } from "~/components/ui/card";
 
-export interface LeagueDraftTabProps {
+interface LeagueDraftTabProps {
   picks: DraftPick[];
   sportPreset: string;
   onTeamClick?: (teamId: string) => void;
@@ -42,5 +42,3 @@ export function LeagueDraftTab({ picks, sportPreset, onTeamClick }: LeagueDraftT
     </Card>
   );
 }
-
-export default LeagueDraftTab;

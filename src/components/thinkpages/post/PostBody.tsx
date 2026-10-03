@@ -10,7 +10,7 @@ import { formatThinkpagesContentForDisplay } from "~/lib/utils";
 import { PostInlineLinkPreview, getInlinePreviewLink } from "./PostInlineLinkPreview";
 import { parseSportsBulletin, type SportsBulletinData } from "~/lib/sports/feed-bulletins";
 
-export interface PostBodyProps {
+interface PostBodyProps {
   content: string;
   cleanContent: string;
   blurbMeta?: {

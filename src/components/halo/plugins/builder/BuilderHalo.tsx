@@ -7,7 +7,7 @@
  * manual save action trigger, and expanded builder modal views.
  */
 
-import React, { useMemo, useRef, useEffect } from "react";
+import React, { useMemo, useEffect } from "react";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import {
   useBuilderFilter,
@@ -210,6 +210,3 @@ export function BuilderHalo() {
 
   return <BuilderHaloInner filter={filter} context={context} />;
 }
-
-// Backwards compatibility alias
-export const BuilderDIPlugin = BuilderHalo;

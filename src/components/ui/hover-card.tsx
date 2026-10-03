@@ -15,10 +15,6 @@ function HoverCardTrigger({ ...props }: React.ComponentProps<typeof HoverCardPri
   return <HoverCardPrimitive.Trigger data-slot="hover-card-trigger" {...props} />;
 }
 
-function HoverCardPortal({ ...props }: React.ComponentProps<typeof HoverCardPrimitive.Portal>) {
-  return <HoverCardPrimitive.Portal data-slot="hover-card-portal" {...props} />;
-}
-
 function HoverCardContent({
   className,
   align = "center",
@@ -44,7 +40,7 @@ function HoverCardContent({
 
 const HoverCardArrow = HoverCardPrimitive.Arrow;
 
-export type VirtualAnchorHoverCardProps = Omit<VirtualAnchorPopoverProps, "surface">;
+type VirtualAnchorHoverCardProps = Omit<VirtualAnchorPopoverProps, "surface">;
 
 /**
  * A hover card anchored to a `VirtualAnchor` (an element found by event delegation, a range, a
@@ -70,11 +66,4 @@ function VirtualAnchorHoverCard({
   );
 }
 
-export {
-  HoverCard,
-  HoverCardTrigger,
-  HoverCardContent,
-  HoverCardPortal,
-  HoverCardArrow,
-  VirtualAnchorHoverCard,
-};
+export { HoverCard, HoverCardTrigger, HoverCardContent, HoverCardArrow, VirtualAnchorHoverCard };

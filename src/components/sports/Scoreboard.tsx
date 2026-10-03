@@ -5,7 +5,7 @@ import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 
-export interface TeamInfo {
+interface TeamInfo {
   id: string;
   name: string;
   city?: string | null;
@@ -13,7 +13,7 @@ export interface TeamInfo {
   logo?: string | null;
 }
 
-export interface ScoreboardProps {
+interface ScoreboardProps {
   homeTeam: TeamInfo;
   awayTeam: TeamInfo;
   homeScore?: number | null;
@@ -158,5 +158,3 @@ export function Scoreboard({
     </Card>
   );
 }
-
-export default Scoreboard;

@@ -10,9 +10,8 @@ import { Search, ArrowSeparate as ArrowLeftRight } from "iconoir-react";
 import { PositionTooltip } from "~/components/sports/PositionTooltip";
 import { PlayerMatchup } from "~/components/sports/PlayerMatchup";
 import { useNotify } from "~/hooks/useNotify";
-import { cn } from "~/lib/utils";
 
-export interface ComparePlayerItem {
+interface ComparePlayerItem {
   id: string;
   firstName: string;
   lastName: string;
@@ -25,7 +24,7 @@ export interface ComparePlayerItem {
   } | null;
 }
 
-export interface ClubTransfersSectionProps {
+interface ClubTransfersSectionProps {
   teamId: string;
   teamColor?: string;
   squadPlayers?: Array<{
@@ -220,7 +219,7 @@ export function ClubTransfersSection({
                         </span>
                       </PositionTooltip>{" "}
                       &middot; {l.player.team.name} &middot; OVR{" "}
-                      {(l.player.ratings as { overall?: number } | undefined)?.overall ?? 50}
+                      {(l.player.ratings as { overall?: number } | undefined)?.overall ?? "—"}
                     </p>
                     <p className="text-footnote text-tint mt-0.5 font-medium tabular-nums">
                       Asking Price: ₷{l.price}
@@ -292,8 +291,8 @@ export function ClubTransfersSection({
                   firstName: squadComparePlayer.firstName,
                   lastName: squadComparePlayer.lastName,
                   position: squadComparePlayer.position,
-                  overallRating:
-                    (squadComparePlayer.ratings as { overall?: number } | undefined)?.overall ?? 50,
+                  overallRating: (squadComparePlayer.ratings as { overall?: number } | undefined)
+                    ?.overall,
                   teamColor: teamColor,
                   ratings: (squadComparePlayer.ratings as Record<string, number>) ?? {},
                 }}
@@ -302,8 +301,8 @@ export function ClubTransfersSection({
                   firstName: comparePlayer.firstName,
                   lastName: comparePlayer.lastName,
                   position: comparePlayer.position,
-                  overallRating:
-                    (comparePlayer.ratings as { overall?: number } | undefined)?.overall ?? 50,
+                  overallRating: (comparePlayer.ratings as { overall?: number } | undefined)
+                    ?.overall,
                   teamColor: comparePlayer.team?.color ?? "#ef4444",
                   ratings: (comparePlayer.ratings as Record<string, number>) ?? {},
                 }}
@@ -414,5 +413,3 @@ export function ClubTransfersSection({
     </div>
   );
 }
-
-export default ClubTransfersSection;

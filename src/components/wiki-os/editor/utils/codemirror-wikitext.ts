@@ -6,14 +6,14 @@ import type { DecorationSet, ViewUpdate, EditorView } from "@codemirror/view";
 import { RangeSetBuilder } from "@codemirror/state";
 import { scanTemplates } from "~/lib/wiki-os/wikitext/template-parser";
 
-export const headingDeco = Decoration.mark({ class: "cm-wikitext-heading" });
-export const listDeco = Decoration.mark({ class: "cm-wikitext-list" });
-export const boldDeco = Decoration.mark({ class: "cm-wikitext-bold" });
-export const italicDeco = Decoration.mark({ class: "cm-wikitext-italic" });
-export const linkDeco = Decoration.mark({ class: "cm-wikitext-link" });
-export const extlinkDeco = Decoration.mark({ class: "cm-wikitext-extlink" });
-export const templateDeco = Decoration.mark({ class: "cm-wikitext-template" });
-export const refDeco = Decoration.mark({ class: "cm-wikitext-ref" });
+const headingDeco = Decoration.mark({ class: "cm-wikitext-heading" });
+const listDeco = Decoration.mark({ class: "cm-wikitext-list" });
+const boldDeco = Decoration.mark({ class: "cm-wikitext-bold" });
+const italicDeco = Decoration.mark({ class: "cm-wikitext-italic" });
+const linkDeco = Decoration.mark({ class: "cm-wikitext-link" });
+const extlinkDeco = Decoration.mark({ class: "cm-wikitext-extlink" });
+const templateDeco = Decoration.mark({ class: "cm-wikitext-template" });
+const refDeco = Decoration.mark({ class: "cm-wikitext-ref" });
 
 export const wikitextHighlightPlugin = ViewPlugin.fromClass(
   class {
@@ -177,32 +177,5 @@ export const wrapSelectionCM = (view: EditorView, before: string, after: string)
     selection: { anchor: from + before.length, head: to + before.length },
     userEvent: "input",
   });
-  return true;
-};
-
-export const insertAtCursorCM = (view: EditorView, text: string) => {
-  const { from } = view.state.selection.main;
-  view.dispatch({
-    changes: { from, insert: text },
-    selection: { anchor: from + text.length },
-    userEvent: "input",
-  });
-  return true;
-};
-
-export const toggleLinePrefixCM = (view: EditorView, prefix: string) => {
-  const { from } = view.state.selection.main;
-  const line = view.state.doc.lineAt(from);
-  if (line.text.startsWith(prefix)) {
-    view.dispatch({
-      changes: { from: line.from, to: line.from + prefix.length, insert: "" },
-      userEvent: "input",
-    });
-  } else {
-    view.dispatch({
-      changes: { from: line.from, insert: prefix },
-      userEvent: "input",
-    });
-  }
   return true;
 };

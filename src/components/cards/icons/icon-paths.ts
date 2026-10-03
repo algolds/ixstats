@@ -9,7 +9,7 @@
 
 import type { LoreCategory } from "~/lib/cards/category-enums";
 
-export interface CategoryIconDef {
+interface CategoryIconDef {
   viewBox: string;
   path: string;
   source: string;

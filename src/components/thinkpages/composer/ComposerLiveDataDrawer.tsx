@@ -15,7 +15,7 @@ import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { springSmooth } from "~/lib/design/motion";
 
-export interface ComposerLiveDataDrawerProps {
+interface ComposerLiveDataDrawerProps {
   showVisualizationPanel: boolean;
   isGeneratingVisualization: boolean;
   isLoadingEconomic?: boolean;

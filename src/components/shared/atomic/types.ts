@@ -81,14 +81,7 @@ export interface UnifiedAtomicCardProps {
 }
 
 // ==================== UTILITY TYPES ====================
-
-export type ComponentComplexity = "Low" | "Medium" | "High";
-
 export type ThemeType = "unified" | "category-based";
-
-export type ColorVariant =
-  "gold" | "blue" | "emerald" | "indigo" | "cyan" | "amber" | "purple" | "teal" | "green" | "red";
-
 // ==================== THEME UTILITIES ====================
 
 export function getThemeClasses(

@@ -34,7 +34,7 @@ import { SettingsDropdown } from "./shared/SettingsDropdown";
 import { WikiEditorHeader } from "./WikiEditorHeader";
 import { Button } from "~/components/ui/button";
 
-export interface WikiVisualToolbarProps {
+interface WikiVisualToolbarProps {
   title: string;
   wordCount: number;
   isDirty: boolean;
@@ -53,7 +53,6 @@ export interface WikiVisualToolbarProps {
   insertTable: () => void;
   insertRef: () => void;
   clearFormatting: () => void;
-  insertHtmlAtCursor: (html: string) => void;
   saveSelection?: () => void;
   restoreSelection?: () => void;
   handleInsertStashedImage: (filename: string) => void;
@@ -77,7 +76,6 @@ export function WikiVisualToolbar({
   insertTable,
   insertRef,
   clearFormatting,
-  insertHtmlAtCursor,
   saveSelection,
   restoreSelection,
   handleInsertStashedImage,

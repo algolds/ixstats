@@ -28,7 +28,6 @@ interface ThinktankPapersTabProps {
   groupId: string;
   groupName?: string;
   isMember?: boolean;
-  currentUserId: string;
 }
 
 export function ThinktankPapersTab({
@@ -36,7 +35,6 @@ export function ThinktankPapersTab({
   // oxlint-disable-next-line eslint/no-unused-vars
   groupName = "Group",
   isMember = true,
-  currentUserId,
 }: ThinktankPapersTabProps) {
   const notify = useNotify();
   const utils = api.useUtils();

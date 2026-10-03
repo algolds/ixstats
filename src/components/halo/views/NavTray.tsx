@@ -20,7 +20,7 @@ import { FacetMaterial } from "~/components/ui/facet";
 import { focusRing } from "~/components/ui/button";
 
 // ─── Section color mapping ─────────────────────
-export const SECTION_COLORS: Record<string, { accent: string; bg: string; label: string }> = {
+const SECTION_COLORS: Record<string, { accent: string; bg: string; label: string }> = {
   "/dashboard": { accent: "var(--color-green)", bg: "bg-green/15", label: "Dashboard" },
   "/mycountry": { accent: "var(--color-yellow)", bg: "bg-yellow/15", label: "MyCountry" },
   "/countries": { accent: "var(--color-indigo)", bg: "bg-indigo/15", label: "Explore" },
@@ -74,7 +74,7 @@ const SECONDARY_NAV: { name: string; href: string }[] = [
 
 // ─── NavTray Component ───────────────────────────────────────────────────────
 
-export interface NavTrayProps {
+interface NavTrayProps {
   isOpen: boolean;
   onClose: () => void;
 }

@@ -3,7 +3,7 @@
 // Core PlateJS plugin definitions for shared text editors.
 
 import React from "react";
-import { createPlatePlugin, ParagraphPlugin } from "platejs/react";
+import { createPlatePlugin } from "platejs/react";
 
 export const BoldPlugin = createPlatePlugin({
   key: "bold",
@@ -98,10 +98,7 @@ export const WikiEmbedPlugin = createPlatePlugin({
   node: { isElement: true, isVoid: true },
   render: {
     node: ({ children, element, attributes }: any) => (
-      <div
-        {...attributes}
-        className="border-wiki/30 bg-wiki/10 my-2 rounded-lg border p-3"
-      >
+      <div {...attributes} className="border-wiki/30 bg-wiki/10 my-2 rounded-lg border p-3">
         <span className="text-wiki text-xs font-bold">📖 {element?.title}</span>
         <p className="mt-1 text-xs text-slate-300">{element?.summary}</p>
         {children}
@@ -122,17 +119,3 @@ export const ImagePlugin = createPlatePlugin({
     ),
   },
 });
-
-export const EDITOR_PLUGINS = [
-  ParagraphPlugin,
-  BoldPlugin,
-  ItalicPlugin,
-  UnderlinePlugin,
-  UnorderedListPlugin,
-  OrderedListPlugin,
-  ListItemPlugin,
-  LinkPlugin,
-  WikiLinkPlugin,
-  WikiEmbedPlugin,
-  ImagePlugin,
-];

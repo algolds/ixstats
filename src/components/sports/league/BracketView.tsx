@@ -242,5 +242,3 @@ function BracketRounds({
     </Card>
   );
 }
-
-export default BracketView;

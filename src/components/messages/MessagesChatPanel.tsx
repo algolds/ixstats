@@ -15,7 +15,6 @@ import { SYSTEM_CONVERSATION_ID, LOREBOT_CONVERSATION_ID } from "~/types/message
 import {
   Crown,
   Shield,
-  StatUp as TrendingUp,
   AntennaSignal as Radio,
   Xmark as X,
   OpenNewWindow as ExternalLink,

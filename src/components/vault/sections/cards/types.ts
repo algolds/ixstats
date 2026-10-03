@@ -22,7 +22,3 @@ export interface FilterState {
   minValue: number;
   maxValue: number;
 }
-
-export interface VaultCardsSectionProps {
-  initialTab?: string | null;
-}

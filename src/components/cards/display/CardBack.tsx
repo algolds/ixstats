@@ -38,7 +38,7 @@ import { withBasePath } from "~/lib/base-path";
 
 export type CardBackVariant = "lattice" | "zodiac" | "runes";
 
-export interface CardBackProps {
+interface CardBackProps {
   /** Card rarity (determines holographic color glow & card back theme) */
   rarity?: CardRarity | string;
   /** Lore Category for Category Accent Hybrid Engine */
@@ -80,7 +80,7 @@ const ALL_CATEGORY_KEYS: LoreCategory[] = [
   "SPECIAL",
 ];
 
-export interface RarityBackTheme {
+interface RarityBackTheme {
   borderOuter: string;
   borderInner: string;
   cornerBracket: string;
@@ -253,7 +253,7 @@ export const RARITY_THEMES: Record<string, RarityBackTheme> = {
   },
 };
 
-export interface PointerState {
+interface PointerState {
   x: number;
   y: number;
   active: boolean;

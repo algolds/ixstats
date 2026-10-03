@@ -26,7 +26,7 @@ const SECTION_LABEL = "text-subhead text-label-secondary flex items-center gap-2
 const SECTION_ICON = "size-4 shrink-0";
 
 /** How many ribbons the signature shelf holds. */
-export const SIGNATURE_SHELF_SIZE = 3;
+const SIGNATURE_SHELF_SIZE = 3;
 
 /** How many achievements and cards the showcase names. */
 const HIGHLIGHT_SIZE = 6;

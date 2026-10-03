@@ -13,7 +13,7 @@ const Card3DViewer = dynamic(
   { ssr: false }
 );
 
-export interface CollectionCarouselTabProps {
+interface CollectionCarouselTabProps {
   cards: CardInstance[];
   currentIndex: number;
   onNext: () => void;

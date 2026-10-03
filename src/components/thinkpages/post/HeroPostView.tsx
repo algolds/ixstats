@@ -11,7 +11,6 @@ import {
   WhiteFlag as Flag,
   EditPencil as Edit,
   Trash as Trash2,
-  Journal as Newspaper,
   Group as Users,
 } from "iconoir-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -35,7 +34,7 @@ import { cn } from "~/lib/utils";
 
 import { ACCOUNT_TYPE_ICONS, ACCOUNT_TYPE_COLORS } from "./ThinkpagesPostUtils";
 
-export interface HeroPostViewProps {
+interface HeroPostViewProps {
   post: any;
   currentUserAccountId: string;
   accounts?: any[];
@@ -343,24 +342,6 @@ export function HeroPostView({
           onAccountSelect={onAccountSelect}
           onAccountSettings={onAccountSettings}
           onCreateAccount={onCreateAccount}
-          isLiked={post.reactions?.some(
-            (r: any) => r.accountId === currentUserAccountId && r.reactionType === "like"
-          )}
-          isReposted={post.reposts?.some((r: any) => r.accountId === currentUserAccountId) ?? false}
-          likeCount={post.likeCount}
-          repostCount={post.repostCount}
-          replyCount={post.replyCount}
-          reactions={post.reactions || []}
-          reactionCounts={(() => {
-            try {
-              if (typeof post.reactionCounts === "string") {
-                return JSON.parse(post.reactionCounts);
-              }
-              return post.reactionCounts || {};
-            } catch {
-              return {};
-            }
-          })()}
           onLike={onLike}
           onRepost={onRepost}
           onReply={onReply}

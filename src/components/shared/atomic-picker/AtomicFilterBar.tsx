@@ -51,7 +51,7 @@ import {
 } from "~/components/ui/select";
 import type { AtomicTemplate } from "./types";
 
-export const DEFAULT_CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+const DEFAULT_CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   // Government categories (exact strings from ATOMIC_COMPONENTS)
   administration: Building,
   crisis: ShieldAlert,
@@ -125,7 +125,7 @@ export const DEFAULT_CATEGORY_ICONS: Record<string, React.ComponentType<{ classN
  * Supports caller overrides, exact matching, punctuation-tolerant lookup,
  * semantic keyword heuristic, and guaranteed contextual fallback.
  */
-export function resolveCategoryIcon(
+function resolveCategoryIcon(
   category: string,
   customIcons?: Record<string, React.ComponentType<{ className?: string }>>
 ): React.ComponentType<{ className?: string }> {
@@ -235,7 +235,7 @@ export function resolveCategoryIcon(
   return Tag;
 }
 
-export interface AtomicFilterBarProps<TType extends string = string> {
+interface AtomicFilterBarProps<TType extends string = string> {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   categories: string[];

@@ -70,7 +70,7 @@ export default function WikiTemplatesPage() {
     return paramEntries.map(([k, p]: [string, any]) => ({
       name: k,
       label: p?.label || k.replace(/_/g, " "),
-      example: p?.example || p?.default || `Sample ${k}`,
+      example: p?.example || p?.default || "",
       type: p?.type || "string",
     }));
   }, [presetMatch, paramEntries]);

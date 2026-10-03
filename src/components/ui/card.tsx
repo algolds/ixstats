@@ -4,8 +4,8 @@ import * as React from "react";
 
 import { cn } from "~/lib/utils/cn";
 
-export type CardVariant = "default" | "inset" | "hero";
-export type CardPadding = "none" | "sm" | "md" | "lg";
+type CardVariant = "default" | "inset" | "hero";
+type CardPadding = "none" | "sm" | "md" | "lg";
 
 const VARIANT: Record<CardVariant, string> = {
   default: "bg-surface text-label border-separator rounded-card shadow-card border",
@@ -30,7 +30,7 @@ const INSET_PADDING: Record<CardPadding, string> = {
 const INTERACTIVE =
   "facet-press facet-lift pointer-coarse:min-h-11 cursor-pointer select-none focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2";
 
-export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   /** `default` is the opaque card, `inset` a panel inside one, `hero` the glass hero. */
   variant?: CardVariant;
   /** Default: none. Inset: `md`. */

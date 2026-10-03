@@ -4,6 +4,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
+import type { CategoryMember } from "./CategoryParts";
 import {
   OpenNewWindow as ExternalLink,
   GraphUp as TrendingUp,
@@ -24,12 +25,6 @@ const CountryMapEmbed = dynamic(
     ),
   }
 );
-
-interface CategoryMember {
-  title: string;
-  ns: number;
-  imageUrl?: string | null;
-}
 
 interface CountryPortalProps {
   country: {

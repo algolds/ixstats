@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import {
@@ -17,8 +17,6 @@ import { EmptyState } from "~/components/ui/empty-state";
 
 interface MatchCommentaryProps {
   matchId: string;
-  autoExpand?: boolean;
-  className?: string;
 }
 
 interface MatchEvaluation {
@@ -30,10 +28,7 @@ interface MatchEvaluation {
   awayExpectedGoals?: number;
 }
 
-export function MatchCommentary({ matchId, autoExpand = false, className }: MatchCommentaryProps) {
-  const [isExpanded, setIsExpanded] = useState(autoExpand);
-  const [configOpen, setConfigOpen] = useState(false);
-
+export function MatchCommentary({ matchId }: MatchCommentaryProps) {
   const utils = api.useUtils();
   const {
     data: match,

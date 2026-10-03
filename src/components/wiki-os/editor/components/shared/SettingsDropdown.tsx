@@ -10,7 +10,7 @@ import { Switch } from "~/components/ui/switch";
 import { useEditorModalContext } from "../../context/EditorModalContext";
 import { Button } from "~/components/ui/button";
 
-export interface SettingsDropdownProps {
+interface SettingsDropdownProps {
   showLineNumbersOption?: boolean;
   showWordWrapOption?: boolean;
 }

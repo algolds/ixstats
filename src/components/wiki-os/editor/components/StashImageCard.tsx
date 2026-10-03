@@ -6,7 +6,7 @@ import React, { useState } from "react";
 import { Copy, Check } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 
-export interface StashImageCardProps {
+interface StashImageCardProps {
   imgInfo: any;
   cleanTitle: string;
   filename: string;

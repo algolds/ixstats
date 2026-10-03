@@ -11,7 +11,6 @@ import {
   FireFlame as Flame,
   ThumbsUp,
   ThumbsDown,
-  Journal as Newspaper,
   Group as Users,
   ChatBubble as MessageSquare,
 } from "iconoir-react";

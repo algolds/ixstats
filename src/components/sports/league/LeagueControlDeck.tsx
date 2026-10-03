@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
   Settings,
   Shield,
@@ -9,10 +9,6 @@ import {
   SystemRestart as Loader2,
   Trophy,
   Refresh,
-  Trash,
-  CheckCircle,
-  Eye,
-  Flash,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -22,10 +18,9 @@ import { Switch } from "~/components/ui/switch";
 import { soundCues } from "~/lib/sound/cuelume";
 import { cn } from "~/lib/utils";
 
-export interface LeagueControlDeckProps {
+interface LeagueControlDeckProps {
   leagueId: string;
   canManageLeague: boolean;
-  isCanonical?: boolean;
   activeSeason?: {
     id: string;
     seasonNumber: number;
@@ -36,10 +31,8 @@ export interface LeagueControlDeckProps {
     seasonNumber: number;
     status: string;
   } | null;
-  nextMatchDay?: number | null;
   hasMatchesPlayed?: boolean;
   onOpenSettings?: () => void;
-  onSimulateMatchDay?: () => void;
   isSimulatingMatchDay?: boolean;
   onSimulateFullSeason?: () => void;
   isSimulatingFullSeason?: boolean;
@@ -53,13 +46,10 @@ export interface LeagueControlDeckProps {
 export function LeagueControlDeck({
   leagueId,
   canManageLeague,
-  isCanonical = false,
   activeSeason,
   latestSeason,
-  nextMatchDay,
   hasMatchesPlayed = false,
   onOpenSettings,
-  onSimulateMatchDay,
   isSimulatingMatchDay = false,
   onSimulateFullSeason,
   isSimulatingFullSeason = false,
@@ -309,5 +299,3 @@ export function LeagueControlDeck({
     </div>
   );
 }
-
-export default LeagueControlDeck;

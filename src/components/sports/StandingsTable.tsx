@@ -5,12 +5,7 @@ import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import Link from "next/link";
 import { titleToWikiOSPath } from "~/lib/wiki-os/transformers/url-compat";
-import {
-  OpenBook as BookOpen,
-  Download,
-  StatUp as TrendingUp,
-  StatDown as TrendingDown,
-} from "iconoir-react";
+import { OpenBook as BookOpen, Download } from "iconoir-react";
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -63,7 +58,7 @@ function exportStandingsCsv(title: string, rows: StandingsRow[]) {
   URL.revokeObjectURL(url);
 }
 
-export interface StandingsTableProps {
+interface StandingsTableProps {
   title?: string;
   standings: StandingsRow[];
   promotionCount?: number | null;
@@ -199,12 +194,7 @@ export function StandingsTable({
                     (relegationCount ?? 0) > 0 &&
                     rank > group.standings.length - (relegationCount ?? 0);
 
-                  // Mock dynamic form if not available
-                  const form = team.recentForm ?? [
-                    team.wins > 0 ? "W" : "D",
-                    team.wins > 1 ? "W" : "L",
-                    team.draws > 0 ? "D" : "W",
-                  ];
+                  const form = team.recentForm ?? [];
 
                   return (
                     <tr
@@ -299,6 +289,7 @@ export function StandingsTable({
                       {/* Recent Form Pills */}
                       <td className="py-3 pr-3 text-center">
                         <div className="flex items-center justify-center gap-1">
+                          {form.length === 0 && <span aria-label="No results yet">—</span>}
                           {form.map((res, i) => (
                             <span
                               key={i}
@@ -325,5 +316,3 @@ export function StandingsTable({
     </Card>
   );
 }
-
-export default StandingsTable;

@@ -26,7 +26,7 @@ import { Input } from "~/components/ui/input";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { NationStatesAttribution } from "~/components/cards/display/NationStatesAttribution";
 
-export interface NSTakedownModalProps {
+interface NSTakedownModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultNationName?: string;

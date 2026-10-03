@@ -16,7 +16,7 @@ import { cn } from "~/lib/utils/cn";
  * ```
  */
 
-export interface RadioCardGroupProps extends Omit<
+interface RadioCardGroupProps extends Omit<
   React.ComponentProps<typeof RadioGroupPrimitive.Root>,
   "value"
 > {
@@ -44,7 +44,7 @@ export function RadioCardGroup({ value, columns, className, ...props }: RadioCar
   );
 }
 
-export interface RadioCardProps extends Omit<
+interface RadioCardProps extends Omit<
   React.ComponentProps<typeof RadioGroupPrimitive.Item>,
   "title"
 > {

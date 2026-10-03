@@ -12,7 +12,6 @@ import {
   WhiteFlag as Flag,
   EditPencil as Edit,
   Trash as Trash2,
-  Journal as Newspaper,
   Group as Users,
   Refresh as Repeat2,
   ChatBubble as MessageCircle,
@@ -46,7 +45,7 @@ import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 
 import { ACCOUNT_TYPE_ICONS, ACCOUNT_TYPE_COLORS, RelativeTimestamp } from "./ThinkpagesPostUtils";
 
-export interface StandardPostViewProps {
+interface StandardPostViewProps {
   post: any;
   currentUserAccountId: string;
   accounts?: any[];
@@ -411,27 +410,6 @@ export function StandardPostView({
             onAccountSelect={onAccountSelect}
             onAccountSettings={onAccountSettings}
             onCreateAccount={onCreateAccount}
-            isLiked={post.reactions?.some(
-              (r: any) => r.accountId === currentUserAccountId && r.reactionType === "like"
-            )}
-            isReposted={
-              post.reposts?.some((r: any) => r.accountId === currentUserAccountId) ?? false
-            }
-            likeCount={post.likeCount}
-            repostCount={post.repostCount}
-            replyCount={post.replyCount}
-            reactions={post.reactions || []}
-            reactionCounts={(() => {
-              try {
-                if (typeof post.reactionCounts === "string") {
-                  return JSON.parse(post.reactionCounts);
-                }
-                return post.reactionCounts || {};
-              } catch (error) {
-                console.warn("Failed to parse reactionCounts:", error);
-                return {};
-              }
-            })()}
             onLike={onLike}
             onRepost={onRepost}
             onReply={() => handleReply()}

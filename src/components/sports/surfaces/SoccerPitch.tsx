@@ -3,7 +3,7 @@
 import React from "react";
 import { cn } from "~/lib/utils";
 
-export interface SoccerPitchProps {
+interface SoccerPitchProps {
   className?: string;
   children?: React.ReactNode;
 }

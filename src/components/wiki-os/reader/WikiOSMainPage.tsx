@@ -466,9 +466,6 @@ export function WikiOSMainPage() {
               featuredArticleHtml={featuredArticleHtml}
               featuredArticleData={featuredArticleData}
               latestChange={latestChange}
-              totalNations={
-                countries?.length ? (countries.length > 50 ? countries.length : 82) : 82
-              }
               onOpenBlurbs={() => setBlurbModalOpen(true)}
             />
           </div>

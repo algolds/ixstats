@@ -29,7 +29,7 @@ import {
 /** Select items cannot carry an empty value; this stands for "no reason given". */
 const NO_REASON = "__none__";
 
-export interface CardTakedownVerificationModalProps {
+interface CardTakedownVerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
   cardId: string;

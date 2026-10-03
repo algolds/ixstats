@@ -19,17 +19,16 @@ import "~/styles/card-art.css";
  *  6. Center label
  */
 
-import React, { useMemo, useState, useRef, useEffect } from "react";
+import React, { useMemo } from "react";
 import { cn } from "~/lib/utils";
-import type { CardRarity } from "@prisma/client";
-import {
-  getRainbowHolographicGradient,
-  getSparkleGridGradient,
-  getPrismaticWaveGradient,
-  getHolofoilTextureGradient,
-  getFoilStampConfig,
-} from "~/lib/themes";
+import { getFoilStampConfig } from "~/lib/themes";
 import { LoreCardHolographicCover } from "./LoreCardHolographicCover";
+import {
+  getCoverHoloOpacity,
+  getEffectiveRarity,
+  getHoloGradient,
+  useHoverMousePos,
+} from "./holo-helpers";
 import { CategoryIcon } from "~/components/cards/icons";
 import { getCategoryTheme } from "~/lib/cards/category-theme";
 import { isValidLoreCategory, type LoreCategory } from "~/lib/cards/category-enums";
@@ -38,7 +37,7 @@ import type { ResolvedCardDesignMetadata } from "~/lib/cards/card-metadata-resol
 
 // ─── Types ──────────────────────────────────────────────────────
 
-export interface CardHolographicCoverProps {
+interface CardHolographicCoverProps {
   cardType?: string;
   category?: LoreCategory | string | null;
   rarity: string;
@@ -111,54 +110,6 @@ const DEFAULT_THEME: CardTypeTheme = {
   motifSymbol: "🎴",
 };
 
-// ─── Rarity helpers ─────────────────────────────────────────────
-
-const VALID_RARITIES = new Set(["COMMON", "UNCOMMON", "RARE", "ULTRA_RARE", "EPIC", "LEGENDARY"]);
-
-function getEffectiveRarity(rarity?: string | null): CardRarity {
-  if (rarity && VALID_RARITIES.has(rarity)) return rarity as CardRarity;
-  return "COMMON";
-}
-
-function getHoloGradient(rarity: CardRarity): string {
-  switch (rarity) {
-    case "LEGENDARY":
-      return `${getSparkleGridGradient()}, ${getPrismaticWaveGradient()}`;
-    case "EPIC":
-      return getSparkleGridGradient();
-    case "ULTRA_RARE":
-      return getPrismaticWaveGradient();
-    case "RARE":
-      return getRainbowHolographicGradient(135);
-    default:
-      return getHolofoilTextureGradient();
-  }
-}
-
-function getHoloOpacity(rarity: CardRarity): number {
-  const map: Record<CardRarity, number> = {
-    COMMON: 0.12,
-    UNCOMMON: 0.2,
-    RARE: 0.3,
-    ULTRA_RARE: 0.4,
-    EPIC: 0.5,
-    LEGENDARY: 0.65,
-  };
-  return map[rarity] ?? 0.12;
-}
-
-function _getSweepSpeed(rarity: CardRarity): number {
-  const speeds: Record<CardRarity, number> = {
-    COMMON: 5,
-    UNCOMMON: 4,
-    RARE: 3.5,
-    ULTRA_RARE: 3,
-    EPIC: 2.5,
-    LEGENDARY: 2,
-  };
-  return speeds[rarity] ?? 5;
-}
-
 // ─── Component ──────────────────────────────────────────────────
 
 export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
@@ -172,22 +123,7 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
     isHovered = false,
     className,
   }) => {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-
-    useEffect(() => {
-      if (!isHovered) return;
-      const handleMouseMove = (e: MouseEvent) => {
-        if (!containerRef.current) return;
-        const rect = containerRef.current.getBoundingClientRect();
-        setMousePos({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-        });
-      };
-      window.addEventListener("mousemove", handleMouseMove);
-      return () => window.removeEventListener("mousemove", handleMouseMove);
-    }, [isHovered]);
+    const { containerRef, mousePos } = useHoverMousePos(isHovered);
 
     const rarity = getEffectiveRarity(rarityStr);
     const holoGradient = useMemo(() => getHoloGradient(rarity), [rarity]);
@@ -213,7 +149,7 @@ export const CardHolographicCover = React.memo<CardHolographicCoverProps>(
     const categoryTheme = resolvedCategory ? getCategoryTheme(resolvedCategory) : null;
     const theme = CARD_TYPE_THEMES[cardType] ?? DEFAULT_THEME;
     const foilStamp = getFoilStampConfig(rarity);
-    const holoOpacity = isHovered ? getHoloOpacity(rarity) : getHoloOpacity(rarity) * 0.4;
+    const holoOpacity = getCoverHoloOpacity(rarity, isHovered);
 
     const showMotifs = rarity !== "COMMON";
 

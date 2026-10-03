@@ -23,7 +23,7 @@ import type { DIViewProps, ViewMode } from "~/components/halo/types";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 
-export interface ForumViewProps extends DIViewProps {}
+interface ForumViewProps extends DIViewProps {}
 
 // ─── Section label ───────────────────────────────────────────────────────────
 

@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/comp
 import { SPORTS_ABBREVIATIONS } from "~/lib/sports/presets";
 import { Card } from "~/components/ui/card";
 
-export interface LineupPlayer {
+interface LineupPlayer {
   id: string;
   firstName: string;
   lastName: string;
@@ -17,7 +17,7 @@ export interface LineupPlayer {
   y?: number; // percentage (0-100)
 }
 
-export interface TeamLineupProps {
+interface TeamLineupProps {
   teamName: string;
   teamColor: string;
   players: LineupPlayer[];
@@ -194,5 +194,3 @@ export function TeamLineup({
     </Card>
   );
 }
-
-export default TeamLineup;

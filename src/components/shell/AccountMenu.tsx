@@ -24,7 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover
 import { NationSwitcher } from "~/components/navigation/NationSwitcher";
 import { CollapsedTooltip, rowBase } from "./AppSidebar";
 
-export interface AccountMenuProps {
+interface AccountMenuProps {
   layout: "sidebar" | "sheet";
   /** The sidebar is collapsed to icons (`null` before hydration). */
   collapsed?: boolean | null;

@@ -71,6 +71,25 @@ function DataCardFooter({ label, children }: { label: string; children: React.Re
   );
 }
 
+type Maybe = number | null | undefined;
+
+const isRecorded = (v: Maybe): v is number => typeof v === "number" && Number.isFinite(v);
+
+/** Chart rows for the recorded values only; an unrecorded metric gets no bar. */
+function recordedRows(entries: [string, Maybe][]): { name: string; value: number }[] {
+  return entries.flatMap(([name, value]) => (isRecorded(value) ? [{ name, value }] : []));
+}
+
+const NotRecorded = () => <span aria-label="Not recorded">—</span>;
+
+function NoRecordedData() {
+  return (
+    <div className="text-footnote text-label-secondary flex h-[125px] w-full items-center justify-center">
+      No recorded data
+    </div>
+  );
+}
+
 export function LiveDataCard({ type, title, countryId, preloadedData }: LiveDataCardProps) {
   const isPreloaded = !!preloadedData;
 
@@ -145,7 +164,8 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
   const trade = preloadedData?.tradeData ?? tradeQuery.data;
   const vitality = preloadedData?.vitalityData ?? vitalityQuery.data;
 
-  const formatMoney = (val: number) => `$${formatCompact(val)}`;
+  const formatMoney = (val: Maybe) =>
+    isRecorded(val) ? `$${formatCompact(val)}` : <NotRecorded />;
 
   // 1. GDP Growth Trajectory
   if (type === "economic_chart") {
@@ -157,38 +177,35 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
       }));
     }
 
-    if (rawHistory.length === 0) {
-      // Mock data for preview fallback if no actual history
-      rawHistory = [
-        { ixTimeTimestamp: new Date(2022, 0, 1), totalGdp: 1.8e12 },
-        { ixTimeTimestamp: new Date(2023, 0, 1), totalGdp: 2.0e12 },
-        { ixTimeTimestamp: new Date(2024, 0, 1), totalGdp: 2.2e12 },
-        { ixTimeTimestamp: new Date(2025, 0, 1), totalGdp: 2.4e12 },
-      ];
-    }
+    const chartPoints = rawHistory
+      .filter((h: any) => h.ixTimeTimestamp && isRecorded(h.totalGdp))
+      .slice(-6)
+      .map((h: any) => ({
+        year: new Date(h.ixTimeTimestamp).getFullYear().toString(),
+        gdp: Number((h.totalGdp / 1e12).toFixed(3)), // GDP in Trillions
+      }));
 
-    const chartPoints = rawHistory.slice(-6).map((h: any, idx: number) => ({
-      year: h.ixTimeTimestamp ? new Date(h.ixTimeTimestamp).getFullYear().toString() : `Y${idx}`,
-      gdp: h.totalGdp ? Number((h.totalGdp / 1e12).toFixed(3)) : 0, // GDP in Trillions
-    }));
-
-    const currentGdp = rawHistory[rawHistory.length - 1]?.totalGdp || 0;
+    const currentGdp = rawHistory[rawHistory.length - 1]?.totalGdp;
 
     return (
       <DataCardFrame icon={<TrendingUp className="text-blue" />} title={title} meta="GDP Growth">
-        <div className="h-[125px] w-full">
-          <GlassLineChart
-            data={chartPoints}
-            xKey="year"
-            yKey="gdp"
-            area={true}
-            height={125}
-            theme="blue"
-            hideLegend={true}
-            hideGrid={true}
-            hideYAxis={true}
-          />
-        </div>
+        {chartPoints.length === 0 ? (
+          <NoRecordedData />
+        ) : (
+          <div className="h-[125px] w-full">
+            <GlassLineChart
+              data={chartPoints}
+              xKey="year"
+              yKey="gdp"
+              area={true}
+              height={125}
+              theme="blue"
+              hideLegend={true}
+              hideGrid={true}
+              hideYAxis={true}
+            />
+          </div>
+        )}
 
         <DataCardFooter label="Recent trajectory">
           <span className="text-label font-semibold tabular-nums">
@@ -201,38 +218,37 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
 
   // 2. Diplomatic Relations Map
   if (type === "diplomatic_map") {
-    const activeRelations =
-      relations.length > 0
-        ? relations.slice(0, 5)
-        : [
-            { targetCountryName: "Kelssek", relationship: "alliance", strength: 85 },
-            { targetCountryName: "Candelaria", relationship: "trade", strength: 70 },
-            { targetCountryName: "Jasĭyun", relationship: "tension", strength: 30 },
-          ];
+    const activeRelations = relations.slice(0, 5);
 
-    const chartData = activeRelations.map((rel: any) => ({
-      name: rel.targetCountryName,
-      strength: rel.strength || 50,
-    }));
+    const chartData = activeRelations
+      .filter((rel: any) => isRecorded(rel.strength))
+      .map((rel: any) => ({
+        name: rel.targetCountryName,
+        strength: rel.strength,
+      }));
 
     return (
       <DataCardFrame
         icon={<Globe className="text-teal" />}
         title={title}
-        meta={`${relations.length || 3} Connections`}
+        meta={`${relations.length} Connections`}
       >
-        <div className="h-[125px] w-full">
-          <GlassBarChart
-            data={chartData}
-            xKey="name"
-            yKey="strength"
-            height={125}
-            theme="cyan"
-            hideLegend={true}
-            hideGrid={true}
-            hideYAxis={true}
-          />
-        </div>
+        {chartData.length === 0 ? (
+          <NoRecordedData />
+        ) : (
+          <div className="h-[125px] w-full">
+            <GlassBarChart
+              data={chartData}
+              xKey="name"
+              yKey="strength"
+              height={125}
+              theme="cyan"
+              hideLegend={true}
+              hideGrid={true}
+              hideYAxis={true}
+            />
+          </div>
+        )}
 
         <DataCardFooter label="Global network">
           <span className="text-label font-semibold tabular-nums">
@@ -245,13 +261,7 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
 
   // 3. Trade Flow Analysis
   if (type === "trade_flow") {
-    const activeTrade = trade ?? { totalVolume: 4.5e9, exports: 2.7e9, imports: 1.8e9 };
-    const pieData = [
-      { name: "Exports", value: activeTrade.exports },
-      { name: "Imports", value: activeTrade.imports },
-    ];
-
-    const netTrade = activeTrade.exports - activeTrade.imports;
+    const netTrade = trade ? trade.exports - trade.imports : undefined;
 
     return (
       <DataCardFrame
@@ -259,28 +269,39 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
         title={title}
         meta="Flow dynamics"
       >
-        <div className="h-[125px] w-full">
-          <GlassPieChart
-            data={pieData}
-            dataKey="value"
-            nameKey="name"
-            innerRadius={15}
-            outerRadius={38}
-            height={125}
-            theme="gold"
-            hideLegend={true}
-          />
-        </div>
+        {trade ? (
+          <div className="h-[125px] w-full">
+            <GlassPieChart
+              data={[
+                { name: "Exports", value: trade.exports },
+                { name: "Imports", value: trade.imports },
+              ]}
+              dataKey="value"
+              nameKey="name"
+              innerRadius={15}
+              outerRadius={38}
+              height={125}
+              theme="gold"
+              hideLegend={true}
+            />
+          </div>
+        ) : (
+          <NoRecordedData />
+        )}
 
         <DataCardFooter label="Net balance">
-          <span
-            className={cn(
-              "font-semibold tabular-nums",
-              netTrade >= 0 ? "text-success" : "text-destructive"
-            )}
-          >
-            {netTrade >= 0 ? "Surplus" : "Deficit"}: {formatMoney(Math.abs(netTrade))}
-          </span>
+          {netTrade === undefined ? (
+            <NotRecorded />
+          ) : (
+            <span
+              className={cn(
+                "font-semibold tabular-nums",
+                netTrade >= 0 ? "text-success" : "text-destructive"
+              )}
+            >
+              {netTrade >= 0 ? "Surplus" : "Deficit"}: {formatMoney(Math.abs(netTrade))}
+            </span>
+          )}
         </DataCardFooter>
       </DataCardFrame>
     );
@@ -288,21 +309,15 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
 
   // 4. Economic Performance Overview (GDP Growth Stats)
   if (type === "gdp_growth") {
-    const activeEcon = economicData ?? {
-      currentTotalGdp: 2.4e12,
-      currentGdpPerCapita: 48000,
-      calculatedStats: { gdpGrowth: 0.032 },
-      economicTier: "Industrialized",
-    };
+    const growthRate = economicData?.calculatedStats?.gdpGrowth ?? economicData?.gdpGrowth;
+    const gdpVal = economicData?.currentTotalGdp ?? economicData?.gdp;
 
-    const growthRate = activeEcon.calculatedStats?.gdpGrowth ?? activeEcon.gdpGrowth ?? 0;
-    const gdpVal = activeEcon.currentTotalGdp ?? activeEcon.gdp ?? 0;
-
-    const barData = [
-      { name: "Growth Rate (%)", value: Number((growthRate * 100).toFixed(1)) },
-      { name: "Savings Rate (%)", value: 12.5 },
-      { name: "Investment (%)", value: 15.0 },
-    ];
+    const barData = recordedRows([
+      [
+        "Growth Rate (%)",
+        isRecorded(growthRate) ? Number((growthRate * 100).toFixed(1)) : undefined,
+      ],
+    ]);
 
     return (
       <DataCardFrame
@@ -310,18 +325,22 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
         title={title}
         meta="Macro indicators"
       >
-        <div className="h-[125px] w-full">
-          <GlassBarChart
-            data={barData}
-            xKey="name"
-            yKey="value"
-            height={125}
-            theme="emerald"
-            hideLegend={true}
-            hideGrid={true}
-            hideYAxis={true}
-          />
-        </div>
+        {barData.length === 0 ? (
+          <NoRecordedData />
+        ) : (
+          <div className="h-[125px] w-full">
+            <GlassBarChart
+              data={barData}
+              xKey="name"
+              yKey="value"
+              height={125}
+              theme="emerald"
+              hideLegend={true}
+              hideGrid={true}
+              hideYAxis={true}
+            />
+          </div>
+        )}
 
         <DataCardFooter label="Current total GDP">
           <span className="text-label font-semibold tabular-nums">{formatMoney(gdpVal)}</span>
@@ -332,38 +351,35 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
 
   // 5. Demographics Profile
   if (type === "demographics") {
-    const activeEcon = economicData ?? {
-      currentPopulation: 45000000,
-      urbanPopulationPercent: 72,
-      ruralPopulationPercent: 28,
-    };
-
-    const urbanPct = activeEcon.urbanPopulationPercent ?? 70;
-    const ruralPct = activeEcon.ruralPopulationPercent ?? 30;
-    const popVal = activeEcon.currentPopulation ?? activeEcon.population ?? 0;
-
-    const pieData = [
-      { name: "Urban (%)", value: urbanPct },
-      { name: "Rural (%)", value: ruralPct },
-    ];
+    const pieData = recordedRows([
+      ["Urban (%)", economicData?.urbanPopulationPercent],
+      ["Rural (%)", economicData?.ruralPopulationPercent],
+    ]);
+    const popVal = economicData?.currentPopulation ?? economicData?.population;
 
     return (
       <DataCardFrame icon={<Users className="text-teal" />} title={title} meta="Demographic split">
-        <div className="h-[125px] w-full">
-          <GlassPieChart
-            data={pieData}
-            dataKey="value"
-            nameKey="name"
-            innerRadius={15}
-            outerRadius={38}
-            height={125}
-            theme="emerald"
-            hideLegend={true}
-          />
-        </div>
+        {pieData.length === 0 ? (
+          <NoRecordedData />
+        ) : (
+          <div className="h-[125px] w-full">
+            <GlassPieChart
+              data={pieData}
+              dataKey="value"
+              nameKey="name"
+              innerRadius={15}
+              outerRadius={38}
+              height={125}
+              theme="emerald"
+              hideLegend={true}
+            />
+          </div>
+        )}
 
         <DataCardFooter label="Population total">
-          <span className="text-label font-semibold tabular-nums">{popVal.toLocaleString()}</span>
+          <span className="text-label font-semibold tabular-nums">
+            {isRecorded(popVal) ? popVal.toLocaleString() : <NotRecorded />}
+          </span>
         </DataCardFooter>
       </DataCardFrame>
     );
@@ -371,17 +387,12 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
 
   // 6. Fiscal Budget & Debt
   if (type === "budget_debt") {
-    const activeEcon = economicData ?? {
-      taxRevenueGDPPercent: 28,
-      governmentBudgetGDPPercent: 30,
-      totalDebtGDPRatio: 55,
-    };
-
-    const chartData = [
-      { name: "Tax Revenue", percent: activeEcon.taxRevenueGDPPercent || 25 },
-      { name: "Spending", percent: activeEcon.governmentBudgetGDPPercent || 28 },
-      { name: "Total Debt", percent: activeEcon.totalDebtGDPRatio || 55 },
-    ];
+    const debtRatio: Maybe = economicData?.totalDebtGDPRatio;
+    const chartData = recordedRows([
+      ["Tax Revenue", economicData?.taxRevenueGDPPercent],
+      ["Spending", economicData?.governmentBudgetGDPPercent],
+      ["Total Debt", debtRatio],
+    ]).map(({ name, value }) => ({ name, percent: value }));
 
     return (
       <DataCardFrame
@@ -389,28 +400,33 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
         title={title}
         meta="Fiscal Profile (% of GDP)"
       >
-        <div className="h-[125px] w-full">
-          <GlassBarChart
-            data={chartData}
-            xKey="name"
-            yKey="percent"
-            height={125}
-            theme="gold"
-            hideLegend={true}
-            hideGrid={true}
-            hideYAxis={true}
-          />
-        </div>
+        {chartData.length === 0 ? (
+          <NoRecordedData />
+        ) : (
+          <div className="h-[125px] w-full">
+            <GlassBarChart
+              data={chartData}
+              xKey="name"
+              yKey="percent"
+              height={125}
+              theme="gold"
+              hideLegend={true}
+              hideGrid={true}
+              hideYAxis={true}
+            />
+          </div>
+        )}
 
         <DataCardFooter label="Debt profile">
-          <span
-            className={cn(
-              "font-semibold",
-              activeEcon.totalDebtGDPRatio > 80 ? "text-destructive" : "text-success"
-            )}
-          >
-            Debt/GDP: {activeEcon.totalDebtGDPRatio || 55}%
-          </span>
+          {isRecorded(debtRatio) ? (
+            <span
+              className={cn("font-semibold", debtRatio > 80 ? "text-destructive" : "text-success")}
+            >
+              Debt/GDP: {debtRatio}%
+            </span>
+          ) : (
+            <NotRecorded />
+          )}
         </DataCardFooter>
       </DataCardFrame>
     );
@@ -418,36 +434,35 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
 
   // 7. Labor Market & Income Distribution
   if (type === "labor_market") {
-    const activeEcon = economicData ?? {
-      unemploymentRate: 4.8,
-      incomeInequalityGini: 34,
-      averageAnnualIncome: 38000,
-    };
-
-    const barData = [
-      { name: "Unemployment (%)", value: activeEcon.unemploymentRate || 5.0 },
-      { name: "Gini Index", value: activeEcon.incomeInequalityGini || 32.0 },
-      { name: "Labor Part. (%)", value: 65.4 },
-    ];
+    const barData = recordedRows([
+      ["Unemployment (%)", economicData?.unemploymentRate],
+      ["Gini Index", economicData?.incomeInequalityGini],
+      ["Labor Part. (%)", economicData?.laborForceParticipationRate],
+    ]);
+    const income: Maybe = economicData?.averageAnnualIncome;
 
     return (
       <DataCardFrame icon={<Briefcase className="text-teal" />} title={title} meta="Labor dynamics">
-        <div className="h-[125px] w-full">
-          <GlassBarChart
-            data={barData}
-            xKey="name"
-            yKey="value"
-            height={125}
-            theme="blue"
-            hideLegend={true}
-            hideGrid={true}
-            hideYAxis={true}
-          />
-        </div>
+        {barData.length === 0 ? (
+          <NoRecordedData />
+        ) : (
+          <div className="h-[125px] w-full">
+            <GlassBarChart
+              data={barData}
+              xKey="name"
+              yKey="value"
+              height={125}
+              theme="blue"
+              hideLegend={true}
+              hideGrid={true}
+              hideYAxis={true}
+            />
+          </div>
+        )}
 
         <DataCardFooter label="Average annual income">
           <span className="text-label font-semibold tabular-nums">
-            ${(activeEcon.averageAnnualIncome || 35000).toLocaleString()}
+            {isRecorded(income) ? `$${income.toLocaleString()}` : <NotRecorded />}
           </span>
         </DataCardFooter>
       </DataCardFrame>
@@ -456,19 +471,16 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
 
   // 8. National Vitality & Well-being
   if (type === "national_vitality") {
-    const activeVit = vitality ?? {
-      economicVitality: 72,
-      populationWellbeing: 68,
-      diplomaticStanding: 80,
-      governmentalEfficiency: 65,
-    };
+    const chartData = recordedRows([
+      ["Economy", vitality?.economicVitality],
+      ["Wellbeing", vitality?.populationWellbeing],
+      ["Diplomatic", vitality?.diplomaticStanding],
+      ["Government", vitality?.governmentalEfficiency],
+    ]).map(({ name, value }) => ({ name, score: value }));
 
-    const chartData = [
-      { name: "Economy", score: activeVit.economicVitality || 50 },
-      { name: "Wellbeing", score: activeVit.populationWellbeing || 50 },
-      { name: "Diplomatic", score: activeVit.diplomaticStanding || 50 },
-      { name: "Government", score: activeVit.governmentalEfficiency || 50 },
-    ];
+    const overall = chartData.length
+      ? Math.round(chartData.reduce((sum, d) => sum + d.score, 0) / chartData.length)
+      : undefined;
 
     return (
       <DataCardFrame
@@ -476,21 +488,27 @@ export function LiveDataCard({ type, title, countryId, preloadedData }: LiveData
         title={title}
         meta="Vitality indicators"
       >
-        <div className="h-[125px] w-full">
-          <GlassBarChart
-            data={chartData}
-            xKey="name"
-            yKey="score"
-            height={125}
-            theme="red"
-            hideLegend={true}
-            hideGrid={true}
-            hideYAxis={true}
-          />
-        </div>
+        {chartData.length === 0 ? (
+          <NoRecordedData />
+        ) : (
+          <div className="h-[125px] w-full">
+            <GlassBarChart
+              data={chartData}
+              xKey="name"
+              yKey="score"
+              height={125}
+              theme="red"
+              hideLegend={true}
+              hideGrid={true}
+              hideYAxis={true}
+            />
+          </div>
+        )}
 
-        <DataCardFooter label="Overall health status">
-          <span className="text-success font-semibold">Active</span>
+        <DataCardFooter label="Overall score">
+          <span className="text-label font-semibold tabular-nums">
+            {overall === undefined ? <NotRecorded /> : overall}
+          </span>
         </DataCardFooter>
       </DataCardFrame>
     );

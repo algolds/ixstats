@@ -55,7 +55,7 @@ interface UseSwipePhysicsOptions {
   onStateChange?: (state: SwipeState) => void;
 }
 
-export interface SwipePhysicsResult {
+interface SwipePhysicsResult {
   /** The current X translation (motion value) */
   x: ReturnType<typeof useMotionValue<number>>;
   /** Spring-animated X position */

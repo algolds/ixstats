@@ -7,7 +7,7 @@ import { useThinkpagesPost } from "./post/useThinkpagesPost";
 
 import { proxyDiscordUrl } from "./post/ThinkpagesPostUtils";
 
-export interface ThinkpagesPostProps {
+interface ThinkpagesPostProps {
   post: any;
   currentUserAccountId: string;
   accounts?: any[];

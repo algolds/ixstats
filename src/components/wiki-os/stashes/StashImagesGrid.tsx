@@ -114,7 +114,7 @@ export function StashImagesGrid({ items, resolvedImagesMap, onUnstash }: StashIm
   );
 }
 
-export function StashedImageModal({
+function StashedImageModal({
   image,
   onClose,
   onUnstash,

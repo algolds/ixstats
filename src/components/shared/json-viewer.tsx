@@ -680,4 +680,4 @@ function JsonViewer({
   );
 }
 
-export { JsonViewer, type JsonViewerProps, type JsonValue };
+export { JsonViewer, type JsonValue };

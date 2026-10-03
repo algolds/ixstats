@@ -17,7 +17,11 @@ import { RepostModal } from "../RepostModal";
 import { useQueryClient } from "@tanstack/react-query";
 import { getQueryKey } from "@trpc/react-query";
 
-import { updateReactionsInCacheData, updatePostReactionsList } from "./ReactionCacheUpdater";
+import {
+  parseReactionCounts,
+  updateReactionsInCacheData,
+  updatePostReactionsList,
+} from "./ReactionCacheUpdater";
 import { ActionPill } from "~/components/ui/action-pill";
 
 interface PostActionsProps {
@@ -30,13 +34,6 @@ interface PostActionsProps {
   onAccountSelect?: (account: any) => void;
   onAccountSettings?: (account: any) => void;
   onCreateAccount?: () => void;
-  isLiked?: boolean;
-  isReposted?: boolean;
-  likeCount?: number;
-  repostCount?: number;
-  replyCount?: number;
-  reactions?: any[];
-  reactionCounts?: Record<string, number>;
   onLike?: (postId: string) => void;
   onRepost?: (postId: string) => void;
   onReply?: (postId: string) => void;
@@ -57,13 +54,6 @@ export function PostActions({
   onAccountSelect,
   onAccountSettings,
   onCreateAccount,
-  isLiked = false,
-  isReposted = false,
-  likeCount = 0,
-  repostCount = 0,
-  replyCount = 0,
-  reactions = [],
-  reactionCounts = {},
   onLike,
   onRepost,
   onReply,
@@ -78,81 +68,99 @@ export function PostActions({
   const [showRepostModal, setShowRepostModal] = useState(false);
   const reactionButtonRef = useRef<HTMLButtonElement>(null);
 
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const utils = api.useUtils();
+  const reactions: any[] = post.reactions ?? [];
+  const isLiked = reactions.some(
+    (r) => r.accountId === currentUserAccountId && r.reactionType === "like"
+  );
+  const isReposted = post.reposts?.some((r: any) => r.accountId === currentUserAccountId) ?? false;
+  const likeCount: number = post.likeCount ?? 0;
+  const repostCount: number = post.repostCount ?? 0;
+  const replyCount: number = post.replyCount ?? 0;
+  const reactionCounts = parseReactionCounts(post.reactionCounts);
+
   const queryClient = useQueryClient();
 
-  // Define context type for mutation error handlers
+  // Context type for mutation error handlers
   type MutationContext = {
     queriesToBackup: [any[], any][];
   };
 
-  const addReactionMutation = api.thinkpages.addReaction.useMutation({
-    onMutate: async (variables): Promise<MutationContext> => {
-      console.log("🚀 Optimistic update starting:", variables);
+  // Feed lists whose cached posts carry reaction state
+  const feedKeys = () => [
+    getQueryKey(api.thinkpages.getFeed),
+    getQueryKey(api.thinkpages.getPostsByClerkUserId),
+    getQueryKey(api.activities.getGlobalFeed),
+    getQueryKey(api.activities.getFollowingFeed),
+  ];
 
-      const activeAccount = accounts.find((a) => a.id === variables.accountId);
+  // Cancel in-flight fetches, snapshot the caches for rollback, then patch them optimistically
+  const applyOptimisticReaction = async (
+    variables: { postId: string; accountId: string },
+    reactionType: string,
+    isRemoval: boolean
+  ): Promise<MutationContext> => {
+    const activeAccount = accounts.find((a) => a.id === variables.accountId);
+    const postKey = getQueryKey(api.thinkpages.getPost);
+    const keys = [...feedKeys(), postKey, getQueryKey(api.thinkpages.getPostReactions)];
 
-      // 1. Cancel outgoing refetches for all relevant feeds
-      const feedKey = getQueryKey(api.thinkpages.getFeed);
-      const userFeedKey = getQueryKey(api.thinkpages.getPostsByClerkUserId);
-      const postKey = getQueryKey(api.thinkpages.getPost);
-      const globalFeedKey = getQueryKey(api.activities.getGlobalFeed);
-      const followingFeedKey = getQueryKey(api.activities.getFollowingFeed);
-      const reactionsKey = getQueryKey(api.thinkpages.getPostReactions);
+    await Promise.all(keys.map((queryKey) => queryClient.cancelQueries({ queryKey })));
 
-      await queryClient.cancelQueries({ queryKey: feedKey });
-      await queryClient.cancelQueries({ queryKey: userFeedKey });
-      await queryClient.cancelQueries({ queryKey: postKey });
-      await queryClient.cancelQueries({ queryKey: globalFeedKey });
-      await queryClient.cancelQueries({ queryKey: followingFeedKey });
-      await queryClient.cancelQueries({ queryKey: reactionsKey });
+    const queriesToBackup = keys.flatMap((queryKey) =>
+      queryClient.getQueriesData({ queryKey })
+    ) as [any[], any][];
 
-      // 2. Snapshot the current state for rollback
-      const queriesToBackup = [
-        ...queryClient.getQueriesData({ queryKey: feedKey }),
-        ...queryClient.getQueriesData({ queryKey: userFeedKey }),
-        ...queryClient.getQueriesData({ queryKey: postKey }),
-        ...queryClient.getQueriesData({ queryKey: globalFeedKey }),
-        ...queryClient.getQueriesData({ queryKey: followingFeedKey }),
-        ...queryClient.getQueriesData({ queryKey: reactionsKey }),
-      ] as [any[], any][];
-
-      // 3. Apply optimistic updates in cache
-      const updateCache = (key: any[]) => {
-        queryClient.setQueriesData({ queryKey: key }, (old: any) =>
-          updateReactionsInCacheData(
-            old,
-            variables.postId,
-            variables.accountId,
-            variables.reactionType,
-            false
-          )
-        );
-      };
-
-      updateCache(feedKey);
-      updateCache(userFeedKey);
-      updateCache(postKey);
-      updateCache(globalFeedKey);
-      updateCache(followingFeedKey);
-
-      // Also update the reactions list query for this specific post
-      queryClient.setQueriesData(
-        { queryKey: getQueryKey(api.thinkpages.getPostReactions, { postId: variables.postId }) },
-        (old: any) =>
-          updatePostReactionsList(
-            old,
-            variables.postId,
-            variables.accountId,
-            variables.reactionType,
-            false,
-            activeAccount
-          )
+    for (const queryKey of [...feedKeys(), postKey]) {
+      queryClient.setQueriesData({ queryKey }, (old: any) =>
+        updateReactionsInCacheData(
+          old,
+          variables.postId,
+          variables.accountId,
+          reactionType,
+          isRemoval
+        )
       );
+    }
 
-      return { queriesToBackup };
-    },
+    // Also update the reactions list query for this specific post
+    queryClient.setQueriesData(
+      { queryKey: getQueryKey(api.thinkpages.getPostReactions, { postId: variables.postId }) },
+      (old: any) =>
+        updatePostReactionsList(
+          old,
+          variables.postId,
+          variables.accountId,
+          reactionType,
+          isRemoval,
+          activeAccount
+        )
+    );
+
+    return { queriesToBackup };
+  };
+
+  const rollbackReaction = (context: MutationContext | undefined) => {
+    for (const [queryKey, queryData] of context?.queriesToBackup ?? []) {
+      queryClient.setQueryData(queryKey, queryData);
+    }
+  };
+
+  const settleReaction = (postId: string) => {
+    // Silent invalidation of feeds (avoid refetch storms)
+    for (const queryKey of feedKeys()) {
+      void queryClient.invalidateQueries({ queryKey, refetchType: "none" });
+    }
+
+    // Active refetch of specific post and its reactions since they are cheap
+    void queryClient.invalidateQueries({
+      queryKey: getQueryKey(api.thinkpages.getPost, { postId }),
+    });
+    void queryClient.invalidateQueries({
+      queryKey: getQueryKey(api.thinkpages.getPostReactions, { postId }),
+    });
+  };
+
+  const addReactionMutation = api.thinkpages.addReaction.useMutation({
+    onMutate: (variables) => applyOptimisticReaction(variables, variables.reactionType, false),
     onSuccess: (data) => {
       // Show feedback
       const dataAny = data as any;
@@ -165,130 +173,24 @@ export function PostActions({
       }
     },
     onError: (error, variables, context) => {
-      console.error("❌ addReactionMutation ERROR:", error);
-      // Rollback cache
-      if (context?.queriesToBackup) {
-        for (const [queryKey, queryData] of context.queriesToBackup) {
-          queryClient.setQueryData(queryKey, queryData);
-        }
-      }
+      console.error("addReactionMutation error:", error);
+      rollbackReaction(context);
       notify.error(error.message || "Failed to add reaction");
     },
-    onSettled: (data, error, variables) => {
-      // Silent invalidation of feeds (avoid refetch storms)
-      const feedKey = getQueryKey(api.thinkpages.getFeed);
-      const userFeedKey = getQueryKey(api.thinkpages.getPostsByClerkUserId);
-      const globalFeedKey = getQueryKey(api.activities.getGlobalFeed);
-      const followingFeedKey = getQueryKey(api.activities.getFollowingFeed);
-
-      void queryClient.invalidateQueries({ queryKey: feedKey, refetchType: "none" });
-      void queryClient.invalidateQueries({ queryKey: userFeedKey, refetchType: "none" });
-      void queryClient.invalidateQueries({ queryKey: globalFeedKey, refetchType: "none" });
-      void queryClient.invalidateQueries({ queryKey: followingFeedKey, refetchType: "none" });
-
-      // Active refetch of specific post and its reactions since they are cheap
-      void queryClient.invalidateQueries({
-        queryKey: getQueryKey(api.thinkpages.getPost, { postId: variables.postId }),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: getQueryKey(api.thinkpages.getPostReactions, { postId: variables.postId }),
-      });
-    },
+    onSettled: (data, error, variables) => settleReaction(variables.postId),
   });
 
   const removeReactionMutation = api.thinkpages.removeReaction.useMutation({
-    onMutate: async (variables): Promise<MutationContext> => {
-      console.log("🚀 Optimistic remove starting:", variables);
-
-      const activeAccount = accounts.find((a) => a.id === variables.accountId);
-
-      // 1. Cancel outgoing refetches for all relevant feeds
-      const feedKey = getQueryKey(api.thinkpages.getFeed);
-      const userFeedKey = getQueryKey(api.thinkpages.getPostsByClerkUserId);
-      const postKey = getQueryKey(api.thinkpages.getPost);
-      const globalFeedKey = getQueryKey(api.activities.getGlobalFeed);
-      const followingFeedKey = getQueryKey(api.activities.getFollowingFeed);
-      const reactionsKey = getQueryKey(api.thinkpages.getPostReactions);
-
-      await queryClient.cancelQueries({ queryKey: feedKey });
-      await queryClient.cancelQueries({ queryKey: userFeedKey });
-      await queryClient.cancelQueries({ queryKey: postKey });
-      await queryClient.cancelQueries({ queryKey: globalFeedKey });
-      await queryClient.cancelQueries({ queryKey: followingFeedKey });
-      await queryClient.cancelQueries({ queryKey: reactionsKey });
-
-      // 2. Snapshot the current state for rollback
-      const queriesToBackup = [
-        ...queryClient.getQueriesData({ queryKey: feedKey }),
-        ...queryClient.getQueriesData({ queryKey: userFeedKey }),
-        ...queryClient.getQueriesData({ queryKey: postKey }),
-        ...queryClient.getQueriesData({ queryKey: globalFeedKey }),
-        ...queryClient.getQueriesData({ queryKey: followingFeedKey }),
-        ...queryClient.getQueriesData({ queryKey: reactionsKey }),
-      ] as [any[], any][];
-
-      // 3. Apply optimistic updates in cache
-      const updateCache = (key: any[]) => {
-        queryClient.setQueriesData({ queryKey: key }, (old: any) =>
-          updateReactionsInCacheData(old, variables.postId, variables.accountId, "", true)
-        );
-      };
-
-      updateCache(feedKey);
-      updateCache(userFeedKey);
-      updateCache(postKey);
-      updateCache(globalFeedKey);
-      updateCache(followingFeedKey);
-
-      // Also update the reactions list query for this specific post
-      queryClient.setQueriesData(
-        { queryKey: getQueryKey(api.thinkpages.getPostReactions, { postId: variables.postId }) },
-        (old: any) =>
-          updatePostReactionsList(
-            old,
-            variables.postId,
-            variables.accountId,
-            "",
-            true,
-            activeAccount
-          )
-      );
-
-      return { queriesToBackup };
-    },
+    onMutate: (variables) => applyOptimisticReaction(variables, "", true),
     onSuccess: () => {
       notify.success("Reaction removed");
     },
     onError: (error, variables, context) => {
-      console.error("❌ removeReactionMutation ERROR:", error);
-      // Rollback cache
-      if (context?.queriesToBackup) {
-        for (const [queryKey, queryData] of context.queriesToBackup) {
-          queryClient.setQueryData(queryKey, queryData);
-        }
-      }
+      console.error("removeReactionMutation error:", error);
+      rollbackReaction(context);
       notify.error(error.message || "Failed to remove reaction");
     },
-    onSettled: (data, error, variables) => {
-      // Silent invalidation of feeds (avoid refetch storms)
-      const feedKey = getQueryKey(api.thinkpages.getFeed);
-      const userFeedKey = getQueryKey(api.thinkpages.getPostsByClerkUserId);
-      const globalFeedKey = getQueryKey(api.activities.getGlobalFeed);
-      const followingFeedKey = getQueryKey(api.activities.getFollowingFeed);
-
-      void queryClient.invalidateQueries({ queryKey: feedKey, refetchType: "none" });
-      void queryClient.invalidateQueries({ queryKey: userFeedKey, refetchType: "none" });
-      void queryClient.invalidateQueries({ queryKey: globalFeedKey, refetchType: "none" });
-      void queryClient.invalidateQueries({ queryKey: followingFeedKey, refetchType: "none" });
-
-      // Active refetch of specific post and its reactions since they are cheap
-      void queryClient.invalidateQueries({
-        queryKey: getQueryKey(api.thinkpages.getPost, { postId: variables.postId }),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: getQueryKey(api.thinkpages.getPostReactions, { postId: variables.postId }),
-      });
-    },
+    onSettled: (data, error, variables) => settleReaction(variables.postId),
   });
 
   const handleLike = useCallback(async () => {

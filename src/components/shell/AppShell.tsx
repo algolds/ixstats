@@ -13,7 +13,7 @@ import { stripBasePath } from "~/lib/base-path";
 import { isChromelessPath } from "~/lib/navigation/app-sections";
 import { FacetShell } from "./FacetShell";
 
-export interface AppShellProps {
+interface AppShellProps {
   /** Rendered between the navigation and `<main>` (e.g. the setup redirect). */
   beforeMain?: ReactNode;
   children: ReactNode;

@@ -27,14 +27,14 @@ import { type SizePresets, type Preset, SIZE_PRESETS, DynamicIslandSizePresets }
 
 export * from "./presets";
 
-export type BlobStateType = {
+type BlobStateType = {
   size: SizePresets;
   previousSize: SizePresets | undefined;
   animationQueue: Array<{ size: SizePresets; delay: number }>;
   isAnimating: boolean;
 };
 
-export type BlobAction =
+type BlobAction =
   | { type: "SET_SIZE"; newSize: SizePresets }
   | { type: "INITIALIZE"; firstState: SizePresets }
   | {
@@ -43,7 +43,7 @@ export type BlobAction =
     }
   | { type: "ANIMATION_END" };
 
-export type BlobContextType = {
+type BlobContextType = {
   state: BlobStateType;
   dispatch: React.Dispatch<BlobAction>;
   setSize: (size: SizePresets) => void;
@@ -51,7 +51,7 @@ export type BlobContextType = {
   presets: Record<SizePresets, Preset>;
 };
 
-export const BlobContext = createContext<BlobContextType | undefined>(undefined);
+const BlobContext = createContext<BlobContextType | undefined>(undefined);
 
 const blobReducer = (state: BlobStateType, action: BlobAction): BlobStateType => {
   switch (action.type) {
@@ -85,7 +85,7 @@ const blobReducer = (state: BlobStateType, action: BlobAction): BlobStateType =>
   }
 };
 
-export interface DynamicIslandProviderProps {
+interface DynamicIslandProviderProps {
   children: React.ReactNode;
   initialSize?: SizePresets;
   initialAnimation?: Array<{ size: SizePresets; delay: number }>;
@@ -153,21 +153,11 @@ export const useHaloSize = () => {
   }
   return context;
 };
-
-export const useScheduledAnimations = (animations: Array<{ size: SizePresets; delay: number }>) => {
-  const { scheduleAnimation } = useHaloSize();
-  const animationsRef = useRef(animations);
-
-  useEffect(() => {
-    scheduleAnimation(animationsRef.current);
-  }, [scheduleAnimation]);
-};
-
-export const HaloOuterWrapper = ({ children }: { children: ReactNode }) => {
+const HaloOuterWrapper = ({ children }: { children: ReactNode }) => {
   return <div className="z-raised flex h-full w-full items-center justify-center">{children}</div>;
 };
 
-export const isCompactSize = (size: SizePresets | undefined): boolean => {
+const isCompactSize = (size: SizePresets | undefined): boolean => {
   if (!size) return true;
   return (
     size === "compact" ||
@@ -239,7 +229,7 @@ const calculateDimensions = (
   };
 };
 
-export interface DynamicIslandContentProps extends Omit<
+interface DynamicIslandContentProps extends Omit<
   React.ComponentPropsWithoutRef<typeof motion.div>,
   "id"
 > {
@@ -248,7 +238,7 @@ export interface DynamicIslandContentProps extends Omit<
   screenSize: string;
 }
 
-export const DynamicIslandContent = ({
+const DynamicIslandContent = ({
   children,
   id,
   screenSize,
@@ -447,7 +437,7 @@ export const Halo = ({ children, id, ...props }: { children: ReactNode; id: stri
   );
 };
 
-export type DynamicContainerProps = {
+type DynamicContainerProps = {
   className?: string;
   children?: React.ReactNode;
 };
@@ -469,69 +459,3 @@ export const HaloContainer = ({ className, children }: DynamicContainerProps) =>
     </motion.div>
   );
 };
-
-export type DynamicChildrenProps = {
-  className?: string;
-  children?: React.ReactNode;
-};
-
-export const DynamicDiv = ({ className, children }: DynamicChildrenProps) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{
-        opacity: 1,
-        scale: 1,
-        transition: springSnappy,
-      }}
-      exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15, ease: "easeOut" } }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-};
-
-export type MotionProps = {
-  className: string;
-  children: React.ReactNode;
-};
-
-export const DynamicTitle = ({ className, children }: MotionProps) => {
-  return (
-    <motion.h3
-      className={className}
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{
-        opacity: 1,
-        scale: 1,
-        transition: springSnappy,
-      }}
-    >
-      {children}
-    </motion.h3>
-  );
-};
-
-export const DynamicDescription = ({ className, children }: MotionProps) => {
-  return (
-    <motion.p
-      className={className}
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{
-        opacity: 1,
-        scale: 1,
-        transition: springSnappy,
-      }}
-    >
-      {children}
-    </motion.p>
-  );
-};
-
-// Aliases for compatibility
-export const DynamicIsland = Halo;
-export const useDynamicIslandSize = useHaloSize;
-export const DynamicIslandProvider = HaloProvider;
-export const DynamicContainer = HaloContainer;
-export default Halo;

@@ -34,7 +34,7 @@ export interface PackItem {
   cardType?: string | null;
 }
 
-export const getPackConfig = (packType: string) => {
+const getPackConfig = (packType: string) => {
   const type = packType.toUpperCase();
   if (type.includes("LEGENDARY") || type.includes("MYTHIC"))
     return {

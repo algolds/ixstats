@@ -38,7 +38,7 @@ import { getCategoryTheme, getCategoryLabel } from "~/lib/cards/category-theme";
 import { isValidLoreCategory, type LoreCategory } from "~/lib/cards/category-enums";
 import { classifyFromWikitext } from "~/lib/cards/category-classifier";
 
-export interface CardDetailsModalProps {
+interface CardDetailsModalProps {
   card: CardInstance | null;
   open: boolean;
   onClose: () => void;

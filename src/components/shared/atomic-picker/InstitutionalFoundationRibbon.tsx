@@ -14,7 +14,7 @@ import { Bank as Landmark, Flash as Zap } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Card } from "~/components/ui/card";
 
-export interface InstitutionalFoundationRibbonProps {
+interface InstitutionalFoundationRibbonProps {
   /** Array of active Government component keys or names from Step 3 */
   governmentComponents?: string[];
   /** Array of currently selected Economic component keys or names from Step 4 */

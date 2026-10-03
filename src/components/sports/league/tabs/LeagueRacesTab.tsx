@@ -7,7 +7,7 @@ import { MapPin } from "iconoir-react";
 import { RaceResults } from "~/components/sports/league/RaceResults";
 import { Card } from "~/components/ui/card";
 
-export interface LeagueRacesTabProps {
+interface LeagueRacesTabProps {
   leagueId: string;
   activeSeasonId?: string;
   latestSeasonId?: string;
@@ -79,5 +79,3 @@ export function LeagueRacesTab({
 
   return <RaceResults races={mappedRaces} />;
 }
-
-export default LeagueRacesTab;

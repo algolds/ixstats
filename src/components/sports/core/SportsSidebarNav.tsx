@@ -16,7 +16,6 @@ import {
   WhiteFlag as Flag,
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
-import { getSportTheme } from "~/lib/sports/theming";
 
 export type SportsNavSection =
   // Competition / League Sections
@@ -41,7 +40,7 @@ export interface SportsNavItem {
   description?: string;
 }
 
-export const LEAGUE_NAV_ITEMS: SportsNavItem[] = [
+const LEAGUE_NAV_ITEMS: SportsNavItem[] = [
   {
     id: "overview",
     label: "Overview",
@@ -71,14 +70,13 @@ export const CLUB_NAV_ITEMS: SportsNavItem[] = [
   { id: "history", label: "History", icon: Clock, description: "Titles & past seasons" },
 ];
 
-export interface SportsSidebarNavProps {
+interface SportsSidebarNavProps {
   activeSection: SportsNavSection;
   onNavigate?: (section: SportsNavSection) => void;
   items?: SportsNavItem[];
   mode?: "league" | "club";
   variant?: "expanded" | "desktop" | "mobile";
   visibleSections?: SportsNavSection[];
-  sportPreset?: string;
   notifications?: Partial<Record<SportsNavSection, number>>;
   className?: string;
 }
@@ -90,7 +88,6 @@ export function SportsSidebarNav({
   mode = "league",
   variant = "expanded",
   visibleSections,
-  sportPreset,
   notifications,
   className,
 }: SportsSidebarNavProps) {
@@ -102,7 +99,6 @@ export function SportsSidebarNav({
     ? allItems.filter((item) => visibleSections.includes(item.id))
     : allItems;
 
-  const sportTheme = getSportTheme(sportPreset);
   const isControlled = !!onNavigate;
 
   /* ── Mobile: horizontal pill bar ── */

@@ -11,7 +11,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Card } from "~/components/ui/card";
 
-export interface ImportVerifyStepProps {
+interface ImportVerifyStepProps {
   nationName: string;
   verificationUrl: string;
   checksum: string;

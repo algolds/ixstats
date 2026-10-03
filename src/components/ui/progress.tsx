@@ -6,8 +6,7 @@ import * as ProgressPrimitive from "@radix-ui/react-progress";
 import { cn } from "~/lib/utils/cn";
 
 /** Indicator colour: the app tint by default, or a status role. */
-export type ProgressTone =
-  "tint" | "success" | "warning" | "caution" | "destructive" | "info" | "neutral";
+type ProgressTone = "tint" | "success" | "warning" | "caution" | "destructive" | "info" | "neutral";
 
 const TONE: Record<ProgressTone, string> = {
   tint: "bg-tint",

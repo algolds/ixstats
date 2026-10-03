@@ -17,7 +17,7 @@ import { StashImageCard } from "../StashImageCard";
 import { useEditorModalContext } from "../../context/EditorModalContext";
 import { Button } from "~/components/ui/button";
 
-export interface StashDropdownProps {
+interface StashDropdownProps {
   onInsertImage: (filename: string) => void;
   onBeforeOpen?: () => void;
 }

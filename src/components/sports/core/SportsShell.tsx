@@ -8,7 +8,7 @@ import { useSportsFocus } from "./SportsFocusProvider";
 import { SportsFocusPanel, SportsFocusSheet } from "./SportsFocusPanel";
 import { Card } from "~/components/ui/card";
 
-export interface SportsShellProps {
+interface SportsShellProps {
   children: React.ReactNode;
   activeSection: SportsNavSection;
   onNavigate?: (section: SportsNavSection) => void;
@@ -57,7 +57,6 @@ export function SportsShell({
             items={navItems}
             mode={mode}
             variant="mobile"
-            sportPreset={sportPreset}
             visibleSections={visibleSections}
             notifications={notifications}
           />
@@ -74,7 +73,6 @@ export function SportsShell({
                 items={navItems}
                 mode={mode}
                 variant="expanded"
-                sportPreset={sportPreset}
                 visibleSections={visibleSections}
                 notifications={notifications}
               />

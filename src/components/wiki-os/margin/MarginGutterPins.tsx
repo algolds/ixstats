@@ -6,7 +6,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { ChatBubble as MessageSquare, DesignPencil as Highlighter } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
-export interface GutterPinItem {
+interface GutterPinItem {
   id: string;
   type: "thread" | "annotation" | "cluster";
   title: string;

@@ -3,7 +3,7 @@
 import React from "react";
 import { cn } from "~/lib/utils";
 
-export interface CircuitMapProps {
+interface CircuitMapProps {
   className?: string;
   circuitName?: string;
   lapCount?: number;

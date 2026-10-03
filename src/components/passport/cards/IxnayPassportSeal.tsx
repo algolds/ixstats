@@ -4,7 +4,7 @@ import React, { memo } from "react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 
-export interface IxnayPassportSealProps {
+interface IxnayPassportSealProps {
   size?: "sm" | "md" | "lg";
   className?: string;
 }

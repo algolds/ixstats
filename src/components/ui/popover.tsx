@@ -92,7 +92,7 @@ const VIRTUAL_SURFACES = {
   none: "",
 } as const;
 
-export type VirtualAnchorPopoverSurface = keyof typeof VIRTUAL_SURFACES;
+type VirtualAnchorPopoverSurface = keyof typeof VIRTUAL_SURFACES;
 
 export interface VirtualAnchorPopoverProps extends Omit<
   React.ComponentProps<typeof PopoverPrimitive.Content>,
@@ -178,15 +178,6 @@ function VirtualAnchorPopover({
   );
 }
 
-function PopoverPortal({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Portal>) {
-  return <PopoverPrimitive.Portal data-slot="popover-portal" {...props} />;
-}
-
-/** Compat shim: Radix popover has no backdrop primitive (no consumers use it). */
-function PopoverBackdrop(_props: { className?: string; children?: React.ReactNode }) {
-  return null;
-}
-
 function PopoverContent({
   className,
   align = "center",
@@ -243,24 +234,14 @@ function PopoverDescription({ className, ...props }: React.ComponentProps<"p">) 
   );
 }
 
-function PopoverClose({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Close>) {
-  return <PopoverPrimitive.Close data-slot="popover-close" {...props} />;
-}
-
-const PopoverCLose = PopoverClose;
-
 export {
   Popover,
   PopoverTrigger,
   PopoverAnchor,
   PopoverVirtualAnchor,
   VirtualAnchorPopover,
-  PopoverBackdrop,
-  PopoverPortal,
   PopoverContent,
   PopoverHeader,
   PopoverTitle,
   PopoverDescription,
-  PopoverClose,
-  PopoverCLose,
 };

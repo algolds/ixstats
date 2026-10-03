@@ -13,7 +13,7 @@ import {
   type SettingSectionConfig,
 } from "../_lib/sections";
 
-export interface SettingsSidebarNavProps {
+interface SettingsSidebarNavProps {
   activeSection: SettingSectionId;
   onSelectSection: (id: SettingSectionId) => void;
   hasCountryId: boolean;

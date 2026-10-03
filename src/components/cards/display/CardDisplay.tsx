@@ -87,7 +87,7 @@ const HEIGHT_PIXELS: Record<CardDisplaySize, string> = {
 /**
  * CardDisplay component props
  */
-export interface CardDisplayProps {
+interface CardDisplayProps {
   /** Card instance data */
   card: CardInstance;
   /** Display size variant */

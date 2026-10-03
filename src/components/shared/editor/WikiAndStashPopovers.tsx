@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover
 import { EmojiPicker } from "~/components/thinkpages/EmojiPicker";
 import { cn } from "~/lib/utils";
 
-export interface WikiAndStashPopoversProps {
+interface WikiAndStashPopoversProps {
   disabled?: boolean;
   isWikiOpen: boolean;
   setIsWikiOpen: (val: boolean) => void;

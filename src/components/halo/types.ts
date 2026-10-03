@@ -7,8 +7,6 @@ export interface CommandPaletteProps {
 
 // Branded string type helper for plugin & view identifiers
 export type Brand<T, B extends string> = T & { readonly __brand: B };
-export type PluginId = Brand<string, "PluginId">;
-
 // User Profile interface
 export interface UserProfile {
   id: string;
@@ -33,8 +31,8 @@ export interface SearchResult {
 }
 
 // View modes — includes plugin-provided views via template literal
-export type BuiltinViewMode = "compact" | "search" | "notifications" | "settings" | "mycountry";
-export type PluginViewMode = `plugin:${string}`;
+type BuiltinViewMode = "compact" | "search" | "notifications" | "settings" | "mycountry";
+type PluginViewMode = `plugin:${string}`;
 export type ViewMode = BuiltinViewMode | PluginViewMode;
 
 export type SearchFilter = "all" | "countries" | "commands" | "features" | "wiki";
@@ -50,7 +48,7 @@ export interface DIViewProps<F = unknown, C = unknown> {
 }
 
 /** An action button a plugin can inject into the pill */
-export interface DIAction {
+interface DIAction {
   id: string;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
@@ -59,7 +57,7 @@ export interface DIAction {
 }
 
 /** A badge indicator (colored dot) on the pill */
-export interface DIBadge {
+interface DIBadge {
   color: string;
   pulse?: boolean;
 }
@@ -80,16 +78,7 @@ export interface DIPlugin<F = unknown, C = unknown> {
 }
 
 // Current time state interface
-export interface CurrentTimeState {
-  greeting: string;
-  dateDisplay: string;
-  timeDisplay: string;
-  multiplier: number;
-}
-
 // Setup status type
-export type SetupStatus = "loading" | "unauthenticated" | "needs-setup" | "complete";
-
 // Component prop interfaces
 export interface CompactViewProps {
   mode?: ViewMode;
@@ -106,7 +95,7 @@ export interface CompactViewProps {
   pluginBadge?: DIBadge;
 }
 
-export type CountrySummary = {
+type CountrySummary = {
   id: string;
   name: string;
   slug?: string;
@@ -129,11 +118,6 @@ export function extractCountriesList(data: CountriesData | undefined): CountrySu
   if (!data) return [];
   if (Array.isArray(data)) return data;
   return data.countries ?? [];
-}
-
-/** Type guard to check if a mode string is a plugin-provided view mode */
-export function isPluginViewMode(mode: string): mode is PluginViewMode {
-  return mode.startsWith("plugin:");
 }
 
 export interface SearchViewProps {

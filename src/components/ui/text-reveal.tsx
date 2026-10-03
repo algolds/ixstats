@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  motion,
-  useAnimation,
-  useInView,
-  useMotionValue,
-  useTransform,
-  animate,
-} from "motion/react";
+import { motion, useAnimation, useInView } from "motion/react";
 import { useEffect, useRef } from "react";
 import { cn } from "~/lib/utils/cn";
 
@@ -56,108 +49,6 @@ export const TextReveal = ({ children, className, delay = 0, duration = 0.6 }: T
           {index !== words.length - 1 ? "\u00A0" : ""}
         </motion.span>
       ))}
-    </motion.div>
-  );
-};
-
-interface CountUpProps {
-  from?: number;
-  to: number;
-  duration?: number;
-  delay?: number;
-  className?: string;
-  prefix?: string;
-  suffix?: string;
-  decimals?: number;
-}
-
-export const CountUp = ({
-  from = 0,
-  to,
-  duration = 1,
-  delay = 0,
-  className,
-  prefix = "",
-  suffix = "",
-  decimals = 0,
-}: CountUpProps) => {
-  const ref = useRef<HTMLSpanElement>(null);
-  const isInView = useInView(ref, { once: true });
-  const count = useMotionValue(from);
-  const rounded = useTransform(count, (latest) =>
-    decimals > 0 ? latest.toFixed(decimals) : Math.round(latest).toString()
-  );
-
-  useEffect(() => {
-    if (isInView) {
-      const controls = animate(count, to, { duration, delay, ease: "easeOut" });
-      return controls.stop;
-    }
-    return;
-  }, [isInView, count, to, duration, delay]);
-
-  return (
-    <motion.span
-      ref={ref}
-      className={className}
-      initial={{ opacity: 0 }}
-      animate={isInView ? { opacity: 1 } : { opacity: 0 }}
-      transition={{ duration: 0.3, delay }}
-    >
-      {isInView && (
-        <motion.span
-          initial={{ scale: 0.8 }}
-          animate={{ scale: 1 }}
-          transition={{ duration, delay, ease: "easeOut" }}
-        >
-          {prefix}
-          <motion.span>{rounded}</motion.span>
-          {suffix}
-        </motion.span>
-      )}
-    </motion.span>
-  );
-};
-
-interface TypewriterProps {
-  text: string;
-  delay?: number;
-  speed?: number;
-  className?: string;
-}
-
-export const Typewriter = ({ text, delay = 0, speed = 50, className }: TypewriterProps) => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
-
-  return (
-    <motion.div
-      ref={ref}
-      className={cn("overflow-hidden", className)}
-      initial="hidden"
-      animate={isInView ? "visible" : "hidden"}
-    >
-      <motion.span
-        variants={{
-          hidden: { opacity: 0 },
-          visible: { opacity: 1 },
-        }}
-        transition={{ delay, duration: 0.1 }}
-      >
-        {text.split("").map((char, index) => (
-          <motion.span
-            key={index}
-            initial={{ opacity: 0 }}
-            animate={isInView ? { opacity: 1 } : { opacity: 0 }}
-            transition={{
-              delay: delay + index * (speed / 1000),
-              duration: 0.1,
-            }}
-          >
-            {char}
-          </motion.span>
-        ))}
-      </motion.span>
     </motion.div>
   );
 };

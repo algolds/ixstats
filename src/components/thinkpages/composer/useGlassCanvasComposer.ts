@@ -5,7 +5,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";
 
-export interface DataVisualization {
+interface DataVisualization {
   id: string;
   type:
     | "economic_chart"
@@ -21,7 +21,7 @@ export interface DataVisualization {
   config: any;
 }
 
-export interface UseGlassCanvasComposerProps {
+interface UseGlassCanvasComposerProps {
   account: any | null;
   countryId: string;
   isOwner: boolean;

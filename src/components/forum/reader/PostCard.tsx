@@ -12,7 +12,6 @@ import {
   Bookmark,
   EditPencil as Pencil,
   Trash as Trash2,
-  Check,
 } from "iconoir-react";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";

@@ -33,7 +33,7 @@ interface CardSlot {
 /**
  * CraftingWorkbench props
  */
-export interface CraftingWorkbenchProps {
+interface CraftingWorkbenchProps {
   /** Selected recipe ID */
   recipeId: string | null;
   /** User's card inventory */

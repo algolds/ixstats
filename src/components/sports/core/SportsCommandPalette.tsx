@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trophy, Shield, Play, Calendar, Activity, Search, Book, User } from "iconoir-react";
+import { Trophy, Shield, Play, Calendar, Book } from "iconoir-react";
 import {
   CommandDialog,
   CommandInput,
@@ -15,7 +15,7 @@ import {
 import { withBasePath } from "~/lib/base-path";
 import { useSportsFocus } from "./SportsFocusProvider";
 
-export interface SportsCommandPaletteProps {
+interface SportsCommandPaletteProps {
   onNavigateSection?: (section: string) => void;
   onSimulateNext?: () => void;
   teams?: Array<{ id: string; name: string; logo?: string | null }>;
@@ -143,5 +143,3 @@ export function SportsCommandPalette({
     </CommandDialog>
   );
 }
-
-export default SportsCommandPalette;

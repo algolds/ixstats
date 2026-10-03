@@ -28,7 +28,7 @@ export interface GlassPlateEditorRef {
   getBbcode: () => string;
 }
 
-export interface GlassPlateEditorProps {
+interface GlassPlateEditorProps {
   value?: string;
   onChange?: (htmlContent: string, plainText: string, bbcode: string) => void;
   placeholder?: string;

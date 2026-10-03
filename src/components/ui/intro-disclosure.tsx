@@ -629,5 +629,3 @@ export function IntroDisclosure({
     </Dialog>
   );
 }
-
-export default IntroDisclosure;

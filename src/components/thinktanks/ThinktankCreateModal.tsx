@@ -23,16 +23,10 @@ import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 interface ThinktankCreateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentUserId: string;
   onCreated: (groupId: string) => void;
 }
 
-export function ThinktankCreateModal({
-  isOpen,
-  onClose,
-  currentUserId,
-  onCreated,
-}: ThinktankCreateModalProps) {
+export function ThinktankCreateModal({ isOpen, onClose, onCreated }: ThinktankCreateModalProps) {
   const notify = useNotify();
   const utils = api.useUtils();
 

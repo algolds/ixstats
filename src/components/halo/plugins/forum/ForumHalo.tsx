@@ -12,12 +12,12 @@ import { ChatBubble as MessageSquare } from "iconoir-react";
 import { useForumContext } from "~/components/forum/shared/ForumContext";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import { ForumView } from "./views";
-import { useDynamicIslandSize, SIZE_PRESETS } from "~/components/halo/HaloPrimitives";
+import { useHaloSize, SIZE_PRESETS } from "~/components/halo/HaloPrimitives";
 import { PreText } from "~/components/ui/pretext";
 
 function ForumBreadcrumb() {
   const { currentThread, currentForum, unreadAlerts } = useForumContext();
-  const { state } = useDynamicIslandSize();
+  const { state } = useHaloSize();
   const isCollapsed = state.size === SIZE_PRESETS.WIKI_COMPACT;
 
   const label = currentThread?.title ?? currentForum?.title ?? "Forum";
@@ -65,4 +65,3 @@ export function ForumHalo() {
 }
 
 // Backwards compatibility alias
-export const ForumDIPlugin = ForumHalo;

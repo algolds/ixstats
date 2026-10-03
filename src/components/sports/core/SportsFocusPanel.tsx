@@ -10,6 +10,7 @@ import { getSportTheme } from "~/lib/sports/theming";
 import { getPlayerPhotoUrl } from "~/lib/sports/photos";
 import { withBasePath } from "~/lib/base-path";
 import { Button } from "~/components/ui/button";
+import { attributeBadgeClass } from "~/components/sports/rating";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
@@ -17,13 +18,6 @@ import { cn } from "~/lib/utils";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 // ─── Attribute badge styling ────────────────────────────────────────────────
-function attributeBadgeClass(value: number): string {
-  if (value >= 90) return "bg-yellow/20 text-yellow border-yellow/40";
-  if (value >= 80) return "bg-green/20 text-green border-green/40";
-  if (value >= 70) return "bg-blue/20 text-blue border-blue/40";
-  return "bg-fill-3 text-label-secondary border-separator";
-}
-
 // ─── Career stage styling ───────────────────────────────────────────────────
 const CAREER_STAGE_STYLES: Record<string, { label: string; className: string }> = {
   rookie: { label: "Rookie", className: "border-blue/30 bg-blue/10 text-blue" },
@@ -138,7 +132,7 @@ function OrganizationFocusContent({
         <FacetListSection aria-label="Top players">
           {topPlayers.map((player) => {
             const ratings = (player.ratings as Record<string, number> | null) ?? {};
-            const ovr = ratings.overall ?? 50;
+            const ovr = ratings.overall;
 
             return (
               <FacetRow
@@ -167,7 +161,7 @@ function OrganizationFocusContent({
                       attributeBadgeClass(ovr)
                     )}
                   >
-                    {ovr}
+                    {ovr ?? <span aria-label="Not recorded">—</span>}
                   </Badge>
                 }
                 accessory="chevron"
@@ -181,13 +175,7 @@ function OrganizationFocusContent({
 }
 
 // ─── Athlete Focus View ─────────────────────────────────────────────────────
-function AthleteFocusContent({
-  athleteId,
-  sportPreset,
-}: {
-  athleteId: string;
-  sportPreset?: string;
-}) {
+function AthleteFocusContent({ athleteId }: { athleteId: string }) {
   const { focusOrganization } = useSportsFocus();
 
   const { data: athlete, isLoading } = api.sports.getPlayer.useQuery(
@@ -196,7 +184,7 @@ function AthleteFocusContent({
   );
 
   const ratings = (athlete?.ratings as Record<string, number> | null) ?? {};
-  const overall = ratings.overall ?? 50;
+  const overall = ratings.overall;
 
   const stage = (athlete?.careerStage ?? "prime").toLowerCase();
   const stageInfo = CAREER_STAGE_STYLES[stage] ?? CAREER_STAGE_STYLES.prime;
@@ -270,7 +258,7 @@ function AthleteFocusContent({
             variant="outline"
             className={cn("text-body px-2 py-0.5 font-semibold", attributeBadgeClass(overall))}
           >
-            {overall}
+            {overall ?? <span aria-label="Not recorded">—</span>}
           </Badge>
           <span className="text-footnote text-label-secondary mt-0.5 block font-semibold">OVR</span>
         </div>
@@ -299,7 +287,7 @@ function AthleteFocusContent({
           <span className="text-eyebrow text-label-secondary">Attributes & skills</span>
           <div className="grid grid-cols-2 gap-2">
             {skillKeys.map((key) => {
-              const val = ratings[key] ?? 50;
+              const val = ratings[key]!; // skillKeys come from the recorded ratings
               return (
                 <div
                   key={key}
@@ -443,9 +431,7 @@ export function SportsFocusPanel({
         <OrganizationFocusContent organizationId={focus.id} sportPreset={sportPreset} />
       )}
 
-      {focus.type === "athlete" && (
-        <AthleteFocusContent athleteId={focus.id} sportPreset={sportPreset} />
-      )}
+      {focus.type === "athlete" && <AthleteFocusContent athleteId={focus.id} />}
 
       {focus.type === "match" && <MatchFocusContent matchId={focus.id} />}
     </aside>
@@ -470,13 +456,10 @@ export function SportsFocusSheet({ sportPreset }: { sportPreset?: string }) {
           <OrganizationFocusContent organizationId={focus.id} sportPreset={sportPreset} />
         )}
 
-        {focus?.type === "athlete" && (
-          <AthleteFocusContent athleteId={focus.id} sportPreset={sportPreset} />
-        )}
+        {focus?.type === "athlete" && <AthleteFocusContent athleteId={focus.id} />}
 
         {focus?.type === "match" && <MatchFocusContent matchId={focus.id} />}
       </SheetContent>
     </Sheet>
   );
 }
-export default SportsFocusPanel;

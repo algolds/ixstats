@@ -35,7 +35,7 @@ export function splitIntoSentences(text: string): string[] {
 }
 
 /** Creates a minimal standard 44-byte silent WAV header */
-export function createSilentWavBuffer(): Buffer {
+function createSilentWavBuffer(): Buffer {
   const buf = Buffer.alloc(44);
   buf.write("RIFF", 0);
   buf.writeUInt32LE(36, 4);

@@ -31,12 +31,44 @@ import { Badge } from "~/components/ui/badge";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { StepIndicator } from "~/components/ui/step-indicator";
 
-export interface TradeOfferModalProps {
+interface TradeOfferModalProps {
   open: boolean;
   onClose: () => void;
   recipientId?: string;
   recipientName?: string;
   initialYourCards?: CardInstance[];
+}
+
+/** A tradable card ownership row as the CardInstance the card picker renders. */
+function toCardInstance(ownership: any): CardInstance {
+  return {
+    id: ownership.id,
+    title: ownership.cards.title,
+    description: ownership.cards.description || "",
+    artwork: ownership.cards.artwork || "/images/cards/placeholder-nation.png",
+    artworkVariants: ownership.cards.artworkVariants || null,
+    cardType: ownership.cards.cardType,
+    rarity: ownership.cards.rarity,
+    season: ownership.cards.season,
+    nsCardId: ownership.cards.nsCardId || null,
+    nsSeason: ownership.cards.nsSeason || null,
+    nsData: ownership.cards.nsData || null,
+    wikiSource: ownership.cards.wikiSource || null,
+    wikiArticleTitle: ownership.cards.wikiArticleTitle || null,
+    wikiUrl: ownership.cards.wikiUrl || null,
+    countryId: ownership.cards.countryId,
+    stats: ownership.cards.stats || {},
+    marketValue: ownership.cards.marketValue || 0,
+    totalSupply: ownership.cards.totalSupply || 0,
+    level: ownership.level || 1,
+    evolutionStage: ownership.cards.evolutionStage || 0,
+    enhancements: ownership.cards.enhancements || null,
+    createdAt: ownership.cards.createdAt,
+    updatedAt: ownership.cards.updatedAt,
+    lastTrade: ownership.cards.lastTrade || null,
+    country: ownership.cards.country,
+    owners: [],
+  };
 }
 
 export const TradeOfferModal = React.memo<TradeOfferModalProps>(
@@ -88,35 +120,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
 
     const { data: yourCardsData } = api.cards.getMyCards.useQuery({});
     const yourCards: CardInstance[] = useMemo(
-      () =>
-        yourCardsData?.map((ownership: any) => ({
-          id: ownership.id,
-          title: ownership.cards.title,
-          description: ownership.cards.description || "",
-          artwork: ownership.cards.artwork || "/images/cards/placeholder-nation.png",
-          artworkVariants: ownership.cards.artworkVariants || null,
-          cardType: ownership.cards.cardType,
-          rarity: ownership.cards.rarity,
-          season: ownership.cards.season,
-          nsCardId: ownership.cards.nsCardId || null,
-          nsSeason: ownership.cards.nsSeason || null,
-          nsData: ownership.cards.nsData || null,
-          wikiSource: ownership.cards.wikiSource || null,
-          wikiArticleTitle: ownership.cards.wikiArticleTitle || null,
-          wikiUrl: ownership.cards.wikiUrl || null,
-          countryId: ownership.cards.countryId,
-          stats: ownership.cards.stats || {},
-          marketValue: ownership.cards.marketValue || 0,
-          totalSupply: ownership.cards.totalSupply || 0,
-          level: ownership.level || 1,
-          evolutionStage: ownership.cards.evolutionStage || 0,
-          enhancements: ownership.cards.enhancements || null,
-          createdAt: ownership.cards.createdAt,
-          updatedAt: ownership.cards.updatedAt,
-          lastTrade: ownership.cards.lastTrade || null,
-          country: ownership.cards.country,
-          owners: [],
-        })) || [],
+      () => yourCardsData?.map(toCardInstance) || [],
       [yourCardsData]
     );
 
@@ -125,35 +129,7 @@ export const TradeOfferModal = React.memo<TradeOfferModalProps>(
       { enabled: !!searchRecipient }
     );
     const theirCards: CardInstance[] = useMemo(
-      () =>
-        theirCardsData?.map((ownership: any) => ({
-          id: ownership.id,
-          title: ownership.cards.title,
-          description: ownership.cards.description || "",
-          artwork: ownership.cards.artwork || "/images/cards/placeholder-nation.png",
-          artworkVariants: ownership.cards.artworkVariants || null,
-          cardType: ownership.cards.cardType,
-          rarity: ownership.cards.rarity,
-          season: ownership.cards.season,
-          nsCardId: ownership.cards.nsCardId || null,
-          nsSeason: ownership.cards.nsSeason || null,
-          nsData: ownership.cards.nsData || null,
-          wikiSource: ownership.cards.wikiSource || null,
-          wikiArticleTitle: ownership.cards.wikiArticleTitle || null,
-          wikiUrl: ownership.cards.wikiUrl || null,
-          countryId: ownership.cards.countryId,
-          stats: ownership.cards.stats || {},
-          marketValue: ownership.cards.marketValue || 0,
-          totalSupply: ownership.cards.totalSupply || 0,
-          level: ownership.level || 1,
-          evolutionStage: ownership.cards.evolutionStage || 0,
-          enhancements: ownership.cards.enhancements || null,
-          createdAt: ownership.cards.createdAt,
-          updatedAt: ownership.cards.updatedAt,
-          lastTrade: ownership.cards.lastTrade || null,
-          country: ownership.cards.country,
-          owners: [],
-        })) || [],
+      () => theirCardsData?.map(toCardInstance) || [],
       [theirCardsData]
     );
 

@@ -197,7 +197,7 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
           <VaultRecentActivityCard loading={loading} activities={activities} />
         </div>
 
-        {/* Right Sidebar Column (Card Holdings Top Right + Milestones) */}
+        {/* Right Sidebar Column (Card Holdings Top Right + rank) */}
         <VaultShowcaseGrid
           hasImported={hasImported}
           isNoticeDismissed={isNoticeDismissed}
@@ -208,8 +208,6 @@ export function VaultDashboardSection({ onNavigate }: VaultDashboardSectionProps
           myAchievements={myAchievements}
           leaderboard={leaderboard}
           userCountryId={userData?.countryId}
-          totalCards={stats?.totalCards ?? 0}
-          creditsBalance={balanceData?.credits ?? 0}
         />
       </div>
 

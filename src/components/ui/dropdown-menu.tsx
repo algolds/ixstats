@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
-import { Check, NavArrowRight as ChevronRightIcon, Circle } from "iconoir-react";
+import { Circle } from "iconoir-react";
 
 import { cn } from "~/lib/utils/cn";
 import { presentMotionClassName } from "~/components/ui/dialog";
@@ -23,17 +23,6 @@ function DropdownMenuTrigger({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
   return <DropdownMenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />;
-}
-
-function DropdownMenuPortal({
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.Portal>) {
-  return <DropdownMenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />;
-}
-
-/** Compat shim: Radix dropdown menu has no backdrop primitive (no consumers use it). */
-function DropdownMenuBackdrop(_props: { className?: string }) {
-  return null;
 }
 
 function DropdownMenuContent({
@@ -87,44 +76,6 @@ function DropdownMenuItem({
   );
 }
 
-function DropdownMenuSub({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Sub>) {
-  return <DropdownMenuPrimitive.Sub data-slot="dropdown-menu-sub" {...props} />;
-}
-
-function DropdownMenuSubTrigger({
-  className,
-  inset,
-  children,
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.SubTrigger> & {
-  inset?: boolean;
-}) {
-  return (
-    <DropdownMenuPrimitive.SubTrigger
-      data-slot="dropdown-menu-sub-trigger"
-      data-inset={inset}
-      className={cn(menuRow, "data-[state=open]:bg-fill-3 data-[inset]:pl-8", className)}
-      {...props}
-    >
-      {children}
-      <ChevronRightIcon className="ml-auto size-4" />
-    </DropdownMenuPrimitive.SubTrigger>
-  );
-}
-
-function DropdownMenuSubContent({
-  className,
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
-  return (
-    <DropdownMenuPrimitive.SubContent
-      data-slot="dropdown-menu-sub-content"
-      className={cn(menuSurface, "overflow-hidden", presentMotionClassName, className)}
-      {...props}
-    />
-  );
-}
-
 function DropdownMenuGroup({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Group>) {
   return <DropdownMenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />;
 }
@@ -173,27 +124,6 @@ function DropdownMenuRadioItem({
   );
 }
 
-function DropdownMenuCheckboxItem({
-  className,
-  children,
-  ...props
-}: React.ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem>) {
-  return (
-    <DropdownMenuPrimitive.CheckboxItem
-      data-slot="dropdown-menu-checkbox-item"
-      className={cn(menuRow, "pr-2 pl-8", className)}
-      {...props}
-    >
-      <span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
-        <DropdownMenuPrimitive.ItemIndicator>
-          <Check className="size-4" />
-        </DropdownMenuPrimitive.ItemIndicator>
-      </span>
-      {children}
-    </DropdownMenuPrimitive.CheckboxItem>
-  );
-}
-
 function DropdownMenuSeparator({
   className,
   ...props
@@ -207,34 +137,17 @@ function DropdownMenuSeparator({
   );
 }
 
-function DropdownMenuShortcut({ className, ...props }: React.ComponentProps<"span">) {
-  return (
-    <span
-      data-slot="dropdown-menu-shortcut"
-      className={cn("text-footnote text-label-secondary ml-auto", className)}
-      {...props}
-    />
-  );
-}
-
 const DropdownMenuLabel = DropdownMenuGroupLabel;
 
 export {
   DropdownMenu,
   DropdownMenuTrigger,
-  DropdownMenuPortal,
-  DropdownMenuBackdrop,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
   DropdownMenuGroup,
   DropdownMenuGroupLabel,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
 };

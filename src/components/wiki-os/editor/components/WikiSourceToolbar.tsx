@@ -38,7 +38,7 @@ import { TemplateDropdown } from "./shared/TemplateDropdown";
 import { SettingsDropdown } from "./shared/SettingsDropdown";
 import { Button } from "~/components/ui/button";
 
-export interface WikiSourceToolbarProps {
+interface WikiSourceToolbarProps {
   title: string;
   isDirty: boolean;
   repulsionProgress: number;

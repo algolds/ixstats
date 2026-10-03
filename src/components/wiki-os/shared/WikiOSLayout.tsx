@@ -27,9 +27,6 @@ import { WikiOSUnifiedSidebar } from "./WikiOSUnifiedSidebar";
 import { WikiOSContentWrapper } from "./WikiOSContentWrapper";
 import { CreatePageModal } from "./CreatePageModal";
 import { WikiOSLogomark } from "./WikiOSLogomark";
-import { WikiUtilitiesRibbon } from "./WikiUtilitiesRibbon";
-
-import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 
 const RESERVED_WIKI_SLUGS = new Set([
   "lorewards",
@@ -64,19 +61,12 @@ function isNonArticlePath(cleanPath: string): boolean {
 
 export function WikiOSLayout({
   title,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  sidebarVariant = "wiki",
   hideTitleHeading = false,
-  showUtilitiesRibbon,
-  sections,
   readOnly,
   children,
 }: {
   title?: string;
-  sidebarVariant?: "wiki" | "dashboard";
   hideTitleHeading?: boolean;
-  showUtilitiesRibbon?: boolean;
-  sections?: TocEntry[];
   /** Another wiki's page shown in WikiOS (ruling E-l): no page tools and no edit shortcut. */
   readOnly?: boolean;
   children: ReactNode;
@@ -170,7 +160,6 @@ export function WikiOSLayout({
       countryData={countryData}
       isSpecialPage={isSpecialPage}
       pathname={pathname}
-      sections={sections}
     />
   );
 
@@ -187,12 +176,6 @@ export function WikiOSLayout({
         disableGlobalHover={true}
       >
         <WikiOSContentWrapper title={hideTitleHeading ? undefined : title}>
-          {/*{(showUtilitiesRibbon ?? isSpecialPage) && (
-          //  <WikiUtilitiesRibbon
-          //    onSearchClick={() => setSearchOpen(true)}
-          //    onCreatePageClick={() => setCreatePageOpen(true)}
-          //  />
-          )}*/}
           {children}
         </WikiOSContentWrapper>
       </DashboardSidebarLayout>

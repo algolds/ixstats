@@ -5,9 +5,9 @@ import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 
-export type AccountType = "government" | "media" | "citizen";
+type AccountType = "government" | "media" | "citizen";
 
-export interface AccountTypeOption {
+interface AccountTypeOption {
   icon: typeof Crown;
   label: string;
   description: string;
@@ -16,7 +16,7 @@ export interface AccountTypeOption {
   examples: string[];
 }
 
-export const ACCOUNT_TYPES: Record<AccountType, AccountTypeOption> = {
+const ACCOUNT_TYPES: Record<AccountType, AccountTypeOption> = {
   government: {
     icon: Crown,
     label: "Government",
@@ -43,7 +43,7 @@ export const ACCOUNT_TYPES: Record<AccountType, AccountTypeOption> = {
   },
 };
 
-export interface AccountTypeSelectorProps {
+interface AccountTypeSelectorProps {
   selectedType: AccountType;
   onSelectType: (type: AccountType) => void;
   onContinue: () => void;

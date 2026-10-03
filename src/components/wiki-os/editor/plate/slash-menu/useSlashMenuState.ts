@@ -6,7 +6,7 @@
 
 import { useCallback, useRef, useState } from "react";
 
-export interface SlashMenuState {
+interface SlashMenuState {
   open: boolean;
   query: string;
   /** DOM rect of the caret position when the menu opened (best-effort anchor). */

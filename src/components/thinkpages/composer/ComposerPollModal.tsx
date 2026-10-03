@@ -22,7 +22,7 @@ import {
 } from "~/components/ui/select";
 import { withBasePath } from "~/lib/base-path";
 
-export interface ComposerPollModalProps {
+interface ComposerPollModalProps {
   showPollModal: boolean;
   setShowPollModal: (val: boolean) => void;
   pollDraft: {

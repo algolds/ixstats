@@ -21,7 +21,7 @@ import { cn, formatCurrency } from "~/lib/utils";
 import type { AtomicMetrics } from "./types";
 import { Card } from "~/components/ui/card";
 
-export interface AtomicMetricsBarProps {
+interface AtomicMetricsBarProps {
   metrics: AtomicMetrics;
   currencyFormatter?: (amount: number) => string;
   onComponentsClick?: () => void;

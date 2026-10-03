@@ -4,7 +4,7 @@
 
 import { NextResponse } from "next/server";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
-import type { WikiSource } from "~/lib/wiki-os/config";
+import { invalidSourceResponse, parseWikiSource, toArticleCandidates } from "../article-candidates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,18 +12,13 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const source = searchParams.get("source") as WikiSource | null;
+    const source = parseWikiSource(searchParams.get("source"));
     const category = searchParams.get("category") || "";
     const count = Math.min(Math.max(parseInt(searchParams.get("count") || "50"), 1), 200);
     const minQuality = parseInt(searchParams.get("minQuality") || "1");
     const preferImages = searchParams.get("preferImages") !== "false";
 
-    if (!source || !["ixwiki", "iiwiki"].includes(source)) {
-      return NextResponse.json(
-        { error: "Invalid wiki source. Must be 'ixwiki' or 'iiwiki'" },
-        { status: 400 }
-      );
-    }
+    if (!source) return invalidSourceResponse();
     if (!category.trim()) {
       return NextResponse.json({ error: "category is required" }, { status: 400 });
     }
@@ -35,26 +30,7 @@ export async function GET(request: Request) {
 
     const previews = await wikiLoreCardGenerator.fetchArticleMetadataBatch(titles, source);
 
-    const articles = previews
-      .filter((p) => p.estimatedQuality >= minQuality)
-      .map((p) => ({
-        title: p.title,
-        excerpt: p.extract,
-        qualityScore: p.estimatedQuality,
-        estimatedRarity: p.estimatedRarity,
-        wikiSource: source,
-        artwork: p.imageUrl,
-        hasImage: p.hasImage,
-        length: p.length,
-        categoryCount: p.categoryCount,
-        estimatedValue: p.estimatedValue,
-      }))
-      .sort((a, b) => {
-        if (preferImages && (b.hasImage ? 1 : 0) !== (a.hasImage ? 1 : 0)) {
-          return (b.hasImage ? 1 : 0) - (a.hasImage ? 1 : 0);
-        }
-        return b.qualityScore - a.qualityScore;
-      });
+    const articles = toArticleCandidates(previews, source, { minQuality, preferImages });
 
     return NextResponse.json({ articles, count: articles.length, source, category });
   } catch (error) {

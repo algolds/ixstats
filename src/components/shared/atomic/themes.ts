@@ -3,31 +3,6 @@
 import type { AtomicComponentTheme } from "./types";
 
 // ==================== THEME PRESETS ====================
-
-export const TAX_THEME: AtomicComponentTheme = {
-  type: "unified",
-  primary: "amber",
-  // Tailwind classes: amber-500, amber-600, amber-50, amber-950/30
-};
-
-export const GOVERNMENT_THEME: AtomicComponentTheme = {
-  type: "unified",
-  primary: "blue",
-  // Tailwind classes: blue-500, blue-600, blue-50, blue-950/30
-};
-
-export const ECONOMY_THEME: AtomicComponentTheme = {
-  type: "category-based",
-  categoryColors: {
-    economicModel: "emerald",
-    marketRegulation: "indigo",
-    tradePolicy: "cyan",
-    laborSystems: "amber",
-    innovationTech: "purple",
-    resourceManagement: "teal",
-  },
-};
-
 // ==================== THEME UTILITIES ====================
 
 /** Theme palette names (legacy Tailwind hues) → Facet system colours. */

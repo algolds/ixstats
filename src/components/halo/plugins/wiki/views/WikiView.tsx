@@ -28,7 +28,7 @@ import { pageRefPath } from "~/lib/wiki-os/page-ref";
 import type { WikiSource } from "~/lib/wiki-os/config";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 
-export interface WikiViewProps extends DIViewProps {}
+interface WikiViewProps extends DIViewProps {}
 
 export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   const router = useRouter();

@@ -1,2 +1,2 @@
-export { ForumHalo, ForumDIPlugin } from "./ForumHalo";
+export { ForumHalo } from "./ForumHalo";
 export * from "./views";

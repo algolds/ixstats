@@ -8,9 +8,9 @@ import { cn } from "~/lib/utils/cn";
  * `hero` (glass hero surface), `acrylic` (Halo island). Glass never holds more glass; anything
  * inside uses opaque roles.
  */
-export type FacetMaterialType = "thin" | "regular" | "thick" | "hero" | "acrylic";
+type FacetMaterialType = "thin" | "regular" | "thick" | "hero" | "acrylic";
 
-export interface FacetMaterialProps extends React.HTMLAttributes<HTMLDivElement> {
+interface FacetMaterialProps extends React.HTMLAttributes<HTMLDivElement> {
   /** @default "regular" */
   material?: FacetMaterialType;
   as?: React.ElementType;

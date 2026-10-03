@@ -128,25 +128,3 @@ export const SETTINGS_SECTIONS: SettingSectionConfig[] = [
     accentColor: "text-emerald-500",
   },
 ];
-
-export function getSectionById(id: SettingSectionId): SettingSectionConfig | undefined {
-  return SETTINGS_SECTIONS.find((s) => s.id === id);
-}
-
-export function getSectionsByCategory(): Record<
-  SettingSectionConfig["category"],
-  SettingSectionConfig[]
-> {
-  const groups: Record<SettingSectionConfig["category"], SettingSectionConfig[]> = {
-    "Profile & identity": [],
-    MyCountry: [],
-    "Platform & preferences": [],
-    Vault: [],
-  };
-
-  for (const section of SETTINGS_SECTIONS) {
-    groups[section.category].push(section);
-  }
-
-  return groups;
-}

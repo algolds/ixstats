@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
 import { SystemRestart as Loader2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 
-export interface MentionMenuPortalProps {
+interface MentionMenuPortalProps {
   coords: { top: number; left: number };
   results: any[];
   selectedIndex: number;

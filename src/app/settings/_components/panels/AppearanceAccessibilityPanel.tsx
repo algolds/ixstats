@@ -24,7 +24,6 @@ import {
   SoundLow,
   Component,
   Compress,
-  CursorPointer,
 } from "iconoir-react";
 import { useTheme, type Theme } from "~/context/theme-context";
 import { useSoundSettings } from "~/hooks/useSoundSettings";

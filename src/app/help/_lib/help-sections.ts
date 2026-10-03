@@ -20,7 +20,7 @@ export type HelpSectionIcon =
   | "flask"
   | "settings";
 
-export interface HelpArticle {
+interface HelpArticle {
   id: string;
   title: string;
   description: string;

@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
-export interface ComposerAccountSwitcherProps {
+interface ComposerAccountSwitcherProps {
   account: any;
   accounts: any[];
   accountAvatarUrl: string;

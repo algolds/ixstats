@@ -25,7 +25,6 @@ import {
   List,
   OpenNewWindow as ExternalLink,
   Search,
-  SoundOff as VolumeX,
   HalfMoon as SunMoon,
   Square,
 } from "iconoir-react";
@@ -36,7 +35,7 @@ import { PreText } from "~/components/ui/pretext";
 import { useSoundSettings } from "~/hooks/useSoundSettings";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { Switch } from "~/components/ui/switch";
-import { useDynamicIslandSize, SIZE_PRESETS } from "../HaloPrimitives";
+import { useHaloSize, SIZE_PRESETS } from "../HaloPrimitives";
 import {
   useLocalPref,
   ToggleSwitch,
@@ -60,7 +59,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
   const [soundIconHovered, setSoundIconHovered] = useState(false);
 
   // Dynamic Island Popover Width Sizing via Apple HIG physics
-  const { setSize } = useDynamicIslandSize();
+  const { setSize } = useHaloSize();
   const [morePrefsExpanded, setMorePrefsExpanded] = useState(false);
 
   const handleToggleMorePrefs = useCallback(

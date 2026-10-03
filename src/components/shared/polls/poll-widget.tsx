@@ -60,11 +60,11 @@ export interface PollOption {
   icon?: ReactNode;
 }
 
-export type PollWidgetMode = "inline" | "popover" | "dialog";
+type PollWidgetMode = "inline" | "popover" | "dialog";
 
-export type PollWidgetAnimationPhase = "idle" | "voting" | "results" | "success";
+type PollWidgetAnimationPhase = "idle" | "voting" | "results" | "success";
 
-export interface PollWidgetRootProps extends Omit<PropsWithChildren, "children"> {
+interface PollWidgetRootProps extends Omit<PropsWithChildren, "children"> {
   /** Poll question text */
   question: string;
   /** Optional description for the poll */
@@ -140,7 +140,7 @@ const PollWidgetContext = createContext<PollWidgetContextValue | null>(null);
  * Hook to access the PollWidget context
  * @throws Error if used outside of PollWidget.Root
  */
-export function usePollWidget() {
+function usePollWidget() {
   const context = useContext(PollWidgetContext);
   if (!context) {
     throw new Error("PollWidget components must be used within PollWidget.Root");
@@ -241,7 +241,7 @@ const progressVariants = cva(
  * Root component for PollWidget. Provides context for all child components.
  * Supports three rendering modes: inline, popover, and dialog.
  */
-export function PollWidgetRoot({
+function PollWidgetRoot({
   question,
   description,
   options,
@@ -465,7 +465,7 @@ export function PollWidgetRoot({
 // Trigger Component
 // ============================================================================
 
-export type PollWidgetTriggerProps = ComponentProps<typeof Button> & {
+type PollWidgetTriggerProps = ComponentProps<typeof Button> & {
   /** Custom label for the trigger button */
   label?: ReactNode;
 };
@@ -474,12 +474,7 @@ export type PollWidgetTriggerProps = ComponentProps<typeof Button> & {
  * Button that opens the poll popover/dialog.
  * Only rendered in popover or dialog modes.
  */
-export function PollWidgetTrigger({
-  className,
-  label,
-  children,
-  ...props
-}: PollWidgetTriggerProps) {
+function PollWidgetTrigger({ className, label, children, ...props }: PollWidgetTriggerProps) {
   const { mode, hasVoted, totalVotes } = usePollWidget();
 
   if (mode === "inline") {
@@ -525,13 +520,13 @@ export function PollWidgetTrigger({
 // Content Component
 // ============================================================================
 
-export type PollWidgetContentProps = HTMLAttributes<HTMLDivElement>;
+type PollWidgetContentProps = HTMLAttributes<HTMLDivElement>;
 
 /**
  * Container for the poll content. Adapts to the current mode.
  * Includes animation transitions between voting states.
  */
-export function PollWidgetContent({ className, children, ...props }: PollWidgetContentProps) {
+function PollWidgetContent({ className, children, ...props }: PollWidgetContentProps) {
   const { mode, animationPhase } = usePollWidget();
 
   const innerContent = (
@@ -615,7 +610,7 @@ export function PollWidgetContent({ className, children, ...props }: PollWidgetC
 // Success Component
 // ============================================================================
 
-export type PollWidgetSuccessProps = HTMLAttributes<HTMLDivElement> & {
+type PollWidgetSuccessProps = HTMLAttributes<HTMLDivElement> & {
   /** Custom title override */
   title?: string;
   /** Custom description override */
@@ -625,12 +620,7 @@ export type PollWidgetSuccessProps = HTMLAttributes<HTMLDivElement> & {
 /**
  * Success state shown after voting with animated checkmark.
  */
-export function PollWidgetSuccess({
-  title,
-  description,
-  className,
-  ...props
-}: PollWidgetSuccessProps) {
+function PollWidgetSuccess({ title, description, className, ...props }: PollWidgetSuccessProps) {
   const { successTitle, successDescription, totalVotes, selected, options } = usePollWidget();
 
   const displayTitle = title ?? successTitle;
@@ -708,12 +698,12 @@ export function PollWidgetSuccess({
 // Question Component
 // ============================================================================
 
-export type PollWidgetQuestionProps = HTMLAttributes<HTMLDivElement>;
+type PollWidgetQuestionProps = HTMLAttributes<HTMLDivElement>;
 
 /**
  * Displays the poll question and optional description.
  */
-export function PollWidgetQuestion({ className, children, ...props }: PollWidgetQuestionProps) {
+function PollWidgetQuestion({ className, children, ...props }: PollWidgetQuestionProps) {
   const { question, description, mode } = usePollWidget();
 
   if (mode === "popover") {
@@ -751,12 +741,12 @@ export function PollWidgetQuestion({ className, children, ...props }: PollWidget
 // Options Component
 // ============================================================================
 
-export type PollWidgetOptionsProps = HTMLAttributes<HTMLDivElement>;
+type PollWidgetOptionsProps = HTMLAttributes<HTMLDivElement>;
 
 /**
  * Container for poll options with keyboard navigation.
  */
-export function PollWidgetOptions({ className, children, ...props }: PollWidgetOptionsProps) {
+function PollWidgetOptions({ className, children, ...props }: PollWidgetOptionsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
@@ -819,7 +809,7 @@ export function PollWidgetOptions({ className, children, ...props }: PollWidgetO
 // Option Component
 // ============================================================================
 
-export type PollWidgetOptionProps = Omit<ComponentProps<"button">, "value"> & {
+type PollWidgetOptionProps = Omit<ComponentProps<"button">, "value"> & {
   /** Unique identifier for this option */
   value: string;
   /** Whether this specific option is disabled */
@@ -829,7 +819,7 @@ export type PollWidgetOptionProps = Omit<ComponentProps<"button">, "value"> & {
 /**
  * Individual poll option with indicator, label, and progress bar.
  */
-export function PollWidgetOption({
+function PollWidgetOption({
   value,
   disabled: optionDisabled = false,
   children,
@@ -946,12 +936,12 @@ export function PollWidgetOption({
 // Indicator Component
 // ============================================================================
 
-export type PollWidgetIndicatorProps = HTMLAttributes<HTMLSpanElement>;
+type PollWidgetIndicatorProps = HTMLAttributes<HTMLSpanElement>;
 
 /**
  * Selection indicator (checkbox/radio visual) for an option.
  */
-export function PollWidgetIndicator({ className, children, ...props }: PollWidgetIndicatorProps) {
+function PollWidgetIndicator({ className, children, ...props }: PollWidgetIndicatorProps) {
   const { multiple, hasVoted } = usePollWidget();
   const { isSelected } = usePollWidgetOptionContext();
 
@@ -992,12 +982,12 @@ export function PollWidgetIndicator({ className, children, ...props }: PollWidge
 // Label Component
 // ============================================================================
 
-export type PollWidgetLabelProps = HTMLAttributes<HTMLSpanElement>;
+type PollWidgetLabelProps = HTMLAttributes<HTMLSpanElement>;
 
 /**
  * Label text for a poll option.
  */
-export function PollWidgetLabel({ className, ...props }: PollWidgetLabelProps) {
+function PollWidgetLabel({ className, ...props }: PollWidgetLabelProps) {
   return (
     <span
       className={cn("flex-1 text-sm font-medium", className)}
@@ -1011,12 +1001,12 @@ export function PollWidgetLabel({ className, ...props }: PollWidgetLabelProps) {
 // Percentage Component
 // ============================================================================
 
-export type PollWidgetPercentageProps = HTMLAttributes<HTMLSpanElement>;
+type PollWidgetPercentageProps = HTMLAttributes<HTMLSpanElement>;
 
 /**
  * Displays the vote percentage for an option (only visible after voting).
  */
-export function PollWidgetPercentage({ children, className, ...props }: PollWidgetPercentageProps) {
+function PollWidgetPercentage({ children, className, ...props }: PollWidgetPercentageProps) {
   const { showResults } = usePollWidget();
   const { percentage } = usePollWidgetOptionContext();
 
@@ -1042,12 +1032,12 @@ export function PollWidgetPercentage({ children, className, ...props }: PollWidg
 // Results Component
 // ============================================================================
 
-export type PollWidgetResultsProps = HTMLAttributes<HTMLDivElement>;
+type PollWidgetResultsProps = HTMLAttributes<HTMLDivElement>;
 
 /**
  * Displays voting results summary (total votes, user vote status).
  */
-export function PollWidgetResults({ children, className, ...props }: PollWidgetResultsProps) {
+function PollWidgetResults({ children, className, ...props }: PollWidgetResultsProps) {
   const { totalVotes, hasVoted } = usePollWidget();
 
   return (
@@ -1078,7 +1068,7 @@ export function PollWidgetResults({ children, className, ...props }: PollWidgetR
 // Submit Component
 // ============================================================================
 
-export type PollWidgetSubmitProps = ComponentProps<typeof Button> & {
+type PollWidgetSubmitProps = ComponentProps<typeof Button> & {
   /** Text to show while submitting */
   loadingText?: string;
 };
@@ -1087,7 +1077,7 @@ export type PollWidgetSubmitProps = ComponentProps<typeof Button> & {
  * Submit button for the poll. Disabled when no option is selected or already voted.
  * Shows loading state during vote submission animation.
  */
-export function PollWidgetSubmit({
+function PollWidgetSubmit({
   className,
   children,
   onClick,
@@ -1190,13 +1180,13 @@ export function PollWidgetSubmit({
 // Dialog Component (for dialog mode wrapper)
 // ============================================================================
 
-export type PollWidgetDialogProps = ComponentProps<typeof DialogContent>;
+type PollWidgetDialogProps = ComponentProps<typeof DialogContent>;
 
 /**
  * Dialog wrapper component. Use when mode="dialog" to wrap PollWidget.Content.
  * This is an alternative to PollWidget.Content for more control over dialog rendering.
  */
-export function PollWidgetDialog({ className, children, ...props }: PollWidgetDialogProps) {
+function PollWidgetDialog({ className, children, ...props }: PollWidgetDialogProps) {
   return (
     <DialogContent
       className={cn("sm:max-w-md", className)}

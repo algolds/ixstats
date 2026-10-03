@@ -4,7 +4,7 @@ import React from "react";
 import { Trophy } from "iconoir-react";
 export * from "./LeagueControlDeck";
 
-export interface ReigningChampionWidgetProps {
+interface ReigningChampionWidgetProps {
   championName: string;
   seasonNumber: number;
 }

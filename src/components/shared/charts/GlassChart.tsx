@@ -235,5 +235,3 @@ export const chartTheme = {
     fontSize: 12,
   },
 };
-
-export default GlassChart;

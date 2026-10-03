@@ -97,7 +97,7 @@ export function injectPlaceholderElements(html: string): string {
   return processed;
 }
 
-export function calculateDistanceAndBearing(
+function calculateDistanceAndBearing(
   lat1: number,
   lng1: number,
   lat2: number,
@@ -194,7 +194,7 @@ export function CoordsPill({
 
 import type { WikiPlaceholderMetadata } from "~/server/shared/wiki-placeholders";
 
-export type DynamicStatMetadata =
+type DynamicStatMetadata =
   | WikiPlaceholderMetadata
   | {
       label?: string;

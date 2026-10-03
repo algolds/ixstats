@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
-import { getSportColors, type SportPresetKey } from "~/lib/sports/presets";
 import { EmptyState } from "~/components/ui/empty-state";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { springSmooth } from "~/lib/design/motion";
@@ -11,13 +10,11 @@ import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
   Play,
-  FastArrowRight as FastForward,
   SystemRestart as Loader2,
   Calendar,
   Check,
   FireFlame as Flame,
   ArrowRight,
-  Clock,
 } from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
@@ -25,13 +22,10 @@ import { withBasePath } from "~/lib/base-path";
 import { soundCues } from "~/lib/sound/cuelume";
 import { Card } from "~/components/ui/card";
 
-export interface LeagueScheduleTabProps {
+interface LeagueScheduleTabProps {
   leagueId: string;
   activeSeasonId?: string;
   latestSeasonId?: string;
-  sportPreset: string;
-  archetype: string;
-  onSeasonTransition?: (newSeasonId: string) => void;
   onTeamClick?: (teamId: string) => void;
   onMatchClick?: (matchId: string) => void;
 }
@@ -40,15 +34,11 @@ export function LeagueScheduleTab({
   leagueId,
   activeSeasonId,
   latestSeasonId,
-  sportPreset,
-  archetype,
-  onSeasonTransition,
   onTeamClick,
   onMatchClick,
 }: LeagueScheduleTabProps) {
   const seasonId = activeSeasonId ?? latestSeasonId;
   const utils = api.useUtils();
-  const sportColors = getSportColors(sportPreset as SportPresetKey);
 
   const { data: season, isLoading: seasonLoading } = api.sports.getSeason.useQuery(
     { id: seasonId ?? "" },
@@ -74,23 +64,6 @@ export function LeagueScheduleTab({
       void utils.sports.getSeason.invalidate({ id: seasonId ?? "" });
       void utils.sports.getSchedule.invalidate({ seasonId: seasonId ?? "" });
       void utils.sports.getLeague.invalidate({ id: leagueId });
-    },
-  });
-
-  const simulateFullSeason = api.sports.simulateFullSeason.useMutation({
-    onSuccess: () => {
-      void utils.sports.getSeason.invalidate({ id: seasonId ?? "" });
-      void utils.sports.getSchedule.invalidate({ seasonId: seasonId ?? "" });
-      void utils.sports.getLeague.invalidate({ id: leagueId });
-    },
-  });
-
-  const transitionToNextSeason = api.sports.transitionToNextSeason.useMutation({
-    onSuccess: (data) => {
-      void utils.sports.getSeason.invalidate({ id: seasonId ?? "" });
-      void utils.sports.getSchedule.invalidate({ seasonId: seasonId ?? "" });
-      void utils.sports.getLeague.invalidate({ id: leagueId });
-      onSeasonTransition?.(data?.newSeasonId ?? "");
     },
   });
 
@@ -163,8 +136,6 @@ export function LeagueScheduleTab({
   }
 
   const selectedRoundMatches = matchDaysMap.get(selectedRound) ?? [];
-  const isRoundCompleted =
-    selectedRoundMatches.length > 0 && selectedRoundMatches.every((m) => m.status === "completed");
   const isRoundActive = selectedRoundMatches.some((m) => m.status === "scheduled");
 
   return (
@@ -402,5 +373,3 @@ export function LeagueScheduleTab({
     </div>
   );
 }
-
-export default LeagueScheduleTab;

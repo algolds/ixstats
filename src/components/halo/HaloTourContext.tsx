@@ -2,9 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 
-export type TourStepId = 1 | 2 | 3 | 4 | 5;
+type TourStepId = 1 | 2 | 3 | 4 | 5;
 
-export interface TourStepDetails {
+interface TourStepDetails {
   id: TourStepId;
   title: string;
   description: string;

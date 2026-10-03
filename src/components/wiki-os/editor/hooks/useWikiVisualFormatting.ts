@@ -15,13 +15,13 @@ import { renderTemplateCached } from "~/lib/wiki-os/templates/preview-service";
 // relies on Slate runtime APIs, so we keep the ref loose.
 type PlateEditorLike = any;
 
-export interface EditingTemplateRef {
+interface EditingTemplateRef {
   id: string;
   name: string;
   params: Record<string, string>;
 }
 
-export interface UseWikiVisualFormattingProps {
+interface UseWikiVisualFormattingProps {
   title: string;
   editorRef: React.MutableRefObject<PlateEditorLike | null>;
   setIsDirty: (val: boolean) => void;
@@ -54,9 +54,7 @@ function getDomActiveFormats(): Set<string> {
   if (!anchorNode || !editorEl.contains(anchorNode)) return fmt;
 
   let curr: HTMLElement | null =
-    anchorNode.nodeType === 1
-      ? (anchorNode as HTMLElement)
-      : anchorNode.parentElement;
+    anchorNode.nodeType === 1 ? (anchorNode as HTMLElement) : anchorNode.parentElement;
 
   while (curr && curr !== editorEl && editorEl.contains(curr)) {
     const tag = curr.tagName.toLowerCase();
@@ -206,9 +204,10 @@ export function useWikiVisualFormatting({
 
   const isFormatMarkActive = useCallback((editor: PlateEditorLike, mark: string): boolean => {
     if (!editor.selection) return false;
-    const marks = ((Editor.marks(editor) as Record<string, boolean> | null) ?? {});
+    const marks = (Editor.marks(editor) as Record<string, boolean> | null) ?? {};
     if (marks[mark]) return true;
-    if ((mark === "strike" || mark === "strikethrough") && (marks.strike || marks.strikethrough)) return true;
+    if ((mark === "strike" || mark === "strikethrough") && (marks.strike || marks.strikethrough))
+      return true;
     if ((mark === "sup" || mark === "superscript") && (marks.sup || marks.superscript)) return true;
     if ((mark === "sub" || mark === "subscript") && (marks.sub || marks.subscript)) return true;
     if ((mark === "code" || mark === "codeMark") && (marks.code || marks.codeMark)) return true;
@@ -225,8 +224,10 @@ export function useWikiVisualFormatting({
         if (mark === "bold" && leaf.bold) return true;
         if (mark === "italic" && leaf.italic) return true;
         if (mark === "underline" && leaf.underline) return true;
-        if ((mark === "strike" || mark === "strikethrough") && (leaf.strike || leaf.strikethrough)) return true;
-        if ((mark === "sup" || mark === "superscript") && (leaf.sup || leaf.superscript)) return true;
+        if ((mark === "strike" || mark === "strikethrough") && (leaf.strike || leaf.strikethrough))
+          return true;
+        if ((mark === "sup" || mark === "superscript") && (leaf.sup || leaf.superscript))
+          return true;
         if ((mark === "sub" || mark === "subscript") && (leaf.sub || leaf.subscript)) return true;
         if ((mark === "code" || mark === "codeMark") && (leaf.code || leaf.codeMark)) return true;
       }
@@ -383,7 +384,9 @@ export function useWikiVisualFormatting({
               Editor.nodes(editor, {
                 match: (n) =>
                   SlateElement.isElement(n) &&
-                  ["table", "tr", "td", "th"].includes((n as unknown as { type?: string }).type ?? ""),
+                  ["table", "tr", "td", "th"].includes(
+                    (n as unknown as { type?: string }).type ?? ""
+                  ),
               })
             );
             if (tableEntry) {
@@ -506,83 +509,67 @@ export function useWikiVisualFormatting({
     [withEditor, setIsDirty, refreshActiveFormats]
   );
 
-  const toggleListBlock = useCallback(
-    (editor: any, targetType: "ul" | "ol") => {
-      if (!editor) return;
+  const toggleListBlock = useCallback((editor: any, targetType: "ul" | "ol") => {
+    if (!editor) return;
 
-      Editor.withoutNormalizing(editor, () => {
-        // If selection is null, focus editor start
-        if (!editor.selection) {
-          if (editor.children.length > 0) {
-            Transforms.select(editor, Editor.start(editor, [0]));
-          } else {
-            Transforms.insertNodes(editor, { type: "p", children: [{ text: "" }] } as any);
-            Transforms.select(editor, [0, 0]);
-          }
+    Editor.withoutNormalizing(editor, () => {
+      // If selection is null, focus editor start
+      if (!editor.selection) {
+        if (editor.children.length > 0) {
+          Transforms.select(editor, Editor.start(editor, [0]));
+        } else {
+          Transforms.insertNodes(editor, { type: "p", children: [{ text: "" }] } as any);
+          Transforms.select(editor, [0, 0]);
         }
+      }
 
-        // Check if currently inside a list
-        const [existingListEntry] = Array.from(
-          Editor.nodes(editor, {
+      // Check if currently inside a list
+      const [existingListEntry] = Array.from(
+        Editor.nodes(editor, {
+          match: (n) =>
+            SlateElement.isElement(n) && ((n as any).type === "ul" || (n as any).type === "ol"),
+        })
+      );
+
+      if (existingListEntry) {
+        const [listNode, listPath] = existingListEntry;
+        const currentType = (listNode as any).type;
+
+        if (currentType === targetType) {
+          // Toggle off: unwrap ul/ol and convert li back to p
+          Transforms.unwrapNodes(editor, {
             match: (n) =>
               SlateElement.isElement(n) && ((n as any).type === "ul" || (n as any).type === "ol"),
-          })
-        );
-
-        if (existingListEntry) {
-          const [listNode, listPath] = existingListEntry;
-          const currentType = (listNode as any).type;
-
-          if (currentType === targetType) {
-            // Toggle off: unwrap ul/ol and convert li back to p
-            Transforms.unwrapNodes(editor, {
-              match: (n) =>
-                SlateElement.isElement(n) &&
-                ((n as any).type === "ul" || (n as any).type === "ol"),
-              split: true,
-            });
-            Transforms.setNodes(
-              editor,
-              { type: "p" } as any,
-              {
-                match: (n) => SlateElement.isElement(n) && (n as any).type === "li",
-              }
-            );
-          } else {
-            // Switch list type (ul <-> ol)
-            Transforms.setNodes(editor, { type: targetType } as any, { at: listPath });
-          }
-          return;
-        }
-
-        // Not in list: convert matching selected blocks to li and wrap in ul/ol
-        Transforms.setNodes(
-          editor,
-          { type: "li", level: 1 } as any,
-          {
-            match: (n) =>
-              SlateElement.isElement(n) &&
-              !editor.isInline(n) &&
-              (n as any).type !== "table" &&
-              (n as any).type !== "tr" &&
-              (n as any).type !== "td" &&
-              (n as any).type !== "th",
-            mode: "lowest",
-          }
-        );
-
-        Transforms.wrapNodes(
-          editor,
-          { type: targetType, children: [] } as any,
-          {
+            split: true,
+          });
+          Transforms.setNodes(editor, { type: "p" } as any, {
             match: (n) => SlateElement.isElement(n) && (n as any).type === "li",
-            mode: "lowest",
-          }
-        );
+          });
+        } else {
+          // Switch list type (ul <-> ol)
+          Transforms.setNodes(editor, { type: targetType } as any, { at: listPath });
+        }
+        return;
+      }
+
+      // Not in list: convert matching selected blocks to li and wrap in ul/ol
+      Transforms.setNodes(editor, { type: "li", level: 1 } as any, {
+        match: (n) =>
+          SlateElement.isElement(n) &&
+          !editor.isInline(n) &&
+          (n as any).type !== "table" &&
+          (n as any).type !== "tr" &&
+          (n as any).type !== "td" &&
+          (n as any).type !== "th",
+        mode: "lowest",
       });
-    },
-    []
-  );
+
+      Transforms.wrapNodes(editor, { type: targetType, children: [] } as any, {
+        match: (n) => SlateElement.isElement(n) && (n as any).type === "li",
+        mode: "lowest",
+      });
+    });
+  }, []);
 
   const exec = useCallback(
     (cmd: string, val?: string) => {
@@ -817,18 +804,6 @@ export function useWikiVisualFormatting({
   const saveSelection = useCallback(() => {}, []);
   const restoreSelection = useCallback(() => {}, []);
 
-  const insertHtmlAtCursor = useCallback(
-    (html: string) => {
-      withEditor((editor) => {
-        const parsed = new DOMParser().parseFromString(html, "text/html");
-        const text = parsed.body.textContent ?? "";
-        Transforms.insertNodes(editor, { text } as Descendant);
-        setIsDirty(true);
-      });
-    },
-    [withEditor, setIsDirty]
-  );
-
   // ── Templates & media ────────────────────────────────────────────────────
 
   const handleInsertTemplate = useCallback(
@@ -985,7 +960,6 @@ export function useWikiVisualFormatting({
     setEditingTemplate,
     saveSelection,
     restoreSelection,
-    insertHtmlAtCursor,
     exec,
     setHeading,
     setParagraph,

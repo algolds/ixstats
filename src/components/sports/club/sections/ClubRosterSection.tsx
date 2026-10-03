@@ -10,7 +10,6 @@ import { PlayerTrainingButton } from "~/components/sports/club/PlayerTrainingBut
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
 import { SquadRosterTable } from "~/components/sports/club/SquadRosterTable";
 import type { PlayerRatings } from "~/lib/sports/types";
-import { cn } from "~/lib/utils";
 import { Card } from "~/components/ui/card";
 
 const CAREER_STAGE_STYLES: Record<string, { label: string; className: string }> = {
@@ -46,7 +45,7 @@ export interface RosterPlayerItem {
   ratings?: PlayerRatings | Record<string, unknown> | null;
 }
 
-export interface RosterCoachItem {
+interface RosterCoachItem {
   id: string;
   firstName: string;
   lastName: string;
@@ -56,7 +55,7 @@ export interface RosterCoachItem {
   ratings?: Record<string, number> | null;
 }
 
-export interface ClubRosterSectionProps {
+interface ClubRosterSectionProps {
   team: {
     id: string;
     name: string;
@@ -196,5 +195,3 @@ export function ClubRosterSection({
     </div>
   );
 }
-
-export default ClubRosterSection;
