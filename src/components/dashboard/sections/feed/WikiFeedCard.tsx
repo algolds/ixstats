@@ -15,21 +15,12 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { WikiArticleActions } from "./WikiArticleActions";
 import { useWikiLeadImage } from "./useWikiLeadImage";
+import { WikiLeadThumb } from "./WikiLeadThumb";
+import { decodeWikiTitle } from "./externalLinks";
 import { Card } from "~/components/ui/card";
 
-const stripEditPrefix = (title: string) =>
-  title
-    .replace(/^(Wiki edit|New wiki page):\s*/i, "")
-    .replace(/_/g, " ")
-    .trim();
-
-function cleanWikiTitle(raw: string): string {
-  try {
-    return stripEditPrefix(decodeURIComponent(raw));
-  } catch {
-    return stripEditPrefix(raw);
-  }
-}
+const cleanWikiTitle = (raw: string) =>
+  decodeWikiTitle(raw).replace(/^(Wiki edit|New wiki page):\s*/i, "");
 
 function WikiByline({ activity }: { activity: any }) {
   if (activity._grouped) {
@@ -125,20 +116,7 @@ function WikiExcerpt({
       </div>
 
       {image && (
-        <Link
-          href={href}
-          className="border-separator bg-fill-4 rounded-row focus-visible:outline-tint relative h-20 w-28 shrink-0 overflow-hidden border focus-visible:outline-2 focus-visible:outline-offset-2 sm:h-24 sm:w-34"
-          title={`View ${title}`}
-        >
-          <img
-            src={image}
-            alt={title}
-            className="h-full w-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLElement).style.display = "none";
-            }}
-          />
-        </Link>
+        <WikiLeadThumb image={image} href={href} title={title} className="sm:h-24 sm:w-34" />
       )}
     </div>
   );
@@ -149,7 +127,7 @@ export function WikiFeedCard({ activity }: { activity: any }) {
   const blurb = activity.content?.metadata?.blurb;
   const wikiPageTitle =
     (activity.content?.metadata?.pageTitle as string) || activity.content?.title || "";
-  const cleanTitle = useMemo(() => cleanWikiTitle(wikiPageTitle), [wikiPageTitle]);
+  const cleanTitle = cleanWikiTitle(wikiPageTitle);
   const wikiHref = titleToWikiOSRoute(cleanTitle);
 
   const { data: intro } = api.wikios.getIntro.useQuery(

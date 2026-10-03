@@ -9,3 +9,14 @@ export function forumThreadIdFromUrl(url: string | null | undefined): number | n
   const match = url?.match(/forum\.ixwiki\.com\/threads\/(?:[^/]*\.)?(\d+)/);
   return match ? parseInt(match[1]!, 10) : null;
 }
+
+/** A wiki article title from a raw or URL-encoded title: decoded, underscores as spaces. */
+export function decodeWikiTitle(raw: string): string {
+  let title = raw;
+  try {
+    title = decodeURIComponent(raw);
+  } catch {
+    // Not URL-encoded: use as is.
+  }
+  return title.replace(/_/g, " ").trim();
+}
