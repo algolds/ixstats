@@ -76,7 +76,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
 
   const createAlliance = api.diplomaticPolicies.createAlliance.useMutation({
     onSuccess: () => {
-      notify.success("Alliance founded!", `${name} is now active. Invite nations to join.`);
+      notify.success("Alliance founded", `${name} is now active. Invite nations to join.`);
       onOpenChange(false);
       resetForm();
       onCreated?.();
@@ -97,7 +97,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
 
   const handleSubmit = () => {
     if (name.trim().length < 2) {
-      notify.error("Invalid Alliance Name", "Alliance name must be at least 2 characters long.");
+      notify.error("Invalid alliance name", "Alliance name must be at least 2 characters long.");
       return;
     }
     createAlliance.mutate({

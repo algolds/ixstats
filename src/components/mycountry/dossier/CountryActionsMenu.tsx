@@ -127,7 +127,7 @@ export function CountryActionsMenu({
 
   const congratulateMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
-      notify.success(`Congratulations sent to ${targetCountryName}!`);
+      notify.success(`Congratulations sent to ${targetCountryName}`);
       setSelectedAchievement("");
       onClose();
     },
@@ -197,7 +197,8 @@ export function CountryActionsMenu({
 
     congratulateMutation.mutate({
       accountId: viewerCountryId,
-      content: `🎉 Congratulations to ${targetCountryName} on achieving: ${achievement.title}! ${achievement.description || "A remarkable accomplishment!"}`,
+      content:
+        `Congratulations to ${targetCountryName} on ${achievement.title}. ${achievement.description ?? ""}`.trim(),
       visibility: "public" as const,
       hashtags: ["achievement", targetCountryName.replace(/\s/g, "")],
     });

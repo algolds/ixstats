@@ -106,7 +106,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
 
   const createOperation = api.security.createOperation.useMutation({
     onSuccess: () => {
-      notify.success("Operation launched!", `${name} has been deployed.`);
+      notify.success("Operation launched", `${name} has been deployed.`);
       setOpen(false);
       resetForm();
       onSuccess?.();

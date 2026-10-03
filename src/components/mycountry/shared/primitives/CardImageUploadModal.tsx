@@ -152,7 +152,7 @@ export function CardImageUploadModal({
   // Mutation to save the image
   const upsertMutation = api.cardImages.upsert.useMutation({
     onSuccess: () => {
-      notify.success("Image saved successfully");
+      notify.success("Image saved");
       utils.cardImages.getByCountryAndType.invalidate({ countryId, cardType });
       utils.cardImages.getAllByCountry.invalidate({ countryId });
       onSuccess?.();

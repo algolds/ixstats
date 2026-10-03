@@ -607,7 +607,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                                   Need:{" "}
                                   {needed > 0
                                     ? formatCurrency(needed) + " more"
-                                    : "Already qualified!"}
+                                    : "Already qualified"}
                                 </p>
                               </>
                             );

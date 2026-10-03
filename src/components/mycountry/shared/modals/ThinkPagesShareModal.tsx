@@ -84,9 +84,9 @@ export function ThinkPagesShareModal({
       }
 
       const initialText =
-        `🏛️ **EXECUTIVE SUMMATION: ${goal}**\n\n` +
-        `Under ${tier.toUpperCase()} Directive authority, ${countryName} has successfully completed state actions regarding "${goal}".\n\n` +
-        `**Key Policy & Budget Measures Implemented:**\n` +
+        `**Executive summary: ${goal}**\n\n` +
+        `${countryName} completed a ${tier} Directive: "${goal}".\n\n` +
+        `**Measures taken:**\n` +
         `• ${changesSummary}\n\n` +
         `#${countrySlug} #ExecutiveDirective #${category}`;
 
@@ -114,10 +114,10 @@ export function ThinkPagesShareModal({
             </Badge>
           </div>
           <DialogTitle className="text-label text-title-3">
-            Share Directive summation to ThinkPages
+            Share Directive summary to ThinkPages
           </DialogTitle>
           <DialogDescription className="text-label-secondary text-footnote">
-            Confirm or tweak your executive post before publishing directly to the ThinkPages feed.
+            Review and edit your post before publishing it to the ThinkPages feed.
           </DialogDescription>
         </DialogHeader>
 
@@ -126,13 +126,13 @@ export function ThinkPagesShareModal({
             <CheckCircle2 className="text-green h-8 w-8" />
             <h3 className="text-label text-title-3">
               {publishStatus === "published"
-                ? "Published Live to ThinkPages!"
-                : "Saved as Draft in ThinkPages!"}
+                ? "Published to ThinkPages"
+                : "Draft saved in ThinkPages"}
             </h3>
             <p className="text-label-secondary text-footnote max-w-md">
               {publishStatus === "published"
-                ? "Your official executive summation is now visible in the national news feed."
-                : "Your directive summation has been saved as an editable draft in ThinkPages."}
+                ? "Your summary is now visible in the national news feed."
+                : "Your Directive summary is saved as an editable draft in ThinkPages."}
             </p>
             <div className="flex items-center gap-2 pt-2">
               <Button variant="outline" size="sm" onClick={onClose}>

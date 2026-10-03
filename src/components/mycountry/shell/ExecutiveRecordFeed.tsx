@@ -171,7 +171,7 @@ function getUniqueDiagnosticNarrative(
   }
 
   return {
-    narrative: `Canon event '${item.title}' recorded under the ${metaLabel.toLowerCase()} domain. System state updated successfully.`,
+    narrative: `Canon event '${item.title}' recorded under the ${metaLabel.toLowerCase()} domain.`,
     badge: { text: "Canon record", cls: NEUTRAL },
   };
 }

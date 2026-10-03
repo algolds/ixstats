@@ -55,7 +55,7 @@ export function AssetManager({
 
   const createAsset = api.security.createMilitaryAsset.useMutation({
     onSuccess: () => {
-      notify.success("Asset created successfully");
+      notify.success("Asset created");
       setShowDialog(false);
       setEditingAsset(null);
       onRefetch();
@@ -67,7 +67,7 @@ export function AssetManager({
 
   const updateAsset = api.security.updateMilitaryAsset.useMutation({
     onSuccess: () => {
-      notify.success("Asset updated successfully");
+      notify.success("Asset updated");
       setShowDialog(false);
       setEditingAsset(null);
       onRefetch();
@@ -79,7 +79,7 @@ export function AssetManager({
 
   const deleteAsset = api.security.deleteMilitaryAsset.useMutation({
     onSuccess: () => {
-      notify.success("Asset deleted successfully");
+      notify.success("Asset deleted");
       onRefetch();
     },
     onError: (error) => {
