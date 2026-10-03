@@ -285,6 +285,23 @@ describe("TTS Proxy API Route (/api/onoma/tts)", () => {
     expect(sent.input).not.toBe("Imperia");
   });
 
+  test("a POST body of JSON null is a 400, not a gateway error", async () => {
+    (auth as jest.Mock).mockResolvedValue({ userId: "user_123" });
+    (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
+    (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
+      { key: "onoma.kokoro.enabled", value: "true" },
+      { key: "onoma.kokoro.baseUrl", value: "http://kokoro-service" },
+    ]);
+
+    const request = new NextRequest("http://localhost/api/onoma/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "null",
+    });
+    const response = await POST(request);
+    expect(response.status).toBe(400);
+  });
+
   test("engine=fastapi posts normalized phonemes to /dev/generate_from_phonemes", async () => {
     (auth as jest.Mock).mockResolvedValue({ userId: "user_123" });
     (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });

@@ -376,6 +376,7 @@ async function prepareRequest(request: NextRequest, isAdmin: boolean) {
     let body: TtsBody;
     try {
       body = await request.json();
+      if (body === null || typeof body !== "object") return json("Invalid JSON body", 400);
     } catch {
       return json("Invalid JSON body", 400);
     }
