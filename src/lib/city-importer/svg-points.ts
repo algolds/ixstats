@@ -13,14 +13,15 @@ import {
   filterProvinceShapes,
 } from "~/lib/maps/province-importer/svg-layer-detector";
 import { extractAllTextLabels } from "~/lib/maps/province-importer/svg-text-matcher";
-
-const SVG_NS = "http://www.w3.org/2000/svg";
-const INKSCAPE_NS = "http://www.inkscape.org/namespaces/inkscape";
-
-// @xmldom/xmldom@0.9's Element type is no longer structurally assignable to the
-// global lib.dom Element (it was in 0.8). All "XmlElement" values in this file are
-// xmldom-parsed nodes, never real DOM elements, so alias to the package's own type.
-type XmlElement = import("@xmldom/xmldom").Element;
+import {
+  SVG_NS,
+  ancestorElements,
+  attrNumber,
+  elementChildren,
+  inkscapeLabel,
+  svgTag,
+  type XmlElement,
+} from "~/lib/maps/province-importer/svg-dom";
 
 export interface SvgLayerInfo {
   id: string; // element id or a synthesized id (e.g. "layer-3")
@@ -60,55 +61,66 @@ interface ParseCitySvgOptions {
   cityNameLayerId?: string; // layer holding city names/labels; optional
 }
 
+type TextLabel = ReturnType<typeof extractAllTextLabels>[number];
+
+interface RawPoint {
+  x: number;
+  y: number;
+  el: XmlElement;
+  refIcon?: string;
+  name?: string;
+}
+
+// Layer-name fragments (after normalizeLayerName) that mark the cities layer.
+const STRONG_CITY_LAYER_NAMES = [
+  "cities",
+  "city",
+  "town",
+  "settlement",
+  "localities",
+  "locality",
+  "place",
+];
+// Word-boundary match so "decorative-dots" doesn't count; only used when no strong match exists.
+const WEAK_CITY_LAYER_NAMES = /\b(dots|pins|markers|points|nodes)\b/i;
+const CITY_NAME_LAYER_NAMES = ["names", "labels", "text", "captions", "annotations"];
+const ANY_LABEL_LAYER_NAMES = /city|town|place|label|name|text/;
+
+const num = (el: XmlElement, attr: string) => parseFloat(el.getAttribute(attr) || "0");
+
 function sanitizeSvg(svgContent: string): string {
   return svgContent
     .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/\s+on\w+\s*=\s*"[^"]*"/gi, "")
-    .replace(/\s+on\w+\s*=\s*'[^']*'/gi, "")
-    .replace(/href\s*=\s*"javascript:[^"]*"/gi, "")
-    .replace(/href\s*=\s*'javascript:[^']*'/gi, "")
-    .replace(/xlink:href\s*=\s*"https?:\/\/[^"]*"/gi, "")
-    .replace(/xlink:href\s*=\s*'https?:\/\/[^']*'/gi, "");
+    .replace(/\s+on\w+\s*=\s*(?:"[^"]*"|'[^']*')/gi, "")
+    .replace(/href\s*=\s*(?:"javascript:[^"]*"|'javascript:[^']*')/gi, "")
+    .replace(/xlink:href\s*=\s*(?:"https?:\/\/[^"]*"|'https?:\/\/[^']*')/gi, "");
 }
 
-function extractViewBox(svgRoot: XmlElement): { width: number; height: number } {
-  const viewBoxAttr = svgRoot.getAttribute("viewBox");
-  let w = 0;
-  let h = 0;
-  if (viewBoxAttr) {
-    const parts = viewBoxAttr.split(/[\s,]+/).map(Number);
-    if (parts.length >= 4) {
-      w = parts[2]!;
-      h = parts[3]!;
-    }
-  }
-  if (w === 0) {
-    w = parseFloat(svgRoot.getAttribute("width") || "0");
-    h = parseFloat(svgRoot.getAttribute("height") || "0");
-  }
-  return { width: w || 800, height: h || 600 };
+function extractViewBoxWidth(svgRoot: XmlElement): number {
+  const parts =
+    svgRoot
+      .getAttribute("viewBox")
+      ?.split(/[\s,]+/)
+      .map(Number) ?? [];
+  const w = parts.length >= 4 ? parts[2]! : 0;
+  return (w === 0 ? num(svgRoot, "width") : w) || 800;
 }
 
-function isPointLikeElement(el: XmlElement, viewBoxWidth: number, _viewBoxHeight: number): boolean {
-  const tag = el.localName ?? el.tagName?.split(":").pop() ?? "";
+function isPointLikeElement(el: XmlElement, viewBoxWidth: number): boolean {
+  const tag = svgTag(el);
   if (tag === "circle" || tag === "ellipse") {
-    const r = parseFloat(el.getAttribute("r") ?? el.getAttribute("rx") ?? "0");
+    const r = attrNumber(el, "r", "rx");
     return r > 0 && r <= 15;
   }
   try {
     const rings = elementToRings(el);
-    if (rings.length === 0 || rings[0]!.length === 0) return false;
-    let minX = Infinity,
-      minY = Infinity,
-      maxX = -Infinity,
-      maxY = -Infinity;
-    for (const ring of rings) {
-      for (const [x, y] of ring) {
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
-      }
+    if (!rings[0]?.length) return false;
+    let [minX, minY, maxX, maxY] = [Infinity, Infinity, -Infinity, -Infinity];
+    for (const [x, y] of rings.flat()) {
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
     }
     const w = maxX - minX;
     const h = maxY - minY;
@@ -119,88 +131,36 @@ function isPointLikeElement(el: XmlElement, viewBoxWidth: number, _viewBoxHeight
   }
 }
 
-// Count point-like markers (circles, ellipses, <use>, small shapes) by walking
-// the DOM directly. Unlike collectShapeElements, this does NOT drop shapes that
-// lack an inline fill= (city dots are usually styled via CSS class / default fill),
-// which is exactly the case collectShapeElements wrongly discards.
-function countPointLikeDescendants(
-  el: XmlElement,
-  viewBoxWidth: number,
-  viewBoxHeight: number
-): number {
-  let count = 0;
-  const walk = (node: XmlElement) => {
-    const tag = node.localName ?? node.tagName?.split(":").pop() ?? "";
-    if (tag === "circle" || tag === "ellipse" || tag === "use") {
-      count++;
-      return;
-    }
-    if (SHAPE_TAGS.has(tag)) {
-      if (isPointLikeElement(node, viewBoxWidth, viewBoxHeight)) count++;
-      return;
-    }
-    if (tag === "g") {
-      const children = node.childNodes;
-      for (let i = 0; i < children.length; i++) {
-        const child = children[i] as XmlElement;
-        if (child && child.nodeType === 1) walk(child);
-      }
-    }
-  };
-  const children = el.childNodes;
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i] as XmlElement;
-    if (child && child.nodeType === 1) walk(child);
-  }
-  return count;
+// Count point-like markers (circles, ellipses, <use>, small shapes) by walking the DOM directly.
+// Unlike collectShapeElements, this does NOT drop shapes that lack an inline fill= (city dots are
+// usually styled via CSS class / default fill), which is exactly what collectShapeElements discards.
+function countPointLikeDescendants(el: XmlElement, viewBoxWidth: number): number {
+  return elementChildren(el).reduce((count, node) => {
+    const tag = svgTag(node);
+    if (tag === "circle" || tag === "ellipse" || tag === "use") return count + 1;
+    if (SHAPE_TAGS.has(tag)) return count + (isPointLikeElement(node, viewBoxWidth) ? 1 : 0);
+    return tag === "g" ? count + countPointLikeDescendants(node, viewBoxWidth) : count;
+  }, 0);
+}
+
+function matchesIdOrName(el: XmlElement, idOrName: string): boolean {
+  return el.getAttribute("id") === idOrName || inkscapeLabel(el) === idOrName;
 }
 
 function findLayerByIdOrName(svgRoot: XmlElement, idOrName: string): XmlElement | null {
   if (idOrName === "root") return svgRoot;
-  const allG = svgRoot.getElementsByTagNameNS(SVG_NS, "g");
-  for (let i = 0; i < allG.length; i++) {
-    const g = allG[i]!;
-    const id = g.getAttribute("id");
-    const label = g.getAttributeNS(INKSCAPE_NS, "label") || g.getAttribute("inkscape:label");
-    if (id === idOrName || label === idOrName) {
-      return g;
-    }
-  }
-  return null;
+  return (
+    [...svgRoot.getElementsByTagNameNS(SVG_NS, "g")].find((g) => matchesIdOrName(g, idOrName)) ??
+    null
+  );
 }
 
-function isDescendantOfIdOrName(el: XmlElement, idOrName: string): boolean {
-  let current: any = el;
-  while (current) {
-    if (current.nodeType === 1 && typeof current.getAttribute === "function") {
-      const id = current.getAttribute("id");
-      const label =
-        current.getAttributeNS(INKSCAPE_NS, "label") || current.getAttribute("inkscape:label");
-      if (id === idOrName || label === idOrName) {
-        return true;
-      }
-    }
-    current = current.parentNode;
-  }
-  return false;
-}
-
-function hasCapitalAncestor(el: XmlElement): boolean {
-  let current: any = el;
-  while (current) {
-    if (current.nodeType === 1 && typeof current.getAttribute === "function") {
-      const id = current.getAttribute("id") || "";
-      const label =
-        current.getAttributeNS(INKSCAPE_NS, "label") ||
-        current.getAttribute("inkscape:label") ||
-        "";
-      if (/capital/i.test(id) || /capital/i.test(label)) {
-        return true;
-      }
-    }
-    current = current.parentNode;
-  }
-  return false;
+function isCapitalElement(el: XmlElement, capitalLayerId?: string): boolean {
+  return [el, ...ancestorElements(el)].some((node) =>
+    capitalLayerId
+      ? matchesIdOrName(node, capitalLayerId)
+      : /capital/i.test(node.getAttribute("id") || "") || /capital/i.test(inkscapeLabel(node))
+  );
 }
 
 // Normalize a layer's name for semantic matching: split camelCase, turn
@@ -217,474 +177,272 @@ function normalizeLayerName(name: string): string {
     .toLowerCase();
 }
 
-function detectProvinceName(el: XmlElement, fallbackId: string): { name: string } {
-  const label = el.getAttributeNS(INKSCAPE_NS, "label") || el.getAttribute("inkscape:label");
-  if (label) return { name: label };
-  const dataName =
-    el.getAttribute("data-name") || el.getAttribute("aria-label") || el.getAttribute("title");
-  if (dataName) return { name: dataName };
-  const id = el.getAttribute("id");
-  if (id) return { name: id };
-  return { name: fallbackId };
+function detectProvinceName(el: XmlElement, fallbackId: string): string {
+  return (
+    inkscapeLabel(el) ||
+    el.getAttribute("data-name") ||
+    el.getAttribute("aria-label") ||
+    el.getAttribute("title") ||
+    el.getAttribute("id") ||
+    fallbackId
+  );
 }
 
-export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): ParsedCitySvg {
-  const sanitized = sanitizeSvg(svgContent);
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(sanitized, "image/svg+xml");
-  const svgRoot = doc.documentElement;
-
-  if (!svgRoot) {
-    throw new Error("Failed to parse SVG: no root element found");
-  }
-
-  const viewBox = extractViewBox(svgRoot);
-
-  // 1. Enumerate layers — recursively walk ALL named <g> groups so nested
-  //    groups (e.g. Labels > Province_Names) appear in the layer picker.
+/** Recursively list every <g> as a layer, plus a synthetic "root" entry when <svg> holds content directly. */
+function enumerateLayers(svgRoot: XmlElement, viewBoxWidth: number): SvgLayerInfo[] {
   const layers: SvgLayerInfo[] = [];
   const seenIds = new Set<string>();
   let syntheticIdx = 0;
 
+  const info = (el: XmlElement, id: string, name: string, depth: number): SvgLayerInfo => ({
+    id,
+    name,
+    shapeCount: collectShapeElements(el, svgRoot).length,
+    textCount: extractAllTextLabels(el, svgRoot).length,
+    markerCount: countPointLikeDescendants(el, viewBoxWidth),
+    depth,
+  });
+
   const enumerateGroups = (parent: XmlElement, depth: number) => {
-    const ch = parent.childNodes;
-    for (let i = 0; i < ch.length; i++) {
-      const child = ch[i] as XmlElement;
-      if (!child || child.nodeType !== 1) continue;
-      const tag = child.localName ?? child.tagName?.split(":").pop() ?? "";
-      if (tag !== "g") continue;
-
-      const rawId = child.getAttribute("id");
-      const id = rawId || `layer-${++syntheticIdx}`;
-      // Skip duplicate ids (shouldn't happen in valid SVG, but guard)
-      if (seenIds.has(id)) {
-        enumerateGroups(child, depth + 1);
-        continue;
+    for (const child of elementChildren(parent)) {
+      if (svgTag(child) !== "g") continue;
+      const id = child.getAttribute("id") || `layer-${++syntheticIdx}`;
+      // Duplicate ids shouldn't happen in valid SVG, but skip the entry and still recurse
+      if (!seenIds.has(id)) {
+        seenIds.add(id);
+        const name = inkscapeLabel(child) || child.getAttribute("data-name") || id;
+        layers.push(info(child, id, name, depth));
       }
-      seenIds.add(id);
-
-      const name =
-        child.getAttributeNS(INKSCAPE_NS, "label") ||
-        child.getAttribute("inkscape:label") ||
-        child.getAttribute("data-name") ||
-        id;
-      const shapes = collectShapeElements(child, svgRoot);
-      const texts = extractAllTextLabels(child, svgRoot);
-      const markers = countPointLikeDescendants(child, viewBox.width, viewBox.height);
-
-      layers.push({
-        id,
-        name,
-        shapeCount: shapes.length,
-        textCount: texts.length,
-        markerCount: markers,
-        depth,
-      });
-
-      // Recurse into child groups
       enumerateGroups(child, depth + 1);
     }
   };
-
   enumerateGroups(svgRoot, 0);
 
-  // Add root entry if there are direct shapes/texts on <svg> or no groups at all
-  const children = svgRoot.childNodes;
-  let rootDirectShapes = 0;
-  let rootDirectTexts = 0;
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i] as XmlElement;
-    if (child && child.nodeType === 1) {
-      const tag = child.localName ?? child.tagName?.split(":").pop() ?? "";
-      if (SHAPE_TAGS.has(tag)) rootDirectShapes++;
-      if (tag === "text") rootDirectTexts++;
+  const rootTags = elementChildren(svgRoot).map(svgTag);
+  if (rootTags.some((t) => SHAPE_TAGS.has(t) || t === "text") || layers.length === 0) {
+    layers.unshift(info(svgRoot, "root", "Root SVG", 0));
+  }
+  return layers;
+}
+
+/** The layer with the highest `key` count among those whose normalized name satisfies `match`. */
+function bestLayerId(
+  layers: SvgLayerInfo[],
+  key: "markerCount" | "textCount",
+  match: (normalizedName: string) => boolean
+): string | undefined {
+  let best: SvgLayerInfo | undefined;
+  for (const layer of layers) {
+    if (
+      layer[key] > 0 &&
+      match(normalizeLayerName(layer.name)) &&
+      layer[key] > (best?.[key] ?? 0)
+    ) {
+      best = layer;
     }
   }
-  if (rootDirectShapes > 0 || rootDirectTexts > 0 || layers.length === 0) {
-    const rootShapes = collectShapeElements(svgRoot, svgRoot);
-    const rootTexts = extractAllTextLabels(svgRoot, svgRoot);
-    const rootMarkers = countPointLikeDescendants(svgRoot, viewBox.width, viewBox.height);
-    layers.unshift({
-      id: "root",
-      name: "Root SVG",
-      shapeCount: rootShapes.length,
-      textCount: rootTexts.length,
-      markerCount: rootMarkers,
-      depth: 0,
-    });
-  }
+  return best?.id;
+}
 
-  // 2. Select cities layer (auto-detect if not specified)
-  //    Strategy: semantic group name match first, then highest marker count.
-  let targetLayerId = opts?.citiesLayerId;
-  if (!targetLayerId) {
-    // Pass 1: look for a group whose name semantically matches "cities"
-    //   Tier A (strong): name contains city/cities/town/towns/settlements — almost
-    //   certainly the right layer. Pick the one with the most markers.
-    //   Tier B (weak): name IS exactly dots/pins/markers (word boundary match to
-    //   avoid "decorative-dots" matching "dots"). Used only if tier A finds nothing.
-    const STRONG_PATTERNS = [
-      "cities",
-      "city",
-      "towns",
-      "town",
-      "settlements",
-      "settlement",
-      "localities",
-      "locality",
-      "places",
-      "place",
-    ];
-    const WEAK_PATTERNS = /\b(dots|pins|markers|points|nodes)\b/i;
+/** Semantic name match first (strong, then weak), else the layer with the most markers. */
+function detectCitiesLayerId(layers: SvgLayerInfo[]): string {
+  const isStrong = (name: string) => STRONG_CITY_LAYER_NAMES.some((p) => name.includes(p));
+  const named =
+    bestLayerId(layers, "markerCount", isStrong) ??
+    bestLayerId(layers, "markerCount", (n) => !isStrong(n) && WEAK_CITY_LAYER_NAMES.test(n));
+  if (named) return named;
+  const mostMarkers = layers.reduce((a, b) => (b.markerCount > a.markerCount ? b : a), layers[0]!);
+  return mostMarkers?.id || "root";
+}
 
-    let bestStrongId: string | null = null;
-    let bestStrongMarkers = 0;
-    let bestWeakId: string | null = null;
-    let bestWeakMarkers = 0;
+function scanPoints(group: XmlElement, svgRoot: XmlElement, viewBoxWidth: number): RawPoint[] {
+  const points: RawPoint[] = [];
+  const toRoot = (el: XmlElement, x: number, y: number) =>
+    applyMatrixToPoint(x, y, getAccumulatedTransform(el, svgRoot));
 
-    for (const layer of layers) {
-      if (layer.markerCount === 0) continue;
-      const nameLower = normalizeLayerName(layer.name);
+  // Explicit point primitives (circle/ellipse/use dots) ARE the cities — ignore stray
+  // point-like <path>s, which are usually label glyphs (text converted to outlines) in the same group.
+  const hasPrimitiveMarkers = ["circle", "ellipse", "use"].some(
+    (t) => group.getElementsByTagName(t).length > 0
+  );
 
-      if (STRONG_PATTERNS.some((p) => nameLower === p || nameLower.includes(p))) {
-        if (layer.markerCount > bestStrongMarkers) {
-          bestStrongMarkers = layer.markerCount;
-          bestStrongId = layer.id;
-        }
-      } else if (WEAK_PATTERNS.test(nameLower)) {
-        if (layer.markerCount > bestWeakMarkers) {
-          bestWeakMarkers = layer.markerCount;
-          bestWeakId = layer.id;
-        }
-      }
-    }
-    targetLayerId = bestStrongId ?? bestWeakId ?? undefined;
-
-    // Pass 2: fall back to the layer with the most markers
-    if (!targetLayerId) {
-      let maxMarkers = -1;
-      let bestId = layers[0]?.id || "root";
-      for (const layer of layers) {
-        if (layer.markerCount > maxMarkers) {
-          maxMarkers = layer.markerCount;
-          bestId = layer.id;
-        }
-      }
-      targetLayerId = bestId;
-    }
-  }
-
-  const targetGroup = findLayerByIdOrName(svgRoot, targetLayerId) || svgRoot;
-
-  // 3. Extract points from target group
-  const rawPoints: { x: number; y: number; el: XmlElement; refIcon?: string; name?: string }[] = [];
-
-  // If the layer has explicit point primitives (circle/ellipse/use dots), those
-  // ARE the cities — ignore stray point-like <path>s, which are usually label
-  // glyphs (text converted to outlines) sharing the same group.
-  const hasPrimitiveMarkers =
-    targetGroup.getElementsByTagName("circle").length > 0 ||
-    targetGroup.getElementsByTagName("ellipse").length > 0 ||
-    targetGroup.getElementsByTagName("use").length > 0;
-
-  const scanGroupForPoints = (el: XmlElement) => {
-    const tag = el.localName ?? el.tagName?.split(":").pop() ?? "";
-
+  const scan = (el: XmlElement) => {
+    const tag = svgTag(el);
     if (tag === "circle" || tag === "ellipse") {
-      const cx = parseFloat(el.getAttribute("cx") || "0");
-      const cy = parseFloat(el.getAttribute("cy") || "0");
-      const r = parseFloat(el.getAttribute("r") ?? el.getAttribute("rx") ?? "0");
-      if (r > 0) {
-        const matrix = getAccumulatedTransform(el, svgRoot);
-        const [tx, ty] = applyMatrixToPoint(cx, cy, matrix);
-        rawPoints.push({ x: tx, y: ty, el });
+      if (attrNumber(el, "r", "rx") > 0) {
+        const [x, y] = toRoot(el, num(el, "cx"), num(el, "cy"));
+        points.push({ x, y, el });
       }
-      return;
-    }
-
-    if (tag === "use") {
-      const x = parseFloat(el.getAttribute("x") || "0");
-      const y = parseFloat(el.getAttribute("y") || "0");
-      const href = el.getAttribute("href") || el.getAttribute("xlink:href") || "";
-      const matrix = getAccumulatedTransform(el, svgRoot);
-      const [tx, ty] = applyMatrixToPoint(x, y, matrix);
-      rawPoints.push({ x: tx, y: ty, el, refIcon: href });
-      return;
-    }
-
-    if (SHAPE_TAGS.has(tag)) {
-      if (!hasPrimitiveMarkers && isPointLikeElement(el, viewBox.width, viewBox.height)) {
+    } else if (tag === "use") {
+      const [x, y] = toRoot(el, num(el, "x"), num(el, "y"));
+      const refIcon = el.getAttribute("href") || el.getAttribute("xlink:href") || "";
+      points.push({ x, y, el, refIcon });
+    } else if (SHAPE_TAGS.has(tag)) {
+      if (!hasPrimitiveMarkers && isPointLikeElement(el, viewBoxWidth)) {
         try {
           const rings = elementToRings(el);
-          if (rings.length > 0 && rings[0]!.length > 0) {
-            const matrix = getAccumulatedTransform(el, svgRoot);
-            const transformedRings = applyMatrixToRings(rings, matrix);
-            let sumX = 0,
-              sumY = 0,
-              count = 0;
-            for (const ring of transformedRings) {
-              for (const [px, py] of ring) {
-                sumX += px;
-                sumY += py;
-                count++;
-              }
-            }
-            if (count > 0) {
-              rawPoints.push({ x: sumX / count, y: sumY / count, el });
-            }
+          if (rings[0]?.length) {
+            const all = applyMatrixToRings(rings, getAccumulatedTransform(el, svgRoot)).flat();
+            points.push({
+              x: all.reduce((sum, [px]) => sum + px, 0) / all.length,
+              y: all.reduce((sum, [, py]) => sum + py, 0) / all.length,
+              el,
+            });
           }
         } catch {
           // malformed or unsupported shape in the uploaded SVG — skipped
         }
       }
-      return;
-    }
-
-    if (tag === "g") {
-      const gChildren = el.childNodes;
-      for (let i = 0; i < gChildren.length; i++) {
-        const child = gChildren[i] as XmlElement;
-        if (child && child.nodeType === 1) {
-          scanGroupForPoints(child);
-        }
-      }
+    } else if (tag === "g") {
+      elementChildren(el).forEach(scan);
     }
   };
+  elementChildren(group).forEach(scan);
 
-  const targetChildren = targetGroup.childNodes;
-  for (let i = 0; i < targetChildren.length; i++) {
-    const child = targetChildren[i] as XmlElement;
-    if (child && child.nodeType === 1) {
-      scanGroupForPoints(child);
+  // Fallback: a group holding only text elements — each label is a point
+  if (points.length === 0 && collectShapeElements(group, svgRoot).length === 0) {
+    for (const label of extractAllTextLabels(group, svgRoot)) {
+      points.push({ x: label.x, y: label.y, el: group, name: label.text });
     }
   }
+  return points;
+}
 
-  // Fallback: if group contains ONLY text elements
-  if (rawPoints.length === 0) {
-    const textLabels = extractAllTextLabels(targetGroup, svgRoot);
-    const shapes = collectShapeElements(targetGroup, svgRoot);
-    if (shapes.length === 0 && textLabels.length > 0) {
-      for (const label of textLabels) {
-        rawPoints.push({
-          x: label.x,
-          y: label.y,
-          el: targetGroup,
-          name: label.text,
-        });
-      }
+function nearestLabelText(x: number, y: number, labels: TextLabel[], maxDistance: number) {
+  let nearest: TextLabel | undefined;
+  let minDistance = Infinity;
+  for (const label of labels) {
+    const d = Math.hypot(x - label.x, y - label.y);
+    if (d < minDistance) {
+      minDistance = d;
+      nearest = label;
     }
   }
+  return minDistance < maxDistance ? nearest?.text : undefined;
+}
 
-  // 4. Match names (nearest label)
-  let targetNameLayerId = opts?.cityNameLayerId;
-  let allLabels: any[] = [];
+/**
+ * Pick the text labels used to name points: the explicit names layer, else the cities group's own
+ * text, else an auto-detected names layer, else any text-bearing layer that looks like names, else
+ * every label in the SVG.
+ */
+function resolveLabels(
+  svgRoot: XmlElement,
+  layers: SvgLayerInfo[],
+  targetGroup: XmlElement,
+  targetLayerId: string,
+  explicitNameLayerId?: string
+): { labels: TextLabel[]; nameLayerId?: string } {
+  const layerLabels = (id?: string) => {
+    const container = id ? findLayerByIdOrName(svgRoot, id) : null;
+    return container ? extractAllTextLabels(container, svgRoot) : [];
+  };
 
-  // If the user explicitly passed a names layer, use it
-  if (targetNameLayerId) {
-    const nameLayerContainer = findLayerByIdOrName(svgRoot, targetNameLayerId);
-    if (nameLayerContainer) {
-      allLabels = extractAllTextLabels(nameLayerContainer, svgRoot);
-    }
-  }
+  let nameLayerId = explicitNameLayerId;
+  let labels = layerLabels(explicitNameLayerId);
 
-  // If no explicit names layer was passed, first check if the selected cities group itself has text labels (same group as dots)
-  if (allLabels.length === 0 && !opts?.cityNameLayerId) {
-    if (targetGroup) {
-      const directTexts = extractAllTextLabels(targetGroup, svgRoot);
-      if (directTexts.length > 0) {
-        allLabels = directTexts;
-        targetNameLayerId = targetLayerId;
-      }
-    }
-  }
-
-  // If still no labels, auto-detect a separate names layer
-  if (allLabels.length === 0 && !opts?.cityNameLayerId) {
-    const NAME_STRONG_PATTERNS = [
-      "city names",
-      "city labels",
-      "town names",
-      "town labels",
-      "place names",
-      "settlement names",
-      "names",
-      "labels",
-      "text",
-      "captions",
-      "annotations",
-    ];
-    let bestNameId: string | null = null;
-    let bestNameTextCount = 0;
-
-    for (const layer of layers) {
-      if (layer.textCount === 0) continue;
-      const nameLower = normalizeLayerName(layer.name);
-
-      if (NAME_STRONG_PATTERNS.some((p) => nameLower === p || nameLower.includes(p))) {
-        if (layer.textCount > bestNameTextCount) {
-          bestNameTextCount = layer.textCount;
-          bestNameId = layer.id;
-        }
-      }
-    }
-    targetNameLayerId = bestNameId ?? undefined;
-
-    const nameLayerContainer = targetNameLayerId
-      ? findLayerByIdOrName(svgRoot, targetNameLayerId)
-      : null;
-    if (nameLayerContainer) {
-      allLabels = extractAllTextLabels(nameLayerContainer, svgRoot);
-    }
-  }
-
-  if (allLabels.length === 0) {
-    // Try to find any layer whose name contains "city", "label", or "name" and has text
-    for (const layer of layers) {
-      if (layer.textCount > 0) {
-        const nameLower = normalizeLayerName(layer.name);
-        if (
-          nameLower.includes("city") ||
-          nameLower.includes("town") ||
-          nameLower.includes("place") ||
-          nameLower.includes("label") ||
-          nameLower.includes("name") ||
-          nameLower.includes("text")
-        ) {
-          const fallbackContainer = findLayerByIdOrName(svgRoot, layer.id);
-          if (fallbackContainer) {
-            allLabels = extractAllTextLabels(fallbackContainer, svgRoot);
-            if (allLabels.length > 0) break;
-          }
-        }
-      }
-    }
-  }
-
-  // Still empty? Fallback to the entire SVG
-  if (allLabels.length === 0) {
-    allLabels = extractAllTextLabels(svgRoot, svgRoot);
-  }
-
-  const points: SvgCityPoint[] = [];
-
-  for (const pt of rawPoints) {
-    if (pt.name !== undefined) {
-      points.push({
-        svgX: pt.x,
-        svgY: pt.y,
-        name: pt.name,
-        isCapital: false,
-      });
-      continue;
-    }
-
-    let nearestLabel = null;
-    let minDistance = Infinity;
-    for (const label of allLabels) {
-      const d = Math.hypot(pt.x - label.x, pt.y - label.y);
-      if (d < minDistance) {
-        minDistance = d;
-        nearestLabel = label;
-      }
-    }
-
-    const name = minDistance < 120 && nearestLabel ? nearestLabel.text : "";
-    points.push({
-      svgX: pt.x,
-      svgY: pt.y,
-      name,
-      isCapital: false,
-    });
-  }
-
-  // 5. Detect capitals
-  const iconCounts = new Map<string, number>();
-  let totalIcons = 0;
-  for (const pt of rawPoints) {
-    if (pt.refIcon) {
-      iconCounts.set(pt.refIcon, (iconCounts.get(pt.refIcon) ?? 0) + 1);
-      totalIcons++;
-    }
-  }
-
-  let dominantIcon: string | null = null;
-  if (totalIcons > 0) {
-    const sortedIcons = Array.from(iconCounts.entries()).sort((a, b) => b[1] - a[1]);
-    if (sortedIcons[0] && sortedIcons[0][1] > totalIcons * 0.5) {
-      dominantIcon = sortedIcons[0][0];
-    }
-  }
-
-  for (let i = 0; i < points.length; i++) {
-    const pt = points[i]!;
-    const el = rawPoints[i]!.el;
-    const refIcon = rawPoints[i]!.refIcon;
-
-    let isCapital = false;
-    if (opts?.capitalLayerId) {
-      isCapital = isDescendantOfIdOrName(el, opts.capitalLayerId);
+  if (labels.length === 0 && !explicitNameLayerId) {
+    labels = extractAllTextLabels(targetGroup, svgRoot);
+    if (labels.length > 0) {
+      nameLayerId = targetLayerId;
     } else {
-      isCapital = hasCapitalAncestor(el);
+      nameLayerId = bestLayerId(layers, "textCount", (n) =>
+        CITY_NAME_LAYER_NAMES.some((p) => n.includes(p))
+      );
+      labels = layerLabels(nameLayerId);
     }
-
-    if (!isCapital && dominantIcon && refIcon && refIcon !== dominantIcon) {
-      isCapital = true;
-    }
-
-    pt.isCapital = isCapital;
   }
 
-  // 6. svgProvinces (centroids)
-  const svgProvinces: SvgProvinceRef[] = [];
-  const provinceLayerResult = detectProvinceLayer(svgRoot);
-  const provinceContainer = provinceLayerResult.layer ?? svgRoot;
-  const provinceShapes = collectShapeElements(provinceContainer, svgRoot);
-  const filteredProvinceShapes = filterProvinceShapes(provinceShapes, svgRoot);
+  for (const layer of layers) {
+    if (labels.length > 0) break;
+    if (layer.textCount > 0 && ANY_LABEL_LAYER_NAMES.test(normalizeLayerName(layer.name))) {
+      labels = layerLabels(layer.id);
+    }
+  }
+  return {
+    labels: labels.length > 0 ? labels : extractAllTextLabels(svgRoot, svgRoot),
+    nameLayerId,
+  };
+}
 
-  for (const el of filteredProvinceShapes) {
+/** Points whose icon differs from the dominant (>50%) <use> icon are capitals. */
+function dominantIcon(rawPoints: RawPoint[]): string | undefined {
+  const counts = new Map<string, number>();
+  for (const { refIcon } of rawPoints) {
+    if (refIcon) counts.set(refIcon, (counts.get(refIcon) ?? 0) + 1);
+  }
+  const total = [...counts.values()].reduce((a, b) => a + b, 0);
+  const top = [...counts].sort((a, b) => b[1] - a[1])[0];
+  return top && top[1] > total * 0.5 ? top[0] : undefined;
+}
+
+function extractProvinceRefs(svgRoot: XmlElement, labels: TextLabel[]): SvgProvinceRef[] {
+  const container = detectProvinceLayer(svgRoot).layer ?? svgRoot;
+  const shapes = filterProvinceShapes(collectShapeElements(container, svgRoot), svgRoot);
+  const refs: SvgProvinceRef[] = [];
+
+  for (const el of shapes) {
     try {
-      const rings = elementToRings(el);
-      if (rings.length > 0 && rings[0]!.length > 0) {
-        const matrix = getAccumulatedTransform(el, svgRoot);
-        const outerRing = rings[0]!;
-        let sumX = 0,
-          sumY = 0;
-        for (const [x, y] of outerRing) {
-          sumX += x;
-          sumY += y;
-        }
-        const localCentroid: [number, number] = [sumX / outerRing.length, sumY / outerRing.length];
-        const [rx, ry] = applyMatrixToPoint(localCentroid[0], localCentroid[1], matrix);
-
-        let nearestLabel = null;
-        let minDistance = Infinity;
-        for (const label of allLabels) {
-          const d = Math.hypot(rx - label.x, ry - label.y);
-          if (d < minDistance) {
-            minDistance = d;
-            nearestLabel = label;
-          }
-        }
-
-        const fallback = detectProvinceName(el, el.getAttribute("id") || "province");
-        const name = minDistance < 250 && nearestLabel ? nearestLabel.text : fallback.name;
-
-        svgProvinces.push({
-          name,
-          svgX: rx,
-          svgY: ry,
-        });
-      }
+      const outerRing = elementToRings(el)[0];
+      if (!outerRing?.length) continue;
+      const centroidX = outerRing.reduce((sum, [x]) => sum + x, 0) / outerRing.length;
+      const centroidY = outerRing.reduce((sum, [, y]) => sum + y, 0) / outerRing.length;
+      const [svgX, svgY] = applyMatrixToPoint(
+        centroidX,
+        centroidY,
+        getAccumulatedTransform(el, svgRoot)
+      );
+      refs.push({
+        name:
+          nearestLabelText(svgX, svgY, labels, 250) ??
+          detectProvinceName(el, el.getAttribute("id") || "province"),
+        svgX,
+        svgY,
+      });
     } catch {
       // malformed or unsupported shape in the uploaded SVG — skipped
     }
   }
+  return refs;
+}
+
+export function parseCitySvg(svgContent: string, opts?: ParseCitySvgOptions): ParsedCitySvg {
+  const doc = new DOMParser().parseFromString(sanitizeSvg(svgContent), "image/svg+xml");
+  const svgRoot = doc.documentElement;
+  if (!svgRoot) {
+    throw new Error("Failed to parse SVG: no root element found");
+  }
+
+  const viewBoxWidth = extractViewBoxWidth(svgRoot);
+  const layers = enumerateLayers(svgRoot, viewBoxWidth);
+  const targetLayerId = opts?.citiesLayerId || detectCitiesLayerId(layers);
+  const targetGroup = findLayerByIdOrName(svgRoot, targetLayerId) || svgRoot;
+  const rawPoints = scanPoints(targetGroup, svgRoot, viewBoxWidth);
+  const { labels, nameLayerId } = resolveLabels(
+    svgRoot,
+    layers,
+    targetGroup,
+    targetLayerId,
+    opts?.cityNameLayerId
+  );
+  const icon = dominantIcon(rawPoints);
+
+  const points = rawPoints.map(({ x, y, el, refIcon, name }): SvgCityPoint => {
+    const isCapital =
+      isCapitalElement(el, opts?.capitalLayerId) || !!(icon && refIcon && refIcon !== icon);
+    return {
+      svgX: x,
+      svgY: y,
+      name: name ?? nearestLabelText(x, y, labels, 120) ?? "",
+      isCapital,
+    };
+  });
 
   return {
     layers,
     points,
-    svgProvinces,
+    svgProvinces: extractProvinceRefs(svgRoot, labels),
     detectedCitiesLayerId: targetLayerId,
-    detectedCityNameLayerId: targetNameLayerId,
+    detectedCityNameLayerId: nameLayerId,
   };
 }
