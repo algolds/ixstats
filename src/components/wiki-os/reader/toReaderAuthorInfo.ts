@@ -7,13 +7,13 @@ const firstSet = <T>(...values: Array<T | null | undefined>): T | null =>
 
 /** Flatten the canonical authorship (people may be names or objects) into the reader's string form. */
 export function toReaderAuthorInfo(info: CanonicalAuthorInfo): ArticleAuthorInfo {
+  // `typeof null` is "object": a null creator must still fall back to `author`.
   const creator = typeof info.creator === "object" ? info.creator : null;
   const lastEditor = typeof info.lastEditor === "object" ? info.lastEditor : null;
   return {
-    creator:
-      typeof info.creator === "object"
-        ? firstSet(creator?.username)
-        : firstSet(info.creator, info.author),
+    creator: creator
+      ? firstSet(creator.username)
+      : firstSet(typeof info.creator === "string" ? info.creator : null, info.author),
     creatorAvatar: firstSet(creator?.avatar, info.creatorAvatar),
     createdAt: firstSet(info.createdAt, creator?.timestamp, info.createdTimestamp),
     lastEditor:

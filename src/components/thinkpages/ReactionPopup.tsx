@@ -92,7 +92,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
             {/* Featured Discord Emojis (including ixnay) */}
             {DISCORD_EMOJI_REACTIONS.map((emoji) => (
               <button
-                key={emoji.name}
+                key={`featured-${emoji.name}`}
                 type="button"
                 onClick={() => onSelectReaction(`discord:${emoji.name}`)}
                 className="hover:bg-fill-3 rounded-control-sm p-2 transition-[background-color,scale] duration-150 hover:scale-125"
@@ -119,7 +119,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                   .slice(0, showMoreEmojis ? discordEmojis.emojis.length : 16)
                   .map((emoji: DiscordEmoji) => (
                     <button
-                      key={emoji.name}
+                      key={emoji.id}
                       type="button"
                       onClick={() => onSelectReaction(`discord:${emoji.name}`)}
                       className="hover:bg-fill-3 rounded-control-sm p-2 transition-[background-color,scale] duration-150 hover:scale-125"

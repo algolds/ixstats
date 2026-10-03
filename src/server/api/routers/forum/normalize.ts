@@ -47,6 +47,7 @@ interface NormalizedPost {
   authorJoinDate: number;
   postDate: number;
   contentHtml: string;
+  message: string;
   isFirstPost: boolean;
   reactionScore: number;
   position: number;
@@ -108,6 +109,7 @@ export function normalizePost(p: XFPost): NormalizedPost {
     authorJoinDate: p.User?.register_date ?? 0,
     postDate: p.post_date,
     contentHtml,
+    message: p.message,
     isFirstPost: p.is_first_post,
     reactionScore: p.reaction_score,
     position: p.position,

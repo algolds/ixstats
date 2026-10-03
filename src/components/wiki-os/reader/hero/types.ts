@@ -40,6 +40,5 @@ export interface WikiHeroProps {
   featuredArticleData?: FeaturedArticleData | null;
   variant?: WikiHeroVariant;
   onSelectVariant?: (variant: WikiHeroVariant) => void;
-  onOpenSearch?: () => void;
   onOpenBlurbs?: () => void;
 }

@@ -22,6 +22,8 @@ import {
 import { PostBody } from "./PostBody";
 import { PostMediaGrid } from "./PostMediaGrid";
 import { PostEmbeds } from "./PostEmbeds";
+import { PostComposers } from "./PostComposers";
+import { PostModals } from "./PostModals";
 import { PostActions } from "../primitives/PostActions";
 import { PersonaAuthorCard } from "../PersonaAuthorCard";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
@@ -238,6 +240,10 @@ export function HeroPostView({ post, ctx, state }: HeroPostViewProps) {
           className="w-full justify-around"
         />
       </div>
+
+      <PostComposers post={post} state={state} ctx={ctx} />
+
+      <PostModals post={post} state={state} onAccountClick={onAccountClick} />
     </motion.div>
   );
 }

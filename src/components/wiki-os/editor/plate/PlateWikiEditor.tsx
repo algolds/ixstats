@@ -138,7 +138,12 @@ function ElementRenderer(props: any) {
   }
   if (Object.hasOwn(HEADING_CLASS, type)) {
     return (
-      <div {...attributes} className={HEADING_CLASS[type]} role="heading">
+      <div
+        {...attributes}
+        className={HEADING_CLASS[type]}
+        role="heading"
+        aria-level={Number(type.slice(1))}
+      >
         {children}
       </div>
     );

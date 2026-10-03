@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { withBasePath } from "~/lib/base-path";
+import { cn } from "~/lib/utils";
 import {
   HoverCard,
   HoverCardTrigger,
@@ -181,7 +182,7 @@ function entityKinds(href: string) {
 const BADGE_BASE =
   "inline-flex items-center gap-2 px-3 py-0.5 rounded-full text-caption font-semibold select-none transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 hover:-translate-y-0.5 border";
 
-// Minimalist glass pills. Appended to BADGE_BASE without a separator, as they always have been.
+// Minimalist glass pills, joined to BADGE_BASE with cn().
 const BADGE_TONES = {
   league: "bg-yellow/6 border-yellow/20 text-yellow hover:bg-yellow/10 hover:border-yellow/30",
   club: "bg-tint/6 border-tint/20 text-tint hover:bg-tint/10 hover:border-tint/30",
@@ -205,7 +206,7 @@ function renderEntityMention(element: HTMLElement, href: string, index: number):
       key={index}
       href={href}
       label={label}
-      badgeStyle={BADGE_BASE + BADGE_TONES[tone]}
+      badgeStyle={cn(BADGE_BASE, BADGE_TONES[tone])}
       icon={getEntityIcon(label, isLeague, isClub, isCountry) || undefined}
     />
   );
