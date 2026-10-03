@@ -1,2 +1,2 @@
-export { BuilderHalo, BuilderDIPlugin } from "./BuilderHalo";
+export { BuilderHalo } from "./BuilderHalo";
 export * from "./views";

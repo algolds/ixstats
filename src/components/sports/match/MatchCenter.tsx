@@ -42,20 +42,19 @@ interface TraceEvent {
 export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchCenterProps) {
   const notify = useNotify();
   const utils = api.useUtils();
-  const { focusOrganization, focusAthlete } = useSportsFocus();
+  const { focusOrganization } = useSportsFocus();
 
   const [activeTab, setActiveTab] = useState<"surface" | "timeline" | "analysis">("surface");
   const [simulationSpeed, setSimulationSpeed] = useState<"instant" | "brief">("instant");
   const [isSimulatingState, setIsSimulatingState] = useState(false);
 
-  const {
-    data: match,
-    isLoading,
-    refetch,
-  } = api.sports.getMatchDetails.useQuery({ matchId }, { enabled: !!matchId });
+  const { data: match, isLoading } = api.sports.getMatchDetails.useQuery(
+    { matchId },
+    { enabled: !!matchId }
+  );
 
   const simulateMutation = api.sports.simulateSingleMatch.useMutation({
-    onSuccess: async (data) => {
+    onSuccess: async () => {
       soundCues.success();
       setIsSimulatingState(false);
       notify.success("Match simulation concluded");

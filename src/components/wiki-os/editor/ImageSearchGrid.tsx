@@ -4,7 +4,6 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import {
-  Search,
   SystemRestart as Loader2,
   Xmark as X,
   OpenNewWindow as ExternalLink,

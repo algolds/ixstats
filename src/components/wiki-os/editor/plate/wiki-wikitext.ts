@@ -5,7 +5,7 @@
  */
 
 import type { Descendant } from "slate";
-import type { WikiText, WikiElement, ListItemEl, RowEl, CellEl } from "./wiki-html";
+import type { WikiText, WikiElement } from "./wiki-html";
 import { serializeTemplateToWikitext } from "~/lib/wiki-os/wikitext/serializer";
 
 function esc(s: string): string {
@@ -71,7 +71,7 @@ export function serializePlateToWikitext(nodes: Descendant[]): WikitextSerialize
             elAny.internal ??
             Boolean(
               elAny.target ||
-                (elAny.url ? !/^https?:/i.test(elAny.url) || elAny.url.startsWith("/wiki/") : true)
+              (elAny.url ? !/^https?:/i.test(elAny.url) || elAny.url.startsWith("/wiki/") : true)
             );
           if (isInternal) {
             const target =

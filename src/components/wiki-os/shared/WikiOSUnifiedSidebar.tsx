@@ -42,7 +42,6 @@ import { useWikiContext } from "./WikiContext";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 
-import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 import { Button } from "~/components/ui/button";
 
 const NAV_GROUP_1 = [
@@ -63,8 +62,6 @@ interface WikiOSUnifiedSidebarProps {
   isSpecialPage: boolean;
   pathname: string;
   forceCollapsed?: boolean;
-  // Deprecated: TOC now in right rail — prop kept for parity but ignored
-  sections?: TocEntry[];
   onCreatePageClick?: () => void;
 }
 
@@ -79,7 +76,6 @@ export function WikiOSUnifiedSidebar({
   isSpecialPage,
   pathname,
   forceCollapsed = false,
-  sections,
   onCreatePageClick,
 }: WikiOSUnifiedSidebarProps) {
   const { isCollapsed: sidebarCollapsed, toggleCollapsed, isHovered } = useSidebar();

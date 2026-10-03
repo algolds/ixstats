@@ -282,7 +282,6 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
                     groupId={activeGroup.id}
                     groupName={activeGroup.name}
                     isMember={Boolean(activeGroup.isMember)}
-                    currentUserId={currentUserId}
                   />
                 )}
 
@@ -330,7 +329,6 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
           initialCategory={activeGroup.category}
           initialAvatar={activeGroup.avatar}
           initialSettings={activeGroup.settings as any}
-          currentUserId={currentUserId}
           onDeleteSuccess={() => {
             setSelectedGroupId(null);
             void utils.thinkpages.getThinktanks.invalidate();
@@ -343,7 +341,6 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
         <ThinktankCreateModal
           isOpen={showCreateModal}
           onClose={() => setShowCreateModal(false)}
-          currentUserId={currentUserId}
           onCreated={(newId) => {
             setSelectedGroupId(newId);
           }}

@@ -6,8 +6,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 // oxlint-disable-next-line eslint/no-unused-vars
 import {
-  Xmark as X,
-  Journal as Newspaper,
   Sparks as Sparkles,
   WarningCircle as AlertCircle,
   SystemRestart as Loader2,

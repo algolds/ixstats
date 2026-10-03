@@ -804,18 +804,6 @@ export function useWikiVisualFormatting({
   const saveSelection = useCallback(() => {}, []);
   const restoreSelection = useCallback(() => {}, []);
 
-  const insertHtmlAtCursor = useCallback(
-    (html: string) => {
-      withEditor((editor) => {
-        const parsed = new DOMParser().parseFromString(html, "text/html");
-        const text = parsed.body.textContent ?? "";
-        Transforms.insertNodes(editor, { text } as Descendant);
-        setIsDirty(true);
-      });
-    },
-    [withEditor, setIsDirty]
-  );
-
   // ── Templates & media ────────────────────────────────────────────────────
 
   const handleInsertTemplate = useCallback(
@@ -972,7 +960,6 @@ export function useWikiVisualFormatting({
     setEditingTemplate,
     saveSelection,
     restoreSelection,
-    insertHtmlAtCursor,
     exec,
     setHeading,
     setParagraph,

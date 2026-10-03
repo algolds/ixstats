@@ -52,7 +52,6 @@ interface ThinktankSettingsModalProps {
     bannerUrl?: string;
     themeAccent?: string;
   };
-  currentUserId?: string;
   onDeleteSuccess?: () => void;
 }
 
@@ -66,7 +65,6 @@ export function ThinktankSettingsModal({
   initialCategory,
   initialAvatar,
   initialSettings,
-  currentUserId = "",
   onDeleteSuccess,
 }: ThinktankSettingsModalProps) {
   const notify = useNotify();

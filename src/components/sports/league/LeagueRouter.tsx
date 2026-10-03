@@ -377,17 +377,10 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
         <LeagueControlDeck
           leagueId={league.id}
           canManageLeague={canManageLeague}
-          isCanonical={league.isCanonical}
           activeSeason={activeSeason}
           latestSeason={latestSeason}
-          nextMatchDay={nextMatchDay}
           hasMatchesPlayed={completedCount > 0}
           onOpenSettings={() => setSettingsOpen(true)}
-          onSimulateMatchDay={
-            activeSeason && nextMatchDay
-              ? () => simulateMatchDay.mutate({ seasonId: activeSeason.id, matchDay: nextMatchDay })
-              : undefined
-          }
           isSimulatingMatchDay={simulateMatchDay.isPending}
           onSimulateFullSeason={
             activeSeason
@@ -431,8 +424,6 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
             leagueId={league.id}
             activeSeasonId={activeSeason?.id}
             latestSeasonId={latestSeason?.id}
-            sportPreset={league.sportPreset}
-            archetype={league.archetype}
             onTeamClick={(tId) => focusOrganization(tId)}
             onMatchClick={handleMatchClick}
           />
@@ -480,7 +471,6 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
         return (
           <LeagueOverviewTab
             leagueId={league.id}
-            seasonId={seasonId}
             activeSeason={activeSeason}
             latestSeason={latestSeason}
             standings={standings}
@@ -488,7 +478,6 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
             latestResultsMatches={latestResultsMatches}
             nextMatchDay={nextMatchDay}
             nextMatchIxTime={nextMatchIxTime}
-            progressPct={progressPct}
             onNavigate={handleNavigate}
             onTeamClick={(tId) => focusOrganization(tId)}
             onMatchClick={handleMatchClick}
@@ -496,8 +485,6 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
               simulateMatchDay.mutate({ seasonId: sId, matchDay: mDay })
             }
             isSimulatingMatchDay={simulateMatchDay.isPending}
-            onSimulateFullSeason={(sId: string) => simulateFullSeason.mutate({ seasonId: sId })}
-            isSimulatingFullSeason={simulateFullSeason.isPending}
             onTransitionSeason={(sId: string) => transitionSeason.mutate({ seasonId: sId })}
             isTransitioningSeason={transitionSeason.isPending}
             onStartSeason={(lId: string) => startSeason.mutate({ leagueId: lId })}

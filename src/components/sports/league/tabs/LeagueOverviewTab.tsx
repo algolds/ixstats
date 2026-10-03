@@ -44,7 +44,6 @@ interface StandingLeader {
 
 interface LeagueOverviewTabProps {
   leagueId: string;
-  seasonId?: string;
   activeSeason?: {
     id: string;
     seasonNumber: number;
@@ -64,18 +63,11 @@ interface LeagueOverviewTabProps {
   latestResultsMatches: MatchEvent[];
   nextMatchDay?: number | null;
   nextMatchIxTime?: number | null;
-  progressPct: number;
-  sportColors?: {
-    accentColor: string;
-    highlightColor: string;
-  } | null;
   onNavigate: (section: SportsNavSection) => void;
   onTeamClick: (teamId: string) => void;
   onMatchClick: (matchId: string) => void;
   onSimulateMatchDay: (seasonId: string, matchDay: number) => void;
   isSimulatingMatchDay?: boolean;
-  onSimulateFullSeason?: (seasonId: string) => void;
-  isSimulatingFullSeason?: boolean;
   onTransitionSeason?: (seasonId: string) => void;
   isTransitioningSeason?: boolean;
   onStartSeason?: (leagueId: string) => void;
@@ -84,7 +76,6 @@ interface LeagueOverviewTabProps {
 
 export function LeagueOverviewTab({
   leagueId,
-  seasonId,
   activeSeason,
   latestSeason,
   standings,
@@ -92,7 +83,6 @@ export function LeagueOverviewTab({
   latestResultsMatches,
   nextMatchDay,
   nextMatchIxTime,
-  progressPct,
   onNavigate,
   onTeamClick,
   onMatchClick,

@@ -4,7 +4,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Eye, EyeClosed, Check, Search, Calendar, Refresh as RefreshCw } from "iconoir-react";
+import { Eye, EyeClosed, Check, Calendar, Refresh as RefreshCw } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { DiffViewer } from "~/components/diff-viewer";
 import { withBasePath } from "~/lib/base-path";

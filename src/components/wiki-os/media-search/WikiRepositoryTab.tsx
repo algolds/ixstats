@@ -6,7 +6,6 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
 import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import {
-  Search,
   SystemRestart as Loader2,
   Xmark as X,
   Globe,

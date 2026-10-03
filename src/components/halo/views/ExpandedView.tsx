@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { AnimatePresence } from "motion/react";
-import { DynamicContainer } from "../HaloPrimitives";
+import { HaloContainer } from "../HaloPrimitives";
 import { SearchView } from "./SearchView";
 import { NotificationsView } from "./NotificationsView";
 import { SettingsView } from "./SettingsView";
@@ -66,7 +66,7 @@ function ExpandedViewComponent({
       )}
       <AnimatePresence mode="wait">
         {mode === "search" && (
-          <DynamicContainer key="search" className="w-full">
+          <HaloContainer key="search" className="w-full">
             <SearchView
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
@@ -76,22 +76,22 @@ function ExpandedViewComponent({
               searchResults={searchResults}
               closeDropdown={onClose}
             />
-          </DynamicContainer>
+          </HaloContainer>
         )}
         {mode === "notifications" && (
-          <DynamicContainer key="notifications" className="w-full">
+          <HaloContainer key="notifications" className="w-full">
             <NotificationsView onClose={onClose} />
-          </DynamicContainer>
+          </HaloContainer>
         )}
         {mode === "settings" && (
-          <DynamicContainer key="settings" className="w-full">
+          <HaloContainer key="settings" className="w-full">
             <SettingsView onClose={onClose} />
-          </DynamicContainer>
+          </HaloContainer>
         )}
         {mode === "mycountry" && (
-          <DynamicContainer key="mycountry" className="w-full">
+          <HaloContainer key="mycountry" className="w-full">
             <MyCountryView onClose={onClose} />
-          </DynamicContainer>
+          </HaloContainer>
         )}
 
         {/* Plugin-provided expanded views */}
@@ -102,14 +102,14 @@ function ExpandedViewComponent({
             const PluginView = activePlugin?.expandedViews?.[viewName];
             if (!PluginView) return null;
             return (
-              <DynamicContainer key={mode} className="w-full">
+              <HaloContainer key={mode} className="w-full">
                 <PluginView
                   onClose={onClose}
                   onSwitchMode={onSwitchMode}
                   filter={activePlugin?.filter}
                   context={activePlugin?.context}
                 />
-              </DynamicContainer>
+              </HaloContainer>
             );
           })()}
       </AnimatePresence>

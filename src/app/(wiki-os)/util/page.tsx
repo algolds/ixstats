@@ -12,11 +12,7 @@ export const metadata: Metadata = {
 
 export default function WikiUtilitiesPage() {
   return (
-    <WikiOSLayout
-      title="Special directory & utilities"
-      hideTitleHeading={true}
-      showUtilitiesRibbon={true}
-    >
+    <WikiOSLayout title="Special directory & utilities" hideTitleHeading={true}>
       <WikiOSUtilitiesDeck />
     </WikiOSLayout>
   );

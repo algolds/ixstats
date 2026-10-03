@@ -317,7 +317,7 @@ export default function StashesPage() {
   return (
     <>
       <SignedIn>
-        <WikiOSLayout sidebarVariant="dashboard">
+        <WikiOSLayout>
           <div className="mx-auto min-h-screen max-w-7xl space-y-6 p-3 sm:p-6">
             {/* Top Page Header */}
             <div className="border-separator flex flex-wrap items-center justify-between gap-4 border-b pb-4">

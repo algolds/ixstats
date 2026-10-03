@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from "react";
 // oxlint-disable-next-line eslint/no-unused-vars
 import {
-  Globe,
   Undo as RotateCcw,
   Eye,
   NavArrowDown as ChevronDown,

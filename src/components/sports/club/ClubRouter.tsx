@@ -25,7 +25,6 @@ import { SportsShell } from "~/components/sports/core/SportsShell";
 import { SportsCommandBar } from "~/components/sports/core/SportsCommandBar";
 import { type SportsNavSection, CLUB_NAV_ITEMS } from "~/components/sports/core/SportsSidebarNav";
 import { TeamSettingsModal } from "~/components/sports/league/TeamSettingsModal";
-import { getSportTheme } from "~/lib/sports/theming";
 import { SPORT_EMOJIS, type SportPresetKey } from "~/lib/sports/presets";
 import { ArrowLeft, Trophy, Shield, Settings, MapPin, WhiteFlag as Flag } from "iconoir-react";
 
@@ -261,8 +260,6 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
   const sportPresetAttrs =
     SPORT_PRESETS.find((p) => p.key === team.league?.sportPreset)?.ratingVector ?? [];
 
-  const sportTheme = getSportTheme(team.league?.sportPreset);
-
   const heroSection = (
     <Card className="overflow-hidden">
       {team.coverImage && (
@@ -401,7 +398,6 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
         commandBar={
           <SportsCommandBar
             title={team.name}
-            subtitle={team.league?.name ?? "Club"}
             lobbyHref="/myclub"
             lobbyLabel="MyClub Lobby"
             activeSectionLabel={CLUB_NAV_ITEMS.find((item) => item.id === activeSection)?.label}

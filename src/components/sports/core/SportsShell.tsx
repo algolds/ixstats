@@ -57,7 +57,6 @@ export function SportsShell({
             items={navItems}
             mode={mode}
             variant="mobile"
-            sportPreset={sportPreset}
             visibleSections={visibleSections}
             notifications={notifications}
           />
@@ -74,7 +73,6 @@ export function SportsShell({
                 items={navItems}
                 mode={mode}
                 variant="expanded"
-                sportPreset={sportPreset}
                 visibleSections={visibleSections}
                 notifications={notifications}
               />

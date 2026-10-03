@@ -181,13 +181,7 @@ function OrganizationFocusContent({
 }
 
 // ─── Athlete Focus View ─────────────────────────────────────────────────────
-function AthleteFocusContent({
-  athleteId,
-  sportPreset,
-}: {
-  athleteId: string;
-  sportPreset?: string;
-}) {
+function AthleteFocusContent({ athleteId }: { athleteId: string }) {
   const { focusOrganization } = useSportsFocus();
 
   const { data: athlete, isLoading } = api.sports.getPlayer.useQuery(
@@ -443,9 +437,7 @@ export function SportsFocusPanel({
         <OrganizationFocusContent organizationId={focus.id} sportPreset={sportPreset} />
       )}
 
-      {focus.type === "athlete" && (
-        <AthleteFocusContent athleteId={focus.id} sportPreset={sportPreset} />
-      )}
+      {focus.type === "athlete" && <AthleteFocusContent athleteId={focus.id} />}
 
       {focus.type === "match" && <MatchFocusContent matchId={focus.id} />}
     </aside>
@@ -470,9 +462,7 @@ export function SportsFocusSheet({ sportPreset }: { sportPreset?: string }) {
           <OrganizationFocusContent organizationId={focus.id} sportPreset={sportPreset} />
         )}
 
-        {focus?.type === "athlete" && (
-          <AthleteFocusContent athleteId={focus.id} sportPreset={sportPreset} />
-        )}
+        {focus?.type === "athlete" && <AthleteFocusContent athleteId={focus.id} />}
 
         {focus?.type === "match" && <MatchFocusContent matchId={focus.id} />}
       </SheetContent>

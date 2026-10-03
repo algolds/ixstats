@@ -291,7 +291,6 @@ export function WikiVisualEditor({
           insertTable={fmt.insertTable}
           insertRef={fmt.insertRef}
           clearFormatting={fmt.clearFormatting}
-          insertHtmlAtCursor={fmt.insertHtmlAtCursor}
           handleInsertStashedImage={handleInsertStashedImage}
         />
 

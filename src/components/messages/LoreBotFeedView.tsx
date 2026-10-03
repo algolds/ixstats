@@ -12,7 +12,6 @@ import {
   User,
   Clock,
   ArrowUpRight,
-  CheckCircle,
   PagePlus as FilePlus,
   EditPencil as Edit3,
 } from "iconoir-react";

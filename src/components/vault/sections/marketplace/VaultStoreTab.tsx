@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   Package,
   Sparks as Sparkles,
-  Gift,
   Shop as Store,
   Crown,
   Cpu,

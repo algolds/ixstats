@@ -21,7 +21,6 @@ import { cn } from "~/lib/utils";
 interface LeagueControlDeckProps {
   leagueId: string;
   canManageLeague: boolean;
-  isCanonical?: boolean;
   activeSeason?: {
     id: string;
     seasonNumber: number;
@@ -32,10 +31,8 @@ interface LeagueControlDeckProps {
     seasonNumber: number;
     status: string;
   } | null;
-  nextMatchDay?: number | null;
   hasMatchesPlayed?: boolean;
   onOpenSettings?: () => void;
-  onSimulateMatchDay?: () => void;
   isSimulatingMatchDay?: boolean;
   onSimulateFullSeason?: () => void;
   isSimulatingFullSeason?: boolean;
@@ -49,13 +46,10 @@ interface LeagueControlDeckProps {
 export function LeagueControlDeck({
   leagueId,
   canManageLeague,
-  isCanonical = false,
   activeSeason,
   latestSeason,
-  nextMatchDay,
   hasMatchesPlayed = false,
   onOpenSettings,
-  onSimulateMatchDay,
   isSimulatingMatchDay = false,
   onSimulateFullSeason,
   isSimulatingFullSeason = false,

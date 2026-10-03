@@ -91,7 +91,7 @@ interface DynamicIslandProviderProps {
   initialAnimation?: Array<{ size: SizePresets; delay: number }>;
 }
 
-const HaloProvider: React.FC<DynamicIslandProviderProps> = ({
+export const HaloProvider: React.FC<DynamicIslandProviderProps> = ({
   children,
   initialSize = SIZE_PRESETS.DEFAULT,
   initialAnimation = [],
@@ -146,7 +146,7 @@ const HaloProvider: React.FC<DynamicIslandProviderProps> = ({
   return <BlobContext.Provider value={contextValue}>{children}</BlobContext.Provider>;
 };
 
-const useHaloSize = () => {
+export const useHaloSize = () => {
   const context = useContext(BlobContext);
   if (!context) {
     throw new Error("useHaloSize must be used within a HaloProvider");
@@ -442,7 +442,7 @@ type DynamicContainerProps = {
   children?: React.ReactNode;
 };
 
-const HaloContainer = ({ className, children }: DynamicContainerProps) => {
+export const HaloContainer = ({ className, children }: DynamicContainerProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.98, y: 4 }}
@@ -459,8 +459,3 @@ const HaloContainer = ({ className, children }: DynamicContainerProps) => {
     </motion.div>
   );
 };
-// Aliases for compatibility
-export const DynamicIsland = Halo;
-export const useDynamicIslandSize = useHaloSize;
-export const DynamicIslandProvider = HaloProvider;
-export const DynamicContainer = HaloContainer;

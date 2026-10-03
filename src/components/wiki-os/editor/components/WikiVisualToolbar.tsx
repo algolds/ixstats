@@ -53,7 +53,6 @@ interface WikiVisualToolbarProps {
   insertTable: () => void;
   insertRef: () => void;
   clearFormatting: () => void;
-  insertHtmlAtCursor: (html: string) => void;
   saveSelection?: () => void;
   restoreSelection?: () => void;
   handleInsertStashedImage: (filename: string) => void;
@@ -77,7 +76,6 @@ export function WikiVisualToolbar({
   insertTable,
   insertRef,
   clearFormatting,
-  insertHtmlAtCursor,
   saveSelection,
   restoreSelection,
   handleInsertStashedImage,

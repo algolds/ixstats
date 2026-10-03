@@ -12,7 +12,6 @@ import { cn } from "~/lib/utils";
 
 interface SportsCommandBarProps {
   title: string;
-  subtitle?: string;
   lobbyHref: string;
   lobbyLabel: string;
   activeSectionLabel?: string;
@@ -26,7 +25,6 @@ interface SportsCommandBarProps {
 
 export function SportsCommandBar({
   title,
-  subtitle,
   lobbyHref,
   lobbyLabel,
   activeSectionLabel,
