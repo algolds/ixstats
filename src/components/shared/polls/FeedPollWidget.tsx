@@ -191,7 +191,6 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
           votes={pollState.votes}
           hasVoted={pollState.hasVoted}
           onVote={(ids) => handleVoteSubmit(ids)}
-          mode="inline"
         >
           <PollWidget.Content>
             <PollWidget.Question />

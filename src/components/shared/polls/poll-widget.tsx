@@ -4,7 +4,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -12,96 +11,40 @@ import {
   type HTMLAttributes,
   type KeyboardEvent,
   type MouseEvent,
-  type PropsWithChildren,
   type ReactNode,
 } from "react";
-import { useControllableState } from "~/hooks/useControllableState";
 import { cva } from "class-variance-authority";
-import {
-  StatsReport as BarChart3Icon,
-  Check as CheckIcon,
-  CheckSquare as Vote,
-} from "iconoir-react";
+import { StatsReport as BarChart3Icon, Check as CheckIcon } from "iconoir-react";
 import { AnimatePresence, motion } from "motion/react";
 
 import { cn } from "~/lib/utils/cn";
 import { Button } from "~/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverDescription,
-  PopoverHeader,
-  PopoverTitle,
-  PopoverTrigger,
-} from "~/components/ui/popover";
 
 interface PollOption {
-  /** Unique identifier for the option */
   id: string;
-  /** Display label for the option */
   label: string;
-  /** Optional description */
   description?: string;
-  /** Optional icon */
-  icon?: ReactNode;
 }
 
-type PollWidgetMode = "inline" | "popover" | "dialog";
+/** idle → voting (submit pressed) → results (vote recorded) → success (confirmation) → idle */
+type AnimationPhase = "idle" | "voting" | "results" | "success";
 
-type PollWidgetAnimationPhase = "idle" | "voting" | "results" | "success";
-
-interface PollWidgetRootProps extends Omit<PropsWithChildren, "children"> {
-  /** Poll question text */
+interface PollWidgetRootProps {
   question: string;
-  /** Optional description for the poll */
   description?: string;
-  /** Available options to vote on */
   options: PollOption[];
-  /** Currently selected option(s) - controlled */
+  /** Selected option id(s); the widget is controlled. */
   value?: string | string[];
-  /** Default selected option(s) - uncontrolled */
-  defaultValue?: string | string[];
-  /** Callback when selection changes */
   onValueChange?: (value: string | string[]) => void;
-  /** Whether multiple selections are allowed */
   multiple?: boolean;
-  /** Whether the poll is disabled */
   disabled?: boolean;
   /** Vote counts per option */
   votes?: Record<string, number>;
-  /** Whether user has submitted their vote */
+  /** Whether the user has already voted (shows results) */
   hasVoted?: boolean;
-  /** Callback when vote is submitted */
   onVote?: (selectedIds: string[]) => void;
-  /** Render mode */
-  mode?: PollWidgetMode;
-  /** Controlled open state (for popover/dialog modes) */
-  open?: boolean;
-  /** Callback when open state changes */
-  onOpenChange?: (open: boolean) => void;
-  /** Duration to show results before collapsing (ms). Set to 0 to disable auto-collapse. */
-  autoCollapseDelay?: number;
-  /** Duration to show success message (ms) */
-  successDuration?: number;
-  /** Custom success title */
-  successTitle?: string;
-  /** Custom success description */
-  successDescription?: string;
-  /** Children components */
   children: ReactNode;
 }
-
-// Context
 
 interface PollWidgetContextValue {
   question: string;
@@ -111,29 +54,17 @@ interface PollWidgetContextValue {
   multiple: boolean;
   disabled: boolean;
   showResults: boolean;
-  votes: Record<string, number>;
   totalVotes: number;
   hasVoted: boolean;
-  mode: PollWidgetMode;
-  open: boolean;
-  setOpen: (open: boolean) => void;
   select: (optionId: string) => void;
-  isSelected: (optionId: string) => boolean;
   getPercentage: (optionId: string) => number;
   submitVote: () => void;
   canSubmit: boolean;
-  // Animation state
-  animationPhase: PollWidgetAnimationPhase;
-  successTitle: string;
-  successDescription: string;
+  animationPhase: AnimationPhase;
 }
 
 const PollWidgetContext = createContext<PollWidgetContextValue | null>(null);
 
-/**
- * Hook to access the PollWidget context
- * @throws Error if used outside of PollWidget.Root
- */
 function usePollWidget() {
   const context = useContext(PollWidgetContext);
   if (!context) {
@@ -142,45 +73,23 @@ function usePollWidget() {
   return context;
 }
 
-interface PollWidgetOptionContextValue {
-  optionId: string;
-  disabled: boolean;
-  isSelected: boolean;
-  percentage: number;
-}
+const OPTION_CLASSES = [
+  "group relative flex w-full cursor-pointer items-center gap-3 rounded-lg border p-3 text-left",
+  "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+  "disabled:cursor-not-allowed disabled:opacity-50",
+];
 
-const PollWidgetOptionContext = createContext<PollWidgetOptionContextValue | null>(null);
-
-function usePollWidgetOptionContext() {
-  const context = useContext(PollWidgetOptionContext);
-  if (!context) {
-    throw new Error("PollWidget.Option sub-components must be used within PollWidget.Option");
-  }
-  return context;
-}
-
-// Variants
-
-const optionVariants = cva(
-  [
-    "group relative flex w-full cursor-pointer items-center gap-3 rounded-lg border p-3 text-left",
-    "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 ease-out",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-    "disabled:cursor-not-allowed disabled:opacity-50",
-  ],
-  {
-    variants: {
-      state: {
-        idle: ["border-border bg-background hover:border-poll/50 hover:bg-poll/5"],
-        selected: ["border-poll/55 bg-poll/5 shadow-xs", "hover:border-poll hover:bg-poll/10"],
-        voted: ["cursor-default border-border bg-muted/30"],
-      },
+const optionVariants = cva(OPTION_CLASSES, {
+  variants: {
+    state: {
+      idle: ["border-border bg-background hover:border-poll/50 hover:bg-poll/5"],
+      selected: ["border-poll/55 bg-poll/5 shadow-xs", "hover:border-poll hover:bg-poll/10"],
+      voted: ["cursor-default border-border bg-muted/30"],
     },
-    defaultVariants: {
-      state: "idle",
-    },
-  }
-);
+  },
+  defaultVariants: { state: "idle" },
+});
 
 const indicatorVariants = cva(
   [
@@ -194,15 +103,9 @@ const indicatorVariants = cva(
         selected: "border-poll bg-poll text-white",
         voted: "border-muted-foreground/30 bg-muted",
       },
-      multiple: {
-        true: "rounded-sm",
-        false: "rounded-full",
-      },
+      multiple: { true: "rounded-sm", false: "rounded-full" },
     },
-    defaultVariants: {
-      state: "idle",
-      multiple: false,
-    },
+    defaultVariants: { state: "idle", multiple: false },
   }
 );
 
@@ -212,74 +115,34 @@ const progressVariants = cva(
     "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500 ease-out",
   ],
   {
-    variants: {
-      state: {
-        idle: "bg-transparent",
-        selected: "bg-poll/15",
-        voted: "bg-poll/10",
-      },
-    },
-    defaultVariants: {
-      state: "idle",
-    },
+    variants: { state: { idle: "bg-transparent", selected: "bg-poll/15", voted: "bg-poll/10" } },
+    defaultVariants: { state: "idle" },
   }
 );
 
-// Root Component
+/** Brief pause before the vote is sent, how long results show, and how long the confirmation stays. */
+const VOTE_DELAY_MS = 400;
+const RESULTS_DURATION_MS = 2500;
+const SUCCESS_DURATION_MS = 1500;
 
-/**
- * Root component for PollWidget. Provides context for all child components.
- * Supports three rendering modes: inline, popover, and dialog.
- */
+/** Root: owns the selection / vote animation state and provides it to the compound parts. */
 function PollWidgetRoot({
   question,
   description,
   options,
-  value: controlledValue,
-  defaultValue,
+  value,
   onValueChange,
   multiple = false,
   disabled = false,
   votes = {},
   hasVoted = false,
   onVote,
-  mode = "inline",
-  open: controlledOpen,
-  onOpenChange,
-  autoCollapseDelay = 2500,
-  successDuration = 1500,
-  successTitle = "Vote recorded",
-  successDescription = "Your vote has been recorded",
   children,
 }: PollWidgetRootProps) {
-  const normalizeValue = (val: string | string[] | undefined): string[] => {
-    if (!val) {
-      return [];
-    }
-    return Array.isArray(val) ? val : [val];
-  };
-
-  const [selectedArray, setSelectedArray] = useControllableState<string[]>({
-    prop: controlledValue ? normalizeValue(controlledValue) : undefined,
-    defaultProp: normalizeValue(defaultValue),
-    onChange: (arr) => {
-      if (onValueChange) {
-        onValueChange(multiple ? arr : (arr[0] ?? ""));
-      }
-    },
-  });
-
-  const [open, setOpen] = useControllableState({
-    prop: controlledOpen,
-    defaultProp: false,
-    onChange: onOpenChange,
-  });
-
-  // Animation state
-  const [animationPhase, setAnimationPhase] = useState<PollWidgetAnimationPhase>("idle");
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const selected = selectedArray ?? [];
+  const selected = useMemo(() => (value ? (Array.isArray(value) ? value : [value]) : []), [value]);
+  const [phase, setAnimationPhase] = useState<AnimationPhase>("idle");
+  // A vote cast elsewhere (or earlier) goes straight to results
+  const animationPhase = hasVoted && phase === "idle" ? "results" : phase;
 
   const totalVotes = useMemo(
     () => Object.values(votes).reduce((sum, count) => sum + count, 0),
@@ -288,88 +151,35 @@ function PollWidgetRoot({
 
   const select = useCallback(
     (optionId: string) => {
-      if (disabled || hasVoted || animationPhase !== "idle") {
-        return;
-      }
-
-      setSelectedArray((prev) => {
-        const current = prev ?? [];
-        const isCurrentlySelected = current.includes(optionId);
-
-        if (multiple) {
-          if (isCurrentlySelected) {
-            return current.filter((id) => id !== optionId);
-          }
-          return [...current, optionId];
-        }
-        if (isCurrentlySelected) {
-          return [];
-        }
-        return [optionId];
-      });
+      if (disabled || hasVoted || animationPhase !== "idle") return;
+      const next = selected.includes(optionId)
+        ? selected.filter((id) => id !== optionId)
+        : multiple
+          ? [...selected, optionId]
+          : [optionId];
+      onValueChange?.(multiple ? next : (next[0] ?? ""));
     },
-    [disabled, hasVoted, multiple, setSelectedArray, animationPhase]
+    [disabled, hasVoted, multiple, selected, onValueChange, animationPhase]
   );
 
-  // oxlint-disable-next-line
-  const isSelected = useCallback((optionId: string) => selected.includes(optionId), [selected]);
-
   const getPercentage = useCallback(
-    (optionId: string) => {
-      if (totalVotes === 0) {
-        return 0;
-      }
-      return Math.round(((votes[optionId] ?? 0) / totalVotes) * 100);
-    },
+    (optionId: string) =>
+      totalVotes === 0 ? 0 : Math.round(((votes[optionId] ?? 0) / totalVotes) * 100),
     [votes, totalVotes]
   );
 
   const submitVote = useCallback(() => {
-    if (selected.length > 0 && onVote && animationPhase === "idle") {
-      // Start animation sequence
-      setAnimationPhase("voting");
-
-      // Brief delay before showing results
-      setTimeout(() => {
-        onVote(selected);
-        setAnimationPhase("results");
-
-        // Show success after results
-        setTimeout(() => {
-          setAnimationPhase("success");
-
-          // Auto-collapse after success (for popover/dialog modes)
-          if (autoCollapseDelay > 0 && mode !== "inline") {
-            setTimeout(() => {
-              setOpen(false);
-              // Reset animation phase after close
-              setTimeout(() => setAnimationPhase("idle"), 300);
-            }, successDuration);
-          } else if (autoCollapseDelay > 0 && mode === "inline") {
-            // For inline mode, just go back to idle after showing success
-            setTimeout(() => setAnimationPhase("idle"), successDuration);
-          }
-        }, autoCollapseDelay);
-      }, 400);
-    }
-    // oxlint-disable-next-line
-  }, [selected, onVote, animationPhase, autoCollapseDelay, successDuration, mode, setOpen]);
-
-  // Reset animation phase when opening
-  useEffect(() => {
-    if (open && !hasVoted) {
-      setAnimationPhase("idle");
-    }
-  }, [open, hasVoted]);
-
-  // Update animation phase when hasVoted changes externally
-  useEffect(() => {
-    if (hasVoted && animationPhase === "idle") {
+    if (selected.length === 0 || !onVote || animationPhase !== "idle") return;
+    setAnimationPhase("voting");
+    setTimeout(() => {
+      onVote(selected);
       setAnimationPhase("results");
-    }
-  }, [hasVoted, animationPhase]);
-
-  const canSubmit = selected.length > 0 && !hasVoted && !disabled && animationPhase === "idle";
+      setTimeout(() => {
+        setAnimationPhase("success");
+        setTimeout(() => setAnimationPhase("idle"), SUCCESS_DURATION_MS);
+      }, RESULTS_DURATION_MS);
+    }, VOTE_DELAY_MS);
+  }, [selected, onVote, animationPhase]);
 
   const contextValue = useMemo<PollWidgetContextValue>(
     () => ({
@@ -380,206 +190,45 @@ function PollWidgetRoot({
       multiple,
       disabled,
       showResults: hasVoted || animationPhase === "results",
-      votes,
       totalVotes,
       hasVoted,
-      mode,
-      open: open ?? false,
-      setOpen: (value: boolean) => setOpen(value),
       select,
-      isSelected,
       getPercentage,
       submitVote,
-      canSubmit,
+      canSubmit: selected.length > 0 && !hasVoted && !disabled && animationPhase === "idle",
       animationPhase,
-      successTitle,
-      successDescription,
     }),
     [
       question,
       description,
       options,
-      // oxlint-disable-next-line
       selected,
       multiple,
       disabled,
       hasVoted,
-      votes,
       totalVotes,
-      mode,
-      open,
-      setOpen,
       select,
-      isSelected,
       getPercentage,
       submitVote,
-      canSubmit,
       animationPhase,
-      successTitle,
-      successDescription,
     ]
   );
 
-  // Render based on mode
-  if (mode === "popover") {
-    return (
-      <PollWidgetContext.Provider value={contextValue}>
-        <Popover onOpenChange={setOpen} open={open}>
-          {children}
-        </Popover>
-      </PollWidgetContext.Provider>
-    );
-  }
-
-  if (mode === "dialog") {
-    return (
-      <PollWidgetContext.Provider value={contextValue}>
-        <Dialog onOpenChange={setOpen} open={open}>
-          {children}
-        </Dialog>
-      </PollWidgetContext.Provider>
-    );
-  }
-
-  // Inline mode - just render children with context
   return (
     <PollWidgetContext.Provider value={contextValue}>
-      <div data-mode={mode} data-slot="poll-widget">
+      <div data-mode="inline" data-slot="poll-widget">
         {children}
       </div>
     </PollWidgetContext.Provider>
   );
 }
 
-// Trigger Component
+const SPRING_TRANSITION = { type: "spring", duration: 0.4, bounce: 0 } as const;
 
-type PollWidgetTriggerProps = ComponentProps<typeof Button> & {
-  /** Custom label for the trigger button */
-  label?: ReactNode;
-};
+/** Poll content; swaps to the confirmation panel after a vote and back. */
+function PollWidgetContent({ className, children, ...props }: HTMLAttributes<HTMLDivElement>) {
+  const { animationPhase } = usePollWidget();
 
-/**
- * Button that opens the poll popover/dialog.
- * Only rendered in popover or dialog modes.
- */
-function PollWidgetTrigger({ className, label, children, ...props }: PollWidgetTriggerProps) {
-  const { mode, hasVoted, totalVotes } = usePollWidget();
-
-  if (mode === "inline") {
-    return null;
-  }
-
-  const content = children ?? (
-    <>
-      <Vote className="size-3.5" />
-      {label ?? "Poll"}
-      {totalVotes > 0 && (
-        <span
-          className="bg-primary text-primary-foreground inline-flex min-w-4 items-center justify-center rounded-full px-1 text-xs"
-          data-slot="poll-widget-vote-count"
-        >
-          {totalVotes}
-        </span>
-      )}
-    </>
-  );
-
-  const button = (
-    <Button
-      className={cn("gap-1.5", hasVoted && "text-foreground", className)}
-      data-slot="poll-widget-trigger"
-      size="sm"
-      type="button"
-      variant="ghost"
-      {...props}
-    >
-      {content}
-    </Button>
-  );
-
-  if (mode === "dialog") {
-    return <DialogTrigger asChild>{button}</DialogTrigger>;
-  }
-
-  return <PopoverTrigger asChild>{button}</PopoverTrigger>;
-}
-
-// Content Component
-
-type PollWidgetContentProps = HTMLAttributes<HTMLDivElement>;
-
-/**
- * Container for the poll content. Adapts to the current mode.
- * Includes animation transitions between voting states.
- */
-function PollWidgetContent({ className, children, ...props }: PollWidgetContentProps) {
-  const { mode, animationPhase } = usePollWidget();
-
-  const innerContent = (
-    <AnimatePresence mode="popLayout">
-      {animationPhase === "success" ? (
-        <motion.div
-          animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
-          className="flex h-full min-h-[120px] flex-col items-center justify-center"
-          exit={{ y: 32, opacity: 0, filter: "blur(4px)" }}
-          initial={{ y: -32, opacity: 0, filter: "blur(4px)" }}
-          key="success"
-          transition={{
-            type: "spring",
-            duration: 0.4,
-            bounce: 0,
-          }}
-        >
-          <PollWidgetSuccess />
-        </motion.div>
-      ) : (
-        <motion.div
-          className="flex flex-col gap-3"
-          exit={{ y: 8, opacity: 0, filter: "blur(4px)" }}
-          initial={false}
-          key="poll-content"
-          transition={{
-            type: "spring",
-            duration: 0.4,
-            bounce: 0,
-          }}
-        >
-          {children}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-
-  if (mode === "popover") {
-    return (
-      <PopoverContent
-        align="start"
-        className={cn("w-80 overflow-hidden p-3", className)}
-        data-animation-phase={animationPhase}
-        data-slot="poll-widget-content"
-        side="top"
-        sideOffset={8}
-        {...props}
-      >
-        {innerContent}
-      </PopoverContent>
-    );
-  }
-
-  if (mode === "dialog") {
-    return (
-      <DialogContent
-        className={cn("overflow-hidden sm:max-w-md", className)}
-        data-animation-phase={animationPhase}
-        data-slot="poll-widget-content"
-        {...props}
-      >
-        {innerContent}
-      </DialogContent>
-    );
-  }
-
-  // Inline mode
   return (
     <div
       className={cn("flex flex-col gap-3", className)}
@@ -587,49 +236,47 @@ function PollWidgetContent({ className, children, ...props }: PollWidgetContentP
       data-slot="poll-widget-content"
       {...props}
     >
-      {innerContent}
+      <AnimatePresence mode="popLayout">
+        {animationPhase === "success" ? (
+          <motion.div
+            animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
+            className="flex h-full min-h-[120px] flex-col items-center justify-center"
+            exit={{ y: 32, opacity: 0, filter: "blur(4px)" }}
+            initial={{ y: -32, opacity: 0, filter: "blur(4px)" }}
+            key="success"
+            transition={SPRING_TRANSITION}
+          >
+            <PollWidgetSuccess />
+          </motion.div>
+        ) : (
+          <motion.div
+            className="flex flex-col gap-3"
+            exit={{ y: 8, opacity: 0, filter: "blur(4px)" }}
+            initial={false}
+            key="poll-content"
+            transition={SPRING_TRANSITION}
+          >
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-// Success Component
-
-type PollWidgetSuccessProps = HTMLAttributes<HTMLDivElement> & {
-  /** Custom title override */
-  title?: string;
-  /** Custom description override */
-  description?: string;
-};
-
-/**
- * Success state shown after voting with animated checkmark.
- */
-function PollWidgetSuccess({ title, description, className, ...props }: PollWidgetSuccessProps) {
-  const { successTitle, successDescription, totalVotes, selected, options } = usePollWidget();
-
-  const displayTitle = title ?? successTitle;
-  const displayDescription = description ?? successDescription;
-
-  // Get voted option labels
+/** Confirmation shown after voting: animated checkmark, the chosen options and the total. */
+function PollWidgetSuccess() {
+  const { totalVotes, selected, options } = usePollWidget();
   const votedOptions = selected
     .map((id) => options.find((o) => o.id === id)?.label)
     .filter(Boolean);
 
   return (
-    <div
-      className={cn("flex flex-col items-center gap-2 text-center", className)}
-      data-slot="poll-widget-success"
-      {...props}
-    >
+    <div className="flex flex-col items-center gap-2 text-center" data-slot="poll-widget-success">
       <motion.div
         animate={{ scale: 1, opacity: 1 }}
         initial={{ scale: 0.8, opacity: 0 }}
-        transition={{
-          type: "spring",
-          duration: 0.5,
-          bounce: 0.4,
-          delay: 0.1,
-        }}
+        transition={{ type: "spring", duration: 0.5, bounce: 0.4, delay: 0.1 }}
       >
         <svg
           aria-hidden="true"
@@ -660,9 +307,9 @@ function PollWidgetSuccess({ title, description, className, ...props }: PollWidg
         initial={{ y: 10, opacity: 0 }}
         transition={{ delay: 0.2, duration: 0.3 }}
       >
-        <h3 className="text-primary text-sm font-medium">{displayTitle}</h3>
+        <h3 className="text-primary text-sm font-medium">Vote recorded</h3>
         <p className="text-muted-foreground mx-auto max-w-xs text-xs text-pretty">
-          {displayDescription}
+          Your vote has been recorded
         </p>
         {votedOptions.length > 0 && (
           <p className="text-muted-foreground text-xs">
@@ -678,35 +325,8 @@ function PollWidgetSuccess({ title, description, className, ...props }: PollWidg
   );
 }
 
-// Question Component
-
-type PollWidgetQuestionProps = HTMLAttributes<HTMLDivElement>;
-
-/**
- * Displays the poll question and optional description.
- */
-function PollWidgetQuestion({ className, children, ...props }: PollWidgetQuestionProps) {
-  const { question, description, mode } = usePollWidget();
-
-  if (mode === "popover") {
-    return (
-      <PopoverHeader className={className} {...props}>
-        <PopoverTitle>{children ?? question}</PopoverTitle>
-        {description && <PopoverDescription>{description}</PopoverDescription>}
-      </PopoverHeader>
-    );
-  }
-
-  if (mode === "dialog") {
-    return (
-      <DialogHeader className={className} {...props}>
-        <DialogTitle>{children ?? question}</DialogTitle>
-        {description && <DialogDescription>{description}</DialogDescription>}
-      </DialogHeader>
-    );
-  }
-
-  // Inline mode
+function PollWidgetQuestion({ className, children, ...props }: HTMLAttributes<HTMLDivElement>) {
+  const { question, description } = usePollWidget();
   return (
     <div
       className={cn("flex flex-col gap-1", className)}
@@ -719,55 +339,32 @@ function PollWidgetQuestion({ className, children, ...props }: PollWidgetQuestio
   );
 }
 
-// Options Component
-
-type PollWidgetOptionsProps = HTMLAttributes<HTMLDivElement>;
-
-/**
- * Container for poll options with keyboard navigation.
- */
-function PollWidgetOptions({ className, children, ...props }: PollWidgetOptionsProps) {
+/** Option list with arrow / Home / End keyboard navigation. */
+function PollWidgetOptions({ className, children, ...props }: HTMLAttributes<HTMLDivElement>) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
     const container = containerRef.current;
-    if (!container) {
-      return;
-    }
+    if (!container) return;
 
     const options = Array.from(
       container.querySelectorAll<HTMLButtonElement>(
         '[data-slot="poll-widget-option"]:not([disabled])'
       )
     );
-    const currentIndex = options.indexOf(document.activeElement as HTMLButtonElement);
-
-    let nextIndex = currentIndex;
-
-    switch (event.key) {
-      case "ArrowDown":
-      case "ArrowRight":
-        event.preventDefault();
-        nextIndex = currentIndex < options.length - 1 ? currentIndex + 1 : 0;
-        break;
-      case "ArrowUp":
-      case "ArrowLeft":
-        event.preventDefault();
-        nextIndex = currentIndex > 0 ? currentIndex - 1 : options.length - 1;
-        break;
-      case "Home":
-        event.preventDefault();
-        nextIndex = 0;
-        break;
-      case "End":
-        event.preventDefault();
-        nextIndex = options.length - 1;
-        break;
-      default:
-        break;
-    }
-
-    options[nextIndex]?.focus();
+    const last = options.length - 1;
+    const current = options.indexOf(document.activeElement as HTMLButtonElement);
+    const targets: Record<string, number> = {
+      ArrowDown: current < last ? current + 1 : 0,
+      ArrowRight: current < last ? current + 1 : 0,
+      ArrowUp: current > 0 ? current - 1 : last,
+      ArrowLeft: current > 0 ? current - 1 : last,
+      Home: 0,
+      End: last,
+    };
+    if (!(event.key in targets)) return;
+    event.preventDefault();
+    options[targets[event.key]!]?.focus();
   }, []);
 
   return (
@@ -785,18 +382,13 @@ function PollWidgetOptions({ className, children, ...props }: PollWidgetOptionsP
   );
 }
 
-// Option Component
-
 type PollWidgetOptionProps = Omit<ComponentProps<"button">, "value"> & {
-  /** Unique identifier for this option */
+  /** Option id */
   value: string;
-  /** Whether this specific option is disabled */
   disabled?: boolean;
 };
 
-/**
- * Individual poll option with indicator, label, and progress bar.
- */
+/** One option: selection indicator, label (and description), vote percentage and a progress bar. */
 function PollWidgetOption({
   value,
   disabled: optionDisabled = false,
@@ -810,206 +402,87 @@ function PollWidgetOption({
     disabled: rootDisabled,
     hasVoted,
     showResults,
-    isSelected,
+    multiple,
+    selected,
     select,
     getPercentage,
   } = usePollWidget();
 
   const option = options.find((o) => o.id === value);
   const disabled = rootDisabled || optionDisabled;
-  const selected = isSelected(value);
+  const isSelected = selected.includes(value);
   const percentage = getPercentage(value);
+  const state = hasVoted ? "voted" : isSelected ? "selected" : "idle";
 
-  const getState = (): "idle" | "selected" | "voted" => {
-    if (hasVoted) {
-      return "voted";
-    }
-    if (selected) {
-      return "selected";
-    }
-    return "idle";
+  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    onClick?.(event);
+    if (!(event.defaultPrevented || disabled)) select(value);
   };
-  const state = getState();
-
-  const handleClick = useCallback(
-    (event: MouseEvent<HTMLButtonElement>) => {
-      onClick?.(event);
-      if (!(event.defaultPrevented || disabled)) {
-        select(value);
-      }
-    },
-    [onClick, disabled, select, value]
-  );
-
-  const optionContextValue = useMemo(
-    () => ({
-      optionId: value,
-      disabled,
-      isSelected: selected,
-      percentage,
-    }),
-    [value, disabled, selected, percentage]
-  );
 
   return (
-    <PollWidgetOptionContext.Provider value={optionContextValue}>
-      <button
-        aria-disabled={disabled || hasVoted}
-        aria-selected={selected}
-        className={cn(optionVariants({ state }), className)}
-        data-disabled={disabled ? true : undefined}
-        data-percentage={percentage}
-        data-selected={selected ? true : undefined}
-        data-slot="poll-widget-option"
-        data-state={state}
-        data-value={value}
-        disabled={disabled || hasVoted}
-        onClick={handleClick}
-        role="option"
-        type="button"
-        {...props}
-      >
-        {/* Animated progress bar background */}
-        {showResults && (
-          <motion.span
-            animate={{ width: `${percentage}%` }}
-            aria-hidden="true"
-            className={cn(progressVariants({ state: selected ? "selected" : "voted" }))}
-            initial={{ width: 0 }}
-            transition={{
-              type: "spring",
-              duration: 0.8,
-              bounce: 0.1,
-              delay: 0.1,
-            }}
-          />
-        )}
-
-        {/* Content */}
-        <span className="relative z-10 flex w-full items-center gap-3">
-          {children ?? (
-            <>
-              <PollWidgetIndicator />
-              {option?.icon && (
-                <span className="text-muted-foreground shrink-0">{option.icon}</span>
-              )}
-              <PollWidgetLabel>
-                {option?.label ?? value}
-                {option?.description && (
-                  <span className="text-muted-foreground block text-xs font-normal">
-                    {option.description}
-                  </span>
-                )}
-              </PollWidgetLabel>
-              {showResults && <PollWidgetPercentage />}
-            </>
-          )}
-        </span>
-      </button>
-    </PollWidgetOptionContext.Provider>
-  );
-}
-
-// Indicator Component
-
-type PollWidgetIndicatorProps = HTMLAttributes<HTMLSpanElement>;
-
-/**
- * Selection indicator (checkbox/radio visual) for an option.
- */
-function PollWidgetIndicator({ className, children, ...props }: PollWidgetIndicatorProps) {
-  const { multiple, hasVoted } = usePollWidget();
-  const { isSelected } = usePollWidgetOptionContext();
-
-  const getState = (): "idle" | "selected" | "voted" => {
-    if (hasVoted) {
-      return "voted";
-    }
-    if (isSelected) {
-      return "selected";
-    }
-    return "idle";
-  };
-  const state = getState();
-
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(indicatorVariants({ state, multiple }), className)}
-      data-slot="poll-widget-indicator"
+    <button
+      aria-disabled={disabled || hasVoted}
+      aria-selected={isSelected}
+      className={cn(optionVariants({ state }), className)}
+      data-disabled={disabled ? true : undefined}
+      data-percentage={percentage}
+      data-selected={isSelected ? true : undefined}
+      data-slot="poll-widget-option"
       data-state={state}
+      data-value={value}
+      disabled={disabled || hasVoted}
+      onClick={handleClick}
+      role="option"
+      type="button"
       {...props}
     >
-      {isSelected && (
-        <CheckIcon
-          className={cn(
-            "h-2.5 w-2.5 transition-transform duration-200",
-            isSelected ? "scale-100" : "scale-0"
-          )}
-          strokeWidth={3}
+      {showResults && (
+        <motion.span
+          animate={{ width: `${percentage}%` }}
+          aria-hidden="true"
+          className={progressVariants({ state: isSelected ? "selected" : "voted" })}
+          initial={{ width: 0 }}
+          transition={{ type: "spring", duration: 0.8, bounce: 0.1, delay: 0.1 }}
         />
       )}
-      {children}
-    </span>
+
+      <span className="relative z-10 flex w-full items-center gap-3">
+        {children ?? (
+          <>
+            <span
+              aria-hidden="true"
+              className={indicatorVariants({ state, multiple })}
+              data-slot="poll-widget-indicator"
+              data-state={state}
+            >
+              {isSelected && <CheckIcon className="h-2.5 w-2.5" strokeWidth={3} />}
+            </span>
+            <span className="flex-1 text-sm font-medium" data-slot="poll-widget-label">
+              {option?.label ?? value}
+              {option?.description && (
+                <span className="text-muted-foreground block text-xs font-normal">
+                  {option.description}
+                </span>
+              )}
+            </span>
+            {showResults && (
+              <span
+                className="text-muted-foreground min-w-[3ch] text-right text-xs font-medium tabular-nums"
+                data-slot="poll-widget-percentage"
+              >
+                {percentage}%
+              </span>
+            )}
+          </>
+        )}
+      </span>
+    </button>
   );
 }
 
-// Label Component
-
-type PollWidgetLabelProps = HTMLAttributes<HTMLSpanElement>;
-
-/**
- * Label text for a poll option.
- */
-function PollWidgetLabel({ className, ...props }: PollWidgetLabelProps) {
-  return (
-    <span
-      className={cn("flex-1 text-sm font-medium", className)}
-      data-slot="poll-widget-label"
-      {...props}
-    />
-  );
-}
-
-// Percentage Component
-
-type PollWidgetPercentageProps = HTMLAttributes<HTMLSpanElement>;
-
-/**
- * Displays the vote percentage for an option (only visible after voting).
- */
-function PollWidgetPercentage({ children, className, ...props }: PollWidgetPercentageProps) {
-  const { showResults } = usePollWidget();
-  const { percentage } = usePollWidgetOptionContext();
-
-  if (!showResults) {
-    return null;
-  }
-
-  return (
-    <span
-      className={cn(
-        "text-muted-foreground min-w-[3ch] text-right text-xs font-medium tabular-nums",
-        className
-      )}
-      data-slot="poll-widget-percentage"
-      {...props}
-    >
-      {children ?? `${percentage}%`}
-    </span>
-  );
-}
-
-// Results Component
-
-type PollWidgetResultsProps = HTMLAttributes<HTMLDivElement>;
-
-/**
- * Displays voting results summary (total votes, user vote status).
- */
-function PollWidgetResults({ children, className, ...props }: PollWidgetResultsProps) {
+/** Total votes and whether you voted. */
+function PollWidgetResults({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
   const { totalVotes, hasVoted } = usePollWidget();
-
   return (
     <div
       className={cn("text-muted-foreground flex items-center justify-between text-xs", className)}
@@ -1034,98 +507,17 @@ function PollWidgetResults({ children, className, ...props }: PollWidgetResultsP
   );
 }
 
-// Submit Component
-
-type PollWidgetSubmitProps = ComponentProps<typeof Button> & {
-  /** Text to show while submitting */
-  loadingText?: string;
-};
-
-/**
- * Submit button for the poll. Disabled when no option is selected or already voted.
- * Shows loading state during vote submission animation.
- */
+/** Submit button; hidden once the vote is in, with a spinner while it is being sent. */
 function PollWidgetSubmit({
   className,
   children,
   onClick,
-  loadingText = "Submitting...",
   ...props
-}: PollWidgetSubmitProps) {
-  const { canSubmit, submitVote, hasVoted, mode, animationPhase } = usePollWidget();
-
+}: ComponentProps<typeof Button>) {
+  const { canSubmit, submitVote, animationPhase } = usePollWidget();
   const isSubmitting = animationPhase === "voting";
 
-  const handleClick: NonNullable<PollWidgetSubmitProps["onClick"]> = (event) => {
-    onClick?.(event);
-    if (!event.defaultPrevented) {
-      submitVote();
-    }
-  };
-
-  if (hasVoted || animationPhase === "results" || animationPhase === "success") {
-    return null;
-  }
-
-  const buttonContent = (
-    <AnimatePresence initial={false} mode="popLayout">
-      <motion.span
-        animate={{ opacity: 1, y: 0 }}
-        className="flex w-full items-center justify-center gap-2"
-        exit={{ opacity: 0, y: 20 }}
-        initial={{ opacity: 0, y: -20 }}
-        key={isSubmitting ? "loading" : "submit"}
-        transition={{
-          type: "spring",
-          duration: 0.3,
-          bounce: 0,
-        }}
-      >
-        {isSubmitting ? (
-          <>
-            <motion.div
-              animate={{ rotate: 360 }}
-              className="size-3.5 rounded-full border-2 border-current border-t-transparent"
-              transition={{
-                duration: 1,
-                repeat: Number.POSITIVE_INFINITY,
-                ease: "linear",
-              }}
-            />
-            {loadingText}
-          </>
-        ) : (
-          (children ?? "Submit Vote")
-        )}
-      </motion.span>
-    </AnimatePresence>
-  );
-
-  // For dialog mode, wrap in DialogFooter
-  if (mode === "dialog") {
-    return (
-      <DialogFooter>
-        <DialogClose asChild>
-          <Button type="button" variant="outline">
-            Cancel
-          </Button>
-        </DialogClose>
-        <Button
-          className={cn(
-            "bg-poll hover:bg-poll/90 min-w-[120px] font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,opacity,transform]",
-            className
-          )}
-          data-slot="poll-widget-submit"
-          disabled={!canSubmit || isSubmitting}
-          onClick={handleClick}
-          type="button"
-          {...props}
-        >
-          {buttonContent}
-        </Button>
-      </DialogFooter>
-    );
-  }
+  if (animationPhase !== "idle" && !isSubmitting) return null;
 
   return (
     <Button
@@ -1135,48 +527,45 @@ function PollWidgetSubmit({
       )}
       data-slot="poll-widget-submit"
       disabled={!canSubmit || isSubmitting}
-      onClick={handleClick}
+      onClick={(event) => {
+        onClick?.(event);
+        if (!event.defaultPrevented) submitVote();
+      }}
       type="button"
       {...props}
     >
-      {buttonContent}
+      <AnimatePresence initial={false} mode="popLayout">
+        <motion.span
+          animate={{ opacity: 1, y: 0 }}
+          className="flex w-full items-center justify-center gap-2"
+          exit={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: -20 }}
+          key={isSubmitting ? "loading" : "submit"}
+          transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+        >
+          {isSubmitting ? (
+            <>
+              <motion.div
+                animate={{ rotate: 360 }}
+                className="size-3.5 rounded-full border-2 border-current border-t-transparent"
+                transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+              />
+              Submitting...
+            </>
+          ) : (
+            (children ?? "Submit Vote")
+          )}
+        </motion.span>
+      </AnimatePresence>
     </Button>
   );
 }
 
-// Dialog Component (for dialog mode wrapper)
-
-type PollWidgetDialogProps = ComponentProps<typeof DialogContent>;
-
-/**
- * Dialog wrapper component. Use when mode="dialog" to wrap PollWidget.Content.
- * This is an alternative to PollWidget.Content for more control over dialog rendering.
- */
-function PollWidgetDialog({ className, children, ...props }: PollWidgetDialogProps) {
-  return (
-    <DialogContent
-      className={cn("sm:max-w-md", className)}
-      data-slot="poll-widget-dialog"
-      {...props}
-    >
-      {children}
-    </DialogContent>
-  );
-}
-
-// Compound Export
-
 export const PollWidget = Object.assign(PollWidgetRoot, {
-  Trigger: PollWidgetTrigger,
   Content: PollWidgetContent,
   Question: PollWidgetQuestion,
   Options: PollWidgetOptions,
   Option: PollWidgetOption,
-  Indicator: PollWidgetIndicator,
-  Label: PollWidgetLabel,
-  Percentage: PollWidgetPercentage,
   Results: PollWidgetResults,
   Submit: PollWidgetSubmit,
-  Success: PollWidgetSuccess,
-  Dialog: PollWidgetDialog,
 });
