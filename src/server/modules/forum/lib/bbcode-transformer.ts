@@ -1,10 +1,5 @@
-// src/lib/forum/bbcode-transformer.ts
 // Transforms XenForo BBCode post content into sanitized HTML for React rendering.
 // Server-side only — runs in tRPC router, never shipped to client.
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 
 interface TransformedPost {
   /** Post body as sanitized HTML */
@@ -24,10 +19,6 @@ interface AttachmentRef {
   /** Whether this is an inline attachment (embedded in text) */
   inline: boolean;
 }
-
-// ---------------------------------------------------------------------------
-// Main transformer
-// ---------------------------------------------------------------------------
 
 /**
  * Transform XenForo BBCode into sanitized HTML suitable for React rendering.
@@ -189,10 +180,6 @@ export function transformBBCode(
   };
 }
 
-// ---------------------------------------------------------------------------
-// Quote processing (supports nesting)
-// ---------------------------------------------------------------------------
-
 function processQuotes(html: string, quotedUsers: string[]): string {
   // Process innermost quotes first, then work outward
   let result = html;
@@ -221,10 +208,6 @@ function processQuotes(html: string, quotedUsers: string[]): string {
   return result;
 }
 
-// ---------------------------------------------------------------------------
-// List processing
-// ---------------------------------------------------------------------------
-
 function processLists(html: string): string {
   let result = html;
 
@@ -250,10 +233,6 @@ function processLists(html: string): string {
 
   return result;
 }
-
-// ---------------------------------------------------------------------------
-// Security helpers
-// ---------------------------------------------------------------------------
 
 function escapeHtml(str: string): string {
   return str
@@ -324,7 +303,3 @@ function rewriteForumUrl(url: string, forumBaseUrl: string): string {
 
   return url;
 }
-
-// ---------------------------------------------------------------------------
-// Batch transform (for thread view with multiple posts)
-// ---------------------------------------------------------------------------

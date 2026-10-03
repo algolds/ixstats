@@ -5,7 +5,6 @@
  * live in ~/shared/forum-utils so client components don't pull in this module.
  */
 
-// ─── Services ────────────────────────────────────────────────────────────────
 export {
   getForumActivity,
   getForumTrendingThreads,
@@ -41,6 +40,5 @@ export {
 } from "./services/linked-user";
 
 export { forumBridge } from "./services/forum-bridge";
-// ─── Lib / Utilities ─────────────────────────────────────────────────────────
 export { transformBBCode } from "./lib/bbcode-transformer";
 export { cacheKey, cacheInvalidate, invalidateThread, cachedFetch } from "./lib/cache";

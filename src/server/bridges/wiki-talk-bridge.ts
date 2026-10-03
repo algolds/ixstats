@@ -59,8 +59,6 @@ async function getUserTalkPageMessages(
   }
 }
 
-// ─── Bridge Implementation ───────────────────────────────────────
-
 export const wikiTalkBridge: BridgeAdapter = {
   async syncInbound(userId: string, db: PrismaClient): Promise<BridgeSyncResult> {
     const result: BridgeSyncResult = {

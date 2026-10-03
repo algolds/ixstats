@@ -11,12 +11,8 @@
 import { db } from "~/server/db";
 import { getXfApiKey, getXfApiUrl, xfPost } from "./xenforo-service";
 
-// ─── Debounce Tracking ──────────────────────────────────────────────────────
-
 const SYNC_DEBOUNCE_MS = 5 * 60 * 1000; // 5 minutes
 const lastSyncTimes = new Map<string, number>();
-
-// ─── Public API ─────────────────────────────────────────────────────────────
 
 /**
  * Look up a XenForo user by username.
