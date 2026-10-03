@@ -219,11 +219,11 @@ function ThreadCard({
 
   const replyInputRef = useRef<HTMLInputElement>(null);
   const notify = useNotify();
-  const isCreatorMatch =
-    (currentUserId && thread.createdBy.id === currentUserId) ||
-    (currentUsername && thread.createdBy.username.toLowerCase() === currentUsername.toLowerCase());
-
-  const creatorLiveAvatar = isCreatorMatch ? currentUserAvatar : undefined;
+  const liveAvatarFor = (author: CommentAuthor) =>
+    (currentUserId && author.id === currentUserId) ||
+    (currentUsername && author.username.toLowerCase() === currentUsername.toLowerCase())
+      ? currentUserAvatar
+      : undefined;
   const isResolved = thread.status === "RESOLVED";
 
   // Parse Lore Dimension tag if present in title (e.g. "[WHY] Topic")
@@ -315,7 +315,11 @@ function ThreadCard({
         onClick={onToggleExpand}
         className="group hover:bg-fill-4 flex cursor-pointer items-start justify-between gap-2 p-3 transition-colors select-none"
       >
-        <MarginUserAvatar author={thread.createdBy} size="sm" liveAvatar={creatorLiveAvatar} />
+        <MarginUserAvatar
+          author={thread.createdBy}
+          size="sm"
+          liveAvatar={liveAvatarFor(thread.createdBy)}
+        />
 
         <div className="min-w-0 flex-1">
           {/* Top metadata: Lore Dimension, Author, Country, Anchor */}
@@ -394,12 +398,6 @@ function ThreadCard({
           {/* Discussion Comments List */}
           <div className="border-separator space-y-2 border-t pt-1">
             {thread.comments.map((comment) => {
-              const isCommentAuthorMatch =
-                (currentUserId && comment.author.id === currentUserId) ||
-                (currentUsername &&
-                  comment.author.username.toLowerCase() === currentUsername.toLowerCase());
-              const commentLiveAvatar = isCommentAuthorMatch ? currentUserAvatar : undefined;
-
               return (
                 <div
                   key={comment.id}
@@ -410,7 +408,7 @@ function ThreadCard({
                       <MarginUserAvatar
                         author={comment.author}
                         size="xs"
-                        liveAvatar={commentLiveAvatar}
+                        liveAvatar={liveAvatarFor(comment.author)}
                       />
                       <span className="text-footnote">{comment.author.username}</span>
                       {comment.author.country?.name && (
