@@ -277,6 +277,8 @@ export class NPCPersonalitySystem {
    * Calculate all 8 personality traits from observable data
    */
   private static calculateTraits(data: ObservableData): PersonalityTraits {
+    // `||` (not `??`) on purpose: a stored 0 also takes the fallback
+    const n = (value: number | undefined, fallback = 0) => value || fallback;
     // Fallback/resiliency guards for all nested objects to prevent TypeError: Cannot read properties of undefined
     const relationships = data.relationships || {
       hostile: 0,
@@ -316,33 +318,33 @@ export class NPCPersonalitySystem {
     // ASSERTIVENESS: Hostile relationships + weak relationships + aggressive actions
     const assertiveness = Math.min(
       100,
-      (relationships.hostile || 0) * 25 + // Hostile relationships strongly indicate assertiveness
-        (relationships.tense || 0) * 12 + // Tense relationships moderately indicate
-        (relationships.deterioratingCount || 0) * 8 + // Deteriorating relations show pushback
-        ((historical.aggressiveActions || 0) / Math.max(1, historical.totalActions || 0)) * 30 + // % of aggressive actions
+      n(relationships.hostile) * 25 + // Hostile relationships strongly indicate assertiveness
+        n(relationships.tense) * 12 + // Tense relationships moderately indicate
+        n(relationships.deterioratingCount) * 8 + // Deteriorating relations show pushback
+        (n(historical.aggressiveActions) / Math.max(1, n(historical.totalActions))) * 30 + // % of aggressive actions
         25 // Base assertiveness
     );
 
     // COOPERATIVENESS: Alliances + friendly relations + treaties + cooperative actions
     const cooperativeness = Math.min(
       100,
-      (relationships.allied || 0) * 18 + // Each alliance shows high cooperation
-        (relationships.friendly || 0) * 10 + // Friendly relations indicate cooperation
-        (treaties.multilateral || 0) * 8 + // Multilateral treaties show cooperation preference
-        ((historical.cooperativeActions || 0) / Math.max(1, historical.totalActions || 0)) * 35 + // % cooperative actions
-        (relationships.averageStrength || 50) / 2 // Strong relationships = cooperation
+      n(relationships.allied) * 18 + // Each alliance shows high cooperation
+        n(relationships.friendly) * 10 + // Friendly relations indicate cooperation
+        n(treaties.multilateral) * 8 + // Multilateral treaties show cooperation preference
+        (n(historical.cooperativeActions) / Math.max(1, n(historical.totalActions))) * 35 + // % cooperative actions
+        n(relationships.averageStrength, 50) / 2 // Strong relationships = cooperation
     );
 
     // ECONOMIC FOCUS: Trade volume + trade treaties + economic embassies
     const economicFocus = Math.min(
       100,
-      (economic.highValuePartners || 0) * 12 + // Each major trade partner
-        (economic.tradeTreatyCount || 0) * 15 + // Trade treaties prioritized
-        (embassies.economicSpecialized || 0) * 10 + // Economic embassy specializations
-        ((economic.tradeGrowthTrend || 0) > 0 ? 20 : 0) + // Growing trade focus
-        ((economic.totalTradeVolume || 0) > 10000000
+      n(economic.highValuePartners) * 12 + // Each major trade partner
+        n(economic.tradeTreatyCount) * 15 + // Trade treaties prioritized
+        n(embassies.economicSpecialized) * 10 + // Economic embassy specializations
+        (n(economic.tradeGrowthTrend) > 0 ? 20 : 0) + // Growing trade focus
+        (n(economic.totalTradeVolume) > 10000000
           ? 25
-          : (economic.totalTradeVolume || 0) > 5000000
+          : n(economic.totalTradeVolume) > 5000000
             ? 15
             : 5) // Absolute trade volume
     );
@@ -350,46 +352,46 @@ export class NPCPersonalitySystem {
     // CULTURAL OPENNESS: Cultural exchanges + cultural embassies + cultural treaties
     const culturalOpenness = Math.min(
       100,
-      (cultural.highExchangeCount || 0) * 20 + // High-level exchanges
-        (cultural.mediumExchangeCount || 0) * 10 + // Medium-level exchanges
-        (embassies.culturalSpecialized || 0) * 15 + // Cultural embassy focus
-        (cultural.culturalTreatyCount || 0) * 12 + // Cultural treaties
+      n(cultural.highExchangeCount) * 20 + // High-level exchanges
+        n(cultural.mediumExchangeCount) * 10 + // Medium-level exchanges
+        n(embassies.culturalSpecialized) * 15 + // Cultural embassy focus
+        n(cultural.culturalTreatyCount) * 12 + // Cultural treaties
         30 // Base openness
     );
 
     // RISK TOLERANCE: Hostile relations + deteriorating relations + policy volatility
     const riskTolerance = Math.min(
       100,
-      (relationships.hostile || 0) * 20 + // Hostility = risk-taking
-        (relationships.deterioratingCount || 0) * 12 + // Letting relations deteriorate = risk
-        (historical.policyVolatility || 0) / 2 + // Policy changes = risk tolerance
-        ((relationships.averageStrength || 50) < 50 ? 20 : 0) + // Weak relations = risk
+      n(relationships.hostile) * 20 + // Hostility = risk-taking
+        n(relationships.deterioratingCount) * 12 + // Letting relations deteriorate = risk
+        n(historical.policyVolatility) / 2 + // Policy changes = risk tolerance
+        (n(relationships.averageStrength, 50) < 50 ? 20 : 0) + // Weak relations = risk
         40 // Base risk tolerance
     );
 
     // IDEOLOGICAL RIGIDITY: Policy consistency - policy volatility
     const ideologicalRigidity = Math.min(
       100,
-      (historical.consistencyScore || 50) * 0.7 + // High consistency = rigid
-        (100 - (historical.policyVolatility || 0)) * 0.3 + // Low volatility = rigid
-        ((relationships.deterioratingCount || 0) > 3 ? 15 : 0) // Willing to lose relations = principled
+      n(historical.consistencyScore, 50) * 0.7 + // High consistency = rigid
+        (100 - n(historical.policyVolatility)) * 0.3 + // Low volatility = rigid
+        (n(relationships.deterioratingCount) > 3 ? 15 : 0) // Willing to lose relations = principled
     );
 
     // MILITARISM: Security embassies + defensive treaties + tense/hostile relations
     const militarism = Math.min(
       100,
-      (embassies.securitySpecialized || 0) * 20 + // Security embassy focus
-        (treaties.defensive || 0) * 18 + // Defense pacts
-        (relationships.hostile || 0) * 15 + // Hostile relations
-        (relationships.tense || 0) * 8 + // Tense relations
+      n(embassies.securitySpecialized) * 20 + // Security embassy focus
+        n(treaties.defensive) * 18 + // Defense pacts
+        n(relationships.hostile) * 15 + // Hostile relations
+        n(relationships.tense) * 8 + // Tense relations
         20 // Base militarism
     );
 
     // ISOLATIONISM: Inverse of engagement (few relationships, embassies, treaties)
     const engagementScore =
-      Math.min(100, (relationships.total || 0) * 8) +
-      Math.min(100, (embassies.total || 0) * 10) +
-      Math.min(100, (treaties.total || 0) * 12);
+      Math.min(100, n(relationships.total) * 8) +
+      Math.min(100, n(embassies.total) * 10) +
+      Math.min(100, n(treaties.total) * 12);
 
     const isolationism = Math.min(
       100,
@@ -397,8 +399,8 @@ export class NPCPersonalitySystem {
         0,
         100 -
           engagementScore / 3 + // Inverse of engagement
-          ((relationships.total || 0) < 3 ? 30 : 0) + // Very few relationships
-          ((embassies.total || 0) < 2 ? 25 : 0) // Very few embassies
+          (n(relationships.total) < 3 ? 30 : 0) + // Very few relationships
+          (n(embassies.total) < 2 ? 25 : 0) // Very few embassies
       )
     );
 
