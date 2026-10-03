@@ -1,23 +1,6 @@
 // Main CommandPalette props interface
-export interface CommandPaletteProps {
-  className?: string;
-  isSticky?: boolean;
-  scrollY?: number;
-}
-
 // Branded string type helper for plugin & view identifiers
-export type Brand<T, B extends string> = T & { readonly __brand: B };
 // User Profile interface
-export interface UserProfile {
-  id: string;
-  countryId: string | null;
-  country?: {
-    id: string;
-    name: string;
-    currentGdpPerCapita: number | null;
-  } | null;
-}
-
 // Search Result interface
 export interface SearchResult {
   id: string;
@@ -37,7 +20,7 @@ export type ViewMode = BuiltinViewMode | PluginViewMode;
 
 export type SearchFilter = "all" | "countries" | "commands" | "features" | "wiki";
 
-// ── Plugin System Types ─────────────────────────────────────────────
+// Plugin System Types
 
 /** Props passed to plugin-provided expanded views */
 export interface DIViewProps<F = unknown, C = unknown> {

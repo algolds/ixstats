@@ -99,10 +99,6 @@ export const GlassPlateEditor = forwardRef<GlassPlateEditorRef, GlassPlateEditor
       setSelectedWikiSource,
       selectedWikiImageUrl,
       setSelectedWikiImageUrl,
-      // oxlint-disable-next-line eslint/no-unused-vars
-      wikiSearchQuery,
-      // oxlint-disable-next-line eslint/no-unused-vars
-      setWikiSearchQuery,
       wikiSearch,
       wikiIntroQuery,
       wikiImagesQuery,

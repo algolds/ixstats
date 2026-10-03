@@ -25,7 +25,6 @@ import { IxTime } from "~/lib/ixtime";
 import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
 import type { PrismaClient } from "@prisma/client";
 import { getNationalIssuesConfig } from "./config";
-import { NationalIssuesConsequences } from "./consequences";
 import { buildCountrySnapshot } from "./country-snapshot";
 import type { CountrySnapshot, ConsequenceDefinition, EvaluationResult } from "./types";
 import {
@@ -53,7 +52,7 @@ import {
 export type { ComparisonOp, TriggerCondition, ResponseOptionTemplate, TemplateCandidate };
 export type { CountrySnapshot, ConsequenceDefinition, EvaluationResult };
 
-// ==================== ENGINE ====================
+// ENGINE
 
 export class NationalIssuesEngine {
   /**
@@ -202,58 +201,6 @@ export class NationalIssuesEngine {
     // (The maxIssuesPerWeek cap above still bounds the total.) See plans/statecraft-stage1.md.
     const debounceMs = GAMEPLAY_FLAGS.statecraftSpine ? 2 * 24 * 60 * 60 * 1000 : 5 * 60 * 1000;
     return currentIxTime - lastLog.ixTimeAtEvaluation > debounceMs;
-  }
-
-  /**
-   * Find all expired issues and auto-resolve them.
-   * Should be called periodically (every 15 real-world minutes).
-   */
-  static async autoResolveExpired(
-    db: PrismaClient
-  ): Promise<{ resolved: number; errors: string[] }> {
-    // In narrative mode deadlines are not enforced; auto-resolution does nothing.
-    if (!GAMEPLAY_FLAGS.issuesEnforceDeadlines) {
-      return { resolved: 0, errors: [] };
-    }
-
-    const currentIxTime = IxTime.getCurrentIxTime();
-    const errors: string[] = [];
-    let resolved = 0;
-
-    const expiredIssues = await db.nationalIssue.findMany({
-      where: {
-        status: { in: ["pending", "viewed"] },
-        deadlineIxTime: { not: null, lte: currentIxTime },
-      },
-    });
-
-    for (const issue of expiredIssues) {
-      try {
-        if (issue.autoResolveOptionId) {
-          // Auto-resolve via the consequence system to apply consequences and update intent progress
-          await NationalIssuesConsequences.resolveIssue(
-            issue.id,
-            issue.autoResolveOptionId,
-            db,
-            true
-          );
-        } else {
-          // No auto-resolve option, just expire
-          await db.nationalIssue.update({
-            where: { id: issue.id },
-            data: { status: "expired" },
-          });
-          if (issue.intentId) {
-            await NationalIssuesConsequences.recomputeIntentProgress(issue.intentId, db);
-          }
-        }
-        resolved++;
-      } catch (err) {
-        errors.push(`Failed to auto-resolve ${issue.id}: ${(err as Error).message}`);
-      }
-    }
-
-    return { resolved, errors };
   }
 
   /**

@@ -2,7 +2,7 @@
 
 import { api } from "~/trpc/react";
 
-export interface Collection {
+interface Collection {
   id: string;
   name: string;
   slug: string;

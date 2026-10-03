@@ -11,7 +11,7 @@ import { withBasePath } from "~/lib/base-path";
  * ThinkPages Activity Hook
  * Triggers notifications for ThinkPages interactions
  */
-export async function onThinkPageActivity(params: {
+async function onThinkPageActivity(params: {
   thinkpageId: string;
   title: string;
   action: "created" | "updated" | "commented" | "liked" | "shared";
@@ -34,7 +34,7 @@ export async function onThinkPageActivity(params: {
  * Meeting Event Hook
  * Triggers notifications for meeting lifecycle events
  */
-export async function onMeetingEvent(params: {
+async function onMeetingEvent(params: {
   meetingId: string;
   title: string;
   scheduledTime: Date;
@@ -64,7 +64,7 @@ export async function onMeetingEvent(params: {
  * Diplomatic Event Hook
  * Triggers notifications for diplomatic activities
  */
-export async function onDiplomaticEvent(params: {
+async function onDiplomaticEvent(params: {
   eventType: "treaty" | "agreement" | "mission" | "conflict" | "resolution";
   title: string;
   countries: string[];
@@ -100,7 +100,7 @@ export async function onDiplomaticEvent(params: {
  * Achievement Unlock Hook
  * Triggers notifications when users unlock achievements
  */
-export async function onAchievementUnlock(params: {
+async function onAchievementUnlock(params: {
   userId: string;
   achievementId: string;
   name: string;
@@ -175,7 +175,7 @@ export async function onSocialActivity(params: {
  * Quick Action Complete Hook
  * Triggers notifications when quick actions (policies, meetings) complete or fail
  */
-export async function onQuickActionComplete(params: {
+async function onQuickActionComplete(params: {
   userId?: string;
   countryId: string;
   actionType: "policy" | "meeting" | "activity" | "decision";
@@ -225,7 +225,7 @@ export async function onQuickActionComplete(params: {
  * Tax System Change Hook
  * Triggers notifications when tax system is updated or changes significantly
  */
-export async function onTaxSystemChange(params: {
+async function onTaxSystemChange(params: {
   userId?: string;
   countryId: string;
   changeType:
@@ -287,7 +287,7 @@ export async function onTaxSystemChange(params: {
  * Government Structure Change Hook
  * Triggers notifications when government components or effectiveness changes
  */
-export async function onGovernmentStructureChange(params: {
+async function onGovernmentStructureChange(params: {
   userId?: string;
   countryId: string;
   changeType:
@@ -366,7 +366,7 @@ export async function onGovernmentStructureChange(params: {
  * ThinkTank Activity Hook
  * Triggers notifications for ThinkTank group activities
  */
-export async function onThinktankActivity(params: {
+async function onThinktankActivity(params: {
   activityType:
     | "group_invite"
     | "new_message"
@@ -500,7 +500,7 @@ export async function onThinktankActivity(params: {
  * User Account Change Hook
  * Triggers notifications for user account events
  */
-export async function onUserAccountChange(params: {
+async function onUserAccountChange(params: {
   userId: string;
   changeType:
     | "country_assigned"
@@ -551,7 +551,7 @@ export async function onUserAccountChange(params: {
  * Vitality Score Change Hook
  * Triggers notifications when national health scores change significantly
  */
-export async function onVitalityScoreChange(params: {
+async function onVitalityScoreChange(params: {
   countryId: string;
   userId?: string;
   dimension: "economic" | "population" | "diplomatic" | "governmental" | "overall";

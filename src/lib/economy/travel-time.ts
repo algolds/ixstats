@@ -96,7 +96,6 @@ const DEFAULT_ROUTE_SPEEDS: Record<string, number> = {
   // Aviation
   air_corridor: 850,
 
-  // Utilities
   pipeline: 12,
   power_grid: 0, // instantaneous / light speed
   fiber: 0, // instantaneous / light speed
@@ -298,7 +297,7 @@ export function formatTravelDuration(totalMinutes: number): string {
   return `${days}d ${remHours.toString().padStart(2, "0")}h`;
 }
 
-// ─── Sea current & wind model ───────────────────────────────────────────────
+// Sea current & wind model
 // Numbers come from docs/reference/oceanography-report.md and stay in knots as
 // the report gives them; they become km/h only through KMH_PER_KNOT.
 

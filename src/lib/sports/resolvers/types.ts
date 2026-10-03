@@ -1,9 +1,4 @@
-import type {
-  TeamRatingVector,
-  EventTraceStep,
-  EvaluationVector,
-  ExtendedMatchResult,
-} from "../types";
+import type { TeamRatingVector, EventTraceStep } from "../types";
 
 export interface RosterPlayer {
   id: string;

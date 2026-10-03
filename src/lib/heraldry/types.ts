@@ -1,9 +1,8 @@
-// --- Heraldic primitives ---
+// Heraldic primitives
 
 type TinctureMetal = "or" | "argent";
 type TinctureColour = "gules" | "azure" | "vert" | "purpure" | "sable";
-type TinctureFur =
-  "ermine" | "vair" | "counter-ermine" | "counter-vair" | "erminois" | "pean";
+type TinctureFur = "ermine" | "vair" | "counter-ermine" | "counter-vair" | "erminois" | "pean";
 type TinctureStain = "tenne" | "sanguine" | "murrey";
 export type Tincture = TinctureMetal | TinctureColour | TinctureFur | TinctureStain;
 
@@ -83,7 +82,7 @@ export type HelmType = "great-helm" | "tilting-helm" | "barrel-helm" | "open-fac
 type HelmFacing = "affronte" | "dexter" | "sinister";
 type MottoPosition = "above" | "below";
 
-// --- Composition structures ---
+// Composition structures
 
 export interface ChargeRef {
   chargeId: string;
@@ -159,7 +158,7 @@ export interface HeraldryComposition {
   externals?: ExternalOrnaments;
 }
 
-// --- Validation ---
+// Validation
 
 type ValidationSeverity = "info" | "advisory" | "caution";
 
@@ -170,7 +169,7 @@ export interface ValidationWarning {
   elementPath?: string; // e.g. "shield.charges[0]"
 }
 
-// --- Layout ---
+// Layout
 
 export interface LayoutElement {
   id: string;

@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/com
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { Stat } from "~/components/ui/stat";
-// oxlint-disable-next-line eslint/no-unused-vars
 import { Bank as Landmark, ArrowUpRight, Trophy, Sparks as Sparkles, Xmark } from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";

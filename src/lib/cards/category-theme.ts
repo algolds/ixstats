@@ -12,8 +12,6 @@
 
 import type { LoreCategory } from "./category-enums";
 
-// ─── Types ──────────────────────────────────────────────────────
-
 interface CategoryTheme {
   /** Human-readable label */
   label: string;
@@ -33,7 +31,7 @@ interface CategoryTheme {
   family: "heraldic" | "celestial" | "civic" | "humanistic" | "meta";
 }
 
-// ─── Theme Definitions ──────────────────────────────────────────
+// Theme Definitions
 
 const CATEGORY_THEMES: Record<LoreCategory, CategoryTheme> = {
   MILITARY: {
@@ -297,8 +295,6 @@ const CATEGORY_THEMES: Record<LoreCategory, CategoryTheme> = {
     family: "meta",
   },
 };
-
-// ─── Helpers ────────────────────────────────────────────────────
 
 export function getCategoryTheme(category: LoreCategory): CategoryTheme {
   return CATEGORY_THEMES[category];

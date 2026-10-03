@@ -157,68 +157,71 @@ const COACH_ROLES = [
 
 import { clamp } from "~/lib/utils";
 
+/** Per stage: next stage, base chance to advance each off-season, and first-match age multipliers. */
+const STAGE_PROGRESSION: Partial<
+  Record<
+    CareerStage,
+    { next: CareerStage; base: number; ageFactors: Array<[(age: number) => boolean, number]> }
+  >
+> = {
+  rookie: {
+    next: "developing",
+    base: 0.85,
+    ageFactors: [
+      [(age) => age < 20, 0.6],
+      [(age) => age < 22, 0.8],
+      [(age) => age > 24, 1.2],
+    ],
+  },
+  developing: {
+    next: "prime",
+    base: 0.6,
+    ageFactors: [
+      [(age) => age >= 24 && age <= 29, 1.3],
+      [(age) => age > 29, 0.8],
+    ],
+  },
+  prime: {
+    next: "plateau",
+    base: 0.4,
+    ageFactors: [
+      [(age) => age > 30, 1.4],
+      [(age) => age > 28, 1.2],
+    ],
+  },
+  plateau: {
+    next: "declining",
+    base: 0.5,
+    ageFactors: [
+      [(age) => age > 33, 1.4],
+      [(age) => age > 31, 1.2],
+    ],
+  },
+  declining: {
+    next: "retired",
+    base: 0.7,
+    ageFactors: [
+      [(age) => age > 36, 1.3],
+      [(age) => age > 34, 1.1],
+    ],
+  },
+};
+
 export function advanceCareerStage(
   current: CareerStage,
   age: number,
   coachDevelopment: number,
   seed: number
 ): CareerStage {
-  if (current === "retired") return "retired";
+  const progression = STAGE_PROGRESSION[current];
+  if (!progression) return current;
 
   const rng = createRNG(seed);
   const devModifier = 1 + ((coachDevelopment - 50) / 50) * 0.1;
-  let baseProbability: number;
+  const ageFactor = progression.ageFactors.find(([applies]) => applies(age))?.[1] ?? 1;
+  const chance = clamp(progression.base * ageFactor * devModifier, 0, 1);
 
-  switch (current) {
-    case "rookie":
-      baseProbability = 0.85;
-      if (age < 20) baseProbability *= 0.6;
-      else if (age < 22) baseProbability *= 0.8;
-      else if (age > 24) baseProbability *= 1.2;
-      break;
-    case "developing":
-      baseProbability = 0.6;
-      if (age >= 24 && age <= 29) baseProbability *= 1.3;
-      else if (age > 29) baseProbability *= 0.8;
-      break;
-    case "prime":
-      baseProbability = 0.4;
-      if (age > 30) baseProbability *= 1.4;
-      else if (age > 28) baseProbability *= 1.2;
-      break;
-    case "plateau":
-      baseProbability = 0.5;
-      if (age > 33) baseProbability *= 1.4;
-      else if (age > 31) baseProbability *= 1.2;
-      break;
-    case "declining":
-      baseProbability = 0.7;
-      if (age > 36) baseProbability *= 1.3;
-      else if (age > 34) baseProbability *= 1.1;
-      break;
-    default:
-      baseProbability = 0;
-  }
-
-  const adjustedProbability = clamp(baseProbability * devModifier, 0, 1);
-  const roll = rng();
-
-  if (roll < adjustedProbability) {
-    switch (current) {
-      case "rookie":
-        return "developing";
-      case "developing":
-        return "prime";
-      case "prime":
-        return "plateau";
-      case "plateau":
-        return "declining";
-      case "declining":
-        return "retired";
-    }
-  }
-
-  return current;
+  return rng() < chance ? progression.next : current;
 }
 
 function generatePlayer(args: {

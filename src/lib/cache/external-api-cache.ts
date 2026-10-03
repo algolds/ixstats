@@ -19,7 +19,7 @@ import { createHash } from "crypto";
 
 type CacheService = "mediawiki" | "unsplash" | "flagcdn" | "restcountries" | "wikimedia" | "custom";
 
-export type CacheType =
+type CacheType =
   | "infobox"
   | "flag"
   | "page"

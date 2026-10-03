@@ -55,17 +55,6 @@ export class QueryPerformanceMonitor {
     return this.snapshot();
   }
 
-  getAverageDuration(queryKey: string): number {
-    const relevant = this.snapshot().filter((m) => m.queryKey === queryKey && m.success);
-    if (relevant.length === 0) return 0;
-
-    return relevant.reduce((sum, m) => sum + m.duration, 0) / relevant.length;
-  }
-
-  getSlowQueries(threshold = 100): QueryMetrics[] {
-    return this.snapshot().filter((m) => m.duration > threshold && m.success);
-  }
-
   clearMetrics(): void {
     this.buffer.length = 0;
     this.head = 0;

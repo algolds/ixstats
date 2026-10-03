@@ -17,8 +17,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sh
 import { cn } from "~/lib/utils";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
-// ─── Attribute badge styling ────────────────────────────────────────────────
-// ─── Career stage styling ───────────────────────────────────────────────────
+// Attribute badge styling
+// Career stage styling
 const CAREER_STAGE_STYLES: Record<string, { label: string; className: string }> = {
   rookie: { label: "Rookie", className: "border-blue/30 bg-blue/10 text-blue" },
   developing: { label: "Developing", className: "border-green/30 bg-green/10 text-green" },
@@ -28,7 +28,7 @@ const CAREER_STAGE_STYLES: Record<string, { label: string; className: string }> 
   retired: { label: "Retired", className: "border-separator bg-fill-3 text-label-tertiary" },
 };
 
-// ─── Organization (Club) Focus View ─────────────────────────────────────────
+// Organization (Club) Focus View
 function OrganizationFocusContent({
   organizationId,
   sportPreset,
@@ -174,7 +174,7 @@ function OrganizationFocusContent({
   );
 }
 
-// ─── Athlete Focus View ─────────────────────────────────────────────────────
+// Athlete Focus View
 function AthleteFocusContent({ athleteId }: { athleteId: string }) {
   const { focusOrganization } = useSportsFocus();
 
@@ -316,7 +316,7 @@ function AthleteFocusContent({ athleteId }: { athleteId: string }) {
   );
 }
 
-// ─── Match Focus View ───────────────────────────────────────────────────────
+// Match Focus View
 function MatchFocusContent({ matchId }: { matchId: string }) {
   const { focusOrganization } = useSportsFocus();
   const { data: match, isLoading } = api.sports.getMatchDetails.useQuery(
@@ -387,7 +387,7 @@ function MatchFocusContent({ matchId }: { matchId: string }) {
   );
 }
 
-// ─── Primary SportsFocusPanel (Desktop Docked Rail) ─────────────────────────
+// Primary SportsFocusPanel (Desktop Docked Rail)
 export function SportsFocusPanel({
   sportPreset,
   className,
@@ -438,7 +438,7 @@ export function SportsFocusPanel({
   );
 }
 
-// ─── Mobile SportsFocusSheet (Fallback for <1024px Viewports) ───────────────
+// Mobile SportsFocusSheet (Fallback for <1024px Viewports)
 export function SportsFocusSheet({ sportPreset }: { sportPreset?: string }) {
   const { focus, clearFocus } = useSportsFocus();
 

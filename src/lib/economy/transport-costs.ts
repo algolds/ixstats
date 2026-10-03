@@ -79,7 +79,7 @@ export function calculateRouteCosts({
   };
 }
 
-// ── Intermodal Transit & Transfer Penalties ─────────────────────────
+// Intermodal Transit & Transfer Penalties
 
 type ModalFamily = "rail" | "road" | "maritime" | "air" | "utility" | "military";
 
@@ -215,4 +215,3 @@ export function calculateIntermodalTransfer({
       };
   }
 }
-

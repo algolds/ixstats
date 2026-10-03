@@ -43,10 +43,6 @@ export {
 };
 export { computeLayerDiff } from "./svg/layer-diff";
 
-// ──────────────────────────────────────────────
-// Types
-// ──────────────────────────────────────────────
-
 export interface SvgParseConfig {
   /** Coordinate conversion config (defaults to IxEarth) */
   coordinateConfig?: SvgCoordinateConfig;
@@ -83,9 +79,7 @@ interface SvgParseResult {
   log: string[];
 }
 
-// ──────────────────────────────────────────────
 // SVG Parsing
-// ──────────────────────────────────────────────
 
 /**
  * Main entry point: parse SVG content string into GeoJSON.
@@ -159,9 +153,7 @@ export function parseSvgToGeoJson(
   };
 }
 
-// ──────────────────────────────────────────────
 // Country Name Matching
-// ──────────────────────────────────────────────
 
 /**
  * Normalize a name for fuzzy matching.
@@ -244,9 +236,7 @@ export function matchFeaturesToCountries(
   return matches;
 }
 
-// ---------------------------------------------------------------------------
 // Layer type auto-detection
-// ---------------------------------------------------------------------------
 
 /**
  * Extract SVG metadata (viewBox, dimensions, layer list).

@@ -35,7 +35,7 @@ function formatContentEnhanced(content: string): string {
   // SECURITY: Escape HTML to prevent XSS, then apply formatting
   let formattedContent = escapeHtml(withPlaceholders);
 
-  // ── Discord Formatting Parser ──
+  // Discord Formatting Parser
 
   // Mask Markdown Links first so their URLs are not double-formatted
   const maskedLinks: string[] = [];

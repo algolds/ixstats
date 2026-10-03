@@ -112,7 +112,6 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
             exit={{ opacity: 0, y: -4 }}
             transition={tweenFast}
           >
-            {/* Header */}
             <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
               <div className="flex items-center gap-3">
                 <SegmentedControl

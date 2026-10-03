@@ -9,7 +9,7 @@ interface IIWikiLogoProps {
   size?: "xs" | "sm" | "md" | "lg";
 }
 
-export function IIWikiLogo({ className, size = "sm" }: IIWikiLogoProps) {
+function IIWikiLogo({ className, size = "sm" }: IIWikiLogoProps) {
   const sizeClasses = {
     xs: "h-3 w-auto",
     sm: "h-3.5 w-auto",

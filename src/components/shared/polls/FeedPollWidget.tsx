@@ -36,8 +36,7 @@ interface FeedPollWidgetProps {
 
 export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
   const notify = useNotify();
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn } = useUser();
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>(
     poll.userVotedOptionIds || []
   );
@@ -53,8 +52,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
 
   // tRPC mutation to cast a vote
   const voteMutation = api.polls.vote.useMutation({
-    // oxlint-disable-next-line eslint/no-unused-vars
-    onSuccess: (data) => {
+    onSuccess: () => {
       // Sync state with server response (which triggered db update)
       // Refetch details to get precise real-time synchronization
       refetchDetails();
@@ -165,9 +163,6 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
     });
   };
 
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const showResults = pollState.hasVoted || isExpired;
-
   // 1. Choice Poll or Feature Poll Render
   if (poll.pollType === "choice" || poll.pollType === "feature-poll") {
     const pollOptions = poll.options.map((opt) => ({
@@ -191,7 +186,6 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
           votes={pollState.votes}
           hasVoted={pollState.hasVoted}
           onVote={(ids) => handleVoteSubmit(ids)}
-          mode="inline"
         >
           <PollWidget.Content>
             <PollWidget.Question />

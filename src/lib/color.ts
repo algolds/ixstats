@@ -53,41 +53,17 @@ export function hslToRgb(h: number, s: number, l: number): [number, number, numb
   const x = c * (1 - Math.abs(((hNorm / 60) % 2) - 1));
   const m = lNorm - c / 2;
 
-  let r = 0;
-  let g = 0;
-  let b = 0;
-
-  if (hNorm < 60) {
-    r = c;
-    g = x;
-    b = 0;
-  } else if (hNorm < 120) {
-    r = x;
-    g = c;
-    b = 0;
-  } else if (hNorm < 180) {
-    r = 0;
-    g = c;
-    b = x;
-  } else if (hNorm < 240) {
-    r = 0;
-    g = x;
-    b = c;
-  } else if (hNorm < 300) {
-    r = x;
-    g = 0;
-    b = c;
-  } else {
-    r = c;
-    g = 0;
-    b = x;
-  }
-
-  return [
-    Math.round((r + m) * 255),
-    Math.round((g + m) * 255),
-    Math.round((b + m) * 255),
+  const sextants = [
+    [c, x, 0],
+    [x, c, 0],
+    [0, c, x],
+    [0, x, c],
+    [x, 0, c],
+    [c, 0, x],
   ];
+  const [r, g, b] = sextants[hNorm < 300 ? Math.floor(hNorm / 60) : 5]!;
+
+  return [Math.round((r! + m) * 255), Math.round((g! + m) * 255), Math.round((b! + m) * 255)];
 }
 
 /**
@@ -138,15 +114,12 @@ export function rgbToHex(r: number, g: number, b: number): string {
  */
 export function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const clean = hex.replace(/^#/, "").trim();
-  if (clean.length === 3) {
-    const r = parseInt(clean[0] + clean[0], 16) || 0;
-    const g = parseInt(clean[1] + clean[1], 16) || 0;
-    const b = parseInt(clean[2] + clean[2], 16) || 0;
-    return { r, g, b };
-  }
-  const r = parseInt(clean.substring(0, 2), 16) || 0;
-  const g = parseInt(clean.substring(2, 4), 16) || 0;
-  const b = parseInt(clean.substring(4, 6), 16) || 0;
+  const full = clean.length === 3 ? [...clean].map((c) => c + c).join("") : clean;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.substring(i, i + 2), 16) || 0) as [
+    number,
+    number,
+    number,
+  ];
   return { r, g, b };
 }
 
@@ -167,88 +140,72 @@ export function hexToHsl(hex: string): HslColor {
   return { h, s, l };
 }
 
+const BLACK: HslaColor = { h: 0, s: 0, l: 0, a: 1 };
+
+/** CSS alpha: a number, or a percentage; unparseable / zero values fall back to opaque. */
+function parseAlpha(raw: string | undefined): number {
+  if (raw === undefined) return 1;
+  return raw.endsWith("%") ? (parseFloat(raw) || 100) / 100 : parseFloat(raw) || 1;
+}
+
+/** #rgb, #rgba, #rrggbb or #rrggbbaa (without the "#") to HSLA; undefined for other lengths. */
+function parseHexToHsl(hex: string): HslaColor | undefined {
+  if (![3, 4, 6, 8].includes(hex.length)) return undefined;
+  const full = hex.length <= 4 ? [...hex].map((c) => c + c).join("") : hex;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16) || 0) as [
+    number,
+    number,
+    number,
+  ];
+  const [h, s, l] = rgbToHsl(r, g, b);
+  const a = full.length === 8 ? (parseInt(full.slice(6, 8), 16) || 255) / 255 : 1;
+  return { h, s, l, a };
+}
+
 /**
  * Parses any color format (hex, rgb, rgba, hsl, hsla, object) into normalized HSLA
  */
 export function parseColorToHsl(input: unknown): HslaColor {
-  if (!input) {
-    return { h: 0, s: 0, l: 0, a: 1 };
-  }
+  if (!input) return BLACK;
 
   if (typeof input === "object") {
-    const obj = input as Record<string, unknown>;
-    if (typeof obj.h === "number" && typeof obj.s === "number" && typeof obj.l === "number") {
-      return {
-        h: obj.h,
-        s: obj.s,
-        l: obj.l,
-        a: typeof obj.a === "number" ? obj.a : 1,
-      };
+    const { h, s, l, a } = input as Record<string, unknown>;
+    if (typeof h === "number" && typeof s === "number" && typeof l === "number") {
+      return { h, s, l, a: typeof a === "number" ? a : 1 };
     }
   }
+  if (typeof input !== "string") return BLACK;
 
-  if (typeof input === "string") {
-    const str = input.trim().toLowerCase();
-
-    // Hex formats (#rgb, #rgba, #rrggbb, #rrggbbaa)
-    if (str.startsWith("#")) {
-      const hex = str.slice(1);
-      if (hex.length === 3 || hex.length === 4) {
-        const r = parseInt(hex[0] + hex[0], 16) || 0;
-        const g = parseInt(hex[1] + hex[1], 16) || 0;
-        const b = parseInt(hex[2] + hex[2], 16) || 0;
-        const a = hex.length === 4 ? (parseInt(hex[3] + hex[3], 16) || 255) / 255 : 1;
-        const [h, s, l] = rgbToHsl(r, g, b);
-        return { h, s, l, a };
-      } else if (hex.length === 6 || hex.length === 8) {
-        const r = parseInt(hex.slice(0, 2), 16) || 0;
-        const g = parseInt(hex.slice(2, 4), 16) || 0;
-        const b = parseInt(hex.slice(4, 6), 16) || 0;
-        const a = hex.length === 8 ? (parseInt(hex.slice(6, 8), 16) || 255) / 255 : 1;
-        const [h, s, l] = rgbToHsl(r, g, b);
-        return { h, s, l, a };
-      }
-    }
-
-    // rgb/rgba format
-    const rgbMatch = str.match(
-      /rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.%]+))?\s*\)/
-    );
-    if (rgbMatch) {
-      const r = parseFloat(rgbMatch[1] ?? "0") || 0;
-      const g = parseFloat(rgbMatch[2] ?? "0") || 0;
-      const b = parseFloat(rgbMatch[3] ?? "0") || 0;
-      let a = 1;
-      if (rgbMatch[4] !== undefined) {
-        if (rgbMatch[4].endsWith("%")) {
-          a = (parseFloat(rgbMatch[4]) || 100) / 100;
-        } else {
-          a = parseFloat(rgbMatch[4]) || 1;
-        }
-      }
-      const [h, s, l] = rgbToHsl(r, g, b);
-      return { h, s, l, a };
-    }
-
-    // hsl/hsla format
-    const hslMatch = str.match(
-      /hsla?\(\s*([\d.]+)(?:deg)?\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%(?:\s*,\s*([\d.%]+))?\s*\)/
-    );
-    if (hslMatch) {
-      const h = parseFloat(hslMatch[1] ?? "0") || 0;
-      const s = parseFloat(hslMatch[2] ?? "0") || 0;
-      const l = parseFloat(hslMatch[3] ?? "0") || 0;
-      let a = 1;
-      if (hslMatch[4] !== undefined) {
-        if (hslMatch[4].endsWith("%")) {
-          a = (parseFloat(hslMatch[4]) || 100) / 100;
-        } else {
-          a = parseFloat(hslMatch[4]) || 1;
-        }
-      }
-      return { h, s, l, a };
-    }
+  const str = input.trim().toLowerCase();
+  if (str.startsWith("#")) {
+    const parsed = parseHexToHsl(str.slice(1));
+    if (parsed) return parsed;
   }
 
-  return { h: 0, s: 0, l: 0, a: 1 };
+  const rgb = str.match(
+    /rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.%]+))?\s*\)/
+  );
+  if (rgb) {
+    const [r, g, b] = [1, 2, 3].map((i) => parseFloat(rgb[i] ?? "0") || 0) as [
+      number,
+      number,
+      number,
+    ];
+    const [h, s, l] = rgbToHsl(r, g, b);
+    return { h, s, l, a: parseAlpha(rgb[4]) };
+  }
+
+  const hsl = str.match(
+    /hsla?\(\s*([\d.]+)(?:deg)?\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%(?:\s*,\s*([\d.%]+))?\s*\)/
+  );
+  if (hsl) {
+    const [h, s, l] = [1, 2, 3].map((i) => parseFloat(hsl[i] ?? "0") || 0) as [
+      number,
+      number,
+      number,
+    ];
+    return { h, s, l, a: parseAlpha(hsl[4]) };
+  }
+
+  return BLACK;
 }

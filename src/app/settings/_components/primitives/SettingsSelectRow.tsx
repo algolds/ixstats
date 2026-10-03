@@ -8,7 +8,7 @@ import {
 } from "~/components/ui/select";
 import { SettingsRow } from "./SettingsRow";
 
-export interface SelectOption {
+interface SelectOption {
   value: string;
   label: string;
   description?: string;

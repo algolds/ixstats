@@ -81,14 +81,6 @@ function CommandPaletteContent({
     searchFilter,
     isUserInteracting,
     searchResults,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    countriesData,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    setMode,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    setIsExpanded,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    setExpandedMode,
     setSearchQuery,
     setSearchFilter,
     setIsUserInteracting,
@@ -99,7 +91,7 @@ function CommandPaletteContent({
   const prevNavRef = useRef(diPathname);
   const sectionInfo = getSectionForPath(diPathname || "/");
 
-  // ── Plugin system: read active plugin ──
+  // Plugin system: read active plugin
   const activePlugin = useActiveDIPlugin();
   const pluginAccentColor = activePlugin?.accentColor ?? sectionInfo.accent;
   const isWikiActive = activePlugin?.id === "wiki";

@@ -44,7 +44,6 @@ interface CountryWithEconomicData extends CountryEconomicSummary {
  * Return type for useEconomicModel hook
  */
 export interface UseEconomicModelReturn {
-  // State
   parameters: ModelParameters;
   sectoralOutputs: SectorData[];
   policyEffects: PolicyData[];
@@ -347,7 +346,7 @@ export function useEconomicModel(
     const population = country.population ?? 0;
     const totalGDP = sectoralOutputs[0]?.totalGDP ?? 0;
 
-    // --- ADVANCED MODELING: Send full model to backend ---
+    // ADVANCED MODELING: Send full model to backend
     const modelData = {
       countryId: country.id,
       economicData: {
@@ -384,7 +383,7 @@ export function useEconomicModel(
         urbanPopulationPercent: 60,
         ruralPopulationPercent: 40,
         literacyRate: 90,
-        // --- ADVANCED MODELING ---
+        // ADVANCED MODELING
         economicModel: {
           baseYear: parameters.baseYear,
           projectionYears: parameters.projectionYears,
@@ -429,7 +428,6 @@ export function useEconomicModel(
   ]);
 
   return {
-    // State
     parameters,
     sectoralOutputs,
     policyEffects,

@@ -76,17 +76,12 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>(defaultSort);
   const [currentPage, setCurrentPage] = useState(0);
-  const [leaderboardCategory, setLeaderboardCategory] = useState<
-    "mostValuable" | "mostCards"
-  >("mostValuable");
+  const [leaderboardCategory, setLeaderboardCategory] = useState<"mostValuable" | "mostCards">(
+    "mostValuable"
+  );
 
   // Fetch public collections
-  const {
-    data: collectionsData,
-    isLoading,
-    // oxlint-disable-next-line eslint/no-unused-vars
-    refetch,
-  } = api.vault.getPublicCollections.useQuery({
+  const { data: collectionsData, isLoading } = api.vault.getPublicCollections.useQuery({
     limit: pageSize,
     offset: currentPage * pageSize,
     sortBy,
@@ -242,7 +237,6 @@ export const CollectionGallery: React.FC<CollectionGalleryProps> = ({
                 <Link href={`/vault/collections/${collection.id}`}>
                   <Card className="flex h-full cursor-pointer flex-col gap-6 py-6 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
                     <CardContent className="space-y-3 p-4">
-                      {/* Header */}
                       <div className="flex items-start justify-between">
                         <div className="min-w-0 flex-1">
                           <h3 className="text-headline text-label truncate">{collection.name}</h3>

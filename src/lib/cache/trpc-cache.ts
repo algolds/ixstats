@@ -318,19 +318,6 @@ export async function invalidateCache(patterns: string[]): Promise<void> {
   }
 }
 
-/**
- * Get cache statistics
- */
-export function getCacheStats(): {
-  memoryCacheSize: number;
-  redisConnected: boolean;
-} {
-  return {
-    memoryCacheSize: memoryCache.size,
-    redisConnected: isRedisReady(getSharedRedis()),
-  };
-}
-
 // Pre-configured cache middleware factories for common use cases
 export const cacheConfigs = {
   /** Static data that rarely changes (1 hour) */

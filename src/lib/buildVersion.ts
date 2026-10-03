@@ -1,4 +1,3 @@
-// ---------------------------------------------------------------------------
 // Version Registry — single source of truth for all platform version info.
 //
 // See revision.md ("IxStates Versioning & Release Architecture"). Every UI,
@@ -15,7 +14,6 @@
 //
 // Components that inherit the platform version (not independently versioned):
 // IxForum, IxTime/IxnayID, Labs, Navigation Hubs.
-// ---------------------------------------------------------------------------
 
 import { BUILD_VERSION } from "./buildVersion.generated";
 
@@ -72,9 +70,7 @@ export const VERSIONS = {
   build: BUILD_VERSION,
 } as const;
 
-// ---------------------------------------------------------------------------
 // Derived display strings — the only thing UI components should import.
-// ---------------------------------------------------------------------------
 
 const p = VERSIONS.platform;
 
@@ -190,11 +186,9 @@ export const FACET_VERSION = String(VERSIONS.design.facet);
 // WikiOS sub-systems.
 export const CANVAS_VERSION = String(VERSIONS.subSystems.canvas);
 
-// ---------------------------------------------------------------------------
 // Welcome / onboarding modal versions (used for localStorage version-gating).
 // These are FEATURE GATES, not product identity — keep them separate from the
 // registry above. Bump one of these to re-show its welcome modal.
-// ---------------------------------------------------------------------------
 
 export const STASHES_WELCOME_VERSION = "1.0";
 export const ATOMIC_WELCOME_VERSION = "1.0";

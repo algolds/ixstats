@@ -12,6 +12,17 @@ export type Subjects =
   | { type: "Tool"; toolId: string; unlocked?: boolean }
   | Record<string, any>;
 
+const CRUD_ACTIONS: Actions[] = ["manage", "read", "update", "create", "delete"];
+const PREMIUM_SECTIONS = ["defense", "intelligence", "map-editor"];
+
+/** A tool id given directly or as `{ toolId }`. */
+const toolIdOf = (value: unknown): string | undefined =>
+  typeof value === "string"
+    ? value
+    : value && typeof value === "object" && "toolId" in value
+      ? (value as { toolId: string }).toolId
+      : undefined;
+
 export interface AppAbility {
   can(action: Actions, subject: Subjects, fieldOrExtra?: any): boolean;
   cannot(action: Actions, subject: Subjects, fieldOrExtra?: any): boolean;
@@ -54,67 +65,21 @@ export function defineAbilityFor(
       return false;
     }
 
-    if (subject === "all") {
-      return isOwner;
-    }
-
-    if (subject === "User") {
-      if (
-        action === "manage" ||
-        action === "read" ||
-        action === "update" ||
-        action === "create" ||
-        action === "delete"
-      ) {
-        return canManageUser;
-      }
-    }
-
-    if (subject === "Role") {
-      if (
-        action === "manage" ||
-        action === "read" ||
-        action === "update" ||
-        action === "create" ||
-        action === "delete"
-      ) {
-        return canManageRole;
-      }
-    }
-
+    if (subject === "User" && CRUD_ACTIONS.includes(action)) return canManageUser;
+    if (subject === "Role" && CRUD_ACTIONS.includes(action)) return canManageRole;
     if (subject === "SystemConfig") {
-      if (
-        action === "manage" ||
-        action === "update" ||
-        action === "create" ||
-        action === "delete"
-      ) {
-        return canManageSystemConfig;
-      }
-      if (action === "read") {
-        return canReadSystemConfig;
-      }
+      if (action === "read") return canReadSystemConfig;
+      if (CRUD_ACTIONS.includes(action)) return canManageSystemConfig;
     }
 
     if (subject === "MyCountryFeature") {
       const section = typeof fieldOrExtra === "string" ? fieldOrExtra : "";
-      if (["overview", "executive", "politics", "economy", "diplomacy"].includes(section)) {
-        return true;
-      }
-      if (["defense", "intelligence", "map-editor"].includes(section)) {
-        return isPremium;
-      }
-      return true;
+      return !PREMIUM_SECTIONS.includes(section) || isPremium;
     }
 
     if (subject === "Tool") {
-      if (typeof fieldOrExtra === "object" && fieldOrExtra !== null && "toolId" in fieldOrExtra) {
-        return unlockedToolSet.has(fieldOrExtra.toolId);
-      }
-      if (typeof fieldOrExtra === "string") {
-        return unlockedToolSet.has(fieldOrExtra);
-      }
-      return true;
+      const toolId = toolIdOf(fieldOrExtra);
+      return toolId === undefined || unlockedToolSet.has(toolId);
     }
 
     return false;

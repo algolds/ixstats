@@ -204,7 +204,6 @@ export const TradeNegotiation = React.memo<TradeNegotiationProps>(
 
     return (
       <div className="space-y-4">
-        {/* Header */}
         <div className="bg-surface-secondary border-separator rounded-control border p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>

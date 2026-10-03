@@ -2,7 +2,7 @@
 
 import type { ComponentType, ReactNode } from "react";
 
-// ── Action Definitions ──────────────────────────────────────────────────
+// Action Definitions
 
 /** An individual action button rendered in the swipe tray */
 export interface SwipeAction {
@@ -32,7 +32,7 @@ export interface SwipeCommitAction {
   color?: string;
 }
 
-// ── Snap Point Thresholds ───────────────────────────────────────────────
+// Snap Point Thresholds
 
 /** Configurable snap point thresholds (0-1 percentage of container width) */
 export interface SwipeThresholds {
@@ -44,11 +44,11 @@ export interface SwipeThresholds {
   commit?: number;
 }
 
-// ── Spring Preset ───────────────────────────────────────────────────────
+// Spring Preset
 
 export type SpringPreset = "tight" | "bouncy" | "gentle" | "fluid";
 
-// ── Swipe State ─────────────────────────────────────────────────────────
+// Swipe State
 
 /** The current state of the swipeable row's interaction */
 export type SwipeState =
@@ -57,7 +57,7 @@ export type SwipeState =
 /** Which side is currently active during a drag */
 export type SwipeSide = "leading" | "trailing" | null;
 
-// ── Component Props ─────────────────────────────────────────────────────
+// Component Props
 
 export interface SwipeableRowProps {
   /** Unique identifier for this row (auto-generated if not provided) */
@@ -89,7 +89,7 @@ export interface SwipeableRowProps {
   children: ReactNode;
 }
 
-// ── Compound Sub-Component Props ────────────────────────────────────────
+// Compound Sub-Component Props
 
 export interface SwipeableRowLeadingProps {
   /** Action buttons rendered in the leading (right-swipe) tray */
@@ -123,7 +123,7 @@ export interface SwipeableRowExpandedProps {
   className?: string;
 }
 
-// ── Group Coordination Context ──────────────────────────────────────────
+// Group Coordination Context
 
 export interface SwipeableGroupContextValue {
   /** The ID of the currently open (revealed/expanded) row, or null */
@@ -136,7 +136,7 @@ export interface SwipeableGroupContextValue {
   unregisterRow: (id: string) => void;
 }
 
-// ── SwipeAction Component Props (the button inside Leading/Trailing) ────
+// SwipeAction Component Props (the button inside Leading/Trailing)
 
 export interface SwipeActionButtonProps {
   /** Unique identifier for this action */

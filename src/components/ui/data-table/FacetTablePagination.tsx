@@ -66,7 +66,7 @@ export function FacetTablePagination({
         className
       )}
     >
-      {/* ─── Results summary & Page size selector ─────────────────── */}
+      {/* Results summary & Page size selector */}
       <div className="text-label-secondary flex flex-wrap items-center gap-3">
         <span className="tabular-nums">
           Showing <strong className="text-label font-semibold">{startItem}</strong> to{" "}
@@ -98,7 +98,7 @@ export function FacetTablePagination({
         )}
       </div>
 
-      {/* ─── Navigation Buttons ───────────────────────────────────── */}
+      {/* Navigation Buttons */}
       {totalPages > 1 && (
         <div className="flex items-center gap-1 self-end sm:self-auto">
           <Button

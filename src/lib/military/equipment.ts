@@ -571,4 +571,3 @@ export const WEAPON_SYSTEMS = {
 } as const;
 
 // Unit Type Templates
-// Helper functions

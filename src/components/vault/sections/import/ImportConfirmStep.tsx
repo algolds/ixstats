@@ -14,7 +14,7 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
-import NumberFlow from "~/components/ui/number-flow";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { CardHolographicCover } from "~/components/cards/display/CardHolographicCover";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 import { Card } from "~/components/ui/card";
@@ -150,14 +150,14 @@ export function ImportCompleteStep({
         <div className="rounded-row border-indigo/20 bg-indigo/10 border p-5 text-center">
           <Package className="text-indigo mx-auto mb-2 h-6 w-6" />
           <p className="text-large-title text-indigo tabular-nums">
-            <NumberFlow value={importResult.cardsImported} />
+            <NumberFlowDisplay value={importResult.cardsImported} />
           </p>
           <p className="text-label-secondary text-footnote font-semibold">Cards imported</p>
         </div>
         <div className="bg-tint-fill rounded-row p-5 text-center">
           <Coins className="text-yellow mx-auto mb-2 h-6 w-6" />
           <p className="text-large-title text-yellow tabular-nums">
-            +<NumberFlow value={importResult.bonusCredits} />
+            +<NumberFlowDisplay value={importResult.bonusCredits} />
           </p>
           <p className="text-label-secondary text-footnote font-semibold">Bonus IxCredits</p>
         </div>

@@ -213,7 +213,7 @@ export function useMapPrefetch() {
     // Defer the warm-up until the browser is idle so it doesn't compete with the map's own
     // first render (worker tiling, style load) for the network and main thread.
     const warm = () => {
-      // ── 1. Bulk map summaries (single DB query) ──
+      // 1. Bulk map summaries (single DB query)
       void (async () => {
         try {
           const bulkSummaries = await utils.countries.getBulkMapSummaries.fetch(
@@ -230,7 +230,7 @@ export function useMapPrefetch() {
         }
       })();
 
-      // ── 2. Bulk rich wiki intros (map panel + /countries/[slug] page) ──
+      // 2. Bulk rich wiki intros (map panel + /countries/[slug] page)
       // Throttled: 20 countries per chunk with 500ms delay between chunks
       // to stay well within nginx rate limit (burst=30).
       void (async () => {

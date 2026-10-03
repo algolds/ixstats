@@ -1,6 +1,5 @@
 import {
   Trophy,
-  Star,
   StatUp as TrendingUp,
   Shield,
   Bank as Landmark,
@@ -128,16 +127,6 @@ export function getCategoryTheme(category?: string): CategoryTheme {
   }
   return CATEGORY_THEME_MAP.General;
 }
-
-export const categories = [
-  { id: "all", name: "All Categories", icon: Star },
-  { id: "Economic", name: "Economic", icon: TrendingUp },
-  { id: "Diplomatic", name: "Diplomatic", icon: Globe },
-  { id: "Government", name: "Government", icon: Landmark },
-  { id: "Military", name: "Military", icon: Shield },
-  { id: "Social", name: "Social", icon: BookOpen },
-  { id: "General", name: "General", icon: Trophy },
-];
 
 export const rarities = ["all", "Common", "Uncommon", "Rare", "Epic", "Legendary"] as const;
 export const getRarityColor = (rarity: string) => {

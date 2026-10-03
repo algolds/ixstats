@@ -4,7 +4,7 @@
 
 import { type PrismaClient } from "@prisma/client";
 import sportsData from "../../../../data/seed/sports-leagues.json";
-import { downloadImageForSeed, hashString } from "./sports-helpers";
+import { downloadImageForSeed } from "./sports-helpers";
 
 type Prisma = PrismaClient;
 
@@ -16,9 +16,6 @@ export async function seedOHLHockeyLeague(
   ixNow: number
 ): Promise<number> {
   let count = 0;
-  // oxlint-disable-next-line typescript/no-unused-vars
-  const leagueSeed = hashString("Occidental Hockey League");
-
   const tierradorCountry = await prisma.country.findFirst({
     where: { name: { contains: "Tierrador", mode: "insensitive" } },
     select: { id: true },

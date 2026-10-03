@@ -6,7 +6,7 @@ import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 
-export interface Track {
+interface Track {
   id: string;
   title: string;
   artist?: string;

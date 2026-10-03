@@ -6,9 +6,7 @@
  * Replaces the v1 PackedGraph with richer physical geography support.
  */
 
-// ──────────────────────────────────────────────
 // Core Data Model
-// ──────────────────────────────────────────────
 
 export interface WorldGraph {
   /** Voronoi cell geometry and per-cell attributes */
@@ -39,14 +37,14 @@ interface WorldCells {
   /** Voronoi polygon vertices per cell (closed rings for GeoJSON) */
   vertices: [number, number][][];
 
-  // ── Tectonic ──────────────────────────────────
+  // Tectonic
 
   /** Plate ID for each cell */
   plate: Uint16Array;
   /** BFS distance to nearest plate boundary cell */
   plateDist: Float32Array;
 
-  // ── Terrain ───────────────────────────────────
+  // Terrain
 
   /** Elevation in meters (float, not quantized) */
   h: Float32Array;
@@ -59,7 +57,7 @@ interface WorldCells {
   /** 1 = on tectonic convergent boundary (mountain ridge) */
   isMountainRidge: Uint8Array;
 
-  // ── Hydrology ─────────────────────────────────
+  // Hydrology
 
   /** Cell ID of steepest-descent neighbor (-1 = drains to ocean/boundary) */
   downstream: Int32Array;
@@ -72,7 +70,7 @@ interface WorldCells {
   /** Lake feature ID (0 = not a lake cell) */
   lake: Uint16Array;
 
-  // ── Climate ───────────────────────────────────
+  // Climate
 
   /** Temperature in °C (float precision, allows fractional degrees) */
   temp: Float32Array;
@@ -89,14 +87,14 @@ interface WorldCells {
   /** Aridity index 0-1 (0 = wet, 1 = hyper-arid) */
   aridity: Float32Array;
 
-  // ── Feature Membership ────────────────────────
+  // Feature Membership
 
   /** Geographic feature ID (ocean/continent/lake/island) */
   feature: Uint16Array;
   /** 1 = cell touches grid boundary */
   boundary: Uint8Array;
 
-  // ── Political (set by politics stage, read-only on physical) ──
+  // Political (set by politics stage, read-only on physical)
 
   /** Culture ID (0 = unassigned) */
   culture: Uint16Array;
@@ -104,9 +102,7 @@ interface WorldCells {
   state: Uint16Array;
 }
 
-// ──────────────────────────────────────────────
 // Entity Types
-// ──────────────────────────────────────────────
 
 export interface TectonicPlate {
   id: number;
@@ -218,9 +214,7 @@ export interface Settlement {
   score: number;
 }
 
-// ──────────────────────────────────────────────
 // Generation Parameters
-// ──────────────────────────────────────────────
 
 export interface WorldGenParams {
   /** Deterministic seed */
@@ -259,9 +253,7 @@ export interface WorldGenParams {
   lloydIterations: number;
 }
 
-// ──────────────────────────────────────────────
 // Generation Output
-// ──────────────────────────────────────────────
 
 export interface GeneratedWorld {
   seed: number;
@@ -304,9 +296,7 @@ type GenerationStage =
 
 export type ProgressCallback = (stage: GenerationStage, progress: number, message: string) => void;
 
-// ──────────────────────────────────────────────
 // Quality Gate
-// ──────────────────────────────────────────────
 
 export interface QualityCheckResult {
   name: string;
@@ -323,10 +313,6 @@ export interface QualityReport {
   checks: QualityCheckResult[];
   totalRepairs: number;
 }
-
-// ──────────────────────────────────────────────
-// Helpers
-// ──────────────────────────────────────────────
 
 /**
  * Create an empty WorldGraph skeleton with all typed arrays allocated and zeroed.

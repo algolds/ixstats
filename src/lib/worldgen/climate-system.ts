@@ -1,5 +1,3 @@
-// ─── Types ───────────────────────────────────────────────────
-
 /** Trewartha climate classification codes */
 export type IxWorldClimate =
   | "Ar" // Tropical Wet
@@ -62,10 +60,10 @@ export const CLIMATE_COLORS: Record<IxWorldClimate, string> = {
   H: "#FFCCFF",
 };
 
-// ─── Main Entry ──────────────────────────────────────────────
-// ─── Continentality ──────────────────────────────────────────
-// ─── Wind Simulation ─────────────────────────────────────────
-// ─── Ocean Current Warmth ────────────────────────────────────
-// ─── Precipitation ───────────────────────────────────────────
-// ─── Temperature ─────────────────────────────────────────────
-// ─── Trewartha Classification → IxWorld 12 Types ─────────────
+// Main Entry
+// Continentality
+// Wind Simulation
+// Ocean Current Warmth
+// Precipitation
+// Temperature
+// Trewartha Classification → IxWorld 12 Types

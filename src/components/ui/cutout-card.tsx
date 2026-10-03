@@ -34,9 +34,7 @@ import { motion, useReducedMotion, type Variants } from "motion/react";
 import { cn } from "~/lib/utils/cn";
 import { EASE_OUT_FACET, springGentle, tweenFast } from "~/lib/design/motion";
 
-// ============================================================================
 // Tokens — the card chrome
-// ============================================================================
 
 const cutoutCardSurfaceShadowClassName =
   "border border-separator shadow-(--cutout-shadow) hover:shadow-(--cutout-shadow-hover) [--facet-lift-shadow:var(--cutout-shadow-hover)]";
@@ -89,9 +87,7 @@ function useCutoutContentStaggerVariants() {
 
 const CORNER_PATH = "M0 200C155.996 199.961 200.029 156.308 200 0V200H0Z";
 
-// ============================================================================
 // Context
-// ============================================================================
 
 interface CutoutCardContextValue {
   hovered: boolean;
@@ -108,9 +104,7 @@ function useCutoutCard() {
   return ctx;
 }
 
-// ============================================================================
 // Root
-// ============================================================================
 
 type CutoutCardProps = Omit<ComponentProps<typeof motion.div>, "defaultValue"> & {
   /** `card` is the opaque cutout surface, `glass` the hero glass. Omit to style it yourself. */
@@ -239,9 +233,7 @@ export function CutoutCard({
   );
 }
 
-// ============================================================================
 // Layout primitives
-// ============================================================================
 
 type CutoutCardContentProps = HTMLAttributes<HTMLDivElement>;
 
@@ -278,9 +270,7 @@ export function CutoutCardStaggerItem(props: CutoutCardStaggerItemProps) {
   return <motion.div data-slot="cutout-card-stagger-item" variants={variants.item} {...props} />;
 }
 
-// ============================================================================
 // Cutout geometry
-// ============================================================================
 
 type CutoutCornerProps = ComponentProps<"svg"> & {
   /** Pixel width/height of the SVG viewBox (square). */
@@ -372,9 +362,7 @@ export function CutoutCardHeader({
   );
 }
 
-// ============================================================================
 // Context-sensitive action region
-// ============================================================================
 
 type CutoutCardActionProps = ComponentProps<typeof motion.div> & {
   /**

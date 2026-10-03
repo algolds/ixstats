@@ -102,7 +102,6 @@ export function TeamLineup({
         className
       )}
     >
-      {/* Header */}
       <div className="mb-4 text-center">
         <h3 className="text-label text-title-3 leading-none">{teamName} Lineup</h3>
         <span className="text-label-secondary text-eyebrow mt-1 inline-block">

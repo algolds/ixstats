@@ -205,8 +205,7 @@ class AdvancedCacheSystem {
     const startTime = performance.now();
 
     try {
-      // oxlint-disable-next-line typescript/no-unused-vars
-      const { ttl = 300, tier = "standard", tags = [], skipRedis = false } = options;
+      const { ttl = 300, tier = "standard", skipRedis = false } = options;
 
       // Redis holds critical and standard tiers (unless skipped) when connected
       const toRedis =

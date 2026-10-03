@@ -24,7 +24,7 @@ import type { MatchDayResultLine } from "./feed-bulletins";
 
 type Prisma = PrismaClient;
 
-// ─── Season completion ──────────────────────────────────────────────
+// Season completion
 
 async function completeSeason(
   prisma: Prisma,
@@ -181,7 +181,7 @@ async function completeSeason(
   }
 }
 
-// ─── League / Division Conference advance ───────────────────────────
+// League / Division Conference advance
 
 async function advanceLeagueMatchDay(
   prisma: Prisma,
@@ -349,7 +349,7 @@ async function advanceLeagueMatchDay(
   return true;
 }
 
-// ─── Circuit advance ────────────────────────────────────────────────
+// Circuit advance
 
 async function advanceCircuitRace(
   prisma: Prisma,
@@ -423,7 +423,7 @@ async function advanceCircuitRace(
   return true;
 }
 
-// ─── Bracket advance ────────────────────────────────────────────────
+// Bracket advance
 
 async function advanceBracketRound(
   prisma: Prisma,
@@ -542,7 +542,7 @@ async function advanceBracketRound(
   return true;
 }
 
-// ─── Main Entry Point ───────────────────────────────────────────────
+// Main Entry Point
 
 export async function advanceSportsSeasons(prisma: Prisma): Promise<number> {
   let advanced = 0;

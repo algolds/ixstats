@@ -21,12 +21,9 @@
  */
 
 import type { DiplomaticChoice, CumulativeEffects } from "./choice-tracker";
-import type {
-  RelationshipState as MarkovRelationshipState,
-  TransitionContext,
-} from "./markov-engine";
+import type { RelationshipState as MarkovRelationshipState } from "./markov-engine";
 
-// ==================== PERSONALITY TRAITS ====================
+// PERSONALITY TRAITS
 
 /**
  * 8 core personality traits that define NPC country behavior
@@ -137,20 +134,7 @@ export interface NPCPersonality {
   };
 }
 
-/**
- * Personality drift tracking for gradual evolution
- * Max ±2 points per IxTime year across all traits
- */
-interface PersonalityDrift {
-  countryId: string;
-  ixTimeYear: number;
-  traitChanges: Partial<PersonalityTraits>;
-  triggeringEvents: string[];
-  netChange: number; // Total absolute change across all traits
-  timestamp: string;
-}
-
-// ==================== OBSERVABLE DATA TYPES ====================
+// OBSERVABLE DATA TYPES
 
 /**
  * Observable data from database for personality calculation
@@ -213,7 +197,7 @@ export interface ObservableData {
   };
 }
 
-// ==================== BEHAVIORAL RESPONSE TYPES ====================
+// BEHAVIORAL RESPONSE TYPES
 
 /**
  * Scenario types for behavioral prediction
@@ -250,31 +234,7 @@ interface BehavioralResponse {
   opportunitySignals?: string[];
 }
 
-/**
- * Relationship preference direction
- */
-interface RelationshipPreference {
-  targetCountryId: string;
-  desiredState: MarkovRelationshipState;
-  currentState: MarkovRelationshipState;
-  urgency: number; // 0-100 - How important this change is
-  reasoning: string[];
-  strategicValue: number; // 0-100 - Strategic importance of relationship
-  willingnessToConcede: number; // 0-100 - Flexibility in negotiations
-}
-
-/**
- * Event generation modifier based on personality
- */
-interface EventModifier {
-  eventType: string;
-  probabilityMultiplier: number; // 0-2 (0=never, 1=baseline, 2=twice as likely)
-  severityAdjustment: number; // -2 to +2 (adjust event severity)
-  urgencyAdjustment: number; // -20 to +20 (adjust urgency score)
-  reasoning: string;
-}
-
-// ==================== NPC PERSONALITY SYSTEM ====================
+// NPC PERSONALITY SYSTEM
 
 export class NPCPersonalitySystem {
   /**
@@ -317,6 +277,8 @@ export class NPCPersonalitySystem {
    * Calculate all 8 personality traits from observable data
    */
   private static calculateTraits(data: ObservableData): PersonalityTraits {
+    // `||` (not `??`) on purpose: a stored 0 also takes the fallback
+    const n = (value: number | undefined, fallback = 0) => value || fallback;
     // Fallback/resiliency guards for all nested objects to prevent TypeError: Cannot read properties of undefined
     const relationships = data.relationships || {
       hostile: 0,
@@ -356,33 +318,33 @@ export class NPCPersonalitySystem {
     // ASSERTIVENESS: Hostile relationships + weak relationships + aggressive actions
     const assertiveness = Math.min(
       100,
-      (relationships.hostile || 0) * 25 + // Hostile relationships strongly indicate assertiveness
-        (relationships.tense || 0) * 12 + // Tense relationships moderately indicate
-        (relationships.deterioratingCount || 0) * 8 + // Deteriorating relations show pushback
-        ((historical.aggressiveActions || 0) / Math.max(1, historical.totalActions || 0)) * 30 + // % of aggressive actions
+      n(relationships.hostile) * 25 + // Hostile relationships strongly indicate assertiveness
+        n(relationships.tense) * 12 + // Tense relationships moderately indicate
+        n(relationships.deterioratingCount) * 8 + // Deteriorating relations show pushback
+        (n(historical.aggressiveActions) / Math.max(1, n(historical.totalActions))) * 30 + // % of aggressive actions
         25 // Base assertiveness
     );
 
     // COOPERATIVENESS: Alliances + friendly relations + treaties + cooperative actions
     const cooperativeness = Math.min(
       100,
-      (relationships.allied || 0) * 18 + // Each alliance shows high cooperation
-        (relationships.friendly || 0) * 10 + // Friendly relations indicate cooperation
-        (treaties.multilateral || 0) * 8 + // Multilateral treaties show cooperation preference
-        ((historical.cooperativeActions || 0) / Math.max(1, historical.totalActions || 0)) * 35 + // % cooperative actions
-        (relationships.averageStrength || 50) / 2 // Strong relationships = cooperation
+      n(relationships.allied) * 18 + // Each alliance shows high cooperation
+        n(relationships.friendly) * 10 + // Friendly relations indicate cooperation
+        n(treaties.multilateral) * 8 + // Multilateral treaties show cooperation preference
+        (n(historical.cooperativeActions) / Math.max(1, n(historical.totalActions))) * 35 + // % cooperative actions
+        n(relationships.averageStrength, 50) / 2 // Strong relationships = cooperation
     );
 
     // ECONOMIC FOCUS: Trade volume + trade treaties + economic embassies
     const economicFocus = Math.min(
       100,
-      (economic.highValuePartners || 0) * 12 + // Each major trade partner
-        (economic.tradeTreatyCount || 0) * 15 + // Trade treaties prioritized
-        (embassies.economicSpecialized || 0) * 10 + // Economic embassy specializations
-        ((economic.tradeGrowthTrend || 0) > 0 ? 20 : 0) + // Growing trade focus
-        ((economic.totalTradeVolume || 0) > 10000000
+      n(economic.highValuePartners) * 12 + // Each major trade partner
+        n(economic.tradeTreatyCount) * 15 + // Trade treaties prioritized
+        n(embassies.economicSpecialized) * 10 + // Economic embassy specializations
+        (n(economic.tradeGrowthTrend) > 0 ? 20 : 0) + // Growing trade focus
+        (n(economic.totalTradeVolume) > 10000000
           ? 25
-          : (economic.totalTradeVolume || 0) > 5000000
+          : n(economic.totalTradeVolume) > 5000000
             ? 15
             : 5) // Absolute trade volume
     );
@@ -390,46 +352,46 @@ export class NPCPersonalitySystem {
     // CULTURAL OPENNESS: Cultural exchanges + cultural embassies + cultural treaties
     const culturalOpenness = Math.min(
       100,
-      (cultural.highExchangeCount || 0) * 20 + // High-level exchanges
-        (cultural.mediumExchangeCount || 0) * 10 + // Medium-level exchanges
-        (embassies.culturalSpecialized || 0) * 15 + // Cultural embassy focus
-        (cultural.culturalTreatyCount || 0) * 12 + // Cultural treaties
+      n(cultural.highExchangeCount) * 20 + // High-level exchanges
+        n(cultural.mediumExchangeCount) * 10 + // Medium-level exchanges
+        n(embassies.culturalSpecialized) * 15 + // Cultural embassy focus
+        n(cultural.culturalTreatyCount) * 12 + // Cultural treaties
         30 // Base openness
     );
 
     // RISK TOLERANCE: Hostile relations + deteriorating relations + policy volatility
     const riskTolerance = Math.min(
       100,
-      (relationships.hostile || 0) * 20 + // Hostility = risk-taking
-        (relationships.deterioratingCount || 0) * 12 + // Letting relations deteriorate = risk
-        (historical.policyVolatility || 0) / 2 + // Policy changes = risk tolerance
-        ((relationships.averageStrength || 50) < 50 ? 20 : 0) + // Weak relations = risk
+      n(relationships.hostile) * 20 + // Hostility = risk-taking
+        n(relationships.deterioratingCount) * 12 + // Letting relations deteriorate = risk
+        n(historical.policyVolatility) / 2 + // Policy changes = risk tolerance
+        (n(relationships.averageStrength, 50) < 50 ? 20 : 0) + // Weak relations = risk
         40 // Base risk tolerance
     );
 
     // IDEOLOGICAL RIGIDITY: Policy consistency - policy volatility
     const ideologicalRigidity = Math.min(
       100,
-      (historical.consistencyScore || 50) * 0.7 + // High consistency = rigid
-        (100 - (historical.policyVolatility || 0)) * 0.3 + // Low volatility = rigid
-        ((relationships.deterioratingCount || 0) > 3 ? 15 : 0) // Willing to lose relations = principled
+      n(historical.consistencyScore, 50) * 0.7 + // High consistency = rigid
+        (100 - n(historical.policyVolatility)) * 0.3 + // Low volatility = rigid
+        (n(relationships.deterioratingCount) > 3 ? 15 : 0) // Willing to lose relations = principled
     );
 
     // MILITARISM: Security embassies + defensive treaties + tense/hostile relations
     const militarism = Math.min(
       100,
-      (embassies.securitySpecialized || 0) * 20 + // Security embassy focus
-        (treaties.defensive || 0) * 18 + // Defense pacts
-        (relationships.hostile || 0) * 15 + // Hostile relations
-        (relationships.tense || 0) * 8 + // Tense relations
+      n(embassies.securitySpecialized) * 20 + // Security embassy focus
+        n(treaties.defensive) * 18 + // Defense pacts
+        n(relationships.hostile) * 15 + // Hostile relations
+        n(relationships.tense) * 8 + // Tense relations
         20 // Base militarism
     );
 
     // ISOLATIONISM: Inverse of engagement (few relationships, embassies, treaties)
     const engagementScore =
-      Math.min(100, (relationships.total || 0) * 8) +
-      Math.min(100, (embassies.total || 0) * 10) +
-      Math.min(100, (treaties.total || 0) * 12);
+      Math.min(100, n(relationships.total) * 8) +
+      Math.min(100, n(embassies.total) * 10) +
+      Math.min(100, n(treaties.total) * 12);
 
     const isolationism = Math.min(
       100,
@@ -437,8 +399,8 @@ export class NPCPersonalitySystem {
         0,
         100 -
           engagementScore / 3 + // Inverse of engagement
-          ((relationships.total || 0) < 3 ? 30 : 0) + // Very few relationships
-          ((embassies.total || 0) < 2 ? 25 : 0) // Very few embassies
+          (n(relationships.total) < 3 ? 30 : 0) + // Very few relationships
+          (n(embassies.total) < 2 ? 25 : 0) // Very few embassies
       )
     );
 
@@ -543,7 +505,7 @@ export class NPCPersonalitySystem {
     return { confidence, dataQuality };
   }
 
-  // ==================== BEHAVIORAL PREDICTION ====================
+  // BEHAVIORAL PREDICTION
 
   /**
    * Predict how NPC will respond to a diplomatic scenario
@@ -958,388 +920,8 @@ export class NPCPersonalitySystem {
     };
   }
 
-  // ==================== RELATIONSHIP PREFERENCES ====================
-
-  /**
-   * Determine desired relationship direction with target country
-   */
-  static getRelationshipPreference(
-    personality: NPCPersonality,
-    targetCountryId: string,
-    currentState: MarkovRelationshipState,
-    currentStrength: number,
-    context: TransitionContext
-  ): RelationshipPreference {
-    const { traits } = personality;
-
-    // Calculate strategic value based on context
-    const strategicValue = this.calculateStrategicValue(traits, context);
-
-    // Determine desired state based on personality
-    let desiredState: MarkovRelationshipState = currentState;
-    let urgency = 50;
-    const reasoning: string[] = [];
-
-    // High cooperativeness pushes toward friendly/allied
-    if (traits.cooperativeness > 70 && currentState !== "allied" && strategicValue > 60) {
-      desiredState = currentState === "friendly" ? "allied" : "friendly";
-      urgency += 20;
-      reasoning.push("High cooperativeness drives alliance-seeking");
-    }
-
-    // High assertiveness + low cooperativeness pushes toward tension
-    if (traits.assertiveness > 70 && traits.cooperativeness < 40 && currentStrength < 50) {
-      desiredState = currentState === "neutral" ? "tense" : "hostile";
-      urgency += 15;
-      reasoning.push("Assertive personality comfortable with tension");
-    }
-
-    // Economic focus preserves relationships with trade partners
-    if (traits.economicFocus > 70 && context.economic.tradeVolume > 500000) {
-      desiredState =
-        currentState === "tense" || currentState === "hostile" ? "neutral" : "friendly";
-      urgency += 25;
-      reasoning.push("Economic focus prioritizes trade partner relations");
-    }
-
-    // Isolationism resists improvement beyond neutral
-    if (traits.isolationism > 65) {
-      if (currentState === "hostile" || currentState === "tense") {
-        desiredState = "neutral";
-      } else {
-        desiredState = currentState; // Maintain current
-      }
-      reasoning.push("Isolationist tendency limits engagement");
-    }
-
-    // Calculate willingness to concede
-    const willingnessToConcede = Math.round(
-      traits.cooperativeness * 0.4 +
-        (100 - traits.assertiveness) * 0.3 +
-        (100 - traits.ideologicalRigidity) * 0.3
-    );
-
-    return {
-      targetCountryId,
-      desiredState,
-      currentState,
-      urgency: Math.min(100, urgency),
-      reasoning,
-      strategicValue,
-      willingnessToConcede,
-    };
-  }
-
-  /**
-   * Calculate strategic value of relationship based on context
-   */
-  private static calculateStrategicValue(
-    traits: PersonalityTraits,
-    context: TransitionContext
-  ): number {
-    let value = 40; // Base value
-
-    // Economic value
-    if (context.economic.tradeVolume > 1000000) value += 20;
-    if (context.economic.hasTradeTreaty) value += 15;
-
-    // Security value
-    if (context.alliances.mutualAllies > 2) value += 15;
-    if (context.geographic.adjacency) value += 10;
-
-    // Cultural value
-    if (context.cultural.culturalExchangeLevel === "high") value += 10;
-
-    // Personality modifiers
-    if (traits.economicFocus > 70) value += (context.economic.tradeVolume / 1000000) * 2;
-    if (traits.militarism > 70 && context.alliances.mutualAllies > 0) value += 10;
-    if (traits.cooperativeness > 70) value += 10;
-
-    return Math.min(100, Math.round(value));
-  }
-
-  // ==================== EVENT MODIFIERS ====================
-
-  /**
-   * Calculate how personality affects event generation probability
-   */
-  static calculateEventModifier(personality: NPCPersonality, eventType: string): EventModifier {
-    const { traits, archetype } = personality;
-    let multiplier = 1.0;
-    let severityAdjustment = 0;
-    let urgencyAdjustment = 0;
-    let reasoning = "";
-
-    switch (eventType) {
-      case "trade_dispute":
-        if (traits.economicFocus > 70) {
-          multiplier = 1.5;
-          urgencyAdjustment = 10;
-          reasoning = "High economic focus increases trade dispute likelihood";
-        } else if (traits.economicFocus < 30) {
-          multiplier = 0.5;
-          reasoning = "Low economic focus reduces trade dispute priority";
-        }
-        break;
-
-      case "alliance_offer":
-        if (traits.cooperativeness > 75 && traits.isolationism < 40) {
-          multiplier = 1.8;
-          urgencyAdjustment = 15;
-          reasoning = "High cooperativeness + low isolationism drives alliance offers";
-        } else if (traits.isolationism > 70) {
-          multiplier = 0.2;
-          reasoning = "Isolationism prevents alliance proposals";
-        }
-        break;
-
-      case "cultural_exchange_offer":
-        if (traits.culturalOpenness > 70) {
-          multiplier = 1.6;
-          reasoning = "High cultural openness promotes exchange initiatives";
-        } else if (traits.culturalOpenness < 35) {
-          multiplier = 0.4;
-          reasoning = "Low cultural openness limits exchange interest";
-        }
-        break;
-
-      case "sanction_threat":
-        if (traits.assertiveness > 70 && traits.riskTolerance > 65) {
-          multiplier = 1.7;
-          severityAdjustment = 1;
-          urgencyAdjustment = 15;
-          reasoning = "High assertiveness + risk tolerance escalates to sanctions";
-        }
-        break;
-
-      case "crisis_mediation":
-        if (traits.cooperativeness > 75 && traits.isolationism < 40) {
-          multiplier = 1.4;
-          reasoning = "Cooperative non-isolationist countries offer mediation";
-        }
-        break;
-
-      case "security_pact":
-        if (traits.militarism > 70) {
-          multiplier = 1.6;
-          urgencyAdjustment = 10;
-          reasoning = "High militarism prioritizes security cooperation";
-        }
-        break;
-
-      case "border_tension":
-        if (traits.assertiveness > 70 && traits.riskTolerance > 60) {
-          multiplier = 1.5;
-          severityAdjustment = 1;
-          reasoning = "Assertive risk-taker creates border incidents";
-        }
-        break;
-
-      case "economic_cooperation":
-        if (traits.economicFocus > 70 && traits.cooperativeness > 60) {
-          multiplier = 1.5;
-          reasoning = "Economic-focused cooperator proposes joint initiatives";
-        }
-        break;
-
-      default:
-        reasoning = "Baseline personality impact";
-    }
-
-    // Archetype overrides
-    if (archetype === "aggressive_expansionist" && eventType === "alliance_offer") {
-      multiplier = 1.9;
-      reasoning = "Aggressive expansionist actively seeks strategic alliances";
-    } else if (archetype === "peaceful_merchant" && eventType === "trade_dispute") {
-      multiplier = 0.5;
-      reasoning = "Peaceful merchant avoids trade conflicts";
-    } else if (archetype === "cautious_isolationist") {
-      multiplier *= 0.6; // Reduce all event generation
-      reasoning = "Cautious isolationist minimizes diplomatic initiatives";
-    }
-
-    return {
-      eventType,
-      probabilityMultiplier: multiplier,
-      severityAdjustment,
-      urgencyAdjustment,
-      reasoning,
-    };
-  }
-
-  // ==================== PROPOSAL DECISION-MAKING ====================
-
-  /**
-   * Decide if NPC should accept player proposal
-   */
-  static shouldAcceptProposal(
-    personality: NPCPersonality,
-    proposal: {
-      type: DiplomaticScenario;
-      terms?: string[];
-      concessions?: string[];
-      benefits?: string[];
-    },
-    context: {
-      currentRelationship: MarkovRelationshipState;
-      relationshipStrength: number;
-      playerReputation: CumulativeEffects;
-    }
-  ): {
-    decision: "accept" | "reject" | "counter_offer";
-    confidence: number;
-    reasoning: string[];
-    counterTerms?: string[];
-  } {
-    const response = this.predictResponse(personality, proposal.type, {
-      ...context,
-      recentPlayerActions: [],
-    });
-
-    // Convert response to decision
-    if (response.predictedAction === "accept") {
-      return {
-        decision: "accept",
-        confidence: response.confidence,
-        reasoning: response.reasoning,
-      };
-    } else if (response.predictedAction === "reject") {
-      return {
-        decision: "reject",
-        confidence: response.confidence,
-        reasoning: response.reasoning,
-      };
-    } else {
-      return {
-        decision: "counter_offer",
-        confidence: response.confidence,
-        reasoning: response.reasoning,
-        counterTerms: response.expectedDemands || [
-          "Modified terms required",
-          "Additional guarantees needed",
-        ],
-      };
-    }
-  }
-
-  // ==================== PERSONALITY DRIFT ====================
-
-  /**
-   * Apply personality drift based on experiences
-   * Max ±2 points per IxTime year across all traits
-   */
-  static applyPersonalityDrift(
-    personality: NPCPersonality,
-    ixTimeYear: number,
-    events: {
-      successfulCooperation: number; // Count of successful cooperative actions
-      militaryConflicts: number; // Count of hostile interactions
-      economicGrowth: boolean; // GDP growth this year
-      tradeExpansion: boolean; // Significant trade growth
-      allianceFormed: boolean; // New alliance this year
-      relationshipDeteriorated: boolean; // Major relationship loss
-    },
-    /** Optional geographic modifiers — small trait pressures from terrain/climate/position */
-    geoModifiers?: Partial<PersonalityTraits> | null
-  ): { updatedTraits: PersonalityTraits; drift: PersonalityDrift } {
-    const traitChanges: Partial<PersonalityTraits> = {};
-    const triggeringEvents: string[] = [];
-    let totalAbsoluteChange = 0;
-    const maxTotalDrift = 2; // Maximum ±2 points total per year
-
-    // Calculate desired changes (before applying limits)
-    const desiredChanges: Partial<PersonalityTraits> = {};
-
-    // Successful cooperation increases cooperativeness (max +1 per year)
-    if (events.successfulCooperation > 0) {
-      const increase = Math.min(1, events.successfulCooperation * 0.3);
-      desiredChanges.cooperativeness = increase;
-      if (increase > 0) triggeringEvents.push("Successful cooperative actions");
-    }
-
-    // Military conflicts increase assertiveness and militarism (max +1 each)
-    if (events.militaryConflicts > 0) {
-      const increase = Math.min(1, events.militaryConflicts * 0.4);
-      desiredChanges.assertiveness = increase;
-      desiredChanges.militarism = increase;
-      if (increase > 0) triggeringEvents.push("Military conflicts and tensions");
-    }
-
-    // Economic growth increases economic focus (max +1)
-    if (events.economicGrowth) {
-      desiredChanges.economicFocus = 0.8;
-      triggeringEvents.push("Strong economic performance");
-    }
-
-    // Trade expansion increases economic focus and reduces isolationism
-    if (events.tradeExpansion) {
-      desiredChanges.economicFocus = (desiredChanges.economicFocus || 0) + 0.7;
-      desiredChanges.isolationism = -0.8;
-      triggeringEvents.push("Trade expansion");
-    }
-
-    // Alliance formed increases cooperativeness, reduces isolationism
-    if (events.allianceFormed) {
-      desiredChanges.cooperativeness = (desiredChanges.cooperativeness || 0) + 0.9;
-      desiredChanges.isolationism = (desiredChanges.isolationism || 0) - 1.0;
-      triggeringEvents.push("New alliance formed");
-    }
-
-    // Relationship deterioration increases assertiveness, risk tolerance
-    if (events.relationshipDeteriorated) {
-      desiredChanges.assertiveness = (desiredChanges.assertiveness || 0) + 0.8;
-      desiredChanges.riskTolerance = 0.6;
-      triggeringEvents.push("Major relationship deterioration");
-    }
-
-    // Geographic modifiers — small terrain/climate-based pressures on national character
-    if (geoModifiers) {
-      let hasGeoEffect = false;
-      for (const [trait, value] of Object.entries(geoModifiers)) {
-        if (typeof value === "number" && Math.abs(value) > 0.05) {
-          desiredChanges[trait as keyof PersonalityTraits] =
-            (desiredChanges[trait as keyof PersonalityTraits] || 0) + value;
-          hasGeoEffect = true;
-        }
-      }
-      if (hasGeoEffect) {
-        triggeringEvents.push("Geographic environmental pressures");
-      }
-    }
-
-    // Apply changes with total drift limit
-    const updatedTraits = { ...personality.traits };
-    const traitKeys = Object.keys(desiredChanges) as Array<keyof PersonalityTraits>;
-
-    // Calculate total desired change
-    const totalDesired = traitKeys.reduce((sum, key) => sum + Math.abs(desiredChanges[key]!), 0);
-
-    // Scale changes if they exceed max drift
-    const scaleFactor = totalDesired > maxTotalDrift ? maxTotalDrift / totalDesired : 1.0;
-
-    for (const key of traitKeys) {
-      const rawChange = desiredChanges[key]!;
-      const scaledChange = rawChange * scaleFactor;
-      const newValue = Math.max(0, Math.min(100, updatedTraits[key] + scaledChange));
-      const actualChange = newValue - updatedTraits[key];
-
-      if (Math.abs(actualChange) > 0.1) {
-        // Only record meaningful changes
-        traitChanges[key] = Math.round(actualChange * 10) / 10; // Round to 1 decimal
-        updatedTraits[key] = Math.round(newValue);
-        totalAbsoluteChange += Math.abs(actualChange);
-      }
-    }
-
-    const drift: PersonalityDrift = {
-      countryId: personality.countryId,
-      ixTimeYear,
-      traitChanges,
-      triggeringEvents,
-      netChange: Math.round(totalAbsoluteChange * 10) / 10,
-      timestamp: new Date().toISOString(),
-    };
-
-    return { updatedTraits, drift };
-  }
+  // RELATIONSHIP PREFERENCES
+  // EVENT MODIFIERS
+  // PROPOSAL DECISION-MAKING
+  // PERSONALITY DRIFT
 }

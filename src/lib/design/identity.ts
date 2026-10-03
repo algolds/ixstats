@@ -3,7 +3,7 @@
 import type { CSSProperties } from "react";
 import { SYSTEM_COLORS, type FacetAccent } from "./tokens";
 
-// ─── Accents ─────────────────────────────────────────────────────────────────
+// Accents
 
 export type { FacetAccent } from "./tokens";
 

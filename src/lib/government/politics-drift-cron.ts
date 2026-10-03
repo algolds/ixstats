@@ -43,7 +43,7 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
     try {
       result.countriesProcessed++;
 
-      // ── Party support drift ──
+      // Party support drift
       const [parties, country, allocations, components] = await Promise.all([
         db.politicalParty.findMany({ where: { countryId, isActive: true } }),
         db.country.findUnique({ where: { id: countryId }, select: { adjustedGdpGrowth: true } }),
@@ -108,7 +108,7 @@ export async function runPoliticsDrift(): Promise<PoliticsDriftResult> {
         }
       }
 
-      // ── Stability / political metrics recompute ──
+      // Stability / political metrics recompute
       await applyGovernmentComponentEffects(db, countryId, {
         activeComponents: components,
         allocations,

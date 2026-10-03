@@ -36,9 +36,6 @@ import { classifyLoreArticle } from "./category-classifier";
 // Re-export for backwards compatibility
 export { LORE_CATEGORIES };
 
-/**
- * Article quality metrics for scoring
- */
 interface ArticleQuality {
   length: number;
   referenceCount: number;
@@ -49,9 +46,6 @@ interface ArticleQuality {
   lastModified: Date;
 }
 
-/**
- * Lore card generation result
- */
 interface LoreCardCandidate {
   title: string;
   description: string;
@@ -76,9 +70,7 @@ interface LoreCardCandidate {
   authorInfo?: CardAuthorInfo;
 }
 
-/**
- * Lightweight article metadata for discovery/preview (no full generateCard fetch).
- */
+/** Lightweight article metadata for discovery/preview (no full generateCard fetch). */
 interface ArticleMetadataPreview {
   title: string;
   hasImage: boolean;
@@ -141,13 +133,116 @@ const CATEGORY_STAT_WEIGHTS: Record<
   default: { economic: 0.25, diplomatic: 0.25, military: 0.25, social: 0.25 },
 };
 
-/**
- * Wiki Lore Card Generator Service
- */
+type MwPage = MediaWikiPageItem & { original?: { source?: string } };
+type RevisionUser = { user: string; timestamp: string };
+
+/** GET against the wiki's MediaWiki action API (`action=query`, JSON), optionally time-limited. */
+function mwQuery(wikiSource: WikiSource, params: Record<string, string>, timeoutMs?: number) {
+  const url = new URL(getMediaWikiApiUrl(wikiSource));
+  for (const [key, value] of Object.entries({ action: "query", format: "json", ...params })) {
+    url.searchParams.set(key, value);
+  }
+  return fetch(url.toString(), {
+    headers: { "User-Agent": getWikiUserAgent(wikiSource) },
+    ...(timeoutMs && { signal: AbortSignal.timeout(timeoutMs) }),
+  });
+}
+
+/** The first page of an `action=query` response's `pages` map. */
+const firstPage = <T = MwPage>(data: any): T | undefined =>
+  Object.values(data.query?.pages ?? {})[0] as T | undefined;
+
+/** The earliest non-bot editor of a revision list (flagging when a bot was skipped). */
+function pickCreator(revs: RevisionUser[]) {
+  let isBotFiltered = false;
+  for (const r of revs) {
+    const user = cleanWikiUsername(r.user);
+    if (!user) continue;
+    if (!BOT_REGEX.test(user)) return { creator: user, createdAt: r.timestamp, isBotFiltered };
+    isBotFiltered = true;
+  }
+  return { creator: "", createdAt: "", isBotFiltered };
+}
+
+/** Creator + top editor (the first non-bot contributor who is not the creator), as card author info. */
+function buildAuthorInfo(
+  found: { creator: string; createdAt: string; isBotFiltered: boolean },
+  contributors: Array<{ name: string }>
+): CardAuthorInfo {
+  let { creator } = found;
+  let primaryContributor: string | null = null;
+  for (const c of contributors) {
+    const user = cleanWikiUsername(c.name);
+    if (
+      user &&
+      (!creator || user.toLowerCase() !== creator.toLowerCase()) &&
+      !BOT_REGEX.test(user)
+    ) {
+      primaryContributor = user;
+      break;
+    }
+  }
+  // No usable creator: the top contributor takes the credit
+  if (!creator && primaryContributor) {
+    creator = primaryContributor;
+    primaryContributor = null;
+  }
+  creator ||= "Unknown";
+
+  return {
+    creator,
+    createdAt: found.createdAt || undefined,
+    primaryContributor,
+    contributorCount: contributors.length,
+    displayAuthor: primaryContributor
+      ? `${creator} (Created) • ${primaryContributor} (Top Editor)`
+      : creator,
+    isBotFiltered: found.isBotFiltered,
+  };
+}
+
+/** Lookup keys an article title may be requested under (raw, lowercase, spaced, underscored). */
+const titleKeys = (title: string | undefined, underscored = false) =>
+  title
+    ? [
+        title,
+        title.toLowerCase(),
+        title.replace(/_/g, " ").trim().toLowerCase(),
+        ...(underscored ? [title.replace(/ /g, "_").trim().toLowerCase()] : []),
+      ]
+    : [];
+
+const FILE_IMAGE = /\.(jpe?g|png|svg)$/;
+const NON_ARTICLE_IMAGE = /icon|flag|logo/;
+
+const RARITY_THRESHOLDS: Array<[minScore: number, rarity: CardRarity]> = [
+  [96, CardRarity.LEGENDARY],
+  [81, CardRarity.EPIC],
+  [61, CardRarity.ULTRA_RARE],
+  [41, CardRarity.RARE],
+  [21, CardRarity.UNCOMMON],
+];
+
+const BASE_MARKET_VALUE: Record<string, number> = {
+  [CardRarity.COMMON]: 5,
+  [CardRarity.UNCOMMON]: 15,
+  [CardRarity.RARE]: 40,
+  [CardRarity.ULTRA_RARE]: 100,
+  [CardRarity.EPIC]: 250,
+  [CardRarity.LEGENDARY]: 600,
+};
+
+const WIKI_URL_BASES: Record<string, string> = {
+  ixwiki: `${process.env.BASE_PATH || ""}/w`,
+  iiwiki: "https://iiwiki.com/w",
+  althistory: "https://althistory.fandom.com/wiki",
+};
+
+const INFOBOX_PATTERN = /\{\{infobox[^}]*(?:\{\{[^}]*\}\}[^}]*)*\}\}/i;
+const PLACEHOLDER_SUMMARY = "A historical article from the wiki archives.";
+
 class WikiLoreCardGenerator {
-  /**
-   * Generate a lore card from a wiki article
-   */
+  /** Generate a lore card candidate from a wiki article; throws a descriptive error when it can't. */
   async generateCard(
     articleTitle: string,
     wikiSource: WikiSource,
@@ -156,30 +251,23 @@ class WikiLoreCardGenerator {
     try {
       console.log(`[Lore Card Generator] Generating card for "${articleTitle}" from ${wikiSource}`);
 
-      // Fetch article data
       const articleData = await this.fetchArticleData(articleTitle, wikiSource);
       if (!articleData) {
         throw new Error(
           `Article "${articleTitle}" was not found or could not be loaded from ${wikiSource}.`
         );
       }
-
-      // Check image requirement
       if (options?.requireImage && !articleData.image) {
         throw new Error(
           `Article "${articleTitle}" has no usable images (image requirement enabled).`
         );
       }
-
-      // Check if card already exists
-      const exists = await this.checkCardExists(articleTitle, wikiSource);
-      if (exists) {
+      if (await this.checkCardExists(articleTitle, wikiSource)) {
         throw new Error(
           `A lore card for "${articleTitle}" (${wikiSource}) already exists in the collection.`
         );
       }
 
-      // Calculate quality score
       const quality = this.analyzeArticleQuality(articleData);
 
       // Minimal floor: skip near-empty stubs (image is the gate, this drops one-liners)
@@ -190,54 +278,32 @@ class WikiLoreCardGenerator {
       }
 
       const qualityScore = this.calculateQualityScore(quality);
-
-      // Determine rarity based on quality
       const rarity = this.determineRarity(qualityScore);
-
-      // Detect category
       const category = this.detectCategory(articleData);
 
-      // Extract image
-      const artwork = this.extractArtwork(articleData, wikiSource);
-
-      // Generate summary (short for card face) and full excerpt (for lore tab)
+      // Short summary for the card face, longer excerpt for the lore tab
       const rawExcerpt = articleData.extract || articleData.text || "";
-      const description = this.generateSummary(rawExcerpt);
-      const fullExcerpt = rawExcerpt.slice(0, 2000).trim();
-
-      // Calculate standard stats (economic/diplomatic/military/social)
-      const stats = this.calculateStats(quality, qualityScore, category);
-
-      // Calculate lore-specific metrics for display
-      const loreStats = this.calculateLoreStats(quality);
-
-      // Build wiki URL
-      const wikiUrl = this.buildWikiUrl(articleTitle, wikiSource);
-
-      // Extract author info if available
-      const authorInfo = articleData.authorInfo as CardAuthorInfo | undefined;
 
       const candidate: LoreCardCandidate = {
         title: articleTitle.replace(/_/g, " "),
-        description,
-        fullExcerpt,
-        artwork,
+        description: this.generateSummary(rawExcerpt),
+        fullExcerpt: rawExcerpt.slice(0, 2000).trim(),
+        artwork: articleData.image || "/images/cards/lore-placeholder.svg",
         rarity,
         wikiSource,
         wikiArticleTitle: articleTitle,
-        wikiUrl,
+        wikiUrl: `${WIKI_URL_BASES[wikiSource]}/${encodeURIComponent(articleTitle)}`,
         category,
-        stats,
-        loreStats,
+        stats: this.calculateStats(quality, qualityScore, category),
+        loreStats: this.calculateLoreStats(quality),
         qualityScore,
-        authorInfo,
+        authorInfo: articleData.authorInfo as CardAuthorInfo | undefined,
       };
 
       console.log(
         `[Lore Card Generator] Generated ${rarity} card for "${articleTitle}" ` +
           `(quality: ${qualityScore.toFixed(1)}, category: ${category})`
       );
-
       return candidate;
     } catch (error) {
       console.error(`[Lore Card Generator] Error generating card for "${articleTitle}":`, error);
@@ -245,39 +311,24 @@ class WikiLoreCardGenerator {
     }
   }
 
-  /**
-   * Fetch article data from wiki API
-   */
-  async fetchArticleData(title: string, wikiSource: WikiSource): Promise<any | null> {
+  /** Article content, infobox, featured image, backlinks and author info from the wiki API. */
+  private async fetchArticleData(title: string, wikiSource: WikiSource): Promise<any | null> {
     try {
-      const apiUrl = getMediaWikiApiUrl(wikiSource);
-      const userAgent = getWikiUserAgent(wikiSource);
-
-      // Fetch article content with infobox, metadata, and contributors
-      const url = new URL(apiUrl);
-      url.searchParams.set("action", "query");
-      url.searchParams.set("format", "json");
-      url.searchParams.set("titles", title);
-      url.searchParams.set(
-        "prop",
-        "extracts|pageimages|info|categories|links|revisions|images|contributors"
-      );
-      url.searchParams.set("exchars", "2000"); // Get first ~2000 chars for full excerpt
-      url.searchParams.set("exlimit", "1");
-      url.searchParams.set("explaintext", "1"); // Plain text
-      url.searchParams.set("piprop", "original|name"); // Get original image and name
-      url.searchParams.set("pithumbsize", "500"); // Thumbnail size
-      url.searchParams.set("inprop", "url");
-      url.searchParams.set("cllimit", "50"); // Get up to 50 categories
-      url.searchParams.set("pllimit", "500"); // Get up to 500 links (inbound indicator)
-      url.searchParams.set("rvprop", "content|timestamp|user|comment"); // Get full wikitext, user, and timestamp
-      url.searchParams.set("imlimit", "10"); // Get up to 10 images
-      url.searchParams.set("pclimit", "10"); // Get up to 10 contributors
-
-      const response = await fetch(url.toString(), {
-        headers: { "User-Agent": userAgent },
+      const response = await mwQuery(wikiSource, {
+        titles: title,
+        prop: "extracts|pageimages|info|categories|links|revisions|images|contributors",
+        exchars: "2000", // first ~2000 chars for the full excerpt
+        exlimit: "1",
+        explaintext: "1",
+        piprop: "original|name",
+        pithumbsize: "500",
+        inprop: "url",
+        cllimit: "50",
+        pllimit: "500", // up to 500 links (inbound indicator)
+        rvprop: "content|timestamp|user|comment", // full wikitext, user, and timestamp
+        imlimit: "10",
+        pclimit: "10", // up to 10 contributors
       });
-
       if (!response.ok) {
         throw new Error(
           `MediaWiki API returned HTTP ${response.status} (${response.statusText || "Error"}) on ${wikiSource}.`
@@ -285,15 +336,9 @@ class WikiLoreCardGenerator {
       }
 
       const data = await response.json();
-      const pages = data.query?.pages;
-      if (!pages) {
-        throw new Error(`MediaWiki response contained no page data.`);
-      }
+      if (!data.query?.pages) throw new Error(`MediaWiki response contained no page data.`);
 
-      const page = Object.values(pages)[0] as MediaWikiPageItem & {
-        original?: { source?: string };
-        invalidreason?: string;
-      };
+      const page = firstPage<MwPage & { invalidreason?: string }>(data)!;
       if (page.missing !== undefined) {
         throw new Error(
           `Article "${title}" does not exist on ${wikiSource}. Check title spelling/casing.`
@@ -305,157 +350,24 @@ class WikiLoreCardGenerator {
         );
       }
 
-      // Get wikitext
       const wikitext = page.revisions?.[0]?.["*"] || "";
-
-      // Parse infobox from wikitext
       const infoboxData = this.parseInfobox(wikitext);
 
-      // Extract featured image (try multiple sources)
-      let featuredImage = page.original?.source; // From pageimages API
+      const featuredImage = await this.resolveFeaturedImage(page, infoboxData, wikiSource);
 
-      // If no pageimage, try to get from infobox
-      if (!featuredImage && infoboxData.image) {
-        // Get actual image URL from image filename
-        featuredImage = (await this.getImageUrl(infoboxData.image, wikiSource)) ?? undefined;
-      }
-
-      // If still no image, try first image from article
-      if (!featuredImage && page.images && page.images.length > 0) {
-        // Get first non-icon image
-        const firstImage = page.images.find((img: { title?: string }) => {
-          const filename = img.title?.toLowerCase() || "";
-          return (
-            !filename.includes("icon") &&
-            !filename.includes("flag") &&
-            !filename.includes("logo") &&
-            (filename.endsWith(".jpg") ||
-              filename.endsWith(".jpeg") ||
-              filename.endsWith(".png") ||
-              filename.endsWith(".svg"))
-          );
-        });
-        if (firstImage && firstImage.title) {
-          featuredImage = (await this.getImageUrl(firstImage.title, wikiSource)) ?? undefined;
-        }
-      }
-
-      // Get backlinks count (inbound links)
-      const backlinksUrl = new URL(apiUrl);
-      backlinksUrl.searchParams.set("action", "query");
-      backlinksUrl.searchParams.set("format", "json");
-      backlinksUrl.searchParams.set("list", "backlinks");
-      backlinksUrl.searchParams.set("bltitle", title);
-      backlinksUrl.searchParams.set("bllimit", "500");
-
-      const backlinksResponse = await fetch(backlinksUrl.toString(), {
-        headers: { "User-Agent": userAgent },
+      const backlinksResponse = await mwQuery(wikiSource, {
+        list: "backlinks",
+        bltitle: title,
+        bllimit: "500",
       });
-
-      let inboundLinks = 0;
-      if (backlinksResponse.ok) {
-        const backlinksData = await backlinksResponse.json();
-        inboundLinks = backlinksData.query?.backlinks?.length || 0;
-      }
-
-      // Clean text by removing all templates except infobox
-      const cleanedText = this.removeTemplates(wikitext);
-
-      // Extract author information (query earliest revision for creator)
-      let creator = "";
-      let createdAt = "";
-      let isBotFiltered = false;
-
-      try {
-        const creatorUrl = new URL(apiUrl);
-        creatorUrl.searchParams.set("action", "query");
-        creatorUrl.searchParams.set("format", "json");
-        creatorUrl.searchParams.set("titles", title);
-        creatorUrl.searchParams.set("prop", "revisions");
-        creatorUrl.searchParams.set("rvdir", "newer");
-        creatorUrl.searchParams.set("rvlimit", "5");
-        creatorUrl.searchParams.set("rvprop", "user|timestamp|comment");
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
-        const creatorRes = await fetch(creatorUrl.toString(), {
-          headers: { "User-Agent": userAgent },
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-
-        if (creatorRes.ok) {
-          const creatorData = await creatorRes.json();
-          const creatorPage = Object.values(creatorData.query?.pages ?? {})[0] as MediaWikiPageItem;
-          const earlyRevs = (creatorPage?.revisions || []) as Array<{
-            user: string;
-            timestamp: string;
-          }>;
-          for (const r of earlyRevs) {
-            const u = cleanWikiUsername(r.user);
-            if (u && !BOT_REGEX.test(u)) {
-              creator = u;
-              createdAt = r.timestamp;
-              break;
-            } else if (u && BOT_REGEX.test(u)) {
-              isBotFiltered = true;
-            }
-          }
-        }
-      } catch (err) {
-        console.warn(`[Lore Card Generator] Earliest revision lookup failed for "${title}":`, err);
-      }
-
-      // Fallback: check latest revision user from main query
-      if (!creator && page.revisions && page.revisions.length > 0) {
-        for (const r of page.revisions) {
-          const u = cleanWikiUsername(r.user);
-          if (u && !BOT_REGEX.test(u)) {
-            creator = u;
-            createdAt = r.timestamp ?? new Date().toISOString();
-            break;
-          }
-        }
-      }
-
-      // 2. Primary Contributor
-      const contributors = (page.contributors || []) as Array<{ name: string; editcount?: number }>;
-      let primaryContributor: string | null = null;
-      for (const c of contributors) {
-        const u = cleanWikiUsername(c.name);
-        if (u && (!creator || u.toLowerCase() !== creator.toLowerCase()) && !BOT_REGEX.test(u)) {
-          primaryContributor = u;
-          break;
-        }
-      }
-
-      // If creator was empty, promote primary contributor to creator
-      if (!creator && primaryContributor) {
-        creator = primaryContributor;
-        primaryContributor = null;
-      }
-
-      if (!creator) {
-        creator = "Unknown";
-      }
-
-      const displayAuthor = primaryContributor
-        ? `${creator} (Created) • ${primaryContributor} (Top Editor)`
-        : creator;
-
-      const authorInfo: CardAuthorInfo = {
-        creator,
-        createdAt: createdAt || undefined,
-        primaryContributor,
-        contributorCount: contributors.length,
-        displayAuthor,
-        isBotFiltered,
-      };
+      const inboundLinks = backlinksResponse.ok
+        ? (await backlinksResponse.json()).query?.backlinks?.length || 0
+        : 0;
 
       return {
         ...page,
-        authorInfo,
-        text: cleanedText,
+        authorInfo: await this.lookupAuthorInfo(page, title, wikiSource),
+        text: this.removeTemplates(wikitext),
         rawText: wikitext,
         image: featuredImage,
         infobox: infoboxData,
@@ -474,6 +386,60 @@ class WikiLoreCardGenerator {
     }
   }
 
+  /** Featured image: the page image, else the infobox image, else the first real image in the article. */
+  private async resolveFeaturedImage(
+    page: MwPage,
+    infobox: Record<string, string>,
+    wikiSource: WikiSource
+  ): Promise<string | undefined> {
+    if (page.original?.source) return page.original.source;
+    if (infobox.image) {
+      const url = await this.getImageUrl(infobox.image, wikiSource);
+      if (url) return url;
+    }
+    const firstImage = page.images?.find((img: { title?: string }) => {
+      const filename = img.title?.toLowerCase() || "";
+      return !NON_ARTICLE_IMAGE.test(filename) && FILE_IMAGE.test(filename);
+    });
+    return firstImage?.title
+      ? ((await this.getImageUrl(firstImage.title, wikiSource)) ?? undefined)
+      : undefined;
+  }
+
+  /** Creator: earliest non-bot editor, else the first non-bot editor among the fetched revisions. */
+  private async lookupAuthorInfo(page: MwPage, title: string, wikiSource: WikiSource) {
+    let found = { creator: "", createdAt: "", isBotFiltered: false };
+    try {
+      const creatorRes = await mwQuery(
+        wikiSource,
+        {
+          titles: title,
+          prop: "revisions",
+          rvdir: "newer",
+          rvlimit: "5",
+          rvprop: "user|timestamp|comment",
+        },
+        8000
+      );
+      if (creatorRes.ok) {
+        const early = firstPage<MediaWikiPageItem>(await creatorRes.json())?.revisions;
+        found = pickCreator((early || []) as RevisionUser[]);
+      }
+    } catch (err) {
+      console.warn(`[Lore Card Generator] Earliest revision lookup failed for "${title}":`, err);
+    }
+    if (!found.creator) {
+      for (const r of page.revisions ?? []) {
+        const user = cleanWikiUsername(r.user);
+        if (user && !BOT_REGEX.test(user)) {
+          found = { ...found, creator: user, createdAt: r.timestamp ?? new Date().toISOString() };
+          break;
+        }
+      }
+    }
+    return buildAuthorInfo(found, (page.contributors || []) as Array<{ name: string }>);
+  }
+
   /**
    * Lightweight batched metadata for many articles — ONE request per <=50 titles.
    * Used for discovery/preview so we don't run the full generateCard fetch per article
@@ -481,62 +447,53 @@ class WikiLoreCardGenerator {
    * the real scorers with the cheap signals available here; the exact score is recomputed
    * in generateCard at actual generation time.
    */
-  /**
-   * Lightweight batched metadata for many articles — ONE request per <=50 titles.
-   */
   async fetchArticleMetadataBatch(
     titles: string[],
     wikiSource: WikiSource
   ): Promise<ArticleMetadataPreview[]> {
-    const apiUrl = getMediaWikiApiUrl(wikiSource);
-    const userAgent = getWikiUserAgent(wikiSource);
-    const out: ArticleMetadataPreview[] = [];
     const valuationCfg = await getValuationConfig(db);
-
     const authorsMap = await this.fetchArticleAuthorInfoBatch(titles, wikiSource);
+
+    const fetchChunk = async (chunk: string[]): Promise<ArticleMetadataPreview[]> => {
+      try {
+        const res = await mwQuery(wikiSource, {
+          titles: chunk.join("|"),
+          prop: "pageimages|info|extracts|categories",
+          piprop: "original",
+          exintro: "1",
+          explaintext: "1",
+          exlimit: "max",
+          cllimit: "50",
+        });
+        if (!res.ok) {
+          console.error(`[Lore Card Generator] Metadata batch error: ${res.status}`);
+          return [];
+        }
+        const data = await res.json();
+        const pages = Object.values(data.query?.pages ?? {}) as Array<
+          MediaWikiPageItem & { missing?: boolean; extract?: string; length?: number }
+        >;
+        return pages
+          .filter((p) => !p.missing)
+          .map((p) => {
+            const titleKey = (p.title || "").replace(/_/g, " ").trim().toLowerCase();
+            return this.toMetadataPreview(p, valuationCfg, authorsMap.get(titleKey) || null);
+          });
+      } catch (e) {
+        console.error(`[Lore Card Generator] Metadata batch fetch failed:`, e);
+        return [];
+      }
+    };
 
     // MediaWiki caps titles at 50 per query; chunk and run a few chunks at a time.
     const chunks: string[][] = [];
     for (let i = 0; i < titles.length; i += 50) chunks.push(titles.slice(i, i + 50));
 
+    const out: ArticleMetadataPreview[] = [];
     const CONCURRENCY = 3;
     for (let i = 0; i < chunks.length; i += CONCURRENCY) {
-      const results = await Promise.all(
-        chunks.slice(i, i + CONCURRENCY).map(async (chunk) => {
-          const url = new URL(apiUrl);
-          url.searchParams.set("action", "query");
-          url.searchParams.set("format", "json");
-          url.searchParams.set("titles", chunk.join("|"));
-          url.searchParams.set("prop", "pageimages|info|extracts|categories");
-          url.searchParams.set("piprop", "original");
-          url.searchParams.set("exintro", "1");
-          url.searchParams.set("explaintext", "1");
-          url.searchParams.set("exlimit", "max");
-          url.searchParams.set("cllimit", "50");
-          try {
-            const res = await fetch(url.toString(), { headers: { "User-Agent": userAgent } });
-            if (!res.ok) {
-              console.error(`[Lore Card Generator] Metadata batch error: ${res.status}`);
-              return [] as ArticleMetadataPreview[];
-            }
-            const data = await res.json();
-            const pages = Object.values(data.query?.pages ?? {}) as Array<
-              MediaWikiPageItem & { missing?: boolean; extract?: string; length?: number }
-            >;
-            return pages
-              .filter((p) => !p.missing)
-              .map((p) => {
-                const titleKey = (p.title || "").replace(/_/g, " ").trim().toLowerCase();
-                const authorInfo = authorsMap.get(titleKey) || null;
-                return this.toMetadataPreview(p, valuationCfg, authorInfo);
-              });
-          } catch (e) {
-            console.error(`[Lore Card Generator] Metadata batch fetch failed:`, e);
-            return [] as ArticleMetadataPreview[];
-          }
-        })
-      );
-      for (const r of results) out.push(...r);
+      const results = await Promise.all(chunks.slice(i, i + CONCURRENCY).map(fetchChunk));
+      out.push(...results.flat());
     }
     return out;
   }
@@ -549,7 +506,7 @@ class WikiLoreCardGenerator {
     const extract: string = page.extract || "";
     const length: number = page.length ?? extract.length;
     const categoryCount: number = page.categories?.length ?? 0;
-    const quality: ArticleQuality = {
+    const estimatedQuality = this.calculateQualityScore({
       length,
       referenceCount: 0,
       inboundLinks: 0,
@@ -557,14 +514,8 @@ class WikiLoreCardGenerator {
       hasInfobox: length > 4000,
       isFeatured: false,
       lastModified: new Date(),
-    };
-    const estimatedQuality = this.calculateQualityScore(quality);
-    const estimatedRarity = this.determineRarity(estimatedQuality);
-    const category = classifyLoreArticle({
-      title: page.title,
-      text: extract,
-      categories: page.categories,
     });
+    const estimatedRarity = this.determineRarity(estimatedQuality);
     return {
       title: (page.title || "").replace(/_/g, " "),
       hasImage: !!page.original?.source,
@@ -572,7 +523,11 @@ class WikiLoreCardGenerator {
       length,
       extract,
       categoryCount,
-      category,
+      category: classifyLoreArticle({
+        title: page.title,
+        text: extract,
+        categories: page.categories,
+      }),
       estimatedQuality,
       estimatedRarity,
       estimatedValue: computeCardValue({ rarity: estimatedRarity, cardType: "LORE" }, cfg),
@@ -588,240 +543,137 @@ class WikiLoreCardGenerator {
     titles: string[],
     wikiSource: WikiSource
   ): Promise<Map<string, CardAuthorInfo>> {
-    const apiUrl = getMediaWikiApiUrl(wikiSource);
-    const userAgent = getWikiUserAgent(wikiSource);
     const resultMap = new Map<string, CardAuthorInfo>();
-
-    if (titles.length === 0) return resultMap;
-
     const uniqueTitles = Array.from(
       new Set(titles.map((t) => t.trim()).filter((t) => t.length > 0))
     );
 
+    const fetchOne = async (title: string) => {
+      try {
+        const res = await mwQuery(
+          wikiSource,
+          {
+            titles: title,
+            prop: "revisions|contributors",
+            rvdir: "newer",
+            rvlimit: "5",
+            rvprop: "user|timestamp|comment",
+            pclimit: "10",
+          },
+          10000
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        const p = firstPage<MediaWikiPageItem>(data);
+        if (!p || p.missing) return;
+
+        const revs = (p.revisions || []) as RevisionUser[];
+        let found = pickCreator(revs);
+        // Everything filtered as a bot: credit the very first editor anyway
+        const firstEditor = revs[0]?.user && cleanWikiUsername(revs[0].user);
+        if (!found.creator && firstEditor) {
+          found = { ...found, creator: firstEditor, createdAt: revs[0]!.timestamp };
+        }
+        const info = buildAuthorInfo(found, (p.contributors || []) as Array<{ name: string }>);
+
+        // Register under every spelling the title may be looked up by (incl. normalizations/redirects)
+        const aliases = [...(data.query?.normalized ?? []), ...(data.query?.redirects ?? [])];
+        const keys = [
+          ...titleKeys(title, true),
+          ...titleKeys(p.title, true),
+          ...aliases.flatMap((a: { from?: string; to?: string }) => [
+            ...titleKeys(a.from),
+            ...titleKeys(a.to),
+          ]),
+        ];
+        for (const key of keys) resultMap.set(key, info);
+      } catch (e) {
+        console.error(`[Lore Card Generator] Author info fetch failed for "${title}":`, e);
+      }
+    };
+
     // Concurrently process titles in chunks of 8
     const CHUNK_SIZE = 8;
     for (let i = 0; i < uniqueTitles.length; i += CHUNK_SIZE) {
-      const slice = uniqueTitles.slice(i, i + CHUNK_SIZE);
-      await Promise.all(
-        slice.map(async (title) => {
-          const url = new URL(apiUrl);
-          url.searchParams.set("action", "query");
-          url.searchParams.set("format", "json");
-          url.searchParams.set("titles", title);
-          url.searchParams.set("prop", "revisions|contributors");
-          url.searchParams.set("rvdir", "newer");
-          url.searchParams.set("rvlimit", "5");
-          url.searchParams.set("rvprop", "user|timestamp|comment");
-          url.searchParams.set("pclimit", "10");
-
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
-            const res = await fetch(url.toString(), {
-              headers: { "User-Agent": userAgent },
-              signal: controller.signal,
-            });
-            clearTimeout(timeoutId);
-
-            if (!res.ok) return;
-            const data = await res.json();
-            const pages = Object.values(data.query?.pages ?? {}) as MediaWikiPageItem[];
-            if (pages.length === 0) return;
-
-            const p = pages[0];
-            if (p.missing) return;
-
-            // 1. Page Creator
-            const revs = (p.revisions || []) as Array<{ user: string; timestamp: string }>;
-            let creator = "";
-            let createdAt = "";
-            let isBotFiltered = false;
-
-            for (const r of revs) {
-              const u = cleanWikiUsername(r.user);
-              if (u && !BOT_REGEX.test(u)) {
-                creator = u;
-                createdAt = r.timestamp;
-                break;
-              } else if (u && BOT_REGEX.test(u)) {
-                isBotFiltered = true;
-              }
-            }
-
-            if (!creator && revs.length > 0 && revs[0].user) {
-              const u = cleanWikiUsername(revs[0].user);
-              if (u) {
-                creator = u;
-                createdAt = revs[0].timestamp;
-              }
-            }
-
-            // 2. Primary Contributor
-            const contributors = (p.contributors || []) as Array<{
-              name: string;
-              editcount?: number;
-            }>;
-            let primaryContributor: string | null = null;
-            for (const c of contributors) {
-              const u = cleanWikiUsername(c.name);
-              if (
-                u &&
-                (!creator || u.toLowerCase() !== creator.toLowerCase()) &&
-                !BOT_REGEX.test(u)
-              ) {
-                primaryContributor = u;
-                break;
-              }
-            }
-
-            // If creator was empty or filtered out, promote top contributor to creator
-            if (!creator && primaryContributor) {
-              creator = primaryContributor;
-              primaryContributor = null;
-            }
-
-            if (!creator) {
-              creator = "Unknown";
-            }
-
-            // 3. Formatted display string
-            const displayAuthor = primaryContributor
-              ? `${creator} (Created) • ${primaryContributor} (Top Editor)`
-              : creator;
-
-            const info: CardAuthorInfo = {
-              creator,
-              createdAt: createdAt || undefined,
-              primaryContributor,
-              contributorCount: contributors.length,
-              displayAuthor,
-              isBotFiltered,
-            };
-
-            // Register under multiple lookup keys to ensure cache hits
-            const keys = [
-              title,
-              title.toLowerCase(),
-              title.replace(/_/g, " ").trim().toLowerCase(),
-              title.replace(/ /g, "_").trim().toLowerCase(),
-              p.title,
-              (p.title || "").toLowerCase(),
-              (p.title || "").replace(/_/g, " ").trim().toLowerCase(),
-              (p.title || "").replace(/ /g, "_").trim().toLowerCase(),
-            ];
-
-            if (data.query?.normalized) {
-              for (const n of data.query.normalized) {
-                if (n.from)
-                  keys.push(
-                    n.from,
-                    n.from.toLowerCase(),
-                    n.from.replace(/_/g, " ").trim().toLowerCase()
-                  );
-                if (n.to)
-                  keys.push(n.to, n.to.toLowerCase(), n.to.replace(/_/g, " ").trim().toLowerCase());
-              }
-            }
-
-            if (data.query?.redirects) {
-              for (const r of data.query.redirects) {
-                if (r.from)
-                  keys.push(
-                    r.from,
-                    r.from.toLowerCase(),
-                    r.from.replace(/_/g, " ").trim().toLowerCase()
-                  );
-                if (r.to)
-                  keys.push(r.to, r.to.toLowerCase(), r.to.replace(/_/g, " ").trim().toLowerCase());
-              }
-            }
-
-            for (const k of keys) {
-              if (k) resultMap.set(k, info);
-            }
-          } catch (e) {
-            console.error(`[Lore Card Generator] Author info fetch failed for "${title}":`, e);
-          }
-        })
-      );
+      await Promise.all(uniqueTitles.slice(i, i + CHUNK_SIZE).map(fetchOne));
     }
-
     return resultMap;
   }
 
-  /**
-   * List page titles in a live wiki category (namespace-0 pages and files, with paging).
-   */
-  async fetchCategoryMembers(
+  /** Page titles from a paged `list=` query, up to `limit`. */
+  private async listAll(
+    wikiSource: WikiSource,
+    params: Record<string, string>,
+    listKey: string,
+    continueKey: string,
+    limit: number
+  ): Promise<string[]> {
+    const titles: string[] = [];
+    let cont: string | undefined;
+    do {
+      try {
+        const res = await mwQuery(
+          wikiSource,
+          { ...params, ...(cont && { [continueKey]: cont }) },
+          12000
+        );
+        if (!res.ok) {
+          console.error(`[Lore Card Generator] ${params.list} error: ${res.status}`);
+          break;
+        }
+        const data = await res.json();
+        for (const m of data.query?.[listKey] ?? []) {
+          if (m.title) titles.push(m.title as string);
+        }
+        cont = data.continue?.[continueKey];
+      } catch (e) {
+        console.error(`[Lore Card Generator] ${params.list} fetch failed:`, e);
+        break;
+      }
+    } while (cont && titles.length < limit);
+    return titles.slice(0, limit);
+  }
+
+  /** List page titles in a live wiki category (namespace-0 pages and files, with paging). */
+  fetchCategoryMembers(
     category: string,
     wikiSource: WikiSource,
     limit = 10000,
     type: "page" | "file" | "page|file" = "page|file"
   ): Promise<string[]> {
-    const apiUrl = getMediaWikiApiUrl(wikiSource);
-    const userAgent = getWikiUserAgent(wikiSource);
     const cmtitle = category.startsWith("Category:") ? category : `Category:${category}`;
-    const titles: string[] = [];
-    let cmcontinue: string | undefined;
-
-    do {
-      const url = new URL(apiUrl);
-      url.searchParams.set("action", "query");
-      url.searchParams.set("format", "json");
-      url.searchParams.set("list", "categorymembers");
-      url.searchParams.set("cmtitle", cmtitle);
-      url.searchParams.set("cmtype", type);
-      url.searchParams.set("cmlimit", "500");
-      if (cmcontinue) url.searchParams.set("cmcontinue", cmcontinue);
-
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000);
-        const res = await fetch(url.toString(), {
-          headers: { "User-Agent": userAgent },
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-
-        if (!res.ok) {
-          console.error(`[Lore Card Generator] categorymembers error: ${res.status}`);
-          break;
-        }
-        const data = await res.json();
-        for (const m of data.query?.categorymembers ?? []) {
-          if (m.title) titles.push(m.title as string);
-        }
-        cmcontinue = data.continue?.cmcontinue;
-      } catch (e) {
-        console.error(`[Lore Card Generator] categorymembers fetch failed:`, e);
-        break;
-      }
-    } while (cmcontinue && titles.length < limit);
-
-    return titles.slice(0, limit);
+    return this.listAll(
+      wikiSource,
+      { list: "categorymembers", cmtitle, cmtype: type, cmlimit: "500" },
+      "categorymembers",
+      "cmcontinue",
+      limit
+    );
   }
 
-  /**
-   * Search live wiki categories by prefix — feeds the discovery category picker.
-   */
-  async searchCategories(prefix: string, wikiSource: WikiSource, limit = 20): Promise<string[]> {
-    const apiUrl = getMediaWikiApiUrl(wikiSource);
-    const userAgent = getWikiUserAgent(wikiSource);
-    const url = new URL(apiUrl);
-    url.searchParams.set("action", "query");
-    url.searchParams.set("format", "json");
-    url.searchParams.set("list", "allcategories");
-    url.searchParams.set("acprefix", prefix);
-    url.searchParams.set("aclimit", String(Math.min(Math.max(limit, 1), 100)));
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
-      const res = await fetch(url.toString(), {
-        headers: { "User-Agent": userAgent },
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
+  /** List all pages in the main namespace (namespace 0, excluding redirects). */
+  fetchAllMainNamespacePages(wikiSource: WikiSource, limit = 10000): Promise<string[]> {
+    return this.listAll(
+      wikiSource,
+      { list: "allpages", apnamespace: "0", apfilterredir: "nonredirects", aplimit: "500" },
+      "allpages",
+      "apcontinue",
+      limit
+    );
+  }
 
+  /** Search live wiki categories by prefix — feeds the discovery category picker. */
+  async searchCategories(prefix: string, wikiSource: WikiSource, limit = 20): Promise<string[]> {
+    try {
+      const res = await mwQuery(
+        wikiSource,
+        {
+          list: "allcategories",
+          acprefix: prefix,
+          aclimit: String(Math.min(Math.max(limit, 1), 100)),
+        },
+        8000
+      );
       if (!res.ok) {
         console.error(`[Lore Card Generator] allcategories error: ${res.status}`);
         return [];
@@ -836,225 +688,101 @@ class WikiLoreCardGenerator {
     }
   }
 
-  /**
-   * Fetch category statistics (size, pages, files, subcats) for categories
-   */
+  /** Category statistics (size, pages, files, subcats). */
   async getCategoriesInfo(
     categories: string[],
     wikiSource: WikiSource
   ): Promise<Record<string, { size: number; pages: number; files: number; subcats: number }>> {
-    const apiUrl = getMediaWikiApiUrl(wikiSource);
-    const userAgent = getWikiUserAgent(wikiSource);
     const result: Record<string, { size: number; pages: number; files: number; subcats: number }> =
       {};
-
     const formattedTitles = categories
       .map((c) => (c.startsWith("Category:") ? c : `Category:${c}`))
       .slice(0, 50);
-
     if (formattedTitles.length === 0) return result;
 
-    const url = new URL(apiUrl);
-    url.searchParams.set("action", "query");
-    url.searchParams.set("format", "json");
-    url.searchParams.set("prop", "categoryinfo");
-    url.searchParams.set("titles", formattedTitles.join("|"));
-
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-      const res = await fetch(url.toString(), {
-        headers: { "User-Agent": userAgent },
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
+      const res = await mwQuery(
+        wikiSource,
+        { prop: "categoryinfo", titles: formattedTitles.join("|") },
+        10000
+      );
       if (res.ok) {
         const data = await res.json();
-        for (const pageId in data.query?.pages ?? {}) {
-          const p = data.query.pages[pageId];
-          const rawTitle = p.title?.replace(/^Category:\s*/i, "") || "";
-          if (p.categoryinfo) {
-            result[rawTitle] = p.categoryinfo;
-            result[p.title] = p.categoryinfo;
-          }
+        for (const p of Object.values<any>(data.query?.pages ?? {})) {
+          if (!p.categoryinfo) continue;
+          result[p.title?.replace(/^Category:\s*/i, "") || ""] = p.categoryinfo;
+          result[p.title] = p.categoryinfo;
         }
       }
     } catch (e) {
       console.warn("[Lore Card Generator] getCategoriesInfo failed:", e);
     }
-
     return result;
   }
 
-  /**
-   * List all pages in the main namespace (namespace 0, excluding redirects).
-   */
-  async fetchAllMainNamespacePages(wikiSource: WikiSource, limit = 10000): Promise<string[]> {
-    const apiUrl = getMediaWikiApiUrl(wikiSource);
-    const userAgent = getWikiUserAgent(wikiSource);
-    const titles: string[] = [];
-    let apcontinue: string | undefined;
-
-    do {
-      const url = new URL(apiUrl);
-      url.searchParams.set("action", "query");
-      url.searchParams.set("format", "json");
-      url.searchParams.set("list", "allpages");
-      url.searchParams.set("apnamespace", "0");
-      url.searchParams.set("apfilterredir", "nonredirects");
-      url.searchParams.set("aplimit", "500");
-      if (apcontinue) url.searchParams.set("apcontinue", apcontinue);
-
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000);
-        const res = await fetch(url.toString(), {
-          headers: { "User-Agent": userAgent },
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-
-        if (!res.ok) {
-          console.error(`[Lore Card Generator] allpages error: ${res.status}`);
-          break;
-        }
-        const data = await res.json();
-        for (const p of data.query?.allpages ?? []) {
-          if (p.title) titles.push(p.title as string);
-        }
-        apcontinue = data.continue?.apcontinue;
-      } catch (e) {
-        console.error(`[Lore Card Generator] allpages fetch failed:`, e);
-        break;
-      }
-    } while (apcontinue && titles.length < limit);
-
-    return titles.slice(0, limit);
-  }
-
-  /**
-   * Parse infobox template from wikitext
-   */
+  /** Infobox fields (lowercased keys, templates/links/HTML stripped) from wikitext. */
   private parseInfobox(wikitext: string): Record<string, string> {
     const infobox: Record<string, string> = {};
+    const infoboxText = wikitext.match(INFOBOX_PATTERN)?.[0];
+    if (!infoboxText) return infobox;
 
-    // Match infobox template
-    const infoboxMatch = wikitext.match(/\{\{infobox[^}]*(?:\{\{[^}]*\}\}[^}]*)*\}\}/i);
-    if (!infoboxMatch) return infobox;
-
-    const infoboxText = infoboxMatch[0];
-
-    // Extract key-value pairs from infobox
-    const lines = infoboxText.split("\n");
-    for (const line of lines) {
+    for (const line of infoboxText.split("\n")) {
       const match = line.match(/^\s*\|\s*([^=]+?)\s*=\s*(.+?)\s*$/);
-      if (match) {
-        const key = match[1]?.trim().toLowerCase() || "";
-        let value = match[2]?.trim() || "";
-
-        // Clean value (remove nested templates, links)
-        value = value.replace(/\{\{[^}]*\}\}/g, ""); // Remove templates
-        value = value.replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1"); // Extract link text
-        value = value.replace(/<[^>]+>/g, ""); // Remove HTML tags
-        value = value.trim();
-
-        if (value && key) {
-          infobox[key] = value;
-        }
-      }
+      if (!match) continue;
+      const key = match[1]?.trim().toLowerCase() || "";
+      const value = (match[2]?.trim() || "")
+        .replace(/\{\{[^}]*\}\}/g, "") // templates
+        .replace(/\[\[(?:[^|\]]*\|)?([^\]]+)\]\]/g, "$1") // link text
+        .replace(/<[^>]+>/g, "") // HTML tags
+        .trim();
+      if (value && key) infobox[key] = value;
     }
-
     return infobox;
   }
 
-  /**
-   * Remove all templates except infobox from wikitext
-   */
+  /** Wikitext without templates (the infobox is preserved out of the way, then dropped) or refs. */
   private removeTemplates(wikitext: string): string {
-    // Remove all templates except infobox
     let cleaned = wikitext;
+    const infobox = wikitext.match(INFOBOX_PATTERN);
+    const placeholder = "___INFOBOX_PLACEHOLDER___";
+    if (infobox) cleaned = cleaned.replace(infobox[0], placeholder);
 
-    // First, preserve infobox
-    const infoboxMatch = wikitext.match(/\{\{infobox[^}]*(?:\{\{[^}]*\}\}[^}]*)*\}\}/i);
-    const infoboxPlaceholder = infoboxMatch ? `___INFOBOX_PLACEHOLDER___` : "";
-    if (infoboxMatch) {
-      cleaned = cleaned.replace(infoboxMatch[0], infoboxPlaceholder);
-    }
-
-    // Remove all other templates (nested template handling)
-    let prevCleaned = "";
-    while (prevCleaned !== cleaned) {
-      prevCleaned = cleaned;
+    // Remove remaining templates, innermost first, until stable
+    let previous = "";
+    while (previous !== cleaned) {
+      previous = cleaned;
       cleaned = cleaned.replace(/\{\{[^{}]*\}\}/g, "");
     }
+    if (infobox) cleaned = cleaned.replace(placeholder, "");
 
-    // Restore infobox if it was there
-    if (infoboxMatch) {
-      cleaned = cleaned.replace(infoboxPlaceholder, "");
-    }
-
-    // Remove reference tags
-    cleaned = cleaned.replace(/<ref[^>]*>.*?<\/ref>/gi, "");
-    cleaned = cleaned.replace(/<ref[^>]*\/>/gi, "");
-
-    return cleaned;
+    return cleaned.replace(/<ref[^>]*>.*?<\/ref>/gi, "").replace(/<ref[^>]*\/>/gi, "");
   }
 
-  /**
-   * Get image URL from filename via MediaWiki API
-   */
-  async getImageUrl(filename: string, wikiSource: WikiSource): Promise<string | null> {
+  /** Image URL from a file name via the MediaWiki API. */
+  private async getImageUrl(filename: string, wikiSource: WikiSource): Promise<string | null> {
     try {
-      const apiUrl = getMediaWikiApiUrl(wikiSource);
-      const userAgent = getWikiUserAgent(wikiSource);
-
-      // Remove "File:" or "Image:" prefix if present
-      const cleanFilename = filename.replace(/^(File|Image):/i, "");
-
-      const url = new URL(apiUrl);
-      url.searchParams.set("action", "query");
-      url.searchParams.set("format", "json");
-      url.searchParams.set("titles", `File:${cleanFilename}`);
-      url.searchParams.set("prop", "imageinfo");
-      url.searchParams.set("iiprop", "url");
-
-      const response = await fetch(url.toString(), {
-        headers: { "User-Agent": userAgent },
+      const response = await mwQuery(wikiSource, {
+        titles: `File:${filename.replace(/^(File|Image):/i, "")}`,
+        prop: "imageinfo",
+        iiprop: "url",
       });
-
       if (!response.ok) return null;
 
       const data = await response.json();
-      const pages = data.query?.pages;
-      if (!pages) return null;
-
-      const page = Object.values(pages)[0] as MediaWikiPageItem;
-      return page.imageinfo?.[0]?.url || null;
+      return firstPage<MediaWikiPageItem>(data)?.imageinfo?.[0]?.url || null;
     } catch (error) {
       console.error(`[Lore Card Generator] Error fetching image URL:`, error);
       return null;
     }
   }
 
-  /**
-   * Check if lore card already exists for this article
-   */
   private async checkCardExists(articleTitle: string, wikiSource: WikiSource): Promise<boolean> {
     const existing = await db.card.findFirst({
-      where: {
-        wikiArticleTitle: articleTitle,
-        wikiSource: wikiSource,
-        cardType: CardType.LORE,
-      },
+      where: { wikiArticleTitle: articleTitle, wikiSource, cardType: CardType.LORE },
     });
-
     return !!existing;
   }
 
-  /**
-   * Analyze article quality metrics
-   */
   private analyzeArticleQuality(
     articleData: MediaWikiPageItem & {
       rawText?: string;
@@ -1063,20 +791,8 @@ class WikiLoreCardGenerator {
       lastModified?: Date;
     }
   ): ArticleQuality {
-    // Use raw text for template/reference detection
+    // Raw text for template/reference detection, cleaned text for length
     const rawText = articleData.rawText || articleData.text || "";
-
-    // Use cleaned text for length measurement
-    const cleanText = articleData.text || "";
-
-    // Count references ({{cite}} templates, <ref> tags) from raw text
-    const refMatches = rawText.match(/<ref[^>]*>|{{cite/gi) || [];
-    const referenceCount = refMatches.length;
-
-    // Check for infobox from raw text
-    const hasInfobox = /{{infobox/i.test(rawText);
-
-    // Check if featured (has {{featured}} template or in Featured category)
     const isFeatured =
       /{{featured/i.test(rawText) ||
       (articleData.categories?.some((cat: MediaWikiCategoryItem) =>
@@ -1085,188 +801,94 @@ class WikiLoreCardGenerator {
         false);
 
     return {
-      length: cleanText.length, // Use cleaned text length
-      referenceCount,
+      length: (articleData.text || "").length,
+      referenceCount: (rawText.match(/<ref[^>]*>|{{cite/gi) || []).length,
       inboundLinks: articleData.inboundLinks || 0,
       categoryCount: articleData.categories?.length || 0,
-      hasInfobox,
+      hasInfobox: /{{infobox/i.test(rawText),
       isFeatured,
       lastModified: articleData.lastModified ?? new Date(),
     };
   }
 
-  /**
-   * Calculate quality score (0-100)
-   * Formula: (length/1000)*0.3 + (refs*5)*0.3 + (inbound*2)*0.2 + (featured?50:0)*0.2
-   */
+  /** Quality score (0-100): length, references, inbound links, featured/infobox/category bonuses. */
   private calculateQualityScore(quality: ArticleQuality): number {
-    let score = 0;
-
-    // Article length score (0-30 points)
-    score += Math.min((quality.length / 1000) * 0.3, 30);
-
-    // Reference count score (0-30 points)
-    score += Math.min(quality.referenceCount * 5 * 0.3, 30);
-
-    // Inbound links score (0-20 points)
-    score += Math.min(quality.inboundLinks * 2 * 0.2, 20);
-
-    // Featured article bonus (0-20 points)
-    if (quality.isFeatured) {
-      score += 20;
-    }
-
-    // Infobox bonus (+5 points)
-    if (quality.hasInfobox) {
-      score += 5;
-    }
-
-    // Category bonus (0-5 points)
-    score += Math.min(quality.categoryCount * 0.5, 5);
-
+    const score =
+      Math.min((quality.length / 1000) * 0.3, 30) +
+      Math.min(quality.referenceCount * 5 * 0.3, 30) +
+      Math.min(quality.inboundLinks * 2 * 0.2, 20) +
+      (quality.isFeatured ? 20 : 0) +
+      (quality.hasInfobox ? 5 : 0) +
+      Math.min(quality.categoryCount * 0.5, 5);
     return Math.min(score, 100);
   }
 
-  /**
-   * Determine card rarity based on quality score
-   */
   private determineRarity(qualityScore: number): CardRarity {
-    if (qualityScore >= 96) return CardRarity.LEGENDARY;
-    if (qualityScore >= 81) return CardRarity.EPIC;
-    if (qualityScore >= 61) return CardRarity.ULTRA_RARE;
-    if (qualityScore >= 41) return CardRarity.RARE;
-    if (qualityScore >= 21) return CardRarity.UNCOMMON;
-    return CardRarity.COMMON;
+    return RARITY_THRESHOLDS.find(([min]) => qualityScore >= min)?.[1] ?? CardRarity.COMMON;
   }
 
-  /**
-   * Detect lore category from article categories and content
-   */
   private detectCategory(
     articleData: MediaWikiPageItem & { text?: string; extract?: string }
   ): LoreCategoryType {
     return classifyLoreArticle({
       title: articleData.title,
       text: articleData.text || articleData.extract || "",
-      categories: (articleData.categories || []).map((c) => ({
-        title: c.title || "",
-      })),
+      categories: (articleData.categories || []).map((c) => ({ title: c.title || "" })),
     });
   }
 
-  private extractArtwork(
-    articleData: MediaWikiPageItem & { image?: string },
-    _wikiSource: WikiSource
-  ): string {
-    // Use original image from API if available
-    if (articleData.image) {
-      return articleData.image;
-    }
-
-    // Fallback to placeholder SVG
-    return "/images/cards/lore-placeholder.svg";
-  }
-
-  /**
-   * Generate summary from article extract (limit 200 chars)
-   */
+  /** Card-face summary from the article extract: templates stripped, whitespace collapsed, <= 250 chars. */
   private generateSummary(extract: string): string {
-    if (!extract) return "A historical article from the wiki archives.";
+    if (!extract) return PLACEHOLDER_SUMMARY;
 
-    // Strip raw templates and infoboxes while preserving wikitext links and bold formatting
-    let summary = extract
-      .replace(/\{\{[^}]*\}\}/g, "")
-      .replace(/\{\{[\s\S]*$/g, "")
-      .replace(/(?:Template|template)\s*:[^\n.<|\]}]*/gi, "")
-      .replace(/\n/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
+    let summary =
+      extract
+        .replace(/\{\{[^}]*\}\}/g, "")
+        .replace(/\{\{[\s\S]*$/g, "")
+        .replace(/(?:Template|template)\s*:[^\n.<|\]}]*/gi, "")
+        .replace(/\s+/g, " ")
+        .trim() || PLACEHOLDER_SUMMARY;
 
-    if (!summary) summary = "A historical article from the wiki archives.";
-
-    // Limit to 250 characters
     if (summary.length > 250) {
       summary = summary.substring(0, 247) + "...";
-      // Clean up unclosed wikitext links if cut off mid-link
+      // Drop an unclosed wikitext link left by the cut
       const openCount = (summary.match(/\[\[/g) || []).length;
       const closeCount = (summary.match(/\]\]/g) || []).length;
-      if (openCount > closeCount) {
-        summary = summary.replace(/\[\[[^\]]*$/, "") + "...";
-      }
+      if (openCount > closeCount) summary = summary.replace(/\[\[[^\]]*$/, "") + "...";
     }
-
     return summary;
   }
 
-  /**
-   * Calculate standard card stats (economic/diplomatic/military/social)
-   * based on article quality metrics and category-specific weighting.
-   */
-  private calculateStats(
-    quality: ArticleQuality,
-    qualityScore: number,
-    category: string
-  ): {
-    economic: number;
-    diplomatic: number;
-    military: number;
-    social: number;
-  } {
+  /** Economic/diplomatic/military/social stats from quality metrics and category-specific weights. */
+  private calculateStats(quality: ArticleQuality, qualityScore: number, category: string) {
     const basePower = qualityScore;
     const refPower = Math.min(quality.referenceCount * 8, 100);
     const linkPower = Math.min(quality.inboundLinks * 5, 100);
     const featuredBonus = quality.isFeatured ? 20 : 0;
-
     const weights = CATEGORY_STAT_WEIGHTS[category] ?? CATEGORY_STAT_WEIGHTS.default!;
 
+    const stat = (value: number) => Math.round(Math.min(value, 100));
     return {
-      economic: Math.round(
-        Math.min(basePower * weights.economic + refPower * 0.15 + featuredBonus * 0.1, 100)
-      ),
-      diplomatic: Math.round(
-        Math.min(basePower * weights.diplomatic + linkPower * 0.2 + featuredBonus * 0.15, 100)
-      ),
-      military: Math.round(Math.min(basePower * weights.military + refPower * 0.1, 100)),
-      social: Math.round(
-        Math.min(basePower * weights.social + linkPower * 0.15 + featuredBonus * 0.2, 100)
-      ),
+      economic: stat(basePower * weights.economic + refPower * 0.15 + featuredBonus * 0.1),
+      diplomatic: stat(basePower * weights.diplomatic + linkPower * 0.2 + featuredBonus * 0.15),
+      military: stat(basePower * weights.military + refPower * 0.1),
+      social: stat(basePower * weights.social + linkPower * 0.15 + featuredBonus * 0.2),
     };
   }
 
-  /**
-   * Calculate lore-specific metrics for display in the Lore tab.
-   */
-  private calculateLoreStats(quality: ArticleQuality): {
-    historicalSignificance: number;
-    culturalImpact: number;
-  } {
-    const historicalSignificance = Math.min(
-      (quality.referenceCount * 10 + quality.inboundLinks * 5) / 2,
-      100
-    );
-    const culturalImpact = Math.min(quality.inboundLinks * 10 + (quality.isFeatured ? 50 : 0), 100);
+  /** Lore-specific metrics for the Lore tab. */
+  private calculateLoreStats(quality: ArticleQuality) {
     return {
-      historicalSignificance: Math.round(historicalSignificance),
-      culturalImpact: Math.round(culturalImpact),
+      historicalSignificance: Math.round(
+        Math.min((quality.referenceCount * 10 + quality.inboundLinks * 5) / 2, 100)
+      ),
+      culturalImpact: Math.round(
+        Math.min(quality.inboundLinks * 10 + (quality.isFeatured ? 50 : 0), 100)
+      ),
     };
   }
 
-  /**
-   * Build wiki URL for article
-   */
-  private buildWikiUrl(articleTitle: string, wikiSource: WikiSource): string {
-    const baseUrls = {
-      ixwiki: `${process.env.BASE_PATH || ""}/w`,
-      iiwiki: "https://iiwiki.com/w",
-      althistory: "https://althistory.fandom.com/wiki",
-    };
-
-    return `${baseUrls[wikiSource]}/${encodeURIComponent(articleTitle)}`;
-  }
-
-  /**
-   * Create card in database from candidate
-   */
+  /** Create the card in the database from a candidate. */
   async createCard(candidate: LoreCardCandidate): Promise<string> {
     const season = await getCurrentIxCardSeason(db);
     const card = await db.card.create({
@@ -1295,7 +917,7 @@ class WikiLoreCardGenerator {
             : {}),
         },
         totalSupply: 0, // Unlimited for lore cards
-        marketValue: this.getBaseMarketValue(candidate.rarity),
+        marketValue: BASE_MARKET_VALUE[candidate.rarity]!,
       },
     });
 
@@ -1304,75 +926,20 @@ class WikiLoreCardGenerator {
   }
 
   /**
-   * Get base market value by rarity
-   */
-  private getBaseMarketValue(rarity: CardRarity): number {
-    const baseValues = {
-      [CardRarity.COMMON]: 5,
-      [CardRarity.UNCOMMON]: 15,
-      [CardRarity.RARE]: 40,
-      [CardRarity.ULTRA_RARE]: 100,
-      [CardRarity.EPIC]: 250,
-      [CardRarity.LEGENDARY]: 600,
-    };
-
-    return baseValues[rarity];
-  }
-
-  /**
-   * Check if a wiki article has a page image
-   */
-  private async checkArticleHasImage(title: string, wikiSource: WikiSource): Promise<boolean> {
-    try {
-      const apiUrl = getMediaWikiApiUrl(wikiSource);
-      const userAgent = getWikiUserAgent(wikiSource);
-
-      const url = new URL(apiUrl);
-      url.searchParams.set("action", "query");
-      url.searchParams.set("format", "json");
-      url.searchParams.set("titles", title);
-      url.searchParams.set("prop", "pageimages");
-      url.searchParams.set("piprop", "original");
-
-      const response = await fetch(url.toString(), {
-        headers: { "User-Agent": userAgent },
-      });
-      if (!response.ok) return false;
-
-      const data = await response.json();
-      const page = Object.values(data.query?.pages ?? {})[0] as
-        (MediaWikiPageItem & { original?: { source?: string } }) | undefined;
-      return !!page?.original?.source;
-    } catch {
-      return false;
-    }
-  }
-
-  /**
-   * Fetch random articles that have images, for lore card generation.
-   * Fetches extra candidates to account for articles without images.
+   * Random articles that have a page image, for lore card generation. One request:
+   * `generator=random` returns random pages and `prop=pageimages` says which have an image
+   * (a per-article image check tripped the wiki's rate limit). Over-fetches via grnlimit to
+   * cover pages without an image.
    */
   async fetchRandomArticlesWithImages(count: number, wikiSource: WikiSource): Promise<string[]> {
-    // One request: `generator=random` returns random pages and `prop=pageimages` tells
-    // us which have an image — no per-article checkArticleHasImage loop. That loop made
-    // 1 + 3N sequential calls and tripped the wiki's rate limit (429). Over-fetch via
-    // grnlimit to cover pages without an image.
     try {
-      const apiUrl = getMediaWikiApiUrl(wikiSource);
-      const userAgent = getWikiUserAgent(wikiSource);
-
-      const url = new URL(apiUrl);
-      url.searchParams.set("action", "query");
-      url.searchParams.set("format", "json");
-      url.searchParams.set("generator", "random");
-      url.searchParams.set("grnnamespace", "0");
-      url.searchParams.set("grnlimit", String(Math.min(count * 3, 50)));
-      url.searchParams.set("prop", "pageimages");
-      url.searchParams.set("piprop", "original");
-      url.searchParams.set("pilimit", "max");
-
-      const response = await fetch(url.toString(), {
-        headers: { "User-Agent": userAgent },
+      const response = await mwQuery(wikiSource, {
+        generator: "random",
+        grnnamespace: "0",
+        grnlimit: String(Math.min(count * 3, 50)),
+        prop: "pageimages",
+        piprop: "original",
+        pilimit: "max",
       });
       if (!response.ok) {
         console.error(`[Lore Card Generator] Random+images fetch error: ${response.status}`);
@@ -1380,9 +947,7 @@ class WikiLoreCardGenerator {
       }
 
       const data = await response.json();
-      const pages = Object.values(data.query?.pages ?? {}) as Array<
-        MediaWikiPageItem & { original?: { source?: string } }
-      >;
+      const pages = Object.values(data.query?.pages ?? {}) as MwPage[];
       return pages
         .filter((p) => p?.original?.source)
         .map((p) => p.title as string)
@@ -1393,34 +958,21 @@ class WikiLoreCardGenerator {
     }
   }
 
-  /**
-   * Fetch random articles from wiki for card generation
-   */
+  /** Random main-namespace article titles. */
   async fetchRandomArticles(count: number, wikiSource: WikiSource): Promise<string[]> {
     try {
-      const apiUrl = getMediaWikiApiUrl(wikiSource);
-      const userAgent = getWikiUserAgent(wikiSource);
-
-      const url = new URL(apiUrl);
-      url.searchParams.set("action", "query");
-      url.searchParams.set("format", "json");
-      url.searchParams.set("list", "random");
-      url.searchParams.set("rnnamespace", "0"); // Main namespace only
-      url.searchParams.set("rnlimit", count.toString());
-
-      const response = await fetch(url.toString(), {
-        headers: { "User-Agent": userAgent },
+      const response = await mwQuery(wikiSource, {
+        list: "random",
+        rnnamespace: "0",
+        rnlimit: count.toString(),
       });
-
       if (!response.ok) {
         console.error(`[Lore Card Generator] Random articles fetch error: ${response.status}`);
         return [];
       }
 
       const data = await response.json();
-      const articles = (data.query?.random || []) as Array<{ title: string }>;
-
-      return articles.map((article) => article.title);
+      return ((data.query?.random || []) as Array<{ title: string }>).map((a) => a.title);
     } catch (error) {
       console.error(`[Lore Card Generator] Error fetching random articles:`, error);
       return [];
@@ -1428,5 +980,4 @@ class WikiLoreCardGenerator {
   }
 }
 
-// Export singleton instance
 export const wikiLoreCardGenerator = new WikiLoreCardGenerator();

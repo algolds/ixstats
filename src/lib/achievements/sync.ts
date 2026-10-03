@@ -3,66 +3,61 @@ import { ACHIEVEMENT_DEFINITIONS, type AchievementRarity } from "./definitions";
 import { getCardRewardForAchievement } from "./card-rewards";
 import { SCALE_METRIC_BY_ID, RARITY_PERCENTILE } from "./scaling";
 
-export async function syncAchievements(db: PrismaClient): Promise<void> {
-  if (!db?.achievement?.upsert) {
-    return;
+const CREDITS_BY_RARITY: Record<string, number> = {
+  Common: 5,
+  Uncommon: 10,
+  Rare: 25,
+  Epic: 50,
+  Legendary: 100,
+};
+
+const TITLE_BY_ID: Record<string, string> = {
+  "collect-lore-keeper": "Lore Keeper",
+  "collect-archaeologist": "Archaeologist",
+  "collect-diplomat": "Diplomat",
+};
+
+function buildRewards(id: string, rarity: string) {
+  const cardId = getCardRewardForAchievement(id);
+  const rewards: { credits: number; cardIds: string[]; cardPacks?: string[]; titles?: string[] } = {
+    credits: CREDITS_BY_RARITY[rarity] || 5,
+    cardIds: cardId ? [cardId] : [],
+  };
+  if (id.startsWith("vid-")) {
+    rewards.cardPacks = ["vidmaster-lore-pack"];
+    rewards.titles = ["Vidmaster"];
+  } else if (TITLE_BY_ID[id]) {
+    rewards.titles = [TITLE_BY_ID[id]];
   }
+  return rewards;
+}
+
+export async function syncAchievements(db: PrismaClient): Promise<void> {
+  if (!db?.achievement?.upsert) return;
+
   console.log("[Achievement Sync] Starting baseline synchronization...");
   let syncedCount = 0;
 
   for (const def of ACHIEVEMENT_DEFINITIONS) {
-    const cardId = getCardRewardForAchievement(def.id);
-    const credits = getCreditsForRarity(def.rarity);
-
-    // Rewards JSON structure
-    // eslint-disable-next-line prefer-const
-    let rewards: any = {
-      credits,
-      cardIds: cardId ? [cardId] : [],
-    };
-
-    if (def.id.startsWith("vid-")) {
-      rewards.cardPacks = ["vidmaster-lore-pack"];
-      rewards.titles = ["Vidmaster"];
-    } else if (def.id === "collect-lore-keeper") {
-      rewards.titles = ["Lore Keeper"];
-    } else if (def.id === "collect-archaeologist") {
-      rewards.titles = ["Archaeologist"];
-    } else if (def.id === "collect-diplomat") {
-      rewards.titles = ["Diplomat"];
-    }
-
-    // Build trigger condition JSON based on standard baseline definition keys
     const condition = determineCondition(def.id, def.rarity);
+    const data = {
+      title: def.title,
+      description: def.description,
+      category: def.category,
+      rarity: def.rarity,
+      points: def.points,
+      iconUrl: def.iconUrl,
+      triggerType: condition.triggerType,
+      conditionJson: JSON.stringify(condition.rules),
+      rewardsJson: JSON.stringify(buildRewards(def.id, def.rarity)),
+      isActive: true,
+    };
 
     try {
       await db.achievement.upsert({
         where: { key: def.id },
-        update: {
-          title: def.title,
-          description: def.description,
-          category: def.category,
-          rarity: def.rarity,
-          points: def.points,
-          iconUrl: def.iconUrl,
-          triggerType: condition.triggerType,
-          conditionJson: JSON.stringify(condition.rules),
-          rewardsJson: JSON.stringify(rewards),
-          isActive: true,
-        },
-        create: {
-          key: def.id,
-          title: def.title,
-          description: def.description,
-          category: def.category,
-          rarity: def.rarity,
-          points: def.points,
-          iconUrl: def.iconUrl,
-          triggerType: condition.triggerType,
-          conditionJson: JSON.stringify(condition.rules),
-          rewardsJson: JSON.stringify(rewards),
-          isActive: true,
-        },
+        update: data,
+        create: { key: def.id, ...data },
       });
       syncedCount++;
     } catch (error) {
@@ -75,21 +70,71 @@ export async function syncAchievements(db: PrismaClient): Promise<void> {
   );
 }
 
-function getCreditsForRarity(rarity: string): number {
-  const rarityRewards: Record<string, number> = {
-    Common: 5,
-    Uncommon: 10,
-    Rare: 25,
-    Epic: 50,
-    Legendary: 100,
-  };
-  return rarityRewards[rarity] || 5;
-}
-
 interface ConditionConfig {
   triggerType: string;
   rules: any;
 }
+
+type FixedCondition = [
+  triggerType: string,
+  metric: string,
+  operator: string,
+  value: number | string | boolean,
+];
+
+/** Baseline trigger per achievement id: [trigger type, metric, operator, threshold]. */
+const FIXED_CONDITIONS: Record<string, FixedCondition> = {
+  "econ-growth-rocket": ["ECONOMIC", "adjustedGdpGrowth", ">=", 10],
+  "econ-boom-cycle": ["ECONOMIC", "adjustedGdpGrowth", ">=", 15],
+  "econ-full-employment": ["ECONOMIC", "unemploymentRate", "<", 3],
+  "econ-price-stability": ["ECONOMIC", "inflationRate", "<", 2],
+  "econ-tax-efficiency": ["ECONOMIC", "taxRevenueGDPPercent", ">=", 30],
+  "econ-tier-advancement": ["ECONOMIC", "economicTier", "==", "Tier 1"],
+  "mil-first-branch": ["MILITARY", "militaryBranchCount", ">=", 1],
+  "mil-armed-forces": ["MILITARY", "militaryBranchCount", ">=", 3],
+  "mil-full-spectrum": ["MILITARY", "militaryBranchCount", ">=", 5],
+  "mil-defense-commitment": ["MILITARY", "militarySpendingPercent", ">=", 1],
+  "mil-strong-defense": ["MILITARY", "militarySpendingPercent", ">=", 3],
+  "mil-military-superpower": ["MILITARY", "militarySpendingPercent", ">=", 5],
+  "mil-standing-army": ["MILITARY", "totalMilitaryPersonnel", ">=", 10000],
+  "mil-large-force": ["MILITARY", "totalMilitaryPersonnel", ">=", 100000],
+  "mil-massive-force": ["MILITARY", "totalMilitaryPersonnel", ">=", 1000000],
+  "mil-global-force": ["MILITARY", "totalMilitaryPersonnel", ">=", 5000000],
+  "dip-first-embassy": ["DIPLOMATIC", "embassyCount", ">=", 1],
+  "dip-diplomatic-network": ["DIPLOMATIC", "embassyCount", ">=", 5],
+  "dip-global-presence": ["DIPLOMATIC", "embassyCount", ">=", 10],
+  "dip-embassy-network": ["DIPLOMATIC", "embassyCount", ">=", 25],
+  "dip-first-treaty": ["DIPLOMATIC", "treatyCount", ">=", 1],
+  "dip-treaty-network": ["DIPLOMATIC", "treatyCount", ">=", 10],
+  "dip-trade-partners": ["DIPLOMATIC", "tradePartnerCount", ">=", 25],
+  "dip-trade-hub": ["DIPLOMATIC", "tradePartnerCount", ">=", 50],
+  "dip-alliance-maker": ["DIPLOMATIC", "allianceCount", ">=", 5],
+  "dip-alliance-network": ["DIPLOMATIC", "allianceCount", ">=", 10],
+  "gov-first-component": ["GOVERNMENT", "atomicComponentCount", ">=", 1],
+  "gov-building-blocks": ["GOVERNMENT", "atomicComponentCount", ">=", 5],
+  "gov-sophisticated": ["GOVERNMENT", "atomicComponentCount", ">=", 10],
+  "gov-complex-system": ["GOVERNMENT", "atomicComponentCount", ">=", 15],
+  "gov-democracy": ["GOVERNMENT", "governmentType", "contains", "democracy"],
+  "gov-republic": ["GOVERNMENT", "governmentType", "contains", "republic"],
+  "gov-monarchy": ["GOVERNMENT", "governmentType", "contains", "monarchy"],
+  "gov-federation": ["GOVERNMENT", "governmentType", "contains", "federal"],
+  "gov-unitary": ["GOVERNMENT", "governmentType", "contains", "unitary"],
+  "gov-parliamentary": ["GOVERNMENT", "governmentType", "contains", "parliament"],
+  "social-first-thinkpage": ["SOCIAL", "thinkpageCount", ">=", 1],
+  "social-thinkpage-author": ["SOCIAL", "thinkpageCount", ">=", 10],
+  "social-prolific-author": ["SOCIAL", "thinkpageCount", ">=", 50],
+  "social-popular": ["SOCIAL", "followerCount", ">=", 100],
+  "social-trending": ["SOCIAL", "trendingPostCount", ">=", 1],
+  "gen-welcome": ["GENERAL", "always_true", "==", true],
+  "gen-first-country": ["GENERAL", "countryClaimed", "==", true],
+  "gen-one-week": ["GENERAL", "daysActive", ">=", 7],
+  "gen-one-month": ["GENERAL", "daysActive", ">=", 30],
+  "gen-three-months": ["GENERAL", "daysActive", ">=", 90],
+  "gen-one-year": ["GENERAL", "daysActive", ">=", 365],
+  "gen-achievement-hunter": ["GENERAL", "totalAchievements", ">=", 10],
+  "gen-achievement-master": ["GENERAL", "totalAchievements", ">=", 25],
+  "gen-achievement-legend": ["GENERAL", "totalAchievements", ">=", 50],
+};
 
 function determineCondition(id: string, rarity?: AchievementRarity): ConditionConfig {
   // Scale-based achievements (population / GDP / GDP-per-capita) are dynamic:
@@ -103,394 +148,8 @@ function determineCondition(id: string, rarity?: AchievementRarity): ConditionCo
     };
   }
 
-  if (id.startsWith("econ-")) {
-    if (id === "econ-growth-rocket") {
-      return {
-        triggerType: "ECONOMIC",
-        rules: { metric: "adjustedGdpGrowth", operator: ">=", value: 10.0 },
-      };
-    }
-    if (id === "econ-boom-cycle") {
-      return {
-        triggerType: "ECONOMIC",
-        rules: { metric: "adjustedGdpGrowth", operator: ">=", value: 15.0 },
-      };
-    }
-    if (id === "econ-full-employment") {
-      return {
-        triggerType: "ECONOMIC",
-        rules: { metric: "unemploymentRate", operator: "<", value: 3.0 },
-      };
-    }
-    if (id === "econ-price-stability") {
-      return {
-        triggerType: "ECONOMIC",
-        rules: { metric: "inflationRate", operator: "<", value: 2.0 },
-      };
-    }
-    if (id === "econ-tax-efficiency") {
-      return {
-        triggerType: "ECONOMIC",
-        rules: { metric: "taxRevenueGDPPercent", operator: ">=", value: 30.0 },
-      };
-    }
-    if (id === "econ-tier-advancement") {
-      return {
-        triggerType: "ECONOMIC",
-        rules: { metric: "economicTier", operator: "==", value: "Tier 1" },
-      };
-    }
-  }
-
-  if (id.startsWith("mil-")) {
-    if (id === "mil-first-branch") {
-      return {
-        triggerType: "MILITARY",
-        rules: { metric: "militaryBranchCount", operator: ">=", value: 1 },
-      };
-    }
-    if (id === "mil-armed-forces") {
-      return {
-        triggerType: "MILITARY",
-        rules: { metric: "militaryBranchCount", operator: ">=", value: 3 },
-      };
-    }
-    if (id === "mil-full-spectrum") {
-      return {
-        triggerType: "MILITARY",
-        rules: { metric: "militaryBranchCount", operator: ">=", value: 5 },
-      };
-    }
-    if (id === "mil-defense-commitment") {
-      return {
-        triggerType: "MILITARY",
-        rules: { metric: "militarySpendingPercent", operator: ">=", value: 1.0 },
-      };
-    }
-    if (id === "mil-strong-defense") {
-      return {
-        triggerType: "MILITARY",
-        rules: { metric: "militarySpendingPercent", operator: ">=", value: 3.0 },
-      };
-    }
-    if (id === "mil-military-superpower") {
-      return {
-        triggerType: "MILITARY",
-        rules: { metric: "militarySpendingPercent", operator: ">=", value: 5.0 },
-      };
-    }
-    if (id === "mil-standing-army") {
-      return {
-        triggerType: "MILITARY",
-        rules: { metric: "totalMilitaryPersonnel", operator: ">=", value: 10_000 },
-      };
-    }
-    if (id === "mil-large-force") {
-      return {
-        triggerType: "MILITARY",
-        rules: { metric: "totalMilitaryPersonnel", operator: ">=", value: 100_000 },
-      };
-    }
-    if (id === "mil-massive-force") {
-      return {
-        triggerType: "MILITARY",
-        rules: { metric: "totalMilitaryPersonnel", operator: ">=", value: 1_000_000 },
-      };
-    }
-    if (id === "mil-global-force") {
-      return {
-        triggerType: "MILITARY",
-        rules: { metric: "totalMilitaryPersonnel", operator: ">=", value: 5_000_000 },
-      };
-    }
-  }
-
-  if (id.startsWith("dip-")) {
-    if (id === "dip-first-embassy") {
-      return {
-        triggerType: "DIPLOMATIC",
-        rules: { metric: "embassyCount", operator: ">=", value: 1 },
-      };
-    }
-    if (id === "dip-diplomatic-network") {
-      return {
-        triggerType: "DIPLOMATIC",
-        rules: { metric: "embassyCount", operator: ">=", value: 5 },
-      };
-    }
-    if (id === "dip-global-presence") {
-      return {
-        triggerType: "DIPLOMATIC",
-        rules: { metric: "embassyCount", operator: ">=", value: 10 },
-      };
-    }
-    if (id === "dip-embassy-network") {
-      return {
-        triggerType: "DIPLOMATIC",
-        rules: { metric: "embassyCount", operator: ">=", value: 25 },
-      };
-    }
-    if (id === "dip-first-treaty") {
-      return {
-        triggerType: "DIPLOMATIC",
-        rules: { metric: "treatyCount", operator: ">=", value: 1 },
-      };
-    }
-    if (id === "dip-treaty-network") {
-      return {
-        triggerType: "DIPLOMATIC",
-        rules: { metric: "treatyCount", operator: ">=", value: 10 },
-      };
-    }
-    if (id === "dip-trade-partners") {
-      return {
-        triggerType: "DIPLOMATIC",
-        rules: { metric: "tradePartnerCount", operator: ">=", value: 25 },
-      };
-    }
-    if (id === "dip-trade-hub") {
-      return {
-        triggerType: "DIPLOMATIC",
-        rules: { metric: "tradePartnerCount", operator: ">=", value: 50 },
-      };
-    }
-    if (id === "dip-alliance-maker") {
-      return {
-        triggerType: "DIPLOMATIC",
-        rules: { metric: "allianceCount", operator: ">=", value: 5 },
-      };
-    }
-    if (id === "dip-alliance-network") {
-      return {
-        triggerType: "DIPLOMATIC",
-        rules: { metric: "allianceCount", operator: ">=", value: 10 },
-      };
-    }
-  }
-
-  if (id.startsWith("gov-")) {
-    if (id === "gov-first-component") {
-      return {
-        triggerType: "GOVERNMENT",
-        rules: { metric: "atomicComponentCount", operator: ">=", value: 1 },
-      };
-    }
-    if (id === "gov-building-blocks") {
-      return {
-        triggerType: "GOVERNMENT",
-        rules: { metric: "atomicComponentCount", operator: ">=", value: 5 },
-      };
-    }
-    if (id === "gov-sophisticated") {
-      return {
-        triggerType: "GOVERNMENT",
-        rules: { metric: "atomicComponentCount", operator: ">=", value: 10 },
-      };
-    }
-    if (id === "gov-complex-system") {
-      return {
-        triggerType: "GOVERNMENT",
-        rules: { metric: "atomicComponentCount", operator: ">=", value: 15 },
-      };
-    }
-    if (id === "gov-democracy") {
-      return {
-        triggerType: "GOVERNMENT",
-        rules: { metric: "governmentType", operator: "contains", value: "democracy" },
-      };
-    }
-    if (id === "gov-republic") {
-      return {
-        triggerType: "GOVERNMENT",
-        rules: { metric: "governmentType", operator: "contains", value: "republic" },
-      };
-    }
-    if (id === "gov-monarchy") {
-      return {
-        triggerType: "GOVERNMENT",
-        rules: { metric: "governmentType", operator: "contains", value: "monarchy" },
-      };
-    }
-    if (id === "gov-federation") {
-      return {
-        triggerType: "GOVERNMENT",
-        rules: { metric: "governmentType", operator: "contains", value: "federal" },
-      };
-    }
-    if (id === "gov-unitary") {
-      return {
-        triggerType: "GOVERNMENT",
-        rules: { metric: "governmentType", operator: "contains", value: "unitary" },
-      };
-    }
-    if (id === "gov-parliamentary") {
-      return {
-        triggerType: "GOVERNMENT",
-        rules: { metric: "governmentType", operator: "contains", value: "parliament" },
-      };
-    }
-  }
-
-  if (id.startsWith("social-")) {
-    if (id === "social-first-thinkpage") {
-      return {
-        triggerType: "SOCIAL",
-        rules: { metric: "thinkpageCount", operator: ">=", value: 1 },
-      };
-    }
-    if (id === "social-thinkpage-author") {
-      return {
-        triggerType: "SOCIAL",
-        rules: { metric: "thinkpageCount", operator: ">=", value: 10 },
-      };
-    }
-    if (id === "social-prolific-author") {
-      return {
-        triggerType: "SOCIAL",
-        rules: { metric: "thinkpageCount", operator: ">=", value: 50 },
-      };
-    }
-    if (id === "social-popular") {
-      return {
-        triggerType: "SOCIAL",
-        rules: { metric: "followerCount", operator: ">=", value: 100 },
-      };
-    }
-    if (id === "social-trending") {
-      return {
-        triggerType: "SOCIAL",
-        rules: { metric: "trendingPostCount", operator: ">=", value: 1 },
-      };
-    }
-  }
-
-  if (id.startsWith("gen-")) {
-    if (id === "gen-welcome") {
-      return {
-        triggerType: "GENERAL",
-        rules: { metric: "always_true", operator: "==", value: true },
-      };
-    }
-    if (id === "gen-first-country") {
-      return {
-        triggerType: "GENERAL",
-        rules: { metric: "countryClaimed", operator: "==", value: true },
-      };
-    }
-    if (id === "gen-one-week") {
-      return { triggerType: "GENERAL", rules: { metric: "daysActive", operator: ">=", value: 7 } };
-    }
-    if (id === "gen-one-month") {
-      return { triggerType: "GENERAL", rules: { metric: "daysActive", operator: ">=", value: 30 } };
-    }
-    if (id === "gen-three-months") {
-      return { triggerType: "GENERAL", rules: { metric: "daysActive", operator: ">=", value: 90 } };
-    }
-    if (id === "gen-one-year") {
-      return {
-        triggerType: "GENERAL",
-        rules: { metric: "daysActive", operator: ">=", value: 365 },
-      };
-    }
-    if (id === "gen-achievement-hunter") {
-      return {
-        triggerType: "GENERAL",
-        rules: { metric: "totalAchievements", operator: ">=", value: 10 },
-      };
-    }
-    if (id === "gen-achievement-master") {
-      return {
-        triggerType: "GENERAL",
-        rules: { metric: "totalAchievements", operator: ">=", value: 25 },
-      };
-    }
-    if (id === "gen-achievement-legend") {
-      return {
-        triggerType: "GENERAL",
-        rules: { metric: "totalAchievements", operator: ">=", value: 50 },
-      };
-    }
-    if (id.startsWith("vid-")) {
-      if (id === "vid-end-of-days") {
-        return {
-          triggerType: "GENERAL",
-          rules: { metric: "totalAchievements", operator: ">=", value: 30 },
-        };
-      }
-      if (id === "vid-annual") {
-        return {
-          triggerType: "GENERAL",
-          rules: { metric: "daysActive", operator: ">=", value: 365 },
-        };
-      }
-      if (id === "vid-lightswitch") {
-        return {
-          triggerType: "DIPLOMATIC",
-          rules: { metric: "embassyCount", operator: ">=", value: 25 },
-        };
-      }
-    }
-    if (id.startsWith("meme-")) {
-      if (id === "meme-stonks") {
-        return {
-          triggerType: "ECONOMIC",
-          rules: { metric: "adjustedGdpGrowth", operator: "<", value: 0 },
-        };
-      }
-      if (id === "meme-1337") {
-        return {
-          triggerType: "GENERAL",
-          rules: { metric: "currentGdpPerCapita", operator: "==", value: 1337 },
-        };
-      }
-      if (id === "meme-bankruptcy") {
-        return {
-          triggerType: "ECONOMIC",
-          rules: { metric: "currentGdpPerCapita", operator: "<=", value: 1.0 },
-        };
-      }
-      if (id === "meme-ns-ref") {
-        return {
-          triggerType: "GENERAL",
-          rules: { metric: "totalAchievements", operator: ">=", value: 40 },
-        };
-      }
-    }
-    if (id.startsWith("lore-")) {
-      if (id === "lore-scholar") {
-        return {
-          triggerType: "SOCIAL",
-          rules: { metric: "thinkpageCount", operator: ">=", value: 5 },
-        };
-      }
-      if (id === "lore-collector") {
-        return {
-          triggerType: "SOCIAL",
-          rules: { metric: "followerCount", operator: ">=", value: 30 },
-        };
-      }
-    }
-    if (id.startsWith("collect-")) {
-      if (id === "collect-lore-keeper") {
-        return {
-          triggerType: "GENERAL",
-          rules: { metric: "loreCardCount", operator: ">=", value: 50 },
-        };
-      }
-      if (id === "collect-archaeologist") {
-        return {
-          triggerType: "GENERAL",
-          rules: { metric: "retiredCardCount", operator: ">=", value: 10 },
-        };
-      }
-      if (id === "collect-diplomat") {
-        return {
-          triggerType: "DIPLOMATIC",
-          rules: { metric: "distinctCountryIdCount", operator: ">=", value: 20 },
-        };
-      }
-    }
-  }
-
-  return { triggerType: "CUSTOM", rules: {} };
+  const fixed = FIXED_CONDITIONS[id];
+  if (!fixed) return { triggerType: "CUSTOM", rules: {} };
+  const [triggerType, metric, operator, value] = fixed;
+  return { triggerType, rules: { metric, operator, value } };
 }

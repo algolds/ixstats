@@ -377,7 +377,6 @@ export function PassportLorewardsModal({
           </div>
         </div>
 
-        {/* Footer */}
         <SheetFooter className="border-separator items-center border-t p-6 pt-4 sm:justify-between">
           <Link
             href={`/wiki/contributions/${encodeURIComponent(wikiUsername)}`}

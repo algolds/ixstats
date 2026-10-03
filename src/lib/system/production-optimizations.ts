@@ -7,7 +7,6 @@ import { memoryConfig, isDevMode, getMemoryStats } from "./dev-memory-config";
  * Enhanced with dev-mode proactive cache clearing
  */
 class MemoryOptimizer {
-  private static readonly MAX_MEMORY_USAGE = 1024 * 1024 * 1024; // 1GB
   private static readonly GC_THRESHOLD = isDevMode ? 0.7 : 0.8; // 70% in dev, 80% in prod
   private static readonly CACHE_CLEAR_THRESHOLD = memoryConfig.monitoring.cacheClearThreshold;
   private static lastCacheClear = 0;
@@ -20,8 +19,7 @@ class MemoryOptimizer {
   static async monitorMemoryUsage(): Promise<void> {
     if (typeof process !== "undefined" && typeof process.memoryUsage === "function") {
       const stats = getMemoryStats();
-      // oxlint-disable-next-line typescript/no-unused-vars
-      const { heapUsedMB, heapTotalMB, usagePercent, rssMB } = stats;
+      const { heapUsedMB, usagePercent, rssMB } = stats;
 
       // Dev mode: Proactive cache clearing at 70% threshold
       if (isDevMode && usagePercent > this.CACHE_CLEAR_THRESHOLD) {
@@ -360,21 +358,6 @@ export class ProductionStartup {
     } catch (error) {
       console.error("[ProductionStartup] Failed to initialize:", error);
     }
-  }
-
-  /**
-   * Stop all monitoring intervals (for cleanup)
-   */
-  static stopMonitoring(): void {
-    if (this.monitoringInterval) {
-      clearInterval(this.monitoringInterval);
-      this.monitoringInterval = null;
-    }
-    if (this.queryAnalysisInterval) {
-      clearInterval(this.queryAnalysisInterval);
-      this.queryAnalysisInterval = null;
-    }
-    console.log("[ProductionStartup] Monitoring stopped");
   }
 
   /**

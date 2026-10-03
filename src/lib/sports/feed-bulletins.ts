@@ -8,9 +8,6 @@ export interface MatchDayResultLine {
   isUpset?: boolean;
 }
 
-/**
- * Format a match day's results into a single bulletin content block.
- */
 export interface StandingMover {
   name: string;
   id?: string;
@@ -18,11 +15,10 @@ export interface StandingMover {
   newRank: number;
 }
 
-// ---------------------------------------------------------------------------
-// Structured payload — lets the feed render a rich card with deep links while
-// the markdown body (below) stays intact for Discord mirroring + fallback.
-// ---------------------------------------------------------------------------
-
+/**
+ * Structured payload: lets the feed render a rich card with deep links while the markdown body
+ * stays intact for Discord mirroring + fallback.
+ */
 export interface SportsBulletinData {
   league: { id?: string; name: string };
   sportEmoji: string;
@@ -106,219 +102,118 @@ function parseResultLineFromText(line: string): {
   };
 }
 
-export function parseSportsBulletin(content: string | null | undefined): SportsBulletinData | null {
-  if (!content) return null;
+const isDivider = (line: string) => /^═+$/.test(line) || /^---+$/.test(line);
 
-  // 1. Primary: JSON comment marker
-  const match = content.match(/<!-- sports-bulletin:([\s\S]*?)-->/);
-  if (match) {
-    try {
-      return JSON.parse(match[1]!) as SportsBulletinData;
-    } catch {
-      // fall through
-    }
+/** The first of the first three lines that matches `pattern` (bulletins put their header there). */
+function findHeader(lines: string[], pattern: RegExp) {
+  for (let index = 0; index < Math.min(lines.length, 3); index++) {
+    const match = pattern.exec(lines[index]!);
+    if (match) return { index, match, text: lines[index]! };
   }
-
-  // Strip blurb header wrapper if present: [blurb:slug|Title]\n\n...
-  const cleanStr = content.replace(/^\[blurb:[^\]]+\]\s*/i, "").trim();
-
-  const lines = cleanStr
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
-  if (lines.length === 0) return null;
-
-  // Helper to extract optional leading emoji and clean league name
-  const extractHeaderInfo = (rawLeft: string) => {
-    let str = rawLeft.trim();
-    const emojiMatch = str.match(/^([\u1F300-\u1F9FF\u2600-\u26FF\u2700-\u27BF])\s*/);
-    let sportEmoji = "🏆";
-    if (emojiMatch) {
-      sportEmoji = emojiMatch[1]!;
-      str = str.substring(emojiMatch[0].length).trim();
-    }
-    const leagueInfo = cleanNameAndId(str);
-    return { sportEmoji, leagueInfo };
-  };
-
-  // 2. Detect Champion Bulletin: line containing "CHAMPION CROWNED!"
-  for (let i = 0; i < Math.min(lines.length, 3); i++) {
-    const line = lines[i]!;
-    const champMatch = line.match(/\s+CHAMPION CROWNED!\s*$/i) || line.match(/CHAMPION CROWNED!/i);
-    if (champMatch) {
-      const rawLeft = line.substring(0, champMatch.index).trim();
-      const { sportEmoji, leagueInfo } = extractHeaderInfo(rawLeft);
-
-      let championName = "";
-      let championId = "";
-      let llmSummary = "";
-      let inSummary = false;
-      const summaryLines: string[] = [];
-
-      for (const rawLine of lines.slice(i + 1)) {
-        if (!rawLine || /^═+$/.test(rawLine) || /^---+$/.test(rawLine)) continue;
-
-        const congratMatch = rawLine.match(/Congratulations to\s+(.+?)\s+for winning/i);
-        if (congratMatch) {
-          const champInfo = cleanNameAndId(congratMatch[1]!);
-          championName = champInfo.name;
-          championId = champInfo.id || "";
-          continue;
-        }
-
-        if (rawLine.includes("Season Summary")) {
-          inSummary = true;
-          continue;
-        }
-
-        if (inSummary) {
-          summaryLines.push(rawLine);
-        }
-      }
-
-      if (summaryLines.length > 0) {
-        llmSummary = summaryLines.join("\n");
-      }
-
-      return {
-        league: { name: leagueInfo.name, id: leagueInfo.id },
-        sportEmoji,
-        isChampionBulletin: true,
-        championName: championName || undefined,
-        championId: championId || undefined,
-        llmSummary: llmSummary || undefined,
-      };
-    }
-  }
-
-  // 3. Detect Playoff Bulletin: line containing "Playoff <Round> Results"
-  for (let i = 0; i < Math.min(lines.length, 3); i++) {
-    const line = lines[i]!;
-    const playoffMatch = line.match(/\s+Playoff\s+(.+?)\s+Results(?:\*\*)?\s*$/i);
-    if (playoffMatch) {
-      const roundName = playoffMatch[1]!.trim();
-      const rawLeft = line.substring(0, playoffMatch.index).trim();
-      const { sportEmoji, leagueInfo } = extractHeaderInfo(rawLeft);
-
-      const results: SportsBulletinData["results"] = [];
-      let llmSummary = "";
-      let inSummary = false;
-      const summaryLines: string[] = [];
-
-      for (const rawLine of lines.slice(i + 1)) {
-        if (!rawLine || /^═+$/.test(rawLine) || /^---+$/.test(rawLine)) continue;
-
-        if (rawLine.includes("Round Summary") || rawLine.includes("Matchday Summary")) {
-          inSummary = true;
-          continue;
-        }
-
-        if (inSummary) {
-          summaryLines.push(rawLine);
-          continue;
-        }
-
-        const parsedLine = parseResultLineFromText(rawLine);
-        if (parsedLine) {
-          results.push(parsedLine);
-        }
-      }
-
-      if (summaryLines.length > 0) {
-        llmSummary = summaryLines.join("\n");
-      }
-
-      return {
-        league: { name: leagueInfo.name, id: leagueInfo.id },
-        sportEmoji,
-        isPlayoffBulletin: true,
-        roundName,
-        results: results.length > 0 ? results : undefined,
-        llmSummary: llmSummary || undefined,
-      };
-    }
-  }
-
-  // 4. Single Match Bulletin: line containing "📢 [MyLeague Bulletin]"
-  for (let i = 0; i < Math.min(lines.length, 3); i++) {
-    const line = lines[i]!;
-    const singleMatch = line.match(/^📢?\s*\[MyLeague Bulletin\]\s*(.*)/i);
-    if (singleMatch) {
-      const resultText = singleMatch[1]!.trim();
-      const parsedLine = parseResultLineFromText(resultText);
-      if (parsedLine) {
-        let leagueName = "MyLeague";
-        const homeName = parsedLine.home.name;
-        const leagueMatch = homeName.match(/^(.*?)\s+Team\s+\d+$/i);
-        if (leagueMatch) {
-          leagueName = leagueMatch[1]!;
-        }
-
-        return {
-          league: { name: leagueName },
-          sportEmoji: "⚽",
-          results: [parsedLine],
-        };
-      }
-    }
-  }
-
-  // 5. Fallback: Matchday Bulletin
-  return parseMarkdownBulletin(lines, extractHeaderInfo);
+  return null;
 }
 
-function parseMarkdownBulletin(
-  lines: string[],
-  extractHeaderInfo: (rawLeft: string) => {
-    sportEmoji: string;
-    leagueInfo: { name: string; id?: string };
+/** Optional leading sport emoji plus the (possibly linked) league name. */
+function extractHeaderInfo(rawLeft: string) {
+  let str = rawLeft.trim();
+  const emojiMatch = str.match(/^([\u1F300-\u1F9FF\u2600-\u26FF\u2700-\u27BF])\s*/);
+  let sportEmoji = "🏆";
+  if (emojiMatch) {
+    sportEmoji = emojiMatch[1]!;
+    str = str.substring(emojiMatch[0].length).trim();
   }
-): SportsBulletinData | null {
-  let matchdayMatchIndex = -1;
-  let matchDay = 0;
-  let rawLeft = "";
+  return { sportEmoji, leagueInfo: cleanNameAndId(str) };
+}
 
-  for (let i = 0; i < Math.min(lines.length, 3); i++) {
-    const line = lines[i]!;
-    const m = line.match(/[-–—]\s*Matchday\s+(\d+)/i);
-    if (m) {
-      matchdayMatchIndex = i;
-      matchDay = Number(m[1]);
-      rawLeft = line.substring(0, m.index).trim();
-      break;
+type ParsedBulletinLines = string[];
+
+function parseChampionBulletin(lines: ParsedBulletinLines): SportsBulletinData | null {
+  const header = findHeader(lines, /CHAMPION CROWNED!/i);
+  if (!header) return null;
+  const { sportEmoji, leagueInfo } = extractHeaderInfo(
+    header.text.substring(0, header.match.index).trim()
+  );
+
+  let champion: { name: string; id?: string } | undefined;
+  let inSummary = false;
+  const summaryLines: string[] = [];
+  for (const line of lines.slice(header.index + 1).filter((l) => !isDivider(l))) {
+    const congrats = /Congratulations to\s+(.+?)\s+for winning/i.exec(line);
+    if (congrats) champion = cleanNameAndId(congrats[1]!);
+    else if (line.includes("Season Summary")) inSummary = true;
+    else if (inSummary) summaryLines.push(line);
+  }
+
+  return {
+    league: { name: leagueInfo.name, id: leagueInfo.id },
+    sportEmoji,
+    isChampionBulletin: true,
+    championName: champion?.name || undefined,
+    championId: champion?.id || undefined,
+    llmSummary: summaryLines.join("\n") || undefined,
+  };
+}
+
+function parsePlayoffBulletin(lines: ParsedBulletinLines): SportsBulletinData | null {
+  const header = findHeader(lines, /\s+Playoff\s+(.+?)\s+Results(?:\*\*)?\s*$/i);
+  if (!header) return null;
+  const { sportEmoji, leagueInfo } = extractHeaderInfo(
+    header.text.substring(0, header.match.index).trim()
+  );
+
+  const results: NonNullable<SportsBulletinData["results"]> = [];
+  let inSummary = false;
+  const summaryLines: string[] = [];
+  for (const line of lines.slice(header.index + 1).filter((l) => !isDivider(l))) {
+    if (line.includes("Round Summary") || line.includes("Matchday Summary")) inSummary = true;
+    else if (inSummary) summaryLines.push(line);
+    else {
+      const parsed = parseResultLineFromText(line);
+      if (parsed) results.push(parsed);
     }
   }
 
-  if (matchdayMatchIndex === -1 || !rawLeft) return null;
+  return {
+    league: { name: leagueInfo.name, id: leagueInfo.id },
+    sportEmoji,
+    isPlayoffBulletin: true,
+    roundName: header.match[1]!.trim(),
+    results: results.length > 0 ? results : undefined,
+    llmSummary: summaryLines.join("\n") || undefined,
+  };
+}
+
+function parseSingleMatchBulletin(lines: ParsedBulletinLines): SportsBulletinData | null {
+  const header = findHeader(lines, /^📢?\s*\[MyLeague Bulletin\]\s*(.*)/i);
+  const parsed = header && parseResultLineFromText(header.match[1]!.trim());
+  if (!parsed) return null;
+
+  const leagueName = /^(.*?)\s+Team\s+\d+$/i.exec(parsed.home.name)?.[1] ?? "MyLeague";
+  return { league: { name: leagueName }, sportEmoji: "⚽", results: [parsed] };
+}
+
+function parseMatchdayBulletin(lines: ParsedBulletinLines): SportsBulletinData | null {
+  const header = findHeader(lines, /[-–—]\s*Matchday\s+(\d+)/i);
+  const rawLeft = header?.text.substring(0, header.match.index).trim();
+  if (!header || !rawLeft) return null;
 
   const { sportEmoji, leagueInfo } = extractHeaderInfo(rawLeft);
-  const results: SportsBulletinData["results"] = [];
+  const results: NonNullable<SportsBulletinData["results"]> = [];
   const movers: NonNullable<SportsBulletinData["movers"]> = [];
   let inMovers = false;
 
-  for (const line of lines.slice(matchdayMatchIndex + 1)) {
-    if (/^═+$/.test(line) || /^---+$/.test(line)) continue;
+  for (const line of lines.slice(header.index + 1).filter((l) => !isDivider(l))) {
     if (line.includes("Table Movers")) {
       inMovers = true;
-      continue;
-    }
-    if (inMovers) {
+    } else if (inMovers) {
       const m = line.match(/^(?:•|\*|-)?\s*(.+?)\s+[▲▼]\d+\s+\((\d+)\w*\s*→\s*(\d+)\w*\)/);
       if (m) {
-        const moverInfo = cleanNameAndId(m[1]!);
-        movers.push({
-          name: moverInfo.name,
-          id: moverInfo.id,
-          oldRank: Number(m[2]),
-          newRank: Number(m[3]),
-        });
+        const { name, id } = cleanNameAndId(m[1]!);
+        movers.push({ name, id, oldRank: Number(m[2]), newRank: Number(m[3]) });
       }
-      continue;
-    }
-
-    const parsedLine = parseResultLineFromText(line);
-    if (parsedLine) {
-      results.push(parsedLine);
+    } else {
+      const parsed = parseResultLineFromText(line);
+      if (parsed) results.push(parsed);
     }
   }
 
@@ -326,16 +221,63 @@ function parseMarkdownBulletin(
   return {
     league: { name: leagueInfo.name, id: leagueInfo.id },
     sportEmoji,
-    matchDay,
+    matchDay: Number(header.match[1]),
     results,
     movers: movers.length > 0 ? movers : undefined,
   };
 }
 
-function ordinal(n: number): string {
-  const s = ["th", "st", "nd", "rd"];
-  const v = n % 100;
-  return n + (s[(v - 20) % 10] ?? s[v] ?? s[0]);
+export function parseSportsBulletin(content: string | null | undefined): SportsBulletinData | null {
+  if (!content) return null;
+
+  // Primary: the JSON comment marker
+  const marker = content.match(/<!-- sports-bulletin:([\s\S]*?)-->/);
+  if (marker) {
+    try {
+      return JSON.parse(marker[1]!) as SportsBulletinData;
+    } catch {
+      // fall through to the markdown parsers
+    }
+  }
+
+  // Strip blurb header wrapper if present: [blurb:slug|Title]\n\n...
+  const lines = content
+    .replace(/^\[blurb:[^\]]+\]\s*/i, "")
+    .trim()
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (lines.length === 0) return null;
+
+  for (const parse of [
+    parseChampionBulletin,
+    parsePlayoffBulletin,
+    parseSingleMatchBulletin,
+    parseMatchdayBulletin,
+  ]) {
+    const data = parse(lines);
+    if (data) return data;
+  }
+  return null;
+}
+
+const ORDINAL_SUFFIX = { one: "st", two: "nd", few: "rd", other: "th" } as const;
+const ordinalRules = new Intl.PluralRules("en", { type: "ordinal" });
+export const ordinal = (n: number) =>
+  `${n}${ORDINAL_SUFFIX[ordinalRules.select(n) as keyof typeof ORDINAL_SUFFIX]}`;
+
+const leagueLink = (name: string, id?: string) => (id ? `[${name}](/myleague/${id})` : name);
+const clubLink = (name: string, id?: string) => (id ? `[${name}](/myclub/${id})` : name);
+
+/** One "🏆 **Winner** 2 – 1 Loser" line per result. */
+function resultLines(results: MatchDayResultLine[]) {
+  return results.map((r) => {
+    const home = clubLink(r.homeName, r.homeId);
+    const away = clubLink(r.awayName, r.awayId);
+    const homeText = r.homeScore > r.awayScore ? `🏆 **${home}**` : home;
+    const awayText = r.awayScore > r.homeScore ? `🏆 **${away}**` : away;
+    return `${homeText} ${r.homeScore} – ${r.awayScore} ${awayText}`;
+  });
 }
 
 export function formatMatchDayBulletin(args: {
@@ -347,30 +289,18 @@ export function formatMatchDayBulletin(args: {
   movers?: StandingMover[];
   llmSummary?: string;
 }): string {
-  // oxlint-disable-next-line typescript/no-unused-vars
-  const { leagueName, leagueId, sportEmoji, matchDay, results, movers, llmSummary } = args;
-
-  const leagueFormatted = leagueId ? `[${leagueName}](/myleague/${leagueId})` : leagueName;
-  const header = `**${leagueFormatted}** — Matchday ${matchDay}`;
-
-  const matchLines = results.map((r) => {
-    const homeNameFormatted = r.homeId ? `[${r.homeName}](/myclub/${r.homeId})` : r.homeName;
-    const awayNameFormatted = r.awayId ? `[${r.awayName}](/myclub/${r.awayId})` : r.awayName;
-
-    const homeText = r.homeScore > r.awayScore ? `🏆 **${homeNameFormatted}**` : homeNameFormatted;
-    const awayText = r.awayScore > r.homeScore ? `🏆 **${awayNameFormatted}**` : awayNameFormatted;
-    return `${homeText} ${r.homeScore} – ${r.awayScore} ${awayText}`;
-  });
+  const { leagueName, leagueId, matchDay, results, movers, llmSummary } = args;
+  const header = `**${leagueLink(leagueName, leagueId)}** — Matchday ${matchDay}`;
 
   const upsets = results.filter((r) => r.isUpset);
   const upsetSection =
     upsets.length > 0
       ? `\n\n⭐ **Upsets of the Day**\n` +
         upsets
-          .map(
-            (u) =>
-              `• ${u.homeScore > u.awayScore ? u.homeName : u.awayName} defeats ${u.homeScore > u.awayScore ? u.awayName : u.homeName}!`
-          )
+          .map((u) => {
+            const homeWon = u.homeScore > u.awayScore;
+            return `• ${homeWon ? u.homeName : u.awayName} defeats ${homeWon ? u.awayName : u.homeName}!`;
+          })
           .join("\n")
       : "";
 
@@ -379,17 +309,15 @@ export function formatMatchDayBulletin(args: {
       ? `\n\n📈 **Table Movers**\n` +
         movers
           .map((m) => {
-            const up = m.newRank < m.oldRank;
-            const arrow = up ? "▲" : "▼";
-            const moverNameFormatted = m.id ? `[${m.name}](/myclub/${m.id})` : m.name;
-            return `• ${moverNameFormatted} ${arrow}${Math.abs(m.oldRank - m.newRank)} (${ordinal(m.oldRank)} → ${ordinal(m.newRank)})`;
+            const arrow = m.newRank < m.oldRank ? "▲" : "▼";
+            return `• ${clubLink(m.name, m.id)} ${arrow}${Math.abs(m.oldRank - m.newRank)} (${ordinal(m.oldRank)} → ${ordinal(m.newRank)})`;
           })
           .join("\n")
       : "";
 
   const summarySection = llmSummary ? `\n\n📝 **Matchday Summary**\n${llmSummary}` : "";
 
-  return `${header}\n\n${matchLines.join("\n")}${upsetSection}${moversSection}${summarySection}`;
+  return `${header}\n\n${resultLines(results).join("\n")}${upsetSection}${moversSection}${summarySection}`;
 }
 
 /** Build the structured payload that backs the rich feed card. */
@@ -413,19 +341,11 @@ export function buildMatchDayBulletinData(args: {
       awayScore: r.awayScore,
       isUpset: r.isUpset,
     })),
-    movers: args.movers?.map((m) => ({
-      name: m.name,
-      id: m.id,
-      oldRank: m.oldRank,
-      newRank: m.newRank,
-    })),
+    movers: args.movers?.map(({ name, id, oldRank, newRank }) => ({ name, id, oldRank, newRank })),
     llmSummary: args.llmSummary,
   };
 }
 
-/**
- * Format season champion news bulletin.
- */
 export function formatSeasonChampionBulletin(args: {
   leagueName: string;
   leagueId?: string;
@@ -434,21 +354,13 @@ export function formatSeasonChampionBulletin(args: {
   championId?: string;
   llmSummary?: string;
 }): string {
-  // oxlint-disable-next-line typescript/no-unused-vars
-  const { leagueName, leagueId, sportEmoji, championName, championId, llmSummary } = args;
-  const leagueFormatted = leagueId ? `[${leagueName}](/myleague/${leagueId})` : leagueName;
-  const header = `🏆 **${leagueFormatted} CHAMPION CROWNED!**`;
-  const championFormatted = championId
-    ? `[${championName}](/myclub/${championId})`
-    : `**${championName}**`;
-  const body = `Congratulations to ${championFormatted} for winning the championship!`;
+  const { leagueName, leagueId, championName, championId, llmSummary } = args;
+  const header = `🏆 **${leagueLink(leagueName, leagueId)} CHAMPION CROWNED!**`;
+  const champion = championId ? clubLink(championName, championId) : `**${championName}**`;
   const summarySection = llmSummary ? `\n\n📝 **Season Summary**\n${llmSummary}` : "";
-  return `${header}\n\n${body}${summarySection}`;
+  return `${header}\n\nCongratulations to ${champion} for winning the championship!${summarySection}`;
 }
 
-/**
- * Format playoff bulletin.
- */
 export function formatPlayoffBulletin(args: {
   leagueName: string;
   leagueId?: string;
@@ -457,18 +369,8 @@ export function formatPlayoffBulletin(args: {
   results: MatchDayResultLine[];
   llmSummary?: string;
 }): string {
-  // oxlint-disable-next-line typescript/no-unused-vars
-  const { leagueName, leagueId, sportEmoji, roundName, results, llmSummary } = args;
-  const leagueFormatted = leagueId ? `[${leagueName}](/myleague/${leagueId})` : leagueName;
-  const header = `**${leagueFormatted} Playoff ${roundName} Results**`;
-  const matchLines = results.map((r) => {
-    const homeNameFormatted = r.homeId ? `[${r.homeName}](/myclub/${r.homeId})` : r.homeName;
-    const awayNameFormatted = r.awayId ? `[${r.awayName}](/myclub/${r.awayId})` : r.awayName;
-
-    const homeText = r.homeScore > r.awayScore ? `🏆 **${homeNameFormatted}**` : homeNameFormatted;
-    const awayText = r.awayScore > r.homeScore ? `🏆 **${awayNameFormatted}**` : awayNameFormatted;
-    return `${homeText} ${r.homeScore} – ${r.awayScore} ${awayText}`;
-  });
+  const { leagueName, leagueId, roundName, results, llmSummary } = args;
+  const header = `**${leagueLink(leagueName, leagueId)} Playoff ${roundName} Results**`;
   const summarySection = llmSummary ? `\n\n📝 **Round Summary**\n${llmSummary}` : "";
-  return `${header}\n\n${matchLines.join("\n")}${summarySection}`;
+  return `${header}\n\n${resultLines(results).join("\n")}${summarySection}`;
 }

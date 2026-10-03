@@ -19,7 +19,7 @@
  *   (drafts, abandoned) and entries that move a budget field (`isBudgetLedgerRow`).
  */
 
-// ─── Directives ─────────────────────────────────────────────────────────────
+// Directives
 
 type PublicDirectiveStatus = "active" | "completed";
 
@@ -81,7 +81,7 @@ export function toPublicDirectives(
     .sort((a, b) => b.createdIxTime - a.createdIxTime);
 }
 
-// ─── National issues ────────────────────────────────────────────────────────
+// National issues
 
 /** Issues that reached a public outcome. */
 export const PUBLIC_ISSUE_STATUSES = ["responded", "auto_resolved"] as const;
@@ -132,7 +132,7 @@ export function toPublicIssueOutcomes(
     .sort((a, b) => (b.ixTime ?? 0) - (a.ixTime ?? 0));
 }
 
-// ─── Budgets ────────────────────────────────────────────────────────────────
+// Budgets
 
 /**
  * A government structure with its budget left out, for a visitor: `totalBudget` is omitted and

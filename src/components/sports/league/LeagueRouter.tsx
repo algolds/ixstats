@@ -338,7 +338,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
 
   const heroSection = (
     <div className="space-y-4">
-      {/* ─── 1. Unified Competition Masthead ─── */}
+      {/* 1. Unified Competition Masthead */}
       <LeagueMasthead
         league={league}
         archetypeLabel={archetypeLabel}
@@ -358,7 +358,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
         isSimulatingMatchDay={simulateMatchDay.isPending}
       />
 
-      {/* ─── 2. Signature Live Matchday Tape ─── */}
+      {/* 2. Signature Live Matchday Tape */}
       {matchdayTapeMatches.length > 0 && (
         <MatchdayTape
           matches={matchdayTapeMatches}

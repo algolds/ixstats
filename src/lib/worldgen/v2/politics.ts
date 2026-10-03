@@ -40,13 +40,13 @@ export function generatePolitics(graph: WorldGraph, params: WorldGenParams): voi
 
   if (landCells.length === 0) return;
 
-  // ── Step 1: Culture Seeding & Terrain-Cost Expansion ──
+  // Step 1: Culture Seeding & Terrain-Cost Expansion
   generateCultures(graph, params, landCells, rng);
 
-  // ── Step 2: Settlement Placement & Habitability Scoring ──
+  // Step 2: Settlement Placement & Habitability Scoring
   generateSettlements(graph, params, landCells, rng);
 
-  // ── Step 3: Natural Border Resistance Field ──
+  // Step 3: Natural Border Resistance Field
   // Base resistance field: higher value = stronger natural boundary
   const borderResistance = new Float32Array(n);
   for (let i = 0; i < n; i++) {
@@ -61,7 +61,7 @@ export function generatePolitics(graph: WorldGraph, params: WorldGenParams): voi
     }
   }
 
-  // ── Step 4: State Expansion via Natural-Border Dijkstra ──
+  // Step 4: State Expansion via Natural-Border Dijkstra
   const targetCount = Math.round(
     ((params.countryCountRange?.[0] ?? 60) + (params.countryCountRange?.[1] ?? 200)) / 2
   );
@@ -102,16 +102,14 @@ export function generatePolitics(graph: WorldGraph, params: WorldGenParams): voi
   // Fill any remaining unclaimed land cells (e.g. islands without capitals) via BFS spread from neighbors
   fillUnclaimedLandCells(graph, sources);
 
-  // ── Step 5: Exclave Reassignment & Connectivity Repair ──
+  // Step 5: Exclave Reassignment & Connectivity Repair
   repairStateConnectivity(graph, actualStateCount);
 
-  // ── Step 6: Build State Entities & Markov Naming ──
+  // Step 6: Build State Entities & Markov Naming
   buildStateEntities(graph, params, chosenCapitals, rng);
 }
 
-// ──────────────────────────────────────────────
 // Helpers: Cultures
-// ──────────────────────────────────────────────
 
 function generateCultures(
   graph: WorldGraph,
@@ -175,9 +173,7 @@ function generateCultures(
   }
 }
 
-// ──────────────────────────────────────────────
 // Helpers: Settlements
-// ──────────────────────────────────────────────
 
 function generateSettlements(
   graph: WorldGraph,
@@ -248,9 +244,7 @@ function generateSettlements(
   }
 }
 
-// ──────────────────────────────────────────────
 // Helpers: Unclaimed Land Filling
-// ──────────────────────────────────────────────
 
 function fillUnclaimedLandCells(
   graph: WorldGraph,
@@ -379,9 +373,7 @@ function repairStateConnectivity(graph: WorldGraph, stateCount: number): void {
   }
 }
 
-// ──────────────────────────────────────────────
 // Helpers: State Entity Construction
-// ──────────────────────────────────────────────
 
 function buildStateEntities(
   graph: WorldGraph,

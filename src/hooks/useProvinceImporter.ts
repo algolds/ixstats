@@ -50,7 +50,7 @@ const DEFAULT_MANUAL_TRANSFORM: ManualTransform = {
 
 export function useProvinceImporter(countryId: string) {
   const notify = useNotify();
-  // ── Session State ──
+  // Session State
   const [step, setStep] = useState<ImportStep>("upload");
   const [uploadId, setUploadId] = useState<string | null>(null);
   const [rawProvinces, setRawProvinces] = useState<ProvinceFeature[]>([]);
@@ -92,7 +92,7 @@ export function useProvinceImporter(countryId: string) {
     }
   }, [importScope, hasCities]);
 
-  // ── tRPC Mutations ──
+  // tRPC Mutations
   const utils = api.useUtils();
   const parseMutation = api.geoAdmin.parseProvinceUpload.useMutation();
   const commitCityMutation = api.geoAdmin.commitCityImport.useMutation({
@@ -143,7 +143,7 @@ export function useProvinceImporter(countryId: string) {
     { enabled: step === "upload" || step === "commit" }
   );
 
-  // ── Auto-align after parsing ──
+  // Auto-align after parsing
   // When raw provinces and country border are both available, automatically
   // apply bbox+ICP alignment so provinces appear near the country on the map
   // instead of staying in SVG pixel space.
@@ -162,7 +162,7 @@ export function useProvinceImporter(countryId: string) {
     }
   }, [rawProvinces, countryBorder]);
 
-  // ── Real-time manual transform preview ──
+  // Real-time manual transform preview
   // When the user changes manual sliders, immediately update the preview
   // instead of requiring an "Apply Transform" button click.
   useEffect(() => {
@@ -185,7 +185,7 @@ export function useProvinceImporter(countryId: string) {
     setAlignedProvinces(applyAffineToProvinces(base, manualMatrix));
   }, [manualTransform, alignmentMode, rawProvinces, transform]);
 
-  // ── Step Navigation ──
+  // Step Navigation
   const stepIndex = useMemo(() => STEPS.indexOf(step), [step]);
   const canGoNext = useMemo(() => stepIndex < STEPS.length - 1, [stepIndex]);
   const canGoBack = useMemo(() => stepIndex > 0, [stepIndex]);
@@ -220,7 +220,7 @@ export function useProvinceImporter(countryId: string) {
     }
   }, [canGoBack, stepIndex]);
 
-  // ── Upload Step ──
+  // Upload Step
   const handleUpload = useCallback(
     async (file: File) => {
       setIsProcessing(true);
@@ -332,7 +332,7 @@ export function useProvinceImporter(countryId: string) {
     [countryId, parseMutation, goToStep]
   );
 
-  // ── Names Step ──
+  // Names Step
   const updateProvinceName = useCallback((sourceId: string, name: string) => {
     setRawProvinces((prev) => prev.map((p) => (p.sourceId === sourceId ? { ...p, name } : p)));
     // Also update alignedProvinces if they exist
@@ -353,7 +353,7 @@ export function useProvinceImporter(countryId: string) {
     });
   }, []);
 
-  // ── Alignment Step ──
+  // Alignment Step
   const addReferencePoint = useCallback((point: ReferencePoint) => {
     setReferencePoints((prev) => [...prev, point]);
   }, []);
@@ -413,7 +413,7 @@ export function useProvinceImporter(countryId: string) {
     setAlignedProvinces(applyAffineToProvinces(rawProvinces, matrix));
   }, [rawProvinces, rawCityPoints, manualTransform]);
 
-  // ── Aligned Cities Derived State & setLayer ──
+  // Aligned Cities Derived State & setLayer
   const { alignedCities, snappedCitiesCount } = useMemo(() => {
     if (!importCities || rawCityPoints.length === 0 || !countryBorder) {
       return { alignedCities: [], snappedCitiesCount: 0 };
@@ -482,7 +482,7 @@ export function useProvinceImporter(countryId: string) {
     [countryId, rawSvgContent, parseCitySvgMutation, capitalLayerId, cityNameLayerId]
   );
 
-  // ── Snap Step ──
+  // Snap Step
   const applySnapping = useCallback(() => {
     if (!countryBorder) {
       setError("Country border not available for snapping");
@@ -504,7 +504,7 @@ export function useProvinceImporter(countryId: string) {
     setAlignedProvinces(simplified);
   }, [alignedProvinces, rawProvinces, countryBorder, snapTolerance, simplifyTolerance]);
 
-  // ── Validation Step ──
+  // Validation Step
   const runValidation = useCallback(() => {
     if (!countryBorder) {
       setError("Country border not available for validation");
@@ -540,7 +540,7 @@ export function useProvinceImporter(countryId: string) {
     setValidationReport(newReport);
   }, [alignedProvinces, rawProvinces, countryBorder, validationReport]);
 
-  // ── Commit Step ──
+  // Commit Step
   const commitImport = useCallback(async () => {
     setIsProcessing(true);
     setError(null);
@@ -652,7 +652,7 @@ export function useProvinceImporter(countryId: string) {
     alignedCities,
   ]);
 
-  // ── Reset ──
+  // Reset
   const reset = useCallback(() => {
     setImportScope("both");
     setStep("upload");
@@ -685,7 +685,7 @@ export function useProvinceImporter(countryId: string) {
     setRawSvgContent(null);
   }, []);
 
-  // ── Current Provinces (for display) ──
+  // Current Provinces (for display)
   const currentProvinces = useMemo(() => {
     return alignedProvinces.length > 0 ? alignedProvinces : rawProvinces;
   }, [alignedProvinces, rawProvinces]);
@@ -695,7 +695,6 @@ export function useProvinceImporter(countryId: string) {
   }, [currentProvinces]);
 
   return {
-    // State
     step,
     stepIndex,
     uploadId,

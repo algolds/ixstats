@@ -4,8 +4,6 @@ import { useState, useEffect, useMemo } from "react";
 import { generateImageKeywords, type CountryImageData, type ImageContext } from "~/lib/media";
 import { unsplashService, type UnsplashImageData } from "~/lib/media";
 
-// ── Types ────────────────────────────────────────────────────────────────
-
 interface UseCountryImageOptions {
   countryData: CountryImageData | null;
   context: ImageContext;
@@ -21,7 +19,7 @@ interface UseCountryImageResult {
   photographerUrl?: string;
 }
 
-// ── Module-level caches ──────────────────────────────────────────────────
+// Module-level caches
 
 const memoryCache = new Map<string, UnsplashImageData>();
 const inflightRequests = new Map<string, Promise<UnsplashImageData | null>>();
@@ -57,8 +55,6 @@ function setSessionCache(key: string, data: UnsplashImageData): void {
 function getCacheKey(context: ImageContext, data: CountryImageData): string {
   return `${context}_${data.continent ?? "x"}_${data.economicTier ?? "x"}_${data.region ?? "x"}_${data.governmentType ?? "x"}`;
 }
-
-// ── Hook ─────────────────────────────────────────────────────────────────
 
 export function useCountryImage({
   countryData,

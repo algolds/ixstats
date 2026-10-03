@@ -95,7 +95,7 @@ export function ClubResultsCard({ teamId }: { teamId: string }) {
 
   return (
     <Card padding="lg" className="space-y-6 overflow-hidden">
-      {/* ── Match Overview (latest result) ───────────────────────── */}
+      {/* Match Overview (latest result) */}
       {lastMatch && (
         <div className="space-y-4">
           <h3 className="text-headline text-label">Latest result</h3>
@@ -167,7 +167,7 @@ export function ClubResultsCard({ teamId }: { teamId: string }) {
         </div>
       )}
 
-      {/* ── Last 5 Results ───────────────────────────────────────── */}
+      {/* Last 5 Results */}
       <div className="space-y-2">
         <h3 className="text-headline text-label">Last 5 Results</h3>
         <div className="divide-separator divide-y">

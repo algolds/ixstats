@@ -11,10 +11,10 @@ export default function LeaderboardsPage() {
   }, []);
 
   return (
-    <VaultSidebarLayout activeSection="leaderboards">
+    <VaultSidebarLayout>
       <div className="space-y-6">
         <PageHeader title="Global leaderboards" className="-mx-2" />
-        <LeaderboardTab standalone />
+        <LeaderboardTab />
       </div>
     </VaultSidebarLayout>
   );

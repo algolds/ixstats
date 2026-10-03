@@ -124,9 +124,7 @@ export interface AchievementDefinition {
  * 50+ pre-defined achievements across all categories
  */
 export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
-  // ==========================================
   // ECONOMIC ACHIEVEMENTS (15)
-  // ==========================================
   {
     id: "econ-first-million",
     title: "Emerging Economy",
@@ -278,9 +276,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     condition: (data) => data.country.economicTier === "Tier 1",
   },
 
-  // ==========================================
   // MILITARY ACHIEVEMENTS (10)
-  // ==========================================
   {
     id: "mil-first-branch",
     title: "First Military Branch",
@@ -382,9 +378,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     condition: (data) => (data.totalMilitaryPersonnel ?? 0) >= 5_000_000,
   },
 
-  // ==========================================
   // DIPLOMATIC ACHIEVEMENTS (10)
-  // ==========================================
   {
     id: "dip-first-embassy",
     title: "First Embassy",
@@ -486,9 +480,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     condition: (data) => (data.allianceCount ?? 0) >= 10,
   },
 
-  // ==========================================
   // GOVERNMENT ACHIEVEMENTS (10)
-  // ==========================================
   {
     id: "gov-first-component",
     title: "First Government Component",
@@ -590,9 +582,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     condition: (data) => data.governmentType?.toLowerCase().includes("parliament") ?? false,
   },
 
-  // ==========================================
   // SOCIAL ACHIEVEMENTS (5)
-  // ==========================================
   {
     id: "social-first-thinkpage",
     title: "First ThinkPage",
@@ -644,9 +634,7 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
     condition: (data) => (data.trendingPostCount ?? 0) >= 1,
   },
 
-  // ==========================================
   // GENERAL ACHIEVEMENTS (10)
-  // ==========================================
   {
     id: "gen-welcome",
     title: "Welcome to IxStats",
@@ -918,37 +906,6 @@ export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
  */
 export function getAchievementById(id: string): AchievementDefinition | undefined {
   return ACHIEVEMENT_DEFINITIONS.find((achievement) => achievement.id === id);
-}
-
-/**
- * Check which achievements should be unlocked for given data
- * @param data Extended country and relational data
- * @param alreadyUnlocked Set of already unlocked achievement IDs
- * @returns Array of achievement IDs that should be unlocked
- */
-export function checkAchievements(
-  data: ExtendedAchievementData,
-  alreadyUnlocked: Set<string>
-): string[] {
-  const toUnlock: string[] = [];
-
-  for (const achievement of ACHIEVEMENT_DEFINITIONS) {
-    // Skip if already unlocked
-    if (alreadyUnlocked.has(achievement.id)) {
-      continue;
-    }
-
-    // Check condition
-    try {
-      if (achievement.condition(data)) {
-        toUnlock.push(achievement.id);
-      }
-    } catch (error) {
-      console.error(`Error checking achievement ${achievement.id}:`, error);
-    }
-  }
-
-  return toUnlock;
 }
 
 /**

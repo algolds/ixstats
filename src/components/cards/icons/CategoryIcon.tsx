@@ -27,8 +27,6 @@ import { cn } from "~/lib/utils";
 import type { LoreCategory } from "~/lib/cards/category-enums";
 import { getCategoryIconDef } from "./icon-paths";
 
-// ─── Types ──────────────────────────────────────────────────────
-
 type IconTreatment = "watermark" | "emblem" | "seal";
 type IconSize = "xs" | "sm" | "md" | "lg" | "xl";
 
@@ -47,7 +45,7 @@ interface CategoryIconProps {
   "aria-label"?: string;
 }
 
-// ─── Treatment & Size Config ────────────────────────────────────
+// Treatment & Size Config
 
 const TREATMENT_CONFIG: Record<IconTreatment, { sizeClass: string; opacity: number }> = {
   watermark: {
@@ -71,8 +69,6 @@ const SIZE_OVERRIDES: Record<IconSize, string> = {
   lg: "w-12 h-12",
   xl: "w-20 h-20",
 };
-
-// ─── Component ──────────────────────────────────────────────────
 
 export const CategoryIcon = React.memo<CategoryIconProps>(
   ({ category, treatment = "emblem", size, color, className, "aria-label": ariaLabel }) => {

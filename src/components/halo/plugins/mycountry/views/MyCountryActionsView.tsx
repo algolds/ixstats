@@ -80,7 +80,6 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
       transition={springSnappy}
       className="flex w-full flex-col p-4 text-left"
     >
-      {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="text-headline text-yellow flex items-center gap-2">
           <Crown className="h-4 w-4" />

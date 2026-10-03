@@ -50,7 +50,7 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* ─── DIRECTORATE TOOLBAR & CONTROLS ─── */}
+      {/* DIRECTORATE TOOLBAR & CONTROLS */}
       <div className="border-separator flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -90,7 +90,7 @@ export function LeagueTeamsTab({ teams, onTeamClick }: LeagueTeamsTabProps) {
         </div>
       </div>
 
-      {/* ─── FRANCHISE CARDS SHOWCASE ─── */}
+      {/* FRANCHISE CARDS SHOWCASE */}
       {filteredTeams.length === 0 ? (
         <Card>
           <EmptyState

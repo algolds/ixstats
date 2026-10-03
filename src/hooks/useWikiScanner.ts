@@ -12,8 +12,6 @@ import { api } from "~/trpc/react";
 import { distanceKm } from "~/lib/maps/geo-math";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 
-// ── Types ──
-
 interface WikiMatch {
   title: string;
   confidence: number; // 0-1 based on name similarity
@@ -46,8 +44,6 @@ export interface UseWikiScannerReturn {
   scanningConflicts: boolean;
 }
 
-// ── Helpers ──
-
 /** Compute match confidence based on name similarity. */
 function computeConfidence(featureName: string, wikiTitle: string): number {
   const a = featureName.toLowerCase().trim();
@@ -70,8 +66,6 @@ function delay(ms: number): Promise<void> {
 
 /** Haversine distance in km between two [lng, lat] points. */
 const haversineKm = distanceKm;
-
-// ── Hook ──
 
 export function useWikiScanner(params: {
   features: EditorFeature[];

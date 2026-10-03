@@ -68,7 +68,7 @@ interface FeatureEntry {
 
 /** Command catalog for the Halo search palette. */
 export const CORE_COMMANDS: CommandEntry[] = [
-  // ─── 1. Statecraft & National Governance ──────────────────────────────────
+  // 1. Statecraft & National Governance
   {
     name: "MyCountry overview",
     path: "/mycountry",
@@ -142,7 +142,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
     keywords: ["borders", "provinces", "claims", "geometry", "land", "territory", "map edit"],
   },
 
-  // ─── 2. Economy, Cards & IxVault ──────────────────────────────────────────
+  // 2. Economy, Cards & IxVault
   {
     name: "IxVault cards",
     path: "/vault/cards",
@@ -192,7 +192,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
     keywords: ["ns", "deck", "nationstates", "sync", "cards"],
   },
 
-  // ─── 3. Geography & Atlas ────────────────────────────────────────────────
+  // 3. Geography & Atlas
   {
     name: "IxWorld map",
     path: "/maps",
@@ -226,7 +226,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
     keywords: ["create", "builder", "found", "new nation", "wizard", "start nation"],
   },
 
-  // ─── 4. Knowledge & WikiOS ────────────────────────────────────────────────
+  // 4. Knowledge & WikiOS
   {
     name: "Wiki main page",
     path: "/wiki/Main_Page",
@@ -269,7 +269,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
     keywords: ["stashes", "bookmarks", "saved", "reading list", "collections"],
   },
 
-  // ─── 5. Social & Community ────────────────────────────────────────────────
+  // 5. Social & Community
   {
     name: "ThinkShare messages",
     path: "/messages",
@@ -319,7 +319,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
     keywords: ["trophies", "badges", "rewards", "lorewards", "quests", "achievements"],
   },
 
-  // ─── 6. Sports & Simulation ───────────────────────────────────────────────
+  // 6. Sports & Simulation
   {
     name: "MyLeague standings and fixtures",
     path: "/myleague",
@@ -337,7 +337,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
     keywords: ["myclub", "team", "squad", "players", "tactics", "club"],
   },
 
-  // ─── 7. Labs & Creative Engines ───────────────────────────────────────────
+  // 7. Labs & Creative Engines
   {
     name: "Onoma language engine",
     path: "/labs/onoma",
@@ -363,7 +363,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
     keywords: ["mesh", "voronoi", "pipeline", "terrain", "splines", "map generator"],
   },
 
-  // ─── 8. System & Settings ─────────────────────────────────────────────────
+  // 8. System & Settings
   {
     name: "Toggle dark or light theme",
     path: "#toggle-theme",

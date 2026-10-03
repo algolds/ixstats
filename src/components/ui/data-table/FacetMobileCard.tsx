@@ -60,7 +60,7 @@ export function FacetMobileCard<T extends Record<string, any>>({
       className={cn("flex flex-col gap-3 p-4", className)}
       interactive
     >
-      {/* ─── Header: Hero + Badges + Actions ─────────────────────── */}
+      {/* Header: Hero + Badges + Actions */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           {effectiveHeroCols.map((col) => (
@@ -91,7 +91,7 @@ export function FacetMobileCard<T extends Record<string, any>>({
         )}
       </div>
 
-      {/* ─── Body: Key-Value Field Matrix ────────────────────────── */}
+      {/* Body: Key-Value Field Matrix */}
       {effectiveFieldCols.length > 0 && (
         <dl className="border-separator grid grid-cols-2 gap-x-4 gap-y-2 border-t pt-3">
           {effectiveFieldCols.map((col) => {
@@ -115,7 +115,7 @@ export function FacetMobileCard<T extends Record<string, any>>({
         </dl>
       )}
 
-      {/* ─── Footer: Full-width details / actions ────────────────── */}
+      {/* Footer: Full-width details / actions */}
       {footerCols.length > 0 && (
         <div className="border-separator text-footnote flex items-center justify-between border-t pt-3">
           {footerCols.map((col) => (

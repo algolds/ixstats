@@ -9,7 +9,6 @@ import { useRouter } from "next/navigation";
 import { withBasePath } from "~/lib/base-path";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { cn } from "~/lib/utils";
-// oxlint-disable-next-line eslint/no-unused-vars
 import {
   Settings,
   Xmark as X,
@@ -43,8 +42,6 @@ import {
   AnimatedVolumeIcon,
 } from "./settings/SettingsControls";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
-
-// ─── Main component ──────────────────────────────────────────────────────────
 
 function SettingsViewComponent({ onClose }: SettingsViewProps) {
   const router = useRouter();
@@ -149,7 +146,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
           morePrefsExpanded ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
         )}
       >
-        {/* ── Primary Left Column (Always persistent in the same place) ── */}
+        {/* Primary Left Column (Always persistent in the same place) */}
         <div className="min-w-0 space-y-1">
           {/* Appearance */}
           <SectionLabel>Appearance</SectionLabel>
@@ -340,7 +337,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
           )}
         </div>
 
-        {/* ── Additive 2nd Column (Smoothly reveals alongside on More Preferences) ── */}
+        {/* Additive 2nd Column (Smoothly reveals alongside on More Preferences) */}
         {morePrefsExpanded && (
           <div className="animate-in fade-in slide-in-from-right-4 border-separator min-w-0 space-y-1 border-t pt-2 duration-200 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
             <SectionLabel>Reader preferences</SectionLabel>
@@ -433,8 +430,6 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
   );
 }
 
-// ─── Header ──────────────────────────────────────────────────────────────────
-
 function SettingsHeader({
   onClose,
   isOnWikiPage,
@@ -489,7 +484,7 @@ function SettingsHeader({
   );
 }
 
-// ─── Reusable settings row ───────────────────────────────────────────────────
+// Reusable settings row
 
 function SettingsRow({
   icon,

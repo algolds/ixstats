@@ -36,7 +36,7 @@ export interface NotificationItem {
   deliveryMethod?: string | null;
 }
 
-export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   economic: TrendingUp,
   diplomatic: Globe,
   social: Users,

@@ -42,10 +42,6 @@ export class ServerFlagResolver implements FlagResolver {
     this.persistentCache = persistentCache;
   }
 
-  public setPersistentCache(adapter: PersistentFlagCacheAdapter): void {
-    this.persistentCache = adapter;
-  }
-
   private getCacheKey(normalizedName: string, policy: FlagFallbackPolicy): string {
     return `${normalizedName}::${policy}`;
   }

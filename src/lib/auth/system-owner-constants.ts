@@ -51,11 +51,3 @@ export function isSystemOwner(clerkUserId: string): boolean {
 
   return isOwner;
 }
-
-/**
- * Get system owner IDs for validation
- * Returns a frozen copy to prevent modification
- */
-export function getSystemOwnerIds(): readonly string[] {
-  return SYSTEM_OWNER_IDS;
-}

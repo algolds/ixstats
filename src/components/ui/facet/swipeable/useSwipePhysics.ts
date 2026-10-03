@@ -1,22 +1,13 @@
 "use client";
 
 /**
- * useSwipePhysics — Reusable spring physics hook for glass interaction primitives
- *
- * Provides:
- * - MotionValue-based X position tracking
- * - Spring-animated settlement to snap points
- * - Velocity tracking for fast-flick gesture detection
- * - Derived transforms (opacity, scale, progress) for action trays
- * - RTL-aware direction flipping
- *
- * Pointer-capture pattern:
- * - onPointerDown  → record start position
- * - onPointerMove  → past the dead zone, capture the pointer; update motion value, track velocity
- * - onPointerUp    → evaluate snap point, spring to target
+ * useSwipePhysics: spring physics for the swipeable row. A motion value tracks the row's X, a
+ * spring follows it, and the action trays derive their opacity / scale / progress from the
+ * spring. Pointer flow: down records the start, move (past the dead zone) captures the pointer
+ * and tracks velocity, up picks the snap point. RTL flips the swipe direction.
  */
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useMotionValue, useSpring, useTransform } from "motion/react";
 import { clamp } from "~/lib/utils/math";
 import {
@@ -29,14 +20,83 @@ import {
 } from "./constants";
 import type { SpringPreset, SwipeState, SwipeSide, SwipeThresholds } from "./types";
 
-// ── Helpers ─────────────────────────────────────────────────────────────
-
 function getDocDir(): "ltr" | "rtl" {
   if (typeof document === "undefined") return "ltr";
   return (document.documentElement.dir as "ltr" | "rtl") || "ltr";
 }
 
-// ── Hook ────────────────────────────────────────────────────────────────
+interface ThresholdsPx {
+  reveal: number;
+  emphasize: number;
+  commit: number;
+}
+
+/** Rubber-band resistance past the commit threshold; the side without actions stays at 0. */
+function resistDrag(
+  targetX: number,
+  { hasLeading, hasTrailing, commit }: ThresholdsPx & { hasLeading: boolean; hasTrailing: boolean },
+  containerWidth: number
+): number {
+  let x: number;
+  if (targetX < -commit && hasTrailing) {
+    x = -(commit + (Math.abs(targetX) - commit) * DRAG_ELASTICITY);
+  } else if (targetX > commit && hasLeading) {
+    x = commit + (targetX - commit) * DRAG_ELASTICITY;
+  } else {
+    const maxTrailing = hasTrailing ? -(containerWidth * DRAG_ELASTICITY + commit) : 0;
+    const maxLeading = hasLeading ? containerWidth * DRAG_ELASTICITY + commit : 0;
+    x = clamp(targetX, maxTrailing, maxLeading);
+  }
+  if ((x > 0 && !hasLeading) || (x < 0 && !hasTrailing)) return 0;
+  return x;
+}
+
+/** Visual state while dragging, by how far the row has travelled. */
+function dragState(absX: number, px: ThresholdsPx): SwipeState {
+  if (absX >= px.commit) return "committing";
+  if (absX >= px.emphasize) return "emphasized";
+  if (absX >= px.reveal) return "revealing";
+  return "dragging";
+}
+
+/** Where a released drag settles: commit (fast flick or past the commit point), reveal, or closed. */
+function releaseOutcome(
+  currentX: number,
+  velocity: number,
+  px: ThresholdsPx,
+  containerWidth: number
+): { targetX: number; state: SwipeState } {
+  const absX = Math.abs(currentX);
+  const absVelocity = Math.abs(velocity);
+  const sign = currentX < 0 ? -1 : 1;
+  const commit = { targetX: sign * containerWidth, state: "committing" as const };
+
+  const flickedWithDrag = velocity * sign > 0;
+  if (absVelocity > VELOCITY_COMMIT && absX > px.reveal && flickedWithDrag) return commit;
+  if (absX >= px.commit) return commit;
+
+  if (absX >= px.reveal) {
+    // A fast pull back toward closed beats the reveal snap
+    const pulledBack = absVelocity > VELOCITY_REVEAL && velocity * sign < 0;
+    return pulledBack
+      ? { targetX: 0, state: "closed" }
+      : { targetX: sign * px.reveal, state: "revealing" };
+  }
+  return { targetX: 0, state: "closed" };
+}
+
+/** Tray opacity, progress and emphasized-icon scale for one swipe direction (`sign` 1 = right, -1 = left). */
+function useSideTransforms(springX: ReturnType<typeof useSpring>, px: ThresholdsPx, sign: 1 | -1) {
+  return {
+    progress: useTransform(springX, [0, sign * (px.commit || 1)], [0, 1]),
+    trayOpacity: useTransform(springX, [0, sign * px.reveal * 0.5, sign * px.reveal], [0, 0.3, 1]),
+    emphasizeScale: useTransform(
+      springX,
+      [0, sign * px.emphasize, sign * px.commit],
+      [0.8, 1.0, 1.2]
+    ),
+  };
+}
 
 interface UseSwipePhysicsOptions {
   /** Container width in px (must be kept in sync via ResizeObserver) */
@@ -113,12 +173,14 @@ export function useSwipePhysics({
     commit: customThresholds?.commit ?? DEFAULT_THRESHOLDS.commit,
   };
 
-  // Convert to pixels
-  const thresholdsPx = {
-    reveal: containerWidth * t.reveal,
-    emphasize: containerWidth * t.emphasize,
-    commit: containerWidth * t.commit,
-  };
+  const thresholdsPx = useMemo(
+    () => ({
+      reveal: containerWidth * t.reveal,
+      emphasize: containerWidth * t.emphasize,
+      commit: containerWidth * t.commit,
+    }),
+    [containerWidth, t.reveal, t.emphasize, t.commit]
+  );
 
   // RTL support: flip the meaning of "left" and "right"
   const isRtl = useRef(getDocDir() === "rtl");
@@ -126,44 +188,12 @@ export function useSwipePhysics({
     isRtl.current = getDocDir() === "rtl";
   });
 
-  // ── Motion values ─────────────────────────────────────────────────────
-
   const rawX = useMotionValue(0);
   const springX = useSpring(rawX, spring);
+  const trailing = useSideTransforms(springX, thresholdsPx, -1);
+  const leading = useSideTransforms(springX, thresholdsPx, 1);
 
-  // Trailing progress: how far we've swiped left (0 → 1)
-  const trailingProgress = useTransform(springX, [0, -thresholdsPx.commit || -1], [0, 1]);
-
-  // Leading progress: how far we've swiped right (0 → 1)
-  const leadingProgress = useTransform(springX, [0, thresholdsPx.commit || 1], [0, 1]);
-
-  // Action tray opacities (fade in during reveal phase)
-  const trailingTrayOpacity = useTransform(
-    springX,
-    [0, -(thresholdsPx.reveal * 0.5), -thresholdsPx.reveal],
-    [0, 0.3, 1]
-  );
-
-  const leadingTrayOpacity = useTransform(
-    springX,
-    [0, thresholdsPx.reveal * 0.5, thresholdsPx.reveal],
-    [0, 0.3, 1]
-  );
-
-  // Emphasized action icon scale (grows past the emphasize threshold)
-  const trailingEmphasizeScale = useTransform(
-    springX,
-    [0, -thresholdsPx.emphasize, -thresholdsPx.commit],
-    [0.8, 1.0, 1.2]
-  );
-
-  const leadingEmphasizeScale = useTransform(
-    springX,
-    [0, thresholdsPx.emphasize, thresholdsPx.commit],
-    [0.8, 1.0, 1.2]
-  );
-
-  // ── Refs for drag tracking ────────────────────────────────────────────
+  // Refs for drag tracking
 
   const swipeState = useRef<SwipeState>("closed");
   const activeSide = useRef<SwipeSide>(null);
@@ -179,7 +209,7 @@ export function useSwipePhysics({
   // oxlint-disable-next-line
   onStateChangeRef.current = onStateChange;
 
-  // ── State transition helper ───────────────────────────────────────────
+  // State transition helper
 
   const setState = useCallback((next: SwipeState) => {
     if (swipeState.current !== next) {
@@ -188,7 +218,7 @@ export function useSwipePhysics({
     }
   }, []);
 
-  // ── Settle & Reset ────────────────────────────────────────────────────
+  // Settle & Reset
 
   const settle = useCallback(
     (targetX: number) => {
@@ -203,7 +233,7 @@ export function useSwipePhysics({
     activeSide.current = null;
   }, [rawX, setState]);
 
-  // ── Pointer Handlers ──────────────────────────────────────────────────
+  // Pointer Handlers
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -261,41 +291,13 @@ export function useSwipePhysics({
         activeSide.current = "leading";
       }
 
-      // Clamp with elasticity past commit threshold
-      let clampedX: number;
-      const maxTrailing = hasTrailing
-        ? -(containerWidth * DRAG_ELASTICITY + thresholdsPx.commit)
-        : 0;
-      const maxLeading = hasLeading ? containerWidth * DRAG_ELASTICITY + thresholdsPx.commit : 0;
-
-      // Apply rubber-band resistance past the commit threshold
-      if (targetX < -thresholdsPx.commit && hasTrailing) {
-        const overshoot = Math.abs(targetX) - thresholdsPx.commit;
-        clampedX = -(thresholdsPx.commit + overshoot * DRAG_ELASTICITY);
-      } else if (targetX > thresholdsPx.commit && hasLeading) {
-        const overshoot = targetX - thresholdsPx.commit;
-        clampedX = thresholdsPx.commit + overshoot * DRAG_ELASTICITY;
-      } else {
-        clampedX = clamp(targetX, maxTrailing, maxLeading);
-      }
-
-      // Don't allow dragging into a side that has no actions
-      if (clampedX > 0 && !hasLeading) clampedX = 0;
-      if (clampedX < 0 && !hasTrailing) clampedX = 0;
-
+      const clampedX = resistDrag(
+        targetX,
+        { ...thresholdsPx, hasLeading, hasTrailing },
+        containerWidth
+      );
       rawX.set(clampedX);
-
-      // Determine visual state based on position
-      const absX = Math.abs(clampedX);
-      if (absX >= thresholdsPx.commit) {
-        setState("committing");
-      } else if (absX >= thresholdsPx.emphasize) {
-        setState("emphasized");
-      } else if (absX >= thresholdsPx.reveal) {
-        setState("revealing");
-      } else {
-        setState("dragging");
-      }
+      setState(dragState(Math.abs(clampedX), thresholdsPx));
 
       // Track velocity
       const dt = e.timeStamp - lastMoveTime.current;
@@ -337,59 +339,15 @@ export function useSwipePhysics({
       }
 
       isDragging.current = false;
-      const currentX = rawX.get();
-      const absX = Math.abs(currentX);
-      const absVelocity = Math.abs(velocity.current);
-      const direction = currentX < 0 ? "trailing" : "leading";
-
-      // Velocity-based fast-flick commit
-      if (absVelocity > VELOCITY_COMMIT && absX > thresholdsPx.reveal) {
-        // Check if the velocity direction matches the drag direction
-        const velocityMatchesDirection =
-          (direction === "trailing" && velocity.current < 0) ||
-          (direction === "leading" && velocity.current > 0);
-
-        if (velocityMatchesDirection) {
-          const targetX = direction === "trailing" ? -containerWidth : containerWidth;
-          settle(targetX);
-          setState("committing");
-          return; // Let the consumer handle commit (the state change triggers it)
-        }
-      }
-
-      // Position-based snap
-      if (absX >= thresholdsPx.commit) {
-        // Past commit threshold — commit
-        const targetX = direction === "trailing" ? -containerWidth : containerWidth;
-        settle(targetX);
-        setState("committing");
-        return;
-      } else if (absX >= thresholdsPx.reveal) {
-        // Past reveal threshold — snap to reveal position
-        const revealX = direction === "trailing" ? -thresholdsPx.reveal : thresholdsPx.reveal;
-
-        // If velocity is pulling back toward closed, snap closed instead
-        if (absVelocity > VELOCITY_REVEAL) {
-          const velocityTowardsClosed =
-            (direction === "trailing" && velocity.current > 0) ||
-            (direction === "leading" && velocity.current < 0);
-
-          if (velocityTowardsClosed) {
-            settle(0);
-            setState("closed");
-            activeSide.current = null;
-            return;
-          }
-        }
-
-        settle(revealX);
-        setState("revealing");
-      } else {
-        // Below reveal threshold — snap back to closed
-        settle(0);
-        setState("closed");
-        activeSide.current = null;
-      }
+      const { targetX, state } = releaseOutcome(
+        rawX.get(),
+        velocity.current,
+        thresholdsPx,
+        containerWidth
+      );
+      settle(targetX);
+      setState(state);
+      if (state === "closed") activeSide.current = null;
     },
     [rawX, settle, setState, thresholdsPx.commit, thresholdsPx.reveal, containerWidth]
   );
@@ -411,7 +369,7 @@ export function useSwipePhysics({
     [settle, setState]
   );
 
-  // ── Cleanup on unmount ────────────────────────────────────────────────
+  // Cleanup on unmount
 
   useEffect(() => {
     const cleanup = () => {
@@ -429,12 +387,12 @@ export function useSwipePhysics({
   return {
     x: rawX,
     springX,
-    trailingProgress,
-    leadingProgress,
-    trailingTrayOpacity,
-    leadingTrayOpacity,
-    trailingEmphasizeScale,
-    leadingEmphasizeScale,
+    trailingProgress: trailing.progress,
+    leadingProgress: leading.progress,
+    trailingTrayOpacity: trailing.trayOpacity,
+    leadingTrayOpacity: leading.trayOpacity,
+    trailingEmphasizeScale: trailing.emphasizeScale,
+    leadingEmphasizeScale: leading.emphasizeScale,
     swipeState,
     activeSide,
     isDragging,

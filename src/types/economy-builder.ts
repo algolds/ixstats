@@ -8,9 +8,7 @@
 
 import type { EconomicComponentType } from "~/lib/economy/atomic-data";
 
-// ============================================
 // ECONOMY BUILDER STATE
-// ============================================
 
 export interface EconomyBuilderState {
   structure: EconomyStructure;
@@ -50,9 +48,7 @@ interface EconomyBuilderErrors {
   validation?: string[];
 }
 
-// ============================================
 // SECTOR CONFIGURATION
-// ============================================
 
 export interface SectorConfiguration {
   id: string;
@@ -73,9 +69,7 @@ export interface SectorConfiguration {
   competitiveness: number; // global competitiveness score 0-100
 }
 
-// ============================================
 // LABOR CONFIGURATION
-// ============================================
 
 export interface LaborConfiguration {
   // Workforce Structure
@@ -146,9 +140,7 @@ export interface LaborConfiguration {
   };
 }
 
-// ============================================
 // DEMOGRAPHICS CONFIGURATION
-// ============================================
 
 export interface DemographicsConfiguration {
   totalPopulation: number;
@@ -191,63 +183,11 @@ export interface RegionDistribution {
   developmentLevel: "Underdeveloped" | "Developing" | "Developed" | "Advanced";
 }
 
-// ============================================
 // INCOME & WEALTH CONFIGURATION
-// ============================================
-// ============================================
 // TRADE CONFIGURATION
-// ============================================
-
-interface TradeConfiguration {
-  totalExports: number; // USD
-  totalImports: number; // USD
-  tradeBalance: number; // USD
-  exportsGDPPercent: number; // percentage
-  importsGDPPercent: number; // percentage
-
-  tradeOpenness: "Closed" | "Limited" | "Moderate" | "Open" | "Very Open";
-  averageTariffRate: number; // percentage
-  nonTariffBarriers: number; // index 0-100
-  tradeAgreements: string[];
-
-  exportComposition: {
-    primary: number; // percentage
-    manufactured: number;
-    services: number;
-    highTech: number;
-  };
-
-  importComposition: {
-    primary: number; // percentage
-    manufactured: number;
-    services: number;
-    energy: number;
-  };
-
-  majorExportDestinations: TradePartner[];
-  majorImportSources: TradePartner[];
-
-  tradeCompetitivenessIndex: number; // 0-100
-  exportDiversificationIndex: number; // 0-100
-  importDependencyIndex: number; // 0-100
-}
-
-interface TradePartner {
-  country: string;
-  share: number; // percentage of total trade
-  tradeValue: number; // USD
-  relationship: "Strategic" | "Important" | "Standard" | "Limited";
-}
-
-// ============================================
 // PRODUCTIVITY CONFIGURATION
-// ============================================
-// ============================================
 // BUSINESS ENVIRONMENT
-// ============================================
-// ============================================
 // ECONOMIC HEALTH METRICS
-// ============================================
 
 export interface EconomicHealthMetrics {
   economicHealthScore: number; // 0-100
@@ -274,40 +214,8 @@ export interface EconomicHealthMetrics {
   systemicRisk: number; // 0-100
 }
 
-// ============================================
 // ATOMIC COMPONENT IMPACT
-// ============================================
-// ============================================
 // CROSS-BUILDER INTEGRATION
-// ============================================
-// ============================================
 // VALIDATION & CONSTRAINTS
-// ============================================
-// ============================================
 // ARCHETYPE TEMPLATES
-// ============================================
-
-export interface EconomicArchetype {
-  id: string;
-  name: string;
-  description: string;
-  category: "Developed" | "Emerging" | "Developing" | "Transitional";
-  atomicComponents: EconomicComponentType[];
-  sectorTemplate: Partial<SectorConfiguration>[];
-  laborTemplate: Partial<LaborConfiguration>;
-  tradeTemplate: Partial<TradeConfiguration>;
-  typicalMetrics: {
-    gdpPerCapita: number;
-    growthRate: number;
-    unemploymentRate: number;
-    inflationRate: number;
-    giniCoefficient: number;
-  };
-  realWorldExamples: string[];
-  effectiveness: number; // 0-100
-}
-
-// ============================================
-// UTILITY TYPES
-// ============================================
 export type { EconomicInputs } from "~/app/builder/lib/economy-data-service";

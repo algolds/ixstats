@@ -138,14 +138,6 @@ export class IxTime {
   }
 
   /**
-   * FIXED: Added missing getYearsBetween function as alias for getYearsElapsed
-   * Calculate years between two IxTime timestamps (absolute value)
-   */
-  static getYearsBetween(startIxTime: number | Date, endIxTime: number | Date): number {
-    return Math.abs(this.getYearsElapsed(startIxTime, endIxTime));
-  }
-
-  /**
    * Calculate years elapsed since the in-game epoch (roster baseline)
    * This tells us how many years have passed since January 1, 2028
    */
@@ -192,15 +184,6 @@ export class IxTime {
       d.getUTCSeconds(),
       d.getUTCMilliseconds()
     );
-  }
-
-  /**
-   * Get the in-game month (1-12) from an IxTime timestamp
-   */
-  static getMonthFromTimestamp(ixTime: number | Date): number {
-    const timeMs = ixTime instanceof Date ? ixTime.getTime() : ixTime;
-    const date = new Date(timeMs);
-    return date.getUTCMonth() + 1;
   }
 
   /**
@@ -550,11 +533,6 @@ export class IxTime {
     return this.multiplierOverride === null;
   }
 
-  static async getCurrentIxTimeFromBot(): Promise<number> {
-    const botData = await this.fetchFromBot();
-    return botData ? botData.ixTimeTimestamp : this.getCurrentIxTime();
-  }
-
   static async getStatus() {
     let botStatusData = null;
     try {
@@ -662,14 +640,6 @@ export class IxTime {
   }
 
   /**
-   * Get the real-world timestamp when IxTime reaches Jan 1 of a given game year.
-   */
-  static getRealDateForGameYear(year: number): number {
-    const ixTimestamp = new Date(Date.UTC(year, 0, 1, 0, 0, 0)).getTime();
-    return this.convertFromIxTime(ixTimestamp);
-  }
-
-  /**
    * Calculate how many IxTime days pass per real day at a given multiplier.
    */
   static getIxDaysPerRealDay(multiplier?: number): number {
@@ -685,10 +655,6 @@ export class IxTime {
     const currentIx = this.getCurrentIxTime();
     const realMs = realHours * 60 * 60 * 1000;
     return currentIx + realMs * m;
-  }
-
-  static dateToTimestamp(date: Date): number {
-    return date.getTime();
   }
 
   static timestampToDate(timestamp: number): Date {

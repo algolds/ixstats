@@ -9,11 +9,11 @@ see `docs/systems/achievements.md` for the full guide.
 
 ## Routes
 
-| Path | Purpose |
-| --- | --- |
-| `/achievements` | Header card + optional Showcase shelf + full catalog (no tabs; `?tab=` is ignored) |
-| `/leaderboards` | Standalone global leaderboards (`LeaderboardTab`) wrapped in `VaultSidebarLayout` |
-| `/wiki/lorewards` | Wiki Lorewards (moved out of `/achievements`; lives under WikiOS) |
+| Path              | Purpose                                                                            |
+| ----------------- | ---------------------------------------------------------------------------------- |
+| `/achievements`   | Header card + optional Showcase shelf + full catalog (no tabs; `?tab=` is ignored) |
+| `/leaderboards`   | Standalone global leaderboards (`LeaderboardTab`) wrapped in `VaultSidebarLayout`  |
+| `/wiki/lorewards` | Wiki Lorewards (moved out of `/achievements`; lives under WikiOS)                  |
 
 ## Key features
 
@@ -36,12 +36,12 @@ in-page leaderboard tab. The planned Ribbons tab is not built yet — see
 
 ## Architecture
 
-| Layer | Files |
-| --- | --- |
-| Page | `src/app/achievements/page.tsx` (profile card, showcase toggle, catalog, layout) |
-| Layout | `VaultSidebarLayout` (`activeSection="achievements"`) |
-| Tabs / panels | `components/achievements/tabs/{AllAchievementsTab,ShowcaseTab,LeaderboardTab}.tsx` |
-| Widgets | `components/achievements/{AchievementDecorations,FloatingRibbonRack}.tsx`, `constants.ts` |
+| Layer         | Files                                                                                     |
+| ------------- | ----------------------------------------------------------------------------------------- |
+| Page          | `src/app/achievements/page.tsx` (profile card, showcase toggle, catalog, layout)          |
+| Layout        | `VaultSidebarLayout`                                                                      |
+| Tabs / panels | `components/achievements/tabs/{AllAchievementsTab,ShowcaseTab,LeaderboardTab}.tsx`        |
+| Widgets       | `components/achievements/{AchievementDecorations,FloatingRibbonRack}.tsx`, `constants.ts` |
 
 The page is fully client-side (`"use client"`); auth via `useUser()` from `~/context/auth-context`.
 

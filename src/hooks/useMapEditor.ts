@@ -89,14 +89,14 @@ function errMsg(e: unknown, fallback: string): string {
 }
 
 export function useMapEditor(countryId: string | undefined, options?: UseMapEditorOptions) {
-  // ── Core Editor Mode & Selection ──
+  // Core Editor Mode & Selection
   const [mode, setModeState] = useState<EditorMode>("view");
   const [selectedFeature, setSelectedFeature] = useState<EditorFeature | null>(null);
   const [pendingCoordinates, setPendingCoordinates] = useState<[number, number] | null>(null);
   const [pendingGeometry, setPendingGeometry] = useState<object | null>(null);
   const [isPickingLocation, setIsPickingLocation] = useState(false);
 
-  // ── Forms ──
+  // Forms
   const [cityForm, setCityForm] = useState<CityFormData>(DEFAULT_CITY);
   const [subdivisionForm, setSubdivisionForm] = useState<SubdivisionFormData>(DEFAULT_SUBDIVISION);
   const [poiForm, setPOIForm] = useState<POIFormData>(DEFAULT_POI);
@@ -106,14 +106,14 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
   const [riverForm, setRiverForm] = useState<NamedRiverFormData>(DEFAULT_RIVER);
   const [lakeForm, setLakeForm] = useState<NamedLakeFormData>(DEFAULT_LAKE);
 
-  // ── Route / river / split-line drawing ──
+  // Route / river / split-line drawing
   const [riverPath, setRiverPath] = useState<[number, number][]>([]);
   const [splitLine, setSplitLine] = useState<[number, number][]>([]);
   const [draggingVertexIndex, setDraggingVertexIndex] = useState<number | null>(null);
   const [snapTarget, setSnapTarget] = useState<[number, number] | null>(null);
   const [isSnapEnabled, setIsSnapEnabled] = useState(true);
 
-  // ── Gaps & Negative Space ──
+  // Gaps & Negative Space
   const [showGaps, setShowGaps] = useState(false);
 
   const [mutationError, setMutationError] = useState<string | null>(null);
@@ -135,7 +135,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     setModeState(resolved);
   }, []);
 
-  // ── Sub-Hooks ──
+  // Sub-Hooks
   const historyHook = useMapHistory();
   const {
     history,
@@ -214,7 +214,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     setLastSavedAt,
   });
 
-  // ── Reset & Start Editing ──
+  // Reset & Start Editing
   const resetForm = useCallback(() => {
     setCityForm(DEFAULT_CITY);
     setSubdivisionForm(DEFAULT_SUBDIVISION);
@@ -232,7 +232,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     setSplitLine([]);
   }, []);
 
-  // ── Mutations Sub-Hook ──
+  // Mutations Sub-Hook
   const mutations = useMapFeatureMutations({
     countryId,
     selectedFeature,
@@ -370,7 +370,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     [countryId, history, historyHook, historyExecutor, runHistoryStep]
   );
 
-  // ── Point moves (drag, nudge, typed coordinates, snap tools) ──
+  // Point moves (drag, nudge, typed coordinates, snap tools)
   const updatePointCoordinates = useCallback(
     async (type?: FeatureType, id?: string, coords?: [number, number]) => {
       if (!countryId || !type || !id || !coords || type === "gap") return;
@@ -531,7 +531,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     [setMode]
   );
 
-  // ── Map Events & Drawing ──
+  // Map Events & Drawing
   const handleMapClick = useCallback(
     (coords: [number, number]) => {
       if (mode === "split-subdivision") {
@@ -605,7 +605,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
     [resetForm, setMode]
   );
 
-  // ── Split-region tool ──
+  // Split-region tool
   const executeSplitSubdivision = useCallback(
     async (subdivisionId: string, lineCoords?: [number, number][]) => {
       const line = lineCoords && lineCoords.length >= 2 ? lineCoords : splitLine;
@@ -621,7 +621,7 @@ export function useMapEditor(countryId: string | undefined, options?: UseMapEdit
 
   const noopShowEmptyRegions = useCallback((v: boolean) => setShowGaps(v), []);
 
-  // ── Draft (in-progress, unsaved placement/drawing) ──
+  // Draft (in-progress, unsaved placement/drawing)
   const draft = useMemo<EditorDraft | null>(() => {
     if (!mode.startsWith("add-")) return null;
     const hasWork =

@@ -220,8 +220,7 @@ async function generateCardsFromWiki(
           }
 
           // Create card in database
-          // oxlint-disable-next-line typescript/no-unused-vars
-          const cardId = await wikiLoreCardGenerator.createCard(candidate);
+          await wikiLoreCardGenerator.createCard(candidate);
 
           result.generated++;
 

@@ -74,15 +74,14 @@ export function useDefenseBudget({ countryId }: UseDefenseBudgetOptions) {
   const currentYear = new Date().getFullYear();
   const { saveAction } = useLocalActions(countryId);
 
-  // --- tRPC Queries ---
+  // tRPC Queries
 
   const { data: country } = api.countries.getByIdAtTime.useQuery(
     { id: countryId },
     { enabled: !!countryId }
   );
 
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { data: defenseBudget, refetch: refetchBudget } = api.security.getDefenseBudget.useQuery(
+  const { data: defenseBudget } = api.security.getDefenseBudget.useQuery(
     { countryId, fiscalYear: currentYear },
     { enabled: !!countryId }
   );
@@ -92,9 +91,9 @@ export function useDefenseBudget({ countryId }: UseDefenseBudgetOptions) {
     { enabled: !!countryId }
   );
 
-  // --- Local Save (replaces mutation) ---
+  // Local Save (replaces mutation)
 
-  // --- Initialize budget data from query results ---
+  // Initialize budget data from query results
 
   useEffect(() => {
     if (defenseBudget) {
@@ -120,8 +119,6 @@ export function useDefenseBudget({ countryId }: UseDefenseBudgetOptions) {
       });
     }
   }, [defenseBudget, country]);
-
-  // --- Handlers ---
 
   const handleSaveBudget = useCallback(() => {
     if (!countryId) {
@@ -197,7 +194,7 @@ export function useDefenseBudget({ countryId }: UseDefenseBudgetOptions) {
     [budgetData]
   );
 
-  // --- Computed values ---
+  // Computed values
 
   const totalAllocated = useMemo(
     () =>
@@ -239,7 +236,6 @@ export function useDefenseBudget({ countryId }: UseDefenseBudgetOptions) {
   );
 
   return {
-    // State
     editingBudget,
     setEditingBudget,
     budgetData,
@@ -248,7 +244,6 @@ export function useDefenseBudget({ countryId }: UseDefenseBudgetOptions) {
     // Data
     branches,
 
-    // Handlers
     handleSaveBudget,
     handleTotalBudgetChange,
     handleCategoryChange,

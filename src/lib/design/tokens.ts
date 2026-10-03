@@ -221,7 +221,7 @@ export const Z_INDEX = {
   command: 110000,
 } as const;
 
-// ─── Identity ────────────────────────────────────────────────────────────────
+// Identity
 // Mirrors the "Identity" block in tokens.css; token-contrast.test.ts checks parity and contrast.
 
 /** `rounded-cutout` radius in px. */

@@ -3,7 +3,7 @@
 import React from "react";
 import { Wallet, Component as Layers, Package, ShoppingBag } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import NumberFlow from "~/components/ui/number-flow";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import { Card } from "~/components/ui/card";
 
@@ -46,7 +46,7 @@ export function VaultNetWorthCard({
         <div className="mt-5">
           <div className="text-large-title text-yellow flex items-center gap-2 tabular-nums">
             <IxCreditsSymbol aria-hidden className="text-yellow h-8 w-8 shrink-0 sm:h-10 sm:w-10" />
-            <NumberFlow value={netWorth} />
+            <NumberFlowDisplay value={netWorth} />
           </div>
         </div>
 
@@ -55,14 +55,14 @@ export function VaultNetWorthCard({
             <span className="text-label-secondary text-stat-label block">Available balance</span>
             <div className="text-title-3 text-yellow mt-1 flex items-center gap-1 tabular-nums">
               <IxCreditsSymbol aria-hidden className="text-yellow h-4.5 w-4.5 shrink-0" />
-              <NumberFlow value={liquidCredits} />
+              <NumberFlowDisplay value={liquidCredits} />
             </div>
           </div>
           <div>
             <span className="text-label-secondary text-stat-label block">Card deck value</span>
             <div className="text-title-3 text-indigo mt-1 flex items-center gap-1 tabular-nums">
               <IxCreditsSymbol aria-hidden className="text-indigo h-4.5 w-4.5 shrink-0" />
-              <NumberFlow value={collectionValuation} />
+              <NumberFlowDisplay value={collectionValuation} />
             </div>
           </div>
         </div>

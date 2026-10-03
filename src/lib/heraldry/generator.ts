@@ -1,4 +1,6 @@
 import type {
+  ChargeRef,
+  ExternalOrnaments,
   HeraldryComposition,
   Tincture,
   Division,
@@ -19,15 +21,14 @@ const SHAPES: ShieldShape[] = [
   "heater",
   "kite",
   "round",
-  "lozengoe",
+  "lozenge",
   "oval",
   "renaissance",
   "pointed",
-] as any;
+];
 
 const METALS: Tincture[] = ["or", "argent"];
 const COLOURS: Tincture[] = ["gules", "azure", "vert", "purpure", "sable"];
-// oxlint-disable-next-line typescript/no-unused-vars
 const DIVISION_POOL: Division[] = [
   "plain",
   "per-pale",
@@ -54,7 +55,6 @@ const ORDINARY_POOL: OrdinaryType[] = [
 
 const CHARGE_POOL = ["star", "cross", "fleur-de-lis", "lion", "eagle"];
 
-// Pick random element from array
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]!;
 }
@@ -81,155 +81,110 @@ function hexToTincture(hex: string): Tincture {
   return "sable"; // fallback
 }
 
+/** Cumulative probability bounds; anything above the last bound picks from DIVISION_POOL. */
+const DIVISION_WEIGHTS: Array<[upTo: number, division: Division]> = [
+  [0.4, "plain"],
+  [0.55, "per-pale"],
+  [0.7, "per-fess"],
+  [0.8, "quarterly"],
+];
+
+/** Number of field tinctures per division (default 2). */
+const FIELD_TINCTURE_COUNT: Partial<Record<Division, number>> = {
+  plain: 1,
+  quarterly: 4,
+  "per-saltire": 4,
+};
+
+const CULTURE_CHARGES: Record<string, string> = {
+  burgundian: "fleur-de-lis",
+  frankish: "fleur-de-lis",
+  germanic: "eagle",
+  nordic: "lion",
+};
+
+const CHARGE_ATTITUDES: Record<string, Attitude> = { lion: "rampant", eagle: "displayed" };
+
+const MOTTOS: Record<string, string> = {
+  christian: "IN HOC SIGNO VINCES",
+  islamic: "ALHAMDULILLAH",
+};
+
+function pickShape(governmentType?: string): ShieldShape {
+  if (governmentType === "republic") return "round";
+  if (governmentType === "monarchy") return "renaissance";
+  return pick(SHAPES);
+}
+
+function pickDivision(): Division {
+  const roll = Math.random();
+  return DIVISION_WEIGHTS.find(([upTo]) => roll < upTo)?.[1] ?? pick(DIVISION_POOL);
+}
+
+/** Charge count: 1 (60%), 3 (30%) or 2 (10%). */
+function rollChargeCount(): number {
+  const roll = Math.random();
+  return roll < 0.6 ? 1 : roll < 0.9 ? 3 : 2;
+}
+
+/** A single charge in a tincture contrasting the field; cultures bias the charge shape. */
+function rollCharge(cultureGroup: string | undefined, contrastPool: Tincture[]): ChargeRef {
+  const rolledCharge = pick(CHARGE_POOL);
+  const chargeId = CULTURE_CHARGES[cultureGroup ?? ""] ?? rolledCharge;
+  const tincture = pick(contrastPool);
+  const count = rollChargeCount();
+  return {
+    chargeId,
+    position: count === 1 ? "fess-point" : "chief-point",
+    count,
+    tincture,
+    size: count === 1 ? 1.1 : 0.6,
+    attitude: CHARGE_ATTITUDES[chargeId],
+  };
+}
+
+/** External ornaments: helm (15%) and a religious motto (50% when applicable). */
+function rollExternals(religion: string | undefined): ExternalOrnaments {
+  const externals: ExternalOrnaments = {};
+  if (Math.random() < 0.15) externals.helm = { type: "great-helm", facing: "affronte" };
+  const motto = MOTTOS[religion ?? ""];
+  if (motto && Math.random() < 0.5) externals.motto = { text: motto, position: "below" };
+  return externals;
+}
+
 export function generateRandomComposition(options?: GenerationOptions): HeraldryComposition {
-  // 1. Shield shape selection
-  let shape: ShieldShape = "heater";
-  if (options?.governmentType === "republic") {
-    shape = "round";
-  } else if (options?.governmentType === "monarchy") {
-    shape = "renaissance";
-  } else {
-    shape = pick(SHAPES);
-    if ((shape as string) === "lozengoe") {
-      shape = "lozenge"; // Fix typo in array definition
-    }
-  }
+  const shape = pickShape(options?.governmentType);
+  const division = pickDivision();
 
-  // 2. Division selection (weighted)
-  let division: Division = "plain";
-  const divRoll = Math.random();
-  if (divRoll < 0.4) {
-    division = "plain";
-  } else if (divRoll < 0.55) {
-    division = "per-pale";
-  } else if (divRoll < 0.7) {
-    division = "per-fess";
-  } else if (divRoll < 0.8) {
-    division = "quarterly";
-  } else {
-    division = pick(DIVISION_POOL);
-  }
-
-  // 3. Select background field colors following Rule of Tincture contrast
-  const fieldTinctures: Tincture[] = [];
-  const expectedCount =
-    division === "plain" ? 1 : division === "quarterly" ? 4 : division === "per-saltire" ? 4 : 2;
-
-  // Culture & national colors weight
-  let preferredTinctures: Tincture[] = [];
-  if (options?.nationalColors && options.nationalColors.length > 0) {
-    preferredTinctures = options.nationalColors.map(hexToTincture);
-  }
-
+  // Background field colors following the rule of tincture: adjacent sections alternate metal/colour.
+  // National colors, when given, take precedence.
+  const preferredTinctures = (options?.nationalColors ?? []).map(hexToTincture);
   const primaryBg = preferredTinctures[0] || pick([...METALS, ...COLOURS]);
   const primaryKind = TINCTURE_KIND[primaryBg] || "colour";
+  const contrastPool = primaryKind === "metal" ? COLOURS : METALS;
 
-  fieldTinctures.push(primaryBg);
-
-  for (let i = 1; i < expectedCount; i++) {
-    if (i % 2 === 1) {
-      // Alternate metal/color for adjacent sections to look gorgeous
-      const oppositePool = primaryKind === "metal" ? COLOURS : METALS;
-      fieldTinctures.push(preferredTinctures[i] || pick(oppositePool));
-    } else {
-      // Same kind as primary
-      fieldTinctures.push(preferredTinctures[i] || primaryBg);
-    }
+  const fieldTinctures: Tincture[] = [primaryBg];
+  for (let i = 1; i < (FIELD_TINCTURE_COUNT[division] ?? 2); i++) {
+    fieldTinctures.push(preferredTinctures[i] || (i % 2 === 1 ? pick(contrastPool) : primaryBg));
   }
 
-  // 4. Ordinaries (30% chance)
+  // Ordinary (35% chance), in a contrasting tincture
   const ordinaries = [];
-  const hasOrdinary = Math.random() < 0.35;
-  let ordinaryTincture: Tincture = primaryKind === "metal" ? "gules" : "or";
-
-  if (hasOrdinary) {
-    const ordType = pick(ORDINARY_POOL);
-    // Contrasting color
-    ordinaryTincture = primaryKind === "metal" ? pick(COLOURS) : pick(METALS);
+  if (Math.random() < 0.35) {
     ordinaries.push({
-      type: ordType,
-      tincture: ordinaryTincture,
+      type: pick(ORDINARY_POOL),
+      tincture: pick(contrastPool),
       lineStyle: "straight" as const,
     });
   }
 
-  // 5. Charges (60% chance)
-  const charges = [];
-  const hasCharges = Math.random() < 0.7;
-
-  if (hasCharges) {
-    // Select a charge shape
-    let chargeId = pick(CHARGE_POOL);
-
-    // Culture biases
-    if (options?.cultureGroup === "burgundian" || options?.cultureGroup === "frankish") {
-      chargeId = "fleur-de-lis";
-    } else if (options?.cultureGroup === "germanic") {
-      chargeId = "eagle";
-    } else if (options?.cultureGroup === "nordic") {
-      chargeId = "lion";
-    }
-
-    // Determine contrasting tincture for the charge
-    // If there is an ordinary, the charge sits either on it or around it.
-    // If no ordinary, sits on the main background field.
-    const backgroundKind = primaryKind;
-    const chargeTincture = backgroundKind === "metal" ? pick(COLOURS) : pick(METALS);
-
-    // Charge count (weighted: 1 (60%), 3 (30%), 2 (10%))
-    let count = 1;
-    const countRoll = Math.random();
-    if (countRoll < 0.6) {
-      count = 1;
-    } else if (countRoll < 0.9) {
-      count = 3;
-    } else {
-      count = 2;
-    }
-
-    charges.push({
-      chargeId,
-      position: count === 1 ? "fess-point" : "chief-point",
-      count,
-      tincture: chargeTincture,
-      size: count === 1 ? 1.1 : 0.6,
-      attitude:
-        chargeId === "lion"
-          ? ("rampant" as Attitude)
-          : chargeId === "eagle"
-            ? ("displayed" as Attitude)
-            : undefined,
-    });
-  }
-
-  // 6. External ornaments (15% chance for helm/motto)
-  const externals: any = {};
-  if (Math.random() < 0.15) {
-    externals.helm = {
-      type: "great-helm",
-      facing: "affronte",
-    };
-  }
-  if (options?.religion === "christian" && Math.random() < 0.5) {
-    externals.motto = {
-      text: "IN HOC SIGNO VINCES",
-      position: "below",
-    };
-  } else if (options?.religion === "islamic" && Math.random() < 0.5) {
-    externals.motto = {
-      text: "ALHAMDULILLAH",
-      position: "below",
-    };
-  }
+  const charges = Math.random() < 0.7 ? [rollCharge(options?.cultureGroup, contrastPool)] : [];
+  const externals = rollExternals(options?.religion);
 
   return {
     shield: {
       shape,
-      field: {
-        division,
-        tinctures: fieldTinctures,
-        lineStyle: "straight",
-      },
+      field: { division, tinctures: fieldTinctures, lineStyle: "straight" },
       ordinaries,
       charges,
     },

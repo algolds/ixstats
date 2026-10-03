@@ -147,35 +147,6 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
         // Calculate current market value
         const currentValue = await getCardMarketValue(db as any, card.id);
 
-        // Calculate sale statistics from recent CardOwnership trades
-        const recentSales = card.CardOwnership.filter(
-          (ownership: any) => ownership.lastSalePrice !== null && ownership.lastSalePrice > 0
-        );
-
-        // oxlint-disable-next-line typescript/no-unused-vars
-        const avgSalePrice =
-          recentSales.length > 0
-            ? recentSales.reduce((sum: number, o: any) => sum + (o.lastSalePrice || 0), 0) /
-              recentSales.length
-            : null;
-
-        // oxlint-disable-next-line typescript/no-unused-vars
-        const highestSale =
-          recentSales.length > 0
-            ? Math.max(...recentSales.map((o: any) => o.lastSalePrice || 0))
-            : null;
-
-        // oxlint-disable-next-line typescript/no-unused-vars
-        const lowestSale =
-          recentSales.length > 0
-            ? Math.min(
-                ...recentSales.map((o: any) => o.lastSalePrice || 0).filter((p: number) => p > 0)
-              )
-            : null;
-
-        // oxlint-disable-next-line typescript/no-unused-vars
-        const ownedBy = card.CardOwnership.length;
-
         // Save value history entry
         await db.cardValueHistory.create({
           data: {
@@ -192,9 +163,6 @@ export async function updateCardValues(): Promise<ValueUpdateResult> {
 
           // Get corresponding GDP values for the same time periods
           // For simplicity, use current GDP as approximation (in production, would query GDP history)
-          // oxlint-disable-next-line typescript/no-unused-vars
-          const gdpValues = cardValues.map(() => country.currentTotalGdp);
-
           // In a real implementation, we'd query GDP history at matching timestamps
           // For now, calculate correlation using current GDP growth trend
           const gdpGrowthFactor = 1 + country.adjustedGdpGrowth / 100;

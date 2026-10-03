@@ -79,7 +79,7 @@ export interface TeamSponsor {
   [key: string]: unknown;
 }
 
-export interface EvaluationVector {
+interface EvaluationVector {
   winProbability: number;
   dominance: number;
   tempo: number;
@@ -90,4 +90,3 @@ export interface ExtendedMatchResult extends MatchResult {
   evaluation: EvaluationVector;
   trace: EventTraceStep[];
 }
-

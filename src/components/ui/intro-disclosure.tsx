@@ -47,7 +47,7 @@ function useFeatureVisibility(featureId: string) {
 }
 
 function useSwipe(onSwipe: (direction: "left" | "right") => void) {
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+  const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (info.offset.x > 100) {
       onSwipe("right");
     } else if (info.offset.x < -100) {
@@ -611,13 +611,7 @@ export function IntroDisclosure({
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="skipNextTime"
-                  // oxlint-disable-next-line eslint/no-unused-vars
-                  onCheckedChange={(checked) => {
-                    hideFeature();
-                  }}
-                />
+                <Checkbox id="skipNextTime" onCheckedChange={hideFeature} />
                 <label htmlFor="skipNextTime" className="text-footnote text-label-secondary">
                   Don't show this again
                 </label>

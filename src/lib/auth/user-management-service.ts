@@ -9,7 +9,7 @@
 
 import { clerkClient } from "@clerk/nextjs/server";
 import type { PrismaClient, User, Role } from "@prisma/client";
-import { SYSTEM_OWNER_IDS, isSystemOwner } from "./system-owner-constants";
+import { isSystemOwner } from "./system-owner-constants";
 import { grantNewPlayerBonus } from "~/lib/vault/vault-bonus";
 import { queueAchievementCheck } from "~/lib/achievements/queue";
 
@@ -240,12 +240,5 @@ export class UserManagementService {
    */
   isSystemOwner(clerkUserId: string): boolean {
     return isSystemOwner(clerkUserId);
-  }
-
-  /**
-   * Get system owner IDs for validation
-   */
-  getSystemOwnerIds(): readonly string[] {
-    return SYSTEM_OWNER_IDS;
   }
 }

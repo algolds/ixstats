@@ -225,18 +225,6 @@ export interface EconomicInputs {
   demographics: DemographicData;
 }
 
-export interface EconomicComparison {
-  metric: string;
-  userValue: number;
-  comparableCountries: Array<{
-    name: string;
-    value: number;
-    tier: string;
-  }>;
-  analysis: string;
-  tier: "Developing" | "Emerging" | "Developed" | "Advanced";
-}
-
 export interface TaxBuilderState {
   taxSystem: TaxSystemInput;
   categories: TaxCategoryInput[];

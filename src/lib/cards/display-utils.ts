@@ -166,15 +166,6 @@ export function getRarityTier(rarity?: string | null): number {
 }
 
 /**
- * Get Tailwind color class for card rarity
- * @param rarity - Card rarity tier
- * @returns Tailwind color class string
- */
-export function getRarityColor(rarity: string): string {
-  return RARITY_COLORS[rarity]?.color ?? RARITY_COLORS[CARD_RARITIES.COMMON]!.color;
-}
-
-/**
  * Get glow intensity class for card rarity
  * Used for hover states and card borders
  * @param rarity - Card rarity tier

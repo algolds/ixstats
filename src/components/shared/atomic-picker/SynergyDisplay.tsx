@@ -27,7 +27,7 @@ export interface SynergyItem {
   type?: "synergy" | "conflict";
 }
 
-export interface SynergyDisplayProps {
+interface SynergyDisplayProps {
   synergies: SynergyItem[];
   conflicts: SynergyItem[];
   className?: string;

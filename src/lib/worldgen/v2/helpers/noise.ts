@@ -7,9 +7,7 @@
 
 import { makeRng } from "./rng";
 
-// ──────────────────────────────────────────────
 // Noise Seed State
-// ──────────────────────────────────────────────
 
 interface NoiseConfig {
   /** Rotation angles per octave (radians) */

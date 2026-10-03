@@ -237,7 +237,7 @@ To prevent CPU degradation and avoid re-rendering entire React component subtree
                            │
       ┌────────────────────┼────────────────────┐
       ▼                    ▼                    ▼
-useIxTimeTimestamp()   useIxTimeFormatted()  useIxTimeGameYear()
+s => s.ixTimeTimestamp  s => s.ixTimeFormatted  s => s.gameYear
 (Subscribers only re-render when their specific slice changes)
 ```
 
@@ -253,25 +253,18 @@ $$\text{CurrentIxTime} = \text{referenceTimestamp} + \Big((\text{Date.now}() - \
 - **1,000ms Tick**: Drives local time interpolation in the Zustand store.
 - **30,000ms Sync**: Fetches authoritative time from `/api/ixtime/current` to eliminate any client clock skew.
 
-### 3. Granular Selector Hooks
+### 3. Granular Selectors
 
-Components subscribe only to the exact temporal slice they require:
+Components subscribe only to the exact temporal slice they require, via a selector on the store:
 
 ```typescript
-import { 
-  useIxTimeTimestamp, 
-  useIxTimeFormatted, 
-  useIxTimeGameYear, 
-  useIxTimeMultiplier,
-  useIxTimeIsPaused,
-  useIxTime, // composite hook (re-renders on any slice change)
-} from "~/context/IxTimeContext";
+import { useIxTimeStore } from "~/stores/ixtime-store";
 
 // Component that needs timestamp (re-renders every tick):
-const timestamp = useIxTimeTimestamp();
+const timestamp = useIxTimeStore((s) => s.ixTimeTimestamp);
 
 // Component that only cares about the current game year (re-renders once every 6 real months):
-const gameYear = useIxTimeGameYear();
+const gameYear = useIxTimeStore((s) => s.gameYear);
 ```
 
 ---
@@ -346,7 +339,7 @@ pm2 restart ixwiki-discord-bot
 
 - `delete` **`src/app/api/ixtime/set-override-direct/`**: ✅ Deleted unreferenced legacy duplicate route handler. All overrides cleanly route to authenticated `POST /api/ixtime/set-override`.
 - `shrink` **`src/app/api/ixtime-status/route.ts`**: ✅ Cleaned up into a concise, lightweight status proxy.
-- `shrink` **`src/context/IxTimeContext.tsx`**: ✅ Purged redundant wrapper functions; directly re-exports granular Zustand selectors (`useIxTimeTimestamp`, `useIxTimeFormatted`, `useIxTimeGameYear`, `useIxTimeMultiplier`, `useIxTimeIsPaused`) alongside the composite `useIxTime()` hook for $O(1)$ selective component re-rendering.
+- `shrink` **`src/context/IxTimeContext.tsx`**: ✅ Purged redundant wrapper functions; exports only `IxTimeProvider`; components needing one slice select it directly from `useIxTimeStore` for $O(1)$ selective re-rendering.
 - `yagni` **`src/lib/ixtime/accuracy.ts` runtime invocation in `updateMasterState()`**: ✅ Eliminated recurring execution of 12 dynamic test suites from the 15s server sync loop. Verification tests now execute exclusively in dedicated Jest suites.
 - `shrink` **`src/lib/ixtime/core.ts` legacy fallbacks**: ✅ Removed uncalled `getCurrentIxTimeInternal()` duplicate and simplified override logic.
 

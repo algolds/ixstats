@@ -39,27 +39,27 @@ export function generateWorld(
   const t0 = performance.now();
   const report = onProgress ?? (() => {});
 
-  // ── Stage 1: Voronoi Mesh (50K+) ──
+  // Stage 1: Voronoi Mesh (50K+)
   report("mesh", 5, "Generating spatial Voronoi mesh...");
   const graph = createMesh(params.seed, params.cellCount, params.lloydIterations);
   report("mesh", 15, `Mesh generated: ${graph.cells.n} cells`);
 
-  // ── Stage 2: Tectonic Plates ──
+  // Stage 2: Tectonic Plates
   report("tectonics", 18, "Simulating tectonic plate boundaries & velocities...");
   generateTectonicPlates(graph, params);
   report("tectonics", 28, `${graph.plates.length} tectonic plates generated`);
 
-  // ── Stage 3: Terrain Elevation ──
+  // Stage 3: Terrain Elevation
   report("terrain", 30, "Computing multi-fractal terrain elevation...");
   generateTerrain(graph, params);
   report("terrain", 42, "Elevation & mountain ridges calculated");
 
-  // ── Stage 4: Coastline Refinement ──
+  // Stage 4: Coastline Refinement
   report("coastlines", 45, "Refining fjords, peninsulas & archipelagos...");
   refineCoastlines(graph, params);
   report("coastlines", 52, "Coastline geometry finalized");
 
-  // ── Stage 5: Unified Hydrology & Climate ──
+  // Stage 5: Unified Hydrology & Climate
   report("hydro-climate", 55, "Computing wind, rain shadow, rivers & climate biomes...");
   computeHydroClimate(graph, params);
   report(
@@ -68,7 +68,7 @@ export function generateWorld(
     `${graph.rivers.length} rivers, ${graph.features.filter((f) => f.type === "lake").length} lakes`
   );
 
-  // ── Stage 6: Quality Gate & Repair ──
+  // Stage 6: Quality Gate & Repair
   report("quality", 75, "Auditing world quality against scientific standards...");
   const qualityReport = validateAndRepair(graph, params);
   report(
@@ -77,7 +77,7 @@ export function generateWorld(
     `Quality Audit Score: ${qualityReport.compositeScore}% (${qualityReport.totalRepairs} repairs)`
   );
 
-  // ── Stage 7: Natural-Border Political Overlay ──
+  // Stage 7: Natural-Border Political Overlay
   report("politics", 85, "Generating cultures, settlements & natural-border countries...");
   generatePolitics(graph, params);
   report(
@@ -86,7 +86,7 @@ export function generateWorld(
     `${graph.states.length} countries, ${graph.settlements.length} settlements`
   );
 
-  // ── Stage 8: GeoJSON Export ──
+  // Stage 8: GeoJSON Export
   report("export", 95, "Exporting to 7-layer GeoJSON with Chaikin smoothing...");
   const layers = exportToGeoJSON(graph);
   report("export", 100, "Generation complete");

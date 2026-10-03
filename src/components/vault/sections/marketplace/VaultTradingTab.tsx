@@ -57,7 +57,6 @@ export function VaultTradingTab() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ArrowRightLeft className="text-blue h-4.5 w-4.5" />

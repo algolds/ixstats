@@ -156,7 +156,6 @@ export const TradeHistory = React.memo<TradeHistoryProps>(({ filterStatus, onTra
           >
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
-                {/* Header */}
                 <div className="mb-2 flex items-center gap-3">
                   <div className={cn("rounded-full p-2", statusConfig.bgColor)}>
                     <StatusIcon className={cn("h-4 w-4", statusConfig.color)} />

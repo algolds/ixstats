@@ -21,21 +21,10 @@ interface MatchTickerSimProps {
   homeTeam: { name: string; color: string; shortName?: string | null };
   awayTeam: { name: string; color: string; shortName?: string | null };
   trace: any[];
-  homeScoreFinal?: number;
-  awayScoreFinal?: number;
   onFinished?: () => void;
 }
 
-export function MatchTickerSim({
-  homeTeam,
-  awayTeam,
-  trace,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  homeScoreFinal,
-  // oxlint-disable-next-line eslint/no-unused-vars
-  awayScoreFinal,
-  onFinished,
-}: MatchTickerSimProps) {
+export function MatchTickerSim({ homeTeam, awayTeam, trace, onFinished }: MatchTickerSimProps) {
   const [isPlaying, setIsPlaying] = useState(true);
   const [traceIndex, setTraceIndex] = useState(0);
   const [homeScore, setHomeScore] = useState(0);

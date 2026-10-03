@@ -70,9 +70,6 @@ export function useBulkFlags(
   countryNames: readonly string[],
   source: "irl" | "wiki" = "wiki"
 ): UseBulkFlagsResult {
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const placeholderUrl = useMemo(() => withBasePath(DEFAULT_PLACEHOLDER), []);
-
   // Safe copied sort for dependency key without mutating input
   const countryNamesKey = useMemo(() => {
     return [...countryNames].sort().join(",");

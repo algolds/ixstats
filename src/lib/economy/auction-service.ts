@@ -16,7 +16,7 @@
 
 import { vaultService, getVaultConfig, LedgerError } from "~/lib/vault/vault-service";
 import { TRPCError } from "@trpc/server";
-import { type PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { notificationAPI } from "~/lib/notifications/api";
 import { grantCardXp } from "~/lib/cards/xp-utils";
 import { SYSTEM_OWNER_IDS } from "~/lib/auth";
@@ -35,6 +35,131 @@ async function getMarketWs() {
     }
   }
   return _marketWs?.getMarketWebSocketServer() ?? null;
+}
+
+type AuctionWithCard = Prisma.CardAuctionGetPayload<{
+  include: { CardOwnership: { include: { cards: true } } };
+}>;
+
+/** 10% marketplace fee on sales over 100 IxC. */
+const marketplaceFee = (price: number) => (price > 100 ? Math.floor(price * 0.1) : 0);
+
+/** Fire-and-forget notification: a failure is logged, never thrown. */
+async function notifyQuietly(
+  label: string,
+  auctionId: string,
+  payload: Parameters<typeof notificationAPI.create>[0]
+) {
+  try {
+    await notificationAPI.create(payload);
+  } catch (err) {
+    console.warn(`[Auction Service] ${label} notification failed for auction`, auctionId, err);
+  }
+}
+
+/**
+ * Nation-card royalty: 2% of the sale to the nation's owner, else the earliest human puller of
+ * the card (never the seller, the buyer or a system account). Optional: must not block the sale.
+ */
+async function payNationRoyalty(
+  tx: Prisma.TransactionClient,
+  auction: AuctionWithCard,
+  buyerId: string,
+  price: number
+) {
+  const card = auction.CardOwnership?.cards;
+  if (card?.cardType !== "NATION" || !card.countryId) return;
+
+  const royaltyAmount = Math.round(price * 0.02 * 100) / 100;
+  const isParty = (clerkId: string | null | undefined) =>
+    clerkId === auction.sellerId || clerkId === buyerId;
+
+  const nationOwner = await tx.user.findFirst({
+    where: { ownedCountries: { some: { id: card.countryId } } },
+  });
+  let recipient: string | null = null;
+  if (nationOwner && !isParty(nationOwner.clerkUserId)) {
+    recipient = nationOwner.clerkUserId;
+  } else {
+    const earliestOwnerships = await tx.cardOwnership.findMany({
+      where: { cardId: card.id },
+      orderBy: { createdAt: "asc" },
+      include: { User: true },
+    });
+    const firstHuman = earliestOwnerships.find((o) => {
+      const clerkId = o.User.clerkUserId;
+      return (
+        clerkId &&
+        clerkId.startsWith("user_") &&
+        !SYSTEM_OWNER_IDS.includes(clerkId) &&
+        !isParty(clerkId)
+      );
+    });
+    recipient = firstHuman?.User.clerkUserId ?? null;
+  }
+  if (!recipient) return;
+
+  try {
+    await vaultService.earnCreditsTx(tx, {
+      userId: recipient,
+      amount: royaltyAmount,
+      type: "EARN_PASSIVE",
+      source: "nation_card_royalty",
+      metadata: {
+        auctionId: auction.id,
+        cardId: card.id,
+        countryId: card.countryId,
+        salePrice: price,
+        royaltyRate: 0.02,
+      },
+    });
+    console.log(
+      `[Auction Service] Awarded ${royaltyAmount} IxC royalty to ${recipient} for nation card sale`
+    );
+  } catch (e) {
+    if (!(e instanceof LedgerError)) throw e;
+    console.warn("[Auction Service] Royalty skipped:", e.message);
+  }
+}
+
+/** Pays the seller (net of the marketplace fee) and royalty, hands the card to the buyer, records the price. */
+async function settleSale(
+  tx: Prisma.TransactionClient,
+  auction: AuctionWithCard,
+  sale: { buyerId: string; price: number; sellerSource: string }
+) {
+  const { buyerId, price } = sale;
+  const fee = marketplaceFee(price);
+  await vaultService.earnCreditsTx(tx, {
+    userId: auction.sellerId,
+    amount: price - fee,
+    type: "EARN_CARDS",
+    source: sale.sellerSource,
+    metadata: {
+      auctionId: auction.id,
+      cardInstanceId: auction.cardInstanceId,
+      marketplaceFee: fee,
+      grossSale: price,
+    },
+  });
+  await payNationRoyalty(tx, auction, buyerId, price);
+
+  await tx.cardOwnership.update({
+    where: { id: auction.cardInstanceId },
+    data: {
+      ownerId: buyerId,
+      userId: buyerId,
+      isLocked: false,
+      lastSalePrice: price,
+      lastSaleDate: new Date(),
+    },
+  });
+  if (auction.CardOwnership?.cards) {
+    await tx.card.update({
+      where: { id: auction.CardOwnership.cards.id },
+      data: { marketValue: price },
+    });
+  }
 }
 
 export class AuctionService {
@@ -441,24 +566,15 @@ export class AuctionService {
 
       // 9. Notify previous bidder if outbid (fire-and-forget)
       if (auction.currentBidderId) {
-        try {
-          const cardTitle = auction.CardOwnership?.cards?.title ?? "Unknown Card";
-          await notificationAPI.create({
-            userId: auction.currentBidderId,
-            title: "You've Been Outbid!",
-            message: `Someone placed a higher bid of ${params.amount} IxC on ${cardTitle}`,
-            type: "warning",
-            category: "cards",
-            priority: "high",
-            metadata: { auctionId: params.auctionId, newBid: params.amount },
-          });
-        } catch (err) {
-          console.warn(
-            "[Auction Service] Outbid notification failed for auction",
-            params.auctionId,
-            err
-          );
-        }
+        await notifyQuietly("Outbid", params.auctionId, {
+          userId: auction.currentBidderId,
+          title: "You've Been Outbid!",
+          message: `Someone placed a higher bid of ${params.amount} IxC on ${auction.CardOwnership?.cards?.title ?? "Unknown Card"}`,
+          type: "warning",
+          category: "cards",
+          priority: "high",
+          metadata: { auctionId: params.auctionId, newBid: params.amount },
+        });
       }
 
       return { success: true };
@@ -587,10 +703,7 @@ export class AuctionService {
           });
         }
 
-        // 3. Transfer IxCredits from buyer to seller (LedgerError rolls the transaction back)
-        const marketplaceFee = buyoutPrice > 100 ? Math.floor(buyoutPrice * 0.1) : 0; // 10% fee on >100 IxC
-        const sellerProceeds = buyoutPrice - marketplaceFee;
-
+        // 3. Buyer pays the full price (LedgerError rolls the transaction back); seller, royalty, card follow
         await vaultService.spendCreditsTx(tx, {
           userId: params.userId,
           amount: buyoutPrice,
@@ -599,116 +712,14 @@ export class AuctionService {
           metadata: {
             auctionId: params.auctionId,
             cardInstanceId: auction.cardInstanceId,
-            marketplaceFee,
+            marketplaceFee: marketplaceFee(buyoutPrice),
           },
         });
-
-        await vaultService.earnCreditsTx(tx, {
-          userId: auction.sellerId,
-          amount: sellerProceeds,
-          type: "EARN_CARDS",
-          source: "card_sale_buyout",
-          metadata: {
-            auctionId: params.auctionId,
-            cardInstanceId: auction.cardInstanceId,
-            marketplaceFee,
-            grossSale: buyoutPrice,
-          },
+        await settleSale(tx, auction, {
+          buyerId: params.userId,
+          price: buyoutPrice,
+          sellerSource: "card_sale_buyout",
         });
-
-        // 2.5. Award nation card royalties (2% of sale price to nation owner with fallback)
-        if (
-          auction.CardOwnership?.cards?.cardType === "NATION" &&
-          auction.CardOwnership?.cards?.countryId
-        ) {
-          const royaltyAmount = Math.round(buyoutPrice * 0.02 * 100) / 100; // 2% royalty
-
-          // Find the nation owner
-          const nationOwner = await tx.user.findFirst({
-            where: { ownedCountries: { some: { id: auction.CardOwnership.cards.countryId } } },
-          });
-
-          let royaltyRecipientClerkId: string | null = null;
-
-          if (
-            nationOwner &&
-            nationOwner.clerkUserId !== auction.sellerId &&
-            nationOwner.clerkUserId !== params.userId
-          ) {
-            royaltyRecipientClerkId = nationOwner.clerkUserId;
-          } else {
-            // Fallback: earliest non-system user pull of this cardId
-            const earliestOwnerships = await tx.cardOwnership.findMany({
-              where: { cardId: auction.CardOwnership.cards.id },
-              orderBy: { createdAt: "asc" },
-              include: { User: true },
-            });
-            const firstHuman = earliestOwnerships.find((o) => {
-              const clerkId = o.User.clerkUserId;
-              return (
-                clerkId &&
-                clerkId.startsWith("user_") &&
-                !SYSTEM_OWNER_IDS.includes(clerkId) &&
-                clerkId !== auction.sellerId &&
-                clerkId !== params.userId
-              );
-            });
-            if (firstHuman) {
-              royaltyRecipientClerkId = firstHuman.User.clerkUserId;
-            }
-          }
-
-          if (royaltyRecipientClerkId) {
-            // Award royalty — optional; must not block the sale when earning is disabled
-            try {
-              await vaultService.earnCreditsTx(tx, {
-                userId: royaltyRecipientClerkId,
-                amount: royaltyAmount,
-                type: "EARN_PASSIVE",
-                source: "nation_card_royalty",
-                metadata: {
-                  auctionId: params.auctionId,
-                  cardId: auction.CardOwnership.cards.id,
-                  countryId: auction.CardOwnership.cards.countryId,
-                  salePrice: buyoutPrice,
-                  royaltyRate: 0.02,
-                },
-              });
-
-              console.log(
-                `[Auction Service] Awarded ${royaltyAmount} IxC royalty to ${royaltyRecipientClerkId} ` +
-                  `for nation card sale`
-              );
-            } catch (e) {
-              if (!(e instanceof LedgerError)) throw e;
-              console.warn("[Auction Service] Royalty skipped:", e.message);
-            }
-          }
-        }
-
-        // 3. Transfer card ownership - change ownerId
-        await tx.cardOwnership.update({
-          where: {
-            id: auction.cardInstanceId,
-          },
-          data: {
-            ownerId: params.userId,
-            userId: params.userId,
-            isLocked: false,
-            lastSalePrice: buyoutPrice,
-            lastSaleDate: new Date(),
-          },
-        });
-
-        // 4. Update card market value
-        if (auction.CardOwnership?.cards) {
-          await tx.card.update({
-            where: { id: auction.CardOwnership.cards.id },
-            data: {
-              marketValue: buyoutPrice,
-            },
-          });
-        }
       });
 
       console.log(
@@ -790,117 +801,12 @@ export class AuctionService {
         }
 
         if (auction.currentBidderId) {
-          // Auction had bids - transfer card to winner
-          const marketplaceFee = finalPrice > 100 ? Math.floor(finalPrice * 0.1) : 0;
-          const sellerProceeds = finalPrice - marketplaceFee;
-
-          // Credits already reserved from bidder, now finalize transfer to seller
-          await vaultService.earnCreditsTx(tx, {
-            userId: auction.sellerId,
-            amount: sellerProceeds,
-            type: "EARN_CARDS",
-            source: "card_sale_auction",
-            metadata: {
-              auctionId,
-              cardInstanceId: auction.cardInstanceId,
-              marketplaceFee,
-              grossSale: finalPrice,
-            },
+          // Credits were reserved from the bidder at bid time; pay the seller and hand over the card
+          await settleSale(tx, auction, {
+            buyerId: auction.currentBidderId,
+            price: finalPrice,
+            sellerSource: "card_sale_auction",
           });
-
-          // Award nation card royalties (2% of sale price to nation owner with fallback)
-          if (
-            auction.CardOwnership?.cards?.cardType === "NATION" &&
-            auction.CardOwnership?.cards?.countryId
-          ) {
-            const royaltyAmount = Math.round(finalPrice * 0.02 * 100) / 100; // 2% royalty
-
-            // Find the nation owner
-            const nationOwner = await tx.user.findFirst({
-              where: { ownedCountries: { some: { id: auction.CardOwnership.cards.countryId } } },
-            });
-
-            let royaltyRecipientClerkId: string | null = null;
-
-            if (
-              nationOwner &&
-              nationOwner.clerkUserId !== auction.sellerId &&
-              nationOwner.clerkUserId !== auction.currentBidderId
-            ) {
-              royaltyRecipientClerkId = nationOwner.clerkUserId;
-            } else {
-              // Fallback: earliest non-system user pull of this cardId
-              const earliestOwnerships = await tx.cardOwnership.findMany({
-                where: { cardId: auction.CardOwnership.cards.id },
-                orderBy: { createdAt: "asc" },
-                include: { User: true },
-              });
-              const firstHuman = earliestOwnerships.find((o) => {
-                const clerkId = o.User.clerkUserId;
-                return (
-                  clerkId &&
-                  clerkId.startsWith("user_") &&
-                  !SYSTEM_OWNER_IDS.includes(clerkId) &&
-                  clerkId !== auction.sellerId &&
-                  clerkId !== auction.currentBidderId
-                );
-              });
-              if (firstHuman) {
-                royaltyRecipientClerkId = firstHuman.User.clerkUserId;
-              }
-            }
-
-            if (royaltyRecipientClerkId) {
-              // Award royalty to nation owner — optional; must not block the sale
-              try {
-                await vaultService.earnCreditsTx(tx, {
-                  userId: royaltyRecipientClerkId,
-                  amount: royaltyAmount,
-                  type: "EARN_PASSIVE",
-                  source: "nation_card_royalty",
-                  metadata: {
-                    auctionId,
-                    cardId: auction.CardOwnership.cards.id,
-                    countryId: auction.CardOwnership.cards.countryId,
-                    salePrice: finalPrice,
-                    royaltyRate: 0.02,
-                  },
-                });
-
-                console.log(
-                  `[Auction Service] Awarded ${royaltyAmount} IxC royalty to ${royaltyRecipientClerkId} ` +
-                    `for nation card sale`
-                );
-              } catch (e) {
-                if (!(e instanceof LedgerError)) throw e;
-                console.warn("[Auction Service] Royalty skipped:", e.message);
-              }
-            }
-          }
-
-          // Transfer card ownership - change ownerId
-          await tx.cardOwnership.update({
-            where: {
-              id: auction.cardInstanceId,
-            },
-            data: {
-              ownerId: auction.currentBidderId,
-              userId: auction.currentBidderId,
-              isLocked: false,
-              lastSalePrice: finalPrice,
-              lastSaleDate: new Date(),
-            },
-          });
-
-          // Update card market value
-          if (auction.CardOwnership?.cards) {
-            await tx.card.update({
-              where: { id: auction.CardOwnership.cards.id },
-              data: {
-                marketValue: finalPrice,
-              },
-            });
-          }
 
           // Grant 50 XP to the winner's card instance
           await grantCardXp(
@@ -921,45 +827,25 @@ export class AuctionService {
             finalPrice,
           });
 
-          // Notify winner (fire-and-forget)
-          try {
-            const cardTitle = auction.CardOwnership?.cards?.title ?? "Unknown Card";
-            await notificationAPI.create({
-              userId: auction.currentBidderId,
-              title: "You Won an Auction!",
-              message: `Congratulations! You won ${cardTitle} for ${finalPrice} IxC`,
-              type: "success",
-              category: "cards",
-              priority: "high",
-              metadata: { auctionId, cardInstanceId: auction.cardInstanceId, finalPrice },
-            });
-          } catch (err) {
-            console.warn(
-              "[Auction Service] Winner notification failed for auction",
-              auctionId,
-              err
-            );
-          }
-
-          // Notify seller (fire-and-forget)
-          try {
-            const cardTitle = auction.CardOwnership?.cards?.title ?? "Unknown Card";
-            await notificationAPI.create({
-              userId: auction.sellerId,
-              title: "Card Sold!",
-              message: `Your ${cardTitle} sold for ${finalPrice} IxC`,
-              type: "success",
-              category: "cards",
-              priority: "high",
-              metadata: { auctionId, buyerId: auction.currentBidderId, finalPrice },
-            });
-          } catch (err) {
-            console.warn(
-              "[Auction Service] Seller notification failed for auction",
-              auctionId,
-              err
-            );
-          }
+          const cardTitle = auction.CardOwnership?.cards?.title ?? "Unknown Card";
+          await notifyQuietly("Winner", auctionId, {
+            userId: auction.currentBidderId,
+            title: "You Won an Auction!",
+            message: `Congratulations! You won ${cardTitle} for ${finalPrice} IxC`,
+            type: "success",
+            category: "cards",
+            priority: "high",
+            metadata: { auctionId, cardInstanceId: auction.cardInstanceId, finalPrice },
+          });
+          await notifyQuietly("Seller", auctionId, {
+            userId: auction.sellerId,
+            title: "Card Sold!",
+            message: `Your ${cardTitle} sold for ${finalPrice} IxC`,
+            type: "success",
+            category: "cards",
+            priority: "high",
+            metadata: { auctionId, buyerId: auction.currentBidderId, finalPrice },
+          });
         } else {
           // No bids - return card to seller, refund 50% of listing fee
           await tx.cardOwnership.update({
@@ -992,25 +878,15 @@ export class AuctionService {
             finalPrice: 0,
           });
 
-          // Notify seller (fire-and-forget)
-          try {
-            const cardTitle = auction.CardOwnership?.cards?.title ?? "Unknown Card";
-            await notificationAPI.create({
-              userId: auction.sellerId,
-              title: "Auction Ended — No Bids",
-              message: `Your auction for ${cardTitle} ended without any bids`,
-              type: "info",
-              category: "cards",
-              priority: "low",
-              metadata: { auctionId },
-            });
-          } catch (err) {
-            console.warn(
-              "[Auction Service] No-bid notification failed for auction",
-              auctionId,
-              err
-            );
-          }
+          await notifyQuietly("No-bid", auctionId, {
+            userId: auction.sellerId,
+            title: "Auction Ended — No Bids",
+            message: `Your auction for ${auction.CardOwnership?.cards?.title ?? "Unknown Card"} ended without any bids`,
+            type: "info",
+            category: "cards",
+            priority: "low",
+            metadata: { auctionId },
+          });
         }
       });
     } catch (error) {
@@ -1137,68 +1013,6 @@ export class AuctionService {
         message: "Failed to cancel auction",
       });
     }
-  }
-
-  /**
-   * Get market trends and analytics
-   *
-   * Calculates market statistics for a time range
-   *
-   * @param params Analytics parameters
-   * @param db Prisma client
-   * @returns Market trend data
-   */
-  async getMarketTrends(
-    params: {
-      cardId?: string;
-      timeRange: "24h" | "7d" | "30d";
-    },
-    db: PrismaClient
-  ) {
-    const timeRangeMs = {
-      "24h": 24 * 60 * 60 * 1000,
-      "7d": 7 * 24 * 60 * 60 * 1000,
-      "30d": 30 * 24 * 60 * 60 * 1000,
-    };
-
-    const since = new Date(Date.now() - timeRangeMs[params.timeRange]);
-
-    const sales = await db.cardAuction.findMany({
-      where: {
-        status: "COMPLETED",
-        finalPrice: { not: null },
-        updatedAt: { gte: since },
-      },
-      include: {
-        CardOwnership: {
-          include: {
-            cards: true,
-          },
-        },
-      },
-      orderBy: { updatedAt: "desc" },
-    });
-
-    // Filter by cardId if provided
-    const filteredSales = params.cardId
-      ? sales.filter((s) => s.CardOwnership?.cards?.id === params.cardId)
-      : sales;
-
-    const totalVolume = filteredSales.reduce((sum, s) => sum + (s.finalPrice ?? 0), 0);
-    const averagePrice = filteredSales.length > 0 ? totalVolume / filteredSales.length : 0;
-
-    return {
-      totalSales: filteredSales.length,
-      totalVolume,
-      averagePrice: Math.round(averagePrice * 100) / 100,
-      priceHistory: filteredSales.map((s) => ({
-        timestamp: s.updatedAt.toISOString(),
-        price: s.finalPrice ?? 0,
-        cardId: s.CardOwnership?.cards?.id ?? "",
-        cardTitle: s.CardOwnership?.cards?.title ?? "Unknown",
-        cardRarity: s.CardOwnership?.cards?.rarity ?? "COMMON",
-      })),
-    };
   }
 
   /**

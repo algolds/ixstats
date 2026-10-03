@@ -6,7 +6,6 @@ type RepeatMode = "none" | "one" | "all";
 type InsertMode = "first" | "last" | "after";
 
 type AudioStore = {
-  // State
   currentTrack: Track | null;
   queue: Track[];
   isPlaying: boolean;

@@ -2,7 +2,7 @@
 
 import React from "react";
 
-// ==================== CORE INTERFACES ====================
+// CORE INTERFACES
 
 export interface UnifiedAtomicComponent {
   id: string;
@@ -43,7 +43,7 @@ export interface EffectivenessMetrics {
   conflictCount: number;
 }
 
-// ==================== COMPONENT SELECTOR PROPS ====================
+// COMPONENT SELECTOR PROPS
 
 export interface UnifiedAtomicComponentSelectorProps<T extends string> {
   // Data
@@ -52,7 +52,6 @@ export interface UnifiedAtomicComponentSelectorProps<T extends string> {
   selectedComponents: T[];
   onComponentChange: (components: T[]) => void;
 
-  // Configuration
   maxComponents?: number;
   isReadOnly?: boolean;
 
@@ -67,7 +66,7 @@ export interface UnifiedAtomicComponentSelectorProps<T extends string> {
   checkConflict: (comp1: string, comp2: string) => boolean;
 }
 
-// ==================== COMPONENT CARD PROPS ====================
+// COMPONENT CARD PROPS
 
 export interface UnifiedAtomicCardProps {
   component: UnifiedAtomicComponent;
@@ -78,66 +77,4 @@ export interface UnifiedAtomicCardProps {
   hasSynergy?: boolean;
   theme: AtomicComponentTheme;
   className?: string;
-}
-
-// ==================== UTILITY TYPES ====================
-export type ThemeType = "unified" | "category-based";
-// ==================== THEME UTILITIES ====================
-
-export function getThemeClasses(
-  theme: AtomicComponentTheme,
-  category?: string
-): {
-  primary: string;
-  primaryLight: string;
-  primaryDark: string;
-  selectedBg: string;
-  selectedBorder: string;
-  synergyBorder: string;
-  synergyBg: string;
-  conflictBorder: string;
-  conflictBg: string;
-} {
-  if (theme.type === "unified" && theme.primary) {
-    const color = theme.primary;
-    return {
-      primary: `${color}-600`,
-      primaryLight: `${color}-500`,
-      primaryDark: `${color}-700`,
-      selectedBg: `${color}-50`,
-      selectedBorder: `${color}-500`,
-      synergyBorder: "green-300",
-      synergyBg: "green-50",
-      conflictBorder: "red-300",
-      conflictBg: "red-50",
-    };
-  }
-
-  if (theme.type === "category-based" && theme.categoryColors && category) {
-    const color = theme.categoryColors[category] || "blue";
-    return {
-      primary: `${color}-600`,
-      primaryLight: `${color}-500`,
-      primaryDark: `${color}-700`,
-      selectedBg: `${color}-50`,
-      selectedBorder: `${color}-500`,
-      synergyBorder: "green-300",
-      synergyBg: "green-50",
-      conflictBorder: "red-300",
-      conflictBg: "red-50",
-    };
-  }
-
-  // Default fallback
-  return {
-    primary: "blue-600",
-    primaryLight: "blue-500",
-    primaryDark: "blue-700",
-    selectedBg: "blue-50",
-    selectedBorder: "blue-500",
-    synergyBorder: "green-300",
-    synergyBg: "green-50",
-    conflictBorder: "red-300",
-    conflictBg: "red-50",
-  };
 }

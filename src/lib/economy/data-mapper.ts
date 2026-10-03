@@ -1,10 +1,7 @@
-// src/lib/economy/data-mapper.ts
-// ═══════════════════════════════════════════════════════════════════════════
 // MAPPER — Patch system: starts from schema-valid base, applies DB patches.
 // ❌ Never imports generateCountryEconomicData or templates.
 // ❌ No (x as any) casts — uses typed helper functions.
 // ✅ Always returns EconomyDataSchema.parse() validated data.
-// ═══════════════════════════════════════════════════════════════════════════
 
 import { createEmptyEconomyData } from "./factory";
 import {
@@ -14,9 +11,7 @@ import {
   type DemographicsData,
 } from "~/types/economics";
 
-// ===============================
 // Types for DB relations
-// ===============================
 
 /** Shape of a country row with economic relations included */
 interface CountryWithEconomicRelations {
@@ -63,9 +58,7 @@ interface CountryWithEconomicRelations {
   demographics?: Record<string, unknown> | null;
 }
 
-// ===============================
 // Safe JSON parsing helper
-// ===============================
 
 function safeJsonParse(value: unknown): unknown {
   if (value == null) return null;
@@ -87,9 +80,7 @@ function readNumber(obj: Record<string, unknown>, field: string): number | null 
   return Number.isFinite(num) ? num : null;
 }
 
-// ===============================
 // Relation patch helpers
-// ===============================
 
 function applyFiscalSystemPatches(
   base: EconomyData,
@@ -386,9 +377,75 @@ function applyDemographicsPatches(
   if (migrationRate != null) (base.demographics as any).migrationRate = migrationRate;
 }
 
-// ===============================
-// MAIN MAPPER
-// ===============================
+type EconomyBase = ReturnType<typeof createEmptyEconomyData>;
+
+function applyCoreFields(
+  base: EconomyBase,
+  country: CountryWithEconomicRelations,
+  population: number,
+  gdpPerCapita: number,
+  totalGdp: number
+) {
+  base.core.totalPopulation = population;
+  base.core.nominalGDP = totalGdp;
+  base.core.gdpPerCapita = gdpPerCapita;
+  base.core.realGDPGrowthRate = country.realGDPGrowthRate ?? country.adjustedGdpGrowth ?? 0;
+  base.core.inflationRate = country.inflationRate ?? 0;
+  base.core.currencyExchangeRate = country.currencyExchangeRate ?? 1;
+  if (country.giniCoefficient != null) base.core.giniCoefficient = country.giniCoefficient;
+}
+
+function applyLaborFields(base: EconomyBase, country: CountryWithEconomicRelations) {
+  base.labor.unemploymentRate = country.unemploymentRate ?? 0;
+  base.labor.employmentRate =
+    country.employmentRate ??
+    (country.unemploymentRate != null ? 100 - country.unemploymentRate : 0);
+  base.labor.laborForceParticipationRate = country.laborForceParticipationRate ?? 0;
+  base.labor.totalWorkforce = country.totalWorkforce ?? 0;
+  base.labor.averageWorkweekHours = country.averageWorkweekHours ?? 0;
+  base.labor.minimumWage = country.minimumWage ?? 0;
+  base.labor.averageAnnualIncome = country.averageAnnualIncome ?? 0;
+}
+
+function applyFiscalFields(
+  base: EconomyBase,
+  country: CountryWithEconomicRelations,
+  population: number,
+  totalGdp: number
+) {
+  base.fiscal.taxRevenueGDPPercent = country.taxRevenueGDPPercent ?? 0;
+  base.fiscal.governmentRevenueTotal = country.governmentRevenueTotal ?? 0;
+  base.fiscal.governmentBudgetGDPPercent = country.governmentBudgetGDPPercent ?? 0;
+  base.fiscal.budgetDeficitSurplus = country.budgetDeficitSurplus ?? 0;
+  base.fiscal.totalDebtGDPRatio = country.totalDebtGDPRatio ?? 0;
+  base.fiscal.internalDebtGDPPercent = country.internalDebtGDPPercent ?? 0;
+  base.fiscal.externalDebtGDPPercent = country.externalDebtGDPPercent ?? 0;
+  base.fiscal.interestRates = country.interestRates ?? 0;
+  base.fiscal.debtServiceCosts = country.debtServiceCosts ?? 0;
+  if (population > 0) {
+    base.fiscal.taxRevenuePerCapita = base.fiscal.governmentRevenueTotal / population;
+    base.fiscal.debtPerCapita = (totalGdp * (base.fiscal.totalDebtGDPRatio / 100)) / population;
+  }
+}
+
+function applySpendingFields(
+  base: EconomyBase,
+  country: CountryWithEconomicRelations,
+  population: number
+) {
+  base.spending.totalSpending = country.totalGovernmentSpending ?? 0;
+  base.spending.spendingGDPPercent = country.spendingGDPPercent ?? 0;
+  if (population > 0) base.spending.spendingPerCapita = base.spending.totalSpending / population;
+}
+
+function applyDemographicFields(base: EconomyBase, country: CountryWithEconomicRelations) {
+  base.demographics.lifeExpectancy = country.lifeExpectancy ?? 0;
+  base.demographics.literacyRate = country.literacyRate ?? 0;
+  base.demographics.urbanRuralSplit =
+    country.urbanPopulationPercent != null && country.ruralPopulationPercent != null
+      ? { urban: country.urbanPopulationPercent, rural: country.ruralPopulationPercent }
+      : { urban: 0, rural: 0 }; // 0 = not recorded, as in factory.ts
+}
 
 /**
  * Maps raw country data (from tRPC) to the structured EconomyData format.
@@ -415,56 +472,12 @@ export function mapCountryToEconomyData(
   const gdpPerCapita = country.currentGdpPerCapita ?? country.baselineGdpPerCapita ?? 0;
   const totalGdp = country.nominalGDP ?? population * gdpPerCapita;
 
-  // 2. Apply direct field patches (Core)
-  base.core.totalPopulation = population;
-  base.core.nominalGDP = totalGdp;
-  base.core.gdpPerCapita = gdpPerCapita;
-  base.core.realGDPGrowthRate = country.realGDPGrowthRate ?? country.adjustedGdpGrowth ?? 0;
-  base.core.inflationRate = country.inflationRate ?? 0;
-  base.core.currencyExchangeRate = country.currencyExchangeRate ?? 1;
-  if (country.giniCoefficient != null) base.core.giniCoefficient = country.giniCoefficient;
-
-  // Labor
-  base.labor.unemploymentRate = country.unemploymentRate ?? 0;
-  base.labor.employmentRate =
-    country.employmentRate ??
-    (country.unemploymentRate != null ? 100 - country.unemploymentRate : 0);
-  base.labor.laborForceParticipationRate = country.laborForceParticipationRate ?? 0;
-  base.labor.totalWorkforce = country.totalWorkforce ?? 0;
-  base.labor.averageWorkweekHours = country.averageWorkweekHours ?? 0;
-  base.labor.minimumWage = country.minimumWage ?? 0;
-  base.labor.averageAnnualIncome = country.averageAnnualIncome ?? 0;
-
-  // Fiscal (direct fields)
-  base.fiscal.taxRevenueGDPPercent = country.taxRevenueGDPPercent ?? 0;
-  base.fiscal.governmentRevenueTotal = country.governmentRevenueTotal ?? 0;
-  base.fiscal.governmentBudgetGDPPercent = country.governmentBudgetGDPPercent ?? 0;
-  base.fiscal.budgetDeficitSurplus = country.budgetDeficitSurplus ?? 0;
-  base.fiscal.totalDebtGDPRatio = country.totalDebtGDPRatio ?? 0;
-  base.fiscal.internalDebtGDPPercent = country.internalDebtGDPPercent ?? 0;
-  base.fiscal.externalDebtGDPPercent = country.externalDebtGDPPercent ?? 0;
-  base.fiscal.interestRates = country.interestRates ?? 0;
-  base.fiscal.debtServiceCosts = country.debtServiceCosts ?? 0;
-  // Compute derived fields
-  if (population > 0) {
-    base.fiscal.taxRevenuePerCapita = base.fiscal.governmentRevenueTotal / population;
-    base.fiscal.debtPerCapita = (totalGdp * (base.fiscal.totalDebtGDPRatio / 100)) / population;
-  }
-
-  // Spending (direct fields)
-  base.spending.totalSpending = country.totalGovernmentSpending ?? 0;
-  base.spending.spendingGDPPercent = country.spendingGDPPercent ?? 0;
-  if (population > 0) {
-    base.spending.spendingPerCapita = base.spending.totalSpending / population;
-  }
-
-  // Demographics (direct fields)
-  base.demographics.lifeExpectancy = country.lifeExpectancy ?? 0;
-  base.demographics.literacyRate = country.literacyRate ?? 0;
-  base.demographics.urbanRuralSplit =
-    country.urbanPopulationPercent != null && country.ruralPopulationPercent != null
-      ? { urban: country.urbanPopulationPercent, rural: country.ruralPopulationPercent }
-      : { urban: 0, rural: 0 }; // 0 = not recorded, as in factory.ts
+  // 2. Apply direct field patches
+  applyCoreFields(base, country, population, gdpPerCapita, totalGdp);
+  applyLaborFields(base, country);
+  applyFiscalFields(base, country, population, totalGdp);
+  applySpendingFields(base, country, population);
+  applyDemographicFields(base, country);
 
   // 3. Wire DB relations (typed helpers)
   applyFiscalSystemPatches(base, country.fiscalSystem);

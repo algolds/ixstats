@@ -12,7 +12,6 @@
  */
 
 import type { WorldGraph, WorldGenParams, GeographicFeature } from "./types";
-import { makeRng } from "./helpers/rng";
 import { cellLat, cellLng, cellAreaKm2 } from "./mesh";
 import { buildNoiseConfig, fractalNoise } from "./helpers/noise";
 import { computeCoastalDistance } from "./helpers/flood-fill";
@@ -23,8 +22,6 @@ import { getElevationZone } from "./config";
  * Mutates graph.cells and populates graph.features in-place.
  */
 export function refineCoastlines(graph: WorldGraph, params: WorldGenParams): void {
-  // oxlint-disable-next-line typescript/no-unused-vars
-  const rng = makeRng(params.seed + 30);
   const { cells } = graph;
   const n = cells.n;
   const complexity = params.coastlineComplexity ?? 0.6;

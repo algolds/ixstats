@@ -81,8 +81,8 @@ export interface CountrySnapshot {
   activeIntents: string[];
   activeIntentCategories: string[];
 
-  // ── Grounded context (Phase 3, focused-first) — all optional; filled when the
-  // ── country has the data. Absent → templates that reference them won't trigger.
+  // Grounded context (Phase 3, focused-first) — all optional; filled when the
+  // country has the data. Absent → templates that reference them won't trigger.
   geo?: {
     isLandlocked: boolean;
     isIsland: boolean;

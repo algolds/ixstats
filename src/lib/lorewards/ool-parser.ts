@@ -394,9 +394,7 @@ export function parseOOLPage(wikitext: string, year: number): ParsedOOLEntry[] {
 /** All known OOL page years */
 export const OOL_YEARS = [2017, 2018, 2019, 2020, 2022, 2023, 2024, 2025, 2026];
 
-// ---------------------------------------------------------------------------
 // Main OOL page parsers (IxWiki:OOL — active members, annual winners)
-// ---------------------------------------------------------------------------
 
 interface ActiveMember {
   username: string;

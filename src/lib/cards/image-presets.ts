@@ -196,16 +196,6 @@ export function getCardImagePreset(type: CardImageType): CardImagePreset {
 
 // Get Unsplash search URL for a card type
 // Get fallback gradient class for a card type
-export function getFallbackGradient(type: CardImageType): string {
-  const preset = getCardImagePreset(type);
-  return `bg-gradient-to-br ${preset.fallbackGradient}`;
-}
-
 // Check if a card type allows custom uploads
-export function allowsCustomUpload(type: CardImageType): boolean {
-  const preset = getCardImagePreset(type);
-  return preset.allowCustomUpload;
-}
-
 // Get all card types that allow custom uploads
 // Validate that a card image type is valid

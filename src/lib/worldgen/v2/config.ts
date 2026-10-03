@@ -7,9 +7,7 @@
 
 import type { WorldGenParams } from "./types";
 
-// ──────────────────────────────────────────────
 // Default Generation Parameters
-// ──────────────────────────────────────────────
 
 export const DEFAULT_PARAMS: WorldGenParams = {
   seed: 42,
@@ -31,9 +29,7 @@ export const DEFAULT_PARAMS: WorldGenParams = {
   lloydIterations: 5,
 };
 
-// ──────────────────────────────────────────────
 // Elevation Zones (meters)
-// ──────────────────────────────────────────────
 
 interface ElevationZone {
   id: number;
@@ -119,9 +115,7 @@ export function getElevationZone(meters: number): number {
   return 0;
 }
 
-// ──────────────────────────────────────────────
 // Trewartha Biome Classification
-// ──────────────────────────────────────────────
 
 interface TrewarthaBiome {
   id: number;
@@ -145,9 +139,7 @@ export const TREWARTHA_BIOMES: TrewarthaBiome[] = [
   { id: 11, code: "H", name: "Highland", color: "#966496" },
 ];
 
-// ──────────────────────────────────────────────
 // Quality Gate Thresholds
-// ──────────────────────────────────────────────
 
 export const QUALITY_THRESHOLDS = {
   /** Minimum composite quality score to pass (0-100) */
@@ -198,9 +190,7 @@ export const QUALITY_THRESHOLDS = {
   flatlandBorderStrength: 0.1,
 } as const;
 
-// ──────────────────────────────────────────────
 // Tectonic Constants
-// ──────────────────────────────────────────────
 
 export const TECTONIC_CONSTANTS = {
   /** Continental plate base elevation in meters */
@@ -227,9 +217,7 @@ export const TECTONIC_CONSTANTS = {
   oceanicSpeedRange: [1.0, 3.0] as [number, number],
 } as const;
 
-// ──────────────────────────────────────────────
 // Climate Constants
-// ──────────────────────────────────────────────
 
 export const CLIMATE_CONSTANTS = {
   /** Baseline equatorial temperature in °C */

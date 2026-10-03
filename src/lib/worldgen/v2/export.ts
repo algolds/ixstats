@@ -39,9 +39,7 @@ export function exportToGeoJSON(graph: WorldGraph): Record<string, FeatureCollec
   return layers;
 }
 
-// ──────────────────────────────────────────────
 // Layer Exporters
-// ──────────────────────────────────────────────
 
 function exportBackground(graph: WorldGraph): FeatureCollection {
   const { cells, features } = graph;
@@ -321,10 +319,6 @@ function exportIcecaps(graph: WorldGraph): FeatureCollection {
   return { type: "FeatureCollection", features: geoFeatures };
 }
 
-// ──────────────────────────────────────────────
-// Helpers
-// ──────────────────────────────────────────────
-
 function processVectorRing(ring: [number, number][], passes: number): [number, number][] {
   // 1. Fine decimation of collinear/duplicate points (0.001° ≈ 100m)
   const simplified = simplifyRing(ring, 0.001);
@@ -350,37 +344,4 @@ function smoothGeometry(geom: Polygon | MultiPolygon, passes: number): Polygon |
       poly.map((ring) => processVectorRing(ring as [number, number][], passes))
     ),
   };
-}
-
-// oxlint-disable-next-line typescript/no-unused-vars
-function filterSmallComponents(graph: WorldGraph, cellList: number[], minSize: number): number[] {
-  const { cells } = graph;
-  const cellSet = new Set(cellList);
-  const visited = new Set<number>();
-  const validCells: number[] = [];
-
-  for (const c of cellList) {
-    if (visited.has(c)) continue;
-
-    const comp: number[] = [];
-    const queue = [c];
-    visited.add(c);
-
-    while (queue.length > 0) {
-      const curr = queue.pop()!;
-      comp.push(curr);
-      for (const nb of cells.neighbors[curr]!) {
-        if (cellSet.has(nb) && !visited.has(nb)) {
-          visited.add(nb);
-          queue.push(nb);
-        }
-      }
-    }
-
-    if (comp.length >= minSize) {
-      validCells.push(...comp);
-    }
-  }
-
-  return validCells;
 }

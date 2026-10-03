@@ -5,9 +5,7 @@
  * on a single Voronoi mesh. This guarantees layers never intersect.
  */
 
-// ──────────────────────────────────────────────
 // Core Data Model
-// ──────────────────────────────────────────────
 
 export interface PackedGraph {
   /** Voronoi cell geometry and per-cell attributes */
@@ -62,9 +60,7 @@ interface CellData {
   boundary: Uint8Array;
 }
 
-// ──────────────────────────────────────────────
 // Entity Types
-// ──────────────────────────────────────────────
 
 interface Feature {
   id: number;
@@ -143,9 +139,7 @@ interface Burg {
   lat: number;
 }
 
-// ──────────────────────────────────────────────
 // Generation Parameters
-// ──────────────────────────────────────────────
 
 export interface WorldGenParams {
   seed: number;
@@ -194,9 +188,7 @@ export const DEFAULT_PARAMS: WorldGenParams = {
   useV2Engine: true,
 };
 
-// ──────────────────────────────────────────────
 // Generation Output
-// ──────────────────────────────────────────────
 
 export interface GeneratedWorld {
   seed: number;

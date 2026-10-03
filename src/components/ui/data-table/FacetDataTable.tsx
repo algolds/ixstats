@@ -61,7 +61,7 @@ export function FacetDataTable<T extends Record<string, any>>({
   tableContainerClassName,
   cardContainerClassName,
 }: FacetDataTableProps<T>) {
-  // ─── 1. URL Sync Initialization & State ─────────────────────────
+  // 1. URL Sync Initialization & State
   const getInitialUrlState = () => {
     if (!urlSync || typeof window === "undefined") {
       return { search: "", page: 1, sort: null as SortState | null };
@@ -97,7 +97,7 @@ export function FacetDataTable<T extends Record<string, any>>({
   const isSortControlled = controlledSortState !== undefined;
   const currentSort = isSortControlled ? controlledSortState : internalSort;
 
-  // ─── 2. URL Sync Effect ──────────────────────────────────────────
+  // 2. URL Sync Effect
   useEffect(() => {
     if (!urlSync || typeof window === "undefined") return;
 
@@ -126,7 +126,7 @@ export function FacetDataTable<T extends Record<string, any>>({
     window.history.replaceState(null, "", newUrl);
   }, [urlSync, urlPrefix, searchTerm, currentPage, currentSort]);
 
-  // ─── 3. State Change Handlers ────────────────────────────────────
+  // 3. State Change Handlers
   const handleSearchChange = useCallback(
     (term: string) => {
       if (controlledOnSearchChange) {
@@ -186,7 +186,7 @@ export function FacetDataTable<T extends Record<string, any>>({
     [currentSort, controlledOnSortChange]
   );
 
-  // ─── 4. Client-side In-memory Filtering, Sorting & Slicing ────────
+  // 4. Client-side In-memory Filtering, Sorting & Slicing
   const filteredData = useMemo(() => {
     if (!searchable || !searchTerm.trim() || isSearchControlled) {
       return data;
@@ -252,7 +252,7 @@ export function FacetDataTable<T extends Record<string, any>>({
     return sortedData.slice(start, start + effectivePageSize);
   }, [sortedData, paginated, isPageControlled, currentPage, effectivePageSize]);
 
-  // ─── 5. CSV Export Handler ───────────────────────────────────────
+  // 5. CSV Export Handler
   const handleExportCSV = useCallback(() => {
     if (!data.length) return;
 
@@ -301,12 +301,12 @@ export function FacetDataTable<T extends Record<string, any>>({
     );
   };
 
-  // ─── 6. View Rendering ───────────────────────────────────────────
+  // 6. View Rendering
   const isEmpty = !loading && paginatedData.length === 0;
 
   return (
     <div data-slot="facet-data-table" className={cn("flex flex-col gap-4", className)}>
-      {/* ─── Toolbar ──────────────────────────────────────────────── */}
+      {/* Toolbar */}
       <FacetTableToolbar
         title={title}
         description={description}
@@ -319,7 +319,7 @@ export function FacetDataTable<T extends Record<string, any>>({
         toolbarActions={toolbarActions}
       />
 
-      {/* ─── Loading Skeleton View ────────────────────────────────── */}
+      {/* Loading Skeleton View */}
       {loading ? (
         <div aria-busy="true" aria-label="Loading" className="flex flex-col gap-3">
           {/* Desktop Table Skeleton: shaped like the Table (header row + body rows) */}
@@ -371,7 +371,7 @@ export function FacetDataTable<T extends Record<string, any>>({
         </Card>
       ) : (
         <>
-          {/* ─── Desktop Table Mode (sm: and up) ────────────────────── */}
+          {/* Desktop Table Mode (sm: and up) */}
           {layoutMode !== "cards" && (
             <div className={cn(layoutMode === "auto" ? "hidden sm:block" : "block")}>
               <Table containerClassName={tableContainerClassName}>
@@ -462,7 +462,7 @@ export function FacetDataTable<T extends Record<string, any>>({
             </div>
           )}
 
-          {/* ─── Mobile Card Mode (< sm) ────────────────────────────── */}
+          {/* Mobile Card Mode (< sm) */}
           {layoutMode !== "table" && (
             <div
               className={cn(
@@ -485,7 +485,7 @@ export function FacetDataTable<T extends Record<string, any>>({
         </>
       )}
 
-      {/* ─── Pagination Controls ──────────────────────────────────── */}
+      {/* Pagination Controls */}
       {paginated && !loading && !isEmpty && (
         <FacetTablePagination
           currentPage={currentPage}

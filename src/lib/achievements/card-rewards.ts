@@ -35,9 +35,7 @@ interface AchievementCardReward {
  * 7. Excellence achievements (multiple high-tier stats)
  */
 const ACHIEVEMENT_CARD_REWARDS: AchievementCardReward[] = [
-  // ==========================================
   // GENERAL MILESTONES
-  // ==========================================
   {
     achievementId: "gen-first-country",
     cardId: "card-achievement-first-nation",
@@ -54,9 +52,7 @@ const ACHIEVEMENT_CARD_REWARDS: AchievementCardReward[] = [
     description: "Master collector! This legendary card recognizes your achievement mastery.",
   },
 
-  // ==========================================
   // ECONOMIC EXCELLENCE
-  // ==========================================
   {
     achievementId: "econ-economic-powerhouse",
     cardId: "card-achievement-economic-titan",
@@ -73,9 +69,7 @@ const ACHIEVEMENT_CARD_REWARDS: AchievementCardReward[] = [
     description: "$100K per capita! Your citizens enjoy unparalleled prosperity.",
   },
 
-  // ==========================================
   // DIPLOMATIC MASTERY
-  // ==========================================
   {
     achievementId: "dip-embassy-network",
     cardId: "card-achievement-diplomatic-architect",
@@ -87,9 +81,7 @@ const ACHIEVEMENT_CARD_REWARDS: AchievementCardReward[] = [
     description: "50 trade partnerships! You've become a central hub of global commerce.",
   },
 
-  // ==========================================
   // SOCIAL INFLUENCE
-  // ==========================================
   {
     achievementId: "social-popular",
     cardId: "card-achievement-influencer",
@@ -101,18 +93,14 @@ const ACHIEVEMENT_CARD_REWARDS: AchievementCardReward[] = [
     description: "50 ThinkPages published! Your intellectual contributions are legendary.",
   },
 
-  // ==========================================
   // MILITARY STRENGTH
-  // ==========================================
   {
     achievementId: "mil-global-force",
     cardId: "card-achievement-military-superpower",
     description: "5M military personnel! Your armed forces are a global superpower.",
   },
 
-  // ==========================================
   // SPECIAL COMBINATIONS
-  // ==========================================
   // Note: These cards can be awarded for multiple related achievements
   // Implementation can check user's overall progress to award combination cards
 ];

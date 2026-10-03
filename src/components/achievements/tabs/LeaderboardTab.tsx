@@ -43,7 +43,6 @@ interface AchievementEntry {
 
 interface LeaderboardTabProps {
   leaderboard?: Array<AchievementEntry>;
-  standalone?: boolean;
 }
 
 const CATEGORIES = [
@@ -211,8 +210,7 @@ function Row({
   );
 }
 
-// oxlint-disable-next-line eslint/no-unused-vars
-export function LeaderboardTab({ leaderboard, standalone = false }: LeaderboardTabProps) {
+export function LeaderboardTab({ leaderboard }: LeaderboardTabProps) {
   const [filter, setFilter] = useState<FilterId>("achievements");
   const [activeDomain, setActiveDomain] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");

@@ -92,126 +92,118 @@ interface StateFile {
   monthlyResults?: Record<string, StateFileResult>;
 }
 
+const winnerOf = (r: StateFileResult) => ({
+  winnerUser: r.winner?.user ?? null,
+  winnerPage: r.winner?.page ?? null,
+});
+
+/** Month range from the state file, else derived from a YYYY-MM key (e.g. "2026-03" → Mar 1 - Mar 31). */
+function monthRange(date: string, result: StateFileResult) {
+  if (result.monthStart) return { start: result.monthStart, end: result.monthEnd ?? null };
+  const [year, month] = /^\d{4}-\d{2}$/.test(date) ? date.split("-").map(Number) : [];
+  if (!year || !month) return { start: null, end: null };
+  const lastDay = new Date(year, month, 0).getDate();
+  return { start: `${date}-01`, end: `${date}-${String(lastDay).padStart(2, "0")}` };
+}
+
+const upsertEntry = (
+  date: string,
+  type: "daily" | "weekly" | "monthly",
+  create: Record<string, unknown>,
+  update: Record<string, unknown>
+) =>
+  db.lorewardEntry.upsert({
+    where: { date_type: { date, type } },
+    create: { date, type, status: "approved", ...create } as any,
+    update: { ...update, syncedAt: new Date() } as any,
+  });
+
+async function syncDaily(results: Record<string, StateFileResult> | undefined): Promise<number> {
+  let synced = 0;
+  for (const [date, result] of Object.entries(results ?? {})) {
+    if (result.status !== "approved") continue;
+    const fields = {
+      ...winnerOf(result),
+      winnerScore: result.winner?.score ?? null,
+      winnerBytes: result.winner?.bytesAdded ?? null,
+      runnerUpUser: result.runnerUp?.user ?? null,
+      runnerUpPage: result.runnerUp?.page ?? null,
+      runnerUpScore: result.runnerUp?.score ?? null,
+      runnerUpBytes: result.runnerUp?.bytesAdded ?? null,
+      editCount: result.editCount ?? 0,
+      metadata: result.candidates ? JSON.stringify(result.candidates) : null,
+    };
+    await upsertEntry(date, "daily", fields, fields);
+    synced++;
+  }
+
+  return synced;
+}
+
+/** Weekly results carry weekStart/weekEnd for date range display. */
+async function syncWeekly(results: Record<string, StateFileResult> | undefined): Promise<number> {
+  let synced = 0;
+  for (const [date, result] of Object.entries(results ?? {})) {
+    await upsertEntry(
+      date,
+      "weekly",
+      {
+        dateStart: result.weekStart ?? null,
+        dateEnd: result.weekEnd ?? null,
+        ...winnerOf(result),
+        winnerScore: result.winner?.score ?? null,
+        winnerBytes: result.winner?.bytesAdded ?? null,
+      },
+      {
+        dateStart: result.weekStart ?? undefined,
+        dateEnd: result.weekEnd ?? undefined,
+        ...winnerOf(result),
+      }
+    );
+    synced++;
+  }
+
+  return synced;
+}
+
+async function syncMonthly(results: Record<string, StateFileResult> | undefined): Promise<number> {
+  let synced = 0;
+  for (const [date, result] of Object.entries(results ?? {})) {
+    const { start, end } = monthRange(date, result);
+    await upsertEntry(
+      date,
+      "monthly",
+      {
+        dateStart: start,
+        dateEnd: end,
+        ...winnerOf(result),
+        winnerScore: result.winner?.score ?? null,
+      },
+      { dateStart: start ?? undefined, dateEnd: end ?? undefined, ...winnerOf(result) }
+    );
+    synced++;
+  }
+
+  return synced;
+}
+
 /**
  * Sync recent results from the bot's lorewards-state.json file.
  */
 export async function syncFromStateFile(): Promise<number> {
   let state: StateFile;
   try {
-    const raw = fs.readFileSync(STATE_FILE, "utf-8");
-    state = JSON.parse(raw) as StateFile;
+    state = JSON.parse(fs.readFileSync(STATE_FILE, "utf-8")) as StateFile;
   } catch {
     console.warn("[Lorewards] Could not read state file:", STATE_FILE);
     return 0;
   }
 
-  let synced = 0;
-
-  // Sync daily results
-  for (const [date, result] of Object.entries(state.dailyResults ?? {})) {
-    if (result.status !== "approved") continue;
-    await db.lorewardEntry.upsert({
-      where: { date_type: { date, type: "daily" } },
-      create: {
-        date,
-        type: "daily",
-        winnerUser: result.winner?.user ?? null,
-        winnerPage: result.winner?.page ?? null,
-        winnerScore: result.winner?.score ?? null,
-        winnerBytes: result.winner?.bytesAdded ?? null,
-        runnerUpUser: result.runnerUp?.user ?? null,
-        runnerUpPage: result.runnerUp?.page ?? null,
-        runnerUpScore: result.runnerUp?.score ?? null,
-        runnerUpBytes: result.runnerUp?.bytesAdded ?? null,
-        editCount: result.editCount ?? 0,
-        status: "approved",
-        metadata: result.candidates ? JSON.stringify(result.candidates) : null,
-      },
-      update: {
-        winnerUser: result.winner?.user ?? null,
-        winnerPage: result.winner?.page ?? null,
-        winnerScore: result.winner?.score ?? null,
-        winnerBytes: result.winner?.bytesAdded ?? null,
-        runnerUpUser: result.runnerUp?.user ?? null,
-        runnerUpPage: result.runnerUp?.page ?? null,
-        runnerUpScore: result.runnerUp?.score ?? null,
-        runnerUpBytes: result.runnerUp?.bytesAdded ?? null,
-        editCount: result.editCount ?? 0,
-        metadata: result.candidates ? JSON.stringify(result.candidates) : null,
-        syncedAt: new Date(),
-      },
-    });
-    synced++;
-  }
-
-  // Sync weekly results — capture weekStart/weekEnd for date range display
-  for (const [date, result] of Object.entries(state.weeklyResults ?? {})) {
-    await db.lorewardEntry.upsert({
-      where: { date_type: { date, type: "weekly" } },
-      create: {
-        date,
-        type: "weekly",
-        dateStart: result.weekStart ?? null,
-        dateEnd: result.weekEnd ?? null,
-        winnerUser: result.winner?.user ?? null,
-        winnerPage: result.winner?.page ?? null,
-        winnerScore: result.winner?.score ?? null,
-        winnerBytes: result.winner?.bytesAdded ?? null,
-        status: "approved",
-      },
-      update: {
-        dateStart: result.weekStart ?? undefined,
-        dateEnd: result.weekEnd ?? undefined,
-        winnerUser: result.winner?.user ?? null,
-        winnerPage: result.winner?.page ?? null,
-        syncedAt: new Date(),
-      },
-    });
-    synced++;
-  }
-
-  // Sync monthly results — derive range from date key (YYYY-MM format)
-  for (const [date, result] of Object.entries(state.monthlyResults ?? {})) {
-    // Compute month range from key (e.g. "2026-03" → Mar 1 - Mar 31)
-    let monthStart: string | null = null;
-    let monthEnd: string | null = null;
-    if (result.monthStart) {
-      monthStart = result.monthStart;
-      monthEnd = result.monthEnd ?? null;
-    } else if (/^\d{4}-\d{2}$/.test(date)) {
-      // Derive from YYYY-MM key
-      const [year, month] = date.split("-").map(Number);
-      if (year && month) {
-        monthStart = `${date}-01`;
-        const lastDay = new Date(year, month, 0).getDate();
-        monthEnd = `${date}-${String(lastDay).padStart(2, "0")}`;
-      }
-    }
-
-    await db.lorewardEntry.upsert({
-      where: { date_type: { date, type: "monthly" } },
-      create: {
-        date,
-        type: "monthly",
-        dateStart: monthStart,
-        dateEnd: monthEnd,
-        winnerUser: result.winner?.user ?? null,
-        winnerPage: result.winner?.page ?? null,
-        winnerScore: result.winner?.score ?? null,
-        status: "approved",
-      },
-      update: {
-        dateStart: monthStart ?? undefined,
-        dateEnd: monthEnd ?? undefined,
-        winnerUser: result.winner?.user ?? null,
-        winnerPage: result.winner?.page ?? null,
-        syncedAt: new Date(),
-      },
-    });
-    synced++;
-  }
-
-  return synced;
+  return (
+    (await syncDaily(state.dailyResults)) +
+    (await syncWeekly(state.weeklyResults)) +
+    (await syncMonthly(state.monthlyResults))
+  );
 }
 
 /**
@@ -284,10 +276,7 @@ export async function recomputeUserStats(username: string): Promise<void> {
     orderBy: { date: "asc" },
   });
 
-  let dailyWins = 0,
-    dailyRunnerUps = 0,
-    weeklyWins = 0,
-    monthlyWins = 0;
+  const stats = { dailyWins: 0, dailyRunnerUps: 0, weeklyWins: 0, monthlyWins: 0 };
   let totalBytes = 0;
   let lastWinDate: string | null = null;
   const winDates: string[] = [];
@@ -295,50 +284,31 @@ export async function recomputeUserStats(username: string): Promise<void> {
   for (const e of entries) {
     if (e.winnerUser === username) {
       if (e.type === "daily") {
-        dailyWins++;
+        stats.dailyWins++;
         winDates.push(e.date);
       }
-      if (e.type === "weekly") weeklyWins++;
-      if (e.type === "monthly") monthlyWins++;
+      if (e.type === "weekly") stats.weeklyWins++;
+      if (e.type === "monthly") stats.monthlyWins++;
       totalBytes += e.winnerBytes ?? 0;
       lastWinDate = e.date;
     }
-    if (e.runnerUpUser === username && e.type === "daily") {
-      dailyRunnerUps++;
-    }
+    if (e.runnerUpUser === username && e.type === "daily") stats.dailyRunnerUps++;
   }
 
   const { current, longest } = calculateStreaks(winDates);
+  const computed = {
+    ...stats,
+    currentStreak: current,
+    longestStreak: longest,
+    totalBytes,
+    lastWinDate,
+  };
 
-  // Preserve existing totalScore (set from main OOL page medal scores)
-  const existing = await db.lorewardUserStats.findUnique({ where: { username } });
-
+  // totalScore is left untouched on update: it comes from the main OOL page medal scores
   await db.lorewardUserStats.upsert({
     where: { username },
-    create: {
-      username,
-      dailyWins,
-      dailyRunnerUps,
-      weeklyWins,
-      monthlyWins,
-      currentStreak: current,
-      longestStreak: longest,
-      totalScore: 0,
-      totalBytes,
-      lastWinDate,
-    },
-    update: {
-      dailyWins,
-      dailyRunnerUps,
-      weeklyWins,
-      monthlyWins,
-      currentStreak: current,
-      longestStreak: longest,
-      // Only update totalScore if it wasn't already set from the main OOL page
-      ...(existing?.totalScore === 0 || !existing ? { totalScore: 0 } : {}),
-      totalBytes,
-      lastWinDate,
-    },
+    create: { username, ...computed, totalScore: 0 },
+    update: computed,
   });
 }
 
@@ -433,51 +403,24 @@ export async function fullSync(): Promise<{
   return { stateEntries, oolEntries, users, members };
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+const DAY_MS = 24 * 60 * 60 * 1000;
+const daysBetween = (from: string, to: string) =>
+  (new Date(to).getTime() - new Date(from).getTime()) / DAY_MS;
 
 function calculateStreaks(winDates: string[]): { current: number; longest: number } {
   if (winDates.length === 0) return { current: 0, longest: 0 };
 
   const sorted = [...winDates].sort();
   let longest = 1;
-  let current = 1;
-  let streak = 1;
-
+  let run = 1; // after the loop: the consecutive-day run ending at the last win
   for (let i = 1; i < sorted.length; i++) {
-    const prev = new Date(sorted[i - 1]!);
-    const curr = new Date(sorted[i]!);
-    const diffDays = (curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
-
-    if (diffDays === 1) {
-      streak++;
-    } else {
-      streak = 1;
-    }
-    longest = Math.max(longest, streak);
+    run = daysBetween(sorted[i - 1]!, sorted[i]!) === 1 ? run + 1 : 1;
+    longest = Math.max(longest, run);
   }
 
-  // Current streak: count backwards from the last win date
   const today = new Date().toISOString().slice(0, 10);
-  const lastDate = sorted[sorted.length - 1]!;
-  const daysSinceLast =
-    (new Date(today).getTime() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24);
-
-  if (daysSinceLast > 1) {
-    current = 0; // Streak broken
-  } else {
-    current = 1;
-    for (let i = sorted.length - 2; i >= 0; i--) {
-      const prev = new Date(sorted[i]!);
-      const curr = new Date(sorted[i + 1]!);
-      const diff = (curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
-      if (diff === 1) current++;
-      else break;
-    }
-  }
-
-  return { current, longest };
+  const streakBroken = daysBetween(sorted[sorted.length - 1]!, today) > 1;
+  return { current: streakBroken ? 0 : run, longest };
 }
 
 let lastAutoSyncTime = 0;

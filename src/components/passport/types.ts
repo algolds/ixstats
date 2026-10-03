@@ -18,9 +18,6 @@ export type PassportVault = NonNullable<PassportPayload["vault"]>;
 export type PassportAchievements = NonNullable<PassportPayload["showcase"]["achievements"]>;
 
 export type PassportRibbon = PassportAchievements["ribbons"][number];
-
-export type PassportSettings = PassportOutputs["getPassportSettings"];
-
 export type PassportTabType = "overview" | "realms" | "work" | "vault" | "history";
 
 /**

@@ -39,50 +39,493 @@ import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import type { CardInstance, CardDisplaySize } from "~/types/cards-display";
 import { getCardDesignMetadata } from "~/lib/cards/card-metadata-resolver";
 
-// Static lookup configurations hoisted outside render function
-const FONT_SIZES = {
+type SizeKey = "small" | "medium" | "large";
+
+const SIZE_KEY: Record<CardDisplaySize, SizeKey> = {
+  small: "small",
+  sm: "small",
+  medium: "medium",
+  md: "medium",
+  large: "large",
+};
+
+const SIZE_STYLES: Record<
+  SizeKey,
+  {
+    title: string;
+    type: string;
+    stats: string;
+    height: string;
+    heightPx: string;
+    imageSizes: string;
+  }
+> = {
   small: {
     title: "text-footnote",
     type: "text-footnote",
     stats: "text-footnote",
-  },
-  sm: {
-    title: "text-footnote",
-    type: "text-footnote",
-    stats: "text-footnote",
+    height: "h-[179px]",
+    heightPx: "179px",
+    imageSizes: "128px",
   },
   medium: {
     title: "text-body",
     type: "text-footnote",
     stats: "text-footnote",
-  },
-  md: {
-    title: "text-body",
-    type: "text-footnote",
-    stats: "text-footnote",
+    height: "h-[269px]",
+    heightPx: "269px",
+    imageSizes: "192px",
   },
   large: {
     title: "text-body",
     type: "text-body",
     stats: "text-body",
+    height: "h-[358px]",
+    heightPx: "358px",
+    imageSizes: "256px",
   },
-} as const;
-
-const HEIGHT_CLASSES: Record<CardDisplaySize, string> = {
-  small: "h-[179px]",
-  sm: "h-[179px]",
-  medium: "h-[269px]",
-  md: "h-[269px]",
-  large: "h-[358px]",
 };
 
-const HEIGHT_PIXELS: Record<CardDisplaySize, string> = {
-  small: "179px",
-  sm: "179px",
-  medium: "269px",
-  md: "269px",
-  large: "358px",
-};
+const HOLOGRAPHIC_RARITIES = ["RARE", "ULTRA_RARE", "EPIC", "LEGENDARY"];
+
+const METALLIC_BY_RARITY: Record<string, "gold" | "purple"> = { LEGENDARY: "gold", EPIC: "purple" };
+
+/** The four dual-border corner brackets (matching CardBack.tsx). */
+const CORNER_BRACKETS = [
+  "top-2 left-2 border-t-2 border-l-2",
+  "top-2 right-2 border-t-2 border-r-2",
+  "bottom-2 left-2 border-b-2 border-l-2",
+  "right-2 bottom-2 border-r-2 border-b-2",
+];
+
+type CardStats = ReturnType<typeof formatCardStats>;
+
+const isNsImport = (card: CardInstance) => card.cardType === "NS_IMPORT" || Boolean(card.nsCardId);
+
+/** Lore cards carry no numeric stats; they are identified by category, wiki linkage or slug. */
+function isLoreCardOf(card: CardInstance, resolvedCategory: LoreCategory | null) {
+  const type = (card.cardType as string) || "";
+  return (
+    type === "LORE" ||
+    type === "LORE_BATCH" ||
+    Boolean(card.category && card.category !== "NS_IMPORT") ||
+    Boolean(card.wikiPageId || card.wikiSource || card.wikiArticleTitle || card.slug) ||
+    (resolvedCategory !== null && resolvedCategory !== "NS_IMPORT")
+  );
+}
+
+function CornerBrackets({ className }: { className: string }) {
+  return (
+    <>
+      {CORNER_BRACKETS.map((position) => (
+        <div
+          key={position}
+          className={cn(
+            "pointer-events-none absolute z-30 h-3 w-3 opacity-85",
+            position,
+            className
+          )}
+        />
+      ))}
+    </>
+  );
+}
+
+function TopBadges(props: {
+  card: CardInstance;
+  size: CardDisplaySize;
+  performanceMode: boolean;
+  isIIWiki: boolean;
+  isLoreCard: boolean;
+  effectiveCategory: LoreCategory | null;
+  accentColor?: string;
+  typeFont: string;
+}) {
+  const { card, isIIWiki, isLoreCard, effectiveCategory } = props;
+  const showNsBadge = !isIIWiki && !isLoreCard && isNsImport(card);
+  const showTypeLabel =
+    !effectiveCategory &&
+    !isIIWiki &&
+    (isLoreCard || (card.cardType !== "NS_IMPORT" && !card.nsCardId));
+
+  return (
+    <div className="flex items-start justify-between">
+      <RarityBadge
+        rarity={card.rarity}
+        season={card.season}
+        size={props.size === "large" ? "medium" : "small"}
+        animated={!props.performanceMode}
+      />
+      <div className="flex items-center gap-1">
+        {isIIWiki && <IIWikiBadge size="sm" showText={false} className="h-5 w-auto px-1 py-0" />}
+        {showNsBadge && <NationStatesBadge />}
+
+        {effectiveCategory ? (
+          <span
+            className="rounded-control-sm shadow-card flex h-5 w-5 items-center justify-center border border-white/20 bg-slate-950/80 p-0.5 text-white"
+            title={getCategoryLabel(effectiveCategory)}
+          >
+            <CategoryIcon
+              category={effectiveCategory}
+              treatment="seal"
+              size="xs"
+              color={props.accentColor}
+            />
+          </span>
+        ) : (
+          showTypeLabel && (
+            <span
+              className={cn(
+                "rounded-control-sm shadow-card border border-white/20 bg-slate-950/80 px-2 py-0.5 font-bold text-white",
+                props.typeFont
+              )}
+            >
+              {getCardTypeLabel(card.cardType)}
+            </span>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Category / rarity line. NS cards show the NationStates badge instead of an "NS Import" label. */
+function SubtitleLine(props: {
+  card: CardInstance;
+  effectiveCategory: LoreCategory | null;
+  isLoreCard: boolean;
+  customSubtitle?: string;
+}) {
+  const { card, effectiveCategory } = props;
+  const rarityLabel = props.customSubtitle || card.rarity;
+  const categoryLabel =
+    card.subcategory ||
+    (effectiveCategory ? getCategoryLabel(effectiveCategory) : null) ||
+    (props.isLoreCard && card.cardType !== "NS_IMPORT" ? getCardTypeLabel(card.cardType) : null);
+
+  if (isNsImport(card) && !categoryLabel) {
+    return (
+      <p className="text-footnote mt-0.5 line-clamp-1 flex items-center gap-2 font-semibold tracking-wider text-amber-400 uppercase">
+        <span>{rarityLabel}</span>
+      </p>
+    );
+  }
+  const showLabel = categoryLabel && !(isNsImport(card) && categoryLabel === "NS Import");
+  return (
+    <p className="text-footnote mt-0.5 line-clamp-1 flex items-center gap-2 font-semibold tracking-wider text-white/80 uppercase">
+      {showLabel && (
+        <>
+          <span>{categoryLabel}</span>
+          <span className="text-white/40">•</span>
+        </>
+      )}
+      <span className="font-semibold tracking-wide text-amber-400">{rarityLabel}</span>
+    </p>
+  );
+}
+
+function StatBars({ stats }: { stats: CardStats }) {
+  return (
+    <div className="space-y-2">
+      <div className="rounded-control flex gap-1 border border-white/10 bg-slate-950/80 px-2 py-2">
+        {Object.entries(stats.base).map(([key, stat]) => (
+          <div key={key} className="flex-1 space-y-0.5">
+            <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
+                style={{ width: `${stat.value}%`, backgroundColor: stat.def.color }}
+              />
+            </div>
+            <div className="text-center text-[7px] leading-none font-bold text-white/50">
+              {stat.def.label.substring(0, 3).toUpperCase()}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function HoverStats({ stats, fontClass }: { stats: CardStats; fontClass: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+      transition={{ duration: 0.2 }}
+      className={cn(
+        "xs:grid-cols-2 rounded-control grid grid-cols-1 gap-1 p-2",
+        "border border-white/20 bg-black/80",
+        fontClass
+      )}
+      style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)" }}
+    >
+      {Object.entries(stats.base).map(([key, stat]) => (
+        <div key={key} className="flex items-center justify-between px-1">
+          <span className="font-medium text-white/70">{stat.def.label}</span>
+          <span
+            className="font-bold tabular-nums"
+            style={{ color: stat.def.color, textShadow: `0 0 8px ${stat.def.color}` }}
+          >
+            {stat.value}
+          </span>
+        </div>
+      ))}
+    </motion.div>
+  );
+}
+
+function ExcerptBox({ card, html }: { card: CardInstance; html: string }) {
+  return (
+    <div className="rounded-row pointer-events-auto mt-1 border border-white/15 bg-slate-950/85 p-2 text-left shadow-inner transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
+      <div className="text-footnote line-clamp-2 leading-snug text-white/90">
+        <WikiHtmlContent html={html} />
+      </div>
+      <div className="text-footnote mt-2 flex items-center justify-between border-t border-white/10 pt-2 text-white/50">
+        <span className="font-semibold tracking-wider text-amber-400 uppercase">
+          {(card.wikiSource || "IXWIKI").toUpperCase()} ARCHIVE
+        </span>
+        <span className="flex items-center gap-0.5 font-mono font-bold text-white/70 tabular-nums">
+          <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
+          {card.marketValue.toLocaleString()}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** Category, lore/NS classification and rarity styling derived from the card. */
+function useCardIdentity(card: CardInstance) {
+  const resolvedCategory: LoreCategory | null = isValidLoreCategory(card.category ?? "")
+    ? (card.category as LoreCategory)
+    : isValidLoreCategory(card.cardType)
+      ? (card.cardType as LoreCategory)
+      : null;
+  const isLoreCard = isLoreCardOf(card, resolvedCategory);
+
+  const meta = card.metadata as Record<string, unknown> | null | undefined;
+  const effectiveCategory = React.useMemo(() => {
+    if (resolvedCategory && resolvedCategory !== "NS_IMPORT") return resolvedCategory;
+    if (!isLoreCard) return null;
+    return classifyFromWikitext(
+      (meta?.fullExcerpt as string) || card.description,
+      card.wikiArticleTitle || card.title
+    );
+  }, [resolvedCategory, isLoreCard, meta, card.description, card.wikiArticleTitle, card.title]);
+
+  return {
+    resolvedCategory,
+    isLoreCard,
+    effectiveCategory,
+    categoryTheme: effectiveCategory ? getCategoryTheme(effectiveCategory) : null,
+    isIIWiki: isIIWikiCard(card),
+  };
+}
+
+function CardArtwork(props: {
+  card: CardInstance;
+  styles: (typeof SIZE_STYLES)[SizeKey];
+  designMeta: ReturnType<typeof getCardDesignMetadata>;
+  resolvedCategory: LoreCategory | null;
+  isIIWiki: boolean;
+  isHovered: boolean;
+  performanceMode: boolean;
+  showHolographic: boolean;
+}) {
+  const { card, performanceMode } = props;
+  const [imageError, setImageError] = useState(false);
+  const artUrl = card.artworkUrl || card.artwork || card.wikiImageUrl;
+  const hasCustomArtwork = Boolean(artUrl?.trim() && !imageError);
+
+  return (
+    <div
+      className="relative h-full w-full overflow-hidden"
+      style={{ height: props.styles.heightPx }}
+    >
+      {hasCustomArtwork && artUrl ? (
+        <Image
+          src={proxyNSImage(artUrl)}
+          alt={card.title}
+          fill
+          className="object-cover"
+          loading="lazy"
+          sizes={props.styles.imageSizes}
+          onError={() => setImageError(true)}
+          unoptimized
+        />
+      ) : (
+        <CardHolographicCover
+          category={props.resolvedCategory}
+          cardType={card.cardType}
+          rarity={card.rarity}
+          wikiSource={props.isIIWiki ? "iiwiki" : card.wikiSource}
+          title={card.title}
+          designMetadata={props.designMeta}
+          isHovered={props.isHovered}
+        />
+      )}
+
+      {/* Metallic gradient overlay for premium feel */}
+      {!performanceMode && (
+        <div
+          className="absolute inset-0 opacity-10 mix-blend-overlay"
+          style={{ background: getMetallicGradient(METALLIC_BY_RARITY[card.rarity] ?? "silver") }}
+        />
+      )}
+
+      {/* Tactile texture for physical cardstock depth */}
+      <TextureOverlay
+        texture="paperGrain"
+        opacity={0.06}
+        className="pointer-events-none z-10 mix-blend-overlay"
+      />
+
+      {/* Text-readability gradient over artwork */}
+      {hasCustomArtwork && (
+        <div className="card-art-linear-t absolute inset-0 from-black/95 via-black/40 to-transparent" />
+      )}
+
+      {props.showHolographic && (
+        <HolographicOverlay
+          rarity={card.rarity}
+          enableMouseTracking={!performanceMode}
+          enableLightRays={!performanceMode}
+          enableFoilStamp={getFoilStampConfig(card.rarity).enabled && !performanceMode}
+          enableParticles={!performanceMode}
+          disabled={performanceMode}
+        />
+      )}
+
+      <motion.div
+        className={cn("rounded-card absolute inset-0", getRarityGlow(card.rarity))}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: props.isHovered ? 0.5 : 0.2 }}
+        transition={{ duration: 0.3 }}
+      />
+    </div>
+  );
+}
+
+function LevelBadge({ level }: { level: number }) {
+  return (
+    <motion.div
+      className={cn(
+        "absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full",
+        "card-art-linear-br from-amber-400 to-amber-600",
+        "text-body font-bold text-black tabular-nums",
+        "border-2 border-amber-300",
+        "shadow-floating"
+      )}
+      style={{ textShadow: "0 1px 2px rgba(0,0,0,0.3)" }}
+      initial={{ scale: 0.8, opacity: 0, rotate: -180 }}
+      animate={{ scale: 1, opacity: 1, rotate: 0 }}
+      transition={{ duration: 0.5, type: "spring" }}
+    >
+      {level}
+    </motion.div>
+  );
+}
+
+/** Rarity border (animated gradient border on premium cards) and drop shadow for the card frame. */
+function cardFrame(
+  rarity: CardInstance["rarity"],
+  specularColor: string,
+  performanceMode: boolean
+) {
+  const border = getPremiumBorderConfig(rarity);
+  const animated = border.animated && !performanceMode;
+  return {
+    className: cn(
+      "rounded-card relative h-full w-full overflow-hidden",
+      animated ? `border-${border.width} ${border.glow}` : `border-${border.width}`,
+      getRarityConfig(rarity).borderColor
+    ),
+    style: {
+      borderImageSource: animated
+        ? `linear-gradient(135deg, ${border.gradient
+            .split(" ")
+            .map((c) => `var(--tw-gradient-${c})`)
+            .join(", ")})`
+        : undefined,
+      borderImageSlice: animated ? 1 : undefined,
+      boxShadow: `0 20px 45px -10px rgba(0, 0, 0, 0.85), 0 0 25px ${specularColor}`,
+    },
+  };
+}
+
+function CardInfoOverlay(props: {
+  card: CardInstance;
+  size: CardDisplaySize;
+  styles: (typeof SIZE_STYLES)[SizeKey];
+  designMeta: ReturnType<typeof getCardDesignMetadata>;
+  identity: ReturnType<typeof useCardIdentity>;
+  stats: CardStats;
+  isHovered: boolean;
+  performanceMode: boolean;
+  showStats: boolean;
+  showStatsOnHover: boolean;
+  showExcerpt: boolean;
+}) {
+  const { card, styles, identity, stats, isHovered, performanceMode } = props;
+  const excerptText = card.wikiExcerpt || card.description || "";
+  const excerptHtml = React.useMemo(
+    () => (excerptText ? parseWikitextToHtml(excerptText) : ""),
+    [excerptText]
+  );
+
+  return (
+    <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-3">
+      <TopBadges
+        card={card}
+        size={props.size}
+        performanceMode={performanceMode}
+        isIIWiki={identity.isIIWiki}
+        isLoreCard={identity.isLoreCard}
+        effectiveCategory={identity.effectiveCategory}
+        accentColor={identity.categoryTheme?.accentColor}
+        typeFont={styles.type}
+      />
+
+      <div className="space-y-1">
+        <motion.h3
+          className={cn("line-clamp-2 font-bold tracking-tight text-white", styles.title)}
+          style={{ textShadow: "0 2px 6px rgba(0, 0, 0, 0.9)" }}
+          animate={!performanceMode && isHovered ? { scale: [1, 1.02, 1] } : {}}
+          transition={{ duration: 0.4 }}
+        >
+          {card.title}
+        </motion.h3>
+
+        <SubtitleLine
+          card={card}
+          effectiveCategory={identity.effectiveCategory}
+          isLoreCard={identity.isLoreCard}
+          customSubtitle={props.designMeta.customSubtitle}
+        />
+
+        {card.country && (
+          <p
+            className={cn("font-semibold text-white/90", styles.type)}
+            style={{ textShadow: "0 1px 2px rgba(0,0,0,0.8)" }}
+          >
+            {card.country.name}
+          </p>
+        )}
+
+        {/* Stat bars: nation / NS_IMPORT cards only (lore categories drop numeric stats) */}
+        {props.showStats && Object.keys(stats.base).length > 0 && <StatBars stats={stats} />}
+
+        {props.showExcerpt && excerptText && <ExcerptBox card={card} html={excerptHtml} />}
+
+        <AnimatePresence>
+          {props.showStats && props.showStatsOnHover && isHovered && (
+            <HoverStats stats={stats} fontClass={styles.stats} />
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
 
 /**
  * CardDisplay component props
@@ -104,7 +547,7 @@ interface CardDisplayProps {
   enableHolographic?: boolean;
   /** Performance mode - disable heavy effects */
   performanceMode?: boolean;
-  /** Hide market value (default: false) */
+  /** Hide market value (accepted for callers; the card face shows none) */
   hideValue?: boolean;
   /** Hide stats bars & hover stats (default: false) */
   hideStats?: boolean;
@@ -122,494 +565,89 @@ export const CardDisplay = React.memo<CardDisplayProps>(
     enable3D = true,
     enableHolographic,
     performanceMode = false,
-    hideValue: _hideValue = false,
     hideStats = false,
     hideExcerpt = false,
   }) => {
     const [isHovered, setIsHovered] = useState(false);
-    const [imageError, setImageError] = useState(false);
 
     const designMeta = React.useMemo(() => getCardDesignMetadata(card), [card]);
-    const rarityConfig = React.useMemo(() => getRarityConfig(card.rarity), [card.rarity]);
     const stats = React.useMemo(() => formatCardStats(card), [card]);
-    const borderConfig = React.useMemo(() => getPremiumBorderConfig(card.rarity), [card.rarity]);
-    const foilStamp = React.useMemo(() => getFoilStampConfig(card.rarity), [card.rarity]);
+    const identity = useCardIdentity(card);
+    const { isLoreCard, effectiveCategory } = identity;
 
-    // Resolve category and theme (memoized)
-    const resolvedCategory: LoreCategory | null = React.useMemo(() => {
-      if (card.category && isValidLoreCategory(card.category)) {
-        return card.category as LoreCategory;
-      }
-      if (isValidLoreCategory(card.cardType)) {
-        return card.cardType as LoreCategory;
-      }
-      return null;
-    }, [card.category, card.cardType]);
-
-    // Check if artwork URL is custom art (Tier 3) or legacy artwork
-    const customArtUrl = card.artworkUrl || card.artwork || card.wikiImageUrl;
-    const hasCustomArtwork = Boolean(customArtUrl && customArtUrl.trim() !== "" && !imageError);
-
-    const cardTypeStr = (card.cardType as string) || "";
-    // Is this a lore card (no numeric stats)?
-    const isLoreCard =
-      cardTypeStr === "LORE" ||
-      cardTypeStr === "LORE_BATCH" ||
-      Boolean(card.category && card.category !== "NS_IMPORT") ||
-      Boolean(card.wikiPageId) ||
-      Boolean(card.wikiSource) ||
-      Boolean(card.wikiArticleTitle) ||
-      Boolean(card.slug) ||
-      (resolvedCategory !== null && resolvedCategory !== "NS_IMPORT");
-
-    const effectiveCategory: LoreCategory | null = React.useMemo(() => {
-      if (resolvedCategory && resolvedCategory !== "NS_IMPORT") {
-        return resolvedCategory;
-      }
-      if (isLoreCard) {
-        const meta = card.metadata as Record<string, unknown> | null | undefined;
-        return classifyFromWikitext(
-          (meta?.fullExcerpt as string) || card.description,
-          card.wikiArticleTitle || card.title
-        );
-      }
-      return null;
-    }, [
-      resolvedCategory,
-      isLoreCard,
-      card.metadata,
-      card.description,
-      card.wikiArticleTitle,
-      card.title,
-    ]);
-
-    const effectiveCategoryTheme = React.useMemo(
-      () => (effectiveCategory ? getCategoryTheme(effectiveCategory) : null),
-      [effectiveCategory]
+    const rarityTheme = RARITY_THEMES[card.rarity] ?? RARITY_THEMES.COMMON!;
+    const frame = cardFrame(
+      card.rarity,
+      getHybridRarityMaterial(card.rarity, effectiveCategory, designMeta.enableCategoryTint)
+        .specularColor,
+      performanceMode
     );
 
-    const isIIWiki = React.useMemo(() => isIIWikiCard(card), [card]);
-
-    const rarityMat = React.useMemo(
-      () => getHybridRarityMaterial(card.rarity, effectiveCategory, designMeta.enableCategoryTint),
-      [card.rarity, effectiveCategory, designMeta.enableCategoryTint]
-    );
-
-    const rarityTheme = React.useMemo(
-      () => RARITY_THEMES[card.rarity] ?? RARITY_THEMES.COMMON!,
-      [card.rarity]
-    );
-
-    const excerptText = card.wikiExcerpt || card.description || "";
-    const parsedExcerptHtml = React.useMemo(
-      () => (excerptText ? parseWikitextToHtml(excerptText) : ""),
-      [excerptText]
-    );
-
-    // Auto-enable holographic for rare+ cards unless explicitly disabled
-    const shouldShowHolographic =
-      enableHolographic !== false &&
-      !performanceMode &&
-      ["RARE", "ULTRA_RARE", "EPIC", "LEGENDARY"].includes(card.rarity);
-
-    // Size-dependent classes
-    const widthClass = getCardWidth(size);
-    const fonts = FONT_SIZES[size] || FONT_SIZES.medium;
-    const heightClass = HEIGHT_CLASSES[size] || HEIGHT_CLASSES.medium;
-
-    const handleClick = () => {
-      if (onClick) {
-        onClick(card);
-      }
-    };
-
-    const handleMouseEnter = () => {
-      setIsHovered(true);
-    };
-
-    const handleMouseLeave = () => {
-      setIsHovered(false);
-    };
-
-    const borderImageSourceStyle = React.useMemo(() => {
-      if (!borderConfig.animated || performanceMode) return undefined;
-      return `linear-gradient(135deg, ${borderConfig.gradient
-        .split(" ")
-        .map((c) => `var(--tw-gradient-${c})`)
-        .join(", ")})`;
-    }, [borderConfig, performanceMode]);
+    // Holographic is on for rare+ cards unless explicitly disabled
+    const showHolographic =
+      enableHolographic !== false && !performanceMode && HOLOGRAPHIC_RARITIES.includes(card.rarity);
+    const showStats = !hideStats && !isLoreCard;
+    const styles = SIZE_STYLES[SIZE_KEY[size] ?? "medium"];
+    const depth3D = enable3D && !performanceMode;
 
     return (
       <CometCard
         className={cn(
-          widthClass,
-          heightClass,
+          getCardWidth(size),
+          styles.height,
           onClick && "cursor-pointer",
           "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
           className
         )}
-        rotateDepth={enable3D && !performanceMode ? 12 : 0}
-        translateDepth={enable3D && !performanceMode ? 15 : 0}
-        holographic={shouldShowHolographic}
+        rotateDepth={depth3D ? 12 : 0}
+        translateDepth={depth3D ? 15 : 0}
+        holographic={showHolographic}
         holographicIntensity={0.7}
         glassDepth="child"
         disableEffects={performanceMode}
       >
         <motion.div
-          className={cn(
-            "rounded-card relative h-full w-full overflow-hidden",
-            borderConfig.animated && !performanceMode
-              ? `border-${borderConfig.width} ${borderConfig.glow}`
-              : `border-${borderConfig.width}`,
-            rarityConfig.borderColor
-          )}
-          style={{
-            borderImageSource: borderImageSourceStyle,
-            borderImageSlice: borderConfig.animated && !performanceMode ? 1 : undefined,
-            boxShadow: `0 20px 45px -10px rgba(0, 0, 0, 0.85), 0 0 25px ${rarityMat.specularColor}`,
-          }}
-          onHoverStart={handleMouseEnter}
-          onHoverEnd={handleMouseLeave}
-          onClick={handleClick}
-          whileHover={
-            !performanceMode
-              ? {
-                  scale: 1.02,
-                  transition: { duration: 0.2 },
-                }
-              : undefined
-          }
+          className={frame.className}
+          style={frame.style}
+          onHoverStart={() => setIsHovered(true)}
+          onHoverEnd={() => setIsHovered(false)}
+          onClick={() => onClick?.(card)}
+          whileHover={!performanceMode ? { scale: 1.02, transition: { duration: 0.2 } } : undefined}
         >
-          {/* Dual-Border Frame & Corner Brackets (matching CardBack.tsx) */}
           <div
             className={cn(
               "pointer-events-none absolute inset-1 z-30 rounded-[14px] border opacity-60",
               rarityTheme.borderInner
             )}
           />
+          <CornerBrackets className={rarityTheme.cornerBracket} />
 
-          <div
-            className={cn(
-              "pointer-events-none absolute top-2 left-2 z-30 h-3 w-3 border-t-2 border-l-2 opacity-85",
-              rarityTheme.cornerBracket
-            )}
+          <CardArtwork
+            card={card}
+            styles={styles}
+            designMeta={designMeta}
+            resolvedCategory={identity.resolvedCategory}
+            isIIWiki={identity.isIIWiki}
+            isHovered={isHovered}
+            performanceMode={performanceMode}
+            showHolographic={showHolographic}
           />
-          <div
-            className={cn(
-              "pointer-events-none absolute top-2 right-2 z-30 h-3 w-3 border-t-2 border-r-2 opacity-85",
-              rarityTheme.cornerBracket
-            )}
+
+          <CardInfoOverlay
+            card={card}
+            size={size}
+            styles={styles}
+            designMeta={designMeta}
+            identity={identity}
+            stats={stats}
+            isHovered={isHovered}
+            performanceMode={performanceMode}
+            showStats={showStats}
+            showStatsOnHover={showStatsOnHover}
+            showExcerpt={isLoreCard && !hideExcerpt}
           />
-          <div
-            className={cn(
-              "pointer-events-none absolute bottom-2 left-2 z-30 h-3 w-3 border-b-2 border-l-2 opacity-85",
-              rarityTheme.cornerBracket
-            )}
-          />
-          <div
-            className={cn(
-              "pointer-events-none absolute right-2 bottom-2 z-30 h-3 w-3 border-r-2 border-b-2 opacity-85",
-              rarityTheme.cornerBracket
-            )}
-          />
-          {/* Card artwork / procedural background */}
-          <div
-            className="relative h-full w-full overflow-hidden"
-            style={{
-              height: HEIGHT_PIXELS[size] || "269px",
-            }}
-          >
-            {hasCustomArtwork && customArtUrl ? (
-              <Image
-                src={proxyNSImage(customArtUrl)}
-                alt={card.title}
-                fill
-                className="object-cover"
-                loading="lazy"
-                sizes={
-                  size === "small" || size === "sm"
-                    ? "128px"
-                    : size === "medium" || size === "md"
-                      ? "192px"
-                      : "256px"
-                }
-                onError={() => setImageError(true)}
-                unoptimized
-              />
-            ) : (
-              <CardHolographicCover
-                category={resolvedCategory}
-                cardType={card.cardType}
-                rarity={card.rarity}
-                wikiSource={isIIWiki ? "iiwiki" : card.wikiSource}
-                title={card.title}
-                designMetadata={designMeta}
-                isHovered={isHovered}
-              />
-            )}
 
-            {/* Metallic gradient overlay for premium feel */}
-            {!performanceMode && (
-              <div
-                className="absolute inset-0 opacity-10 mix-blend-overlay"
-                style={{
-                  background: getMetallicGradient(
-                    card.rarity === "LEGENDARY"
-                      ? "gold"
-                      : card.rarity === "EPIC"
-                        ? "purple"
-                        : "silver"
-                  ),
-                }}
-              />
-            )}
-
-            {/* Tactile Texture Overlay for Physical Cardstock Depth */}
-            <TextureOverlay
-              texture="paperGrain"
-              opacity={0.06}
-              className="pointer-events-none z-10 mix-blend-overlay"
-            />
-
-            {/* Gradient overlay for text readability when using artwork */}
-            {hasCustomArtwork && (
-              <div className="card-art-linear-t absolute inset-0 from-black/95 via-black/40 to-transparent" />
-            )}
-
-            {/* Holographic overlay layer */}
-            {shouldShowHolographic && (
-              <HolographicOverlay
-                rarity={card.rarity}
-                enableMouseTracking={!performanceMode}
-                enableLightRays={!performanceMode}
-                enableFoilStamp={foilStamp.enabled && !performanceMode}
-                enableParticles={!performanceMode}
-                disabled={performanceMode}
-              />
-            )}
-
-            {/* Rarity glow effect */}
-            <motion.div
-              className={cn("rounded-card absolute inset-0", getRarityGlow(card.rarity))}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: isHovered ? 0.5 : 0.2 }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-
-          {/* Card content overlay */}
-          <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-3">
-            {/* Top section - Rarity badge & category seal */}
-            <div className="flex items-start justify-between">
-              <RarityBadge
-                rarity={card.rarity}
-                season={card.season}
-                size={size === "large" ? "medium" : "small"}
-                animated={!performanceMode}
-              />
-              <div className="flex items-center gap-1">
-                {isIIWiki ? (
-                  <IIWikiBadge size="sm" showText={false} className="h-5 w-auto px-1 py-0" />
-                ) : !isLoreCard && (card.cardType === "NS_IMPORT" || Boolean(card.nsCardId)) ? (
-                  <NationStatesBadge />
-                ) : null}
-
-                {effectiveCategory ? (
-                  <span
-                    className="rounded-control-sm shadow-card flex h-5 w-5 items-center justify-center border border-white/20 bg-slate-950/80 p-0.5 text-white"
-                    title={getCategoryLabel(effectiveCategory)}
-                  >
-                    <CategoryIcon
-                      category={effectiveCategory}
-                      treatment="seal"
-                      size="xs"
-                      color={effectiveCategoryTheme?.accentColor}
-                    />
-                  </span>
-                ) : !isIIWiki &&
-                  (isLoreCard || (card.cardType !== "NS_IMPORT" && !card.nsCardId)) ? (
-                  <span
-                    className={cn(
-                      "rounded-control-sm shadow-card border border-white/20 bg-slate-950/80 px-2 py-0.5 font-bold text-white",
-                      fonts.type
-                    )}
-                  >
-                    {getCardTypeLabel(card.cardType)}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-
-            {/* Bottom section - Card info */}
-            <div className="space-y-1">
-              {/* Card title */}
-              <motion.h3
-                className={cn("line-clamp-2 font-bold tracking-tight text-white", fonts.title)}
-                style={{
-                  textShadow: "0 2px 6px rgba(0, 0, 0, 0.9)",
-                }}
-                animate={
-                  !performanceMode && isHovered
-                    ? {
-                        scale: [1, 1.02, 1],
-                      }
-                    : {}
-                }
-                transition={{ duration: 0.4 }}
-              >
-                {card.title}
-              </motion.h3>
-
-              {/* Subtitle line — NS cards use NationStates badge, so suppress "NS Import" text label */}
-              {(() => {
-                const isNsImportLabel = cardTypeStr === "NS_IMPORT" || Boolean(card.nsCardId);
-                const categoryLabel =
-                  card.subcategory ||
-                  (effectiveCategory ? getCategoryLabel(effectiveCategory) : null) ||
-                  (isLoreCard && card.cardType !== "NS_IMPORT"
-                    ? getCardTypeLabel(card.cardType)
-                    : null);
-                // For NS imports with badge, never show "NS Import" text — badge already signals it
-                const showLabel =
-                  categoryLabel && !(isNsImportLabel && categoryLabel === "NS Import");
-                const hideLabel = isNsImportLabel && !categoryLabel;
-                if (hideLabel) {
-                  return (
-                    <p className="text-footnote mt-0.5 line-clamp-1 flex items-center gap-2 font-semibold tracking-wider text-amber-400 uppercase">
-                      <span>{designMeta.customSubtitle || card.rarity}</span>
-                    </p>
-                  );
-                }
-                return (
-                  <p className="text-footnote mt-0.5 line-clamp-1 flex items-center gap-2 font-semibold tracking-wider text-white/80 uppercase">
-                    {showLabel ? (
-                      <>
-                        <span>{categoryLabel}</span>
-                        <span className="text-white/40">•</span>
-                      </>
-                    ) : null}
-                    <span className="font-semibold tracking-wide text-amber-400">
-                      {designMeta.customSubtitle || card.rarity}
-                    </span>
-                  </p>
-                );
-              })()}
-
-              {/* Country name (if available) */}
-              {card.country && (
-                <p
-                  className={cn("font-semibold text-white/90", fonts.type)}
-                  style={{
-                    textShadow: "0 1px 2px rgba(0,0,0,0.8)",
-                  }}
-                >
-                  {card.country.name}
-                </p>
-              )}
-
-              {/* Stat bars — ONLY for nation/NS_IMPORT cards (numeric stats are dropped for lore categories) */}
-              {!hideStats && !isLoreCard && Object.keys(stats.base).length > 0 && (
-                <div className="space-y-2">
-                  <div className="rounded-control flex gap-1 border border-white/10 bg-slate-950/80 px-2 py-2">
-                    {Object.entries(stats.base).map(([key, stat]) => (
-                      <div key={key} className="flex-1 space-y-0.5">
-                        <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
-                          <div
-                            className="h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-500"
-                            style={{
-                              width: `${stat.value}%`,
-                              backgroundColor: stat.def.color,
-                            }}
-                          />
-                        </div>
-                        <div className="text-center text-[7px] leading-none font-bold text-white/50">
-                          {stat.def.label.substring(0, 3).toUpperCase()}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Bottom Lore Excerpt Box */}
-              {isLoreCard && !hideExcerpt && (excerptText || parsedExcerptHtml) && (
-                <div className="rounded-row pointer-events-auto mt-1 border border-white/15 bg-slate-950/85 p-2 text-left shadow-inner transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
-                  <div className="text-footnote line-clamp-2 leading-snug text-white/90">
-                    <WikiHtmlContent html={parsedExcerptHtml} />
-                  </div>
-                  <div className="text-footnote mt-2 flex items-center justify-between border-t border-white/10 pt-2 text-white/50">
-                    <span className="font-semibold tracking-wider text-amber-400 uppercase">
-                      {(card.wikiSource || "IXWIKI").toUpperCase()} ARCHIVE
-                    </span>
-                    <span className="flex items-center gap-0.5 font-mono font-bold text-white/70 tabular-nums">
-                      <IxCreditsSymbol className="h-2.5 w-2.5 shrink-0" />
-                      {card.marketValue.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Premium stats reveal on hover for non-lore cards */}
-              <AnimatePresence>
-                {!hideStats && !isLoreCard && showStatsOnHover && isHovered && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className={cn(
-                      "xs:grid-cols-2 rounded-control grid grid-cols-1 gap-1 p-2",
-                      "border border-white/20 bg-black/80",
-                      fonts.stats
-                    )}
-                    style={{
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)",
-                    }}
-                  >
-                    {Object.entries(stats.base).map(([key, stat]) => (
-                      <div key={key} className="flex items-center justify-between px-1">
-                        <span className="font-medium text-white/70">{stat.def.label}</span>
-                        <span
-                          className="font-bold tabular-nums"
-                          style={{
-                            color: stat.def.color,
-                            textShadow: `0 0 8px ${stat.def.color}`,
-                          }}
-                        >
-                          {stat.value}
-                        </span>
-                      </div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* Level indicator */}
-          {card.level > 1 && (
-            <motion.div
-              className={cn(
-                "absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full",
-                "card-art-linear-br from-amber-400 to-amber-600",
-                "text-body font-bold text-black tabular-nums",
-                "border-2 border-amber-300",
-                "shadow-floating"
-              )}
-              style={{
-                textShadow: "0 1px 2px rgba(0,0,0,0.3)",
-              }}
-              initial={{ scale: 0.8, opacity: 0, rotate: -180 }}
-              animate={{
-                scale: 1,
-                opacity: 1,
-                rotate: 0,
-              }}
-              transition={{ duration: 0.5, type: "spring" }}
-            >
-              {card.level}
-            </motion.div>
-          )}
+          {card.level > 1 && <LevelBadge level={card.level} />}
         </motion.div>
       </CometCard>
     );

@@ -106,8 +106,6 @@ export function ClubOverviewSection({
                   shortName: liveMatch.awayTeam.shortName,
                 }}
                 trace={liveMatch.trace as unknown[]}
-                homeScoreFinal={liveMatch.finalHomeScore ?? undefined}
-                awayScoreFinal={liveMatch.finalAwayScore ?? undefined}
               />
             ) : (
               <ClubResultsCard teamId={team.id} />

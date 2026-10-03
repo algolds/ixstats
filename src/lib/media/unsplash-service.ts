@@ -295,4 +295,3 @@ class UnsplashService {
 }
 
 export const unsplashService = new UnsplashService();
-export default UnsplashService;

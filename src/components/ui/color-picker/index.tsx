@@ -27,11 +27,11 @@ import {
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { cn } from "~/lib/utils/cn";
 
-// ─── Color Math Helpers (Canonical ~/lib/color) ────────────────────────────────
+// Color Math Helpers (Canonical ~/lib/color)
 import { hslToRgb, rgbToHsl, hslToHex, parseColorToHsl } from "~/lib/color";
 export { hslToRgb, rgbToHsl, hslToHex, parseColorToHsl };
 
-// ─── ColorPicker Context & Components ─────────────────────────────────────────
+// ColorPicker Context & Components
 
 type ColorPickerContextValue = {
   hue: number;
@@ -64,7 +64,7 @@ type ColorPickerProps = Omit<HTMLAttributes<HTMLDivElement>, "onChange"> & {
   onChange?: (value: [number, number, number, number]) => void;
 };
 
-export const ColorPicker = ({
+const ColorPicker = ({
   value,
   defaultValue = "#000000",
   onChange,
@@ -334,7 +334,6 @@ type ColorPickerOutputProps = ComponentProps<typeof SelectTrigger>;
 
 const formats = ["hex", "rgb", "css", "hsl"];
 
-// oxlint-disable-next-line eslint/no-unused-vars
 const ColorPickerOutput = ({ className, ...props }: ColorPickerOutputProps) => {
   const { mode, setMode } = useColorPicker();
 

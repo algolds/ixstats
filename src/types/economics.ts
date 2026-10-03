@@ -1,15 +1,11 @@
 // src/types/economics.ts
-// ═══════════════════════════════════════════════════════════════════════════
 // SINGLE SOURCE OF TRUTH — All economy schemas and types.
 // ❌ No duplicate interface definitions.
 // ✅ Zod schemas + z.infer derived types.
-// ═══════════════════════════════════════════════════════════════════════════
 
 import { z } from "zod";
 
-// ===============================
 // Discriminated unions (core enums)
-// ===============================
 
 const RegionTypeSchema = z.enum([
   "Developed",
@@ -27,12 +23,9 @@ const EconomicClassSchema = z.enum([
   "UpperMiddleClass",
   "UpperClass",
 ]);
-export type EconomicClass = z.infer<typeof EconomicClassSchema>;
 const TaxBracketSchema = z.enum(["Low", "Middle", "High", "Top"]);
 const CorporateSizeSchema = z.enum(["Small", "Medium", "Large", "Multinational"]);
-// ===============================
 // Core indicators
-// ===============================
 
 const CoreEconomicIndicatorsSchema = z.object({
   totalPopulation: z.number(),
@@ -60,9 +53,7 @@ const CoreEconomicIndicatorsDataSchema = CoreEconomicIndicatorsSchema.extend({
   corruptionIndex: z.number().nullable().optional(),
 });
 
-// ===============================
 // Labor — sub-schemas for nested objects
-// ===============================
 
 const EmploymentBySectorSchema = z.object({
   agriculture: z.number(),
@@ -154,9 +145,7 @@ const LaborEmploymentDataSchema = LaborEmploymentSchema.extend({
   wageBySector: z.record(z.string(), z.number()).nullable().optional(),
 });
 
-// ===============================
 // Fiscal system
-// ===============================
 
 const FiscalSystemSchema = z.object({
   taxRevenueGDPPercent: z.number(),
@@ -218,9 +207,7 @@ const FiscalSystemDataSchema = FiscalSystemSchema.extend({
   fiscalBalanceGDPPercent: z.number().nullable().optional(),
 });
 
-// ===============================
 // Income / wealth
-// ===============================
 
 const IncomeWealthSchema = z.object({
   economicClasses: z.array(
@@ -246,9 +233,7 @@ const IncomeWealthDataSchema = IncomeWealthSchema.extend({
   intergenerationalMobility: z.number().nullable().optional(),
 });
 
-// ===============================
 // Government spending
-// ===============================
 
 const GovernmentSpendingSchema = z.object({
   education: z.number(),
@@ -345,9 +330,7 @@ const GovernmentSpendingDataSchema = GovernmentSpendingSchema.extend({
   socialSpendingPercent: z.number().nullable().optional(),
 });
 
-// ===============================
 // Demographics
-// ===============================
 
 const DemographicsSchema = z.object({
   lifeExpectancy: z.number(),
@@ -419,20 +402,9 @@ const DemographicsDataSchema = DemographicsSchema.extend({
     .optional(),
 });
 
-// ===============================
 // ROOT SCHEMAS
-// ===============================
 
 // STRICT schema — for template validation
-const EconomySchema = z.object({
-  core: CoreEconomicIndicatorsSchema,
-  labor: LaborEmploymentSchema,
-  fiscal: FiscalSystemSchema,
-  income: IncomeWealthSchema,
-  spending: GovernmentSpendingSchema,
-  demographics: DemographicsSchema,
-});
-
 // FULL DATA schema — for UI consumption (includes all extended nullable fields)
 export const EconomyDataSchema = z.object({
   core: CoreEconomicIndicatorsDataSchema,
@@ -443,34 +415,23 @@ export const EconomyDataSchema = z.object({
   demographics: DemographicsDataSchema,
 });
 
-// ===============================
 // TYPES (inferred - NO MANUAL TYPES)
-// ===============================
 
 // Strict types (for templates / factory presets)
-export type Economy = z.infer<typeof EconomySchema>;
-export type CoreEconomicIndicators = z.infer<typeof CoreEconomicIndicatorsSchema>;
-export type Demographics = z.infer<typeof DemographicsSchema>;
-
 // Extended types (for UI / mapper — imported by consumers)
 export type EconomyData = z.infer<typeof EconomyDataSchema>;
-export type LaborEmploymentData = z.infer<typeof LaborEmploymentDataSchema>;
 export type FiscalSystemData = z.infer<typeof FiscalSystemDataSchema>;
 export type GovernmentSpendingData = z.infer<typeof GovernmentSpendingDataSchema>;
 export type DemographicsData = z.infer<typeof DemographicsDataSchema>;
 
 // Sub-object types (for component props)
-// ===============================
 // PARSERS
-// ===============================
 
 export function safeParseEconomyData(data: unknown) {
   return EconomyDataSchema.safeParse(data);
 }
 
-// ===============================
 // ECONOMIC MODELING & PROJECTIONS
-// ===============================
 
 export type CountryEconomicSummary = {
   id: string;

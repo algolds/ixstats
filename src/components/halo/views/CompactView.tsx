@@ -20,8 +20,6 @@ import { PreText } from "~/components/ui/pretext";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { springSnappy } from "~/lib/design/motion";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
 const getGreeting = (ixTime: number): string => {
   const hour = new Date(ixTime).getUTCHours();
   if (hour >= 5 && hour < 12) return "Good morning";
@@ -29,8 +27,6 @@ const getGreeting = (ixTime: number): string => {
   if (hour >= 17 && hour < 21) return "Good evening";
   return "Good night";
 };
-
-// ─── Component ───────────────────────────────────────────────────────────────
 
 function CompactViewComponent({
   mode,
@@ -74,7 +70,7 @@ function CompactViewComponent({
 
   const [currentTime, setCurrentTime] = useState({ greeting: "Good morning" });
 
-  // ─── Notification peek ─────────────────────────────────────────────────
+  // Notification peek
 
   const [peekText, setPeekText] = useState<string | null>(null);
   const toastQueue = useToastQueueStore((s) => s.queue);
@@ -94,7 +90,7 @@ function CompactViewComponent({
     return () => clearTimeout(timer);
   }, [toastQueue]);
 
-  // ─── Notification counts ───────────────────────────────────────────────
+  // Notification counts
 
   const enhancedStats = useNotificationStore((s) => s.stats);
   const notifications = useNotificationStore((s) => s.notifications);
@@ -123,7 +119,7 @@ function CompactViewComponent({
     liveNotificationCount;
   const totalUnreadCount = notificationUnreadCount + messageUnreadCount;
 
-  // ─── Time ──────────────────────────────────────────────────────────────
+  // Time
 
   useEffect(() => {
     const greeting = getGreeting(ixTimeTimestamp);
@@ -151,8 +147,6 @@ function CompactViewComponent({
 
   if (!mounted) return null;
 
-  // ─── Render ────────────────────────────────────────────────────────────
-
   return (
     <TooltipProvider>
       <div
@@ -174,7 +168,7 @@ function CompactViewComponent({
               isSticky ? "px-3 py-2" : "px-4 py-2"
             } ${isFlashing ? "animate-flash-notification" : ""}`}
           >
-            {/* ── Sticky: peek text or wiki breadcrumb ──────────────── */}
+            {/* Sticky: peek text or wiki breadcrumb */}
             {isSticky && peekText && (
               <AnimatePresence mode="wait">
                 <motion.div
@@ -235,7 +229,7 @@ function CompactViewComponent({
                 </div>
               ))}
 
-            {/* ── Non-sticky: peek or time/context ─────────────────── */}
+            {/* Non-sticky: peek or time/context */}
             {!isSticky && (
               <AnimatePresence mode="wait">
                 {peekText ? (
@@ -325,7 +319,7 @@ function CompactViewComponent({
               </AnimatePresence>
             )}
 
-            {/* ── Right-Side Action Icons Group with Optional Narrator Progress Underneath ── */}
+            {/* Right-Side Action Icons Group with Optional Narrator Progress Underneath */}
             <div className="relative flex shrink-0 flex-col items-center justify-center">
               <div className="flex items-center gap-0.5">
                 <Tooltip>

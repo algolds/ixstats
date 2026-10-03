@@ -1,6 +1,6 @@
 /** Shared spring and drag constants for the swipeable and slider physics. */
 
-// ── Shared Spring Presets ──────────────────────────────────────────────────
+// Shared Spring Presets
 
 /** Tight, precise spring */
 const SPRING_TIGHT = { stiffness: 700, damping: 48, mass: 0.55 } as const;
@@ -20,10 +20,7 @@ export const SPRING_PRESETS = {
   gentle: SPRING_GENTLE,
   fluid: SPRING_FLUID,
 } as const;
-
-export type SpringPreset = keyof typeof SPRING_PRESETS;
-
-// ── Shared Drag Settings ───────────────────────────────────────────────────
+// Shared Drag Settings
 
 export const DRAG_ELASTICITY = 0.32;
 export const DRAG_DEAD_ZONE = 3;
