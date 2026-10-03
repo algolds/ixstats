@@ -67,6 +67,8 @@ interface PopulationCountryData {
   populationDensity?: number | null;
   landArea?: number | null;
   economicTier: string;
+  urbanPopulationPercent?: number | null;
+  ruralPopulationPercent?: number | null;
 }
 
 interface PopulationDetailsModalProps {
@@ -276,39 +278,24 @@ export function PopulationDetailsModal({
     };
   }, [economicData]);
 
+  // Only the recorded urban/rural split; no estimate is derived when it is missing.
   const demographicBreakdown = useMemo(() => {
-    if (!economicData) return [];
-
-    const urbanizationRate =
-      economicData.economicTier === "Extravagant"
-        ? 0.85
-        : economicData.economicTier === "Very Strong"
-          ? 0.75
-          : economicData.economicTier === "Strong"
-            ? 0.65
-            : economicData.economicTier === "Healthy"
-              ? 0.55
-              : economicData.economicTier === "Developed"
-                ? 0.45
-                : economicData.economicTier === "Developing"
-                  ? 0.35
-                  : 0.25;
-
-    const urbanPop = economicData.currentPopulation * urbanizationRate;
-    const ruralPop = economicData.currentPopulation * (1 - urbanizationRate);
+    const urban = economicData?.urbanPopulationPercent;
+    const rural = economicData?.ruralPopulationPercent;
+    if (!economicData || urban == null || rural == null) return [];
 
     return [
       {
         name: "Urban Population",
-        value: urbanPop,
+        value: (economicData.currentPopulation * urban) / 100,
         color: "var(--color-blue-500)",
-        percentage: urbanizationRate * 100,
+        percentage: urban,
       },
       {
         name: "Rural Population",
-        value: ruralPop,
+        value: (economicData.currentPopulation * rural) / 100,
         color: "var(--chart-3)",
-        percentage: (1 - urbanizationRate) * 100,
+        percentage: rural,
       },
     ];
   }, [economicData]);
@@ -374,18 +361,7 @@ export function PopulationDetailsModal({
 
   const renderOverviewTab = () => {
     if (isEconomicLoading) {
-      return (
-        <MetricModalLayout variant="social">
-          <MetricModalLayout.MainArea>
-            <Skeleton className="h-[300px] w-full" />
-          </MetricModalLayout.MainArea>
-          <MetricModalLayout.Sidebar>
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-          </MetricModalLayout.Sidebar>
-        </MetricModalLayout>
-      );
+      return <MetricModalLayout.Loading variant="social" mainHeight={300} sidebarCards={3} />;
     }
 
     if (!economicData) return null;
@@ -577,16 +553,7 @@ export function PopulationDetailsModal({
     const chartData = processChartData(timeRange);
 
     if (isHistoricalLoading) {
-      return (
-        <MetricModalLayout variant="social">
-          <MetricModalLayout.MainArea>
-            <Skeleton className="h-[400px] w-full" />
-          </MetricModalLayout.MainArea>
-          <MetricModalLayout.Sidebar>
-            <Skeleton className="h-full w-full" />
-          </MetricModalLayout.Sidebar>
-        </MetricModalLayout>
-      );
+      return <MetricModalLayout.Loading variant="social" mainHeight={400} sidebarCards={0} />;
     }
 
     if (chartData.length === 0) {
@@ -936,54 +903,62 @@ export function PopulationDetailsModal({
               <h3 className="text-label text-title-3 text-headline">Demographics breakdown</h3>
             </CardHeader>
             <CardContent className="space-y-3 p-0">
-              <div className="flex h-44 w-full items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={demographicBreakdown}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={60}
-                      fill="var(--chart-5)"
-                      dataKey="value"
-                      label={(props: { name?: string }) => props.name ?? ""}
-                      labelLine={false}
-                    >
-                      {demographicBreakdown.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        background: "var(--color-surface-elevated)",
-                        color: "var(--color-label)",
-                        borderColor: "var(--color-separator)",
-                        borderRadius: "8px",
-                      }}
-                      formatter={(value) => formatPopulation(value as number)}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="max-h-[160px] space-y-2 overflow-y-auto pr-1">
-                {demographicBreakdown.map((segment) => (
-                  <div
-                    key={segment.name}
-                    className="bg-fill-3 rounded-row text-footnote flex items-center justify-between p-2"
-                  >
-                    <span className="text-label-secondary font-medium">{segment.name}</span>
-                    <div className="text-right">
-                      <div className="text-label font-semibold tabular-nums">
-                        {formatPopulation(segment.value)}
-                      </div>
-                      <div className="text-label-secondary text-footnote">
-                        {segment.percentage.toFixed(1)}%
-                      </div>
-                    </div>
+              {demographicBreakdown.length === 0 ? (
+                <p className="text-label-secondary text-footnote py-8 text-center">
+                  No urban/rural split recorded
+                </p>
+              ) : (
+                <>
+                  <div className="flex h-44 w-full items-center justify-center">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={demographicBreakdown}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={60}
+                          fill="var(--chart-5)"
+                          dataKey="value"
+                          label={(props: { name?: string }) => props.name ?? ""}
+                          labelLine={false}
+                        >
+                          {demographicBreakdown.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            background: "var(--color-surface-elevated)",
+                            color: "var(--color-label)",
+                            borderColor: "var(--color-separator)",
+                            borderRadius: "8px",
+                          }}
+                          formatter={(value) => formatPopulation(value as number)}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
-                ))}
-              </div>
+
+                  <div className="max-h-[160px] space-y-2 overflow-y-auto pr-1">
+                    {demographicBreakdown.map((segment) => (
+                      <div
+                        key={segment.name}
+                        className="bg-fill-3 rounded-row text-footnote flex items-center justify-between p-2"
+                      >
+                        <span className="text-label-secondary font-medium">{segment.name}</span>
+                        <div className="text-right">
+                          <div className="text-label font-semibold tabular-nums">
+                            {formatPopulation(segment.value)}
+                          </div>
+                          <div className="text-label-secondary text-footnote">
+                            {segment.percentage.toFixed(1)}%
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </MetricModalLayout.Sidebar>

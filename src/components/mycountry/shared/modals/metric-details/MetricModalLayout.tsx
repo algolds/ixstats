@@ -4,6 +4,7 @@ import React from "react";
 import { cn } from "~/lib/utils/cn";
 import { ArrowUpRight, ArrowDownRight } from "iconoir-react";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
+import { Skeleton } from "~/components/ui/skeleton";
 
 export type MetricThemeVariant = "economy" | "social" | "demographics" | "labor" | "default";
 
@@ -86,6 +87,34 @@ MetricModalLayout.Sidebar = function MetricModalSidebar({
   children: React.ReactNode;
 }) {
   return <div className={cn("flex flex-col space-y-6 lg:col-span-1", className)}>{children}</div>;
+};
+
+// Loading skeleton: a main panel plus either `sidebarCards` stat cards or one full-height panel.
+MetricModalLayout.Loading = function MetricModalLoading({
+  variant,
+  mainHeight,
+  sidebarCards,
+}: {
+  variant: MetricThemeVariant;
+  mainHeight: number;
+  sidebarCards: number;
+}) {
+  return (
+    <MetricModalLayout variant={variant}>
+      <MetricModalLayout.MainArea>
+        <Skeleton className="w-full" style={{ height: mainHeight }} />
+      </MetricModalLayout.MainArea>
+      <MetricModalLayout.Sidebar>
+        {sidebarCards > 0 ? (
+          Array.from({ length: sidebarCards }, (_, i) => (
+            <Skeleton key={i} className="h-24 w-full" />
+          ))
+        ) : (
+          <Skeleton className="h-full w-full" />
+        )}
+      </MetricModalLayout.Sidebar>
+    </MetricModalLayout>
+  );
 };
 
 // 3. Stat Card Component

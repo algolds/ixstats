@@ -18,6 +18,7 @@ import {
   RailCount,
   RailEmpty,
   RailRow,
+  pushRecorded,
   STATUS_FILL,
   STATUS_TEXT,
   type ActivityEntry,
@@ -50,7 +51,6 @@ interface MilitaryBranchRecord {
   technologyLevel: number;
   morale: number;
   annualBudget: number;
-  readiness?: number | null;
   personnelCount?: number | null;
   personnel?: number | null;
   updatedAt?: string | Date | null;
@@ -89,25 +89,34 @@ export function DefenseRail({ countryId }: { countryId: string }) {
     const entries: ActivityEntry[] = [];
 
     branches?.forEach((b) => {
-      const readiness = b.readinessLevel ?? 0;
-      entries.push({
-        id: `branch-${b.id}`,
-        icon: Sword,
-        iconColor: STATUS_TEXT[readinessTone(readiness)],
-        text: `${b.name ?? "Military branch"} — ${Math.round(readiness)}% ready`,
-        time: new Date(b.updatedAt ?? b.createdAt ?? Date.now()),
-      });
+      const readiness = b.readinessLevel;
+      pushRecorded(
+        entries,
+        {
+          id: `branch-${b.id}`,
+          icon: Sword,
+          iconColor: STATUS_TEXT[readinessTone(readiness)],
+          text: `${b.name ?? "Military branch"} — ${Math.round(readiness)}% ready`,
+        },
+        b.updatedAt,
+        b.createdAt
+      );
     });
 
     assessment?.activeThreats?.forEach((t) => {
       const critical = t.severity === "critical" || t.severity === "existential";
-      entries.push({
-        id: `threat-${t.id}`,
-        icon: critical ? AlertTriangle : ShieldAlert,
-        iconColor: critical ? STATUS_TEXT.critical : STATUS_TEXT.warning,
-        text: `${t.threatName ?? "Threat"} — ${t.severity ?? "monitoring"}`,
-        time: new Date(t.lastUpdated ?? t.detectedAt ?? t.createdAt ?? Date.now()),
-      });
+      pushRecorded(
+        entries,
+        {
+          id: `threat-${t.id}`,
+          icon: critical ? AlertTriangle : ShieldAlert,
+          iconColor: critical ? STATUS_TEXT.critical : STATUS_TEXT.warning,
+          text: `${t.threatName ?? "Threat"} — ${t.severity ?? "monitoring"}`,
+        },
+        t.lastUpdated,
+        t.detectedAt,
+        t.createdAt
+      );
     });
 
     return entries.sort((a, b) => b.time.getTime() - a.time.getTime());
@@ -133,7 +142,7 @@ export function DefenseRail({ countryId }: { countryId: string }) {
           <RailEmpty>No active military branches configured.</RailEmpty>
         ) : (
           branches.slice(0, 4).map((b) => {
-            const readiness = b.readinessLevel ?? b.readiness ?? 50;
+            const readiness = b.readinessLevel;
             const personnel = b.personnelCount ?? b.personnel ?? 0;
             const tone = readinessTone(readiness);
 

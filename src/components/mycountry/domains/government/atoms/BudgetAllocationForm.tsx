@@ -11,20 +11,14 @@ import { Button } from "~/components/ui/button";
 import { currentBudgetYear } from "~/lib/government/budget-year";
 import { cn } from "~/lib/utils";
 import { Eyebrow } from "~/components/ui/eyebrow";
-import { Progress } from "~/components/ui/progress";
 import { Textarea } from "~/components/ui/textarea";
 import {
-  StatUp as TrendingUp,
-  StatDown as TrendingDown,
-  WarningTriangle as AlertTriangle,
-  CheckCircle,
-  Clock,
   Calculator,
   NavArrowDown as ChevronDown,
   NavArrowRight as ChevronRight,
 } from "iconoir-react";
 import { BUDGET_YEAR_MAX, BUDGET_YEAR_MIN } from "~/types/government";
-import type { BudgetAllocationInput, BudgetStatus } from "~/types/government";
+import type { BudgetAllocationInput } from "~/types/government";
 import { Card } from "~/components/ui/card";
 
 interface BudgetAllocationFormProps {
@@ -40,23 +34,6 @@ interface BudgetAllocationFormProps {
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }
-
-/** Budget status → semantic outline-badge colour. */
-const budgetStatusConfig = {
-  Allocated: { color: "text-label-secondary", icon: Clock, label: "Allocated" },
-  "In Use": { color: "border-green/30 text-green", icon: TrendingUp, label: "In use" },
-  Overspent: {
-    color: "border-destructive/30 text-destructive",
-    icon: AlertTriangle,
-    label: "Overspent",
-  },
-  Underutilized: {
-    color: "border-yellow/30 text-yellow",
-    icon: TrendingDown,
-    label: "Underutilized",
-  },
-  Completed: { color: "text-label-secondary", icon: CheckCircle, label: "Completed" },
-};
 
 /** Compact inline number field used in the allocation header row. */
 const INLINE_NUMBER =
@@ -110,22 +87,6 @@ export function BudgetAllocationForm({
     return formatExactCurrency(amount, currency);
   };
 
-  const utilizationRate =
-    data.allocatedAmount > 0
-      ? ((data.allocatedAmount - data.allocatedAmount * 0.1) / data.allocatedAmount) * 100 // Mock utilization
-      : 0;
-
-  const getBudgetStatus = (): BudgetStatus => {
-    if (utilizationRate > 100) return "Overspent";
-    if (utilizationRate < 50) return "Underutilized";
-    if (utilizationRate > 0) return "In Use";
-    return "Allocated";
-  };
-
-  const currentStatus = getBudgetStatus();
-  const statusConfig = budgetStatusConfig[currentStatus];
-  const StatusIcon = statusConfig.icon;
-
   const cardElement = (
     <Card className={cn("overflow-hidden", !isCollapsed && "border-separator-opaque")}>
       {/* Header row: always visible */}
@@ -161,7 +122,7 @@ export function BudgetAllocationForm({
                 {parentName && <Badge variant="outline">Sub of {parentName}</Badge>}
               </span>
               <span className="text-label-secondary text-footnote">
-                {utilizationRate > 0 ? `Utilization: ${utilizationRate.toFixed(0)}%` : "Unfunded"}
+                {data.allocatedAmount > 0 ? "Funded" : "Unfunded"}
               </span>
             </div>
           </div>
@@ -226,10 +187,6 @@ export function BudgetAllocationForm({
 
         {/* Status badge + outflow */}
         <div className="border-separator flex items-center justify-between gap-3 border-t pt-3 sm:justify-end lg:border-t-0 lg:pt-0">
-          <Badge variant="outline" className={statusConfig.color}>
-            <StatusIcon aria-hidden="true" />
-            {statusConfig.label}
-          </Badge>
           <div className="text-right">
             <div className="text-label text-caption font-semibold tabular-nums">
               {formatCurrency(data.allocatedAmount)}
@@ -302,40 +259,12 @@ export function BudgetAllocationForm({
 
             {/* Utilization & context */}
             <div className="space-y-4">
-              <div className="border-separator rounded-control space-y-3 border p-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-label text-headline">Budget utilization</h4>
-                  <span className="text-label text-headline tabular-nums">
-                    {utilizationRate.toFixed(1)}%
-                  </span>
-                </div>
-
-                <Progress value={utilizationRate} className="bg-fill-3 h-2" />
-
-                <dl className="border-separator grid grid-cols-3 gap-2 border-t pt-2 text-center">
-                  {[
-                    { label: "Allocated", value: data.allocatedAmount },
-                    { label: "Utilized", value: data.allocatedAmount * 0.9 },
-                    { label: "Remaining", value: data.allocatedAmount * 0.1 },
-                  ].map((item) => (
-                    <div key={item.label}>
-                      <dd className="text-label text-caption font-semibold tabular-nums">
-                        {formatNumber(item.value)}
-                      </dd>
-                      <dt>
-                        <span className="text-stat-label text-label-secondary">{item.label}</span>
-                      </dt>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-
               <div className="space-y-2">
                 <h4 className="text-label text-headline flex items-center gap-2">
                   <Calculator aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
                   Context analytics
                 </h4>
-                <dl className="border-separator divide-separator rounded-control grid grid-cols-2 divide-x border">
+                <dl className="border-separator divide-separator rounded-control grid grid-cols-1 border">
                   <div className="flex flex-col justify-between p-3">
                     <dt>
                       <span className="text-stat-label text-label-secondary">Share of budget</span>
@@ -345,17 +274,6 @@ export function BudgetAllocationForm({
                     </dd>
                     <dd className="text-label-secondary text-footnote mt-1 leading-normal">
                       of {formatNumber(totalBudget)} total outflow
-                    </dd>
-                  </div>
-                  <div className="flex flex-col justify-between p-3">
-                    <dt>
-                      <span className="text-stat-label text-label-secondary">Per capita cost</span>
-                    </dt>
-                    <dd className="text-label text-title-3 mt-2 tabular-nums">
-                      {formatNumber(data.allocatedAmount / 100000)}
-                    </dd>
-                    <dd className="text-label-secondary text-footnote mt-1 leading-normal">
-                      estimated per citizen
                     </dd>
                   </div>
                 </dl>

@@ -20,6 +20,7 @@ import {
   RailCount,
   RailEmpty,
   RailRow,
+  pushRecorded,
   STATUS_TEXT,
   type Kpi,
   type ActivityEntry,
@@ -120,36 +121,47 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
     const entries: ActivityEntry[] = [];
 
     if (legislature && legislature.totalSeats > 0) {
-      entries.push({
-        id: "legislature",
-        icon: Landmark,
-        iconColor: STATUS_TEXT.neutral,
-        text: `Legislature: ${legislature.totalSeats} seats configured`,
-        time: new Date(legislature.updatedAt ?? legislature.createdAt ?? Date.now()),
-      });
+      pushRecorded(
+        entries,
+        {
+          id: "legislature",
+          icon: Landmark,
+          iconColor: STATUS_TEXT.neutral,
+          text: `Legislature: ${legislature.totalSeats} seats configured`,
+        },
+        legislature.updatedAt,
+        legislature.createdAt
+      );
     }
 
     parties?.forEach((p) => {
-      entries.push({
-        id: `party-${p.id}`,
-        icon: Users,
-        iconColor: STATUS_TEXT.neutral,
-        text: `Party: ${p.name} (${p.ideology?.replace(/_/g, " ") ?? "Independent"})`,
-        time: new Date(p.createdAt ?? Date.now()),
-      });
+      pushRecorded(
+        entries,
+        {
+          id: `party-${p.id}`,
+          icon: Users,
+          iconColor: STATUS_TEXT.neutral,
+          text: `Party: ${p.name} (${p.ideology?.replace(/_/g, " ") ?? "Independent"})`,
+        },
+        p.createdAt
+      );
     });
 
     elections?.forEach((e) => {
       const isCompleted = e.status === "COMPLETED" || e.status === "completed";
-      entries.push({
-        id: `election-${e.id}`,
-        icon: isCompleted ? CheckCircle : BarChart3,
-        iconColor: isCompleted ? STATUS_TEXT.success : STATUS_TEXT.neutral,
-        text: isCompleted
-          ? `Completed: ${e.name ?? "Election"}`
-          : `Scheduled: ${e.name ?? "Election"}`,
-        time: new Date(e.updatedAt ?? e.createdAt ?? Date.now()),
-      });
+      pushRecorded(
+        entries,
+        {
+          id: `election-${e.id}`,
+          icon: isCompleted ? CheckCircle : BarChart3,
+          iconColor: isCompleted ? STATUS_TEXT.success : STATUS_TEXT.neutral,
+          text: isCompleted
+            ? `Completed: ${e.name ?? "Election"}`
+            : `Scheduled: ${e.name ?? "Election"}`,
+        },
+        e.updatedAt,
+        e.createdAt
+      );
     });
 
     return entries.sort((a, b) => b.time.getTime() - a.time.getTime());
@@ -196,13 +208,15 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
         ) : (
           <div className="space-y-2">
             <p className="text-label-secondary text-footnote py-1 text-center">
-              Chamber hemicycle ({legislature?.totalSeats ?? 100} total seats)
+              {legislature
+                ? `Chamber hemicycle (${legislature.totalSeats} total seats)`
+                : "No legislature configured"}
             </p>
             {parties && parties.length > 0 ? (
               <div className="space-y-2">
                 {parties.slice(0, 4).map((p) => {
                   const seats = seatsByParty.get(p.id) ?? 0;
-                  const total = legislature?.totalSeats ?? 100;
+                  const total = legislature?.totalSeats ?? 0;
                   const pct = total > 0 ? (seats / total) * 100 : 0;
                   return (
                     <div

@@ -13,10 +13,7 @@ import {
   InfoCircle as Info,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { Skeleton } from "~/components/ui/skeleton";
 import { Badge } from "~/components/ui/badge";
-// oxlint-disable-next-line eslint/no-unused-vars
-import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
 import {
   LineChart as RechartsLineChart,
@@ -104,8 +101,6 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
             if (abs <= 0.5) return rate * 100;
             return rate;
           })(),
-          realGdp: (point.totalGdp || 0) / 1e12,
-          nominalGdp: (point.totalGdp || 0) / 1e12,
         };
       },
       365
@@ -196,8 +191,6 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
     totalGdp: { label: "Total GDP (Trillions)", color: "var(--color-blue-500)" },
     gdpPerCapita: { label: "GDP per capita", color: "var(--color-destructive)" },
     gdpGrowth: { label: "GDP Growth %", color: "var(--chart-3)" },
-    realGdp: { label: "Real GDP (Trillions)", color: "var(--chart-1)" },
-    nominalGdp: { label: "Nominal GDP (Trillions)", color: "var(--chart-4)" },
   };
 
   // oxlint-disable-next-line eslint/no-unused-vars
@@ -231,18 +224,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
 
   const renderOverviewTab = () => {
     if (isLoading) {
-      return (
-        <MetricModalLayout variant="economy">
-          <MetricModalLayout.MainArea>
-            <Skeleton className="h-[300px] w-full" />
-          </MetricModalLayout.MainArea>
-          <MetricModalLayout.Sidebar>
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-          </MetricModalLayout.Sidebar>
-        </MetricModalLayout>
-      );
+      return <MetricModalLayout.Loading variant="economy" mainHeight={300} sidebarCards={3} />;
     }
 
     return (
@@ -355,16 +337,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
     const processedData = processHistoricalData(timeRange);
 
     if (historicalLoading) {
-      return (
-        <MetricModalLayout variant="economy">
-          <MetricModalLayout.MainArea>
-            <Skeleton className="h-[400px] w-full" />
-          </MetricModalLayout.MainArea>
-          <MetricModalLayout.Sidebar>
-            <Skeleton className="h-full w-full" />
-          </MetricModalLayout.Sidebar>
-        </MetricModalLayout>
-      );
+      return <MetricModalLayout.Loading variant="economy" mainHeight={400} sidebarCards={0} />;
     }
 
     if (processedData.length === 0) {
@@ -450,7 +423,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                 {chartType === "composed" && (
                   <ComposedChart data={processedData}>
                     <defs>
-                      <linearGradient id="realGdpGrad" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient id="totalGdpGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.2} />
                         <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0} />
                       </linearGradient>
@@ -468,20 +441,11 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
                     <Area
                       yAxisId="left"
                       type="monotone"
-                      dataKey="realGdp"
+                      dataKey="totalGdp"
                       stroke="var(--chart-1)"
                       fillOpacity={1}
-                      fill="url(#realGdpGrad)"
-                      name="Real GDP (T)"
-                    />
-                    <Line
-                      yAxisId="left"
-                      type="monotone"
-                      dataKey="nominalGdp"
-                      stroke="var(--chart-4)"
-                      strokeWidth={2}
-                      dot={false}
-                      name="Nominal GDP (T)"
+                      fill="url(#totalGdpGrad)"
+                      name="Total GDP (T)"
                     />
                     <Bar
                       yAxisId="right"
@@ -527,16 +491,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
 
   const renderComparisonTab = () => {
     if (isLoading) {
-      return (
-        <MetricModalLayout variant="economy">
-          <MetricModalLayout.MainArea>
-            <Skeleton className="h-[400px] w-full" />
-          </MetricModalLayout.MainArea>
-          <MetricModalLayout.Sidebar>
-            <Skeleton className="h-full w-full" />
-          </MetricModalLayout.Sidebar>
-        </MetricModalLayout>
-      );
+      return <MetricModalLayout.Loading variant="economy" mainHeight={400} sidebarCards={0} />;
     }
 
     return (

@@ -107,11 +107,89 @@ function MetricSection({
   );
 }
 
+/** The full metric breakdown, shown once stability data has been recorded. */
+function StabilityBody({ metrics }: { metrics: StabilityMetrics }) {
+  return (
+    <>
+      {/* Stability Score */}
+      <div>
+        <div className="mb-2 flex items-end justify-between">
+          <span className="text-stat-label text-label-secondary">Overall stability score</span>
+          <span className={cn("text-title-1 tabular-nums", scoreTone(metrics.stabilityScore))}>
+            <NumberFlowDisplay value={metrics.stabilityScore} format="decimal" decimalPlaces={1} />
+            <span className="text-label-secondary text-body">/100</span>
+          </span>
+        </div>
+        <Progress value={metrics.stabilityScore} className="h-2" />
+      </div>
+
+      <MetricSection title="Crime & law enforcement" icon={Shield}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <div className="text-body flex items-center justify-between">
+              <span className="text-label-secondary">Overall crime rate</span>
+              <span className="text-label font-medium tabular-nums">
+                <NumberFlowDisplay value={metrics.crimeRate} format="decimal" decimalPlaces={1} />{" "}
+                per 100k
+              </span>
+            </div>
+            <div className="text-label-secondary text-footnote flex items-center justify-between">
+              <span>Violent crime</span>
+              <span className="tabular-nums">
+                <NumberFlowDisplay value={metrics.violentCrimeRate} />
+              </span>
+            </div>
+            <div className="text-label-secondary text-footnote flex items-center justify-between">
+              <span>Property crime</span>
+              <span className="tabular-nums">
+                <NumberFlowDisplay value={metrics.propertyCrimeRate} />
+              </span>
+            </div>
+          </div>
+          <PercentMetric label="Organized crime" value={metrics.organizedCrimeLevel} />
+          <PercentMetric label="Policing effectiveness" value={metrics.policingEffectiveness} />
+          <PercentMetric
+            label="Justice system efficiency"
+            value={metrics.justiceSystemEfficiency}
+          />
+        </div>
+      </MetricSection>
+
+      <MetricSection title="Public order" icon={Activity}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="text-body flex items-center justify-between gap-2">
+            <span className="text-label-secondary">Protest frequency</span>
+            <span className="text-label font-medium tabular-nums">
+              <NumberFlowDisplay value={metrics.protestFrequency} /> /year
+            </span>
+          </div>
+          <PercentMetric label="Riot risk" value={metrics.riotRisk} />
+          <PercentMetric label="Civil disobedience" value={metrics.civilDisobedience} />
+        </div>
+      </MetricSection>
+
+      <MetricSection title="Social cohesion" icon={Heart}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <PercentMetric label="Social cohesion" value={metrics.socialCohesion} />
+          <PercentMetric label="Ethnic tension" value={metrics.ethnicTension} />
+          <PercentMetric label="Political polarization" value={metrics.politicalPolarization} />
+        </div>
+      </MetricSection>
+
+      <MetricSection title="Public confidence" icon={Eye}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <PercentMetric label="Trust in government" value={metrics.trustInGovernment} />
+          <PercentMetric label="Trust in police" value={metrics.trustInPolice} />
+          <PercentMetric label="Fear of crime" value={metrics.fearOfCrime} />
+        </div>
+      </MetricSection>
+    </>
+  );
+}
+
 export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
   metrics,
 }: StabilityMetricsCardProps) {
-  const score = metrics?.stabilityScore ?? 75;
-
   return (
     <Card>
       <CardHeader className="p-5 pb-3">
@@ -131,93 +209,11 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4 px-5 pb-5">
-        {/* Stability Score */}
-        <div>
-          <div className="mb-2 flex items-end justify-between">
-            <span className="text-stat-label text-label-secondary">Overall stability score</span>
-            <span
-              className={cn(
-                "text-title-1 tabular-nums",
-                metrics ? scoreTone(metrics.stabilityScore) : "text-label"
-              )}
-            >
-              <NumberFlowDisplay value={score} format="decimal" decimalPlaces={1} />
-              <span className="text-label-secondary text-body">/100</span>
-            </span>
-          </div>
-          <Progress value={score} className="h-2" />
-        </div>
-
-        <MetricSection title="Crime & law enforcement" icon={Shield}>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <div className="text-body flex items-center justify-between">
-                <span className="text-label-secondary">Overall crime rate</span>
-                <span className="text-label font-medium tabular-nums">
-                  <NumberFlowDisplay
-                    value={metrics?.crimeRate ?? 5}
-                    format="decimal"
-                    decimalPlaces={1}
-                  />{" "}
-                  per 100k
-                </span>
-              </div>
-              <div className="text-label-secondary text-footnote flex items-center justify-between">
-                <span>Violent crime</span>
-                <span className="tabular-nums">
-                  <NumberFlowDisplay value={metrics?.violentCrimeRate ?? 2} />
-                </span>
-              </div>
-              <div className="text-label-secondary text-footnote flex items-center justify-between">
-                <span>Property crime</span>
-                <span className="tabular-nums">
-                  <NumberFlowDisplay value={metrics?.propertyCrimeRate ?? 10} />
-                </span>
-              </div>
-            </div>
-            <PercentMetric label="Organized crime" value={metrics?.organizedCrimeLevel ?? 3} />
-            <PercentMetric
-              label="Policing effectiveness"
-              value={metrics?.policingEffectiveness ?? 60}
-            />
-            <PercentMetric
-              label="Justice system efficiency"
-              value={metrics?.justiceSystemEfficiency ?? 50}
-            />
-          </div>
-        </MetricSection>
-
-        <MetricSection title="Public order" icon={Activity}>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="text-body flex items-center justify-between gap-2">
-              <span className="text-label-secondary">Protest frequency</span>
-              <span className="text-label font-medium tabular-nums">
-                <NumberFlowDisplay value={metrics?.protestFrequency ?? 5} /> /year
-              </span>
-            </div>
-            <PercentMetric label="Riot risk" value={metrics?.riotRisk ?? 10} />
-            <PercentMetric label="Civil disobedience" value={metrics?.civilDisobedience ?? 5} />
-          </div>
-        </MetricSection>
-
-        <MetricSection title="Social cohesion" icon={Heart}>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <PercentMetric label="Social cohesion" value={metrics?.socialCohesion ?? 70} />
-            <PercentMetric label="Ethnic tension" value={metrics?.ethnicTension ?? 20} />
-            <PercentMetric
-              label="Political polarization"
-              value={metrics?.politicalPolarization ?? 40}
-            />
-          </div>
-        </MetricSection>
-
-        <MetricSection title="Public confidence" icon={Eye}>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <PercentMetric label="Trust in government" value={metrics?.trustInGovernment ?? 50} />
-            <PercentMetric label="Trust in police" value={metrics?.trustInPolice ?? 55} />
-            <PercentMetric label="Fear of crime" value={metrics?.fearOfCrime ?? 35} />
-          </div>
-        </MetricSection>
+        {metrics ? (
+          <StabilityBody metrics={metrics} />
+        ) : (
+          <p className="text-label-secondary text-body">No stability data recorded yet.</p>
+        )}
       </CardContent>
     </Card>
   );

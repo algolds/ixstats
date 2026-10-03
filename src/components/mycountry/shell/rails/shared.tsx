@@ -50,6 +50,16 @@ export interface ActivityEntry {
   time: Date;
 }
 
+/** Appends an activity entry only when the record carries a real timestamp (never "now"). */
+export function pushRecorded(
+  entries: ActivityEntry[],
+  entry: Omit<ActivityEntry, "time">,
+  ...stamps: Array<string | Date | null | undefined>
+): void {
+  const stamp = stamps.find((value) => value != null);
+  if (stamp != null) entries.push({ ...entry, time: new Date(stamp) });
+}
+
 /**
  * A rail card: a Facet card with a plain title row (muted glyph, sentence-case title, optional
  * trailing accessory such as a count badge) and content below.
