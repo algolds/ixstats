@@ -35,19 +35,6 @@ interface DerivedDemographicMetrics {
  *
  * Computes absolute population counts for different age groups and urban/rural
  * splits based on percentage distributions and total population.
- *
- * @example
- * ```ts
- * const demographics = {
- *   totalPopulation: 10000000,
- *   ageDistribution: { under15: 20, age15to64: 65, over65: 15 },
- *   urbanRuralSplit: { urban: 70, rural: 30 },
- *   totalDependencyRatio: 53.8
- * };
- * const metrics = calculateDerivedDemographics(demographics);
- * // metrics.workingAge = 6500000
- * // metrics.urbanPop = 7000000
- * ```
  */
 export function calculateDerivedDemographics(
   demographics: DemographicsConfiguration
@@ -76,12 +63,6 @@ export function calculateDerivedDemographics(
  *
  * Returns a cyclical color from a predefined palette for consistent
  * region visualization in charts and maps.
- *
- * @example
- * ```ts
- * const color1 = getRegionColor(0); // 'blue'
- * const color2 = getRegionColor(10); // 'blue' (wraps around)
- * ```
  */
 export function getRegionColor(index: number): string {
   const colors = [

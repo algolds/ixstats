@@ -43,20 +43,6 @@ interface DerivedLaborMetrics {
  *
  * Computes absolute numbers of employed, unemployed, and underemployed workers,
  * as well as the effective unemployment rate that accounts for underemployment.
- *
- * @example
- * ```ts
- * const labor = {
- *   totalWorkforce: 10000000,
- *   employmentRate: 95,
- *   unemploymentRate: 5,
- *   underemploymentRate: 3,
- *   laborForceParticipationRate: 65
- * };
- * const metrics = calculateDerivedLabor(labor);
- * // metrics.employed = 9500000
- * // metrics.effectiveUnemployment = 8 (5% + 3%)
- * ```
  */
 export function calculateDerivedLabor(laborMarket: LaborConfiguration): DerivedLaborMetrics {
   const totalWorkforce = laborMarket.totalWorkforce;
@@ -91,11 +77,6 @@ export function calculateDerivedLabor(laborMarket: LaborConfiguration): DerivedL
  *
  * Returns a predefined color for consistent visualization of employment types
  * in charts and UI components.
- *
- * @example
- * ```ts
- * const color = getEmploymentTypeColor('fullTime'); // 'blue'
- * ```
  */
 export function getEmploymentTypeColor(type: string): string {
   const colors: Record<string, string> = {
@@ -115,11 +96,6 @@ export function getEmploymentTypeColor(type: string): string {
  *
  * Returns a predefined color for consistent visualization of economic sectors
  * across charts and UI components.
- *
- * @example
- * ```ts
- * const color = getSectorColor('finance'); // 'amber'
- * ```
  */
 export function getSectorColor(sector: string): string {
   const colors: Record<string, string> = {
@@ -148,11 +124,6 @@ export function getSectorColor(sector: string): string {
  *
  * Returns a predefined color for consistent visualization of labor protections
  * in UI components showing worker rights and regulations.
- *
- * @example
- * ```ts
- * const color = getProtectionColor('healthSafety'); // 'red'
- * ```
  */
 export function getProtectionColor(protection: string): string {
   const colors: Record<string, string> = {
