@@ -21,6 +21,57 @@ const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
 
 const jsonRecordSchema = z.record(z.string(), jsonValueSchema.optional());
 
+/** National identity fields shared by the builder payload and country creation. */
+export const nationalIdentityFieldsSchema = z.object({
+  countryName: z.string().optional(),
+  officialName: z.string().optional(),
+  governmentType: z.string().optional(),
+  motto: z.string().optional(),
+  mottoNative: z.string().optional(),
+  capitalCity: z.string().optional(),
+  largestCity: z.string().optional(),
+  demonym: z.string().optional(),
+  nationalReligion: z.string().optional(),
+  currency: z.string().optional(),
+  currencySymbol: z.string().optional(),
+  officialLanguages: z.string().optional(),
+  nationalLanguage: z.string().optional(),
+  nationalAnthem: z.string().optional(),
+  nationalDay: z.string().optional(),
+  nationalSport: z.string().optional(),
+  nationalAnimal: z.string().optional(),
+  nationalBird: z.string().optional(),
+  nationalFish: z.string().optional(),
+  founders: z.string().optional(),
+  nationalFlower: z.string().optional(),
+  nationalDish: z.string().optional(),
+  nationalFruit: z.string().optional(),
+  nationalDrink: z.string().optional(),
+  nationalInstrument: z.string().optional(),
+  nationalSymbol: z.string().optional(),
+  nationalAnimalImage: z.string().optional(),
+  nationalBirdImage: z.string().optional(),
+  nationalFishImage: z.string().optional(),
+  foundersImage: z.string().optional(),
+  nationalFlowerImage: z.string().optional(),
+  nationalDishImage: z.string().optional(),
+  nationalFruitImage: z.string().optional(),
+  nationalDrinkImage: z.string().optional(),
+  nationalInstrumentImage: z.string().optional(),
+  nationalSymbolImage: z.string().optional(),
+  callingCode: z.string().optional(),
+  internetTLD: z.string().optional(),
+  drivingSide: z.string().optional(),
+  timeZone: z.string().optional(),
+  isoCode: z.string().optional(),
+  coordinatesLatitude: z.string().optional(),
+  coordinatesLongitude: z.string().optional(),
+  emergencyNumber: z.string().optional(),
+  postalCodeFormat: z.string().optional(),
+  weekStartDay: z.string().optional(),
+  leader: z.string().optional(),
+});
+
 /**
  * Shared Zod schema for economic inputs submitted through Country Builder / Editor.
  */
@@ -149,58 +200,7 @@ export const countryEconomicInputsSchema = z
       })
       .passthrough()
       .optional(),
-    nationalIdentity: z
-      .object({
-        countryName: z.string().optional(),
-        officialName: z.string().optional(),
-        governmentType: z.string().optional(),
-        motto: z.string().optional(),
-        mottoNative: z.string().optional(),
-        capitalCity: z.string().optional(),
-        largestCity: z.string().optional(),
-        demonym: z.string().optional(),
-        nationalReligion: z.string().optional(),
-        currency: z.string().optional(),
-        currencySymbol: z.string().optional(),
-        officialLanguages: z.string().optional(),
-        nationalLanguage: z.string().optional(),
-        nationalAnthem: z.string().optional(),
-        nationalDay: z.string().optional(),
-        nationalSport: z.string().optional(),
-        nationalAnimal: z.string().optional(),
-        nationalBird: z.string().optional(),
-        nationalFish: z.string().optional(),
-        founders: z.string().optional(),
-        nationalFlower: z.string().optional(),
-        nationalDish: z.string().optional(),
-        nationalFruit: z.string().optional(),
-        nationalDrink: z.string().optional(),
-        nationalInstrument: z.string().optional(),
-        nationalSymbol: z.string().optional(),
-        nationalAnimalImage: z.string().optional(),
-        nationalBirdImage: z.string().optional(),
-        nationalFishImage: z.string().optional(),
-        foundersImage: z.string().optional(),
-        nationalFlowerImage: z.string().optional(),
-        nationalDishImage: z.string().optional(),
-        nationalFruitImage: z.string().optional(),
-        nationalDrinkImage: z.string().optional(),
-        nationalInstrumentImage: z.string().optional(),
-        nationalSymbolImage: z.string().optional(),
-        callingCode: z.string().optional(),
-        internetTLD: z.string().optional(),
-        drivingSide: z.string().optional(),
-        timeZone: z.string().optional(),
-        isoCode: z.string().optional(),
-        coordinatesLatitude: z.string().optional(),
-        coordinatesLongitude: z.string().optional(),
-        emergencyNumber: z.string().optional(),
-        postalCodeFormat: z.string().optional(),
-        weekStartDay: z.string().optional(),
-        leader: z.string().optional(),
-      })
-      .passthrough()
-      .optional(),
+    nationalIdentity: nationalIdentityFieldsSchema.passthrough().optional(),
     geography: z
       .object({
         continent: z.string().optional(),
@@ -288,4 +288,3 @@ export const countryEconomyBuilderStateSchema = z
     version: z.string().optional(),
   })
   .passthrough();
-

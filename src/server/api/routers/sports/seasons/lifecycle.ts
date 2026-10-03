@@ -15,13 +15,7 @@ import {
 } from "~/server/api/routers/sports/league-access";
 import { IxTime } from "~/lib/ixtime";
 import { computeMatchRevenue } from "~/lib/sports/match-revenue";
-import {
-  generateSchedule,
-  matchIntervalMs,
-  raceIntervalMs,
-  transitionSeasonAction,
-  type ArchetypeType,
-} from "~/lib/sports";
+import { persistSeasonSchedule, transitionSeasonAction } from "~/lib/sports";
 
 /** Completed matches of `teamId` whose revenue that side hasn't collected yet. */
 function uncollectedMatches(
@@ -179,73 +173,12 @@ export const sportsSeasonsLifecycleRouter = createTRPCRouter({
           })),
         });
 
-        if (league.archetype === "circuit") {
-          // Generate race calendar
-          const schedule = generateSchedule({
-            archetype: league.archetype as ArchetypeType,
-            teamCount: teamIds.length,
-            raceCount: (league.settings as Record<string, unknown> | null)?.raceCount as
-              number | undefined,
-          });
-          const races = Array.isArray(schedule) ? schedule : [];
-          for (const race of races) {
-            const rRec = race as any;
-            await ctx.db.sportRace.create({
-              data: {
-                seasonId: season.id,
-                raceNumber: rRec.raceNumber as number,
-                circuitName: (rRec.circuitName as string) ?? `Race ${rRec.raceNumber}`,
-                status: "upcoming",
-                raceIxTime:
-                  startIxTime + (rRec.raceNumber as number) * raceIntervalMs(league.settings),
-              },
-            });
-          }
-        } else if (league.archetype === "bracket") {
-          // Create initial bracket matchups: seed teams by index, pair 1vN, 2v(N-1), etc.
-          const shuffled = [...league.teams].sort(() => Math.random() - 0.5);
-          const pairs: Array<[(typeof league.teams)[0], (typeof league.teams)[0]]> = [];
-          for (let i = 0; i < shuffled.length; i += 2) {
-            if (i + 1 < shuffled.length) {
-              pairs.push([shuffled[i], shuffled[i + 1]]);
-            }
-          }
-
-          for (const [fighter1, fighter2] of pairs) {
-            await ctx.db.sportBracket.create({
-              data: {
-                seasonId: season.id,
-                round: 1,
-                fighter1Id: fighter1.id,
-                fighter2Id: fighter2.id,
-                status: "scheduled",
-                scheduledIxTime: startIxTime,
-              },
-            });
-          }
-        } else {
-          // League or division_conference archetype: generate match schedule
-          const schedule = generateSchedule({
-            archetype: league.archetype as ArchetypeType,
-            teamCount: teamIds.length,
-          });
-          const matches = Array.isArray(schedule) ? schedule : [];
-          for (const m of matches) {
-            const mRec = m as any;
-            await ctx.db.sportMatch.create({
-              data: {
-                seasonId: season.id,
-                matchDay: (mRec.matchDay as number) ?? 1,
-                homeTeamId: teamIds[(mRec.homeTeamIndex as number) ?? 0] ?? teamIds[0],
-                awayTeamId:
-                  teamIds[(mRec.awayTeamIndex as number) ?? 1] ?? teamIds[1] ?? teamIds[0],
-                status: "scheduled",
-                scheduledIxTime:
-                  startIxTime + ((mRec.matchDay as number) ?? 1) * matchIntervalMs(league.settings),
-              },
-            });
-          }
-        }
+        await persistSeasonSchedule(ctx.db, {
+          seasonId: season.id,
+          startIxTime,
+          league,
+          teams: league.teams,
+        });
 
         return season;
       } catch (error) {

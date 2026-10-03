@@ -12,6 +12,36 @@ import { generateSlug } from "~/lib/utils";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 
+/** Every roster-derived Country column, with current values and tiers computed from the baseline. */
+function rosterCountryData(country: BaseCountryData) {
+  return {
+    name: country.country,
+    slug: generateSlug(country.country),
+    continent: country.continent,
+    region: country.region,
+    governmentType: country.governmentType,
+    religion: country.religion,
+    leader: country.leader,
+    baselinePopulation: country.population,
+    baselineGdpPerCapita: country.gdpPerCapita,
+    landArea: country.landArea,
+    areaSqMi: country.areaSqMi,
+    maxGdpGrowthRate: country.maxGdpGrowthRate,
+    adjustedGdpGrowth: country.adjustedGdpGrowth,
+    populationGrowthRate: country.populationGrowthRate,
+    projected2040Population: country.projected2040Population,
+    projected2040Gdp: country.projected2040Gdp,
+    projected2040GdpPerCapita: country.projected2040GdpPerCapita,
+    actualGdpGrowth: country.actualGdpGrowth,
+    localGrowthFactor: country.localGrowthFactor,
+    currentPopulation: country.population,
+    currentGdpPerCapita: country.gdpPerCapita,
+    currentTotalGdp: country.population * country.gdpPerCapita,
+    economicTier: getEconomicTierFromGdpPerCapita(country.gdpPerCapita),
+    populationTier: getPopulationTierFromPopulation(country.population),
+  };
+}
+
 export const adminCountriesImportRouter = createTRPCRouter({
   // Analyze import file
   analyzeImport: adminProcedure
@@ -214,83 +244,19 @@ export const adminCountriesImportRouter = createTRPCRouter({
           const existing = existingMap.get(country.country);
           try {
             if (!existing) {
-              // Compute required calculated fields for new country
-              const totalGdp = country.population * country.gdpPerCapita;
-              const currentPopulation = country.population;
-              const currentGdpPerCapita = country.gdpPerCapita;
-              const currentTotalGdp = totalGdp;
-              // Calculate tiers
-              const economicTier = getEconomicTierFromGdpPerCapita(country.gdpPerCapita);
-              const populationTier = getPopulationTierFromPopulation(country.population);
               await ctx.db.country.create({
                 data: {
-                  name: country.country,
-                  slug: generateSlug(country.country),
-                  continent: country.continent,
-                  region: country.region,
-                  governmentType: country.governmentType,
-                  religion: country.religion,
-                  leader: country.leader,
-                  baselinePopulation: country.population,
-                  baselineGdpPerCapita: country.gdpPerCapita,
-                  landArea: country.landArea,
-                  areaSqMi: country.areaSqMi,
-                  maxGdpGrowthRate: country.maxGdpGrowthRate,
-                  adjustedGdpGrowth: country.adjustedGdpGrowth,
-                  populationGrowthRate: country.populationGrowthRate,
-                  projected2040Population: country.projected2040Population,
-                  projected2040Gdp: country.projected2040Gdp,
-                  projected2040GdpPerCapita: country.projected2040GdpPerCapita,
-                  actualGdpGrowth: country.actualGdpGrowth,
-                  localGrowthFactor: country.localGrowthFactor,
+                  ...rosterCountryData(country),
                   baselineDate: new Date(IxTime.getCurrentIxTime()),
                   lastCalculated: new Date(IxTime.getCurrentIxTime()),
-                  currentPopulation,
-                  currentGdpPerCapita,
-                  currentTotalGdp,
-                  economicTier,
-                  populationTier,
                 },
               });
               created++;
             } else if (input.replaceExisting) {
-              // Replace all fields
-              const totalGdp = country.population * country.gdpPerCapita;
-              const currentPopulation = country.population;
-              const currentGdpPerCapita = country.gdpPerCapita;
-              const currentTotalGdp = totalGdp;
-              // Calculate tiers
-              const economicTier = getEconomicTierFromGdpPerCapita(country.gdpPerCapita);
-              const populationTier = getPopulationTierFromPopulation(country.population);
+              // Replace all fields (baselineDate and lastCalculated stay as they were)
               await ctx.db.country.update({
                 where: { id: existing.id },
-                data: {
-                  name: country.country,
-                  slug: generateSlug(country.country),
-                  continent: country.continent,
-                  region: country.region,
-                  governmentType: country.governmentType,
-                  religion: country.religion,
-                  leader: country.leader,
-                  baselinePopulation: country.population,
-                  baselineGdpPerCapita: country.gdpPerCapita,
-                  landArea: country.landArea,
-                  areaSqMi: country.areaSqMi,
-                  maxGdpGrowthRate: country.maxGdpGrowthRate,
-                  adjustedGdpGrowth: country.adjustedGdpGrowth,
-                  populationGrowthRate: country.populationGrowthRate,
-                  projected2040Population: country.projected2040Population,
-                  projected2040Gdp: country.projected2040Gdp,
-                  projected2040GdpPerCapita: country.projected2040GdpPerCapita,
-                  actualGdpGrowth: country.actualGdpGrowth,
-                  localGrowthFactor: country.localGrowthFactor,
-                  currentPopulation,
-                  currentGdpPerCapita,
-                  currentTotalGdp,
-                  economicTier,
-                  populationTier,
-                  // Do not update baselineDate or lastCalculated here
-                },
+                data: rosterCountryData(country),
               });
               updated++;
             } else {

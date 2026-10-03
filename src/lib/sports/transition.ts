@@ -3,8 +3,7 @@ import { IxTime } from "../ixtime";
 import { getPreset, type SportPresetKey } from "./presets";
 import { processAging } from "./aging";
 import { generateCoach, generateRookieClass } from "./talent";
-import { generateSchedule, matchIntervalMs, raceIntervalMs } from "./scheduler";
-import type { ArchetypeType } from "./presets";
+import { persistSeasonSchedule } from "./scheduler";
 import { resolveMatch, type TeamRatingVector } from "./resolver";
 import { teamWageBill } from "./team-rating";
 
@@ -683,70 +682,12 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
     }
 
     // Generate schedule
-    const teamIds = updatedTeams.map((t: any) => t.id);
-    if (season.league.archetype === "circuit") {
-      const schedule = generateSchedule({
-        archetype: season.league.archetype as ArchetypeType,
-        teamCount: teamIds.length,
-        raceCount: (season.league.settings as Record<string, unknown> | null)?.raceCount as
-          number | undefined,
-      });
-      const races = Array.isArray(schedule) ? schedule : [];
-      for (const race of races) {
-        const rRec = race as any;
-        await tx.sportRace.create({
-          data: {
-            seasonId: newSeason.id,
-            raceNumber: rRec.raceNumber as number,
-            circuitName: (rRec.circuitName as string) ?? `Race ${rRec.raceNumber}`,
-            status: "upcoming",
-            raceIxTime:
-              startIxTime + (rRec.raceNumber as number) * raceIntervalMs(season.league.settings),
-          },
-        });
-      }
-    } else if (season.league.archetype === "bracket") {
-      const shuffled = [...updatedTeams].sort(() => Math.random() - 0.5);
-      const pairs: Array<[(typeof updatedTeams)[0], (typeof updatedTeams)[0]]> = [];
-      for (let i = 0; i < shuffled.length; i += 2) {
-        if (i + 1 < shuffled.length) {
-          pairs.push([shuffled[i], shuffled[i + 1]]);
-        }
-      }
-      for (const [fighter1, fighter2] of pairs) {
-        await tx.sportBracket.create({
-          data: {
-            seasonId: newSeason.id,
-            round: 1,
-            fighter1Id: fighter1.id,
-            fighter2Id: fighter2.id,
-            status: "scheduled",
-            scheduledIxTime: startIxTime,
-          },
-        });
-      }
-    } else {
-      const schedule = generateSchedule({
-        archetype: season.league.archetype as ArchetypeType,
-        teamCount: teamIds.length,
-      });
-      const matches = Array.isArray(schedule) ? schedule : [];
-      for (const m of matches) {
-        const mRec = m as any;
-        await tx.sportMatch.create({
-          data: {
-            seasonId: newSeason.id,
-            matchDay: (mRec.matchDay as number) ?? 1,
-            homeTeamId: teamIds[(mRec.homeTeamIndex as number) ?? 0] ?? teamIds[0],
-            awayTeamId: teamIds[(mRec.awayTeamIndex as number) ?? 1] ?? teamIds[1] ?? teamIds[0],
-            status: "scheduled",
-            scheduledIxTime:
-              startIxTime +
-              ((mRec.matchDay as number) ?? 1) * matchIntervalMs(season.league.settings),
-          },
-        });
-      }
-    }
+    await persistSeasonSchedule(tx, {
+      seasonId: newSeason.id,
+      startIxTime,
+      league: season.league,
+      teams: updatedTeams,
+    });
 
     // ─── Phase 4 Integrations ───────────────────────────────────────────────
 

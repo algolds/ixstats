@@ -9,7 +9,7 @@
 
 import { type PrismaClient } from "@prisma/client";
 import { IxTime } from "../ixtime";
-import { resolveRace, createRNG, seedFromString } from "./resolver";
+import { resolveRace, loadLeagueDrivers, createRNG, seedFromString } from "./resolver";
 import { transitionToNextStage } from "./transition";
 import { postMatchDayBulletin } from "./feed-post";
 import { notifyClubMatchResult } from "./club-notify";
@@ -376,46 +376,7 @@ async function advanceCircuitRace(
     return false;
   }
 
-  // Get all drivers for the season's teams
-  const teams = await prisma.sportTeam.findMany({
-    where: {
-      leagueId: season.leagueId,
-      players: { some: { position: "driver", isActive: true } },
-    },
-    include: {
-      players: {
-        where: { position: "driver", isActive: true },
-        select: { id: true, ratings: true },
-      },
-    },
-  });
-
-  const allDrivers: Array<{
-    driverId: string;
-    teamId: string;
-    pace: number;
-    consistency: number;
-    wetSkill: number;
-    overtaking: number;
-    tyreManagement: number;
-    starts: number;
-  }> = [];
-
-  for (const team of teams) {
-    for (const driver of team.players) {
-      const r = (driver.ratings ?? {}) as Record<string, number>;
-      allDrivers.push({
-        driverId: driver.id,
-        teamId: team.id,
-        pace: r.pace ?? 50,
-        consistency: r.consistency ?? 50,
-        wetSkill: r.wetSkill ?? 50,
-        overtaking: r.overtaking ?? 50,
-        tyreManagement: r.tyreManagement ?? 50,
-        starts: r.starts ?? 50,
-      });
-    }
-  }
+  const allDrivers = await loadLeagueDrivers(prisma, season.leagueId);
 
   if (allDrivers.length === 0) return false;
 

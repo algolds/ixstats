@@ -17,6 +17,7 @@ import { notificationHooks } from "~/lib/notifications/hooks";
 import { globalCache } from "~/lib/cache";
 import { hasPremiumTier } from "~/lib/auth/premium";
 import { activateOwnedNation, assignNation } from "~/server/modules/realms";
+import { nationalIdentityFieldsSchema } from "~/server/shared/country-payload-builder";
 
 export const usersCountryLinkingRouter = createTRPCRouter({
   // Create new country for user (LEGACY - Use countries.createCountry for new builder)
@@ -50,55 +51,7 @@ export const usersCountryLinkingRouter = createTRPCRouter({
           })
           .optional(),
         // National Identity data from builder
-        nationalIdentity: z
-          .object({
-            countryName: z.string().optional(),
-            officialName: z.string().optional(),
-            governmentType: z.string().optional(),
-            motto: z.string().optional(),
-            mottoNative: z.string().optional(),
-            capitalCity: z.string().optional(),
-            largestCity: z.string().optional(),
-            demonym: z.string().optional(),
-            currency: z.string().optional(),
-            currencySymbol: z.string().optional(),
-            officialLanguages: z.string().optional(),
-            nationalLanguage: z.string().optional(),
-            nationalAnthem: z.string().optional(),
-            nationalDay: z.string().optional(),
-            callingCode: z.string().optional(),
-            internetTLD: z.string().optional(),
-            drivingSide: z.string().optional(),
-            timeZone: z.string().optional(),
-            isoCode: z.string().optional(),
-            coordinatesLatitude: z.string().optional(),
-            coordinatesLongitude: z.string().optional(),
-            emergencyNumber: z.string().optional(),
-            postalCodeFormat: z.string().optional(),
-            nationalSport: z.string().optional(),
-            nationalAnimal: z.string().optional(),
-            nationalBird: z.string().optional(),
-            nationalFish: z.string().optional(),
-            founders: z.string().optional(),
-            nationalFlower: z.string().optional(),
-            nationalDish: z.string().optional(),
-            nationalFruit: z.string().optional(),
-            nationalDrink: z.string().optional(),
-            nationalInstrument: z.string().optional(),
-            nationalSymbol: z.string().optional(),
-            nationalAnimalImage: z.string().optional(),
-            nationalBirdImage: z.string().optional(),
-            nationalFishImage: z.string().optional(),
-            foundersImage: z.string().optional(),
-            nationalFlowerImage: z.string().optional(),
-            nationalDishImage: z.string().optional(),
-            nationalFruitImage: z.string().optional(),
-            nationalDrinkImage: z.string().optional(),
-            nationalInstrumentImage: z.string().optional(),
-            nationalSymbolImage: z.string().optional(),
-            weekStartDay: z.string().optional(),
-          })
-          .optional(),
+        nationalIdentity: nationalIdentityFieldsSchema.optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -224,7 +177,10 @@ export const usersCountryLinkingRouter = createTRPCRouter({
         activateOwnedNation(tx, { userId: ctx.user.id, countryId: input.countryId })
       );
       if (!activated) {
-        throw new TRPCError({ code: "FORBIDDEN", message: "You can only play as a nation you own" });
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only play as a nation you own",
+        });
       }
       await globalCache.delete(`user_profile:${ctx.user.clerkUserId}`);
       return { success: true };

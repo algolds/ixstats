@@ -2,6 +2,7 @@
  * Sports Engine — Racing & Motorsport Resolution
  */
 
+import type { PrismaClient } from "@prisma/client";
 import { createRNG } from "./rng";
 
 interface RaceResult {
@@ -29,17 +30,50 @@ const F1_POINTS: Record<number, number> = {
   10: 1,
 };
 
+interface RaceDriver {
+  driverId: string;
+  teamId: string;
+  pace: number;
+  consistency: number;
+  wetSkill: number;
+  overtaking: number;
+  tyreManagement: number;
+  starts: number;
+}
+
+/** Every active driver in the league's teams, with their race ratings (50 where unrated). */
+export async function loadLeagueDrivers(
+  db: Pick<PrismaClient, "sportTeam">,
+  leagueId: string
+): Promise<RaceDriver[]> {
+  const teams = await db.sportTeam.findMany({
+    where: { leagueId, players: { some: { position: "driver", isActive: true } } },
+    include: {
+      players: {
+        where: { position: "driver", isActive: true },
+        select: { id: true, ratings: true },
+      },
+    },
+  });
+  return teams.flatMap((team) =>
+    team.players.map((driver) => {
+      const r = (driver.ratings ?? {}) as Record<string, number>;
+      return {
+        driverId: driver.id,
+        teamId: team.id,
+        pace: r.pace ?? 50,
+        consistency: r.consistency ?? 50,
+        wetSkill: r.wetSkill ?? 50,
+        overtaking: r.overtaking ?? 50,
+        tyreManagement: r.tyreManagement ?? 50,
+        starts: r.starts ?? 50,
+      };
+    })
+  );
+}
+
 export function resolveRace(args: {
-  drivers: Array<{
-    driverId: string;
-    teamId: string;
-    pace: number;
-    consistency: number;
-    wetSkill: number;
-    overtaking: number;
-    tyreManagement: number;
-    starts: number;
-  }>;
+  drivers: RaceDriver[];
   seed: number;
   isWet: boolean;
 }): RaceResult {

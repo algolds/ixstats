@@ -17,10 +17,39 @@ import {
 import { nsApiClient } from "~/lib/nationstates/api-client";
 import { processCTENationFilter } from "~/lib/nationstates/sync-processor";
 import { computeCardValue, getValuationConfig } from "~/lib/cards/valuation";
-import { Prisma } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { normalizeNationName } from "~/lib/vault/exploit-corrections";
 
 // ─── Background Processing Functions ──────────────────────────────
+
+async function findNSCard(db: PrismaClient, nsCardId: number, nsSeason: number) {
+  const card = await db.card.findFirst({ where: { nsCardId, nsSeason } });
+  if (!card) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: `No NS card found for ${nsCardId} S${nsSeason}`,
+    });
+  }
+  return card;
+}
+
+/** Retire a card, purge its artwork and record the takedown in its metadata. */
+async function retireCardArtwork(
+  db: PrismaClient,
+  card: { id: string; metadata: unknown },
+  takedown: Prisma.InputJsonObject
+) {
+  await db.card.update({
+    where: { id: card.id },
+    data: {
+      isRetired: true,
+      retiredAt: new Date(),
+      artwork: null,
+      artworkVariants: Prisma.DbNull,
+      metadata: { ...(card.metadata as Prisma.JsonObject | null), nsTakedown: takedown },
+    },
+  });
+}
 
 export function nationNamesMatch(a: string, b: string): boolean {
   const left = normalizeNationName(a);
@@ -102,24 +131,11 @@ export const nsImportCardsRouter = createTRPCRouter({
       }
 
       // 3. Retire card and purge artwork
-      const prevMetadata = (card.metadata as Record<string, any>) || {};
-      await ctx.db.card.update({
-        where: { id: card.id },
-        data: {
-          isRetired: true,
-          retiredAt: new Date(),
-          artwork: null,
-          artworkVariants: Prisma.DbNull,
-          metadata: {
-            ...prevMetadata,
-            nsTakedown: {
-              selfService: true,
-              verifiedNation: input.nationName.trim(),
-              hiddenAt: new Date().toISOString(),
-              reason: input.reason || "Self-service flag owner takedown request",
-            },
-          },
-        },
+      await retireCardArtwork(ctx.db, card, {
+        selfService: true,
+        verifiedNation: input.nationName.trim(),
+        hiddenAt: new Date().toISOString(),
+        reason: input.reason || "Self-service flag owner takedown request",
       });
 
       return {
@@ -146,34 +162,12 @@ export const nsImportCardsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const card = await ctx.db.card.findFirst({
-        where: { nsCardId: input.nsCardId, nsSeason: input.nsSeason },
-      });
+      const card = await findNSCard(ctx.db, input.nsCardId, input.nsSeason);
 
-      if (!card) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `No NS card found for ${input.nsCardId} S${input.nsSeason}`,
-        });
-      }
-
-      const prevMetadata = (card.metadata as Record<string, any>) || {};
-      await ctx.db.card.update({
-        where: { id: card.id },
-        data: {
-          isRetired: true,
-          retiredAt: new Date(),
-          artwork: null,
-          artworkVariants: Prisma.DbNull,
-          metadata: {
-            ...prevMetadata,
-            nsTakedown: {
-              hiddenAt: new Date().toISOString(),
-              hiddenBy: ctx.user.id,
-              reason: input.reason || null,
-            },
-          },
-        },
+      await retireCardArtwork(ctx.db, card, {
+        hiddenAt: new Date().toISOString(),
+        hiddenBy: ctx.user.id,
+        reason: input.reason || null,
       });
 
       console.log(
@@ -199,16 +193,7 @@ export const nsImportCardsRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const card = await ctx.db.card.findFirst({
-        where: { nsCardId: input.nsCardId, nsSeason: input.nsSeason },
-      });
-
-      if (!card) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `No NS card found for ${input.nsCardId} S${input.nsSeason}`,
-        });
-      }
+      const card = await findNSCard(ctx.db, input.nsCardId, input.nsSeason);
 
       const prevMetadata = (card.metadata as Record<string, any>) || {};
       await ctx.db.card.update({

@@ -9,7 +9,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { assertCanManageLeague } from "~/server/api/routers/sports/league-access";
 import { IxTime } from "~/lib/ixtime";
-import { resolveRace, transitionToNextStage, simpleHash } from "~/lib/sports";
+import { resolveRace, loadLeagueDrivers, transitionToNextStage, simpleHash } from "~/lib/sports";
 import { outcomeFromScores, resolveMatchPredictions } from "~/lib/sports/predictions";
 import {
   SIM_MATCH_INCLUDE,
@@ -44,45 +44,7 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
             orderBy: { raceNumber: "asc" },
           });
 
-          // Fetch all drivers for the season's teams
-          const teams = await ctx.db.sportTeam.findMany({
-            where: {
-              leagueId: currentSeason.leagueId,
-              players: { some: { position: "driver", isActive: true } },
-            },
-            include: {
-              players: {
-                where: { position: "driver", isActive: true },
-              },
-            },
-          });
-
-          const allDrivers: Array<{
-            driverId: string;
-            teamId: string;
-            pace: number;
-            consistency: number;
-            wetSkill: number;
-            overtaking: number;
-            tyreManagement: number;
-            starts: number;
-          }> = [];
-
-          for (const team of teams) {
-            for (const driver of team.players) {
-              const r = (driver.ratings ?? {}) as Record<string, number>;
-              allDrivers.push({
-                driverId: driver.id,
-                teamId: team.id,
-                pace: r.pace ?? 50,
-                consistency: r.consistency ?? 50,
-                wetSkill: r.wetSkill ?? 50,
-                overtaking: r.overtaking ?? 50,
-                tyreManagement: r.tyreManagement ?? 50,
-                starts: r.starts ?? 50,
-              });
-            }
-          }
+          const allDrivers = await loadLeagueDrivers(ctx.db, currentSeason.leagueId);
 
           for (const race of races) {
             const raceResult = resolveRace({
@@ -238,9 +200,7 @@ export const sportsSeasonsFullseasonRouter = createTRPCRouter({
                 select: { winnerId: true },
               });
 
-              const winners = completedBrackets
-                .map((b) => b.winnerId)
-                .filter(Boolean) as string[];
+              const winners = completedBrackets.map((b) => b.winnerId).filter(Boolean) as string[];
 
               if (winners.length >= 2) {
                 const nextRound = currentRound + 1;
