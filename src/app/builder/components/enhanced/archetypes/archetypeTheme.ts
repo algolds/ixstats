@@ -21,20 +21,17 @@ import {
   City as Building2,
 } from "iconoir-react";
 
+const COMPLEXITY_BADGE_VARIANTS: Record<string, "success" | "warning" | "destructive"> = {
+  low: "success",
+  medium: "warning",
+  high: "destructive",
+};
+
 /** Badge variant for an implementation complexity (status roles). */
 export function getComplexityBadgeVariant(
   complexity: string | undefined
 ): "success" | "warning" | "destructive" | "default" {
-  switch ((complexity ?? "").toLowerCase()) {
-    case "low":
-      return "success";
-    case "medium":
-      return "warning";
-    case "high":
-      return "destructive";
-    default:
-      return "default";
-  }
+  return COMPLEXITY_BADGE_VARIANTS[(complexity ?? "").toLowerCase()] ?? "default";
 }
 
 export function getArchetypeIcon(archetypeId: string): React.ComponentType<{ className?: string }> {
