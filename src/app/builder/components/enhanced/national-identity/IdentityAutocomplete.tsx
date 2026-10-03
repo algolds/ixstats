@@ -109,7 +109,6 @@ export const IdentityAutocomplete = React.memo(function IdentityAutocomplete({
           })) || []
         }
         isLoading={isLoading}
-        allowCustom={true}
       />
     </div>
   );

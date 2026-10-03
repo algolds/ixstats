@@ -46,7 +46,7 @@ export interface SegmentedControlOption<T extends string = string> {
 
 export interface SegmentedControlProps<T extends string = string> extends Omit<
   React.HTMLAttributes<HTMLDivElement>,
-  "onChange" | "defaultValue" | "role"
+  "onChange" | "defaultValue" | "role" | "dir"
 > {
   options: readonly SegmentedControlOption<T>[];
   value?: T;

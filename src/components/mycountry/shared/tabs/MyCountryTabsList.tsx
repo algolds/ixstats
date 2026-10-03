@@ -137,14 +137,13 @@ export function MyCountryTabsList({
     return (
       <div className="border-separator relative flex [scrollbar-width:none] items-center gap-1 overflow-x-auto overflow-y-hidden border-b pb-0.5 select-none [-ms-overflow-style:none] sm:gap-2 [&::-webkit-scrollbar]:hidden">
         {resolvedTabs.map((tab) => {
-          const isActive = resolvedActiveTab === tab.id;
-          const Icon = tab.icon;
+          const isActive = resolvedActiveTab === tab.value;
           return (
             <button
-              key={tab.id}
+              key={tab.value}
               type="button"
               aria-current={isActive ? "page" : undefined}
-              onClick={() => handleChange(tab.id)}
+              onClick={() => handleChange(tab.value)}
               className={cn(
                 "focus-visible:ring-tint rounded-control text-caption sm:text-body relative flex min-h-9 items-center gap-2 px-3 py-2 transition-[color,background-color,transform] duration-150 outline-none focus-visible:ring-2 active:scale-[0.98]",
                 isActive
@@ -152,9 +151,14 @@ export function MyCountryTabsList({
                   : "text-label-secondary hover:text-label hover:bg-fill-3"
               )}
             >
-              <Icon
-                className={cn("h-4 w-4 shrink-0", isActive ? "text-tint" : "text-label-secondary")}
-              />
+              <span
+                className={cn(
+                  "shrink-0 [&>svg]:h-4 [&>svg]:w-4",
+                  isActive ? "text-tint" : "text-label-secondary"
+                )}
+              >
+                {tab.icon}
+              </span>
               <span>{tab.label}</span>
               {tab.badge !== undefined && tab.badge > 0 && (
                 <span

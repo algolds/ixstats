@@ -13,7 +13,7 @@
  * - Click-outside → smooth retraction
  *
  * Facet 3.1 chrome (spec §16.1 #6): the island is Halo's acrylic — `FacetMaterial material="acrylic"`
- * with the v2 blue / indigo / cyan glow underlay and the four refraction edges, opening into the
+ * with a soft glow underlay, opening into the
  * 40px / 210% expanded sheet (`data-expanded`) while searching — and the results list a
  * `material-regular` panel.
  * Desktop springs its size (layout animation); phones swap content without it.
@@ -268,7 +268,6 @@ export function MapDynamicIsland({
   const desktopPill = (
     <MotionFacetMaterial
       material="acrylic"
-      glow
       layout
       transition={SPRING}
       animate={isFlashing ? { scale: [1, 1.05, 1] } : { scale: 1 }}
