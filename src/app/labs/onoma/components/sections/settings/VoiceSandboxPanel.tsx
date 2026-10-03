@@ -156,7 +156,6 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
             className="text-footnote w-full font-mono"
           />
 
-          {/* Normalizer Preview & Warning */}
           {speechConfig?.kokoro?.enabled && (
             <div className="text-label-secondary text-caption mt-1 space-y-0.5 font-mono">
               <div className="flex justify-between">

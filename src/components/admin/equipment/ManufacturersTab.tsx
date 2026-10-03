@@ -136,9 +136,7 @@ export function ManufacturersTab({
           </Button>
         </div>
 
-        {/* Filters */}
         <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-4">
-          {/* Search */}
           <div className="relative">
             <Search className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
             <Input
@@ -149,7 +147,6 @@ export function ManufacturersTab({
             />
           </div>
 
-          {/* Country filter */}
           <Select value={countryFilter} onValueChange={setCountryFilter}>
             <SelectTrigger>
               <Globe className="mr-2 h-4 w-4" />
@@ -165,7 +162,6 @@ export function ManufacturersTab({
             </SelectContent>
           </Select>
 
-          {/* Show inactive toggle */}
           <Button
             variant={showInactiveManufacturers ? "default" : "outline"}
             onClick={() => setShowInactiveManufacturers(!showInactiveManufacturers)}
@@ -179,7 +175,6 @@ export function ManufacturersTab({
             {showInactiveManufacturers ? "Showing All" : "Active Only"}
           </Button>
 
-          {/* Stats placeholder */}
           <div className="bg-tint-fill border-tint/20 rounded-control-sm flex items-center justify-center border px-4 py-2">
             <Package className="text-tint mr-2 h-4 w-4" />
             <span className="text-body font-medium">
@@ -189,7 +184,6 @@ export function ManufacturersTab({
         </div>
       </div>
 
-      {/* Table */}
       <Card className="p-6">
         {manufacturersLoading ? (
           <div className="py-12 text-center">
@@ -324,7 +318,6 @@ export function ManufacturersTab({
         )}
       </Card>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <div className="bg-surface border-separator rounded-control border p-4">
           <div className="text-label text-title-1">{normalizedManufacturers.length}</div>

@@ -142,7 +142,6 @@ export function EventsRegistryPanel() {
 
   return (
     <div className="space-y-6">
-      {/* Stats bar */}
       {data && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Card className="flex flex-col gap-6 py-6">
@@ -184,7 +183,6 @@ export function EventsRegistryPanel() {
         </div>
       )}
 
-      {/* Seed / Batch controls */}
       <div className="flex flex-wrap items-center gap-3">
         {!hasConfigs && (
           <Button
@@ -226,7 +224,6 @@ export function EventsRegistryPanel() {
 
       {hasConfigs && (
         <>
-          {/* Filters */}
           <Card className="flex flex-col gap-6 py-6">
             <CardContent className="p-4">
               <div className="flex flex-wrap items-end gap-3">

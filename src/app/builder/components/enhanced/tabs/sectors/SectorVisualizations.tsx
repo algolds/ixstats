@@ -41,7 +41,6 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
 
   return (
     <div className="space-y-6">
-      {/* GDP Composition */}
       <Card>
         <CardContent className="p-6">
           <h3 className="text-headline text-label mb-4 flex items-center gap-2">
@@ -64,7 +63,6 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
         </CardContent>
       </Card>
 
-      {/* Employment Distribution */}
       <Card>
         <CardContent className="p-6">
           <h3 className="text-headline text-label mb-4 flex items-center gap-2">
@@ -88,7 +86,6 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
         </CardContent>
       </Card>
 
-      {/* Component Impact Summary */}
       <Card>
         <CardContent className="p-6">
           <h3 className="text-headline text-label mb-4 flex items-center gap-2">

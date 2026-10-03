@@ -156,7 +156,6 @@ export function SystemTuningSection() {
 
       {/* Right Column: Cache, Templates, Cron */}
       <div className="space-y-6">
-        {/* Cache Utilities */}
         <Card className="space-y-4 p-5">
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <Database className="text-green h-4 w-4" />
@@ -210,7 +209,6 @@ export function SystemTuningSection() {
           </div>
         </Card>
 
-        {/* Wiki Templates Synchronization */}
         <Card className="space-y-4 p-5">
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <SlidersHorizontal className="text-indigo h-4 w-4" />
@@ -341,7 +339,6 @@ export function SystemTuningSection() {
           </div>
         </Card>
 
-        {/* Cron Schedules Editor */}
         <Card className="space-y-4 p-5">
           <div className="border-separator flex items-center gap-2 border-b pb-3">
             <Sliders className="text-green h-4 w-4" />

@@ -146,7 +146,6 @@ export function LorewardWeightsCard() {
 
   return (
     <div className="space-y-6">
-      {/* Scoring Parameter Weights */}
       <Card className="space-y-4 p-5">
         <div className="border-separator border-b pb-3">
           <div className="flex items-center gap-2">
@@ -205,7 +204,6 @@ export function LorewardWeightsCard() {
         </div>
       </Card>
 
-      {/* Weight Tuning Preview Console */}
       <Card className="space-y-4 p-5">
         <div className="border-separator border-b pb-3">
           <div className="flex items-center gap-2">

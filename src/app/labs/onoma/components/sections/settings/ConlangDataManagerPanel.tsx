@@ -178,18 +178,15 @@ export function ConlangDataManagerPanel({ onImportComplete }: ConlangDataManager
       </p>
 
       <div className="grid gap-3 pt-1 sm:grid-cols-3">
-        {/* Backup / Export */}
         <Button variant="outline" size="sm" onClick={handleExportData} className="justify-center">
           <Download className="text-tint h-3.5 w-3.5" /> Export backup file
         </Button>
 
-        {/* Restore / Import */}
         <label className="border-separator bg-background text-label hover:bg-fill-3 rounded-control text-footnote flex cursor-pointer items-center justify-center gap-2 border px-3 py-2 font-semibold transition-colors select-none">
           <Upload className="text-green h-3.5 w-3.5" /> Import backup file
           <input type="file" accept=".json" onChange={handleImportData} className="hidden" />
         </label>
 
-        {/* Clear Actions */}
         <Button
           variant="outline"
           size="default"

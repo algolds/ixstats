@@ -32,7 +32,6 @@ export function SystemValidationDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Controls */}
       <Card className="flex flex-col gap-6 py-6">
         <CardContent className="p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -67,7 +66,6 @@ export function SystemValidationDashboard() {
             )}
           </div>
 
-          {/* Progress bar */}
           {isLoading && (
             <div className="mt-4">
               <AuditProgressBar progress={progress} total={totalCategories} isRunning={isRunning} />
@@ -76,7 +74,6 @@ export function SystemValidationDashboard() {
         </CardContent>
       </Card>
 
-      {/* Error banner */}
       {errorList.length > 0 && (
         <Card className="border-red/20 bg-red/5 flex flex-col gap-6 py-6">
           <CardContent className="p-4">
@@ -95,7 +92,6 @@ export function SystemValidationDashboard() {
         </Card>
       )}
 
-      {/* Category grid */}
       {categories.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {categories.map((category) => (
@@ -117,7 +113,6 @@ export function SystemValidationDashboard() {
         )
       )}
 
-      {/* Summary */}
       {summary && (
         <Card className="flex flex-col gap-6 py-6">
           <CardContent className="p-6">

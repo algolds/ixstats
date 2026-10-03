@@ -65,7 +65,6 @@ export function StashSettingsContent() {
         subtitle="WikiOS article stash, offline storage, highlights tracker and welcome modals."
       />
 
-      {/* Real Stats Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Total stashed articles</p>
@@ -90,7 +89,6 @@ export function StashSettingsContent() {
         </Card>
       </div>
 
-      {/* Settings Form */}
       <Card className="space-y-5 p-5">
         <div className="border-separator flex items-center justify-between border-b pb-4">
           <div>
@@ -106,7 +104,6 @@ export function StashSettingsContent() {
         </div>
 
         <div className="space-y-3">
-          {/* Max Items */}
           <div className="border-separator bg-fill-3 rounded-row flex flex-col justify-between gap-3 border p-4 sm:flex-row sm:items-center">
             <div>
               <Label className="text-label text-caption">Max Stash Limit per Account</Label>
@@ -124,7 +121,6 @@ export function StashSettingsContent() {
             />
           </div>
 
-          {/* Offline Sync */}
           <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
               <Label className="text-label text-caption">Offline storage syncing</Label>
@@ -139,7 +135,6 @@ export function StashSettingsContent() {
             />
           </div>
 
-          {/* Auto Category */}
           <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
               <Label className="text-label text-caption">Automatic image categorization</Label>
@@ -154,7 +149,6 @@ export function StashSettingsContent() {
             />
           </div>
 
-          {/* Highlight Tracker */}
           <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
               <Label className="text-label text-caption">Text highlight tracking</Label>

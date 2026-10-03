@@ -288,7 +288,6 @@ export function TestSuitePanel() {
 
   return (
     <div className="space-y-6">
-      {/* Preset Buttons */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -319,7 +318,6 @@ export function TestSuitePanel() {
         </CardContent>
       </Card>
 
-      {/* System-level test buttons */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -374,7 +372,6 @@ export function TestSuitePanel() {
         </CardContent>
       </Card>
 
-      {/* Custom Simulator */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -479,7 +476,6 @@ export function TestSuitePanel() {
         </CardContent>
       </Card>
 
-      {/* Test Results */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

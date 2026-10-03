@@ -131,7 +131,6 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
                 </div>
               )}
 
-              {/* Recovery actions */}
               <div className="flex flex-col gap-3 pt-4">
                 <Button
                   onClick={this.handleRetry}
@@ -171,7 +170,6 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
                 </div>
               </div>
 
-              {/* User guidance */}
               <div className="text-label-secondary text-body pt-4 text-center">
                 <p>If this problem persists, try clearing your draft and starting over.</p>
               </div>

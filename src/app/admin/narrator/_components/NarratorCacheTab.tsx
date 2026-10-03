@@ -42,7 +42,6 @@ export function NarratorCacheTab() {
 
   return (
     <div className="space-y-5">
-      {/* Metric Cards */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Card className="p-4">
           <p className="text-label-secondary text-eyebrow">Total cached cards</p>
@@ -78,7 +77,6 @@ export function NarratorCacheTab() {
         </Card>
       </div>
 
-      {/* Cache Control Card */}
       <Card className="space-y-4 p-5">
         <div className="border-separator border-b pb-3">
           <div className="flex items-center gap-2">

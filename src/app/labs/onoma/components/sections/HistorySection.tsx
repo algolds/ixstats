@@ -128,7 +128,6 @@ export default function HistorySection({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         {!hideHeader ? (
           <div>
@@ -146,7 +145,6 @@ export default function HistorySection({
         </Button>
       </div>
 
-      {/* Stats Panel */}
       <AnimatePresence>
         {showStats && stats && (
           <motion.div
@@ -182,7 +180,6 @@ export default function HistorySection({
                   <p className="text-label-secondary text-footnote">Top category</p>
                 </div>
               </div>
-              {/* Category Breakdown */}
               {stats.categoryBreakdown.length > 1 && (
                 <div className="border-separator mt-4 border-t pt-3">
                   <div className="flex flex-wrap gap-2">
@@ -205,7 +202,6 @@ export default function HistorySection({
         )}
       </AnimatePresence>
 
-      {/* Search & Filters */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="relative w-full sm:w-64">
           <Search className="text-label-secondary absolute top-2 left-3 h-3.5 w-3.5" />
@@ -254,7 +250,6 @@ export default function HistorySection({
         </div>
       </div>
 
-      {/* Timeline */}
       {filteredEvents.length === 0 ? (
         <Card variant="inset" padding="none">
           <div className="flex flex-col items-center justify-center space-y-2 p-8 text-center">
@@ -286,7 +281,6 @@ export default function HistorySection({
                       key={event.id}
                       className="transition-[color,background-color,border-color,box-shadow,opacity,transform]"
                     >
-                      {/* Event Header */}
                       <Button
                         variant="ghost"
                         onClick={() => toggleExpanded(event.id)}
@@ -355,7 +349,6 @@ export default function HistorySection({
                             className="overflow-hidden"
                           >
                             <div className="border-separator space-y-3 border-t px-3 pt-2 pb-4">
-                              {/* Batch Actions Bar */}
                               <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-b pb-2">
                                 <div className="text-label-secondary text-caption">
                                   Run payload ({names.length} names)
@@ -418,7 +411,6 @@ export default function HistorySection({
                                 </div>
                               </div>
 
-                              {/* Badges Grid */}
                               <div className="flex flex-wrap gap-2">
                                 {names.map((name, idx) => {
                                   const isFav = favoriteNames.has(name);
@@ -476,7 +468,6 @@ export default function HistorySection({
             </div>
           ))}
 
-          {/* Load More */}
           {hasMore && (
             <div className="flex justify-center">
               <Button

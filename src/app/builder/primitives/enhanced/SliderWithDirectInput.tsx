@@ -189,7 +189,6 @@ export function SliderWithDirectInput({
 
   return (
     <div className={cn("space-y-3", className)} style={cssVars as React.CSSProperties}>
-      {/* Label and Value Header */}
       {(label || showValue || description) && (
         <div className="space-y-1">
           <div className="flex items-center justify-between gap-3">
@@ -298,7 +297,6 @@ export function SliderWithDirectInput({
       {/* Slider Mode: Visual Slider */}
       {inputMode === "slider" && (
         <div className={cn("relative px-2", orientation === "vertical" && "flex justify-center")}>
-          {/* Track Container */}
           <div
             className={cn(
               "relative overflow-hidden rounded-full will-change-transform",
@@ -311,7 +309,6 @@ export function SliderWithDirectInput({
               [orientation === "horizontal" ? "height" : "width"]: `${track}px`,
             }}
           >
-            {/* Background Track */}
             <div
               className={cn(
                 "absolute inset-0 rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
@@ -319,7 +316,6 @@ export function SliderWithDirectInput({
               )}
             />
 
-            {/* Progress Track */}
             <motion.div
               className={cn(
                 "absolute rounded-full",
@@ -340,7 +336,6 @@ export function SliderWithDirectInput({
               transition={{ duration: 0.15, ease: "easeOut" }}
             />
 
-            {/* Reference Value Indicator */}
             {referencePercentage !== null && showComparison && (
               <div
                 className="bg-label-tertiary absolute h-full w-0.5 opacity-60"
@@ -350,7 +345,6 @@ export function SliderWithDirectInput({
               />
             )}
 
-            {/* Tick Marks */}
             {ticks.map((tick, index) => (
               <div
                 key={index}
@@ -386,7 +380,6 @@ export function SliderWithDirectInput({
             />
           </div>
 
-          {/* Range Display */}
           {showRange && (
             <div className="text-label-secondary text-footnote mt-2 flex justify-between">
               <span>
@@ -400,7 +393,6 @@ export function SliderWithDirectInput({
             </div>
           )}
 
-          {/* Reference Label */}
           {referenceLabel && showComparison && referenceValue !== undefined && (
             <motion.div
               initial={{ opacity: 0 }}

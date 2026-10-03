@@ -182,7 +182,6 @@ export function NarratorPanel() {
             </div>
 
             <div className="space-y-4">
-              {/* Enable Switch */}
               <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
                 <div>
                   <Label className="text-label text-caption">Enable flavor cards globally</Label>
@@ -193,7 +192,6 @@ export function NarratorPanel() {
                 <Switch checked={enabled} onCheckedChange={setEnabled} className="scale-90" />
               </div>
 
-              {/* Grid Configs */}
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label className="text-label-secondary text-subhead">LLM Provider</Label>
@@ -285,7 +283,6 @@ export function NarratorPanel() {
                 )}
               </div>
 
-              {/* System Prompt Editor */}
               <div className="space-y-2 pt-2">
                 <div className="flex items-center justify-between">
                   <Label className="text-label-secondary text-subhead">Global system prompt</Label>

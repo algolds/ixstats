@@ -120,7 +120,6 @@ function OnomaHelpModal({
             : "h-[90vh] max-h-[700px] sm:max-w-3xl"
         )}
       >
-        {/* Header */}
         <div className="border-separator flex items-center gap-3 border-b py-3 pr-14 pl-5">
           <OnomaBrandLogo variant="wordmark" className="text-label h-5 w-auto" aria-hidden />
           <span className="text-label-tertiary" aria-hidden="true">
@@ -136,7 +135,6 @@ function OnomaHelpModal({
           </DialogDescription>
         </div>
 
-        {/* Main Modal Body */}
         {isWalkthrough ? (
           <div className="flex flex-1 scrollbar-thin flex-col justify-between overflow-y-auto p-6 sm:p-7">
             <div className="mx-auto w-full max-w-lg space-y-4">
@@ -182,13 +180,11 @@ function OnomaHelpModal({
               </div>
             </div>
 
-            {/* Walkthrough Navigation Bar */}
             <div className="border-separator mx-auto mt-6 flex w-full max-w-lg items-center justify-between border-t pt-4">
               <Button variant="ghost" size="sm" onClick={handleDismissWalkthrough}>
                 Don&apos;t show on startup
               </Button>
 
-              {/* Step Dots */}
               <div className="flex items-center gap-2">
                 {WALKTHROUGH_STEPS.map((_, idx) => (
                   <Button

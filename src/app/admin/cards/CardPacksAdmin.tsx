@@ -256,7 +256,6 @@ export function CardPacksAdmin() {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {[
           { label: "Total packs", value: stats.total, icon: Package, color: "text-blue" },
@@ -279,7 +278,6 @@ export function CardPacksAdmin() {
         ))}
       </div>
 
-      {/* Pack Grid */}
       {isLoading ? (
         <div className="py-12 text-center">
           <div className="border-yellow mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2" />
@@ -387,7 +385,6 @@ export function CardPacksAdmin() {
         </div>
       )}
 
-      {/* Create / Edit Dialog */}
       <Dialog
         open={isAddDialogOpen || !!editingPack}
         onOpenChange={(open) => {

@@ -307,7 +307,6 @@ function OverviewSection() {
         </div>
       </div>
 
-      {/* Redirect Modal for deployment */}
       {useName && (
         <UseNameDialog
           isOpen={!!useName}

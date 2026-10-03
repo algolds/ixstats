@@ -216,7 +216,6 @@ function CronSchedule({
       className={cn("border-separator bg-surface rounded-row overflow-hidden border", className)}
       {...props}
     >
-      {/* Header */}
       <div className="border-separator flex items-start justify-between gap-3 border-b px-4 py-3">
         <div className="flex flex-col gap-1">
           {title && <h3 className="text-label text-headline">{title}</h3>}
@@ -227,7 +226,6 @@ function CronSchedule({
         </code>
       </div>
 
-      {/* Field breakdown */}
       <div className="divide-separator grid grid-cols-5 divide-x">
         {fields.map((field, i) => {
           const [min, max] = FIELD_RANGES[i];
@@ -243,7 +241,6 @@ function CronSchedule({
         })}
       </div>
 
-      {/* Next runs */}
       {nextRuns.length > 0 && (
         <div className="border-separator border-t px-4 py-3">
           <p className="text-label-secondary text-eyebrow mb-2">

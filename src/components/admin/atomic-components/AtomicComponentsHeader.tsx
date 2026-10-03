@@ -60,7 +60,6 @@ export function AtomicComponentsHeader({
         </span>
       </p>
 
-      {/* Filter Rail */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <div className="relative max-w-sm min-w-[200px] flex-1">
           <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />

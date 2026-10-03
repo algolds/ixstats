@@ -333,7 +333,6 @@ function LogViewerFilterable({
       )}
       {...props}
     >
-      {/* Header */}
       <div className="border-separator bg-fill-4 flex items-center gap-2 border-b px-3 py-2">
         <Filter className="text-label-secondary size-3.5 shrink-0" />
         <span className="text-label text-body flex-1 truncate font-medium">{title}</span>
@@ -362,9 +361,7 @@ function LogViewerFilterable({
         </div>
       </div>
 
-      {/* Filter bar */}
       <div className="border-separator bg-fill-4 flex flex-wrap items-center gap-2 border-b px-3 py-2">
-        {/* Level toggles */}
         <div role="group" aria-label="Log levels" className="flex items-center gap-1">
           {levels.map((level) => {
             const customBadge = colorScale?.[level]?.badge;
@@ -391,7 +388,6 @@ function LogViewerFilterable({
           })}
         </div>
 
-        {/* Inline search */}
         <div className="border-separator bg-background rounded-control-sm ml-auto flex items-center gap-2 border px-2 py-1">
           <Search className="text-label-secondary size-3" />
           <Input
@@ -416,7 +412,6 @@ function LogViewerFilterable({
         </div>
       </div>
 
-      {/* Log output */}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
@@ -473,7 +468,6 @@ function LogViewerFilterable({
         )}
       </div>
 
-      {/* Scroll-to-bottom indicator */}
       {!isAtBottom && (
         <Button
           variant="ghost"

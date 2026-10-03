@@ -363,7 +363,6 @@ export function GovernmentStep({
 
         {activeTab === "structure" && (
           <div className="space-y-6">
-            {/* Departments list */}
             <Card>
               <div className="border-separator border-b px-6 py-4">
                 <h2 className="text-label text-headline flex items-center gap-2">
@@ -422,7 +421,6 @@ export function GovernmentStep({
               </CardContent>
             </Card>
 
-            {/* Budget Allocations list */}
             <Card>
               <div className="border-separator border-b px-6 py-4">
                 <h2 className="text-label text-headline flex items-center gap-2">
@@ -484,7 +482,6 @@ export function GovernmentStep({
         {activeTab === "spending" && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-1">
             <div className="space-y-6">
-              {/* GDP Cap Alert Banner */}
               {gdpCapWarning && (
                 <div className="rounded-control border-red/25 bg-red/5 text-footnote text-red flex items-start gap-2 border p-4">
                   <AlertTriangle className="text-red mt-0.5 h-4.5 w-4.5 shrink-0" />
@@ -492,7 +489,6 @@ export function GovernmentStep({
                 </div>
               )}
 
-              {/* Budget Configuration */}
               <GovernmentStructureForm
                 data={governmentStructure.structure}
                 onChange={(structure) => {
@@ -511,7 +507,6 @@ export function GovernmentStep({
                 showOnlyBudgetConfig={true}
               />
 
-              {/* Revenue Sources form */}
               <RevenueSourceForm
                 data={governmentStructure.revenueSources}
                 onChange={(revenueSources) => {

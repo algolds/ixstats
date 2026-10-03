@@ -172,7 +172,6 @@ export default function SyntaxSection() {
 
   return (
     <div className="space-y-6">
-      {/* Grammar Rules Formulation Card */}
       <Card variant="inset" padding="none" className="space-y-4 p-5 text-left">
         <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-3">
           <div className="flex items-center gap-2">
@@ -215,7 +214,6 @@ export default function SyntaxSection() {
 
         {/* Word Order & Morphosyntax Grid */}
         <div className="text-footnote grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {/* Word Order */}
           <div className="space-y-1">
             <label className="text-label-secondary text-subhead">Word order</label>
             <ValueSelect
@@ -234,7 +232,6 @@ export default function SyntaxSection() {
             />
           </div>
 
-          {/* Adjective Placement */}
           <div className="space-y-1">
             <label className="text-label-secondary text-subhead">Adjective order</label>
             <ValueSelect
@@ -249,7 +246,6 @@ export default function SyntaxSection() {
             />
           </div>
 
-          {/* Accusative Suffix */}
           <div className="space-y-1">
             <label className="text-label-secondary text-subhead">Accusative suffix</label>
             <Input
@@ -261,7 +257,6 @@ export default function SyntaxSection() {
             />
           </div>
 
-          {/* Plural Suffix */}
           <div className="space-y-1">
             <label className="text-label-secondary text-subhead">Plural suffix</label>
             <Input
@@ -275,7 +270,6 @@ export default function SyntaxSection() {
         </div>
       </Card>
 
-      {/* Live Sentence Builder */}
       <SyntaxSentenceBuilder
         wordOrder={wordOrder}
         adjectiveOrder={adjectiveOrder}
@@ -310,7 +304,6 @@ export default function SyntaxSection() {
         setObjectAdjective={setObjectAdjective}
       />
 
-      {/* Dictionary Editor */}
       <SyntaxDictionaryEditor
         dictionary={dictionary}
         onAddWord={handleAddWord}

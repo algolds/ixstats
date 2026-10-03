@@ -91,7 +91,6 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
 
   return (
     <div className={`space-y-6 ${className ?? ""}`}>
-      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-fill-3 border-separator rounded-row grid h-11 w-full grid-cols-2 border p-1">
           <TabsTrigger
@@ -112,7 +111,6 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
           {archetypes.length > 0 && (
             <div className="border-separator bg-surface rounded-row flex flex-col gap-4 border p-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-                {/* Search Input */}
                 <div className="relative max-w-md flex-1">
                   <Search className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <Input
@@ -123,7 +121,6 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
                   />
                 </div>
 
-                {/* Complexity Filter */}
                 <ValueSelect
                   value={complexityFilter}
                   onValueChange={setComplexityFilter}
@@ -138,7 +135,6 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
                 />
               </div>
 
-              {/* Counter */}
               <div className="text-label-secondary text-caption shrink-0 font-semibold">
                 Showing {filteredArchetypes.length} of{" "}
                 {archetypes.filter((a) => (a.era ?? "modern") === activeTab).length}
@@ -190,7 +186,6 @@ export const EconomicArchetypeDisplay = memo(function EconomicArchetypeDisplay({
         </div>
       </Tabs>
 
-      {/* Details Modal */}
       <ArchetypeDetailsModal
         isOpen={isDetailsOpen}
         onOpenChange={setIsDetailsOpen}

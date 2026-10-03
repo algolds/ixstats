@@ -270,7 +270,6 @@ export const CultureForm = React.memo(
               </span>
             </button>
 
-            {/* Text Input */}
             <div className="min-w-0 flex-1 space-y-1">
               <label
                 htmlFor={`${fieldId}-${key}`}
@@ -298,7 +297,6 @@ export const CultureForm = React.memo(
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-6 text-left lg:grid-cols-2">
-          {/* Aspirations & Expressions Card */}
           <Card>
             <div className="border-separator border-b px-6 py-4">
               <h3 className="text-label text-headline flex items-center gap-2">
@@ -345,7 +343,6 @@ export const CultureForm = React.memo(
                 />
               </div>
 
-              {/* National Anthem */}
               <div className="space-y-2">
                 <label
                   htmlFor={`${fieldId}-nationalAnthem`}
@@ -365,7 +362,6 @@ export const CultureForm = React.memo(
                 />
               </div>
 
-              {/* Primary Religion */}
               <div className="space-y-2">
                 <label
                   htmlFor={`${fieldId}-nationalReligion`}
@@ -421,7 +417,6 @@ export const CultureForm = React.memo(
             </CardContent>
           </Card>
 
-          {/* Languages & Currency Card */}
           <Card className="overflow-visible">
             <div className="border-separator border-b px-6 py-4">
               <h3 className="text-label text-headline flex items-center gap-2">
@@ -461,7 +456,6 @@ export const CultureForm = React.memo(
                 />
               </div>
 
-              {/* Currency Selector */}
               <div className="border-separator space-y-4 border-t pt-4">
                 <CurrencyAutocomplete
                   fieldName="currency"
@@ -532,7 +526,6 @@ export const CultureForm = React.memo(
               {visibleAdditionalSymbols.map(renderSymbolCard)}
             </div>
 
-            {/* Progressive Motif Add Tray */}
             {unrevealedSymbols.length > 0 && !showAllMotifs && (
               <div className="border-separator space-y-2 border-t pt-3">
                 <div className="flex items-center justify-between">
@@ -563,7 +556,6 @@ export const CultureForm = React.memo(
           </CardContent>
         </Card>
 
-        {/* Media Search Modal */}
         {imagePickerField && (
           <MediaSearchModal
             isOpen={true}

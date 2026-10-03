@@ -145,7 +145,6 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
     <div className="space-y-6">
       <PageHeader title="Admin dashboard" />
 
-      {/* Quick Actions */}
       <div>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-label text-headline">Quick actions</h2>
@@ -221,13 +220,11 @@ export function LiveAdminDashboard({ onNavigate }: LiveAdminDashboardProps) {
         </TooltipProvider>
       </div>
 
-      {/* Cron Schedules & Logs */}
       <div className="space-y-6">
         <SystemCronScheduleWidget />
         <SystemLogs />
       </div>
 
-      {/* Warnings */}
       {systemStatus && <WarningPanel systemStatus={systemStatus} />}
     </div>
   );

@@ -136,7 +136,6 @@ export function ImportPreviewDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="flex max-h-[90vh] w-full max-w-4xl flex-col gap-0 p-0 sm:max-w-4xl">
-        {/* Header */}
         <DialogHeader className="border-separator border-b p-6">
           <DialogTitle>Import Preview - {changes.length} Countries Found</DialogTitle>
           <DialogDescription className="sr-only">
@@ -144,9 +143,7 @@ export function ImportPreviewDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Content */}
         <div className="grow scrollbar-thin overflow-y-auto p-6">
-          {/* Summary */}
           <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="rounded-control border-green/20 bg-green/10 border p-4">
               <div className="flex items-center">
@@ -169,7 +166,6 @@ export function ImportPreviewDialog({
             </div>
           </div>
 
-          {/* New Countries Section */}
           {newCountries.length > 0 && (
             <div className="mb-6">
               <h3 className="text-label text-title-3 mb-3 flex items-center">
@@ -204,7 +200,6 @@ export function ImportPreviewDialog({
             </div>
           )}
 
-          {/* Updated Countries Section */}
           {updatedCountries.length > 0 && (
             <div className="mb-6">
               <h3 className="text-label text-title-3 mb-3 flex items-center">
@@ -293,9 +288,7 @@ export function ImportPreviewDialog({
           )}
         </div>
 
-        {/* Footer */}
         <div className="border-separator bg-fill-3 border-t p-6">
-          {/* Epoch Sync Section */}
           <div className="rounded-control border-yellow/20 bg-yellow/10 mb-4 border p-4">
             <div className="flex items-start space-x-3">
               <Clock className="text-yellow mt-0.5 h-5 w-5" />

@@ -90,7 +90,6 @@ function CalcNode({ data, selected }: NodeProps) {
         backgroundColor: bgGlows[category],
       }}
     >
-      {/* Handles */}
       {inputs.map((pos) => {
         let position = Position.Left;
         if (pos === "top") position = Position.Top;

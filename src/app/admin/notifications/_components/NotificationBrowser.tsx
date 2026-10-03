@@ -136,7 +136,6 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
         />
       </SwipeableRow.Trailing>
 
-      {/* Main card content */}
       <SwipeableRow.Content>
         <div
           className={cn(
@@ -144,7 +143,6 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
             !n.read && "border-blue/30 bg-blue/5"
           )}
         >
-          {/* Left indicator accent border */}
           <div
             className={cn(
               "rounded-l-row duration-fast absolute top-0 bottom-0 left-0 w-[3px] transition-[color,background-color,border-color,box-shadow,opacity,transform]",
@@ -221,7 +219,6 @@ function AdminNotificationRow({ n, handleDelete, deleteMutation }: AdminNotifica
         </div>
       </SwipeableRow.Content>
 
-      {/* Expanded details */}
       <SwipeableRow.Expanded>
         <div className="rounded-b-row border-separator bg-fill-3 space-y-3 border-t p-4 pl-[52px]">
           {n.message && (
@@ -340,7 +337,6 @@ export function NotificationBrowser() {
 
   return (
     <div className="space-y-4">
-      {/* Controls */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-[200px] flex-1">
           <Search className="text-label-secondary absolute top-2 left-2 h-4 w-4" />
@@ -431,7 +427,6 @@ export function NotificationBrowser() {
         </Button>
       </div>
 
-      {/* List container */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader className="py-3">
           <CardTitle className="text-body flex items-center justify-between">
@@ -471,7 +466,6 @@ export function NotificationBrowser() {
         </CardContent>
       </Card>
 
-      {/* Pagination */}
       {data && data.totalCount > limit && (
         <div className="flex items-center justify-center gap-4">
           <Button

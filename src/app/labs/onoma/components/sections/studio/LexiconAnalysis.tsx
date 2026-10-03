@@ -42,7 +42,6 @@ export function LexiconAnalysis({ selectedTerm, stashedEntry, originLabel }: Lex
     <div className="space-y-2">
       <h4 className="text-label-secondary text-subhead">Lexical & phonotactic analysis</h4>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {/* CV Pattern */}
         <div className="border-separator bg-background rounded-row border p-3 text-center">
           <span className="text-label-secondary text-eyebrow mb-1 block">Phonotactic pattern</span>
           <span className="text-tint text-body font-mono font-semibold">
@@ -50,7 +49,6 @@ export function LexiconAnalysis({ selectedTerm, stashedEntry, originLabel }: Lex
           </span>
         </div>
 
-        {/* Composition */}
         <div className="border-separator bg-background rounded-row border p-3 text-center">
           <span className="text-label-secondary text-eyebrow mb-1 block">Composition</span>
           <span className="text-label text-footnote font-mono font-semibold">
@@ -58,7 +56,6 @@ export function LexiconAnalysis({ selectedTerm, stashedEntry, originLabel }: Lex
           </span>
         </div>
 
-        {/* Stash Folder */}
         {(() => {
           const entry = stashedEntry as { stashName?: string; stashColor?: string } | undefined;
           if (!entry?.stashName) return null;
@@ -79,7 +76,6 @@ export function LexiconAnalysis({ selectedTerm, stashedEntry, originLabel }: Lex
           );
         })()}
 
-        {/* Origin / Name Set */}
         {originLabel && (
           <div className="border-separator bg-background rounded-row flex flex-col items-center justify-center border p-3 text-center">
             <span className="text-label-secondary text-eyebrow mb-1 block">Origin / Name Set</span>

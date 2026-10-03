@@ -104,7 +104,6 @@ export function CardImportStudio({
             </div>
           </div>
 
-          {/* Subtab switcher */}
           <SegmentedControl
             asTabs
             aria-label="Import sources"

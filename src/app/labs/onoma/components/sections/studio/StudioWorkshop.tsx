@@ -82,12 +82,10 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
 
   return (
     <>
-      {/* Two-Column Layout */}
       <div className="grid items-start gap-6 lg:grid-cols-12">
         {/* Left Column (5/12): Seed input and parameters */}
         <div className="space-y-4 lg:col-span-5">
           <Card variant="inset" padding="none" className="space-y-4 p-4">
-            {/* Seeds text area */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-label-secondary text-footnote font-semibold">
@@ -115,7 +113,6 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   )}
                 </div>
               </div>
-              {/* Load Saved Dictionary Selector */}
               {savedDictionaries.length > 0 && (
                 <div className="pt-0.5 pb-1">
                   <Select
@@ -154,7 +151,6 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               </div>
             )}
 
-            {/* Save Seeds Form */}
             {isEdited && (
               <form
                 onSubmit={handleSaveDictionary}
@@ -185,14 +181,12 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               </div>
             )}
 
-            {/* Parameters Accordion/Content */}
             <div className="border-separator space-y-4 border-t pt-4">
               <h3 className="text-label-secondary text-subhead flex items-center gap-1 pb-1">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 Parameters
               </h3>
 
-              {/* Pattern Depth Control */}
               <PatternDepthControl value={order} onChange={setOrder} variant="inspector" />
 
               <LengthFields ctx={ctx} />
@@ -202,13 +196,11 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                 <OptionText ctx={ctx} field="endsWith" label="Ends with" placeholder="Suffix" />
               </div>
 
-              {/* Phonotactic Constraints */}
               <div className="border-separator space-y-3 border-t pt-3">
                 <h4 className="text-label-secondary text-subhead pb-0.5">
                   Phonotactic constraints
                 </h4>
 
-                {/* Vowel Harmony */}
                 <div className="space-y-2">
                   <label className="text-label-secondary text-subhead">Vowel harmony</label>
                   <Select
@@ -234,7 +226,6 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   </Select>
                 </div>
 
-                {/* Cluster Size Limits */}
                 <div className="grid grid-cols-2 gap-3 pt-1">
                   <div className="space-y-1">
                     <div className="flex justify-between">
@@ -272,7 +263,6 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   </div>
                 </div>
 
-                {/* Allow Double Letters Toggle */}
                 <div className="border-separator flex items-center justify-between border-t pt-2">
                   <div className="space-y-0.5">
                     <label className="text-label-secondary text-subhead">
@@ -290,7 +280,6 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   />
                 </div>
 
-                {/* Advanced toggler */}
                 <div className="border-separator border-t pt-2">
                   <Button
                     variant="ghost"
@@ -323,7 +312,6 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               </div>
             </div>
 
-            {/* Assemble control */}
             <div className="border-separator mt-2 flex items-center gap-2 border-t pt-4">
               <div className="border-separator bg-background rounded-control flex h-7 items-center gap-1 border p-0.5 select-none">
                 <Button

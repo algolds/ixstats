@@ -358,7 +358,6 @@ export function NSImportSuiteAdmin() {
       )}
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Region Fetch Card */}
         <Card className="space-y-4 p-6">
           <div className="flex items-center gap-2">
             <div className="rounded-row border-green/30 bg-green/20 border p-2">
@@ -395,7 +394,6 @@ export function NSImportSuiteAdmin() {
           </div>
         </Card>
 
-        {/* Discover Top Regions Card */}
         <Card className="space-y-4 p-6">
           <div className="flex items-center gap-2">
             <div className="rounded-row border-purple/30 bg-purple/20 border p-2">
@@ -510,7 +508,6 @@ export function NSImportSuiteAdmin() {
       </Card>
 
       <Card className="space-y-6 p-6">
-        {/* Header toolbar */}
         <div className="border-separator flex flex-col gap-3 border-b pb-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="flex items-center gap-2">
@@ -527,7 +524,6 @@ export function NSImportSuiteAdmin() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {/* Import run selector dropdown */}
             <div className="flex items-center gap-2">
               <label className="text-label-secondary text-caption flex items-center gap-1">
                 <Layers className="text-tint h-3 w-3" /> Import:
@@ -564,7 +560,6 @@ export function NSImportSuiteAdmin() {
               </Select>
             </div>
 
-            {/* Sync type filter */}
             <ValueSelect
               value={syncTypeFilter}
               onValueChange={(v) => setSyncTypeFilter(v as "all" | "region")}
@@ -629,7 +624,6 @@ export function NSImportSuiteAdmin() {
               </div>
             </div>
 
-            {/* Metrics row */}
             <div className="text-footnote grid grid-cols-2 gap-2 pt-1 sm:grid-cols-4 lg:grid-cols-6">
               <div className="bg-surface border-separator rounded-control border p-2">
                 <span className="text-label-secondary text-footnote block">Processed</span>

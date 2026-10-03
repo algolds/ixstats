@@ -57,7 +57,6 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
 }: CardExplorerFiltersProps) {
   return (
     <Card className="flex flex-wrap items-center gap-2 p-4">
-      {/* Search Input */}
       <div className="relative max-w-md min-w-[220px] flex-1">
         <Search className="text-label-secondary pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
         <Input
@@ -91,7 +90,6 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
         </SelectContent>
       </Select>
 
-      {/* Lore Category Filter */}
       {cardTypeFilter !== "NS_IMPORT" && (
         <Select
           value={categoryFilter}
@@ -114,7 +112,6 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
         </Select>
       )}
 
-      {/* CTE Status Filter */}
       {cardTypeFilter !== "LORE_BATCH" && (
         <Select
           value={cteFilter}
@@ -134,7 +131,6 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
         </Select>
       )}
 
-      {/* Takedown Filter */}
       <Select
         value={takedownFilter}
         onValueChange={(v) => {
@@ -152,7 +148,6 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
         </SelectContent>
       </Select>
 
-      {/* Season Filter */}
       <Select
         value={String(season)}
         onValueChange={(v) => {
@@ -172,7 +167,6 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
         </SelectContent>
       </Select>
 
-      {/* Rarity Filter */}
       <Select
         value={rarity}
         onValueChange={(v) => {
@@ -194,7 +188,6 @@ export const CardExplorerFilters = React.memo(function CardExplorerFilters({
         </SelectContent>
       </Select>
 
-      {/* Sort Option */}
       <Select
         value={sortBy}
         onValueChange={(v) => {

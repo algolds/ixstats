@@ -130,7 +130,6 @@ export function NarratorPlaygroundTab() {
             </div>
           </div>
 
-          {/* Mode Switcher */}
           <div className="border-separator bg-fill-3 rounded-row flex items-center justify-between border p-4">
             <div>
               <Label className="text-label text-subhead">Sandbox snapshot mode</Label>
@@ -150,7 +149,6 @@ export function NarratorPlaygroundTab() {
             />
           </div>
 
-          {/* Database Select Controls */}
           {!sandboxMode && (
             <div className="border-separator bg-fill-3 rounded-row grid grid-cols-1 gap-3 border p-4 sm:grid-cols-3">
               <div className="space-y-1">
@@ -217,7 +215,6 @@ export function NarratorPlaygroundTab() {
             </div>
           )}
 
-          {/* Title & Description */}
           <div className="space-y-3">
             <div className="space-y-1">
               <Label className="text-label-secondary text-subhead">Event title</Label>
@@ -241,7 +238,6 @@ export function NarratorPlaygroundTab() {
             </div>
           </div>
 
-          {/* Sandbox JSON */}
           {sandboxMode && (
             <div className="space-y-1">
               <Label className="text-label-secondary text-subhead">
@@ -256,7 +252,6 @@ export function NarratorPlaygroundTab() {
             </div>
           )}
 
-          {/* Custom Prompt */}
           <div className="space-y-1">
             <Label className="text-label-secondary text-subhead">
               Prompt Override (Playground only)

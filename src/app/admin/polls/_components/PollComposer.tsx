@@ -167,7 +167,6 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
               <span className="text-label-secondary text-caption">Step {step} of 3</span>
             </div>
 
-            {/* Wizard progress */}
             <StepIndicator
               aria-label="Poll wizard progress"
               className="mt-4"
@@ -356,7 +355,6 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                 </div>
               )}
 
-              {/* Navigation Actions */}
               <div className="border-separator mt-6 flex justify-between gap-3 border-t pt-4">
                 <Button
                   type="button"
@@ -393,7 +391,6 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
         </Card>
       </div>
 
-      {/* Guide Card */}
       <div className="space-y-4">
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader>

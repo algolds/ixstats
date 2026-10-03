@@ -132,7 +132,6 @@ export function ArchetypeGrid({
               {selectedTemplate?.name ? ` (${selectedTemplate.name})` : ""}
             </Button>
 
-            {/* Step indicator */}
             <div className="border-separator bg-surface text-caption flex items-center gap-2 rounded-full border px-3 py-1 select-none">
               {selectedTemplate ? (
                 <Button
@@ -356,7 +355,6 @@ export function ArchetypeGrid({
                     isSelected && "border-tint ring-tint/50 ring-1"
                   )}
                 >
-                  {/* Header */}
                   <div className="space-y-2">
                     <div className="flex items-start justify-between">
                       <div className={cn("rounded-control p-2", styleClasses)}>
@@ -411,7 +409,6 @@ export function ArchetypeGrid({
                     </p>
                   </div>
 
-                  {/* Faction traits / characteristics */}
                   <div className="space-y-3">
                     <div className="border-separator border-t pt-3">
                       <div className="relative z-10 flex w-fit items-center gap-1">
@@ -478,7 +475,6 @@ export function ArchetypeGrid({
                     )}
                   </div>
 
-                  {/* Card Action Buttons */}
                   <div className="border-separator relative z-10 flex items-center gap-2 border-t pt-3">
                     <Button
                       type="button"
@@ -514,7 +510,6 @@ export function ArchetypeGrid({
         </motion.div>
       )}
 
-      {/* Sentinel for infinite loading */}
       <div
         ref={loaderRef}
         className={cn(

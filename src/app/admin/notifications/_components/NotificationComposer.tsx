@@ -281,9 +281,7 @@ export function NotificationComposer() {
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      {/* Compose form */}
       <div className="space-y-6 lg:col-span-2">
-        {/* Mode Selector */}
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader className="pb-3">
             <CardTitle className="text-headline flex items-center gap-2">
@@ -323,7 +321,6 @@ export function NotificationComposer() {
           </CardContent>
         </Card>
 
-        {/* Templates */}
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader className="pb-2">
             <CardTitle className="text-caption flex items-center gap-2">
@@ -348,7 +345,6 @@ export function NotificationComposer() {
           </CardContent>
         </Card>
 
-        {/* Main form */}
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader>
             <CardTitle className="text-headline flex items-center gap-2">
@@ -532,7 +528,6 @@ export function NotificationComposer() {
         </Card>
       </div>
 
-      {/* Sidebar Live Preview */}
       <div className="space-y-4">
         <Card className="flex flex-col gap-6 py-6">
           <CardHeader className="pb-3">

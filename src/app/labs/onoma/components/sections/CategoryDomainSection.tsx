@@ -139,7 +139,6 @@ function CategoryDomainSection({ domain }: CategoryDomainSectionProps) {
         </div>
       </div>
 
-      {/* Redirect Modal for deployment */}
       {useName && (
         <UseNameDialog
           isOpen={!!useName}

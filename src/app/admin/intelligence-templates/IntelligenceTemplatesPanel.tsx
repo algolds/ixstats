@@ -181,7 +181,6 @@ export function IntelligenceTemplatesPanel() {
         subtitle="Analytical templates, classification rules and findings formats."
       />
 
-      {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
           <p className="text-label-secondary text-stat-label">Total templates</p>
@@ -207,7 +206,6 @@ export function IntelligenceTemplatesPanel() {
         </Card>
       </div>
 
-      {/* Filter & Action Rail */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <div className="relative max-w-sm min-w-[200px] flex-1">
@@ -261,7 +259,6 @@ export function IntelligenceTemplatesPanel() {
         </Button>
       </div>
 
-      {/* High-Density Inset Glass Table */}
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -353,7 +350,6 @@ export function IntelligenceTemplatesPanel() {
         </Card>
       )}
 
-      {/* Add/Edit Dialog */}
       <Dialog
         open={isAddDialogOpen || !!editingTemplate}
         onOpenChange={(open) => {
@@ -489,7 +485,6 @@ export function IntelligenceTemplatesPanel() {
         </DialogContent>
       </Dialog>
 
-      {/* Preview Dialog */}
       {previewTemplate && (
         <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
           <DialogContent className="max-w-lg">

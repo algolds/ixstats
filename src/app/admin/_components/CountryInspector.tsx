@@ -1456,7 +1456,6 @@ export function CountryInspector() {
 
   return (
     <div className="space-y-6">
-      {/* Search Header Selector */}
       <div className="border-separator flex flex-col justify-between gap-4 border-b pb-5 sm:flex-row sm:items-center">
         <div className="space-y-1">
           <h3 className="text-label text-title-3 flex items-center gap-2">
@@ -1470,7 +1469,6 @@ export function CountryInspector() {
         </div>
 
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-          {/* Search Input Searchable Single-select */}
           <div className="relative w-full sm:w-[240px]">
             <div className="relative">
               <Search className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
@@ -1524,7 +1522,6 @@ export function CountryInspector() {
             )}
           </div>
 
-          {/* Fullscreen Button */}
           <Button
             variant="outline"
             onClick={() => {
@@ -1550,9 +1547,7 @@ export function CountryInspector() {
         </div>
       ) : countryData && calculation ? (
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-          {/* Left Controls Column */}
           <div className="space-y-6 lg:col-span-4">
-            {/* Country info header */}
             <div className="border-separator bg-fill-4 rounded-row flex items-center gap-3 border p-4">
               <UnifiedCountryFlag
                 countryName={countryData.name}
@@ -1568,7 +1563,6 @@ export function CountryInspector() {
               </div>
             </div>
 
-            {/* Slider controls */}
             <div className="border-separator bg-fill-4 rounded-row space-y-5 border p-4">
               <div className="space-y-2">
                 <div className="text-caption flex items-center justify-between">
@@ -1611,7 +1605,6 @@ export function CountryInspector() {
               </div>
             </div>
 
-            {/* Active database storyteller effects */}
             <div className="border-separator bg-fill-4 rounded-row space-y-3 border p-4">
               <Label className="text-label text-caption block">Active database effects</Label>
               {countryData.storytellerEffects && countryData.storytellerEffects.length > 0 ? (
@@ -1661,7 +1654,6 @@ export function CountryInspector() {
               )}
             </div>
 
-            {/* Mock Sandbox effects form */}
             <div className="border-separator bg-fill-4 rounded-row space-y-4 border p-4">
               <Label className="text-label text-caption block">Mock sandbox event</Label>
               <form onSubmit={handleAddMockEffect} className="space-y-3">
@@ -1748,7 +1740,6 @@ export function CountryInspector() {
 
           {/* Right React Flow + Details Inspector Column */}
           <div className="flex flex-col gap-6 lg:col-span-8">
-            {/* React Flow Board */}
             <CountryFormulaFlow
               nodes={nodes}
               edges={edges}
@@ -1757,7 +1748,6 @@ export function CountryInspector() {
               onNodeClick={handleNodeClick}
             />
 
-            {/* Selected Node Details Card */}
             <div className="border-separator bg-surface rounded-row border p-5">
               {renderNodeDetails()}
             </div>

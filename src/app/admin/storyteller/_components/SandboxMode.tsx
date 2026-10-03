@@ -68,7 +68,6 @@ export function SandboxMode() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Configuration */}
         <div className="space-y-5">
           <div>
             <Label>Event type</Label>
@@ -151,7 +150,6 @@ export function SandboxMode() {
           </Button>
         </div>
 
-        {/* Results */}
         <div>
           {!runSimulation ? (
             <div className="border-separator rounded-row flex flex-col items-center justify-center border border-dashed py-20 text-center">
@@ -168,7 +166,6 @@ export function SandboxMode() {
             </div>
           ) : simulation.data ? (
             <div className="space-y-4">
-              {/* Summary */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="border-separator rounded-control border p-3 text-center">
                   <div className="text-label-secondary text-footnote">Countries</div>
@@ -195,7 +192,6 @@ export function SandboxMode() {
                 </div>
               </div>
 
-              {/* Per-country breakdown */}
               <ScrollArea className="border-separator rounded-control h-[360px] border">
                 <div className="space-y-2 p-3">
                   {simulation.data.projectedImpacts.map((p) => (
@@ -238,7 +234,6 @@ export function SandboxMode() {
                 </div>
               </ScrollArea>
 
-              {/* Apply button */}
               <div className="rounded-control border-yellow/20 bg-yellow/5 border p-3">
                 <p className="text-label-secondary text-footnote mb-2">
                   Ready to apply this simulation as a real world event? Use the Event Wizard tab to

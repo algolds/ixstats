@@ -390,7 +390,6 @@ export function LorewardsBotSection() {
         </CardContent>
       </Card>
 
-      {/* Bot Logs Console */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -452,7 +451,6 @@ export function LorewardsBotSection() {
         </CardContent>
       </Card>
 
-      {/* Loreward Run Console */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="text-title-3 flex items-center gap-2">
@@ -572,7 +570,6 @@ export function LorewardsBotSection() {
         </CardContent>
       </Card>
 
-      {/* Sync & Cross-Validation Diagnostics */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="text-title-3 flex items-center gap-2">
@@ -629,7 +626,6 @@ export function LorewardsBotSection() {
             </div>
           </div>
 
-          {/* Validation Result Display */}
           {validationResult && (
             <div className="rounded-row border-blue/20 bg-blue/5 space-y-3 border p-4">
               <div className="border-blue/20 flex items-center justify-between border-b pb-2">
@@ -673,7 +669,6 @@ export function LorewardsBotSection() {
             </div>
           )}
 
-          {/* Recent validation history list */}
           <div className="space-y-2">
             <h6 className="text-label-secondary text-subhead">Recent Cross-Validation History:</h6>
             <div className="border-separator bg-fill-4 divide-separator rounded-row text-footnote divide-y overflow-hidden border">
@@ -714,7 +709,6 @@ export function LorewardsBotSection() {
         </CardContent>
       </Card>
 
-      {/* Silent Blacklist Manager */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="text-title-3 flex items-center gap-2">
@@ -851,7 +845,6 @@ export function LorewardsBotSection() {
             Add to blacklist
           </Button>
 
-          {/* Active Blacklisted Users List */}
           <div className="space-y-2">
             <h6 className="text-label-secondary text-subhead">Active Blacklisted Users:</h6>
             <div className="border-separator bg-fill-4 divide-separator rounded-row text-footnote max-h-48 divide-y overflow-hidden overflow-y-auto border">
@@ -894,7 +887,6 @@ export function LorewardsBotSection() {
         </CardContent>
       </Card>
 
-      {/* Manual Winner Override Tool */}
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
           <CardTitle className="text-title-3 flex items-center gap-2">
@@ -933,7 +925,6 @@ export function LorewardsBotSection() {
             </div>
           </div>
 
-          {/* Winner details */}
           <div className="border-separator space-y-2 border-t pt-2">
             <span className="text-eyebrow text-yellow">1. Winner Details</span>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -980,7 +971,6 @@ export function LorewardsBotSection() {
             </div>
           </div>
 
-          {/* Runner up details */}
           <div className="border-separator space-y-2 border-t pt-2">
             <span className="text-label-secondary text-eyebrow">2. Runner-up Details</span>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

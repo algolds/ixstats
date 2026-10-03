@@ -41,7 +41,6 @@ export const PreviewEconomy = memo(function PreviewEconomy({
 
   return (
     <div className="space-y-5">
-      {/* Core Indicators */}
       {coreIndicators && (
         <div className="space-y-2">
           <h3 className="text-eyebrow text-label-secondary flex items-center gap-2">
@@ -52,7 +51,6 @@ export const PreviewEconomy = memo(function PreviewEconomy({
         </div>
       )}
 
-      {/* Labor & Employment */}
       {laborEmployment && (
         <div className="space-y-2">
           <h3 className="text-eyebrow text-label-secondary flex items-center gap-2">
@@ -110,7 +108,6 @@ export const PreviewEconomy = memo(function PreviewEconomy({
         </div>
       )}
 
-      {/* Demographics */}
       {demographics && (
         <div className="space-y-2">
           <h3 className="text-eyebrow text-label-secondary flex items-center gap-2">

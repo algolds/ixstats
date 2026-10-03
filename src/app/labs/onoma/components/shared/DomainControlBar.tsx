@@ -55,7 +55,6 @@ export function DomainControlBar({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-footnote text-label font-semibold">Category</label>
-            {/* Rules trigger */}
             <Toggle
               variant="outline"
               size="sm"
@@ -210,7 +209,6 @@ export function DomainControlBar({
         setBatchCount={setBatchCount}
       />
 
-      {/* Collapsible Advanced Conlang Settings */}
       {showAdvanced && (
         <div className="animate-in fade-in slide-in-from-top-1 border-separator border-t pt-4 duration-200">
           <AdvancedConlangSettings gen={gen} category={category} />

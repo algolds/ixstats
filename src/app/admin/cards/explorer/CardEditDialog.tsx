@@ -96,7 +96,6 @@ export const CardEditDialog = React.memo(function CardEditDialog({
 
           {/* Right Column: Interactive Editor Form */}
           <div className="space-y-4 md:col-span-7">
-            {/* Origin & Title */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="text-label text-caption mb-1 block">Card Origin / Type</label>
@@ -125,7 +124,6 @@ export const CardEditDialog = React.memo(function CardEditDialog({
               </div>
             </div>
 
-            {/* Lore Category */}
             <div>
               <label className="text-label text-caption mb-1 block flex items-center justify-between">
                 <span>Lore category</span>
@@ -147,7 +145,6 @@ export const CardEditDialog = React.memo(function CardEditDialog({
               />
             </div>
 
-            {/* Rarity & Market Value */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-label text-caption mb-1 block">Rarity tier</label>
@@ -180,7 +177,6 @@ export const CardEditDialog = React.memo(function CardEditDialog({
               </div>
             </div>
 
-            {/* Artwork Source & URL */}
             <div className="space-y-2">
               <div>
                 <label className="text-label text-caption mb-1 block">Artwork source tier</label>
@@ -215,7 +211,6 @@ export const CardEditDialog = React.memo(function CardEditDialog({
               </div>
             </div>
 
-            {/* Visibility / Takedown Toggle */}
             <div className="border-separator bg-surface rounded-row flex items-center justify-between border p-3">
               <div>
                 <div className="text-label text-caption">Card visibility status</div>

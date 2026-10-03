@@ -75,7 +75,6 @@ export function BuilderGuideSheet({
           onValueChange={(value) => setActiveTab(value as typeof activeTab)}
           className="flex min-h-0 flex-1 flex-col"
         >
-          {/* Header */}
           <SheetHeader className="border-separator border-b p-5 text-left">
             <div className="flex items-start gap-3">
               <BookOpen
@@ -103,7 +102,6 @@ export function BuilderGuideSheet({
             </TabsList>
           </SheetHeader>
 
-          {/* Scrollable Content Body */}
           <div className="flex-1 space-y-4 overflow-y-auto p-5">
             <TabsContent value="milestones" role="tabpanel" className="space-y-4">
               <ol className="space-y-3">
@@ -153,7 +151,6 @@ export function BuilderGuideSheet({
           </div>
         </Tabs>
 
-        {/* Footer info bar */}
         <div className="border-separator text-label-secondary text-footnote flex items-center justify-between border-t px-5 py-3">
           <span className="flex items-center gap-2">
             <InfoCircle aria-hidden="true" className="h-3.5 w-3.5" />

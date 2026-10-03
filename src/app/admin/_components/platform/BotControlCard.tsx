@@ -351,7 +351,6 @@ export function BotControlCard({
           </div>
         </div>
 
-        {/* Section switcher */}
         <SegmentedControl
           asTabs
           size="sm"
@@ -403,7 +402,6 @@ export function BotControlCard({
                         </Badge>
                       </div>
 
-                      {/* Process Metrics Grid */}
                       <div className="text-label-secondary border-separator text-caption mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t pt-2">
                         <div className="flex items-center gap-2">
                           <Activity className="text-label-secondary h-3 w-3" />
@@ -506,7 +504,6 @@ export function BotControlCard({
                 </Alert>
               )}
 
-              {/* Grid matching details */}
               <div className="border-separator text-caption grid grid-cols-2 gap-3 border-b pb-3">
                 <div className="space-y-0.5">
                   <span className="text-label-secondary text-eyebrow block">Health status</span>
@@ -522,7 +519,6 @@ export function BotControlCard({
                 </div>
               </div>
 
-              {/* Execution Overrides */}
               <div className="space-y-2">
                 <span className="text-label-secondary text-eyebrow block">
                   Execution override controls
@@ -570,7 +566,6 @@ export function BotControlCard({
                 </div>
               </div>
 
-              {/* Synchronization actions */}
               <div className="space-y-2">
                 <span className="text-label-secondary text-eyebrow block">
                   Time synchronization
@@ -625,7 +620,6 @@ export function BotControlCard({
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-                {/* Commands list */}
                 <FacetListSection
                   header="Commands registry"
                   className="lg:col-span-2"
@@ -647,7 +641,6 @@ export function BotControlCard({
                 <div className="space-y-4 lg:col-span-3">
                   {selectedCommand ? (
                     <div className="border-separator bg-surface rounded-control space-y-4 border p-4">
-                      {/* Description header */}
                       <div className="space-y-1">
                         <div className="text-label text-headline font-mono">
                           /{selectedCommand.name}
@@ -659,7 +652,6 @@ export function BotControlCard({
 
                       <Separator className="border-separator" />
 
-                      {/* Mock Author settings */}
                       <div className="bg-fill-4 border-separator rounded-control space-y-3 border p-3">
                         <span className="text-label-secondary text-eyebrow block">
                           Mock user settings
@@ -714,7 +706,6 @@ export function BotControlCard({
                         </div>
                       </div>
 
-                      {/* Options fields */}
                       {selectedCommand.options && selectedCommand.options.length > 0 && (
                         <div className="border-separator space-y-4 border-t pt-4">
                           <span className="text-label-secondary text-eyebrow block">
@@ -726,7 +717,6 @@ export function BotControlCard({
                         </div>
                       )}
 
-                      {/* Action trigger */}
                       <Button
                         onClick={handleSimulate}
                         disabled={simulateMutation.isPending || !isAvailable}
@@ -745,7 +735,6 @@ export function BotControlCard({
                         )}
                       </Button>
 
-                      {/* Output section */}
                       {simulationResult && (
                         <div className="border-separator animate-in fade-in duration-fast space-y-4 border-t pt-4">
                           <div className="flex items-center justify-between">
@@ -771,9 +760,7 @@ export function BotControlCard({
                                 </div>
                               ) : simulationResult.payload ? (
                                 <div className="space-y-2">
-                                  {/* Discord mockup window */}
                                   <div className="rounded-control border-separator bg-surface-secondary text-footnote text-label-secondary md:text-body space-y-4 border p-4 font-sans">
-                                    {/* Message */}
                                     <div className="flex items-start gap-3">
                                       <div className="bg-blue text-eyebrow text-on-blue flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-sans select-none">
                                         IX
@@ -795,7 +782,6 @@ export function BotControlCard({
                                           </span>
                                         </div>
 
-                                        {/* Message Content */}
                                         {typeof simulationResult.payload === "string" ? (
                                           <div className="text-label-secondary break-words whitespace-pre-wrap">
                                             {simulationResult.payload}
@@ -808,7 +794,6 @@ export function BotControlCard({
                                               </div>
                                             )}
 
-                                            {/* Embeds */}
                                             {simulationResult.payload.embeds &&
                                               simulationResult.payload.embeds.map(
                                                 (embed: any, idx: number) => (
@@ -994,10 +979,8 @@ export function BotControlCard({
 
         {activeSubTab === "logs" && (
           <div className="animate-in fade-in duration-fast space-y-4 pt-1">
-            {/* Filter Controls */}
             <div className="bg-fill-4 border-separator rounded-control text-footnote flex flex-wrap items-center justify-between gap-3 border p-3">
               <div className="flex flex-wrap items-center gap-3">
-                {/* Process Selector */}
                 <div className="space-y-1">
                   <Label
                     htmlFor="log-proc-select"
@@ -1017,7 +1000,6 @@ export function BotControlCard({
                   />
                 </div>
 
-                {/* Log Type Selector */}
                 <div className="space-y-1">
                   <Label
                     htmlFor="log-type-select"
@@ -1038,7 +1020,6 @@ export function BotControlCard({
                 </div>
               </div>
 
-              {/* Refresh buttons and toggle */}
               <div className="flex items-center gap-3">
                 <div className="border-separator bg-surface rounded-control flex items-center gap-2 border px-2 py-2">
                   <Label
@@ -1066,7 +1047,6 @@ export function BotControlCard({
               </div>
             </div>
 
-            {/* Console output window */}
             <div className="relative">
               <div className="text-label-secondary border-separator rounded-control-sm text-footnote bg-surface-elevated absolute top-2 right-2 z-10 flex items-center gap-2 border px-2 py-0.5 font-mono select-none">
                 <FileCode className="h-3 w-3" />

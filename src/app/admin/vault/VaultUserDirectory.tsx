@@ -466,7 +466,6 @@ export function VaultUserDirectory() {
 
   return (
     <div className="space-y-6">
-      {/* Directory Table */}
       <FacetDataTable
         data={vaultData?.users || []}
         columns={columns}
@@ -488,7 +487,6 @@ export function VaultUserDirectory() {
         emptyMessage="No user vaults found matching your search."
       />
 
-      {/* Adjust Credits Dialog */}
       <Dialog open={isAdjustOpen} onOpenChange={setIsAdjustOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -608,7 +606,6 @@ export function VaultUserDirectory() {
         </DialogContent>
       </Dialog>
 
-      {/* Adjust Streak Dialog */}
       <Dialog open={isStreakOpen} onOpenChange={setIsStreakOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -665,7 +662,6 @@ export function VaultUserDirectory() {
         </DialogContent>
       </Dialog>
 
-      {/* Transaction history sheet */}
       <Sheet open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
         <SheetContent size="wide" className="overflow-y-auto">
           <SheetHeader>
@@ -724,7 +720,6 @@ export function VaultUserDirectory() {
         </SheetContent>
       </Sheet>
 
-      {/* Award Pack Dialog */}
       <Dialog open={isPackOpen} onOpenChange={setIsPackOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -812,7 +807,6 @@ export function VaultUserDirectory() {
         </DialogContent>
       </Dialog>
 
-      {/* Manage Cosmetics Dialog */}
       <Dialog open={isCosmeticsOpen} onOpenChange={setIsCosmeticsOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>

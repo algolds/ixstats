@@ -313,7 +313,6 @@ export function VoicePreferencesPanel({
 
           {showAdvancedVoice && (
             <div className="text-label-secondary text-caption mt-3 space-y-4 pl-1">
-              {/* Preset Selection */}
               <div className="space-y-1">
                 <label className="text-label text-subhead">Species preset</label>
                 <Select value={selectedPreset} onValueChange={(v) => onApplyPreset(v)}>
@@ -331,7 +330,6 @@ export function VoicePreferencesPanel({
                 </Select>
               </div>
 
-              {/* Force Native Bypass */}
               <div className="text-label flex items-center justify-between py-1">
                 <span className="text-eyebrow">Force Native Browser TTS</span>
                 <Checkbox
@@ -342,7 +340,6 @@ export function VoicePreferencesPanel({
                 />
               </div>
 
-              {/* Local Playback Volume */}
               <div className="space-y-1">
                 <div className="flex justify-between">
                   <span className="text-eyebrow">Local playback volume</span>
@@ -359,7 +356,6 @@ export function VoicePreferencesPanel({
                 />
               </div>
 
-              {/* Browser Pitch Override */}
               <div className="space-y-1">
                 <div className="flex justify-between">
                   <span className="text-eyebrow">Browser speech pitch</span>
@@ -376,7 +372,6 @@ export function VoicePreferencesPanel({
                 />
               </div>
 
-              {/* Voice Blending Options */}
               <div className="border-separator space-y-2 border-t pt-2">
                 <div className="text-label flex items-center justify-between">
                   <span className="text-eyebrow">Voice blending</span>
@@ -420,7 +415,6 @@ export function VoicePreferencesPanel({
                 )}
               </div>
 
-              {/* Emotional Prosody Inflections */}
               <div className="border-separator space-y-1 border-t pt-2">
                 <label className="text-label text-subhead">Emotional prosody</label>
                 <ValueSelect
@@ -437,7 +431,6 @@ export function VoicePreferencesPanel({
                 />
               </div>
 
-              {/* Inflection & Aspiration Tweaks */}
               <div className="border-separator space-y-2 border-t pt-2">
                 <span className="text-label text-eyebrow">Inflection & phoneme tweaks</span>
 

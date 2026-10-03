@@ -286,7 +286,6 @@ export function SynthesisResultsGrid({
             </form>
           )}
 
-          {/* Adaptive View Rendering */}
           {viewMode === "table" ? (
             <div className={cn("transition-opacity duration-200", isGenerating && "opacity-50")}>
               <BatchResultsTable

@@ -82,7 +82,6 @@ export function DiplomaticScenariosAnalyticsTab() {
 
   return (
     <div className="space-y-5">
-      {/* KPI Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
           <p className="text-label-secondary text-stat-label">Total generations</p>
@@ -102,7 +101,6 @@ export function DiplomaticScenariosAnalyticsTab() {
         </Card>
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card className="space-y-4 p-5">
           <h3 className="text-label text-caption flex items-center gap-2">

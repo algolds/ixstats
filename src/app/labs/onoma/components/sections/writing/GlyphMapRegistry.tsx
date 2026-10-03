@@ -74,7 +74,6 @@ export function GlyphMapRegistry({
           </div>
         </div>
 
-        {/* Starter Packs Drawer Toggle */}
         <Toggle
           variant="outline"
           size="sm"
@@ -87,7 +86,6 @@ export function GlyphMapRegistry({
         </Toggle>
       </div>
 
-      {/* Starter Packs Dropdown Drawer */}
       <AnimatePresence>
         {showPackDrawer && (
           <motion.div
@@ -135,7 +133,6 @@ export function GlyphMapRegistry({
         )}
       </AnimatePresence>
 
-      {/* Search Filter */}
       {glyphs.length > 0 && (
         <div className="relative">
           <Search className="text-label-secondary absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
@@ -212,7 +209,6 @@ export function GlyphMapRegistry({
                     </Button>
                   </div>
 
-                  {/* SVG Vector Render */}
                   <Button
                     variant="ghost"
                     onClick={() => onEditGlyph(g)}
@@ -233,7 +229,6 @@ export function GlyphMapRegistry({
                     </svg>
                   </Button>
 
-                  {/* Metadata Tag */}
                   <div
                     onClick={() => onEditGlyph(g)}
                     className="mt-2 flex w-full cursor-pointer items-center justify-between gap-1"

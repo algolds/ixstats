@@ -105,7 +105,6 @@ export function LanguagePackCard({
             {pack.description || "Phonological rules, syllabic weights and lexicon seeds."}
           </p>
 
-          {/* Tags */}
           {pack.tags && pack.tags.length > 0 && (
             <div className="mt-3 flex flex-wrap items-center justify-center gap-1">
               {pack.tags.slice(0, 3).map((tag) => (

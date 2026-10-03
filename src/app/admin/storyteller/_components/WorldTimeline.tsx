@@ -107,7 +107,6 @@ export function WorldTimeline() {
   return (
     <ScrollArea className="h-[600px]">
       <div className="relative space-y-3 pl-6">
-        {/* Timeline line */}
         <div className="bg-separator absolute top-0 bottom-0 left-[11px] w-px" />
 
         {data.events.map((event) => {
@@ -118,7 +117,6 @@ export function WorldTimeline() {
 
           return (
             <div key={event.id} className="relative">
-              {/* Timeline dot */}
               <div
                 className={`absolute top-4 -left-6 h-[22px] w-[22px] rounded-full border-2 ${
                   isActive ? `${colors.bg} ${colors.border}` : "border-separator bg-fill-3"
@@ -131,7 +129,6 @@ export function WorldTimeline() {
                 />
               </div>
 
-              {/* Event card */}
               <div
                 className={`rounded-row border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
                   isActive
@@ -204,7 +201,6 @@ export function WorldTimeline() {
                   </div>
                 </div>
 
-                {/* Timeline info */}
                 <div className="text-label-secondary text-footnote mt-2 flex items-center gap-4">
                   <span className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
@@ -225,7 +221,6 @@ export function WorldTimeline() {
                   <p className="text-label-secondary text-body mt-2">{event.description}</p>
                 )}
 
-                {/* Expanded detail */}
                 {isExpanded && (
                   <div className="border-separator mt-3 space-y-2 border-t pt-3">
                     <h5 className="text-label text-subhead">Affected countries</h5>

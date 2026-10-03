@@ -488,14 +488,12 @@ export function FoundationStep({
         onConfirmFaction={handleConfirmFaction}
       />
 
-      {/* Selected Archetype Drawer */}
       <ArchetypeConfirmationPanel
         selectedArchetype={localSelectedArchetype}
         onClearSelection={() => setLocalSelectedArchetype(null)}
         onConfirmFaction={() => handleConfirmFaction()}
       />
 
-      {/* Full Archetype Details Modal */}
       <ArchetypeDetailsModal
         isOpen={isDetailsOpen}
         onOpenChange={setIsDetailsOpen}

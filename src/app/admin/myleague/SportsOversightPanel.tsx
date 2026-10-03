@@ -184,7 +184,6 @@ function AdminAdvancedControls({ league, onRefetch }: { league: any; onRefetch: 
         </Button>
       </div>
 
-      {/* Match override dialog */}
       <Dialog open={matchOverrideOpen} onOpenChange={setMatchOverrideOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -461,8 +460,6 @@ function AINarratorLab() {
 
   return (
     <Card className="relative flex flex-col gap-6 overflow-hidden p-6 py-6">
-      {/* Background radial glow */}
-
       <div className="space-y-6">
         <div>
           <h2 className="text-label text-title-2 flex items-center gap-2">
@@ -496,7 +493,6 @@ function AINarratorLab() {
               />
             </div>
 
-            {/* Advanced Settings Toggle */}
             <div className="pt-1 select-none">
               <Button
                 type="button"
@@ -511,7 +507,6 @@ function AINarratorLab() {
               </Button>
             </div>
 
-            {/* Config Fields */}
             {showConfig && (
               <div className="border-separator rounded-row space-y-4 border p-4">
                 <div className="border-separator flex items-center gap-2 border-b pb-2 select-none">
@@ -1094,9 +1089,7 @@ export default function SportsOversightPanel() {
 
       <NotificationSettingsCard />
 
-      {/* Overview stats cards */}
       <div className="border-separator bg-surface rounded-row border p-6">
-        {/* Global stats row */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
           <div className="bg-surface-secondary border-separator rounded-control border p-3">
             <span className="text-label-secondary text-stat-label">Total leagues</span>
@@ -1313,7 +1306,6 @@ export default function SportsOversightPanel() {
         </Tabs>
       )}
 
-      {/* Creator dialog */}
       <LeagueCreator
         open={creatorOpen}
         onOpenChange={setCreatorOpen}
@@ -1325,7 +1317,6 @@ export default function SportsOversightPanel() {
         isCanonical={true}
       />
 
-      {/* Delete confirmation dialog */}
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

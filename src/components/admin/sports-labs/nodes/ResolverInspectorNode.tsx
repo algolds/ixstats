@@ -280,7 +280,6 @@ export const ResolverInspectorNode = React.memo(function ResolverInspectorNode({
               </p>
             </div>
 
-            {/* Match Events Ticker Trace */}
             {singleResult.trace && singleResult.trace.length > 0 && (
               <div className="space-y-2">
                 <h6 className="text-label-secondary text-subhead">Match events ticker</h6>

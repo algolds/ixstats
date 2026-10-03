@@ -328,7 +328,6 @@ export default function EtymologySection() {
             )}
           </Card>
 
-          {/* Add New Root Form */}
           <Card variant="inset" padding="none" className="p-4">
             <form onSubmit={handleCreateRoot} className="space-y-3">
               <h4 className="text-label text-subhead">Create new root word</h4>
@@ -401,7 +400,6 @@ export default function EtymologySection() {
         <div className="space-y-4 lg:col-span-8">
           {activeRoot ? (
             <div className="space-y-4">
-              {/* Root Details Header */}
               <Card variant="inset" padding="none" className="p-4">
                 <div className="flex items-start justify-between">
                   <div>
@@ -436,7 +434,6 @@ export default function EtymologySection() {
                 </div>
               </Card>
 
-              {/* Derivations Tree Graph */}
               <Card variant="inset" padding="none" className="relative min-h-[300px] space-y-4 p-4">
                 <div className="border-separator flex items-center justify-between border-b pb-2">
                   <h4 className="text-label text-subhead flex items-center gap-2">
@@ -478,7 +475,6 @@ export default function EtymologySection() {
                 )}
               </Card>
 
-              {/* Form to Add Derivation */}
               <Card variant="inset" padding="none" className="p-4">
                 <form onSubmit={handleAddDerivation} className="space-y-3">
                   <div className="flex items-center justify-between">

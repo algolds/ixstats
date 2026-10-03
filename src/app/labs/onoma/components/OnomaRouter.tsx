@@ -91,7 +91,6 @@ function OnomaRouter() {
         </Card>
       </div>
 
-      {/* Physics-Based Elastic Pull Footer */}
       <PhysicsPullFooter>
         <OnomaFooter
           onNavigate={handleNavigate}

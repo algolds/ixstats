@@ -32,7 +32,6 @@ export function SectorMetrics({
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-title-1">Economic sectors configuration</h2>
@@ -65,7 +64,6 @@ export function SectorMetrics({
         </div>
       </div>
 
-      {/* Overview Metrics */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <MetricCard
           label="GDP distribution"

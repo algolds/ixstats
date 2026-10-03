@@ -62,7 +62,6 @@ export function EconomicArchetypeModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="economic-archetype-modal-v2 border-separator bg-background text-label shadow-floating flex h-[90vh] max-h-[90vh] w-full max-w-7xl flex-col gap-0 border p-0">
-        {/* Header */}
         <DialogHeader className="border-separator bg-surface shrink-0 border-b px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex min-w-0 flex-1 items-center gap-4">
@@ -79,7 +78,6 @@ export function EconomicArchetypeModal({
           </div>
         </DialogHeader>
 
-        {/* Fallback Warning */}
         {isUsingFallback && !isLoading && (
           <div className="px-6 pt-4">
             <Alert variant="default" className="border-caution/30 bg-caution/10">
@@ -91,7 +89,6 @@ export function EconomicArchetypeModal({
           </div>
         )}
 
-        {/* Content Area - Scrollable */}
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="p-6">
             <EconomicArchetypeDisplay
@@ -101,7 +98,6 @@ export function EconomicArchetypeModal({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="border-separator bg-surface shrink-0 border-t px-6 py-4">
           <div className="flex items-center justify-between gap-4">
             <p className="text-label-secondary text-body flex items-center gap-2 leading-relaxed">

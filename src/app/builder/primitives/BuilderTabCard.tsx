@@ -112,7 +112,6 @@ export function BuilderTabCard({
         </div>
       )}
 
-      {/* Content Area */}
       <div
         className="relative"
         {...(hideTabList

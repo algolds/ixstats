@@ -257,7 +257,6 @@ export function AlertRulesPanel() {
         </CardContent>
       </Card>
 
-      {/* Edit / Create Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>

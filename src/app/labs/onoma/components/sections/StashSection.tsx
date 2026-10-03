@@ -180,9 +180,7 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
 
   return (
     <div className="space-y-5">
-      {/* Tab Switcher & Filters/Import */}
       <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-3">
-        {/* Sub-tab Toggle buttons */}
         <SegmentedControl
           size="sm"
           asTabs
@@ -201,7 +199,6 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
             {/* Upload .txt files (one dictionary per file) */}
             <ImportStashPanel />
 
-            {/* Folder filter dropdown */}
             <div className="relative w-full sm:w-44">
               <ValueSelect
                 value={selectedStashFilterId}
@@ -217,7 +214,6 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
               />
             </div>
 
-            {/* Search Input */}
             <div className="relative w-full sm:w-56">
               <Search className="text-label-secondary absolute top-2 left-3 h-4 w-4" />
               <Input
@@ -251,7 +247,6 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
             ))}
           </datalist>
 
-          {/* Two-Column Side-by-Side Layout */}
           <div className="grid items-start gap-6 lg:grid-cols-12">
             {/* Left Column (7/12): Saved Names Badges */}
             <div className="space-y-3 lg:col-span-7">
@@ -357,7 +352,6 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
                               </PopoverContent>
                             </Popover>
 
-                            {/* Delete */}
                             <Button
                               variant="ghost"
                               size="icon-sm"
@@ -433,7 +427,6 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
         </>
       )}
 
-      {/* Deployment Modal */}
       {selectedNameForUse && (
         <UseNameDialog
           isOpen={!!selectedNameForUse}
@@ -443,7 +436,6 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
         />
       )}
 
-      {/* Edit Dictionary Modal */}
       {editDict && (
         <DictionaryEditModal
           dict={editDict}

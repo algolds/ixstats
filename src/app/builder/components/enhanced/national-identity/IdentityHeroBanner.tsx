@@ -308,9 +308,7 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
             </div>
           </div>
 
-          {/* Core Text Details */}
           <div className="min-w-0 flex-1 space-y-2">
-            {/* Meta Pill Badges */}
             <div className="text-footnote flex flex-wrap items-center gap-2">
               {governmentType && (
                 <Badge variant="secondary">
@@ -334,7 +332,6 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
               )}
             </div>
 
-            {/* Display Nation Name */}
             <div>
               <h2 className="text-title-1 sm:text-large-title text-label truncate">
                 {displayCountryName}
@@ -346,7 +343,6 @@ export const IdentityHeroBanner = React.memo(function IdentityHeroBanner({
               )}
             </div>
 
-            {/* National Motto Quote */}
             {motto && (
               <div className="text-footnote text-label-secondary flex items-center gap-2 pt-0.5 italic">
                 <Quote aria-hidden="true" className="h-3 w-3 shrink-0 opacity-70" />

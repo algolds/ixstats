@@ -442,7 +442,6 @@ export function OnomaAdminPanel() {
               onChange={(v) => setKokoroSpeed(v)}
             />
 
-            {/* Per-culture voice mapping */}
             <div className="border-separator space-y-2 border-t pt-3">
               <Label className="text-label text-caption">Per-culture voices</Label>
               <p className="text-label-secondary text-footnote">
@@ -500,7 +499,6 @@ export function OnomaAdminPanel() {
               </div>
             </div>
 
-            {/* Test word */}
             <div className="border-separator flex flex-wrap items-end gap-3 border-t pt-3">
               <div className="space-y-1">
                 <Label className="text-label text-caption">Test word</Label>

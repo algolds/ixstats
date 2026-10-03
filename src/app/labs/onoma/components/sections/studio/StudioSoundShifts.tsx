@@ -287,7 +287,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
         <LoanwordsSection />
       ) : (
         <>
-          {/* Header Banner */}
           <div className="bg-surface-secondary rounded-row relative overflow-hidden p-5 sm:p-6">
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
               <div className="space-y-1">
@@ -301,7 +300,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                 </p>
               </div>
 
-              {/* Preset Selector */}
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-label-secondary text-eyebrow">Presets:</span>
                 <ToggleGroup
@@ -342,7 +340,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                 </Button>
               </div>
 
-              {/* Quick Insert Symbols Palette */}
               <div className="border-separator bg-fill-4 rounded-row flex flex-wrap items-center gap-2 border p-3">
                 <span className="text-label-secondary text-eyebrow mr-1">Insert:</span>
                 {QUICK_SYMBOLS.map((sym) => (
@@ -358,14 +355,12 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                 ))}
               </div>
 
-              {/* Epochs List */}
               <div className="space-y-4">
                 {epochs.map((epoch, epochIdx) => (
                   <div
                     key={epoch.id}
                     className="border-separator bg-surface rounded-row shadow-card relative space-y-3 border p-4"
                   >
-                    {/* Epoch Header */}
                     <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
                       <div className="flex flex-1 items-center gap-2">
                         <span className="bg-tint/15 text-tint text-caption flex h-5 w-5 items-center justify-center rounded-full font-semibold">
@@ -396,7 +391,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                       </Button>
                     </div>
 
-                    {/* Rules Table / Rows */}
                     <div className="space-y-2">
                       {epoch.rules.map((rule, ruleIdx) => (
                         <div
@@ -406,7 +400,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                             !rule.enabled && "opacity-50"
                           )}
                         >
-                          {/* Checkbox Enable */}
                           <Checkbox
                             checked={rule.enabled !== false}
                             onCheckedChange={(checked) =>
@@ -415,7 +408,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                             title="Toggle rule"
                           />
 
-                          {/* Source */}
                           <div className="flex w-20 flex-shrink-0 items-center">
                             <Input
                               type="text"
@@ -433,7 +425,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
 
                           <ArrowRight className="text-label-secondary h-3.5 w-3.5 flex-shrink-0" />
 
-                          {/* Target */}
                           <div className="flex w-20 flex-shrink-0 items-center">
                             <Input
                               type="text"
@@ -453,7 +444,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                             /
                           </span>
 
-                          {/* Context / Environment */}
                           <div className="flex min-w-[90px] flex-1 items-center">
                             <Input
                               type="text"
@@ -521,7 +511,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
 
             {/* Right Column: Interactive Lexicon Evolution & Diff (5 cols) */}
             <div className="space-y-5 lg:col-span-5">
-              {/* Proto-Lexicon Input */}
               <div className="border-separator bg-surface rounded-row shadow-card space-y-2 border p-4">
                 <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
                   <label className="text-label text-footnote font-semibold">
@@ -556,7 +545,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                 </div>
               </div>
 
-              {/* Evolved Daughter Lexicon Results */}
               <div className="border-separator bg-surface rounded-row shadow-card space-y-3 border p-4">
                 <div className="flex items-center justify-between gap-2">
                   <div>
@@ -601,7 +589,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex min-w-0 flex-1 items-center gap-2">
-                            {/* Proto Word */}
                             <div className="flex items-center gap-1">
                               <span className="text-label-secondary text-footnote font-mono">
                                 *{res.original}
@@ -620,7 +607,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
 
                             <ArrowRight className="text-label-tertiary h-3 w-3 flex-shrink-0" />
 
-                            {/* Daughter Word */}
                             <div className="flex items-center gap-1">
                               <span className="text-label text-footnote font-mono font-semibold">
                                 {res.final}
@@ -638,9 +624,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                             </div>
                           </div>
 
-                          {/* Actions */}
                           <div className="flex items-center gap-1">
-                            {/* Save to Stash */}
                             <Button
                               variant="ghost"
                               size="icon-sm"
@@ -652,7 +636,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                               <Bookmark className="h-3.5 w-3.5" />
                             </Button>
 
-                            {/* Copy */}
                             <Button
                               variant="ghost"
                               size="icon-sm"
@@ -668,7 +651,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                               )}
                             </Button>
 
-                            {/* Trace Step toggle */}
                             {res.steps.length > 0 && (
                               <Button
                                 variant="ghost"
@@ -688,7 +670,6 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                           </div>
                         </div>
 
-                        {/* Step-by-Step Derivation Inspector */}
                         {isExpanded && res.steps.length > 0 && (
                           <div className="border-separator bg-fill-4 rounded-control-sm text-caption mt-2 space-y-2 border p-2">
                             <div className="text-label-secondary font-semibold">

@@ -387,7 +387,6 @@ export function VaultStoreControl() {
         </Table>
       )}
 
-      {/* Create / Edit Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -663,7 +662,6 @@ export function VaultStoreControl() {
         </DialogContent>
       </Dialog>
 
-      {/* Price History Ledger Dialog */}
       <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>

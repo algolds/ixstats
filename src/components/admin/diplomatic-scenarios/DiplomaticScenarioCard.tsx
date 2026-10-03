@@ -43,7 +43,6 @@ export function DiplomaticScenarioCard({
   return (
     <Card className="hover:border-yellow/50 flex flex-col justify-between gap-6 p-4 py-6 transition-[color,background-color,border-color,box-shadow,opacity,transform]">
       <div>
-        {/* Header */}
         <div className="mb-3 flex items-start justify-between">
           <div className="flex items-start gap-3">
             <Checkbox checked={isSelected} onCheckedChange={onToggleSelect} className="mt-1" />
@@ -67,10 +66,8 @@ export function DiplomaticScenarioCard({
           {scenario.status !== "active" && <Badge variant="destructive">{scenario.status}</Badge>}
         </div>
 
-        {/* Narrative */}
         <p className="text-footnote text-label-secondary mb-3 line-clamp-2">{scenario.narrative}</p>
 
-        {/* Stats */}
         <div className="border-separator text-footnote mb-3 grid grid-cols-3 gap-2 border-t border-b py-2 text-center">
           <div>
             <span className="text-label-secondary">Impact</span>
@@ -87,7 +84,6 @@ export function DiplomaticScenarioCard({
         </div>
       </div>
 
-      {/* Actions */}
       <div className="flex items-center gap-2 pt-2">
         <Button size="sm" variant="outline" onClick={onEdit} className="flex-1">
           <Pencil className="mr-1 h-3 w-3" />

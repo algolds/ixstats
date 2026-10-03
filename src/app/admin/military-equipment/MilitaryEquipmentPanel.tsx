@@ -111,7 +111,6 @@ export function MilitaryEquipmentPanel() {
         </TabsContent>
       </Tabs>
 
-      {/* Equipment Add/Edit Dialog */}
       <EquipmentFormDialog
         isOpen={catalog.isAddDialogOpen || !!catalog.editingEquipment}
         isEditing={!!catalog.editingEquipment}
@@ -128,7 +127,6 @@ export function MilitaryEquipmentPanel() {
         isPending={catalog.createMutation.isPending || catalog.updateMutation.isPending}
       />
 
-      {/* Manufacturer Add/Edit Dialog */}
       <ManufacturerFormDialog
         isOpen={manufacturers.isManufacturerDialogOpen || !!manufacturers.editingManufacturerId}
         onOpenChange={manufacturers.setIsManufacturerDialogOpen}

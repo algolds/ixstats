@@ -140,7 +140,6 @@ export function TimeControlCard({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Live IxTime Display */}
         <div className="rounded-control border-blue/20 bg-blue/5 space-y-2 border p-4">
           <div className="text-eyebrow text-blue flex items-center gap-2">
             <span className="relative flex h-2 w-2">
@@ -169,7 +168,6 @@ export function TimeControlCard({
           </div>
         </div>
 
-        {/* Time Multiplier Slider */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-label text-caption">Speed multiplier</Label>
@@ -193,7 +191,6 @@ export function TimeControlCard({
           </div>
         </div>
 
-        {/* Speed Preset Buttons */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {SPEED_PRESETS.map((preset) => {
             const Icon = preset.icon;
@@ -231,7 +228,6 @@ export function TimeControlCard({
           <div className="animate-in fade-in slide-in-from-top-2 duration-fast space-y-4 pt-1">
             <Separator className="border-separator my-1" />
 
-            {/* Year Jump Presets */}
             <div className="space-y-2">
               <Label className="text-label text-caption">Jump to simulation era</Label>
               <div className="grid grid-cols-3 gap-2">
@@ -261,7 +257,6 @@ export function TimeControlCard({
 
             <Separator className="border-separator my-1" />
 
-            {/* Custom IxTime Setting */}
             <div className="space-y-3">
               <Label className="text-label text-caption">Set custom time point</Label>
               <div className="grid grid-cols-2 gap-3">

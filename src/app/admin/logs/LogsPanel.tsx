@@ -125,7 +125,6 @@ export default function DedicatedLogsPage() {
         subtitle="Search and filter database logs, runtime exceptions and client-side rejections."
       />
 
-      {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
           <p className="text-label-secondary text-stat-label">Fetched logs</p>
@@ -151,7 +150,6 @@ export default function DedicatedLogsPage() {
         </Card>
       </div>
 
-      {/* Single-line Filter Rail */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <div className="relative max-w-xs min-w-[180px] flex-1">
@@ -252,7 +250,6 @@ export default function DedicatedLogsPage() {
         </div>
       </div>
 
-      {/* Main Terminal Output */}
       <Card className="overflow-hidden p-3">
         {isLoading ? (
           <div className="flex h-96 items-center justify-center">

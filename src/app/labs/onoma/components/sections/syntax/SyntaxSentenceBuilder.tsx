@@ -154,7 +154,6 @@ export function SyntaxSentenceBuilder({
         <Cpu className="text-indigo h-4 w-4" /> Live sentence generator
       </h4>
 
-      {/* Translation Output Banner */}
       <div className="rounded-control border-indigo/20 bg-indigo/5 space-y-2 border p-4">
         <div className="text-label-secondary text-footnote flex items-center gap-2 font-semibold">
           <span>Source (English):</span>
@@ -166,9 +165,7 @@ export function SyntaxSentenceBuilder({
         </div>
       </div>
 
-      {/* Interactive Phrase Tuning */}
       <div className="text-footnote grid grid-cols-1 gap-4 pt-2 md:grid-cols-3">
-        {/* Subject */}
         <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
           <span className="text-label block font-semibold">Subject noun</span>
           <Input
@@ -203,7 +200,6 @@ export function SyntaxSentenceBuilder({
           </div>
         </div>
 
-        {/* Verb */}
         <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
           <span className="text-label block font-semibold">Action verb</span>
           <Input
@@ -226,7 +222,6 @@ export function SyntaxSentenceBuilder({
           />
         </div>
 
-        {/* Object */}
         <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
           <span className="text-label block font-semibold">Object noun</span>
           <Input

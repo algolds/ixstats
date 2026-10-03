@@ -137,7 +137,6 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
             </p>
           </div>
 
-          {/* Search */}
           <div className="relative">
             <Search className="text-label-secondary absolute top-2 left-3 h-4 w-4" />
             <Input
@@ -149,7 +148,6 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
             />
           </div>
 
-          {/* List */}
           <div className="max-h-[500px] space-y-2 overflow-y-auto pr-1">
             {filteredTerms.length === 0 ? (
               <p className="text-label-secondary text-footnote py-6 text-center">
@@ -222,7 +220,6 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
             padding="none"
             className="animate-in fade-in space-y-6 p-5 duration-300"
           >
-            {/* Word Title Header */}
             <div className="border-separator flex items-start justify-between border-b pb-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
@@ -319,7 +316,6 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
               </Button>
             </div>
 
-            {/* Inline Pronunciation Editor */}
             {editingPron && (
               <PronunciationEditor
                 name={selectedTerm}
@@ -334,7 +330,6 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
               />
             )}
 
-            {/* Transcriptions Grid */}
             <div className="space-y-2">
               <h4 className="text-label-secondary text-subhead">Orthographic transcriptions</h4>
               <div className="grid gap-3 sm:grid-cols-3">
@@ -416,14 +411,12 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
               </div>
             </div>
 
-            {/* Lexical & Phonotactic Analysis */}
             <LexiconAnalysis
               selectedTerm={selectedTerm}
               stashedEntry={stashedEntry}
               originLabel={originLabel}
             />
 
-            {/* Case Declension Table */}
             {selectedTermMorphology && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -465,7 +458,6 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
               </div>
             )}
 
-            {/* Definition Edit Form */}
             <LexiconDefinitionForm
               lexEditPos={lexEditPos}
               setLexEditPos={setLexEditPos}

@@ -90,7 +90,6 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
       </div>
 
       <div className="space-y-2">
-        {/* Currency Selector Mode */}
         {inputMode === "selector" ? (
           <div className="space-y-2">
             <CurrencySelector
@@ -110,7 +109,6 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
               allowCustom={allowCustom}
             />
 
-            {/* Suggestions from database */}
             {((data?.global?.length ?? 0) > 0 || (data?.user?.length ?? 0) > 0) && (
               <div className="bg-surface-secondary rounded-row text-footnote p-2">
                 <div className="text-subhead text-label-secondary mb-1">Community currencies</div>
@@ -132,7 +130,6 @@ export const CurrencyAutocomplete = React.memo(function CurrencyAutocomplete({
           </div>
         )}
 
-        {/* Currency Meta Pill Badges */}
         {value && currencyInfo && (
           <div className="text-footnote flex items-center gap-2">
             {currencyInfo.isISO ? (

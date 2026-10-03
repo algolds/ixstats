@@ -434,7 +434,6 @@ export function EnhancedNumberInput({
 
   return (
     <div className={cn("space-y-2", className)} style={cssVars as React.CSSProperties}>
-      {/* Label and Description */}
       {(label || description) && (
         <div className="space-y-1">
           {label && (
@@ -451,7 +450,6 @@ export function EnhancedNumberInput({
       )}
 
       <div className="relative w-full">
-        {/* Main Input Container */}
         <div
           className={cn(
             "relative w-full",
@@ -486,15 +484,12 @@ export function EnhancedNumberInput({
               )}
             />
 
-            {/* Unit Display */}
             {unit && displayValue && !isEditing && (
               <span className="text-label-secondary text-body mx-2 shrink-0">{unit}</span>
             )}
 
-            {/* Action Buttons */}
             {showButtons && (
               <div className="z-10 flex shrink-0 items-center gap-0.5">
-                {/* Divider Line */}
                 <div className="bg-fill-3 mx-1 h-4 w-[1px] shrink-0" />
 
                 <motion.button
@@ -549,7 +544,6 @@ export function EnhancedNumberInput({
         </div>
       </div>
 
-      {/* Comparison Display */}
       {comparisonData && referenceLabel && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}

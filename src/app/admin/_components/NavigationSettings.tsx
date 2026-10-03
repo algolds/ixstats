@@ -115,7 +115,6 @@ export function NavigationSettings() {
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Wiki Tab Setting */}
         <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-control border-blue/20 bg-blue/10 border p-2">
@@ -141,7 +140,6 @@ export function NavigationSettings() {
           />
         </div>
 
-        {/* Cards Tab Setting */}
         <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-control border-teal/20 bg-teal/10 border p-2">
@@ -167,7 +165,6 @@ export function NavigationSettings() {
           />
         </div>
 
-        {/* Labs Tab Setting */}
         <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-control border-purple/20 bg-purple/10 border p-2">
@@ -193,7 +190,6 @@ export function NavigationSettings() {
           />
         </div>
 
-        {/* Intelligence Tab Setting */}
         <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-control border-green/20 bg-green/10 border p-2">
@@ -223,7 +219,6 @@ export function NavigationSettings() {
           />
         </div>
 
-        {/* Defense Tab Setting */}
         <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-control border-red/20 bg-red/10 border p-2">
@@ -253,7 +248,6 @@ export function NavigationSettings() {
           />
         </div>
 
-        {/* Maps Tab Setting */}
         <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-control border-orange/20 bg-orange/10 border p-2">
@@ -279,7 +273,6 @@ export function NavigationSettings() {
           />
         </div>
 
-        {/* Forum Tab Setting */}
         <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-control border-orange/20 bg-orange/10 border p-2">
@@ -305,7 +298,6 @@ export function NavigationSettings() {
           />
         </div>
 
-        {/* Help Tab Setting */}
         <div className="bg-surface border-separator rounded-control flex items-center justify-between border p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-control border-yellow/20 bg-yellow/10 border p-2">
@@ -331,7 +323,6 @@ export function NavigationSettings() {
           />
         </div>
 
-        {/* Save Button */}
         {hasChanges && (
           <div className="border-separator border-t pt-4">
             <Button onClick={handleSave} disabled={isSaving} className="w-full">

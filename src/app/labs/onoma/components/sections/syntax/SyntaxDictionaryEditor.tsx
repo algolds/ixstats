@@ -36,7 +36,6 @@ export function SyntaxDictionaryEditor({
         <FileText className="text-indigo h-4 w-4" /> Vocabulary dictionary
       </h4>
 
-      {/* Add Word Row */}
       <div className="text-footnote flex gap-2">
         <Input
           type="text"
@@ -57,7 +56,6 @@ export function SyntaxDictionaryEditor({
         </Button>
       </div>
 
-      {/* Word Pairs Grid */}
       <div className="grid max-h-[220px] grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-4">
         {Object.entries(dictionary).map(([eng, con]) => (
           <div

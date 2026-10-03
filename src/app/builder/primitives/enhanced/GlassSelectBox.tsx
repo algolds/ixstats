@@ -150,7 +150,6 @@ export function GlassSelectBox({
       className={cn("relative space-y-2", className)}
       style={cssVars as React.CSSProperties}
     >
-      {/* Label and Description */}
       {(label || description) && (
         <div className="space-y-1">
           {label && (
@@ -164,7 +163,6 @@ export function GlassSelectBox({
         </div>
       )}
 
-      {/* Select Button */}
       <motion.button
         type="button"
         onClick={toggleDropdown}
@@ -210,7 +208,6 @@ export function GlassSelectBox({
         </motion.div>
       </motion.button>
 
-      {/* Dropdown */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -227,7 +224,6 @@ export function GlassSelectBox({
             )}
             style={{ maxHeight }}
           >
-            {/* Search Input */}
             {searchable && (
               <div className="border-separator border-b p-3">
                 <div className="relative">
@@ -244,7 +240,6 @@ export function GlassSelectBox({
               </div>
             )}
 
-            {/* Options List */}
             <div className="max-h-48 overflow-y-auto">
               {filteredOptions.length === 0 ? (
                 <div className="text-label-secondary text-body px-4 py-3 text-center">

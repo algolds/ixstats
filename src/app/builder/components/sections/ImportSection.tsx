@@ -393,9 +393,7 @@ export const ImportSection = React.memo(function ImportSection({
     <div className="pt-1 sm:pt-2">
       {/* The page title (the import flow has no studio header); results and cards are h2. */}
       <h1 className="sr-only">Import a nation from a wiki · MyCountry Builder</h1>
-      {/* Main Content */}
       <div className="mt-4 space-y-6">
-        {/* Loading State Back Button */}
         {selectedResult && !parsedData && (
           <Button type="button" variant="outline" size="sm" onClick={handleBackFromSelection}>
             <ArrowLeft aria-hidden />
@@ -445,7 +443,6 @@ export const ImportSection = React.memo(function ImportSection({
           </div>
         )}
 
-        {/* Loading Spinner */}
         {isLoading && !parsedData && (
           <div className="border-separator bg-surface rounded-card flex items-center justify-center gap-3 border px-6 py-8">
             <div className="border-fill border-t-tint h-5 w-5 animate-spin rounded-full border-2" />

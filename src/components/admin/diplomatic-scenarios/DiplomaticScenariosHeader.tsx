@@ -89,11 +89,9 @@ export function DiplomaticScenariosHeader({
         </Button>
       </div>
 
-      {/* Advanced Tag Filter Pills */}
       <div className="flex flex-wrap items-center gap-2 pt-1">
         <span className="text-label-secondary text-caption mr-1">Filter by:</span>
 
-        {/* Relationship filters */}
         <ToggleGroup
           type="multiple"
           variant="pill"
@@ -114,7 +112,6 @@ export function DiplomaticScenariosHeader({
           ))}
         </ToggleGroup>
 
-        {/* Difficulty filters */}
         <ToggleGroup
           type="multiple"
           variant="pill"
@@ -135,7 +132,6 @@ export function DiplomaticScenariosHeader({
           ))}
         </ToggleGroup>
 
-        {/* Time frame filters */}
         <ToggleGroup
           type="multiple"
           variant="pill"

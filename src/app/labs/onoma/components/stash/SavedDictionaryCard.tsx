@@ -114,7 +114,6 @@ export function SavedDictionaryCard({
       className="p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
     >
       <div className="space-y-2">
-        {/* Header & Meta Row */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <h4 className="text-label text-footnote truncate font-semibold">{dict.title}</h4>
@@ -173,11 +172,8 @@ export function SavedDictionaryCard({
           </div>
         </div>
 
-        {/* Actions Bar */}
         <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-t pt-2">
-          {/* Primary Buttons */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Expand Button */}
             <Button
               variant="secondary"
               size="sm"
@@ -207,7 +203,6 @@ export function SavedDictionaryCard({
               </Button>
             )}
 
-            {/* Quick Cross-System Actions */}
             {onNavigateExplore && (
               <Button
                 variant="secondary"
@@ -305,7 +300,6 @@ export function SavedDictionaryCard({
             </Popover>
           </div>
 
-          {/* Secondary Utilities */}
           <div className="flex items-center gap-2">
             {/* Edit (rename / re-tag) */}
             <Button
@@ -318,7 +312,6 @@ export function SavedDictionaryCard({
               <Pencil />
             </Button>
 
-            {/* Export */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -342,7 +335,6 @@ export function SavedDictionaryCard({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Delete */}
             <Button
               variant="secondary"
               size="icon-sm"
@@ -356,7 +348,6 @@ export function SavedDictionaryCard({
         </div>
       </div>
 
-      {/* Expanded list of words */}
       {isExpanded && (
         <div className="border-separator text-footnote border-t pt-2">
           <p className="text-label-secondary line-clamp-3 font-mono leading-normal">

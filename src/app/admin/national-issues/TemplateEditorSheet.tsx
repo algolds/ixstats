@@ -260,7 +260,6 @@ export function TemplateEditorSheet({
               </div>
             )}
 
-            {/* Basic Info */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-subhead text-label-secondary mb-1 block">
@@ -314,7 +313,6 @@ export function TemplateEditorSheet({
               />
             </div>
 
-            {/* Classification */}
             <div className="grid grid-cols-3 gap-2">
               <div>
                 <label className="text-subhead text-label-secondary mb-1 block">Domain</label>
@@ -350,7 +348,6 @@ export function TemplateEditorSheet({
               </div>
             </div>
 
-            {/* Mechanics parameters */}
             <div className="grid grid-cols-4 gap-2">
               <div>
                 <label className="text-subhead text-label-secondary mb-1 block">
@@ -407,7 +404,6 @@ export function TemplateEditorSheet({
               </div>
             </div>
 
-            {/* Settings Toggles */}
             <div className="flex gap-4">
               <label className="text-caption flex cursor-pointer items-center gap-2">
                 <Checkbox
@@ -426,7 +422,6 @@ export function TemplateEditorSheet({
               </label>
             </div>
 
-            {/* JSON Code Blocks */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <label className="text-subhead text-label-secondary flex items-center gap-2">

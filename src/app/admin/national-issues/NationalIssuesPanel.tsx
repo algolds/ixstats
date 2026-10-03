@@ -156,7 +156,6 @@ function NationalIssuesPanel() {
         subtitle="Decision trees, generation triggers and storyteller injections."
       />
 
-      {/* Global Stat Bar */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
           <p className="text-label-secondary text-stat-label">Total evaluations</p>
@@ -224,7 +223,6 @@ function NationalIssuesPanel() {
           )}
         </div>
 
-        {/* Templates Tab */}
         <TabsContent value="templates" className="mt-4 space-y-4 focus-visible:outline-none">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="relative max-w-sm min-w-[200px] flex-1">
@@ -341,7 +339,6 @@ function NationalIssuesPanel() {
           )}
         </TabsContent>
 
-        {/* Active Issues Tab */}
         <TabsContent value="issues" className="mt-4 focus-visible:outline-none">
           {isIssuesLoading ? (
             <div className="text-label-secondary text-footnote p-8 text-center">
@@ -390,7 +387,6 @@ function NationalIssuesPanel() {
           )}
         </TabsContent>
 
-        {/* Engine Configuration Tab */}
         <TabsContent value="engine" className="mt-4 focus-visible:outline-none">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Card className="space-y-4 p-5">

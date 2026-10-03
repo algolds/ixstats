@@ -216,7 +216,6 @@ export function AcousticFormantVisualizer({
 
   return (
     <div className="bg-surface-secondary rounded-row space-y-4 p-4 sm:p-5">
-      {/* Header with Switcher */}
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div className="space-y-0.5 text-left">
           <div className="flex items-center gap-2">
@@ -230,7 +229,6 @@ export function AcousticFormantVisualizer({
           </p>
         </div>
 
-        {/* View Switcher Tabs */}
         <SegmentedControl
           size="sm"
           asTabs
@@ -244,11 +242,9 @@ export function AcousticFormantVisualizer({
         />
       </div>
 
-      {/* Main Visualizer Container */}
       {activeTab === "quadrilateral" ? (
         <div className="space-y-3">
           <div className="border-separator bg-surface rounded-row relative overflow-hidden border p-2">
-            {/* Axis Labels */}
             <div className="text-label-secondary text-eyebrow absolute top-2 left-3 font-mono">
               ← Front ($F_2$ High)
             </div>
@@ -262,12 +258,10 @@ export function AcousticFormantVisualizer({
               ↓ Open / Low ($F_1$ High)
             </div>
 
-            {/* SVG IPA Quadrilateral */}
             <svg
               viewBox={`0 0 ${svgWidth} ${svgHeight}`}
               className="mx-auto h-auto w-full max-w-[500px] select-none"
             >
-              {/* Background IPA Trapezoid */}
               <path
                 d={trapezoidPath}
                 fill="var(--color-fill-4)"
@@ -276,7 +270,6 @@ export function AcousticFormantVisualizer({
                 strokeDasharray="4 3"
               />
 
-              {/* Central horizontal dividing lines */}
               <line
                 x1={f2ToX(2150, svgWidth, pad)}
                 y1={f1ToY(420, svgHeight, pad)}
@@ -294,7 +287,6 @@ export function AcousticFormantVisualizer({
                 strokeWidth="1"
               />
 
-              {/* Central vertical dividing line */}
               <line
                 x1={f2ToX(1500, svgWidth, pad)}
                 y1={f1ToY(250, svgHeight, pad)}
@@ -304,7 +296,6 @@ export function AcousticFormantVisualizer({
                 strokeWidth="1"
               />
 
-              {/* All Cardinal Background Vowels */}
               {CARDINAL_VOWEL_GRID.map((v) => {
                 const cx = f2ToX(v.f2, svgWidth, pad);
                 const cy = f1ToY(v.f1, svgHeight, pad);
@@ -338,7 +329,6 @@ export function AcousticFormantVisualizer({
                 );
               })}
 
-              {/* Active Trajectory Line */}
               {activePoints.length > 1 && (
                 <path
                   d={activeTrajectoryPath}
@@ -351,7 +341,6 @@ export function AcousticFormantVisualizer({
                 />
               )}
 
-              {/* Active Vowel Highlight Rings */}
               {activePoints.map((pt, idx) => (
                 <g key={idx}>
                   <circle
@@ -371,7 +360,6 @@ export function AcousticFormantVisualizer({
                 </g>
               ))}
 
-              {/* Acoustic Center Marker */}
               {acousticCenter && activeVowels.length > 0 && (
                 <g>
                   <circle
@@ -395,7 +383,6 @@ export function AcousticFormantVisualizer({
             </svg>
           </div>
 
-          {/* Metrics Summary Strip */}
           <div className="grid grid-cols-2 gap-2 text-left sm:grid-cols-4">
             <div className="border-separator bg-fill-4 rounded-control border p-2">
               <div className="text-label-secondary text-eyebrow">Active vowels</div>

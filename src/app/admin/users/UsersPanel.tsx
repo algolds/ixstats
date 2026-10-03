@@ -230,7 +230,6 @@ export function UsersPanel() {
         subtitle="MediaWiki reconciliation, Discord sync, nation links and system roles."
       />
 
-      {/* Active Impersonation Session Banner */}
       {activePlayAs && (
         <div className="rounded-card border-red/40 bg-red/10 flex flex-col gap-3 border p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
@@ -701,7 +700,6 @@ export function UsersPanel() {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Auto Match Suggestions */}
                 <div>
                   <h4 className="text-label text-subhead mb-2">
                     High Confidence Match Candidates ({discordSyncData?.suggestions.length || 0})
@@ -832,7 +830,6 @@ export function UsersPanel() {
         </TabsContent>
       </Tabs>
 
-      {/* Manual Wiki Link Dialog */}
       <Dialog open={isWikiDialogOpen} onOpenChange={setIsWikiDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -871,7 +868,6 @@ export function UsersPanel() {
         </DialogContent>
       </Dialog>
 
-      {/* Manual Discord Link Dialog */}
       <Dialog open={isDiscordDialogOpen} onOpenChange={setIsDiscordDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -916,7 +912,6 @@ export function UsersPanel() {
         </DialogContent>
       </Dialog>
 
-      {/* Country Assign Dialog */}
       <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
         <DialogContent>
           <DialogHeader>

@@ -148,7 +148,6 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
               </div>
             </div>
 
-            {/* Step track */}
             <nav
               aria-label="Builder steps"
               className="flex min-w-0 flex-1 items-center justify-center gap-2 overflow-x-auto py-0.5 sm:gap-2"
@@ -231,7 +230,6 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
               })}
             </nav>
 
-            {/* Guide and primary action */}
             <div className="flex shrink-0 items-center gap-2">
               {hasAlerts && (
                 <Badge

@@ -32,7 +32,6 @@ export function RealmUsersTab() {
 
   return (
     <div className="space-y-6">
-      {/* Summary */}
       <div className="flex gap-4">
         <div className="rounded-control border-green/20 bg-green/5 border px-4 py-2">
           <span className="text-label-secondary text-footnote">Assigned</span>
@@ -44,7 +43,6 @@ export function RealmUsersTab() {
         </div>
       </div>
 
-      {/* Users table */}
       <Table>
         <TableHeader>
           <TableRow>

@@ -272,7 +272,6 @@ export default function LoanwordsSection() {
 
   return (
     <div className="space-y-4">
-      {/* Help Guide Drawer Overlay */}
       <AnimatePresence>
         {showHelpGuide && (
           <motion.div
@@ -328,11 +327,9 @@ export default function LoanwordsSection() {
         )}
       </AnimatePresence>
 
-      {/* Main Studio Grid */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
         {/* Left Column: Contact Links & Configuration (5 cols) */}
         <div className="space-y-4 lg:col-span-5">
-          {/* Contact Registry List */}
           <Card variant="inset" padding="none" className="space-y-3 p-4">
             <div className="border-separator flex items-center justify-between border-b pb-2">
               <div className="flex items-center gap-2">
@@ -464,7 +461,6 @@ export default function LoanwordsSection() {
                 </div>
               </div>
 
-              {/* Contact Domain & Intensity */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-label-secondary text-subhead mb-1 block">
@@ -502,7 +498,6 @@ export default function LoanwordsSection() {
                 </div>
               </div>
 
-              {/* Phonological Adaptation Rules Suite */}
               <div className="border-separator space-y-2 border-t pt-3">
                 <div className="flex items-center justify-between">
                   <span className="text-label-secondary text-eyebrow">
@@ -660,7 +655,6 @@ export default function LoanwordsSection() {
                   </Button>
                 )}
 
-                {/* Thematic Preset Selector */}
                 <ToggleGroup
                   type="single"
                   size="sm"
@@ -689,7 +683,6 @@ export default function LoanwordsSection() {
               </div>
             </div>
 
-            {/* Simulated Words Output Table */}
             <div className="border-separator bg-surface rounded-row overflow-hidden border shadow-inner">
               <div className="bg-fill-4 text-label-secondary border-separator text-eyebrow grid grid-cols-12 gap-2 border-b px-4 py-2 select-none">
                 <span className="col-span-4">Donor Word (L1)</span>

@@ -157,7 +157,6 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
           Automatically search wiki sources for unlinked countries and suggest entity cross-links.
         </p>
 
-        {/* Scan button */}
         <div className="flex items-center gap-2">
           <Button onClick={handleScan} disabled={isScanning || unlinkedCountries.length === 0}>
             {isScanning ? (
@@ -184,7 +183,6 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
           )}
         </div>
 
-        {/* Progress */}
         {isScanning && (
           <div className="space-y-2">
             <div className="text-label-secondary text-footnote flex items-center justify-between">
@@ -206,7 +204,6 @@ export function BulkScannerSection({ countriesData }: { countriesData: any }) {
           </div>
         )}
 
-        {/* Results */}
         {scanComplete && scanResults.length === 0 && (
           <div className="rounded-row border-yellow/30 bg-yellow/10 text-footnote text-yellow flex items-center gap-2 border p-3">
             <AlertTriangle className="text-yellow h-4 w-4 shrink-0" />

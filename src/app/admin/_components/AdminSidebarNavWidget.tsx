@@ -585,7 +585,6 @@ export function AdminSidebarNavWidget({
       )}
       aria-label="Admin navigation"
     >
-      {/* Search filter */}
       <SearchField
         size="sm"
         placeholder="Filter tools & applications..."

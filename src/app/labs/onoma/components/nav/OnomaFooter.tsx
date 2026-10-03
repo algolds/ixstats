@@ -85,7 +85,6 @@ export function OnomaFooter({
           />
         </div>
 
-        {/* Lockup and manifesto */}
         <div className="border-separator relative flex flex-col justify-between gap-4 border-b pb-4 lg:flex-row lg:items-center">
           <div className="max-w-2xl space-y-2">
             <div className="flex items-center gap-3">
@@ -133,7 +132,6 @@ export function OnomaFooter({
           </Button>
         </div>
 
-        {/* Sitemap */}
         <nav aria-label="Onoma" className="relative flex flex-wrap items-center gap-2">
           {SITEMAP_PAGES.map((page) => (
             <Button

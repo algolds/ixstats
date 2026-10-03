@@ -251,7 +251,6 @@ export function QuickGeneratorControls({
 
           {/* Dictionary Action Controls & Rules toggle */}
           <div className="flex items-center gap-2">
-            {/* Rules / Constraints toggle */}
             <Toggle
               variant="outline"
               size="sm"
@@ -285,7 +284,6 @@ export function QuickGeneratorControls({
                   </Button>
                 )}
 
-                {/* Rename custom dictionary */}
                 <Button
                   variant="outline"
                   size="sm"
@@ -301,7 +299,6 @@ export function QuickGeneratorControls({
                   <span>Rename</span>
                 </Button>
 
-                {/* Delete custom dictionary */}
                 <Button
                   variant="ghost"
                   size="icon-sm"
@@ -333,7 +330,6 @@ export function QuickGeneratorControls({
           </div>
         </div>
 
-        {/* Inline Rename Form */}
         {isRenaming && (
           <div className="border-tint/30 bg-tint/5 animate-in fade-in rounded-row flex items-center gap-2 border p-2 duration-150">
             <Input
@@ -403,13 +399,11 @@ export function QuickGeneratorControls({
           </div>
         )}
 
-        {/* Dictionary Select Dropdown */}
         <Select value={selectedDictId} onValueChange={setSelectedDictId}>
           <SelectTrigger className="text-footnote h-9 w-full">
             <SelectValue placeholder="Select lexicon..." />
           </SelectTrigger>
           <SelectContent className="max-h-[320px]">
-            {/* Custom Dictionaries Group */}
             {customDicts.length > 0 && (
               <SelectGroup>
                 <SelectLabel className="text-tint px-2 py-1">
@@ -428,7 +422,6 @@ export function QuickGeneratorControls({
               </SelectGroup>
             )}
 
-            {/* Built-in Presets Group */}
             <SelectGroup>
               <SelectLabel className="text-label-secondary px-2 py-1">
                 Built-in Presets ({publicDicts.length})
@@ -508,7 +501,6 @@ export function QuickGeneratorControls({
         setBatchCount={setBatchCount}
       />
 
-      {/* Collapsible Phonotactics & Constraints */}
       {showAdvanced && (
         <div className="animate-in fade-in slide-in-from-top-1 border-separator space-y-3 border-t pt-4 duration-200">
           <div className="space-y-2">
@@ -534,7 +526,6 @@ export function QuickGeneratorControls({
               placeholder="e.g. 'xx'"
             />
 
-            {/* Permit Seed Duplicates */}
             <div className="border-separator bg-fill-4 rounded-control flex items-center justify-between border px-3 py-2">
               <label className="text-caption text-label font-medium">Allow seed duplicates</label>
               <Checkbox

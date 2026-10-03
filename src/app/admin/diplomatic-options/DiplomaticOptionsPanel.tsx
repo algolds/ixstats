@@ -248,7 +248,6 @@ export function DiplomaticOptionsPanel() {
         subtitle="Reference catalog for diplomatic profiles, strategic priorities and partnership goals."
       />
 
-      {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
           <p className="text-label-secondary text-stat-label">Total options</p>
@@ -289,7 +288,6 @@ export function DiplomaticOptionsPanel() {
         </TabsList>
 
         <TabsContent value="catalog" className="mt-4 space-y-4 focus-visible:outline-none">
-          {/* Filters & Actions */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-1 flex-wrap items-center gap-2">
               <div className="relative max-w-xs min-w-[180px] flex-1">
@@ -345,7 +343,6 @@ export function DiplomaticOptionsPanel() {
             </Button>
           </div>
 
-          {/* Bulk actions */}
           {selectedIds.size > 0 && (
             <div className="border-tint/30 bg-tint-fill rounded-row text-footnote flex items-center gap-3 border p-3">
               <span className="text-label font-semibold">{selectedIds.size} selected</span>
@@ -363,7 +360,6 @@ export function DiplomaticOptionsPanel() {
             </div>
           )}
 
-          {/* High-Density Inset Glass Table */}
           {isLoading ? (
             <div className="space-y-2">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -480,7 +476,6 @@ export function DiplomaticOptionsPanel() {
         </TabsContent>
       </Tabs>
 
-      {/* Add Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>

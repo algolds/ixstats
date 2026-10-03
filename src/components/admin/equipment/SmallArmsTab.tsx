@@ -35,7 +35,6 @@ export function SmallArmsTab({
         </div>
       ) : (
         <>
-          {/* Statistics */}
           {smallArmsStats && (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
               <Card className="flex flex-col gap-6 p-4 py-6">
@@ -63,7 +62,6 @@ export function SmallArmsTab({
             </div>
           )}
 
-          {/* Equipment Display */}
           {smallArmsEquipment &&
           smallArmsEquipment.equipment &&
           smallArmsEquipment.equipment.length > 0 ? (

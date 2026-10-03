@@ -204,7 +204,6 @@ function AtomicBuilderPageInner({
 
   return (
     <div className="flex h-full min-h-0 w-full flex-1 flex-col">
-      {/* Main Content Area */}
       {builderState.step === "foundation" && !isEditMode ? (
         <div className="flex h-full min-h-0 w-full flex-1 flex-col">
           <Suspense fallback={<BuilderStepLoading message="Loading builder step..." />}>
@@ -233,7 +232,6 @@ function AtomicBuilderPageInner({
         </StepContent>
       )}
 
-      {/* Tutorial Intro Disclosure Components */}
       <IntroDisclosure
         steps={enhancedTutorialSteps}
         featureId="builder-complete-tutorial"

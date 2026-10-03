@@ -356,7 +356,6 @@ export function StudioNameSets() {
                 ))}
               </div>
 
-              {/* Template slots */}
               <div className="border-separator space-y-3 border-t pt-3">
                 <h3 className="text-label-secondary text-subhead">Full-Name Template Builder</h3>
                 {slots.map((slot, idx) => {
@@ -402,9 +401,7 @@ export function StudioNameSets() {
                         </Button>
                       </div>
 
-                      {/* Advanced Options Sub-Grid */}
                       <div className="border-separator text-caption grid grid-cols-2 gap-2 border-t pt-2">
-                        {/* Prefix */}
                         <div className="flex flex-col gap-0.5">
                           <span className="text-label-secondary font-semibold">Prefix</span>
                           <Input
@@ -415,7 +412,6 @@ export function StudioNameSets() {
                           />
                         </div>
 
-                        {/* Suffix Rule */}
                         <div className="flex flex-col gap-0.5">
                           <span className="text-label-secondary font-semibold">Suffix rule</span>
                           <ValueSelect
@@ -455,7 +451,6 @@ export function StudioNameSets() {
                           </div>
                         )}
 
-                        {/* Gender Mode checkbox */}
                         <div className="col-span-2 flex flex-col gap-0.5 pt-0.5">
                           <label className="flex cursor-pointer items-center gap-1">
                             <Checkbox
@@ -489,7 +484,6 @@ export function StudioNameSets() {
                 </div>
               </div>
 
-              {/* Generate */}
               <div className="border-separator flex items-center gap-2 border-t pt-3">
                 <div className="border-separator bg-background rounded-control flex h-7 items-center gap-1 border p-0.5 select-none">
                   <Button

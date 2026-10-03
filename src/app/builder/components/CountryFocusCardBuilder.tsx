@@ -94,7 +94,6 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
                 : "border-separator hover:border-label-tertiary"
             )}
           >
-            {/* Selected Checkmark Badge */}
             {isSelected && (
               <span
                 className="bg-primary-fill text-on-primary shadow-card absolute top-3 right-3 z-30 flex size-6 items-center justify-center rounded-full"
@@ -104,7 +103,6 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
               </span>
             )}
 
-            {/* Contextual Confirmation Popup */}
             <AnimatePresence>
               {isSelected && (
                 <motion.div
@@ -194,7 +192,6 @@ export const CountryFocusCardBuilder = React.memo<CountryFocusCardProps>(
               )}
             </AnimatePresence>
 
-            {/* Flag Background */}
             {showFlag ? (
               <img
                 src={resolvedFlagUrl ?? undefined}

@@ -89,7 +89,6 @@ export function WikiLinkStatusSection({
         />
       </div>
 
-      {/* Search */}
       <div className="relative max-w-sm">
         <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
         <Input
@@ -100,7 +99,6 @@ export function WikiLinkStatusSection({
         />
       </div>
 
-      {/* Table */}
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (

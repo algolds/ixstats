@@ -274,7 +274,6 @@ export function NPCPersonalitiesPanel() {
         subtitle="Diplomatic behavior profiles, decision parameters and nation assignments."
       />
 
-      {/* Metric Strip */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card className="p-4">
           <div className="text-label-secondary text-stat-label">Total archetypes</div>
@@ -302,7 +301,6 @@ export function NPCPersonalitiesPanel() {
         </Card>
       </div>
 
-      {/* Filter & Action Rail */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <div className="relative max-w-sm min-w-[200px] flex-1">
@@ -351,7 +349,6 @@ export function NPCPersonalitiesPanel() {
         </Button>
       </div>
 
-      {/* High-Density Inset Glass Table */}
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -450,7 +447,6 @@ export function NPCPersonalitiesPanel() {
         </Card>
       )}
 
-      {/* Form Dialog */}
       {(isAddDialogOpen || !!editingPersonality) && (
         <NPCPersonalityFormDialog
           isOpen={isAddDialogOpen || !!editingPersonality}
@@ -467,7 +463,6 @@ export function NPCPersonalitiesPanel() {
         />
       )}
 
-      {/* Assign Dialog */}
       {isAssignDialogOpen && (
         <NPCPersonalityAssignDialog
           isOpen={isAssignDialogOpen}

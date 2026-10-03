@@ -298,7 +298,6 @@ export default function OnomaGlyphsDevPage() {
   return (
     <div className="bg-background text-label min-h-screen p-4 antialiased sm:p-8">
       <div className="mx-auto max-w-7xl space-y-8">
-        {/* Navigation & Header */}
         <div className="border-separator flex flex-col justify-between gap-4 border-b pb-6 md:flex-row md:items-center">
           <div className="space-y-2">
             <div className="text-label-secondary text-footnote flex items-center gap-2 font-mono">
@@ -343,7 +342,6 @@ export default function OnomaGlyphsDevPage() {
           </div>
         </div>
 
-        {/* Interactive Controls Bench */}
         <div className="border-separator bg-fill-4 rounded-card shadow-card space-y-4 border p-4 sm:p-6">
           <div className="border-separator flex items-center justify-between gap-2 border-b pb-3">
             <div className="text-label-secondary text-eyebrow flex items-center gap-2 font-mono">
@@ -355,9 +353,7 @@ export default function OnomaGlyphsDevPage() {
             </span>
           </div>
 
-          {/* Search & Domain Filters */}
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            {/* Search Input */}
             <div className="relative md:col-span-1">
               <Search className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
@@ -369,7 +365,6 @@ export default function OnomaGlyphsDevPage() {
               />
             </div>
 
-            {/* Domain Pills */}
             <ToggleGroup
               type="single"
               variant="pill"
@@ -390,7 +385,6 @@ export default function OnomaGlyphsDevPage() {
 
           {/* Sizing, States, Stroke & Palette Control Row */}
           <div className="border-separator grid grid-cols-1 gap-3 border-t pt-2 sm:grid-cols-2 lg:grid-cols-4">
-            {/* Sizing Switcher */}
             <div className="space-y-2">
               <label className="text-label-secondary text-subhead font-mono">
                 Scale: <span className="text-label">{selectedSize}</span>
@@ -409,7 +403,6 @@ export default function OnomaGlyphsDevPage() {
               />
             </div>
 
-            {/* State Switcher */}
             <div className="space-y-2">
               <label className="text-label-secondary text-subhead font-mono">
                 State: <span className="text-label">{selectedState}</span>
@@ -427,7 +420,6 @@ export default function OnomaGlyphsDevPage() {
               />
             </div>
 
-            {/* Stroke Weight */}
             <div className="space-y-2">
               <label className="text-label-secondary text-subhead flex items-center justify-between font-mono">
                 <span>Stroke:</span>
@@ -445,7 +437,6 @@ export default function OnomaGlyphsDevPage() {
               </div>
             </div>
 
-            {/* Accent Color Palette */}
             <div className="space-y-2">
               <label className="text-label-secondary text-subhead font-mono">Accent color</label>
               <ToggleGroup
@@ -480,7 +471,6 @@ export default function OnomaGlyphsDevPage() {
           </div>
         </div>
 
-        {/* Glyph Cards Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {filteredGlyphs.map((glyph) => {
             const jsxCode = `<OnomaGlyph name="${glyph.name}" size="${selectedSize}" />`;
@@ -491,7 +481,6 @@ export default function OnomaGlyphsDevPage() {
                 key={glyph.name}
                 className="group border-separator bg-fill-4 hover:border-separator hover:bg-fill-3 rounded-card shadow-card relative flex flex-col justify-between border p-5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
               >
-                {/* Top Badge Row */}
                 <div className="flex items-center justify-between gap-2">
                   <span
                     className="rounded-control-sm text-eyebrow border px-2 py-0.5 font-mono"
@@ -508,7 +497,6 @@ export default function OnomaGlyphsDevPage() {
                   </span>
                 </div>
 
-                {/* Hero Glyph Canvas Preview */}
                 <div className="bg-surface border-separator rounded-row my-6 flex h-24 items-center justify-center border transition-transform group-hover:scale-[1.02]">
                   <OnomaGlyph
                     name={glyph.name}
@@ -519,7 +507,6 @@ export default function OnomaGlyphsDevPage() {
                   />
                 </div>
 
-                {/* Info & Code Copy */}
                 <div className="space-y-2">
                   <div>
                     <h3 className="text-label text-footnote sm:text-body font-semibold">
@@ -632,7 +619,6 @@ export default function OnomaGlyphsDevPage() {
           </div>
         </div>
 
-        {/* Optical Scale Matrix */}
         <div className="border-separator bg-fill-4 rounded-card space-y-4 border p-6">
           <div className="border-separator border-b pb-3">
             <h2 className="text-title-3 flex items-center gap-2 font-mono font-bold">

@@ -179,7 +179,6 @@ export default function SportsSeederPanel() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-4">
-              {/* Wipe Option */}
               <div className="rounded-row border-red/20 bg-red/5 flex items-center justify-between border p-4">
                 <div className="max-w-[80%] space-y-0.5">
                   <Label
@@ -202,7 +201,6 @@ export default function SportsSeederPanel() {
                 />
               </div>
 
-              {/* Leagues selector grid */}
               <div className="space-y-3">
                 <Label className="text-label-secondary text-subhead block">Leagues to seed</Label>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -247,7 +245,6 @@ export default function SportsSeederPanel() {
                 </div>
               </div>
 
-              {/* Action trigger button */}
               <Button
                 onClick={handleReseed}
                 disabled={reseedMutation.isPending}
@@ -271,7 +268,6 @@ export default function SportsSeederPanel() {
 
         {/* Global Admin Diagnostics & Cache Controls (Right) */}
         <div className="space-y-6 lg:col-span-4">
-          {/* Cache Controls */}
           <Card className="flex flex-col gap-6 py-6">
             <CardHeader className="pb-2">
               <CardTitle className="text-headline flex items-center gap-2">
@@ -309,7 +305,6 @@ export default function SportsSeederPanel() {
             </CardContent>
           </Card>
 
-          {/* System Diagnostics */}
           <Card className="flex flex-col gap-6 py-6">
             <CardHeader className="pb-2">
               <CardTitle className="text-headline flex items-center gap-2">

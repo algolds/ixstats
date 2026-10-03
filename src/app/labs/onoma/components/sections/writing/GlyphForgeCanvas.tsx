@@ -364,7 +364,6 @@ export function GlyphForgeCanvas({
           </div>
         </div>
 
-        {/* Top Control Cluster */}
         <div className="flex items-center gap-2">
           {editingGlyph && onCancelEdit && (
             <Button
@@ -377,7 +376,6 @@ export function GlyphForgeCanvas({
             </Button>
           )}
 
-          {/* History Group */}
           <div className="border-separator bg-fill-4 rounded-control flex items-center gap-0.5 border p-0.5">
             <Button
               variant="ghost"
@@ -414,7 +412,6 @@ export function GlyphForgeCanvas({
             </Button>
           </div>
 
-          {/* Guide Overlay Toggle */}
           <Button
             variant={guides.guideLevel !== "none" ? "secondary" : "outline"}
             size="sm"
@@ -463,7 +460,6 @@ export function GlyphForgeCanvas({
             </pattern>
           </defs>
 
-          {/* Background Grid Pattern */}
           {guides.showGrid && guides.guideLevel !== "none" && (
             <rect width="128" height="128" fill="url(#forge-grid)" />
           )}
@@ -617,7 +613,6 @@ export function GlyphForgeCanvas({
             />
           )}
 
-          {/* Committed Strokes */}
           {strokes.map((pathStr, i) => (
             <path
               key={`stroke-${i}`}
@@ -633,7 +628,6 @@ export function GlyphForgeCanvas({
             />
           ))}
 
-          {/* Active In-Progress Stroke */}
           {currentStroke && (
             <path
               d={currentStroke}
@@ -652,7 +646,6 @@ export function GlyphForgeCanvas({
 
       {/* 3. Docked Apple-Style Unified Tool Inspector */}
       <div className="border-separator bg-fill-4 rounded-row flex items-center justify-between gap-2 border p-1">
-        {/* Stroke Weight Stepper */}
         <ToggleGroup
           type="single"
           size="sm"
@@ -680,7 +673,6 @@ export function GlyphForgeCanvas({
 
         <div className="bg-separator h-4 w-px" />
 
-        {/* Ink Color Palette */}
         <ToggleGroup
           type="single"
           size="sm"
@@ -715,7 +707,6 @@ export function GlyphForgeCanvas({
 
         <div className="bg-separator h-4 w-px" />
 
-        {/* Stamps Drawer Button */}
         <Toggle
           size="sm"
           pressed={showStampDrawer}
@@ -727,7 +718,6 @@ export function GlyphForgeCanvas({
         </Toggle>
       </div>
 
-      {/* Stamp Primitives Drawer */}
       <AnimatePresence>
         {showStampDrawer && (
           <motion.div
@@ -838,7 +828,6 @@ export function GlyphForgeCanvas({
           </Button>
         </div>
 
-        {/* Quick IPA Helper Strip */}
         <AnimatePresence>
           {showIpaDrawer && (
             <motion.div

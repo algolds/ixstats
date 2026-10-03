@@ -245,7 +245,6 @@ export function AnalyticsTab({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="bg-surface rounded-row border-separator border p-6">
         <h2 className="text-title-1 text-red">Military equipment analytics</h2>
         <p className="text-label-secondary">Usage statistics for the military equipment catalog</p>

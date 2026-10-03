@@ -177,7 +177,6 @@ export function LanguagePacksSection({
 
       {/* Main Grid: Card Gallery on Left + Detail Drawer on Right if Selected */}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-        {/* Gallery Column */}
         <div className={activePack ? "space-y-4 lg:col-span-7" : "space-y-4 lg:col-span-12"}>
           {isLoading ? (
             <div className="flex h-64 items-center justify-center">
@@ -236,11 +235,9 @@ export function LanguagePacksSection({
           )}
         </div>
 
-        {/* Detailed Inspection Drawer */}
         {activePack && (
           <div className="sticky top-(--shell-top-offset) space-y-4 lg:col-span-5">
             <Card variant="inset" padding="none" className="space-y-4 p-5">
-              {/* Drawer Header */}
               <div className="border-separator flex items-start justify-between border-b pb-3">
                 <div>
                   <div className="flex items-center gap-2">
@@ -263,7 +260,6 @@ export function LanguagePacksSection({
                 </Button>
               </div>
 
-              {/* Sub-tabs Segmented Switcher */}
               <SegmentedControl
                 size="sm"
                 fullWidth
@@ -336,7 +332,6 @@ export function LanguagePacksSection({
               {/* Tab 3: Reviews */}
               {activeSubTab === "reviews" && (
                 <div className="text-footnote space-y-4">
-                  {/* Rating input */}
                   <div className="bg-surface border-separator rounded-row space-y-2 border p-3">
                     <label className="text-label block font-semibold">
                       Leave a community rating
