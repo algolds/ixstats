@@ -1,5 +1,5 @@
-import { type PrismaClient } from "@prisma/client";
-import { ComponentType, type AtomicEffectiveness } from "@prisma/client";
+import { type PrismaClient, ComponentType, type AtomicEffectiveness } from "@prisma/client";
+import { clamp } from "~/lib/utils/math";
 
 interface ComponentEffectiveness {
   type: ComponentType;
@@ -175,14 +175,8 @@ class AtomicEffectivenessService {
   }
 
   async calculateEffectiveness(countryId: string): Promise<AtomicEffectiveness> {
-    // Get components and synergies from database
     const components = await this.db.governmentComponent.findMany({
       where: { countryId, isActive: true },
-    });
-
-    // oxlint-disable-next-line typescript/no-unused-vars
-    const existingSynergies = await this.db.componentSynergy.findMany({
-      where: { countryId },
     });
 
     if (components.length === 0) {
@@ -213,53 +207,25 @@ class AtomicEffectivenessService {
       this.calculateSynergyEffects(componentTypes);
 
     // Apply modifiers to base scores
-    const finalScores = {
-      overallScore: Math.max(0, Math.min(100, baseScores.overall + synergyBonus - conflictPenalty)),
-      taxEffectiveness: Math.max(
-        0,
-        Math.min(100, baseScores.tax * (1 + synergyBonus / 100 - conflictPenalty / 100))
-      ),
-      economicPolicyScore: Math.max(
-        0,
-        Math.min(100, baseScores.economic * (1 + synergyBonus / 100 - conflictPenalty / 100))
-      ),
-      stabilityScore: Math.max(
-        0,
-        Math.min(100, baseScores.stability + synergyBonus - conflictPenalty)
-      ),
-      legitimacyScore: Math.max(
-        0,
-        Math.min(100, baseScores.legitimacy + synergyBonus - conflictPenalty)
-      ),
+    const additive = (score: number) => clamp(score + synergyBonus - conflictPenalty, 0, 100);
+    const relative = (score: number) =>
+      clamp(score * (1 + synergyBonus / 100 - conflictPenalty / 100), 0, 100);
+    const scoreData = {
+      overallScore: additive(baseScores.overall),
+      taxEffectiveness: relative(baseScores.tax),
+      economicPolicyScore: relative(baseScores.economic),
+      stabilityScore: additive(baseScores.stability),
+      legitimacyScore: additive(baseScores.legitimacy),
+      componentCount: components.length,
+      synergyBonus,
+      conflictPenalty,
+      lastCalculated: new Date(),
     };
 
-    // Store or update in database
     const effectivenessData = await this.db.atomicEffectiveness.upsert({
       where: { countryId },
-      update: {
-        overallScore: finalScores.overallScore,
-        taxEffectiveness: finalScores.taxEffectiveness,
-        economicPolicyScore: finalScores.economicPolicyScore,
-        stabilityScore: finalScores.stabilityScore,
-        legitimacyScore: finalScores.legitimacyScore,
-        componentCount: components.length,
-        synergyBonus,
-        conflictPenalty,
-        lastCalculated: new Date(),
-        updatedAt: new Date(),
-      },
-      create: {
-        countryId,
-        overallScore: finalScores.overallScore,
-        taxEffectiveness: finalScores.taxEffectiveness,
-        economicPolicyScore: finalScores.economicPolicyScore,
-        stabilityScore: finalScores.stabilityScore,
-        legitimacyScore: finalScores.legitimacyScore,
-        componentCount: components.length,
-        synergyBonus,
-        conflictPenalty,
-        lastCalculated: new Date(),
-      },
+      update: { ...scoreData, updatedAt: new Date() },
+      create: { countryId, ...scoreData },
     });
 
     // Create synergies in database if they don't exist
@@ -305,24 +271,17 @@ class AtomicEffectivenessService {
     let conflictPenalty = 0;
     const detectedSynergies: SynergyRule[] = [];
 
-    // Check for synergies
-    for (const rule of this.synergyRules) {
-      const hasAllComponents = rule.components.every((comp) => componentTypes.includes(comp));
-      if (hasAllComponents) {
-        detectedSynergies.push(rule);
-        const bonus = (rule.effectMultiplier - 1) * 10;
-        synergyBonus += bonus;
-      }
+    const matches = (rule: SynergyRule) =>
+      rule.components.every((comp) => componentTypes.includes(comp));
+
+    for (const rule of this.synergyRules.filter(matches)) {
+      detectedSynergies.push(rule);
+      synergyBonus += (rule.effectMultiplier - 1) * 10;
     }
 
-    // Check for conflicts
-    for (const rule of this.conflictRules) {
-      const hasAllComponents = rule.components.every((comp) => componentTypes.includes(comp));
-      if (hasAllComponents) {
-        detectedSynergies.push(rule);
-        const penalty = (1 - rule.effectMultiplier) * 10;
-        conflictPenalty += penalty;
-      }
+    for (const rule of this.conflictRules.filter(matches)) {
+      detectedSynergies.push(rule);
+      conflictPenalty += (1 - rule.effectMultiplier) * 10;
     }
 
     return { synergyBonus, conflictPenalty, detectedSynergies };
@@ -364,14 +323,6 @@ class AtomicEffectivenessService {
         },
       });
     }
-  }
-
-  invalidateCache(countryId: string): void {
-    this.cache.delete(countryId);
-  }
-
-  clearCache(): void {
-    this.cache.clear();
   }
 
   // Helper method to get component effectiveness breakdown
