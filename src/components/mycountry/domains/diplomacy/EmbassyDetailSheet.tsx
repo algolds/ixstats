@@ -161,7 +161,7 @@ export function EmbassyDetailSheet({
           <SheetTitle className="flex items-start gap-2">
             <Building2 className="text-label-secondary mt-0.5 h-5 w-5 shrink-0" />
             <span className="line-clamp-2">
-              {isLoading ? "Loading…" : (embassy?.name ?? "Embassy Not Found")}
+              {isLoading ? "Loading…" : (embassy?.name ?? "Embassy not found")}
             </span>
           </SheetTitle>
           {embassy && (

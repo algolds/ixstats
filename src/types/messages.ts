@@ -21,10 +21,6 @@ export interface MessageFolderConfig {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   description: string;
-  /** Accent color class for the icon, e.g. "text-blue-500" */
-  gradient: string;
-  /** Active state classes: tinted bg + border, e.g. "bg-blue-500/10 border-blue-500/40" */
-  activeGlow: string;
   emptyTitle: string;
   emptyDescription: string;
 }

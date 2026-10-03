@@ -6,7 +6,6 @@ import { Menu } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "~/components/ui/sheet";
 import { SystemStatusStrip, SystemStatusWidget } from "./SystemStatusWidget";
-import { ShellGate } from "~/components/shell/ShellGate";
 import { AdminSidebarNavWidget } from "./AdminSidebarNavWidget";
 import { useAdminNavigation } from "./AdminNavigationContext";
 
@@ -105,9 +104,7 @@ export function AdminSidebarLayout({
 
           {/* Main Content */}
           <div className="min-w-0 flex-1">
-            <ShellGate variant="facet">
-              <SystemStatusStrip className="mb-6" />
-            </ShellGate>
+            <SystemStatusStrip className="mb-6" />
             {children}
           </div>
         </div>

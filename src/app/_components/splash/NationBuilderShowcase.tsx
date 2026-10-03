@@ -15,7 +15,7 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { BUILD_STEPS, BUILDER_THEME, type BuilderSection } from "~/app/builder/lib/builder-theme";
+import { BUILD_STEPS, BUILDER_THEME } from "~/app/builder/lib/builder-theme";
 import { splashGold } from "~/lib/splash/mycountry-gold";
 
 const STEP_ICONS: Record<(typeof BUILD_STEPS)[number], typeof Crown> = {
@@ -78,8 +78,8 @@ export function NationBuilderShowcase() {
 
           <div className="relative">
             <ol className="relative grid grid-cols-1 gap-4 md:grid-cols-5 md:gap-2">
-              {BUILD_STEPS.map((section, i) => {
-                const theme = BUILDER_THEME[section as BuilderSection];
+              {BUILD_STEPS.filter((section) => section !== "import").map((section, i) => {
+                const theme = BUILDER_THEME[section];
                 const Icon = STEP_ICONS[section];
 
                 return (

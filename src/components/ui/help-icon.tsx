@@ -40,7 +40,7 @@ export function HelpIcon({
           type="button"
           className={cn(
             "inline-flex items-center justify-center rounded-full",
-            "duration-fast ease-out-facet transition-[color,transform] active:scale-95",
+            "duration-fast ease-out-facet transition-colors",
             "focus-visible:outline-tint outline-none focus-visible:outline-2 focus-visible:outline-offset-2",
             className
           )}

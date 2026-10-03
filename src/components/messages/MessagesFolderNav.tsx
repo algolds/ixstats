@@ -32,8 +32,6 @@ export const MESSAGE_FOLDERS: MessageFolderConfig[] = [
     icon: ChatBubble as any,
     title: "Messages",
     description: "Direct, diplomatic, and wiki discussions",
-    gradient: "text-tint",
-    activeGlow: "bg-tint-fill border-tint/40",
     emptyTitle: "No messages yet",
     emptyDescription: "Start a conversation to see it here.",
   },

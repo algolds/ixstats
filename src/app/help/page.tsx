@@ -1,10 +1,9 @@
 import React from "react";
 import Link from "next/link";
 import { type Metadata } from "next";
-import { Book, Archery as Target, Crown, Coins, Globe, NavArrowRight } from "iconoir-react";
+import { Archery as Target, Crown, Coins, Globe, NavArrowRight } from "iconoir-react";
 import { HelpExplorer } from "./_components/HelpExplorer";
 import { PageHeader } from "~/components/shell/PageHeader";
-import { ShellGate } from "~/components/shell/ShellGate";
 import { Card } from "~/components/ui/card";
 
 export const metadata: Metadata = {
@@ -56,23 +55,9 @@ const INTRO = (
 export default function HelpPage() {
   return (
     <div className="bg-background min-h-screen">
-      {/* PageHeader under the new navigation shell, the original header otherwise. */}
-      <ShellGate variant="facet">
-        <div className="mx-auto max-w-7xl px-2 pt-2 sm:px-4 lg:px-6">
-          <PageHeader title="Help center" subtitle={INTRO} />
-        </div>
-      </ShellGate>
-      <ShellGate variant="legacy">
-        <header className="material-thin border-separator border-b">
-          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-            <div className="mb-3 flex items-center gap-3">
-              <Book aria-hidden="true" className="text-muted-foreground h-7 w-7" />
-              <h1 className="text-foreground text-3xl font-semibold tracking-tight">Help center</h1>
-            </div>
-            <p className="text-muted-foreground max-w-2xl">{INTRO}</p>
-          </div>
-        </header>
-      </ShellGate>
+      <div className="mx-auto max-w-7xl px-2 pt-2 sm:px-4 lg:px-6">
+        <PageHeader title="Help center" subtitle={INTRO} />
+      </div>
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Interactive Explorer */}

@@ -294,7 +294,7 @@ export default function EtymologySection() {
                   <GitFork className="h-4 w-4" />
                 </div>
                 <div className="space-y-0.5">
-                  <p className="text-label font-semibold">No Proto-Roots Yet</p>
+                  <p className="text-label font-semibold">No proto-roots yet</p>
                   <p className="text-label-secondary text-caption leading-normal">
                     Create your first root word below to start branching derivations.
                   </p>

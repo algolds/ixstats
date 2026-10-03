@@ -160,7 +160,7 @@ export function LeagueMasthead({
                     : "Finals in Progress"
                   : latestSeason?.status === "completed"
                     ? "Season Completed"
-                    : "Season Not Started"}
+                    : "Season not started"}
               </span>
             </div>
 

@@ -12,8 +12,7 @@
  *
  * ```tsx
  * <PageHeader
- *   title="Help Center"
- *   subtitle="Plain guides to every part of IxStats."
+ *   title="Help center"
  *   back={{ href: "/dashboard", label: "Home" }}
  *   actions={<Button size="sm">Contact</Button>}
  * />
