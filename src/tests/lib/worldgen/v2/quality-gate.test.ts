@@ -7,7 +7,7 @@ import { generateTectonicPlates } from "~/lib/worldgen/v2/tectonics";
 import { generateTerrain } from "~/lib/worldgen/v2/terrain";
 import { refineCoastlines } from "~/lib/worldgen/v2/coastlines";
 import { computeHydroClimate } from "~/lib/worldgen/v2/hydro-climate";
-import { validateAndRepair } from "~/lib/worldgen/v2/quality-gate";
+import { checkCoastlineComplexity, validateAndRepair } from "~/lib/worldgen/v2/quality-gate";
 import { DEFAULT_PARAMS } from "~/lib/worldgen/v2/config";
 
 const TEST_SEED = 42;
@@ -72,5 +72,28 @@ describe("v2/quality-gate", () => {
       cellCount: TEST_CELLS,
     });
     expect(report2.compositeScore).toBe(report.compositeScore);
+  });
+});
+
+describe("v2/quality-gate coastline complexity", () => {
+  const params = { ...DEFAULT_PARAMS, seed: TEST_SEED, cellCount: TEST_CELLS };
+  const withCoast = (coastalCells: number) => {
+    const graph = createMesh(TEST_SEED, TEST_CELLS, 2);
+    graph.cells.isLand.fill(1);
+    graph.cells.coastDist.fill(1);
+    for (let i = 0; i < coastalCells; i++) graph.cells.coastDist[i] = 0;
+    return graph;
+  };
+
+  it("passes with more than 50 coastal land cells", () => {
+    const result = checkCoastlineComplexity(withCoast(51), params);
+    expect(result.passed).toBe(true);
+    expect(result.score).toBeGreaterThanOrEqual(85);
+  });
+
+  it("fails with 50 or fewer coastal land cells", () => {
+    const result = checkCoastlineComplexity(withCoast(50), params);
+    expect(result.passed).toBe(false);
+    expect(result.score).toBeLessThan(70);
   });
 });
