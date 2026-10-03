@@ -1051,6 +1051,35 @@ const BUILTIN_TEMPLATE_SCHEMAS: Record<
   },
 };
 
+type TemplateSearchMap = Map<
+  string,
+  {
+    name: string;
+    description: string | null;
+    category: string;
+    paramCount: number;
+    isCanonical: boolean;
+    canonicalTarget: string | null;
+    hasTemplateData: boolean;
+    variants?: string[];
+  }
+>;
+
+function localTemplateFilter(input: { query: string; category?: string; canonicalOnly: boolean }) {
+  const where: {
+    isCanonical?: boolean;
+    category?: string;
+    OR?: Array<{ name: { contains: string; mode: "insensitive" } }>;
+  } = {};
+  if (input.canonicalOnly) where.isCanonical = true;
+  if (input.category && input.category !== "all") where.category = input.category;
+  if (input.query) where.OR = [{ name: { contains: input.query, mode: "insensitive" } }];
+  return where;
+}
+
+const matchesCategoryFilter = (filter: string | undefined, category: string) =>
+  !filter || filter === "all" || filter === category;
+
 export const wikiosTemplatesRouter = createTRPCRouter({
   /**
    * Search templates with noise-rejection filtering and canonical tier promotion.
@@ -1065,20 +1094,7 @@ export const wikiosTemplatesRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const templateMap = new Map<
-        string,
-        {
-          name: string;
-          description: string | null;
-          category: string;
-          paramCount: number;
-          isCanonical: boolean;
-          canonicalTarget: string | null;
-          hasTemplateData: boolean;
-          variants?: string[];
-        }
-      >();
-
+      const templateMap: TemplateSearchMap = new Map();
       const queryLower = input.query.trim().toLowerCase();
 
       // 1. Primary: Seed and prioritize Canonical Master Templates
@@ -1088,45 +1104,30 @@ export const wikiosTemplatesRouter = createTRPCRouter({
           !queryLower ||
           key.includes(queryLower) ||
           canonical.description.toLowerCase().includes(queryLower);
-        const matchesCat =
-          !input.category || input.category === "all" || input.category === canonical.category;
-
-        if (matchesQuery && matchesCat) {
+        if (matchesQuery && matchesCategoryFilter(input.category, canonical.category)) {
           templateMap.set(key, canonical);
         }
       }
 
       // 2. Check local WikiTemplate database registry (custom user-registered templates)
-      const where: {
-        isCanonical?: boolean;
-        category?: string;
-        OR?: Array<{ name: { contains: string; mode: "insensitive" } }>;
-      } = {};
-
-      if (input.canonicalOnly) where.isCanonical = true;
-      if (input.category && input.category !== "all") where.category = input.category;
-      if (input.query) where.OR = [{ name: { contains: input.query, mode: "insensitive" } }];
-
       const localTemplates = await db.wikiTemplate.findMany({
-        where,
+        where: localTemplateFilter(input),
         take: input.limit,
         orderBy: [{ isCanonical: "desc" }, { paramCount: "desc" }],
       });
 
       for (const t of localTemplates) {
-        if (isNoiseTemplate(t.name)) continue;
         const key = t.name.toLowerCase();
-        if (!templateMap.has(key)) {
-          templateMap.set(key, {
-            name: t.name,
-            description: t.description,
-            category: t.category ?? "general",
-            paramCount: t.paramCount,
-            isCanonical: t.isCanonical,
-            canonicalTarget: t.canonicalTarget,
-            hasTemplateData: !!t.templateData,
-          });
-        }
+        if (isNoiseTemplate(t.name) || templateMap.has(key)) continue;
+        templateMap.set(key, {
+          name: t.name,
+          description: t.description,
+          category: t.category ?? "general",
+          paramCount: t.paramCount,
+          isCanonical: t.isCanonical,
+          canonicalTarget: t.canonicalTarget,
+          hasTemplateData: !!t.templateData,
+        });
       }
 
       // 3. Check PostgreSQL WikiArticle table for namespace 10 with strict noise filtering
@@ -1142,32 +1143,28 @@ export const wikiosTemplatesRouter = createTRPCRouter({
 
         for (const art of articleTemplates) {
           const cleanName = art.title.replace(/^Template:/i, "").trim();
-          if (isNoiseTemplate(cleanName)) continue;
+          const key = cleanName.toLowerCase();
+          if (isNoiseTemplate(cleanName) || templateMap.has(key)) continue;
+
+          const cat = categorizeTemplate(cleanName, art.summary ?? undefined);
+          if (!matchesCategoryFilter(input.category, cat)) continue;
 
           // Check if it's an alias to a canonical master
-          const alias = CANONICAL_ALIASES_MAP[cleanName.toLowerCase()];
-          const key = cleanName.toLowerCase();
-
-          if (!templateMap.has(key)) {
-            const cat = categorizeTemplate(cleanName, art.summary ?? undefined);
-            if (!input.category || input.category === "all" || input.category === cat) {
-              templateMap.set(key, {
-                name: cleanName,
-                description:
-                  art.summary || (alias ? `Variant of ${alias.target}` : "Registered Template"),
-                category: cat,
-                paramCount: 0,
-                isCanonical: false,
-                canonicalTarget: alias ? alias.target : null,
-                hasTemplateData: false,
-              });
-            }
-          }
+          const alias = CANONICAL_ALIASES_MAP[key];
+          templateMap.set(key, {
+            name: cleanName,
+            description:
+              art.summary || (alias ? `Variant of ${alias.target}` : "Registered Template"),
+            category: cat,
+            paramCount: 0,
+            isCanonical: false,
+            canonicalTarget: alias?.target ?? null,
+            hasTemplateData: false,
+          });
         }
       }
 
-      const templates = Array.from(templateMap.values()).slice(0, input.limit);
-      return { templates };
+      return { templates: Array.from(templateMap.values()).slice(0, input.limit) };
     }),
 
   /**
