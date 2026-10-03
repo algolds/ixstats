@@ -40,10 +40,7 @@ function markExternalHostOffline(hostname: string) {
  * Fetch from an external wiki API with circuit breaker resilience for 403/offline errors.
  * Returns null on persistent failures instead of throwing or polling repeatedly.
  */
-async function fetchExternalWiki(
-  url: string,
-  timeoutMs: number = 12000
-): Promise<Response | null> {
+async function fetchExternalWiki(url: string, timeoutMs: number = 12000): Promise<Response | null> {
   const hostname = new URL(url).hostname;
   if (isExternalHostOffline(hostname)) {
     return null;
@@ -104,8 +101,11 @@ export function getFullIiwikiApiUrl(): string {
   return "https://iiwiki.com/api.php";
 }
 
-export async function iiwikiApiCall(params: Record<string, string>): Promise<unknown | null> {
-  const url = new URL(getFullIiwikiApiUrl());
+async function mediaWikiApiCall(
+  apiUrl: string,
+  params: Record<string, string>
+): Promise<unknown | null> {
+  const url = new URL(apiUrl);
   url.searchParams.set("format", "json");
   url.searchParams.set("origin", "*");
   for (const [k, v] of Object.entries(params)) {
@@ -117,9 +117,15 @@ export async function iiwikiApiCall(params: Record<string, string>): Promise<unk
   return res.json();
 }
 
-export async function iiwikiGetWikitext(title: string): Promise<WikiArticle | null> {
+type WikiApiCall = (params: Record<string, string>) => Promise<unknown | null>;
+
+async function mediaWikiGetWikitext(
+  apiCall: WikiApiCall,
+  title: string,
+  label: string
+): Promise<WikiArticle | null> {
   try {
-    const data = (await iiwikiApiCall({
+    const data = (await apiCall({
       action: "query",
       titles: title,
       prop: "revisions",
@@ -153,14 +159,18 @@ export async function iiwikiGetWikitext(title: string): Promise<WikiArticle | nu
       length: wikitext.length,
     };
   } catch (err) {
-    console.error("[WikiBridge] iiwiki fetch error:", err);
+    console.error(`[WikiBridge] ${label} fetch error:`, err);
     return null;
   }
 }
 
-export async function iiwikiSearch(query: string, limit: number = 10): Promise<WikiSearchResult[]> {
+async function mediaWikiSearch(
+  apiCall: WikiApiCall,
+  query: string,
+  limit: number
+): Promise<WikiSearchResult[]> {
   try {
-    const data = await iiwikiApiCall({
+    const data = await apiCall({
       action: "opensearch",
       search: query,
       limit: String(limit),
@@ -176,6 +186,18 @@ export async function iiwikiSearch(query: string, limit: number = 10): Promise<W
   } catch {
     return [];
   }
+}
+
+export function iiwikiApiCall(params: Record<string, string>): Promise<unknown | null> {
+  return mediaWikiApiCall(getFullIiwikiApiUrl(), params);
+}
+
+export function iiwikiGetWikitext(title: string): Promise<WikiArticle | null> {
+  return mediaWikiGetWikitext(iiwikiApiCall, title, "iiwiki");
+}
+
+export function iiwikiSearch(query: string, limit: number = 10): Promise<WikiSearchResult[]> {
+  return mediaWikiSearch(iiwikiApiCall, query, limit);
 }
 
 export async function httpGetCategoryMembers(
@@ -332,81 +354,16 @@ export async function fetchMediaWikiPageAuthorsAndRevisions(
 
 export const ALTHISTORY_API = "https://althistory.fandom.com/api.php";
 
-export async function althistoryApiCall(params: Record<string, string>): Promise<unknown | null> {
-  const url = new URL(ALTHISTORY_API);
-  url.searchParams.set("format", "json");
-  url.searchParams.set("origin", "*");
-  for (const [k, v] of Object.entries(params)) {
-    url.searchParams.set(k, v);
-  }
-
-  const res = await fetchExternalWiki(url.toString());
-  if (!res) return null;
-  return res.json();
+export function althistoryApiCall(params: Record<string, string>): Promise<unknown | null> {
+  return mediaWikiApiCall(ALTHISTORY_API, params);
 }
 
-export async function althistoryGetWikitext(title: string): Promise<WikiArticle | null> {
-  try {
-    const data = (await althistoryApiCall({
-      action: "query",
-      titles: title,
-      prop: "revisions",
-      rvprop: "content",
-      rvslots: "main",
-    })) as {
-      query?: {
-        pages?: Record<
-          string,
-          {
-            pageid?: number;
-            title?: string;
-            revisions?: Array<{ slots?: { main?: { "*"?: string } } }>;
-          }
-        >;
-      };
-    } | null;
-
-    if (!data) return null;
-    const pages = data.query?.pages;
-    if (!pages) return null;
-
-    const page = Object.values(pages)[0];
-    if (!page || !page.pageid || page.pageid < 0) return null;
-
-    const wikitext = page.revisions?.[0]?.slots?.main?.["*"] ?? "";
-    return {
-      title: page.title ?? title,
-      pageId: page.pageid,
-      wikitext,
-      length: wikitext.length,
-    };
-  } catch (err) {
-    console.error("[WikiBridge] althistory fetch error:", err);
-    return null;
-  }
+export function althistoryGetWikitext(title: string): Promise<WikiArticle | null> {
+  return mediaWikiGetWikitext(althistoryApiCall, title, "althistory");
 }
 
-export async function althistorySearch(
-  query: string,
-  limit: number = 10
-): Promise<WikiSearchResult[]> {
-  try {
-    const data = await althistoryApiCall({
-      action: "opensearch",
-      search: query,
-      limit: String(limit),
-      namespace: "0",
-    });
-
-    if (!data || !Array.isArray(data) || data.length < 2) return [];
-    return ((data[1] as string[]) ?? []).map((title: string, i: number) => ({
-      title,
-      pageId: i,
-      length: 0,
-    }));
-  } catch {
-    return [];
-  }
+export function althistorySearch(query: string, limit: number = 10): Promise<WikiSearchResult[]> {
+  return mediaWikiSearch(althistoryApiCall, query, limit);
 }
 
 // ──────────────────────────────────────────────
