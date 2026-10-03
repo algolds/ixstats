@@ -15,6 +15,7 @@ import {
 } from "~/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { useNotify } from "~/hooks/useNotify";
+import { api } from "~/trpc/react";
 import type { CountryWithEconomicData } from "~/types/ixstats";
 
 import type { ComparisonCountry } from "~/types/country-comparison";
@@ -40,9 +41,34 @@ const CHART_COLORS = [
   "#14b8a6",
   "#f59e0b",
   "#ef4444",
-  "#8b5cf6",
-  "#06b6d4",
 ];
+const MAX_COUNTRIES = 8;
+const colorAt = (index: number) => CHART_COLORS[index] || "#8b5cf6";
+
+type AvailableCountry = CountryComparisonModalProps["availableCountries"][number];
+
+function toComparisonCountry(
+  data: CountryWithEconomicData,
+  fallback: AvailableCountry,
+  index: number
+): ComparisonCountry {
+  return {
+    id: data.id,
+    name: data.name,
+    currentPopulation: data.currentPopulation || data.baselinePopulation || 0,
+    currentGdpPerCapita: data.currentGdpPerCapita || data.baselineGdpPerCapita || 0,
+    currentTotalGdp: data.currentTotalGdp || data.currentPopulation * data.currentGdpPerCapita || 0,
+    populationGrowthRate: data.populationGrowthRate || 0,
+    adjustedGdpGrowth: data.adjustedGdpGrowth || 0,
+    economicTier: data.economicTier || fallback.economicTier,
+    populationTier: data.populationTier || "Unknown",
+    populationDensity: data.populationDensity,
+    gdpDensity: data.gdpDensity,
+    landArea: data.landArea,
+    continent: data.continent || fallback.continent,
+    color: colorAt(index),
+  };
+}
 
 export function CountryComparisonModal({
   isOpen,
@@ -51,6 +77,7 @@ export function CountryComparisonModal({
   onCountrySelect,
 }: CountryComparisonModalProps) {
   const notify = useNotify();
+  const utils = api.useUtils();
   const [selectedCountries, setSelectedCountries] = useState<ComparisonCountry[]>([]);
   const [countrySearchOpen, setCountrySearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -65,113 +92,57 @@ export function CountryComparisonModal({
     }
   }, [isOpen]);
 
-  // Filter available countries for search
   const filteredCountries = useMemo(() => {
     const selectedIds = new Set(selectedCountries.map((c) => c.id));
-    return availableCountries
-      .filter((country) => !selectedIds.has(country.id))
-      .filter(
-        (country) =>
-          searchValue === "" || country.name.toLowerCase().includes(searchValue.toLowerCase())
-      );
+    const query = searchValue.toLowerCase();
+    return availableCountries.filter(
+      (country) => !selectedIds.has(country.id) && country.name.toLowerCase().includes(query)
+    );
   }, [availableCountries, selectedCountries, searchValue]);
 
-  // Add country to comparison
   const addCountry = async (countryId: string) => {
     const country = availableCountries.find((c) => c.id === countryId);
-    if (!country || selectedCountries.length >= 8 || loadingCountries.has(countryId)) return;
+    if (!country || selectedCountries.length >= MAX_COUNTRIES || loadingCountries.has(countryId)) {
+      return;
+    }
 
     setLoadingCountries((prev) => new Set(prev).add(countryId));
-
     try {
-      // Use direct fetch to tRPC endpoint with GET request for query
-      const params = new URLSearchParams({
-        batch: "1",
-        input: JSON.stringify({
-          "0": {
-            json: { id: countryId },
-          },
-        }),
-      });
+      const data = (await utils.countries.getByIdWithEconomicData.fetch({
+        id: countryId,
+      })) as CountryWithEconomicData | null;
+      if (!data) throw new Error("No country data returned");
 
-      const response = await fetch(`/api/trpc/countries.getByIdWithEconomicData?${params}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      const countryData = result[0]?.result?.data?.json as CountryWithEconomicData;
-
-      if (countryData) {
-        // Use properties directly from countryData, not calculatedStats
-        const newCountry: ComparisonCountry = {
-          id: countryData.id,
-          name: countryData.name,
-          currentPopulation: countryData.currentPopulation || countryData.baselinePopulation || 0,
-          currentGdpPerCapita:
-            countryData.currentGdpPerCapita || countryData.baselineGdpPerCapita || 0,
-          currentTotalGdp:
-            countryData.currentTotalGdp ||
-            countryData.currentPopulation * countryData.currentGdpPerCapita ||
-            0,
-          populationGrowthRate: countryData.populationGrowthRate || 0,
-          adjustedGdpGrowth: countryData.adjustedGdpGrowth || 0,
-          economicTier: countryData.economicTier || country.economicTier,
-          populationTier: countryData.populationTier || "Unknown",
-          populationDensity: countryData.populationDensity,
-          gdpDensity: countryData.gdpDensity,
-          landArea: countryData.landArea,
-          continent: countryData.continent || country.continent,
-          color: CHART_COLORS[selectedCountries.length] || "#8b5cf6",
-        };
-
-        setSelectedCountries((prev) => [...prev, newCountry]);
-        notify.success(`${countryData.name || country.name} added to comparison`);
-      } else {
-        throw new Error("No country data returned");
-      }
+      setSelectedCountries((prev) => [
+        ...prev,
+        toComparisonCountry(data, country, selectedCountries.length),
+      ]);
+      notify.success(`${data.name || country.name} added to comparison`);
     } catch (error) {
       console.error("Error fetching country data for comparison:", error);
       notify.error(`Failed to load data for ${country.name}.`);
     } finally {
       setLoadingCountries((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(countryId);
-        return newSet;
+        const next = new Set(prev);
+        next.delete(countryId);
+        return next;
       });
       setCountrySearchOpen(false);
       setSearchValue("");
     }
   };
 
-  // Remove country from comparison
   const removeCountry = (countryId: string) => {
-    const countryToRemove = selectedCountries.find((c) => c.id === countryId);
-    const newCountries = selectedCountries
-      .filter((c) => c.id !== countryId)
-      .map((country, index) => ({
-        ...country,
-        color: CHART_COLORS[index] || "#8b5cf6",
-      }));
-    setSelectedCountries(newCountries);
-    if (countryToRemove) {
-      notify.success(`${countryToRemove.name} removed from comparison`);
-    }
+    const removed = selectedCountries.find((c) => c.id === countryId);
+    setSelectedCountries(
+      selectedCountries
+        .filter((c) => c.id !== countryId)
+        .map((country, index) => ({ ...country, color: colorAt(index) }))
+    );
+    if (removed) notify.success(`${removed.name} removed from comparison`);
   };
 
-  // Handle country selection from modal
-  const handleCountrySelect = (countryId: string) => {
-    if (onCountrySelect) {
-      onCountrySelect(countryId);
-    }
-    onClose();
-  };
+  const [onlyCountry] = selectedCountries.length === 1 ? selectedCountries : [];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -183,13 +154,16 @@ export function CountryComparisonModal({
         </DialogHeader>
 
         <div className="flex h-full flex-col gap-4">
-          {/* Country Selection */}
           <div className="flex flex-wrap items-center gap-2">
             <Popover open={countrySearchOpen} onOpenChange={setCountrySearchOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" disabled={selectedCountries.length >= 8}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={selectedCountries.length >= MAX_COUNTRIES}
+                >
                   <Plus aria-hidden="true" className="h-4 w-4" />
-                  Add country ({selectedCountries.length}/8)
+                  Add country ({selectedCountries.length}/{MAX_COUNTRIES})
                 </Button>
               </PopoverTrigger>
               <PopoverContent
@@ -197,13 +171,10 @@ export function CountryComparisonModal({
                 align="start"
                 onOpenAutoFocus={(e) => {
                   e.preventDefault();
-                  const target = e.currentTarget as HTMLElement;
-                  const input = target.querySelector(
+                  const input = (e.currentTarget as HTMLElement).querySelector<HTMLInputElement>(
                     '[data-slot="command-input"]'
-                  ) as HTMLInputElement;
-                  if (input) {
-                    input.focus({ preventScroll: true });
-                  }
+                  );
+                  input?.focus({ preventScroll: true });
                 }}
               >
                 <Command className="text-label bg-transparent">
@@ -257,7 +228,6 @@ export function CountryComparisonModal({
             )}
           </div>
 
-          {/* Selected Countries Display */}
           {selectedCountries.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {selectedCountries.map((country) => (
@@ -283,7 +253,6 @@ export function CountryComparisonModal({
             </div>
           )}
 
-          {/* Comparison Charts */}
           <div className="min-h-0 flex-1">
             <ComparisonCharts
               countries={selectedCountries}
@@ -292,7 +261,6 @@ export function CountryComparisonModal({
             />
           </div>
 
-          {/* Action Buttons */}
           <div className="border-separator flex justify-end gap-2 border-t pt-4">
             <Button
               variant="outline"
@@ -301,13 +269,11 @@ export function CountryComparisonModal({
             >
               Close
             </Button>
-            {selectedCountries.length === 1 && selectedCountries[0] && (
+            {onlyCountry && (
               <Button
                 onClick={() => {
-                  const country = selectedCountries[0];
-                  if (country) {
-                    handleCountrySelect(country.id);
-                  }
+                  onCountrySelect?.(onlyCountry.id);
+                  onClose();
                 }}
                 className="bg-tint text-on-tint hover:bg-tint/90"
               >
