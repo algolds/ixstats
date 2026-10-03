@@ -99,7 +99,6 @@ export function useMapEditorBulkOps({
   const [isBulkBusy, setIsBulkBusy] = useState(false);
   const [gapRecalcTick, setGapRecalcTick] = useState(0);
 
-  // ── Bulk Actions ──
   const bulkDeleteSelected = useCallback(async () => {
     if (!countryId || selectedIds.size === 0) return { successCount: 0, failCount: 0 };
     const toDelete = allFeatures.filter((f) => selectedIds.has(f.id) && f.type !== "gap");
@@ -210,7 +209,7 @@ export function useMapEditorBulkOps({
     [countryId, allFeatures, selectedIds, historyExecutor, pushAction, afterWrite]
   );
 
-  // ── Gaps & empty regions (computed only while the overlay is on) ──
+  // Gaps & empty regions (computed only while the overlay is on)
   const gapFeatures = useMemo<FeatureCollection | null>(() => {
     void gapRecalcTick;
     if (!showGaps || !countryGeo || !features?.subdivisions) return null;
@@ -392,7 +391,6 @@ export function useMapEditorBulkOps({
     [resolveCity, worldMapLayers, updatePointCoordinates]
   );
 
-  // ── GeoJSON import ──
   const importGeoJSON = useCallback(
     async (doc: unknown) => {
       if (!countryId) return { created: 0, skipped: 0, failed: 0 };

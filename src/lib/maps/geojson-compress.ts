@@ -10,8 +10,6 @@
 import { simplify } from "@turf/simplify";
 import type { Feature, FeatureCollection, Geometry, Position } from "geojson";
 
-// ── Coordinate truncation + pole clamping ──────────
-
 /** Max latitude — 90° is fine for globe projection; MapLibre clamps internally for Mercator. */
 const MAX_LAT = 90;
 
@@ -68,8 +66,6 @@ export function truncateGeometry(geom: Geometry, decimals: number): Geometry {
       return geom;
   }
 }
-
-// ── Consecutive duplicate removal ──────────────────
 
 function posEqual(a: Position, b: Position): boolean {
   if (a.length !== b.length) return false;
@@ -131,8 +127,6 @@ function deduplicateGeometry(geom: Geometry): Geometry {
       return geom;
   }
 }
-
-// ── Master compression ─────────────────────────────
 
 export interface CompressOptions {
   /** Simplification tolerance in degrees (0.01 ≈ 1.1km). 0 = skip simplification. */

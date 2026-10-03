@@ -9,8 +9,6 @@
 import type { Position, Polygon, MultiPolygon } from "geojson";
 import { getAllRings } from "./border-editor";
 
-// ── Types ──
-
 type VertexKey = string & { readonly __brand: "VertexKey" };
 
 export interface TopologyRef {
@@ -25,8 +23,6 @@ export interface TopologyRef {
  */
 export type TopologyIndex = Map<VertexKey, TopologyRef[]>;
 
-// ── Coordinate quantization & Branded keys ──
-
 /**
  * Quantize a coordinate to given decimal places (~1.1 m precision at 5 decimals) for
  * spatial-hash bucketing.
@@ -38,8 +34,6 @@ function toVertexKey(coord: Position, precision = 5): VertexKey {
 export function vkey(coord: Position): VertexKey {
   return toVertexKey(coord, 5);
 }
-
-// ── Index building ──
 
 /**
  * Build a spatial-hash topology index from a set of polygon features.
@@ -80,9 +74,6 @@ export function buildTopologyIndex(
 
   return index;
 }
-
-// ── Snap assistance ──
-// ── Cascade moves ──
 
 /**
  * Given a topology index, move every vertex that shares the `oldKey`

@@ -210,7 +210,7 @@ const CLIMATE_CODE_TO_NAME: Record<string, string> = {
 };
 
 /** Canonical Trewartha fill colors → climate code. Used to identify climate zones from SVG map data. */
-export const CLIMATE_COLORS: Record<string, string> = {
+const CLIMATE_COLORS: Record<string, string> = {
   "#990000": "Ar",
   "#ff3300": "Aw",
   "#ffff33": "Bw",

@@ -65,8 +65,6 @@ import {
 } from "~/components/ui/table";
 import { Card } from "~/components/ui/card";
 
-// ─── Quick Update Types & Helpers ───────────────────────────────────────────
-
 const LAYER_TYPES = [
   { value: "auto", label: "Auto-detect" },
   { value: "political", label: "Political" },
@@ -124,8 +122,6 @@ interface ProcessResult {
 
 type QuickStage = "select" | "processing" | "review" | "committing" | "done";
 
-// ─── Main Component ─────────────────────────────────────────────────────────
-
 export function PipelineWizard() {
   const [mode, setMode] = useState<"quick" | "full">("quick");
 
@@ -147,8 +143,6 @@ export function PipelineWizard() {
     </div>
   );
 }
-
-// ─── Quick Update Panel ─────────────────────────────────────────────────────
 
 function QuickUpdatePanel() {
   const [stage, setStage] = useState<QuickStage>("select");
@@ -532,8 +526,6 @@ function QuickUpdatePanel() {
   );
 }
 
-// ─── Full Pipeline Panel (legacy wizard) ────────────────────────────────────
-
 interface WizardPipelineResult {
   layers: Record<string, unknown>;
   metadata: { featureCounts: Record<string, number>; log: string[]; warnings: string[] };
@@ -816,8 +808,6 @@ function FullPipelinePanel() {
   );
 }
 
-// ─── Full Pipeline steps ────────────────────────────────────────────────────
-
 function SvgDetectionStep({
   fileName,
   busy,
@@ -950,8 +940,6 @@ function ImportStep({
   );
 }
 
-// ─── PNG colour → nation step ───────────────────────────────────────────────
-
 interface PngColourStepProps {
   pngBase64: string;
   realmSlug: string | undefined;
@@ -1049,8 +1037,6 @@ function PngColourStep({
     </div>
   );
 }
-
-// ─── Shared Sub-Components ──────────────────────────────────────────────────
 
 function DiffBadge({
   icon: Icon,

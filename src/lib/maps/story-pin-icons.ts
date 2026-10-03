@@ -25,7 +25,7 @@
 
 import type { Map as MapLibreMap } from "maplibre-gl";
 
-// ─── Category colors (aligned with wiki lore analysis) ───────────────────────
+// Category colors (aligned with wiki lore analysis)
 
 export const STORY_PIN_COLORS: Record<string, string> = {
   battle: "#dc2626", // red — military conflicts
@@ -52,8 +52,6 @@ const IMPORTANCE_SIZES: Record<number, number> = {
   1: 36, // major
   2: 44, // legendary
 };
-
-// ─── Category shape drawing functions ────────────────────────────────────────
 
 type ShapeDrawer = (ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) => void;
 
@@ -415,8 +413,6 @@ const SHAPE_DRAWERS: Record<string, ShapeDrawer> = {
   upheaval: drawUpheaval,
 };
 
-// ─── Icon generation ─────────────────────────────────────────────────────────
-
 /**
  * Generate a single story pin icon as ImageData.
  * Structure: colored circle background → white border → category shape in white.
@@ -466,8 +462,6 @@ function createStoryPinIcon(size: number, category: string, importance: number):
 
   return ctx.getImageData(0, 0, size, size);
 }
-
-// ─── Registration ────────────────────────────────────────────────────────────
 
 // Module-level cache: avoids re-creating 42 canvas icons when map remounts
 const iconCache = new Map<string, ImageData>();

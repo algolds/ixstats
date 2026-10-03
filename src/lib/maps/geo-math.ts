@@ -18,8 +18,6 @@
  * who may need to adjust measurements for their own world.
  */
 
-// ─── IxEarth World Configuration ─────────────────────────────────────────────
-
 /** Planet reference data */
 const IXEARTH_REFERENCE = {
   /** Lore total surface area in sq mi */
@@ -51,13 +49,10 @@ let activeScale: WorldScale = {
   distanceScale: 1.0,
   radiusKm: IXEARTH_REFERENCE.earthRadiusKm,
 };
-// ─── Constants ───────────────────────────────────────────────────────────────
 
 const DEG2RAD = Math.PI / 180;
 const KM_PER_MI = 1.60934;
 const SQKM_PER_SQMI = 2.58999;
-
-// ─── Distance ────────────────────────────────────────────────────────────────
 
 /**
  * Haversine distance between two [lng, lat] points, in IxEarth km.
@@ -78,8 +73,6 @@ export function distanceKm(a: [number, number], b: [number, number]): number {
 export function distanceKmLatLng(lat1: number, lng1: number, lat2: number, lng2: number): number {
   return distanceKm([lng1, lat1], [lng2, lat2]);
 }
-
-// ─── Area ────────────────────────────────────────────────────────────────────
 
 /**
  * Compute polygon area in IxEarth sq km from a coordinate ring [[lng,lat], ...].
@@ -145,8 +138,6 @@ export function geometryAreaSqMi(geometry: {
   return geometryAreaSqKm(geometry) / SQKM_PER_SQMI;
 }
 
-// ─── Perimeter ───────────────────────────────────────────────────────────────
-
 /**
  * Compute perimeter of a coordinate ring in IxEarth km.
  */
@@ -165,8 +156,6 @@ export function ringPerimeterKm(ring: [number, number][]): number {
   return total;
 }
 
-// ─── Polyline Length ─────────────────────────────────────────────────────────
-
 /**
  * Compute length of a polyline (route/path) in IxEarth km.
  */
@@ -184,8 +173,6 @@ export function polylineLengthKm(points: [number, number][]): number {
 export function polylineLengthMi(points: [number, number][]): number {
   return polylineLengthKm(points) / KM_PER_MI;
 }
-
-// ─── Bearing ─────────────────────────────────────────────────────────────────
 
 /**
  * Initial bearing from point A to point B in degrees (0-360).
@@ -207,21 +194,6 @@ export function compassDirection(deg: number): string {
   const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
   return dirs[Math.round(deg / 45) % 8]!;
 }
-
-// ─── Formatting ──────────────────────────────────────────────────────────────
-
-/**
- * Format distance with appropriate unit (km or mi with commas).
- */
-export function formatDistance(km: number, unit: "km" | "mi" = "km"): string {
-  const value = unit === "mi" ? km / KM_PER_MI : km;
-  if (value < 1) return `${(value * 1000).toFixed(0)} ${unit === "mi" ? "ft" : "m"}`;
-  if (value < 100) return `${value.toFixed(1)} ${unit}`;
-  return `${Math.round(value).toLocaleString()} ${unit}`;
-}
-
-// ─── Coordinate utilities ────────────────────────────────────────────────────
-// ─── Terrain Difficulty ──────────────────────────────────────────────────────
 
 /**
  * Normalize a series of elevation samples (meters) to a 0-1 terrain-difficulty
