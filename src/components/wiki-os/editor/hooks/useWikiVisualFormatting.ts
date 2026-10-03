@@ -1,5 +1,4 @@
 "use client";
-// src/components/wiki-os/editor/hooks/useWikiVisualFormatting.ts
 // Visual editing via Plate/Slate transforms. Preserves the original hook's
 // public interface so toolbars and modal hosts need no changes.
 
@@ -7,7 +6,14 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { fixEditorImageUrls } from "~/lib/wiki-os/transformers/fix-editor-images";
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Transforms, Editor, Element as SlateElement, type Node, type Descendant } from "slate";
+import {
+  Transforms,
+  Editor,
+  Element as SlateElement,
+  type Node,
+  type Descendant,
+  type Path,
+} from "slate";
 import { nanoid } from "platejs";
 import { renderTemplateCached } from "~/lib/wiki-os/templates/preview-service";
 
@@ -27,12 +33,115 @@ interface UseWikiVisualFormattingProps {
   setIsDirty: (val: boolean) => void;
 }
 
-const MARK_MAP: Record<string, string> = {
+const MARK_COMMANDS: Record<string, string> = {
   bold: "bold",
   italic: "italic",
   underline: "underline",
   strikeThrough: "strike",
+  superscript: "sup",
+  subscript: "sub",
+  code: "code",
 };
+
+/** Toolbar format names that each Slate mark (and its legacy alias) lights up. */
+const MARK_GROUPS: ReadonlyArray<{ marks: readonly string[]; formats: readonly string[] }> = [
+  { marks: ["bold"], formats: ["bold"] },
+  { marks: ["italic"], formats: ["italic"] },
+  { marks: ["underline"], formats: ["underline"] },
+  { marks: ["strike", "strikethrough"], formats: ["strikethrough", "strike"] },
+  { marks: ["sup", "superscript"], formats: ["superscript", "sup"] },
+  { marks: ["sub", "subscript"], formats: ["subscript", "sub"] },
+  { marks: ["code", "codeMark"], formats: ["code"] },
+];
+
+interface DomFormatRule {
+  formats: readonly string[];
+  tags: readonly string[];
+  /** Substring of the element's class attribute. */
+  className?: string;
+  style?: (style: CSSStyleDeclaration) => boolean;
+  /** Selector used to inspect a cloned selection fragment (defaults to the tags). */
+  selector?: string | false;
+}
+
+const DOM_FORMAT_RULES: readonly DomFormatRule[] = [
+  {
+    formats: ["bold"],
+    tags: ["strong", "b"],
+    style: (s) => s.fontWeight === "bold" || parseInt(s.fontWeight, 10) >= 600,
+  },
+  { formats: ["italic"], tags: ["em", "i"], style: (s) => s.fontStyle === "italic" },
+  { formats: ["underline"], tags: ["u"], style: (s) => !!s.textDecoration?.includes("underline") },
+  {
+    formats: ["strikethrough", "strike"],
+    tags: ["s", "strike", "del"],
+    style: (s) => !!s.textDecoration?.includes("line-through"),
+  },
+  { formats: ["superscript", "sup"], tags: ["sup"] },
+  { formats: ["subscript", "sub"], tags: ["sub"] },
+  { formats: ["code"], tags: ["code", "pre"], className: "font-mono" },
+  { formats: ["blockquote"], tags: ["blockquote"] },
+  { formats: ["ul"], tags: ["ul"] },
+  { formats: ["ol"], tags: ["ol"] },
+  { formats: ["table"], tags: ["table", "td", "th", "tr"], selector: "table" },
+  { formats: ["link"], tags: ["a"] },
+  ...["h1", "h2", "h3", "h4"].map((h) => ({
+    formats: [h],
+    tags: [h],
+    className: `wikios-ve-${h}`,
+    selector: `.wikios-ve-${h}, ${h}`,
+  })),
+  { formats: ["p", "paragraph"], tags: ["p"], className: "wikios-ve-p", selector: false },
+];
+
+/** Plate block types that light up a toolbar format when the selection is inside one. */
+const BLOCK_PROBES: ReadonlyArray<{ types: readonly string[]; format: (type: string) => string }> =
+  [
+    { types: ["ul", "ol", "li"], format: (type) => (type === "ol" ? "ol" : "ul") },
+    { types: ["table", "tr", "td", "th"], format: () => "table" },
+    { types: ["link", "a"], format: () => "link" },
+  ];
+
+const noop = () => {};
+
+const nodeType = (n: unknown) => (n as { type?: string }).type;
+const isTypeIn =
+  (...types: string[]) =>
+  (n: Node) =>
+    SlateElement.isElement(n) && types.includes(nodeType(n) ?? "");
+const firstEntry = (
+  editor: PlateEditorLike,
+  match: (n: Node) => boolean,
+  options: { mode?: "lowest"; at?: Path } = {}
+) => Editor.nodes(editor, { match, ...options }).next().value as [Node, Path] | undefined;
+const findNodeEntry = (editor: PlateEditorLike, id: string) =>
+  firstEntry(editor, (n) => (n as { id?: string }).id === id, { at: [] });
+const lowestLeaves = (editor: PlateEditorLike) =>
+  Array.from(
+    Editor.nodes(editor, {
+      match: (n) => (n as { text?: unknown }).text !== undefined,
+      mode: "lowest",
+    })
+  ).map(([node]) => node as unknown as Record<string, boolean | undefined>);
+const isEditableBlock = (editor: PlateEditorLike) => (n: Node) =>
+  SlateElement.isElement(n) && !editor.isInline(n) && !editor.isVoid(n);
+
+const buildWikitext = (name: string, params: Record<string, string>) =>
+  `{{${name}${Object.entries(params)
+    .filter(([, v]) => v.trim())
+    .map(([k, v]) => `|${k}=${v}`)
+    .join("")}}}`;
+
+const transclusionHtml = (dataMw: string, html: string) =>
+  `<div typeof="mw:Transclusion" data-mw='${dataMw.replace(/'/g, "&#39;")}' class="wikios-ve-template">${fixEditorImageUrls(html)}</div>`;
+
+function elementMatchesRule(el: HTMLElement, rule: DomFormatRule): boolean {
+  return (
+    rule.tags.includes(el.tagName.toLowerCase()) ||
+    !!(rule.className && (el.className || "").includes(rule.className)) ||
+    !!rule.style?.(el.style)
+  );
+}
 
 /**
  * Inspect the browser's live DOM selection inside the visual editor to instantly
@@ -48,123 +157,125 @@ function getDomActiveFormats(): Set<string> {
   const editorEl =
     document.querySelector(".wikios-ve-content") ||
     document.querySelector("[contenteditable='true']");
-  if (!editorEl) return fmt;
-
   const anchorNode = sel.anchorNode;
-  if (!anchorNode || !editorEl.contains(anchorNode)) return fmt;
+  if (!editorEl || !anchorNode || !editorEl.contains(anchorNode)) return fmt;
 
   let curr: HTMLElement | null =
     anchorNode.nodeType === 1 ? (anchorNode as HTMLElement) : anchorNode.parentElement;
 
   while (curr && curr !== editorEl && editorEl.contains(curr)) {
-    const tag = curr.tagName.toLowerCase();
-    const cl = curr.className || "";
-
-    if (
-      tag === "strong" ||
-      tag === "b" ||
-      curr.style.fontWeight === "bold" ||
-      parseInt(curr.style.fontWeight, 10) >= 600
-    ) {
-      fmt.add("bold");
+    for (const rule of DOM_FORMAT_RULES) {
+      if (elementMatchesRule(curr, rule)) rule.formats.forEach((f) => fmt.add(f));
     }
-    if (tag === "em" || tag === "i" || curr.style.fontStyle === "italic") {
-      fmt.add("italic");
-    }
-    if (tag === "u" || curr.style.textDecoration?.includes("underline")) {
-      fmt.add("underline");
-    }
-    if (
-      tag === "s" ||
-      tag === "strike" ||
-      tag === "del" ||
-      curr.style.textDecoration?.includes("line-through")
-    ) {
-      fmt.add("strikethrough");
-      fmt.add("strike");
-    }
-    if (tag === "sup") {
-      fmt.add("superscript");
-      fmt.add("sup");
-    }
-    if (tag === "sub") {
-      fmt.add("subscript");
-      fmt.add("sub");
-    }
-    if (tag === "code" || tag === "pre" || cl.includes("font-mono")) {
-      fmt.add("code");
-    }
-    if (tag === "blockquote") {
-      fmt.add("blockquote");
-    }
-    if (tag === "ul") {
-      fmt.add("ul");
-    }
-    if (tag === "ol") {
-      fmt.add("ol");
-    }
-    if (tag === "table" || tag === "td" || tag === "th" || tag === "tr") {
-      fmt.add("table");
-    }
-    if (tag === "a") {
-      fmt.add("link");
-    }
-    if (tag === "h1" || cl.includes("wikios-ve-h1")) {
-      fmt.add("h1");
-    }
-    if (tag === "h2" || cl.includes("wikios-ve-h2")) {
-      fmt.add("h2");
-    }
-    if (tag === "h3" || cl.includes("wikios-ve-h3")) {
-      fmt.add("h3");
-    }
-    if (tag === "h4" || cl.includes("wikios-ve-h4")) {
-      fmt.add("h4");
-    }
-    if (tag === "p" || cl.includes("wikios-ve-p")) {
-      fmt.add("p");
-      fmt.add("paragraph");
-    }
-
     curr = curr.parentElement;
   }
 
   // If text is selected (expanded range), inspect the contents of the range
-  if (!sel.isCollapsed && sel.rangeCount > 0) {
+  if (!sel.isCollapsed) {
     try {
-      const range = sel.getRangeAt(0);
-      const fragment = range.cloneContents();
-      if (fragment.querySelector("strong, b")) fmt.add("bold");
-      if (fragment.querySelector("em, i")) fmt.add("italic");
-      if (fragment.querySelector("u")) fmt.add("underline");
-      if (fragment.querySelector("s, strike, del")) {
-        fmt.add("strikethrough");
-        fmt.add("strike");
+      const fragment = sel.getRangeAt(0).cloneContents();
+      for (const rule of DOM_FORMAT_RULES) {
+        const selector = rule.selector ?? rule.tags.join(", ");
+        if (selector && fragment.querySelector(selector)) rule.formats.forEach((f) => fmt.add(f));
       }
-      if (fragment.querySelector("sup")) {
-        fmt.add("superscript");
-        fmt.add("sup");
-      }
-      if (fragment.querySelector("sub")) {
-        fmt.add("subscript");
-        fmt.add("sub");
-      }
-      if (fragment.querySelector("code, pre")) fmt.add("code");
-      if (fragment.querySelector("a")) fmt.add("link");
-      if (fragment.querySelector(".wikios-ve-h1, h1")) fmt.add("h1");
-      if (fragment.querySelector(".wikios-ve-h2, h2")) fmt.add("h2");
-      if (fragment.querySelector(".wikios-ve-h3, h3")) fmt.add("h3");
-      if (fragment.querySelector(".wikios-ve-h4, h4")) fmt.add("h4");
-      if (fragment.querySelector("blockquote")) fmt.add("blockquote");
-      if (fragment.querySelector("ul")) fmt.add("ul");
-      if (fragment.querySelector("ol")) fmt.add("ol");
-      if (fragment.querySelector("table")) fmt.add("table");
     } catch {
       /* best effort */
     }
   }
 
   return fmt;
+}
+
+function isFormatMarkActive(editor: PlateEditorLike, mark: string): boolean {
+  if (!editor.selection) return false;
+  const marks = (Editor.marks(editor) as Record<string, boolean> | null) ?? {};
+  if (marks[mark]) return true;
+  const names = MARK_GROUPS.find((g) => g.marks.includes(mark))?.marks ?? [];
+  if (names.some((n) => marks[n])) return true;
+  try {
+    return lowestLeaves(editor).some((leaf) => names.some((n) => leaf[n]));
+  } catch {
+    return false; // best-effort fallback
+  }
+}
+
+/** Formats implied by the Plate/Slate AST at the current selection. */
+function getEditorActiveFormats(editor: PlateEditorLike, fmt: Set<string>) {
+  const addGroups = (isOn: (names: readonly string[]) => boolean) => {
+    for (const g of MARK_GROUPS) if (isOn(g.marks)) g.formats.forEach((f) => fmt.add(f));
+  };
+  try {
+    // Direct editor marks (Plate editor.api or editor.marks or Slate Editor.marks)
+    const marks: Record<string, boolean> =
+      editor.api?.marks?.() ?? editor.marks ?? Editor.marks(editor) ?? {};
+    addGroups((names) => names.some((n) => marks[n] || editor.api?.hasMark?.(n)));
+
+    // Also inspect selected text leaf nodes in Plate/Slate
+    if (editor.selection) {
+      for (const leaf of lowestLeaves(editor)) addGroups((names) => names.some((n) => leaf[n]));
+    }
+  } catch {
+    /* best effort */
+  }
+  if (!editor.selection) return;
+
+  try {
+    const blockEntry =
+      editor.api?.block?.() ?? firstEntry(editor, isEditableBlock(editor), { mode: "lowest" });
+    if (blockEntry) {
+      const blockType = nodeType(blockEntry[0]) || "p";
+      fmt.add(blockType);
+      if (blockType === "p") fmt.add("paragraph");
+      if (blockType === "paragraph") fmt.add("p");
+    }
+
+    for (const { types, format } of BLOCK_PROBES) {
+      const entry = firstEntry(editor, isTypeIn(...types));
+      if (entry) fmt.add(format(nodeType(entry[0]) ?? ""));
+    }
+  } catch {
+    /* best-effort block detection */
+  }
+}
+
+function toggleListBlock(editor: PlateEditorLike, targetType: "ul" | "ol") {
+  Editor.withoutNormalizing(editor, () => {
+    // If selection is null, focus editor start
+    if (!editor.selection) {
+      if (editor.children.length > 0) {
+        Transforms.select(editor, Editor.start(editor, [0]));
+      } else {
+        Transforms.insertNodes(editor, { type: "p", children: [{ text: "" }] } as Descendant);
+        Transforms.select(editor, [0, 0]);
+      }
+    }
+
+    const isList = isTypeIn("ul", "ol");
+    const listEntry = firstEntry(editor, isList);
+    if (listEntry && nodeType(listEntry[0]) === targetType) {
+      // Toggle off: unwrap ul/ol and convert li back to p
+      Transforms.unwrapNodes(editor, { match: isList, split: true });
+      Transforms.setNodes(editor, { type: "p" } as Partial<Descendant>, { match: isTypeIn("li") });
+    } else if (listEntry) {
+      // Switch list type (ul <-> ol)
+      Transforms.setNodes(editor, { type: targetType } as Partial<Descendant>, {
+        at: listEntry[1],
+      });
+    } else {
+      // Not in list: convert matching selected blocks to li and wrap in ul/ol
+      Transforms.setNodes(editor, { type: "li", level: 1 } as Partial<Descendant>, {
+        match: (n) =>
+          SlateElement.isElement(n) &&
+          !editor.isInline(n) &&
+          !["table", "tr", "td", "th"].includes(nodeType(n) ?? ""),
+        mode: "lowest",
+      });
+      Transforms.wrapNodes(editor, { type: targetType, children: [] } as Descendant, {
+        match: isTypeIn("li"),
+        mode: "lowest",
+      });
+    }
+  });
 }
 
 function buildDataMw(name: string, params: Record<string, string>): string {
@@ -200,251 +311,53 @@ export function useWikiVisualFormatting({
     [editorRef]
   );
 
-  // ── Marks ────────────────────────────────────────────────────────────────
+  /** Run an editor mutation and mark the document dirty. */
+  const edit = useCallback(
+    (fn: (editor: PlateEditorLike) => void) =>
+      withEditor((editor) => {
+        fn(editor);
+        setIsDirty(true);
+      }),
+    [withEditor, setIsDirty]
+  );
 
-  const isFormatMarkActive = useCallback((editor: PlateEditorLike, mark: string): boolean => {
-    if (!editor.selection) return false;
-    const marks = (Editor.marks(editor) as Record<string, boolean> | null) ?? {};
-    if (marks[mark]) return true;
-    if ((mark === "strike" || mark === "strikethrough") && (marks.strike || marks.strikethrough))
-      return true;
-    if ((mark === "sup" || mark === "superscript") && (marks.sup || marks.superscript)) return true;
-    if ((mark === "sub" || mark === "subscript") && (marks.sub || marks.subscript)) return true;
-    if ((mark === "code" || mark === "codeMark") && (marks.code || marks.codeMark)) return true;
-
-    try {
-      const textNodes = Array.from(
-        Editor.nodes(editor, {
-          match: (n) => (n as { text?: unknown }).text !== undefined,
-          mode: "lowest",
-        })
-      );
-      for (const [node] of textNodes) {
-        const leaf = node as unknown as Record<string, boolean | undefined>;
-        if (mark === "bold" && leaf.bold) return true;
-        if (mark === "italic" && leaf.italic) return true;
-        if (mark === "underline" && leaf.underline) return true;
-        if ((mark === "strike" || mark === "strikethrough") && (leaf.strike || leaf.strikethrough))
-          return true;
-        if ((mark === "sup" || mark === "superscript") && (leaf.sup || leaf.superscript))
-          return true;
-        if ((mark === "sub" || mark === "subscript") && (leaf.sub || leaf.subscript)) return true;
-        if ((mark === "code" || mark === "codeMark") && (leaf.code || leaf.codeMark)) return true;
-      }
-    } catch {
-      /* best-effort fallback */
-    }
-    return false;
-  }, []);
+  const insertNode = useCallback(
+    (node: Record<string, unknown>) =>
+      edit((editor) => Transforms.insertNodes(editor, node as unknown as Descendant)),
+    [edit]
+  );
 
   /** Refresh toolbar highlight state from current marks + block type. */
   const refreshActiveFormats = useCallback(() => {
     // 1. First get formats from native browser DOM selection (immediate, zero latency)
-    const domFmt = getDomActiveFormats();
-    const fmt = new Set<string>(domFmt);
+    const fmt = getDomActiveFormats();
 
     // If DOM returned no selection inside editor, check if focus is in toolbar (preserve formats)
-    if (fmt.size === 0 && typeof window !== "undefined") {
-      const activeEl = document.activeElement;
+    if (fmt.size === 0) {
       const toolbarEl = document.querySelector(".wikios-ve-toolbar");
-      if (toolbarEl && activeEl && toolbarEl.contains(activeEl)) {
-        return;
-      }
+      if (toolbarEl && document.activeElement && toolbarEl.contains(document.activeElement)) return;
     }
 
     // 2. Supplement/validate with Plate/Slate editor AST state if available
-    const editor = editorRef.current;
-    if (editor) {
-      try {
-        // Direct editor marks (Plate editor.api or editor.marks or Slate Editor.marks)
-        const marks =
-          editor.api?.marks?.() ??
-          editor.marks ??
-          (Editor.marks(editor) as Record<string, boolean> | null) ??
-          {};
-
-        if (marks.bold || editor.api?.hasMark?.("bold")) fmt.add("bold");
-        if (marks.italic || editor.api?.hasMark?.("italic")) fmt.add("italic");
-        if (marks.underline || editor.api?.hasMark?.("underline")) fmt.add("underline");
-        if (
-          marks.strike ||
-          marks.strikethrough ||
-          editor.api?.hasMark?.("strike") ||
-          editor.api?.hasMark?.("strikethrough")
-        ) {
-          fmt.add("strikethrough");
-          fmt.add("strike");
-        }
-        if (
-          marks.sup ||
-          marks.superscript ||
-          editor.api?.hasMark?.("sup") ||
-          editor.api?.hasMark?.("superscript")
-        ) {
-          fmt.add("superscript");
-          fmt.add("sup");
-        }
-        if (
-          marks.sub ||
-          marks.subscript ||
-          editor.api?.hasMark?.("sub") ||
-          editor.api?.hasMark?.("subscript")
-        ) {
-          fmt.add("subscript");
-          fmt.add("sub");
-        }
-        if (marks.code || marks.codeMark || editor.api?.hasMark?.("code")) {
-          fmt.add("code");
-        }
-
-        // Also inspect selected text leaf nodes in Plate/Slate
-        try {
-          if (editor.selection) {
-            const textNodes = Array.from(
-              Editor.nodes(editor, {
-                match: (n) => (n as { text?: unknown }).text !== undefined,
-                mode: "lowest",
-              })
-            );
-            for (const [node] of textNodes) {
-              const leaf = node as unknown as Record<string, boolean | undefined>;
-              if (leaf.bold) fmt.add("bold");
-              if (leaf.italic) fmt.add("italic");
-              if (leaf.underline) fmt.add("underline");
-              if (leaf.strike || leaf.strikethrough) {
-                fmt.add("strikethrough");
-                fmt.add("strike");
-              }
-              if (leaf.sup || leaf.superscript) {
-                fmt.add("superscript");
-                fmt.add("sup");
-              }
-              if (leaf.sub || leaf.subscript) {
-                fmt.add("subscript");
-                fmt.add("sub");
-              }
-              if (leaf.code || leaf.codeMark) {
-                fmt.add("code");
-              }
-            }
-          }
-        } catch {
-          /* best effort */
-        }
-
-        // Enclosing block element
-        if (editor.selection) {
-          try {
-            const blockEntry =
-              editor.api?.block?.() ??
-              Array.from(
-                Editor.nodes(editor, {
-                  match: (n) =>
-                    SlateElement.isElement(n) &&
-                    !editor.isInline(n as unknown as import("slate").Element) &&
-                    !editor.isVoid(n as unknown as import("slate").Element),
-                  mode: "lowest",
-                })
-              )[0];
-
-            if (blockEntry) {
-              const blockType = (blockEntry[0] as unknown as { type?: string }).type || "p";
-              fmt.add(blockType);
-              if (blockType === "p") fmt.add("paragraph");
-              if (blockType === "paragraph") fmt.add("p");
-            }
-          } catch {
-            /* best-effort block detection */
-          }
-
-          // Lists (ul, ol, li)
-          try {
-            const [listEntry] = Array.from(
-              Editor.nodes(editor, {
-                match: (n) =>
-                  SlateElement.isElement(n) &&
-                  ["ul", "ol", "li"].includes((n as unknown as { type?: string }).type ?? ""),
-              })
-            );
-            if (listEntry) {
-              const listType = (listEntry[0] as unknown as { type?: string }).type;
-              if (listType === "ul" || listType === "ol") {
-                fmt.add(listType);
-              } else {
-                fmt.add("ul");
-              }
-            }
-          } catch {
-            /* best-effort list detection */
-          }
-
-          // Table
-          try {
-            const [tableEntry] = Array.from(
-              Editor.nodes(editor, {
-                match: (n) =>
-                  SlateElement.isElement(n) &&
-                  ["table", "tr", "td", "th"].includes(
-                    (n as unknown as { type?: string }).type ?? ""
-                  ),
-              })
-            );
-            if (tableEntry) {
-              fmt.add("table");
-            }
-          } catch {
-            /* best-effort table detection */
-          }
-
-          // Link
-          try {
-            const [linkEntry] = Array.from(
-              Editor.nodes(editor, {
-                match: (n) =>
-                  SlateElement.isElement(n) &&
-                  ["link", "a"].includes((n as unknown as { type?: string }).type ?? ""),
-              })
-            );
-            if (linkEntry) {
-              fmt.add("link");
-            }
-          } catch {
-            /* best-effort link detection */
-          }
-        }
-      } catch {
-        /* best-effort editor AST inspection */
-      }
-    }
+    if (editorRef.current) getEditorActiveFormats(editorRef.current, fmt);
 
     const prev = lastActiveFormatsRef.current;
-    if (prev.size === fmt.size) {
-      let identical = true;
-      for (const item of fmt) {
-        if (!prev.has(item)) {
-          identical = false;
-          break;
-        }
-      }
-      if (identical) {
-        return;
-      }
-    }
+    if (prev.size === fmt.size && [...fmt].every((f) => prev.has(f))) return;
 
     lastActiveFormatsRef.current = fmt;
     setActiveFormats(fmt);
   }, [editorRef]);
 
+  /** Refocus the editor and resync the toolbar after a command. */
+  const settle = useCallback(() => {
+    editorRef.current?.focus?.();
+    refreshActiveFormats();
+  }, [editorRef, refreshActiveFormats]);
+
   // Automatically listen to native selection changes anywhere in the document
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const handleDocSelection = () => {
-      refreshActiveFormats();
-    };
-    document.addEventListener("selectionchange", handleDocSelection);
-    return () => {
-      document.removeEventListener("selectionchange", handleDocSelection);
-    };
+    document.addEventListener("selectionchange", refreshActiveFormats);
+    return () => document.removeEventListener("selectionchange", refreshActiveFormats);
   }, [refreshActiveFormats]);
 
   const toggleMark = useCallback(
@@ -453,34 +366,19 @@ export function useWikiVisualFormatting({
         // 1. If Plate has native toggleMark on transforms
         if (editor.tf?.toggleMark) {
           editor.tf.toggleMark(mark);
-          setIsDirty(true);
-          refreshActiveFormats();
-          return;
-        }
-
-        // 2. Otherwise determine active state from isFormatMarkActive or DOM
-        const active = isFormatMarkActive(editor, mark) || getDomActiveFormats().has(mark);
-        if (editor.tf?.addMark && editor.tf?.removeMark) {
-          if (active) {
-            editor.tf.removeMark(mark);
-            if (mark === "strike") editor.tf.removeMark("strikethrough");
-            if (mark === "sup") editor.tf.removeMark("superscript");
-            if (mark === "sub") editor.tf.removeMark("subscript");
-            if (mark === "code") editor.tf.removeMark("codeMark");
-          } else {
-            editor.tf.addMark(mark, true);
-          }
         } else {
+          // 2. Otherwise determine active state from isFormatMarkActive or DOM
+          const active = isFormatMarkActive(editor, mark) || getDomActiveFormats().has(mark);
+          const hasTf = editor.tf?.addMark && editor.tf?.removeMark;
+          const addMark = (m: string) =>
+            hasTf ? editor.tf.addMark(m, true) : Editor.addMark(editor, m, true);
+          const removeMark = (m: string) =>
+            hasTf ? editor.tf.removeMark(m) : Editor.removeMark(editor, m);
           try {
-            if (active) {
-              Editor.removeMark(editor, mark);
-              if (mark === "strike") Editor.removeMark(editor, "strikethrough");
-              if (mark === "sup") Editor.removeMark(editor, "superscript");
-              if (mark === "sub") Editor.removeMark(editor, "subscript");
-              if (mark === "code") Editor.removeMark(editor, "codeMark");
-            } else {
-              Editor.addMark(editor, mark, true);
-            }
+            if (!active) addMark(mark);
+            else
+              for (const m of MARK_GROUPS.find((g) => g.marks.includes(mark))?.marks ?? [mark])
+                removeMark(m);
           } catch {
             /* best effort */
           }
@@ -489,225 +387,101 @@ export function useWikiVisualFormatting({
         refreshActiveFormats();
       });
     },
-    [withEditor, isFormatMarkActive, setIsDirty, refreshActiveFormats]
+    [withEditor, setIsDirty, refreshActiveFormats]
   );
 
   // ── Block transforms ─────────────────────────────────────────────────────
 
   const setType = useCallback(
     (type: string) => {
-      withEditor((editor) => {
+      edit((editor) =>
         Transforms.setNodes(editor, { type } as Partial<Descendant>, {
-          match: (n) =>
-            SlateElement.isElement(n) && !editor.isVoid(n as unknown as import("slate").Element),
+          match: (n) => SlateElement.isElement(n) && !editor.isVoid(n),
           mode: "lowest",
-        });
-        setIsDirty(true);
-      });
-      refreshActiveFormats();
-    },
-    [withEditor, setIsDirty, refreshActiveFormats]
-  );
-
-  const toggleListBlock = useCallback((editor: any, targetType: "ul" | "ol") => {
-    if (!editor) return;
-
-    Editor.withoutNormalizing(editor, () => {
-      // If selection is null, focus editor start
-      if (!editor.selection) {
-        if (editor.children.length > 0) {
-          Transforms.select(editor, Editor.start(editor, [0]));
-        } else {
-          Transforms.insertNodes(editor, { type: "p", children: [{ text: "" }] } as any);
-          Transforms.select(editor, [0, 0]);
-        }
-      }
-
-      // Check if currently inside a list
-      const [existingListEntry] = Array.from(
-        Editor.nodes(editor, {
-          match: (n) =>
-            SlateElement.isElement(n) && ((n as any).type === "ul" || (n as any).type === "ol"),
         })
       );
+      refreshActiveFormats();
+    },
+    [edit, refreshActiveFormats]
+  );
 
-      if (existingListEntry) {
-        const [listNode, listPath] = existingListEntry;
-        const currentType = (listNode as any).type;
-
-        if (currentType === targetType) {
-          // Toggle off: unwrap ul/ol and convert li back to p
-          Transforms.unwrapNodes(editor, {
-            match: (n) =>
-              SlateElement.isElement(n) && ((n as any).type === "ul" || (n as any).type === "ol"),
-            split: true,
-          });
-          Transforms.setNodes(editor, { type: "p" } as any, {
-            match: (n) => SlateElement.isElement(n) && (n as any).type === "li",
-          });
-        } else {
-          // Switch list type (ul <-> ol)
-          Transforms.setNodes(editor, { type: targetType } as any, { at: listPath });
-        }
-        return;
-      }
-
-      // Not in list: convert matching selected blocks to li and wrap in ul/ol
-      Transforms.setNodes(editor, { type: "li", level: 1 } as any, {
-        match: (n) =>
-          SlateElement.isElement(n) &&
-          !editor.isInline(n) &&
-          (n as any).type !== "table" &&
-          (n as any).type !== "tr" &&
-          (n as any).type !== "td" &&
-          (n as any).type !== "th",
-        mode: "lowest",
-      });
-
-      Transforms.wrapNodes(editor, { type: targetType, children: [] } as any, {
-        match: (n) => SlateElement.isElement(n) && (n as any).type === "li",
-        mode: "lowest",
-      });
-    });
-  }, []);
+  const shiftListLevel = useCallback(
+    (delta: number) =>
+      withEditor((editor) => {
+        const liEntry = firstEntry(editor, isTypeIn("li"));
+        if (!liEntry) return;
+        const level = Math.min(
+          6,
+          Math.max(1, ((liEntry[0] as { level?: number }).level || 1) + delta)
+        );
+        Transforms.setNodes(editor, { level } as Partial<Descendant>, { at: liEntry[1] });
+        setIsDirty(true);
+      }),
+    [withEditor, setIsDirty]
+  );
 
   const exec = useCallback(
     (cmd: string, val?: string) => {
-      switch (cmd) {
-        case "bold":
-        case "italic":
-        case "underline":
-        case "strikeThrough":
-          toggleMark(MARK_MAP[cmd] ?? cmd);
-          break;
-        case "superscript":
-          toggleMark("sup");
-          break;
-        case "subscript":
-          toggleMark("sub");
-          break;
-        case "code":
-          toggleMark("code");
-          break;
-        case "insertUnorderedList": {
-          withEditor((editor) => {
-            toggleListBlock(editor, "ul");
-            setIsDirty(true);
-          });
-          break;
-        }
-        case "insertOrderedList": {
-          withEditor((editor) => {
-            toggleListBlock(editor, "ol");
-            setIsDirty(true);
-          });
-          break;
-        }
-        case "indent": {
-          withEditor((editor) => {
-            const [liEntry] = Array.from(
-              Editor.nodes(editor, {
-                match: (n) => SlateElement.isElement(n) && (n as any).type === "li",
-              })
-            );
-            if (liEntry) {
-              const [liNode, liPath] = liEntry;
-              const currentLevel = (liNode as any).level || 1;
-              const newLevel = Math.min(currentLevel + 1, 6);
-              Transforms.setNodes(editor, { level: newLevel } as any, { at: liPath });
-              setIsDirty(true);
+      const markCmd = MARK_COMMANDS[cmd];
+      if (markCmd) {
+        toggleMark(markCmd);
+      } else {
+        switch (cmd) {
+          case "insertUnorderedList":
+          case "insertOrderedList":
+            edit((editor) => toggleListBlock(editor, cmd === "insertOrderedList" ? "ol" : "ul"));
+            break;
+          case "indent":
+            shiftListLevel(1);
+            break;
+          case "outdent":
+            shiftListLevel(-1);
+            break;
+          case "formatBlock":
+            if (val === "blockquote") {
+              withEditor((editor) =>
+                setType(firstEntry(editor, isTypeIn("blockquote")) ? "p" : "blockquote")
+              );
             }
-          });
-          break;
-        }
-        case "outdent": {
-          withEditor((editor) => {
-            const [liEntry] = Array.from(
-              Editor.nodes(editor, {
-                match: (n) => SlateElement.isElement(n) && (n as any).type === "li",
-              })
+            break;
+          case "undo":
+          case "redo":
+            edit((editor) => editor[cmd]?.());
+            break;
+          case "removeFormat":
+            edit((editor) =>
+              Object.keys(Editor.marks(editor) ?? {}).forEach((m) => Editor.removeMark(editor, m))
             );
-            if (liEntry) {
-              const [liNode, liPath] = liEntry;
-              const currentLevel = (liNode as any).level || 1;
-              const newLevel = Math.max(currentLevel - 1, 1);
-              Transforms.setNodes(editor, { level: newLevel } as any, { at: liPath });
-              setIsDirty(true);
-            }
-          });
-          break;
+            break;
         }
-        case "formatBlock": {
-          if (val === "blockquote") {
-            withEditor((editor) => {
-              const [quoteEntry] = Editor.nodes(editor, {
-                match: (n) => SlateElement.isElement(n) && (n as any).type === "blockquote",
-              });
-              setType(quoteEntry ? "p" : "blockquote");
-            });
-          }
-          break;
-        }
-        case "undo":
-          withEditor((editor) => {
-            (editor as any).undo?.();
-            setIsDirty(true);
-          });
-          break;
-        case "redo":
-          withEditor((editor) => {
-            (editor as any).redo?.();
-            setIsDirty(true);
-          });
-          break;
-        case "removeFormat":
-          withEditor((editor) => {
-            const marks = Object.keys(Editor.marks(editor) ?? {});
-            marks.forEach((m) => Editor.removeMark(editor, m));
-            setIsDirty(true);
-          });
-          break;
-        default:
-          break;
       }
-      editorRef.current?.focus?.();
-      refreshActiveFormats();
+      settle();
     },
-    [toggleMark, setType, toggleListBlock, withEditor, editorRef, setIsDirty, refreshActiveFormats]
+    [toggleMark, setType, shiftListLevel, edit, withEditor, settle]
   );
 
   const setHeading = useCallback(
     (level: number) => {
-      withEditor((editor) => {
+      edit((editor) => {
         const targetType = `h${Math.min(Math.max(level, 2), 4)}`;
-        const [blockEntry] = Editor.nodes(editor, {
-          match: (n) =>
-            SlateElement.isElement(n) &&
-            !editor.isInline(n as unknown as import("slate").Element) &&
-            !editor.isVoid(n as unknown as import("slate").Element),
-          mode: "lowest",
-        });
-        const currentType = (blockEntry?.[0] as unknown as { type?: string })?.type;
-        const newType = currentType === targetType ? "p" : targetType;
-
-        Transforms.setNodes(editor, { type: newType } as Partial<Descendant>, {
-          match: (n) =>
-            SlateElement.isElement(n) && !editor.isVoid(n as unknown as import("slate").Element),
-          mode: "lowest",
-        });
-        setIsDirty(true);
+        const blockEntry = firstEntry(editor, isEditableBlock(editor), { mode: "lowest" });
+        Transforms.setNodes(
+          editor,
+          {
+            type: nodeType(blockEntry?.[0]) === targetType ? "p" : targetType,
+          } as Partial<Descendant>,
+          { match: (n) => SlateElement.isElement(n) && !editor.isVoid(n), mode: "lowest" }
+        );
       });
-      editorRef.current?.focus?.();
-      refreshActiveFormats();
+      settle();
     },
-    [withEditor, setIsDirty, editorRef, refreshActiveFormats]
+    [edit, settle]
   );
 
   const setParagraph = useCallback(() => {
     setType("p");
-    editorRef.current?.focus?.();
-    refreshActiveFormats();
-  }, [setType, editorRef, refreshActiveFormats]);
+    settle();
+  }, [setType, settle]);
 
   // ── Links ────────────────────────────────────────────────────────────────
 
@@ -720,78 +494,56 @@ export function useWikiVisualFormatting({
       );
       if (!url) return;
       const internal = !/^https?:/i.test(url);
-      const href = internal ? `/wiki/${encodeURIComponent(url.replace(/ /g, "_"))}` : url;
-      Transforms.insertNodes(editor, {
+      insertNode({
         type: "link",
-        url: href,
+        url: internal ? `/wiki/${encodeURIComponent(url.replace(/ /g, "_"))}` : url,
         internal,
-        children: selectedText ? [{ text: selectedText }] : [{ text: url }],
-      } as Descendant);
-      setIsDirty(true);
+        children: [{ text: selectedText || url }],
+      });
     });
     editorRef.current?.focus?.();
-  }, [withEditor, setIsDirty, editorRef]);
+  }, [withEditor, insertNode, editorRef]);
 
   const removeLink = useCallback(() => {
-    withEditor((editor) => {
-      Transforms.unwrapNodes(editor, {
-        match: (n) =>
-          SlateElement.isElement(n) && (n as unknown as { type?: string }).type === "link",
-      });
-      setIsDirty(true);
-    });
+    edit((editor) => Transforms.unwrapNodes(editor, { match: isTypeIn("link") }));
     editorRef.current?.focus?.();
-  }, [withEditor, setIsDirty, editorRef]);
+  }, [edit, editorRef]);
 
   // ── Insertions ───────────────────────────────────────────────────────────
 
   const insertHR = useCallback(() => {
-    withEditor((editor) => {
+    edit((editor) => {
       Transforms.insertNodes(editor, { type: "hr", children: [{ text: "" }] } as Descendant);
       Transforms.insertNodes(editor, { type: "p", children: [{ text: "" }] } as Descendant);
-      setIsDirty(true);
     });
-  }, [withEditor, setIsDirty]);
+  }, [edit]);
 
   const insertTable = useCallback(() => {
-    withEditor((editor) => {
-      const cell = (t: "th" | "td", text: string) =>
-        ({ type: t, children: [{ text }] }) as Descendant;
-      const row = (cells: Descendant[]) => ({ type: "tr", children: cells }) as Descendant;
-      Transforms.insertNodes(editor, {
-        type: "table",
-        attributes: 'class="wikitable"',
-        children: [
-          row([cell("th", "Header 1"), cell("th", "Header 2"), cell("th", "Header 3")]),
-          row([cell("td", "Data 1"), cell("td", "Data 2"), cell("td", "Data 3")]),
-          row([cell("td", "Data 4"), cell("td", "Data 5"), cell("td", "Data 6")]),
-        ],
-      } as Descendant);
-      setIsDirty(true);
+    const cell = (type: "th" | "td", text: string) => ({ type, children: [{ text }] });
+    const row = (type: "th" | "td", ...labels: string[]) => ({
+      type: "tr",
+      children: labels.map((label) => cell(type, label)),
     });
-  }, [withEditor, setIsDirty]);
+    insertNode({
+      type: "table",
+      attributes: 'class="wikitable"',
+      children: [
+        row("th", "Header 1", "Header 2", "Header 3"),
+        row("td", "Data 1", "Data 2", "Data 3"),
+        row("td", "Data 4", "Data 5", "Data 6"),
+      ],
+    });
+  }, [insertNode]);
 
-  const insertRef = useCallback(() => {
-    withEditor((editor) => {
-      Transforms.insertNodes(editor, {
-        type: "ref",
-        label: "Citation needed",
-        children: [{ text: "" }],
-      } as Descendant);
-      setIsDirty(true);
-    });
-  }, [withEditor, setIsDirty]);
+  const insertRef = useCallback(
+    () => insertNode({ type: "ref", label: "Citation needed", children: [{ text: "" }] }),
+    [insertNode]
+  );
 
   /** Insert a prepared custom node (chips, coords, map embeds). */
   const insertChip = useCallback(
-    (chip: Record<string, unknown>) => {
-      withEditor((editor) => {
-        const node = { ...chip, id: nanoid() };
-        Transforms.insertNodes(editor, node as unknown as Descendant);
-        setIsDirty(true);
-      });
-    },
-    [withEditor, setIsDirty]
+    (chip: Record<string, unknown>) => insertNode({ ...chip, id: nanoid() }),
+    [insertNode]
   );
 
   const clearFormatting = useCallback(() => {
@@ -799,66 +551,45 @@ export function useWikiVisualFormatting({
     editorRef.current?.focus?.();
   }, [exec, editorRef]);
 
-  // Legacy DOM-selection shims — retained because shared toolbar dropdowns
-  // (StashDropdown / TemplateDropdown) still take onBeforeOpen handlers.
-  const saveSelection = useCallback(() => {}, []);
-  const restoreSelection = useCallback(() => {}, []);
-
   // ── Templates & media ────────────────────────────────────────────────────
 
   const handleInsertTemplate = useCallback(
     async (templateName: string, params: Record<string, string>) => {
       const dataMw = buildDataMw(templateName, params);
 
-      if (
-        templateName.startsWith("MyCountry:") ||
-        templateName.startsWith("CountryData:") ||
-        templateName.startsWith("BusinessData:")
-      ) {
-        withEditor((editor) => {
-          const node: Record<string, unknown> = {
-            type: "chip-engine",
-            id: nanoid(),
-            name: templateName,
-            params,
-            dataMw,
-            label: params.label || templateName.split(":").pop() || templateName,
-            wikitext: `{{${templateName}}}`,
-            children: [{ text: "" }],
-          };
-          Transforms.insertNodes(editor, node as unknown as Descendant);
-          setIsDirty(true);
+      if (/^(MyCountry|CountryData|BusinessData):/.test(templateName)) {
+        insertNode({
+          type: "chip-engine",
+          id: nanoid(),
+          name: templateName,
+          params,
+          dataMw,
+          label: params.label || templateName.split(":").pop() || templateName,
+          wikitext: `{{${templateName}}}`,
+          children: [{ text: "" }],
         });
         return;
       }
 
       try {
-        const paramParts = Object.entries(params)
-          .filter(([, v]) => v.trim())
-          .map(([k, v]) => `|${k}=${v}`);
-        const wikitext = `{{${templateName}${paramParts.join("")}}}`;
+        const wikitext = buildWikitext(templateName, params);
         const preview = await renderTemplateCached(templateName, params);
-        const result = { html: preview.html };
-        withEditor((editor) => {
-          Transforms.insertNodes(editor, {
-            type: "raw-html",
-            id: nanoid(),
-            kind: /infobox/i.test(wikitext) ? "infobox" : "generic",
-            name: templateName,
-            params,
-            dataMw,
-            html: `<div typeof="mw:Transclusion" data-mw='${dataMw.replace(/'/g, "&#39;")}' class="wikios-ve-template">${fixEditorImageUrls(result.html)}</div>`,
-            wikitext,
-            children: [{ text: "" }],
-          } as Descendant);
-          setIsDirty(true);
+        insertNode({
+          type: "raw-html",
+          id: nanoid(),
+          kind: /infobox/i.test(wikitext) ? "infobox" : "generic",
+          name: templateName,
+          params,
+          dataMw,
+          html: transclusionHtml(dataMw, preview.html),
+          wikitext,
+          children: [{ text: "" }],
         });
       } catch (err) {
         console.error("Failed to render template:", err);
       }
     },
-    // oxlint-disable-next-line
-    [previewMutation, title, withEditor, setIsDirty]
+    [insertNode]
   );
 
   const handleInsertImage = useCallback(
@@ -871,22 +602,19 @@ export function useWikiVisualFormatting({
         if (!figure) return;
         figure.setAttribute("contenteditable", "false");
         figure.classList?.add("wikios-ve-media");
-        withEditor((editor) => {
-          Transforms.insertNodes(editor, {
-            type: "media",
-            id: nanoid(),
-            html: figure.outerHTML,
-            filename: figure.querySelector("img")?.getAttribute("alt") ?? undefined,
-            wikitext: imageWikitext,
-            children: [{ text: "" }],
-          } as Descendant);
-          setIsDirty(true);
+        insertNode({
+          type: "media",
+          id: nanoid(),
+          html: figure.outerHTML,
+          filename: figure.querySelector("img")?.getAttribute("alt") ?? undefined,
+          wikitext: imageWikitext,
+          children: [{ text: "" }],
         });
       } catch (err) {
         console.error("Failed to render image:", err);
       }
     },
-    [previewMutation, title, withEditor, setIsDirty]
+    [previewMutation, title, insertNode]
   );
 
   const handleTemplateUpdate = useCallback(
@@ -895,41 +623,24 @@ export function useWikiVisualFormatting({
       const { id, name } = editingTemplate;
 
       withEditor((editor) => {
-        const entries = Array.from(
-          Editor.nodes(editor, {
-            at: [],
-            match: (n) => (n as unknown as { id?: string }).id === id,
-          })
-        );
-        if (entries.length === 0) return;
-        const [node, path] = entries[0]! as [Node, import("slate").Path];
+        const entry = findNodeEntry(editor, id);
+        if (!entry) return;
+        const [node, path] = entry;
         const dataMw = buildDataMw(name, newParams);
-        const rebuiltWikitext = `{{${name}${Object.entries(newParams)
-          .filter(([, v]) => v.trim())
-          .map(([k, v]) => `|${k}=${v}`)
-          .join("")}}}`;
-
-        if ((node as unknown as { type?: string }).type === "chip-engine") {
+        const wikitext = buildWikitext(name, newParams);
+        const update = (extra: Record<string, unknown>) =>
           Transforms.setNodes(
             editor,
-            { params: newParams, dataMw, wikitext: rebuiltWikitext } as Partial<Descendant>,
+            { params: newParams, dataMw, wikitext, ...extra } as Partial<Descendant>,
             { at: path }
           );
+
+        if (nodeType(node) === "chip-engine") {
+          update({});
         } else {
           void previewMutation
-            .mutateAsync({ wikitext: rebuiltWikitext, title })
-            .then((result) => {
-              Transforms.setNodes(
-                editor,
-                {
-                  params: newParams,
-                  dataMw,
-                  wikitext: rebuiltWikitext,
-                  html: `<div typeof="mw:Transclusion" data-mw='${buildDataMw(name, newParams).replace(/'/g, "&#39;")}' class="wikios-ve-template">${fixEditorImageUrls(result.html)}</div>`,
-                } as Partial<Descendant>,
-                { at: path }
-              );
-            })
+            .mutateAsync({ wikitext, title })
+            .then((result) => update({ html: transclusionHtml(dataMw, result.html) }))
             .catch((err) => console.error("Failed to update template:", err));
         }
         setIsDirty(true);
@@ -943,11 +654,9 @@ export function useWikiVisualFormatting({
     if (!editingTemplate) return;
     const { id } = editingTemplate;
     withEditor((editor) => {
-      const entries = Array.from(
-        Editor.nodes(editor, { at: [], match: (n) => (n as unknown as { id?: string }).id === id })
-      );
-      if (entries.length > 0) {
-        Transforms.removeNodes(editor, { at: entries[0]![1] });
+      const entry = findNodeEntry(editor, id);
+      if (entry) {
+        Transforms.removeNodes(editor, { at: entry[1] });
         setIsDirty(true);
       }
     });
@@ -958,8 +667,9 @@ export function useWikiVisualFormatting({
     activeFormats,
     editingTemplate,
     setEditingTemplate,
-    saveSelection,
-    restoreSelection,
+    // Legacy DOM-selection shims: shared toolbar dropdowns still take onBeforeOpen handlers.
+    saveSelection: noop,
+    restoreSelection: noop,
     exec,
     setHeading,
     setParagraph,
