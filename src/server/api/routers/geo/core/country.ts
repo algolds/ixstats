@@ -5,6 +5,7 @@ import { TRPCError } from "@trpc/server";
 import type { Geometry } from "geojson";
 import { featureIdToDisplayName } from "~/lib/maps/map-utils";
 import { truncateGeometry } from "~/lib/maps/geojson-compress";
+import { neighbourFeatures } from "./shared";
 
 export const countryProcedures = {
   getCountryGeometry: cachedPublicProcedure
@@ -326,21 +327,6 @@ export const countryProcedures = {
         select: { featureId: true, displayName: true, geometry: true, boundingBox: true },
       });
 
-      return neighbors
-        .filter((l) => {
-          const nb = l.boundingBox as number[] | null;
-          if (!nb || nb.length !== 4) return false;
-          return (
-            nb[0]! < bbox[2]! + pad &&
-            nb[2]! > bbox[0]! - pad &&
-            nb[1]! < bbox[3]! + pad &&
-            nb[3]! > bbox[1]! - pad
-          );
-        })
-        .map((l) => ({
-          featureId: l.featureId,
-          displayName: l.displayName,
-          geometry: l.geometry,
-        }));
+      return neighbourFeatures(neighbors, bbox, pad);
     }),
 };

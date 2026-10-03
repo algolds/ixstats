@@ -24,6 +24,38 @@ export function assertOwnCountry(
   }
 }
 
+/** NOT_FOUND unless the (already queried) map feature exists. */
+export function assertFeatureFound<T>(feature: T | null | undefined, featureId: string): T {
+  if (!feature) {
+    throw new TRPCError({ code: "NOT_FOUND", message: `Feature not found: ${featureId}` });
+  }
+  return feature;
+}
+
+/** Neighbouring layers overlapping a [minLng, minLat, maxLng, maxLat] box padded by `pad`, as feature stubs. */
+export function neighbourFeatures<
+  T extends {
+    featureId: string;
+    displayName: string | null;
+    geometry: unknown;
+    boundingBox: unknown;
+  },
+>(layers: T[], bbox: number[], pad: number) {
+  return layers
+    .filter((l) => {
+      const nb = l.boundingBox as number[] | null;
+      return (
+        !!nb &&
+        nb.length === 4 &&
+        nb[0]! < bbox[2]! + pad &&
+        nb[2]! > bbox[0]! - pad &&
+        nb[1]! < bbox[3]! + pad &&
+        nb[3]! > bbox[1]! - pad
+      );
+    })
+    .map((l) => ({ featureId: l.featureId, displayName: l.displayName, geometry: l.geometry }));
+}
+
 /** The realm's political layer for a feature (featureId is unique only within a realm), or NOT_FOUND. */
 export async function requirePoliticalLayer(db: PrismaClient, featureId: string, realmId: string) {
   const mapLayer = await db.mapLayer.findFirst({

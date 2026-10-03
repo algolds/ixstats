@@ -8,7 +8,7 @@ import { clearLayerCache } from "../../core";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { IxTime } from "~/lib/ixtime";
 import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
-import { requirePoliticalLayer } from "../../core/shared";
+import { assertFeatureFound, requirePoliticalLayer } from "../../core/shared";
 
 export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
   /**
@@ -104,29 +104,26 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
   getFeatureDetails: adminProcedure
     .input(z.object({ featureId: z.string(), ...realmScopeInput.shape }))
     .query(async ({ ctx, input }) => {
-      const feature = await ctx.db.mapLayer.findFirst({
-        where: {
-          layerType: "political",
-          featureId: input.featureId,
-          isActive: true,
-          realmId: await viewerRealmId(ctx, input.realm),
-        },
-        include: {
-          country: {
-            select: {
-              id: true,
-              name: true,
-              wikiPageTitle: true,
+      const feature = assertFeatureFound(
+        await ctx.db.mapLayer.findFirst({
+          where: {
+            layerType: "political",
+            featureId: input.featureId,
+            isActive: true,
+            realmId: await viewerRealmId(ctx, input.realm),
+          },
+          include: {
+            country: {
+              select: {
+                id: true,
+                name: true,
+                wikiPageTitle: true,
+              },
             },
           },
-        },
-      });
-      if (!feature) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Feature not found: ${input.featureId}`,
-        });
-      }
+        }),
+        input.featureId
+      );
       return {
         id: feature.id,
         featureId: feature.featureId,
@@ -157,15 +154,12 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const realmId = await viewerRealmId(ctx, input.realm);
-      const feature = await ctx.db.mapLayer.findFirst({
-        where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
-      });
-      if (!feature) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: `Feature not found: ${input.featureId}`,
-        });
-      }
+      const feature = assertFeatureFound(
+        await ctx.db.mapLayer.findFirst({
+          where: { layerType: "political", featureId: input.featureId, isActive: true, realmId },
+        }),
+        input.featureId
+      );
       // A new link (and the rename/wiki/sync writes that follow it) must stay inside the feature's realm
       await assertCountryInFeatureRealm(ctx.db, input.countryId, realmId);
 
