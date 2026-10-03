@@ -23,316 +23,70 @@ class AtomicEffectivenessService {
 
   constructor(private db: PrismaClient) {}
 
-  // Component effectiveness mappings based on the atomic design document
-  private componentEffectiveness: Partial<Record<ComponentType, ComponentEffectiveness>> = {
-    // Power Distribution Components
-    [ComponentType.CENTRALIZED_POWER]: {
-      type: ComponentType.CENTRALIZED_POWER,
-      baseEffectiveness: 75,
-      taxImpact: 1.2, // 20% better tax collection
-      economicImpact: 1.05,
-      stabilityImpact: 10,
-      legitimacyImpact: -5, // Centralization can reduce legitimacy
-    },
-    [ComponentType.FEDERAL_SYSTEM]: {
-      type: ComponentType.FEDERAL_SYSTEM,
-      baseEffectiveness: 70,
-      taxImpact: 0.95,
-      economicImpact: 1.08,
-      stabilityImpact: 5,
-      legitimacyImpact: 10,
-    },
-    [ComponentType.CONFEDERATE_SYSTEM]: {
-      type: ComponentType.CONFEDERATE_SYSTEM,
-      baseEffectiveness: 60,
-      taxImpact: 0.85,
-      economicImpact: 1.02,
-      stabilityImpact: -5,
-      legitimacyImpact: 15,
-    },
-    [ComponentType.UNITARY_SYSTEM]: {
-      type: ComponentType.UNITARY_SYSTEM,
-      baseEffectiveness: 72,
-      taxImpact: 1.15,
-      economicImpact: 1.06,
-      stabilityImpact: 8,
-      legitimacyImpact: 2,
-    },
-
-    // Decision Process Components
-    [ComponentType.DEMOCRATIC_PROCESS]: {
-      type: ComponentType.DEMOCRATIC_PROCESS,
-      baseEffectiveness: 68,
-      taxImpact: 1.0,
-      economicImpact: 1.03,
-      stabilityImpact: 5,
-      legitimacyImpact: 25,
-    },
-    [ComponentType.AUTOCRATIC_PROCESS]: {
-      type: ComponentType.AUTOCRATIC_PROCESS,
-      baseEffectiveness: 75,
-      taxImpact: 1.25,
-      economicImpact: 1.08,
-      stabilityImpact: 15,
-      legitimacyImpact: -15,
-    },
-    [ComponentType.TECHNOCRATIC_PROCESS]: {
-      type: ComponentType.TECHNOCRATIC_PROCESS,
-      baseEffectiveness: 85,
-      taxImpact: 1.15,
-      economicImpact: 1.25, // 25% economic boost from expert decisions
-      stabilityImpact: 12,
-      legitimacyImpact: 5,
-    },
-    [ComponentType.CONSENSUS_PROCESS]: {
-      type: ComponentType.CONSENSUS_PROCESS,
-      baseEffectiveness: 60,
-      taxImpact: 0.9,
-      economicImpact: 0.95,
-      stabilityImpact: 20,
-      legitimacyImpact: 20,
-    },
-    [ComponentType.OLIGARCHIC_PROCESS]: {
-      type: ComponentType.OLIGARCHIC_PROCESS,
-      baseEffectiveness: 70,
-      taxImpact: 1.1,
-      economicImpact: 1.1,
-      stabilityImpact: 5,
-      legitimacyImpact: -10,
-    },
-
-    // Legitimacy Sources
-    [ComponentType.ELECTORAL_LEGITIMACY]: {
-      type: ComponentType.ELECTORAL_LEGITIMACY,
-      baseEffectiveness: 65,
-      taxImpact: 1.05,
-      economicImpact: 1.08,
-      stabilityImpact: 10,
-      legitimacyImpact: 30,
-    },
-    [ComponentType.TRADITIONAL_LEGITIMACY]: {
-      type: ComponentType.TRADITIONAL_LEGITIMACY,
-      baseEffectiveness: 70,
-      taxImpact: 1.1,
-      economicImpact: 0.98,
-      stabilityImpact: 25,
-      legitimacyImpact: 20,
-    },
-    [ComponentType.PERFORMANCE_LEGITIMACY]: {
-      type: ComponentType.PERFORMANCE_LEGITIMACY,
-      baseEffectiveness: 80,
-      taxImpact: 1.2,
-      economicImpact: 1.15,
-      stabilityImpact: 15,
-      legitimacyImpact: 15,
-    },
-    [ComponentType.CHARISMATIC_LEGITIMACY]: {
-      type: ComponentType.CHARISMATIC_LEGITIMACY,
-      baseEffectiveness: 75,
-      taxImpact: 1.15,
-      economicImpact: 1.1,
-      stabilityImpact: 10,
-      legitimacyImpact: 25,
-    },
-    [ComponentType.RELIGIOUS_LEGITIMACY]: {
-      type: ComponentType.RELIGIOUS_LEGITIMACY,
-      baseEffectiveness: 72,
-      taxImpact: 1.12,
-      economicImpact: 1.0,
-      stabilityImpact: 20,
-      legitimacyImpact: 18,
-    },
-    [ComponentType.INSTITUTIONAL_LEGITIMACY]: {
-      type: ComponentType.INSTITUTIONAL_LEGITIMACY,
-      baseEffectiveness: 83,
-      taxImpact: 1.18,
-      economicImpact: 1.12,
-      stabilityImpact: 15,
-      legitimacyImpact: 22,
-    },
-
-    // Institution Types
-    [ComponentType.PROFESSIONAL_BUREAUCRACY]: {
-      type: ComponentType.PROFESSIONAL_BUREAUCRACY,
-      baseEffectiveness: 85,
-      taxImpact: 1.3, // 30% improvement as per design doc
-      economicImpact: 1.15,
-      stabilityImpact: 15,
-      legitimacyImpact: 10,
-    },
-    [ComponentType.MILITARY_ADMINISTRATION]: {
-      type: ComponentType.MILITARY_ADMINISTRATION,
-      baseEffectiveness: 78,
-      taxImpact: 1.25,
-      economicImpact: 1.05,
-      stabilityImpact: 20,
-      legitimacyImpact: -5,
-    },
-    [ComponentType.INDEPENDENT_JUDICIARY]: {
-      type: ComponentType.INDEPENDENT_JUDICIARY,
-      baseEffectiveness: 80,
-      taxImpact: 1.05,
-      economicImpact: 1.12,
-      stabilityImpact: 25,
-      legitimacyImpact: 20,
-    },
-    [ComponentType.PARTISAN_INSTITUTIONS]: {
-      type: ComponentType.PARTISAN_INSTITUTIONS,
-      baseEffectiveness: 65,
-      taxImpact: 1.08,
-      economicImpact: 1.02,
-      stabilityImpact: -5,
-      legitimacyImpact: 5,
-    },
-    [ComponentType.TECHNOCRATIC_AGENCIES]: {
-      type: ComponentType.TECHNOCRATIC_AGENCIES,
-      baseEffectiveness: 82,
-      taxImpact: 1.18,
-      economicImpact: 1.2,
-      stabilityImpact: 12,
-      legitimacyImpact: 8,
-    },
-
-    // Control Mechanisms
-    [ComponentType.RULE_OF_LAW]: {
-      type: ComponentType.RULE_OF_LAW,
-      baseEffectiveness: 85,
-      taxImpact: 1.15,
-      economicImpact: 1.18,
-      stabilityImpact: 30,
-      legitimacyImpact: 25,
-    },
-    [ComponentType.SURVEILLANCE_SYSTEM]: {
-      type: ComponentType.SURVEILLANCE_SYSTEM,
-      baseEffectiveness: 78,
-      taxImpact: 1.2,
-      economicImpact: 1.05,
-      stabilityImpact: 15,
-      legitimacyImpact: -15,
-    },
-    [ComponentType.ECONOMIC_INCENTIVES]: {
-      type: ComponentType.ECONOMIC_INCENTIVES,
-      baseEffectiveness: 73,
-      taxImpact: 1.08,
-      economicImpact: 1.15,
-      stabilityImpact: 5,
-      legitimacyImpact: 8,
-    },
-    [ComponentType.SOCIAL_PRESSURE]: {
-      type: ComponentType.SOCIAL_PRESSURE,
-      baseEffectiveness: 68,
-      taxImpact: 1.05,
-      economicImpact: 1.02,
-      stabilityImpact: 8,
-      legitimacyImpact: -5,
-    },
-    [ComponentType.MILITARY_ENFORCEMENT]: {
-      type: ComponentType.MILITARY_ENFORCEMENT,
-      baseEffectiveness: 80,
-      taxImpact: 1.3,
-      economicImpact: 1.02,
-      stabilityImpact: 25,
-      legitimacyImpact: -20,
-    },
-
-    // New Government Type Components
-    [ComponentType.DIGITAL_GOVERNMENT]: {
-      type: ComponentType.DIGITAL_GOVERNMENT,
-      baseEffectiveness: 85,
-      taxImpact: 1.35,
-      economicImpact: 1.22,
-      stabilityImpact: 15,
-      legitimacyImpact: 12,
-    },
-    [ComponentType.MINIMAL_GOVERNMENT]: {
-      type: ComponentType.MINIMAL_GOVERNMENT,
-      baseEffectiveness: 60,
-      taxImpact: 0.8,
-      economicImpact: 1.15,
-      stabilityImpact: 5,
-      legitimacyImpact: 10,
-    },
-    [ComponentType.PRIVATE_SECTOR_LEADERSHIP]: {
-      type: ComponentType.PRIVATE_SECTOR_LEADERSHIP,
-      baseEffectiveness: 75,
-      taxImpact: 0.95,
-      economicImpact: 1.2,
-      stabilityImpact: 8,
-      legitimacyImpact: 5,
-    },
-    [ComponentType.SOCIAL_DEMOCRACY]: {
-      type: ComponentType.SOCIAL_DEMOCRACY,
-      baseEffectiveness: 78,
-      taxImpact: 1.15,
-      economicImpact: 1.1,
-      stabilityImpact: 18,
-      legitimacyImpact: 22,
-    },
-    [ComponentType.COMPREHENSIVE_WELFARE]: {
-      type: ComponentType.COMPREHENSIVE_WELFARE,
-      baseEffectiveness: 72,
-      taxImpact: 1.1,
-      economicImpact: 1.05,
-      stabilityImpact: 15,
-      legitimacyImpact: 18,
-    },
-    [ComponentType.PUBLIC_SECTOR_LEADERSHIP]: {
-      type: ComponentType.PUBLIC_SECTOR_LEADERSHIP,
-      baseEffectiveness: 70,
-      taxImpact: 1.2,
-      economicImpact: 1.08,
-      stabilityImpact: 12,
-      legitimacyImpact: 8,
-    },
-    [ComponentType.ENVIRONMENTAL_FOCUS]: {
-      type: ComponentType.ENVIRONMENTAL_FOCUS,
-      baseEffectiveness: 68,
-      taxImpact: 0.95,
-      economicImpact: 1.12,
-      stabilityImpact: 10,
-      legitimacyImpact: 15,
-    },
-    [ComponentType.ECONOMIC_PLANNING]: {
-      type: ComponentType.ECONOMIC_PLANNING,
-      baseEffectiveness: 82,
-      taxImpact: 1.25,
-      economicImpact: 1.18,
-      stabilityImpact: 15,
-      legitimacyImpact: 5,
-    },
-    [ComponentType.DEVELOPMENTAL_STATE]: {
-      type: ComponentType.DEVELOPMENTAL_STATE,
-      baseEffectiveness: 83,
-      taxImpact: 1.22,
-      economicImpact: 1.25,
-      stabilityImpact: 18,
-      legitimacyImpact: 10,
-    },
-    [ComponentType.WORKER_PROTECTION]: {
-      type: ComponentType.WORKER_PROTECTION,
-      baseEffectiveness: 65,
-      taxImpact: 0.9,
-      economicImpact: 1.05,
-      stabilityImpact: 8,
-      legitimacyImpact: 15,
-    },
-    [ComponentType.MERITOCRATIC_SYSTEM]: {
-      type: ComponentType.MERITOCRATIC_SYSTEM,
-      baseEffectiveness: 88,
-      taxImpact: 1.3,
-      economicImpact: 1.2,
-      stabilityImpact: 20,
-      legitimacyImpact: 18,
-    },
-    [ComponentType.REGIONAL_DEVELOPMENT]: {
-      type: ComponentType.REGIONAL_DEVELOPMENT,
-      baseEffectiveness: 67,
-      taxImpact: 0.92,
-      economicImpact: 1.12,
-      stabilityImpact: 10,
-      legitimacyImpact: 12,
-    },
-  };
+  // Component effectiveness mappings based on the atomic design document.
+  // Columns: type, baseEffectiveness, taxImpact, economicImpact, stabilityImpact, legitimacyImpact.
+  private componentEffectiveness: Partial<Record<ComponentType, ComponentEffectiveness>> =
+    Object.fromEntries(
+      (
+        [
+          // Power Distribution Components
+          [ComponentType.CENTRALIZED_POWER, 75, 1.2, 1.05, 10, -5],
+          [ComponentType.FEDERAL_SYSTEM, 70, 0.95, 1.08, 5, 10],
+          [ComponentType.CONFEDERATE_SYSTEM, 60, 0.85, 1.02, -5, 15],
+          [ComponentType.UNITARY_SYSTEM, 72, 1.15, 1.06, 8, 2],
+          // Decision Process Components
+          [ComponentType.DEMOCRATIC_PROCESS, 68, 1.0, 1.03, 5, 25],
+          [ComponentType.AUTOCRATIC_PROCESS, 75, 1.25, 1.08, 15, -15],
+          [ComponentType.TECHNOCRATIC_PROCESS, 85, 1.15, 1.25, 12, 5],
+          [ComponentType.CONSENSUS_PROCESS, 60, 0.9, 0.95, 20, 20],
+          [ComponentType.OLIGARCHIC_PROCESS, 70, 1.1, 1.1, 5, -10],
+          // Legitimacy Sources
+          [ComponentType.ELECTORAL_LEGITIMACY, 65, 1.05, 1.08, 10, 30],
+          [ComponentType.TRADITIONAL_LEGITIMACY, 70, 1.1, 0.98, 25, 20],
+          [ComponentType.PERFORMANCE_LEGITIMACY, 80, 1.2, 1.15, 15, 15],
+          [ComponentType.CHARISMATIC_LEGITIMACY, 75, 1.15, 1.1, 10, 25],
+          [ComponentType.RELIGIOUS_LEGITIMACY, 72, 1.12, 1.0, 20, 18],
+          [ComponentType.INSTITUTIONAL_LEGITIMACY, 83, 1.18, 1.12, 15, 22],
+          // Institution Types
+          [ComponentType.PROFESSIONAL_BUREAUCRACY, 85, 1.3, 1.15, 15, 10],
+          [ComponentType.MILITARY_ADMINISTRATION, 78, 1.25, 1.05, 20, -5],
+          [ComponentType.INDEPENDENT_JUDICIARY, 80, 1.05, 1.12, 25, 20],
+          [ComponentType.PARTISAN_INSTITUTIONS, 65, 1.08, 1.02, -5, 5],
+          [ComponentType.TECHNOCRATIC_AGENCIES, 82, 1.18, 1.2, 12, 8],
+          // Control Mechanisms
+          [ComponentType.RULE_OF_LAW, 85, 1.15, 1.18, 30, 25],
+          [ComponentType.SURVEILLANCE_SYSTEM, 78, 1.2, 1.05, 15, -15],
+          [ComponentType.ECONOMIC_INCENTIVES, 73, 1.08, 1.15, 5, 8],
+          [ComponentType.SOCIAL_PRESSURE, 68, 1.05, 1.02, 8, -5],
+          [ComponentType.MILITARY_ENFORCEMENT, 80, 1.3, 1.02, 25, -20],
+          // New Government Type Components
+          [ComponentType.DIGITAL_GOVERNMENT, 85, 1.35, 1.22, 15, 12],
+          [ComponentType.MINIMAL_GOVERNMENT, 60, 0.8, 1.15, 5, 10],
+          [ComponentType.PRIVATE_SECTOR_LEADERSHIP, 75, 0.95, 1.2, 8, 5],
+          [ComponentType.SOCIAL_DEMOCRACY, 78, 1.15, 1.1, 18, 22],
+          [ComponentType.COMPREHENSIVE_WELFARE, 72, 1.1, 1.05, 15, 18],
+          [ComponentType.PUBLIC_SECTOR_LEADERSHIP, 70, 1.2, 1.08, 12, 8],
+          [ComponentType.ENVIRONMENTAL_FOCUS, 68, 0.95, 1.12, 10, 15],
+          [ComponentType.ECONOMIC_PLANNING, 82, 1.25, 1.18, 15, 5],
+          [ComponentType.DEVELOPMENTAL_STATE, 83, 1.22, 1.25, 18, 10],
+          [ComponentType.WORKER_PROTECTION, 65, 0.9, 1.05, 8, 15],
+          [ComponentType.MERITOCRATIC_SYSTEM, 88, 1.3, 1.2, 20, 18],
+          [ComponentType.REGIONAL_DEVELOPMENT, 67, 0.92, 1.12, 10, 12],
+        ] as const
+      ).map(
+        ([
+          type,
+          baseEffectiveness,
+          taxImpact,
+          economicImpact,
+          stabilityImpact,
+          legitimacyImpact,
+        ]) => [
+          type,
+          { type, baseEffectiveness, taxImpact, economicImpact, stabilityImpact, legitimacyImpact },
+        ]
+      )
+    ) as Partial<Record<ComponentType, ComponentEffectiveness>>;
 
   // Predefined synergies based on the atomic design document
   private synergyRules: SynergyRule[] = [
