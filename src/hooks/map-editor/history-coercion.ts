@@ -90,3 +90,30 @@ export function lineString(v: unknown): LineStringInput | undefined {
   }
   return undefined;
 }
+
+type Coercers = Record<string, (value: unknown) => unknown>;
+
+/** Patch fields for every key whose coerced value is usable (not undefined). */
+export function usable<C extends Coercers>(
+  data: HistoryData,
+  coercers: C
+): { [K in keyof C]?: Exclude<ReturnType<C[K]>, undefined> } {
+  const patch: Record<string, unknown> = {};
+  for (const [key, coerce] of Object.entries(coercers)) {
+    const value = coerce(data[key]);
+    if (value !== undefined) patch[key] = value;
+  }
+  return patch as never;
+}
+
+/** Patch fields for every key the snapshot recorded, even when its coerced value is undefined. */
+export function present<C extends Coercers>(
+  data: HistoryData,
+  coercers: C
+): { [K in keyof C]?: ReturnType<C[K]> } {
+  const patch: Record<string, unknown> = {};
+  for (const [key, coerce] of Object.entries(coercers)) {
+    if (has(data, key)) patch[key] = coerce(data[key]);
+  }
+  return patch as never;
+}
