@@ -3,6 +3,7 @@ import { Badge } from "~/components/ui/badge";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Stat } from "~/components/ui/stat";
 import { cn } from "~/lib/utils/cn";
+import { stripHtml } from "~/lib/utils/sanitize-html";
 import type {
   ProfileIdentity,
   ProfileLand,
@@ -53,7 +54,11 @@ export function IdentityRows({
     ["Demonym", identity.demonym],
     ["Anthem", identity.anthem],
   ];
-  const present = rows.filter((r): r is [string, string] => !!r[1]);
+  // Wiki infobox values can carry raw HTML (<div>, <br>…); these fields are plain text.
+  const present = rows.flatMap(([label, value]): [string, string][] => {
+    const text = value ? stripHtml(value) : "";
+    return text ? [[label, text]] : [];
+  });
   const leaders = identity.leaders;
   if (present.length === 0 && leaders.length === 0) return null;
   return (
@@ -62,7 +67,11 @@ export function IdentityRows({
         <FacetRow key={label} title={label} trailing={value} />
       ))}
       {leaders.map((l) => (
-        <FacetRow key={`${l.title}-${l.name}`} title={l.title} trailing={l.name} />
+        <FacetRow
+          key={`${l.title}-${l.name}`}
+          title={stripHtml(l.title)}
+          trailing={stripHtml(l.name)}
+        />
       ))}
     </FacetListSection>
   );

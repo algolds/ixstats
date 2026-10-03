@@ -11,6 +11,7 @@ import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-lis
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { Stat } from "~/components/ui/stat";
 import { withBasePath } from "~/lib/base-path";
+import { stripHtml } from "~/lib/utils/sanitize-html";
 import { cn } from "~/lib/utils/cn";
 import type { BannerMode } from "~/app/countries/[slug]/_types";
 import { CountryIdentityStrip, type CountryIdentityStripProps } from "./CountryIdentityStrip";
@@ -189,7 +190,13 @@ export function CountryHero({
   const coverSrc = resolveSrc(cover?.url);
   const showCover = !!coverSrc && coverFailed !== coverSrc;
   const Heading = headingLevel === 1 ? "h1" : "h2";
-  const shownFacts = facts.filter((f): f is { label: string; value: string } => !!f.value);
+  // Wiki infobox values can carry raw HTML (<div>, <br>…); these fields are plain text.
+  const plainMotto = motto ? stripHtml(motto) : null;
+  const plainOfficialName = officialName ? stripHtml(officialName) : null;
+  const shownFacts = facts.flatMap((f) => {
+    const value = f.value ? stripHtml(f.value) : "";
+    return value ? [{ label: f.label, value }] : [];
+  });
 
   return (
     <Card id={id} className={cn("overflow-hidden", className)}>
@@ -220,16 +227,16 @@ export function CountryHero({
                 <Heading className="text-display text-label text-balance">{name}</Heading>
                 {countrySlug && <CountryOwnerRibbonRack countrySlug={countrySlug} />}
               </div>
-              {officialName && officialName !== name && (
-                <p className="text-callout text-label-secondary">{officialName}</p>
+              {plainOfficialName && plainOfficialName !== name && (
+                <p className="text-callout text-label-secondary">{plainOfficialName}</p>
               )}
             </div>
           </div>
 
-          {motto && (
+          {plainMotto && (
             <p className="text-title-3 text-label-secondary max-w-[38rem] font-normal text-pretty">
               <span className="sr-only">Motto: </span>
-              &ldquo;{motto}&rdquo;
+              &ldquo;{plainMotto}&rdquo;
             </p>
           )}
 
