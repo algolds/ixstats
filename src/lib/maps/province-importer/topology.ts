@@ -19,6 +19,7 @@ import { union } from "@turf/union";
 import type { Feature, Polygon, MultiPolygon, Position } from "geojson";
 import type { ProvinceFeature, TopologyReport, GapReport, OverlapReport } from "./types";
 import { boxDistanceSq, distanceDeg } from "../planar";
+import { toPolygonal } from "../polygonal-geometry";
 
 /**
  * Validate the topology of imported provinces against a country border.
@@ -435,43 +436,6 @@ export interface ConformanceResult {
 }
 
 /**
- * Extract Polygons from Geometry/GeometryCollection, keeping only
- * Polygon/MultiPolygon components. Returns a clean Polygon or MultiPolygon,
- * or null if no polygon component exists.
- */
-function cleanToPolygonOrMultiPolygon(geometry: any): Polygon | MultiPolygon | null {
-  if (!geometry) return null;
-
-  if (geometry.type === "Polygon" || geometry.type === "MultiPolygon") {
-    return geometry as Polygon | MultiPolygon;
-  }
-
-  if (geometry.type === "GeometryCollection") {
-    const polygons: any[] = [];
-    for (const g of geometry.geometries || []) {
-      if (g.type === "Polygon") {
-        polygons.push(g.coordinates);
-      } else if (g.type === "MultiPolygon") {
-        polygons.push(...g.coordinates);
-      }
-    }
-    if (polygons.length === 0) return null;
-    if (polygons.length === 1) {
-      return {
-        type: "Polygon",
-        coordinates: polygons[0],
-      };
-    }
-    return {
-      type: "MultiPolygon",
-      coordinates: polygons,
-    };
-  }
-
-  return null;
-}
-
-/**
  * Clip all included province geometries to fit within the country border.
  * Uses turf.intersect to produce the intersection of each province with the country.
  */
@@ -502,7 +466,7 @@ export function clipProvincesToBorder(
         return { ...p, included: false };
       }
 
-      const cleaned = cleanToPolygonOrMultiPolygon(clipped.geometry);
+      const cleaned = toPolygonal(clipped.geometry);
       if (!cleaned) {
         clippedIndices.push(i);
         clippedNames.push(p.name);
@@ -550,7 +514,7 @@ export function clipGeometryToBorder(
 
     if (!clipped) return { geometry, wasClipped: true };
 
-    const cleaned = cleanToPolygonOrMultiPolygon(clipped.geometry);
+    const cleaned = toPolygonal(clipped.geometry);
     if (!cleaned) return { geometry, wasClipped: true };
 
     const origArea = area(feat);

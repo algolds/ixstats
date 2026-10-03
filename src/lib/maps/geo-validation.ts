@@ -7,8 +7,9 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
-import type { Geometry, Polygon, MultiPolygon, Position } from "geojson";
+import type { Geometry } from "geojson";
 import { TRPCError } from "@trpc/server";
+import { toPolygonal } from "./polygonal-geometry";
 
 /**
  * Validate that coordinates are within valid WGS84 bounds.
@@ -163,37 +164,6 @@ export async function validatePolygonContainment(
 }
 
 /**
- * Helper to clean a PostGIS-returned GeoJSON geometry to a Polygon or MultiPolygon.
- * Filters out line strings, points, and other non-polygon components.
- */
-function cleanPostGISGeometry(
-  geometry:
-    Geometry | { type: string; coordinates?: any; geometries?: Geometry[] } | null | undefined
-): Polygon | MultiPolygon | null {
-  if (!geometry) return null;
-  if (geometry.type === "Polygon" || geometry.type === "MultiPolygon") {
-    return geometry as Polygon | MultiPolygon;
-  }
-  if (geometry.type === "GeometryCollection") {
-    const polygons: Position[][][] = [];
-    const geometries = "geometries" in geometry ? geometry.geometries || [] : [];
-    for (const g of geometries) {
-      if (g.type === "Polygon") {
-        polygons.push(g.coordinates);
-      } else if (g.type === "MultiPolygon") {
-        polygons.push(...g.coordinates);
-      }
-    }
-    if (polygons.length === 0) return null;
-    if (polygons.length === 1 && polygons[0]) {
-      return { type: "Polygon", coordinates: polygons[0] };
-    }
-    return { type: "MultiPolygon", coordinates: polygons };
-  }
-  return null;
-}
-
-/**
  * Clip a polygon to the country border and validate it contains geometry.
  * Returns the clipped/trimmed geometry.
  * Throws TRPCError BAD_REQUEST if no overlap exists (the subdivision lies entirely outside).
@@ -238,7 +208,7 @@ export async function clipAndValidatePolygon(
     }
 
     const parsedClipped = JSON.parse(clippedGeoJson);
-    const cleaned = cleanPostGISGeometry(parsedClipped);
+    const cleaned = toPolygonal(parsedClipped);
     if (!cleaned) {
       throw new TRPCError({
         code: "BAD_REQUEST",
@@ -368,73 +338,56 @@ export async function checkNameUniqueness(
   featureType: "city" | "subdivision" | "poi" | "storyPin" | "mapLabel",
   excludeId?: string
 ): Promise<void> {
-  const normalizedName = name.trim().toLowerCase();
+  const insensitive = { equals: name.trim().toLowerCase(), mode: "insensitive" as const };
+  const scope = { countryId, ...(excludeId ? { id: { not: excludeId } } : {}) };
 
-  let existing: { id: string; name: string } | null = null;
+  // Each feature type stores its display name in a different column
+  const finders = {
+    city: async () =>
+      (await db.city.findFirst({ where: { ...scope, name: insensitive }, select: { name: true } }))
+        ?.name,
+    subdivision: async () =>
+      (
+        await db.subdivision.findFirst({
+          where: { ...scope, name: insensitive },
+          select: { name: true },
+        })
+      )?.name,
+    poi: async () =>
+      (
+        await db.pointOfInterest.findFirst({
+          where: { ...scope, name: insensitive },
+          select: { name: true },
+        })
+      )?.name,
+    storyPin: async () =>
+      (
+        await db.storyPin.findFirst({
+          where: { ...scope, title: insensitive },
+          select: { title: true },
+        })
+      )?.title,
+    mapLabel: async () =>
+      (
+        await db.mapLabel.findFirst({
+          where: { ...scope, text: insensitive },
+          select: { text: true },
+        })
+      )?.text,
+  };
+  const labels = {
+    city: "city",
+    subdivision: "subdivision",
+    poi: "point of interest",
+    storyPin: "story pin",
+    mapLabel: "map label",
+  };
 
-  if (featureType === "city") {
-    existing = await db.city.findFirst({
-      where: {
-        countryId,
-        name: { equals: normalizedName, mode: "insensitive" },
-        ...(excludeId ? { id: { not: excludeId } } : {}),
-      },
-      select: { id: true, name: true },
-    });
-  } else if (featureType === "subdivision") {
-    existing = await db.subdivision.findFirst({
-      where: {
-        countryId,
-        name: { equals: normalizedName, mode: "insensitive" },
-        ...(excludeId ? { id: { not: excludeId } } : {}),
-      },
-      select: { id: true, name: true },
-    });
-  } else if (featureType === "poi") {
-    existing = await db.pointOfInterest.findFirst({
-      where: {
-        countryId,
-        name: { equals: normalizedName, mode: "insensitive" },
-        ...(excludeId ? { id: { not: excludeId } } : {}),
-      },
-      select: { id: true, name: true },
-    });
-  } else if (featureType === "storyPin") {
-    existing = (await db.storyPin.findFirst({
-      where: {
-        countryId,
-        title: { equals: normalizedName, mode: "insensitive" },
-        ...(excludeId ? { id: { not: excludeId } } : {}),
-      },
-      select: { id: true, title: true },
-    })) as { id: string; name: string } | null;
-    if (existing) existing.name = (existing as any).title;
-  } else if (featureType === "mapLabel") {
-    existing = (await db.mapLabel.findFirst({
-      where: {
-        countryId,
-        text: { equals: normalizedName, mode: "insensitive" },
-        ...(excludeId ? { id: { not: excludeId } } : {}),
-      },
-      select: { id: true, text: true },
-    })) as { id: string; name: string } | null;
-    if (existing) existing.name = (existing as any).text;
-  }
-
-  if (existing) {
-    const label =
-      featureType === "city"
-        ? "city"
-        : featureType === "subdivision"
-          ? "subdivision"
-          : featureType === "storyPin"
-            ? "story pin"
-            : featureType === "mapLabel"
-              ? "map label"
-              : "point of interest";
+  const existingName = await finders[featureType]();
+  if (existingName) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: `A ${label} named "${existing.name}" already exists in this country.`,
+      message: `A ${labels[featureType]} named "${existingName}" already exists in this country.`,
     });
   }
 }
