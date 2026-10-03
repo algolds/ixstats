@@ -251,6 +251,7 @@ function HumanCapitalSection({
           {
             id: "literacy",
             name: "Adult literacy rate",
+            value: 0,
             percentage: literacyRate,
             color: "emerald",
           },
