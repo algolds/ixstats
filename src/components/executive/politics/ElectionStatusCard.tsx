@@ -2,13 +2,52 @@
 
 import { WarningTriangle as AlertTriangle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 
 interface ElectionStatusCardProps {
   countryId: string;
   /** Only the country owner can count a due election early. */
   canManage?: boolean;
+}
+
+type ElectionStatus = NonNullable<RouterOutputs["elections"]["getElectionStatus"]>;
+
+function describeElection(status: ElectionStatus): { headline: string; detail?: string } {
+  const { upcoming, minParties } = status;
+  if (!status.hasLegislature) {
+    return {
+      headline: "No legislature configured",
+      detail: `Configure the legislature and register at least ${minParties} parties to schedule the first election.`,
+    };
+  }
+  if (status.activeParties < minParties) {
+    return {
+      headline: "Awaiting parties",
+      detail: `${status.activeParties} of ${minParties} active parties registered. The first election is scheduled once ${minParties} parties exist.`,
+    };
+  }
+  if (status.counting) return { headline: "Votes are being counted" };
+  if (!upcoming) {
+    return {
+      headline: "No election scheduled",
+      detail: "The elections job schedules the next one.",
+    };
+  }
+  const when = IxTime.formatIxTime(upcoming.scheduledIxTime);
+  if (upcoming.isDue) {
+    return {
+      headline: `${upcoming.name}: polls have closed`,
+      detail: `Voting ended ${when}. Results are counted by the elections job, or count them now.`,
+    };
+  }
+  return upcoming.isFirst
+    ? {
+        headline: `First election scheduled for ${when}`,
+        detail:
+          "Every active party stands. The result seats the legislature, and bills can then go to a vote.",
+      }
+    : { headline: `Next election: ${when}` };
 }
 
 /**
@@ -34,32 +73,7 @@ export function ElectionStatusCard({ countryId, canManage = true }: ElectionStat
 
   const { upcoming, lastElection } = status;
   const needsParties = status.activeParties < status.minParties;
-
-  let headline: string;
-  let detail: string | null = null;
-  if (!status.hasLegislature) {
-    headline = "No legislature configured";
-    detail = `Configure the legislature and register at least ${status.minParties} parties to schedule the first election.`;
-  } else if (needsParties) {
-    headline = "Awaiting parties";
-    detail = `${status.activeParties} of ${status.minParties} active parties registered. The first election is scheduled once ${status.minParties} parties exist.`;
-  } else if (status.counting) {
-    headline = "Votes are being counted";
-  } else if (upcoming?.isDue) {
-    headline = `${upcoming.name}: polls have closed`;
-    detail = `Voting ended ${IxTime.formatIxTime(upcoming.scheduledIxTime)}. Results are counted by the elections job, or count them now.`;
-  } else if (upcoming) {
-    headline = upcoming.isFirst
-      ? `First election scheduled for ${IxTime.formatIxTime(upcoming.scheduledIxTime)}`
-      : `Next election: ${IxTime.formatIxTime(upcoming.scheduledIxTime)}`;
-    detail = upcoming.isFirst
-      ? "Every active party stands. The result seats the legislature, and bills can then go to a vote."
-      : null;
-  } else {
-    headline = "No election scheduled";
-    detail = "The elections job schedules the next one.";
-  }
-
+  const { headline, detail } = describeElection(status);
   const vacant = status.totalSeats - status.seatedSeats;
 
   return (
