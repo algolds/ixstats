@@ -2,6 +2,7 @@
 // src/app/admin/economic-archetypes/EconomicArchetypesPanel.tsx
 // Admin interface for managing economic archetypes
 
+import { RowActions } from "../_components/RowActions";
 import { useState, useMemo } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
@@ -17,9 +18,6 @@ import {
 import { useNotify } from "~/hooks/useNotify";
 import {
   Plus,
-  EditPencil as Pencil,
-  Trash as Trash2,
-  Copy,
   Search, // oxlint-disable-next-line eslint/no-unused-vars
   EyeClosed as EyeOff,
 } from "iconoir-react";
@@ -360,38 +358,11 @@ export function EconomicArchetypesPanel() {
                     {archetype.usageCount || 0}×
                   </TableCell>
                   <TableCell className="px-4 text-right">
-                    <div className="inline-flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label="Clone"
-                        onClick={() => handleClone(archetype)}
-
-                        title="Clone"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label="Edit"
-                        onClick={() => handleEdit(archetype)}
-
-                        title="Edit"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label="Delete"
-                        onClick={() => handleDelete(archetype.id, archetype.name)}
-                        className="text-destructive"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+                    <RowActions
+                      onClone={() => handleClone(archetype)}
+                      onEdit={() => handleEdit(archetype)}
+                      onDelete={() => handleDelete(archetype.id, archetype.name)}
+                    />
                   </TableCell>
                 </TableRow>
               ))}

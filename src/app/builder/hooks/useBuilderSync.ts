@@ -1,3 +1,7 @@
+import {
+  STARTING_SECTOR_DISTRIBUTION,
+  STARTING_EMPLOYMENT_TYPE,
+} from "../lib/default-labor-market";
 import { useEffect, useRef } from "react";
 import { safeGetItemSync, safeRemoveItemSync } from "~/lib/system/local-storage-mutex";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
@@ -117,9 +121,7 @@ export function useBuilderSync({
           }
 
           const gdpPcValue =
-            wikiData.gdpPerCapita ??
-            wikiData.GDP_nominal_per_capita ??
-            wikiData.GDP_PPP_per_capita;
+            wikiData.gdpPerCapita ?? wikiData.GDP_nominal_per_capita ?? wikiData.GDP_PPP_per_capita;
           if (gdpPcValue) {
             const parsed = parseWikiNumericValue(gdpPcValue);
             if (parsed !== null) inputs.coreIndicators.gdpPerCapita = parsed;
@@ -251,9 +253,7 @@ export function useBuilderSync({
 
           if (wikiData.government_type || wikiData.head_of_state) {
             const govType = (
-              wikiData.government_type
-                ? normalizeGovernmentType(wikiData.government_type)
-                : "Other"
+              wikiData.government_type ? normalizeGovernmentType(wikiData.government_type) : "Other"
             ) as GovernmentType;
             stateUpdate.governmentStructure = {
               structure: {
@@ -326,33 +326,8 @@ export function useBuilderSync({
                 seniorEmploymentRate: 35,
                 femaleParticipationRate: 50,
                 maleParticipationRate: 70,
-                sectorDistribution: {
-                  agriculture: 5,
-                  mining: 2,
-                  manufacturing: 15,
-                  construction: 8,
-                  utilities: 2,
-                  wholesale: 5,
-                  retail: 10,
-                  transportation: 5,
-                  information: 3,
-                  finance: 5,
-                  professional: 10,
-                  education: 6,
-                  healthcare: 8,
-                  hospitality: 5,
-                  government: 8,
-                  other: 3,
-                },
-                employmentType: {
-                  fullTime: 70,
-                  partTime: 15,
-                  temporary: 8,
-                  seasonal: 0,
-                  selfEmployed: 5,
-                  gig: 2,
-                  informal: 0,
-                },
+                sectorDistribution: { ...STARTING_SECTOR_DISTRIBUTION },
+                employmentType: { ...STARTING_EMPLOYMENT_TYPE },
                 averageAnnualIncome: gdpPerCapCalc * 0.6,
                 averageWorkweekHours: 40,
                 averageOvertimeHours: 2,
@@ -412,7 +387,10 @@ export function useBuilderSync({
             };
           }
 
-          if (wikiData._importResult?.selectedComponents && wikiData._importResult.selectedComponents.length > 0) {
+          if (
+            wikiData._importResult?.selectedComponents &&
+            wikiData._importResult.selectedComponents.length > 0
+          ) {
             stateUpdate.governmentComponents = wikiData._importResult.selectedComponents;
           }
 
@@ -424,7 +402,8 @@ export function useBuilderSync({
             const deptInputs = wikiData._importResult.parsedDepartments.map((d) => ({
               name: d.name,
               category: (d.category as DepartmentCategory) || "Other",
-              description: d.description || `Government ${d.category?.toLowerCase() || ""} department`,
+              description:
+                d.description || `Government ${d.category?.toLowerCase() || ""} department`,
               minister: d.minister,
               ministerTitle: "Minister",
               headquarters: "",

@@ -15,6 +15,7 @@ import { ControlSlider as Sliders, Suitcase as Briefcase } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { processAging, generateTeamRoster, type SportPresetKey } from "~/lib/sports";
+import { LeagueSeasonPicker } from "./LeagueSeasonPicker";
 import { getPlayerOverall } from "../sports-labs-utils";
 
 interface AgingInspectorNodeProps {
@@ -38,7 +39,6 @@ export const AgingInspectorNode = React.memo(function AgingInspectorNode({
   const [agingResults, setAgingResults] = useState<any[]>([]);
 
   // DB queries
-  const { data: dbLeagues } = api.sports.getLeagues.useQuery({});
   const { data: dbLeague } = api.sports.getLeague.useQuery(
     { id: selectedLeagueId },
     { enabled: !!selectedLeagueId }
@@ -143,39 +143,12 @@ export const AgingInspectorNode = React.memo(function AgingInspectorNode({
   // DB Mode
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <Label>Select league</Label>
-        <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
-          <SelectTrigger>
-            <SelectValue placeholder="Choose league" />
-          </SelectTrigger>
-          <SelectContent>
-            {dbLeagues?.map((l) => (
-              <SelectItem key={l.id} value={l.id}>
-                {l.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {dbLeague && dbLeague.seasons && (
-        <div className="space-y-2">
-          <Label>Select season</Label>
-          <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choose season" />
-            </SelectTrigger>
-            <SelectContent>
-              {dbLeague.seasons.map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  Season {s.seasonNumber} ({s.status})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      <LeagueSeasonPicker
+        selectedLeagueId={selectedLeagueId}
+        setSelectedLeagueId={setSelectedLeagueId}
+        selectedSeasonId={selectedSeasonId}
+        setSelectedSeasonId={setSelectedSeasonId}
+      />
 
       {dbSeason && (
         <div className="rounded-control border-yellow/20 bg-yellow/5 text-footnote space-y-2 border p-3">

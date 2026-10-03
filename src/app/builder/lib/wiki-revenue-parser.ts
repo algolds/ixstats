@@ -3,6 +3,8 @@
  * Extremely strict — only matches explicit, unambiguous statements about government revenue sources.
  */
 
+import { extractEvidence } from "./wiki-pattern-utils";
+
 interface ParsedRevenueSource {
   name: string;
   category: "Direct Tax" | "Indirect Tax" | "Non-Tax Revenue" | "Fees and Fines" | "Other";
@@ -86,20 +88,6 @@ const revenuePatterns = [
     confidence: 95,
   },
 ];
-
-function extractEvidence(
-  content: string,
-  matchIndex: number,
-  matchLength: number,
-  contextChars = 80
-): string {
-  const start = Math.max(0, matchIndex - contextChars);
-  const end = Math.min(content.length, matchIndex + matchLength + contextChars);
-  let snippet = content.slice(start, end).replace(/\n/g, " ").trim();
-  if (start > 0) snippet = "..." + snippet;
-  if (end < content.length) snippet = snippet + "...";
-  return snippet;
-}
 
 function categorizeRevenue(name: string): ParsedRevenueSource["category"] | null {
   const lowerName = name.toLowerCase().trim();

@@ -3,6 +3,10 @@
  * Composed of focused sub-hooks: useBuilderPersistence, useBuilderEditMode, useBuilderSync.
  */
 
+import {
+  STARTING_SECTOR_DISTRIBUTION,
+  STARTING_EMPLOYMENT_TYPE,
+} from "../lib/default-labor-market";
 import { useState, useCallback, useRef } from "react";
 import { type BuilderStep, getStepsForMode } from "../components/enhanced/builderConfig";
 import type { RealCountryData, EconomicInputs } from "../lib/economy-data-service";
@@ -279,33 +283,8 @@ export function useBuilderState(
                       seniorEmploymentRate: 20.0,
                       femaleParticipationRate: 60.0,
                       maleParticipationRate: 70.0,
-                      sectorDistribution: {
-                        agriculture: 5,
-                        mining: 2,
-                        manufacturing: 15,
-                        construction: 8,
-                        utilities: 2,
-                        wholesale: 5,
-                        retail: 10,
-                        transportation: 5,
-                        information: 3,
-                        finance: 5,
-                        professional: 10,
-                        education: 6,
-                        healthcare: 8,
-                        hospitality: 5,
-                        government: 8,
-                        other: 3,
-                      },
-                      employmentType: {
-                        fullTime: 70,
-                        partTime: 15,
-                        temporary: 8,
-                        seasonal: 0,
-                        selfEmployed: 5,
-                        gig: 2,
-                        informal: 0,
-                      },
+                      sectorDistribution: { ...STARTING_SECTOR_DISTRIBUTION },
+                      employmentType: { ...STARTING_EMPLOYMENT_TYPE },
                       averageWorkweekHours: 40,
                       averageOvertimeHours: 2,
                       averageAnnualIncome: 30000,

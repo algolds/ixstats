@@ -94,6 +94,38 @@ interface BatchResultsTableProps {
   onExportJSON: () => void;
 }
 
+/** Tooltip explaining the perplexity filter. */
+function PerplexityHelp() {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label="What is Perplexity?"
+          className="text-label-secondary hover:text-label cursor-help"
+        >
+          <HelpCircle className="h-3 w-3" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="text-footnote max-w-xs space-y-2 p-3">
+        <p className="text-label font-semibold">Perplexity (Linguistic Surprise)</p>
+        <p className="text-label-secondary text-caption leading-relaxed">
+          Measures how unexpected or unusual a word&apos;s letter transitions are relative to the
+          training phonology model.
+        </p>
+        <div className="border-separator text-caption grid grid-cols-2 gap-2 border-t pt-1 font-mono">
+          <span className="text-green font-medium">&lt; 25: Natural & familiar</span>
+          <span className="text-yellow font-medium">25–50: Balanced</span>
+          <span className="text-red col-span-2 font-medium">
+            &gt; 50: Exotic & unusual transitions
+          </span>
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 export function BatchResultsTable({
   results,
   selectedNames,
@@ -133,32 +165,7 @@ export function BatchResultsTable({
           <div className="text-label-secondary text-footnote flex items-center gap-2">
             <div className="flex items-center gap-1">
               <span>Max Perplexity:</span>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="What is Perplexity?"
-                    className="text-label-secondary hover:text-label cursor-help"
-                  >
-                    <HelpCircle className="h-3 w-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-footnote max-w-xs space-y-2 p-3">
-                  <p className="text-label font-semibold">Perplexity (Linguistic Surprise)</p>
-                  <p className="text-label-secondary text-caption leading-relaxed">
-                    Measures how unexpected or unusual a word&apos;s letter transitions are relative
-                    to the training phonology model.
-                  </p>
-                  <div className="border-separator text-caption grid grid-cols-2 gap-2 border-t pt-1 font-mono">
-                    <span className="text-green font-medium">&lt; 25: Natural & familiar</span>
-                    <span className="text-yellow font-medium">25–50: Balanced</span>
-                    <span className="text-red col-span-2 font-medium">
-                      &gt; 50: Exotic & unusual transitions
-                    </span>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
+              <PerplexityHelp />
             </div>
             <Slider
               min={0}
@@ -211,32 +218,7 @@ export function BatchResultsTable({
                   sorting={sorting}
                   onSort={onSort}
                 />
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label="What is Perplexity?"
-                      className="text-label-secondary hover:text-label cursor-help"
-                    >
-                      <HelpCircle className="h-3 w-3" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-footnote max-w-xs space-y-2 p-3">
-                    <p className="text-label font-semibold">Perplexity (Linguistic Surprise)</p>
-                    <p className="text-label-secondary text-caption leading-relaxed">
-                      Measures how unexpected or unusual a word&apos;s letter transitions are
-                      relative to the training phonology model.
-                    </p>
-                    <div className="border-separator text-caption grid grid-cols-2 gap-2 border-t pt-1 font-mono">
-                      <span className="text-green font-medium">&lt; 25: Natural & familiar</span>
-                      <span className="text-yellow font-medium">25–50: Balanced</span>
-                      <span className="text-red col-span-2 font-medium">
-                        &gt; 50: Exotic & unusual transitions
-                      </span>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
+                <PerplexityHelp />
               </div>
             </TableHead>
             <TableHead className="text-right">Actions</TableHead>

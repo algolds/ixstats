@@ -1,29 +1,11 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, CheckCircle, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { soundEffects } from "~/lib/sound/cuelume";
-import { createUrl } from "~/lib/utils";
-import {
-  type BuilderSection,
-  isScratchOrImportOrigin,
-  getBuilderSteps,
-} from "../lib/builder-theme";
-import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
-
-import { useBuilderFilter } from "./builder-filter-context";
+import { type BuilderSection } from "../lib/builder-theme";
+import { useBuilderStepNav, SECTION_LABELS } from "../hooks/useBuilderStepNav";
 import { BuilderRealmPicker } from "./BuilderRealmPicker";
-
-const SECTION_LABELS: Record<BuilderSection, string> = {
-  foundation: "Foundation",
-  identity: "Identity",
-  government: "Government",
-  economics: "Economics",
-  preview: "Preview and finalize",
-  import: "Wiki import",
-};
 
 interface BuilderStepFooterProps {
   activeSection: BuilderSection;
@@ -46,35 +28,12 @@ export const BuilderStepFooter = React.memo(function BuilderStepFooter({
   isSubmitting = false,
   onReset,
 }: BuilderStepFooterProps) {
-  const { clearDraft, builderState, setBuilderState } = useBuilderContext();
-  const filter = useBuilderFilter();
-  const router = useRouter();
-
-  const handleReset = () => {
-    if (onReset) {
-      onReset();
-      return;
-    }
-    soundEffects.press();
-    clearDraft();
-    if (mode === "edit") {
-      router.push(createUrl("/mycountry"));
-    } else {
-      filter.clearSelection();
-      onNavigate("foundation");
-    }
-  };
-
-  const isScratchOrImport = useMemo(() => isScratchOrImportOrigin(builderState), [builderState]);
-
-  const steps = useMemo(
-    () => getBuilderSteps(activeSection, mode, isScratchOrImport),
-    [activeSection, mode, isScratchOrImport]
-  );
-
-  const currentIndex = steps.indexOf(activeSection);
-  const isBackDisabled = currentIndex <= 0;
-  const isOnPreview = activeSection === "preview";
+  const { handleReset, steps, currentIndex, isBackDisabled, isOnPreview } = useBuilderStepNav({
+    activeSection,
+    mode,
+    onNavigate,
+    onReset,
+  });
 
   const previousStepLabel = useMemo(() => {
     if (currentIndex > 0) {

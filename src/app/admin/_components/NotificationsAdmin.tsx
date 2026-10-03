@@ -13,7 +13,6 @@ import {
   AlertRulesPanel,
   TestSuitePanel,
 } from "../notifications/_components";
-import { NotificationTestCard } from "./platform/NotificationTestCard";
 
 export function NotificationsAdmin() {
   usePageTitle({ title: "Admin - Notification Settings" });
@@ -71,10 +70,7 @@ export function NotificationsAdmin() {
         <TabsContent value="testing" className="outline-none">
           {activeTab === "testing" && (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-fast space-y-6">
-              <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                <NotificationComposer />
-                <NotificationTestCard />
-              </div>
+              <NotificationComposer />
               <TestSuitePanel />
             </div>
           )}

@@ -2,7 +2,6 @@
 
 import React, { useMemo } from "react";
 import { motion } from "motion/react";
-import { useRouter } from "next/navigation";
 import {
   Globe,
   WhiteFlag as Flag,
@@ -18,20 +17,15 @@ import {
   Refresh as RefreshCw,
   XmarkCircle as XCircle,
 } from "iconoir-react";
-import { cn, createUrl } from "~/lib/utils";
+import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button, focusRing, hitSlop } from "~/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { soundEffects } from "~/lib/sound/cuelume";
-import {
-  type BuilderSection,
-  isScratchOrImportOrigin,
-  getBuilderSteps,
-} from "../lib/builder-theme";
+import { type BuilderSection } from "../lib/builder-theme";
 import type { BuilderAlertResult } from "../lib/builder-alerts";
 
-import { useBuilderContext } from "./enhanced/context/BuilderStateContext";
-import { useBuilderFilter } from "./builder-filter-context";
+import { useBuilderStepNav, SECTION_LABELS } from "../hooks/useBuilderStepNav";
 import { useBuilderGuide } from "./builder-guide-context";
 import { BuilderModeToggle } from "./BuilderModeToggle";
 import { Eyebrow } from "~/components/ui/eyebrow";
@@ -47,15 +41,6 @@ const SECTION_ICONS: Record<
   economics: TrendingUp,
   preview: CheckCircle,
   import: Download,
-};
-
-const SECTION_LABELS: Record<BuilderSection, string> = {
-  foundation: "Foundation",
-  identity: "Identity",
-  government: "Government",
-  economics: "Economics",
-  preview: "Preview and finalize",
-  import: "Wiki import",
 };
 
 interface BuilderStudioHeaderProps {
@@ -86,35 +71,14 @@ export const BuilderStudioHeader = React.memo(function BuilderStudioHeader({
   onReset,
 }: BuilderStudioHeaderProps) {
   const { openGuide } = useBuilderGuide();
-  const { clearDraft, builderState } = useBuilderContext();
-  const filter = useBuilderFilter();
-  const router = useRouter();
+  const { handleReset, steps, currentIndex, isBackDisabled, isOnPreview } = useBuilderStepNav({
+    activeSection,
+    mode,
+    onNavigate,
+    onReset,
+  });
 
-  const handleReset = () => {
-    if (onReset) {
-      onReset();
-      return;
-    }
-    soundEffects.press();
-    clearDraft();
-    if (mode === "edit") {
-      router.push(createUrl("/mycountry"));
-    } else {
-      filter.clearSelection();
-      onNavigate("foundation");
-    }
-  };
-
-  const isScratchOrImport = useMemo(() => isScratchOrImportOrigin(builderState), [builderState]);
-
-  const steps = useMemo(
-    () => getBuilderSteps(activeSection, mode, isScratchOrImport),
-    [activeSection, mode, isScratchOrImport]
-  );
-
-  const stepIndex = Math.max(0, steps.indexOf(activeSection));
-  const isBackDisabled = activeSection === steps[0] || steps.indexOf(activeSection) <= 0;
-  const isOnPreview = activeSection === "preview";
+  const stepIndex = Math.max(0, currentIndex);
 
   const sectionAlerts = useMemo(
     () => alertResult?.forSection(activeSection) || [],

@@ -3,6 +3,8 @@
  * Uses keyword-based regex matching with evidence collection and confidence scoring.
  */
 
+import { extractEvidence, findBestMatch, type PatternMatch } from "./wiki-pattern-utils";
+
 export interface WikiGovernmentAttributes {
   powerStructure: "centralized" | "federal" | "confederate" | "unitary" | null;
   powerStructureConfidence: number;
@@ -80,45 +82,6 @@ export interface WikiGovernmentAttributes {
   overallConfidence: number;
 }
 
-interface PatternMatch {
-  pattern: RegExp;
-  value: string;
-  confidence: number;
-}
-
-function extractEvidence(content: string, match: RegExpExecArray, contextChars = 80): string {
-  const start = Math.max(0, match.index - contextChars);
-  const end = Math.min(content.length, match.index + match[0].length + contextChars);
-  let snippet = content.slice(start, end).replace(/\n/g, " ").trim();
-  if (start > 0) snippet = "..." + snippet;
-  if (end < content.length) snippet = snippet + "...";
-  return snippet;
-}
-
-function findBestMatch(
-  content: string,
-  patterns: PatternMatch[],
-  evidence: string[]
-): { value: string | null; confidence: number } {
-  let bestValue: string | null = null;
-  let bestConfidence = 0;
-
-  for (const { pattern, value, confidence } of patterns) {
-    pattern.lastIndex = 0;
-    const match = pattern.exec(content);
-    if (match && confidence > bestConfidence) {
-      bestValue = value;
-      bestConfidence = confidence;
-      const evidenceSnippet = extractEvidence(content, match);
-      if (!evidence.includes(evidenceSnippet)) {
-        evidence.push(evidenceSnippet);
-      }
-    }
-  }
-
-  return { value: bestValue, confidence: bestConfidence };
-}
-
 function collectAllMatches<T extends string>(
   content: string,
   patterns: Array<{ pattern: RegExp; value: T; confidence: number }>,
@@ -128,7 +91,7 @@ function collectAllMatches<T extends string>(
     pattern.lastIndex = 0;
     const match = pattern.exec(content);
     if (match) {
-      const evidenceSnippet = extractEvidence(content, match);
+      const evidenceSnippet = extractEvidence(content, match.index, match[0].length);
       results.push({ type: value, confidence, evidence: evidenceSnippet });
     }
   }

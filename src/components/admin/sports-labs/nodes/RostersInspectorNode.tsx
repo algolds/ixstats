@@ -16,7 +16,42 @@ import { Undo as RotateCcw } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { generateTeamRoster, generateCoach, type SportPresetKey } from "~/lib/sports";
+import { LeagueSeasonPicker } from "./LeagueSeasonPicker";
 import { getPlayerOverall } from "../sports-labs-utils";
+
+function PlayerRow({
+  player,
+}: {
+  player: {
+    firstName: string;
+    lastName: string;
+    position: string;
+    age: number;
+    careerStage: string;
+    ratings: Parameters<typeof getPlayerOverall>[0];
+  };
+}) {
+  return (
+    <div className="rounded-control-sm text-footnote flex items-center justify-between border p-2">
+      <div>
+        <p className="font-semibold">
+          {player.firstName} {player.lastName}
+        </p>
+        <p className="text-label-secondary text-footnote flex items-center gap-1">
+          <PositionTooltip position={player.position}>
+            <span className="hover:text-label cursor-help font-medium transition-colors">
+              {player.position}
+            </span>
+          </PositionTooltip>{" "}
+          &middot; Age {player.age} &middot; {player.careerStage}
+        </p>
+      </div>
+      <Badge variant="outline" className="font-semibold tabular-nums">
+        {getPlayerOverall(player.ratings)}
+      </Badge>
+    </div>
+  );
+}
 
 interface RostersInspectorNodeProps {
   isSandbox: boolean;
@@ -41,7 +76,6 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
   const [selectedSaint, setSelectedSaint] = useState("Saint Rais");
 
   // DB queries
-  const { data: dbLeagues } = api.sports.getLeagues.useQuery({});
   const { data: dbLeague } = api.sports.getLeague.useQuery(
     { id: selectedLeagueId },
     { enabled: !!selectedLeagueId }
@@ -114,32 +148,9 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
             <p className="text-label-secondary text-footnote">
               {mockRoster.length} Players Generated
             </p>
-            {mockRoster.map((p, i) => {
-              const overall = getPlayerOverall(p.ratings);
-              return (
-                <div
-                  key={i}
-                  className="rounded-control-sm text-footnote flex items-center justify-between border p-2"
-                >
-                  <div>
-                    <p className="font-semibold">
-                      {p.firstName} {p.lastName}
-                    </p>
-                    <p className="text-label-secondary text-footnote flex items-center gap-1">
-                      <PositionTooltip position={p.position}>
-                        <span className="hover:text-label cursor-help font-medium transition-colors">
-                          {p.position}
-                        </span>
-                      </PositionTooltip>{" "}
-                      &middot; Age {p.age} &middot; {p.careerStage}
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="font-semibold">
-                    {overall}
-                  </Badge>
-                </div>
-              );
-            })}
+            {mockRoster.map((p, i) => (
+              <PlayerRow key={i} player={p} />
+            ))}
           </div>
         ) : (
           <p className="text-label-secondary text-footnote py-6 text-center">
@@ -153,21 +164,10 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
   // DB Mode
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <Label>Select league</Label>
-        <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
-          <SelectTrigger>
-            <SelectValue placeholder="Choose league" />
-          </SelectTrigger>
-          <SelectContent>
-            {dbLeagues?.map((l) => (
-              <SelectItem key={l.id} value={l.id}>
-                {l.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <LeagueSeasonPicker
+        selectedLeagueId={selectedLeagueId}
+        setSelectedLeagueId={setSelectedLeagueId}
+      />
 
       {dbLeague && (
         <div className="space-y-2">
@@ -245,32 +245,9 @@ export const RostersInspectorNode = React.memo(function RostersInspectorNode({
             <h6 className="text-label-secondary text-subhead">
               Active Roster ({dbTeam.players.length})
             </h6>
-            {dbTeam.players.map((p) => {
-              const overall = getPlayerOverall(p.ratings);
-              return (
-                <div
-                  key={p.id}
-                  className="rounded-control-sm text-footnote flex items-center justify-between border p-2"
-                >
-                  <div>
-                    <p className="font-semibold">
-                      {p.firstName} {p.lastName}
-                    </p>
-                    <p className="text-label-secondary text-footnote flex items-center gap-1">
-                      <PositionTooltip position={p.position}>
-                        <span className="hover:text-label cursor-help font-medium transition-colors">
-                          {p.position}
-                        </span>
-                      </PositionTooltip>{" "}
-                      &middot; Age {p.age} &middot; {p.careerStage}
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="tabular-nums">
-                    {overall}
-                  </Badge>
-                </div>
-              );
-            })}
+            {dbTeam.players.map((p) => (
+              <PlayerRow key={p.id} player={p} />
+            ))}
           </div>
         </div>
       )}

@@ -2,6 +2,7 @@
 // src/app/admin/intelligence-templates/IntelligenceTemplatesPanel.tsx
 // Admin interface for managing intelligence report templates
 
+import { RowActions } from "../_components/RowActions";
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
@@ -24,7 +25,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useNotify } from "~/hooks/useNotify";
-import { Plus, EditPencil as Pencil, Trash as Trash2, Eye, Search } from "iconoir-react";
+import { Plus, Eye, Search } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
@@ -342,38 +343,22 @@ export function IntelligenceTemplatesPanel() {
                     </span>
                   </TableCell>
                   <TableCell className="px-4 text-right">
-                    <div className="inline-flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label="Preview"
-                        onClick={() => setPreviewTemplate(template)}
+                    <RowActions
+                      before={
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label="Preview"
+                          onClick={() => setPreviewTemplate(template)}
 
-                        title="Preview"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label="Edit"
-                        onClick={() => handleEdit(template)}
-
-                        title="Edit"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label="Delete"
-                        onClick={() => handleDelete(template.id)}
-                        className="text-destructive"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+                          title="Preview"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                      }
+                      onEdit={() => handleEdit(template)}
+                      onDelete={() => handleDelete(template.id)}
+                    />
                   </TableCell>
                 </TableRow>
               ))}

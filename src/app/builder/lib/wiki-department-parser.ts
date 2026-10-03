@@ -3,6 +3,8 @@
  * Maps to builder department categories using keyword-based matching.
  */
 
+import { extractEvidence } from "./wiki-pattern-utils";
+
 export interface ParsedDepartment {
   name: string;
   category:
@@ -133,20 +135,6 @@ function categorizeDepartment(name: string): ParsedDepartment["category"] {
   }
 
   return "Other";
-}
-
-function extractEvidence(
-  content: string,
-  matchIndex: number,
-  matchLength: number,
-  contextChars = 80
-): string {
-  const start = Math.max(0, matchIndex - contextChars);
-  const end = Math.min(content.length, matchIndex + matchLength + contextChars);
-  let snippet = content.slice(start, end).replace(/\n/g, " ").trim();
-  if (start > 0) snippet = "..." + snippet;
-  if (end < content.length) snippet = snippet + "...";
-  return snippet;
 }
 
 function findMinisterForDepartment(

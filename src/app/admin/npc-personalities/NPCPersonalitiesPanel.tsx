@@ -2,6 +2,7 @@
 // src/app/admin/npc-personalities/NPCPersonalitiesPanel.tsx
 // Unified NPC Personality Archetypes Admin Panel with standard iconoir icons
 
+import { RowActions } from "../_components/RowActions";
 import { useState, useMemo } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
@@ -17,7 +18,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useNotify } from "~/hooks/useNotify";
-import { Search, Plus, EditPencil as Pencil, Trash as Trash2, Copy, Globe } from "iconoir-react";
+import { Search, Plus, Globe } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
 import {
   NPCPersonalityFormDialog,
@@ -421,51 +422,26 @@ export function NPCPersonalitiesPanel() {
                     )}
                   </TableCell>
                   <TableCell className="px-4 text-right">
-                    <div className="inline-flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label="Assign to country"
-                        onClick={() => {
-                          setAssigningPersonality(p);
-                          setIsAssignDialogOpen(true);
-                        }}
+                    <RowActions
+                      before={
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label="Assign to country"
+                          onClick={() => {
+                            setAssigningPersonality(p);
+                            setIsAssignDialogOpen(true);
+                          }}
 
-                        title="Assign to country"
-                      >
-                        <Globe className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label="Clone"
-                        onClick={() => handleClone(p)}
-
-                        title="Clone"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label="Edit"
-                        onClick={() => handleEdit(p)}
-
-                        title="Edit"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label="Delete"
-                        onClick={() => handleDelete(p.id, p.name)}
-                        className="text-destructive"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+                          title="Assign to country"
+                        >
+                          <Globe className="h-3.5 w-3.5" />
+                        </Button>
+                      }
+                      onClone={() => handleClone(p)}
+                      onEdit={() => handleEdit(p)}
+                      onDelete={() => handleDelete(p.id, p.name)}
+                    />
                   </TableCell>
                 </TableRow>
               ))}

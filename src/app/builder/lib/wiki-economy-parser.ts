@@ -3,6 +3,8 @@
  * Uses keyword-based regex matching with evidence collection and confidence scoring.
  */
 
+import { extractEvidence, findBestMatch, type PatternMatch } from "./wiki-pattern-utils";
+
 export interface WikiEconomyAttributes {
   economicSystem:
     | "free_market"
@@ -31,45 +33,6 @@ export interface WikiEconomyAttributes {
   overallConfidence: number;
 }
 
-interface PatternMatch {
-  pattern: RegExp;
-  value: string;
-  confidence: number;
-}
-
-function extractEvidence(content: string, match: RegExpExecArray, contextChars = 80): string {
-  const start = Math.max(0, match.index - contextChars);
-  const end = Math.min(content.length, match.index + match[0].length + contextChars);
-  let snippet = content.slice(start, end).replace(/\n/g, " ").trim();
-  if (start > 0) snippet = "..." + snippet;
-  if (end < content.length) snippet = snippet + "...";
-  return snippet;
-}
-
-function findBestMatch(
-  content: string,
-  patterns: PatternMatch[],
-  evidence: string[]
-): { value: string | null; confidence: number } {
-  let bestValue: string | null = null;
-  let bestConfidence = 0;
-
-  for (const { pattern, value, confidence } of patterns) {
-    pattern.lastIndex = 0;
-    const match = pattern.exec(content);
-    if (match && confidence > bestConfidence) {
-      bestValue = value;
-      bestConfidence = confidence;
-      const evidenceSnippet = extractEvidence(content, match);
-      if (!evidence.includes(evidenceSnippet)) {
-        evidence.push(evidenceSnippet);
-      }
-    }
-  }
-
-  return { value: bestValue, confidence: bestConfidence };
-}
-
 function collectAllMatches(
   content: string,
   pattern: RegExp,
@@ -86,7 +49,7 @@ function collectAllMatches(
         .map((s) => s.trim())
         .filter((s) => s.length > 0 && s.length < 50);
       results.push(...items);
-      const evidenceSnippet = extractEvidence(content, match, contextChars);
+      const evidenceSnippet = extractEvidence(content, match.index, match[0].length, contextChars);
       if (!evidence.includes(evidenceSnippet)) {
         evidence.push(evidenceSnippet);
       }
@@ -159,7 +122,7 @@ export function parseEconomyAttributes(
   let soeMatch;
   while ((soeMatch = soePattern.exec(combinedContent)) !== null) {
     result.hasStateOwnedEnterprises = true;
-    const evidenceSnippet = extractEvidence(combinedContent, soeMatch);
+    const evidenceSnippet = extractEvidence(combinedContent, soeMatch.index, soeMatch[0].length);
     if (!result.stateOwnedEvidence.includes(evidenceSnippet)) {
       result.stateOwnedEvidence.push(evidenceSnippet);
     }
@@ -170,7 +133,7 @@ export function parseEconomyAttributes(
   let ftzMatch;
   while ((ftzMatch = ftzPattern.exec(combinedContent)) !== null) {
     result.hasFreeTradeZones = true;
-    const evidenceSnippet = extractEvidence(combinedContent, ftzMatch);
+    const evidenceSnippet = extractEvidence(combinedContent, ftzMatch.index, ftzMatch[0].length);
     if (!result.freeTradeEvidence.includes(evidenceSnippet)) {
       result.freeTradeEvidence.push(evidenceSnippet);
     }
@@ -221,7 +184,11 @@ export function parseEconomyAttributes(
     if (matched.includes("education")) {
       result.hasPublicEducation = true;
     }
-    const evidenceSnippet = extractEvidence(combinedContent, welfareMatch);
+    const evidenceSnippet = extractEvidence(
+      combinedContent,
+      welfareMatch.index,
+      welfareMatch[0].length
+    );
     if (!result.socialPolicyEvidence.includes(evidenceSnippet)) {
       result.socialPolicyEvidence.push(evidenceSnippet);
     }

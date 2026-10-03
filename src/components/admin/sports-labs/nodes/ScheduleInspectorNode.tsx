@@ -1,3 +1,4 @@
+import { LeagueSeasonPicker } from "./LeagueSeasonPicker";
 import React, { useState } from "react";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
@@ -38,7 +39,6 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
   const activePreset = getPreset(selectedSport);
 
   // DB queries
-  const { data: dbLeagues } = api.sports.getLeagues.useQuery({});
   const { data: dbLeague } = api.sports.getLeague.useQuery(
     { id: selectedLeagueId },
     { enabled: !!selectedLeagueId }
@@ -121,39 +121,12 @@ export const ScheduleInspectorNode = React.memo(function ScheduleInspectorNode({
   // DB Mode
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <Label>Select league</Label>
-        <Select value={selectedLeagueId} onValueChange={setSelectedLeagueId}>
-          <SelectTrigger>
-            <SelectValue placeholder="Choose league" />
-          </SelectTrigger>
-          <SelectContent>
-            {dbLeagues?.map((l) => (
-              <SelectItem key={l.id} value={l.id}>
-                {l.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {dbLeague && dbLeague.seasons && (
-        <div className="space-y-2">
-          <Label>Select season</Label>
-          <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choose season" />
-            </SelectTrigger>
-            <SelectContent>
-              {dbLeague.seasons.map((s) => (
-                <SelectItem key={s.id} value={s.id}>
-                  Season {s.seasonNumber} ({s.status})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      <LeagueSeasonPicker
+        selectedLeagueId={selectedLeagueId}
+        setSelectedLeagueId={setSelectedLeagueId}
+        selectedSeasonId={selectedSeasonId}
+        setSelectedSeasonId={setSelectedSeasonId}
+      />
 
       {dbSeason && (
         <div className="border-separator text-footnote flex items-center justify-between border-b py-2">

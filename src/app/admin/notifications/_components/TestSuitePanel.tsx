@@ -77,6 +77,7 @@ export function TestSuitePanel() {
   const [persistent, setPersistent] = useState(false);
   const [silent, setSilent] = useState(false);
   const [hasAction, setHasAction] = useState(false);
+  const [duration, setDuration] = useState("5000");
 
   const addResult = (msg: string) => setTestResults((prev) => [...prev, msg]);
   const clearResults = () => setTestResults([]);
@@ -158,6 +159,7 @@ export function TestSuitePanel() {
       category,
       persistent,
       silent,
+      duration: duration ? parseInt(duration, 10) : undefined,
       actions: hasAction
         ? [
             {
@@ -482,6 +484,18 @@ export function TestSuitePanel() {
                   <p className="text-label-secondary text-footnote">Include clickable action</p>
                 </div>
                 <Switch checked={hasAction} onCheckedChange={setHasAction} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="notif-duration" className="text-footnote">
+                  Auto-dismiss duration (ms)
+                </Label>
+                <Input
+                  id="notif-duration"
+                  type="number"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  disabled={persistent}
+                />
               </div>
               <Button onClick={handleCustomTrigger} className="w-full" size="lg">
                 <Play className="mr-2 h-4 w-4" />

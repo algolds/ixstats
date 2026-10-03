@@ -4,12 +4,7 @@
 // Onoma Lab — Modular Domain Synthesis Control Bar (Horizontal Surface Layout)
 
 import React from "react";
-import {
-  ControlSlider as SlidersHorizontal,
-  SystemRestart as Loader2,
-  NavArrowDown as ChevronDown,
-} from "iconoir-react";
-import { NumberFlowDisplay } from "~/components/ui/number-flow";
+import { ControlSlider as SlidersHorizontal, NavArrowDown as ChevronDown } from "iconoir-react";
 import {
   Select,
   SelectContent,
@@ -20,10 +15,9 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { AdvancedConlangSettings } from "./AdvancedConlangSettings";
-import { OnomaGlyph } from "../glyphs/OnomaGlyph";
+import { GenerateCountPill } from "./GenerateCountPill";
 import type { NameCategory } from "~/lib/onoma/types";
 import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
 import { Toggle } from "~/components/ui/toggle";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Card } from "~/components/ui/card";
@@ -211,71 +205,12 @@ export function DomainControlBar({
       )}
 
       {/* 4. Unified Generate Action & Quantity Pill */}
-      <div className="bg-tint hover:bg-tint-hover active:bg-tint-hover group rounded-row border-separator shadow-card relative flex h-11 w-full items-center overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] select-none">
-        {/* Left / Center: Primary Generate Action Trigger */}
-        <Button
-          variant="ghost"
-          onClick={handleGenerate}
-          disabled={gen.isGenerating}
-          className="text-on-tint hover:text-on-tint h-full flex-1 gap-2 rounded-none pr-3 pl-4 hover:bg-transparent"
-        >
-          {gen.isGenerating ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <OnomaGlyph
-              name="emerge-synthesis"
-              size="xs"
-              className="text-on-tint transition-transform group-hover:scale-110"
-            />
-          )}
-          <span className="text-body font-semibold">Generate</span>
-        </Button>
-
-        {/* Subtle Vertical Divider */}
-        <div className="bg-fill-3 h-5 w-[1px] shrink-0" />
-
-        {/* Right: Quantity Stepper Pill */}
-        <div className="text-on-tint flex h-full shrink-0 items-center pr-2 pl-1">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              setBatchCount((c) =>
-                c > 100 ? Math.max(100, c - 50) : c > 50 ? Math.max(50, c - 25) : Math.max(5, c - 5)
-              );
-            }}
-            disabled={batchCount <= 5 || gen.isGenerating}
-            title="Decrease count"
-            aria-label="Decrease count"
-            className="text-on-tint/80 hover:text-on-tint text-on-tint/80 hover:text-on-tint hover:bg-on-tint/15 w-7 justify-center"
-          >
-            -
-          </Button>
-          <div className="text-body text-on-tint flex min-w-[28px] items-center justify-center px-1 leading-none font-semibold">
-            <NumberFlowDisplay
-              value={batchCount}
-              className="text-body text-on-tint font-semibold"
-            />
-          </div>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              setBatchCount((c) =>
-                c >= 100 ? Math.min(500, c + 50) : c >= 50 ? Math.min(100, c + 25) : c + 5
-              );
-            }}
-            disabled={batchCount >= 500 || gen.isGenerating}
-            title="Increase count"
-            aria-label="Increase count"
-            className="text-on-tint/80 hover:text-on-tint text-on-tint/80 hover:text-on-tint hover:bg-on-tint/15 w-7 justify-center"
-          >
-            +
-          </Button>
-        </div>
-      </div>
+      <GenerateCountPill
+        isGenerating={gen.isGenerating}
+        onGenerate={handleGenerate}
+        batchCount={batchCount}
+        setBatchCount={setBatchCount}
+      />
 
       {/* Collapsible Advanced Conlang Settings */}
       {showAdvanced && (
