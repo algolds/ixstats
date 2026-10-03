@@ -170,7 +170,7 @@ export function SystemStatusWidget() {
         variant="ghost"
         onClick={toggleCollapsed}
         aria-expanded={!isCollapsed}
-        className="bg-tint-fill hover:bg-tint/15 relative h-auto w-full justify-between rounded-none px-4 pt-3 pb-5 text-left focus-visible:-outline-offset-2 active:scale-100"
+        className="bg-tint-fill hover:bg-tint/15 relative h-auto w-full justify-between rounded-none px-4 pt-3 pb-5 text-left focus-visible:-outline-offset-2"
       >
         <CutoutCorner className="text-surface absolute -bottom-px left-0" size={16} />
         <CutoutCorner className="text-surface absolute right-0 -bottom-px -scale-x-100" size={16} />

@@ -62,14 +62,14 @@ export function BlurbsPanel() {
         <TabsList className="bg-fill-3 mb-4 flex w-full max-w-md justify-start gap-1 rounded-full p-1">
           <TabsTrigger
             value="prompts"
-            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
             <FileText className="text-teal h-4 w-4" />
             Prompt Catalog
           </TabsTrigger>
           <TabsTrigger
             value="moderation"
-            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
             <MessageCircle className="text-purple h-4 w-4" />
             Response Moderation

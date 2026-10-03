@@ -89,7 +89,7 @@ export const RouteFilterList = memo(function RouteFilterList({
               <div
                 key={route.id}
                 onClick={() => onSelectRouteId?.(isSelected ? null : route.id)}
-                className={`group rounded-control-sm text-footnote flex cursor-pointer items-center justify-between border p-2 transition active:scale-[0.98] ${
+                className={`group rounded-control-sm text-footnote flex cursor-pointer items-center justify-between border p-2 transition ${
                   isSelected
                     ? "border-tint bg-tint-fill text-label"
                     : "border-separator bg-surface hover:bg-fill-4"

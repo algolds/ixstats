@@ -96,7 +96,7 @@ export function EconomicArchetypeFormDialog({
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className="text-footnote active:scale-[0.98]"
+                  className="text-footnote"
                 >
                   <Icon className="mr-2 inline h-4 w-4" />
                   {tab.label}

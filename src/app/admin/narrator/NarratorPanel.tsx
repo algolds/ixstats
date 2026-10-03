@@ -144,21 +144,21 @@ export function NarratorPanel() {
         <TabsList className="bg-fill-3 mb-4 flex w-full max-w-md justify-start gap-1 rounded-full p-1">
           <TabsTrigger
             value="config"
-            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
             <Settings className="text-teal h-4 w-4" />
             Configuration
           </TabsTrigger>
           <TabsTrigger
             value="playground"
-            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
             <Play className="text-yellow h-4 w-4" />
             Playground
           </TabsTrigger>
           <TabsTrigger
             value="cache"
-            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
             <Database className="text-green h-4 w-4" />
             Cache Lab

@@ -31,14 +31,14 @@ export function ThinkPagesSettingsContent() {
         <TabsList className="bg-fill-3 mb-4 flex w-full max-w-md justify-start gap-1 rounded-full p-1">
           <TabsTrigger
             value="platform"
-            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
             <Globe className="text-teal h-4 w-4" />
             Platform Settings
           </TabsTrigger>
           <TabsTrigger
             value="discord"
-            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
             <Rss className="text-purple h-4 w-4" />
             Discord Mirror Feed

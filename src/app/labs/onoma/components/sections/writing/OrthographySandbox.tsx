@@ -394,7 +394,7 @@ export function OrthographySandbox({
                     onForgeMissing?.(tok.charOrPhoneme);
                   }}
                   title={`Unmapped phoneme: '${tok.charOrPhoneme}' (Click to design)`}
-                  className="border-separator hover:border-tint/60 hover:bg-tint/10 text-label-secondary hover:text-tint rounded-row text-footnote flex shrink-0 cursor-pointer items-center justify-center border border-dashed font-mono font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
+                  className="border-separator hover:border-tint/60 hover:bg-tint/10 text-label-secondary hover:text-tint rounded-row text-footnote flex shrink-0 cursor-pointer items-center justify-center border border-dashed font-mono font-semibold transition-[color,background-color,border-color,box-shadow,opacity]"
                   style={{
                     width: glyphSize,
                     height: glyphSize,

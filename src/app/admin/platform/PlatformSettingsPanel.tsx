@@ -131,42 +131,42 @@ export function PlatformSettingsPanel({ defaultTab = "general" }: PlatformSettin
         <TabsList className="bg-fill-3 rounded-row flex w-full flex-wrap justify-start gap-1 p-1">
           <TabsTrigger
             value="general"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2"
           >
             <TrendingUp className="text-green h-4 w-4" />
             Economic Controls
           </TabsTrigger>
           <TabsTrigger
             value="autosave"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2"
           >
             <Activity className="text-green h-4 w-4" />
             Autosave Monitor
           </TabsTrigger>
           <TabsTrigger
             value="time"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2"
           >
             <Clock className="text-blue h-4 w-4" />
             Time Override
           </TabsTrigger>
           <TabsTrigger
             value="system-health"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2"
           >
             <HeartPulse className="text-red h-4 w-4" />
             System Diagnostics
           </TabsTrigger>
           <TabsTrigger
             value="navigation"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2"
           >
             <Navigation className="text-teal h-4 w-4" />
             Navigation Controls
           </TabsTrigger>
           <TabsTrigger
             value="database"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2"
           >
             <Database className="text-indigo h-4 w-4" />
             Database Explorer

@@ -291,7 +291,7 @@ export default function HistorySection({
                         variant="ghost"
                         onClick={() => toggleExpanded(event.id)}
                         aria-expanded={isExpanded}
-                        className="rounded-row h-auto w-full justify-between p-3 text-left font-normal whitespace-normal active:scale-100"
+                        className="rounded-row h-auto w-full justify-between p-3 text-left font-normal whitespace-normal"
                       >
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                           <div className="bg-fill-3 rounded-control-sm text-footnote px-2 py-0.5 font-semibold capitalize">

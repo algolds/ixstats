@@ -55,7 +55,7 @@ export function ImportStashPanel() {
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         {/* Upload .txt files (one dictionary per file) */}
-        <label className="border-separator bg-surface hover:bg-surface text-label rounded-control text-footnote flex cursor-pointer items-center gap-2 border px-3 py-2 font-semibold transition-colors select-none active:scale-95">
+        <label className="border-separator bg-surface hover:bg-surface text-label rounded-control text-footnote flex cursor-pointer items-center gap-2 border px-3 py-2 font-semibold transition-colors select-none">
           <Upload className="h-3.5 w-3.5" />
           <span>Upload .txt</span>
           <input type="file" multiple accept=".txt" className="hidden" onChange={handleUpload} />

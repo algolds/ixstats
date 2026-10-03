@@ -23,21 +23,21 @@ export default function MyLeagueAdminPanel() {
         <TabsList className="bg-fill-3 rounded-row flex w-full flex-wrap justify-start gap-1 p-1 md:w-auto">
           <TabsTrigger
             value="oversight"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2"
           >
             <Trophy className="text-green h-4 w-4" />
             Oversight Dashboard
           </TabsTrigger>
           <TabsTrigger
             value="sandbox"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2"
           >
             <FlaskConical className="text-yellow h-4 w-4" />
             Simulation Sandbox
           </TabsTrigger>
           <TabsTrigger
             value="seeder"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2"
           >
             <Database className="text-teal h-4 w-4" />
             Data Lab & Seeder

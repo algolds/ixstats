@@ -766,7 +766,7 @@ export const FeatureInspector = React.memo(function FeatureInspector({
                 href={`/wiki/${encodeURIComponent(wikiPageTitle)}`}
                 target="_blank"
                 rel="noreferrer"
-                className="border-separator bg-surface hover:bg-fill-3 text-label rounded-control text-caption flex items-center justify-center gap-2 border py-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98]"
+                className="border-separator bg-surface hover:bg-fill-3 text-label rounded-control text-caption flex items-center justify-center gap-2 border py-2 transition-[color,background-color,border-color,box-shadow,opacity]"
               >
                 <ExternalLink className="h-3.5 w-3.5 opacity-70" />
                 <span>Open in Wiki</span>

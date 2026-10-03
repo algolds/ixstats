@@ -96,7 +96,7 @@ function CountryInterventionRow({
         variant="ghost"
         aria-expanded={expanded}
         onClick={() => setExpanded(!expanded)}
-        className="rounded-row h-auto w-full justify-between p-3 text-left font-normal active:scale-100"
+        className="rounded-row h-auto w-full justify-between p-3 text-left font-normal"
       >
         <div className="flex items-center gap-3">
           <UnifiedCountryFlag countryName={country.name} flagUrl={country.flag} size="sm" />

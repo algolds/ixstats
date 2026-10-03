@@ -130,14 +130,14 @@ export function UserRolesPanel() {
         <TabsList className="bg-fill-3 flex w-full max-w-md justify-start gap-1 rounded-full p-1">
           <TabsTrigger
             value="roles"
-            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
             <Shield className="text-teal h-4 w-4" />
             System Roles
           </TabsTrigger>
           <TabsTrigger
             value="memberships"
-            className="text-caption flex flex-1 items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
           >
             <Users className="text-purple h-4 w-4" />
             Account Elevation

@@ -156,7 +156,7 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
 
         {/* Advanced operations popover */}
         <Popover>
-          <PopoverTrigger className="bg-fill-3 text-label-secondary hover:bg-fill-3 hover:text-label text-caption rounded-control-sm flex h-6 cursor-pointer items-center gap-1 px-2 transition-colors active:scale-[0.98]">
+          <PopoverTrigger className="bg-fill-3 text-label-secondary hover:bg-fill-3 hover:text-label text-caption rounded-control-sm flex h-6 cursor-pointer items-center gap-1 px-2 transition-colors">
             <Wrench className="h-3 w-3" />
             <span>Advanced</span>
           </PopoverTrigger>

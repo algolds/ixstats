@@ -202,21 +202,21 @@ export function NationalIssuesPanel() {
           <TabsList className="bg-fill-3 rounded-row flex w-full flex-wrap justify-start gap-1 p-1 sm:w-auto">
             <TabsTrigger
               value="templates"
-              className="rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-transform active:scale-[0.98]"
+              className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
             >
               <Newspaper className="h-3.5 w-3.5" />
               Templates ({templatesData?.templates?.length ?? 0})
             </TabsTrigger>
             <TabsTrigger
               value="issues"
-              className="rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-transform active:scale-[0.98]"
+              className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
             >
               <Play className="text-teal h-3.5 w-3.5" />
               Active Instances ({issuesData?.issues?.length ?? 0})
             </TabsTrigger>
             <TabsTrigger
               value="engine"
-              className="rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-transform active:scale-[0.98]"
+              className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
             >
               <Sliders className="text-yellow h-3.5 w-3.5" />
               Engine Configuration

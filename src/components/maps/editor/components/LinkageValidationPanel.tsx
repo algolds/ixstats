@@ -138,7 +138,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                       countryId: item.countryId,
                     });
                   }}
-                  className="border-separator bg-fill-4 hover:border-tint/40 hover:bg-tint-fill rounded-control flex cursor-pointer items-center justify-between border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.99]"
+                  className="border-separator bg-fill-4 hover:border-tint/40 hover:bg-tint-fill rounded-control flex cursor-pointer items-center justify-between border p-2 transition-[color,background-color,border-color,box-shadow,opacity]"
                 >
                   <div className="flex items-center gap-2 truncate">
                     {item.countryFlag && (
@@ -176,7 +176,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                       countryId: item.countryId,
                     });
                   }}
-                  className="border-separator bg-fill-4 hover:border-tint/40 hover:bg-tint-fill rounded-control flex cursor-pointer items-center justify-between border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.99]"
+                  className="border-separator bg-fill-4 hover:border-tint/40 hover:bg-tint-fill rounded-control flex cursor-pointer items-center justify-between border p-2 transition-[color,background-color,border-color,box-shadow,opacity]"
                 >
                   <div className="flex items-center gap-2 truncate">
                     {item.countryFlag && (
@@ -275,7 +275,7 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
                         setActiveCountryId(null);
                       }
                     }}
-                    className="border-separator bg-fill-4 hover:border-tint/40 hover:bg-tint-fill rounded-control flex cursor-pointer items-center justify-between border p-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.99]"
+                    className="border-separator bg-fill-4 hover:border-tint/40 hover:bg-tint-fill rounded-control flex cursor-pointer items-center justify-between border p-2 transition-[color,background-color,border-color,box-shadow,opacity]"
                   >
                     <div className="flex items-center gap-2 truncate">
                       <div

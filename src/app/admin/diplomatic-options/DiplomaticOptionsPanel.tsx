@@ -281,14 +281,14 @@ export function DiplomaticOptionsPanel() {
         <TabsList className="bg-fill-3 rounded-row mb-4 flex w-full flex-wrap justify-start gap-1 p-1">
           <TabsTrigger
             value="catalog"
-            className="rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-transform active:scale-[0.98]"
+            className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
           >
             <Flag className="h-3.5 w-3.5" />
             Options Catalog
           </TabsTrigger>
           <TabsTrigger
             value="analytics"
-            className="rounded-control text-caption flex items-center gap-2 px-3 py-2 transition-transform active:scale-[0.98]"
+            className="rounded-control text-caption flex items-center gap-2 px-3 py-2"
           >
             <BarChart3 className="h-3.5 w-3.5" />
             Usage Analytics

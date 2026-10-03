@@ -110,7 +110,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
             onClick={() => handleItemClick(-1)}
             disabled={isMutating}
             aria-current={position === -1 ? "step" : undefined}
-            className={`group rounded-control text-caption relative flex w-full items-center gap-2 px-2 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
+            className={`group rounded-control text-caption relative flex w-full items-center gap-2 px-2 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity] ${
               position === -1
                 ? "bg-tint-fill text-tint ring-tint/30 font-semibold ring-1"
                 : "text-label-secondary hover:bg-fill-3 hover:text-label"
@@ -144,7 +144,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
                 onClick={() => handleItemClick(idx)}
                 disabled={isMutating}
                 aria-current={isCurrent ? "step" : undefined}
-                className={`group rounded-control text-caption relative flex w-full items-center gap-2 px-2 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.98] ${
+                className={`group rounded-control text-caption relative flex w-full items-center gap-2 px-2 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity] ${
                   isCurrent
                     ? "bg-tint-fill text-tint ring-tint/30 font-semibold ring-1"
                     : isActive

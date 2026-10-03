@@ -44,35 +44,35 @@ export default function AdminVaultPage() {
         <TabsList className="bg-fill-3 rounded-row mb-4 flex w-full flex-wrap justify-start gap-1 p-1">
           <TabsTrigger
             value="users"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2"
           >
             <Users className="h-4 w-4" />
             Users & Balances
           </TabsTrigger>
           <TabsTrigger
             value="store"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2"
           >
             <ShoppingBag className="h-4 w-4" />
             Store Inventory
           </TabsTrigger>
           <TabsTrigger
             value="bonuses"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2"
           >
             <Gift className="h-4 w-4" />
             Metagame Bonuses
           </TabsTrigger>
           <TabsTrigger
             value="logs"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2"
           >
             <History className="h-4 w-4" />
             Purchase Logs
           </TabsTrigger>
           <TabsTrigger
             value="config"
-            className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+            className="text-caption flex items-center gap-2"
           >
             <Settings className="h-4 w-4" />
             System Config

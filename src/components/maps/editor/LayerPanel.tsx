@@ -251,7 +251,7 @@ export const LayerPanel = React.memo(function LayerPanel({
       const row = (
         <div
           key={feature.id}
-          className={`group rounded-control-sm flex items-center gap-2 px-2 py-2 pl-8 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-100 ease-out select-none active:scale-[0.99] ${
+          className={`group rounded-control-sm flex items-center gap-2 px-2 py-2 pl-8 transition-[color,background-color,border-color,box-shadow,opacity] duration-100 ease-out select-none ${
             isSelected
               ? "bg-tint-fill ring-tint/30 font-semibold ring-1"
               : isMultiSelected

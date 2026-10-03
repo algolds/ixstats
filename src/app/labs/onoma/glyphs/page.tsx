@@ -350,7 +350,7 @@ export default function OnomaGlyphsDevPage() {
           <div className="flex items-center gap-2 self-start md:self-auto">
             <Link
               href="/labs/onoma"
-              className="border-separator bg-fill-3 hover:bg-fill-3 rounded-row text-footnote inline-flex items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
+              className="border-separator bg-fill-3 hover:bg-fill-3 rounded-row text-footnote inline-flex items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity]"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               <span>Back to Onoma Workspace</span>

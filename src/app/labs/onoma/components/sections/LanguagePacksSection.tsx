@@ -141,7 +141,7 @@ export function LanguagePacksSection({
         {/* IxVault Platform Marketplace Bridge Link */}
         <Link
           href="/vault/marketplace?tab=store"
-          className="group border-separator bg-fill-4 hover:bg-fill-3 rounded-row text-footnote flex shrink-0 items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-95"
+          className="group border-separator bg-fill-4 hover:bg-fill-3 rounded-row text-footnote flex shrink-0 items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity]"
         >
           <Shop className="text-yellow h-4 w-4" />
           <span className="text-label">Browse on IxVault</span>
@@ -320,7 +320,7 @@ export function LanguagePacksSection({
                     type="button"
                     onClick={() => handleFork(activePack as LanguagePack)}
                     disabled={forkMutation.isPending}
-                    className="bg-tint hover:bg-tint-hover rounded-row text-on-tint shadow-card h-9 w-full cursor-pointer font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] active:scale-[0.97]"
+                    className="bg-tint hover:bg-tint-hover rounded-row text-on-tint shadow-card h-9 w-full cursor-pointer font-semibold transition-[color,background-color,border-color,box-shadow,opacity]"
                   >
                     <GitFork className="mr-2 h-4 w-4" />
                     <span>Fork Pack to My Studio</span>

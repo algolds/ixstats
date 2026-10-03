@@ -85,7 +85,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   Training Seeds
                 </label>
                 <div className="flex items-center gap-2">
-                  <label className="border-tint/20 bg-tint/5 text-tint hover:bg-tint/10 hover:text-tint rounded-control text-caption flex cursor-pointer items-center gap-1 border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-95">
+                  <label className="border-tint/20 bg-tint/5 text-tint hover:bg-tint/10 hover:text-tint rounded-control text-caption flex cursor-pointer items-center gap-1 border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity] duration-200">
                     <Upload className="h-3 w-3" />
                     <span>Upload .txt</span>
                     <input

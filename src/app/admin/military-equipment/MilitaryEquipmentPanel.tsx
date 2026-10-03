@@ -54,28 +54,28 @@ export function MilitaryEquipmentPanel() {
           <TabsList className="bg-fill-3 rounded-row flex w-full flex-wrap justify-start gap-1 p-1 sm:w-auto">
             <TabsTrigger
               value="catalog"
-              className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+              className="text-caption flex items-center gap-2"
             >
               <Rocket className="h-4 w-4" />
               Equipment Catalog
             </TabsTrigger>
             <TabsTrigger
               value="manufacturers"
-              className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+              className="text-caption flex items-center gap-2"
             >
               <Factory className="h-4 w-4" />
               Manufacturers
             </TabsTrigger>
             <TabsTrigger
               value="small-arms"
-              className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+              className="text-caption flex items-center gap-2"
             >
               <Target className="h-4 w-4" />
               Small Arms
             </TabsTrigger>
             <TabsTrigger
               value="analytics"
-              className="text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+              className="text-caption flex items-center gap-2"
             >
               <BarChart3 className="h-4 w-4" />
               Analytics

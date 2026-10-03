@@ -37,21 +37,21 @@ export function CountriesAdminPanel() {
         <TabsList className="bg-fill-3 rounded-row mb-4 flex w-full flex-wrap justify-start gap-1 p-1">
           <TabsTrigger
             value="grid"
-            className="rounded-control text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+            className="rounded-control text-caption flex items-center gap-2"
           >
             <Globe className="h-4 w-4" />
             Live Country Grid
           </TabsTrigger>
           <TabsTrigger
             value="inspector"
-            className="rounded-control text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+            className="rounded-control text-caption flex items-center gap-2"
           >
             <Search className="h-4 w-4" />
             Country Inspector & Formulas
           </TabsTrigger>
           <TabsTrigger
             value="import"
-            className="rounded-control text-caption flex items-center gap-2 transition-transform active:scale-[0.98]"
+            className="rounded-control text-caption flex items-center gap-2"
           >
             <FileText className="h-4 w-4" />
             Roster Import & Sync
