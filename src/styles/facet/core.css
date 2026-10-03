@@ -1,91 +1,29 @@
 /* ==========================================================================
-   FACET — CORE TOKENS, VOLUMETRIC DEPTHS & LAYOUTS
+   FACET — CORE TOKENS & LAYOUTS
 
-   Everything here is layered: custom-property blocks live in `@layer base`, classes in
-   `@layer components`, so any Tailwind utility on the same element wins. Material/surface
-   classes set only visual properties — never position, z-index, radius, margin or
-   letter-spacing.
+   Custom-property blocks live in `@layer base`, classes in `@layer components`, so any Tailwind
+   utility on the same element wins.
    ========================================================================== */
 
 @layer base {
   :root {
-    /* Domain accents read by domain components */
-    --facet-mycountry: var(--color-theme-gold);
-
     /* Blur intensities */
-    --blur-subtle: 8px;
     --blur-moderate: 16px;
-    --blur-prominent: 24px;
     --blur-intense: 32px;
 
     /* Texture pattern foreground colour */
     --facet-texture-color: rgba(0, 0, 0, 0.25);
-
-    /* Halo */
-    --facet-halo-glow-color: rgba(59, 130, 246, 0.3);
   }
 
   .dark,
   [data-theme="dark"] {
     /* Texture patterns adapt to translucent white in dark mode */
     --facet-texture-color: rgba(255, 255, 255, 0.08);
-
-    /* High-luminance domain accents tuned for dark surfaces */
-    --facet-mycountry: var(--color-amber-400);
   }
 }
 
 @layer components {
-  /* ─── 1. Base depths & volumetric surfaces ───────────────────────────── */
-
-  .facet-base,
-  .facet-surface,
-  .facet-floating,
-  .facet-overlay,
-  .facet-depth-1,
-  .facet-depth-2,
-  .facet-depth-3,
-  .facet-depth-4 {
-    transition:
-      transform 200ms cubic-bezier(0.23, 1, 0.32, 1),
-      box-shadow 200ms cubic-bezier(0.23, 1, 0.32, 1),
-      border-color 200ms cubic-bezier(0.23, 1, 0.32, 1),
-      background-color 200ms cubic-bezier(0.23, 1, 0.32, 1);
-  }
-
-  .facet-depth-1 {
-    backdrop-filter: blur(var(--blur-moderate, 16px)) saturate(var(--facet-saturate, 150%));
-    -webkit-backdrop-filter: blur(var(--blur-moderate, 16px)) saturate(var(--facet-saturate, 150%));
-    border: 1px solid var(--facet-border-1, var(--border, rgba(255, 255, 255, 0.1)));
-    background: var(--facet-bg-1, rgba(var(--card-rgb, 24, 24, 27), 0.7));
-    box-shadow: var(--facet-shadow-1, 0 4px 16px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.08));
-  }
-
-  .facet-depth-2 {
-    backdrop-filter: blur(var(--blur-prominent, 24px)) saturate(var(--facet-saturate, 160%));
-    -webkit-backdrop-filter: blur(var(--blur-prominent, 24px)) saturate(var(--facet-saturate, 160%));
-    border: 1px solid var(--facet-border-2, var(--border, rgba(255, 255, 255, 0.15)));
-    background: var(--facet-bg-2, rgba(var(--card-rgb, 24, 24, 27), 0.85));
-    box-shadow: var(--facet-shadow-2, 0 12px 36px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.12));
-  }
-
-  .facet-depth-3 {
-    backdrop-filter: blur(var(--blur-intense, 32px)) saturate(var(--facet-saturate, 180%));
-    -webkit-backdrop-filter: blur(var(--blur-intense, 32px)) saturate(var(--facet-saturate, 180%));
-    border: 1px solid var(--facet-border-3, var(--border, rgba(255, 255, 255, 0.18)));
-    background: var(--facet-bg-3, rgba(var(--card-rgb, 24, 24, 27), 0.92));
-    box-shadow: var(--facet-shadow-3, 0 20px 60px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15));
-  }
-
-  .facet-depth-4 {
-    backdrop-filter: blur(var(--blur-intense, 32px)) saturate(var(--facet-saturate, 200%));
-    -webkit-backdrop-filter: blur(var(--blur-intense, 32px)) saturate(var(--facet-saturate, 200%));
-    border: 1px solid var(--facet-border-4, var(--border, rgba(255, 255, 255, 0.2)));
-    background: var(--facet-bg-4, rgba(var(--card-rgb, 24, 24, 27), 0.98));
-    box-shadow: var(--facet-shadow-4, 0 32px 80px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2));
-  }
-
-  /* ─── 2. Grid & column layout helpers ────────────────────────────────── */
+  /* ─── Layout helpers ─────────────────────────────────────────────────── */
 
   /* 3-column dashboard/vault grid container */
   .facet-layout-grid-3 {
@@ -119,20 +57,11 @@
     }
   }
 
-  /* ─── 3. Stacking hierarchy ──────────────────────────────────────────── */
+  /* ─── Analytics card surface ─────────────────────────────────────────── */
 
   /* Default corner radius at zero specificity so any `rounded-*` wins. */
-  :where(.facet-hierarchy-child, .facet-hierarchy-interactive) {
+  :where(.facet-hierarchy-child) {
     border-radius: 0.5rem;
-  }
-
-  .facet-hierarchy-parent {
-    backdrop-filter: blur(var(--blur-subtle)) saturate(120%);
-    -webkit-backdrop-filter: blur(var(--blur-subtle)) saturate(120%);
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.75) 0%, rgba(248, 250, 252, 0.65) 100%);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.9);
-    color: var(--foreground);
   }
 
   .facet-hierarchy-child {
@@ -144,69 +73,11 @@
     color: var(--foreground);
   }
 
-  .facet-hierarchy-interactive {
-    backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
-    -webkit-backdrop-filter: blur(var(--blur-prominent)) saturate(180%);
-    transition:
-      transform 160ms cubic-bezier(0.23, 1, 0.32, 1),
-      box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1),
-      background-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
-      border-color 160ms cubic-bezier(0.23, 1, 0.32, 1);
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 1);
-    cursor: pointer;
-    color: var(--foreground);
-  }
-
-  .facet-hierarchy-interactive:hover {
-    backdrop-filter: blur(var(--blur-intense)) saturate(200%);
-    -webkit-backdrop-filter: blur(var(--blur-intense)) saturate(200%);
-    transform: translateY(-1px);
-    background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(248, 250, 252, 0.98) 100%);
-    border-color: rgba(0, 0, 0, 0.14);
-    box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1);
-    color: var(--foreground);
-  }
-
-  /* Dark theme */
-  .dark .facet-hierarchy-parent,
-  [data-theme="dark"] .facet-hierarchy-parent {
-    background: linear-gradient(135deg, rgba(22, 24, 29, 0.6) 0%, rgba(15, 17, 20, 0.7) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  }
-
   .dark .facet-hierarchy-child,
   [data-theme="dark"] .facet-hierarchy-child {
     background: linear-gradient(135deg, rgba(30, 32, 40, 0.6) 0%, rgba(22, 24, 29, 0.7) 100%);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  }
-
-  .dark .facet-hierarchy-interactive,
-  [data-theme="dark"] .facet-hierarchy-interactive {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  }
-
-  .dark .facet-hierarchy-interactive:hover,
-  [data-theme="dark"] .facet-hierarchy-interactive:hover {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
-    border-color: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  }
-
-  /* Light theme. Single selector model: `.light` / [data-theme="light"] only —
-     never `html:not([data-theme="dark"])`, which painted light glass during SSR. */
-  .light .facet-hierarchy-parent,
-  [data-theme="light"] .facet-hierarchy-parent {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow:
-      0 4px 16px rgba(0, 0, 0, 0.08),
-      0 2px 8px rgba(0, 0, 0, 0.04);
   }
 
   .light .facet-hierarchy-child,
@@ -216,23 +87,5 @@
     box-shadow:
       0 2px 12px rgba(0, 0, 0, 0.06),
       0 1px 6px rgba(0, 0, 0, 0.03);
-  }
-
-  .light .facet-hierarchy-interactive,
-  [data-theme="light"] .facet-hierarchy-interactive {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.85) 100%);
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    box-shadow:
-      0 1px 8px rgba(0, 0, 0, 0.05),
-      0 1px 4px rgba(0, 0, 0, 0.02);
-  }
-
-  .light .facet-hierarchy-interactive:hover,
-  [data-theme="light"] .facet-hierarchy-interactive:hover {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.9) 100%);
-    box-shadow:
-      0 4px 16px rgba(0, 0, 0, 0.1),
-      0 2px 8px rgba(0, 0, 0, 0.05);
-    transform: translateY(-1px);
   }
 }

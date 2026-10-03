@@ -3,8 +3,6 @@
 
    `.facet-modal` is the dialog/sheet material. It sets only visual properties;
    the primitive's own utilities (position, z, radius, bg, blur, shadow) win.
-   The domain colour variants (`.facet-{mycountry,global,economy,…}`) are only
-   reachable from the materials lab and live in `facet/lab.css`.
    ========================================================================== */
 
 @layer components {
