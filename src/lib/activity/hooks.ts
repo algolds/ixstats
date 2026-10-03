@@ -1,3 +1,4 @@
+import type { Priority } from "@prisma/client";
 import { db } from "~/server/db";
 import { ActivityGenerator } from "./generator";
 import { formatCurrency, formatPopulation } from "~/lib/utils";
@@ -57,7 +58,7 @@ interface ActivityRecord {
   eventType: string;
   /** Extra metadata fields, stored after `eventType`. */
   meta?: Record<string, unknown>;
-  priority: string;
+  priority: Priority;
   visibility?: string;
   /** Countries the entry relates to (stored as JSON); null for none. */
   related: string[] | null;

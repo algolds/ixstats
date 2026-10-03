@@ -500,7 +500,7 @@ function CardInfoOverlay(props: {
           card={card}
           effectiveCategory={identity.effectiveCategory}
           isLoreCard={identity.isLoreCard}
-          customSubtitle={props.designMeta.customSubtitle}
+          customSubtitle={props.designMeta.customSubtitle ?? undefined}
         />
 
         {card.country && (

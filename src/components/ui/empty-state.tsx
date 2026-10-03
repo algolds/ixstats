@@ -8,7 +8,7 @@ import { cn } from "~/lib/utils/cn";
  *   <EmptyState icon={<Page />} title="No drafts" message="Drafts you save appear here."
  *     action={<Button>New draft</Button>} />
  */
-interface EmptyStateProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
+export interface EmptyStateProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
   /** A decorative icon element (sized 40px, or 32px when compact; `label-secondary`). */
   icon?: React.ReactNode;
   title: React.ReactNode;

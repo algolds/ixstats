@@ -125,7 +125,7 @@ function BiasRing({
   title,
   description,
 }: {
-  offset: number;
+  offset: string;
   value: React.ReactNode;
   title: string;
   description: string;
