@@ -18,6 +18,7 @@ import {
   Trophy,
 } from "iconoir-react";
 import type { RouterOutputs } from "~/trpc/react";
+import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
@@ -49,6 +50,278 @@ const REPORT_TABS = [
   { value: "superlatives", label: "Superlatives", icon: <Trophy /> },
 ];
 
+type IconType = React.ComponentType<{
+  className?: string;
+  "aria-hidden"?: boolean | "true" | "false";
+}>;
+
+/** A bordered panel of label/value pairs; each cell may truncate with a tooltip. */
+function MetricsCard({
+  title,
+  cells,
+}: {
+  title: string;
+  cells: { label: string; value: React.ReactNode; truncate?: boolean; title?: string }[];
+}) {
+  return (
+    <Card variant="inset" padding="sm" className="space-y-1">
+      <Eyebrow className="block">{title}</Eyebrow>
+      <div className="text-footnote grid grid-cols-2 gap-2">
+        {cells.map((c) => (
+          <div key={c.label}>
+            <span className="text-label-secondary text-footnote">{c.label}</span>
+            <div
+              className={cn("text-label font-semibold", c.truncate && "truncate")}
+              title={c.title}
+            >
+              {c.value}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function RowsCard({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: [label: string, value: React.ReactNode][];
+}) {
+  return (
+    <Card variant="inset" padding="sm" className="space-y-1">
+      <Eyebrow className="block">{title}</Eyebrow>
+      <div className="text-footnote space-y-2">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex justify-between">
+            <span className="text-label-secondary">{label}</span>
+            <span className="text-label font-semibold">{value}</span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function TableSection({
+  icon: Icon,
+  title,
+  columns,
+  rows,
+  empty,
+}: {
+  icon: IconType;
+  title: string;
+  columns: string[];
+  rows: { key: string | number; cells: React.ReactNode[] }[];
+  empty: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <Icon aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
+        <Eyebrow>{title}</Eyebrow>
+      </div>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {columns.map((c, i) => (
+              <TableHead key={c} className={i > 0 ? "text-right" : undefined}>
+                {c}
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((r) => (
+            <TableRow key={r.key}>
+              {r.cells.map((cell, i) => (
+                <TableCell key={i} className={i === 0 ? "text-label font-medium" : "text-right"}>
+                  {cell}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+          {rows.length === 0 && (
+            <TableRow>
+              <TableCell
+                colSpan={columns.length}
+                className="text-label-secondary py-4 text-center italic"
+              >
+                {empty}
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+const km = (n: number) => `${n.toLocaleString()} km`;
+const areaKm2 = (n: number) => Math.round(n).toLocaleString();
+
+function OverviewTab({ profile: p }: { profile: GeoProfileData }) {
+  const { derived } = p;
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <MetricsCard
+          title="Spatial metrics"
+          cells={[
+            { label: "Total area", value: `${p.area.areaKm2.toLocaleString()} km²` },
+            { label: "Border perimeter", value: km(p.area.perimeterKm) },
+            { label: "North-South span", value: km(p.area.nsSpanKm) },
+            { label: "East-West span", value: km(p.area.ewSpanKm) },
+          ]}
+        />
+        <MetricsCard
+          title="Biogeographic overview"
+          cells={[
+            {
+              label: "Dominant climate",
+              value: p.climate.dominant,
+              truncate: true,
+              title: p.climate.dominant ?? undefined,
+            },
+            {
+              label: "Mean elevation",
+              value: `${Math.round(p.elevation.meanElev).toLocaleString()} m`,
+            },
+            { label: "Arable land", value: `${derived.arableLandPercent.toFixed(1)}%` },
+            { label: "Terrain class", value: p.elevation.terrainRoughness, truncate: true },
+          ]}
+        />
+      </div>
+
+      <Card variant="inset" className="space-y-2 p-3">
+        <div className="flex items-center gap-2">
+          <Globe2 aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
+          <Eyebrow>Geographic classification</Eyebrow>
+        </div>
+        <div className="text-footnote flex flex-wrap gap-2">
+          {derived.isLandlocked && <Badge variant="outline">Landlocked state</Badge>}
+          {derived.isIsland && <Badge variant="outline">Island nation</Badge>}
+          {derived.coastlineKm > 0 && (
+            <Badge variant="outline">
+              Coastline: {Math.round(derived.coastlineKm).toLocaleString()} km
+            </Badge>
+          )}
+          <Badge variant="outline">Borders: {derived.neighborCount} Neighboring Countries</Badge>
+          <Badge variant="outline">
+            Hydrology: {p.hydro.riverCount} Rivers / {p.hydro.lakeCount} Lakes
+          </Badge>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function ClimateTab({ profile: p }: { profile: GeoProfileData }) {
+  return (
+    <div className="space-y-4">
+      <TableSection
+        icon={CloudSun}
+        title="Climate zone distribution"
+        columns={["Climate category", "Coverage %", "Area (km²)", "Agri weight"]}
+        rows={p.climate.zones.map((z) => ({
+          key: z.type,
+          cells: [
+            z.type,
+            `${z.percentArea.toFixed(1)}%`,
+            areaKm2(z.areaSqKm),
+            `x${z.agricultureFactor.toFixed(1)}`,
+          ],
+        }))}
+        empty="No climate zones mapped."
+      />
+      <TableSection
+        icon={TrendingUp}
+        title="Altitude profile breakdown"
+        columns={["Elevation tier", "Coverage %", "Area (km²)"]}
+        rows={p.elevation.zones.map((z) => ({
+          key: z.zone,
+          cells: [z.name, `${z.percentArea.toFixed(1)}%`, areaKm2(z.areaSqKm)],
+        }))}
+        empty="No elevation profile mapped."
+      />
+    </div>
+  );
+}
+
+function HydroTab({ profile: p }: { profile: GeoProfileData }) {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <RowsCard
+          title="River networks"
+          rows={[
+            ["Unique rivers", p.hydro.riverCount],
+            ["Clipped length", km(p.hydro.totalRiverLengthKm)],
+          ]}
+        />
+        <RowsCard
+          title="Lakes & reservoirs"
+          rows={[
+            ["Unique lakes", p.hydro.lakeCount],
+            ["Clipped area", `${p.hydro.totalLakeAreaSqKm.toLocaleString()} km²`],
+          ]}
+        />
+      </div>
+      <TableSection
+        icon={Globe2}
+        title="International border adjacency"
+        columns={["Bordering country", "Shared Frontier (km)"]}
+        rows={p.neighbors.map((n) => ({
+          key: n.id,
+          cells: [n.name, `${n.sharedBorderKm.toFixed(1)} km`],
+        }))}
+        empty="This country is land-locked with no direct international land borders or is an island."
+      />
+    </div>
+  );
+}
+
+function SuperlativesTab({ profile: p }: { profile: GeoProfileData }) {
+  const { tallestPeak, longestRiver, largestLake } = p.superlatives;
+  return (
+    <div className="space-y-3">
+      <SuperlativeCard
+        title="Tallest peak"
+        item={tallestPeak}
+        metricLabel="Elevation"
+        metricVal={tallestPeak ? `${tallestPeak.elevation ?? 0}m` : null}
+        description={tallestPeak?.prominence ? `Prominence: ${tallestPeak.prominence}m` : undefined}
+        fallbackMsg="No named peaks exist. Add a Peak in the map editor geography section."
+      />
+      <SuperlativeCard
+        title="Longest river"
+        item={longestRiver}
+        metricLabel="Length"
+        metricVal={longestRiver?.lengthKm ? `${longestRiver.lengthKm.toFixed(2)} km` : null}
+        fallbackMsg="No named rivers exist. Add a River in the map editor."
+      />
+      <SuperlativeCard
+        title="Largest lake"
+        item={largestLake}
+        metricLabel="Surface Area"
+        metricVal={largestLake?.areaSqKm ? `${largestLake.areaSqKm.toFixed(2)} km²` : null}
+        description={largestLake?.maxDepthM ? `Max Depth: ${largestLake.maxDepthM}m` : undefined}
+        fallbackMsg="No named lakes exist. Add a Lake in the map editor."
+      />
+    </div>
+  );
+}
+
+const TAB_PANELS: Record<ReportTab, (props: { profile: GeoProfileData }) => React.ReactNode> = {
+  overview: OverviewTab,
+  "climate-elevation": ClimateTab,
+  "hydro-borders": HydroTab,
+  superlatives: SuperlativesTab,
+};
+
 interface GeographyReportModalProps {
   countryName: string;
   geoProfile: GeoProfileData;
@@ -62,6 +335,7 @@ export function GeographyReportModal({
 }: GeographyReportModalProps) {
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<ReportTab>("overview");
+  const Panel = TAB_PANELS[activeTab];
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -93,316 +367,8 @@ export function GeographyReportModal({
           asTabs
         />
 
-        {/* Tab Body Container */}
         <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto px-1">
-          {activeTab === "overview" && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Card variant="inset" padding="sm" className="space-y-1">
-                  <Eyebrow className="block">Spatial metrics</Eyebrow>
-                  <div className="text-footnote grid grid-cols-2 gap-2">
-                    <div>
-                      <span className="text-label-secondary text-footnote">Total area</span>
-                      <div className="text-label font-semibold">
-                        {geoProfile.area.areaKm2.toLocaleString()} km²
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-label-secondary text-footnote">Border perimeter</span>
-                      <div className="text-label font-semibold">
-                        {geoProfile.area.perimeterKm.toLocaleString()} km
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-label-secondary text-footnote">North-South span</span>
-                      <div className="text-label font-semibold">
-                        {geoProfile.area.nsSpanKm.toLocaleString()} km
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-label-secondary text-footnote">East-West span</span>
-                      <div className="text-label font-semibold">
-                        {geoProfile.area.ewSpanKm.toLocaleString()} km
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-
-                <Card variant="inset" padding="sm" className="space-y-1">
-                  <Eyebrow className="block">Biogeographic overview</Eyebrow>
-                  <div className="text-footnote grid grid-cols-2 gap-2">
-                    <div>
-                      <span className="text-label-secondary text-footnote">Dominant climate</span>
-                      <div
-                        className="text-label truncate font-semibold"
-                        title={geoProfile.climate.dominant ?? undefined}
-                      >
-                        {geoProfile.climate.dominant}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-label-secondary text-footnote">Mean elevation</span>
-                      <div className="text-label font-semibold">
-                        {Math.round(geoProfile.elevation.meanElev).toLocaleString()} m
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-label-secondary text-footnote">Arable land</span>
-                      <div className="text-label font-semibold">
-                        {geoProfile.derived.arableLandPercent.toFixed(1)}%
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-label-secondary text-footnote">Terrain class</span>
-                      <div className="text-label truncate font-semibold">
-                        {geoProfile.elevation.terrainRoughness}
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-
-              <Card variant="inset" className="space-y-2 p-3">
-                <div className="flex items-center gap-2">
-                  <Globe2 aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
-                  <Eyebrow>Geographic classification</Eyebrow>
-                </div>
-                <div className="text-footnote flex flex-wrap gap-2">
-                  {geoProfile.derived.isLandlocked && (
-                    <Badge variant="outline">Landlocked state</Badge>
-                  )}
-                  {geoProfile.derived.isIsland && <Badge variant="outline">Island nation</Badge>}
-                  {geoProfile.derived.coastlineKm > 0 && (
-                    <Badge variant="outline">
-                      Coastline: {Math.round(geoProfile.derived.coastlineKm).toLocaleString()} km
-                    </Badge>
-                  )}
-                  <Badge variant="outline">
-                    Borders: {geoProfile.derived.neighborCount} Neighboring Countries
-                  </Badge>
-                  <Badge variant="outline">
-                    Hydrology: {geoProfile.hydro.riverCount} Rivers / {geoProfile.hydro.lakeCount}{" "}
-                    Lakes
-                  </Badge>
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {activeTab === "climate-elevation" && (
-            <div className="space-y-4">
-              {/* Climate Zones Table */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <CloudSun aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
-                  <Eyebrow>Climate zone distribution</Eyebrow>
-                </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Climate category</TableHead>
-                      <TableHead className="text-right">Coverage %</TableHead>
-                      <TableHead className="text-right">Area (km²)</TableHead>
-                      <TableHead className="text-right">Agri weight</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {geoProfile.climate.zones.map((zone) => (
-                      <TableRow key={zone.type}>
-                        <TableCell className="text-label font-medium">{zone.type}</TableCell>
-                        <TableCell className="text-right">{zone.percentArea.toFixed(1)}%</TableCell>
-                        <TableCell className="text-right">
-                          {Math.round(zone.areaSqKm).toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          x{zone.agricultureFactor.toFixed(1)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {geoProfile.climate.zones.length === 0 && (
-                      <TableRow>
-                        <TableCell
-                          colSpan={4}
-                          className="text-label-secondary py-4 text-center italic"
-                        >
-                          No climate zones mapped.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* Elevation Zones Table */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <TrendingUp aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
-                  <Eyebrow>Altitude profile breakdown</Eyebrow>
-                </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Elevation tier</TableHead>
-                      <TableHead className="text-right">Coverage %</TableHead>
-                      <TableHead className="text-right">Area (km²)</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {geoProfile.elevation.zones.map((zone) => (
-                      <TableRow key={zone.zone}>
-                        <TableCell className="text-label font-medium">{zone.name}</TableCell>
-                        <TableCell className="text-right">{zone.percentArea.toFixed(1)}%</TableCell>
-                        <TableCell className="text-right">
-                          {Math.round(zone.areaSqKm).toLocaleString()}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {geoProfile.elevation.zones.length === 0 && (
-                      <TableRow>
-                        <TableCell
-                          colSpan={3}
-                          className="text-label-secondary py-4 text-center italic"
-                        >
-                          No elevation profile mapped.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "hydro-borders" && (
-            <div className="space-y-4">
-              {/* Hydrography Summary Card */}
-              <div className="grid grid-cols-2 gap-4">
-                <Card variant="inset" padding="sm" className="space-y-1">
-                  <Eyebrow className="block">River networks</Eyebrow>
-                  <div className="text-footnote space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-label-secondary">Unique rivers</span>
-                      <span className="text-label font-semibold">
-                        {geoProfile.hydro.riverCount}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-label-secondary">Clipped length</span>
-                      <span className="text-label font-semibold">
-                        {geoProfile.hydro.totalRiverLengthKm.toLocaleString()} km
-                      </span>
-                    </div>
-                  </div>
-                </Card>
-
-                <Card variant="inset" padding="sm" className="space-y-1">
-                  <Eyebrow className="block">Lakes & reservoirs</Eyebrow>
-                  <div className="text-footnote space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-label-secondary">Unique lakes</span>
-                      <span className="text-label font-semibold">{geoProfile.hydro.lakeCount}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-label-secondary">Clipped area</span>
-                      <span className="text-label font-semibold">
-                        {geoProfile.hydro.totalLakeAreaSqKm.toLocaleString()} km²
-                      </span>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-
-              {/* Neighbors border table */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Globe2 aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
-                  <Eyebrow>International border adjacency</Eyebrow>
-                </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Bordering country</TableHead>
-                      <TableHead className="text-right">Shared Frontier (km)</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {geoProfile.neighbors.map((n) => (
-                      <TableRow key={n.id}>
-                        <TableCell className="text-label font-medium">{n.name}</TableCell>
-                        <TableCell className="text-right">
-                          {n.sharedBorderKm.toFixed(1)} km
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {geoProfile.neighbors.length === 0 && (
-                      <TableRow>
-                        <TableCell
-                          colSpan={2}
-                          className="text-label-secondary py-4 text-center italic"
-                        >
-                          This country is land-locked with no direct international land borders or
-                          is an island.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "superlatives" && (
-            <div className="space-y-4">
-              {/* Superlative cards */}
-              <div className="space-y-3">
-                <SuperlativeCard
-                  title="Tallest peak"
-                  item={geoProfile.superlatives.tallestPeak}
-                  metricLabel="Elevation"
-                  metricVal={
-                    geoProfile.superlatives.tallestPeak
-                      ? `${geoProfile.superlatives.tallestPeak.elevation ?? 0}m`
-                      : null
-                  }
-                  description={
-                    geoProfile.superlatives.tallestPeak?.prominence
-                      ? `Prominence: ${geoProfile.superlatives.tallestPeak.prominence}m`
-                      : undefined
-                  }
-                  fallbackMsg="No named peaks exist. Add a Peak in the map editor geography section."
-                />
-
-                <SuperlativeCard
-                  title="Longest river"
-                  item={geoProfile.superlatives.longestRiver}
-                  metricLabel="Length"
-                  metricVal={
-                    geoProfile.superlatives.longestRiver?.lengthKm
-                      ? `${geoProfile.superlatives.longestRiver.lengthKm.toFixed(2)} km`
-                      : null
-                  }
-                  fallbackMsg="No named rivers exist. Add a River in the map editor."
-                />
-
-                <SuperlativeCard
-                  title="Largest lake"
-                  item={geoProfile.superlatives.largestLake}
-                  metricLabel="Surface Area"
-                  metricVal={
-                    geoProfile.superlatives.largestLake?.areaSqKm
-                      ? `${geoProfile.superlatives.largestLake.areaSqKm.toFixed(2)} km²`
-                      : null
-                  }
-                  description={
-                    geoProfile.superlatives.largestLake?.maxDepthM
-                      ? `Max Depth: ${geoProfile.superlatives.largestLake.maxDepthM}m`
-                      : undefined
-                  }
-                  fallbackMsg="No named lakes exist. Add a Lake in the map editor."
-                />
-              </div>
-            </div>
-          )}
+          <Panel profile={geoProfile} />
         </div>
       </SheetContent>
     </Sheet>
